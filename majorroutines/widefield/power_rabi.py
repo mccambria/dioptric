@@ -62,8 +62,8 @@ def main(
     ### Some initial setup
 
     pulse_gen = tb.get_server_pulse_gen()
-    # powers = calculate_powers(0, power_range, num_steps)
-    powers = np.linspace(0, power_range, num_steps) + 1
+    powers = calculate_powers(0, power_range, num_steps)
+    # powers = np.linspace(0, power_range, num_steps) + 1
 
     seq_file = "resonance_ref.py"
 
@@ -124,7 +124,7 @@ def main(
 if __name__ == "__main__":
     kpl.init_kplotlib()
 
-    data = dm.get_raw_data(file_id=1546629220746)
+    data = dm.get_raw_data(file_id=1547288098999)
 
     raw_fig = create_raw_data_figure(data)
 

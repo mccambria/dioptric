@@ -350,7 +350,11 @@ def macro_pi_pulse(uwave_ind_list, duration=None):
     for uwave_ind in uwave_ind_list:
         sig_gen_el = get_sig_gen_element(uwave_ind)
         qua.align()
-        qua.play("pi_pulse", sig_gen_el, duration=duration)
+        if duration is None:
+            qua.play("pi_pulse", sig_gen_el)
+        else:
+            with qua.if_(duration > 0):
+                qua.play("pi_pulse", sig_gen_el, duration=duration)
         qua.wait(uwave_buffer, sig_gen_el)
 
 
@@ -372,6 +376,15 @@ def macro_pi_on_2_pulse(uwave_ind_list):
         qua.align()
         qua.play("pi_on_2_pulse", sig_gen_el)
         qua.wait(uwave_buffer, sig_gen_el)
+
+
+def get_macro_pi_on_2_pulse_duration(uwave_ind_list):
+    duration = 0
+    uwave_buffer = get_uwave_buffer()
+    for uwave_ind in uwave_ind_list:
+        duration += get_rabi_period(uwave_ind) // 4
+        duration += uwave_buffer
+    return duration
 
 
 def macro_charge_state_readout(readout_duration_ns=None):
@@ -752,8 +765,4 @@ def get_rabi_period(uwave_ind=0):
 
 
 if __name__ == "__main__":
-    start = time.time()
-    for ind in range(1000):
-        get_rabi_period()
-    stop = time.time()
-    print(stop - start)
+    print(get_macro_pi_on_2_pulse_duration([0, 1]))

@@ -51,8 +51,8 @@ config |= {
     ###
     "count_format": CountFormat.RAW,
     "collection_mode": CollectionMode.CAMERA,
-    "charge_state_estimation_mode": ChargeStateEstimationMode.MLE,
-    # "charge_state_estimation_mode": ChargeStateEstimationMode.THRESHOLDING,
+    # "charge_state_estimation_mode": ChargeStateEstimationMode.MLE,
+    "charge_state_estimation_mode": ChargeStateEstimationMode.THRESHOLDING,
     "windows_repo_path": home / "GitHub/dioptric",
     ###
     # Common durations are in ns
@@ -61,7 +61,7 @@ config |= {
         "aod_access_time": 20e3,
         # "aod_access_time": 30e3,
         "widefield_operation_buffer": 1e3,
-        "uwave_buffer": 20,
+        "uwave_buffer": 16,
     },
     ###
     "DeviceIDs": {
@@ -95,23 +95,27 @@ config |= {
         "sig_gen_0": {
             "name": "sig_gen_STAN_sg394",
             "frequency": 2.8585669247525622,
-            # "rabi_period": 112,
+            "rabi_period": 112,
             # "uwave_power": 6.05,
             # "rabi_period": 192,
             # "uwave_power": -3.7,
-            "rabi_period": 128,
-            "uwave_power": 2.51,
+            # "rabi_period": 128,
+            # "frequency": 2.9304468840166678,
+            # "rabi_period": 120,
+            "uwave_power": 3.5,
             "iq_delay": 140,
         },
         "sig_gen_1": {
             "name": "sig_gen_STAN_sg394_2",
             "frequency": 2.8124502997156644,
-            # "rabi_period": 128,
+            "rabi_period": 128,
             # "uwave_power": 8.2,
             # "rabi_period": 192,
             # "uwave_power": -0.6,
-            "rabi_period": 144,
-            "uwave_power": 6.7,
+            # "rabi_period": 144,
+            # "frequency": 2.8874701085827104,
+            # "rabi_period": 128,
+            "uwave_power": 6.2,
         },
     },
     ###
@@ -613,6 +617,7 @@ opx_config = {
         "iq_pi_on_2_pulse_0": {
             "operation": "control",
             "length": int(rabi_period_0 / 4) + iq_buffer,
+            # "length": 20,
             "waveforms": {"single": "cw"},
         },
         ### Digital
@@ -663,7 +668,8 @@ opx_config = {
         },
         "do_pi_on_2_pulse_0": {
             "operation": "control",
-            "length": int(rabi_period_0 / 4),
+            "length": int(rabi_period_0 / 4) + 4,
+            # "length": 20,
             "digital_marker": "on",
         },
         "do_pi_pulse_1": {
@@ -673,7 +679,8 @@ opx_config = {
         },
         "do_pi_on_2_pulse_1": {
             "operation": "control",
-            "length": int(rabi_period_1 / 4),
+            "length": int(rabi_period_1 / 4) + 4,
+            # "length": 20,
             "digital_marker": "on",
         },
         ### Mixed
@@ -684,6 +691,9 @@ opx_config = {
     "waveforms": {
         # Green AOD
         "green_aod_cw-opti": {"type": "constant", "sample": 0.09},
+        # "green_aod_cw-opti": {"type": "constant", "sample": 0.07},
+        # "green_aod_cw-opti": {"type": "constant", "sample": 0.05},
+        # "green_aod_cw-opti": {"type": "constant", "sample": 0.03},
         # "green_aod_cw-charge_pol": {"type": "constant", "sample": 0.13},
         # "green_aod_cw-charge_pol": {"type": "constant", "sample": 0.06},  # Negative
         "green_aod_cw-charge_pol": {"type": "constant", "sample": 0.11},
@@ -693,13 +703,13 @@ opx_config = {
         # Red AOD
         # "red_aod_cw-opti": {"type": "constant", "sample": 0.10},
         "red_aod_cw-opti": {"type": "constant", "sample": 0.13},
-        "red_aod_cw-ion": {"type": "constant", "sample": 0.15},
+        "red_aod_cw-ion": {"type": "constant", "sample": 0.13},
         "red_aod_cw-scc": {"type": "constant", "sample": 0.13},
         # Yellow AOM
         "yellow_imaging": {"type": "constant", "sample": 0.40},  # 0.35
         # "yellow_imaging": {"type": "constant", "sample": 0.50},  # 0.35
         # "yellow_charge_readout": {"type": "constant", "sample": 0.355},  # 30e6
-        "yellow_charge_readout": {"type": "constant", "sample": 0.355},  # 30e6
+        "yellow_charge_readout": {"type": "constant", "sample": 0.3475},  # 30e6
         "yellow_spin_pol": {"type": "constant", "sample": 0.38},
         # Other
         "aod_cw": {"type": "constant", "sample": 0.35},

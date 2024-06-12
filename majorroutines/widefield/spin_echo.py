@@ -81,13 +81,14 @@ def create_raw_data_figure(data):
     return fig
 
 
-def create_fit_figure(data):
+def create_fit_figure(data, axes_pack=None, layout=None, no_legend=False):
     nv_list = data["nv_list"]
     taus = data["taus"]
     counts = np.array(data["states"])
 
     num_nvs = len(nv_list)
     total_evolution_times = 2 * np.array(taus) / 1e3
+    # total_evolution_times = np.array(taus) / 1e3
 
     sig_counts = counts[0]
     ref_counts = counts[1]
@@ -137,7 +138,10 @@ def create_fit_figure(data):
 
     ### Make the figure
 
-    fig, axes_pack, layout = kpl.subplot_mosaic(num_nvs, num_rows=2)
+    if axes_pack is None:
+        fig, axes_pack, layout = kpl.subplot_mosaic(num_nvs, num_rows=2)
+    else:
+        fig = None
     norm_counts = avg_counts - norms[0][:, np.newaxis]
     norm_counts_ste = avg_counts_ste
     widefield.plot_fit(
@@ -148,9 +152,12 @@ def create_fit_figure(data):
         norm_counts_ste,
         # fit_fns,
         # popts,
+        no_legend=no_legend,
     )
-    kpl.set_mosaic_xlabel(fig, axes_pack, layout, "Total evolution time (µs)")
-    kpl.set_mosaic_ylabel(fig, axes_pack, layout, "Normalized fluorescence")
+    kpl.set_mosaic_xlabel(axes_pack, layout, "Total evolution time (µs)")
+    # kpl.set_mosaic_xlabel(axes_pack, layout, "Evolution time (µs)")
+    # kpl.set_mosaic_ylabel(axes_pack, layout, "Change in NV$^{-}$ fraction")
+    kpl.set_mosaic_ylabel(axes_pack, layout, "$\Delta$NV$^{-}$")
     return fig
 
 
@@ -208,8 +215,9 @@ def main(nv_list, num_steps, num_reps, num_runs, min_tau, max_tau):
     taus.extend(np.linspace(min_tau, min_tau + revival_width, 11).tolist())
     taus.extend(np.linspace(38e3 - revival_width, 38e3 + revival_width, 61).tolist())
     taus.extend(np.linspace(76e3 - revival_width, 76e3 + revival_width, 21).tolist())
-    taus = np.array(taus)
-    print(taus)
+    taus = [round(el / 4) * 4 for el in taus]
+    num_steps = len(taus)
+    # print(taus)
 
     uwave_ind_list = [0, 1]
 
@@ -225,7 +233,13 @@ def main(nv_list, num_steps, num_reps, num_runs, min_tau, max_tau):
         pulse_gen.stream_load(seq_file, seq_args_string, num_reps)
 
     raw_data = base_routine.main(
-        nv_list, num_steps, num_reps, num_runs, run_fn, uwave_ind_list=uwave_ind_list
+        nv_list,
+        num_steps,
+        num_reps,
+        num_runs,
+        run_fn,
+        uwave_ind_list=uwave_ind_list,
+        save_all_images=False,
     )
 
     ### Process and plot
@@ -243,7 +257,8 @@ def main(nv_list, num_steps, num_reps, num_runs, min_tau, max_tau):
         raw_fig = create_raw_data_figure(data)
         fit_fig = create_fit_figure(data)
     except Exception:
-        pass
+        raw_fig = None
+        fit_fig = None
 
     ### Clean up and return
 
@@ -264,15 +279,7 @@ def main(nv_list, num_steps, num_reps, num_runs, min_tau, max_tau):
 if __name__ == "__main__":
     kpl.init_kplotlib()
 
-    # data = dm.get_raw_data(file_id=1544212555074)
-    # data = dm.get_raw_data(file_id=1544356290934)
-    # data = dm.get_raw_data(file_id=1544510655664)
-
-    # data = dm.get_raw_data(file_id=1544680353432)
-    # data = dm.get_raw_data(file_id=1544821259934)
-    # data = dm.get_raw_data(file_id=1544947399019)
-
-    data = dm.get_raw_data(file_id=1546985295617)
+    data = dm.get_raw_data(file_id=1548381879624)
 
     create_raw_data_figure(data)
     create_fit_figure(data)

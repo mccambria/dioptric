@@ -283,20 +283,102 @@ def main(
 if __name__ == "__main__":
     kpl.init_kplotlib()
 
-    data = dm.get_raw_data(file_id=1537195144201, load_npz=True)
-    img_array = np.array(data["sig_img_array"])
-    nv_list = data["nv_list"]
-    coords_list = [
-        widefield.get_nv_pixel_coords(nv, drift_adjust=True, drift=(4, 10))
-        for nv in nv_list
+    ######
+
+    ### Basic widefield
+    # # data = dm.get_raw_data(file_id=1556420881234, load_npz=True)
+    # data = dm.get_raw_data(file_id=1556655608661, load_npz=True)
+    # img_array = np.array(data["img_array"])
+    # img_array = widefield.adus_to_photons(img_array)
+    # img_array_offset = [0, 0]
+
+    ### Smiley
+    smiley_inds = list(range(6))
+
+    # Histograms ref
+    # file_id = 1556690958663
+    # img_array_offset = [3, 5]
+    # ion_inds = []
+    # img_array_ind = 1
+
+    # Everything ionized
+    # file_id = 1556690958663
+    # img_array_offset = [3, 5]
+    # ion_inds = [0, 1, 2, 3, 4, 5]
+    # img_array_ind = 0
+
+    # Every other
+    file_id = 1556723203013
+    img_array_offset = [0, 0]
+    ion_inds = [0, 2, 5]
+    img_array_ind = 0
+
+    # # Inverted every other
+    # file_id = 1556745846534
+    # img_array_offset = [0,0]
+    # ion_inds = [1, 3, 4]
+    # img_array_ind = 0
+
+    # # Blinking
+    # file_id = 1556830424482
+    # img_array_offset = [0,0]
+    # ion_inds = [4,5]
+    # img_array_ind = 0
+
+    # # Winking
+    # file_id = None
+    # img_array_offset = [0,0]
+    # ion_inds = [5]
+    # img_array_ind = 0
+
+    data = dm.get_raw_data(file_id=file_id, load_npz=True, use_cache=False)
+    img_arrays = np.array(data["img_arrays"])
+    del data
+    img_arrays = img_arrays[img_array_ind]
+    img_array = np.mean(img_arrays, axis=(0, 1, 2))
+    del img_arrays
+    not_ion_inds = [ind for ind in smiley_inds if ind not in ion_inds]
+
+    ######
+
+    widefield.replace_dead_pixel(img_array)
+    img_array = img_array[
+        10 + img_array_offset[0] : 240 + img_array_offset[0],
+        10 + img_array_offset[1] : 240 + img_array_offset[1],
     ]
-    widefield.integrate_counts(img_array, coords_list[1])
-    print(coords_list)
-    scale = widefield.get_camera_scale()
-    um_coords_list = [
-        (round(el[0] / scale, 3), round(el[1] / scale, 3)) for el in coords_list
+
+    pixel_coords_list = [
+        [131.144, 129.272],  #  Smiley
+        [161.477, 105.335],  #  Smiley
+        [135.139, 104.013],
+        [110.023, 87.942],
+        [144.169, 163.787],
+        [173.93, 78.505],  #  Smiley
+        [171.074, 49.877],  #  Smiley
+        [170.501, 132.597],
+        [137.025, 74.662],
+        [58.628, 139.616],
+        # Smiley additions
+        # [150.34, 119.249],  # Too much crosstalk
+        [61.277, 76.387],
+        [85.384, 33.935],
     ]
-    print(um_coords_list)
+    pixel_coords_list = [
+        widefield.adjust_pixel_coords_for_drift(el, [10 - 10, 38 - 10])
+        for el in pixel_coords_list
+    ]
+
+    # coords_list = [
+    #     widefield.get_nv_pixel_coords(nv, drift_adjust=True, drift=(4, 10))
+    #     for nv in nv_list
+    # ]
+    # widefield.integrate_counts(img_array, coords_list[1])
+    # print(coords_list)
+    # scale = widefield.get_camera_scale()
+    # um_coords_list = [
+    #     (round(el[0] / scale, 3), round(el[1] / scale, 3)) for el in coords_list
+    # ]
+    # print(um_coords_list)
 
     # img_array = widefield.adus_to_photons(img_array)
 
@@ -312,10 +394,29 @@ if __name__ == "__main__":
     # )
 
     fig, ax = plt.subplots()
-    kpl.imshow(ax, img_array, cbar_label="Photons")
+    kpl.imshow(ax, img_array, cbar_label="Photons", vmin=0.05, vmax=0.45)
+    ax.axis("off")
 
-    # scale = widefield.get_camera_scale()
-    # kpl.scale_bar(ax, scale, "1 µm", kpl.Loc.UPPER_RIGHT)
-    # widefield.draw_circles_on_nvs(ax, nv_list, drift=(4, 10))
+    scale = widefield.get_camera_scale()
+    kpl.scale_bar(ax, scale, "1 µm", kpl.Loc.UPPER_RIGHT)
+    # pixel_coords_list = [pixel_coords_list[ind] for ind in range(10)]
+    # widefield.draw_circles_on_nvs(ax, pixel_coords_list=pixel_coords_list)
+    pixel_coords_list = [pixel_coords_list[ind] for ind in [0, 1, 5, 6, 10, 11]]
+    draw_coords_list = [pixel_coords_list[ind] for ind in ion_inds]
+    widefield.draw_circles_on_nvs(
+        ax,
+        pixel_coords_list=draw_coords_list,
+        color=kpl.KplColors.DARK_GRAY,
+        no_legend=True,
+        linestyle="solid",
+    )
+    draw_coords_list = [pixel_coords_list[ind] for ind in not_ion_inds]
+    widefield.draw_circles_on_nvs(
+        ax,
+        pixel_coords_list=draw_coords_list,
+        color=kpl.KplColors.DARK_GRAY,
+        no_legend=True,
+        linestyle="dashed",
+    )
 
     plt.show(block=True)

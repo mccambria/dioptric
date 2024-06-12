@@ -10,6 +10,7 @@ Created November 15th, 2023
 # region Imports and constants
 
 import copy
+import io
 import os
 import socket
 import time
@@ -22,6 +23,7 @@ import numpy as np
 import orjson  # orjson is faster and more lightweight than ujson, but can't write straight to file
 import ujson  # usjson is faster than standard json library
 from git import Repo
+from PIL import Image
 
 from utils import _cloud, common, widefield
 from utils.constants import NVSig
@@ -129,20 +131,25 @@ def save_raw_data(raw_data, file_path, keys_to_compress=None):
     raw_data = copy.deepcopy(raw_data)
 
     # Compress numpy arrays to linked file
-    if keys_to_compress is not None:
-        # Build the object to compress
-        kwargs = {}
+    try:
+        if keys_to_compress is not None:
+            # Build the object to compress
+            kwargs = {}
+            for key in keys_to_compress:
+                kwargs[key] = raw_data[key]
+            # Upload to cloud
+            content = BytesIO()
+            np.savez_compressed(content, **kwargs)
+            file_path_npz = file_path.with_suffix(".npz")
+            npz_file_id = _cloud.upload(file_path_npz, content)
+            # Replace the value in the raw data with a string that tells us where
+            # to find the compressed file
+            for key in keys_to_compress:
+                raw_data[key] = f"{npz_file_id}.npz"
+    except Exception as exc:
+        print(exc)
         for key in keys_to_compress:
-            kwargs[key] = raw_data[key]
-        # Upload to cloud
-        content = BytesIO()
-        np.savez_compressed(content, **kwargs)
-        file_path_npz = file_path.with_suffix(".npz")
-        npz_file_id = _cloud.upload(file_path_npz, content)
-        # Replace the value in the raw data with a string that tells us where
-        # to find the compressed file
-        for key in keys_to_compress:
-            raw_data[key] = f"{npz_file_id}.npz"
+            raw_data[key] = None
 
     # Always include the config dict
     config = common.get_config_dict()
@@ -298,6 +305,13 @@ def get_raw_data(file_name=None, file_id=None, use_cache=True, load_npz=False):
         data["nv_list"] = nv_list
 
     return data
+
+
+def get_img(file_name=None, ext=None, file_id=None):
+    file_content, file_id, file_name = _cloud.download(file_name, ext, file_id)
+    img = Image.open(io.BytesIO(file_content))
+    img = np.asarray(img)
+    return np.asarray(img)
 
 
 # endregion

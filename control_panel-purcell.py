@@ -17,6 +17,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 
 from majorroutines.widefield import (
+    ac_stark,
     calibrate_iq_delay,
     charge_monitor,
     charge_state_histograms,
@@ -67,7 +68,8 @@ def do_scanning_image_sample_zoom(nv_sig):
 
 
 def do_image_nv_list(nv_list):
-    num_reps = 100
+    num_reps = 200
+    # num_reps = 2
     return image_sample.nv_list(nv_list, num_reps)
 
 
@@ -79,9 +81,14 @@ def do_image_single_nv(nv_sig):
 def do_charge_state_histograms(nv_list, verify_charge_states=False):
     num_reps = 200
     num_runs = 40
+    # num_runs = 20
     # num_runs = 2
     return charge_state_histograms.main(
-        nv_list, num_reps, num_runs, verify_charge_states=verify_charge_states
+        nv_list,
+        num_reps,
+        num_runs,
+        verify_charge_states=verify_charge_states,
+        ion_include_inds=[0, 1, 2, 3, 5],
     )
 
 
@@ -200,8 +207,8 @@ def do_optimize_scc(nv_list):
 
 def do_scc_snr_check(nv_list):
     num_reps = 100
-    num_runs = 30
-    scc_snr_check.main(nv_list, num_reps, num_runs)
+    num_runs = 100
+    scc_snr_check.main(nv_list, num_reps, num_runs, uwave_ind_list=[0, 1])
 
 
 def do_simple_correlation_test(nv_list):
@@ -249,7 +256,8 @@ def do_resonance(nv_list):
 
 
 def do_resonance_zoom(nv_list):
-    for freq_center in (2.85761751, 2.812251747511455):
+    # for freq_center in (2.85761751, 2.812251747511455):
+    for freq_center in (2.87 + (2.87 - 2.85856), 2.87 + (2.87 - 2.81245)):
         freq_range = 0.030
         num_steps = 20
         num_reps = 15
@@ -274,11 +282,30 @@ def do_rabi(nv_list):
     rabi.main(nv_list, num_steps, num_reps, num_runs, min_tau, max_tau, uwave_ind_list)
 
 
+def do_ac_stark(nv_list):
+    min_tau = 0
+    # max_tau = 240 + min_tau
+    # max_tau = 360 + min_tau
+    max_tau = 480 + min_tau
+    num_steps = 31
+    num_reps = 10
+    # num_runs = 100
+    num_runs = 50
+    # num_runs = 2
+
+    # uwave_ind_list = [1]
+    uwave_ind_list = [0, 1]
+
+    ac_stark.main(
+        nv_list, num_steps, num_reps, num_runs, min_tau, max_tau, uwave_ind_list
+    )
+
+
 def do_power_rabi(nv_list):
     # power_center = -3.6
-    power_range = -10
-    num_steps = 21
-    num_reps = 15
+    power_range = 6
+    num_steps = 16
+    num_reps = 20
     # num_runs = 100
     num_runs = 50
     # num_runs = 2
@@ -302,21 +329,18 @@ def do_spin_echo(nv_list):
     num_steps = 29
     num_reps = 3
     num_runs = 800
-    num_runs = 2
+    # num_runs = 2
     spin_echo.main(nv_list, num_steps, num_reps, num_runs, min_tau, max_tau)
 
 
 def do_ramsey(nv_list):
-    min_tau = 0
-    # max_tau = 2000 + min_tau
+    min_tau = 100
     max_tau = 3200 + min_tau
     detuning = 3
-    # num_steps = 21
-    # num_reps = 15
-    # num_runs = 30
     num_steps = 101
-    num_reps = 4
-    num_runs = 250
+    num_reps = 3
+    num_runs = 1600
+    # num_runs = 2
     ramsey.main(nv_list, num_steps, num_reps, num_runs, min_tau, max_tau, detuning)
 
 
@@ -358,8 +382,9 @@ def do_sq_relaxation(nv_list):
     min_tau = 1e3
     max_tau = 20e6 + min_tau
     num_steps = 21
-    num_reps = 10
-    num_runs = 400
+    num_reps = 15
+    num_runs = 200
+    # num_runs = 2
     relaxation_interleave.sq_relaxation(
         nv_list, num_steps, num_reps, num_runs, min_tau, max_tau
     )
@@ -369,8 +394,8 @@ def do_dq_relaxation(nv_list):
     min_tau = 1e3
     max_tau = 15e6 + min_tau
     num_steps = 21
-    num_reps = 10
-    num_runs = 400
+    num_reps = 15
+    num_runs = 200
     relaxation_interleave.dq_relaxation(
         nv_list, num_steps, num_reps, num_runs, min_tau, max_tau
     )
@@ -454,7 +479,7 @@ def do_detect_cosmic_rays(nv_list):
 
 def do_check_readout_fidelity(nv_list):
     num_reps = 200
-    num_runs = 40
+    num_runs = 20
 
     charge_monitor.check_readout_fidelity(nv_list, num_reps, num_runs)
 
@@ -500,15 +525,15 @@ def do_opx_constant_ac():
     # opx.constant_ac(
     #     [],  # Digital channels
     #     [7],  # Analog channels
-    #     [0.34],  # Analog voltages
+    #     [0.4],  # Analog voltages
     #     [0],  # Analog frequencies
     # )
     # Green
     # opx.constant_ac(
     #     [4],  # Digital channels
-    #     [3, 4],  # Analog channels
-    #     [0.11, 0.11],  # Analog voltages
-    #     [110, 110],  # Analog frequencies
+    #     # [3, 4],  # Analog channels
+    #     # [0.11, 0.11],  # Analog voltages
+    #     # [110, 110],  # Analog frequencies
     # )
     # opx.constant_ac([4])  # Just laser
     # Red
@@ -529,13 +554,12 @@ def do_opx_constant_ac():
     #     opx.halt()
     opx.constant_ac(
         [1],  # Digital channels
-        [2, 6],  # Analog channels
-        [0.19, 0.19],  # Analog voltages
-        [
-            75,
-            75,
-        ],  # Analog frequencies                                                                                                                                                                       uencies
-        # [73.76, 75.257],
+        # [2, 6],  # Analog channels
+        # [0.19, 0.19],  # Analog voltages
+        # [
+        #     75,
+        #     75,
+        # ],  # Analog frequencies                                                                                                                                                                       uencies
     )
     # opx.constant_ac([1])  # Just laser
     # # Green + red
@@ -609,207 +633,92 @@ if __name__ == "__main__":
     pixel_coords_key = "pixel_coords"
 
     sample_name = "johnson"
-    z_coord = 4.57
+    z_coord = 4.38
     magnet_angle = 90
     date_str = "2024_03_12"
     global_coords = [None, None, z_coord]
 
     # endregion
-    # region Coords (from March 12th)
-
-    pixel_coords_list = [
-        [131.447, 154.371],
-        [149.612, 145.434],
-        [162.289, 130.925],
-        [135.679, 128.482],
-        [126.597, 113.929],
-        [110.558, 113.266],
-        [112.347, 127.94],
-        [83.832, 112.609],
-        [144.666, 188.907],
-        [159.542, 186.902],
-        [174.584, 103.798],
-        [171.363, 74.501],
-        [158.976, 59.177],
-        [105.906, 149.857],
-        [60.542, 102.178],
-    ]
-    num_nvs = len(pixel_coords_list)
-    green_coords_list = [
-        [108.485, 109.627],
-        [108.925, 109.878],
-        [109.177, 110.226],
-        [108.606, 110.28],
-        [108.363, 110.59],
-        [107.995, 110.61],
-        [108.077, 110.238],
-        [107.374, 110.612],
-        [108.848, 108.844],
-        [109.176, 108.916],
-        [109.383, 110.881],
-        [109.319, 111.517],
-        [109.02, 111.876],
-        [107.923, 109.72],
-        [106.92, 110.791],
-    ]
-    red_coords_list = [
-        [73.166, 74.936],
-        [73.442, 75.083],
-        [73.701, 75.35],
-        [73.191, 75.334],
-        [72.997, 75.654],
-        [72.835, 75.638],
-        [72.754, 75.386],
-        [72.278, 75.661],
-        [73.401, 74.276],
-        [73.64, 74.29],
-        [73.978, 75.856],
-        [73.854, 76.464],
-        [73.673, 76.742],
-        [72.754, 74.993],
-        [71.845, 75.925],
-    ]
-    threshold_list = [
-        27.5,
-        29.5,
-        27.5,
-        25.5,
-        26.5,
-        25.5,
-        27.5,
-        29.5,
-        23.5,
-        22.5,
-        23.5,
-        21.5,
-        19.5,
-        23.5,
-        20.5,
-    ]
-    nvn_dist_params_list = [
-        (0.0743790997693472, 0.49243735948571105, 4.273609343036658),
-        (0.10309718046655189, 0.46973570049751356, 4.197247761091586),
-        (0.09180231145372664, 0.47455038483121154, 4.106815710367739),
-        (0.10317066887596402, 0.38318795496960856, 4.154859076199519),
-        (0.11666315685494058, 0.39051320471698014, 3.9673747080502557),
-        (0.10486219919226811, 0.3510649292843532, 4.205933398393933),
-        (0.0929983642221821, 0.41660935339954097, 4.329751354770707),
-        (0.1405594825258909, 0.3166155422804541, 3.95928440378325),
-        (0.07885560222640701, 0.3654986245171775, 4.119590214945802),
-        (0.0813716277445373, 0.3477543594526663, 4.197370425075404),
-        (0.08829324682066712, 0.3303466874395145, 4.105873465693761),
-        (0.07840901367552365, 0.2864792643147898, 4.317161603008103),
-        (0.06851973774302232, 0.22769362621930464, 4.669128290191102),
-        (0.10114463323084008, 0.31435370475412344, 4.060191867734814),
-        (0.07685628782646109, 0.2497550236464285, 4.350185904031819),
-    ]
-    scc_duration_list = [
-        124,
-        104,
-        116,
-        208,
-        92,
-        132,
-        76,
-        152,
-        120,
-        100,
-        200,
-        136,
-        96,
-        204,
-        116,
-    ]
-    # endregion
-    # region Coords (smiley)
-
-    # pixel_coords_list = [
-    #     [142.851, 193.093],
-    #     [161.181, 184.12],
-    #     [173.95, 169.448],
-    #     [186.133, 142.627],
-    #     [183.492, 113.143],
-    #     [170.196, 98.414],
-    # ]
-    # green_coords_list = [
-    #     [108.712, 108.84],
-    #     [109.137, 109.074],
-    #     [109.363, 109.421],
-    #     [109.587, 110.096],
-    #     [109.532, 110.746],
-    #     [109.22, 111.088],
-    # ]
-    # red_coords_list = [
-    #     [73.62, 74.141],
-    #     [73.813, 74.268],
-    #     [74.074, 74.529],
-    #     [74.37, 75.109],
-    #     [74.26, 75.662],
-    #     [74.009, 75.891],
-    # ]
-    # threshold_list = [25.5, 26.5, 25.5, 21.5, 21.5, 20.5]
-    # nvn_dist_params_list = [
-    #     (0.08864254977843133, 0.31782688165126877, 3.8583663986211434),
-    #     (0.07940066813697125, 0.3064650349721238, 4.313006125005059),
-    #     (0.08060280012144272, 0.28900824292747535, 4.1945931058872095),
-    #     (0.0970023907871867, 0.16389041639281693, 3.7315296874137602),
-    #     (0.05820311354749401, 0.22557983981381505, 4.7204760434244895),
-    #     (0.079625551762134, 0.16060140009866478, 4.222986241289107),
-    # ]
-
-    # endregion
     # region Coords (publication set)
     pixel_coords_list = [
-        [131.144, 129.272],
-        [161.477, 105.335],
+        [131.144, 129.272],  #  Smiley
+        [161.477, 105.335],  #  Smiley
         [135.139, 104.013],
         [110.023, 87.942],
         [144.169, 163.787],
-        [173.93, 78.505],
-        [171.074, 49.877],
+        [173.93, 78.505],  #  Smiley
+        [171.074, 49.877],  #  Smiley
         [170.501, 132.597],
         [137.025, 74.662],
         [58.628, 139.616],
+        # Smiley additions
+        # [150.34, 119.249],  # Too much crosstalk
+        [61.277, 76.387],
+        [85.384, 33.935],
     ]
     num_nvs = len(pixel_coords_list)
     green_coords_list = [
-        [108.507, 110.208],
-        [109.089, 110.756],
-        [108.53, 110.804],
-        [107.93, 111.171],
-        [108.778, 109.393],
-        [109.305, 111.414],
-        [109.237, 112.058],
-        [109.294, 110.155],
-        [108.479, 111.479],
-        [106.85, 109.898],
+        [108.463, 110.222],
+        [109.141, 110.831],
+        [108.59, 110.861],
+        [107.94, 111.123],
+        [108.791, 109.466],
+        [109.397, 111.413],
+        [109.244, 112.113],
+        [109.387, 110.167],
+        [108.529, 111.472],
+        [106.843, 109.874],
+        [106.776, 111.351],
+        [107.227, 112.366],
     ]
     red_coords_list = [
-        [73.293, 75.462],
-        [73.83, 75.913],
-        [73.345, 75.937],
-        [72.85, 76.202],
-        [73.536, 74.8],
-        [74.025, 76.402],
-        [73.968, 76.974],
-        [74.035, 75.432],
-        [73.333, 76.454],
-        [71.956, 75.199],
+        [73.497, 75.563],
+        [74.042, 76.036],
+        [73.527, 76.016],
+        [73.04, 76.28],
+        [73.754, 74.915],
+        [74.227, 76.542],
+        [74.142, 77.09],
+        [74.208, 75.515],
+        [73.518, 76.561],
+        [72.122, 75.258],
+        #
+        # [73.825, 75.724],
+        [72.124, 76.462],
+        [72.518, 77.284],
     ]
-    threshold_list = [27.5, 27.5, 25.5, 23.5, 27.5, 22.5, 17.5, 24.5, 22.5, 20.5]
-    nvn_dist_params_list = [
-        (0.06949197853215423, 0.5631391420690471, 4.216881064360549),
-        (0.11193774130398557, 0.47231178723798944, 4.014239435395525),
-        (0.10381090503410967, 0.3769014823750456, 4.2066099249824465),
-        (0.0885175358700188, 0.3582170426257401, 4.128432914770158),
-        (0.0805859848201578, 0.527147580304454, 4.126784289287142),
-        (0.08303824820569747, 0.3533486405172414, 4.153486955348017),
-        (0.0798138155994101, 0.25658246969626625, 4.152802177012195),
-        (0.06476534188853134, 0.493100136132556, 4.172789007253776),
-        (0.08984212570556235, 0.34267315254366004, 4.171807751951278),
-        (0.0827199390683145, 0.3142148295165403, 4.010679074571614),
+    threshold_list = [
+        26.5,
+        27.5,
+        25.5,
+        27.5,
+        23.5,
+        23.5,
+        21.5,
+        23.5,
+        24.5,
+        18.5,
+        #
+        # 22.5,
+        22.5,
+        22.5,
     ]
-    scc_duration_list = [145, 160, 163, 187, 168, 188, 143, 174, 193, 156]
+    scc_duration_list = [
+        118,
+        106,
+        120,
+        106,
+        123,
+        111,
+        131,
+        132,
+        110,
+        103,
+        #
+        # 115,
+        120,
+        120,
+    ]
     scc_duration_list = [4 * round(el / 4) for el in scc_duration_list]
     # scc_duration_list = [None] * num_nvs
     # endregion
@@ -828,7 +737,6 @@ if __name__ == "__main__":
             name=f"{sample_name}-nv{ind}_{date_str}",
             coords=coords,
             threshold=threshold_list[ind],
-            nvn_dist_params=nvn_dist_params_list[ind],
             scc_duration=scc_duration_list[ind],
         )
         nv_list.append(nv_sig)
@@ -836,7 +744,7 @@ if __name__ == "__main__":
     # Additional properties for the representative NV
     nv_list[0].representative = True
     nv_sig = widefield.get_repr_nv_sig(nv_list)
-    nv_sig.expected_counts = 1150
+    nv_sig.expected_counts = 1200
     num_nvs = len(nv_list)
 
     # nv_inds = [0, 1]
@@ -862,7 +770,7 @@ if __name__ == "__main__":
 
     # for nv in nv_list:
     #     pixel_drift = widefield.get_pixel_drift()
-    #     pixel_drift = [-el for el in pixel_drift]
+    #     # pixel_drift = [-el for el in pixel_drift]
     #     coords = widefield.get_nv_pixel_coords(nv, drift=pixel_drift)
     #     r_coords = [round(el, 3) for el in coords]
     #     print(f"{r_coords},")
@@ -880,6 +788,11 @@ if __name__ == "__main__":
     #     print(f"{r_coords},")
     # sys.exit()
 
+    nv_list = [nv_list[ind] for ind in [0, 1, 5, 6, 10, 11]]  # Smiley
+    # nv_list = [nv_list[0], *nv_list[10:]]
+
+    # nv_list = [nv_list[2]]
+
     # endregion
 
     ### Functions to run
@@ -894,7 +807,10 @@ if __name__ == "__main__":
 
         # widefield.reset_all_drift()
         # pos.reset_drift()  # Reset z drift
-        # widefield.set_pixel_drift([+7, +19])  # [131.144, 129.272]
+        # widefield.set_pixel_drift(
+        #     np.array([139.435, 178.025])  # New coords
+        #     - np.array([131.144, 129.272])  # Original coords
+        # )
         # widefield.set_all_scanning_drift_from_pixel_drift()
 
         # do_optimize_z(nv_sig)
@@ -908,7 +824,7 @@ if __name__ == "__main__":
         # do_scanning_image_sample(nv_sig)
         # do_scanning_image_sample_zoom(nv_sig)
         # do_widefield_image_sample(nv_sig, 20)
-        # do_widefield_image_sample(nv_sig, 100)
+        # do_widefield_image_sample(nv_sig, 200)
 
         # do_image_nv_list(nv_list)
         # do_image_single_nv(nv_sig)
@@ -921,6 +837,7 @@ if __name__ == "__main__":
         # do_image_single_nv(nv_sig)
 
         optimize.optimize_pixel_and_z(nv_sig, do_plot=True)
+        # do_image_nv_list(nv_list)
         # for ind in range(20):
         #     do_optimize_pixel(nv_sig)
         # do_optimize_pixel(nv_sig)
@@ -935,13 +852,13 @@ if __name__ == "__main__":
         # do_optimize_loop(nv_list, coords_key, scanning_from_pixel=False)
 
         # nv_list = nv_list[::-1]
-        # do_charge_state_histograms(nv_list)
+        do_charge_state_histograms(nv_list)
         # do_check_readout_fidelity(nv_list)
 
         # do_resonance(nv_list)
         # do_resonance_zoom(nv_list)
         # do_rabi(nv_list)
-        do_spin_echo(nv_list)
+        # do_spin_echo(nv_list)
         # do_power_rabi(nv_list)
         # do_correlation_test(nv_list)
         # do_ramsey(nv_list)
@@ -951,6 +868,7 @@ if __name__ == "__main__":
         # do_detect_cosmic_rays(nv_list)
         # do_check_readout_fidelity(nv_list)
         # do_charge_quantum_jump(nv_list)
+        # do_ac_stark(nv_list)
 
         # do_opx_constant_ac()
         # do_opx_square_wave()

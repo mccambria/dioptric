@@ -21,22 +21,41 @@ from servers.timing.sequencelibrary.QM_opx.camera import base_scc_sequence
 
 def get_seq(base_scc_seq_args, num_reps=1):
     buffer = seq_utils.get_widefield_operation_buffer()
+    pi_pulse_duration = seq_utils.get_macro_pi_pulse_duration([1])
     with qua.program() as seq:
 
         def uwave_macro_sig(uwave_ind_list, step_val):
+            #     uwave_ind_list = [0]
             seq_utils.macro_pi_pulse(uwave_ind_list)
+
+        #     seq_utils.macro_pi_on_2_pulse(uwave_ind_list)
 
         # MCC spin echo test
         # def uwave_macro_sig(uwave_ind_list, step_val):
-        #     for uwave_ind in uwave_ind_list:
-        #         qua.align()
-        #         seq_utils.macro_pi_on_2_pulse([uwave_ind])
-        #         qua.wait(4)
-        #         seq_utils.macro_pi_pulse([uwave_ind])
-        #         qua.wait(4)
-        #         # seq_utils.macro_pi_pulse([uwave_ind])
-        #         seq_utils.macro_pi_on_2_pulse([uwave_ind])
+        #     seq_utils.macro_pi_on_2_pulse(uwave_ind_list)
+        #     qua.wait(4)
+        #     seq_utils.macro_pi_pulse(uwave_ind_list)
+        #     qua.wait(4)
+        #     # seq_utils.macro_pi_pulse(uwave_ind_list)
+        #     seq_utils.macro_pi_on_2_pulse(uwave_ind_list)
         #     qua.wait(buffer)
+
+        # MCC Ramsey test
+        # def uwave_macro_sig(uwave_ind_list, step_val):
+        #     uwave_ind_list = [0]
+        #     seq_utils.macro_pi_on_2_pulse(uwave_ind_list)
+        #     qua.wait(pi_pulse_duration)
+        #     seq_utils.macro_pi_on_2_pulse(uwave_ind_list)
+        #     # seq_utils.macro_pi_pulse(uwave_ind_list)
+        #     # for ind in uwave_ind_list:
+        #     #     qua.align()
+        #     #     seq_utils.macro_pi_on_2_pulse([ind])
+        #     #     # qua.wait(10)
+        #     #     # seq_utils.macro_pi_pulse(uwave_ind_list)
+        #     #     # qua.wait(4)
+        #     #     # seq_utils.macro_pi_pulse(uwave_ind_list)
+        #     #     seq_utils.macro_pi_on_2_pulse([ind])
+        #     # qua.wait(buffer)
 
         def uwave_macro_ref(uwave_ind_list, step_val):
             pass

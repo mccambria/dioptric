@@ -36,7 +36,16 @@ def create_raw_data_figure(nv_list, freqs, counts, counts_errs):
     return fig
 
 
-def create_fit_figure(nv_list, freqs, counts, counts_ste, norms):
+def create_fit_figure(
+    nv_list,
+    freqs,
+    counts,
+    counts_ste,
+    norms,
+    axes_pack=None,
+    layout=None,
+    no_legend=False,
+):
     ### Do the fitting
 
     num_nvs = len(nv_list)
@@ -73,8 +82,8 @@ def create_fit_figure(nv_list, freqs, counts, counts_ste, norms):
         #     num_resonances = 2
         # else:
         #     num_resonances = 0
-        num_resonances = 1
-        # num_resonances = 2
+        # num_resonances = 1
+        num_resonances = 2
 
         if num_resonances == 1:
             guess_params = [amp_guess, 5, 5, np.median(freqs)]
@@ -137,31 +146,43 @@ def create_fit_figure(nv_list, freqs, counts, counts_ste, norms):
 
     ### Make the figure
 
-    layout = kpl.calc_mosaic_layout(num_nvs, num_rows=2)
-    fig, axes_pack = plt.subplot_mosaic(
-        layout, figsize=[6.5, 4.0], sharex=True, sharey=True
-    )
+    if axes_pack is None:
+        layout = kpl.calc_mosaic_layout(num_nvs, num_rows=2)
+        fig, axes_pack = plt.subplot_mosaic(
+            layout, figsize=[6.5, 4.0], sharex=True, sharey=True
+        )
     axes_pack_flat = list(axes_pack.values())
 
     widefield.plot_fit(
-        axes_pack_flat, nv_list, freqs, norm_counts, norm_counts_ste, fit_fns, popts
+        axes_pack_flat,
+        nv_list,
+        freqs,
+        norm_counts,
+        norm_counts_ste,
+        fit_fns,
+        popts,
+        no_legend=no_legend,
     )
 
-    ax = axes_pack[layout[-1, 0]]
-    ax.set_xlabel(" ")
-    fig.text(0.55, 0.01, "Frequency (GHz)", ha="center")
-    ax.set_ylabel(" ")
-    # label = "Normalized fraction in NV$^{-}$"
-    label = "Change in fraction in NV$^{-}$"
-    fig.text(0.005, 0.55, label, va="center", rotation="vertical")
-    # ax.set_ylim([0.945, 1.19])
-    # ax.set_yticks([1.0, 1.1, 1.2])
-    # ax.set_xticks([2.83, 2.87, 2.91])
-    x_buffer = 0.05 * (np.max(freqs) - np.min(freqs))
-    ax.set_xlim(np.min(freqs) - x_buffer, np.max(freqs) + x_buffer)
-    y_buffer = 0.05 * (np.max(norm_counts) - np.min(norm_counts))
-    ax.set_ylim(np.min(norm_counts) - y_buffer, np.max(norm_counts) + y_buffer)
-    return fig
+    kpl.set_mosaic_xlabel(axes_pack, layout, "Frequency (GHz)")
+    # kpl.set_mosaic_ylabel(axes_pack, layout, "Change in NV$^{-}$ fraction")
+    kpl.set_mosaic_ylabel(axes_pack, layout, "$\Delta$NV$^{-}$")
+
+    # ax = axes_pack[layout[-1, 0]]
+    # ax.set_xlabel(" ")
+    # fig.text(0.55, 0.01, "Frequency (GHz)", ha="center")
+    # ax.set_ylabel(" ")
+    # # label = "Normalized fraction in NV$^{-}$"
+    # label = "Change in NV$^{-}$ fraction"
+    # fig.text(0.005, 0.55, label, va="center", rotation="vertical")
+    # # ax.set_ylim([0.945, 1.19])
+    # # ax.set_yticks([1.0, 1.1, 1.2])
+    # # ax.set_xticks([2.83, 2.87, 2.91])
+    # x_buffer = 0.05 * (np.max(freqs) - np.min(freqs))
+    # ax.set_xlim(np.min(freqs) - x_buffer, np.max(freqs) + x_buffer)
+    # y_buffer = 0.05 * (np.max(norm_counts) - np.min(norm_counts))
+    # ax.set_ylim(np.min(norm_counts) - y_buffer, np.max(norm_counts) + y_buffer)
+    # return fig
 
 
 def main(
@@ -248,7 +269,7 @@ if __name__ == "__main__":
     kpl.init_kplotlib()
 
     # data = dm.get_raw_data(file_id=1546290628159)
-    data = dm.get_raw_data(file_id=1546310936879)
+    data = dm.get_raw_data(file_id=1548426318061)
 
     nv_list = data["nv_list"]
     num_nvs = len(nv_list)

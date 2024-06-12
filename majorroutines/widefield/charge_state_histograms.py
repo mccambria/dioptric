@@ -26,80 +26,19 @@ from utils import kplotlib as kpl
 from utils import positioning as pos
 from utils import tool_belt as tb
 from utils.constants import LaserKey, NVSig
+from utils.tool_belt import determine_threshold
 
-# region Math functions
-
-
-def poisson_dist(x, rate):
-    return (rate**x) * np.exp(-rate) / factorial(x)
-
-
-def poisson_cdf(x, rate):
-    """Cumulative distribution function for poisson pdf. Integrates
-    up to and including x"""
-    x_floor = int(np.floor(x))
-    val = 0
-    for ind in range(x_floor):
-        val += poisson_dist(ind, rate)
-    return val
-
-
-def bimodal_dist(x, prob_nv0, mean_counts_nv0, mean_counts_nvn):
-    prob_nvn = 1 - prob_nv0
-    val_nv0 = poisson_dist(x, mean_counts_nv0)
-    val_nvn = poisson_dist(x, mean_counts_nvn)
-    return prob_nv0 * val_nv0 + prob_nvn * val_nvn
-
-
-def determine_threshold(counts_list, nvn_ratio=0.5):
-    """counts_list should probably be the ref since we need some population
-    in both NV- and NV0"""
-
-    # Histogram the counts
-    counts_list = [round(el) for el in counts_list]
-    max_count = max(counts_list)
-    x_vals = np.linspace(0, max_count, max_count + 1)
-    hist, _ = np.histogram(
-        counts_list, bins=max_count + 1, range=(0, max_count), density=True
-    )
-
-    # Fit the histogram
-    prob_nv0_guess = 0.3
-    mean_counts_nv0_guess = np.quantile(counts_list, 0.2)
-    mean_counts_nvn_guess = np.quantile(counts_list, 0.8)
-    guess_params = (prob_nv0_guess, mean_counts_nv0_guess, mean_counts_nvn_guess)
-    popt, _ = curve_fit(bimodal_dist, x_vals, hist, p0=guess_params)
-    print(popt)
-
-    # Find the optimum threshold by maximizing readout fidelity
-    # I.e. find threshold that maximizes:
-    # F = (1/2)P(say NV- | actually NV-) + (1/2)P(say NV0 | actually NV0)
-    _, mean_counts_nv0, mean_counts_nvn = popt
-    mean_counts_nv0 = round(mean_counts_nv0)
-    mean_counts_nvn = round(mean_counts_nvn)
-    num_steps = mean_counts_nvn - mean_counts_nv0
-    thresh_options = np.linspace(
-        mean_counts_nv0 + 0.5, mean_counts_nvn - 0.5, num_steps
-    )
-    fidelities = []
-    for val in thresh_options:
-        nv0_fid = poisson_cdf(val, mean_counts_nv0)
-        nvn_fid = 1 - poisson_cdf(val, mean_counts_nvn)
-        fidelities.append((1 - nvn_ratio) * nv0_fid + nvn_ratio * nvn_fid)
-
-    best_fidelity = max(fidelities)
-    best_threshold = thresh_options[np.argmax(fidelities)]
-    print(f"Optimum threshold: {best_threshold}")
-    print(f"Fidelity: {best_fidelity}")
-
-    return popt, best_threshold
-
-
-# endregion
 # region Process and plotting functions
 
 
-def create_histogram(sig_counts_list, ref_counts_list, no_title=True):
+def create_histogram(
+    sig_counts_list,
+    ref_counts_list,
+    no_title=True,
+    no_text=None,
+    ax=None,
+    density=False,
+):
     try:
         laser_dict = tb.get_optics_dict(LaserKey.WIDEFIELD_CHARGE_READOUT)
         readout = laser_dict["duration"]
@@ -116,21 +55,27 @@ def create_histogram(sig_counts_list, ref_counts_list, no_title=True):
     labels = ["With ionization pulse", "Without ionization pulse"]
     colors = [kpl.KplColors.RED, kpl.KplColors.GREEN]
     counts_lists = [sig_counts_list, ref_counts_list]
-    fig, ax = plt.subplots()
+    if ax is None:
+        fig, ax = plt.subplots()
+    else:
+        fig = None
     if not no_title:
         ax.set_title(f"Charge prep hist, {num_reps} reps")
     ax.set_xlabel("Integrated counts")
-    ax.set_ylabel("Number of occurrences")
+    if density:
+        ax.set_ylabel("Probability")
+    else:
+        ax.set_ylabel("Number of occurrences")
     for ind in range(2):
         counts_list = counts_lists[ind]
         label = labels[ind]
         color = colors[ind]
         # kpl.histogram(ax, counts_list, num_bins, label=labels[ind])
-        kpl.histogram(ax, counts_list, label=label, color=color)
+        kpl.histogram(ax, counts_list, label=label, color=color, density=density)
     ax.legend()
 
     # Calculate the normalized separation
-    if True:
+    if not no_text:
         noise = np.sqrt(np.var(ref_counts_list) + np.var(sig_counts_list))
         signal = np.mean(ref_counts_list) - np.mean(sig_counts_list)
         snr = signal / noise
@@ -143,7 +88,8 @@ def create_histogram(sig_counts_list, ref_counts_list, no_title=True):
         snr_str = f"SNR: {snr}"
         kpl.anchored_text(ax, snr_str, "center right", size=kpl.Size.SMALL)
 
-    return fig
+    if fig is not None:
+        return fig
 
 
 # def imshow_scalebar(ax, img_array):
@@ -175,8 +121,8 @@ def process_and_plot(raw_data):
         hist_figs.append(fig)
         all_counts_list = np.append(sig_counts_list, ref_counts_list)
         # nvn_ratio = 0.3
-        nvn_ratio = 0.5
-        _, threshold = determine_threshold(all_counts_list, nvn_ratio=nvn_ratio)
+        nvn_ratio = 0.1
+        threshold = determine_threshold(all_counts_list, nvn_ratio=nvn_ratio)
         threshold_list.append(threshold)
         # threshold = prior_thresholds[ind]
         prep_fidelity_list.append(
@@ -215,25 +161,25 @@ def process_and_plot(raw_data):
 
     ### MLE state estimation
 
-    shape = widefield.get_img_array_shape()
-    ref_img_arrays = img_arrays[1]
-    ref_img_arrays = ref_img_arrays.reshape((num_shots, *shape))
-    nvn_dist_params_list = []
-    for nv_ind in range(num_nvs):
-        nvn_img_arrays = []
-        nv = nv_list[nv_ind]
-        threshold = threshold_list[nv_ind] + 5  # + 5 to decrease nv0 prob
-        ref_counts_list = ref_counts_lists[nv_ind]
-        for shot_ind in range(num_shots):
-            if ref_counts_list[shot_ind] > threshold:
-                nvn_img_arrays.append(ref_img_arrays[shot_ind])
-        mean_img_array = np.mean(nvn_img_arrays, axis=0)
-        popt = optimize.optimize_pixel_with_img_array(
-            mean_img_array, nv, return_popt=True
-        )
-        # bg, amp, sigma
-        nvn_dist_params_list.append((popt[-1], popt[0], popt[-2]))
-    print(nvn_dist_params_list)
+    # shape = widefield.get_img_array_shape()
+    # ref_img_arrays = img_arrays[1]
+    # ref_img_arrays = ref_img_arrays.reshape((num_shots, *shape))
+    # nvn_dist_params_list = []
+    # for nv_ind in range(num_nvs):
+    #     nvn_img_arrays = []
+    #     nv = nv_list[nv_ind]
+    #     threshold = threshold_list[nv_ind] + 5  # + 5 to decrease nv0 prob
+    #     ref_counts_list = ref_counts_lists[nv_ind]
+    #     for shot_ind in range(num_shots):
+    #         if ref_counts_list[shot_ind] > threshold:
+    #             nvn_img_arrays.append(ref_img_arrays[shot_ind])
+    #     mean_img_array = np.mean(nvn_img_arrays, axis=0)
+    #     popt = optimize.optimize_pixel_with_img_array(
+    #         mean_img_array, nv, return_popt=True
+    #     )
+    #     # bg, amp, sigma
+    #     nvn_dist_params_list.append((popt[-1], popt[0], popt[-2]))
+    # print(nvn_dist_params_list)
 
     return img_arrays_to_save, img_figs, hist_figs
 
@@ -248,6 +194,7 @@ def main(
     verify_charge_states=False,
     diff_polarize=False,
     diff_ionize=True,
+    ion_include_inds=None,
 ):
     ### Some initial setup
     seq_file = "charge_state_histograms.py"
@@ -264,7 +211,9 @@ def main(
 
     def run_fn(shuffled_step_inds):
         pol_coords_list = widefield.get_coords_list(nv_list, LaserKey.CHARGE_POL)
-        ion_coords_list = widefield.get_coords_list(nv_list, LaserKey.ION)
+        ion_coords_list = widefield.get_coords_list(
+            nv_list, LaserKey.ION, include_inds=ion_include_inds
+        )
         seq_args = [
             pol_coords_list,
             ion_coords_list,
@@ -283,7 +232,8 @@ def main(
         run_fn=run_fn,
         save_all_images=True,
         charge_prep_fn=charge_prep_fn,
-        uwave_ind_list=[0, 1],  # MCC
+        # uwave_ind_list=[0, 1],  # MCC
+        save_images_downsample_factor=None,
     )
 
     ### Processing
@@ -324,10 +274,11 @@ def main(
         diff_img_array = None
         keys_to_compress = None
 
-    try:
-        del raw_data["img_arrays"]
-    except Exception:
-        pass
+    # try:
+    #     del raw_data["img_arrays"]
+    # except Exception:
+    #     pass
+    keys_to_compress = ["img_arrays"]
 
     ### Save raw data
 
@@ -350,9 +301,7 @@ def main(
 
 if __name__ == "__main__":
     kpl.init_kplotlib()
-
-    data = dm.get_raw_data(file_id=1537195144201)
-
+    data = dm.get_raw_data(file_id=1556934779836)
     process_and_plot(data)
 
     ### Images

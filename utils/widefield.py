@@ -34,6 +34,7 @@ from utils.constants import (
     LaserPosMode,
     NVSig,
 )
+from utils.tool_belt import determine_threshold
 
 # endregion
 # region Image processing
@@ -210,41 +211,49 @@ def average_counts(sig_counts, ref_counts=None):
     return avg_counts, avg_counts_ste, norms
 
 
-def threshold_counts(nv_list, sig_counts, ref_counts=None):
+def threshold_counts(
+    nv_list, sig_counts, ref_counts=None, dual_thresh_range=None, dynamic_thresh=False
+):
     """Only actually thresholds counts for NVs with thresholds specified in their sigs.
     If there's no threshold, then the raw counts are just averaged as normal."""
     _validate_counts_structure(sig_counts)
     _validate_counts_structure(ref_counts)
 
-    thresholds = np.array([nv.threshold for nv in nv_list])
+    if dynamic_thresh:
+        thresholds = []
+        num_nvs = len(nv_list)
+        for ind in range(num_nvs):
+            # combined_counts = np.append(
+            #     sig_counts[ind].flatten(), ref_counts[ind].flatten()
+            # )
+            # threshold = determine_threshold(combined_counts)
+            threshold = determine_threshold(sig_counts[ind], no_print=True)
+            thresholds.append(threshold)
+    else:
+        thresholds = [1.2 * nv.threshold for nv in nv_list]  # MCC
+    print(thresholds)
+
+    thresholds = np.array(thresholds)
     thresholds = thresholds[:, np.newaxis, np.newaxis, np.newaxis]
 
-    # Find where there are valid thresholds in the array
-    # If there's no threshold, just return the counts unchanged
-    where_thresh = np.array(thresholds, dtype=bool)
-
-    sig_states_array = np.copy(sig_counts)
-    sig_states_array = np.greater(
-        sig_counts, thresholds, out=sig_states_array, where=where_thresh
-    )
-    if ref_counts is not None:
-        ref_states_array = np.copy(ref_counts)
-        ref_states_array = np.greater(
-            ref_counts, thresholds, out=ref_states_array, where=where_thresh
+    if dual_thresh_range is None:
+        sig_states_array = tb.threshold(sig_counts, thresholds)
+    else:
+        half_range = dual_thresh_range / 2
+        sig_states_array = tb.dual_threshold(
+            sig_counts, thresholds - half_range, thresholds + half_range
         )
+    if ref_counts is not None:
+        if dual_thresh_range is None:
+            ref_states_array = tb.threshold(ref_counts, thresholds)
+        else:
+            ref_states_array = tb.dual_threshold(
+                ref_counts, thresholds - half_range, thresholds + half_range
+            )
     else:
         ref_states_array = None
 
     return sig_states_array, ref_states_array
-
-
-def threshold(nv_sig, count_val):
-    """Threshold for a single value"""
-    threshold = nv_sig.threshold
-    if threshold is None:
-        return None
-    else:
-        return count_val > threshold
 
 
 def poisson_pmf_cont(k, mean):
@@ -335,17 +344,25 @@ def process_counts(nv_list, sig_counts, ref_counts=None, threshold=True):
 
 def calc_snr(sig_counts, ref_counts):
     """Calculate SNR for a single shot"""
-    _validate_counts_structure(sig_counts)
-    _validate_counts_structure(ref_counts)
-    avg_sig_counts, avg_sig_counts_ste, _ = average_counts(sig_counts)
-    avg_ref_counts, avg_ref_counts_ste, _ = average_counts(ref_counts)
+    avg_contrast, avg_contrast_ste = calc_contrast(sig_counts, ref_counts)
     noise = np.sqrt(
         np.std(sig_counts, axis=run_rep_axes, ddof=1) ** 2
         + np.std(ref_counts, axis=run_rep_axes, ddof=1) ** 2
     )
-    avg_snr = (avg_sig_counts - avg_ref_counts) / noise
-    avg_snr_ste = np.sqrt((avg_sig_counts_ste**2 + avg_ref_counts_ste**2)) / noise
+    avg_snr = avg_contrast / noise
+    avg_snr_ste = avg_contrast_ste / noise
     return avg_snr, avg_snr_ste
+
+
+def calc_contrast(sig_counts, ref_counts):
+    """Calculate contrast for a single shot"""
+    _validate_counts_structure(sig_counts)
+    _validate_counts_structure(ref_counts)
+    avg_sig_counts, avg_sig_counts_ste, _ = average_counts(sig_counts)
+    avg_ref_counts, avg_ref_counts_ste, _ = average_counts(ref_counts)
+    avg_contrast = avg_sig_counts - avg_ref_counts
+    avg_contrast_ste = np.sqrt((avg_sig_counts_ste**2 + avg_ref_counts_ste**2))
+    return avg_contrast, avg_contrast_ste
 
 
 def _validate_counts_structure(counts):
@@ -442,7 +459,9 @@ def get_nv_num(nv_sig):
     return nv_num
 
 
-def get_base_scc_seq_args(nv_list: list[NVSig], uwave_ind_list: list[int]):
+def get_base_scc_seq_args(
+    nv_list: list[NVSig], uwave_ind_list: list[int], scc_include_inds=None
+):
     """Return base seq_args for any SCC routine. The base sequence arguments
     are the minimum info required for state preparation and SCC
 
@@ -460,8 +479,10 @@ def get_base_scc_seq_args(nv_list: list[NVSig], uwave_ind_list: list[int]):
     """
 
     pol_coords_list = get_coords_list(nv_list, LaserKey.CHARGE_POL)
-    scc_coords_list = get_coords_list(nv_list, LaserKey.SCC)
-    scc_duration_list = get_scc_duration_list(nv_list)
+    scc_coords_list = get_coords_list(
+        nv_list, LaserKey.SCC, include_inds=scc_include_inds
+    )
+    scc_duration_list = get_scc_duration_list(nv_list, include_inds=scc_include_inds)
     spin_flip_ind_list = get_spin_flip_ind_list(nv_list)
 
     seq_args = [
@@ -474,7 +495,9 @@ def get_base_scc_seq_args(nv_list: list[NVSig], uwave_ind_list: list[int]):
     return seq_args
 
 
-def get_coords_list(nv_list: list[NVSig], laser_key, drift_adjust=True):
+def get_coords_list(
+    nv_list: list[NVSig], laser_key, drift_adjust=True, include_inds=None
+):
     laser_name = tb.get_laser_name(laser_key)
     drift = pos.get_drift(laser_name) if drift_adjust else None
     coords_list = [
@@ -483,6 +506,8 @@ def get_coords_list(nv_list: list[NVSig], laser_key, drift_adjust=True):
         )
         for nv in nv_list
     ]
+    if include_inds is not None:
+        coords_list = [coords_list[ind] for ind in include_inds]
     return coords_list
 
 
@@ -491,7 +516,7 @@ def get_spin_flip_ind_list(nv_list: list[NVSig]):
     return [ind for ind in range(num_nvs) if nv_list[ind].spin_flip]
 
 
-def get_scc_duration_list(nv_list: list[NVSig]):
+def get_scc_duration_list(nv_list: list[NVSig], include_inds=None):
     scc_duration_list = []
     for nv in nv_list:
         scc_duration = nv.scc_duration
@@ -501,6 +526,8 @@ def get_scc_duration_list(nv_list: list[NVSig]):
         if not (scc_duration % 4 == 0 and scc_duration >= 16):
             raise RuntimeError("SCC pulse duration not valid for OPX.")
         scc_duration_list.append(scc_duration)
+    if include_inds is not None:
+        scc_duration_list = [scc_duration_list[ind] for ind in include_inds]
     return scc_duration_list
 
 
@@ -796,24 +823,67 @@ def get_img_array_shape():
 
 
 @cache
-def get_camera_scale():
-    return _get_camera_config_val("scale")
+def get_camera_scale(downsample_factor=1):
+    return _get_camera_config_val("scale") / downsample_factor
 
 
 # endregion
 # region Plotting
 
 
-def draw_circles_on_nvs(ax, nv_list, drift=None):
+def replace_dead_pixel(img_array):
+    dead_pixel = [142, 109]
+    dead_pixel_x = dead_pixel[1]
+    dead_pixel_y = dead_pixel[0]
+    img_array[dead_pixel_y, dead_pixel_x] = np.mean(
+        img_array[
+            dead_pixel_y - 1 : dead_pixel_y + 1 : 2,
+            dead_pixel_x - 1 : dead_pixel_x + 1 : 2,
+        ]
+    )
+
+
+def draw_circles_on_nvs(
+    ax,
+    nv_list=None,
+    drift=None,
+    pixel_coords_list=None,
+    color=None,
+    linestyle="solid",
+    no_legend=False,
+    include_inds=None,
+):
     scale = get_camera_scale()
-    pixel_coords_list = [get_nv_pixel_coords(nv, drift=drift) for nv in nv_list]
-    for ind in range(len(pixel_coords_list)):
+    passed_color = color
+    if pixel_coords_list is None:
+        pixel_coords_list = [get_nv_pixel_coords(nv, drift=drift) for nv in nv_list]
+    num_nvs = len(pixel_coords_list)
+    points = []
+    for ind in range(num_nvs):
         pixel_coords = pixel_coords_list[ind]
-        color = kpl.data_color_cycler[ind]
-        kpl.draw_circle(ax, pixel_coords, color=color, radius=scale / 2 - 1, label=ind)
-    num_nvs = len(nv_list)
-    ncols = (num_nvs // 5) + (1 if num_nvs % 5 > 0 else 0)
-    ax.legend(loc=kpl.Loc.UPPER_LEFT, ncols=ncols, markerscale=0.7)
+        if passed_color is None:
+            color = kpl.data_color_cycler[ind]
+        else:
+            color = passed_color
+        point = kpl.draw_circle(
+            ax,
+            pixel_coords,
+            color=color,
+            radius=0.7 * scale,
+            label=ind,
+            linestyle=linestyle,
+        )
+        points.append(point)
+    if not no_legend:
+        ncols = (num_nvs // 5) + (1 if num_nvs % 5 > 0 else 0)
+        ncols = 6
+        # ax.legend(loc=kpl.Loc.LOWER_CENTER, ncols=ncols, markerscale=0.9)
+        ax.legend(loc=kpl.Loc.UPPER_LEFT, ncols=ncols, markerscale=0.5)
+
+    if include_inds is not None:
+        for ind in range(num_nvs):
+            if ind not in include_inds:
+                points[ind].remove()
 
 
 def plot_raw_data(ax, nv_list, x, ys, yerrs=None, subset_inds=None):
@@ -885,7 +955,7 @@ def plot_fit(
     popts=None,
     xlim=[None, None],
     norms=None,
-    legend=True,
+    no_legend=False,
 ):
     """Plot multiple data sets (with a common set of x vals) with an offset between
     the sets such that they are separated and easier to interpret. Useful for
@@ -939,7 +1009,9 @@ def plot_fit(
         # Plot the points
         # ls = "none" if fn is not None else "solid"
         ls = "none"
-        size = kpl.Size.SMALL
+        # size = kpl.Size.SMALL
+        size = kpl.Size.XSMALL
+        # size = kpl.Size.TINY
         label = str(nv_num)
         kpl.plot_points(
             ax, x, y, yerr=yerr, label=label, size=size, color=color, linestyle=ls
@@ -953,7 +1025,7 @@ def plot_fit(
                 fit_vals /= norm
             kpl.plot_line(ax, x_linspace, fit_vals, color=color)
 
-        if legend:
+        if not no_legend:
             loc = kpl.Loc.UPPER_LEFT
             # loc = kpl.Loc.UPPER_LEFT if nv_ind in [0, 1, 4, 6] else "upper center"
             ax.legend(loc=loc)
@@ -1067,7 +1139,7 @@ def animate(x, nv_list, counts, counts_errs, img_arrays, cmin=None, cmax=None):
             x[: step_ind + 1],
             counts[:, : step_ind + 1],
             counts_errs[:, : step_ind + 1],
-            legend=False,
+            no_legend=False,
         )
         data_ax_relim()
         return all_axes

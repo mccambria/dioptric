@@ -14,6 +14,9 @@ import numpy as np
 from scipy.optimize import curve_fit
 
 from majorroutines.widefield import base_routine
+from majorroutines.widefield.spin_echo import (
+    create_fit_figure as spin_echo_create_fit_figure,
+)
 from utils import data_manager as dm
 from utils import kplotlib as kpl
 from utils import tool_belt as tb
@@ -104,10 +107,9 @@ def main(nv_list, num_steps, num_reps, num_runs, min_tau, max_tau, detuning):
     uwave_ind_list = [0, 1]
     uwave_freq_list = []
     for ind in uwave_ind_list:
-        uwave_ind = 0
-        uwave_dict = tb.get_uwave_dict(uwave_ind)
+        uwave_dict = tb.get_uwave_dict(ind)
         uwave_freq = uwave_dict["frequency"]
-        uwave_freq += detuning / 1000
+        uwave_freq -= detuning / 1000
         uwave_freq_list.append(uwave_freq)
 
     ### Collect the data
@@ -129,6 +131,7 @@ def main(nv_list, num_steps, num_reps, num_runs, min_tau, max_tau, detuning):
         run_fn,
         uwave_ind_list=uwave_ind_list,
         uwave_freq_list=uwave_freq_list,
+        save_all_images=False,
     )
 
     ### Process and plot
@@ -159,7 +162,8 @@ def main(nv_list, num_steps, num_reps, num_runs, min_tau, max_tau, detuning):
     repr_nv_name = repr_nv_sig.name
     file_path = dm.get_file_path(__file__, timestamp, repr_nv_name)
     dm.save_raw_data(raw_data, file_path)
-    dm.save_figure(raw_fig, file_path)
+    if raw_fig is not None:
+        dm.save_figure(raw_fig, file_path)
     if fit_fig is not None:
         file_path = dm.get_file_path(__file__, timestamp, repr_nv_name + "-fit")
         dm.save_figure(fit_fig, file_path)
@@ -168,6 +172,8 @@ def main(nv_list, num_steps, num_reps, num_runs, min_tau, max_tau, detuning):
 if __name__ == "__main__":
     kpl.init_kplotlib()
 
-    data = dm.get_raw_data(file_id=1399222081277)
+    data = dm.get_raw_data(file_id=1550116175341)
+
+    spin_echo_create_fit_figure(data)
 
     plt.show(block=True)

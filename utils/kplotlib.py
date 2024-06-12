@@ -35,17 +35,23 @@ class Loc(StrEnum):
     UPPER_LEFT = "upper left"
     LOWER_RIGHT = "lower right"
     UPPER_RIGHT = "upper right"
+    UPPER_CENTER = "upper center"
+    LOWER_CENTER = "lower center"
+    CENTER_LEFT = "center left"
+    CENTER_RIGHT = "center right"
 
 
 class Size(Enum):
     NORMAL = "NORMAL"
     SMALL = "SMALL"
+    XSMALL = "XSMALL"
     TINY = "TINY"
 
 
 class MarkerSize(float, Enum):
     NORMAL = 7
     SMALL = 6
+    XSMALL = 5
     TINY = 4
 
 
@@ -54,12 +60,14 @@ class LineWidth(float, Enum):
     BIG = 2.0
     NORMAL = 1.5
     SMALL = 1.25
+    XSMALL = 1.1
     TINY = 1.0
 
 
 class MarkerEdgeWidth(float, Enum):
     NORMAL = 1.5
     SMALL = 1.25
+    XSMALL = 1.1
     TINY = 1.0
 
 
@@ -141,7 +149,8 @@ data_color_cycler = [
     KplColors.YELLOW,
     KplColors.CYAN,
     mpl.colors.cnames["darkgoldenrod"],
-    mpl.colors.cnames["springgreen"],
+    # mpl.colors.cnames["greenyellow"],
+    mpl.colors.cnames["darkseagreen"],
     mpl.colors.cnames["indianred"],
     mpl.colors.cnames["darkslateblue"],
     mpl.colors.cnames["sienna"],
@@ -218,10 +227,10 @@ def calc_mosaic_layout(num_panels, num_rows=None):
     if num_panels != num_axes:
         vals[0, num_panels - num_axes :] = "."
 
-    return vals
+    return vals.tolist()
 
 
-def subplot_mosaic(num_panels, num_rows=None, figsize=[6.5, 4.0]):
+def subplot_mosaic(num_panels, num_rows=None, figsize=[10, 6.0]):
     layout = calc_mosaic_layout(num_panels, num_rows)
     fig, axes_pack = plt.subplot_mosaic(
         layout, figsize=figsize, sharex=True, sharey=True
@@ -229,16 +238,39 @@ def subplot_mosaic(num_panels, num_rows=None, figsize=[6.5, 4.0]):
     return fig, axes_pack, layout
 
 
-def set_mosaic_xlabel(fig, axes_pack, layout, label):
-    ax = axes_pack[layout[-1, 0]]
+def set_mosaic_xlabel(axes_pack, layout, label):
+    _set_mosaic_axis_label(True, axes_pack, layout, label)
+
+
+def set_mosaic_ylabel(axes_pack, layout, label):
+    _set_mosaic_axis_label(False, axes_pack, layout, label)
+
+
+def _set_mosaic_axis_label(x_or_y, axes_pack, layout, label):
+    """Works by making a dummy axis just for setting the label"""
+    ax = axes_pack[layout[-1][0]]
     ax.set_xlabel(" ")
-    fig.text(0.55, 0.01, label, ha="center")
-
-
-def set_mosaic_ylabel(fig, axes_pack, layout, label):
-    ax = axes_pack[layout[-1, 0]]
-    ax.set_ylabel(" ")
-    fig.text(0.005, 0.55, label, va="center", rotation="vertical")
+    fig = ax.get_figure()
+    try:
+        label_ax = fig.label_ax
+    except Exception:
+        label_ax = fig.add_subplot(frameon=False)
+        fig.label_ax = label_ax
+        label_ax.tick_params(
+            which="both",
+            top=False,
+            bottom=False,
+            left=False,
+            right=False,
+            labelbottom=False,
+            labelleft=False,
+        )
+    if x_or_y:
+        ax.set_xlabel(" ")
+        label_ax.set_xlabel(label)
+    else:
+        ax.set_ylabel(" ")
+        label_ax.set_ylabel(label)
 
 
 def init_kplotlib(
@@ -481,8 +513,38 @@ def plot_points(ax, x, y, size=None, **kwargs):
     ax.errorbar(x, y, **params)
 
 
+def plot_sequence(ax, edges, values, size=None, **kwargs):
+    global default_data_size
+    if size is None:
+        size = default_data_size
+
+    # Color handling
+    if "color" in kwargs:
+        edge_color = kwargs["color"]
+    else:
+        edge_color = get_default_color(ax, PlotType.HIST)
+    if "facecolor" in kwargs:
+        face_color = kwargs["facecolor"]
+    else:
+        face_color = lighten_color_hex(edge_color)
+
+    # Defaults
+    params = {
+        "fill": True,
+        "linewidth": 1.2 * MarkerEdgeWidth[size.value],
+        "linestyle": "-",
+    }
+
+    # Combine passed args and defaults
+    params = {**params, **kwargs}
+    params["edgecolor"] = edge_color
+    params["facecolor"] = face_color
+
+    ax.stairs(values, edges, **params)
+
+
 def plot_bars(ax, x, y, **kwargs):
-    """Same as matplotlib's errorbar, but with our defaults. Use for plotting
+    """Same as matplotlib's bar, but with our defaults. Use for plotting
     data points
 
     Parameters
@@ -773,7 +835,15 @@ def histogram(ax, data, hist_type=HistType.INTEGER, nbins=None, **kwargs):
 #     ax.add_artist(circle)
 
 
-def draw_circle(ax, coords, radius=1, color=KplColors.BLUE, label=None, linewidth=None):
+def draw_circle(
+    ax,
+    coords,
+    radius=1,
+    color=KplColors.BLUE,
+    label=None,
+    linewidth=None,
+    linestyle="solid",
+):
     """Draw a circle on the passed axes
 
     Parameters
@@ -785,16 +855,23 @@ def draw_circle(ax, coords, radius=1, color=KplColors.BLUE, label=None, linewidt
     radius : numeric
         Radius of the circle
     """
+    M = ax.transData.get_matrix()
+    xscale = M[0, 0]
     if linewidth is None:
-        linewidth = radius / 4
-    ax.scatter(
+        linewidth = 0.1 * xscale * radius
+    return ax.scatter(
         *coords,
-        s=(2 * radius) ** 2,
+        s=(xscale * radius) ** 2,
         facecolors="none",
         edgecolors=color,
         label=label,
         linewidths=linewidth,
+        linestyle=linestyle,
     )
+    # circle = plt.Circle(
+    #     coords, radius, fill=False, color=color, label=label, linewidth=linewidth
+    # )
+    # ax.add_patch(circle)
 
 
 # endregion

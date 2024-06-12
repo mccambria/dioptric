@@ -135,6 +135,7 @@ def optimize_pixel_and_z(nv_sig, do_plot=False):
         attempt_ind += 1
         if attempt_ind == num_attempts:
             raise RuntimeError("Optimization failed.")
+    return opti_pixel_coords
 
 
 def optimize_pixel(nv_sig, do_plot=False):

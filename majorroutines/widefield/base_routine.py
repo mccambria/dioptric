@@ -127,7 +127,7 @@ def read_and_process_image(nv_list):
         states_list = []
         for nv_ind in range(num_nvs):
             states_list.append(
-                widefield.threshold(nv_list[nv_ind], counts_list[nv_ind])
+                tb.threshold(counts_list[nv_ind], nv_list[nv_ind].threshold)
             )
     elif charge_state_estimation_mode == ChargeStateEstimationMode.MLE:
         # start = time.time()
@@ -149,7 +149,7 @@ def main(
     uwave_freq_list=None,
     num_exps_per_rep=2,
     load_iq=False,
-    save_all_images=True,
+    save_all_images=False,
     save_mean_images=False,
     save_images_downsample_factor=3,
     stream_load_in_run_fn=True,
@@ -215,14 +215,15 @@ def main(
     # Sig gen setup - all but turning on the output
     if isinstance(uwave_ind_list, int):
         uwave_ind_list = [uwave_ind_list]
-    for ind in uwave_ind_list:
-        uwave_dict = tb.get_uwave_dict(ind)
+    for ind in range(len(uwave_ind_list)):
+        uwave_ind = uwave_ind_list[ind]
+        uwave_dict = tb.get_uwave_dict(uwave_ind)
         uwave_power = uwave_dict["uwave_power"]
         if uwave_freq_list is None:
             freq = uwave_dict["frequency"]
         else:
-            freq = uwave_freq_list.pop(0)
-        sig_gen = tb.get_server_sig_gen(ind=ind)
+            freq = uwave_freq_list[uwave_ind]
+        sig_gen = tb.get_server_sig_gen(ind=uwave_ind)
         # if load_iq:  # MCC
         #     uwave_power += 0.4
         sig_gen.set_amp(uwave_power)
@@ -232,6 +233,7 @@ def main(
 
     counts = np.empty((num_exps_per_rep, num_nvs, num_runs, num_steps, num_reps))
     states = np.empty((num_exps_per_rep, num_nvs, num_runs, num_steps, num_reps))
+    pixel_drifts = np.empty((num_runs, 2))
     if save_all_images or save_mean_images:
         shape = widefield.get_img_array_shape()
         if save_images_downsample_factor is not None:
@@ -298,12 +300,12 @@ def main(
                                     )
                                 ret_vals = read_and_process_image(nv_list)
                                 img_array, counts_list, states_list = ret_vals
-                                counts[exp_ind, :, run_ind, step_ind, rep_ind] = (
-                                    counts_list
-                                )
-                                states[exp_ind, :, run_ind, step_ind, rep_ind] = (
-                                    states_list
-                                )
+                                counts[
+                                    exp_ind, :, run_ind, step_ind, rep_ind
+                                ] = counts_list
+                                states[
+                                    exp_ind, :, run_ind, step_ind, rep_ind
+                                ] = states_list
 
                                 if save_images_downsample_factor is not None:
                                     img_array = widefield.downsample_img_array(
@@ -314,9 +316,9 @@ def main(
                                         exp_ind, run_ind, step_ind, rep_ind, :, :
                                     ] = img_array
                                 if save_mean_images:
-                                    mean_img_arrays[exp_ind, step_ind, :, :] += (
-                                        img_array
-                                    )
+                                    mean_img_arrays[
+                                        exp_ind, step_ind, :, :
+                                    ] += img_array
 
                     ### Move on to the next run
 
@@ -331,7 +333,8 @@ def main(
                     step_ind_master_list[run_ind] = step_ind_list.copy()
 
                     # Update coordinates
-                    optimize.optimize_pixel_and_z(repr_nv_sig)
+                    pixel_drift = optimize.optimize_pixel_and_z(repr_nv_sig)
+                    pixel_drifts[run_ind, :] = pixel_drift
 
                     break
 
@@ -371,6 +374,7 @@ def main(
         "counts-units": "photons",
         "counts": counts,
         "states": states,
+        "pixel_drifts": pixel_drifts,
     }
     if save_all_images:
         raw_data |= {

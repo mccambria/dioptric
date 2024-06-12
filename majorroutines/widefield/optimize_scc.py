@@ -123,7 +123,7 @@ def process_and_plot(nv_list, taus, sig_counts, ref_counts):
     fit_ax.set_xlabel("SCC pulse duration (ns)")
     fit_ax.set_ylabel("SNR")
 
-    return sig_fig, ref_fig, snr_fig
+    return sig_fig, ref_fig, snr_fig, avg_snr_fig, fit_fig
     # return sig_fig, ref_fig, snr_fig, avg_snr_fig
 
 
@@ -213,7 +213,11 @@ def main(nv_list, num_steps, num_reps, num_runs, min_tau, max_tau):
 if __name__ == "__main__":
     kpl.init_kplotlib()
 
-    data = dm.get_raw_data(file_id=1533399424192)
+    # data = dm.get_raw_data(file_id=1555539001887)  # 0.12
+    # data = dm.get_raw_data(file_id=1555803236661)  # 0.14
+    data = dm.get_raw_data(file_id=1555925950891)  # 0.14
+
+    print(data["opx_config"]["waveforms"]["red_aod_cw-scc"])
 
     nv_list = data["nv_list"]
     taus = data["taus"]
@@ -221,6 +225,7 @@ if __name__ == "__main__":
     counts = np.array(data["states"])
     sig_counts = counts[0]
     ref_counts = counts[1]
+    # ref_counts = ref_counts[:, :, :, ::2]
 
     # sig_counts, ref_counts = widefield.threshold_counts(nv_list, sig_counts, ref_counts)
 
