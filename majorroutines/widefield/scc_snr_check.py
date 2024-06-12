@@ -153,7 +153,7 @@ def main(nv_list, num_reps, num_runs, scc_include_inds=None, uwave_ind_list=[0, 
         uwave_ind_list=uwave_ind_list,
         save_all_images=True,
         charge_prep_fn=None,
-        save_images_downsample_factor=4,
+        save_images_downsample_factor=None,
     )
 
     ### Report results and cleanup

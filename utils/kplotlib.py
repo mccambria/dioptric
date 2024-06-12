@@ -859,7 +859,7 @@ def draw_circle(
     xscale = M[0, 0]
     if linewidth is None:
         linewidth = 0.1 * xscale * radius
-    ax.scatter(
+    return ax.scatter(
         *coords,
         s=(xscale * radius) ** 2,
         facecolors="none",

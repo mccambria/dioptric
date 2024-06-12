@@ -851,19 +851,21 @@ def draw_circles_on_nvs(
     color=None,
     linestyle="solid",
     no_legend=False,
+    include_inds=None,
 ):
     scale = get_camera_scale()
     passed_color = color
     if pixel_coords_list is None:
         pixel_coords_list = [get_nv_pixel_coords(nv, drift=drift) for nv in nv_list]
     num_nvs = len(pixel_coords_list)
+    points = []
     for ind in range(num_nvs):
         pixel_coords = pixel_coords_list[ind]
         if passed_color is None:
             color = kpl.data_color_cycler[ind]
         else:
             color = passed_color
-        kpl.draw_circle(
+        point = kpl.draw_circle(
             ax,
             pixel_coords,
             color=color,
@@ -871,11 +873,17 @@ def draw_circles_on_nvs(
             label=ind,
             linestyle=linestyle,
         )
+        points.append(point)
     if not no_legend:
         ncols = (num_nvs // 5) + (1 if num_nvs % 5 > 0 else 0)
         ncols = 6
         # ax.legend(loc=kpl.Loc.LOWER_CENTER, ncols=ncols, markerscale=0.9)
-        ax.legend(loc=kpl.Loc.UPPER_LEFT, ncols=ncols, markerscale=0.6)
+        ax.legend(loc=kpl.Loc.UPPER_LEFT, ncols=ncols, markerscale=0.5)
+
+    if include_inds is not None:
+        for ind in range(num_nvs):
+            if ind not in include_inds:
+                points[ind].remove()
 
 
 def plot_raw_data(ax, nv_list, x, ys, yerrs=None, subset_inds=None):

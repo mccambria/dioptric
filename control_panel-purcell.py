@@ -207,21 +207,8 @@ def do_optimize_scc(nv_list):
 
 def do_scc_snr_check(nv_list):
     num_reps = 100
-    num_runs = 200
-    # for scc_include_inds in [
-    #     [0, 1, 2, 3, 4, 5],
-    #     [0, 2, 5],
-    #     [1, 3, 4],
-    #     [4, 5],
-    #     [5],
-    # ]:
-    for uwave_ind_list in [
-        [],
-        [0, 1],
-        [0],
-        [1],
-    ]:
-        scc_snr_check.main(nv_list, num_reps, num_runs, uwave_ind_list=uwave_ind_list)
+    num_runs = 100
+    scc_snr_check.main(nv_list, num_reps, num_runs, uwave_ind_list=[0, 1])
 
 
 def do_simple_correlation_test(nv_list):
