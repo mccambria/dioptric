@@ -164,9 +164,9 @@ def create_fit_figure(
         no_legend=no_legend,
     )
 
-    kpl.set_mosaic_xlabel(axes_pack, layout, "Frequency (GHz)")
+    kpl.set_shared_ax_xlabel(axes_pack, layout, "Frequency (GHz)")
     # kpl.set_mosaic_ylabel(axes_pack, layout, "Change in NV$^{-}$ fraction")
-    kpl.set_mosaic_ylabel(axes_pack, layout, "Change in $P($NV$^{-})$")
+    kpl.set_shared_ax_ylabel(axes_pack, layout, "Change in $P($NV$^{-})$")
     # kpl.set_mosaic_ylabel(axes_pack, layout, "$\Delta$NV$^{-}$")
 
     # ax = axes_pack[layout[-1, 0]]

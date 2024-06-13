@@ -238,18 +238,17 @@ def subplot_mosaic(num_panels, num_rows=None, figsize=[10, 6.0]):
     return fig, axes_pack, layout
 
 
-def set_mosaic_xlabel(axes_pack, layout, label):
-    _set_mosaic_axis_label(True, axes_pack, layout, label)
+def set_shared_ax_xlabel(lower_left_ax, label):
+    _set_shared_ax_axis_label(True, lower_left_ax, label)
 
 
-def set_mosaic_ylabel(axes_pack, layout, label):
-    _set_mosaic_axis_label(False, axes_pack, layout, label)
+def set_shared_ax_ylabel(lower_left_ax, label):
+    _set_shared_ax_axis_label(False, lower_left_ax, label)
 
 
-def _set_mosaic_axis_label(x_or_y, axes_pack, layout, label):
+def _set_shared_ax_axis_label(x_or_y, lower_left_ax, label):
     """Works by making a dummy axis just for setting the label"""
-    ax = axes_pack[layout[-1][0]]
-    ax.set_xlabel(" ")
+    ax = lower_left_ax
     fig = ax.get_figure()
     try:
         label_ax = fig.label_ax
