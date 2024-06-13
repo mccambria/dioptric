@@ -108,6 +108,7 @@ def macro(
         qua.align()
         uwave_macro[exp_ind](uwave_ind_list, step_val)
 
+        # Check if this is the automatically included reference experiment
         ref_exp = reference and exp_ind == num_exps_per_rep - 1
         # Signal experiment
         if not ref_exp:

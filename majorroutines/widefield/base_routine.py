@@ -364,7 +364,7 @@ def main(
                         raise RuntimeError("Maxed out number of attempts")
 
     except Exception:
-        pass
+        print(traceback.format_exc())
 
     ### Return
 

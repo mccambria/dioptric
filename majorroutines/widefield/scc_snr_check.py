@@ -8,6 +8,7 @@ Created on December 6th, 2023
 """
 
 import time
+import traceback
 
 import numpy as np
 from matplotlib import pyplot as plt
@@ -24,29 +25,8 @@ def process_and_plot(data):
     threshold = True
     nv_list = data["nv_list"]
     counts = np.array(data["counts"])
-    # counts = np.array(data["states"])
     sig_counts = counts[0]
     ref_counts = counts[1]
-
-    thresholds = [
-        29.5,
-        31.5,
-        30.5,
-        29.5,
-        29.5,
-        26.5,
-        23.5,
-        25.5,
-        27.5,
-        21.5,
-        21.5,
-        17.5,
-    ]
-    num_nvs = len(nv_list)
-    for ind in range(num_nvs):
-        nv = nv_list[ind]
-        nv_ind = widefield.get_nv_num(nv)
-        nv.threshold = thresholds[nv_ind]
 
     if threshold:
         sig_counts, ref_counts = widefield.threshold_counts(
@@ -151,7 +131,7 @@ def main(nv_list, num_reps, num_runs, scc_include_inds=None, uwave_ind_list=[0, 
         num_runs,
         run_fn=run_fn,
         uwave_ind_list=uwave_ind_list,
-        save_images=True,
+        save_images=False,
         charge_prep_fn=None,
     )
 
@@ -160,6 +140,7 @@ def main(nv_list, num_reps, num_runs, scc_include_inds=None, uwave_ind_list=[0, 
     try:
         figs = process_and_plot(data)
     except Exception:
+        print(traceback.format_exc())
         figs = None
 
     timestamp = dm.get_time_stamp()

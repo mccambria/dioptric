@@ -78,23 +78,16 @@ def do_image_single_nv(nv_sig):
     return image_sample.single_nv(nv_sig, num_reps)
 
 
-def do_charge_state_histograms(nv_list, verify_charge_states=False):
+def do_charge_state_histograms(nv_list):
     num_reps = 200
     num_runs = 40
     # num_runs = 20
     # num_runs = 2
-    for ion_include_inds in [None, [0, 1, 2, 3, 4, 5]]:
-        charge_state_histograms.main(
-            nv_list, num_reps, num_runs, ion_include_inds=ion_include_inds
-        )
-    # return charge_state_histograms.main(
-    #     nv_list,
-    #     num_reps,
-    #     num_runs,
-    #     verify_charge_states=verify_charge_states,
-    #     # ion_include_inds=[0, 1, 2, 3, 5],  # Missing tooth winking
-    #     # ion_include_inds=[0, 1, 2, 3, 4,5],  # Complete smiley winking
-    # )
+    # for ion_include_inds in [None, [0, 1, 2, 3, 4, 5]]:
+    #     charge_state_histograms.main(
+    #         nv_list, num_reps, num_runs, ion_include_inds=ion_include_inds
+    #     )
+    return charge_state_histograms.main(nv_list, num_reps, num_runs)
 
 
 def do_optimize_green(nv_sig, do_plot=True):
@@ -214,7 +207,8 @@ def do_scc_snr_check(nv_list):
     # num_reps = 100
     # num_runs = 100
     num_reps = 200
-    num_runs = 160 * 4
+    num_runs = 20
+    # num_runs = 160 * 4
     # num_runs = 2
     scc_snr_check.main(nv_list, num_reps, num_runs, uwave_ind_list=[0, 1])
 
@@ -252,12 +246,15 @@ def do_resonance(nv_list):
     freq_center = 2.87
     freq_range = 0.180
     num_steps = 40
-    num_reps = 8
-    num_runs = 120
+    # Single ref
+    # num_reps = 8
+    # num_runs = 120
     # num_runs = 50
 
-    # num_reps = 3
-    # num_runs = 150
+    # Both refs
+    num_reps = 4
+    num_runs = 500
+
     # num_runs = 2
 
     resonance.main(nv_list, num_steps, num_reps, num_runs, freq_center, freq_range)
@@ -276,13 +273,14 @@ def do_resonance_zoom(nv_list):
 def do_rabi(nv_list):
     min_tau = 16
     # max_tau = 240 + min_tau
-    # max_tau = 360 + min_tau
-    max_tau = 480 + min_tau
+    max_tau = 360 + min_tau
+    # max_tau = 480 + min_tau
     num_steps = 31
     num_reps = 10
     # num_runs = 100
-    num_runs = 50
-    # num_runs = 2
+    # num_runs = 50
+    # num_runs = 200
+    num_runs = 20
 
     # uwave_ind_list = [1]
     uwave_ind_list = [0, 1]
@@ -729,22 +727,22 @@ if __name__ == "__main__":
         120,
         120,
     ]
-    scc_duration_list = [
-        50,
-        90,
-        120,
-        106,
-        123,
-        111,
-        131,
-        132,
-        110,
-        103,
-        #
-        100,
-        100,
-        100,
-    ]
+    # scc_duration_list = [
+    #     50,
+    #     90,
+    #     120,
+    #     106,
+    #     123,
+    #     111,
+    #     131,
+    #     132,
+    #     110,
+    #     103,
+    #     #
+    #     100,
+    #     100,
+    #     100,
+    # ]
     scc_duration_list = [4 * round(el / 4) for el in scc_duration_list]
     # scc_duration_list = [None] * num_nvs
     # endregion
@@ -814,11 +812,11 @@ if __name__ == "__main__":
     #     print(f"{r_coords},")
     # sys.exit()
 
-    nv_list = [nv_list[ind] for ind in [0, 1, 5, 6, 10, 11, 12]]  # Smiley
+    # nv_list = [nv_list[ind] for ind in [0, 1, 5, 6, 10, 11, 12]]  # Smiley
     # nv_list = [nv_list[ind] for ind in [0, 1, 5, 6, 10, 11]]  # Smiley
     # nv_list = [nv_list[0], *nv_list[10:]]
-
     # nv_list = [nv_list[2]]
+    nv_list = nv_list[:10]
 
     # endregion
 
@@ -863,7 +861,7 @@ if __name__ == "__main__":
         # do_optimize_red(nv_sig)
         # do_image_single_nv(nv_sig)
 
-        # optimize.optimize_pixel_and_z(nv_sig, do_plot=True)
+        optimize.optimize_pixel_and_z(nv_sig, do_plot=True)
         # do_image_nv_list(nv_list)
         # for ind in range(20):
         #     do_optimize_pixel(nv_sig)
@@ -879,7 +877,7 @@ if __name__ == "__main__":
         # do_optimize_loop(nv_list, coords_key, scanning_from_pixel=False)
 
         # nv_list = nv_list[::-1]
-        # do_charge_state_histograms(nv_list)
+        do_charge_state_histograms(nv_list)
         # do_check_readout_fidelity(nv_list)
 
         # do_resonance(nv_list)
