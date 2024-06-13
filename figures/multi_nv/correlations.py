@@ -89,10 +89,18 @@ def main(block_data, checkerboard_data, orientation_data):
     seq_ax.set_xlabel(" ")
     seq_fig.text(0.4, 0.3, "Spin pol.", horizontalalignment="center", rotation=90)
     seq_fig.text(
-        0.6, 0.3, r"$\pi_{\text{A}}$ pulse", horizontalalignment="center", rotation=90
+        0.6,
+        0.3,
+        r"$\pi_{\mathregular{A}}$ pulse",
+        horizontalalignment="center",
+        rotation=90,
     )
     seq_fig.text(
-        0.5, 0.3, r"$\pi_{\text{B}}$ pulse", horizontalalignment="center", rotation=90
+        0.5,
+        0.3,
+        r"$\pi_{\mathregular{B}}$ pulse",
+        horizontalalignment="center",
+        rotation=90,
     )
     seq_fig.text(
         0.9, 0.3, "Charge state\nreadout", horizontalalignment="center", rotation=90
@@ -119,8 +127,8 @@ def main(block_data, checkerboard_data, orientation_data):
     # # seq_ax, [0, start, stop, 0], [0, 1, 0], color=kpl.KplColors.BROWN
     # # )
     for color in [kpl.KplColors.BROWN, kpl.KplColors.ORANGE]:
-        start = stop + 1
-        stop = start + 1.5
+        start = stop + 0.3
+        stop = start + 2
         kpl.plot_sequence(
             global_ax,
             [0, start, stop, 0],
@@ -144,8 +152,8 @@ def main(block_data, checkerboard_data, orientation_data):
     # Anticorrelation microwaves
     stop += 2
     for color in [kpl.KplColors.BROWN, kpl.KplColors.ORANGE]:
-        start = stop + 1
-        stop = start + 1.5
+        start = stop + 0.3
+        stop = start + 2
         kpl.plot_sequence(
             global_ax,
             [0, start, stop, 0],
