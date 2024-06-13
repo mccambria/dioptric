@@ -351,6 +351,7 @@ def init_kplotlib(
     plt.rcParams["legend.columnspacing"] = 1.0
     plt.rcParams["legend.borderaxespad"] = 0.2
     plt.rcParams["legend.borderpad"] = 0.3
+    plt.rcParams["axes.ymargin"] = 0.02
 
 
 def get_default_color(ax, plot_type):

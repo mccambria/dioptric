@@ -149,9 +149,9 @@ def main(
     uwave_freq_list=None,
     num_exps_per_rep=2,
     load_iq=False,
-    save_all_images=False,
-    save_mean_images=False,
-    save_images_downsample_factor=3,
+    save_images=False,
+    save_images_avg_reps=True,
+    save_images_downsample_factor=None,
     stream_load_in_run_fn=True,
     charge_prep_fn=None,
 ) -> dict:
@@ -234,17 +234,17 @@ def main(
     counts = np.empty((num_exps_per_rep, num_nvs, num_runs, num_steps, num_reps))
     states = np.empty((num_exps_per_rep, num_nvs, num_runs, num_steps, num_reps))
     pixel_drifts = np.empty((num_runs, 2))
-    if save_all_images or save_mean_images:
+    if save_images:
         shape = widefield.get_img_array_shape()
         if save_images_downsample_factor is not None:
             shape = [
                 int(np.floor(shape[ind] / save_images_downsample_factor))
                 for ind in range(2)
             ]
-    if save_all_images:
-        img_arrays = np.empty((num_exps_per_rep, num_runs, num_steps, num_reps, *shape))
-    if save_mean_images:
-        mean_img_arrays = np.zeros((num_exps_per_rep, num_steps, *shape))
+        save_images_num_reps = 1 if save_images_avg_reps else num_reps
+        img_arrays = np.empty(
+            (num_exps_per_rep, num_runs, num_steps, save_images_num_reps, *shape)
+        )
     step_ind_master_list = [None for ind in range(num_runs)]
     step_ind_list = list(range(0, num_steps))
 
@@ -290,6 +290,9 @@ def main(
                                 pulse_gen.stream_start()
 
                         # Reps loop
+                        if save_images and save_images_avg_reps:
+                            avg_reps_img_arrays = np.zeros((num_exps_per_rep, *shape))
+
                         for rep_ind in range(num_reps):
                             for exp_ind in range(num_exps_per_rep):
                                 if charge_prep_fn is not None:
@@ -307,18 +310,23 @@ def main(
                                     exp_ind, :, run_ind, step_ind, rep_ind
                                 ] = states_list
 
-                                if save_images_downsample_factor is not None:
-                                    img_array = widefield.downsample_img_array(
-                                        img_array, save_images_downsample_factor
-                                    )
-                                if save_all_images:
-                                    img_arrays[
-                                        exp_ind, run_ind, step_ind, rep_ind, :, :
-                                    ] = img_array
-                                if save_mean_images:
-                                    mean_img_arrays[
-                                        exp_ind, step_ind, :, :
-                                    ] += img_array
+                                if save_images:
+                                    if save_images_downsample_factor is not None:
+                                        img_array = widefield.downsample_img_array(
+                                            img_array, save_images_downsample_factor
+                                        )
+                                    if save_images_avg_reps:
+                                        avg_reps_img_arrays[exp_ind] += img_array
+                                    else:
+                                        img_arrays[
+                                            exp_ind, run_ind, step_ind, rep_ind, :, :
+                                        ] = img_array
+
+                        if save_images and save_images_avg_reps:
+                            avg_reps_img_arrays /= num_reps
+                            img_arrays[
+                                :, run_ind, step_ind, 0, :, :
+                            ] = avg_reps_img_arrays
 
                     ### Move on to the next run
 
@@ -376,7 +384,7 @@ def main(
         "states": states,
         "pixel_drifts": pixel_drifts,
     }
-    if save_all_images:
+    if save_images:
         raw_data |= {
             "img_arrays-units": "photons",
             "img_arrays": img_arrays,

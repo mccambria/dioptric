@@ -151,7 +151,7 @@ def main(nv_list, num_reps, num_runs, scc_include_inds=None, uwave_ind_list=[0, 
         num_runs,
         run_fn=run_fn,
         uwave_ind_list=uwave_ind_list,
-        save_all_images=True,
+        save_images=True,
         charge_prep_fn=None,
         save_images_downsample_factor=None,
     )
