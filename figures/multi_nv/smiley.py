@@ -117,8 +117,8 @@ def main(
 
     ### Imshow
 
-    downsample_factor = 4
-    img_array = widefield.downsample_img_array(img_array, downsample_factor)
+    # downsample_factor = 6
+    # img_array = widefield.downsample_img_array(img_array, downsample_factor)
 
     fig, ax = plt.subplots()
     kpl.imshow(ax, img_array, cbar_label="Photons", vmin=vmin, vmax=vmax)
@@ -224,8 +224,12 @@ if __name__ == "__main__":
     # main(file_id, img_array_offset=img_array_offset, diff=True, draw_circles=True)
 
     # Spin
-    file_id = 1558673759071
-    img_array_offset=[2,0]
+    # file_id = 1558797947702
+    # img_array_offset=[0,1]
+    # file_id = 1558944220372
+    # img_array_offset=[0,1]
+    file_id = 1559062712968
+    img_array_offset=[1,0]
     # main(file_id, img_array_offset=img_array_offset, diff=True, vmin=0, vmax=1.4)
     main(file_id, img_array_offset=img_array_offset, diff=True)
     # main(file_id, img_array_offset=img_array_offset, diff=True, draw_circles=True)

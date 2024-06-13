@@ -56,7 +56,7 @@ def main(esr_data, spin_echo_data):
 
     ### Sequence
 
-    global_alpha = 0.7
+    global_alpha = 0.8
 
     # NV-specific axes
     nrows = 6
@@ -65,7 +65,7 @@ def main(esr_data, spin_echo_data):
         sharex=True,
         sharey=True,
         height_ratios=[1, 1, 1, 0.25, 1, 1],
-        # hspace=0.005,
+        gridspec_kw={"hspace": 0.01},
     )
     global_ax = seq_axes_pack[-1]
 
@@ -114,7 +114,8 @@ def main(esr_data, spin_echo_data):
     seq_fig.text(0.1, 0.9, "Charge pol.")
     seq_fig.text(0.4, 0.3, "Spin pol.", horizontalalignment="center", rotation=90)
     # seq_fig.text(0.4, 0.1, "Spin pol.")
-    seq_fig.text(0.6, 0.3, "RF seq.", horizontalalignment="center", rotation=90)
+    # seq_fig.text(0.6, 0.3, "RF seq.", horizontalalignment="center", rotation=90)
+    seq_fig.text(0.6, 0.3, "RF sequence", horizontalalignment="center", rotation=90)
     # seq_fig.text(0.6, 0.1, "RF seq.")
     seq_fig.text(0.7, 0.9, "SCC")
     seq_fig.text(
@@ -138,7 +139,7 @@ def main(esr_data, spin_echo_data):
 
     # Spin polarization
     start = stop + 1
-    stop = start + 11
+    stop = start + 10
     kpl.plot_sequence(
         global_ax, [0, start, stop, 0], [0, 1, 0], color="#d9d900", alpha=global_alpha
     )
@@ -155,7 +156,7 @@ def main(esr_data, spin_echo_data):
     # # seq_ax, [0, start, stop, 0], [0, 1, 0], color=kpl.KplColors.BROWN
     # # )
     start = stop + 1
-    stop = start + 9
+    stop = start + 10
     kpl.plot_sequence(
         global_ax,
         [0, start, stop, 0],
@@ -180,8 +181,6 @@ def main(esr_data, spin_echo_data):
     kpl.plot_sequence(
         global_ax, [0, start, stop, 0], [0, 1, 0], color="#f5f556", alpha=global_alpha
     )
-
-    seq_fig.subplots_adjust(hspace=0.1)
 
     ### ESR
 
@@ -233,6 +232,12 @@ def main(esr_data, spin_echo_data):
     )
     ax = spin_echo_zoom_axes_pack[mosaic_layout[0][0]]
     ax.set_xlim(zoom_range)
+
+    for ax in [
+        spin_echo_zoom_axes_pack[mosaic_layout[0][0]],
+        spin_echo_axes_pack[mosaic_layout[0][0]],
+    ]:
+        ax.set_yticks([0, 0.1])
 
     # ### Adjustments
 
