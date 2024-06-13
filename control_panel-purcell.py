@@ -214,7 +214,8 @@ def do_scc_snr_check(nv_list):
     # num_reps = 100
     # num_runs = 100
     num_reps = 200
-    num_runs = 40
+    num_runs = 160 * 4
+    # num_runs = 2
     scc_snr_check.main(nv_list, num_reps, num_runs, uwave_ind_list=[0, 1])
 
 
@@ -729,7 +730,7 @@ if __name__ == "__main__":
         120,
     ]
     scc_duration_list = [
-        90,
+        50,
         90,
         120,
         106,
@@ -740,9 +741,9 @@ if __name__ == "__main__":
         110,
         103,
         #
-        120,
-        120,
-        120,
+        100,
+        100,
+        100,
     ]
     scc_duration_list = [4 * round(el / 4) for el in scc_duration_list]
     # scc_duration_list = [None] * num_nvs
@@ -862,7 +863,7 @@ if __name__ == "__main__":
         # do_optimize_red(nv_sig)
         # do_image_single_nv(nv_sig)
 
-        optimize.optimize_pixel_and_z(nv_sig, do_plot=True)
+        # optimize.optimize_pixel_and_z(nv_sig, do_plot=True)
         # do_image_nv_list(nv_list)
         # for ind in range(20):
         #     do_optimize_pixel(nv_sig)

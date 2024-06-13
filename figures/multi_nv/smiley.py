@@ -92,8 +92,8 @@ def main(
             for ind in range(num_runs):
                 pixel_drift = pixel_drifts[ind]
                 offset = [
-                    img_array_offset[0] + (pixel_drift[0] - base_pixel_drift[0]) / 2,
-                    img_array_offset[1] + (pixel_drift[1] - base_pixel_drift[1]) / 2,
+                    img_array_offset[0] + (pixel_drift[1] - base_pixel_drift[1]),
+                    img_array_offset[1] + (pixel_drift[0] - base_pixel_drift[0]),
                 ]
                 img_array = img_arrays[ind]
                 cropped_img_array = crop_img_array(
@@ -211,16 +211,16 @@ if __name__ == "__main__":
 
     # Histograms: ref, sig, diff
     # file_id = 1558589699406
-    # img_array_offset=[0,1]
+    # img_array_offset=[0,0]
     # main(file_id, img_array_offset=img_array_offset, diff=False, sig_or_ref=False, vmin=0.02, vmax=0.42)
     # main(file_id, img_array_offset=img_array_offset, diff=False, sig_or_ref=True, vmin=0.02, vmax=0.42)
-    # main(file_id, img_array_offset=img_array_offset, diff=True, vmin=-0.29, vmax=0.03)
+    # main(file_id, img_array_offset=img_array_offset, diff=True, vmin=-0.32, vmax=0.02)
     # main(file_id, img_array_offset=img_array_offset, diff=True, draw_circles=True)
 
     # Winking histogram
-    # file_id = 1558619706453
-    # img_array_offset=[-1,5]
-    # main(file_id, img_array_offset=img_array_offset, diff=True, vmin=-0.29, vmax=0.03)
+    file_id = 1558619706453
+    img_array_offset=[0,0]
+    main(file_id, img_array_offset=img_array_offset, diff=True, vmin=-0.32, vmax=0.02)
     # main(file_id, img_array_offset=img_array_offset, diff=True, draw_circles=True)
 
     # Spin
@@ -228,10 +228,12 @@ if __name__ == "__main__":
     # img_array_offset=[0,1]
     # file_id = 1558944220372
     # img_array_offset=[0,1]
-    file_id = 1559062712968
-    img_array_offset=[1,0]
-    # main(file_id, img_array_offset=img_array_offset, diff=True, vmin=0, vmax=1.4)
-    main(file_id, img_array_offset=img_array_offset, diff=True)
+    # file_id = 1559062712968
+    # img_array_offset=[1,0]
+    # file_id = 1559550352430
+    # img_array_offset=[0,0]
+    # main(file_id, img_array_offset=img_array_offset, diff=True, vmin=-0.005, vmax=0.046)
+    # main(file_id, img_array_offset=img_array_offset, diff=True)
     # main(file_id, img_array_offset=img_array_offset, diff=True, draw_circles=True)
 
     plt.show(block=True)
