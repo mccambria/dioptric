@@ -208,7 +208,6 @@ def main(
     repr_nv_sig = widefield.get_repr_nv_sig(nv_list)
     pos.set_xyz_on_nv(repr_nv_sig)
     num_nvs = len(nv_list)
-    num_shots = num_reps * num_runs
     camera = tb.get_server_camera()
     pulse_gen = tb.get_server_pulse_gen()
 
@@ -303,12 +302,12 @@ def main(
                                     )
                                 ret_vals = read_and_process_image(nv_list)
                                 img_array, counts_list, states_list = ret_vals
-                                counts[
-                                    exp_ind, :, run_ind, step_ind, rep_ind
-                                ] = counts_list
-                                states[
-                                    exp_ind, :, run_ind, step_ind, rep_ind
-                                ] = states_list
+                                counts[exp_ind, :, run_ind, step_ind, rep_ind] = (
+                                    counts_list
+                                )
+                                states[exp_ind, :, run_ind, step_ind, rep_ind] = (
+                                    states_list
+                                )
 
                                 if save_images:
                                     if save_images_downsample_factor is not None:
@@ -324,9 +323,9 @@ def main(
 
                         if save_images and save_images_avg_reps:
                             avg_reps_img_arrays /= num_reps
-                            img_arrays[
-                                :, run_ind, step_ind, 0, :, :
-                            ] = avg_reps_img_arrays
+                            img_arrays[:, run_ind, step_ind, 0, :, :] = (
+                                avg_reps_img_arrays
+                            )
 
                     ### Move on to the next run
 
@@ -388,12 +387,6 @@ def main(
         raw_data |= {
             "img_arrays-units": "photons",
             "img_arrays": img_arrays,
-        }
-    if save_mean_images:
-        mean_img_arrays /= num_shots
-        raw_data |= {
-            "mean_img_arrays-units": "photons",
-            "mean_img_arrays": mean_img_arrays,
         }
     return raw_data
 
