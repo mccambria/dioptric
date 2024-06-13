@@ -181,8 +181,6 @@ def main(esr_data, spin_echo_data):
         global_ax, [0, start, stop, 0], [0, 1, 0], color="#f5f556", alpha=global_alpha
     )
 
-    seq_fig.subplots_adjust(hspace=0.1)
-
     ### ESR
 
     esr_axes_pack = esr_fig.subplot_mosaic(mosaic_layout, sharex=True, sharey=True)
