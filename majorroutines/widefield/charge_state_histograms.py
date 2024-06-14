@@ -121,7 +121,7 @@ def process_and_plot(raw_data):
         hist_figs.append(fig)
         all_counts_list = np.append(sig_counts_list, ref_counts_list)
         # nvn_ratio = 0.3
-        nvn_ratio = 0.1
+        nvn_ratio = 0.15
         threshold = determine_threshold(all_counts_list, nvn_ratio=nvn_ratio)
         threshold_list.append(threshold)
         # threshold = prior_thresholds[ind]
