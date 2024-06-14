@@ -113,15 +113,11 @@ def main(esr_data, spin_echo_data):
     seq_ax.set_xlabel(" ")
     seq_fig.text(0.1, 0.9, "Charge pol.")
     seq_fig.text(0.4, 0.3, "Spin pol.", horizontalalignment="center", rotation=90)
-    # seq_fig.text(0.4, 0.1, "Spin pol.")
-    # seq_fig.text(0.6, 0.3, "RF seq.", horizontalalignment="center", rotation=90)
     seq_fig.text(0.6, 0.3, "RF sequence", horizontalalignment="center", rotation=90)
-    # seq_fig.text(0.6, 0.1, "RF seq.")
     seq_fig.text(0.7, 0.9, "SCC")
     seq_fig.text(
         0.9, 0.3, "Charge state\nreadout", horizontalalignment="center", rotation=90
     )
-    # seq_fig.text(0.9, 0.1, "Readout", horizontalalignment="center")
 
     row_skip_inds = [nrows - 3, nrows - 1]
 
@@ -145,17 +141,7 @@ def main(esr_data, spin_echo_data):
         global_ax, [0, start, stop, 0], [0, 1, 0], color="#d9d900", alpha=global_alpha
     )
 
-    # Microwaves A
-    # start = stop + 2
-    # stop = start + 1
-    # # kpl.plot_sequence(
-    # # seq_ax, [0, start, stop, 0], [0, 1, 0], color=kpl.KplColors.BROWN
-    # # )
-    # start = stop + 1
-    # stop = start + 1
-    # # kpl.plot_sequence(
-    # # seq_ax, [0, start, stop, 0], [0, 1, 0], color=kpl.KplColors.BROWN
-    # # )
+    # Microwaves
     start = stop + 2
     stop = start + 10
     kpl.plot_sequence(

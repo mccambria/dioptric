@@ -20,7 +20,7 @@ from utils import tool_belt as tb
 from utils import widefield as widefield
 
 
-def process_and_plot(nv_list, taus, sig_counts, ref_counts):
+def process_and_plot(nv_list, taus, sig_counts, ref_counts, duration_or_amp):
     num_nvs = len(nv_list)
 
     avg_sig_counts, avg_sig_counts_ste, _ = widefield.average_counts(sig_counts)
@@ -29,19 +29,23 @@ def process_and_plot(nv_list, taus, sig_counts, ref_counts):
 
     # avg_snr_ste = None
 
+    xlabel = (
+        "SCC pulse duration (ns)" if duration_or_amp else "SCC relative AOD amplitude"
+    )
+
     sig_fig, sig_ax = plt.subplots()
     widefield.plot_raw_data(sig_ax, nv_list, taus, avg_sig_counts, avg_sig_counts_ste)
-    sig_ax.set_xlabel("Ionization pulse duration (ns)")
+    sig_ax.set_xlabel(xlabel)
     sig_ax.set_ylabel("Signal counts")
 
     ref_fig, ref_ax = plt.subplots()
     widefield.plot_raw_data(ref_ax, nv_list, taus, avg_ref_counts, avg_ref_counts_ste)
-    ref_ax.set_xlabel("Ionization pulse duration (ns)")
+    ref_ax.set_xlabel(xlabel)
     ref_ax.set_ylabel("Reference counts")
 
     snr_fig, snr_ax = plt.subplots()
     widefield.plot_raw_data(snr_ax, nv_list, taus, avg_snr, avg_snr_ste)
-    snr_ax.set_xlabel("Ionization pulse duration (ns)")
+    snr_ax.set_xlabel(xlabel)
     snr_ax.set_ylabel("SNR")
 
     # Average across NVs
@@ -117,21 +121,33 @@ def process_and_plot(nv_list, taus, sig_counts, ref_counts):
         opti_durations.append(opti_duration)
     print("Optimum SNRs")
     print([round(val, 3) for val in opti_snrs])
-    print("Optimum SCC pulse durations")
+    print(f"Optimum {xlabel}")
     print([round(val) for val in opti_durations])
     fit_ax.legend(ncols=3)
-    fit_ax.set_xlabel("SCC pulse duration (ns)")
+    fit_ax.set_xlabel(xlabel)
     fit_ax.set_ylabel("SNR")
 
     return sig_fig, ref_fig, snr_fig, avg_snr_fig, fit_fig
     # return sig_fig, ref_fig, snr_fig, avg_snr_fig
 
 
-def main(nv_list, num_steps, num_reps, num_runs, min_tau, max_tau):
+def optimize_scc_duration(nv_list, num_steps, num_reps, num_runs, min_tau, max_tau):
+    return _main(nv_list, num_steps, num_reps, num_runs, min_tau, max_tau, True)
+
+
+def optimize_scc_amp(nv_list, num_steps, num_reps, num_runs, min_tau, max_tau):
+    return _main(nv_list, num_steps, num_reps, num_runs, min_tau, max_tau, False)
+
+
+def _main(nv_list, num_steps, num_reps, num_runs, min_tau, max_tau, duration_or_amp):
     ### Some initial setup
     uwave_ind_list = [0, 1]
 
-    seq_file = "optimize_scc.py"
+    if duration_or_amp:
+        seq_file = "optimize_scc-duration.py"
+    else:
+        seq_file = "optimize_scc-duration.py"
+
     taus = np.linspace(min_tau, max_tau, num_steps)
 
     pulse_gen = tb.get_server_pulse_gen()
@@ -165,7 +181,7 @@ def main(nv_list, num_steps, num_reps, num_runs, min_tau, max_tau):
     ### Process and plot
 
     try:
-        figs = process_and_plot(nv_list, taus, sig_counts, ref_counts)
+        figs = process_and_plot(nv_list, taus, sig_counts, ref_counts, duration_or_amp)
     except Exception:
         print(traceback.format_exc())
         figs = None

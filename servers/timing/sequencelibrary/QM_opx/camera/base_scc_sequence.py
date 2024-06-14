@@ -19,6 +19,7 @@ def macro(
     step_vals=None,
     num_reps=1,
     scc_duration_override=None,
+    scc_amp_override=None,
     reference=True,
 ):
     """Base spin sequence as a QUA macro for widefield experiments with many
@@ -63,6 +64,7 @@ def macro(
         pol_coords_list,
         scc_coords_list,
         scc_duration_list,
+        scc_amp_list,
         spin_flip_ind_list,
         uwave_ind_list,
     ) = base_scc_seq_args
@@ -89,10 +91,12 @@ def macro(
         seq_utils.macro_scc(
             scc_coords_list,
             scc_duration_list,
+            scc_amp_list,
             spin_flip_ind_list,
             uwave_ind_list,
             pol_coords_list,
             scc_duration_override,
+            scc_amp_override,
             exp_spin_flip=exp_spin_flip,
             ref_spin_flip=ref_spin_flip,
         )
