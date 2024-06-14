@@ -144,6 +144,8 @@ def process_and_plot_experimental(data, ax=None):
 
     print(np.nanmean(ref_corr_coeffs) / np.nanmean(np.abs(sig_corr_coeffs)))
 
+
+
     # MCC
     # fig, ax = plt.subplots()
     # mean_diff_corr_coeffs = [
@@ -188,7 +190,6 @@ def process_and_plot_experimental(data, ax=None):
     #     plt.close(figs[ind])
 
     return figs
-
     ### Spurious correlations offset
 
     # offsets = np.array(range(15000))
@@ -395,7 +396,7 @@ if __name__ == "__main__":
 
     # data = dm.get_raw_data(file_id=1538271354881)  # Checkerboard
     # data = dm.get_raw_data(file_id=1539569377493)  # Checkerboard
-    data = dm.get_raw_data(file_id=1540048047866)  # Block
+    data = dm.get_raw_data(file_id=1541938921939)  # Block
     # data = dm.get_raw_data(file_id=1540558251818)  # By orientation
     #
     # data = dm.get_raw_data(file_id=1541938921939)  # Block

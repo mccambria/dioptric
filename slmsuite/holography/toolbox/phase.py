@@ -691,3 +691,30 @@ def radial_gradient(grid):
 
     return radial_phase
 
+
+def quadratic_phase(grid, focal_length):
+    """
+    Returns a smoothly varying quadratic phase pattern for a lens with specified focal length.
+
+    Parameters
+    ----------
+    grid : (array_like, array_like) OR SLM
+        The grid can be a tuple of x and y coordinates or an instance of SLM.
+    focal_length : float
+        The focal length of the lens.
+
+    Returns
+    -------
+    numpy.ndarray
+        The smoothly varying phase for the quadratic function.
+    """
+    x_grid, y_grid = _process_grid(grid)
+
+    # Compute the quadratic phase pattern
+    k = 2 * np.pi / 1  # Assuming wavelength λ=1 for simplicity, adjust as needed
+    phase = (k / (2 * focal_length)) * (x_grid**2 + y_grid**2)
+
+    # Normalize the phase to the range [0, 2*pi] to create a smooth phase pattern
+    phase = np.mod(phase, 2 * np.pi)
+
+    return phase
