@@ -67,14 +67,19 @@ if __name__ == "__main__":
                     100,
                     100,
                 ],
+                [
+                    1.0,
+                    1.0,
+                    1.0,
+                ],
                 [],
                 [0, 1],
             ],
-            [100, 112, 124],
+            [1000, 1120, 1240],
             5,
         )
 
-        sim_config = SimulationConfig(duration=int(200e3 / 4))
+        sim_config = SimulationConfig(duration=int(300e3 / 4))
         sim = opx.simulate(seq, sim_config)
         samples = sim.get_simulated_samples()
         samples.con1.plot()

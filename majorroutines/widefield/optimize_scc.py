@@ -143,10 +143,7 @@ def _main(nv_list, num_steps, num_reps, num_runs, min_tau, max_tau, duration_or_
     ### Some initial setup
     uwave_ind_list = [0, 1]
 
-    if duration_or_amp:
-        seq_file = "optimize_scc-duration.py"
-    else:
-        seq_file = "optimize_scc-duration.py"
+    seq_file = "optimize_scc-duration.py" if duration_or_amp else "optimize_scc-amp.py"
 
     taus = np.linspace(min_tau, max_tau, num_steps)
 

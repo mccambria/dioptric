@@ -31,6 +31,7 @@ class NVSig:
     # and rejecting common mode noise
     spin_flip: bool = False
     scc_duration: int | None = None
+    scc_amp: float | None = None
     nvn_dist_params: tuple | None = None  # bg, amp, sigma
 
 

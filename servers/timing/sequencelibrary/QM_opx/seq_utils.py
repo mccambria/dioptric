@@ -38,6 +38,9 @@ def init(num_nvs=None):
     global _cache_duration
     _cache_duration = qua.declare(int)
 
+    global _cache_amp
+    _cache_amp = qua.declare(qua.fixed)
+
     global _cache_target
     _cache_target = qua.declare(bool)
 
@@ -591,32 +594,22 @@ def _macro_pulse_list(
 
     qua.align()
 
-    # Branch based on what lists are populated
-    if target_list is None and duration_list is None:
-        with qua.for_each_(
-            (_cache_x_freq, _cache_y_freq), (x_coords_list, y_coords_list)
-        ):
-            macro_sub()
-    elif target_list is None and duration_list is not None:
-        with qua.for_each_(
-            (_cache_x_freq, _cache_y_freq, _cache_duration),
-            (x_coords_list, y_coords_list, duration_list),
-        ):
-            macro_sub()
-    elif target_list is not None and duration_list is None:
-        with qua.for_each_(
-            (_cache_x_freq, _cache_y_freq, _cache_target),
-            (x_coords_list, y_coords_list, target_list),
-        ):
-            with qua.if_(_cache_target):
-                macro_sub()
-    elif target_list is not None and duration_list is not None:
-        with qua.for_each_(
-            (_cache_x_freq, _cache_y_freq, _cache_duration, _cache_target),
-            (x_coords_list, y_coords_list, duration_list, target_list),
-        ):
-            with qua.if_(_cache_target):
-                macro_sub()
+    # Adjust the for each based on what lists are populated
+
+    list_1 = [_cache_x_freq, _cache_y_freq]
+    list_2 = [x_coords_list, y_coords_list]
+    if duration_list is not None:
+        list_1.append(_cache_duration)
+        list_2.append(duration_list)
+    if amp_list is not None:
+        list_1.append(_cache_amp)
+        list_2.append(amp_list)
+    if target_list is not None:
+        list_1.append(_cache_target)
+        list_2.append(target_list)
+
+    with qua.for_each_(tuple(list_1), tuple(list_2)):
+        macro_sub()
 
 
 def macro_pulse(
@@ -681,7 +674,7 @@ def _macro_single_pulse(
         qua.play("continue", x_el)
         qua.play("continue", y_el)
     else:
-        macro_run_aods(laser_names=[laser_name], amps=[amp])
+        macro_run_aods(laser_names=[laser_name], aod_suffices=[pulse_name], amps=[amp])
     qua.update_frequency(x_el, coords[0])
     qua.update_frequency(y_el, coords[1])
 
