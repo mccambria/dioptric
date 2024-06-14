@@ -135,8 +135,8 @@ def optimize_scc_duration(nv_list, num_steps, num_reps, num_runs, min_tau, max_t
     return _main(nv_list, num_steps, num_reps, num_runs, min_tau, max_tau, True)
 
 
-def optimize_scc_amp(nv_list, num_steps, num_reps, num_runs, min_tau, max_tau):
-    return _main(nv_list, num_steps, num_reps, num_runs, min_tau, max_tau, False)
+def optimize_scc_amp(nv_list, num_steps, num_reps, num_runs, min_amp, max_amp):
+    return _main(nv_list, num_steps, num_reps, num_runs, min_amp, max_amp, False)
 
 
 def _main(nv_list, num_steps, num_reps, num_runs, min_tau, max_tau, duration_or_amp):

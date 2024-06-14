@@ -184,25 +184,35 @@ def do_calibrate_green_red_delay():
     pulse_gen.halt()
 
 
-def do_optimize_scc(nv_list):
+def do_optimize_scc_duration(nv_list):
     min_tau = 16
     max_tau = 224
-    # min_tau = 100
-    # max_tau = 308
     num_steps = 14
     num_reps = 15
 
-    # min_tau = 16
-    # max_tau = 104
-    # num_steps = 12
-    # num_reps = 8
-
-    # num_runs = 2
     # num_runs = 20 * 25
     num_runs = 30
     num_runs = 50
+    num_runs = 2
 
-    optimize_scc.main(nv_list, num_steps, num_reps, num_runs, min_tau, max_tau)
+    optimize_scc.optimize_scc_duration(
+        nv_list, num_steps, num_reps, num_runs, min_tau, max_tau
+    )
+
+
+def do_optimize_scc_amp(nv_list):
+    min_tau = 0.7
+    max_tau = 1.3
+    num_steps = 16
+    num_reps = 15
+
+    num_runs = 30
+    num_runs = 50
+    num_runs = 2
+
+    optimize_scc.optimize_scc_amp(
+        nv_list, num_steps, num_reps, num_runs, min_tau, max_tau
+    )
 
 
 def do_scc_snr_check(nv_list):
@@ -921,8 +931,9 @@ if __name__ == "__main__":
         # do_opx_square_wave()
 
         # nv_list = nv_list[::-1]
-        do_scc_snr_check(nv_list)
-        # do_optimize_scc(nv_list)
+        # do_scc_snr_check(nv_list)
+        do_optimize_scc_duration(nv_list)
+        do_optimize_scc_amp(nv_list)
         # do_crosstalk_check(nv_sig)
         # do_spin_pol_check(nv_sig)
         # do_calibrate_green_red_delay()
