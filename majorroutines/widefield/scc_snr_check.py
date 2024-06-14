@@ -42,7 +42,7 @@ def process_and_plot(data):
     avg_contrast, avg_contrast_ste = widefield.calc_contrast(sig_counts, ref_counts)
 
     # There's only one point, so only consider that
-    step_ind = 7
+    step_ind = 0
     avg_sig_counts = avg_sig_counts[:, step_ind]
     avg_sig_counts_ste = avg_sig_counts_ste[:, step_ind]
     avg_ref_counts = avg_ref_counts[:, step_ind]
