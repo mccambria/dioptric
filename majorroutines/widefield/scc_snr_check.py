@@ -8,6 +8,7 @@ Created on December 6th, 2023
 """
 
 import time
+import traceback
 
 import numpy as np
 from matplotlib import pyplot as plt
@@ -24,29 +25,8 @@ def process_and_plot(data):
     threshold = True
     nv_list = data["nv_list"]
     counts = np.array(data["counts"])
-    # counts = np.array(data["states"])
     sig_counts = counts[0]
     ref_counts = counts[1]
-
-    thresholds = [
-        29.5,
-        31.5,
-        30.5,
-        29.5,
-        29.5,
-        26.5,
-        23.5,
-        25.5,
-        27.5,
-        21.5,
-        21.5,
-        17.5,
-    ]
-    num_nvs = len(nv_list)
-    for ind in range(num_nvs):
-        nv = nv_list[ind]
-        nv_ind = widefield.get_nv_num(nv)
-        nv.threshold = thresholds[nv_ind]
 
     if threshold:
         sig_counts, ref_counts = widefield.threshold_counts(
@@ -55,24 +35,22 @@ def process_and_plot(data):
 
     ### Report the results and return
 
-    avg_sig_counts, avg_sig_counts_ste, _ = widefield.process_counts(
-        nv_list, sig_counts, threshold=False
-    )
-    avg_ref_counts, avg_ref_counts_ste, _ = widefield.process_counts(
-        nv_list, ref_counts, threshold=False
-    )
+    avg_sig_counts, avg_sig_counts_ste, _ = widefield.average_counts(sig_counts)
+    avg_ref_counts, avg_ref_counts_ste, _ = widefield.average_counts(ref_counts)
+
     avg_snr, avg_snr_ste = widefield.calc_snr(sig_counts, ref_counts)
     avg_contrast, avg_contrast_ste = widefield.calc_contrast(sig_counts, ref_counts)
 
     # There's only one point, so only consider that
-    avg_sig_counts = avg_sig_counts[:, 0]
-    avg_sig_counts_ste = avg_sig_counts_ste[:, 0]
-    avg_ref_counts = avg_ref_counts[:, 0]
-    avg_ref_counts_ste = avg_ref_counts_ste[:, 0]
-    avg_snr = avg_snr[:, 0]
-    avg_snr_ste = avg_snr_ste[:, 0]
-    avg_contrast = avg_contrast[:, 0]
-    avg_contrast_ste = avg_contrast_ste[:, 0]
+    step_ind = 0
+    avg_sig_counts = avg_sig_counts[:, step_ind]
+    avg_sig_counts_ste = avg_sig_counts_ste[:, step_ind]
+    avg_ref_counts = avg_ref_counts[:, step_ind]
+    avg_ref_counts_ste = avg_ref_counts_ste[:, step_ind]
+    avg_snr = avg_snr[:, step_ind]
+    avg_snr_ste = avg_snr_ste[:, step_ind]
+    avg_contrast = avg_contrast[:, step_ind]
+    avg_contrast_ste = avg_contrast_ste[:, step_ind]
 
     # fig, ax = plt.subplots()
     # kpl.histogram(ax, sig_counts[6].flatten())
@@ -139,6 +117,7 @@ def main(nv_list, num_reps, num_runs, scc_include_inds=None, uwave_ind_list=[0, 
         seq_args = [
             widefield.get_base_scc_seq_args(nv_list, uwave_ind_list, scc_include_inds)
         ]
+        # print(seq_args)
         seq_args_string = tb.encode_seq_args(seq_args)
         pulse_gen.stream_load(seq_file, seq_args_string, num_reps)
 
@@ -151,9 +130,8 @@ def main(nv_list, num_reps, num_runs, scc_include_inds=None, uwave_ind_list=[0, 
         num_runs,
         run_fn=run_fn,
         uwave_ind_list=uwave_ind_list,
-        save_all_images=True,
+        save_images=False,
         charge_prep_fn=None,
-        save_images_downsample_factor=None,
     )
 
     ### Report results and cleanup
@@ -161,6 +139,7 @@ def main(nv_list, num_reps, num_runs, scc_include_inds=None, uwave_ind_list=[0, 
     try:
         figs = process_and_plot(data)
     except Exception:
+        print(traceback.format_exc())
         figs = None
 
     timestamp = dm.get_time_stamp()
@@ -179,8 +158,6 @@ def main(nv_list, num_reps, num_runs, scc_include_inds=None, uwave_ind_list=[0, 
 
 if __name__ == "__main__":
     kpl.init_kplotlib()
-
-    # data = dm.get_raw_data(file_id=1548854318015)  # 6/2 benchmark
-    data = dm.get_raw_data(file_id=1557059855690)
+    data = dm.get_raw_data(file_id=1560609724329)
     figs = process_and_plot(data)
     kpl.show(block=True)

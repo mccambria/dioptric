@@ -38,6 +38,9 @@ def init(num_nvs=None):
     global _cache_duration
     _cache_duration = qua.declare(int)
 
+    global _cache_amp
+    _cache_amp = qua.declare(qua.fixed)
+
     global _cache_target
     _cache_target = qua.declare(bool)
 
@@ -180,10 +183,12 @@ def macro_ionize(ion_coords_list):
 def macro_scc(
     scc_coords_list,
     scc_duration_list=None,
+    scc_amp_list=None,
     spin_flip_ind_list=None,
     uwave_ind_list=None,
     shelving_coords_list=None,
     scc_duration_override=None,
+    scc_amp_override=None,
     exp_spin_flip=True,
     ref_spin_flip=False,
 ):
@@ -217,9 +222,11 @@ def macro_scc(
         _macro_scc_no_shelving(
             scc_coords_list,
             scc_duration_list,
+            scc_duration_override,
+            scc_amp_list,
+            scc_amp_override,
             spin_flip_ind_list,
             uwave_ind_list,
-            scc_duration_override,
             exp_spin_flip=exp_spin_flip,
             ref_spin_flip=ref_spin_flip,
         )
@@ -282,9 +289,11 @@ def _macro_scc_shelving(
 def _macro_scc_no_shelving(
     coords_list,
     duration_list=None,
+    duration_override=None,
+    amp_list=None,
+    amp_override=None,
     exp_spin_flip_ind_list=None,
     uwave_ind_list=None,
-    duration_override=None,
     exp_spin_flip=True,
     ref_spin_flip=False,
 ):
@@ -306,11 +315,18 @@ def _macro_scc_no_shelving(
         for ind in range(num_nvs)
         if ind not in exp_spin_flip_ind_list
     ]
+    first_amp_list = [
+        amp_list[ind] for ind in range(num_nvs) if ind not in exp_spin_flip_ind_list
+    ]
 
     # Actual commands
 
     if ref_spin_flip:
         macro_pi_pulse(uwave_ind_list)
+
+    # MCC antiphase by orientation
+    # if exp_spin_flip:
+    #     macro_pi_pulse(uwave_ind_list[:1])
 
     _macro_pulse_list(
         ion_laser_name,
@@ -318,6 +334,8 @@ def _macro_scc_no_shelving(
         first_coords_list,
         duration_list=first_duration_list,
         duration_override=duration_override,
+        amp_list=first_amp_list,
+        amp_override=amp_override,
     )
 
     # Just exit here if all NVs are SCC'ed in the first batch
@@ -330,6 +348,9 @@ def _macro_scc_no_shelving(
     second_duration_list = [
         duration_list[ind] for ind in range(num_nvs) if ind in exp_spin_flip_ind_list
     ]
+    second_amp_list = [
+        amp_list[ind] for ind in range(num_nvs) if ind in exp_spin_flip_ind_list
+    ]
 
     if exp_spin_flip:
         macro_pi_pulse(uwave_ind_list)
@@ -340,6 +361,8 @@ def _macro_scc_no_shelving(
         second_coords_list,
         duration_list=second_duration_list,
         duration_override=duration_override,
+        amp_list=second_amp_list,
+        amp_override=amp_override,
     )
 
 
@@ -516,8 +539,10 @@ def _macro_pulse_list(
     pulse_name,
     coords_list,
     duration_list=None,
-    target_list=None,
     duration_override=None,
+    amp_list=None,
+    amp_override=None,
+    target_list=None,
 ):
     """Apply a laser pulse to each coordinate pair in the passed coords_list.
     Pulses are applied in series
@@ -547,7 +572,7 @@ def _macro_pulse_list(
         duration_list = [convert_ns_to_cc(el) for el in duration_list]
 
     # These are declared in init
-    global _cache_x_freq, _cache_y_freq, _cache_duration, _cache_target
+    global _cache_x_freq, _cache_y_freq, _cache_duration, _cache_amp, _cache_target
 
     def macro_sub():
         if duration_override is not None:
@@ -556,48 +581,47 @@ def _macro_pulse_list(
             duration = _cache_duration
         else:
             duration = None
+        if amp_override is not None:
+            amp = amp_override
+        elif amp_list is not None:
+            amp = _cache_amp
+        else:
+            amp = None
         macro_pulse(
             laser_name,
             (_cache_x_freq, _cache_y_freq),
             pulse_name=pulse_name,
             duration=duration,
+            amp=amp,
             convert_to_Hz=False,
         )
 
     qua.align()
 
-    # Branch based on what lists are populated
-    if target_list is None and duration_list is None:
-        with qua.for_each_(
-            (_cache_x_freq, _cache_y_freq), (x_coords_list, y_coords_list)
-        ):
-            macro_sub()
-    elif target_list is None and duration_list is not None:
-        with qua.for_each_(
-            (_cache_x_freq, _cache_y_freq, _cache_duration),
-            (x_coords_list, y_coords_list, duration_list),
-        ):
-            macro_sub()
-    elif target_list is not None and duration_list is None:
-        with qua.for_each_(
-            (_cache_x_freq, _cache_y_freq, _cache_target),
-            (x_coords_list, y_coords_list, target_list),
-        ):
-            with qua.if_(_cache_target):
-                macro_sub()
-    elif target_list is not None and duration_list is not None:
-        with qua.for_each_(
-            (_cache_x_freq, _cache_y_freq, _cache_duration, _cache_target),
-            (x_coords_list, y_coords_list, duration_list, target_list),
-        ):
-            with qua.if_(_cache_target):
-                macro_sub()
+    # Adjust the for each based on what lists are populated
+
+    list_1 = [_cache_x_freq, _cache_y_freq]
+    list_2 = [x_coords_list, y_coords_list]
+    if duration_list is not None:
+        list_1.append(_cache_duration)
+        list_2.append(duration_list)
+    if amp_list is not None:
+        list_1.append(_cache_amp)
+        list_2.append(amp_list)
+    if target_list is not None:
+        list_1.append(_cache_target)
+        list_2.append(target_list)
+
+    with qua.for_each_(tuple(list_1), tuple(list_2)):
+        macro_sub()
 
 
-def macro_pulse(laser_name, coords, pulse_name="on", duration=None, convert_to_Hz=True):
+def macro_pulse(
+    laser_name, coords, pulse_name="on", duration=None, amp=None, convert_to_Hz=True
+):
     qua.align()
     _macro_single_pulse(
-        laser_name, coords, pulse_name, duration, convert_to_Hz=convert_to_Hz
+        laser_name, coords, pulse_name, duration, amp, convert_to_Hz=convert_to_Hz
     )
 
 
@@ -629,7 +653,13 @@ def macro_multi_pulse(
 
 
 def _macro_single_pulse(
-    laser_name, coords, pulse_name="on", duration=None, delay=0, convert_to_Hz=True
+    laser_name,
+    coords,
+    pulse_name="on",
+    duration=None,
+    amp=None,
+    delay=0,
+    convert_to_Hz=True,
 ):
     # Setup
     laser_el = get_laser_mod_element(laser_name)
@@ -644,8 +674,11 @@ def _macro_single_pulse(
     if convert_to_Hz:
         coords = [int(el * 10**6) for el in coords]
 
-    qua.play("continue", x_el)
-    qua.play("continue", y_el)
+    if amp is None:
+        qua.play("continue", x_el)
+        qua.play("continue", y_el)
+    else:
+        macro_run_aods(laser_names=[laser_name], aod_suffices=[pulse_name], amps=[amp])
     qua.update_frequency(x_el, coords[0])
     qua.update_frequency(y_el, coords[1])
 

@@ -117,17 +117,17 @@ def process_and_plot(raw_data):
     for ind in range(num_nvs):
         sig_counts_list = sig_counts_lists[ind]
         ref_counts_list = ref_counts_lists[ind]
-        fig = create_histogram(sig_counts_list, ref_counts_list)
+        fig = create_histogram(sig_counts_list, ref_counts_list, density=True)
         hist_figs.append(fig)
         all_counts_list = np.append(sig_counts_list, ref_counts_list)
         # nvn_ratio = 0.3
-        nvn_ratio = 0.1
+        nvn_ratio = 0.15
         threshold = determine_threshold(all_counts_list, nvn_ratio=nvn_ratio)
         threshold_list.append(threshold)
         # threshold = prior_thresholds[ind]
         prep_fidelity_list.append(
-            # np.sum(np.greater(ref_counts_list, threshold)) / num_shots
-            np.sum(np.less(sig_counts_list, threshold)) / num_shots
+            np.sum(np.greater(ref_counts_list, threshold)) / num_shots
+            # np.sum(np.less(sig_counts_list, threshold)) / num_shots
         )
     print(threshold_list)
     print([round(el, 3) for el in prep_fidelity_list])
@@ -230,10 +230,9 @@ def main(
         num_reps,
         num_runs,
         run_fn=run_fn,
-        save_all_images=True,
+        save_images=True,
         charge_prep_fn=charge_prep_fn,
         # uwave_ind_list=[0, 1],  # MCC
-        save_images_downsample_factor=None,
     )
 
     ### Processing
@@ -274,11 +273,11 @@ def main(
         diff_img_array = None
         keys_to_compress = None
 
-    # try:
-    #     del raw_data["img_arrays"]
-    # except Exception:
-    #     pass
-    keys_to_compress = ["img_arrays"]
+    try:
+        del raw_data["img_arrays"]
+    except Exception:
+        pass
+    # keys_to_compress = ["img_arrays"]
 
     ### Save raw data
 
@@ -301,7 +300,8 @@ def main(
 
 if __name__ == "__main__":
     kpl.init_kplotlib()
-    data = dm.get_raw_data(file_id=1556934779836)
+    # data = dm.get_raw_data(file_id=1556934779836)
+    data = dm.get_raw_data(file_id=1558619706453)
     process_and_plot(data)
 
     ### Images

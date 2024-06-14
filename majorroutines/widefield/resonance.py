@@ -11,6 +11,7 @@ Created on November 19th, 2023
 import os
 import sys
 import time
+import traceback
 from random import shuffle
 
 import matplotlib.pyplot as plt
@@ -164,9 +165,10 @@ def create_fit_figure(
         no_legend=no_legend,
     )
 
-    kpl.set_mosaic_xlabel(axes_pack, layout, "Frequency (GHz)")
-    # kpl.set_mosaic_ylabel(axes_pack, layout, "Change in NV$^{-}$ fraction")
-    kpl.set_mosaic_ylabel(axes_pack, layout, "$\Delta$NV$^{-}$")
+    ax = axes_pack[layout[-1, 0]]
+    kpl.set_shared_ax_xlabel(ax, "Frequency (GHz)")
+    kpl.set_shared_ax_ylabel(ax, "Change in $P($NV$^{-})$")
+    ax.set_yticks([0, 0.1])
 
     # ax = axes_pack[layout[-1, 0]]
     # ax.set_xlabel(" ")
@@ -192,26 +194,54 @@ def main(
     num_runs,
     freq_center,
     freq_range,
-    uwave_ind=0,
+    uwave_ind_list=[0, 1],
 ):
     ### Some initial setup
 
     pulse_gen = tb.get_server_pulse_gen()
-    sig_gen = tb.get_server_sig_gen(ind=uwave_ind)
     freqs = calculate_freqs(freq_center, freq_range, num_steps)
+    original_num_steps = num_steps
+    num_steps *= 4  # For sig, ms=0 ref, and ms=+/-1 ref
 
-    seq_file = "resonance_ref.py"
+    seq_file = "resonance_ref2.py"
 
     ### Collect the data
 
     def run_fn(step_inds):
-        seq_args = [widefield.get_base_scc_seq_args(nv_list, uwave_ind), step_inds]
+        seq_args = [widefield.get_base_scc_seq_args(nv_list, uwave_ind_list), step_inds]
         seq_args_string = tb.encode_seq_args(seq_args)
         pulse_gen.stream_load(seq_file, seq_args_string, num_reps)
 
+    # def step_fn(step_ind):
+    #     freq = freqs[step_ind]
+    #     sig_gen.set_freq(freq)
+
     def step_fn(step_ind):
-        freq = freqs[step_ind]
-        sig_gen.set_freq(freq)
+        if step_ind < (1 / 2) * num_steps:
+            freq = freqs[step_ind % original_num_steps]
+
+            uwave_ind = uwave_ind_list[0]
+            uwave_dict = tb.get_uwave_dict(uwave_ind)
+            sig_gen = tb.get_server_sig_gen(ind=uwave_ind)
+            sig_gen.set_amp(uwave_dict["uwave_power"])
+            sig_gen.set_freq(freq)
+            sig_gen.uwave_on()
+
+            uwave_ind = uwave_ind_list[1]
+            sig_gen = tb.get_server_sig_gen(ind=uwave_ind)
+            sig_gen.uwave_off()
+
+        elif step_ind < (3 / 4) * num_steps:  # ms=0 ref
+            for uwave_ind in uwave_ind_list:
+                sig_gen = tb.get_server_sig_gen(ind=uwave_ind)
+                sig_gen.uwave_off()
+        else:  # ms=+/-1 ref
+            for uwave_ind in uwave_ind_list:
+                uwave_dict = tb.get_uwave_dict(uwave_ind)
+                sig_gen = tb.get_server_sig_gen(ind=uwave_ind)
+                sig_gen.set_amp(uwave_dict["uwave_power"])
+                sig_gen.set_freq(uwave_dict["frequency"])
+                sig_gen.uwave_on()
 
     raw_data = base_routine.main(
         nv_list,
@@ -220,7 +250,9 @@ def main(
         num_runs,
         run_fn,
         step_fn,
-        uwave_ind_list=uwave_ind,
+        uwave_ind_list=uwave_ind_list,
+        save_images=True,
+        num_exps_per_rep=1,
     )
     counts = raw_data["states"]
 
@@ -235,8 +267,8 @@ def main(
         )
         raw_fig = create_raw_data_figure(nv_list, freqs, avg_counts, avg_counts_ste)
         fit_fig = create_fit_figure(nv_list, freqs, avg_counts, avg_counts_ste, norms)
-    except Exception as exc:
-        print(exc)
+    except Exception:
+        print(traceback.format_exc())
         raw_fig = None
         fit_fig = None
 
@@ -269,7 +301,7 @@ if __name__ == "__main__":
     kpl.init_kplotlib()
 
     # data = dm.get_raw_data(file_id=1546290628159)
-    data = dm.get_raw_data(file_id=1548426318061)
+    data = dm.get_raw_data(file_id=1543601415736)
 
     nv_list = data["nv_list"]
     num_nvs = len(nv_list)

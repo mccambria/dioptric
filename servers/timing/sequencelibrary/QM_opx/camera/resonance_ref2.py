@@ -19,52 +19,24 @@ from servers.timing.sequencelibrary.QM_opx import seq_utils
 from servers.timing.sequencelibrary.QM_opx.camera import base_scc_sequence
 
 
-def get_seq(base_scc_seq_args, num_reps=1):
-    buffer = seq_utils.get_widefield_operation_buffer()
-    pi_pulse_duration = seq_utils.get_macro_pi_pulse_duration([1])
+def get_seq(
+    base_scc_seq_args,
+    step_vals=None,
+    num_reps=1,
+):
+    reference = False
+
     with qua.program() as seq:
 
-        def uwave_macro_sig(uwave_ind_list, step_val):
-            #     uwave_ind_list = [0]
+        def uwave_macro(uwave_ind_list, step_val):
             seq_utils.macro_pi_pulse(uwave_ind_list)
-
-        #     seq_utils.macro_pi_on_2_pulse(uwave_ind_list)
-
-        # MCC spin echo test
-        # def uwave_macro_sig(uwave_ind_list, step_val):
-        #     seq_utils.macro_pi_on_2_pulse(uwave_ind_list)
-        #     qua.wait(4)
-        #     seq_utils.macro_pi_pulse(uwave_ind_list)
-        #     qua.wait(4)
-        #     # seq_utils.macro_pi_pulse(uwave_ind_list)
-        #     seq_utils.macro_pi_on_2_pulse(uwave_ind_list)
-        #     qua.wait(buffer)
-
-        # MCC Ramsey test
-        # def uwave_macro_sig(uwave_ind_list, step_val):
-        #     uwave_ind_list = [0]
-        #     seq_utils.macro_pi_on_2_pulse(uwave_ind_list)
-        #     qua.wait(pi_pulse_duration)
-        #     seq_utils.macro_pi_on_2_pulse(uwave_ind_list)
-        #     # seq_utils.macro_pi_pulse(uwave_ind_list)
-        #     # for ind in uwave_ind_list:
-        #     #     qua.align()
-        #     #     seq_utils.macro_pi_on_2_pulse([ind])
-        #     #     # qua.wait(10)
-        #     #     # seq_utils.macro_pi_pulse(uwave_ind_list)
-        #     #     # qua.wait(4)
-        #     #     # seq_utils.macro_pi_pulse(uwave_ind_list)
-        #     #     seq_utils.macro_pi_on_2_pulse([ind])
-        #     # qua.wait(buffer)
-
-        def uwave_macro_ref(uwave_ind_list, step_val):
-            pass
 
         base_scc_sequence.macro(
             base_scc_seq_args,
-            [uwave_macro_sig, uwave_macro_ref],
+            uwave_macro,
+            step_vals,
             num_reps=num_reps,
-            reference=False,
+            reference=reference,
         )
 
     seq_ret_vals = []
@@ -93,11 +65,11 @@ if __name__ == "__main__":
                     [73.91305409727465, 75.64165445569202],
                     [73.42805409727465, 75.66565445569202],
                 ],
-                [1000, 160, 1000],
-                [1.0, 0.1, 1.2],
+                [144, 160, 164],
                 [],
-                [0, 1],
+                [0],
             ],
+            [136, 168, 112, 224],
             10,
         )
 

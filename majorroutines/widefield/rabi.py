@@ -8,6 +8,7 @@ Created on November 29th, 2023
 """
 
 import time
+import traceback
 
 import matplotlib.pyplot as plt
 import numpy as np
@@ -122,15 +123,17 @@ def create_fit_figure(nv_list, taus, counts, counts_ste, norms):
         fit_fns,
         popts,
         xlim=[0, None],
+        no_legend=True,
     )
-    ax = axes_pack[layout[-1, 0]]
-    ax.set_xlabel(" ")
-    fig.text(0.55, 0.01, "Pulse duration (ns)", ha="center")
-    ax.set_ylabel(" ")
-    label = "Change in fraction in NV$^{-}$"
-    fig.text(0.01, 0.55, label, va="center", rotation="vertical")
+
+    ax = axes_pack[layout[-1][0]]
+    kpl.set_shared_ax_xlabel(ax, "Pulse duration (ns)")
+    kpl.set_shared_ax_ylabel(ax, "Change in $P($NV$^{-})$")
+
     # ax.set_ylim([0.966, 1.24])
     # ax.set_yticks([1.0, 1.2])
+    ax.set_yticks([0, 0.1])
+
     return fig
 
 
@@ -177,24 +180,23 @@ def main(nv_list, num_steps, num_reps, num_runs, min_tau, max_tau, uwave_ind_lis
         num_runs,
         run_fn=run_fn,
         uwave_ind_list=uwave_ind_list,
-        save_all_images=False,
+        save_images=True,
     )
 
     ### Process and plot
 
     try:
-        # counts = raw_data["counts"]
-        counts = raw_data["states"]
+        counts = raw_data["counts"]
         sig_counts = counts[0]
         ref_counts = counts[1]
         avg_counts, avg_counts_ste, norms = widefield.process_counts(
-            nv_list, sig_counts, ref_counts, threshold=False
+            nv_list, sig_counts, ref_counts, threshold=True
         )
 
         raw_fig = create_raw_data_figure(nv_list, taus, avg_counts, avg_counts_ste)
         fit_fig = create_fit_figure(nv_list, taus, avg_counts, avg_counts_ste, norms)
-    except Exception as exc:
-        print(exc)
+    except Exception:
+        print(traceback.format_exc())
         raw_fig = None
         fit_fig = None
 
@@ -226,10 +228,7 @@ def main(nv_list, num_steps, num_reps, num_runs, min_tau, max_tau, uwave_ind_lis
 if __name__ == "__main__":
     kpl.init_kplotlib()
 
-    # data = dm.get_raw_data(file_id=1538601728884, load_npz=True)
-    # data = dm.get_raw_data(file_id=1540791781984)
-    # data = dm.get_raw_data(file_id=1543670303416)
-    data = dm.get_raw_data(file_id=1550171089315)
+    data = dm.get_raw_data(file_id=1560700983819)
 
     nv_list = data["nv_list"]
     num_nvs = len(nv_list)
@@ -237,14 +236,13 @@ if __name__ == "__main__":
     num_runs = data["num_runs"]
     taus = data["taus"]
 
-    counts = np.array(data["states"])
+    counts = np.array(data["counts"])
     sig_counts = counts[0]
     ref_counts = counts[1]
 
     avg_counts, avg_counts_ste, norms = widefield.process_counts(
-        nv_list, sig_counts, ref_counts, threshold=False
+        nv_list, sig_counts, ref_counts, threshold=True
     )
-    # norms = np.mean(norms[0], axis=0)
 
     raw_fig = create_raw_data_figure(nv_list, taus, avg_counts, avg_counts_ste)
     fit_fig = create_fit_figure(nv_list, taus, avg_counts, avg_counts_ste, norms)

@@ -78,18 +78,16 @@ def do_image_single_nv(nv_sig):
     return image_sample.single_nv(nv_sig, num_reps)
 
 
-def do_charge_state_histograms(nv_list, verify_charge_states=False):
+def do_charge_state_histograms(nv_list):
     num_reps = 200
     num_runs = 40
     # num_runs = 20
     # num_runs = 2
-    return charge_state_histograms.main(
-        nv_list,
-        num_reps,
-        num_runs,
-        verify_charge_states=verify_charge_states,
-        ion_include_inds=[0, 1, 2, 3, 5],
-    )
+    # for ion_include_inds in [None, [0, 1, 2, 3, 4, 5]]:
+    #     charge_state_histograms.main(
+    #         nv_list, num_reps, num_runs, ion_include_inds=ion_include_inds
+    #     )
+    return charge_state_histograms.main(nv_list, num_reps, num_runs)
 
 
 def do_optimize_green(nv_sig, do_plot=True):
@@ -186,28 +184,44 @@ def do_calibrate_green_red_delay():
     pulse_gen.halt()
 
 
-def do_optimize_scc(nv_list):
+def do_optimize_scc_duration(nv_list):
     min_tau = 16
     max_tau = 224
-    # min_tau = 100
-    # max_tau = 308
     num_steps = 14
-    num_reps = 5
+    num_reps = 15
 
-    # min_tau = 16
-    # max_tau = 104
-    # num_steps = 12
-    # num_reps = 8
+    # num_runs = 20 * 25
+    num_runs = 30
+    num_runs = 50
+    num_runs = 2
 
+    optimize_scc.optimize_scc_duration(
+        nv_list, num_steps, num_reps, num_runs, min_tau, max_tau
+    )
+
+
+def do_optimize_scc_amp(nv_list):
+    min_tau = 0.7
+    max_tau = 1.3
+    num_steps = 16
+    num_reps = 15
+
+    num_runs = 30
+    # num_runs = 50
     # num_runs = 2
-    num_runs = 20 * 25
 
-    optimize_scc.main(nv_list, num_steps, num_reps, num_runs, min_tau, max_tau)
+    optimize_scc.optimize_scc_amp(
+        nv_list, num_steps, num_reps, num_runs, min_tau, max_tau
+    )
 
 
 def do_scc_snr_check(nv_list):
-    num_reps = 100
-    num_runs = 100
+    # num_reps = 100
+    # num_runs = 100
+    num_reps = 200
+    num_runs = 20
+    # num_runs = 160 * 4
+    # num_runs = 2
     scc_snr_check.main(nv_list, num_reps, num_runs, uwave_ind_list=[0, 1])
 
 
@@ -244,12 +258,15 @@ def do_resonance(nv_list):
     freq_center = 2.87
     freq_range = 0.180
     num_steps = 40
-    num_reps = 8
-    num_runs = 120
+    # Single ref
+    # num_reps = 8
+    # num_runs = 120
     # num_runs = 50
 
-    # num_reps = 3
-    # num_runs = 150
+    # Both refs
+    num_reps = 2
+    num_runs = 1000
+
     # num_runs = 2
 
     resonance.main(nv_list, num_steps, num_reps, num_runs, freq_center, freq_range)
@@ -267,19 +284,22 @@ def do_resonance_zoom(nv_list):
 
 def do_rabi(nv_list):
     min_tau = 16
-    # max_tau = 240 + min_tau
+    max_tau = 240 + min_tau
     # max_tau = 360 + min_tau
-    max_tau = 480 + min_tau
+    # max_tau = 480 + min_tau
     num_steps = 31
     num_reps = 10
-    # num_runs = 100
-    num_runs = 50
-    # num_runs = 2
+    num_runs = 100
+    # num_runs = 50
+    # num_runs = 20
 
     # uwave_ind_list = [1]
     uwave_ind_list = [0, 1]
-
     rabi.main(nv_list, num_steps, num_reps, num_runs, min_tau, max_tau, uwave_ind_list)
+    # uwave_ind_list = [0]
+    # rabi.main(nv_list, num_steps, num_reps, num_runs, min_tau, max_tau, uwave_ind_list)
+    # uwave_ind_list = [1]
+    # rabi.main(nv_list, num_steps, num_reps, num_runs, min_tau, max_tau, uwave_ind_list)
 
 
 def do_ac_stark(nv_list):
@@ -633,7 +653,7 @@ if __name__ == "__main__":
     pixel_coords_key = "pixel_coords"
 
     sample_name = "johnson"
-    z_coord = 4.38
+    z_coord = 4.43
     magnet_angle = 90
     date_str = "2024_03_12"
     global_coords = [None, None, z_coord]
@@ -652,7 +672,7 @@ if __name__ == "__main__":
         [137.025, 74.662],
         [58.628, 139.616],
         # Smiley additions
-        # [150.34, 119.249],  # Too much crosstalk
+        [150.34, 119.249],  # Too much crosstalk
         [61.277, 76.387],
         [85.384, 33.935],
     ]
@@ -668,6 +688,8 @@ if __name__ == "__main__":
         [109.387, 110.167],
         [108.529, 111.472],
         [106.843, 109.874],
+        #
+        [108.869, 110.525],
         [106.776, 111.351],
         [107.227, 112.366],
     ]
@@ -683,23 +705,23 @@ if __name__ == "__main__":
         [73.518, 76.561],
         [72.122, 75.258],
         #
-        # [73.825, 75.724],
+        [73.825, 75.724],
         [72.124, 76.462],
         [72.518, 77.284],
     ]
     threshold_list = [
-        26.5,
         27.5,
+        28.5,
+        28.5,
+        28.5,
         25.5,
-        27.5,
-        23.5,
-        23.5,
-        21.5,
-        23.5,
+        25.5,
         24.5,
-        18.5,
+        24.5,
+        28.5,
+        20.5,
         #
-        # 22.5,
+        22.5,
         22.5,
         22.5,
     ]
@@ -715,11 +737,50 @@ if __name__ == "__main__":
         110,
         103,
         #
-        # 115,
+        120,
         120,
         120,
     ]
+    scc_duration_list = [100] * num_nvs
+    scc_duration_list[5] = 150
+    scc_duration_list[7] = 150
+    scc_duration_list[8] = 150
+    scc_duration_list[9] = 150
+    # scc_duration_list = [
+    #     50,
+    #     90,
+    #     120,
+    #     106,
+    #     123,
+    #     111,
+    #     131,
+    #     132,
+    #     110,
+    #     103,
+    #     #
+    #     100,
+    #     100,
+    #     100,
+    # ]
+    # scc_duration_list = [
+    #     138,
+    #     124,
+    #     111,
+    #     156,
+    #     139,
+    #     104,
+    #     104,
+    #     105,
+    #     106,
+    #     135,
+    #     120,
+    #     120,
+    #     120,
+    # ]
+    scc_duration_list = [100] * num_nvs
     scc_duration_list = [4 * round(el / 4) for el in scc_duration_list]
+    scc_amp_list = [1.18, 1.12, 1.1, 1.05, 1.1, 1.11, 1.1, 1.12, 1.07, 1.1, 1, 1, 1]
+    # scc_amp_list = [1.0] * num_nvs
     # scc_duration_list = [None] * num_nvs
     # endregion
     # region NV list construction
@@ -738,13 +799,14 @@ if __name__ == "__main__":
             coords=coords,
             threshold=threshold_list[ind],
             scc_duration=scc_duration_list[ind],
+            scc_amp=scc_amp_list[ind],
         )
         nv_list.append(nv_sig)
 
     # Additional properties for the representative NV
     nv_list[0].representative = True
     nv_sig = widefield.get_repr_nv_sig(nv_list)
-    nv_sig.expected_counts = 1200
+    nv_sig.expected_counts = 1150
     num_nvs = len(nv_list)
 
     # nv_inds = [0, 1]
@@ -788,10 +850,11 @@ if __name__ == "__main__":
     #     print(f"{r_coords},")
     # sys.exit()
 
-    nv_list = [nv_list[ind] for ind in [0, 1, 5, 6, 10, 11]]  # Smiley
+    # nv_list = [nv_list[ind] for ind in [0, 1, 5, 6, 10, 11, 12]]  # Smiley
+    # nv_list = [nv_list[ind] for ind in [0, 1, 5, 6, 10, 11]]  # Smiley
     # nv_list = [nv_list[0], *nv_list[10:]]
-
     # nv_list = [nv_list[2]]
+    nv_list = nv_list[:10]
 
     # endregion
 
@@ -808,7 +871,7 @@ if __name__ == "__main__":
         # widefield.reset_all_drift()
         # pos.reset_drift()  # Reset z drift
         # widefield.set_pixel_drift(
-        #     np.array([139.435, 178.025])  # New coords
+        #     np.array([140.6, 167.0])  # New coords
         #     - np.array([131.144, 129.272])  # Original coords
         # )
         # widefield.set_all_scanning_drift_from_pixel_drift()
@@ -823,7 +886,7 @@ if __name__ == "__main__":
 
         # do_scanning_image_sample(nv_sig)
         # do_scanning_image_sample_zoom(nv_sig)
-        # do_widefield_image_sample(nv_sig, 20)
+        do_widefield_image_sample(nv_sig, 20)
         # do_widefield_image_sample(nv_sig, 200)
 
         # do_image_nv_list(nv_list)
@@ -836,7 +899,7 @@ if __name__ == "__main__":
         # do_optimize_red(nv_sig)
         # do_image_single_nv(nv_sig)
 
-        optimize.optimize_pixel_and_z(nv_sig, do_plot=True)
+        # optimize.optimize_pixel_and_z(nv_sig, do_plot=True)
         # do_image_nv_list(nv_list)
         # for ind in range(20):
         #     do_optimize_pixel(nv_sig)
@@ -852,12 +915,12 @@ if __name__ == "__main__":
         # do_optimize_loop(nv_list, coords_key, scanning_from_pixel=False)
 
         # nv_list = nv_list[::-1]
-        do_charge_state_histograms(nv_list)
+        # do_charge_state_histograms(nv_list)
         # do_check_readout_fidelity(nv_list)
 
-        # do_resonance(nv_list)
         # do_resonance_zoom(nv_list)
         # do_rabi(nv_list)
+        # do_resonance(nv_list)
         # do_spin_echo(nv_list)
         # do_power_rabi(nv_list)
         # do_correlation_test(nv_list)
@@ -875,7 +938,8 @@ if __name__ == "__main__":
 
         # nv_list = nv_list[::-1]
         # do_scc_snr_check(nv_list)
-        # do_optimize_scc(nv_list)
+        # do_optimize_scc_duration(nv_list)
+        # do_optimize_scc_amp(nv_list)
         # do_crosstalk_check(nv_sig)
         # do_spin_pol_check(nv_sig)
         # do_calibrate_green_red_delay()

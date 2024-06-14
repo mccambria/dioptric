@@ -230,7 +230,11 @@ def threshold_counts(
             threshold = determine_threshold(sig_counts[ind], no_print=True)
             thresholds.append(threshold)
     else:
-        thresholds = [1.2 * nv.threshold for nv in nv_list]  # MCC
+        thresholds = [nv.threshold for nv in nv_list]
+        # thresholds = [27.5, 28.5, 28.5, 28.5, 25.5, 25.5, 24.5, 24.5, 28.5, 20.5]
+        # thresholds = [1.3 * nv.threshold for nv in nv_list]  # MCC
+        # thresholds[5] += 2
+        # thresholds[6] += 2
     print(thresholds)
 
     thresholds = np.array(thresholds)
@@ -483,12 +487,14 @@ def get_base_scc_seq_args(
         nv_list, LaserKey.SCC, include_inds=scc_include_inds
     )
     scc_duration_list = get_scc_duration_list(nv_list, include_inds=scc_include_inds)
+    scc_amp_list = get_scc_amp_list(nv_list, include_inds=scc_include_inds)
     spin_flip_ind_list = get_spin_flip_ind_list(nv_list)
 
     seq_args = [
         pol_coords_list,
         scc_coords_list,
         scc_duration_list,
+        scc_amp_list,
         spin_flip_ind_list,
         uwave_ind_list,
     ]
@@ -529,6 +535,19 @@ def get_scc_duration_list(nv_list: list[NVSig], include_inds=None):
     if include_inds is not None:
         scc_duration_list = [scc_duration_list[ind] for ind in include_inds]
     return scc_duration_list
+
+
+def get_scc_amp_list(nv_list: list[NVSig], include_inds=None):
+    scc_amp_list = []
+    for nv in nv_list:
+        scc_amp = nv.scc_amp
+        # if scc_amp is None:
+        #     config = common.get_config_dict()
+        #     scc_amp = config["Optics"][LaserKey.SCC]["duration"]
+        scc_amp_list.append(scc_amp)
+    if include_inds is not None:
+        scc_amp_list = [scc_amp_list[ind] for ind in include_inds]
+    return scc_amp_list
 
 
 # endregion
@@ -875,10 +894,13 @@ def draw_circles_on_nvs(
         )
         points.append(point)
     if not no_legend:
-        ncols = (num_nvs // 5) + (1 if num_nvs % 5 > 0 else 0)
-        ncols = 6
+        # ncols = (num_nvs // 5) + (1 if num_nvs % 5 > 0 else 0)
+        # ncols = 6
+        nrows = 2
+        ncols = np.ceil(num_nvs / nrows)
         # ax.legend(loc=kpl.Loc.LOWER_CENTER, ncols=ncols, markerscale=0.9)
-        ax.legend(loc=kpl.Loc.UPPER_LEFT, ncols=ncols, markerscale=0.5)
+        ax.legend(loc=kpl.Loc.UPPER_CENTER, ncols=ncols, markerscale=0.5)
+        # ax.legend(loc=kpl.Loc.UPPER_LEFT, ncols=ncols, markerscale=0.5)
 
     if include_inds is not None:
         for ind in range(num_nvs):

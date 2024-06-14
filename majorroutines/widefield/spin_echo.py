@@ -154,10 +154,9 @@ def create_fit_figure(data, axes_pack=None, layout=None, no_legend=False):
         # popts,
         no_legend=no_legend,
     )
-    kpl.set_mosaic_xlabel(axes_pack, layout, "Total evolution time (µs)")
-    # kpl.set_mosaic_xlabel(axes_pack, layout, "Evolution time (µs)")
-    # kpl.set_mosaic_ylabel(axes_pack, layout, "Change in NV$^{-}$ fraction")
-    kpl.set_mosaic_ylabel(axes_pack, layout, "$\Delta$NV$^{-}$")
+    ax = axes_pack[layout[-1, 0]]
+    kpl.set_shared_ax_xlabel(ax, "Total evolution time (µs)")
+    kpl.set_shared_ax_ylabel(ax, "Change in $P($NV$^{-})$")
     return fig
 
 
@@ -239,7 +238,7 @@ def main(nv_list, num_steps, num_reps, num_runs, min_tau, max_tau):
         num_runs,
         run_fn,
         uwave_ind_list=uwave_ind_list,
-        save_all_images=False,
+        save_images=False,
     )
 
     ### Process and plot

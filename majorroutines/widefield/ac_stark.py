@@ -123,9 +123,9 @@ def create_fit_figure(nv_list, taus, counts, counts_ste, norms):
         # popts,
         xlim=[0, None],
     )
-    kpl.set_mosaic_xlabel(fig, axes_pack, layout, "Pulse duration (ns)")
+    kpl.set_shared_ax_xlabel(fig, axes_pack, layout, "Pulse duration (ns)")
     label = "Change in fraction in NV$^{-}$"
-    kpl.set_mosaic_ylabel(fig, axes_pack, layout, label)
+    kpl.set_shared_ax_ylabel(fig, axes_pack, layout, label)
     return fig
 
 
@@ -154,7 +154,7 @@ def main(nv_list, num_steps, num_reps, num_runs, min_tau, max_tau, uwave_ind_lis
         num_runs,
         run_fn=run_fn,
         uwave_ind_list=uwave_ind_list,
-        save_all_images=False,
+        save_images=False,
     )
 
     ### Process and plot

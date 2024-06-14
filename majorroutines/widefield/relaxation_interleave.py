@@ -171,8 +171,8 @@ def create_fit_figure(data):
         fit_fns,
         popts,
     )
-    kpl.set_mosaic_xlabel(fig, axes_pack, layout, "Relaxation time (ms)")
-    kpl.set_mosaic_ylabel(fig, axes_pack, layout, "Change in NV- fraction")
+    kpl.set_shared_ax_xlabel(fig, axes_pack, layout, "Relaxation time (ms)")
+    kpl.set_shared_ax_ylabel(fig, axes_pack, layout, "Change in NV- fraction")
     return fig
 
 

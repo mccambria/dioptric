@@ -108,7 +108,7 @@ def main(
         num_reps,
         num_runs,
         step_fn,
-        save_all_images=False,
+        save_images=False,
         load_iq=True,
     )
 
