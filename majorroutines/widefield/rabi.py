@@ -123,6 +123,7 @@ def create_fit_figure(nv_list, taus, counts, counts_ste, norms):
         fit_fns,
         popts,
         xlim=[0, None],
+        no_legend=True,
     )
 
     ax = axes_pack[layout[-1][0]]
@@ -131,6 +132,7 @@ def create_fit_figure(nv_list, taus, counts, counts_ste, norms):
 
     # ax.set_ylim([0.966, 1.24])
     # ax.set_yticks([1.0, 1.2])
+    ax.set_yticks([0, 0.1])
 
     return fig
 
@@ -226,11 +228,7 @@ def main(nv_list, num_steps, num_reps, num_runs, min_tau, max_tau, uwave_ind_lis
 if __name__ == "__main__":
     kpl.init_kplotlib()
 
-    # data = dm.get_raw_data(file_id=1538601728884, load_npz=True)
-    # data = dm.get_raw_data(file_id=1540791781984)
-    # data = dm.get_raw_data(file_id=1543670303416)
-    # data = dm.get_raw_data(file_id=1550171089315)
-    data = dm.get_raw_data(file_id=1560090714173)
+    data = dm.get_raw_data(file_id=1560700983819)
 
     nv_list = data["nv_list"]
     num_nvs = len(nv_list)

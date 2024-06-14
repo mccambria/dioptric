@@ -168,6 +168,7 @@ def create_fit_figure(
     ax = axes_pack[layout[-1, 0]]
     kpl.set_shared_ax_xlabel(ax, "Frequency (GHz)")
     kpl.set_shared_ax_ylabel(ax, "Change in $P($NV$^{-})$")
+    ax.set_yticks([0, 0.1])
 
     # ax = axes_pack[layout[-1, 0]]
     # ax.set_xlabel(" ")
@@ -300,7 +301,7 @@ if __name__ == "__main__":
     kpl.init_kplotlib()
 
     # data = dm.get_raw_data(file_id=1546290628159)
-    data = dm.get_raw_data(file_id=1548426318061)
+    data = dm.get_raw_data(file_id=1543601415736)
 
     nv_list = data["nv_list"]
     num_nvs = len(nv_list)
