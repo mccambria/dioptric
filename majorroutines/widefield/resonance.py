@@ -45,7 +45,7 @@ def create_fit_figure(
     norms,
     axes_pack=None,
     layout=None,
-    no_legend=False,
+    no_legend=True,
 ):
     ### Do the fitting
 
@@ -148,9 +148,12 @@ def create_fit_figure(
     ### Make the figure
 
     if axes_pack is None:
+        # figsize = [6.5, 6.0]
+        figsize = [6.5, 5.0]
+        # figsize = [6.5, 4.0]
         layout = kpl.calc_mosaic_layout(num_nvs, num_rows=2)
         fig, axes_pack = plt.subplot_mosaic(
-            layout, figsize=[6.5, 4.0], sharex=True, sharey=True
+            layout, figsize=figsize, sharex=True, sharey=True
         )
     axes_pack_flat = list(axes_pack.values())
 

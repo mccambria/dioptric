@@ -109,8 +109,10 @@ def create_fit_figure(nv_list, taus, counts, counts_ste, norms):
 
     layout = kpl.calc_mosaic_layout(num_nvs, num_rows=2)
     # layout = kpl.calc_mosaic_layout(num_nvs)
+    figsize = [6.5, 6.0]
+    figsize = [6.5, 5.0]
     fig, axes_pack = plt.subplot_mosaic(
-        layout, figsize=[6.5, 6.0], sharex=True, sharey=True
+        layout, figsize=figsize, sharex=True, sharey=True
     )
     axes_pack_flat = list(axes_pack.values())
 
@@ -132,6 +134,7 @@ def create_fit_figure(nv_list, taus, counts, counts_ste, norms):
 
     # ax.set_ylim([0.966, 1.24])
     # ax.set_yticks([1.0, 1.2])
+    ax.set_xticks([0, 200])
     ax.set_yticks([0, 0.1])
 
     return fig
@@ -228,7 +231,7 @@ def main(nv_list, num_steps, num_reps, num_runs, min_tau, max_tau, uwave_ind_lis
 if __name__ == "__main__":
     kpl.init_kplotlib()
 
-    data = dm.get_raw_data(file_id=1560700983819)
+    data = dm.get_raw_data(file_id=1560700983819, load_npz=False)
 
     nv_list = data["nv_list"]
     num_nvs = len(nv_list)
@@ -249,22 +252,41 @@ if __name__ == "__main__":
 
     ###
 
-    # img_arrays = np.array(data["mean_img_arrays"])[0]
+    # pixel_drifts = data["pixel_drifts"]
+    # img_arrays = np.array(data["img_arrays"])
+    # base_pixel_drift = [10, 38]
+    # num_reps = 1
 
-    # proc_img_arrays = widefield.downsample_img_arrays(img_arrays, 3)
+    # buffer = 20
+    # img_array_size = 250
+    # cropped_size = img_array_size - 2 * buffer
+    # proc_img_arrays = np.empty(
+    #     (2, num_runs, num_steps, num_reps, cropped_size, cropped_size)
+    # )
+    # for run_ind in range(num_runs):
+    #     pixel_drift = pixel_drifts[run_ind]
+    #     offset = [
+    #         pixel_drift[1] - base_pixel_drift[1],
+    #         pixel_drift[0] - base_pixel_drift[0],
+    #     ]
+    #     for step_ind in range(num_steps):
+    #         for exp_ind in range(2):
+    #             img_array = img_arrays[exp_ind, run_ind, step_ind, 0]
+    #             cropped_img_array = widefield.crop_img_array(img_array, offset, buffer)
+    #             proc_img_arrays[exp_ind, run_ind, step_ind, 0, :, :] = cropped_img_array
 
-    # bottom = np.percentile(proc_img_arrays, 30, axis=0)
-    # proc_img_arrays -= bottom
+    # sig_img_arrays = np.mean(proc_img_arrays, axis=(1, 3))[0]
+    # ref_img_array = np.mean(proc_img_arrays, axis=(1, 2, 3))[1]
+    # proc_img_arrays = sig_img_arrays - ref_img_array
 
-    # norms_newaxis = norms[:, np.newaxis]
-    # avg_counts = avg_counts - norms_newaxis
     # widefield.animate(
     #     taus,
     #     nv_list,
     #     avg_counts,
     #     avg_counts_ste,
+    #     norms,
     #     proc_img_arrays,
-    #     cmin=0.01,
+    #     cmin=-0.05,
     #     cmax=0.05,
     # )
 

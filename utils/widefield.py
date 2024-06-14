@@ -40,6 +40,19 @@ from utils.tool_belt import determine_threshold
 # region Image processing
 
 
+def crop_img_array(img_array, offset=[0, 0], buffer=20):
+    offset = [round(el) for el in offset]
+    size = img_array.shape[-1]
+    if size == 250:
+        replace_dead_pixel(img_array)
+    # print([buffer + offset[0], buffer + offset[1]])
+    img_array = img_array[
+        buffer + offset[0] : size - buffer + offset[0],
+        buffer + offset[1] : size - buffer + offset[1],
+    ]
+    return img_array
+
+
 def integrate_counts_from_adus(img_array, pixel_coords, radius=None):
     img_array_photons = adus_to_photons(img_array)
     return integrate_counts(img_array_photons, pixel_coords, radius)
@@ -1084,74 +1097,56 @@ def downsample_img_array(img_array, downsample_factor):
     return downsampled_img_array
 
 
-def animate(x, nv_list, counts, counts_errs, img_arrays, cmin=None, cmax=None):
+def animate(x, nv_list, counts, counts_errs, norms, img_arrays, cmin=None, cmax=None):
     num_steps = img_arrays.shape[0]
 
-    figsize = [12.8, 6.0]
+    norms_newaxis = norms[0][:, np.newaxis]
+    norm_counts = counts - norms_newaxis
+    norm_counts_ste = counts_errs
+
+    just_plot_figsize = [6.5, 5.0]
+    figsize = [just_plot_figsize[0] + just_plot_figsize[1], just_plot_figsize[1]]
     # fig, axes_pack = plt.subplots(2, 1, height_ratios=(1, 1), figsize=figsize)
     fig = plt.figure(figsize=figsize)
-    im_fig, data_fig = fig.subfigures(1, 2, width_ratios=(6, 6.5))
+    im_fig, data_fig = fig.subfigures(1, 2, width_ratios=just_plot_figsize[::-1])
     im_ax = im_fig.add_subplot()
     num_nvs = len(nv_list)
-    layout = kpl.calc_mosaic_layout(num_nvs, num_rows=3)
+
+    layout = kpl.calc_mosaic_layout(num_nvs, num_rows=2)
     data_axes = data_fig.subplot_mosaic(layout, sharex=True, sharey=True)
     data_axes_flat = list(data_axes.values())
     rep_data_ax = data_axes[layout[-1, 0]]
 
-    # all_axes = [fig, im_fig, data_fig, im_ax]
     all_axes = [im_ax]
     all_axes.extend(data_axes_flat)
 
     # Set up the actual image
     kpl.imshow(im_ax, np.zeros(img_arrays[0].shape), no_cbar=True)
 
-    # Set up the data axis
-    # plot_raw_data(data_ax, nv_list, x, counts, counts_errs)
-    # plot_fit(data_axes_flat, nv_list, x, counts, counts_errs)
-
     def data_ax_relim():
         # pass
         x_buffer = 0.05 * (np.max(x) - np.min(x))
         rep_data_ax.set_xlim(np.min(x) - x_buffer, np.max(x) + x_buffer)
-        # rep_data_ax.set_xlim(0, np.max(x) + x_buffer)
-        # ax.set_xticks((0, 100, 200))
-        y_buffer = 0.05 * (np.max(counts) - np.min(counts))
-        rep_data_ax.set_ylim(np.min(counts) - y_buffer, np.max(counts) + y_buffer)
+        y_buffer = 0.05 * (np.max(norm_counts) - np.min(norm_counts))
+        rep_data_ax.set_ylim(
+            np.min(norm_counts) - y_buffer, np.max(norm_counts) + y_buffer
+        )
 
-        ax = data_axes[layout[-1, 0]]
-        ax.set_xlabel(" ")
-        xlabel = "Frequency (GHz)"
-        # xlabel = "Pulse duration (ns)"
-        data_fig.text(0.55, 0.01, xlabel, ha="center")
-        ylabel = "Change in fraction in NV$^{-}$"
-        ax.set_ylabel(" ")
-        data_fig.text(0.005, 0.55, ylabel, va="center", rotation="vertical")
-
-        # data_axes[layout[0, 1]].legend(bbox_to_anchor=(1.05, 1), loc=kpl.Loc.UPPER_LEFT)
-
-    # ax.set_xlabel(" ")
-    # ax.set_ylabel(" ")
-    # # label = "Normalized fraction in NV$^{-}$"
-    # label = "Change in fraction in NV$^{-}$"
-    # fig.text(0.005, 0.55, label, va="center", rotation="vertical")
+        # xlabel = "Frequency (GHz)"
+        xlabel = "Pulse duration (ns)"
+        ylabel = "Change in $P($NV$^{-})$"
+        kpl.set_shared_ax_xlabel(rep_data_ax, xlabel)
+        kpl.set_shared_ax_ylabel(rep_data_ax, ylabel)
+        ax.set_xticks([0, 200])
+        ax.set_yticks([0, 0.1])
+        ax.set_xlim([-12.8, 268.8])
+        ax.set_ylim([-0.03671401564507494, 0.1688633341304579])
 
     data_ax_relim()
 
     def animate_sub(step_ind):
-        # print(step_ind)
         kpl.imshow_update(im_ax, img_arrays[step_ind], cmin, cmax)
         im_ax.axis("off")
-
-        # data_ax.clear()
-        # plot_raw_data(
-        #     data_ax,
-        #     nv_list,
-        #     x[0 : step_ind + 1],
-        #     counts[:, 0 : step_ind + 1],
-        #     counts_errs[:, 0 : step_ind + 1],
-        # )
-        # data_ax_relim()
-        # return [im_ax, data_ax]
 
         for ax in data_axes_flat:
             ax.clear()
@@ -1159,14 +1154,12 @@ def animate(x, nv_list, counts, counts_errs, img_arrays, cmin=None, cmax=None):
             data_axes_flat,
             nv_list,
             x[: step_ind + 1],
-            counts[:, : step_ind + 1],
+            norm_counts[:, : step_ind + 1],
             counts_errs[:, : step_ind + 1],
-            no_legend=False,
+            no_legend=True,
         )
         data_ax_relim()
         return all_axes
-
-    # animate_sub(10)
 
     anim = animation.FuncAnimation(
         fig, animate_sub, frames=num_steps, interval=200, blit=False
