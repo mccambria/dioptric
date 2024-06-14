@@ -215,11 +215,11 @@ def square_array():
     # for ind in range(phase.shape[0]):
     #     for jnd in range(phase.shape[1]):
     #         phase[ind, jnd] += np.dot((ind, jnd), (0.03, 0.03))
-
-    phase_update = toolbox.phase.gaussian(grid=slm, wx=10000, wy=10000)
+    quadratic_phase =  toolbox.phase.quadratic_phase(grid=slm, focal_length=25)
+    gaussian_phase = toolbox.phase.gaussian(grid=slm, wx=60000, wy=60000)
     # Generate the initial phase with the gradient
-    phase += phase_update
-    plot_phase(phase_update)
+    phase += gaussian_phase
+    # plot_phase(quadratic_phase)
     slm.write(phase, settle=True)
     cam_plot()
     # evaluate_uniformity(vectors=square)
