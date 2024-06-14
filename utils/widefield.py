@@ -231,6 +231,7 @@ def threshold_counts(
             thresholds.append(threshold)
     else:
         thresholds = [nv.threshold for nv in nv_list]
+        # thresholds = [27.5, 28.5, 28.5, 28.5, 25.5, 25.5, 24.5, 24.5, 28.5, 20.5]
         # thresholds = [1.3 * nv.threshold for nv in nv_list]  # MCC
         # thresholds[5] += 2
         # thresholds[6] += 2
