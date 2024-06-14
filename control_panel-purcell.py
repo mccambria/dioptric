@@ -264,8 +264,8 @@ def do_resonance(nv_list):
     # num_runs = 50
 
     # Both refs
-    num_reps = 4
-    num_runs = 500
+    num_reps = 2
+    num_runs = 1000
 
     # num_runs = 2
 
