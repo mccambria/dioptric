@@ -284,19 +284,21 @@ def do_resonance_zoom(nv_list):
 
 def do_rabi(nv_list):
     min_tau = 16
-    # max_tau = 240 + min_tau
-    max_tau = 360 + min_tau
+    max_tau = 240 + min_tau
+    # max_tau = 360 + min_tau
     # max_tau = 480 + min_tau
     num_steps = 31
     num_reps = 10
-    # num_runs = 100
+    num_runs = 100
     # num_runs = 50
-    # num_runs = 200
-    num_runs = 20
+    # num_runs = 20
 
     # uwave_ind_list = [1]
     uwave_ind_list = [0, 1]
-
+    rabi.main(nv_list, num_steps, num_reps, num_runs, min_tau, max_tau, uwave_ind_list)
+    uwave_ind_list = [0]
+    rabi.main(nv_list, num_steps, num_reps, num_runs, min_tau, max_tau, uwave_ind_list)
+    uwave_ind_list = [1]
     rabi.main(nv_list, num_steps, num_reps, num_runs, min_tau, max_tau, uwave_ind_list)
 
 
@@ -916,9 +918,9 @@ if __name__ == "__main__":
         # do_charge_state_histograms(nv_list)
         # do_check_readout_fidelity(nv_list)
 
-        # do_resonance(nv_list)
+        do_resonance(nv_list)
         # do_resonance_zoom(nv_list)
-        # do_rabi(nv_list)
+        do_rabi(nv_list)
         # do_spin_echo(nv_list)
         # do_power_rabi(nv_list)
         # do_correlation_test(nv_list)
@@ -937,7 +939,7 @@ if __name__ == "__main__":
         # nv_list = nv_list[::-1]
         # do_scc_snr_check(nv_list)
         # do_optimize_scc_duration(nv_list)
-        do_optimize_scc_amp(nv_list)
+        # do_optimize_scc_amp(nv_list)
         # do_crosstalk_check(nv_sig)
         # do_spin_pol_check(nv_sig)
         # do_calibrate_green_red_delay()

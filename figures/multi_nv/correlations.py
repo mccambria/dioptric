@@ -89,7 +89,7 @@ def main(block_data, checkerboard_data, orientation_data):
     seq_ax.set_xlabel(" ")
     seq_fig.text(0.1, 0.9, "Charge pol.")
     seq_fig.text(0.4, 0.3, "Spin pol.", horizontalalignment="center", rotation=90)
-    seq_fig.text(0.6, 0.3, "RF sequence", horizontalalignment="center", rotation=90)
+    seq_fig.text(0.6, 0.3, r"$\pi$ pulse", horizontalalignment="center", rotation=90)
     seq_fig.text(0.7, 0.9, "SCC")
     seq_fig.text(
         0.9, 0.3, "Charge state\nreadout", horizontalalignment="center", rotation=90
@@ -117,22 +117,45 @@ def main(block_data, checkerboard_data, orientation_data):
         global_ax, [0, start, stop, 0], [0, 1, 0], color="#d9d900", alpha=global_alpha
     )
 
-    # Microwaves
+    # Random pi pulse
+    pi_pulse_color = kpl.KplColors.BROWN
     start = stop + 2
-    stop = start + 10
+    stop = start + 2
     kpl.plot_sequence(
         global_ax,
         [0, start, stop, 0],
         [0, 1, 0],
-        # color=kpl.KplColors.DARK_GRAY,
-        color=kpl.KplColors.BLACK,
-        facecolor=kpl.KplColors.LIGHT_GRAY,
+        color=pi_pulse_color,
+        alpha=global_alpha * 0.8,
+        linestyle="--",
+    )
+
+    # SCC 1
+    stop += 1
+    for ind in [0, 2]:
+        if ind == row_skip_inds[0]:
+            stop += 2
+        if ind in row_skip_inds:
+            continue
+        ax = seq_axes_pack[ind]
+        start = stop + 1
+        stop = start + 1
+        kpl.plot_sequence(ax, [0, start, stop, 0], [0, 1, 0], color=kpl.KplColors.RED)
+
+    # Anticorrelation pi pulse
+    start = stop + 3
+    stop = start + 2
+    kpl.plot_sequence(
+        global_ax,
+        [0, start, stop, 0],
+        [0, 1, 0],
+        color=pi_pulse_color,
         alpha=global_alpha,
     )
 
-    # SCC
+    # SCC 2
     stop += 1
-    for ind in range(nrows):
+    for ind in [1, 3, 4]:
         if ind == row_skip_inds[0]:
             stop += 2
         if ind in row_skip_inds:
@@ -148,155 +171,6 @@ def main(block_data, checkerboard_data, orientation_data):
     kpl.plot_sequence(
         global_ax, [0, start, stop, 0], [0, 1, 0], color="#f5f556", alpha=global_alpha
     )
-
-    ### Seq
-
-    global_alpha = 0.8
-
-    # NV-specific axes
-    nrows = 6
-    seq_axes_pack = seq_fig.subplots(
-        nrows=nrows,
-        sharex=True,
-        sharey=True,
-        height_ratios=[1, 1, 1, 0.25, 1, 1],
-        gridspec_kw={"hspace": 0.01},
-    )
-    global_ax = seq_axes_pack[-1]
-
-    # Global pulse axis
-    seq_ax = seq_fig.add_subplot(111)
-    seq_ax.set_ylabel(" ", rotation="horizontal", labelpad=40, loc="bottom")
-    seq_ax.sharex(seq_axes_pack[0])
-    # seq_ax.sharey(seq_axes_pack[0])
-    global_ax = seq_ax
-
-    for ax in [*seq_axes_pack, seq_ax]:
-        ax.tick_params(
-            which="both",
-            top=False,
-            bottom=False,
-            left=False,
-            right=False,
-            labelbottom=False,
-            labelleft=False,
-        )
-        ax.spines[["left", "right", "top"]].set_visible(False)
-
-    seq_axes_pack[-3].spines[["bottom"]].set_visible(False)
-    seq_ax.spines[["bottom"]].set_visible(False)
-    seq_ax.patch.set_alpha(0)
-
-    labels = [*[f"NV {ind}" for ind in range(3)], "...", "NV $\it{n}$", "Global"]
-    for ind in range(nrows):
-        ax = seq_axes_pack[ind]
-        if ind == nrows - 3:
-            ax.set_ylabel(labels[ind])
-        else:
-            ax.set_ylabel(labels[ind], rotation="horizontal", labelpad=50, loc="bottom")
-    global_ax.set_ylabel(" ", labelpad=50, loc="bottom")
-
-    ax = seq_axes_pack[0]
-    # ax.set_xlim([16, 49])
-    ax.set_ylim([0.1, 1.01])
-    seq_ax.set_ylim([0.1, 1.01])
-
-    # Annotations
-    seq_axes_pack[0].set_title(" ")
-    seq_ax.set_title(" ")
-    seq_axes_pack[-1].set_xlabel(" ")
-    seq_ax.set_xlabel(" ")
-    seq_fig.text(0.4, 0.3, "Spin pol.", horizontalalignment="center", rotation=90)
-    seq_fig.text(
-        0.6,
-        0.3,
-        r"$\pi_{\mathregular{A}}$ pulse",
-        horizontalalignment="center",
-        rotation=90,
-    )
-    seq_fig.text(
-        0.5,
-        0.3,
-        r"$\pi_{\mathregular{B}}$ pulse",
-        horizontalalignment="center",
-        rotation=90,
-    )
-    seq_fig.text(
-        0.9, 0.3, "Charge state\nreadout", horizontalalignment="center", rotation=90
-    )
-
-    row_skip_inds = [nrows - 3, nrows - 1]
-
-    # Spin polarization
-    start = 10
-    stop = start + 10
-    kpl.plot_sequence(
-        global_ax, [0, start, stop, 0], [0, 1, 0], color="#d9d900", alpha=global_alpha
-    )
-
-    # Microwaves A
-    # start = stop + 2
-    # stop = start + 1
-    # # kpl.plot_sequence(
-    # # seq_ax, [0, start, stop, 0], [0, 1, 0], color=kpl.KplColors.BROWN
-    # # )
-    # start = stop + 1
-    # stop = start + 1
-    # # kpl.plot_sequence(
-    # # seq_ax, [0, start, stop, 0], [0, 1, 0], color=kpl.KplColors.BROWN
-    # # )
-    for color in [kpl.KplColors.BROWN, kpl.KplColors.ORANGE]:
-        start = stop + 0.3
-        stop = start + 2
-        kpl.plot_sequence(
-            global_ax,
-            [0, start, stop, 0],
-            [0, 1, 0],
-            color=color,
-            facecolor="none",
-            alpha=global_alpha,
-            linestyle="--",
-        )
-
-    # SCC
-    for ind in range(nrows - 2):
-        if ind in row_skip_inds:
-            start += 2
-            continue
-        ax = seq_axes_pack[ind]
-        start = stop + 4
-        stop = start + 1
-        kpl.plot_sequence(ax, [0, start, stop, 0], [0, 1, 0], color=kpl.KplColors.RED)
-
-    # Anticorrelation microwaves
-    stop += 2
-    for color in [kpl.KplColors.BROWN, kpl.KplColors.ORANGE]:
-        start = stop + 0.3
-        stop = start + 2
-        kpl.plot_sequence(
-            global_ax,
-            [0, start, stop, 0],
-            [0, 1, 0],
-            color=color,
-            # facecolor="none",
-            alpha=global_alpha,
-            # linestyle="--",
-        )
-
-    # Final SCC pulse
-    start = stop + 3
-    stop = start + 1
-    ax = seq_axes_pack[-2]
-    kpl.plot_sequence(ax, [0, start, stop, 0], [0, 1, 0], color=kpl.KplColors.RED)
-
-    # Charge state readout
-    start = stop + 1
-    stop = 200
-    kpl.plot_sequence(
-        global_ax, [0, start, stop, 0], [0, 1, 0], color="#f5f556", alpha=global_alpha
-    )
-
-    ax.set_xlim([17, start + 4])
 
     ### Data
 

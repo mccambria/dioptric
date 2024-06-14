@@ -35,24 +35,22 @@ def process_and_plot(data):
 
     ### Report the results and return
 
-    avg_sig_counts, avg_sig_counts_ste, _ = widefield.process_counts(
-        nv_list, sig_counts, threshold=False
-    )
-    avg_ref_counts, avg_ref_counts_ste, _ = widefield.process_counts(
-        nv_list, ref_counts, threshold=False
-    )
+    avg_sig_counts, avg_sig_counts_ste, _ = widefield.average_counts(sig_counts)
+    avg_ref_counts, avg_ref_counts_ste, _ = widefield.average_counts(ref_counts)
+
     avg_snr, avg_snr_ste = widefield.calc_snr(sig_counts, ref_counts)
     avg_contrast, avg_contrast_ste = widefield.calc_contrast(sig_counts, ref_counts)
 
     # There's only one point, so only consider that
-    avg_sig_counts = avg_sig_counts[:, 0]
-    avg_sig_counts_ste = avg_sig_counts_ste[:, 0]
-    avg_ref_counts = avg_ref_counts[:, 0]
-    avg_ref_counts_ste = avg_ref_counts_ste[:, 0]
-    avg_snr = avg_snr[:, 0]
-    avg_snr_ste = avg_snr_ste[:, 0]
-    avg_contrast = avg_contrast[:, 0]
-    avg_contrast_ste = avg_contrast_ste[:, 0]
+    step_ind = 7
+    avg_sig_counts = avg_sig_counts[:, step_ind]
+    avg_sig_counts_ste = avg_sig_counts_ste[:, step_ind]
+    avg_ref_counts = avg_ref_counts[:, step_ind]
+    avg_ref_counts_ste = avg_ref_counts_ste[:, step_ind]
+    avg_snr = avg_snr[:, step_ind]
+    avg_snr_ste = avg_snr_ste[:, step_ind]
+    avg_contrast = avg_contrast[:, step_ind]
+    avg_contrast_ste = avg_contrast_ste[:, step_ind]
 
     # fig, ax = plt.subplots()
     # kpl.histogram(ax, sig_counts[6].flatten())
@@ -162,6 +160,8 @@ if __name__ == "__main__":
     kpl.init_kplotlib()
 
     # data = dm.get_raw_data(file_id=1548854318015)  # 6/2 benchmark
-    data = dm.get_raw_data(file_id=1560162597422)
+    # data = dm.get_raw_data(file_id=1560539865450)
+    data = dm.get_raw_data(file_id=1560517055418)
+
     figs = process_and_plot(data)
     kpl.show(block=True)
