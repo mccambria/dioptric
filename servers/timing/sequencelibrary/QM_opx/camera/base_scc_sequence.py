@@ -106,12 +106,15 @@ def macro(
 
     seq_utils.init(num_nvs)
 
-    step_vals = np.array(step_vals)
-    step_int_check = [el.is_integer() for el in step_vals]
-    if all(step_int_check):
-        step_val = qua.declare(int)
+    if step_vals is not None and len(step_vals) > 0:
+        step_vals = np.array(step_vals)
+        step_int_check = [el.is_integer() for el in step_vals]
+        if all(step_int_check):
+            step_val = qua.declare(int)
+        else:
+            step_val = qua.declare(qua.fixed)
     else:
-        step_val = qua.declare(qua.fixed)
+        step_val = qua.declare(int)
 
     def one_exp(rep_ind, exp_ind):
         # exp_ind = num_exps_per_rep - 1  # MCC
