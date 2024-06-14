@@ -161,6 +161,6 @@ if __name__ == "__main__":
     kpl.init_kplotlib()
 
     # data = dm.get_raw_data(file_id=1548854318015)  # 6/2 benchmark
-    data = dm.get_raw_data(file_id=1560162597422)
+    data = dm.get_raw_data(file_id=1560609724329)
     figs = process_and_plot(data)
     kpl.show(block=True)
