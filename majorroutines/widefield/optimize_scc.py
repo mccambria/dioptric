@@ -165,14 +165,10 @@ def main(nv_list, num_steps, num_reps, num_runs, min_tau, max_tau):
     ### Process and plot
 
     try:
-        sig_fig, ref_fig, snr_fig = process_and_plot(
-            nv_list, taus, sig_counts, ref_counts
-        )
+        figs = process_and_plot(nv_list, taus, sig_counts, ref_counts)
     except Exception:
         print(traceback.format_exc())
-        sig_fig = None
-        ref_fig = None
-        snr_fig = None
+        figs = None
 
     ### Clean up and return
 
@@ -197,17 +193,11 @@ def main(nv_list, num_steps, num_reps, num_runs, min_tau, max_tau):
     else:
         keys_to_compress = None
     dm.save_raw_data(raw_data, file_path, keys_to_compress)
-    if sig_fig is not None:
-        file_path = dm.get_file_path(__file__, timestamp, repr_nv_name + "-sig")
-        dm.save_figure(sig_fig, file_path)
-    if ref_fig is not None:
-        file_path = dm.get_file_path(__file__, timestamp, repr_nv_name + "-ref")
-        dm.save_figure(ref_fig, file_path)
-    if snr_fig is not None:
-        file_path = dm.get_file_path(__file__, timestamp, repr_nv_name + "-snr")
-        dm.save_figure(snr_fig, file_path)
-    # file_path = dm.get_file_path(__file__, timestamp, repr_nv_name + "-avg_snr")
-    # dm.save_figure(avg_snr_fig, file_path)
+    if figs is not None:
+        for ind in range(len(figs)):
+            fig = figs[ind]
+            file_path = dm.get_file_path(__file__, timestamp, f"{repr_nv_name}-{ind}")
+            dm.save_figure(fig, file_path)
 
 
 if __name__ == "__main__":

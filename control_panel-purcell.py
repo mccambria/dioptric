@@ -190,7 +190,7 @@ def do_optimize_scc(nv_list):
     # min_tau = 100
     # max_tau = 308
     num_steps = 14
-    num_reps = 5
+    num_reps = 15
 
     # min_tau = 16
     # max_tau = 104
@@ -198,7 +198,8 @@ def do_optimize_scc(nv_list):
     # num_reps = 8
 
     # num_runs = 2
-    num_runs = 20 * 25
+    # num_runs = 20 * 25
+    num_runs = 30
 
     optimize_scc.main(nv_list, num_steps, num_reps, num_runs, min_tau, max_tau)
 
@@ -727,6 +728,11 @@ if __name__ == "__main__":
         120,
         120,
     ]
+    scc_duration_list = [100] * num_nvs
+    scc_duration_list[5] = 150
+    scc_duration_list[7] = 150
+    scc_duration_list[8] = 150
+    scc_duration_list[9] = 150
     # scc_duration_list = [
     #     50,
     #     90,
@@ -899,7 +905,7 @@ if __name__ == "__main__":
         # do_opx_square_wave()
 
         # nv_list = nv_list[::-1]
-        # do_scc_snr_check(nv_list)
+        do_scc_snr_check(nv_list)
         # do_optimize_scc(nv_list)
         # do_crosstalk_check(nv_sig)
         # do_spin_pol_check(nv_sig)
