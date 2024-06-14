@@ -227,6 +227,7 @@ def calc_mosaic_layout(num_panels, num_rows=None):
     if num_panels != num_axes:
         vals[0, num_panels - num_axes :] = "."
 
+    return vals
     return vals.tolist()
 
 

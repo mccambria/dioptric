@@ -165,8 +165,9 @@ def create_fit_figure(
         no_legend=no_legend,
     )
 
-    kpl.set_shared_ax_xlabel(axes_pack, layout, "Frequency (GHz)")
-    kpl.set_shared_ax_ylabel(axes_pack, layout, "Change in $P($NV$^{-})$")
+    ax = axes_pack[layout[-1, 0]]
+    kpl.set_shared_ax_xlabel(ax, "Frequency (GHz)")
+    kpl.set_shared_ax_ylabel(ax, "Change in $P($NV$^{-})$")
 
     # ax = axes_pack[layout[-1, 0]]
     # ax.set_xlabel(" ")
