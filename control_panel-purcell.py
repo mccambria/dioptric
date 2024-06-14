@@ -779,8 +779,8 @@ if __name__ == "__main__":
     # ]
     scc_duration_list = [100] * num_nvs
     scc_duration_list = [4 * round(el / 4) for el in scc_duration_list]
-    scc_amp_list = [1.1, 1.3, 1.3, 1.1, 1.2, 1.05, 1.05, 1.15, 1.0, 1.3, 1, 1, 1]
-    scc_amp_list = [1.0] * num_nvs
+    scc_amp_list = [1.18, 1.12, 1.1, 1.05, 1.1, 1.11, 1.1, 1.12, 1.07, 1.1, 1, 1, 1]
+    # scc_amp_list = [1.0] * num_nvs
     # scc_duration_list = [None] * num_nvs
     # endregion
     # region NV list construction
