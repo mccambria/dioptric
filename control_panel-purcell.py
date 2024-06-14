@@ -184,23 +184,35 @@ def do_calibrate_green_red_delay():
     pulse_gen.halt()
 
 
-def do_optimize_scc(nv_list):
+def do_optimize_scc_duration(nv_list):
     min_tau = 16
     max_tau = 224
-    # min_tau = 100
-    # max_tau = 308
     num_steps = 14
-    num_reps = 5
+    num_reps = 15
 
-    # min_tau = 16
-    # max_tau = 104
-    # num_steps = 12
-    # num_reps = 8
+    # num_runs = 20 * 25
+    num_runs = 30
+    num_runs = 50
+    num_runs = 2
 
+    optimize_scc.optimize_scc_duration(
+        nv_list, num_steps, num_reps, num_runs, min_tau, max_tau
+    )
+
+
+def do_optimize_scc_amp(nv_list):
+    min_tau = 0.7
+    max_tau = 1.3
+    num_steps = 16
+    num_reps = 15
+
+    num_runs = 30
+    # num_runs = 50
     # num_runs = 2
-    num_runs = 20 * 25
 
-    optimize_scc.main(nv_list, num_steps, num_reps, num_runs, min_tau, max_tau)
+    optimize_scc.optimize_scc_amp(
+        nv_list, num_steps, num_reps, num_runs, min_tau, max_tau
+    )
 
 
 def do_scc_snr_check(nv_list):
@@ -272,19 +284,21 @@ def do_resonance_zoom(nv_list):
 
 def do_rabi(nv_list):
     min_tau = 16
-    # max_tau = 240 + min_tau
-    max_tau = 360 + min_tau
+    max_tau = 240 + min_tau
+    # max_tau = 360 + min_tau
     # max_tau = 480 + min_tau
     num_steps = 31
     num_reps = 10
-    # num_runs = 100
+    num_runs = 100
     # num_runs = 50
-    # num_runs = 200
-    num_runs = 20
+    # num_runs = 20
 
     # uwave_ind_list = [1]
     uwave_ind_list = [0, 1]
-
+    rabi.main(nv_list, num_steps, num_reps, num_runs, min_tau, max_tau, uwave_ind_list)
+    uwave_ind_list = [0]
+    rabi.main(nv_list, num_steps, num_reps, num_runs, min_tau, max_tau, uwave_ind_list)
+    uwave_ind_list = [1]
     rabi.main(nv_list, num_steps, num_reps, num_runs, min_tau, max_tau, uwave_ind_list)
 
 
@@ -727,6 +741,11 @@ if __name__ == "__main__":
         120,
         120,
     ]
+    scc_duration_list = [100] * num_nvs
+    scc_duration_list[5] = 150
+    scc_duration_list[7] = 150
+    scc_duration_list[8] = 150
+    scc_duration_list[9] = 150
     # scc_duration_list = [
     #     50,
     #     90,
@@ -743,7 +762,25 @@ if __name__ == "__main__":
     #     100,
     #     100,
     # ]
+    # scc_duration_list = [
+    #     138,
+    #     124,
+    #     111,
+    #     156,
+    #     139,
+    #     104,
+    #     104,
+    #     105,
+    #     106,
+    #     135,
+    #     120,
+    #     120,
+    #     120,
+    # ]
+    scc_duration_list = [100] * num_nvs
     scc_duration_list = [4 * round(el / 4) for el in scc_duration_list]
+    scc_amp_list = [1.18, 1.12, 1.1, 1.05, 1.1, 1.11, 1.1, 1.12, 1.07, 1.1, 1, 1, 1]
+    # scc_amp_list = [1.0] * num_nvs
     # scc_duration_list = [None] * num_nvs
     # endregion
     # region NV list construction
@@ -762,13 +799,14 @@ if __name__ == "__main__":
             coords=coords,
             threshold=threshold_list[ind],
             scc_duration=scc_duration_list[ind],
+            scc_amp=scc_amp_list[ind],
         )
         nv_list.append(nv_sig)
 
     # Additional properties for the representative NV
     nv_list[0].representative = True
     nv_sig = widefield.get_repr_nv_sig(nv_list)
-    nv_sig.expected_counts = 1200
+    nv_sig.expected_counts = 1150
     num_nvs = len(nv_list)
 
     # nv_inds = [0, 1]
@@ -899,8 +937,9 @@ if __name__ == "__main__":
         # do_opx_square_wave()
 
         # nv_list = nv_list[::-1]
-        # do_scc_snr_check(nv_list)
-        # do_optimize_scc(nv_list)
+        do_scc_snr_check(nv_list)
+        # do_optimize_scc_duration(nv_list)
+        # do_optimize_scc_amp(nv_list)
         # do_crosstalk_check(nv_sig)
         # do_spin_pol_check(nv_sig)
         # do_calibrate_green_red_delay()

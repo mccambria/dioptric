@@ -20,7 +20,7 @@ from utils import tool_belt as tb
 from utils import widefield as widefield
 
 
-def process_and_plot(nv_list, taus, sig_counts, ref_counts):
+def process_and_plot(nv_list, taus, sig_counts, ref_counts, duration_or_amp):
     num_nvs = len(nv_list)
 
     avg_sig_counts, avg_sig_counts_ste, _ = widefield.average_counts(sig_counts)
@@ -29,20 +29,30 @@ def process_and_plot(nv_list, taus, sig_counts, ref_counts):
 
     # avg_snr_ste = None
 
+    xlabel = (
+        "SCC pulse duration (ns)" if duration_or_amp else "SCC relative AOD amplitude"
+    )
+
     sig_fig, sig_ax = plt.subplots()
     widefield.plot_raw_data(sig_ax, nv_list, taus, avg_sig_counts, avg_sig_counts_ste)
-    sig_ax.set_xlabel("Ionization pulse duration (ns)")
+    sig_ax.set_xlabel(xlabel)
     sig_ax.set_ylabel("Signal counts")
 
     ref_fig, ref_ax = plt.subplots()
     widefield.plot_raw_data(ref_ax, nv_list, taus, avg_ref_counts, avg_ref_counts_ste)
-    ref_ax.set_xlabel("Ionization pulse duration (ns)")
+    ref_ax.set_xlabel(xlabel)
     ref_ax.set_ylabel("Reference counts")
 
     snr_fig, snr_ax = plt.subplots()
     widefield.plot_raw_data(snr_ax, nv_list, taus, avg_snr, avg_snr_ste)
-    snr_ax.set_xlabel("Ionization pulse duration (ns)")
+    snr_ax.set_xlabel(xlabel)
     snr_ax.set_ylabel("SNR")
+
+    for ind in range(num_nvs):
+        fig, ax = plt.subplots()
+        kpl.plot_points(ax, taus, avg_snr[ind], yerr=avg_snr_ste[ind])
+        ax.set_title(ind)
+        plt.show(block=True)
 
     # Average across NVs
     avg_snr_fig, avg_snr_ax = plt.subplots()
@@ -117,21 +127,30 @@ def process_and_plot(nv_list, taus, sig_counts, ref_counts):
         opti_durations.append(opti_duration)
     print("Optimum SNRs")
     print([round(val, 3) for val in opti_snrs])
-    print("Optimum SCC pulse durations")
+    print(f"Optimum {xlabel}")
     print([round(val) for val in opti_durations])
     fit_ax.legend(ncols=3)
-    fit_ax.set_xlabel("SCC pulse duration (ns)")
+    fit_ax.set_xlabel(xlabel)
     fit_ax.set_ylabel("SNR")
 
     return sig_fig, ref_fig, snr_fig, avg_snr_fig, fit_fig
     # return sig_fig, ref_fig, snr_fig, avg_snr_fig
 
 
-def main(nv_list, num_steps, num_reps, num_runs, min_tau, max_tau):
+def optimize_scc_duration(nv_list, num_steps, num_reps, num_runs, min_tau, max_tau):
+    return _main(nv_list, num_steps, num_reps, num_runs, min_tau, max_tau, True)
+
+
+def optimize_scc_amp(nv_list, num_steps, num_reps, num_runs, min_amp, max_amp):
+    return _main(nv_list, num_steps, num_reps, num_runs, min_amp, max_amp, False)
+
+
+def _main(nv_list, num_steps, num_reps, num_runs, min_tau, max_tau, duration_or_amp):
     ### Some initial setup
     uwave_ind_list = [0, 1]
 
-    seq_file = "optimize_scc.py"
+    seq_file = "optimize_scc-duration.py" if duration_or_amp else "optimize_scc-amp.py"
+
     taus = np.linspace(min_tau, max_tau, num_steps)
 
     pulse_gen = tb.get_server_pulse_gen()
@@ -165,14 +184,10 @@ def main(nv_list, num_steps, num_reps, num_runs, min_tau, max_tau):
     ### Process and plot
 
     try:
-        sig_fig, ref_fig, snr_fig = process_and_plot(
-            nv_list, taus, sig_counts, ref_counts
-        )
+        figs = process_and_plot(nv_list, taus, sig_counts, ref_counts, duration_or_amp)
     except Exception:
         print(traceback.format_exc())
-        sig_fig = None
-        ref_fig = None
-        snr_fig = None
+        figs = None
 
     ### Clean up and return
 
@@ -197,27 +212,19 @@ def main(nv_list, num_steps, num_reps, num_runs, min_tau, max_tau):
     else:
         keys_to_compress = None
     dm.save_raw_data(raw_data, file_path, keys_to_compress)
-    if sig_fig is not None:
-        file_path = dm.get_file_path(__file__, timestamp, repr_nv_name + "-sig")
-        dm.save_figure(sig_fig, file_path)
-    if ref_fig is not None:
-        file_path = dm.get_file_path(__file__, timestamp, repr_nv_name + "-ref")
-        dm.save_figure(ref_fig, file_path)
-    if snr_fig is not None:
-        file_path = dm.get_file_path(__file__, timestamp, repr_nv_name + "-snr")
-        dm.save_figure(snr_fig, file_path)
-    # file_path = dm.get_file_path(__file__, timestamp, repr_nv_name + "-avg_snr")
-    # dm.save_figure(avg_snr_fig, file_path)
+    if figs is not None:
+        for ind in range(len(figs)):
+            fig = figs[ind]
+            file_path = dm.get_file_path(__file__, timestamp, f"{repr_nv_name}-{ind}")
+            dm.save_figure(fig, file_path)
 
 
 if __name__ == "__main__":
     kpl.init_kplotlib()
 
-    # data = dm.get_raw_data(file_id=1555539001887)  # 0.12
-    # data = dm.get_raw_data(file_id=1555803236661)  # 0.14
-    data = dm.get_raw_data(file_id=1555925950891)  # 0.14
+    data = dm.get_raw_data(file_id=1560594496006)
 
-    print(data["opx_config"]["waveforms"]["red_aod_cw-scc"])
+    # print(data["opx_config"]["waveforms"]["red_aod_cw-scc"])
 
     nv_list = data["nv_list"]
     taus = data["taus"]
@@ -229,6 +236,6 @@ if __name__ == "__main__":
 
     # sig_counts, ref_counts = widefield.threshold_counts(nv_list, sig_counts, ref_counts)
 
-    process_and_plot(nv_list, taus, sig_counts, ref_counts)
+    process_and_plot(nv_list, taus, sig_counts, ref_counts, False)
 
     plt.show(block=True)

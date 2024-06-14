@@ -487,12 +487,14 @@ def get_base_scc_seq_args(
         nv_list, LaserKey.SCC, include_inds=scc_include_inds
     )
     scc_duration_list = get_scc_duration_list(nv_list, include_inds=scc_include_inds)
+    scc_amp_list = get_scc_amp_list(nv_list, include_inds=scc_include_inds)
     spin_flip_ind_list = get_spin_flip_ind_list(nv_list)
 
     seq_args = [
         pol_coords_list,
         scc_coords_list,
         scc_duration_list,
+        scc_amp_list,
         spin_flip_ind_list,
         uwave_ind_list,
     ]
@@ -533,6 +535,19 @@ def get_scc_duration_list(nv_list: list[NVSig], include_inds=None):
     if include_inds is not None:
         scc_duration_list = [scc_duration_list[ind] for ind in include_inds]
     return scc_duration_list
+
+
+def get_scc_amp_list(nv_list: list[NVSig], include_inds=None):
+    scc_amp_list = []
+    for nv in nv_list:
+        scc_amp = nv.scc_amp
+        # if scc_amp is None:
+        #     config = common.get_config_dict()
+        #     scc_amp = config["Optics"][LaserKey.SCC]["duration"]
+        scc_amp_list.append(scc_amp)
+    if include_inds is not None:
+        scc_amp_list = [scc_amp_list[ind] for ind in include_inds]
+    return scc_amp_list
 
 
 # endregion

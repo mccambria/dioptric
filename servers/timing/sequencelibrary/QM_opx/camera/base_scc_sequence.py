@@ -8,6 +8,7 @@ Created on December 11th, 2023
 @author: mccambria
 """
 
+import numpy as np
 from qm import qua
 
 from servers.timing.sequencelibrary.QM_opx import seq_utils
@@ -19,6 +20,7 @@ def macro(
     step_vals=None,
     num_reps=1,
     scc_duration_override=None,
+    scc_amp_override=None,
     reference=True,
 ):
     """Base spin sequence as a QUA macro for widefield experiments with many
@@ -63,6 +65,7 @@ def macro(
         pol_coords_list,
         scc_coords_list,
         scc_duration_list,
+        scc_amp_list,
         spin_flip_ind_list,
         uwave_ind_list,
     ) = base_scc_seq_args
@@ -89,10 +92,12 @@ def macro(
         seq_utils.macro_scc(
             scc_coords_list,
             scc_duration_list,
+            scc_amp_list,
             spin_flip_ind_list,
             uwave_ind_list,
             pol_coords_list,
             scc_duration_override,
+            scc_amp_override,
             exp_spin_flip=exp_spin_flip,
             ref_spin_flip=ref_spin_flip,
         )
@@ -100,7 +105,16 @@ def macro(
     ### QUA stuff
 
     seq_utils.init(num_nvs)
-    step_val = qua.declare(int)
+
+    if step_vals is not None and len(step_vals) > 0:
+        step_vals = np.array(step_vals)
+        step_int_check = [el.is_integer() for el in step_vals]
+        if all(step_int_check):
+            step_val = qua.declare(int)
+        else:
+            step_val = qua.declare(qua.fixed)
+    else:
+        step_val = qua.declare(int)
 
     def one_exp(rep_ind, exp_ind):
         # exp_ind = num_exps_per_rep - 1  # MCC
@@ -138,6 +152,9 @@ def macro(
     else:
         if scc_duration_override is not None:
             with qua.for_each_(scc_duration_override, step_vals):
+                one_step()
+        elif scc_amp_override is not None:
+            with qua.for_each_(scc_amp_override, step_vals):
                 one_step()
         else:
             with qua.for_each_(step_val, step_vals):

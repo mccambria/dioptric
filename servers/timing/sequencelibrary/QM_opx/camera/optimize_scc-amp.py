@@ -16,10 +16,9 @@ from servers.timing.sequencelibrary.QM_opx import seq_utils
 from servers.timing.sequencelibrary.QM_opx.camera import base_scc_sequence
 
 
-def get_seq(base_scc_seq_args, scc_duration_steps, num_reps):
-    scc_duration_steps = [seq_utils.convert_ns_to_cc(el) for el in scc_duration_steps]
+def get_seq(base_scc_seq_args, scc_amp_steps, num_reps):
     with qua.program() as seq:
-        scc_duration_override = qua.declare(int)
+        scc_amp_override = qua.declare(qua.fixed)
 
         def uwave_macro_sig(uwave_ind_list, step_val):
             seq_utils.macro_pi_pulse(uwave_ind_list)
@@ -30,9 +29,9 @@ def get_seq(base_scc_seq_args, scc_duration_steps, num_reps):
         base_scc_sequence.macro(
             base_scc_seq_args,
             [uwave_macro_sig, uwave_macro_ref],
-            step_vals=scc_duration_steps,
+            step_vals=scc_amp_steps,
             num_reps=num_reps,
-            scc_duration_override=scc_duration_override,
+            scc_amp_override=scc_amp_override,
             reference=False,
         )
 
@@ -53,28 +52,44 @@ if __name__ == "__main__":
         seq, seq_ret_vals = get_seq(
             [
                 [
-                    [108.48124282165938, 109.79869381786162],
-                    [108.92124282165938, 110.04969381786162],
-                    [109.17324282165939, 110.39769381786162],
+                    [108.73558077916097, 109.58849887552114],
+                    [109.41358077916098, 110.19749887552115],
+                    [108.86258077916098, 110.22749887552115],
+                    [108.21258077916097, 110.48949887552115],
                 ],
                 [
-                    [73.16298031205457, 75.08589052467828],
-                    [73.43898031205457, 75.23289052467827],
-                    [73.69798031205457, 75.49989052467826],
+                    [73.71607634356549, 75.00994679683262],
+                    [74.26107634356549, 75.48294679683262],
+                    [73.74607634356549, 75.46294679683263],
+                    [73.2590763435655, 75.72694679683262],
                 ],
-                [
-                    100,
-                    100,
-                    100,
-                ],
+                [120, 120, 120, 120],
+                [1.0, 1.0, 1.0, 1.0],
                 [],
                 [0, 1],
             ],
-            [100, 112, 124],
+            [
+                0.7,
+                0.74,
+                1.1400000000000001,
+                0.86,
+                1.2200000000000002,
+                0.78,
+                1.1,
+                1.02,
+                0.9,
+                1.3,
+                1.1800000000000002,
+                0.82,
+                1.26,
+                0.94,
+                0.98,
+                1.06,
+            ],
             5,
         )
 
-        sim_config = SimulationConfig(duration=int(200e3 / 4))
+        sim_config = SimulationConfig(duration=int(250e3 / 4))
         sim = opx.simulate(seq, sim_config)
         samples = sim.get_simulated_samples()
         samples.con1.plot()
