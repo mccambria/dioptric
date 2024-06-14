@@ -93,14 +93,14 @@ if __name__ == "__main__":
                     [73.91305409727465, 75.64165445569202],
                     [73.42805409727465, 75.66565445569202],
                 ],
-                [144, 160, 164],
+                [1000, 160, 1000],
                 [],
                 [0, 1],
             ],
             10,
         )
 
-        sim_config = SimulationConfig(duration=int(200e3 / 4))
+        sim_config = SimulationConfig(duration=int(300e3 / 4))
         sim = opx.simulate(seq, sim_config)
         samples = sim.get_simulated_samples()
         samples.con1.plot()

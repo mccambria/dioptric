@@ -119,6 +119,7 @@ def main(nv_list, num_reps, num_runs, scc_include_inds=None, uwave_ind_list=[0, 
         seq_args = [
             widefield.get_base_scc_seq_args(nv_list, uwave_ind_list, scc_include_inds)
         ]
+        # print(seq_args)
         seq_args_string = tb.encode_seq_args(seq_args)
         pulse_gen.stream_load(seq_file, seq_args_string, num_reps)
 

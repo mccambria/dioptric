@@ -200,6 +200,7 @@ def do_optimize_scc(nv_list):
     # num_runs = 2
     # num_runs = 20 * 25
     num_runs = 30
+    num_runs = 50
 
     optimize_scc.main(nv_list, num_steps, num_reps, num_runs, min_tau, max_tau)
 
@@ -749,6 +750,21 @@ if __name__ == "__main__":
     #     100,
     #     100,
     # ]
+    scc_duration_list = [
+        138,
+        124,
+        111,
+        156,
+        139,
+        104,
+        104,
+        105,
+        106,
+        135,
+        120,
+        120,
+        120,
+    ]
     scc_duration_list = [4 * round(el / 4) for el in scc_duration_list]
     # scc_duration_list = [None] * num_nvs
     # endregion
@@ -774,7 +790,7 @@ if __name__ == "__main__":
     # Additional properties for the representative NV
     nv_list[0].representative = True
     nv_sig = widefield.get_repr_nv_sig(nv_list)
-    nv_sig.expected_counts = 1200
+    nv_sig.expected_counts = 1150
     num_nvs = len(nv_list)
 
     # nv_inds = [0, 1]
