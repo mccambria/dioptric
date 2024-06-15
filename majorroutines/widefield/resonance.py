@@ -45,7 +45,7 @@ def create_fit_figure(
     norms,
     axes_pack=None,
     layout=None,
-    no_legend=False,
+    no_legend=True,
 ):
     ### Do the fitting
 
@@ -148,9 +148,12 @@ def create_fit_figure(
     ### Make the figure
 
     if axes_pack is None:
+        # figsize = [6.5, 6.0]
+        figsize = [6.5, 5.0]
+        # figsize = [6.5, 4.0]
         layout = kpl.calc_mosaic_layout(num_nvs, num_rows=2)
         fig, axes_pack = plt.subplot_mosaic(
-            layout, figsize=[6.5, 4.0], sharex=True, sharey=True
+            layout, figsize=figsize, sharex=True, sharey=True
         )
     axes_pack_flat = list(axes_pack.values())
 
@@ -168,6 +171,7 @@ def create_fit_figure(
     ax = axes_pack[layout[-1, 0]]
     kpl.set_shared_ax_xlabel(ax, "Frequency (GHz)")
     kpl.set_shared_ax_ylabel(ax, "Change in $P($NV$^{-})$")
+    ax.set_yticks([0, 0.1])
 
     # ax = axes_pack[layout[-1, 0]]
     # ax.set_xlabel(" ")
@@ -300,7 +304,7 @@ if __name__ == "__main__":
     kpl.init_kplotlib()
 
     # data = dm.get_raw_data(file_id=1546290628159)
-    data = dm.get_raw_data(file_id=1548426318061)
+    data = dm.get_raw_data(file_id=1543601415736)
 
     nv_list = data["nv_list"]
     num_nvs = len(nv_list)
