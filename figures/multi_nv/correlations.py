@@ -176,36 +176,67 @@ def main(block_data, checkerboard_data, orientation_data):
 
     axes_pack = data_fig.subplots(
         2,
-        2,
+        4,
         sharex=True,
         sharey=True,
         gridspec_kw={"hspace": 0.02, "wspace": 0.02},
     )
-    ((ref_ax, block_ax), (checkerboard_ax, orientation_ax)) = axes_pack
+    # ((ref_ax, block_ax), (checkerboard_ax, orientation_ax)) = axes_pack
+    (ideal_axes, data_axes) = axes_pack
 
+    cbar_max = 0.04
     datas = [block_data, block_data, checkerboard_data, orientation_data]
-    axes = [ref_ax, block_ax, checkerboard_ax, orientation_ax]
+
+    # Ideal
+
+    for ind in range(4):
+        ax = ideal_axes[ind]
+        data = datas[ind]
+        nv_list = data["nv_list"]
+        if ind == 0:
+            spin_flips = [0] * 10
+        if ind in [1, 2]:
+            spin_flips = np.array([-1 if nv.spin_flip else +1 for nv in nv_list])
+        if ind == 3:
+            spin_flips = [1, 1, -1, -1, 1, -1, 1, -1, -1, -1]
+        ideal_corr_coeffs = np.outer(spin_flips, spin_flips)
+        ideal_corr_coeffs = ideal_corr_coeffs.astype(float)
+        np.fill_diagonal(ideal_corr_coeffs, np.nan)
+        kpl.imshow(
+            ax,
+            ideal_corr_coeffs,
+            cmap="RdBu_r",
+            vmin=-cbar_max,
+            vmax=cbar_max,
+            nan_color=kpl.KplColors.GRAY,
+            no_cbar=True,
+        )
+
+    # Data
+
     for ind in range(4):
         data = datas[ind]
-        ax = axes[ind]
+        ax = data_axes[ind]
         sig_or_ref = ind > 0
         simple_correlation_test.process_and_plot(
             data,
             ax=ax,
             sig_or_ref=sig_or_ref,
             no_cbar=True,
-            cbar_max=0.04,
+            cbar_max=cbar_max,
             no_labels=True,
         )
-    ax = checkerboard_ax
+    # ax = checkerboard_ax
+    ax = data_axes[0]
     kpl.set_shared_ax_xlabel(ax, "NV index")
     kpl.set_shared_ax_ylabel(ax, "NV index")
     img = ax.get_images()[0]
-    cbar = data_fig.colorbar(img, ax=axes_pack, shrink=0.7, aspect=25)
-    cbar.set_label("Correlation coefficient", size=16)
-    cbar.ax.set_title(r"$\times 10^{-2}$", fontsize=14)
-    cbar.ax.locator_params(axis="y", nbins=5)
-    cbar.ax.set_yticklabels([-4, -2, 0, 2, 4], fontsize=16)
+    cbar = data_fig.colorbar(img, ax=axes_pack, shrink=0.7, aspect=25, extend="both")
+    data_fig.text(0.95, 0.5, "Correlation coefficient", size=16, rotation=90)
+    # cbar.set_label("Correlation coefficient", size=16)
+    # cbar.ax.set_title(r"$\times 10^{-2}$", fontsize=14)
+    cbar.ax.locator_params(axis="y", nbins=2)
+    cbar.ax.set_yticklabels([-cbar_max, cbar_max], fontsize=16)
     # cbar.ax.set_yticks([-0.004, -0.002, 0.000, 0.002, 0.004], labels=[-4, -2, 0, 2, 4])
     # cbar.ax.tick_params(rotation=90)
 
