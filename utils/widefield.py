@@ -1097,7 +1097,17 @@ def downsample_img_array(img_array, downsample_factor):
     return downsampled_img_array
 
 
-def animate(x, nv_list, counts, counts_errs, norms, img_arrays, cmin=None, cmax=None):
+def animate(
+    x,
+    nv_list,
+    counts,
+    counts_errs,
+    norms,
+    img_arrays,
+    cmin=None,
+    cmax=None,
+    scale_bar_length_factor=None,
+):
     num_steps = img_arrays.shape[0]
 
     norms_newaxis = norms[0][:, np.newaxis]
@@ -1122,6 +1132,8 @@ def animate(x, nv_list, counts, counts_errs, norms, img_arrays, cmin=None, cmax=
 
     # Set up the actual image
     kpl.imshow(im_ax, np.zeros(img_arrays[0].shape), no_cbar=True)
+    scale = get_camera_scale(scale_bar_length_factor)
+    kpl.scale_bar(im_ax, scale, "1 µm", kpl.Loc.LOWER_RIGHT)
 
     def data_ax_relim():
         # pass
@@ -1137,10 +1149,10 @@ def animate(x, nv_list, counts, counts_errs, norms, img_arrays, cmin=None, cmax=
         ylabel = "Change in $P($NV$^{-})$"
         kpl.set_shared_ax_xlabel(rep_data_ax, xlabel)
         kpl.set_shared_ax_ylabel(rep_data_ax, ylabel)
-        ax.set_xticks([0, 200])
-        ax.set_yticks([0, 0.1])
-        ax.set_xlim([-12.8, 268.8])
-        ax.set_ylim([-0.03671401564507494, 0.1688633341304579])
+        rep_data_ax.set_xticks([0, 200])
+        rep_data_ax.set_yticks([0, 0.1])
+        rep_data_ax.set_xlim([-12.8, 268.8])
+        rep_data_ax.set_ylim([-0.03671401564507494, 0.1688633341304579])
 
     data_ax_relim()
 
