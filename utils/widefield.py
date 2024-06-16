@@ -242,7 +242,7 @@ def threshold_counts(nv_list, sig_counts, ref_counts=None, dynamic_thresh=False)
                 combined_counts,
                 single_or_dual=False,
                 nvn_ratio=None,
-                dual_threshold_min_fidelity=0.99,
+                dual_threshold_min_fidelity=0.8,
                 no_print=True,
             )
             thresholds.append(threshold)

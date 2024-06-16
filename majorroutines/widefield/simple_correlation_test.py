@@ -256,7 +256,7 @@ def process_and_plot_experimental(data, ax=None):
 
 
 def process_and_plot(
-    data, passed_ax=None, sig_or_ref=True, no_cbar=False, cbar_max=None, no_labels=False
+    data, ax=None, sig_or_ref=True, no_cbar=False, cbar_max=None, no_labels=False
 ):
     ### Unpack
 
@@ -265,6 +265,7 @@ def process_and_plot(
     num_nvs = len(nv_list)
 
     passed_cbar_max = cbar_max
+    passed_ax = ax
 
     # Break down the counts array
     # experiment, nv, run, step, rep
@@ -333,6 +334,11 @@ def process_and_plot(
     # Make the colorbar symmetric about 0
     sig_max = np.nanmax(np.abs(sig_corr_coeffs))
     ref_max = np.nanmax(np.abs(ref_corr_coeffs))
+
+    print(f"Sig mean mag: {np.nanmean(np.abs(sig_corr_coeffs))}")
+    print(f"Ref mean: {np.nanmean(ref_corr_coeffs)}")
+    print(f"Ref std: {np.nanstd(ref_corr_coeffs)}")
+    print()
 
     # cbar_maxes = [sig_max, sig_max, 1]
     cbar_max = sig_max if passed_cbar_max is None else passed_cbar_max

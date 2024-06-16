@@ -379,10 +379,7 @@ def determine_threshold(
         nvn_ratio = 1 - popt[0]
     nv0_ratio = 1 - nvn_ratio
 
-    # Find the optimum threshold by maximizing readout fidelity
-    # I.e. find threshold that maximizes:
-    # F = (1/2)P(say NV- | actually NV-) + (1/2)P(say NV0 | actually NV0)
-    # mean_counts_nv0, mean_counts_nvn = popt[1], popt[3]
+    # Calculate fidelities for given threshold
     mean_counts_nv0, mean_counts_nvn = popt[1], popt[1 + num_single_dist_params]
     mean_counts_nv0 = round(mean_counts_nv0)
     mean_counts_nvn = round(mean_counts_nvn)
@@ -414,24 +411,55 @@ def determine_threshold(
         right_fidelities.append(right_fidelity)
     single_threshold = thresh_options[np.argmax(fidelities)]
     # print(np.max(fidelities))
+
+    # Calculate normalized probabilities for given integrated counts value
+    norm_nv0_probs = []
+    norm_nvn_probs = []
+    for val in x_vals:
+        nv0_prob = skew_gaussian_pdf(val, *popt[1 : 1 + num_single_dist_params])
+        nvn_prob = skew_gaussian_pdf(val, *popt[1 + num_single_dist_params :])
+        norm_nv0_prob = (
+            nv0_ratio * nv0_prob / (nv0_ratio * nv0_prob + nvn_ratio * nvn_prob)
+        )
+        norm_nvn_prob = (
+            nvn_ratio * nvn_prob / (nv0_ratio * nv0_prob + nvn_ratio * nvn_prob)
+        )
+        norm_nv0_probs.append(norm_nv0_prob)
+        norm_nvn_probs.append(norm_nvn_prob)
     if not single_or_dual:
-        threshold = [single_threshold - 4, single_threshold + 1]
-    if False:
-        threshold = [np.min(thresh_options), np.max(thresh_options)]
-        for ind in range(num_options):
-            left_fidelity = left_fidelities[ind]
-            right_fidelity = right_fidelities[ind]
-            thresh_option = thresh_options[ind]
-            if (
-                left_fidelity > dual_threshold_min_fidelity
-                and thresh_option > threshold[0]
-            ):
-                threshold[0] = thresh_option
-            if (
-                right_fidelity > dual_threshold_min_fidelity
-                and thresh_option < threshold[1]
-            ):
-                threshold[1] = thresh_option
+        ### Manual approach
+        # threshold = [single_threshold - 4, single_threshold + 1]
+
+        ### CDF
+        # threshold = [np.min(thresh_options), np.max(thresh_options)]
+        # for ind in range(num_options):
+        #     left_fidelity = left_fidelities[ind]
+        #     right_fidelity = right_fidelities[ind]
+        #     thresh_option = thresh_options[ind]
+        #     if (
+        #         left_fidelity > dual_threshold_min_fidelity
+        #         and thresh_option > threshold[0]
+        #     ):
+        #         threshold[0] = thresh_option
+        #     if (
+        #         right_fidelity > dual_threshold_min_fidelity
+        #         and thresh_option < threshold[1]
+        #     ):
+        #         threshold[1] = thresh_option
+
+        ### PDF
+        norm_nv0_probs = np.array(norm_nv0_probs)
+        norm_nvn_probs = np.array(norm_nvn_probs)
+        adj_norm_nv0_probs = np.where(
+            norm_nv0_probs > dual_threshold_min_fidelity, norm_nv0_probs, 1
+        )
+        adj_norm_nvn_probs = np.where(
+            norm_nvn_probs > dual_threshold_min_fidelity, norm_nvn_probs, 1
+        )
+        threshold = [
+            x_vals[np.argmin(adj_norm_nv0_probs)] + 0.5,
+            x_vals[np.argmin(adj_norm_nvn_probs)] - 0.5,
+        ]
 
     # if there's no ambiguous zone for dual-thresholding just use a single value
     if single_or_dual or threshold[0] >= threshold[1]:

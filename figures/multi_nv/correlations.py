@@ -120,7 +120,7 @@ def main(block_data, checkerboard_data, orientation_data):
     # Random pi pulse
     pi_pulse_color = kpl.KplColors.BROWN
     start = stop + 2
-    stop = start + 2
+    stop = start + 3
     kpl.plot_sequence(
         global_ax,
         [0, start, stop, 0],
@@ -144,7 +144,7 @@ def main(block_data, checkerboard_data, orientation_data):
 
     # Anticorrelation pi pulse
     start = stop + 3
-    stop = start + 2
+    stop = start + 3
     kpl.plot_sequence(
         global_ax,
         [0, start, stop, 0],
