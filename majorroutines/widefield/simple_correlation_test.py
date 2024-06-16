@@ -144,8 +144,6 @@ def process_and_plot_experimental(data, ax=None):
 
     print(np.nanmean(ref_corr_coeffs) / np.nanmean(np.abs(sig_corr_coeffs)))
 
-
-
     # MCC
     # fig, ax = plt.subplots()
     # mean_diff_corr_coeffs = [
@@ -258,7 +256,7 @@ def process_and_plot_experimental(data, ax=None):
 
 
 def process_and_plot(
-    data, ax=None, sig_or_ref=True, no_cbar=False, cbar_max=None, no_labels=False
+    data, passed_ax=None, sig_or_ref=True, no_cbar=False, cbar_max=None, no_labels=False
 ):
     ### Unpack
 
@@ -274,7 +272,7 @@ def process_and_plot(
     ref_counts = np.array(counts[1])
 
     sig_counts, ref_counts = widefield.threshold_counts(
-        nv_list, sig_counts, ref_counts, None
+        nv_list, sig_counts, ref_counts, dynamic_thresh=True
     )
 
     ### Calculate the correlations
@@ -303,7 +301,7 @@ def process_and_plot(
     titles = ["Signal", "Reference", "Ideal signal"]
     cbar_maxes = [sig_max, sig_max, 1]
     for ind in range(len(vals)):
-        if ax is None:
+        if passed_ax is None:
             fig, ax = plt.subplots()
             figs.append(fig)
         else:
@@ -311,6 +309,7 @@ def process_and_plot(
                 continue
             if not sig_or_ref and ind != 1:
                 continue
+            ax = passed_ax
         if passed_cbar_max is not None:
             cbar_max = passed_cbar_max
         else:
@@ -394,19 +393,10 @@ def main(nv_list, num_reps, num_runs):
 if __name__ == "__main__":
     kpl.init_kplotlib()
 
-    # data = dm.get_raw_data(file_id=1538271354881)  # Checkerboard
-    # data = dm.get_raw_data(file_id=1539569377493)  # Checkerboard
-    data = dm.get_raw_data(file_id=1541938921939)  # Block
-    # data = dm.get_raw_data(file_id=1540558251818)  # By orientation
-    #
-    # data = dm.get_raw_data(file_id=1541938921939)  # Block
-    # data = dm.get_raw_data(file_id=1542229869361)  # Block
-    # data = dm.get_raw_data(file_id=1542771522665)  # Block
-    # data = dm.get_raw_data(file_id=1543311522838)  # uniform
-
-    # nv_list = data["nv_list"]
-    # nv_inds = [nv.name for nv in nv_list]
-    # spin_flips = [nv.spin_flip for nv in nv_list]
+    data = dm.get_raw_data(file_id=1540048047866)  # Straight block
+    # data = dm.get_raw_data(file_id=1541938921939)  # reverse block
+    # data = dm.get_raw_data(file_id=1538271354881)  # checkerboard
+    # data = dm.get_raw_data(file_id=1540558251818)  # orientation
 
     process_and_plot(data)
 

@@ -29,7 +29,7 @@ import numpy.ma as ma
 from numpy import exp
 from scipy.optimize import curve_fit
 from scipy.special import erf, factorial
-from scipy.stats import norm
+from scipy.stats import norm, skewnorm
 
 from utils import common
 from utils.constants import Boltzmann, Digital, ModMode, NormMode
@@ -311,8 +311,33 @@ def gaussian_cdf(x, mean, std):
     return norm(loc=mean, scale=std).cdf(x)
 
 
-def determine_threshold(counts_list, nvn_ratio=0.5, no_print=False):
+def bimodal_skew_gaussian(
+    x, prob_nv0, mean_nv0, std_nv0, skew_nv0, mean_nvn, std_nvn, skew_nvn
+):
+    prob_nvn = 1 - prob_nv0
+    val_nv0 = skew_gaussian_pdf(x, mean_nv0, std_nv0, skew_nv0)
+    val_nvn = skew_gaussian_pdf(x, mean_nvn, std_nvn, skew_nvn)
+    return prob_nv0 * val_nv0 + prob_nvn * val_nvn
+
+
+def skew_gaussian_pdf(x, mean, std, skew):
+    return skewnorm(a=skew, loc=mean, scale=std).pdf(x)
+
+
+def skew_gaussian_cdf(x, mean, std, skew):
+    return skewnorm(a=skew, loc=mean, scale=std).cdf(x)
+
+
+def determine_threshold(
+    counts_list,
+    single_or_dual=True,
+    nvn_ratio=0.5,
+    dual_fidelity_limit=0.9,
+    no_print=False,
+):
     """counts_list should have some population in both NV- and NV0"""
+
+    counts_list = counts_list.flatten()
 
     # Remove outliers
     median = np.median(counts_list)
@@ -320,7 +345,7 @@ def determine_threshold(counts_list, nvn_ratio=0.5, no_print=False):
     counts_list = counts_list[counts_list < median + 10 * std]
 
     # Histogram the counts
-    counts_list = [round(el) for el in counts_list]
+    counts_list = np.array([round(el) for el in counts_list])
     max_count = max(counts_list)
     x_vals = np.linspace(0, max_count, max_count + 1)
     hist, _ = np.histogram(
@@ -331,67 +356,98 @@ def determine_threshold(counts_list, nvn_ratio=0.5, no_print=False):
         return gaussian_pdf(x, mean_nv0, std_nv0) + gaussian_pdf(x, mean_nvn, std_nvn)
 
     # Fit the histogram
-    fit_fn = bimodal_gaussian
+    # fit_fn = bimodal_gaussian
+    fit_fn = bimodal_skew_gaussian
+    num_single_dist_params = 3
     mean_nv0_guess = round(np.quantile(counts_list, 0.2))
-    mean_nvn_guess = round(np.quantile(counts_list, 0.9))
+    mean_nvn_guess = round(np.quantile(counts_list, 0.95))
     guess_params = (
-        0.6,
+        0.7,
         mean_nv0_guess,
-        1.5 * np.sqrt(mean_nv0_guess),  # 1.5 factor for broadening
+        2 * np.sqrt(mean_nv0_guess),  # 1.5 factor for broadening
+        2,
         mean_nvn_guess,
-        1.5 * np.sqrt(mean_nvn_guess),
+        2 * np.sqrt(mean_nvn_guess),
+        -2,
         # 0.002,
     )
     popt, _ = curve_fit(fit_fn, x_vals, hist, p0=guess_params)
     if not no_print:
         print(popt)
-    # fig, ax = plt.subplots()
-    # ax.plot(x_vals, hist)
-    # ax.plot(x_vals, fit_fn(x_vals, *guess_params))
-    # ax.plot(x_vals, fit_fn(x_vals, *popt))
 
     # Find the optimum threshold by maximizing readout fidelity
     # I.e. find threshold that maximizes:
     # F = (1/2)P(say NV- | actually NV-) + (1/2)P(say NV0 | actually NV0)
-    mean_counts_nv0, mean_counts_nvn = popt[1], popt[3]
+    # mean_counts_nv0, mean_counts_nvn = popt[1], popt[3]
+    mean_counts_nv0, mean_counts_nvn = popt[1], popt[1 + num_single_dist_params]
     mean_counts_nv0 = round(mean_counts_nv0)
     mean_counts_nvn = round(mean_counts_nvn)
-    num_steps = mean_counts_nvn - mean_counts_nv0
-    thresh_options = np.linspace(
-        mean_counts_nv0 + 0.5, mean_counts_nvn - 0.5, num_steps
-    )
-    fidelities = []
+    thresh_options = np.arange(mean_counts_nv0 - 4.5, mean_counts_nvn + 5.5, 1)
+    best_fidelity = None if single_or_dual else [None, None]
+    threshold = None if single_or_dual else [None, None]
     for val in thresh_options:
         # nv0_fid = poisson_cdf(val, mean_counts_nv0)
         # nvn_fid = 1 - poisson_cdf(val, mean_counts_nvn)
-        nv0_fid = gaussian_cdf(val, *popt[1:3])
-        nvn_fid = 1 - gaussian_cdf(val, *popt[3:])
-        fidelities.append((1 - nvn_ratio) * nv0_fid + nvn_ratio * nvn_fid)
+        # nv0_fid = gaussian_cdf(val, *popt[1:3])
+        # nvn_fid = 1 - gaussian_cdf(val, *popt[3:])
+        nv0_fid = skew_gaussian_cdf(val, *popt[1 : 1 + num_single_dist_params])
+        nvn_fid = 1 - skew_gaussian_cdf(val, *popt[1 + num_single_dist_params :])
+        if single_or_dual:
+            fidelity = (1 - nvn_ratio) * nv0_fid + nvn_ratio * nvn_fid
+            if best_fidelity is None or fidelity > best_fidelity:
+                best_fidelity = fidelity
+                threshold = val
+        else:
+            fidelity = [nv0_fid, nvn_fid]
+            # The lower (higher) threshold is set based on the fidelity of calling NV- (NV0)
+            for ind in range(2):
+                opp_ind = 1 - ind
+                if fidelity[opp_ind] < dual_fidelity_limit:
+                    continue
+                best_fid_val = best_fidelity[opp_ind]
+                if best_fid_val is None or fidelity[opp_ind] < best_fidelity[opp_ind]:
+                    best_fidelity[opp_ind] = fidelity[opp_ind]
+                    threshold[ind] = val
 
-    best_fidelity = max(fidelities)
-    best_threshold = thresh_options[np.argmax(fidelities)]
+    # if not single_or_dual:
+    #     fig, ax = plt.subplots()
+    #     ax.plot(x_vals, hist)
+    #     ax.plot(x_vals, fit_fn(x_vals, *guess_params))
+    #     ax.plot(x_vals, fit_fn(x_vals, *popt))
+    #     ax.axvline(threshold[0], color="red")
+    #     ax.axvline(threshold[1], color="black")
+
+    # if there's no ambiguous zone for dual-thresholding just use a single value
+    if not single_or_dual and threshold[0] >= threshold[1]:
+        threshold = determine_threshold(
+            counts_list, single_or_dual=True, nvn_ratio=0.5, no_print=True
+        )
 
     if not no_print:
-        print(f"Optimum threshold: {best_threshold}")
-        print(f"Fidelity: {best_fidelity}")
+        print(f"Optimum threshold: {threshold}")
+        if single_or_dual:
+            print(f"Fidelity: {best_fidelity}")
 
-    return best_threshold
+    return threshold
 
 
 def threshold(val, thresh):
+    try:
+        if len(thresh) == 2:
+            return _dual_threshold(val, *thresh)
+    except Exception:
+        pass
     where_thresh = np.array(thresh, dtype=bool)
     thresh_val = np.copy(val)
     thresh_val = np.greater(val, thresh, out=thresh_val, where=where_thresh)
     return thresh_val
 
 
-def dual_threshold(val, low_thresh, high_thresh):
+def _dual_threshold(val, low_thresh, high_thresh):
     low_thresh_val = threshold(val, low_thresh)
     high_thresh_val = threshold(val, high_thresh)
     ambiguous = np.logical_xor(low_thresh_val, high_thresh_val)
     dual_thresh_val = np.where(ambiguous, np.nan, high_thresh_val)
-    # mid_thresh_val = threshold(val, (high_thresh + low_thresh) / 2)
-    # dual_thresh_val = np.where(ambiguous, mid_thresh_val, np.nan)
     return dual_thresh_val
 
 
@@ -1166,9 +1222,9 @@ def reset_cfm():
 
 # Testing
 if __name__ == "__main__":
-    test_a = dual_threshold(
+    test_a = _dual_threshold(
         [1, 2, 3, 4.5, 5, 6], [3, 3, 3, 4, 4, 4], [5, 5, 5, 5, 5, 5]
     )
-    test_b = dual_threshold([1, 2, 3, 2, 5, 6], [3, 3, 3, 4, 4, 4], [5, 5, 5, 5, 5, 5])
-    test_c = dual_threshold([1, 2, 3, 6, 5, 6], [3, 3, 3, 4, 4, 4], [5, 5, 5, 5, 5, 5])
+    test_b = _dual_threshold([1, 2, 3, 2, 5, 6], [3, 3, 3, 4, 4, 4], [5, 5, 5, 5, 5, 5])
+    test_c = _dual_threshold([1, 2, 3, 6, 5, 6], [3, 3, 3, 4, 4, 4], [5, 5, 5, 5, 5, 5])
     print(nan_corr_coef([test_a, test_b, test_c]))

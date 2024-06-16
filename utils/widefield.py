@@ -224,53 +224,46 @@ def average_counts(sig_counts, ref_counts=None):
     return avg_counts, avg_counts_ste, norms
 
 
-def threshold_counts(
-    nv_list, sig_counts, ref_counts=None, dual_thresh_range=None, dynamic_thresh=False
-):
+def threshold_counts(nv_list, sig_counts, ref_counts=None, dynamic_thresh=False):
     """Only actually thresholds counts for NVs with thresholds specified in their sigs.
     If there's no threshold, then the raw counts are just averaged as normal."""
     _validate_counts_structure(sig_counts)
     _validate_counts_structure(ref_counts)
 
+    num_nvs = len(nv_list)
     if dynamic_thresh:
         thresholds = []
-        num_nvs = len(nv_list)
-        for ind in range(num_nvs):
+        for nv_ind in range(num_nvs):
+            if nv_ind == num_nvs - 1:
+                pass
             # combined_counts = np.append(
             #     sig_counts[ind].flatten(), ref_counts[ind].flatten()
             # )
             # threshold = determine_threshold(combined_counts)
-            threshold = determine_threshold(sig_counts[ind], no_print=True)
+            threshold = determine_threshold(
+                sig_counts[nv_ind],
+                single_or_dual=False,
+                dual_fidelity_limit=0.95,
+                no_print=True,
+            )
             thresholds.append(threshold)
     else:
         thresholds = [nv.threshold for nv in nv_list]
-        # thresholds = [27.5, 28.5, 28.5, 28.5, 25.5, 25.5, 24.5, 24.5, 28.5, 20.5]
-        # thresholds = [1.3 * nv.threshold for nv in nv_list]  # MCC
-        # thresholds[5] += 2
-        # thresholds[6] += 2
     print(thresholds)
 
-    thresholds = np.array(thresholds)
-    thresholds = thresholds[:, np.newaxis, np.newaxis, np.newaxis]
+    shape = sig_counts.shape
+    sig_states = np.empty(shape)
+    for nv_ind in range(num_nvs):
+        sig_states[nv_ind] = tb.threshold(sig_counts[nv_ind], thresholds[nv_ind])
 
-    if dual_thresh_range is None:
-        sig_states_array = tb.threshold(sig_counts, thresholds)
-    else:
-        half_range = dual_thresh_range / 2
-        sig_states_array = tb.dual_threshold(
-            sig_counts, thresholds - half_range, thresholds + half_range
-        )
     if ref_counts is not None:
-        if dual_thresh_range is None:
-            ref_states_array = tb.threshold(ref_counts, thresholds)
-        else:
-            ref_states_array = tb.dual_threshold(
-                ref_counts, thresholds - half_range, thresholds + half_range
-            )
+        ref_states = np.empty(shape)
+        for nv_ind in range(num_nvs):
+            ref_states[nv_ind] = tb.threshold(ref_counts[nv_ind], thresholds[nv_ind])
     else:
-        ref_states_array = None
+        ref_states = None
 
-    return sig_states_array, ref_states_array
+    return sig_states, ref_states
 
 
 def poisson_pmf_cont(k, mean):
