@@ -708,11 +708,11 @@ def imshow(
 
     # Labels
     if x_label is not None:
-        plt.xlabel(x_label)
+        ax.set_xlabel(x_label)
     if y_label is not None:
-        plt.ylabel(y_label)
+        ax.set_ylabel(y_label)
     if title:
-        plt.title(title)
+        ax.set_title(title)
 
     # Click handler
     fig.canvas.mpl_connect("button_press_event", on_click_image)

@@ -360,7 +360,7 @@ def determine_threshold(
     fit_fn = bimodal_skew_gaussian
     num_single_dist_params = 3
     mean_nv0_guess = round(np.quantile(counts_list, 0.2))
-    mean_nvn_guess = round(np.quantile(counts_list, 0.95))
+    mean_nvn_guess = round(np.quantile(counts_list, 0.98))
     guess_params = (
         0.7,
         mean_nv0_guess,
@@ -374,6 +374,8 @@ def determine_threshold(
     popt, _ = curve_fit(fit_fn, x_vals, hist, p0=guess_params)
     if not no_print:
         print(popt)
+
+    nvn_ratio = 1 - popt[0]
 
     # Find the optimum threshold by maximizing readout fidelity
     # I.e. find threshold that maximizes:
@@ -410,18 +412,50 @@ def determine_threshold(
                     threshold[ind] = val
 
     # if not single_or_dual:
-    #     fig, ax = plt.subplots()
-    #     ax.plot(x_vals, hist)
-    #     ax.plot(x_vals, fit_fn(x_vals, *guess_params))
-    #     ax.plot(x_vals, fit_fn(x_vals, *popt))
-    #     ax.axvline(threshold[0], color="red")
-    #     ax.axvline(threshold[1], color="black")
+    if True:
+        smooth_x_vals = np.linspace(0, max_count, 10 * (max_count + 1))
+        fig, ax = plt.subplots()
+        max_data = max(counts_list)
+        rng = (-0.5, max_data + 0.5)
+        nbins = max_data + 1
+        color = "#1f77b4"
+        alpha = 0.3
+        hex_alpha = hex(round(alpha * 255))
+        if len(hex_alpha) == 3:
+            hex_alpha = f"0{hex_alpha[-1]}"
+        else:
+            hex_alpha = hex_alpha[-2:]
+        facecolor = f"{color}{hex_alpha}"
+        ax.hist(
+            counts_list,
+            histtype="step",
+            bins=nbins,
+            facecolor=facecolor,
+            fill=True,
+            range=rng,
+            label="Histogram",
+            density=True,
+        )
+        # ax.plot(x_vals, fit_fn(x_vals, *guess_params))
+        ax.plot(smooth_x_vals, fit_fn(smooth_x_vals, *popt), label="Fit")
+        if single_or_dual:
+            ax.axvline(threshold, color="red", label="Threshold")
+        else:
+            ax.axvline(threshold[0], color="red")
+            ax.axvline(threshold[1], color="black")
+        ax.set_xlabel("Integrated counts")
+        ax.set_ylabel("Probability")
+        ax.legend()
+        plt.show(block=True)
+
+    # if not single_or_dual:
+    #     threshold = threshold[1]
 
     # if there's no ambiguous zone for dual-thresholding just use a single value
-    if not single_or_dual and threshold[0] >= threshold[1]:
-        threshold = determine_threshold(
-            counts_list, single_or_dual=True, nvn_ratio=0.5, no_print=True
-        )
+    # if not single_or_dual and threshold[0] >= threshold[1]:
+    #     threshold = determine_threshold(
+    #         counts_list, single_or_dual=True, nvn_ratio=nvn_ratio, no_print=True
+    #     )
 
     if not no_print:
         print(f"Optimum threshold: {threshold}")

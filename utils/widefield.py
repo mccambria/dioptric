@@ -234,17 +234,21 @@ def threshold_counts(nv_list, sig_counts, ref_counts=None, dynamic_thresh=False)
     if dynamic_thresh:
         thresholds = []
         for nv_ind in range(num_nvs):
+            # nv_ind = 6
             if nv_ind == num_nvs - 1:
                 pass
-            # combined_counts = np.append(
-            #     sig_counts[ind].flatten(), ref_counts[ind].flatten()
-            # )
+            combined_counts = np.append(
+                sig_counts[nv_ind].flatten(), ref_counts[nv_ind].flatten()
+            )
             # threshold = determine_threshold(combined_counts)
             threshold = determine_threshold(
-                sig_counts[nv_ind],
+                combined_counts,
                 single_or_dual=True,
-                nvn_ratio=0.3,
-                dual_fidelity_limit=0.95,
+                # nvn_ratio=0.05,
+                # nvn_ratio=0.1,
+                nvn_ratio=0.15,
+                # nvn_ratio=0.2,
+                dual_fidelity_limit=0.9,
                 no_print=True,
             )
             thresholds.append(threshold)

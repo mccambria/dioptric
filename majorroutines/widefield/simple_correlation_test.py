@@ -271,6 +271,14 @@ def process_and_plot(
     sig_counts = np.array(counts[0])
     ref_counts = np.array(counts[1])
 
+    num_runs = data["num_runs"]
+    # sig_counts = sig_counts[:, round(0.5 * num_runs) :]
+    # ref_counts = ref_counts[:, round(0.5 * num_runs) :]
+    # sig_counts = sig_counts[:, : round(0.5 * num_runs)]
+    # ref_counts = ref_counts[:, : round(0.5 * num_runs)]
+    # sig_counts = sig_counts[:, round(0.25 * num_runs) : round(0.75 * num_runs)]
+    # ref_counts = ref_counts[:, round(0.25 * num_runs) : round(0.75 * num_runs)]
+
     sig_counts, ref_counts = widefield.threshold_counts(
         nv_list, sig_counts, ref_counts, dynamic_thresh=True
     )
@@ -283,47 +291,77 @@ def process_and_plot(
     ref_corr_coeffs = tb.nan_corr_coef(flattened_ref_counts)
 
     spin_flips = np.array([-1 if nv.spin_flip else +1 for nv in nv_list])
+    if -1 not in spin_flips:
+        spin_flips[0] = -1
+        spin_flips[1] = -1
+        spin_flips[4] = -1
+        spin_flips[6] = -1
     ideal_sig_corr_coeffs = np.outer(spin_flips, spin_flips)
     ideal_sig_corr_coeffs = ideal_sig_corr_coeffs.astype(float)
 
-    # Replace diagonals (Cii=1) with nan so they don't show
-    vals = [sig_corr_coeffs, ref_corr_coeffs, ideal_sig_corr_coeffs]
-    for val in vals:
-        np.fill_diagonal(val, np.nan)
+    ideal_ref_corr_coeffs = np.outer([0] * num_nvs, [0] * num_nvs)
+    ideal_ref_corr_coeffs = ideal_ref_corr_coeffs.astype(float)
 
     ### Plot
+
+    figsize = kpl.figsize.copy()
+
+    figsize[0] *= 1.4
+    figsize[1] *= 0.85
+    titles = ["Ideal signal", "Signal"]
+    vals = [ideal_sig_corr_coeffs, sig_corr_coeffs]
+
+    titles = ["Ideal reference", "Reference"]
+    vals = [ideal_ref_corr_coeffs, ref_corr_coeffs]
+
+    # figsize[0] *= 2
+    # figsize[1] *= 0.85
+    # titles = ["Ideal signal", "Signal", "Reference"]
+    # vals = [ideal_sig_corr_coeffs, sig_corr_coeffs, ref_corr_coeffs]
+
+    num_plots = len(vals)
+    fig, axes_pack = plt.subplots(ncols=num_plots, figsize=figsize)
+
+    # Replace diagonals (Cii=1) with nan so they don't show
+    for val in [
+        ideal_ref_corr_coeffs,
+        ideal_sig_corr_coeffs,
+        sig_corr_coeffs,
+        ref_corr_coeffs,
+    ]:
+        np.fill_diagonal(val, np.nan)
 
     # Make the colorbar symmetric about 0
     sig_max = np.nanmax(np.abs(sig_corr_coeffs))
     ref_max = np.nanmax(np.abs(ref_corr_coeffs))
 
-    figs = []
-    titles = ["Signal", "Reference", "Ideal signal"]
-    cbar_maxes = [sig_max, sig_max, 1]
+    # cbar_maxes = [sig_max, sig_max, 1]
+    cbar_max = sig_max if passed_cbar_max is None else passed_cbar_max
     for ind in range(len(vals)):
         if passed_ax is None:
-            fig, ax = plt.subplots()
-            figs.append(fig)
+            # fig, ax = plt.subplots()
+            # figs.append(fig)
+            ax = axes_pack[ind]
         else:
             if sig_or_ref and ind != 0:
                 continue
             if not sig_or_ref and ind != 1:
                 continue
             ax = passed_ax
-        if passed_cbar_max is not None:
-            cbar_max = passed_cbar_max
-        else:
-            cbar_max = cbar_maxes[ind]
+        # if passed_cbar_max is not None:
+        #     cbar_max = passed_cbar_max
+        # else:
+        #     cbar_max = cbar_maxes[ind]
         kpl.imshow(
             ax,
             vals[ind],
-            # title=titles[ind],
+            title=titles[ind],
             cbar_label="Correlation coefficient",
             cmap="RdBu_r",
             vmin=-cbar_max,
             vmax=cbar_max,
             nan_color=kpl.KplColors.GRAY,
-            no_cbar=no_cbar,
+            no_cbar=no_cbar or ind < num_plots - 1,
         )
         ax.xaxis.set_major_locator(MaxNLocator(integer=True))
         ax.yaxis.set_major_locator(MaxNLocator(integer=True))
@@ -331,7 +369,7 @@ def process_and_plot(
             ax.set_xlabel("NV index")
             ax.set_ylabel("NV index")
 
-    return figs
+    # return figs
 
 
 def main(nv_list, num_reps, num_runs):
@@ -393,11 +431,13 @@ def main(nv_list, num_reps, num_runs):
 if __name__ == "__main__":
     kpl.init_kplotlib()
 
-    data = dm.get_raw_data(file_id=1540048047866)  # Straight block
-    # data = dm.get_raw_data(file_id=1541938921939)  # reverse block
-    # data = dm.get_raw_data(file_id=1538271354881)  # checkerboard
-    # data = dm.get_raw_data(file_id=1540558251818)  # orientation
-
+    # data = dm.get_raw_data(file_id=1540048047866)  # Straight block
+    # process_and_plot(data)
+    data = dm.get_raw_data(file_id=1541938921939)  # reverse block
+    process_and_plot(data)
+    data = dm.get_raw_data(file_id=1538271354881)  # checkerboard
+    process_and_plot(data)
+    data = dm.get_raw_data(file_id=1540558251818)  # orientation
     process_and_plot(data)
 
     plt.show(block=True)
