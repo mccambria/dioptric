@@ -242,7 +242,8 @@ def threshold_counts(nv_list, sig_counts, ref_counts=None, dynamic_thresh=False)
             # threshold = determine_threshold(combined_counts)
             threshold = determine_threshold(
                 sig_counts[nv_ind],
-                single_or_dual=False,
+                single_or_dual=True,
+                nvn_ratio=0.3,
                 dual_fidelity_limit=0.95,
                 no_print=True,
             )
