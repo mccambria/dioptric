@@ -306,18 +306,17 @@ def process_and_plot(
 
     figsize = kpl.figsize.copy()
 
-    figsize[0] *= 1.4
-    figsize[1] *= 0.85
-    titles = ["Ideal signal", "Signal"]
-    vals = [ideal_sig_corr_coeffs, sig_corr_coeffs]
-
-    titles = ["Ideal reference", "Reference"]
-    vals = [ideal_ref_corr_coeffs, ref_corr_coeffs]
-
-    # figsize[0] *= 2
+    # figsize[0] *= 1.4
     # figsize[1] *= 0.85
-    # titles = ["Ideal signal", "Signal", "Reference"]
-    # vals = [ideal_sig_corr_coeffs, sig_corr_coeffs, ref_corr_coeffs]
+    # titles = ["Ideal signal", "Signal"]
+    # vals = [ideal_sig_corr_coeffs, sig_corr_coeffs]
+    # titles = ["Ideal reference", "Reference"]
+    # vals = [ideal_ref_corr_coeffs, ref_corr_coeffs]
+
+    figsize[0] *= 2
+    figsize[1] *= 0.85
+    titles = ["Ideal signal", "Signal", "Reference"]
+    vals = [ideal_sig_corr_coeffs, sig_corr_coeffs, ref_corr_coeffs]
 
     num_plots = len(vals)
     fig, axes_pack = plt.subplots(ncols=num_plots, figsize=figsize)
@@ -431,8 +430,8 @@ def main(nv_list, num_reps, num_runs):
 if __name__ == "__main__":
     kpl.init_kplotlib()
 
-    # data = dm.get_raw_data(file_id=1540048047866)  # Straight block
-    # process_and_plot(data)
+    data = dm.get_raw_data(file_id=1540048047866)  # Straight block
+    process_and_plot(data)
     data = dm.get_raw_data(file_id=1541938921939)  # reverse block
     process_and_plot(data)
     data = dm.get_raw_data(file_id=1538271354881)  # checkerboard

@@ -331,8 +331,8 @@ def skew_gaussian_cdf(x, mean, std, skew):
 def determine_threshold(
     counts_list,
     single_or_dual=True,
-    nvn_ratio=0.5,
-    dual_fidelity_limit=0.9,
+    nvn_ratio=None,
+    dual_threshold_min_fidelity=0.9,
     no_print=False,
 ):
     """counts_list should have some population in both NV- and NV0"""
@@ -375,7 +375,9 @@ def determine_threshold(
     if not no_print:
         print(popt)
 
-    nvn_ratio = 1 - popt[0]
+    if nvn_ratio is None:
+        nvn_ratio = 1 - popt[0]
+    nv0_ratio = 1 - nvn_ratio
 
     # Find the optimum threshold by maximizing readout fidelity
     # I.e. find threshold that maximizes:
@@ -384,35 +386,60 @@ def determine_threshold(
     mean_counts_nv0, mean_counts_nvn = popt[1], popt[1 + num_single_dist_params]
     mean_counts_nv0 = round(mean_counts_nv0)
     mean_counts_nvn = round(mean_counts_nvn)
-    thresh_options = np.arange(mean_counts_nv0 - 4.5, mean_counts_nvn + 5.5, 1)
-    best_fidelity = None if single_or_dual else [None, None]
-    threshold = None if single_or_dual else [None, None]
+    thresh_options = np.arange(0.5, np.max(counts_list) + 0.5, 1)
+    num_options = len(thresh_options)
+    fidelities = []
+    left_fidelities = []
+    right_fidelities = []
     for val in thresh_options:
         # nv0_fid = poisson_cdf(val, mean_counts_nv0)
         # nvn_fid = 1 - poisson_cdf(val, mean_counts_nvn)
         # nv0_fid = gaussian_cdf(val, *popt[1:3])
         # nvn_fid = 1 - gaussian_cdf(val, *popt[3:])
-        nv0_fid = skew_gaussian_cdf(val, *popt[1 : 1 + num_single_dist_params])
-        nvn_fid = 1 - skew_gaussian_cdf(val, *popt[1 + num_single_dist_params :])
-        if single_or_dual:
-            fidelity = (1 - nvn_ratio) * nv0_fid + nvn_ratio * nvn_fid
-            if best_fidelity is None or fidelity > best_fidelity:
-                best_fidelity = fidelity
-                threshold = val
-        else:
-            fidelity = [nv0_fid, nvn_fid]
-            # The lower (higher) threshold is set based on the fidelity of calling NV- (NV0)
-            for ind in range(2):
-                opp_ind = 1 - ind
-                if fidelity[opp_ind] < dual_fidelity_limit:
-                    continue
-                best_fid_val = best_fidelity[opp_ind]
-                if best_fid_val is None or fidelity[opp_ind] < best_fidelity[opp_ind]:
-                    best_fidelity[opp_ind] = fidelity[opp_ind]
-                    threshold[ind] = val
+        nv0_left_prob = skew_gaussian_cdf(val, *popt[1 : 1 + num_single_dist_params])
+        nvn_left_prob = skew_gaussian_cdf(val, *popt[1 + num_single_dist_params :])
+        nv0_right_prob = 1 - nv0_left_prob
+        nvn_right_prob = 1 - nvn_left_prob
+        fidelity = nv0_ratio * nv0_left_prob + nvn_ratio * nvn_right_prob
+        # fidelity = nv0_ratio * nv0_left_prob + nvn_ratio * nvn_left_prob
+        # fidelity = -((fidelity - nv0_ratio) ** 2)
+        left_fidelity = (nv0_ratio * nv0_left_prob) / (
+            nv0_ratio * nv0_left_prob + nvn_ratio * nvn_left_prob
+        )
+        right_fidelity = (nvn_ratio * nvn_right_prob) / (
+            nvn_ratio * nvn_right_prob + nv0_ratio * nv0_right_prob
+        )
+        fidelities.append(fidelity)
+        left_fidelities.append(left_fidelity)
+        right_fidelities.append(right_fidelity)
+    single_threshold = thresh_options[np.argmax(fidelities)]
+    # print(np.max(fidelities))
+    if not single_or_dual:
+        threshold = [single_threshold - 4, single_threshold + 1]
+    if False:
+        threshold = [np.min(thresh_options), np.max(thresh_options)]
+        for ind in range(num_options):
+            left_fidelity = left_fidelities[ind]
+            right_fidelity = right_fidelities[ind]
+            thresh_option = thresh_options[ind]
+            if (
+                left_fidelity > dual_threshold_min_fidelity
+                and thresh_option > threshold[0]
+            ):
+                threshold[0] = thresh_option
+            if (
+                right_fidelity > dual_threshold_min_fidelity
+                and thresh_option < threshold[1]
+            ):
+                threshold[1] = thresh_option
+
+    # if there's no ambiguous zone for dual-thresholding just use a single value
+    if single_or_dual or threshold[0] >= threshold[1]:
+        # if single_or_dual:
+        threshold = single_threshold
 
     # if not single_or_dual:
-    if True:
+    if False:
         smooth_x_vals = np.linspace(0, max_count, 10 * (max_count + 1))
         fig, ax = plt.subplots()
         max_data = max(counts_list)
@@ -450,12 +477,6 @@ def determine_threshold(
 
     # if not single_or_dual:
     #     threshold = threshold[1]
-
-    # if there's no ambiguous zone for dual-thresholding just use a single value
-    # if not single_or_dual and threshold[0] >= threshold[1]:
-    #     threshold = determine_threshold(
-    #         counts_list, single_or_dual=True, nvn_ratio=nvn_ratio, no_print=True
-    #     )
 
     if not no_print:
         print(f"Optimum threshold: {threshold}")
