@@ -22,6 +22,7 @@ from utils import kplotlib as kpl
 from utils import positioning as pos
 from utils import tool_belt as tb
 from utils.constants import LaserKey, NVSig
+from utils.widefield import crop_img_array
 
 pixel_coords_list = [
     [131.144, 129.272],  #  Smiley
@@ -42,19 +43,6 @@ pixel_coords_list = [
 base_pixel_drift = [10, 38]
 
 
-def crop_img_array(img_array, offset=[0, 0], buffer=20):
-    offset = [round(el) for el in offset]
-    size = img_array.shape[-1]
-    if size == 250:
-        widefield.replace_dead_pixel(img_array)
-    # print([buffer + offset[0], buffer + offset[1]])
-    img_array = img_array[
-        buffer + offset[0] : size - buffer + offset[0],
-        buffer + offset[1] : size - buffer + offset[1],
-    ]
-    return img_array
-
-
 def main(
     file_id,
     diff=True,
@@ -64,6 +52,7 @@ def main(
     vmax=None,
     draw_circles=False,
     draw_circles_inds=None,
+    inverted=False,
 ):
     ### Unpacking
 
@@ -78,7 +67,10 @@ def main(
         buffer = buffer // downsample_factor
 
         if diff:  # diff
-            img_arrays = img_arrays[0] - img_arrays[1]
+            if not inverted:
+                img_arrays = img_arrays[0] - img_arrays[1]
+            else:
+                img_arrays = img_arrays[1] - img_arrays[0]
         else:
             img_array_ind = 0 if sig_or_ref else 1
             img_arrays = img_arrays[img_array_ind]
@@ -215,12 +207,14 @@ if __name__ == "__main__":
     # main(file_id, img_array_offset=img_array_offset, diff=False, sig_or_ref=False, vmin=0.02, vmax=0.42)
     # main(file_id, img_array_offset=img_array_offset, diff=False, sig_or_ref=True, vmin=0.02, vmax=0.42)
     # main(file_id, img_array_offset=img_array_offset, diff=True, vmin=-0.32, vmax=0.02)
+    # main(file_id, img_array_offset=img_array_offset, diff=True, vmin=-0.02, vmax=0.32, inverted=True) # Inverted
     # main(file_id, img_array_offset=img_array_offset, diff=True, draw_circles=True)
 
     # Winking histogram
-    file_id = 1558619706453
-    img_array_offset=[0,0]
-    main(file_id, img_array_offset=img_array_offset, diff=True, vmin=-0.32, vmax=0.02)
+    # file_id = 1558619706453
+    # img_array_offset=[0,0]
+    # main(file_id, img_array_offset=img_array_offset, diff=True, vmin=-0.32, vmax=0.02)
+    # main(file_id, img_array_offset=img_array_offset, diff=True, vmin=-0.02, vmax=0.32, inverted=True)
     # main(file_id, img_array_offset=img_array_offset, diff=True, draw_circles=True)
 
     # Spin
@@ -230,10 +224,10 @@ if __name__ == "__main__":
     # img_array_offset=[0,1]
     # file_id = 1559062712968
     # img_array_offset=[1,0]
-    # file_id = 1559550352430
-    # img_array_offset=[0,0]
+    file_id = 1559550352430
+    img_array_offset=[0,0]
     # main(file_id, img_array_offset=img_array_offset, diff=True, vmin=-0.005, vmax=0.046)
-    # main(file_id, img_array_offset=img_array_offset, diff=True)
+    main(file_id, img_array_offset=img_array_offset, diff=True)
     # main(file_id, img_array_offset=img_array_offset, diff=True, draw_circles=True)
 
     plt.show(block=True)

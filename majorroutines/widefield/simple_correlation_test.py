@@ -144,8 +144,6 @@ def process_and_plot(data):
 
     print(np.nanmean(ref_corr_coeffs) / np.nanmean(np.abs(sig_corr_coeffs)))
 
-
-
     # MCC
     # fig, ax = plt.subplots()
     # mean_diff_corr_coeffs = [
@@ -257,6 +255,131 @@ def process_and_plot(data):
     return figs
 
 
+<<<<<<< HEAD
+=======
+def process_and_plot(
+    data, ax=None, sig_or_ref=True, no_cbar=False, cbar_max=None, no_labels=False
+):
+    ### Unpack
+
+    nv_list = data["nv_list"]
+    counts = np.array(data["counts"])
+    num_nvs = len(nv_list)
+
+    passed_cbar_max = cbar_max
+    passed_ax = ax
+
+    # Break down the counts array
+    # experiment, nv, run, step, rep
+    sig_counts = np.array(counts[0])
+    ref_counts = np.array(counts[1])
+
+    num_runs = data["num_runs"]
+    # sig_counts = sig_counts[:, round(0.5 * num_runs) :]
+    # ref_counts = ref_counts[:, round(0.5 * num_runs) :]
+    # sig_counts = sig_counts[:, : round(0.5 * num_runs)]
+    # ref_counts = ref_counts[:, : round(0.5 * num_runs)]
+    # sig_counts = sig_counts[:, round(0.25 * num_runs) : round(0.75 * num_runs)]
+    # ref_counts = ref_counts[:, round(0.25 * num_runs) : round(0.75 * num_runs)]
+
+    sig_counts, ref_counts = widefield.threshold_counts(
+        nv_list, sig_counts, ref_counts, dynamic_thresh=True
+    )
+
+    ### Calculate the correlations
+    flattened_sig_counts = [sig_counts[ind].flatten() for ind in range(num_nvs)]
+    flattened_ref_counts = [ref_counts[ind].flatten() for ind in range(num_nvs)]
+
+    sig_corr_coeffs = tb.nan_corr_coef(flattened_sig_counts)
+    ref_corr_coeffs = tb.nan_corr_coef(flattened_ref_counts)
+
+    spin_flips = np.array([-1 if nv.spin_flip else +1 for nv in nv_list])
+    if -1 not in spin_flips:
+        spin_flips[0] = -1
+        spin_flips[1] = -1
+        spin_flips[4] = -1
+        spin_flips[6] = -1
+    ideal_sig_corr_coeffs = np.outer(spin_flips, spin_flips)
+    ideal_sig_corr_coeffs = ideal_sig_corr_coeffs.astype(float)
+
+    ideal_ref_corr_coeffs = np.outer([0] * num_nvs, [0] * num_nvs)
+    ideal_ref_corr_coeffs = ideal_ref_corr_coeffs.astype(float)
+
+    ### Plot
+
+    figsize = kpl.figsize.copy()
+
+    # figsize[0] *= 1.4
+    # figsize[1] *= 0.85
+    # titles = ["Ideal signal", "Signal"]
+    # vals = [ideal_sig_corr_coeffs, sig_corr_coeffs]
+    # titles = ["Ideal reference", "Reference"]
+    # vals = [ideal_ref_corr_coeffs, ref_corr_coeffs]
+
+    figsize[0] *= 2
+    figsize[1] *= 0.85
+    titles = ["Ideal signal", "Signal", "Reference"]
+    vals = [ideal_sig_corr_coeffs, sig_corr_coeffs, ref_corr_coeffs]
+
+    num_plots = len(vals)
+    fig, axes_pack = plt.subplots(ncols=num_plots, figsize=figsize)
+
+    # Replace diagonals (Cii=1) with nan so they don't show
+    for val in [
+        ideal_ref_corr_coeffs,
+        ideal_sig_corr_coeffs,
+        sig_corr_coeffs,
+        ref_corr_coeffs,
+    ]:
+        np.fill_diagonal(val, np.nan)
+
+    # Make the colorbar symmetric about 0
+    sig_max = np.nanmax(np.abs(sig_corr_coeffs))
+    ref_max = np.nanmax(np.abs(ref_corr_coeffs))
+
+    print(f"Sig mean mag: {np.nanmean(np.abs(sig_corr_coeffs))}")
+    print(f"Ref mean: {np.nanmean(ref_corr_coeffs)}")
+    print(f"Ref std: {np.nanstd(ref_corr_coeffs)}")
+    print()
+
+    # cbar_maxes = [sig_max, sig_max, 1]
+    cbar_max = sig_max if passed_cbar_max is None else passed_cbar_max
+    for ind in range(len(vals)):
+        if passed_ax is None:
+            # fig, ax = plt.subplots()
+            # figs.append(fig)
+            ax = axes_pack[ind]
+        else:
+            if sig_or_ref and ind != 0:
+                continue
+            if not sig_or_ref and ind != 1:
+                continue
+            ax = passed_ax
+        # if passed_cbar_max is not None:
+        #     cbar_max = passed_cbar_max
+        # else:
+        #     cbar_max = cbar_maxes[ind]
+        kpl.imshow(
+            ax,
+            vals[ind],
+            title=titles[ind],
+            cbar_label="Correlation coefficient",
+            cmap="RdBu_r",
+            vmin=-cbar_max,
+            vmax=cbar_max,
+            nan_color=kpl.KplColors.GRAY,
+            no_cbar=no_cbar or ind < num_plots - 1,
+        )
+        ax.xaxis.set_major_locator(MaxNLocator(integer=True))
+        ax.yaxis.set_major_locator(MaxNLocator(integer=True))
+        if not no_labels:
+            ax.set_xlabel("NV index")
+            ax.set_ylabel("NV index")
+
+    # return figs
+
+
+>>>>>>> 92063939bc5e8d0c8d6a3b7ad7f55db4b43a032f
 def main(nv_list, num_reps, num_runs):
     ### Some initial setup
     uwave_ind_list = [0, 1]
@@ -316,20 +439,13 @@ def main(nv_list, num_reps, num_runs):
 if __name__ == "__main__":
     kpl.init_kplotlib()
 
-    # data = dm.get_raw_data(file_id=1538271354881)  # Checkerboard
-    # data = dm.get_raw_data(file_id=1539569377493)  # Checkerboard
-    data = dm.get_raw_data(file_id=1541938921939)  # Block
-    # data = dm.get_raw_data(file_id=1540558251818)  # By orientation
-    #
-    # data = dm.get_raw_data(file_id=1541938921939)  # Block
-    # data = dm.get_raw_data(file_id=1542229869361)  # Block
-    # data = dm.get_raw_data(file_id=1542771522665)  # Block
-    # data = dm.get_raw_data(file_id=1543311522838)  # uniform
-
-    # nv_list = data["nv_list"]
-    # nv_inds = [nv.name for nv in nv_list]
-    # spin_flips = [nv.spin_flip for nv in nv_list]
-
+    data = dm.get_raw_data(file_id=1540048047866)  # Straight block
+    process_and_plot(data)
+    data = dm.get_raw_data(file_id=1541938921939)  # reverse block
+    process_and_plot(data)
+    data = dm.get_raw_data(file_id=1538271354881)  # checkerboard
+    process_and_plot(data)
+    data = dm.get_raw_data(file_id=1540558251818)  # orientation
     process_and_plot(data)
 
     plt.show(block=True)
