@@ -148,6 +148,7 @@ def main(
     uwave_ind_list=[0, 1],
     uwave_freq_list=None,
     num_exps_per_rep=2,
+    ref_by_rep_parity=True,
     load_iq=False,
     save_images=False,
     save_images_avg_reps=True,
@@ -302,12 +303,12 @@ def main(
                                     )
                                 ret_vals = read_and_process_image(nv_list)
                                 img_array, counts_list, states_list = ret_vals
-                                counts[exp_ind, :, run_ind, step_ind, rep_ind] = (
-                                    counts_list
-                                )
-                                states[exp_ind, :, run_ind, step_ind, rep_ind] = (
-                                    states_list
-                                )
+                                counts[
+                                    exp_ind, :, run_ind, step_ind, rep_ind
+                                ] = counts_list
+                                states[
+                                    exp_ind, :, run_ind, step_ind, rep_ind
+                                ] = states_list
 
                                 if save_images:
                                     if save_images_downsample_factor is not None:
@@ -315,6 +316,14 @@ def main(
                                             img_array, save_images_downsample_factor
                                         )
                                     if save_images_avg_reps:
+                                        if (
+                                            ref_by_rep_parity
+                                            and exp_ind == num_exps_per_rep - 1
+                                        ):
+                                            if rep_ind % 2 == 0:
+                                                img_array *= 2
+                                            else:
+                                                img_array *= 0
                                         avg_reps_img_arrays[exp_ind] += img_array
                                     else:
                                         img_arrays[
@@ -322,10 +331,10 @@ def main(
                                         ] = img_array
 
                         if save_images and save_images_avg_reps:
-                            avg_reps_img_arrays /= num_reps
-                            img_arrays[:, run_ind, step_ind, 0, :, :] = (
-                                avg_reps_img_arrays
-                            )
+                            avg_reps_img_arrays /= int(np.ceil(num_reps / 2))
+                            img_arrays[
+                                :, run_ind, step_ind, 0, :, :
+                            ] = avg_reps_img_arrays
 
                     ### Move on to the next run
 
