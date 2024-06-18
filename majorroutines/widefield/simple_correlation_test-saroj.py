@@ -65,7 +65,7 @@ def process_and_plot(
 
     figs = []
     titles = ["Signal", "Reference", "Ideal signal"]
-    cbar_maxes = [sig_max, sig_max, 1]
+    cbar_maxes = [sig_max, ref_max, 1]  # Adjust cbar_maxes to match the actual maximum values for each dataset
     for ind in range(len(vals)):
         if ax is None:
             fig, ax = plt.subplots()
@@ -75,10 +75,12 @@ def process_and_plot(
                 continue
             if not sig_or_ref and ind != 1:
                 continue
+
         if passed_cbar_max is not None:
             cbar_max = passed_cbar_max
         else:
             cbar_max = cbar_maxes[ind]
+
         kpl.imshow(
             ax,
             vals[ind],
@@ -95,6 +97,21 @@ def process_and_plot(
         if not no_labels:
             ax.set_xlabel("NV index")
             ax.set_ylabel("NV index")
+
+        import os
+        output_dir = f'data/correlation_matrix/block_1540558251818'
+        if not os.path.exists(output_dir):
+            os.makedirs(output_dir)
+
+        np.save(os.path.join(output_dir, 'sig_corr_coeffs.npy'), sig_corr_coeffs)
+        # np.save(os.path.join(output_dir, 'diff_corr_coeffs.npy'), diff_corr_coeffs)
+        np.save(os.path.join(output_dir, 'ref_corr_coeffs.npy'), ref_corr_coeffs)
+        np.save(os.path.join(output_dir, 'ideal_sig_corr_coeffs.npy'), ideal_sig_corr_coeffs)
+
+        for fig, title in zip(figs, titles):
+            fig.savefig(os.path.join(output_dir, f"{title.replace(' ', '_')}.png"))
+
+        print(f"Data and figures saved to {output_dir}")
 
     return figs
 
@@ -158,7 +175,7 @@ def main(nv_list, num_reps, num_runs):
 if __name__ == "__main__":
     kpl.init_kplotlib()
 
-    data = dm.get_raw_data(file_id=1540048047866)  # Block
+    data = dm.get_raw_data(file_id=1541938921939)  # Block
 
     process_and_plot(data)
 
