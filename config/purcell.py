@@ -124,7 +124,7 @@ config |= {
         # See camera server file for details
         "readout_mode": 1,  # 16 for double horizontal readout rate
         # "readout_mode": 6,  # Fast conventional
-        "roi": (125, 95, 250, 250),  # offsetX, offsetY, width, height
+        "roi": (121, 110, 250, 250),  # offsetX, offsetY, width, height
         # "roi": None,  # offsetX, offsetY, width, height
         "scale": 24,  # pixels / micron
     },

@@ -146,7 +146,7 @@ def adus_to_photons(adus, k_gain=None, em_gain=None, baseline=None):
 def _img_array_iris(shape):
     roi = _get_camera_roi()  # offsetX, offsetY, width, height
     offsetX, offsetY, width, height = roi
-    iris_radius = np.sqrt((height / 2) ** 2 + (width / 2) ** 2) + 10
+    iris_radius = np.sqrt((height / 2) ** 2 + (width / 2) ** 2) + 25
     center_x = offsetX + width // 2
     center_y = height // 2
 

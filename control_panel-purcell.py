@@ -653,7 +653,7 @@ if __name__ == "__main__":
     pixel_coords_key = "pixel_coords"
 
     sample_name = "johnson"
-    z_coord = 4.43
+    z_coord = 4.63
     magnet_angle = 90
     date_str = "2024_03_12"
     global_coords = [None, None, z_coord]
@@ -676,6 +676,9 @@ if __name__ == "__main__":
         [61.277, 76.387],
         [85.384, 33.935],
     ]
+    for pair in pixel_coords_list:
+        pair[0] += 4
+        pair[1] -= 15
     num_nvs = len(pixel_coords_list)
     green_coords_list = [
         [108.463, 110.222],
@@ -871,8 +874,8 @@ if __name__ == "__main__":
         # widefield.reset_all_drift()
         # pos.reset_drift()  # Reset z drift
         # widefield.set_pixel_drift(
-        #     np.array([140.6, 167.0])  # New coords
-        #     - np.array([131.144, 129.272])  # Original coords
+        #     np.array([149.886, 175.123])  # New coords
+        #     - np.array([131.144 + 4, 129.272 - 15])  # Original coords
         # )
         # widefield.set_all_scanning_drift_from_pixel_drift()
 
@@ -880,14 +883,15 @@ if __name__ == "__main__":
 
         # pos.set_xyz_on_nv(nv_sig)
 
-        # for z in np.linspace(4.45, 4.75, 11):
+        # for z in np.linspace(4.4, 4.7, 11):
         #     nv_sig.coords[CoordsKey.GLOBAL][2] = z
-        #     do_widefield_image_sample(nv_sig, 20)
+        #     # do_widefield_image_sample(nv_sig, 20)
+        #     do_widefield_image_sample(nv_sig, 100)
 
         # do_scanning_image_sample(nv_sig)
         # do_scanning_image_sample_zoom(nv_sig)
-        do_widefield_image_sample(nv_sig, 20)
-        # do_widefield_image_sample(nv_sig, 200)
+        # do_widefield_image_sample(nv_sig, 20)
+        # do_widefield_image_sample(nv_sig, 100)
 
         # do_image_nv_list(nv_list)
         # do_image_single_nv(nv_sig)
@@ -899,7 +903,7 @@ if __name__ == "__main__":
         # do_optimize_red(nv_sig)
         # do_image_single_nv(nv_sig)
 
-        # optimize.optimize_pixel_and_z(nv_sig, do_plot=True)
+        optimize.optimize_pixel_and_z(nv_sig, do_plot=True)
         # do_image_nv_list(nv_list)
         # for ind in range(20):
         #     do_optimize_pixel(nv_sig)
@@ -919,7 +923,7 @@ if __name__ == "__main__":
         # do_check_readout_fidelity(nv_list)
 
         # do_resonance_zoom(nv_list)
-        # do_rabi(nv_list)
+        do_rabi(nv_list)
         # do_resonance(nv_list)
         # do_spin_echo(nv_list)
         # do_power_rabi(nv_list)

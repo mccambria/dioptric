@@ -325,8 +325,8 @@ def _macro_scc_no_shelving(
         macro_pi_pulse(uwave_ind_list)
 
     # MCC antiphase by orientation
-    # if exp_spin_flip:
-    #     macro_pi_pulse(uwave_ind_list[:1])
+    if exp_spin_flip:
+        macro_pi_pulse(uwave_ind_list[1:])
 
     _macro_pulse_list(
         ion_laser_name,
