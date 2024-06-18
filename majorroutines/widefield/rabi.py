@@ -36,11 +36,14 @@ def create_fit_figure(nv_list, taus, counts, counts_ste, norms):
 
     taus = np.array(taus)
 
-    def cos_decay(tau, ptp_amp, freq, decay, tau_offset):
-        amp = abs(ptp_amp) / 2
+    def cos_decay(tau, freq, decay, tau_phase):
+        # def cos_decay(tau, ptp_amp, freq, decay, tau_offset):
+        amp = 0.5
+        # amp = abs(ptp_amp) / 2
         envelope = np.exp(-tau / abs(decay)) * amp
-        cos_part = np.cos((2 * np.pi * freq * (tau - tau_offset)))
-        sign = np.sign(ptp_amp)
+        cos_part = np.cos((2 * np.pi * freq * (tau - tau_phase)))
+        sign = 1
+        # sign = np.sign(ptp_amp)
         return amp - sign * (envelope * cos_part)
 
     def constant(tau):
@@ -85,7 +88,10 @@ def create_fit_figure(nv_list, taus, counts, counts_ste, norms):
         transform_mag = np.absolute(transform)
         max_ind = np.argmax(transform_mag[1:])  # Exclude DC component
         freq_guess = freqs[max_ind + 1]
-        guess_params = [ptp_amp_guess, freq_guess, 1000, 0]
+        period_guess = 1 / freq_guess
+        tau_phase_guess = 0 if np.sign(ptp_amp_guess) else period_guess / 2
+        guess_params = [freq_guess, 1000, tau_phase_guess]
+        # guess_params = [ptp_amp_guess, freq_guess, 1000, 0]
         fit_fn = cos_decay
 
         try:
@@ -109,7 +115,7 @@ def create_fit_figure(nv_list, taus, counts, counts_ste, norms):
         red_chi_sq = chi_sq / (len(nv_counts) - len(popt))
         print(f"Red chi sq: {round(red_chi_sq, 3)}")
 
-    rabi_periods = [None if el is None else round(1 / el[1], 2) for el in popts]
+    rabi_periods = [None if el is None else round(1 / el[0], 2) for el in popts]
     tau_offsets = [None if el is None else round(el[-1], 2) for el in popts]
     print(f"rabi_periods: {rabi_periods}")
     print(f"tau_offsets: {tau_offsets}")
