@@ -267,67 +267,56 @@ if __name__ == "__main__":
 
     ###
 
-    # pixel_drifts = data["pixel_drifts"]
-    # img_arrays = np.array(data["img_arrays"])
-    # base_pixel_drift = [10, 38]
-    # num_reps = 1
+    pixel_drifts = data["pixel_drifts"]
+    img_arrays = np.array(data["img_arrays"])
+    base_pixel_drift = [10, 38]
+    num_reps = 1
 
-    # buffer = 20
-    # img_array_size = 250
-    # cropped_size = img_array_size - 2 * buffer
-    # proc_img_arrays = np.empty(
-    #     (2, num_runs, num_steps, num_reps, cropped_size, cropped_size)
-    # )
-    # for run_ind in range(num_runs):
-    #     pixel_drift = pixel_drifts[run_ind]
-    #     offset = [
-    #         pixel_drift[1] - base_pixel_drift[1],
-    #         pixel_drift[0] - base_pixel_drift[0],
-    #     ]
-    #     for step_ind in range(num_steps):
-    #         for exp_ind in range(2):
-    #             img_array = img_arrays[exp_ind, run_ind, step_ind, 0]
-    #             cropped_img_array = widefield.crop_img_array(img_array, offset, buffer)
-    #             proc_img_arrays[exp_ind, run_ind, step_ind, 0, :, :] = cropped_img_array
+    buffer = 20
+    img_array_size = 250
+    cropped_size = img_array_size - 2 * buffer
+    proc_img_arrays = np.empty(
+        (2, num_runs, num_steps, num_reps, cropped_size, cropped_size)
+    )
+    for run_ind in range(num_runs):
+        pixel_drift = pixel_drifts[run_ind]
+        offset = [
+            pixel_drift[1] - base_pixel_drift[1],
+            pixel_drift[0] - base_pixel_drift[0],
+        ]
+        for step_ind in range(num_steps):
+            for exp_ind in range(2):
+                img_array = img_arrays[exp_ind, run_ind, step_ind, 0]
+                cropped_img_array = widefield.crop_img_array(img_array, offset, buffer)
+                proc_img_arrays[exp_ind, run_ind, step_ind, 0, :, :] = cropped_img_array
 
-    # sig_img_arrays = np.mean(proc_img_arrays, axis=(1, 3))[0]
-    # # ref_img_array = np.mean(proc_img_arrays, axis=(1, 2, 3))[1]
-    # # proc_img_arrays = sig_img_arrays - ref_img_array
+    sig_img_arrays = np.mean(proc_img_arrays, axis=(1, 3))[0]
+    ref_img_array = np.mean(proc_img_arrays, axis=(1, 2, 3))[1]
+    proc_img_arrays = sig_img_arrays - ref_img_array
 
-    # downsample_factor = 2
-    # sig_img_arrays = [
-    #     widefield.downsample_img_array(el, downsample_factor) for el in sig_img_arrays
-    # ]
-    # sig_img_arrays = np.array(sig_img_arrays)
+    downsample_factor = 2
+    proc_img_arrays = [
+        widefield.downsample_img_array(el, downsample_factor) for el in proc_img_arrays
+    ]
+    proc_img_arrays = np.array(proc_img_arrays)
 
-    # # bottom = np.percentile(proc_img_arrays, 20, axis=(0, 1, 2, 3))
-    # # bottom = np.percentile(sig_img_arrays, 20, axis=(0))
-    # # fig, ax = plt.subplots()
-    # # kpl.imshow(ax, bottom)
-    # inds = [15, 16, 17, -1, -2]
-    # bottom = np.mean(sig_img_arrays[inds], axis=0)
-    # proc_img_arrays = sig_img_arrays - bottom
-
-    # # proc_img_arrays = [widefield.downsample_img_array(el, 3) for el in proc_img_arrays]
-    # # proc_img_arrays = np.array(proc_img_arrays)
-
-    # widefield.animate(
-    #     taus,
-    #     nv_list,
-    #     avg_counts,
-    #     avg_counts_ste,
-    #     norms,
-    #     proc_img_arrays,
-    #     # cmin=-0.05,
-    #     # cmax=0.05,
-    #     # cmin=0.05,
-    #     # cmax=0.2,
-    #     # cmin=np.percentile(proc_img_arrays, 40),
-    #     # cmax=np.percentile(proc_img_arrays, 99),
-    #     cmin=np.percentile(proc_img_arrays, 60),
-    #     cmax=np.percentile(proc_img_arrays, 99.9),
-    #     scale_bar_length_factor=downsample_factor,
-    # )
+    widefield.animate(
+        taus,
+        nv_list,
+        avg_counts,
+        avg_counts_ste,
+        norms,
+        proc_img_arrays,
+        # cmin=-0.05,
+        # cmax=0.05,
+        # cmin=0.05,
+        # cmax=0.2,
+        # cmin=np.percentile(proc_img_arrays, 40),
+        # cmax=np.percentile(proc_img_arrays, 99),
+        cmin=np.percentile(proc_img_arrays, 60),
+        cmax=np.percentile(proc_img_arrays, 99.9),
+        scale_bar_length_factor=downsample_factor,
+    )
 
     ###
 
