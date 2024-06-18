@@ -240,7 +240,7 @@ def threshold_counts(nv_list, sig_counts, ref_counts=None, dynamic_thresh=False)
             # threshold = determine_threshold(combined_counts)
             threshold = determine_threshold(
                 combined_counts,
-                single_or_dual=False,
+                single_or_dual=True,
                 nvn_ratio=None,
                 dual_threshold_min_fidelity=0.8,
                 no_print=True,
@@ -344,7 +344,7 @@ def process_counts(nv_list, sig_counts, ref_counts=None, threshold=True):
     _validate_counts_structure(ref_counts)
     if threshold:
         sig_states_array, ref_states_array = threshold_counts(
-            nv_list, sig_counts, ref_counts
+            nv_list, sig_counts, ref_counts, dynamic_thresh=True
         )
         return average_counts(sig_states_array, ref_states_array)
     else:
