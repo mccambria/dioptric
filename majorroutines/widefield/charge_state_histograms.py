@@ -120,14 +120,12 @@ def process_and_plot(raw_data):
         fig = create_histogram(sig_counts_list, ref_counts_list, density=True)
         hist_figs.append(fig)
         all_counts_list = np.append(sig_counts_list, ref_counts_list)
-        # nvn_ratio = 0.3
-        nvn_ratio = 0.15
-        threshold = determine_threshold(all_counts_list, nvn_ratio=nvn_ratio)
+        threshold = determine_threshold(all_counts_list)
         threshold_list.append(threshold)
         # threshold = prior_thresholds[ind]
         prep_fidelity_list.append(
-            np.sum(np.greater(ref_counts_list, threshold)) / num_shots
-            # np.sum(np.less(sig_counts_list, threshold)) / num_shots
+            # np.sum(np.greater(ref_counts_list, threshold)) / num_shots
+            np.sum(np.less(sig_counts_list, threshold)) / num_shots
         )
     print(threshold_list)
     print([round(el, 3) for el in prep_fidelity_list])
@@ -300,8 +298,7 @@ def main(
 
 if __name__ == "__main__":
     kpl.init_kplotlib()
-    # data = dm.get_raw_data(file_id=1556934779836)
-    data = dm.get_raw_data(file_id=1558619706453)
+    data = dm.get_raw_data(file_id=1564788091142)
     process_and_plot(data)
 
     ### Images

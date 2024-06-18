@@ -410,7 +410,7 @@ def determine_threshold(
         left_fidelities.append(left_fidelity)
         right_fidelities.append(right_fidelity)
     single_threshold = thresh_options[np.argmax(fidelities)]
-    # print(np.max(fidelities))
+    best_fidelity = np.max(fidelities)
 
     # Calculate normalized probabilities for given integrated counts value
     norm_nv0_probs = []

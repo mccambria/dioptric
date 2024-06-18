@@ -1093,7 +1093,7 @@ def animate(
     x,
     nv_list,
     counts,
-    counts_errs,
+    counts_ste,
     norms,
     img_arrays,
     cmin=None,
@@ -1102,9 +1102,11 @@ def animate(
 ):
     num_steps = img_arrays.shape[0]
 
-    norms_newaxis = norms[0][:, np.newaxis]
-    norm_counts = counts - norms_newaxis
-    norm_counts_ste = counts_errs
+    norms_ms0_newaxis = norms[0][:, np.newaxis]
+    norms_ms1_newaxis = norms[1][:, np.newaxis]
+    contrast = norms_ms1_newaxis - norms_ms0_newaxis
+    norm_counts = (counts - norms_ms0_newaxis) / contrast
+    norm_counts_ste = counts_ste / contrast
 
     just_plot_figsize = [6.5, 5.0]
     figsize = [just_plot_figsize[0] + just_plot_figsize[1], just_plot_figsize[1]]
@@ -1128,19 +1130,13 @@ def animate(
     kpl.scale_bar(im_ax, scale, "1 µm", kpl.Loc.LOWER_RIGHT)
 
     def data_ax_relim():
-        # pass
-        x_buffer = 0.05 * (np.max(x) - np.min(x))
-        rep_data_ax.set_xlim(np.min(x) - x_buffer, np.max(x) + x_buffer)
-        y_buffer = 0.05 * (np.max(norm_counts) - np.min(norm_counts))
-        rep_data_ax.set_ylim(
-            np.min(norm_counts) - y_buffer, np.max(norm_counts) + y_buffer
-        )
-
+        # Update this manually to match the final plot
         # xlabel = "Frequency (GHz)"
         xlabel = "Pulse duration (ns)"
         ylabel = "Change in $P($NV$^{-})$"
         kpl.set_shared_ax_xlabel(rep_data_ax, xlabel)
         kpl.set_shared_ax_ylabel(rep_data_ax, ylabel)
+
         rep_data_ax.set_xticks([0, 200])
         rep_data_ax.set_yticks([0, 0.1])
         rep_data_ax.set_xlim([-12.8, 268.8])
@@ -1159,7 +1155,7 @@ def animate(
             nv_list,
             x[: step_ind + 1],
             norm_counts[:, : step_ind + 1],
-            counts_errs[:, : step_ind + 1],
+            norm_counts_ste[:, : step_ind + 1],
             no_legend=True,
         )
         data_ax_relim()

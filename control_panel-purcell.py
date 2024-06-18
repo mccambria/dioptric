@@ -80,8 +80,8 @@ def do_image_single_nv(nv_sig):
 
 def do_charge_state_histograms(nv_list):
     num_reps = 200
-    num_runs = 40
-    # num_runs = 20
+    # num_runs = 40
+    num_runs = 20
     # num_runs = 2
     # for ion_include_inds in [None, [0, 1, 2, 3, 4, 5]]:
     #     charge_state_histograms.main(
@@ -204,11 +204,11 @@ def do_optimize_scc_amp(nv_list):
     min_tau = 0.7
     max_tau = 1.3
     num_steps = 16
-    num_reps = 15
+    num_reps = 30
 
     num_runs = 30
     # num_runs = 50
-    # num_runs = 2
+    num_runs = 2
 
     optimize_scc.optimize_scc_amp(
         nv_list, num_steps, num_reps, num_runs, min_tau, max_tau
@@ -780,7 +780,7 @@ if __name__ == "__main__":
     #     120,
     #     120,
     # ]
-    scc_duration_list = [100] * num_nvs
+    scc_duration_list = [140] * num_nvs
     scc_duration_list = [4 * round(el / 4) for el in scc_duration_list]
     scc_amp_list = [1.18, 1.12, 1.1, 1.05, 1.1, 1.11, 1.1, 1.12, 1.07, 1.1, 1, 1, 1]
     # scc_amp_list = [1.0] * num_nvs
@@ -943,7 +943,7 @@ if __name__ == "__main__":
         # nv_list = nv_list[::-1]
         # do_scc_snr_check(nv_list)
         # do_optimize_scc_duration(nv_list)
-        # do_optimize_scc_amp(nv_list)
+        do_optimize_scc_amp(nv_list)
         # do_crosstalk_check(nv_sig)
         # do_spin_pol_check(nv_sig)
         # do_calibrate_green_red_delay()

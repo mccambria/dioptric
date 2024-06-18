@@ -177,7 +177,7 @@ def _main(nv_list, num_steps, num_reps, num_runs, min_tau, max_tau, duration_or_
 
     ### Process and plot
 
-    counts = raw_data["states"]
+    counts = raw_data["counts"]
     sig_counts = counts[0]
     ref_counts = counts[1]
 

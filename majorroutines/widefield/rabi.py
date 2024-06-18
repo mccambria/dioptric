@@ -66,7 +66,6 @@ def create_fit_figure(nv_list, taus, counts, counts_ste, norms):
     # norm_counts_ste = counts_ste
 
     # Dual-valued norm
-    # norms_newaxis = norms[:, np.newaxis]
     norms_ms0_newaxis = norms[0][:, np.newaxis]
     norms_ms1_newaxis = norms[1][:, np.newaxis]
     contrast = norms_ms1_newaxis - norms_ms0_newaxis
@@ -143,11 +142,12 @@ def create_fit_figure(nv_list, taus, counts, counts_ste, norms):
     ax = axes_pack[layout[-1][0]]
     kpl.set_shared_ax_xlabel(ax, "Pulse duration (ns)")
     kpl.set_shared_ax_ylabel(ax, "Change in $P($NV$^{-})$")
+    kpl.set_shared_ax_ylabel(ax, "$P($NV$^{-})$")
 
     # ax.set_ylim([0.966, 1.24])
     # ax.set_yticks([1.0, 1.2])
     ax.set_xticks([0, 200])
-    # ax.set_yticks([0, 0.1])
+    ax.set_yticks([0, 1], ["$M_{s}=0", "$M_{s}=1"], rotation=90)
 
     return fig
 
@@ -243,8 +243,8 @@ def main(nv_list, num_steps, num_reps, num_runs, min_tau, max_tau, uwave_ind_lis
 if __name__ == "__main__":
     kpl.init_kplotlib()
 
-    # data = dm.get_raw_data(file_id=1563956435746, load_npz=False)
-    data = dm.get_raw_data(file_id=1564682133151, load_npz=False)
+    # data = dm.get_raw_data(file_id=1563956435746, load_npz=True)
+    data = dm.get_raw_data(file_id=1564682133151, load_npz=True)
 
     nv_list = data["nv_list"]
     num_nvs = len(nv_list)
@@ -267,7 +267,7 @@ if __name__ == "__main__":
 
     pixel_drifts = data["pixel_drifts"]
     img_arrays = np.array(data["img_arrays"])
-    base_pixel_drift = [10, 38]
+    base_pixel_drift = [24, 74]
     num_reps = 1
 
     buffer = 20
@@ -305,12 +305,6 @@ if __name__ == "__main__":
         avg_counts_ste,
         norms,
         proc_img_arrays,
-        # cmin=-0.05,
-        # cmax=0.05,
-        # cmin=0.05,
-        # cmax=0.2,
-        # cmin=np.percentile(proc_img_arrays, 40),
-        # cmax=np.percentile(proc_img_arrays, 99),
         cmin=np.percentile(proc_img_arrays, 60),
         cmax=np.percentile(proc_img_arrays, 99.9),
         scale_bar_length_factor=downsample_factor,
