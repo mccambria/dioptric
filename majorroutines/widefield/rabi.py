@@ -289,25 +289,14 @@ if __name__ == "__main__":
                 proc_img_arrays[exp_ind, run_ind, step_ind, 0, :, :] = cropped_img_array
 
     sig_img_arrays = np.mean(proc_img_arrays, axis=(1, 3))[0]
-    # ref_img_array = np.mean(proc_img_arrays, axis=(1, 2, 3))[1]
-    # proc_img_arrays = sig_img_arrays - ref_img_array
+    ref_img_array = np.mean(proc_img_arrays, axis=(1, 2, 3))[1]
+    proc_img_arrays = sig_img_arrays - ref_img_array
 
     downsample_factor = 2
-    sig_img_arrays = [
-        widefield.downsample_img_array(el, downsample_factor) for el in sig_img_arrays
+    proc_img_arrays = [
+        widefield.downsample_img_array(el, downsample_factor) for el in proc_img_arrays
     ]
-    sig_img_arrays = np.array(sig_img_arrays)
-
-    # bottom = np.percentile(proc_img_arrays, 20, axis=(0, 1, 2, 3))
-    # bottom = np.percentile(sig_img_arrays, 20, axis=(0))
-    # fig, ax = plt.subplots()
-    # kpl.imshow(ax, bottom)
-    inds = [15, 16, 17, -1, -2]
-    bottom = np.mean(sig_img_arrays[inds], axis=0)
-    proc_img_arrays = sig_img_arrays - bottom
-
-    # proc_img_arrays = [widefield.downsample_img_array(el, 3) for el in proc_img_arrays]
-    # proc_img_arrays = np.array(proc_img_arrays)
+    proc_img_arrays = np.array(proc_img_arrays)
 
     widefield.animate(
         taus,
