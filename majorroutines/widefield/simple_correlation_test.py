@@ -21,7 +21,7 @@ from utils import widefield as widefield
 from utils.constants import NVSig
 
 
-def process_and_plot(data):
+def process_and_plot_experimental(data):
     nv_list = data["nv_list"]
     # nv_list = nv_list[::-1]
     counts = np.array(data["counts"])
@@ -255,8 +255,6 @@ def process_and_plot(data):
     return figs
 
 
-<<<<<<< HEAD
-=======
 def process_and_plot(
     data, ax=None, sig_or_ref=True, no_cbar=False, cbar_max=None, no_labels=False
 ):
@@ -379,7 +377,6 @@ def process_and_plot(
     # return figs
 
 
->>>>>>> 92063939bc5e8d0c8d6a3b7ad7f55db4b43a032f
 def main(nv_list, num_reps, num_runs):
     ### Some initial setup
     uwave_ind_list = [0, 1]

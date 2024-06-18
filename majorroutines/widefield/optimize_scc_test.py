@@ -68,7 +68,7 @@ def main(nv_list, num_steps, num_reps, num_runs, min_tau, max_tau):
         pulse_gen.stream_load(seq_file, seq_args_string, num_reps)
 
     counts, raw_data = base_routine.main(
-        nv_list, num_steps, num_reps, num_runs, step_fn, num_exps_per_rep=2
+        nv_list, num_steps, num_reps, num_runs, step_fn, num_exps=2
     )
     sig_counts = counts[0]
     ref_counts = counts[1]

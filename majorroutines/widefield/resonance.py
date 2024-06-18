@@ -255,7 +255,7 @@ def main(
         step_fn,
         uwave_ind_list=uwave_ind_list,
         save_images=True,
-        num_exps_per_rep=1,
+        num_exps=1,
     )
     counts = raw_data["states"]
 

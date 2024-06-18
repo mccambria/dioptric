@@ -162,8 +162,8 @@ if __name__ == "__main__":
     kpl.init_kplotlib()
     
     # Basic widefield
-    # file_id = 1556655608661
-    # main(file_id, draw_circles=False)
+    file_id = 1556655608661
+    main(file_id, draw_circles=False)
     # main(file_id, draw_circles=True)
     # main(file_id, draw_circles=True, draw_circles_inds=list(range(10)))
     # main(file_id, draw_circles=True, draw_circles_inds=[0, 1, 5, 6, 10, 11, 12])
@@ -224,10 +224,10 @@ if __name__ == "__main__":
     # img_array_offset=[0,1]
     # file_id = 1559062712968
     # img_array_offset=[1,0]
-    file_id = 1559550352430
-    img_array_offset=[0,0]
-    # main(file_id, img_array_offset=img_array_offset, diff=True, vmin=-0.005, vmax=0.046)
-    main(file_id, img_array_offset=img_array_offset, diff=True)
-    # main(file_id, img_array_offset=img_array_offset, diff=True, draw_circles=True)
+    # file_id = 1559550352430
+    # img_array_offset=[0,0]
+    # # main(file_id, img_array_offset=img_array_offset, diff=True, vmin=-0.005, vmax=0.046)
+    # main(file_id, img_array_offset=img_array_offset, diff=True)
+    # # main(file_id, img_array_offset=img_array_offset, diff=True, draw_circles=True)
 
     plt.show(block=True)

@@ -147,7 +147,7 @@ def main(
     step_fn=None,
     uwave_ind_list=[0, 1],
     uwave_freq_list=None,
-    num_exps_per_rep=2,
+    num_exps=2,
     ref_by_rep_parity=True,
     load_iq=False,
     save_images=False,
@@ -231,8 +231,8 @@ def main(
 
     ### Data tracking
 
-    counts = np.empty((num_exps_per_rep, num_nvs, num_runs, num_steps, num_reps))
-    states = np.empty((num_exps_per_rep, num_nvs, num_runs, num_steps, num_reps))
+    counts = np.empty((num_exps, num_nvs, num_runs, num_steps, num_reps))
+    states = np.empty((num_exps, num_nvs, num_runs, num_steps, num_reps))
     pixel_drifts = np.empty((num_runs, 2))
     if save_images:
         shape = widefield.get_img_array_shape()
@@ -243,7 +243,7 @@ def main(
             ]
         save_images_num_reps = 1 if save_images_avg_reps else num_reps
         img_arrays = np.empty(
-            (num_exps_per_rep, num_runs, num_steps, save_images_num_reps, *shape)
+            (num_exps, num_runs, num_steps, save_images_num_reps, *shape)
         )
     step_ind_master_list = [None for ind in range(num_runs)]
     step_ind_list = list(range(0, num_steps))
@@ -291,10 +291,10 @@ def main(
 
                         # Reps loop
                         if save_images and save_images_avg_reps:
-                            avg_reps_img_arrays = np.zeros((num_exps_per_rep, *shape))
+                            avg_reps_img_arrays = np.zeros((num_exps, *shape))
 
                         for rep_ind in range(num_reps):
-                            for exp_ind in range(num_exps_per_rep):
+                            for exp_ind in range(num_exps):
                                 if charge_prep_fn is not None:
                                     charge_prep_fn(
                                         rep_ind,
@@ -303,12 +303,12 @@ def main(
                                     )
                                 ret_vals = read_and_process_image(nv_list)
                                 img_array, counts_list, states_list = ret_vals
-                                counts[
-                                    exp_ind, :, run_ind, step_ind, rep_ind
-                                ] = counts_list
-                                states[
-                                    exp_ind, :, run_ind, step_ind, rep_ind
-                                ] = states_list
+                                counts[exp_ind, :, run_ind, step_ind, rep_ind] = (
+                                    counts_list
+                                )
+                                states[exp_ind, :, run_ind, step_ind, rep_ind] = (
+                                    states_list
+                                )
 
                                 if save_images:
                                     if save_images_downsample_factor is not None:
@@ -316,25 +316,30 @@ def main(
                                             img_array, save_images_downsample_factor
                                         )
                                     if save_images_avg_reps:
+                                        # Just discard the ms=1 ref if averaging over reps
                                         if (
                                             ref_by_rep_parity
-                                            and exp_ind == num_exps_per_rep - 1
+                                            and exp_ind == num_exps - 1
+                                            and rep_ind % 2 == 1
                                         ):
-                                            if rep_ind % 2 == 0:
-                                                img_array *= 2
-                                            else:
-                                                img_array *= 0
-                                        avg_reps_img_arrays[exp_ind] += img_array
+                                            pass
+                                        else:
+                                            avg_reps_img_arrays[exp_ind] += img_array
                                     else:
                                         img_arrays[
                                             exp_ind, run_ind, step_ind, rep_ind, :, :
                                         ] = img_array
 
                         if save_images and save_images_avg_reps:
-                            avg_reps_img_arrays /= int(np.ceil(num_reps / 2))
-                            img_arrays[
-                                :, run_ind, step_ind, 0, :, :
-                            ] = avg_reps_img_arrays
+                            for exp_ind in range(num_exps):
+                                # Account for discarded ms=1 ref images
+                                if ref_by_rep_parity and exp_ind == num_exps - 1:
+                                    divisor = int(np.ceil(num_reps / 2))
+                                else:
+                                    divisor = num_reps
+                                img_arrays[exp_ind, run_ind, step_ind, 0, :, :] = (
+                                    avg_reps_img_arrays[exp_ind] / divisor
+                                )
 
                     ### Move on to the next run
 
@@ -384,7 +389,7 @@ def main(
         "num_runs": num_runs,
         "uwave_ind": uwave_ind_list,
         "uwave_freq": uwave_freq_list,
-        "num_exps_per_rep": num_exps_per_rep,
+        "num_exps_per_rep": num_exps,
         "load_iq": load_iq,
         "step_ind_master_list": step_ind_master_list,
         "counts-units": "photons",
