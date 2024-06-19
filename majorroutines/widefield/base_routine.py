@@ -304,12 +304,12 @@ def main(
                                     )
                                 ret_vals = read_and_process_image(nv_list)
                                 img_array, counts_list, states_list = ret_vals
-                                counts[
-                                    exp_ind, :, run_ind, step_ind, rep_ind
-                                ] = counts_list
-                                states[
-                                    exp_ind, :, run_ind, step_ind, rep_ind
-                                ] = states_list
+                                counts[exp_ind, :, run_ind, step_ind, rep_ind] = (
+                                    counts_list
+                                )
+                                states[exp_ind, :, run_ind, step_ind, rep_ind] = (
+                                    states_list
+                                )
 
                                 if save_images:
                                     if save_images_downsample_factor is not None:
@@ -327,7 +327,7 @@ def main(
                                                 exp_ind,
                                                 run_ind,
                                                 original_step_ind,
-                                                rep_ind,
+                                                0,
                                             ]
                                             local_img_array += img_array / (
                                                 2 * num_reps
@@ -337,12 +337,12 @@ def main(
                                                 exp_ind,
                                                 run_ind,
                                                 original_step_ind + original_num_steps,
-                                                rep_ind,
+                                                0,
                                             ]
                                             local_img_array += img_array / num_reps
                                         # Just discard the ms=1 ref if averaging over reps
                                         # working_img_array = img_arrays[
-                                        #     exp_ind, run_ind, step_ind, rep_ind, :, :
+                                        #     exp_ind, run_ind, step_ind, 0, :, :
                                         # ]
                                         # if (
                                         #     ref_by_rep_parity

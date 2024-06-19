@@ -25,7 +25,7 @@ def get_seq(base_scc_seq_args, step_vals, num_reps=1):
     with qua.program() as seq:
 
         def uwave_macro_sig(uwave_ind_list, step_val):
-            seq_utils.macro_pi_pulse(uwave_ind_list[1:], duration=step_val)
+            seq_utils.macro_pi_pulse(uwave_ind_list, duration=step_val)
 
         base_scc_sequence.macro(base_scc_seq_args, uwave_macro_sig, step_vals, num_reps)
 
