@@ -242,7 +242,7 @@ def main(
                 for ind in range(2)
             ]
         save_images_num_reps = 1 if save_images_avg_reps else num_reps
-        img_arrays = np.empty(
+        img_arrays = np.zeros(
             # (num_exps, num_runs, num_steps, save_images_num_reps, *shape)
             (num_exps, num_runs, num_steps // 2, save_images_num_reps, *shape)  # MCC
         )
@@ -318,36 +318,47 @@ def main(
                                         )
                                     if save_images_avg_reps:
                                         # MCC
+                                        original_num_steps = num_steps // 4
+                                        original_step_ind = (
+                                            step_ind % original_num_steps
+                                        )
                                         if step_ind < (1 / 2) * num_steps:
-                                            avg_reps_img_arrays[exp_ind] += (
-                                                img_array / 2
+                                            local_img_array = img_arrays[
+                                                exp_ind,
+                                                run_ind,
+                                                original_step_ind,
+                                                rep_ind,
+                                            ]
+                                            local_img_array += img_array / (
+                                                2 * num_reps
                                             )
                                         elif step_ind < (3 / 4) * num_steps:
-                                            avg_reps_img_arrays[exp_ind] += img_array
-                                        # # Just discard the ms=1 ref if averaging over reps
+                                            local_img_array = img_arrays[
+                                                exp_ind,
+                                                run_ind,
+                                                original_step_ind + original_num_steps,
+                                                rep_ind,
+                                            ]
+                                            local_img_array += img_array / num_reps
+                                        # Just discard the ms=1 ref if averaging over reps
+                                        # working_img_array = img_arrays[
+                                        #     exp_ind, run_ind, step_ind, rep_ind, :, :
+                                        # ]
                                         # if (
                                         #     ref_by_rep_parity
                                         #     and exp_ind == num_exps - 1
-                                        #     and rep_ind % 2 == 1
                                         # ):
-                                        #     pass
+                                        #     if rep_ind % 2 == 0:
+                                        #         divisor = int(np.ceil(num_reps / 2))
+                                        #     else:
+                                        #         continue
                                         # else:
-                                        #     avg_reps_img_arrays[exp_ind] += img_array
+                                        #     divisor = num_reps
+                                        # working_img_array += img_array / divisor
                                     else:
                                         img_arrays[
                                             exp_ind, run_ind, step_ind, rep_ind, :, :
                                         ] = img_array
-
-                        if save_images and save_images_avg_reps:
-                            for exp_ind in range(num_exps):
-                                # Account for discarded ms=1 ref images
-                                if ref_by_rep_parity and exp_ind == num_exps - 1:
-                                    divisor = int(np.ceil(num_reps / 2))
-                                else:
-                                    divisor = num_reps
-                                img_arrays[exp_ind, run_ind, step_ind, 0, :, :] = (
-                                    avg_reps_img_arrays[exp_ind] / divisor
-                                )
 
                     ### Move on to the next run
 
