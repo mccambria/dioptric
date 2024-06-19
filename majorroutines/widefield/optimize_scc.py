@@ -52,11 +52,11 @@ def process_and_plot(nv_list, taus, sig_counts, ref_counts, duration_or_amp):
     snr_ax.set_xlabel(xlabel)
     snr_ax.set_ylabel("SNR")
 
-    # for ind in range(num_nvs):
-    #     fig, ax = plt.subplots()
-    #     kpl.plot_points(ax, taus, avg_snr[ind], yerr=avg_snr_ste[ind])
-    #     ax.set_title(ind)
-    #     plt.show(block=True)
+    for ind in range(num_nvs):
+        fig, ax = plt.subplots()
+        kpl.plot_points(ax, taus, avg_snr[ind], yerr=avg_snr_ste[ind])
+        ax.set_title(ind)
+        plt.show(block=True)
 
     # Average across NVs
     avg_snr_fig, avg_snr_ax = plt.subplots()
@@ -226,17 +226,13 @@ def _main(nv_list, num_steps, num_reps, num_runs, min_tau, max_tau, duration_or_
 if __name__ == "__main__":
     kpl.init_kplotlib()
 
-    data = dm.get_raw_data(file_id=1560594496006)
-
-    # print(data["opx_config"]["waveforms"]["red_aod_cw-scc"])
+    data = dm.get_raw_data(file_id=1564881159891)
 
     nv_list = data["nv_list"]
     taus = data["taus"]
-    # counts = np.array(data["counts"])
-    counts = np.array(data["states"])
+    counts = np.array(data["counts"])
     sig_counts = counts[0]
     ref_counts = counts[1]
-    # ref_counts = ref_counts[:, :, :, ::2]
 
     # sig_counts, ref_counts = widefield.threshold_counts(nv_list, sig_counts, ref_counts)
 

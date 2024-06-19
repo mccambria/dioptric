@@ -781,7 +781,7 @@ if __name__ == "__main__":
     # ]
     scc_duration_list = [140] * num_nvs
     scc_duration_list = [4 * round(el / 4) for el in scc_duration_list]
-    scc_amp_list = [1.18, 1.12, 1.1, 1.05, 1.1, 1.11, 1.1, 1.12, 1.07, 1.1, 1, 1, 1]
+    scc_amp_list = [0.942, 0.91, 0.87, 0.94, 0.94, 0.94, 0.9, 0.98, 0.84, 0.94]
     # scc_amp_list = [1.0] * num_nvs
     # scc_duration_list = [None] * num_nvs
     # endregion
