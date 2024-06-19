@@ -30,7 +30,7 @@ def process_and_plot(data):
 
     if threshold:
         sig_counts, ref_counts = widefield.threshold_counts(
-            nv_list, sig_counts, ref_counts, dynamic_thresh=False
+            nv_list, sig_counts, ref_counts, dynamic_thresh=True
         )
 
     ### Report the results and return

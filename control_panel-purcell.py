@@ -204,11 +204,10 @@ def do_optimize_scc_amp(nv_list):
     min_tau = 0.7
     max_tau = 1.3
     num_steps = 16
-    num_reps = 30
+    num_reps = 20
 
-    num_runs = 30
-    # num_runs = 50
-    num_runs = 2
+    num_runs = 60
+    # num_runs = 2
 
     optimize_scc.optimize_scc_amp(
         nv_list, num_steps, num_reps, num_runs, min_tau, max_tau
