@@ -291,9 +291,6 @@ def main(
                                 pulse_gen.stream_start()
 
                         # Reps loop
-                        if save_images and save_images_avg_reps:
-                            avg_reps_img_arrays = np.zeros((num_exps, *shape))
-
                         for rep_ind in range(num_reps):
                             for exp_ind in range(num_exps):
                                 if charge_prep_fn is not None:

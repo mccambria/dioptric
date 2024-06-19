@@ -17,7 +17,7 @@ from random import shuffle
 import matplotlib.pyplot as plt
 import numpy as np
 
-from majorroutines.pulsed_resonance import fit_resonance, voigt, voigt_split
+from majorroutines.pulsed_resonance import fit_resonance, norm_voigt, voigt, voigt_split
 from majorroutines.widefield import base_routine, optimize
 from utils import common
 from utils import data_manager as dm
@@ -62,9 +62,11 @@ def create_fit_figure(
         else:
             return norm
 
-    norms_newaxis = norms[:, np.newaxis]
-    norm_counts = counts - norms_newaxis
-    norm_counts_ste = counts_ste
+    norms_ms0_newaxis = norms[0][:, np.newaxis]
+    norms_ms1_newaxis = norms[1][:, np.newaxis]
+    contrast = norms_ms1_newaxis - norms_ms0_newaxis
+    norm_counts = (counts - norms_ms0_newaxis) / contrast
+    norm_counts_ste = counts_ste / contrast
 
     fit_fns = []
     pcovs = []
@@ -93,8 +95,8 @@ def create_fit_figure(
             for ind in [1, 2]:
                 bounds[1][ind] = 10
 
-            def fit_fn(freq, contrast, g_width, l_width, center):
-                return voigt(freq, contrast, g_width, l_width, center)
+            def fit_fn(freq, g_width, l_width, center):
+                return norm_voigt(freq, g_width, l_width, center)
         elif num_resonances == 2:
             # Find peaks in left and right halves
             low_freq_guess = freqs[np.argmax(nv_counts[:half_num_freqs])]
@@ -106,16 +108,16 @@ def create_fit_figure(
             # low_freq_guess = 2.85
             # high_freq_guess = 2.89
 
-            guess_params = [amp_guess, 5, 5, low_freq_guess]
-            guess_params.extend([amp_guess, 5, 5, high_freq_guess])
+            guess_params = [5, 5, low_freq_guess]
+            guess_params.extend([5, 5, high_freq_guess])
             num_params = len(guess_params)
             bounds = [[0] * num_params, [np.inf] * num_params]
             # Limit linewidths
-            for ind in [1, 2, 5, 6]:
+            for ind in [0, 1, 3, 4]:
                 bounds[1][ind] = 10
 
             def fit_fn(freq, *args):
-                return voigt(freq, *args[:4]) + voigt(freq, *args[4:])
+                return norm_voigt(freq, *args[:3]) + norm_voigt(freq, *args[3:])
                 # return 1 + voigt(freq, *args[:4]) + voigt(freq, *args[4:])
 
         if num_resonances == 0:
@@ -137,10 +139,10 @@ def create_fit_figure(
             pcovs.append(pcov)
 
         if num_resonances == 1:
-            center_freqs.append(popt[3])
-            center_freq_errs.append(np.sqrt(pcov[3, 3]))
+            center_freqs.append(popt[2])
+            center_freq_errs.append(np.sqrt(pcov[2, 2]))
         elif num_resonances == 2:
-            center_freqs.append((popt[3], popt[7]))
+            center_freqs.append((popt[2], popt[5]))
 
     print(center_freqs)
     print(center_freq_errs)
@@ -170,8 +172,8 @@ def create_fit_figure(
 
     ax = axes_pack[layout[-1, 0]]
     kpl.set_shared_ax_xlabel(ax, "Frequency (GHz)")
-    kpl.set_shared_ax_ylabel(ax, "Change in $P($NV$^{-})$")
-    ax.set_yticks([0, 0.1])
+    kpl.set_shared_ax_ylabel(ax, "Norm. NV$^{-}$ population")
+    ax.set_yticks([0, 1])
 
     # ax = axes_pack[layout[-1, 0]]
     # ax.set_xlabel(" ")
@@ -254,19 +256,30 @@ def main(
         run_fn,
         step_fn,
         uwave_ind_list=uwave_ind_list,
-        save_images=True,
+        save_images=False,
         num_exps=1,
     )
-    counts = raw_data["states"]
 
     ### Process and plot
 
     try:
+        # Manipulate the counts into the format expected for normalization
+        adj_num_steps = num_steps
+        counts = np.array(data["counts"])[0]
+        sig_counts_0 = counts[:, :, 0:adj_num_steps, :]
+        sig_counts_1 = counts[:, :, adj_num_steps : 2 * adj_num_steps, :]
+        sig_counts = np.append(sig_counts_0, sig_counts_1, axis=3)
+        ref_counts_0 = counts[:, :, 2 * adj_num_steps : 3 * adj_num_steps, :]
+        ref_counts_1 = counts[:, :, 3 * adj_num_steps :, :]
+        ref_counts = np.empty((num_nvs, num_runs, adj_num_steps, 2 * num_reps))
+        ref_counts[:, :, :, 0::2] = ref_counts_0
+        ref_counts[:, :, :, 1::2] = ref_counts_1
+
         sig_counts = counts[0]
         ref_counts = counts[1]
 
         avg_counts, avg_counts_ste, norms = widefield.process_counts(
-            nv_list, sig_counts, ref_counts, threshold=False
+            nv_list, sig_counts, ref_counts, threshold=True
         )
         raw_fig = create_raw_data_figure(nv_list, freqs, avg_counts, avg_counts_ste)
         fit_fig = create_fit_figure(nv_list, freqs, avg_counts, avg_counts_ste, norms)
@@ -303,8 +316,7 @@ def main(
 if __name__ == "__main__":
     kpl.init_kplotlib()
 
-    # data = dm.get_raw_data(file_id=1546290628159)
-    data = dm.get_raw_data(file_id=1543601415736)
+    data = dm.get_raw_data(file_id=1565478112406, load_npz=True, use_cache=False)
 
     nv_list = data["nv_list"]
     num_nvs = len(nv_list)
@@ -313,34 +325,71 @@ if __name__ == "__main__":
     num_reps = data["num_reps"]
     freqs = data["freqs"]
 
-    counts = np.array(data["states"])
-    sig_counts = counts[0]
-    ref_counts = counts[1]
+    # Manipulate the counts into the format expected for normalization
+    adj_num_steps = num_steps // 4
+    counts = np.array(data["counts"])[0]
+    sig_counts_0 = counts[:, :, 0:adj_num_steps, :]
+    sig_counts_1 = counts[:, :, adj_num_steps : 2 * adj_num_steps, :]
+    sig_counts = np.append(sig_counts_0, sig_counts_1, axis=3)
+    ref_counts_0 = counts[:, :, 2 * adj_num_steps : 3 * adj_num_steps, :]
+    ref_counts_1 = counts[:, :, 3 * adj_num_steps :, :]
+    ref_counts = np.empty((num_nvs, num_runs, adj_num_steps, 2 * num_reps))
+    ref_counts[:, :, :, 0::2] = ref_counts_0
+    ref_counts[:, :, :, 1::2] = ref_counts_1
 
     avg_counts, avg_counts_ste, norms = widefield.process_counts(
-        nv_list, sig_counts, ref_counts, threshold=False
+        nv_list, sig_counts, ref_counts, threshold=True
     )
-    norms = norms[0]
 
     raw_fig = create_raw_data_figure(nv_list, freqs, avg_counts, avg_counts_ste)
     fit_fig = create_fit_figure(nv_list, freqs, avg_counts, avg_counts_ste, norms)
 
-    # img_arrays = np.array(data["mean_img_arrays"])[0]
-    # proc_img_arrays = widefield.downsample_img_arrays(img_arrays, 3)
+    ###
 
-    # bottom = np.percentile(proc_img_arrays, 30, axis=0)
-    # proc_img_arrays -= bottom
+    pixel_drifts = data["pixel_drifts"]
+    img_arrays = np.array(data["img_arrays"])
+    base_pixel_drift = [24, 74]
+    num_reps = 1
 
-    # norms_newaxis = norms[:, np.newaxis]
-    # avg_counts = avg_counts - norms_newaxis
-    # widefield.animate(
-    #     freqs,
-    #     nv_list,
-    #     avg_counts,
-    #     avg_counts_ste,
-    #     proc_img_arrays,
-    #     cmin=0.01,
-    #     cmax=0.04,
-    # )
+    buffer = 20
+    img_array_size = 250
+    cropped_size = img_array_size - 2 * buffer
+    proc_img_arrays = np.empty(
+        (2, num_runs, 2 * adj_num_steps, num_reps, cropped_size, cropped_size)
+    )
+    for run_ind in range(num_runs):
+        pixel_drift = pixel_drifts[run_ind]
+        offset = [
+            pixel_drift[1] - base_pixel_drift[1],
+            pixel_drift[0] - base_pixel_drift[0],
+        ]
+        for step_ind in range(2 * adj_num_steps):
+            img_array = img_arrays[0, run_ind, step_ind, 0]
+            cropped_img_array = widefield.crop_img_array(img_array, offset, buffer)
+            proc_img_arrays[0, run_ind, step_ind, 0, :, :] = cropped_img_array
+
+    sig_img_arrays = np.mean(proc_img_arrays[:, :, 0:adj_num_steps, :], axis=(0, 1, 3))
+    ref_img_array = np.mean(proc_img_arrays[:, :, adj_num_steps:, :], axis=(0, 1, 2, 3))
+    proc_img_arrays = sig_img_arrays - ref_img_array
+
+    downsample_factor = 2
+    proc_img_arrays = [
+        widefield.downsample_img_array(el, downsample_factor) for el in proc_img_arrays
+    ]
+    proc_img_arrays = np.array(proc_img_arrays)
+
+    widefield.animate(
+        freqs,
+        nv_list,
+        avg_counts,
+        avg_counts_ste,
+        norms,
+        proc_img_arrays,
+        cmin=np.percentile(proc_img_arrays, 60),
+        cmax=np.percentile(proc_img_arrays, 99.9),
+        scale_bar_length_factor=downsample_factor,
+    )
+
+    ###
 
     kpl.show(block=True)

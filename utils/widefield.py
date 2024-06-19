@@ -1131,16 +1131,26 @@ def animate(
 
     def data_ax_relim():
         # Update this manually to match the final plot
-        # xlabel = "Frequency (GHz)"
-        xlabel = "Pulse duration (ns)"
-        ylabel = "Change in $P($NV$^{-})$"
-        kpl.set_shared_ax_xlabel(rep_data_ax, xlabel)
-        kpl.set_shared_ax_ylabel(rep_data_ax, ylabel)
 
-        rep_data_ax.set_xticks([0, 200])
-        rep_data_ax.set_yticks([0, 0.1])
-        rep_data_ax.set_xlim([-12.8, 268.8])
-        rep_data_ax.set_ylim([-0.03671401564507494, 0.1688633341304579])
+        # ESR
+        xlabel = "Frequency (GHz)"
+        # rep_data_ax.set_xticks([0, 200])
+        rep_data_ax.set_xlim([2.771, 2.969])
+        rep_data_ax.set_yticks([0, 1])
+        rep_data_ax.set_ylim([-0.2698272503744738, 1.2643312422797126])
+
+        # Rabi
+        # xlabel = "Pulse duration (ns)"
+        # rep_data_ax.set_xticks([0, 200])
+        # rep_data_ax.set_xlim([-12.8, 268.8])
+        # rep_data_ax.set_yticks([0, 1])
+        # rep_data_ax.set_ylim([-0.03671401564507494, 0.1688633341304579])
+
+        # Leave fixed
+        kpl.set_shared_ax_xlabel(rep_data_ax, xlabel)
+        ylabel = "Norm. NV$^{-}$ population"
+        # ylabel = "Change in $P($NV$^{-})$"
+        kpl.set_shared_ax_ylabel(rep_data_ax, ylabel)
 
     data_ax_relim()
 

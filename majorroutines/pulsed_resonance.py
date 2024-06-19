@@ -8,24 +8,25 @@ Created on April 11th, 2019
 @author: mccambria
 """
 
-import utils.tool_belt as tool_belt
-import utils.kplotlib as kpl
-from utils.kplotlib import KplColors
-import majorroutines.optimize as optimize
-import numpy as np
-import matplotlib.pyplot as plt
-import time
-from scipy.optimize import curve_fit, brute
-from scipy.signal import find_peaks
-import labrad
-from utils.constants import NVSpinState, NormMode
-from random import shuffle
 import sys
-from utils.positioning import get_scan_1d as calculate_freqs
-from pathlib import Path
+import time
 from inspect import signature
+from pathlib import Path
+from random import shuffle
+
+import labrad
+import matplotlib.pyplot as plt
+import numpy as np
+from scipy.optimize import brute, curve_fit
+from scipy.signal import find_peaks
 from scipy.special import voigt_profile as scipy_voigt
 
+import majorroutines.optimize as optimize
+import utils.kplotlib as kpl
+import utils.tool_belt as tool_belt
+from utils.constants import NormMode, NVSpinState
+from utils.kplotlib import KplColors
+from utils.positioning import get_scan_1d as calculate_freqs
 
 # region Plotting
 
@@ -277,6 +278,14 @@ def voigt(freq, contrast, g_width, l_width, center):
     return (contrast / norm) * ret_val
 
 
+def norm_voigt(freq, g_width, l_width, center):
+    g_width_ghz = g_width / 1000
+    l_width_ghz = l_width / 1000
+    norm = scipy_voigt(0, g_width_ghz, l_width_ghz)
+    val = scipy_voigt(freq - center, g_width_ghz, l_width_ghz)
+    return val / norm
+
+
 def voigt_split(freq, contrast, g_width, l_width, center, splitting):
     splitting_ghz = splitting / 1000
     line_1 = voigt(freq, contrast, g_width, l_width, center - splitting_ghz / 2)
@@ -524,7 +533,7 @@ def fit_resonance(
     line_func=None,
     num_resonances=None,
     guess_params=None,
-    bounds=None, 
+    bounds=None,
 ):
     """Fit the ESR spectrum
 
