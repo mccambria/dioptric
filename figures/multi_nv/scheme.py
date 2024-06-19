@@ -24,17 +24,17 @@ from utils import widefield as widefield
 from utils.constants import NVSig
 
 
-def main(nv_list, apparatus_img, image_data, histogram_data, readout_data):
+def main(nv_list, apparatus_img, image_data, histogram_data):
     ### Setup
 
     # fig = plt.figure(figsize=kpl.double_figsize)
     # fig, ax = plt.subplots(2, 1, figsize=kpl.double_figsize)
     layout = [
+        ["apparatus", "smiley"],
         ["apparatus", "histogram"],
-        ["apparatus", "readout"],
     ]
     w_factor = 0.65
-    h_factor = 0.6
+    h_factor = 0.5 * 210 / 200
     figsize = kpl.double_figsize
     figsize[1] *= 1.1
     main_fig, axes_pack = plt.subplot_mosaic(
@@ -78,6 +78,10 @@ def main(nv_list, apparatus_img, image_data, histogram_data, readout_data):
     kpl.scale_bar(inset_ax, scale, "2 µm", kpl.Loc.UPPER_RIGHT)
     widefield.draw_circles_on_nvs(inset_ax, nv_list, drift=(13, 3))
 
+    ### Smiley
+
+    ax = axes_pack["smiley"]
+
     ### Charge states histogram
 
     nv_list = histogram_data["nv_list"]
@@ -87,7 +91,7 @@ def main(nv_list, apparatus_img, image_data, histogram_data, readout_data):
     sig_counts_lists = [counts[0, nv_ind].flatten() for nv_ind in range(num_nvs)]
     ref_counts_lists = [counts[1, nv_ind].flatten() for nv_ind in range(num_nvs)]
 
-    nv_ind = 1
+    nv_ind = 0
     sig_counts_list = sig_counts_lists[nv_ind]
     ref_counts_list = ref_counts_lists[nv_ind]
     ax = axes_pack["histogram"]
@@ -99,13 +103,7 @@ def main(nv_list, apparatus_img, image_data, histogram_data, readout_data):
         no_title=True,
         density=True,
     )
-    ax.set_xlim(-1, 93)
-
-    ### Readout fidelity
-
-    ax = axes_pack["readout"]
-    fig = process_check_readout_fidelity(readout_data, fidelity_ax=ax)
-    plt.close(fig)
+    ax.set_xlim(-0.5, 90.5)
 
     ### Adjustments
 
@@ -124,9 +122,9 @@ if __name__ == "__main__":
     apparatus_img = dm.get_img("multiplexed_apparatus", "png")
     # image_data = dm.get_raw_data(file_id=1537097641802, load_npz=True)
     image_data = dm.get_raw_data(file_id=1556655608661, load_npz=True)
-    histogram_data = dm.get_raw_data(file_id=1537195144201)
-    readout_data = dm.get_raw_data(file_id=1537208030313)
+    # histogram_data = dm.get_raw_data(file_id=1537195144201)
+    histogram_data = dm.get_raw_data(file_id=1556934779836)
 
-    main(nv_list, apparatus_img, image_data, histogram_data, readout_data)
+    main(nv_list, apparatus_img, image_data, histogram_data)
 
     plt.show(block=True)

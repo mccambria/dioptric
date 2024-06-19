@@ -142,8 +142,13 @@ def create_fit_figure(data, axes_pack=None, layout=None, no_legend=False):
         fig, axes_pack, layout = kpl.subplot_mosaic(num_nvs, num_rows=2)
     else:
         fig = None
-    norm_counts = avg_counts - norms[0][:, np.newaxis]
-    norm_counts_ste = avg_counts_ste
+
+    norms_ms0_newaxis = norms[0][:, np.newaxis]
+    norms_ms1_newaxis = norms[1][:, np.newaxis]
+    contrast = norms_ms1_newaxis - norms_ms0_newaxis
+    norm_counts = (avg_counts - norms_ms0_newaxis) / contrast
+    norm_counts_ste = avg_counts_ste / contrast
+
     widefield.plot_fit(
         axes_pack,
         nv_list,
@@ -156,7 +161,8 @@ def create_fit_figure(data, axes_pack=None, layout=None, no_legend=False):
     )
     ax = axes_pack[layout[-1, 0]]
     kpl.set_shared_ax_xlabel(ax, "Total evolution time (µs)")
-    kpl.set_shared_ax_ylabel(ax, "Change in $P($NV$^{-})$")
+    # kpl.set_shared_ax_ylabel(ax, "Change in $P($NV$^{-})$")
+    kpl.set_shared_ax_ylabel(ax, "Norm. NV$^{-}$ population")
     return fig
 
 
