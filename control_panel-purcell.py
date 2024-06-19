@@ -264,7 +264,7 @@ def do_resonance(nv_list):
 
     # Both refs
     num_reps = 2
-    num_runs = 1000
+    num_runs = 500
 
     # num_runs = 2
 
@@ -781,7 +781,7 @@ if __name__ == "__main__":
     # ]
     scc_duration_list = [140] * num_nvs
     scc_duration_list = [4 * round(el / 4) for el in scc_duration_list]
-    scc_amp_list = [0.942, 0.91, 0.87, 0.94, 0.94, 0.94, 0.9, 0.98, 0.84, 0.94]
+    scc_amp_list = [0.942, 0.91, 0.87, 0.94, 0.94, 0.94, 0.9, 0.98, 0.84, 0.94, 1, 1, 1]
     # scc_amp_list = [1.0] * num_nvs
     # scc_duration_list = [None] * num_nvs
     # endregion
@@ -922,7 +922,7 @@ if __name__ == "__main__":
         # do_check_readout_fidelity(nv_list)
 
         # do_resonance_zoom(nv_list)
-        # do_rabi(nv_list)
+        do_rabi(nv_list)
         # do_resonance(nv_list)
         # do_spin_echo(nv_list)
         # do_power_rabi(nv_list)
@@ -942,7 +942,7 @@ if __name__ == "__main__":
         # nv_list = nv_list[::-1]
         # do_scc_snr_check(nv_list)
         # do_optimize_scc_duration(nv_list)
-        do_optimize_scc_amp(nv_list)
+        # do_optimize_scc_amp(nv_list)
         # do_crosstalk_check(nv_sig)
         # do_spin_pol_check(nv_sig)
         # do_calibrate_green_red_delay()
