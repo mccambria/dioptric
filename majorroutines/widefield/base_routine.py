@@ -243,8 +243,7 @@ def main(
             ]
         save_images_num_reps = 1 if save_images_avg_reps else num_reps
         img_arrays = np.zeros(
-            # (num_exps, num_runs, num_steps, save_images_num_reps, *shape)
-            (num_exps, num_runs, num_steps // 2, save_images_num_reps, *shape)  # MCC
+            (num_exps, num_runs, num_steps, save_images_num_reps, *shape)
         )
     step_ind_master_list = [None for ind in range(num_runs)]
     step_ind_list = list(range(0, num_steps))
@@ -314,44 +313,21 @@ def main(
                                             img_array, save_images_downsample_factor
                                         )
                                     if save_images_avg_reps:
-                                        # MCC
-                                        original_num_steps = num_steps // 4
-                                        original_step_ind = (
-                                            step_ind % original_num_steps
-                                        )
-                                        if step_ind < (1 / 2) * num_steps:
-                                            local_img_array = img_arrays[
-                                                exp_ind,
-                                                run_ind,
-                                                original_step_ind,
-                                                0,
-                                            ]
-                                            local_img_array += img_array / (
-                                                2 * num_reps
-                                            )
-                                        elif step_ind < (3 / 4) * num_steps:
-                                            local_img_array = img_arrays[
-                                                exp_ind,
-                                                run_ind,
-                                                original_step_ind + original_num_steps,
-                                                0,
-                                            ]
-                                            local_img_array += img_array / num_reps
                                         # Just discard the ms=1 ref if averaging over reps
-                                        # working_img_array = img_arrays[
-                                        #     exp_ind, run_ind, step_ind, 0, :, :
-                                        # ]
-                                        # if (
-                                        #     ref_by_rep_parity
-                                        #     and exp_ind == num_exps - 1
-                                        # ):
-                                        #     if rep_ind % 2 == 0:
-                                        #         divisor = int(np.ceil(num_reps / 2))
-                                        #     else:
-                                        #         continue
-                                        # else:
-                                        #     divisor = num_reps
-                                        # working_img_array += img_array / divisor
+                                        working_img_array = img_arrays[
+                                            exp_ind, run_ind, step_ind, 0, :, :
+                                        ]
+                                        if (
+                                            ref_by_rep_parity
+                                            and exp_ind == num_exps - 1
+                                        ):
+                                            if rep_ind % 2 == 0:
+                                                divisor = int(np.ceil(num_reps / 2))
+                                            else:
+                                                continue
+                                        else:
+                                            divisor = num_reps
+                                        working_img_array += img_array / divisor
                                     else:
                                         img_arrays[
                                             exp_ind, run_ind, step_ind, rep_ind, :, :
