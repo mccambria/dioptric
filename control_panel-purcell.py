@@ -288,7 +288,8 @@ def do_rabi(nv_list):
     # max_tau = 480 + min_tau
     num_steps = 31
     num_reps = 10
-    num_runs = 100
+    # num_runs = 100
+    num_runs = 200
     # num_runs = 50
     # num_runs = 20
 
@@ -922,7 +923,7 @@ if __name__ == "__main__":
         # do_check_readout_fidelity(nv_list)
 
         # do_resonance_zoom(nv_list)
-        # do_rabi(nv_list)
+        do_rabi(nv_list)
         # do_resonance(nv_list)
         # do_spin_echo(nv_list)
         # do_power_rabi(nv_list)

@@ -312,25 +312,30 @@ def main(
                                         img_array = widefield.downsample_img_array(
                                             img_array, save_images_downsample_factor
                                         )
+
                                     if save_images_avg_reps:
-                                        # Just discard the ms=1 ref if averaging over reps
                                         working_img_array = img_arrays[
-                                            exp_ind, run_ind, step_ind, 0, :, :
+                                            exp_ind, run_ind, step_ind, 0
                                         ]
+                                        # Check if this is a parity-based ref exp
                                         if (
                                             ref_by_rep_parity
                                             and exp_ind == num_exps - 1
                                         ):
+                                            # Account for the number of ms=0 ref shots
                                             if rep_ind % 2 == 0:
-                                                divisor = int(np.ceil(num_reps / 2))
+                                                coeff = 1 / int(np.ceil(num_reps / 2))
+                                            # Just discard the ms=1 ref if averaging over reps
                                             else:
-                                                continue
+                                                coeff = 0
                                         else:
-                                            divisor = num_reps
-                                        working_img_array += img_array / divisor
+                                            coeff = 1 / num_reps
+
+                                        working_img_array += coeff * img_array
+
                                     else:
                                         img_arrays[
-                                            exp_ind, run_ind, step_ind, rep_ind, :, :
+                                            exp_ind, run_ind, step_ind, rep_ind
                                         ] = img_array
 
                     ### Move on to the next run
