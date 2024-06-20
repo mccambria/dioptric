@@ -903,7 +903,7 @@ if __name__ == "__main__":
         # do_optimize_red(nv_sig)
         # do_image_single_nv(nv_sig)
 
-        optimize.optimize_pixel_and_z(nv_sig, do_plot=True)
+        # optimize.optimize_pixel_and_z(nv_sig, do_plot=True)
         # do_image_nv_list(nv_list)
         # for ind in range(20):
         #     do_optimize_pixel(nv_sig)
@@ -923,7 +923,7 @@ if __name__ == "__main__":
         # do_check_readout_fidelity(nv_list)
 
         # do_resonance_zoom(nv_list)
-        do_rabi(nv_list)
+        # do_rabi(nv_list)
         # do_resonance(nv_list)
         # do_spin_echo(nv_list)
         # do_power_rabi(nv_list)
