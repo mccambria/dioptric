@@ -195,14 +195,10 @@ def main(
     ion_include_inds=None,
 ):
     ### Some initial setup
-    seq_file = "charge_state_histograms.py"
+    seq_file = "charge_state_conditional_init.py"
     num_steps = 1
 
-    if verify_charge_states:
-        charge_prep_fn = base_routine.charge_prep_loop
-    else:
-        # charge_prep_fn = base_routine.charge_prep_no_verification
-        charge_prep_fn = None
+    charge_prep_fn = base_routine.charge_prep_no_verification
 
     pulse_gen = tb.get_server_pulse_gen()
 
@@ -210,16 +206,7 @@ def main(
 
     def run_fn(shuffled_step_inds):
         pol_coords_list = widefield.get_coords_list(nv_list, LaserKey.CHARGE_POL)
-        ion_coords_list = widefield.get_coords_list(
-            nv_list, LaserKey.ION, include_inds=ion_include_inds
-        )
-        seq_args = [
-            pol_coords_list,
-            ion_coords_list,
-            diff_polarize,
-            diff_ionize,
-            verify_charge_states,
-        ]
+        seq_args = [pol_coords_list]
         seq_args_string = tb.encode_seq_args(seq_args)
         pulse_gen.stream_load(seq_file, seq_args_string, num_reps)
 
@@ -232,6 +219,7 @@ def main(
         save_images=True,
         save_images_avg_reps=False,
         charge_prep_fn=charge_prep_fn,
+        num_exps=2,
         # uwave_ind_list=[0, 1],  # MCC
     )
 
@@ -241,57 +229,14 @@ def main(
     repr_nv_sig = widefield.get_repr_nv_sig(nv_list)
     repr_nv_name = repr_nv_sig.name
 
-    try:
-        imgs, img_figs, hist_figs = process_and_plot(raw_data)
-
-        title_suffixes = ["sig", "ref", "diff"]
-        for ind in range(len(img_figs)):
-            fig = img_figs[ind]
-            title = title_suffixes[ind]
-            file_path = dm.get_file_path(__file__, timestamp, f"{repr_nv_name}-{title}")
-            dm.save_figure(fig, file_path)
-
-        num_nvs = len(nv_list)
-        for nv_ind in range(num_nvs):
-            fig = hist_figs[nv_ind]
-            nv_sig = nv_list[nv_ind]
-            nv_name = nv_sig.name
-            file_path = dm.get_file_path(__file__, timestamp, nv_name)
-            dm.save_figure(fig, file_path)
-
-        sig_img_array, ref_img_array, diff_img_array = imgs
-        keys_to_compress = [
-            "sig_img_array",
-            "ref_img_array",
-            "diff_img_array",
-        ]
-
-    except Exception:
-        print(traceback.format_exc())
-        sig_img_array = None
-        ref_img_array = None
-        diff_img_array = None
-        keys_to_compress = None
-
-    # try:
-    #     del raw_data["img_arrays"]
-    # except Exception:
-    #     pass
-    keys_to_compress = ["img_arrays"]
-
     ### Save raw data
 
     file_path = dm.get_file_path(__file__, timestamp, repr_nv_name)
     raw_data |= {
         "timestamp": timestamp,
-        "diff_polarize": diff_polarize,
-        "diff_ionize": diff_ionize,
-        "sig_img_array": sig_img_array,
-        "ref_img_array": ref_img_array,
-        "diff_img_array": diff_img_array,
         "img_array-units": "photons",
     }
-    dm.save_raw_data(raw_data, file_path, keys_to_compress)
+    dm.save_raw_data(raw_data, file_path)
 
     tb.reset_cfm()
 
