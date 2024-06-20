@@ -23,6 +23,10 @@ from utils import widefield as widefield
 def process_and_plot(nv_list, taus, sig_counts, ref_counts, duration_or_amp):
     num_nvs = len(nv_list)
 
+    sig_counts, ref_counts = widefield.threshold_counts(
+        nv_list, sig_counts, ref_counts, dynamic_thresh=True
+    )
+
     avg_sig_counts, avg_sig_counts_ste, _ = widefield.average_counts(sig_counts)
     avg_ref_counts, avg_ref_counts_ste, _ = widefield.average_counts(ref_counts)
     avg_snr, avg_snr_ste = widefield.calc_snr(sig_counts, ref_counts)
@@ -177,7 +181,7 @@ def _main(nv_list, num_steps, num_reps, num_runs, min_tau, max_tau, duration_or_
 
     ### Process and plot
 
-    counts = raw_data["states"]
+    counts = raw_data["counts"]
     sig_counts = counts[0]
     ref_counts = counts[1]
 
@@ -222,17 +226,13 @@ def _main(nv_list, num_steps, num_reps, num_runs, min_tau, max_tau, duration_or_
 if __name__ == "__main__":
     kpl.init_kplotlib()
 
-    data = dm.get_raw_data(file_id=1560594496006)
-
-    # print(data["opx_config"]["waveforms"]["red_aod_cw-scc"])
+    data = dm.get_raw_data(file_id=1564881159891)
 
     nv_list = data["nv_list"]
     taus = data["taus"]
-    # counts = np.array(data["counts"])
-    counts = np.array(data["states"])
+    counts = np.array(data["counts"])
     sig_counts = counts[0]
     ref_counts = counts[1]
-    # ref_counts = ref_counts[:, :, :, ::2]
 
     # sig_counts, ref_counts = widefield.threshold_counts(nv_list, sig_counts, ref_counts)
 

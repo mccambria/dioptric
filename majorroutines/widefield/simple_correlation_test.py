@@ -21,7 +21,7 @@ from utils import widefield as widefield
 from utils.constants import NVSig
 
 
-def process_and_plot(data):
+def process_and_plot_experimental(data):
     nv_list = data["nv_list"]
     # nv_list = nv_list[::-1]
     counts = np.array(data["counts"])

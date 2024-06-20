@@ -146,7 +146,7 @@ def adus_to_photons(adus, k_gain=None, em_gain=None, baseline=None):
 def _img_array_iris(shape):
     roi = _get_camera_roi()  # offsetX, offsetY, width, height
     offsetX, offsetY, width, height = roi
-    iris_radius = np.sqrt((height / 2) ** 2 + (width / 2) ** 2) + 10
+    iris_radius = np.sqrt((height / 2) ** 2 + (width / 2) ** 2) + 25
     center_x = offsetX + width // 2
     center_y = height // 2
 
@@ -240,7 +240,7 @@ def threshold_counts(nv_list, sig_counts, ref_counts=None, dynamic_thresh=False)
             # threshold = determine_threshold(combined_counts)
             threshold = determine_threshold(
                 combined_counts,
-                single_or_dual=False,
+                single_or_dual=True,
                 nvn_ratio=None,
                 dual_threshold_min_fidelity=0.8,
                 no_print=True,
@@ -344,7 +344,7 @@ def process_counts(nv_list, sig_counts, ref_counts=None, threshold=True):
     _validate_counts_structure(ref_counts)
     if threshold:
         sig_states_array, ref_states_array = threshold_counts(
-            nv_list, sig_counts, ref_counts
+            nv_list, sig_counts, ref_counts, dynamic_thresh=True
         )
         return average_counts(sig_states_array, ref_states_array)
     else:
@@ -1093,7 +1093,7 @@ def animate(
     x,
     nv_list,
     counts,
-    counts_errs,
+    counts_ste,
     norms,
     img_arrays,
     cmin=None,
@@ -1102,9 +1102,11 @@ def animate(
 ):
     num_steps = img_arrays.shape[0]
 
-    norms_newaxis = norms[0][:, np.newaxis]
-    norm_counts = counts - norms_newaxis
-    norm_counts_ste = counts_errs
+    norms_ms0_newaxis = norms[0][:, np.newaxis]
+    norms_ms1_newaxis = norms[1][:, np.newaxis]
+    contrast = norms_ms1_newaxis - norms_ms0_newaxis
+    norm_counts = (counts - norms_ms0_newaxis) / contrast
+    norm_counts_ste = counts_ste / contrast
 
     just_plot_figsize = [6.5, 5.0]
     figsize = [just_plot_figsize[0] + just_plot_figsize[1], just_plot_figsize[1]]
@@ -1128,23 +1130,27 @@ def animate(
     kpl.scale_bar(im_ax, scale, "1 µm", kpl.Loc.LOWER_RIGHT)
 
     def data_ax_relim():
-        # pass
-        x_buffer = 0.05 * (np.max(x) - np.min(x))
-        rep_data_ax.set_xlim(np.min(x) - x_buffer, np.max(x) + x_buffer)
-        y_buffer = 0.05 * (np.max(norm_counts) - np.min(norm_counts))
-        rep_data_ax.set_ylim(
-            np.min(norm_counts) - y_buffer, np.max(norm_counts) + y_buffer
-        )
+        # Update this manually to match the final plot
 
-        # xlabel = "Frequency (GHz)"
-        xlabel = "Pulse duration (ns)"
-        ylabel = "Change in $P($NV$^{-})$"
+        # ESR
+        xlabel = "Frequency (GHz)"
+        # rep_data_ax.set_xticks([0, 200])
+        rep_data_ax.set_xlim([2.771, 2.969])
+        rep_data_ax.set_yticks([0, 1])
+        rep_data_ax.set_ylim([-0.2698272503744738, 1.2643312422797126])
+
+        # Rabi
+        # xlabel = "Pulse duration (ns)"
+        # rep_data_ax.set_xticks([0, 200])
+        # rep_data_ax.set_xlim([-12.8, 268.8])
+        # rep_data_ax.set_yticks([0, 1])
+        # rep_data_ax.set_ylim([-0.03671401564507494, 0.1688633341304579])
+
+        # Leave fixed
         kpl.set_shared_ax_xlabel(rep_data_ax, xlabel)
+        ylabel = "Norm. NV$^{-}$ population"
+        # ylabel = "Change in $P($NV$^{-})$"
         kpl.set_shared_ax_ylabel(rep_data_ax, ylabel)
-        rep_data_ax.set_xticks([0, 200])
-        rep_data_ax.set_yticks([0, 0.1])
-        rep_data_ax.set_xlim([-12.8, 268.8])
-        rep_data_ax.set_ylim([-0.03671401564507494, 0.1688633341304579])
 
     data_ax_relim()
 
@@ -1159,7 +1165,7 @@ def animate(
             nv_list,
             x[: step_ind + 1],
             norm_counts[:, : step_ind + 1],
-            counts_errs[:, : step_ind + 1],
+            norm_counts_ste[:, : step_ind + 1],
             no_legend=True,
         )
         data_ax_relim()

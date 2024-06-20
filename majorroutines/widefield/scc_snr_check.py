@@ -30,7 +30,7 @@ def process_and_plot(data):
 
     if threshold:
         sig_counts, ref_counts = widefield.threshold_counts(
-            nv_list, sig_counts, ref_counts
+            nv_list, sig_counts, ref_counts, dynamic_thresh=True
         )
 
     ### Report the results and return
@@ -158,6 +158,6 @@ def main(nv_list, num_reps, num_runs, scc_include_inds=None, uwave_ind_list=[0, 
 
 if __name__ == "__main__":
     kpl.init_kplotlib()
-    data = dm.get_raw_data(file_id=1560609724329)
+    data = dm.get_raw_data(file_id=1564838065461)
     figs = process_and_plot(data)
     kpl.show(block=True)

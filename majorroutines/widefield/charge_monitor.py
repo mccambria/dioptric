@@ -205,7 +205,7 @@ def main(
         num_reps,
         num_runs,
         run_fn=run_fn,
-        num_exps_per_rep=num_exps_per_rep,
+        num_exps=num_exps_per_rep,
         charge_prep_fn=charge_prep_fn,
     )
 

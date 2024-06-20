@@ -67,6 +67,7 @@ class QmOpx(Tagger, PulseGen, LabradServer):
         # Get manager and OPX
         qm_opx_args = config["DeviceIDs"]["QM_opx_args"]
         self.qmm = QuantumMachinesManager(**qm_opx_args)
+        self.qmm.clear_all_job_results()
 
         self.running_job = None
 
@@ -95,6 +96,7 @@ class QmOpx(Tagger, PulseGen, LabradServer):
         logging.info("Init complete")
 
     def stopServer(self):
+        self.qmm.clear_all_job_results()
         self.qmm.close_all_quantum_machines()
         self.qmm.close()
 

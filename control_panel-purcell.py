@@ -80,8 +80,8 @@ def do_image_single_nv(nv_sig):
 
 def do_charge_state_histograms(nv_list):
     num_reps = 200
-    num_runs = 40
-    # num_runs = 20
+    # num_runs = 40
+    num_runs = 20
     # num_runs = 2
     # for ion_include_inds in [None, [0, 1, 2, 3, 4, 5]]:
     #     charge_state_histograms.main(
@@ -204,10 +204,9 @@ def do_optimize_scc_amp(nv_list):
     min_tau = 0.7
     max_tau = 1.3
     num_steps = 16
-    num_reps = 15
+    num_reps = 20
 
-    num_runs = 30
-    # num_runs = 50
+    num_runs = 60
     # num_runs = 2
 
     optimize_scc.optimize_scc_amp(
@@ -265,7 +264,7 @@ def do_resonance(nv_list):
 
     # Both refs
     num_reps = 2
-    num_runs = 1000
+    num_runs = 500
 
     # num_runs = 2
 
@@ -289,7 +288,8 @@ def do_rabi(nv_list):
     # max_tau = 480 + min_tau
     num_steps = 31
     num_reps = 10
-    num_runs = 100
+    # num_runs = 100
+    num_runs = 200
     # num_runs = 50
     # num_runs = 20
 
@@ -653,7 +653,7 @@ if __name__ == "__main__":
     pixel_coords_key = "pixel_coords"
 
     sample_name = "johnson"
-    z_coord = 4.43
+    z_coord = 4.63
     magnet_angle = 90
     date_str = "2024_03_12"
     global_coords = [None, None, z_coord]
@@ -676,6 +676,9 @@ if __name__ == "__main__":
         [61.277, 76.387],
         [85.384, 33.935],
     ]
+    for pair in pixel_coords_list:
+        pair[0] += 4
+        pair[1] -= 15
     num_nvs = len(pixel_coords_list)
     green_coords_list = [
         [108.463, 110.222],
@@ -777,9 +780,9 @@ if __name__ == "__main__":
     #     120,
     #     120,
     # ]
-    scc_duration_list = [100] * num_nvs
+    scc_duration_list = [140] * num_nvs
     scc_duration_list = [4 * round(el / 4) for el in scc_duration_list]
-    scc_amp_list = [1.18, 1.12, 1.1, 1.05, 1.1, 1.11, 1.1, 1.12, 1.07, 1.1, 1, 1, 1]
+    scc_amp_list = [0.942, 0.91, 0.87, 0.94, 0.94, 0.94, 0.9, 0.98, 0.84, 0.94, 1, 1, 1]
     # scc_amp_list = [1.0] * num_nvs
     # scc_duration_list = [None] * num_nvs
     # endregion
@@ -871,8 +874,8 @@ if __name__ == "__main__":
         # widefield.reset_all_drift()
         # pos.reset_drift()  # Reset z drift
         # widefield.set_pixel_drift(
-        #     np.array([140.6, 167.0])  # New coords
-        #     - np.array([131.144, 129.272])  # Original coords
+        #     np.array([149.886, 175.123])  # New coords
+        #     - np.array([131.144 + 4, 129.272 - 15])  # Original coords
         # )
         # widefield.set_all_scanning_drift_from_pixel_drift()
 
@@ -880,14 +883,15 @@ if __name__ == "__main__":
 
         # pos.set_xyz_on_nv(nv_sig)
 
-        # for z in np.linspace(4.45, 4.75, 11):
+        # for z in np.linspace(4.4, 4.7, 11):
         #     nv_sig.coords[CoordsKey.GLOBAL][2] = z
-        #     do_widefield_image_sample(nv_sig, 20)
+        #     # do_widefield_image_sample(nv_sig, 20)
+        #     do_widefield_image_sample(nv_sig, 100)
 
         # do_scanning_image_sample(nv_sig)
         # do_scanning_image_sample_zoom(nv_sig)
-        do_widefield_image_sample(nv_sig, 20)
-        # do_widefield_image_sample(nv_sig, 200)
+        # do_widefield_image_sample(nv_sig, 20)
+        # do_widefield_image_sample(nv_sig, 100)
 
         # do_image_nv_list(nv_list)
         # do_image_single_nv(nv_sig)
@@ -915,7 +919,7 @@ if __name__ == "__main__":
         # do_optimize_loop(nv_list, coords_key, scanning_from_pixel=False)
 
         # nv_list = nv_list[::-1]
-        # do_charge_state_histograms(nv_list)
+        do_charge_state_histograms(nv_list)
         # do_check_readout_fidelity(nv_list)
 
         # do_resonance_zoom(nv_list)

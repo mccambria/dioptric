@@ -124,7 +124,7 @@ config |= {
         # See camera server file for details
         "readout_mode": 1,  # 16 for double horizontal readout rate
         # "readout_mode": 6,  # Fast conventional
-        "roi": (125, 95, 250, 250),  # offsetX, offsetY, width, height
+        "roi": (121, 110, 250, 250),  # offsetX, offsetY, width, height
         # "roi": None,  # offsetX, offsetY, width, height
         "scale": 24,  # pixels / micron
     },
@@ -700,8 +700,8 @@ opx_config = {
         # Yellow AOM
         "yellow_imaging": {"type": "constant", "sample": 0.40},  # 0.35
         # "yellow_imaging": {"type": "constant", "sample": 0.50},  # 0.35
-        # "yellow_charge_readout": {"type": "constant", "sample": 0.355},  # 30e6
-        "yellow_charge_readout": {"type": "constant", "sample": 0.3475},  # 30e6
+        "yellow_charge_readout": {"type": "constant", "sample": 0.353},  # 30e6
+        # "yellow_charge_readout": {"type": "constant", "sample": 0.3475},  # 30e6
         "yellow_spin_pol": {"type": "constant", "sample": 0.38},
         # Other
         "aod_cw": {"type": "constant", "sample": 0.35},

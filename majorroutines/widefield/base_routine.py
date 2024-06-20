@@ -147,7 +147,8 @@ def main(
     step_fn=None,
     uwave_ind_list=[0, 1],
     uwave_freq_list=None,
-    num_exps_per_rep=2,
+    num_exps=2,
+    ref_by_rep_parity=True,
     load_iq=False,
     save_images=False,
     save_images_avg_reps=True,
@@ -230,8 +231,8 @@ def main(
 
     ### Data tracking
 
-    counts = np.empty((num_exps_per_rep, num_nvs, num_runs, num_steps, num_reps))
-    states = np.empty((num_exps_per_rep, num_nvs, num_runs, num_steps, num_reps))
+    counts = np.empty((num_exps, num_nvs, num_runs, num_steps, num_reps))
+    states = np.empty((num_exps, num_nvs, num_runs, num_steps, num_reps))
     pixel_drifts = np.empty((num_runs, 2))
     if save_images:
         shape = widefield.get_img_array_shape()
@@ -241,8 +242,8 @@ def main(
                 for ind in range(2)
             ]
         save_images_num_reps = 1 if save_images_avg_reps else num_reps
-        img_arrays = np.empty(
-            (num_exps_per_rep, num_runs, num_steps, save_images_num_reps, *shape)
+        img_arrays = np.zeros(
+            (num_exps, num_runs, num_steps, save_images_num_reps, *shape)
         )
     step_ind_master_list = [None for ind in range(num_runs)]
     step_ind_list = list(range(0, num_steps))
@@ -289,11 +290,8 @@ def main(
                                 pulse_gen.stream_start()
 
                         # Reps loop
-                        if save_images and save_images_avg_reps:
-                            avg_reps_img_arrays = np.zeros((num_exps_per_rep, *shape))
-
                         for rep_ind in range(num_reps):
-                            for exp_ind in range(num_exps_per_rep):
+                            for exp_ind in range(num_exps):
                                 if charge_prep_fn is not None:
                                     charge_prep_fn(
                                         rep_ind,
@@ -314,18 +312,31 @@ def main(
                                         img_array = widefield.downsample_img_array(
                                             img_array, save_images_downsample_factor
                                         )
+
                                     if save_images_avg_reps:
-                                        avg_reps_img_arrays[exp_ind] += img_array
+                                        working_img_array = img_arrays[
+                                            exp_ind, run_ind, step_ind, 0
+                                        ]
+                                        # Check if this is a parity-based ref exp
+                                        if (
+                                            ref_by_rep_parity
+                                            and exp_ind == num_exps - 1
+                                        ):
+                                            # Account for the number of ms=0 ref shots
+                                            if rep_ind % 2 == 0:
+                                                coeff = 1 / int(np.ceil(num_reps / 2))
+                                            # Just discard the ms=1 ref if averaging over reps
+                                            else:
+                                                coeff = 0
+                                        else:
+                                            coeff = 1 / num_reps
+
+                                        working_img_array += coeff * img_array
+
                                     else:
                                         img_arrays[
-                                            exp_ind, run_ind, step_ind, rep_ind, :, :
+                                            exp_ind, run_ind, step_ind, rep_ind
                                         ] = img_array
-
-                        if save_images and save_images_avg_reps:
-                            avg_reps_img_arrays /= num_reps
-                            img_arrays[:, run_ind, step_ind, 0, :, :] = (
-                                avg_reps_img_arrays
-                            )
 
                     ### Move on to the next run
 
@@ -375,7 +386,7 @@ def main(
         "num_runs": num_runs,
         "uwave_ind": uwave_ind_list,
         "uwave_freq": uwave_freq_list,
-        "num_exps_per_rep": num_exps_per_rep,
+        "num_exps_per_rep": num_exps,
         "load_iq": load_iq,
         "step_ind_master_list": step_ind_master_list,
         "counts-units": "photons",

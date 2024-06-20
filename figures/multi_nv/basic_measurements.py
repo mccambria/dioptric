@@ -228,7 +228,7 @@ def main(esr_data, spin_echo_data):
         spin_echo_zoom_axes_pack[mosaic_layout[0][0]],
         spin_echo_axes_pack[mosaic_layout[0][0]],
     ]:
-        ax.set_yticks([0, 0.1])
+        ax.set_yticks([0, 0.5])
 
     # ### Adjustments
 
