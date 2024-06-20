@@ -255,8 +255,6 @@ def process_and_plot(data):
     return figs
 
 
-<<<<<<< HEAD
-=======
 def process_and_plot(
     data, ax=None, sig_or_ref=True, no_cbar=False, cbar_max=None, no_labels=False
 ):
@@ -376,10 +374,23 @@ def process_and_plot(
             ax.set_xlabel("NV index")
             ax.set_ylabel("NV index")
 
+        # import os
+        # output_dir = f'data/correlation_matrix/orientation_1540558251818'
+        # if not os.path.exists(output_dir):
+        #     os.makedirs(output_dir)
+        # np.save(os.path.join(output_dir, 'sig_corr_coeffs.npy'), sig_corr_coeffs)
+        # np.save(os.path.join(output_dir, 'ref_corr_coeffs.npy'), ref_corr_coeffs)
+        # np.save(os.path.join(output_dir, 'ideal_sig_corr_coeffs.npy'), ideal_sig_corr_coeffs)
+        # np.save(os.path.join(output_dir, 'ideal_sig_corr_coeffs.npy'), ideal_ref_corr_coeffs)
+
+        # # for fig, title in zip(figs, titles):
+        # #     fig.savefig(os.path.join(output_dir, f"{title.replace(' ', '_')}.png"))
+
+        # print(f"Data and figures saved to {output_dir}")
+
     # return figs
 
 
->>>>>>> 92063939bc5e8d0c8d6a3b7ad7f55db4b43a032f
 def main(nv_list, num_reps, num_runs):
     ### Some initial setup
     uwave_ind_list = [0, 1]
@@ -439,12 +450,12 @@ def main(nv_list, num_reps, num_runs):
 if __name__ == "__main__":
     kpl.init_kplotlib()
 
-    data = dm.get_raw_data(file_id=1540048047866)  # Straight block
-    process_and_plot(data)
-    data = dm.get_raw_data(file_id=1541938921939)  # reverse block
-    process_and_plot(data)
-    data = dm.get_raw_data(file_id=1538271354881)  # checkerboard
-    process_and_plot(data)
+    # data = dm.get_raw_data(file_id=1540048047866)  # Straight block
+    # process_and_plot(data)
+    # data = dm.get_raw_data(file_id=1541938921939)  # reverse block
+    # process_and_plot(data)
+    # data = dm.get_raw_data(file_id=1538271354881)  # checkerboard
+    # process_and_plot(data)
     data = dm.get_raw_data(file_id=1540558251818)  # orientation
     process_and_plot(data)
 
