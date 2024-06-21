@@ -1,23 +1,28 @@
 # -*- coding: utf-8 -*-
 """
-Default config file for laptops, home PCs, etc 
+Config file for Thorslm server
 
-Created June 10th, 2024
+Created June 21st, 2024
 
 @author: sbchand
 """
 
-from utils.constants import ModMode, ControlMode, CountFormat
-from utils.constants import CollectionMode, LaserKey, LaserPosMode
 from pathlib import Path
-import numpy as np
 
+# Set home directory path
 home = Path.home()
 
+# Configuration dictionary
 config = {
-    ###
     "shared_email": "kolkowitznvlab@gmail.com",
     "windows_repo_path": home / "Documents/dioptric",
     "linux_repo_path": home / "Documents/dioptric",
-    "nv_sig_units": "{'coords': 'V', 'expected_count_rate': 'kcps', 'durations': 'ns', 'magnet_angle': 'deg', 'resonance': 'GHz', 'rabi': 'ns', 'uwave_power': 'dBm'}",
+    "Servers": {
+        "thorslm": "ThorslmServer",
+    },
 }
+
+# Print configuration for verification
+if __name__ == "__main__":
+    for key, value in config.items():
+        print(f"{key}: {value}")
