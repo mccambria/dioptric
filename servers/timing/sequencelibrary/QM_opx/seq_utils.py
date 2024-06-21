@@ -587,14 +587,15 @@ def _macro_pulse_list(
             amp = _cache_amp
         else:
             amp = None
-        macro_pulse(
-            laser_name,
-            (_cache_x_freq, _cache_y_freq),
-            pulse_name=pulse_name,
-            duration=duration,
-            amp=amp,
-            convert_to_Hz=False,
-        )
+        with qua.if_(_cache_target):
+            macro_pulse(
+                laser_name,
+                (_cache_x_freq, _cache_y_freq),
+                pulse_name=pulse_name,
+                duration=duration,
+                amp=amp,
+                convert_to_Hz=False,
+            )
 
     qua.align()
 
@@ -611,6 +612,8 @@ def _macro_pulse_list(
     if target_list is not None:
         list_1.append(_cache_target)
         list_2.append(target_list)
+    else:  # Just set _cache_target to true if we want to hit every NV
+        qua.assign(_cache_target, True)
 
     with qua.for_each_(tuple(list_1), tuple(list_2)):
         macro_sub()

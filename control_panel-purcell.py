@@ -20,6 +20,7 @@ from majorroutines.widefield import (
     ac_stark,
     calibrate_iq_delay,
     charge_monitor,
+    charge_state_conditional_init,
     charge_state_histograms,
     correlation_test,
     crosstalk_check,
@@ -79,15 +80,24 @@ def do_image_single_nv(nv_sig):
 
 
 def do_charge_state_histograms(nv_list):
-    num_reps = 200
-    # num_runs = 40
-    num_runs = 20
+    # num_reps = 200
+    num_reps = 100
+    num_runs = 40
+    # num_runs = 20
+    # num_runs = 10
     # num_runs = 2
     # for ion_include_inds in [None, [0, 1, 2, 3, 4, 5]]:
     #     charge_state_histograms.main(
     #         nv_list, num_reps, num_runs, ion_include_inds=ion_include_inds
     #     )
     return charge_state_histograms.main(nv_list, num_reps, num_runs)
+
+
+def do_charge_state_conditional_init(nv_list):
+    num_reps = 20
+    # num_runs = 100
+    num_runs = 400
+    return charge_state_conditional_init.main(nv_list, num_reps, num_runs)
 
 
 def do_optimize_green(nv_sig, do_plot=True):
@@ -492,6 +502,7 @@ def do_spin_pol_check(nv_sig):
 def do_detect_cosmic_rays(nv_list):
     num_reps = 60
     num_runs = 6 * 60
+    # num_runs = 2
     dark_time = 1e9
 
     charge_monitor.detect_cosmic_rays(nv_list, num_reps, num_runs, dark_time)
@@ -712,21 +723,56 @@ if __name__ == "__main__":
         [72.124, 76.462],
         [72.518, 77.284],
     ]
+    # 50 ms, 0.353
+    # threshold_list = [
+    #     29.5,
+    #     29.5,
+    #     32.5,
+    #     35.5,
+    #     26.5,
+    #     23.5,
+    #     22.5,
+    #     21.5,
+    #     33.5,
+    #     25.5,
+    #     #
+    #     23.5,
+    #     33.5,
+    #     29.5,
+    # ]
+    # 100 ms, 0.33
+    # threshold_list = [
+    #     35.5,
+    #     32.5,
+    #     35.5,
+    #     41.5,
+    #     30.5,
+    #     24.5,
+    #     24.5,
+    #     23.5,
+    #     37.5,
+    #     31.5,
+    #     #
+    #     23.5,
+    #     33.5,
+    #     29.5,
+    # ]
+    # 100 ms, 0.32
     threshold_list = [
-        27.5,
-        28.5,
-        28.5,
-        28.5,
-        25.5,
-        25.5,
+        29.5,
+        26.5,
+        29.5,
+        33.5,
         24.5,
+        18.5,
+        23.5,
+        19.5,
+        29.5,
         24.5,
-        28.5,
-        20.5,
         #
-        22.5,
-        22.5,
-        22.5,
+        23.5,
+        33.5,
+        29.5,
     ]
     scc_duration_list = [
         118,
@@ -809,7 +855,8 @@ if __name__ == "__main__":
     # Additional properties for the representative NV
     nv_list[0].representative = True
     nv_sig = widefield.get_repr_nv_sig(nv_list)
-    nv_sig.expected_counts = 1150
+    # nv_sig.expected_counts = 1150
+    nv_sig.expected_counts = 1200
     num_nvs = len(nv_list)
 
     # nv_inds = [0, 1]
@@ -903,7 +950,7 @@ if __name__ == "__main__":
         # do_optimize_red(nv_sig)
         # do_image_single_nv(nv_sig)
 
-        # optimize.optimize_pixel_and_z(nv_sig, do_plot=True)
+        optimize.optimize_pixel_and_z(nv_sig, do_plot=True)
         # do_image_nv_list(nv_list)
         # for ind in range(20):
         #     do_optimize_pixel(nv_sig)
@@ -920,6 +967,7 @@ if __name__ == "__main__":
 
         # nv_list = nv_list[::-1]
         do_charge_state_histograms(nv_list)
+        # do_charge_state_conditional_init(nv_list)
         # do_check_readout_fidelity(nv_list)
 
         # do_resonance_zoom(nv_list)

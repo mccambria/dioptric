@@ -74,21 +74,30 @@ def process_detect_cosmic_rays(data):
     states = np.array(data["states"])[0]
     states_by_nv = np.array([states[nv_ind].flatten() for nv_ind in range(num_nvs)])
 
-    coincidences = []
-    num_shots = len(states_by_nv[0])
-    for shot_ind in range(num_shots):
-        coincidences.append(num_nvs - np.sum(states_by_nv[:, shot_ind]))
-    coincidences = np.array(coincidences)
-    hist_fig, ax = plt.subplots()
-    kpl.histogram(ax, coincidences, label=f"Data ({num_nvs} NVs)")
-    ax.set_xlabel("Number NVs found in NV0")
-    ax.set_ylabel("Number of occurrences")
-    x_vals = np.array(range(0, num_nvs + 1))
-    expected_dist = num_shots * poisson.pmf(x_vals, np.mean(coincidences))
-    kpl.plot_points(
-        ax, x_vals, expected_dist, label="Poisson pmf", color=kpl.KplColors.RED
-    )
-    ax.legend()
+    for ind in range(2):
+        if ind == 1:
+            for nv_ind in range(num_nvs):
+                states_by_nv[nv_ind] = np.roll(states_by_nv[nv_ind], 10 * nv_ind)
+        coincidences = []
+        num_shots = len(states_by_nv[0])
+        for shot_ind in range(num_shots):
+            coincidences.append(num_nvs - np.sum(states_by_nv[:, shot_ind]))
+        coincidences = np.array(coincidences)
+        hist_fig, ax = plt.subplots()
+        kpl.histogram(ax, coincidences, label=f"Data ({num_nvs} NVs)")
+        ax.set_xlabel("Number NVs found in NV0")
+        ax.set_ylabel("Number of occurrences")
+        x_vals = np.array(range(0, num_nvs + 1))
+        expected_dist = num_shots * poisson.pmf(x_vals, np.mean(coincidences))
+        kpl.plot_points(
+            ax, x_vals, expected_dist, label="Poisson pmf", color=kpl.KplColors.RED
+        )
+        ax.legend()
+        if ind == 0:
+            ax.set_title("Unscrambled")
+        elif ind == 1:
+            ax.set_title("Scrambled")
+        ax.set_yscale("log")
 
     im_fig, ax = plt.subplots()
     kpl.imshow(ax, states_by_nv, aspect="auto")
@@ -227,11 +236,14 @@ def main(
     file_path = dm.get_file_path(__file__, timestamp, repr_nv_name)
     dm.save_raw_data(raw_data, file_path)
     if fig is not None:
-        if isinstance(fig, tuple):
+        try:
             num_figs = len(fig)
             for fig_ind in range(num_figs):
-                dm.save_figure(fig, file_path + f"-{fig_ind}")
-        else:
+                file_path = dm.get_file_path(
+                    __file__, timestamp, f"{repr_nv_name}-{fig_ind}"
+                )
+                dm.save_figure(fig[fig_ind], file_path)
+        except Exception:
             dm.save_figure(fig, file_path)
 
     tb.reset_cfm()
@@ -240,14 +252,12 @@ def main(
 if __name__ == "__main__":
     kpl.init_kplotlib()
 
-    data = dm.get_raw_data(file_id=1554089396997)
-
-    process_check_readout_fidelity(data)
+    # data = dm.get_raw_data(file_id=1554089396997)
+    # process_check_readout_fidelity(data)
 
     ###
 
-    # data = dm.get_raw_data(file_id=1512018506235)
-
-    # process_detect_cosmic_rays(data)
+    data = dm.get_raw_data(file_id=1567772101718)
+    process_detect_cosmic_rays(data)
 
     kpl.show(block=True)

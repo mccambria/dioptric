@@ -259,10 +259,9 @@ def threshold_counts(nv_list, sig_counts, ref_counts=None, dynamic_thresh=False)
         ref_states = np.empty(shape)
         for nv_ind in range(num_nvs):
             ref_states[nv_ind] = tb.threshold(ref_counts[nv_ind], thresholds[nv_ind])
+        return sig_states, ref_states
     else:
-        ref_states = None
-
-    return sig_states, ref_states
+        return sig_states
 
 
 def poisson_pmf_cont(k, mean):
@@ -856,7 +855,8 @@ def get_camera_scale(downsample_factor=1):
 
 
 def replace_dead_pixel(img_array):
-    dead_pixel = [142, 109]
+    # dead_pixel = [142, 109]
+    dead_pixel = [127, 113]
     dead_pixel_x = dead_pixel[1]
     dead_pixel_y = dead_pixel[0]
     img_array[dead_pixel_y, dead_pixel_x] = np.mean(
