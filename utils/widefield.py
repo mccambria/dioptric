@@ -1089,6 +1089,31 @@ def downsample_img_array(img_array, downsample_factor):
     return downsampled_img_array
 
 
+def smooth_img_array(img_array, downsample_factor):
+    shape = img_array.shape
+    downsampled_shape = (
+        int(np.floor(shape[0] / downsample_factor)),
+        int(np.floor(shape[1] / downsample_factor)),
+    )
+
+    # Clip the original img_array so that its dimensions are an integer
+    # multiple of downsample_factor
+    clip_shape = (
+        downsample_factor * downsampled_shape[0],
+        downsample_factor * downsampled_shape[1],
+    )
+    img_array = img_array[: clip_shape[0], : clip_shape[1]]
+
+    downsampled_img_array = np.zeros(downsampled_shape)
+    for ind in range(downsample_factor):
+        for jnd in range(downsample_factor):
+            downsampled_img_array += img_array[
+                ind::downsample_factor, jnd::downsample_factor
+            ]
+
+    return downsampled_img_array
+
+
 def animate(
     x,
     nv_list,

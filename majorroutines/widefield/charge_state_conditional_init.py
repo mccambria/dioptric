@@ -16,6 +16,7 @@ import traceback
 import matplotlib.pyplot as plt
 import numpy as np
 from scipy import ndimage
+from scipy.ndimage import gaussian_filter
 from scipy.optimize import curve_fit
 from scipy.special import factorial
 
@@ -120,23 +121,48 @@ def main(
 
 
 if __name__ == "__main__":
-    data = dm.get_raw_data(file_id=1567050253764, load_npz=True)
+    kpl.init_kplotlib()
+
+    base_pixel_drift = [24, 70]
+    buffer = 20
+
+    # Background image
+    data = dm.get_raw_data(file_id=1567907418932, load_npz=True)
     bg_img_array = np.array(data["sig_img_array"])
     widefield.replace_dead_pixel(bg_img_array)
+    pixel_drifts = np.array(data["pixel_drifts"])
+    pixel_drift = np.mean(pixel_drifts, axis=0)
+    offset = [
+        pixel_drift[1] - base_pixel_drift[1],
+        pixel_drift[0] - base_pixel_drift[0],
+    ]
+    bg_img_array = widefield.crop_img_array(bg_img_array, offset, buffer)
+    del data
 
-    kpl.init_kplotlib()
-    data = dm.get_raw_data(file_id=1567068167346, load_npz=True)
+    # Single shot image from experiment
+    data = dm.get_raw_data(file_id=1567068167346, use_cache=False, load_npz=True)
     process_and_plot(data)
     img_arrays = np.array(data["img_arrays"])
-    # bg_img_array = np.mean(img_arrays, axis=(0, 1, 2, 3))
-    img_array = img_arrays[0, 30, 0, 0] - bg_img_array
+    bg_img_array = np.mean(img_arrays, axis=(0, 1, 2, 3))
+    # bg_img_array = np.quantile(img_arrays, 0.1, axis=(0, 1, 2, 3))
+    img_array = img_arrays[0, 30, 0, 3]
     states = np.array(data["states"])
-    print(states[0, :, 30, 0, 0])
-    offset = [0, 0]
-    buffer = 20
+    print(states[0, :, 30, 0, 3])
+    pixel_drifts = np.array(data["pixel_drifts"])[30]
+    offset = [
+        pixel_drift[1] - base_pixel_drift[1],
+        pixel_drift[0] - base_pixel_drift[0],
+    ]
     cropped_img_array = widefield.crop_img_array(img_array, offset, buffer)
+    bg_img_array = widefield.crop_img_array(bg_img_array, offset, buffer)
+    cropped_img_array = bg_img_array - cropped_img_array
+    # cropped_img_array = cropped_img_array - bg_img_array
     cropped_img_array = widefield.downsample_img_array(cropped_img_array, 4)
+    # cropped_img_array = gaussian_filter(cropped_img_array, 3)
     fig, ax = plt.subplots()
-    kpl.imshow(ax, cropped_img_array)
+    kpl.imshow(ax, cropped_img_array, clim=[0, None])
     # kpl.imshow(ax, bg_img_array)
+    del img_arrays
+    del data
+
     kpl.show(block=True)
