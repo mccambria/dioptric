@@ -120,7 +120,7 @@ def process_and_plot(raw_data):
         fig = create_histogram(sig_counts_list, ref_counts_list, density=True)
         hist_figs.append(fig)
         all_counts_list = np.append(sig_counts_list, ref_counts_list)
-        threshold = determine_threshold(all_counts_list)
+        threshold = determine_threshold(all_counts_list, nvn_ratio=0.5)
         threshold_list.append(threshold)
         # threshold = prior_thresholds[ind]
         prep_fidelity_list.append(
@@ -273,11 +273,11 @@ def main(
         diff_img_array = None
         keys_to_compress = None
 
-    # try:
-    #     del raw_data["img_arrays"]
-    # except Exception:
-    #     pass
-    keys_to_compress = ["img_arrays"]
+    try:
+        del raw_data["img_arrays"]
+    except Exception:
+        pass
+    # keys_to_compress = ["img_arrays"]
 
     ### Save raw data
 

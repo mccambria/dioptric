@@ -259,10 +259,9 @@ def threshold_counts(nv_list, sig_counts, ref_counts=None, dynamic_thresh=False)
         ref_states = np.empty(shape)
         for nv_ind in range(num_nvs):
             ref_states[nv_ind] = tb.threshold(ref_counts[nv_ind], thresholds[nv_ind])
+        return sig_states, ref_states
     else:
-        ref_states = None
-
-    return sig_states, ref_states
+        return sig_states
 
 
 def poisson_pmf_cont(k, mean):
@@ -856,7 +855,8 @@ def get_camera_scale(downsample_factor=1):
 
 
 def replace_dead_pixel(img_array):
-    dead_pixel = [142, 109]
+    # dead_pixel = [142, 109]
+    dead_pixel = [127, 113]
     dead_pixel_x = dead_pixel[1]
     dead_pixel_y = dead_pixel[0]
     img_array[dead_pixel_y, dead_pixel_x] = np.mean(
@@ -1065,6 +1065,31 @@ def plot_fit(
 
 
 def downsample_img_array(img_array, downsample_factor):
+    shape = img_array.shape
+    downsampled_shape = (
+        int(np.floor(shape[0] / downsample_factor)),
+        int(np.floor(shape[1] / downsample_factor)),
+    )
+
+    # Clip the original img_array so that its dimensions are an integer
+    # multiple of downsample_factor
+    clip_shape = (
+        downsample_factor * downsampled_shape[0],
+        downsample_factor * downsampled_shape[1],
+    )
+    img_array = img_array[: clip_shape[0], : clip_shape[1]]
+
+    downsampled_img_array = np.zeros(downsampled_shape)
+    for ind in range(downsample_factor):
+        for jnd in range(downsample_factor):
+            downsampled_img_array += img_array[
+                ind::downsample_factor, jnd::downsample_factor
+            ]
+
+    return downsampled_img_array
+
+
+def smooth_img_array(img_array, downsample_factor):
     shape = img_array.shape
     downsampled_shape = (
         int(np.floor(shape[0] / downsample_factor)),

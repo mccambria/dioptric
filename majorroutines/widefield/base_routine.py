@@ -55,9 +55,6 @@ def charge_prep_base(
             charge_pol_target_list = [el is None or el == 0 for el in states_list]
         else:
             charge_pol_target_list = [True for ind in range(num_nvs)]
-        # MCC
-        # charge_pol_target_list = [False for ind in range(num_nvs)]
-        # charge_pol_target_list[2] = True
         return charge_pol_target_list
 
     if verify_charge_states:

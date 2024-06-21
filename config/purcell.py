@@ -172,8 +172,8 @@ config |= {
         # LaserKey.WIDEFIELD_SPIN_POL: {"name": yellow_laser, "duration": 10e3},
         LaserKey.WIDEFIELD_SPIN_POL: {"name": yellow_laser, "duration": 100e3},
         # LaserKey.WIDEFIELD_SPIN_POL: {"name": yellow_laser, "duration": 1e6},
-        LaserKey.WIDEFIELD_CHARGE_READOUT: {"name": yellow_laser, "duration": 50e6},
-        # LaserKey.WIDEFIELD_CHARGE_READOUT: {"name": yellow_laser, "duration": 100e6},
+        # LaserKey.WIDEFIELD_CHARGE_READOUT: {"name": yellow_laser, "duration": 50e6},
+        LaserKey.WIDEFIELD_CHARGE_READOUT: {"name": yellow_laser, "duration": 100e6},
         #
         "scc_shelving_pulse": False,  # Whether or not to include a shelving pulse in SCC
     },
@@ -701,8 +701,9 @@ opx_config = {
         # Yellow AOM
         "yellow_imaging": {"type": "constant", "sample": 0.40},  # 0.35
         # "yellow_imaging": {"type": "constant", "sample": 0.50},  # 0.35
-        "yellow_charge_readout": {"type": "constant", "sample": 0.353},  # 30e6
-        # "yellow_charge_readout": {"type": "constant", "sample": 0.3475},  # 30e6
+        # "yellow_charge_readout": {"type": "constant", "sample": 0.353},  # 50e6
+        # "yellow_charge_readout": {"type": "constant", "sample": 0.3475},  # 50e6
+        "yellow_charge_readout": {"type": "constant", "sample": 0.32},  # 100e6
         "yellow_spin_pol": {"type": "constant", "sample": 0.38},
         # Other
         "aod_cw": {"type": "constant", "sample": 0.35},
