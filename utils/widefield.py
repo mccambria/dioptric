@@ -53,6 +53,25 @@ def crop_img_array(img_array, offset=[0, 0], buffer=20):
     return img_array
 
 
+def crop_img_arrays(img_arrays, offsets=[0, 0], buffer=20):
+    shape = img_arrays.shape
+    cropped_shape = list(shape)
+    cropped_shape[-1] -= 2 * buffer
+    cropped_shape[-2] -= 2 * buffer
+    cropped_img_arrays = np.empty(cropped_shape)
+    for exp_ind in range(shape[0]):
+        for run_ind in range(shape[1]):
+            offset = offsets[run_ind]
+            for step_ind in range(shape[2]):
+                for rep_ind in range(shape[2]):
+                    img_array = img_arrays[exp_ind, run_ind, step_ind, rep_ind]
+                    cropped_img_array = crop_img_array(img_array, offset, buffer)
+                    cropped_img_arrays[
+                        exp_ind, run_ind, step_ind, rep_ind
+                    ] = cropped_img_array
+    return cropped_img_arrays
+
+
 def integrate_counts_from_adus(img_array, pixel_coords, radius=None):
     img_array_photons = adus_to_photons(img_array)
     return integrate_counts(img_array_photons, pixel_coords, radius)

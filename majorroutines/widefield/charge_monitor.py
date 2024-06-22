@@ -117,7 +117,7 @@ def process_check_readout_fidelity(data, fidelity_ax=None):
     # charge_state_estimation_mode = ChargeStateEstimationMode.THRESHOLDING
     # charge_state_estimation_mode = ChargeStateEstimationMode.MLE
     if charge_state_estimation_mode == ChargeStateEstimationMode.THRESHOLDING:
-        states, _ = widefield.threshold_counts(nv_list, sig_counts)
+        states = widefield.threshold_counts(nv_list, sig_counts)
     elif charge_state_estimation_mode == ChargeStateEstimationMode.MLE:
         states = np.array(data["states"])[0]
 
@@ -252,12 +252,12 @@ def main(
 if __name__ == "__main__":
     kpl.init_kplotlib()
 
-    # data = dm.get_raw_data(file_id=1554089396997)
-    # process_check_readout_fidelity(data)
+    data = dm.get_raw_data(file_id=1568108087044)
+    process_check_readout_fidelity(data)
 
     ###
 
-    data = dm.get_raw_data(file_id=1567772101718)
-    process_detect_cosmic_rays(data)
+    # data = dm.get_raw_data(file_id=1567772101718)
+    # process_detect_cosmic_rays(data)
 
     kpl.show(block=True)
