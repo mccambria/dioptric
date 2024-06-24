@@ -224,10 +224,10 @@ if __name__ == "__main__":
     # img_array_offset=[0,1]
     # file_id = 1559062712968
     # img_array_offset=[1,0]
-    # file_id = 1559550352430
-    # img_array_offset=[0,0]
+    file_id = 1559550352430
+    img_array_offset=[0,0]
     # # main(file_id, img_array_offset=img_array_offset, diff=True, vmin=-0.005, vmax=0.046)
-    # main(file_id, img_array_offset=img_array_offset, diff=True)
+    main(file_id, img_array_offset=img_array_offset, diff=True)
     # # main(file_id, img_array_offset=img_array_offset, diff=True, draw_circles=True)
 
     plt.show(block=True)
