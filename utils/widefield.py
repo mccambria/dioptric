@@ -53,6 +53,22 @@ def crop_img_array(img_array, offset=[0, 0], buffer=20):
     return img_array
 
 
+def mask_img_array(img_array, nv_list, pixel_drift):
+    shape = img_array.shape
+    x_mesh, y_mesh = np.meshgrid(list(range(shape[0])), list(range(shape[1])))
+    mask = np.zeros(shape)
+    radius = _get_camera_spot_radius()
+    for nv in nv_list:
+        pixel_coords = get_nv_pixel_coords(nv, drift=pixel_drift)
+        dist = np.sqrt(
+            (x_mesh - pixel_coords[0]) ** 2 + (y_mesh - pixel_coords[1]) ** 2
+        )
+        mask += np.where(dist < radius, 1, 0)
+    fig, ax = plt.subplots()
+    kpl.imshow(ax, mask)
+    return img_array * mask
+
+
 def crop_img_arrays(img_arrays, offsets=[0, 0], buffer=20):
     shape = img_arrays.shape
     cropped_shape = list(shape)

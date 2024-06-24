@@ -19,7 +19,6 @@ from scipy import ndimage
 from scipy.ndimage import gaussian_filter
 from scipy.optimize import curve_fit
 from scipy.special import factorial
-from skimage.metrics import structural_similarity as ssim
 
 from majorroutines.widefield import base_routine, optimize
 from utils import common, widefield
@@ -145,15 +144,19 @@ if __name__ == "__main__":
         img_array = widefield.crop_img_array(img_array, offset, buffer)
         ref_img_arrays.append(img_array)
     bg_img_array = ref_img_arrays[0]
+    # bg_img_array = ref_img_arrays[1]
     mask_img_array = ref_img_arrays[1] - ref_img_arrays[0]
+    # mask_img_array = mask_img_array > 0.05
     del data
     # fig, ax = plt.subplots()
-    # kpl.imshow(ax, bg_img_array, no_cbar=True)
+    # # kpl.imshow(ax, bg_img_array, no_cbar=True)
+    # kpl.imshow(ax, mask_img_array, no_cbar=True)
     # ax.axis("off")
     # kpl.show(block=True)
 
     # Single shot image from experiment
     data = dm.get_raw_data(file_id=1567068167346, use_cache=False, load_npz=True)
+    nv_list = data["nv_list"]
     # process_and_plot(data)
     img_arrays = np.array(data["img_arrays"])
     # bg_img_array = np.mean(img_arrays, axis=(0, 1, 2, 3))
@@ -170,17 +173,24 @@ if __name__ == "__main__":
         pixel_drift[1] - base_pixel_drift[1],
         pixel_drift[0] - base_pixel_drift[0],
     ]
-    cropped_img_array = widefield.crop_img_array(img_array, offset, buffer)
+    proc_img_array = widefield.crop_img_array(img_array, offset, buffer)
+    # bg_img_array = widefield.crop_img_array(bg_img_array, offset, buffer)
     # proc_img_array = bg_img_array - cropped_img_array
-    # proc_img_array = cropped_img_array - bg_img_array
-    proc_img_array = (cropped_img_array - bg_img_array) * mask_img_array
+    proc_img_array = proc_img_array - bg_img_array
+    # proc_img_array = (cropped_img_array - bg_img_array) * mask_img_array
+    # proc_img_array = (cropped_img_array - bg_img_array) * (0.05 + mask_img_array)
+    # proc_img_array = np.sqrt(
+    #     np.abs((cropped_img_array - bg_img_array) * mask_img_array)
+    # )
     # score, proc_img_array = ssim(
     #     cropped_img_array - bg_img_array,
     #     mask_img_array,
     #     data_range=mask_img_array.max() - mask_img_array.min(),
     #     full=True,
     # )
-    proc_img_array = widefield.downsample_img_array(proc_img_array, 5)
+    drift = [pixel_drift[0] - buffer - offset[1], pixel_drift[1] - buffer - offset[0]]
+    proc_img_array = widefield.mask_img_array(proc_img_array, nv_list, drift)
+    proc_img_array = widefield.downsample_img_array(proc_img_array, 3)
     # proc_img_array = gaussian_filter(proc_img_array, 3)
     fig, ax = plt.subplots()
     # kpl.imshow(ax, proc_img_array, no_cbar=True)
