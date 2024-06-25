@@ -859,7 +859,7 @@ def draw_circle(
     M = ax.transData.get_matrix()
     xscale = M[0, 0]
     if linewidth is None:
-        linewidth = 0.1 * xscale * radius
+        linewidth = 0.08 * xscale * radius
     return ax.scatter(
         *coords,
         s=(xscale * radius) ** 2,

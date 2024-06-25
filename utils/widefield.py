@@ -64,8 +64,8 @@ def mask_img_array(img_array, nv_list, pixel_drift):
             (x_mesh - pixel_coords[0]) ** 2 + (y_mesh - pixel_coords[1]) ** 2
         )
         mask += np.where(dist < radius, 1, 0)
-    fig, ax = plt.subplots()
-    kpl.imshow(ax, mask)
+    # fig, ax = plt.subplots()
+    # kpl.imshow(ax, mask)
     return img_array * mask
 
 
