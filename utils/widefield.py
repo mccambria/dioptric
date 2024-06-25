@@ -64,8 +64,8 @@ def mask_img_array(img_array, nv_list, pixel_drift):
             (x_mesh - pixel_coords[0]) ** 2 + (y_mesh - pixel_coords[1]) ** 2
         )
         mask += np.where(dist < radius, 1, 0)
-    fig, ax = plt.subplots()
-    kpl.imshow(ax, mask)
+    # fig, ax = plt.subplots()
+    # kpl.imshow(ax, mask)
     return img_array * mask
 
 
@@ -1015,7 +1015,7 @@ def plot_fit(
     yerrs=None,
     fns=None,
     popts=None,
-    xlim=[None, None],
+    xlim=None,
     norms=None,
     no_legend=False,
 ):
@@ -1042,10 +1042,8 @@ def plot_fit(
     """
     if isinstance(axes_pack, dict):
         axes_pack = list(axes_pack.values())
-    if xlim[0] is None:
-        xlim[0] = min(x)
-    if xlim[1] is None:
-        xlim[1] = max(x)
+    if xlim is None:
+        xlim = (min(x), max(x))
     x_linspace = np.linspace(*xlim, 1000)
     num_nvs = len(nv_list)
     for nv_ind in range(num_nvs):

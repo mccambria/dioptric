@@ -20,15 +20,85 @@ from utils import tool_belt as tb
 from utils import widefield as widefield
 
 
-def quartic_decay(tau, amplitude, revival_time, quartic_decay_time, T2):
-    baseline = 1 + amplitude
+def quartic_decay(tau, baseline, revival_time, quartic_decay_time, T2_ms, env_exp):
+    # baseline = 0.5
+    amplitude = baseline
     val = baseline
     # print(len(amplitudes))
-    envelope = np.exp(-((tau / T2) ** 3))
+    T2_us = 1000 * T2_ms
+    envelope = np.exp(-((tau / T2_us) ** env_exp))
     num_revivals = 3
     for ind in range(num_revivals):
-        exp_part = np.exp(-(((tau - ind * revival_time) / quartic_decay_time) ** 4))
+        exp_part = np.exp(-(((tau - ind * revival_time) / quartic_decay_time) ** 2))
         val -= amplitude * envelope * exp_part
+    return val
+
+
+def quartic_decay_osc(
+    tau,
+    baseline,
+    revival_time,
+    quartic_decay_time,
+    T2_ms,
+    env_exp,
+    osc_freq0,
+    # osc_freq1,
+):
+    # # baseline = 0.5
+    # env = quartic_decay(tau, baseline, revival_time, quartic_decay_time, T2_ms, env_exp)
+    # return baseline * (1 + ((1 - env / baseline) * np.cos(2 * np.pi * osc_freq * tau)))
+    #
+    # baseline = 0.5
+    amplitude = baseline
+    val = baseline
+    # print(len(amplitudes))
+    T2_us = 1000 * T2_ms
+    envelope = np.exp(-((tau / T2_us) ** env_exp))
+    num_revivals = 3
+    for ind in range(num_revivals):
+        exp_part = np.exp(-(((tau - ind * revival_time) / quartic_decay_time) ** 2))
+        coeff = (
+            1 if ind == 0 else 0.5 * np.cos(2 * np.pi * osc_freq0 * tau)
+            # * 0.5
+            # * np.cos(2 * np.pi * osc_freq1 * tau)
+        )
+        val -= coeff * amplitude * envelope * exp_part
+    return val
+
+
+def quartic_decay_three_osc(
+    tau,
+    baseline,
+    revival_time,
+    quartic_decay_time,
+    T2_ms,
+    env_exp,
+    osc_freq0,
+    osc_freq1,
+    osc_freq2,
+):
+    # # baseline = 0.5
+    # env = quartic_decay(tau, baseline, revival_time, quartic_decay_time, T2_ms, env_exp)
+    # return baseline * (1 + ((1 - env / baseline) * np.cos(2 * np.pi * osc_freq * tau)))
+    #
+    # baseline = 0.5
+    amplitude = baseline
+    val = baseline
+    # print(len(amplitudes))
+    T2_us = 1000 * T2_ms
+    envelope = np.exp(-((tau / T2_us) ** env_exp))
+    num_revivals = 3
+    for ind in range(num_revivals):
+        exp_part = np.exp(-(((tau - ind * revival_time) / quartic_decay_time) ** 2))
+        coeff = (
+            1
+            if ind == 0
+            else 0.5
+            * np.cos(2 * np.pi * osc_freq0 * tau)
+            * np.cos(2 * np.pi * osc_freq1 * tau)
+            * np.cos(2 * np.pi * osc_freq2 * tau)
+        )
+        val -= coeff * amplitude * envelope * exp_part
     return val
 
 
@@ -40,24 +110,6 @@ def constant(tau):
         return np.array([norm] * len(tau))
     else:
         return norm
-
-
-# def create_raw_data_figure(nv_list, taus, counts, counts_ste):
-#     total_evolution_times = 2 * np.array(taus) / 1e3
-#     for ind in range(len(nv_list)):
-#         subset_inds = [ind]
-#         fig, ax = plt.subplots()
-#         widefield.plot_raw_data(
-#             ax,
-#             nv_list,
-#             total_evolution_times,
-#             counts,
-#             counts_ste,
-#             subset_inds=subset_inds,
-#         )
-#         ax.set_xlabel("Total evolution time (µs)")
-#         ax.set_ylabel("Counts")
-#     return fig
 
 
 def create_raw_data_figure(data):
@@ -83,58 +135,99 @@ def create_raw_data_figure(data):
 
 def create_fit_figure(data, axes_pack=None, layout=None, no_legend=False):
     nv_list = data["nv_list"]
-    taus = data["taus"]
-    counts = np.array(data["states"])
-
     num_nvs = len(nv_list)
-    total_evolution_times = 2 * np.array(taus) / 1e3
-    # total_evolution_times = np.array(taus) / 1e3
+    taus = np.array(data["taus"])
+    counts = np.array(data["counts"])
+    # counts = np.array(data["states"])
 
     sig_counts = counts[0]
     ref_counts = counts[1]
     avg_counts, avg_counts_ste, norms = widefield.process_counts(
-        nv_list, sig_counts, ref_counts, threshold=False
+        nv_list, sig_counts, ref_counts, threshold=True
+    )
+
+    norms_ms0_newaxis = norms[0][:, np.newaxis]
+    norms_ms1_newaxis = norms[1][:, np.newaxis]
+    contrast = norms_ms1_newaxis - norms_ms0_newaxis
+    norm_counts = (avg_counts - norms_ms0_newaxis) / contrast
+    norm_counts_ste = avg_counts_ste / contrast
+
+    # Put everything in order to help curve_fit
+    sorted_inds = taus.argsort()
+    taus = taus[sorted_inds]
+    total_evolution_times = 2 * np.array(taus) / 1e3
+    norm_counts = np.array(
+        [norm_counts[nv_ind, sorted_inds] for nv_ind in range(num_nvs)]
+    )
+    norm_counts_ste = np.array(
+        [norm_counts_ste[nv_ind, sorted_inds] for nv_ind in range(num_nvs)]
     )
 
     fit_fns = []
     popts = []
+    freq0_guesses = {0: 0.047, 1: 0.047, 2: 0.05, 4: 0.2, 5: 0.2, 8: 0.2}
+    freq1_guesses = {2: 0.047, 4: 0.18, 5: 0.18}
+    freq2_guesses = {2: 0.01, 4: 0.047, 5: 0.047}
 
-    # for nv_ind in range(num_nvs):
-    #     nv_counts = counts[nv_ind] / norms[nv_ind]
-    #     nv_counts_ste = counts_ste[nv_ind] / norms[nv_ind]
+    for nv_ind in range(num_nvs):
+        nv_counts = norm_counts[nv_ind]
+        nv_counts_ste = norm_counts_ste[nv_ind]
 
-    #     try:
-    #         if nv_ind != 1:
-    #             fit_fn = quartic_decay
-    #             amplitude_guess = np.quantile(nv_counts, 0.7)
-    #             guess_params = [amplitude_guess, 175, 15, 500]
-    #             popt, pcov = curve_fit(
-    #                 fit_fn,
-    #                 total_evolution_times,
-    #                 nv_counts,
-    #                 p0=guess_params,
-    #                 sigma=nv_counts_ste,
-    #                 absolute_sigma=True,
-    #                 maxfev=10000,
-    #                 bounds=(
-    #                     (0, 100, 5, 100),
-    #                     (100, 500, 30, 1000),
-    #                 ),
-    #             )
-    #         else:
-    #             fit_fn = constant
-    #             popt = []
-    #         fit_fns.append(fit_fn)
-    #         popts.append(popt)
-    #     except Exception as exc:
-    #         print(exc)
-    #         fit_fns.append(None)
-    #         popts.append(None)
+        try:
+            if nv_ind in [2, 4, 5]:
+                fit_fn = quartic_decay_three_osc
+                freq0_guess = freq0_guesses[nv_ind]
+                freq1_guess = freq1_guesses[nv_ind]
+                freq2_guess = freq2_guesses[nv_ind]
+                guess_params = [
+                    0.5,
+                    75,
+                    10,
+                    0.4,
+                    2,
+                    freq0_guess,
+                    freq1_guess,
+                    freq2_guess,
+                ]
+                bounds = (
+                    (0, 0, 0, 0, 1, 0, 0, 0),
+                    (1, np.inf, np.inf, np.inf, 5, np.inf, np.inf, np.inf),
+                )
+            elif nv_ind in [0, 1, 8]:
+                fit_fn = quartic_decay_osc
+                freq0_guess = freq0_guesses[nv_ind]
+                guess_params = [0.5, 75, 10, 0.4, 2, freq0_guess]
+                bounds = (
+                    (0, 0, 0, 0, 1, 0),
+                    (1, np.inf, np.inf, np.inf, 5, np.inf),
+                )
+            else:
+                fit_fn = quartic_decay
+                guess_params = [0.5, 75, 10, 0.4, 2]
+                bounds = ((0, 0, 0, 0, 1), (1, np.inf, np.inf, np.inf, 5))
+            popt, pcov, info, msg, ier = curve_fit(
+                fit_fn,
+                total_evolution_times,
+                nv_counts,
+                p0=guess_params,
+                sigma=nv_counts_ste,
+                absolute_sigma=True,
+                full_output=True,
+                bounds=bounds,
+            )
+        except Exception as exc:
+            # pass
+            print(exc)
+            fit_fn = None
+            popt = None
+        fit_fns.append(fit_fn)
+        popts.append(popt)
 
-    #     residuals = fit_fn(total_evolution_times, *popt) - nv_counts
-    #     chi_sq = np.sum((residuals / nv_counts_ste) ** 2)
-    #     red_chi_sq = chi_sq / (len(nv_counts) - len(popt))
-    #     print(f"Red chi sq: {round(red_chi_sq, 3)}")
+        if fit_fn is not None:
+            residuals = fit_fn(total_evolution_times, *popt) - nv_counts
+            chi_sq = np.sum((residuals / nv_counts_ste) ** 2)
+            red_chi_sq = chi_sq / (len(nv_counts) - len(popt))
+            print(f"Red chi sq: {round(red_chi_sq, 3)}")
 
     ### Make the figure
 
@@ -143,20 +236,14 @@ def create_fit_figure(data, axes_pack=None, layout=None, no_legend=False):
     else:
         fig = None
 
-    norms_ms0_newaxis = norms[0][:, np.newaxis]
-    norms_ms1_newaxis = norms[1][:, np.newaxis]
-    contrast = norms_ms1_newaxis - norms_ms0_newaxis
-    norm_counts = (avg_counts - norms_ms0_newaxis) / contrast
-    norm_counts_ste = avg_counts_ste / contrast
-
     widefield.plot_fit(
         axes_pack,
         nv_list,
         total_evolution_times,
         norm_counts,
         norm_counts_ste,
-        # fit_fns,
-        # popts,
+        fit_fns,
+        popts,
         no_legend=no_legend,
     )
     ax = axes_pack[layout[-1, 0]]
@@ -284,9 +371,15 @@ def main(nv_list, num_steps, num_reps, num_runs, min_tau, max_tau):
 if __name__ == "__main__":
     kpl.init_kplotlib()
 
+    # fig, ax = plt.subplots()
+    # taus = np.linspace(0, 400, 1000)
+    # ys = quartic_decay(taus, *[0.6, 75, 10, 400])
+    # # ys = quartic_decay(taus, *[175, 15, 500])
+    # kpl.plot_line(ax, taus, ys)
+
     data = dm.get_raw_data(file_id=1548381879624)
 
-    create_raw_data_figure(data)
+    # create_raw_data_figure(data)
     create_fit_figure(data)
 
     plt.show(block=True)

@@ -759,16 +759,16 @@ if __name__ == "__main__":
     # ]
     # 100 ms, 0.32
     threshold_list = [
-        29.5,
+        26.5,
+        22.5,
         26.5,
         29.5,
-        33.5,
-        24.5,
-        18.5,
+        20.5,
+        16.5,
+        16.5,
+        16.5,
+        25.5,
         23.5,
-        19.5,
-        29.5,
-        24.5,
         #
         23.5,
         33.5,
@@ -966,8 +966,8 @@ if __name__ == "__main__":
         # do_optimize_loop(nv_list, coords_key, scanning_from_pixel=False)
 
         # nv_list = nv_list[::-1]
-        do_charge_state_histograms(nv_list)
-        # do_charge_state_conditional_init(nv_list)
+        # do_charge_state_histograms(nv_list)
+        do_charge_state_conditional_init(nv_list)
         # do_check_readout_fidelity(nv_list)
 
         # do_resonance_zoom(nv_list)
