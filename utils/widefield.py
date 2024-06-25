@@ -53,6 +53,41 @@ def crop_img_array(img_array, offset=[0, 0], buffer=20):
     return img_array
 
 
+def mask_img_array(img_array, nv_list, pixel_drift):
+    shape = img_array.shape
+    x_mesh, y_mesh = np.meshgrid(list(range(shape[0])), list(range(shape[1])))
+    mask = np.zeros(shape)
+    radius = _get_camera_spot_radius()
+    for nv in nv_list:
+        pixel_coords = get_nv_pixel_coords(nv, drift=pixel_drift)
+        dist = np.sqrt(
+            (x_mesh - pixel_coords[0]) ** 2 + (y_mesh - pixel_coords[1]) ** 2
+        )
+        mask += np.where(dist < radius, 1, 0)
+    fig, ax = plt.subplots()
+    kpl.imshow(ax, mask)
+    return img_array * mask
+
+
+def crop_img_arrays(img_arrays, offsets=[0, 0], buffer=20):
+    shape = img_arrays.shape
+    cropped_shape = list(shape)
+    cropped_shape[-1] -= 2 * buffer
+    cropped_shape[-2] -= 2 * buffer
+    cropped_img_arrays = np.empty(cropped_shape)
+    for exp_ind in range(shape[0]):
+        for run_ind in range(shape[1]):
+            offset = offsets[run_ind]
+            for step_ind in range(shape[2]):
+                for rep_ind in range(shape[2]):
+                    img_array = img_arrays[exp_ind, run_ind, step_ind, rep_ind]
+                    cropped_img_array = crop_img_array(img_array, offset, buffer)
+                    cropped_img_arrays[
+                        exp_ind, run_ind, step_ind, rep_ind
+                    ] = cropped_img_array
+    return cropped_img_arrays
+
+
 def integrate_counts_from_adus(img_array, pixel_coords, radius=None):
     img_array_photons = adus_to_photons(img_array)
     return integrate_counts(img_array_photons, pixel_coords, radius)
@@ -1065,6 +1100,31 @@ def plot_fit(
 
 
 def downsample_img_array(img_array, downsample_factor):
+    shape = img_array.shape
+    downsampled_shape = (
+        int(np.floor(shape[0] / downsample_factor)),
+        int(np.floor(shape[1] / downsample_factor)),
+    )
+
+    # Clip the original img_array so that its dimensions are an integer
+    # multiple of downsample_factor
+    clip_shape = (
+        downsample_factor * downsampled_shape[0],
+        downsample_factor * downsampled_shape[1],
+    )
+    img_array = img_array[: clip_shape[0], : clip_shape[1]]
+
+    downsampled_img_array = np.zeros(downsampled_shape)
+    for ind in range(downsample_factor):
+        for jnd in range(downsample_factor):
+            downsampled_img_array += img_array[
+                ind::downsample_factor, jnd::downsample_factor
+            ]
+
+    return downsampled_img_array
+
+
+def smooth_img_array(img_array, downsample_factor):
     shape = img_array.shape
     downsampled_shape = (
         int(np.floor(shape[0] / downsample_factor)),
