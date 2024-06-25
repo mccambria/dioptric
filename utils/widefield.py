@@ -1018,6 +1018,7 @@ def plot_fit(
     xlim=None,
     norms=None,
     no_legend=False,
+    linestyle="none",
 ):
     """Plot multiple data sets (with a common set of x vals) with an offset between
     the sets such that they are separated and easier to interpret. Useful for
@@ -1068,13 +1069,19 @@ def plot_fit(
 
         # Plot the points
         # ls = "none" if fn is not None else "solid"
-        ls = "none"
         # size = kpl.Size.SMALL
         size = kpl.Size.XSMALL
         # size = kpl.Size.TINY
         label = str(nv_num)
         kpl.plot_points(
-            ax, x, y, yerr=yerr, label=label, size=size, color=color, linestyle=ls
+            ax,
+            x,
+            y,
+            yerr=yerr,
+            label=label,
+            size=size,
+            color=color,
+            linestyle=linestyle,
         )
 
         # Plot the fit

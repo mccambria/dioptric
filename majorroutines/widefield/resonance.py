@@ -164,10 +164,11 @@ def create_fit_figure(
         nv_list,
         freqs,
         norm_counts,
-        norm_counts_ste,
-        fit_fns,
-        popts,
+        # norm_counts_ste,
+        # fit_fns,
+        # popts,
         no_legend=no_legend,
+        linestyle="solid",
     )
 
     ax = axes_pack[layout[-1, 0]]
