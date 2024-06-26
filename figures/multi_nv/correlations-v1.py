@@ -24,12 +24,10 @@ from utils.constants import NVSig
 
 def main(block_data, checkerboard_data, orientation_data):
     figsize = kpl.figsize
-    figsize[1] = 0.9 * figsize[0]
+    figsize[1] = 1.2 * figsize[0]
     main_fig = plt.figure(figsize=figsize)
 
-    seq_fig, data_fig = main_fig.subfigures(
-        nrows=2, height_ratios=((3 / 11) * 1.2, 1), hspace=0
-    )
+    seq_fig, data_fig = main_fig.subfigures(nrows=2, height_ratios=(0.3, 0.8), hspace=0)
     seq_fig.get_layout_engine().set(w_pad=0, h_pad=0, hspace=0, wspace=0)
 
     ### Seq
@@ -177,38 +175,24 @@ def main(block_data, checkerboard_data, orientation_data):
     ### Data
 
     axes_pack = data_fig.subplots(
-        1,
+        2,
         4,
         sharex=True,
         sharey=True,
         gridspec_kw={"hspace": 0.02, "wspace": 0.02},
     )
+    # ((ref_ax, block_ax), (checkerboard_ax, orientation_ax)) = axes_pack
+    (ideal_axes, data_axes) = axes_pack
 
     cbar_max = 0.03
     datas = [block_data, block_data, checkerboard_data, orientation_data]
-    data_corr_coeffs_list = []
-
-    # Data
-    for ind in range(4):
-        data = datas[ind]
-        ax = axes_pack[ind]
-        sig_or_ref = ind > 0
-        data_corr_coeffs = simple_correlation_test.process_and_plot(
-            data,
-            ax=ax,
-            sig_or_ref=sig_or_ref,
-            no_cbar=True,
-            cbar_max=cbar_max,
-            no_labels=True,
-        )
-        data_corr_coeffs_list.append(data_corr_coeffs)
 
     # Ideal
+
     for ind in range(4):
+        ax = ideal_axes[ind]
         data = datas[ind]
         nv_list = data["nv_list"]
-        ax = axes_pack[ind]
-        data_corr_coeffs = data_corr_coeffs_list[ind]
         if ind == 0:
             spin_flips = [0] * 10
         if ind in [1, 2]:
@@ -217,24 +201,45 @@ def main(block_data, checkerboard_data, orientation_data):
             spin_flips = [1, 1, -1, -1, 1, -1, 1, -1, -1, -1]
         ideal_corr_coeffs = np.outer(spin_flips, spin_flips)
         ideal_corr_coeffs = ideal_corr_coeffs.astype(float)
-        comb_corr_coeffs = np.tril(data_corr_coeffs) + np.triu(ideal_corr_coeffs, k=1)
-        ax.get_images()[0].set_data(comb_corr_coeffs)
+        np.fill_diagonal(ideal_corr_coeffs, np.nan)
+        kpl.imshow(
+            ax,
+            ideal_corr_coeffs,
+            cmap="RdBu_r",
+            vmin=-cbar_max,
+            vmax=cbar_max,
+            nan_color=kpl.KplColors.GRAY,
+            no_cbar=True,
+        )
 
-    titles = ["Reference", "Block", "Checker", "Orientation"]
+    # Data
+
     for ind in range(4):
-        ax = axes_pack[ind]
-        ax.set_title(titles[ind], fontsize=18)
-
+        data = datas[ind]
+        ax = data_axes[ind]
+        sig_or_ref = ind > 0
+        simple_correlation_test.process_and_plot(
+            data,
+            ax=ax,
+            sig_or_ref=sig_or_ref,
+            no_cbar=True,
+            cbar_max=cbar_max,
+            no_labels=True,
+        )
     # ax = checkerboard_ax
-    ax = axes_pack[0]
-    kpl.set_shared_ax_xlabel(ax, "NV index", fontsize=16)
-    kpl.set_shared_ax_ylabel(ax, "NV index\n", fontsize=16)
+    ax = data_axes[0]
+    kpl.set_shared_ax_xlabel(ax, "NV index")
+    kpl.set_shared_ax_ylabel(ax, "NV index")
     img = ax.get_images()[0]
-    cbar = data_fig.colorbar(
-        img, ax=axes_pack, shrink=0.7, aspect=25, extend="both", location="bottom"
-    )
-    cbar.set_label("Correlation coefficient", size=16)
-    cbar.ax.set_xticks([-cbar_max, 0, cbar_max])
+    cbar = data_fig.colorbar(img, ax=axes_pack, shrink=0.7, aspect=25, extend="both")
+    # data_fig.text(0.95, 0.5, "Correlation coefficient", size=16, rotation=90)
+    data_fig.text(0.95, 0.5, "Corr. coeff.", size=16, rotation=90)
+    # cbar.set_label("Correlation coefficient", size=16)
+    # cbar.ax.set_title(r"$\times 10^{-2}$", fontsize=14)
+    cbar.ax.locator_params(axis="y", nbins=2)
+    cbar.ax.set_yticklabels([-cbar_max, cbar_max], fontsize=16)
+    # cbar.ax.set_yticks([-0.004, -0.002, 0.000, 0.002, 0.004], labels=[-4, -2, 0, 2, 4])
+    # cbar.ax.tick_params(rotation=90)
 
 
 if __name__ == "__main__":
