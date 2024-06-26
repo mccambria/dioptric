@@ -51,7 +51,9 @@ def process_and_plot(raw_data):
     fig, ax = plt.subplots()
     kpl.plot_points(ax, reps_vals, avg_num_nvn, yerr=avg_num_nvn_ste)
     ax.set_xlabel("Number of attempts")
-    ax.set_ylabel("Number in NV-")
+    ax.set_ylabel("Number NV$^{-}$")
+    ax.set_xlim((0.5, 10.5))
+    ax.set_xticks(np.array(range(10)) + 1)
 
     return fig
 
@@ -123,8 +125,10 @@ def main(
 if __name__ == "__main__":
     kpl.init_kplotlib()
 
-    # data = dm.get_raw_data(file_id=1567068167346)
-    # process_and_plot(data)
+    # data = dm.get_raw_data(file_id=1567957794147)
+    data = dm.get_raw_data(file_id=1570547331729)
+    process_and_plot(data)
+    kpl.show(block=True)
 
     base_pixel_drift = [7, 52]
     buffer = 30
@@ -155,47 +159,69 @@ if __name__ == "__main__":
     # kpl.show(block=True)
 
     # Single shot image from experiment
-    data = dm.get_raw_data(file_id=1567068167346, use_cache=False, load_npz=True)
+    data = dm.get_raw_data(file_id=1570505963872, use_cache=False, load_npz=True)
     nv_list = data["nv_list"]
+    num_nvs = len(nv_list)
     # process_and_plot(data)
     img_arrays = np.array(data["img_arrays"])
     # bg_img_array = np.mean(img_arrays, axis=(0, 1, 2, 3))
     # bg_img_array = np.quantile(img_arrays, 0.1, axis=(0, 1, 2, 3))
-    run_ind = 30
-    rep_ind = 0
-    img_array = img_arrays[0, run_ind, 0, rep_ind]
-    # img_array = np.mean(img_arrays, axis=(0, 1, 2, 3))
-    widefield.replace_dead_pixel(img_array)
-    states = np.array(data["states"])
-    print(states[0, :, run_ind, 0, rep_ind])
-    pixel_drift = np.array(data["pixel_drifts"])[run_ind]
-    offset = [
-        pixel_drift[1] - base_pixel_drift[1],
-        pixel_drift[0] - base_pixel_drift[0],
-    ]
-    proc_img_array = widefield.crop_img_array(img_array, offset, buffer)
-    # bg_img_array = widefield.crop_img_array(bg_img_array, offset, buffer)
-    # proc_img_array = bg_img_array - cropped_img_array
-    proc_img_array = proc_img_array - bg_img_array
-    # proc_img_array = (cropped_img_array - bg_img_array) * mask_img_array
-    # proc_img_array = (cropped_img_array - bg_img_array) * (0.05 + mask_img_array)
-    # proc_img_array = np.sqrt(
-    #     np.abs((cropped_img_array - bg_img_array) * mask_img_array)
-    # )
-    # score, proc_img_array = ssim(
-    #     cropped_img_array - bg_img_array,
-    #     mask_img_array,
-    #     data_range=mask_img_array.max() - mask_img_array.min(),
-    #     full=True,
-    # )
-    drift = [pixel_drift[0] - buffer - offset[1], pixel_drift[1] - buffer - offset[0]]
-    proc_img_array = widefield.mask_img_array(proc_img_array, nv_list, drift)
-    proc_img_array = widefield.downsample_img_array(proc_img_array, 3)
-    # proc_img_array = gaussian_filter(proc_img_array, 3)
-    fig, ax = plt.subplots()
-    # kpl.imshow(ax, proc_img_array, no_cbar=True)
-    kpl.imshow(ax, proc_img_array, clim=[0, None], no_cbar=True)
-    ax.axis("off")
+    run_ind = 3
+    for rep_ind in [0, 1, 7, 8]:
+        # run_ind = 95
+        # for rep_ind in [0, 1, 6, 7]:
+        img_array = img_arrays[0, run_ind, 0, rep_ind]
+        # img_array = np.mean(img_arrays, axis=(0, 1, 2, 3))
+        widefield.replace_dead_pixel(img_array)
+        states = np.array(data["states"])
+        states = states[0, :, run_ind, 0, rep_ind]
+        print(states)
+        pixel_drift = np.array(data["pixel_drifts"])[run_ind]
+        offset = [
+            pixel_drift[1] - base_pixel_drift[1],
+            pixel_drift[0] - base_pixel_drift[0],
+        ]
+        proc_img_array = widefield.crop_img_array(img_array, offset, buffer)
+        # bg_img_array = widefield.crop_img_array(bg_img_array, offset, buffer)
+        # proc_img_array = bg_img_array - cropped_img_array
+        proc_img_array = proc_img_array - bg_img_array
+        # proc_img_array = (cropped_img_array - bg_img_array) * mask_img_array
+        # proc_img_array = (cropped_img_array - bg_img_array) * (0.05 + mask_img_array)
+        # proc_img_array = np.sqrt(
+        #     np.abs((cropped_img_array - bg_img_array) * mask_img_array)
+        # )
+        # score, proc_img_array = ssim(
+        #     cropped_img_array - bg_img_array,
+        #     mask_img_array,
+        #     data_range=mask_img_array.max() - mask_img_array.min(),
+        #     full=True,
+        # )
+        drift = [
+            pixel_drift[0] - buffer - offset[1],
+            pixel_drift[1] - buffer - offset[0],
+        ]
+        proc_img_array = widefield.mask_img_array(proc_img_array, nv_list, drift)
+        proc_img_array = widefield.downsample_img_array(proc_img_array, 2)
+        proc_img_array = np.repeat(proc_img_array, 2, axis=0)
+        proc_img_array = np.repeat(proc_img_array, 2, axis=1)
+        # proc_img_array = gaussian_filter(proc_img_array, 3)
+        fig, ax = plt.subplots()
+        # kpl.imshow(ax, proc_img_array, no_cbar=True)
+        kpl.imshow(ax, proc_img_array, clim=[1, 5], no_cbar=True)
+        ax.axis("off")
+        nvm_inds = [ind for ind in range(num_nvs) if states[ind]]
+        nv0_inds = [ind for ind in range(num_nvs) if not states[ind]]
+        widefield.draw_circles_on_nvs(
+            ax, nv_list, drift, linestyle="solid", no_legend=True, include_inds=nvm_inds
+        )
+        widefield.draw_circles_on_nvs(
+            ax,
+            nv_list,
+            drift,
+            linestyle="dashed",
+            no_legend=True,
+            include_inds=nv0_inds,
+        )
     del img_arrays
     del data
 

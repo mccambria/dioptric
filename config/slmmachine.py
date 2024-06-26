@@ -18,11 +18,20 @@ config = {
     "windows_repo_path": home / "Documents/dioptric",
     "linux_repo_path": home / "Documents/dioptric",
     "Servers": {
-        "thorslm": "ThorslmServer",
+        "thorslm": "slm_THOR_exulus_hd2",
     },
 }
 
-# Print configuration for verification
-if __name__ == "__main__":
-    for key, value in config.items():
+def print_config(configuration):
+    """
+    Function to print the configuration dictionary.
+    
+    Parameters:
+    configuration (dict): The configuration dictionary to print.
+    """
+    for key, value in configuration.items():
         print(f"{key}: {value}")
+
+# Call the function to print configuration for verification
+if __name__ == "__main__":
+    print_config(config)

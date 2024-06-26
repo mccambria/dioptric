@@ -179,15 +179,25 @@ def main(esr_data, spin_echo_data):
 
     nv_list = esr_data["nv_list"]
     freqs = esr_data["freqs"]
+    num_steps = esr_data["num_steps"]
+    num_reps = esr_data["num_reps"]
+    num_runs = esr_data["num_runs"]
 
-    counts = np.array(esr_data["states"])
-    sig_counts = counts[0]
-    ref_counts = counts[1]
+    # Manipulate the counts into the format expected for normalization
+    adj_num_steps = num_steps // 4
+    counts = np.array(esr_data["counts"])[0]
+    sig_counts_0 = counts[:, :, 0:adj_num_steps, :]
+    sig_counts_1 = counts[:, :, adj_num_steps : 2 * adj_num_steps, :]
+    sig_counts = np.append(sig_counts_0, sig_counts_1, axis=3)
+    ref_counts_0 = counts[:, :, 2 * adj_num_steps : 3 * adj_num_steps, :]
+    ref_counts_1 = counts[:, :, 3 * adj_num_steps :, :]
+    ref_counts = np.empty((num_nvs, num_runs, adj_num_steps, 2 * num_reps))
+    ref_counts[:, :, :, 0::2] = ref_counts_0
+    ref_counts[:, :, :, 1::2] = ref_counts_1
 
     avg_counts, avg_counts_ste, norms = widefield.process_counts(
-        nv_list, sig_counts, ref_counts, threshold=False
+        nv_list, sig_counts, ref_counts, threshold=True
     )
-    norms = norms[0]
 
     resonance.create_fit_figure(
         nv_list,
@@ -209,7 +219,7 @@ def main(esr_data, spin_echo_data):
         spin_echo_data, spin_echo_axes_pack, mosaic_layout, no_legend=True
     )
 
-    zoom_range = [65, 87]
+    zoom_range = [64, 87]
     # ax = spin_echo_axes_pack[mosaic_layout[0][0]]
     # ax.axvspan(*zoom_range, color=kpl.KplColors.LIGHT_GRAY, zorder=-11)
     for ax in spin_echo_axes_pack.values():
@@ -242,7 +252,7 @@ def main(esr_data, spin_echo_data):
 if __name__ == "__main__":
     kpl.init_kplotlib()
 
-    esr_data = dm.get_raw_data(file_id=1543601415736)
+    esr_data = dm.get_raw_data(file_id=1565478112406)
     spin_echo_data = dm.get_raw_data(file_id=1548381879624)
 
     main(esr_data, spin_echo_data)

@@ -64,8 +64,8 @@ def mask_img_array(img_array, nv_list, pixel_drift):
             (x_mesh - pixel_coords[0]) ** 2 + (y_mesh - pixel_coords[1]) ** 2
         )
         mask += np.where(dist < radius, 1, 0)
-    fig, ax = plt.subplots()
-    kpl.imshow(ax, mask)
+    # fig, ax = plt.subplots()
+    # kpl.imshow(ax, mask)
     return img_array * mask
 
 
@@ -1015,9 +1015,10 @@ def plot_fit(
     yerrs=None,
     fns=None,
     popts=None,
-    xlim=[None, None],
+    xlim=None,
     norms=None,
     no_legend=False,
+    linestyle="none",
 ):
     """Plot multiple data sets (with a common set of x vals) with an offset between
     the sets such that they are separated and easier to interpret. Useful for
@@ -1042,10 +1043,8 @@ def plot_fit(
     """
     if isinstance(axes_pack, dict):
         axes_pack = list(axes_pack.values())
-    if xlim[0] is None:
-        xlim[0] = min(x)
-    if xlim[1] is None:
-        xlim[1] = max(x)
+    if xlim is None:
+        xlim = (min(x), max(x))
     x_linspace = np.linspace(*xlim, 1000)
     num_nvs = len(nv_list)
     for nv_ind in range(num_nvs):
@@ -1070,13 +1069,19 @@ def plot_fit(
 
         # Plot the points
         # ls = "none" if fn is not None else "solid"
-        ls = "none"
         # size = kpl.Size.SMALL
         size = kpl.Size.XSMALL
         # size = kpl.Size.TINY
         label = str(nv_num)
         kpl.plot_points(
-            ax, x, y, yerr=yerr, label=label, size=size, color=color, linestyle=ls
+            ax,
+            x,
+            y,
+            yerr=yerr,
+            label=label,
+            size=size,
+            color=color,
+            linestyle=linestyle,
         )
 
         # Plot the fit
