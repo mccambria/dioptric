@@ -165,15 +165,17 @@ def create_fit_figure(
         freqs,
         norm_counts,
         # norm_counts_ste,
-        # fit_fns,
-        # popts,
+        None,
+        fit_fns,
+        popts,
         no_legend=no_legend,
-        linestyle="solid",
+        # linestyle="solid",
     )
 
     ax = axes_pack[layout[-1, 0]]
     kpl.set_shared_ax_xlabel(ax, "Frequency (GHz)")
-    kpl.set_shared_ax_ylabel(ax, "Norm. NV$^{-}$ population")
+    # kpl.set_shared_ax_ylabel(ax, "Norm. NV$^{-}$ population")
+    kpl.set_shared_ax_ylabel(ax, "Norm. NV$^{-}$ pop.")
     ax.set_yticks([0, 1])
 
     # ax = axes_pack[layout[-1, 0]]

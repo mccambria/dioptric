@@ -23,7 +23,6 @@ from utils import widefield as widefield
 
 
 def quartic_decay_base(
-    # tau, baseline, revival_time, quartic_decay_time, T2_ms, env_exp, osc_freqs=None
     tau,
     baseline,
     revival_time,
@@ -56,18 +55,42 @@ def quartic_decay_base(
     return val
 
 
-def quartic_decay(tau, baseline, revival_time, quartic_decay_time, T2_ms, env_exp):
+def quartic_decay(
+    tau,
+    baseline,
+    revival_time,
+    quartic_decay_time,
+    T2_ms,
+    env_exp,
+):
     return quartic_decay_base(
-        tau, baseline, revival_time, quartic_decay_time, T2_ms, env_exp
+        tau,
+        baseline,
+        revival_time,
+        quartic_decay_time,
+        T2_ms,
+        env_exp,
     )
 
 
 def quartic_decay_one_osc(
-    tau, baseline, revival_time, quartic_decay_time, T2_ms, env_exp, osc_freq0
+    tau,
+    baseline,
+    revival_time,
+    quartic_decay_time,
+    T2_ms,
+    env_exp,
+    osc_freq0,
 ):
     osc_freqs = [osc_freq0]
     return quartic_decay_base(
-        tau, baseline, revival_time, quartic_decay_time, T2_ms, env_exp, osc_freqs
+        tau,
+        baseline,
+        revival_time,
+        quartic_decay_time,
+        T2_ms,
+        env_exp,
+        osc_freqs,
     )
 
 
@@ -83,7 +106,13 @@ def quartic_decay_two_osc(
 ):
     osc_freqs = [osc_freq0, osc_freq1]
     return quartic_decay_base(
-        tau, baseline, revival_time, quartic_decay_time, T2_ms, env_exp, osc_freqs
+        tau,
+        baseline,
+        revival_time,
+        quartic_decay_time,
+        T2_ms,
+        env_exp,
+        osc_freqs,
     )
 
 
@@ -100,7 +129,13 @@ def quartic_decay_three_osc(
 ):
     osc_freqs = [osc_freq0, osc_freq1, osc_freq2]
     return quartic_decay_base(
-        tau, baseline, revival_time, quartic_decay_time, T2_ms, env_exp, osc_freqs
+        tau,
+        baseline,
+        revival_time,
+        quartic_decay_time,
+        T2_ms,
+        env_exp,
+        osc_freqs,
     )
 
 
@@ -181,12 +216,23 @@ def create_fit_figure(data, axes_pack=None, layout=None, no_legend=False):
         (),
     ]
 
+    # Sort for plotting
+    # total_evolution_times = 2 * np.array(taus) / 1e3
+    inds = taus.argsort()
+    total_evolution_times = 2 * np.array(taus)[inds] / 1e3
+    norm_counts = np.array([norm_counts[nv_ind, inds] for nv_ind in range(num_nvs)])
+    norm_counts_ste = np.array(
+        [norm_counts_ste[nv_ind, inds] for nv_ind in range(num_nvs)]
+    )
+
     for nv_ind in range(num_nvs):
         nv_counts = norm_counts[nv_ind]
         nv_counts_ste = norm_counts_ste[nv_ind]
         # Contrast, revival period, quartic decay tc, amp1, amp2
         guess_params = [0.53, 75.5, 7, 0.4, 0.4]
         bounds = [[0, 73, 0, 0, 0], [1, 77, np.inf, 1, 1]]
+        # guess_params = [75.5, 7, 0.4, 0.4]
+        # bounds = [[73, 0, 0, 0], [77, np.inf, 1, 1]]
 
         # FFT to determine dominant frequency
         # even_counts = nv_counts[40:100] - 0.55
@@ -199,8 +245,6 @@ def create_fit_figure(data, axes_pack=None, layout=None, no_legend=False):
         # kpl.plot_points(ax, freqs[1:], transform_mag[1:])
         # ax.set_title(nv_ind)
         # kpl.show(block=True)
-
-        # Sort for plotting
 
         try:
             freq_guess = freq_guesses[nv_ind]
@@ -267,10 +311,11 @@ def create_fit_figure(data, axes_pack=None, layout=None, no_legend=False):
     ax = axes_pack[layout[-1, 0]]
     kpl.set_shared_ax_xlabel(ax, "Total evolution time (µs)")
     # kpl.set_shared_ax_ylabel(ax, "Change in $P($NV$^{-})$")
-    kpl.set_shared_ax_ylabel(ax, "Norm. NV$^{-}$ population")
+    # kpl.set_shared_ax_ylabel(ax, "Norm. NV$^{-}$ population")
+    kpl.set_shared_ax_ylabel(ax, "Norm. NV$^{-}$ pop.")
 
-    figManager = plt.get_current_fig_manager()
-    figManager.window.showMaximized()
+    # figManager = plt.get_current_fig_manager()
+    # figManager.window.showMaximized()
 
     return fig
 
