@@ -1045,6 +1045,10 @@ def plot_fit(
         axes_pack = list(axes_pack.values())
     if xlim is None:
         xlim = (min(x), max(x))
+    if xlim[0] is None:
+        xlim[0] = min(x)
+    if xlim[1] is None:
+        xlim[1] = max(x)
     x_linspace = np.linspace(*xlim, 1000)
     num_nvs = len(nv_list)
     for nv_ind in range(num_nvs):

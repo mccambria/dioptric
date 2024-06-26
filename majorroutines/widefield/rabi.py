@@ -244,7 +244,7 @@ def main(nv_list, num_steps, num_reps, num_runs, min_tau, max_tau, uwave_ind_lis
 if __name__ == "__main__":
     kpl.init_kplotlib()
 
-    data = dm.get_raw_data(file_id=1565028247153, load_npz=False)  # In-phase
+    data = dm.get_raw_data(file_id=1565028247153, load_npz=True)  # In-phase
     # data = dm.get_raw_data(file_id=1565094990480, load_npz=True)
 
     nv_list = data["nv_list"]
@@ -266,50 +266,51 @@ if __name__ == "__main__":
 
     ###
 
-    # pixel_drifts = data["pixel_drifts"]
-    # img_arrays = np.array(data["img_arrays"])
+    pixel_drifts = data["pixel_drifts"]
+    img_arrays = np.array(data["img_arrays"])
+    base_pixel_drift = [10, 38]
     # base_pixel_drift = [24, 74]
-    # num_reps = 1
+    num_reps = 1
 
-    # buffer = 20
-    # img_array_size = 250
-    # cropped_size = img_array_size - 2 * buffer
-    # proc_img_arrays = np.empty(
-    #     (2, num_runs, num_steps, num_reps, cropped_size, cropped_size)
-    # )
-    # for run_ind in range(num_runs):
-    #     pixel_drift = pixel_drifts[run_ind]
-    #     offset = [
-    #         pixel_drift[1] - base_pixel_drift[1],
-    #         pixel_drift[0] - base_pixel_drift[0],
-    #     ]
-    #     for step_ind in range(num_steps):
-    #         for exp_ind in range(2):
-    #             img_array = img_arrays[exp_ind, run_ind, step_ind, 0]
-    #             cropped_img_array = widefield.crop_img_array(img_array, offset, buffer)
-    #             proc_img_arrays[exp_ind, run_ind, step_ind, 0, :, :] = cropped_img_array
+    buffer = 30
+    img_array_size = 230
+    cropped_size = img_array_size - 2 * buffer
+    proc_img_arrays = np.empty(
+        (2, num_runs, num_steps, num_reps, cropped_size, cropped_size)
+    )
+    for run_ind in range(num_runs):
+        pixel_drift = pixel_drifts[run_ind]
+        offset = [
+            pixel_drift[1] - base_pixel_drift[1],
+            pixel_drift[0] - base_pixel_drift[0],
+        ]
+        for step_ind in range(num_steps):
+            for exp_ind in range(2):
+                img_array = img_arrays[exp_ind, run_ind, step_ind, 0]
+                cropped_img_array = widefield.crop_img_array(img_array, offset, buffer)
+                proc_img_arrays[exp_ind, run_ind, step_ind, 0, :, :] = cropped_img_array
 
-    # sig_img_arrays = np.mean(proc_img_arrays, axis=(1, 3))[0]
-    # ref_img_array = np.mean(proc_img_arrays, axis=(1, 2, 3))[1]
-    # proc_img_arrays = sig_img_arrays - ref_img_array
+    sig_img_arrays = np.mean(proc_img_arrays, axis=(1, 3))[0]
+    ref_img_array = np.mean(proc_img_arrays, axis=(1, 2, 3))[1]
+    proc_img_arrays = sig_img_arrays - ref_img_array
 
-    # downsample_factor = 2
-    # proc_img_arrays = [
-    #     widefield.downsample_img_array(el, downsample_factor) for el in proc_img_arrays
-    # ]
-    # proc_img_arrays = np.array(proc_img_arrays)
+    downsample_factor = 2
+    proc_img_arrays = [
+        widefield.downsample_img_array(el, downsample_factor) for el in proc_img_arrays
+    ]
+    proc_img_arrays = np.array(proc_img_arrays)
 
-    # widefield.animate(
-    #     taus,
-    #     nv_list,
-    #     avg_counts,
-    #     avg_counts_ste,
-    #     norms,
-    #     proc_img_arrays,
-    #     cmin=np.percentile(proc_img_arrays, 60),
-    #     cmax=np.percentile(proc_img_arrays, 99.9),
-    #     scale_bar_length_factor=downsample_factor,
-    # )
+    widefield.animate(
+        taus,
+        nv_list,
+        avg_counts,
+        avg_counts_ste,
+        norms,
+        proc_img_arrays,
+        cmin=np.percentile(proc_img_arrays, 60),
+        cmax=np.percentile(proc_img_arrays, 99.9),
+        scale_bar_length_factor=downsample_factor,
+    )
 
     ###
 
