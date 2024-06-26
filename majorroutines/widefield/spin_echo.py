@@ -8,6 +8,7 @@ Created on November 29th, 2023
 """
 
 import time
+import traceback
 
 import matplotlib.pyplot as plt
 import numpy as np
@@ -234,6 +235,7 @@ def main(nv_list, num_steps, num_reps, num_runs, min_tau, max_tau):
             widefield.get_base_scc_seq_args(nv_list, uwave_ind_list),
             shuffled_taus,
         ]
+        # print(seq_args)
         seq_args_string = tb.encode_seq_args(seq_args)
         pulse_gen.stream_load(seq_file, seq_args_string, num_reps)
 
@@ -262,6 +264,7 @@ def main(nv_list, num_steps, num_reps, num_runs, min_tau, max_tau):
         raw_fig = create_raw_data_figure(data)
         fit_fig = create_fit_figure(data)
     except Exception:
+        print(traceback.format_exc())
         raw_fig = None
         fit_fig = None
 
