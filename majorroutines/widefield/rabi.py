@@ -144,6 +144,7 @@ def create_fit_figure(nv_list, taus, counts, counts_ste, norms):
     # kpl.set_shared_ax_ylabel(ax, "Change in $P($NV$^{-})$")
     # kpl.set_shared_ax_ylabel(ax, "$P($NV$^{-})$")
     kpl.set_shared_ax_ylabel(ax, "Norm. NV$^{-}$ population")
+    # kpl.set_shared_ax_ylabel(ax, "Norm. NV$^{-}$ pop.")
 
     # ax.set_ylim([0.966, 1.24])
     # ax.set_yticks([1.0, 1.2])
@@ -244,8 +245,12 @@ def main(nv_list, num_steps, num_reps, num_runs, min_tau, max_tau, uwave_ind_lis
 if __name__ == "__main__":
     kpl.init_kplotlib()
 
-    data = dm.get_raw_data(file_id=1565028247153, load_npz=True)  # In-phase
-    # data = dm.get_raw_data(file_id=1565094990480, load_npz=True)
+    data = dm.get_raw_data(
+        file_id=1565949427093, load_npz=True, use_cache=False
+    )  # In-phase
+    # data = dm.get_raw_data(
+    #     file_id=1565826743905, load_npz=True, use_cache=False
+    # )  # Out-of-phase
 
     nv_list = data["nv_list"]
     num_nvs = len(nv_list)
@@ -268,12 +273,12 @@ if __name__ == "__main__":
 
     pixel_drifts = data["pixel_drifts"]
     img_arrays = np.array(data["img_arrays"])
-    base_pixel_drift = [10, 38]
+    base_pixel_drift = [15, 45]
     # base_pixel_drift = [24, 74]
     num_reps = 1
 
     buffer = 30
-    img_array_size = 230
+    img_array_size = 250
     cropped_size = img_array_size - 2 * buffer
     proc_img_arrays = np.empty(
         (2, num_runs, num_steps, num_reps, cropped_size, cropped_size)
@@ -290,8 +295,10 @@ if __name__ == "__main__":
                 cropped_img_array = widefield.crop_img_array(img_array, offset, buffer)
                 proc_img_arrays[exp_ind, run_ind, step_ind, 0, :, :] = cropped_img_array
 
-    sig_img_arrays = np.mean(proc_img_arrays, axis=(1, 3))[0]
-    ref_img_array = np.mean(proc_img_arrays, axis=(1, 2, 3))[1]
+    # Average over cosmic ray
+    proc_img_arrays[0, 117, -1, 0, :, :] = np.nan
+    sig_img_arrays = np.nanmean(proc_img_arrays, axis=(1, 3))[0]
+    ref_img_array = np.nanmean(proc_img_arrays, axis=(1, 2, 3))[1]
     proc_img_arrays = sig_img_arrays - ref_img_array
 
     downsample_factor = 2
