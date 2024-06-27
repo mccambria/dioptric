@@ -373,7 +373,8 @@ def process_and_plot(
         ax.xaxis.set_major_locator(MaxNLocator(integer=True))
         ax.yaxis.set_major_locator(MaxNLocator(integer=True))
         ax.set_yticks([0, 2, 4, 6, 8])
-        ax.tick_params(labelsize=14)
+        ax.set_xticks([0, 2, 4, 6, 8])
+        ax.tick_params(labelsize=16)
         if not no_labels:
             ax.set_xlabel("NV index")
             ax.set_ylabel("NV index")

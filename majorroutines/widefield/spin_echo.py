@@ -191,6 +191,15 @@ def create_fit_figure(data, axes_pack=None, layout=None, no_legend=False):
     norm_counts = (avg_counts - norms_ms0_newaxis) / contrast
     norm_counts_ste = avg_counts_ste / contrast
 
+    # # Sort for plotting
+    # total_evolution_times = 2 * np.array(taus) / 1e3
+    inds = taus.argsort()
+    total_evolution_times = 2 * np.array(taus)[inds] / 1e3
+    norm_counts = np.array([norm_counts[nv_ind, inds] for nv_ind in range(num_nvs)])
+    norm_counts_ste = np.array(
+        [norm_counts_ste[nv_ind, inds] for nv_ind in range(num_nvs)]
+    )
+
     # fit_fns = []
     # popts = []
     # freq_guesses = [
@@ -215,15 +224,6 @@ def create_fit_figure(data, axes_pack=None, layout=None, no_legend=False):
     #     # 9
     #     (),
     # ]
-
-    # # Sort for plotting
-    # # total_evolution_times = 2 * np.array(taus) / 1e3
-    # inds = taus.argsort()
-    # total_evolution_times = 2 * np.array(taus)[inds] / 1e3
-    # norm_counts = np.array([norm_counts[nv_ind, inds] for nv_ind in range(num_nvs)])
-    # norm_counts_ste = np.array(
-    #     [norm_counts_ste[nv_ind, inds] for nv_ind in range(num_nvs)]
-    # )
 
     # for nv_ind in range(num_nvs):
     #     nv_counts = norm_counts[nv_ind]
@@ -449,8 +449,8 @@ if __name__ == "__main__":
     #     kpl.plot_line(ax, taus, ys)
     #     ax.set_title(freq)
 
-    # data = dm.get_raw_data(file_id=1548381879624)
-    data = dm.get_raw_data(file_id=1571608451985)
+    data = dm.get_raw_data(file_id=1548381879624)
+    # data = dm.get_raw_data(file_id=1572552719404)
 
     # create_raw_data_figure(data)
     create_fit_figure(data)

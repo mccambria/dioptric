@@ -16,7 +16,7 @@ import utils.common as common
 from servers.timing.sequencelibrary.QM_opx import seq_utils
 
 
-def get_seq(pol_coords_list, num_reps):
+def get_seq(ion_coords_list, pol_coords_list, num_reps):
     if num_reps is None:
         num_reps = 1
     num_nvs = len(pol_coords_list)
@@ -26,12 +26,15 @@ def get_seq(pol_coords_list, num_reps):
         seq_utils.macro_run_aods()
 
         def one_rep(rep_ind=None):
-            seq_utils.macro_polarize(
-                pol_coords_list,
-                spin_pol=False,
-                targeted_polarization=True,
-                verify_charge_states=False,
-            )
+            with qua.if_(rep_ind == 0):
+                seq_utils.macro_ionize(ion_coords_list)
+            with qua.else_():
+                seq_utils.macro_polarize(
+                    pol_coords_list,
+                    spin_pol=False,
+                    targeted_polarization=True,
+                    verify_charge_states=False,
+                )
             seq_utils.macro_charge_state_readout()
             seq_utils.macro_wait_for_trigger()
 

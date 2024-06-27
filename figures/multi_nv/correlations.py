@@ -228,13 +228,20 @@ def main(block_data, checkerboard_data, orientation_data):
     # ax = checkerboard_ax
     ax = axes_pack[0]
     kpl.set_shared_ax_xlabel(ax, "NV index", fontsize=16)
-    kpl.set_shared_ax_ylabel(ax, "NV index\n", fontsize=16)
+    kpl.set_shared_ax_ylabel(ax, "NV index", fontsize=16)
     img = ax.get_images()[0]
     cbar = data_fig.colorbar(
-        img, ax=axes_pack, shrink=0.7, aspect=25, extend="both", location="bottom"
+        img,
+        ax=axes_pack,
+        shrink=0.35,
+        aspect=12,
+        extend="both",  # location="bottom"
     )
-    cbar.set_label("Correlation coefficient", size=16)
-    cbar.ax.set_xticks([-cbar_max, 0, cbar_max])
+    # cbar.set_label("Correlation coefficient", size=16)
+    # cbar.set_label("Corr.\ncoeff.", size=16)
+    cbar.ax.set_title("Corr.\ncoeff.", size=16)
+    cbar.ax.set_yticks([-cbar_max, 0, cbar_max])
+    cbar.ax.tick_params(labelrotation=90)
 
 
 if __name__ == "__main__":
