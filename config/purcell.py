@@ -172,8 +172,8 @@ config |= {
         # LaserKey.WIDEFIELD_SPIN_POL: {"name": yellow_laser, "duration": 10e3},
         LaserKey.WIDEFIELD_SPIN_POL: {"name": yellow_laser, "duration": 100e3},
         # LaserKey.WIDEFIELD_SPIN_POL: {"name": yellow_laser, "duration": 1e6},
-        # LaserKey.WIDEFIELD_CHARGE_READOUT: {"name": yellow_laser, "duration": 50e6},
-        LaserKey.WIDEFIELD_CHARGE_READOUT: {"name": yellow_laser, "duration": 100e6},
+        LaserKey.WIDEFIELD_CHARGE_READOUT: {"name": yellow_laser, "duration": 50e6},
+        # LaserKey.WIDEFIELD_CHARGE_READOUT: {"name": yellow_laser, "duration": 100e6},
         #
         "scc_shelving_pulse": False,  # Whether or not to include a shelving pulse in SCC
     },
@@ -660,7 +660,7 @@ opx_config = {
         },
         "do_pi_on_2_pulse_0": {
             "operation": "control",
-            "length": int(rabi_period_0 / 4),
+            "length": int(rabi_period_0 / 4) + 4,
             # "length": 20,
             "digital_marker": "on",
         },
@@ -671,7 +671,7 @@ opx_config = {
         },
         "do_pi_on_2_pulse_1": {
             "operation": "control",
-            "length": int(rabi_period_1 / 4),
+            "length": int(rabi_period_1 / 4) + 4,
             # "length": 20,
             "digital_marker": "on",
         },
@@ -702,8 +702,8 @@ opx_config = {
         "yellow_imaging": {"type": "constant", "sample": 0.40},  # 0.35
         # "yellow_imaging": {"type": "constant", "sample": 0.50},  # 0.35
         # "yellow_charge_readout": {"type": "constant", "sample": 0.353},  # 50e6
-        # "yellow_charge_readout": {"type": "constant", "sample": 0.3475},  # 50e6
-        "yellow_charge_readout": {"type": "constant", "sample": 0.32},  # 100e6
+        "yellow_charge_readout": {"type": "constant", "sample": 0.3475},  # 50e6
+        # "yellow_charge_readout": {"type": "constant", "sample": 0.32},  # 100e6
         "yellow_spin_pol": {"type": "constant", "sample": 0.38},
         # Other
         "aod_cw": {"type": "constant", "sample": 0.35},
