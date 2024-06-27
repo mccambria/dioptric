@@ -1045,6 +1045,10 @@ def plot_fit(
         axes_pack = list(axes_pack.values())
     if xlim is None:
         xlim = (min(x), max(x))
+    if xlim[0] is None:
+        xlim[0] = min(x)
+    if xlim[1] is None:
+        xlim[1] = max(x)
     x_linspace = np.linspace(*xlim, 1000)
     num_nvs = len(nv_list)
     for nv_ind in range(num_nvs):
@@ -1209,12 +1213,11 @@ def animate(
         # rep_data_ax.set_xticks([0, 200])
         # rep_data_ax.set_xlim([-12.8, 268.8])
         # rep_data_ax.set_yticks([0, 1])
-        # rep_data_ax.set_ylim([-0.03671401564507494, 0.1688633341304579])
+        # rep_data_ax.set_ylim([-0.33, 1.25])
 
         # Leave fixed
         kpl.set_shared_ax_xlabel(rep_data_ax, xlabel)
         ylabel = "Norm. NV$^{-}$ population"
-        # ylabel = "Change in $P($NV$^{-})$"
         kpl.set_shared_ax_ylabel(rep_data_ax, ylabel)
 
     data_ax_relim()

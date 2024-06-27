@@ -46,14 +46,14 @@ def process_and_plot(raw_data):
     avg_num_nvn = np.mean(num_nvn, axis=0)  # Average over runs
     avg_num_nvn_ste = np.std(num_nvn, axis=0) / np.sqrt(num_runs)
 
-    reps_vals = np.array(range(num_reps)) + 1
+    reps_vals = np.array(range(num_reps))
 
     fig, ax = plt.subplots()
     kpl.plot_points(ax, reps_vals, avg_num_nvn, yerr=avg_num_nvn_ste)
     ax.set_xlabel("Number of attempts")
-    ax.set_ylabel("Number NV$^{-}$")
-    ax.set_xlim((0.5, 10.5))
-    ax.set_xticks(np.array(range(10)) + 1)
+    ax.set_ylabel("Mean number NV$^{-}$")
+    ax.set_xlim((-0.5, 10.5))
+    ax.set_xticks(np.array(range(11)))
 
     return fig
 
@@ -77,8 +77,9 @@ def main(
     ### Collect the data
 
     def run_fn(shuffled_step_inds):
+        ion_coords_list = widefield.get_coords_list(nv_list, LaserKey.ION)
         pol_coords_list = widefield.get_coords_list(nv_list, LaserKey.CHARGE_POL)
-        seq_args = [pol_coords_list]
+        seq_args = [ion_coords_list, pol_coords_list]
         seq_args_string = tb.encode_seq_args(seq_args)
         pulse_gen.stream_load(seq_file, seq_args_string, num_reps)
 
