@@ -24,7 +24,8 @@ from utils.constants import NVSig
 
 def main(block_data, checkerboard_data, orientation_data):
     figsize = kpl.figsize
-    figsize[1] = 0.9 * figsize[0]
+    # figsize[1] = 0.9 * figsize[0]
+    figsize[1] = 1.25 * figsize[0]
     main_fig = plt.figure(figsize=figsize)
 
     seq_fig, data_fig = main_fig.subfigures(
@@ -177,8 +178,10 @@ def main(block_data, checkerboard_data, orientation_data):
     ### Data
 
     axes_pack = data_fig.subplots(
-        1,
-        4,
+        # 1,
+        # 4,
+        2,
+        2,
         sharex=True,
         sharey=True,
         gridspec_kw={"hspace": 0.02, "wspace": 0.02},
@@ -187,6 +190,7 @@ def main(block_data, checkerboard_data, orientation_data):
     cbar_max = 0.03
     datas = [block_data, block_data, checkerboard_data, orientation_data]
     data_corr_coeffs_list = []
+    axes_pack = axes_pack.flatten()
 
     # Data
     for ind in range(4):
@@ -223,23 +227,21 @@ def main(block_data, checkerboard_data, orientation_data):
     titles = ["Reference", "Block", "Checker", "Orientation"]
     for ind in range(4):
         ax = axes_pack[ind]
-        ax.set_title(titles[ind], fontsize=18)
+        ax.set_title(titles[ind])
 
     # ax = checkerboard_ax
     ax = axes_pack[0]
-    kpl.set_shared_ax_xlabel(ax, "NV index", fontsize=16)
-    kpl.set_shared_ax_ylabel(ax, "NV index", fontsize=16)
+    kpl.set_shared_ax_xlabel(ax, "NV index")
+    kpl.set_shared_ax_ylabel(ax, "NV index")
     img = ax.get_images()[0]
     cbar = data_fig.colorbar(
         img,
         ax=axes_pack,
-        shrink=0.35,
-        aspect=12,
+        shrink=0.95,
+        # aspect=12,
         extend="both",  # location="bottom"
     )
-    # cbar.set_label("Correlation coefficient", size=16)
-    # cbar.set_label("Corr.\ncoeff.", size=16)
-    cbar.ax.set_title("Corr.\ncoeff.", size=16)
+    cbar.ax.set_title("Corr.\ncoeff.")
     cbar.ax.set_yticks([-cbar_max, 0, cbar_max])
     cbar.ax.tick_params(labelrotation=90)
 
