@@ -49,16 +49,19 @@ def process_and_plot(raw_data, mean_val=None):
 
     reps_vals = np.array(range(num_reps))
 
-    fig, ax = plt.subplots()
+    figsize = kpl.figsize
+    figsize[1] *= 0.75
+    fig, ax = plt.subplots(figsize=figsize)
     kpl.plot_points(ax, reps_vals, avg_num_nvn, yerr=avg_num_nvn_ste)
     ax.set_xlabel("Number of attempts")
     ax.set_ylabel("Mean number NV$^{-}$")
     ax.set_xlim((-0.5, 10.5))
     ax.set_xticks(np.array(range(11)))
-    ax.set_yticks(np.array(range(9)) + 1)
+    ax.set_yticks(range(11))
+    # ax.set_yticks(range(10))
 
     if mean_val is not None:
-        ax.axhline(mean_val, color=kpl.KplColors.DARK_GRAY)
+        ax.axhline(mean_val, color=kpl.KplColors.GREEN, linestyle="dashed", linewidth=2)
 
     return fig
 
