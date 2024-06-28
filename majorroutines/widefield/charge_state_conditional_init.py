@@ -136,19 +136,19 @@ if __name__ == "__main__":
     kpl.init_kplotlib()
 
     ### Just get a mean val
-    data = dm.get_raw_data(file_id=1573560918521)
-    nv_list = data["nv_list"]
-    states = np.array(data["states"])[0]
-    num_runs = data["num_runs"]
-    num_reps = data["num_reps"]
-    mean_val = np.sum(states) / (num_runs * num_reps)
+    # data = dm.get_raw_data(file_id=1573560918521)
+    # nv_list = data["nv_list"]
+    # states = np.array(data["states"])[0]
+    # num_runs = data["num_runs"]
+    # num_reps = data["num_reps"]
+    # mean_val = np.sum(states) / (num_runs * num_reps)
 
     ### Main plot
-    # data = dm.get_raw_data(file_id=1567957794147)
-    # data = dm.get_raw_data(file_id=1570547331729)
-    data = dm.get_raw_data(file_id=1573541903486)  # init ionized data
-    process_and_plot(data, mean_val=mean_val)
-    kpl.show(block=True)
+    # # data = dm.get_raw_data(file_id=1567957794147)
+    # # data = dm.get_raw_data(file_id=1570547331729)
+    # data = dm.get_raw_data(file_id=1573541903486)  # init ionized data
+    # process_and_plot(data, mean_val=mean_val)
+    # kpl.show(block=True)
 
     ### Inset images
 
@@ -187,13 +187,20 @@ if __name__ == "__main__":
     #         #     num_in_nvm[run_ind, 0, 0] == 0
     #         #     and num_in_nvm[run_ind, 0, 1] == 7
     #         #     and num_in_nvm[run_ind, 0, rep_ind] == 9
-    #         #     and num_in_nvm[run_ind, 0, rep_ind + 1] == 9
+    #         #     and num_in_nvm[run_ind, 0, rep_ind + 1] == 10
     #         #     and not (
     #         #         states[:, run_ind, 0, rep_ind] == states[:, run_ind, 0, rep_ind + 1]
     #         #     ).all()
     #         # ):
-    #         if num_in_nvm[run_ind, 0, rep_ind] == 10:
-    #             print(run_ind, rep_ind)
+    #         for rep_ind2 in range(9):
+    #             if (
+    #                 num_in_nvm[run_ind, 0, 0] == 0
+    #                 and num_in_nvm[run_ind, 0, 1] == 7
+    #                 and num_in_nvm[run_ind, 0, rep_ind] == 9
+    #                 and num_in_nvm[run_ind, 0, rep_ind2] == 10
+    #             ):
+    #                 # if num_in_nvm[run_ind, 0, rep_ind] == 10:
+    #                 print(run_ind, rep_ind, rep_ind2)
     # sys.exit()
 
     nv_list = data["nv_list"]
@@ -208,8 +215,10 @@ if __name__ == "__main__":
     # run_ind = 74
     # rep_indd = 8
     # for rep_ind in [0, 1, rep_indd, rep_indd + 1]:
-    run_ind = 73
-    for rep_ind in [3, 6, 8]:
+    # run_ind = 73
+    # for rep_ind in [3, 6, 8]:
+    run_ind = 74
+    for rep_ind in [6]:
         img_array = img_arrays[0, run_ind, 0, rep_ind]
         # img_array = np.mean(img_arrays, axis=(0, 1, 2, 3))
         widefield.replace_dead_pixel(img_array)
@@ -242,8 +251,8 @@ if __name__ == "__main__":
         kpl.imshow(
             ax,
             proc_img_array,
-            clim=[0, 5],
-            # clim=[0, 15],
+            # clim=[0, 5],
+            clim=[0, 15],
             # clim=[0.0, 0.2],
             no_cbar=True,
             # cmap=mpl.colormaps["gist_gray"],
