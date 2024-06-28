@@ -180,15 +180,16 @@ if __name__ == "__main__":
     # num_in_nvm = np.sum(states, axis=0)
     # for run_ind in range(num_runs):
     #     for rep_ind in range(9):
-    #         if (
-    #             num_in_nvm[run_ind, 0, 0] == 0
-    #             and num_in_nvm[run_ind, 0, 1] == 7
-    #             and num_in_nvm[run_ind, 0, rep_ind] == 9
-    #             and num_in_nvm[run_ind, 0, rep_ind + 1] == 9
-    #             and not (
-    #                 states[:, run_ind, 0, rep_ind] == states[:, run_ind, 0, rep_ind + 1]
-    #             ).all()
-    #         ):
+    #         # if (
+    #         #     num_in_nvm[run_ind, 0, 0] == 0
+    #         #     and num_in_nvm[run_ind, 0, 1] == 7
+    #         #     and num_in_nvm[run_ind, 0, rep_ind] == 9
+    #         #     and num_in_nvm[run_ind, 0, rep_ind + 1] == 9
+    #         #     and not (
+    #         #         states[:, run_ind, 0, rep_ind] == states[:, run_ind, 0, rep_ind + 1]
+    #         #     ).all()
+    #         # ):
+    #         if num_in_nvm[run_ind, 0, rep_ind] == 10:
     #             print(run_ind, rep_ind)
     # sys.exit()
 
@@ -201,9 +202,11 @@ if __name__ == "__main__":
     # rep_indd = 7
     # run_ind = 42
     # rep_indd = 3
-    run_ind = 74
-    rep_indd = 8
-    for rep_ind in [0, 1, rep_indd, rep_indd + 1]:
+    # run_ind = 74
+    # rep_indd = 8
+    # for rep_ind in [0, 1, rep_indd, rep_indd + 1]:
+    run_ind = 73
+    for rep_ind in [3, 6, 8]:
         img_array = img_arrays[0, run_ind, 0, rep_ind]
         # img_array = np.mean(img_arrays, axis=(0, 1, 2, 3))
         widefield.replace_dead_pixel(img_array)
@@ -223,22 +226,22 @@ if __name__ == "__main__":
         ]
 
         # Downsampling / smoothing
-        # downsample_factor = 6
-        # proc_img_array = widefield.downsample_img_array(
-        #     proc_img_array, downsample_factor
-        # )
-        # proc_img_array = np.repeat(proc_img_array, downsample_factor, axis=0)
-        # proc_img_array = np.repeat(proc_img_array, downsample_factor, axis=1)
-        proc_img_array = gaussian_filter(proc_img_array, 4)
+        downsample_factor = 6
+        proc_img_array = widefield.downsample_img_array(
+            proc_img_array, downsample_factor
+        )
+        proc_img_array = np.repeat(proc_img_array, downsample_factor, axis=0)
+        proc_img_array = np.repeat(proc_img_array, downsample_factor, axis=1)
+        # proc_img_array = gaussian_filter(proc_img_array, 4)
         # proc_img_array = uniform_filter(proc_img_array, 5)
 
         fig, ax = plt.subplots()
         kpl.imshow(
             ax,
             proc_img_array,
-            # clim=[0, 5],
+            clim=[0, 5],
             # clim=[0, 15],
-            clim=[0.0, 0.2],
+            # clim=[0.0, 0.2],
             no_cbar=True,
             # cmap=mpl.colormaps["gist_gray"],
         )
