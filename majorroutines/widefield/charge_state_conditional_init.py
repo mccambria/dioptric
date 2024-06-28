@@ -16,6 +16,7 @@ import traceback
 import matplotlib as mpl
 import matplotlib.pyplot as plt
 import numpy as np
+from matplotlib.ticker import MaxNLocator
 from scipy import ndimage
 from scipy.ndimage import gaussian_filter, uniform_filter
 from scipy.optimize import curve_fit
@@ -50,15 +51,31 @@ def process_and_plot(raw_data, mean_val=None):
     reps_vals = np.array(range(num_reps))
 
     figsize = kpl.figsize
-    figsize[1] *= 0.75
+    figsize[1] *= 0.6
     fig, ax = plt.subplots(figsize=figsize)
     kpl.plot_points(ax, reps_vals, avg_num_nvn, yerr=avg_num_nvn_ste)
     ax.set_xlabel("Number of attempts")
     ax.set_ylabel("Mean number NV$^{-}$")
     ax.set_xlim((-0.5, 10.5))
     ax.set_xticks(np.array(range(11)))
-    ax.set_yticks(range(11))
+    ax.set_yticks([0, 2, 4, 6, 8, 10])
     # ax.set_yticks(range(10))
+    ax.yaxis.set_minor_locator(MaxNLocator(integer=True))
+
+    def fit_fn(x, yintercept, slope, saturation):
+        return yintercept + saturation * x / (x + (1 / slope))
+
+    popt, pcov = curve_fit(
+        fit_fn,
+        reps_vals,
+        avg_num_nvn,
+        p0=(0.5, 7, 9.2),
+        sigma=avg_num_nvn_ste,
+        absolute_sigma=True,
+    )
+
+    reps_vals_linspace = np.linspace(0, 11, 1000)
+    kpl.plot_line(ax, reps_vals_linspace, fit_fn(reps_vals_linspace, *popt))
 
     if mean_val is not None:
         ax.axhline(mean_val, color=kpl.KplColors.GREEN, linestyle="dashed", linewidth=2)
@@ -136,19 +153,19 @@ if __name__ == "__main__":
     kpl.init_kplotlib()
 
     ### Just get a mean val
-    # data = dm.get_raw_data(file_id=1573560918521)
-    # nv_list = data["nv_list"]
-    # states = np.array(data["states"])[0]
-    # num_runs = data["num_runs"]
-    # num_reps = data["num_reps"]
-    # mean_val = np.sum(states) / (num_runs * num_reps)
+    data = dm.get_raw_data(file_id=1573560918521)
+    nv_list = data["nv_list"]
+    states = np.array(data["states"])[0]
+    num_runs = data["num_runs"]
+    num_reps = data["num_reps"]
+    mean_val = np.sum(states) / (num_runs * num_reps)
 
-    ### Main plot
-    # # data = dm.get_raw_data(file_id=1567957794147)
-    # # data = dm.get_raw_data(file_id=1570547331729)
-    # data = dm.get_raw_data(file_id=1573541903486)  # init ionized data
-    # process_and_plot(data, mean_val=mean_val)
-    # kpl.show(block=True)
+    ## Main plot
+    # data = dm.get_raw_data(file_id=1567957794147)
+    # data = dm.get_raw_data(file_id=1570547331729)
+    data = dm.get_raw_data(file_id=1573541903486)  # init ionized data
+    process_and_plot(data, mean_val=mean_val)
+    kpl.show(block=True)
 
     ### Inset images
 
