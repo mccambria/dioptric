@@ -28,8 +28,11 @@ def main(data):
 if __name__ == "__main__":
     kpl.init_kplotlib()
 
-    data = dm.get_raw_data(file_id=)
+    data = dm.get_raw_data(file_id=1573541903486)  # Data
+    data = dm.get_raw_data(file_id=1573560918521)  # Just mean val
+    counts = data["counts"]
+    
 
-    main(data)
+    main(data, mean_val=)
 
     plt.show(block=True)

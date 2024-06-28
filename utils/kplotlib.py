@@ -239,15 +239,15 @@ def subplot_mosaic(num_panels, num_rows=None, figsize=[10, 6.0]):
     return fig, axes_pack, layout
 
 
-def set_shared_ax_xlabel(lower_left_ax, label):
-    _set_shared_ax_axis_label(True, lower_left_ax, label)
+def set_shared_ax_xlabel(lower_left_ax, label, **kwargs):
+    _set_shared_ax_axis_label(True, lower_left_ax, label, **kwargs)
 
 
-def set_shared_ax_ylabel(lower_left_ax, label):
-    _set_shared_ax_axis_label(False, lower_left_ax, label)
+def set_shared_ax_ylabel(lower_left_ax, label, **kwargs):
+    _set_shared_ax_axis_label(False, lower_left_ax, label, **kwargs)
 
 
-def _set_shared_ax_axis_label(x_or_y, lower_left_ax, label):
+def _set_shared_ax_axis_label(x_or_y, lower_left_ax, label, **kwargs):
     """Works by making a dummy axis just for setting the label"""
     ax = lower_left_ax
     fig = ax.get_figure()
@@ -267,10 +267,10 @@ def _set_shared_ax_axis_label(x_or_y, lower_left_ax, label):
         )
     if x_or_y:
         ax.set_xlabel(" ")
-        label_ax.set_xlabel(label)
+        label_ax.set_xlabel(label, **kwargs)
     else:
         ax.set_ylabel(" ")
-        label_ax.set_ylabel(label)
+        label_ax.set_ylabel(label, **kwargs)
 
 
 def init_kplotlib(
@@ -860,6 +860,16 @@ def draw_circle(
     xscale = M[0, 0]
     if linewidth is None:
         linewidth = 0.08 * xscale * radius
+    ax.scatter(  # MCC
+        *coords,
+        s=(xscale * radius) ** 2,
+        facecolors="none",
+        edgecolors="black",
+        label=label,
+        linewidths=1.8 * linewidth,
+        linestyle="solid",
+        zorder=9,
+    )
     return ax.scatter(
         *coords,
         s=(xscale * radius) ** 2,
@@ -868,6 +878,7 @@ def draw_circle(
         label=label,
         linewidths=linewidth,
         linestyle=linestyle,
+        zorder=10,
     )
     # circle = plt.Circle(
     #     coords, radius, fill=False, color=color, label=label, linewidth=linewidth

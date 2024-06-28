@@ -928,7 +928,7 @@ def draw_circles_on_nvs(
             ax,
             pixel_coords,
             color=color,
-            radius=0.7 * scale,
+            radius=0.6 * scale,
             label=ind,
             linestyle=linestyle,
         )
@@ -1018,6 +1018,7 @@ def plot_fit(
     xlim=None,
     norms=None,
     no_legend=False,
+    linestyle="none",
 ):
     """Plot multiple data sets (with a common set of x vals) with an offset between
     the sets such that they are separated and easier to interpret. Useful for
@@ -1044,6 +1045,10 @@ def plot_fit(
         axes_pack = list(axes_pack.values())
     if xlim is None:
         xlim = (min(x), max(x))
+    if xlim[0] is None:
+        xlim[0] = min(x)
+    if xlim[1] is None:
+        xlim[1] = max(x)
     x_linspace = np.linspace(*xlim, 1000)
     num_nvs = len(nv_list)
     for nv_ind in range(num_nvs):
@@ -1068,13 +1073,19 @@ def plot_fit(
 
         # Plot the points
         # ls = "none" if fn is not None else "solid"
-        ls = "none"
         # size = kpl.Size.SMALL
         size = kpl.Size.XSMALL
         # size = kpl.Size.TINY
         label = str(nv_num)
         kpl.plot_points(
-            ax, x, y, yerr=yerr, label=label, size=size, color=color, linestyle=ls
+            ax,
+            x,
+            y,
+            yerr=yerr,
+            label=label,
+            size=size,
+            color=color,
+            linestyle=linestyle,
         )
 
         # Plot the fit
@@ -1202,12 +1213,11 @@ def animate(
         # rep_data_ax.set_xticks([0, 200])
         # rep_data_ax.set_xlim([-12.8, 268.8])
         # rep_data_ax.set_yticks([0, 1])
-        # rep_data_ax.set_ylim([-0.03671401564507494, 0.1688633341304579])
+        # rep_data_ax.set_ylim([-0.33, 1.25])
 
         # Leave fixed
         kpl.set_shared_ax_xlabel(rep_data_ax, xlabel)
         ylabel = "Norm. NV$^{-}$ population"
-        # ylabel = "Change in $P($NV$^{-})$"
         kpl.set_shared_ax_ylabel(rep_data_ax, ylabel)
 
     data_ax_relim()

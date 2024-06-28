@@ -319,8 +319,9 @@ def process_and_plot(
     titles = ["Ideal signal", "Signal", "Reference"]
     vals = [ideal_sig_corr_coeffs, sig_corr_coeffs, ref_corr_coeffs]
 
-    num_plots = len(vals)
-    fig, axes_pack = plt.subplots(ncols=num_plots, figsize=figsize)
+    if passed_ax is None:
+        num_plots = len(vals)
+        fig, axes_pack = plt.subplots(ncols=num_plots, figsize=figsize)
 
     # Replace diagonals (Cii=1) with nan so they don't show
     for val in [
@@ -348,11 +349,12 @@ def process_and_plot(
             # figs.append(fig)
             ax = axes_pack[ind]
         else:
-            if sig_or_ref and ind != 0:
+            if sig_or_ref and ind != 1:
                 continue
-            if not sig_or_ref and ind != 1:
+            if not sig_or_ref and ind != 2:
                 continue
             ax = passed_ax
+            ret_val = vals[ind]
         # if passed_cbar_max is not None:
         #     cbar_max = passed_cbar_max
         # else:
@@ -370,6 +372,9 @@ def process_and_plot(
         )
         ax.xaxis.set_major_locator(MaxNLocator(integer=True))
         ax.yaxis.set_major_locator(MaxNLocator(integer=True))
+        ax.set_yticks([0, 2, 4, 6, 8])
+        ax.set_xticks([0, 2, 4, 6, 8])
+        # ax.tick_params(labelsize=16)
         if not no_labels:
             ax.set_xlabel("NV index")
             ax.set_ylabel("NV index")
@@ -388,6 +393,8 @@ def process_and_plot(
 
         # print(f"Data and figures saved to {output_dir}")
 
+    if passed_ax is not None:
+        return ret_val
     # return figs
 
 

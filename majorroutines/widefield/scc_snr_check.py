@@ -35,6 +35,24 @@ def process_and_plot(data):
 
     ### Report the results and return
 
+    avg_sig_counts, avg_sig_counts_ste, norms = widefield.average_counts(
+        sig_counts, ref_counts
+    )
+    norms_ms0_newaxis = norms[0][:, np.newaxis]
+    norms_ms1_newaxis = norms[1][:, np.newaxis]
+    contrast = norms_ms1_newaxis - norms_ms0_newaxis
+    norm_counts = (avg_sig_counts - norms_ms0_newaxis) / contrast
+    norm_counts_ste = avg_sig_counts_ste / contrast
+    fig, ax = plt.subplots()
+    for ind in range(len(nv_list)):
+        nv_sig = nv_list[ind]
+        nv_num = widefield.get_nv_num(nv_sig)
+        kpl.plot_bars(ax, nv_num, norm_counts[ind], yerr=norm_counts_ste[ind])
+    ax.set_xlabel("NV index")
+    ax.set_ylabel("Contrast")
+
+    return
+
     avg_sig_counts, avg_sig_counts_ste, _ = widefield.average_counts(sig_counts)
     avg_ref_counts, avg_ref_counts_ste, _ = widefield.average_counts(ref_counts)
 
@@ -138,6 +156,7 @@ def main(nv_list, num_reps, num_runs, scc_include_inds=None, uwave_ind_list=[0, 
 
     try:
         figs = process_and_plot(data)
+        figs = None
     except Exception:
         print(traceback.format_exc())
         figs = None
@@ -158,6 +177,6 @@ def main(nv_list, num_reps, num_runs, scc_include_inds=None, uwave_ind_list=[0, 
 
 if __name__ == "__main__":
     kpl.init_kplotlib()
-    data = dm.get_raw_data(file_id=1564838065461)
+    data = dm.get_raw_data(file_id=1573914782129)
     figs = process_and_plot(data)
     kpl.show(block=True)

@@ -219,7 +219,7 @@ def main(esr_data, spin_echo_data):
         spin_echo_data, spin_echo_axes_pack, mosaic_layout, no_legend=True
     )
 
-    zoom_range = [65, 87]
+    zoom_range = [64, 87]
     # ax = spin_echo_axes_pack[mosaic_layout[0][0]]
     # ax.axvspan(*zoom_range, color=kpl.KplColors.LIGHT_GRAY, zorder=-11)
     for ax in spin_echo_axes_pack.values():

@@ -95,8 +95,8 @@ def do_charge_state_histograms(nv_list):
 
 def do_charge_state_conditional_init(nv_list):
     num_reps = 20
-    # num_runs = 100
-    num_runs = 400
+    num_runs = 100
+    # num_runs = 400
     return charge_state_conditional_init.main(nv_list, num_reps, num_runs)
 
 
@@ -358,7 +358,7 @@ def do_spin_echo(nv_list):
     max_tau = 84e3 + min_tau
     num_steps = 29
     num_reps = 3
-    num_runs = 800
+    num_runs = 1000
     # num_runs = 2
     spin_echo.main(nv_list, num_steps, num_reps, num_runs, min_tau, max_tau)
 
@@ -857,6 +857,7 @@ if __name__ == "__main__":
     nv_sig = widefield.get_repr_nv_sig(nv_list)
     # nv_sig.expected_counts = 1150
     nv_sig.expected_counts = 1200
+    # nv_sig.expected_counts = 1250
     num_nvs = len(nv_list)
 
     # nv_inds = [0, 1]
@@ -950,7 +951,7 @@ if __name__ == "__main__":
         # do_optimize_red(nv_sig)
         # do_image_single_nv(nv_sig)
 
-        optimize.optimize_pixel_and_z(nv_sig, do_plot=True)
+        # optimize.optimize_pixel_and_z(nv_sig, do_plot=True)
         # do_image_nv_list(nv_list)
         # for ind in range(20):
         #     do_optimize_pixel(nv_sig)
@@ -967,7 +968,7 @@ if __name__ == "__main__":
 
         # nv_list = nv_list[::-1]
         # do_charge_state_histograms(nv_list)
-        do_charge_state_conditional_init(nv_list)
+        # do_charge_state_conditional_init(nv_list)
         # do_check_readout_fidelity(nv_list)
 
         # do_resonance_zoom(nv_list)
@@ -989,7 +990,7 @@ if __name__ == "__main__":
         # do_opx_square_wave()
 
         # nv_list = nv_list[::-1]
-        # do_scc_snr_check(nv_list)
+        do_scc_snr_check(nv_list)
         # do_optimize_scc_duration(nv_list)
         # do_optimize_scc_amp(nv_list)
         # do_crosstalk_check(nv_sig)

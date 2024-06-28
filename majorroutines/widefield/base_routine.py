@@ -21,6 +21,8 @@ from utils.constants import ChargeStateEstimationMode
 
 
 def charge_prep_no_verification(rep_ind, nv_list, initial_states_list=None):
+    # if rep_ind > 0:  # MCC
+    #     charge_prep_base(nv_list, initial_states_list)
     charge_prep_base(nv_list, initial_states_list)
 
 

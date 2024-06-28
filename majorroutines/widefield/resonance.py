@@ -165,14 +165,17 @@ def create_fit_figure(
         freqs,
         norm_counts,
         norm_counts_ste,
+        # None,
         fit_fns,
         popts,
         no_legend=no_legend,
+        # linestyle="solid",
     )
 
     ax = axes_pack[layout[-1, 0]]
     kpl.set_shared_ax_xlabel(ax, "Frequency (GHz)")
-    kpl.set_shared_ax_ylabel(ax, "Norm. NV$^{-}$ population")
+    # kpl.set_shared_ax_ylabel(ax, "Norm. NV$^{-}$ population")
+    kpl.set_shared_ax_ylabel(ax, "Norm. NV$^{-}$ pop.")
     ax.set_yticks([0, 1])
 
     # ax = axes_pack[layout[-1, 0]]
@@ -316,7 +319,7 @@ def main(
 if __name__ == "__main__":
     kpl.init_kplotlib()
 
-    data = dm.get_raw_data(file_id=1565478112406, load_npz=True, use_cache=False)
+    data = dm.get_raw_data(file_id=1565478112406, load_npz=False, use_cache=False)
 
     nv_list = data["nv_list"]
     num_nvs = len(nv_list)
@@ -346,49 +349,50 @@ if __name__ == "__main__":
 
     ###
 
-    pixel_drifts = data["pixel_drifts"]
-    img_arrays = np.array(data["img_arrays"])
-    base_pixel_drift = [24, 74]
-    num_reps = 1
+    # pixel_drifts = data["pixel_drifts"]
+    # img_arrays = np.array(data["img_arrays"])
+    # base_pixel_drift = [15, 45]
+    # # base_pixel_drift = [24, 74]
+    # num_reps = 1
 
-    buffer = 20
-    img_array_size = 250
-    cropped_size = img_array_size - 2 * buffer
-    proc_img_arrays = np.empty(
-        (2, num_runs, 2 * adj_num_steps, num_reps, cropped_size, cropped_size)
-    )
-    for run_ind in range(num_runs):
-        pixel_drift = pixel_drifts[run_ind]
-        offset = [
-            pixel_drift[1] - base_pixel_drift[1],
-            pixel_drift[0] - base_pixel_drift[0],
-        ]
-        for step_ind in range(2 * adj_num_steps):
-            img_array = img_arrays[0, run_ind, step_ind, 0]
-            cropped_img_array = widefield.crop_img_array(img_array, offset, buffer)
-            proc_img_arrays[0, run_ind, step_ind, 0, :, :] = cropped_img_array
+    # buffer = 30
+    # img_array_size = 250
+    # cropped_size = img_array_size - 2 * buffer
+    # proc_img_arrays = np.empty(
+    #     (2, num_runs, 2 * adj_num_steps, num_reps, cropped_size, cropped_size)
+    # )
+    # for run_ind in range(num_runs):
+    #     pixel_drift = pixel_drifts[run_ind]
+    #     offset = [
+    #         pixel_drift[1] - base_pixel_drift[1],
+    #         pixel_drift[0] - base_pixel_drift[0],
+    #     ]
+    #     for step_ind in range(2 * adj_num_steps):
+    #         img_array = img_arrays[0, run_ind, step_ind, 0]
+    #         cropped_img_array = widefield.crop_img_array(img_array, offset, buffer)
+    #         proc_img_arrays[0, run_ind, step_ind, 0, :, :] = cropped_img_array
 
-    sig_img_arrays = np.mean(proc_img_arrays[:, :, 0:adj_num_steps, :], axis=(0, 1, 3))
-    ref_img_array = np.mean(proc_img_arrays[:, :, adj_num_steps:, :], axis=(0, 1, 2, 3))
-    proc_img_arrays = sig_img_arrays - ref_img_array
+    # sig_img_arrays = np.mean(proc_img_arrays[:, :, 0:adj_num_steps, :], axis=(0, 1, 3))
+    # ref_img_array = np.mean(proc_img_arrays[:, :, adj_num_steps:, :], axis=(0, 1, 2, 3))
+    # proc_img_arrays = sig_img_arrays - ref_img_array
 
-    downsample_factor = 2
-    proc_img_arrays = [
-        widefield.downsample_img_array(el, downsample_factor) for el in proc_img_arrays
-    ]
-    proc_img_arrays = np.array(proc_img_arrays)
+    # downsample_factor = 2
+    # proc_img_arrays = [
+    #     widefield.downsample_img_array(el, downsample_factor) for el in proc_img_arrays
+    # ]
+    # proc_img_arrays = np.array(proc_img_arrays)
 
-    widefield.animate(
-        freqs,
-        nv_list,
-        avg_counts,
-        avg_counts_ste,
-        norms,
-        proc_img_arrays,
-        cmin=np.percentile(proc_img_arrays, 60),
-        cmax=np.percentile(proc_img_arrays, 99.9),
-        scale_bar_length_factor=downsample_factor,
-    )
+    # widefield.animate(
+    #     freqs,
+    #     nv_list,
+    #     avg_counts,
+    #     avg_counts_ste,
+    #     norms,
+    #     proc_img_arrays,
+    #     cmin=np.percentile(proc_img_arrays, 60),
+    #     cmax=np.percentile(proc_img_arrays, 99.9),
+    #     scale_bar_length_factor=downsample_factor,
+    # )
 
     ###
 
