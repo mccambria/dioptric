@@ -16,7 +16,7 @@ import imageio
 import io 
 from scipy.optimize import curve_fit
 
-
+from utils import tool_belt as tb
 
 mpl.rc('image', cmap='Blues')
 
@@ -903,15 +903,19 @@ def plot_laguerre_gaussian_phase():
 
 # region run funtions
 try:
-    slm = ThorSLM(serialNumber='00429430')
-    cam = ThorCam(serial="26438", verbose=True)
+    # slm = ThorSLM(serialNumber='00429430')
+    # cam = ThorCam(serial="26438", verbose=True)
+    cam = tb.get_server_thorcam()
+    slm = tb.get_server_thorslm()
+
     fs = FourierSLM(cam, slm)
+
     # blaze()
     # fourier_calibration()
-    load_fourier_calibration()
+    # load_fourier_calibration()
     # test_wavefront_calibration()
     # wavefront_calibration()
-    load_wavefront_calibration()
+    # load_wavefront_calibration()
     # fs.process_wavefront_calibration(r2_threshold=.9, smooth=True, plot=True)
     square_array()
     # save_initial_phase()

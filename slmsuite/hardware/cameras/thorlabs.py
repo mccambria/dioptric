@@ -17,7 +17,7 @@ import sys
 import time
 import numpy as np
 
-sys.path.append('c:/Users/Saroj Chand/Documents/dioptric')
+# sys.path.append('c:/Users/Saroj Chand/Documents/dioptric')
 from slmsuite.hardware.cameras.camera import Camera
 
 # DEFAULT_DLL_PATH = (
