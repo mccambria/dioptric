@@ -967,6 +967,12 @@ def get_server_magnet_rotation():
 def get_server_thorslm():
     """Get the Thorslm server."""
     return common.get_server("thorslm")
+
+@cache
+def get_server_thorcam():
+    """Get the Thorslm server."""
+    return common.get_server("thorcam")
+
 # endregion
 # region Email utils
 
