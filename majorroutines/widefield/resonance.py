@@ -174,8 +174,8 @@ def create_fit_figure(
 
     ax = axes_pack[layout[-1, 0]]
     kpl.set_shared_ax_xlabel(ax, "Frequency (GHz)")
-    kpl.set_shared_ax_ylabel(ax, "Norm. NV$^{-}$ population")
-    # kpl.set_shared_ax_ylabel(ax, "Norm. NV$^{-}$ pop.")
+    # kpl.set_shared_ax_ylabel(ax, "Norm. NV$^{-}$ population")
+    kpl.set_shared_ax_ylabel(ax, "Norm. NV$^{-}$ pop.")
     ax.set_yticks([0, 1])
 
     # ax = axes_pack[layout[-1, 0]]
