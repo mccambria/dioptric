@@ -860,6 +860,16 @@ def draw_circle(
     xscale = M[0, 0]
     if linewidth is None:
         linewidth = 0.08 * xscale * radius
+    ax.scatter(  # MCC
+        *coords,
+        s=(xscale * radius) ** 2,
+        facecolors="none",
+        edgecolors="black",
+        label=label,
+        linewidths=1.8 * linewidth,
+        linestyle="solid",
+        zorder=9,
+    )
     return ax.scatter(
         *coords,
         s=(xscale * radius) ** 2,
@@ -868,6 +878,7 @@ def draw_circle(
         label=label,
         linewidths=linewidth,
         linestyle=linestyle,
+        zorder=10,
     )
     # circle = plt.Circle(
     #     coords, radius, fill=False, color=color, label=label, linewidth=linewidth

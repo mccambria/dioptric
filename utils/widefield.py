@@ -928,7 +928,7 @@ def draw_circles_on_nvs(
             ax,
             pixel_coords,
             color=color,
-            radius=0.7 * scale,
+            radius=0.6 * scale,
             label=ind,
             linestyle=linestyle,
         )
