@@ -26,9 +26,8 @@ def get_seq(base_scc_seq_args, num_reps=1):
 
         def uwave_macro_sig(uwave_ind_list, step_val):
             #     uwave_ind_list = [0]
-            seq_utils.macro_pi_pulse(uwave_ind_list)
-
-        #     seq_utils.macro_pi_on_2_pulse(uwave_ind_list)
+            # seq_utils.macro_pi_pulse(uwave_ind_list)
+            seq_utils.macro_pi_on_2_pulse(uwave_ind_list)
 
         # MCC spin echo test
         # def uwave_macro_sig(uwave_ind_list, step_val):
@@ -64,7 +63,7 @@ def get_seq(base_scc_seq_args, num_reps=1):
             base_scc_seq_args,
             [uwave_macro_sig, uwave_macro_ref],
             num_reps=num_reps,
-            reference=False,
+            reference=True,
         )
 
     seq_ret_vals = []

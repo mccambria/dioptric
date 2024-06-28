@@ -95,8 +95,8 @@ def do_charge_state_histograms(nv_list):
 
 def do_charge_state_conditional_init(nv_list):
     num_reps = 20
-    # num_runs = 100
-    num_runs = 400
+    num_runs = 100
+    # num_runs = 400
     return charge_state_conditional_init.main(nv_list, num_reps, num_runs)
 
 
@@ -857,6 +857,7 @@ if __name__ == "__main__":
     nv_sig = widefield.get_repr_nv_sig(nv_list)
     # nv_sig.expected_counts = 1150
     nv_sig.expected_counts = 1200
+    # nv_sig.expected_counts = 1250
     num_nvs = len(nv_list)
 
     # nv_inds = [0, 1]
@@ -973,7 +974,7 @@ if __name__ == "__main__":
         # do_resonance_zoom(nv_list)
         # do_rabi(nv_list)
         # do_resonance(nv_list)
-        do_spin_echo(nv_list)
+        # do_spin_echo(nv_list)
         # do_power_rabi(nv_list)
         # do_correlation_test(nv_list)
         # do_ramsey(nv_list)
@@ -989,7 +990,7 @@ if __name__ == "__main__":
         # do_opx_square_wave()
 
         # nv_list = nv_list[::-1]
-        # do_scc_snr_check(nv_list)
+        do_scc_snr_check(nv_list)
         # do_optimize_scc_duration(nv_list)
         # do_optimize_scc_amp(nv_list)
         # do_crosstalk_check(nv_sig)

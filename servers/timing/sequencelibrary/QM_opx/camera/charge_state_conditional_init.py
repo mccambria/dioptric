@@ -35,6 +35,12 @@ def get_seq(ion_coords_list, pol_coords_list, num_reps):
                     targeted_polarization=True,
                     verify_charge_states=False,
                 )
+            # seq_utils.macro_polarize(
+            #     pol_coords_list,
+            #     spin_pol=False,
+            #     targeted_polarization=False,
+            #     verify_charge_states=False,
+            # )
             seq_utils.macro_charge_state_readout()
             seq_utils.macro_wait_for_trigger()
 
