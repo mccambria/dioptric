@@ -24,14 +24,14 @@ from utils import widefield as widefield
 
 def quartic_decay_base(
     tau,
-    baseline,
+    # baseline,
     revival_time,
     quartic_decay_time,
     amp1,
     amp2,
     osc_freqs=None,
 ):
-    # baseline = 0.5
+    baseline = 0.5
     amplitude = baseline
     val = 0
     # print(len(amplitudes))
@@ -57,7 +57,7 @@ def quartic_decay_base(
 
 def quartic_decay(
     tau,
-    baseline,
+    # baseline,
     revival_time,
     quartic_decay_time,
     T2_ms,
@@ -65,7 +65,7 @@ def quartic_decay(
 ):
     return quartic_decay_base(
         tau,
-        baseline,
+        # baseline,
         revival_time,
         quartic_decay_time,
         T2_ms,
@@ -75,7 +75,7 @@ def quartic_decay(
 
 def quartic_decay_one_osc(
     tau,
-    baseline,
+    # baseline,
     revival_time,
     quartic_decay_time,
     T2_ms,
@@ -85,7 +85,7 @@ def quartic_decay_one_osc(
     osc_freqs = [osc_freq0]
     return quartic_decay_base(
         tau,
-        baseline,
+        # baseline,
         revival_time,
         quartic_decay_time,
         T2_ms,
@@ -96,7 +96,7 @@ def quartic_decay_one_osc(
 
 def quartic_decay_two_osc(
     tau,
-    baseline,
+    # baseline,
     revival_time,
     quartic_decay_time,
     T2_ms,
@@ -107,7 +107,7 @@ def quartic_decay_two_osc(
     osc_freqs = [osc_freq0, osc_freq1]
     return quartic_decay_base(
         tau,
-        baseline,
+        # baseline,
         revival_time,
         quartic_decay_time,
         T2_ms,
@@ -229,10 +229,10 @@ def create_fit_figure(data, axes_pack=None, layout=None, no_legend=False):
         nv_counts = norm_counts[nv_ind]
         nv_counts_ste = norm_counts_ste[nv_ind]
         # Contrast, revival period, quartic decay tc, amp1, amp2
-        guess_params = [0.53, 75.5, 7, 0.4, 0.4]
-        bounds = [[0, 73, 0, 0, 0], [1, 77, np.inf, 1, 1]]
-        # guess_params = [75.5, 7, 0.4, 0.4]
-        # bounds = [[73, 0, 0, 0], [77, np.inf, 1, 1]]
+        # guess_params = [0.53, 75.5, 7, 0.4, 0.4]
+        # bounds = [[0, 73, 0, 0, 0], [1, 77, np.inf, 1, 1]]
+        guess_params = [75.5, 7, 0.4, 0.4]
+        bounds = [[73, 0, 0, 0], [77, np.inf, 1, 1]]
 
         # FFT to determine dominant frequency
         # even_counts = nv_counts[40:100] - 0.55
