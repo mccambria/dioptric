@@ -963,15 +963,18 @@ def get_server_magnet_rotation():
     """Get the signal generator that controls magnet rotation angle"""
     return common.get_server("magnet_rotation")
 
+
 @cache
 def get_server_thorslm():
     """Get the Thorslm server."""
     return common.get_server("thorslm")
 
+
 @cache
 def get_server_thorcam():
     """Get the Thorslm server."""
     return common.get_server("thorcam")
+
 
 # endregion
 # region Email utils

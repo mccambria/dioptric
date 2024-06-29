@@ -60,7 +60,7 @@ class QmOpx(Tagger, PulseGen, LabradServer):
     pc_name = socket.gethostname()
 
     def initServer(self):
-        tb.configure_logging(self)
+        tb.configure_logging(self, level=logging.ERROR)
 
         config = common.get_config_dict()
 
