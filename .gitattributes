@@ -1,2 +1,24 @@
-# Auto detect text files and perform LF normalization
+# Normalize all text files to LF line endings
 * text=auto
+
+# Explicitly declare text files we want to always be normalized and converted to LF line endings
+*.sh text eol=lf
+*.py text eol=lf
+*.md text eol=lf
+
+# Declare binary files to avoid any line ending normalization or diffing
+*.png binary
+*.jpg binary
+*.gif binary
+*.zip binary
+*.pdf binary
+*.exe binary
+
+# Use a custom diff driver for markdown files
+*.md diff=markdown
+
+# Use 'ours' merge strategy for lock files (useful for package manager lock files)
+*.lock merge=ours
+
+# Handle specific text file line endings
+*.bat text eol=crlf

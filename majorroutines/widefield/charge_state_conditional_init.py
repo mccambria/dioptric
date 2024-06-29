@@ -38,6 +38,7 @@ def process_and_plot(raw_data, mean_val=None):
     ### Setup
 
     nv_list = raw_data["nv_list"]
+    num_nvs = len(nv_list)
     counts = np.array(raw_data["counts"])[0]
     num_reps = raw_data["num_reps"]
     num_runs = raw_data["num_runs"]
@@ -62,17 +63,20 @@ def process_and_plot(raw_data, mean_val=None):
     # ax.set_yticks(range(10))
     ax.yaxis.set_minor_locator(MaxNLocator(integer=True))
 
-    def fit_fn(x, yintercept, slope, saturation):
-        return yintercept + saturation * x / (x + (1 / slope))
+    def fit_fn(x, y0, init, nondem):
+        term1 = ((nondem - init) ** x) * y0
+        term2 = init * num_nvs * (1 - (nondem - init) ** x) / (1 - (nondem - init))
+        return term1 + term2
 
     popt, pcov = curve_fit(
         fit_fn,
         reps_vals,
         avg_num_nvn,
-        p0=(0.5, 7, 9.2),
+        p0=(0.05, 0.7, 0.9),
         sigma=avg_num_nvn_ste,
         absolute_sigma=True,
     )
+    print(popt)
 
     reps_vals_linspace = np.linspace(0, 11, 1000)
     kpl.plot_line(ax, reps_vals_linspace, fit_fn(reps_vals_linspace, *popt))

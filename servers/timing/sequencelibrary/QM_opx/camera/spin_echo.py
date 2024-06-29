@@ -42,8 +42,9 @@ def get_seq(base_scc_seq_args, step_vals, num_reps=1):
                 qua.align()
                 seq_utils.macro_pi_on_2_pulse([uwave_ind])
                 qua.wait(step_val)
-                seq_utils.macro_pi_pulse([uwave_ind])
-                qua.wait(step_val)
+                # seq_utils.macro_pi_pulse([uwave_ind])
+                # seq_utils.macro_pi_on_2_pulse_b([uwave_ind])
+                # qua.wait(step_val)
                 seq_utils.macro_pi_on_2_pulse([uwave_ind])
                 qua.wait(buffer)
 

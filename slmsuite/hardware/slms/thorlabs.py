@@ -11,7 +11,7 @@ import ctypes
 import warnings
 import time
 import numpy as np
-sys.path.append('c:/Users/Saroj Chand/Documents/dioptric')
+# sys.path.append('c:/Users/Saroj Chand/Documents/dioptric')
 from slmsuite.hardware.slms.slm import SLM
 from slmsuite.hardware.Thorlabs_EXULUS_PythonSDK.Thorlabs_EXULUS_Python_SDK.EXULUS_COMMAND_LIB import*
 from slmsuite.hardware.Thorlabs_EXULUS_PythonSDK.Thorlabs_EXULUS_CGHDisplay.Thorlabs_EXULUS_CGHDisplay import*

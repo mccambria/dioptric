@@ -401,6 +401,17 @@ def macro_pi_on_2_pulse(uwave_ind_list):
         qua.wait(uwave_buffer, sig_gen_el)
 
 
+def macro_pi_on_2_pulse_b(uwave_ind_list):
+    if uwave_ind_list is None:
+        return
+    uwave_buffer = get_uwave_buffer()
+    for uwave_ind in uwave_ind_list:
+        sig_gen_el = get_sig_gen_element(uwave_ind)
+        qua.align()
+        qua.play("pi_on_2_pulse_b", sig_gen_el)
+        qua.wait(uwave_buffer, sig_gen_el)
+
+
 def get_macro_pi_on_2_pulse_duration(uwave_ind_list):
     duration = 0
     uwave_buffer = get_uwave_buffer()
