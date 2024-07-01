@@ -50,6 +50,7 @@ def process_and_plot(data):
         kpl.plot_bars(ax, nv_num, norm_counts[ind], yerr=norm_counts_ste[ind])
     ax.set_xlabel("NV index")
     ax.set_ylabel("Contrast")
+    print(norm_counts)
     print(np.mean(norm_counts))
 
     return

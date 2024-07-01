@@ -28,25 +28,27 @@ def get_seq(base_scc_seq_args, step_vals, num_reps=1):
         raise RuntimeError("Negative wait duration")
 
     with qua.program() as seq:
+
+        def uwave_macro_sig(uwave_ind_list, step_val):
+            # for uwave_ind in uwave_ind_list:
+            qua.align()
+            seq_utils.macro_pi_on_2_pulse(uwave_ind_list)
+            qua.wait(step_val)
+            seq_utils.macro_pi_pulse(uwave_ind_list)
+            qua.wait(step_val)
+            seq_utils.macro_pi_on_2_pulse(uwave_ind_list)
+            qua.wait(buffer)
+
         # def uwave_macro_sig(uwave_ind_list, step_val):
         #     for uwave_ind in uwave_ind_list:
-        #     qua.align()
-        #     seq_utils.macro_pi_on_2_pulse(uwave_ind_list)
-        #     qua.wait(step_val)
-        #     seq_utils.macro_pi_pulse(uwave_ind_list)
-        #     qua.wait(step_val)
-        #     seq_utils.macro_pi_on_2_pulse(uwave_ind_list)
-        #     qua.wait(buffer)
-        def uwave_macro_sig(uwave_ind_list, step_val):
-            for uwave_ind in uwave_ind_list:
-                qua.align()
-                seq_utils.macro_pi_on_2_pulse([uwave_ind])
-                qua.wait(step_val)
-                # seq_utils.macro_pi_pulse([uwave_ind])
-                # seq_utils.macro_pi_on_2_pulse_b([uwave_ind])
-                # qua.wait(step_val)
-                seq_utils.macro_pi_on_2_pulse([uwave_ind])
-                qua.wait(buffer)
+        #         qua.align()
+        #         seq_utils.macro_pi_on_2_pulse([uwave_ind])
+        #         qua.wait(step_val)
+        #         # seq_utils.macro_pi_pulse([uwave_ind])
+        #         # seq_utils.macro_pi_on_2_pulse_b([uwave_ind])
+        #         # qua.wait(step_val)
+        #         seq_utils.macro_pi_on_2_pulse([uwave_ind])
+        #         qua.wait(buffer)
 
         base_scc_sequence.macro(base_scc_seq_args, uwave_macro_sig, step_vals, num_reps)
 

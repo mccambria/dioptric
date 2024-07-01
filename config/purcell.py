@@ -104,7 +104,9 @@ config |= {
         "sig_gen_1": {
             "name": "sig_gen_STAN_sg394_2",
             "uwave_power": 8.1,
-            "frequency": 2.8124502997156644,
+            # "frequency": 2.8124502997156644,
+            "frequency": 3.05,
+            # "frequency": 2.79,
             # "frequency": 2.8874701085827104,
             "rabi_period": 128,
         },

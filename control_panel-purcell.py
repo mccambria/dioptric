@@ -855,8 +855,8 @@ if __name__ == "__main__":
     # Additional properties for the representative NV
     nv_list[0].representative = True
     nv_sig = widefield.get_repr_nv_sig(nv_list)
-    # nv_sig.expected_counts = 1150
-    nv_sig.expected_counts = 1200
+    nv_sig.expected_counts = 1150
+    # nv_sig.expected_counts = 1200
     # nv_sig.expected_counts = 1250
     num_nvs = len(nv_list)
 
