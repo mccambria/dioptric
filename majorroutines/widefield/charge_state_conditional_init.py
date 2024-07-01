@@ -47,18 +47,23 @@ def process_and_plot(raw_data, mean_val=None):
     num_nvn = np.sum(states, axis=0)
     num_nvn = num_nvn[:, 0, :]  # Just one step
     avg_num_nvn = np.mean(num_nvn, axis=0)  # Average over runs
-    avg_num_nvn_ste = np.std(num_nvn, axis=0) / np.sqrt(num_runs)
+    avg_num_nvn_ste = np.std(num_nvn, axis=0, ddof=1) / np.sqrt(num_runs)
 
     reps_vals = np.array(range(num_reps))
+
+    # Only use the data we're going to show
+    avg_num_nvn = avg_num_nvn[:11]
+    avg_num_nvn_ste = avg_num_nvn_ste[:11]
+    reps_vals = reps_vals[:11]
 
     figsize = kpl.figsize
     figsize[1] *= 0.6
     fig, ax = plt.subplots(figsize=figsize)
     kpl.plot_points(ax, reps_vals, avg_num_nvn, yerr=avg_num_nvn_ste)
 
-    def fit_fn(x, y0, init, nondem):
-        term1 = ((nondem - init) ** x) * y0
-        term2 = init * num_nvs * (1 - (nondem - init) ** x) / (1 - (nondem - init))
+    def fit_fn(x, y0, c1, c2):
+        term1 = (c1**x) * y0
+        term2 = c2 * num_nvs * (1 - (c1**x)) / (1 - c1)
         return term1 + term2
 
     popt, pcov = curve_fit(
@@ -70,6 +75,10 @@ def process_and_plot(raw_data, mean_val=None):
         absolute_sigma=True,
     )
     print(popt)
+    residuals = fit_fn(reps_vals, *popt) - avg_num_nvn
+    chi_sq = np.sum((residuals / avg_num_nvn_ste) ** 2)
+    red_chi_sq = chi_sq / (len(avg_num_nvn) - len(popt))
+    print(f"Red chi sq: {round(red_chi_sq, 3)}")
 
     reps_vals_linspace = np.linspace(0, 11, 1000)
     kpl.plot_line(ax, reps_vals_linspace, fit_fn(reps_vals_linspace, *popt))
