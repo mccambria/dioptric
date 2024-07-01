@@ -179,6 +179,7 @@ def main(nv_list, num_reps, num_runs, scc_include_inds=None, uwave_ind_list=[0, 
 
 if __name__ == "__main__":
     kpl.init_kplotlib()
-    data = dm.get_raw_data(file_id=1573914782129)
+    data = dm.get_raw_data(file_id=1575309155682)
+    # data = dm.get_raw_data(file_id=1575323838562)
     figs = process_and_plot(data)
     kpl.show(block=True)

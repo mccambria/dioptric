@@ -55,13 +55,6 @@ def process_and_plot(raw_data, mean_val=None):
     figsize[1] *= 0.6
     fig, ax = plt.subplots(figsize=figsize)
     kpl.plot_points(ax, reps_vals, avg_num_nvn, yerr=avg_num_nvn_ste)
-    ax.set_xlabel("Number of attempts")
-    ax.set_ylabel("Mean number NV$^{-}$")
-    ax.set_xlim((-0.5, 10.5))
-    ax.set_xticks(np.array(range(11)))
-    ax.set_yticks([0, 2, 4, 6, 8, 10])
-    # ax.set_yticks(range(10))
-    ax.yaxis.set_minor_locator(MaxNLocator(integer=True))
 
     def fit_fn(x, y0, init, nondem):
         term1 = ((nondem - init) ** x) * y0
@@ -83,6 +76,14 @@ def process_and_plot(raw_data, mean_val=None):
 
     if mean_val is not None:
         ax.axhline(mean_val, color=kpl.KplColors.GREEN, linestyle="dashed", linewidth=2)
+
+    ax.set_xlabel("Number of attempts")
+    ax.set_ylabel("Mean number NV$^{-}$")
+    ax.set_xlim((-0.5, 10.5))
+    ax.set_xticks(np.array(range(11)))
+    ax.set_yticks([0, 2, 4, 6, 8, 10])
+    # ax.set_yticks(range(10))
+    ax.yaxis.set_minor_locator(MaxNLocator(integer=True))
 
     return fig
 
