@@ -47,8 +47,8 @@ def process_and_plot(data):
     for ind in range(len(nv_list)):
         nv_sig = nv_list[ind]
         nv_num = widefield.get_nv_num(nv_sig)
-        if ind in [0, 1, 4, 6]:
-            kpl.plot_bars(ax, nv_num, norm_counts[ind], yerr=norm_counts_ste[ind])
+        # if ind in [0, 1, 4, 6]:
+        kpl.plot_bars(ax, nv_num, norm_counts[ind], yerr=norm_counts_ste[ind])
     ax.set_xlabel("NV index")
     ax.set_ylabel("Contrast")
     print(norm_counts)

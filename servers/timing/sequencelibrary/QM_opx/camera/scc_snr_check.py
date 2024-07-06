@@ -28,16 +28,16 @@ def get_seq(base_scc_seq_args, num_reps=1):
         def uwave_macro_sig(uwave_ind_list, step_val):
             # pass
             #     uwave_ind_list = [0]
-            # seq_utils.macro_pi_pulse(uwave_ind_list)
-            qua.align()
-            seq_utils.macro_pi_on_2_pulse(uwave_ind_list[1:])
-            qua.wait(tau)
-            seq_utils.macro_pi_on_2_pulse(uwave_ind_list[1:])
+            seq_utils.macro_pi_pulse(uwave_ind_list)
+            # qua.align()
+            # seq_utils.macro_pi_on_2_pulse(uwave_ind_list[1:])
             # qua.wait(tau)
-            # seq_utils.macro_pi_on_2_pulse(uwave_ind_list)
-            # qua.wait(tau)
-            # seq_utils.macro_pi_on_2_pulse(uwave_ind_list)
-            qua.wait(buffer)
+            # seq_utils.macro_pi_on_2_pulse(uwave_ind_list[1:])
+            # # qua.wait(tau)
+            # # seq_utils.macro_pi_on_2_pulse(uwave_ind_list)
+            # # qua.wait(tau)
+            # # seq_utils.macro_pi_on_2_pulse(uwave_ind_list)
+            # qua.wait(buffer)
             # for uwave_ind in uwave_ind_list:
             #     qua.align()
             #     seq_utils.macro_pi_on_2_pulse([uwave_ind])

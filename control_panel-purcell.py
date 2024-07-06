@@ -553,12 +553,12 @@ def do_opx_constant_ac():
     # opx.stream_start()
 
     # Yellow
-    # opx.constant_ac(
-    #     [],  # Digital channels
-    #     [7],  # Analog channels
-    #     [0.4],  # Analog voltages
-    #     [0],  # Analog frequencies
-    # )
+    opx.constant_ac(
+        [],  # Digital channels
+        [7],  # Analog channels
+        [0.4],  # Analog voltages
+        [0],  # Analog frequencies
+    )
     # Green
     # opx.constant_ac(
     #     [4],  # Digital channels
@@ -583,23 +583,23 @@ def do_opx_constant_ac():
     #         )
     #         time.sleep(0.5)
     #     opx.halt()
-    opx.constant_ac(
-        [1],  # Digital channels
-        # [2, 6],  # Analog channels
-        # [0.19, 0.19],  # Analog voltages
-        # [
-        #     75,
-        #     75,
-        # ],  # Analog frequencies                                                                                                                                                                       uencies
-    )
+    # opx.constant_ac(
+    #     [1],  # Digital channels
+    #     # [2, 6],  # Analog channels
+    #     # [0.19, 0.19],  # Analog voltages
+    #     # [
+    #     #     75,
+    #     #     75,
+    #     # ],  # Analog frequencies                                                                                                                                                                       uencies
+    # )
     # opx.constant_ac([1])  # Just laser
-    # # Green + red
+    # Green + red
     # opx.constant_ac(
     #     [4, 1],  # Digital channels
     #     [3, 4, 2, 6],  # Analog channels
     #     [0.19, 0.19, 0.17, 0.17],  # Analog voltages
     #     # [108.249, 108.582, 72.85, 73.55],  # Analog frequencies
-    #     [113.229, 112.796, 76.6, 76.6],
+    #     [110, 110, 75, 75],
     # )
     # red
     # opx.constant_ac(
@@ -619,7 +619,7 @@ def do_opx_constant_ac():
     # opx.constant_ac(
     #     [4, 1],  # Digital channels
     #     [3, 4, 2, 6, 7],  # Analog channels
-    #     [0.19, 0.19, 0.17, 0.17, 1.0],  # Analog voltages
+    #     [0.19, 0.19, 0.17, 0.17, 0.4],  # Analog voltages
     #     [110, 110, 75, 75, 0],  # Analog frequencies
     # )
     input("Press enter to stop...")
@@ -664,7 +664,7 @@ if __name__ == "__main__":
     pixel_coords_key = "pixel_coords"
 
     sample_name = "johnson"
-    z_coord = 4.63
+    z_coord = 3.98
     magnet_angle = 90
     date_str = "2024_03_12"
     global_coords = [None, None, z_coord]
@@ -931,10 +931,10 @@ if __name__ == "__main__":
 
         # pos.set_xyz_on_nv(nv_sig)
 
-        # for z in np.linspace(4.4, 4.7, 11):
+        # for z in np.linspace(3.8, 5.0, 31):
         #     nv_sig.coords[CoordsKey.GLOBAL][2] = z
         #     # do_widefield_image_sample(nv_sig, 20)
-        #     do_widefield_image_sample(nv_sig, 100)
+        #     do_widefield_image_sample(nv_sig, 20)
 
         # do_scanning_image_sample(nv_sig)
         # do_scanning_image_sample_zoom(nv_sig)
@@ -951,7 +951,7 @@ if __name__ == "__main__":
         # do_optimize_red(nv_sig)
         # do_image_single_nv(nv_sig)
 
-        optimize.optimize_pixel_and_z(nv_sig, do_plot=True)
+        # optimize.optimize_pixel_and_z(nv_sig, do_plot=True)
         # do_image_nv_list(nv_list)
         # for ind in range(20):
         #     do_optimize_pixel(nv_sig)
@@ -990,7 +990,7 @@ if __name__ == "__main__":
         # do_opx_square_wave()
 
         # nv_list = nv_list[::-1]
-        do_scc_snr_check(nv_list)
+        # do_scc_snr_check(nv_list)
         # do_optimize_scc_duration(nv_list)
         # do_optimize_scc_amp(nv_list)
         # do_crosstalk_check(nv_sig)
