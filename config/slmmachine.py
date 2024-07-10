@@ -19,6 +19,7 @@ config = {
     "linux_repo_path": home / "Documents/dioptric",
     "Servers": {
         "thorslm": "slm_THOR_exulus_hd2",
+        "thorcam": "camera_thorlabs_zelux",
     },
 }
 

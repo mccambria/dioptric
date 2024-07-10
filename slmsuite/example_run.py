@@ -17,6 +17,7 @@ import io
 from scipy.optimize import curve_fit
 
 from utils import tool_belt as tb
+from labrad.types import Value
 
 mpl.rc('image', cmap='Blues')
 
@@ -159,8 +160,14 @@ def load_wavefront_calibration():
     
 # region "cam_plot" function 
 def cam_plot():
-    cam.set_exposure(.0001)
+    cam.set_exposure(Value(0.0001, 's'))
     img = cam.get_image()
+    if img is None:
+        print("No image acquired")
+        return
+
+    # Ensure img is converted to the appropriate dtype if needed
+    img = img.astype(np.uint8)  # Example conversion to uint8
 
     # Plot the result
     plt.figure(figsize=(12, 9))
@@ -764,10 +771,10 @@ def camp2phase_calibration():
 
     nuvu_pixel_coords = [
         [131.144, 129.272], 
-       [261.477, 205.335], 
-       [435.139, 304.013], 
-       [310.023, 187.942], 
-       [444.169, 463.787], 
+        [261.477, 205.335], 
+        [435.139, 304.013], 
+        [310.023, 187.942], 
+        [444.169, 463.787], 
     ]
     # Convert the list to a numpy array
     nuvu_pixel_coords_array = np.array(nuvu_pixel_coords)
@@ -901,47 +908,77 @@ def plot_laguerre_gaussian_phase():
     laguerre_gaussian_phase =  toolbox.phase.laguerre_gaussian(grid=slm, l=12, p=0)  # Example values for l and p
     plot_phase(laguerre_gaussian_phase)
 
-# region run funtions
-try:
-    # slm = ThorSLM(serialNumber='00429430')
-    # cam = ThorCam(serial="26438", verbose=True)
-    cam = tb.get_server_thorcam()
-    slm = tb.get_server_thorslm()
+# try:
+#     slm = tb.get_server_thorslm()
+#     if slm is not None:
+#         # Print some attributes to ensure the correct device is connected
+#         print(f"Connected to SLM server: {slm.name}")
+#         info = slm.info()
+#         print(f"SLM Info: {info}")
+#     else:
+#         print("SLM server is None.")
+# except Exception as e:
+#     print(f"Failed to get SLM server: {e}")
+cam = tb.get_server_thorcam()
+cam.info()
+print(f"Camera Properties: {cam.info()}")
+cam_plot()
+# try:
+#     cam = tb.get_server_thorcam()
+#     if cam is not None:
+#         # Example: Print some attributes to ensure the correct device is connected
+#         print(f"Camera name: {cam.name}")
+#         print (f"camera width: {cam.get_width()}")
+#         print(f"Camera Properties: {cam.info()}")
+#          # Call the info method to retrieve camera properties
+#         properties = cam.info()
+#         cam_plot()
+#         # Print retrieved properties
 
-    fs = FourierSLM(cam, slm)
+# except Exception as e:
+#     print(f"Failed to get cam server: {e}")
 
-    # blaze()
-    # fourier_calibration()
-    # load_fourier_calibration()
-    # test_wavefront_calibration()
-    # wavefront_calibration()
-    # load_wavefront_calibration()
-    # fs.process_wavefront_calibration(r2_threshold=.9, smooth=True, plot=True)
-    square_array()
-    # save_initial_phase()
-    # animate_wavefront_shifts()
-    # real_time_dynamical_tweezers()
-    # selected_dynamical_tweezers()
-    # camp2phase_calibration()
-    # initial_phase()
-    # optimize_array()
-    # plot_laguerre_gaussian_phase()
-    # nvs_demo()
-    # circles()
-    # circle_pattern()
-    # smiley()pip i
-    # scatter_pattern()
-    # UCB_pattern()
-    # pattern_from_image()
-    # cam_plot()
-    # integrate_intensity()
+# # region run funtions
+# try:
+#     # slm = ThorSLM(serialNumber='00429430')
+#     # cam = ThorCam(serial="26438", verbose=True)
+#     cam = tb.get_server_thorcam()
+#     slm = tb.get_server_thorslm()
 
-finally:
-    print("Closing")
-    # After you're done using the camera
-    cam.close()  # Add this line
-    # Then close the SDK
-    ThorCam.close_sdk()
+#     # fs = FourierSLM(cam, slm)
+
+#     # blaze()
+#     # fourier_calibration()
+#     # load_fourier_calibration()
+#     # test_wavefront_calibration()
+#     # wavefront_calibration()
+#     # load_wavefront_calibration()
+#     # fs.process_wavefront_calibration(r2_threshold=.9, smooth=True, plot=True)
+#     # square_array()
+#     # save_initial_phase()
+#     # animate_wavefront_shifts()
+#     # real_time_dynamical_tweezers()
+#     # selected_dynamical_tweezers()
+#     # camp2phase_calibration()
+#     # initial_phase()
+#     # optimize_array()
+#     # plot_laguerre_gaussian_phase()
+#     # nvs_demo()
+#     # circles()
+#     # circle_pattern()
+#     # smiley()pip i
+#     # scatter_pattern()
+#     # UCB_pattern()
+#     # pattern_from_image()
+#     # cam_plot()
+#     # integrate_intensity()
+
+# finally:
+#     print("Closing")
+#     # After you're done using the camera
+#     cam.close()  # Add this line
+#     # Then close the SDK
+#     ThorCam.close_sdk()
 
     # slm.close()
 # endregions

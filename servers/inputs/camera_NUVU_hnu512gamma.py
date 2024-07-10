@@ -92,7 +92,6 @@ class CameraNuvuHnu512gamma(LabradServer):
 
     def initServer(self):
         tb.configure_logging(self)
-
         # For readability keep the C stuff in the nuvu_camera folder. To allow this file
         # to be easily imported in post-processing contexts, only import the C stuff if
         # we're actually initializating the server
