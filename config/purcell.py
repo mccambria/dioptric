@@ -104,7 +104,9 @@ config |= {
         "sig_gen_1": {
             "name": "sig_gen_STAN_sg394_2",
             "uwave_power": 8.1,
-            "frequency": 2.8124502997156644,
+            # "frequency": 2.8124502997156644,
+            "frequency": 3.05,
+            # "frequency": 2.79,
             # "frequency": 2.8874701085827104,
             "rabi_period": 128,
         },
@@ -437,6 +439,7 @@ opx_config = {
                 "off": "do_off",
                 "pi_pulse": "do_pi_pulse_0",
                 "pi_on_2_pulse": "do_pi_on_2_pulse_0",
+                "pi_on_2_pulse_b": "do_pi_on_2_pulse_b_0",
             },
         },
         "ao_sig_gen_STAN_sg394_i": {
@@ -468,6 +471,7 @@ opx_config = {
                 "off": "do_off",
                 "pi_pulse": "do_pi_pulse_1",
                 "pi_on_2_pulse": "do_pi_on_2_pulse_1",
+                "pi_on_2_pulse_b": "do_pi_on_2_pulse_b_1",
             },
         },
         "do_camera_trigger": {
@@ -655,23 +659,39 @@ opx_config = {
         },
         "do_pi_pulse_0": {
             "operation": "control",
-            "length": int(rabi_period_0 / 2),
+            "length": int(rabi_period_0 / 2) + 4,
             "digital_marker": "on",
         },
         "do_pi_on_2_pulse_0": {
             "operation": "control",
+            "length": int(rabi_period_0 / 4) + 4,
+            # "length": int(rabi_period_0 / 2) + 4,
+            # "length": 20,
+            "digital_marker": "on",
+        },
+        "do_pi_on_2_pulse_b_0": {
+            "operation": "control",
             "length": int(rabi_period_0 / 4),
+            # "length": int(rabi_period_0 / 2),
             # "length": 20,
             "digital_marker": "on",
         },
         "do_pi_pulse_1": {
             "operation": "control",
-            "length": int(rabi_period_1 / 2),
+            "length": int(rabi_period_1 / 2) + 4,
             "digital_marker": "on",
         },
         "do_pi_on_2_pulse_1": {
             "operation": "control",
+            "length": int(rabi_period_1 / 4) + 4,
+            # "length": int(rabi_period_1 / 2) + 4,
+            # "length": 20,
+            "digital_marker": "on",
+        },
+        "do_pi_on_2_pulse_b_1": {
+            "operation": "control",
             "length": int(rabi_period_1 / 4),
+            # "length": int(rabi_period_1 / 2),
             # "length": 20,
             "digital_marker": "on",
         },

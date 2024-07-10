@@ -47,9 +47,12 @@ def process_and_plot(data):
     for ind in range(len(nv_list)):
         nv_sig = nv_list[ind]
         nv_num = widefield.get_nv_num(nv_sig)
-        kpl.plot_bars(ax, nv_num, norm_counts[ind], yerr=norm_counts_ste[ind])
+        if ind in [0, 1, 4, 6]:
+            kpl.plot_bars(ax, nv_num, norm_counts[ind], yerr=norm_counts_ste[ind])
     ax.set_xlabel("NV index")
     ax.set_ylabel("Contrast")
+    print(norm_counts)
+    print(np.mean(norm_counts))
 
     return
 
@@ -177,6 +180,9 @@ def main(nv_list, num_reps, num_runs, scc_include_inds=None, uwave_ind_list=[0, 
 
 if __name__ == "__main__":
     kpl.init_kplotlib()
-    data = dm.get_raw_data(file_id=1573914782129)
+
+    data = dm.get_raw_data(file_id=1576977691052)
+    # data = dm.get_raw_data(file_id=1575309155682)
+    # data = dm.get_raw_data(file_id=1575323838562)
     figs = process_and_plot(data)
     kpl.show(block=True)
