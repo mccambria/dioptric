@@ -39,7 +39,7 @@ def process_and_plot(raw_data, mean_val=None):
 
     nv_list = raw_data["nv_list"]
     num_nvs = len(nv_list)
-    # counts = np.array(raw_data["counts"])[0]
+    counts = np.array(raw_data["counts"])[0]
     # states = widefield.threshold_counts(nv_list, counts, dynamic_thresh=False)
     states = np.array(raw_data["states"])[0]
     num_reps = raw_data["num_reps"]
@@ -64,7 +64,7 @@ def process_and_plot(raw_data, mean_val=None):
     reps_vals = reps_vals[:xlim]
 
     figsize = kpl.figsize
-    figsize[1] *= 0.6
+    figsize[1] *= 1.0
     fig, ax = plt.subplots(figsize=figsize)
     kpl.plot_points(ax, reps_vals, avg_num_nvn, yerr=avg_num_nvn_ste)
 
@@ -105,7 +105,7 @@ def process_and_plot(raw_data, mean_val=None):
     ### Inset histograms
 
     # fig, ax = plt.subplots()
-    ax = fig.add_axes([0.4, 0.05, width, height])
+    ax = fig.add_axes([0.38, 0.265, 0.6, 0.48])
     nv_ind = 3
     # nv_ind = 9
     # for rep_ind in reps_vals:
@@ -142,6 +142,7 @@ def process_and_plot(raw_data, mean_val=None):
     ax.legend()
     ax.set_xlabel("Integrated counts")
     ax.set_ylabel("Probability")
+    ax.set_yticks([0.0, 0.02, 0.04, 0.06])
 
     return fig
 
