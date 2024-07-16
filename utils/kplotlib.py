@@ -344,7 +344,7 @@ def init_kplotlib(
     plt.rcParams["figure.max_open_warning"] = 100
     plt.rcParams["image.cmap"] = "inferno"
     plt.rcParams["figure.constrained_layout.use"] = constrained_layout
-    plt.rcParams["image.interpolation"] = "none"
+    plt.rcParams["image.interpolation"] = "nearest"
     plt.rcParams["legend.fontsize"] = 0.9 * FontSize[default_font_size.value]
     plt.rcParams["legend.handlelength"] = 0.8
     plt.rcParams["legend.handletextpad"] = 0.4

@@ -39,15 +39,21 @@ def process_and_plot(raw_data, mean_val=None):
 
     nv_list = raw_data["nv_list"]
     num_nvs = len(nv_list)
-    counts = np.array(raw_data["counts"])[0]
+    # counts = np.array(raw_data["counts"])[0]
+    # states = widefield.threshold_counts(nv_list, counts, dynamic_thresh=False)
+    states = np.array(raw_data["states"])[0]
     num_reps = raw_data["num_reps"]
     num_runs = raw_data["num_runs"]
 
-    states = widefield.threshold_counts(nv_list, counts, dynamic_thresh=False)
     num_nvn = np.sum(states, axis=0)
     num_nvn = num_nvn[:, 0, :]  # Just one step
     avg_num_nvn = np.mean(num_nvn, axis=0)  # Average over runs
     avg_num_nvn_ste = np.std(num_nvn, axis=0, ddof=1) / np.sqrt(num_runs)
+
+    print("Perfect 10s")
+    print(np.count_nonzero(num_nvn[:, 1] == 10) / num_runs)
+    print(np.count_nonzero(num_nvn[:, 5] == 10) / num_runs)
+    print(np.count_nonzero(num_nvn[:, 3:10] == 10) / (7 * num_runs))
 
     reps_vals = np.array(range(num_reps))
 
@@ -75,6 +81,7 @@ def process_and_plot(raw_data, mean_val=None):
         absolute_sigma=True,
     )
     print(popt)
+    print(fit_fn(1000, *popt))
     residuals = fit_fn(reps_vals, *popt) - avg_num_nvn
     chi_sq = np.sum((residuals / avg_num_nvn_ste) ** 2)
     red_chi_sq = chi_sq / (len(avg_num_nvn) - len(popt))
@@ -173,6 +180,7 @@ if __name__ == "__main__":
     num_runs = data["num_runs"]
     num_reps = data["num_reps"]
     mean_val = np.sum(states) / (num_runs * num_reps)
+    print(mean_val)
 
     ## Main plot
     # data = dm.get_raw_data(file_id=1567957794147)
