@@ -58,9 +58,10 @@ def process_and_plot(raw_data, mean_val=None):
     reps_vals = np.array(range(num_reps))
 
     # Only use the data we're going to show
-    avg_num_nvn = avg_num_nvn[:11]
-    avg_num_nvn_ste = avg_num_nvn_ste[:11]
-    reps_vals = reps_vals[:11]
+    xlim = 11
+    avg_num_nvn = avg_num_nvn[:xlim]
+    avg_num_nvn_ste = avg_num_nvn_ste[:xlim]
+    reps_vals = reps_vals[:xlim]
 
     figsize = kpl.figsize
     figsize[1] *= 0.6
@@ -87,7 +88,7 @@ def process_and_plot(raw_data, mean_val=None):
     red_chi_sq = chi_sq / (len(avg_num_nvn) - len(popt))
     print(f"Red chi sq: {round(red_chi_sq, 3)}")
 
-    reps_vals_linspace = np.linspace(0, 11, 1000)
+    reps_vals_linspace = np.linspace(0, xlim, 1000)
     kpl.plot_line(ax, reps_vals_linspace, fit_fn(reps_vals_linspace, *popt))
 
     if mean_val is not None:
@@ -100,6 +101,47 @@ def process_and_plot(raw_data, mean_val=None):
     ax.set_yticks([0, 2, 4, 6, 8, 10])
     # ax.set_yticks(range(10))
     ax.yaxis.set_minor_locator(MaxNLocator(integer=True))
+
+    ### Inset histograms
+
+    # fig, ax = plt.subplots()
+    ax = fig.add_axes([0.4, 0.05, width, height])
+    nv_ind = 3
+    # nv_ind = 9
+    # for rep_ind in reps_vals:
+    hist_reps_vals = [0, 1, 3]
+    # hist_reps_vals = [0, 1, 2, 3]
+    num_hist_reps_vals = len(hist_reps_vals)
+    colors = [
+        kpl.KplColors.GRAY,
+        mpl.colors.cnames["goldenrod"],
+        kpl.KplColors.BROWN,
+    ]
+    # colors = [
+    #     kpl.KplColors.GRAY,
+    #     mpl.colors.cnames["steelblue"],
+    #     mpl.colors.cnames["darkslateblue"],
+    # ]
+    colors = [mpl.colors.rgb2hex(color) for color in colors]
+    for ind in range(num_hist_reps_vals):
+        rep_ind = hist_reps_vals[ind]
+        # color_rgb = mpl.colormaps["inferno"](ind / (num_hist_reps_vals - 1))
+        color = colors[ind]
+        # color = mpl.colors.rgb2hex(color_rgb)
+        label = "1 attempt" if rep_ind == 1 else f"{rep_ind} attempts"
+        kpl.histogram(
+            ax,
+            counts[nv_ind, :, 0, rep_ind],
+            color=color,
+            density=True,
+            # facecolor="none",
+            bin_size=4,
+            lw=1.5,
+            label=label,
+        )
+    ax.legend()
+    ax.set_xlabel("Integrated counts")
+    ax.set_ylabel("Probability")
 
     return fig
 
@@ -185,7 +227,7 @@ if __name__ == "__main__":
     ## Main plot
     # data = dm.get_raw_data(file_id=1567957794147)
     # data = dm.get_raw_data(file_id=1570547331729)
-    data = dm.get_raw_data(file_id=1573541903486)  # init ionized data
+    data = dm.get_raw_data(file_id=1573541903486)  # initially ionized data set
     process_and_plot(data, mean_val=mean_val)
     kpl.show(block=True)
 
