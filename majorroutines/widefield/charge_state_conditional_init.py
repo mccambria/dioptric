@@ -40,24 +40,31 @@ def process_and_plot(raw_data, mean_val=None):
     nv_list = raw_data["nv_list"]
     num_nvs = len(nv_list)
     counts = np.array(raw_data["counts"])[0]
+    # states = widefield.threshold_counts(nv_list, counts, dynamic_thresh=False)
+    states = np.array(raw_data["states"])[0]
     num_reps = raw_data["num_reps"]
     num_runs = raw_data["num_runs"]
 
-    states = widefield.threshold_counts(nv_list, counts, dynamic_thresh=False)
     num_nvn = np.sum(states, axis=0)
     num_nvn = num_nvn[:, 0, :]  # Just one step
     avg_num_nvn = np.mean(num_nvn, axis=0)  # Average over runs
     avg_num_nvn_ste = np.std(num_nvn, axis=0, ddof=1) / np.sqrt(num_runs)
 
+    print("Perfect 10s")
+    print(np.count_nonzero(num_nvn[:, 1] == 10) / num_runs)
+    print(np.count_nonzero(num_nvn[:, 5] == 10) / num_runs)
+    print(np.count_nonzero(num_nvn[:, 3:10] == 10) / (7 * num_runs))
+
     reps_vals = np.array(range(num_reps))
 
     # Only use the data we're going to show
-    avg_num_nvn = avg_num_nvn[:11]
-    avg_num_nvn_ste = avg_num_nvn_ste[:11]
-    reps_vals = reps_vals[:11]
+    xlim = 11
+    avg_num_nvn = avg_num_nvn[:xlim]
+    avg_num_nvn_ste = avg_num_nvn_ste[:xlim]
+    reps_vals = reps_vals[:xlim]
 
     figsize = kpl.figsize
-    figsize[1] *= 0.6
+    figsize[1] *= 1.0
     fig, ax = plt.subplots(figsize=figsize)
     kpl.plot_points(ax, reps_vals, avg_num_nvn, yerr=avg_num_nvn_ste)
 
@@ -75,12 +82,13 @@ def process_and_plot(raw_data, mean_val=None):
         absolute_sigma=True,
     )
     print(popt)
+    print(fit_fn(1000, *popt))
     residuals = fit_fn(reps_vals, *popt) - avg_num_nvn
     chi_sq = np.sum((residuals / avg_num_nvn_ste) ** 2)
     red_chi_sq = chi_sq / (len(avg_num_nvn) - len(popt))
     print(f"Red chi sq: {round(red_chi_sq, 3)}")
 
-    reps_vals_linspace = np.linspace(0, 11, 1000)
+    reps_vals_linspace = np.linspace(0, xlim, 1000)
     kpl.plot_line(ax, reps_vals_linspace, fit_fn(reps_vals_linspace, *popt))
 
     if mean_val is not None:
@@ -93,6 +101,48 @@ def process_and_plot(raw_data, mean_val=None):
     ax.set_yticks([0, 2, 4, 6, 8, 10])
     # ax.set_yticks(range(10))
     ax.yaxis.set_minor_locator(MaxNLocator(integer=True))
+
+    ### Inset histograms
+
+    # fig, ax = plt.subplots()
+    ax = fig.add_axes([0.38, 0.265, 0.6, 0.48])
+    nv_ind = 3
+    # nv_ind = 9
+    # for rep_ind in reps_vals:
+    hist_reps_vals = [0, 1, 3]
+    # hist_reps_vals = [0, 1, 2, 3]
+    num_hist_reps_vals = len(hist_reps_vals)
+    colors = [
+        kpl.KplColors.GRAY,
+        mpl.colors.cnames["goldenrod"],
+        kpl.KplColors.BROWN,
+    ]
+    # colors = [
+    #     kpl.KplColors.GRAY,
+    #     mpl.colors.cnames["steelblue"],
+    #     mpl.colors.cnames["darkslateblue"],
+    # ]
+    colors = [mpl.colors.rgb2hex(color) for color in colors]
+    for ind in range(num_hist_reps_vals):
+        rep_ind = hist_reps_vals[ind]
+        # color_rgb = mpl.colormaps["inferno"](ind / (num_hist_reps_vals - 1))
+        color = colors[ind]
+        # color = mpl.colors.rgb2hex(color_rgb)
+        label = "1 attempt" if rep_ind == 1 else f"{rep_ind} attempts"
+        kpl.histogram(
+            ax,
+            counts[nv_ind, :, 0, rep_ind],
+            color=color,
+            density=True,
+            # facecolor="none",
+            bin_size=4,
+            lw=1.5,
+            label=label,
+        )
+    ax.legend()
+    ax.set_xlabel("Integrated counts")
+    ax.set_ylabel("Probability")
+    ax.set_yticks([0.0, 0.02, 0.04, 0.06])
 
     return fig
 
@@ -173,11 +223,12 @@ if __name__ == "__main__":
     num_runs = data["num_runs"]
     num_reps = data["num_reps"]
     mean_val = np.sum(states) / (num_runs * num_reps)
+    print(mean_val)
 
     ## Main plot
     # data = dm.get_raw_data(file_id=1567957794147)
     # data = dm.get_raw_data(file_id=1570547331729)
-    data = dm.get_raw_data(file_id=1573541903486)  # init ionized data
+    data = dm.get_raw_data(file_id=1573541903486)  # initially ionized data set
     process_and_plot(data, mean_val=mean_val)
     kpl.show(block=True)
 

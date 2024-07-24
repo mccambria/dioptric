@@ -344,7 +344,7 @@ def init_kplotlib(
     plt.rcParams["figure.max_open_warning"] = 100
     plt.rcParams["image.cmap"] = "inferno"
     plt.rcParams["figure.constrained_layout.use"] = constrained_layout
-    plt.rcParams["image.interpolation"] = "none"
+    plt.rcParams["image.interpolation"] = "nearest"
     plt.rcParams["legend.fontsize"] = 0.9 * FontSize[default_font_size.value]
     plt.rcParams["legend.handlelength"] = 0.8
     plt.rcParams["legend.handletextpad"] = 0.4
@@ -757,7 +757,7 @@ def on_click_image(event):
         pass
 
 
-def histogram(ax, data, hist_type=HistType.INTEGER, nbins=None, **kwargs):
+def histogram(ax, data, hist_type=HistType.INTEGER, nbins=None, bin_size=1, **kwargs):
     """Similar to matplotlib's hist, but with our defaults
 
     Parameters
@@ -796,12 +796,20 @@ def histogram(ax, data, hist_type=HistType.INTEGER, nbins=None, **kwargs):
     if hist_type == HistType.INTEGER:
         data = [round(el) for el in data]
         max_data = max(data)
-        rng = (-0.5, max_data + 0.5)
-        nbins = max_data + 1
+        if bin_size == 1:
+            rng = (-0.5, max_data + 0.5)
+            nbins = max_data + 1
+        else:
+            nbins = int(np.ceil(max_data / bin_size))
+            rng = (0, bin_size * nbins)
     else:
         rng = None
     if hist_type == HistType.INTEGER or hist_type == HistType.STEP:
-        facecolor = alpha_color_hex(color)
+        if "facecolor" in kwargs:
+            facecolor = kwargs["facecolor"]
+            del kwargs["facecolor"]
+        else:
+            facecolor = alpha_color_hex(color)
         occur, bin_edges, _ = ax.hist(
             data,
             histtype="step",
