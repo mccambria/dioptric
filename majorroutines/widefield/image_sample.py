@@ -286,11 +286,20 @@ if __name__ == "__main__":
     ######
 
     ### Basic widefield
-    # # data = dm.get_raw_data(file_id=1556420881234, load_npz=True)
-    # data = dm.get_raw_data(file_id=1556655608661, load_npz=True)
-    # img_array = np.array(data["img_array"])
+    # data = dm.get_raw_data(file_id=1556420881234, load_npz=True)
+    data = dm.get_raw_data(file_id=1556655608661, load_npz=True)
+    img_array = np.array(data["img_array"])
     # img_array = widefield.adus_to_photons(img_array)
-    # img_array_offset = [0, 0]
+    img_array_offset = [0, 0]
+
+    fig, ax = plt.subplots()
+    kpl.imshow(ax, img_array)
+    ax.axis("off")
+
+    scale = 2 * widefield.get_camera_scale()
+    kpl.scale_bar(ax, scale, "2 µm", kpl.Loc.UPPER_RIGHT)
+
+    kpl.show(block=True)
 
     ### Smiley
     smiley_inds = list(range(6))
@@ -397,8 +406,8 @@ if __name__ == "__main__":
     kpl.imshow(ax, img_array, cbar_label="Photons", vmin=0.05, vmax=0.45)
     ax.axis("off")
 
-    scale = widefield.get_camera_scale()
-    kpl.scale_bar(ax, scale, "1 µm", kpl.Loc.UPPER_RIGHT)
+    scale = 2 * widefield.get_camera_scale()
+    kpl.scale_bar(ax, scale, "2 µm", kpl.Loc.UPPER_RIGHT)
     # pixel_coords_list = [pixel_coords_list[ind] for ind in range(10)]
     # widefield.draw_circles_on_nvs(ax, pixel_coords_list=pixel_coords_list)
     pixel_coords_list = [pixel_coords_list[ind] for ind in [0, 1, 5, 6, 10, 11]]

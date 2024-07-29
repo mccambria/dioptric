@@ -467,7 +467,7 @@ def determine_threshold(
         threshold = single_threshold
 
     # if not single_or_dual:
-    if False:
+    if True:
         smooth_x_vals = np.linspace(0, max_count, 10 * (max_count + 1))
         fig, ax = plt.subplots()
         max_data = max(counts_list)
@@ -488,13 +488,31 @@ def determine_threshold(
             facecolor=facecolor,
             fill=True,
             range=rng,
-            label="Histogram",
+            # label="Histogram",
             density=True,
         )
         # ax.plot(x_vals, fit_fn(x_vals, *guess_params))
-        ax.plot(smooth_x_vals, fit_fn(smooth_x_vals, *popt), label="Fit")
+        # popt: prob_nv0, mean_nv0, std_nv0, skew_nv0, mean_nvn, std_nvn, skew_nvn
+        ax.plot(
+            smooth_x_vals,
+            popt[0] * skew_gaussian_pdf(smooth_x_vals, *popt[1:4]),
+            color="#d62728",
+            label="NV⁰ mode",
+        )
+        ax.plot(
+            smooth_x_vals,
+            (1 - popt[0]) * skew_gaussian_pdf(smooth_x_vals, *popt[4:]),
+            color="#2ca02c",
+            label="NV⁻ mode",
+        )
+        ax.plot(
+            smooth_x_vals,
+            fit_fn(smooth_x_vals, *popt),
+            color="#1f77b4",
+            label="Combined",
+        )
         if single_or_dual:
-            ax.axvline(threshold, color="red", label="Threshold")
+            ax.axvline(threshold, color="#7f7f7f", linestyle="dashed", linewidth=2)
         else:
             ax.axvline(threshold[0], color="red")
             ax.axvline(threshold[1], color="black")
