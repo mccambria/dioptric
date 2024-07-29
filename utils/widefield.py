@@ -82,9 +82,9 @@ def crop_img_arrays(img_arrays, offsets=[0, 0], buffer=20):
                 for rep_ind in range(shape[2]):
                     img_array = img_arrays[exp_ind, run_ind, step_ind, rep_ind]
                     cropped_img_array = crop_img_array(img_array, offset, buffer)
-                    cropped_img_arrays[
-                        exp_ind, run_ind, step_ind, rep_ind
-                    ] = cropped_img_array
+                    cropped_img_arrays[exp_ind, run_ind, step_ind, rep_ind] = (
+                        cropped_img_array
+                    )
     return cropped_img_arrays
 
 
@@ -508,21 +508,23 @@ def get_base_scc_seq_args(
     nv_list: list[NVSig], uwave_ind_list: list[int], scc_include_inds=None
 ):
     """Return base seq_args for any SCC routine. The base sequence arguments
-    are the minimum info required for state preparation and SCC
+    are the minimum info required for state preparation and SCC.
 
     Parameters
     ----------
     nv_list : list[NVSig]
         List of nv signatures to target
-    uwave_ind : int
-        Index of the microwave chain to run for state prep
+    uwave_ind_list : list[int]
+        List of indices of the microwave chains to run for state prep
+    scc_include_inds : list[int], optional
+        Indices to include in the SCC
 
     Returns
     -------
     list
         Sequence arguments
     """
-
+    # Get lists
     pol_coords_list = get_coords_list(nv_list, LaserKey.CHARGE_POL)
     scc_coords_list = get_coords_list(
         nv_list, LaserKey.SCC, include_inds=scc_include_inds
@@ -530,7 +532,9 @@ def get_base_scc_seq_args(
     scc_duration_list = get_scc_duration_list(nv_list, include_inds=scc_include_inds)
     scc_amp_list = get_scc_amp_list(nv_list, include_inds=scc_include_inds)
     spin_flip_ind_list = get_spin_flip_ind_list(nv_list)
+    # threshold_list = get_threshold_list(nv_list, include_inds=scc_include_inds)
 
+    # Create list of arguments
     seq_args = [
         pol_coords_list,
         scc_coords_list,
@@ -539,6 +543,8 @@ def get_base_scc_seq_args(
         spin_flip_ind_list,
         uwave_ind_list,
     ]
+    # print(seq_args)
+
     return seq_args
 
 
@@ -591,7 +597,19 @@ def get_scc_amp_list(nv_list: list[NVSig], include_inds=None):
     return scc_amp_list
 
 
-# endregion
+def get_threshold_list(nv_list: list[NVSig], include_inds=None):
+    threshold_list = []
+    for nv in nv_list:
+        threshold = nv.threshold
+        if threshold is None:
+            config = common.get_config_dict()
+            threshold = config["Default"]["threshold"]
+        threshold_list.append(threshold)
+    if include_inds is not None:
+        threshold_list = [threshold_list[ind] for ind in include_inds]
+    return threshold_list
+
+
 # region Drift tracking
 
 

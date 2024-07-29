@@ -57,13 +57,13 @@ def do_widefield_image_sample(nv_sig, num_reps=1):
 
 
 def do_scanning_image_sample(nv_sig):
-    scan_range = 6
-    num_steps = 5
+    scan_range = 7
+    num_steps = 10
     image_sample.scanning(nv_sig, scan_range, scan_range, num_steps)
 
 
 def do_scanning_image_sample_zoom(nv_sig):
-    scan_range = 0.5
+    scan_range = 0.01
     num_steps = 5
     image_sample.scanning(nv_sig, scan_range, scan_range, num_steps)
 
@@ -82,8 +82,8 @@ def do_image_single_nv(nv_sig):
 def do_charge_state_histograms(nv_list):
     # num_reps = 200
     num_reps = 100
-    num_runs = 40
-    # num_runs = 20
+    # num_runs = 50
+    num_runs = 20
     # num_runs = 10
     # num_runs = 2
     # for ion_include_inds in [None, [0, 1, 2, 3, 4, 5]]:
@@ -150,8 +150,8 @@ def do_optimize_loop(nv_list, coords_key, scanning_from_pixel=False):
             # imaging_laser = tb.get_laser_name(LaserKey.IMAGING)
             # if scanning_from_pixel:
             #     widefield.set_nv_scanning_coords_from_pixel_coords(nv, imaging_laser)
-            # opti_coords = do_optimize_pixel(nv)
-            opti_coords = optimize.optimize_pixel_with_img_array(img_array, nv_sig=nv)
+            opti_coords = do_optimize_pixel(nv)
+            # opti_coords = optimize.optimize_pixel_with_img_array(img_array, nv_sig=nv)
             # widefield.reset_all_drift()
 
         # Scanning coords
@@ -553,19 +553,13 @@ def do_opx_constant_ac():
     # opx.stream_start()
 
     # Yellow
-    opx.constant_ac(
-        [],  # Digital channels
-        [7],  # Analog channels
-        [0.4],  # Analog voltages
-        [0],  # Analog frequencies
-    )
-    # Green
     # opx.constant_ac(
-    #     [4],  # Digital channels
-    #     # [3, 4],  # Analog channels
-    #     # [0.11, 0.11],  # Analog voltages
-    #     # [110, 110],  # Analog frequencies
+    #     [],  # Digital channels
+    #     [7],  # Analog channels
+    #     [0.4],  # Analog voltages
+    #     [0],  # Analog frequencies
     # )
+
     # opx.constant_ac([4])  # Just laser
     # Red
     # freqs = [65, 75, 85]
@@ -593,12 +587,20 @@ def do_opx_constant_ac():
     #     # ],  # Analog frequencies                                                                                                                                                                       uencies
     # )
     # opx.constant_ac([1])  # Just laser
-    # Green + red
+    # Green
+    # opx.constant_ac(
+    #     [4],  # Digital channels
+    #     [3, 4],  # Analog channels
+    #     [0.19, 0.19],  # Analog voltages
+    #     [110.0, 110.0],  # Analog frequencies
+    # )
+    # # Green + red
     # opx.constant_ac(
     #     [4, 1],  # Digital channels
     #     [3, 4, 2, 6],  # Analog channels
     #     [0.19, 0.19, 0.17, 0.17],  # Analog voltages
-    #     # [108.249, 108.582, 72.85, 73.55],  # Analog frequencies
+    #     # [109.409, 111.033, 73.0, 77.3],  # Analog frequencies
+    #     # [108.907, 112.362, 74.95, 78.65],  # Analog frequencies
     #     [110, 110, 75, 75],
     # )
     # red
@@ -606,14 +608,14 @@ def do_opx_constant_ac():
     #     [1],  # Digital channels
     #     [2, 6],  # Analog channels
     #     [0.17, 0.17],  # Analog voltages
-    #     [76.7, 76.6],  # Analog frequencies
+    #     [75.7, 74.95],  # Analog frequencies
     # )
     # Green + yellow
     # opx.constant_ac(
     #     [4],  # Digital channels
     #     [3, 4, 7],  # Analog channels
-    #     [0.19, 0.19, 1.0],  # Analog voltages
-    #     [110.5, 110, 0],  # Analog frequencies
+    #     [0.19, 0.19, 0.4],  # Analog voltages
+    #     [110, 110, 0],  # Analog frequencies
     # )
     # Red + green + Yellow
     # opx.constant_ac(
@@ -664,7 +666,7 @@ if __name__ == "__main__":
     pixel_coords_key = "pixel_coords"
 
     sample_name = "johnson"
-    z_coord = 3.98
+    z_coord = 4.27
     magnet_angle = 90
     date_str = "2024_03_12"
     global_coords = [None, None, z_coord]
@@ -672,167 +674,34 @@ if __name__ == "__main__":
     # endregion
     # region Coords (publication set)
     pixel_coords_list = [
-        [131.144, 129.272],  #  Smiley
-        [161.477, 105.335],  #  Smiley
-        [135.139, 104.013],
-        [110.023, 87.942],
-        [144.169, 163.787],
-        [173.93, 78.505],  #  Smiley
-        [171.074, 49.877],  #  Smiley
-        [170.501, 132.597],
-        [137.025, 74.662],
-        [58.628, 139.616],
-        # Smiley additions
-        [150.34, 119.249],  # Too much crosstalk
-        [61.277, 76.387],
-        [85.384, 33.935],
+        [87.003, 140.444],
+        [92.176, 143.419],
+        [92.561, 150.425],
+        [92.251, 160.428],
+        [101.79, 157.333],
+        [101.731, 164.294],
     ]
-    for pair in pixel_coords_list:
-        pair[0] += 4
-        pair[1] -= 15
     num_nvs = len(pixel_coords_list)
     green_coords_list = [
-        [108.463, 110.222],
-        [109.141, 110.831],
-        [108.59, 110.861],
-        [107.94, 111.123],
-        [108.791, 109.466],
-        [109.397, 111.413],
-        [109.244, 112.113],
-        [109.387, 110.167],
-        [108.529, 111.472],
-        [106.843, 109.874],
-        #
-        [108.869, 110.525],
-        [106.776, 111.351],
-        [107.227, 112.366],
+        [110.782, 109.581],
+        [110.249, 109.618],
+        [110.26, 110.32],
+        [110.245, 111.449],
+        [109.084, 111.052],
+        [109.048, 111.794],
     ]
     red_coords_list = [
-        [73.497, 75.563],
-        [74.042, 76.036],
-        [73.527, 76.016],
-        [73.04, 76.28],
-        [73.754, 74.915],
-        [74.227, 76.542],
-        [74.142, 77.09],
-        [74.208, 75.515],
-        [73.518, 76.561],
-        [72.122, 75.258],
-        #
-        [73.825, 75.724],
-        [72.124, 76.462],
-        [72.518, 77.284],
+        [75.369, 74.715],
+        [74.819, 74.939],
+        [74.84, 75.595],
+        [74.984, 76.737],
+        [74.076, 76.237],
+        [74.124, 77.099],
     ]
-    # 50 ms, 0.353
-    # threshold_list = [
-    #     29.5,
-    #     29.5,
-    #     32.5,
-    #     35.5,
-    #     26.5,
-    #     23.5,
-    #     22.5,
-    #     21.5,
-    #     33.5,
-    #     25.5,
-    #     #
-    #     23.5,
-    #     33.5,
-    #     29.5,
-    # ]
-    # 100 ms, 0.33
-    # threshold_list = [
-    #     35.5,
-    #     32.5,
-    #     35.5,
-    #     41.5,
-    #     30.5,
-    #     24.5,
-    #     24.5,
-    #     23.5,
-    #     37.5,
-    #     31.5,
-    #     #
-    #     23.5,
-    #     33.5,
-    #     29.5,
-    # ]
-    # 100 ms, 0.32
-    threshold_list = [
-        26.5,
-        22.5,
-        26.5,
-        29.5,
-        20.5,
-        16.5,
-        16.5,
-        16.5,
-        25.5,
-        23.5,
-        #
-        23.5,
-        33.5,
-        29.5,
-    ]
-    scc_duration_list = [
-        118,
-        106,
-        120,
-        106,
-        123,
-        111,
-        131,
-        132,
-        110,
-        103,
-        #
-        120,
-        120,
-        120,
-    ]
-    scc_duration_list = [100] * num_nvs
-    scc_duration_list[5] = 150
-    scc_duration_list[7] = 150
-    scc_duration_list[8] = 150
-    scc_duration_list[9] = 150
-    # scc_duration_list = [
-    #     50,
-    #     90,
-    #     120,
-    #     106,
-    #     123,
-    #     111,
-    #     131,
-    #     132,
-    #     110,
-    #     103,
-    #     #
-    #     100,
-    #     100,
-    #     100,
-    # ]
-    # scc_duration_list = [
-    #     138,
-    #     124,
-    #     111,
-    #     156,
-    #     139,
-    #     104,
-    #     104,
-    #     105,
-    #     106,
-    #     135,
-    #     120,
-    #     120,
-    #     120,
-    # ]
+    threshold_list = [79.5, 83.5, 85.5, 78.5, 79.5, 68.5]
     scc_duration_list = [140] * num_nvs
     scc_duration_list = [4 * round(el / 4) for el in scc_duration_list]
-    scc_amp_list = [0.942, 0.91, 0.87, 0.94, 0.94, 0.94, 0.9, 0.98, 0.84, 0.94, 1, 1, 1]
-    # scc_amp_list = [1.0] * num_nvs
-    # scc_duration_list = [None] * num_nvs
-    # endregion
-    # region NV list construction
+    scc_amp_list = [1, 1, 1, 1, 1, 1]
 
     # nv_list[i] will have the ith coordinates from the above lists
     nv_list: list[NVSig] = []
@@ -846,20 +715,28 @@ if __name__ == "__main__":
         nv_sig = NVSig(
             name=f"{sample_name}-nv{ind}_{date_str}",
             coords=coords,
-            threshold=threshold_list[ind],
             scc_duration=scc_duration_list[ind],
             scc_amp=scc_amp_list[ind],
+            threshold=threshold_list[ind],
         )
         nv_list.append(nv_sig)
-
     # Additional properties for the representative NV
     nv_list[0].representative = True
     nv_sig = widefield.get_repr_nv_sig(nv_list)
-    nv_sig.expected_counts = 1150
+    nv_sig.expected_counts = None
+    # nv_sig.expected_counts = 1150
     # nv_sig.expected_counts = 1200
     # nv_sig.expected_counts = 1250
     num_nvs = len(nv_list)
+    # print(f"Final NV List: {nv_list}")
+    # Ensure data is defined before accessing it
+    # data = None
 
+    # try:
+    #     pulse_gen.stream_load(seq_file, seq_args_string, num_reps)
+    #     counts = np.array(data["counts"])[0] if data else None
+    # except Exception as e:
+    #     print(f"Error occurred: {e}")
     # nv_inds = [0, 1]
     # nv_list = [nv_list[ind] for ind in range(num_nvs) if ind in nv_inds]
     # num_nvs = len(nv_list)
@@ -901,15 +778,13 @@ if __name__ == "__main__":
     #     print(f"{r_coords},")
     # sys.exit()
 
-    # nv_list = [nv_list[ind] for ind in [0, 1, 5, 6, 10, 11, 12]]  # Smiley
-    # nv_list = [nv_list[ind] for ind in [0, 1, 5, 6, 10, 11]]  # Smiley
     # nv_list = [nv_list[0], *nv_list[10:]]
     # nv_list = [nv_list[2]]
-    nv_list = nv_list[:10]
+    # nv_list = nv_list[: len(nv_list)]
 
     # endregion
 
-    ### Functions to run
+    # region Functions to run
 
     email_recipient = "mccambria@berkeley.edu"
     do_email = False
@@ -918,12 +793,12 @@ if __name__ == "__main__":
 
         kpl.init_kplotlib()
         # tb.init_safe_stop()
-
+        #
         # widefield.reset_all_drift()
         # pos.reset_drift()  # Reset z drift
         # widefield.set_pixel_drift(
-        #     np.array([149.886, 175.123])  # New coords
-        #     - np.array([131.144 + 4, 129.272 - 15])  # Original coords
+        #     np.array([93.093, 120.507])  # New coords
+        #     - np.array([96.549, 119.583])  # Original coords
         # )
         # widefield.set_all_scanning_drift_from_pixel_drift()
 
@@ -931,30 +806,27 @@ if __name__ == "__main__":
 
         # pos.set_xyz_on_nv(nv_sig)
 
-        # for z in np.linspace(3.8, 5.0, 31):
+        # for z in np.linspace(3.5, 5.0, 16):
         #     nv_sig.coords[CoordsKey.GLOBAL][2] = z
-        #     # do_widefield_image_sample(nv_sig, 20)
-        #     do_widefield_image_sample(nv_sig, 20)
+        #     # do_scanning_image_sample(nv_sig)
+        #     do_widefield_image_sample(nv_sig, 50)
 
         # do_scanning_image_sample(nv_sig)
         # do_scanning_image_sample_zoom(nv_sig)
-        # do_widefield_image_sample(nv_sig, 20)
+        do_widefield_image_sample(nv_sig, 50)
         # do_widefield_image_sample(nv_sig, 100)
 
         # do_image_nv_list(nv_list)
         # do_image_single_nv(nv_sig)
-
+        #
         # for nv_sig in nv_list:
-        #     widefield.reset_all_drift()
-        #     # do_optimize_pixel(nv_sig)
-        #     do_optimize_green(nv_sig)
-        # do_optimize_red(nv_sig)
+        # widefield.reset_all_drift()
+        # do_optimize_pixel(nv_sig)
         # do_image_single_nv(nv_sig)
 
         # optimize.optimize_pixel_and_z(nv_sig, do_plot=True)
         # do_image_nv_list(nv_list)
         # for ind in range(20):
-        #     do_optimize_pixel(nv_sig)
         # do_optimize_pixel(nv_sig)
         # do_optimize_z(nv_sig)
         # do_optimize_green(nv_sig)
@@ -1043,8 +915,9 @@ if __name__ == "__main__":
         # print(res_mle)
         # print([res_mle[ind] == res_thresh[ind] for ind in range(num_nvs)])
 
-    # region Cleanup
-
+        # region Cleanup
+    # do_optimize_green(nv_sig)
+    # do_optimize_red(nv_sig)
     except Exception as exc:
         if do_email:
             recipient = email_recipient

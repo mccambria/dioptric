@@ -542,7 +542,6 @@ def main(
                 print("Value at optimized coordinates out of bounds.")
 
     ### Calculate the drift relative to the passed coordinates
-
     passed_coords = pos.get_nv_coords(nv_sig, coords_key, drift_adjust=False)
     drift = []
     for ind in range(len(passed_coords)):
