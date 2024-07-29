@@ -91,25 +91,30 @@ def create_fit_figure(nv_list, taus, counts, counts_ste, norms):
         fit_fn = cos_decay
 
         try:
-            popt, pcov = curve_fit(
-                fit_fn,
-                taus,
-                nv_counts,
-                p0=guess_params,
-                sigma=nv_counts_ste,
-                absolute_sigma=True,
-            )
-            fit_fns.append(fit_fn)
-            popts.append(popt)
+            if nv_ind in [0, 1, 4, 6]:
+                fit_fn = constant
+                popt = None
+            else:
+                popt, pcov = curve_fit(
+                    fit_fn,
+                    taus,
+                    nv_counts,
+                    p0=guess_params,
+                    sigma=nv_counts_ste,
+                    absolute_sigma=True,
+                )
         except Exception:
-            fit_fns.append(None)
-            popts.append(None)
-            continue
+            fit_fn = None
+            popt = None
 
-        residuals = fit_fn(taus, *popt) - nv_counts
-        chi_sq = np.sum((residuals / nv_counts_ste) ** 2)
-        red_chi_sq = chi_sq / (len(nv_counts) - len(popt))
-        print(f"Red chi sq: {round(red_chi_sq, 3)}")
+        fit_fns.append(fit_fn)
+        popts.append(popt)
+
+        if popt is not None:
+            residuals = fit_fn(taus, *popt) - nv_counts
+            chi_sq = np.sum((residuals / nv_counts_ste) ** 2)
+            red_chi_sq = chi_sq / (len(nv_counts) - len(popt))
+            print(f"Red chi sq: {round(red_chi_sq, 3)}")
 
     rabi_periods = [None if el is None else round(1 / el[0], 2) for el in popts]
     tau_offsets = [None if el is None else round(el[-1], 2) for el in popts]
@@ -245,12 +250,12 @@ def main(nv_list, num_steps, num_reps, num_runs, min_tau, max_tau, uwave_ind_lis
 if __name__ == "__main__":
     kpl.init_kplotlib()
 
-    data = dm.get_raw_data(
-        file_id=1565949427093, load_npz=True, use_cache=False
-    )  # In-phase
     # data = dm.get_raw_data(
-    #     file_id=1565826743905, load_npz=True, use_cache=False
-    # )  # Out-of-phase
+    #     file_id=1566067602178, load_npz=False, use_cache=False
+    # )  # Crosstalk A
+    data = dm.get_raw_data(
+        file_id=1566322671967, load_npz=True, use_cache=False
+    )  # Crosstalk B
 
     nv_list = data["nv_list"]
     num_nvs = len(nv_list)
@@ -258,16 +263,19 @@ if __name__ == "__main__":
     num_runs = data["num_runs"]
     taus = data["taus"]
 
-    counts = np.array(data["counts"])
+    # counts = np.array(data["counts"])
+    counts = np.array(data["states"])
     sig_counts = counts[0]
     ref_counts = counts[1]
 
     avg_counts, avg_counts_ste, norms = widefield.process_counts(
-        nv_list, sig_counts, ref_counts, threshold=True
+        nv_list, sig_counts, ref_counts, threshold=False
     )
 
     raw_fig = create_raw_data_figure(nv_list, taus, avg_counts, avg_counts_ste)
     fit_fig = create_fit_figure(nv_list, taus, avg_counts, avg_counts_ste, norms)
+
+    kpl.show(block=True)
 
     ###
 

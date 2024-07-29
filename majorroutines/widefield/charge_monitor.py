@@ -124,7 +124,7 @@ def process_check_readout_fidelity(data, fidelity_ax=None):
     figsize = kpl.figsize
     figsize[1] *= 1.5
     fig, axes_pack = plt.subplots(2, 1, sharex=True, figsize=figsize)
-    labels = {0: "NV0", 1: "NV-"}
+    labels = {0: "NV⁰", 1: "NV⁻"}
     probs = [[] for ind in range(2)]
     prob_errs = [[] for ind in range(2)]
     lookback = 2
@@ -150,7 +150,7 @@ def process_check_readout_fidelity(data, fidelity_ax=None):
             probs[init_state].append(prob)
             prob_errs[init_state].append(err)
         label = labels[init_state]
-        ax.set_ylabel(f"P({label}|previous {lookback} shots {label})")
+        ax.set_ylabel(f"P({label} | previous {lookback} shots {label})")
         ax.set_ylim((0.5, 1.0))
 
     ax.set_xlabel("NV index")

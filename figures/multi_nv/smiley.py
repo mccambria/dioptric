@@ -103,7 +103,7 @@ def main(
     else:
         downsample_factor = 1
         img_array = np.array(data["img_array"])
-        img_array = widefield.adus_to_photons(img_array)
+        img_array = widefield.adus_to_photons(img_array, k_gain=1000)
         img_array = crop_img_array(img_array, offset=img_array_offset, buffer=buffer)
     del data
 
@@ -162,8 +162,8 @@ if __name__ == "__main__":
     kpl.init_kplotlib()
     
     # Basic widefield
-    file_id = 1556655608661
-    main(file_id, draw_circles=False)
+    # file_id = 1556655608661
+    # main(file_id, draw_circles=False)
     # main(file_id, draw_circles=True)
     # main(file_id, draw_circles=True, draw_circles_inds=list(range(10)))
     # main(file_id, draw_circles=True, draw_circles_inds=[0, 1, 5, 6, 10, 11, 12])
@@ -197,18 +197,18 @@ if __name__ == "__main__":
     # main(file_id, img_array_offset=[-2,-1], draw_circles=True)
 
     # Green, 3x longer on dim NV
-    # file_id = 1558551918959
-    # main(file_id, img_array_offset=[0,1], vmin=0.3, vmax=9.2)
+    file_id = 1558551918959
+    main(file_id, img_array_offset=[0,1], vmin=0.3, vmax=9.2)
     # main(file_id, img_array_offset=[0,1], draw_circles=True)
 
     # Histograms: ref, sig, diff
     # file_id = 1558589699406
     # img_array_offset=[0,0]
-    # main(file_id, img_array_offset=img_array_offset, diff=False, sig_or_ref=False, vmin=0.02, vmax=0.42)
-    # main(file_id, img_array_offset=img_array_offset, diff=False, sig_or_ref=True, vmin=0.02, vmax=0.42)
-    # main(file_id, img_array_offset=img_array_offset, diff=True, vmin=-0.32, vmax=0.02)
+    # # main(file_id, img_array_offset=img_array_offset, diff=False, sig_or_ref=False, vmin=0.02, vmax=0.42)
+    # # main(file_id, img_array_offset=img_array_offset, diff=False, sig_or_ref=True, vmin=0.02, vmax=0.42)
+    # # main(file_id, img_array_offset=img_array_offset, diff=True, vmin=-0.32, vmax=0.02)
     # main(file_id, img_array_offset=img_array_offset, diff=True, vmin=-0.02, vmax=0.32, inverted=True) # Inverted
-    # main(file_id, img_array_offset=img_array_offset, diff=True, draw_circles=True)
+    # # main(file_id, img_array_offset=img_array_offset, diff=True, draw_circles=True)
 
     # Winking histogram
     # file_id = 1558619706453
@@ -218,16 +218,16 @@ if __name__ == "__main__":
     # main(file_id, img_array_offset=img_array_offset, diff=True, draw_circles=True)
 
     # Spin
-    # file_id = 1558797947702
-    # img_array_offset=[0,1]
-    # file_id = 1558944220372
-    # img_array_offset=[0,1]
-    # file_id = 1559062712968
-    # img_array_offset=[1,0]
-    file_id = 1559550352430
-    img_array_offset=[0,0]
-    # # main(file_id, img_array_offset=img_array_offset, diff=True, vmin=-0.005, vmax=0.046)
-    main(file_id, img_array_offset=img_array_offset, diff=True)
-    # # main(file_id, img_array_offset=img_array_offset, diff=True, draw_circles=True)
+    # # file_id = 1558797947702
+    # # img_array_offset=[0,1]
+    # # file_id = 1558944220372
+    # # img_array_offset=[0,1]
+    # # file_id = 1559062712968
+    # # img_array_offset=[1,0]
+    # file_id = 1559550352430
+    # img_array_offset=[0,0]
+    # # # main(file_id, img_array_offset=img_array_offset, diff=True, vmin=-0.005, vmax=0.046)
+    # main(file_id, img_array_offset=img_array_offset, diff=True)
+    # # # main(file_id, img_array_offset=img_array_offset, diff=True, draw_circles=True)
 
     plt.show(block=True)

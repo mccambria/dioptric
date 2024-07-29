@@ -275,6 +275,7 @@ def threshold_counts(nv_list, sig_counts, ref_counts=None, dynamic_thresh=False)
             # threshold = determine_threshold(combined_counts)
             threshold = determine_threshold(
                 combined_counts,
+                # sig_counts[nv_ind].flatten(),
                 single_or_dual=True,
                 nvn_ratio=None,
                 dual_threshold_min_fidelity=0.8,
@@ -1093,7 +1094,7 @@ def plot_fit(
         # Plot the fit
         if fn is not None:
             # Include the norm if there is one
-            fit_vals = fn(x_linspace, *popt)
+            fit_vals = fn(x_linspace) if popt is None else fn(x_linspace, *popt)
             if norms is not None:
                 fit_vals /= norm
             kpl.plot_line(ax, x_linspace, fit_vals, color=color)
