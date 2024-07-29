@@ -59,12 +59,23 @@ def main(
     data = dm.get_raw_data(file_id=file_id, load_npz=True, use_cache=False)
     global pixel_coords_list
     buffer = 20
+    states = np.array(data["states"])
 
     if "img_arrays" in data:
         img_arrays = np.array(data["img_arrays"])
         size = img_arrays.shape[-1]
         downsample_factor = round(250 / size)
         buffer = buffer // downsample_factor
+
+        # Select images where only 3 certain NVs are bright
+        for run_ind in range(data["num_runs"]):
+            for rep_ind in range(data["num_reps"]):
+                state_arr = states[1, :, run_ind, 0, rep_ind]
+                num_dark = 4 - (
+                    state_arr[3] + state_arr[4] + state_arr[5] + state_arr[6]
+                )
+                if num_dark != 4:
+                    img_arrays[1, run_ind, 0, rep_ind, :, :] = np.nan
 
         if diff:  # diff
             if not inverted:
@@ -78,7 +89,7 @@ def main(
         # Crop/center the images
         if "pixel_drifts" in data:
             pixel_drifts = data["pixel_drifts"]
-            img_arrays = np.mean(img_arrays, axis=(1, 2))
+            img_arrays = np.nanmean(img_arrays, axis=(1, 2))
             cropped_img_arrays = []
             num_runs = img_arrays.shape[0]
             for ind in range(num_runs):
@@ -197,18 +208,18 @@ if __name__ == "__main__":
     # main(file_id, img_array_offset=[-2,-1], draw_circles=True)
 
     # Green, 3x longer on dim NV
-    file_id = 1558551918959
-    main(file_id, img_array_offset=[0,1], vmin=0.3, vmax=9.2)
+    # file_id = 1558551918959
+    # main(file_id, img_array_offset=[0,1], vmin=0.3, vmax=9.2)
     # main(file_id, img_array_offset=[0,1], draw_circles=True)
 
     # Histograms: ref, sig, diff
-    # file_id = 1558589699406
-    # img_array_offset=[0,0]
-    # # main(file_id, img_array_offset=img_array_offset, diff=False, sig_or_ref=False, vmin=0.02, vmax=0.42)
-    # # main(file_id, img_array_offset=img_array_offset, diff=False, sig_or_ref=True, vmin=0.02, vmax=0.42)
-    # # main(file_id, img_array_offset=img_array_offset, diff=True, vmin=-0.32, vmax=0.02)
-    # main(file_id, img_array_offset=img_array_offset, diff=True, vmin=-0.02, vmax=0.32, inverted=True) # Inverted
-    # # main(file_id, img_array_offset=img_array_offset, diff=True, draw_circles=True)
+    file_id = 1558589699406
+    img_array_offset=[0,0]
+    # main(file_id, img_array_offset=img_array_offset, diff=False, sig_or_ref=False, vmin=0.02, vmax=0.42)
+    # main(file_id, img_array_offset=img_array_offset, diff=False, sig_or_ref=True, vmin=0.02, vmax=0.42)
+    # main(file_id, img_array_offset=img_array_offset, diff=True, vmin=-0.32, vmax=0.02)
+    main(file_id, img_array_offset=img_array_offset, diff=True, vmin=-0.02, vmax=0.32, inverted=True) # Inverted
+    # main(file_id, img_array_offset=img_array_offset, diff=True, draw_circles=True)
 
     # Winking histogram
     # file_id = 1558619706453

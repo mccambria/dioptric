@@ -379,7 +379,7 @@ if __name__ == "__main__":
     ref_img_array = np.mean(proc_img_arrays[:, :, adj_num_steps:, :], axis=(0, 1, 2, 3))
     proc_img_arrays = sig_img_arrays - ref_img_array
 
-    downsample_factor = 2
+    downsample_factor = 1
     proc_img_arrays = [
         widefield.downsample_img_array(el, downsample_factor) for el in proc_img_arrays
     ]
