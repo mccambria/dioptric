@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 """
-Output server for the PI E709 objective piezo. 
+Output server for the PI E709 objective piezo.
 
 Created on Thu Apr  4 15:58:30 2019
 
@@ -18,7 +18,7 @@ timeout = 20
 
 [shutdown]
 message = 987654321
-timeout = 
+timeout =
 ### END NODE INFO
 """
 

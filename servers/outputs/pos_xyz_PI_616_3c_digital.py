@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 """
-Output server for the PI nanocube P-616.3C 3-axis piezo. 
+Output server for the PI nanocube P-616.3C 3-axis piezo.
 Sending commands over usb
 
 Created on Wed Nov  3 15:58:30 2021
@@ -19,22 +19,22 @@ timeout = 20
 
 [shutdown]
 message = 987654321
-timeout = 
+timeout =
 ### END NODE INFO
 """
 
-
-from labrad.server import LabradServer
-from labrad.server import setting
-from twisted.internet.defer import ensureDeferred
-from pipython import GCSDevice
-import nidaqmx
 import logging
-import numpy
-import nidaqmx.stream_writers as stream_writers
 import socket
-from pathlib import Path
 import time
+from pathlib import Path
+
+import nidaqmx
+import nidaqmx.stream_writers as stream_writers
+import numpy
+from labrad.server import LabradServer, setting
+from pipython import GCSDevice
+from twisted.internet.defer import ensureDeferred
+
 from utils import common
 from utils import tool_belt as tb
 

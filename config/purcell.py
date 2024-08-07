@@ -41,17 +41,11 @@ widefield_calibration_coords2 = {
     green_laser: [108.876, 111.806],
     red_laser: [73.623, 77.103],
 }
-
-# widefield_calibration_coords1 = {
-#     CoordsKey.PIXEL: [126.902, 116.166],
-#     green_laser: [110.094, 110.434],
-#     red_laser: [75.12, 75.24],
-# }
-# widefield_calibration_coords2 = {
-#     CoordsKey.PIXEL: [139.548, 99.476],
-#     green_laser: [109.186, 108.427],
-#     red_laser: [74.40, 73.60],
-# }
+widefield_calibration_coords3 = {
+    CoordsKey.PIXEL: [101.79, 157.333],
+    green_laser: [109.084, 111.052],
+    red_laser: [74.076, 76.237],
+}
 
 
 # endregion
@@ -83,8 +77,8 @@ config |= {
         / "GitHub/dioptric/servers/outputs/GCSTranslator/PI_GCS2_DLL_x64.dll",
         "objective_piezo_model": "E709",
         "objective_piezo_serial": "0119008970",
-        "piezo_stage_616_3c_model": "E727",
-        "piezo_stage_616_3c_serial": "121089079",
+        "piezo_controller_E727_model": "E727",
+        "piezo_controller_E727_serial": "0121089079",
         "pulse_gen_SWAB_82_ip": "192.168.0.111",
         "rotation_stage_THOR_ell18k_com": "COM8",
         "sig_gen_BERK_bnc835_visa": "TCPIP::128.104.ramp_to_zero_duration.114::inst0::INSTR",
@@ -184,7 +178,7 @@ config |= {
         # LaserKey.SCC: {"name": red_laser, "duration": 248},
         LaserKey.SCC: {"name": red_laser, "duration": 124},
         # LaserKey.SCC: {"name": green_laser, "duration": 200},
-        LaserKey.WIDEFIELD_IMAGING: {"name": yellow_laser, "duration": 300e6},
+        LaserKey.WIDEFIELD_IMAGING: {"name": yellow_laser, "duration": 100e6},
         # LaserKey.WIDEFIELD_SPIN_POL: {"name": yellow_laser, "duration": 10e3},
         LaserKey.WIDEFIELD_SPIN_POL: {"name": yellow_laser, "duration": 100e3},
         # LaserKey.WIDEFIELD_SPIN_POL: {"name": yellow_laser, "duration": 1e6},
@@ -213,21 +207,31 @@ config |= {
         },
         CoordsKey.GLOBAL: {
             "z_control_mode": ControlMode.STREAM,
-            "z_delay": int(5e6),  # 5 ms for PIFOC
+            "z_delay": int(5e6),  # 5 ms for PIFOC xyz
             "z_dtype": float,
             "z_nm_per_unit": 1000,
             "z_optimize_range": 0.1,
             "z_units": "Voltage (V)",
+            "xy_delay": int(5e6),
+            "xy_dtype": float,
+            "xy_nm_per_unit": 1000,
+            "xy_optimize_range": 0.1,
+            "xy_small_response_delay": 800,
+            "xy_units": "V",
+            "xy_positional_accuracy": 0.002,
+            "xy_timeout": 1,
         },
         "widefield_calibration_coords1": widefield_calibration_coords1,
         "widefield_calibration_coords2": widefield_calibration_coords2,
+        "widefield_calibration_coords3": widefield_calibration_coords3,
     },
     ###
     "Servers": {
         "counter": "QM_opx",
         "magnet_rotation": "rotation_stage_thor_ell18k",
-        "pos_z": "pos_z_PI_pifoc",
-        "pos_xyz": "pos_xyz_PI_616_3c",
+        "pos_xy": "piezo_stage_P616_3c_purcell",
+        "pos_z": "piezo_stage_P616_3c_purcell",
+        "pos_xyz": "piezo_stage_P616_3c_purcell",
         # "pos_z": None,
         "pulse_gen": "QM_opx",
         "sig_gen_LOW": "sig_gen_STAN_sg394",
@@ -243,11 +247,20 @@ config |= {
         "Daq": {
             # "ao_galvo_x": "dev1/AO0",
             # "ao_galvo_y": "dev1/AO1",
-            "ao_piezo_stage_616_3c_x": "dev1/AO0",
-            "ao_piezo_stage_616_3c_y": "dev1/AO1",
-            "ao_piezo_stage_616_3c_z": "dev1/AO2",
+            "ao_piezo_stage_P616_3c_x": "dev1/AO25",
+            "ao_piezo_stage_P616_3c_y": "dev1/AO27",
+            "ao_piezo_stage_P616_3c_z": "dev1/AO29",
             "ao_objective_piezo": "dev1/AO21",
+            "voltage_range_factor": 10.0,
             "di_clock": "PFI12",
+        },
+        "Piezo_Controller_E727": {
+            "piezo_controller_channel_x": 4,
+            "piezo_controller_channel_y": 5,
+            "piezo_controller_channel_z": 6,
+            "voltage_range_factor": 10.0,
+            "scaling_offset": 50.0,
+            "scaling_gain": 0.5,
         },
         "PulseGen": {
             "do_apd_gate": 5,

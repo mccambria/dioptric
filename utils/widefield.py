@@ -18,6 +18,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 from matplotlib import animation
 from numpy import inf
+from scipy.ndimage import affine_transform
 from scipy.special import gamma
 from scipy.stats import poisson
 
@@ -611,6 +612,7 @@ def get_threshold_list(nv_list: list[NVSig], include_inds=None):
     return threshold_list
 
 
+# updated affine calibration (July 2024)
 # region Drift tracking
 
 
@@ -645,7 +647,7 @@ def adjust_pixel_coords_for_drift(pixel_coords, drift=None):
     return adjusted_coords
 
 
-def get_nv_pixel_coords(nv_sig: NVSig, drift_adjust=True, drift=None):
+def get_nv_pixel_coords(nv_sig, drift_adjust=True, drift=None):
     pixel_coords = nv_sig.coords[CoordsKey.PIXEL]
     if drift_adjust:
         pixel_coords = adjust_pixel_coords_for_drift(pixel_coords, drift)
@@ -688,20 +690,21 @@ def set_pixel_drift_from_scanning_drift(
 def pixel_to_scanning_drift(pixel_drift=None, coords_key=CoordsKey.GLOBAL):
     if pixel_drift is None:
         pixel_drift = get_pixel_drift()
-    m_x, _, m_y, _ = _pixel_to_scanning_calibration(coords_key)
-    scanning_drift = pos.get_drift(coords_key)
-    if len(scanning_drift) > 2:
-        z_scanning_drift = scanning_drift[2]
-        return [m_x * pixel_drift[0], m_y * pixel_drift[1], z_scanning_drift]
-    else:
-        return [m_x * pixel_drift[0], m_y * pixel_drift[1]]
+    transform_matrix = _get_affine_transform_matrix(
+        coords_key, direction="pixel_to_scanning"
+    )
+    scanning_drift = np.dot(transform_matrix, np.append(pixel_drift, 1))[:2]
+    return scanning_drift.tolist()
 
 
 def scanning_to_pixel_drift(scanning_drift=None, coords_key=CoordsKey.GLOBAL):
     if scanning_drift is None:
         scanning_drift = pos.get_drift(coords_key)
-    m_x, _, m_y, _ = _scanning_to_pixel_calibration(coords_key)
-    return [m_x * scanning_drift[0], m_y * scanning_drift[1]]
+    transform_matrix = _get_affine_transform_matrix(
+        coords_key, direction="scanning_to_pixel"
+    )
+    pixel_drift = np.dot(transform_matrix, np.append(scanning_drift, 1))[:2]
+    return pixel_drift.tolist()
 
 
 # endregion
@@ -709,12 +712,9 @@ def scanning_to_pixel_drift(scanning_drift=None, coords_key=CoordsKey.GLOBAL):
 
 
 def set_nv_scanning_coords_from_pixel_coords(
-    nv_sig, coords_key: str | CoordsKey = CoordsKey.GLOBAL, drift_adjust=True
+    nv_sig, coords_key=CoordsKey.GLOBAL, drift_adjust=True
 ):
     pixel_coords = get_nv_pixel_coords(nv_sig, drift_adjust=drift_adjust)
-    # pixel_coords = pos.get_nv_coords(
-    #     nv_sig, "laser_INTE_520", drift_adjust=drift_adjust
-    # )  # MCC
     scanning_coords = pixel_to_scanning_coords(pixel_coords, coords_key)
     pos.set_nv_coords(nv_sig, scanning_coords, coords_key)
     return scanning_coords
@@ -724,97 +724,259 @@ def get_widefield_calibration_nvs():
     module = common.get_config_module()
     nv1 = NVSig(coords=module.widefield_calibration_coords1)
     nv2 = NVSig(coords=module.widefield_calibration_coords2)
-    return nv1, nv2
+    nv3 = NVSig(coords=module.widefield_calibration_coords3)
+    return nv1, nv2, nv3
 
 
 def pixel_to_scanning_coords(pixel_coords, coords_key=CoordsKey.GLOBAL):
-    """Convert camera pixel coordinates to scanning coordinates (e.g. galvo voltages)
-    using two calibrated NV coordinate pairs from the config file
-
-    Parameters
-    ----------
-    pixel_coords : list(numeric)
-        Camera pixel coordinates to convert
-
-    Returns
-    -------
-    list(numeric)
-        Scanning coordinates
-    """
-    m_x, b_x, m_y, b_y = _pixel_to_scanning_calibration(coords_key)
-    scanning_coords = [m_x * pixel_coords[0] + b_x, m_y * pixel_coords[1] + b_y]
-    return scanning_coords
+    transform_matrix = _get_affine_transform_matrix(
+        coords_key, direction="pixel_to_scanning"
+    )
+    scanning_coords = np.dot(transform_matrix, np.append(pixel_coords, 1))[:2]
+    return scanning_coords.tolist()
 
 
-def _pixel_to_scanning_calibration(coords_key=CoordsKey.GLOBAL):
-    """Get the linear parameters for the conversion"""
-
-    nv1, nv2 = get_widefield_calibration_nvs()
+def _get_affine_transform_matrix(
+    coords_key=CoordsKey.GLOBAL, direction="pixel_to_scanning"
+):
+    nv1, nv2, nv3 = get_widefield_calibration_nvs()
     nv1_scanning_coords = pos.get_nv_coords(nv1, coords_key, drift_adjust=False)
     nv1_pixel_coords = get_nv_pixel_coords(nv1, drift_adjust=False)
     nv2_scanning_coords = pos.get_nv_coords(nv2, coords_key, drift_adjust=False)
     nv2_pixel_coords = get_nv_pixel_coords(nv2, drift_adjust=False)
+    nv3_scanning_coords = pos.get_nv_coords(nv3, coords_key, drift_adjust=False)
+    nv3_pixel_coords = get_nv_pixel_coords(nv3, drift_adjust=False)
 
-    # Assume (independent) linear relations for both x and y
+    if direction == "pixel_to_scanning":
+        source_coords = [nv1_pixel_coords, nv2_pixel_coords, nv3_pixel_coords]
+        dest_coords = [nv1_scanning_coords, nv2_scanning_coords, nv3_scanning_coords]
+    else:  # scanning_to_pixel
+        source_coords = [nv1_scanning_coords, nv2_scanning_coords, nv3_scanning_coords]
+        dest_coords = [nv1_pixel_coords, nv2_pixel_coords, nv3_pixel_coords]
 
-    scanning_diff = nv2_scanning_coords[0] - nv1_scanning_coords[0]
-    pixel_diff = nv2_pixel_coords[0] - nv1_pixel_coords[0]
-    m_x = scanning_diff / pixel_diff
-    b_x = nv1_scanning_coords[0] - m_x * nv1_pixel_coords[0]
-
-    scanning_diff = nv2_scanning_coords[1] - nv1_scanning_coords[1]
-    pixel_diff = nv2_pixel_coords[1] - nv1_pixel_coords[1]
-    m_y = scanning_diff / pixel_diff
-    b_y = nv1_scanning_coords[1] - m_y * nv1_pixel_coords[1]
-
-    return m_x, b_x, m_y, b_y
+    A = np.array(
+        [source_coords[0] + [1], source_coords[1] + [1], source_coords[2] + [1]]
+    )
+    B = np.array(dest_coords)
+    transform_matrix = np.linalg.lstsq(A, B, rcond=None)[0]
+    return transform_matrix.T
 
 
 def scanning_to_pixel_coords(scanning_coords, coords_key=CoordsKey.GLOBAL):
-    """Convert scanning coordinates (e.g. galvo voltages) to camera pixel coordinates
-    using two calibrated NV coordinate pairs from the config file
-
-    Parameters
-    ----------
-    scanning_coords : list(numeric)
-        Scanning coordinates to convert
-
-    Returns
-    -------
-    list(numeric)
-        Camera pixel coordinates
-    """
-
-    m_x, b_x, m_y, b_y = _scanning_to_pixel_calibration(coords_key)
-    pixel_coords = [m_x * scanning_coords[0] + b_x, m_y * scanning_coords[1] + b_y]
-    return pixel_coords
-
-
-def _scanning_to_pixel_calibration(coords_key=CoordsKey.GLOBAL):
-    """Get the linear parameters for the conversion"""
-
-    nv1, nv2 = get_widefield_calibration_nvs()
-    nv1_scanning_coords = pos.get_nv_coords(nv1, coords_key, drift_adjust=False)
-    nv1_pixel_coords = get_nv_pixel_coords(nv1, drift_adjust=False)
-    nv2_scanning_coords = pos.get_nv_coords(nv2, coords_key, drift_adjust=False)
-    nv2_pixel_coords = get_nv_pixel_coords(nv2, drift_adjust=False)
-
-    # Assume (independent) linear relations for both x and y
-
-    pixel_diff = nv2_pixel_coords[0] - nv1_pixel_coords[0]
-    scanning_diff = nv2_scanning_coords[0] - nv1_scanning_coords[0]
-    m_x = pixel_diff / scanning_diff
-    b_x = nv1_pixel_coords[0] - m_x * nv1_scanning_coords[0]
-
-    pixel_diff = nv2_pixel_coords[1] - nv1_pixel_coords[1]
-    scanning_diff = nv2_scanning_coords[1] - nv1_scanning_coords[1]
-    m_y = pixel_diff / scanning_diff
-    b_y = nv1_pixel_coords[1] - m_y * nv1_scanning_coords[1]
-
-    return m_x, b_x, m_y, b_y
+    transform_matrix = _get_affine_transform_matrix(
+        coords_key, direction="scanning_to_pixel"
+    )
+    pixel_coords = np.dot(transform_matrix, np.append(scanning_coords, 1))[:2]
+    return pixel_coords.tolist()
 
 
 # endregion
+
+# old linear calibration
+
+# # region Drift tracking
+# @cache
+# def get_pixel_drift():
+#     pixel_drift = common.get_registry_entry(["State"], "DRIFT-pixel")
+#     return np.array(pixel_drift)
+
+
+# def set_pixel_drift(drift):
+#     get_pixel_drift.cache_clear()
+#     return common.set_registry_entry(["State"], "DRIFT-pixel", drift)
+
+
+# def reset_pixel_drift():
+#     return set_pixel_drift([0.0, 0.0])
+
+
+# def reset_all_drift():
+#     reset_pixel_drift()
+#     pos.reset_drift()
+#     scanning_optics = _get_scanning_optics()
+#     for coords_key in scanning_optics:
+#         pos.reset_drift(coords_key)
+
+
+# def adjust_pixel_coords_for_drift(pixel_coords, drift=None):
+#     """Current drift will be retrieved from registry if passed drift is None"""
+#     if drift is None:
+#         drift = get_pixel_drift()
+#     adjusted_coords = (np.array(pixel_coords) + np.array(drift)).tolist()
+#     return adjusted_coords
+
+
+# def get_nv_pixel_coords(nv_sig: NVSig, drift_adjust=True, drift=None):
+#     pixel_coords = nv_sig.coords[CoordsKey.PIXEL]
+#     if drift_adjust:
+#         pixel_coords = adjust_pixel_coords_for_drift(pixel_coords, drift)
+#     return pixel_coords
+
+
+# def set_all_scanning_drift_from_pixel_drift(pixel_drift=None):
+#     scanning_optics = _get_scanning_optics()
+#     for coords_key in scanning_optics:
+#         set_scanning_drift_from_pixel_drift(pixel_drift, coords_key)
+
+
+# def _get_scanning_optics():
+#     config = common.get_config_dict()
+#     config_optics = config["Optics"]
+#     scanning_optics = []
+#     for optic_name in config_optics:
+#         val = config_optics[optic_name]
+#         if (
+#             isinstance(val, dict)
+#             and "pos_mode" in val
+#             and val["pos_mode"] == LaserPosMode.SCANNING
+#         ):
+#             scanning_optics.append(optic_name)
+#     return scanning_optics
+
+
+# def set_scanning_drift_from_pixel_drift(pixel_drift=None, coords_key=CoordsKey.GLOBAL):
+#     scanning_drift = pixel_to_scanning_drift(pixel_drift, coords_key)
+#     pos.set_drift(scanning_drift, coords_key)
+
+
+# def set_pixel_drift_from_scanning_drift(
+#     scanning_drift=None, coords_key=CoordsKey.GLOBAL
+# ):
+#     pixel_drift = scanning_to_pixel_drift(scanning_drift, coords_key)
+#     set_pixel_drift(pixel_drift)
+
+
+# def pixel_to_scanning_drift(pixel_drift=None, coords_key=CoordsKey.GLOBAL):
+#     if pixel_drift is None:
+#         pixel_drift = get_pixel_drift()
+#     m_x, _, m_y, _ = _pixel_to_scanning_calibration(coords_key)
+#     scanning_drift = pos.get_drift(coords_key)
+#     if len(scanning_drift) > 2:
+#         z_scanning_drift = scanning_drift[2]
+#         return [m_x * pixel_drift[0], m_y * pixel_drift[1], z_scanning_drift]
+#     else:
+#         return [m_x * pixel_drift[0], m_y * pixel_drift[1]]
+
+
+# def scanning_to_pixel_drift(scanning_drift=None, coords_key=CoordsKey.GLOBAL):
+#     if scanning_drift is None:
+#         scanning_drift = pos.get_drift(coords_key)
+#     m_x, _, m_y, _ = _scanning_to_pixel_calibration(coords_key)
+#     return [m_x * scanning_drift[0], m_y * scanning_drift[1]]
+
+
+# # endregion
+# # region Scanning to pixel calibration
+
+
+# def set_nv_scanning_coords_from_pixel_coords(
+#     nv_sig, coords_key: str | CoordsKey = CoordsKey.GLOBAL, drift_adjust=True
+# ):
+#     pixel_coords = get_nv_pixel_coords(nv_sig, drift_adjust=drift_adjust)
+#     # pixel_coords = pos.get_nv_coords(
+#     #     nv_sig, "laser_INTE_520", drift_adjust=drift_adjust
+#     # )  # MCC
+#     scanning_coords = pixel_to_scanning_coords(pixel_coords, coords_key)
+#     pos.set_nv_coords(nv_sig, scanning_coords, coords_key)
+#     return scanning_coords
+
+
+# def get_widefield_calibration_nvs():
+#     module = common.get_config_module()
+#     nv1 = NVSig(coords=module.widefield_calibration_coords1)
+#     nv2 = NVSig(coords=module.widefield_calibration_coords2)
+#     return nv1, nv2
+
+
+# def pixel_to_scanning_coords(pixel_coords, coords_key=CoordsKey.GLOBAL):
+#     """Convert camera pixel coordinates to scanning coordinates (e.g. galvo voltages)
+#     using two calibrated NV coordinate pairs from the config file
+
+#     Parameters
+#     ----------
+#     pixel_coords : list(numeric)
+#         Camera pixel coordinates to convert
+
+#     Returns
+#     -------
+#     list(numeric)
+#         Scanning coordinates
+#     """
+#     m_x, b_x, m_y, b_y = _pixel_to_scanning_calibration(coords_key)
+#     scanning_coords = [m_x * pixel_coords[0] + b_x, m_y * pixel_coords[1] + b_y]
+#     return scanning_coords
+
+
+# def _pixel_to_scanning_calibration(coords_key=CoordsKey.GLOBAL):
+#     """Get the linear parameters for the conversion"""
+
+#     nv1, nv2 = get_widefield_calibration_nvs()
+#     nv1_scanning_coords = pos.get_nv_coords(nv1, coords_key, drift_adjust=False)
+#     nv1_pixel_coords = get_nv_pixel_coords(nv1, drift_adjust=False)
+#     nv2_scanning_coords = pos.get_nv_coords(nv2, coords_key, drift_adjust=False)
+#     nv2_pixel_coords = get_nv_pixel_coords(nv2, drift_adjust=False)
+
+#     # Assume (independent) linear relations for both x and y
+
+#     scanning_diff = nv2_scanning_coords[0] - nv1_scanning_coords[0]
+#     pixel_diff = nv2_pixel_coords[0] - nv1_pixel_coords[0]
+#     m_x = scanning_diff / pixel_diff
+#     b_x = nv1_scanning_coords[0] - m_x * nv1_pixel_coords[0]
+
+#     scanning_diff = nv2_scanning_coords[1] - nv1_scanning_coords[1]
+#     pixel_diff = nv2_pixel_coords[1] - nv1_pixel_coords[1]
+#     m_y = scanning_diff / pixel_diff
+#     b_y = nv1_scanning_coords[1] - m_y * nv1_pixel_coords[1]
+
+#     return m_x, b_x, m_y, b_y
+
+
+# def scanning_to_pixel_coords(scanning_coords, coords_key=CoordsKey.GLOBAL):
+#     """Convert scanning coordinates (e.g. galvo voltages) to camera pixel coordinates
+#     using two calibrated NV coordinate pairs from the config file
+
+#     Parameters
+#     ----------
+#     scanning_coords : list(numeric)
+#         Scanning coordinates to convert
+
+#     Returns
+#     -------
+#     list(numeric)
+#         Camera pixel coordinates
+#     """
+
+#     m_x, b_x, m_y, b_y = _scanning_to_pixel_calibration(coords_key)
+#     pixel_coords = [m_x * scanning_coords[0] + b_x, m_y * scanning_coords[1] + b_y]
+#     return pixel_coords
+
+
+# def _scanning_to_pixel_calibration(coords_key=CoordsKey.GLOBAL):
+#     """Get the linear parameters for the conversion"""
+
+#     nv1, nv2 = get_widefield_calibration_nvs()
+#     nv1_scanning_coords = pos.get_nv_coords(nv1, coords_key, drift_adjust=False)
+#     nv1_pixel_coords = get_nv_pixel_coords(nv1, drift_adjust=False)
+#     nv2_scanning_coords = pos.get_nv_coords(nv2, coords_key, drift_adjust=False)
+#     nv2_pixel_coords = get_nv_pixel_coords(nv2, drift_adjust=False)
+
+#     # Assume (independent) linear relations for both x and y
+
+#     pixel_diff = nv2_pixel_coords[0] - nv1_pixel_coords[0]
+#     scanning_diff = nv2_scanning_coords[0] - nv1_scanning_coords[0]
+#     m_x = pixel_diff / scanning_diff
+#     b_x = nv1_pixel_coords[0] - m_x * nv1_scanning_coords[0]
+
+#     pixel_diff = nv2_pixel_coords[1] - nv1_pixel_coords[1]
+#     scanning_diff = nv2_scanning_coords[1] - nv1_scanning_coords[1]
+#     m_y = pixel_diff / scanning_diff
+#     b_y = nv1_pixel_coords[1] - m_y * nv1_scanning_coords[1]
+
+#     return m_x, b_x, m_y, b_y
+
+
+# # endregion
+
 # region Camera getters - probably only needed internally
 
 

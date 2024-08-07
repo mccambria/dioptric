@@ -1,14 +1,15 @@
 # -*- coding: utf-8 -*-
 """
-Output server for the PI P-616.3C 3-axis nanocube piezo.
+Output server for the PI nanocube E727.CDA 3-axis piezo.
+Sending commands over usb
 
-Created on [Date]
+Created on Wed July  3 15:58:30 2024
 
-@author: [Your Name]
+@author: saroj b chand
 
 ### BEGIN NODE INFO
 [info]
-name = pos_xyz_PI_616_3c
+name = piezo_stage_P616_3c_purcell
 version = 1.0
 description =
 
@@ -24,34 +25,26 @@ timeout =
 
 import logging
 import socket
+import time
 from pathlib import Path
 
 import nidaqmx
 import nidaqmx.stream_writers as stream_writers
 import numpy
 from labrad.server import LabradServer, setting
-from pipython import GCSDevice
+from pipython import GCSDevice, GCSError
 from twisted.internet.defer import ensureDeferred
 
 from utils import common
 from utils import tool_belt as tb
 
 
-class PosXyzPi6163c(LabradServer):
-    name = "pos_xyz_PI_616_3c"
+class PosxyzP616Digial(LabradServer):
+    name = "piezo_stage_P616_3c_purcell"
     pc_name = socket.gethostname()
 
     def initServer(self):
-        filename = (
-            "E:/Shared drives/Kolkowitz Lab Group/nvdata/pc_{}/labrad_logging/{}.log"
-        )
-        filename = filename.format(self.pc_name, self.name)
-        logging.basicConfig(
-            level=logging.DEBUG,
-            format="%(asctime)s %(levelname)-8s %(message)s",
-            datefmt="%y-%m-%d_%H-%M-%S",
-            filename=filename,
-        )
+        tb.configure_logging(self)
         self.task = None
         self.sub_init_server_xyz()
 
@@ -66,63 +59,49 @@ class PosXyzPi6163c(LabradServer):
         self.z_last_position = None
         self.z_current_direction = None
         self.z_last_turning_position = None
+
         config = common.get_config_dict()
-        config = ensureDeferred(self.get_config_xyz())
-        config.addCallback(self.on_get_config_xyz)
+        gcs_dll_path = config["DeviceIDs"]["gcs_dll_path"]
+        model = config["DeviceIDs"]["piezo_controller_E727_model"]
+        serial = config["DeviceIDs"]["piezo_controller_E727_serial"]
 
-    async def get_config_xyz(self):
-        p = self.client.registry.packet()
-        p.cd(["", "Config", "DeviceIDs"])  # change this in registry
-        p.get("piezo_stage_616_3c_model")
-        p.get("piezo_stage_616_3c_serial")
-        p.cd(["", "Config", "Wiring", "Piezo_stage_E616"])
-        p.get("piezo_stage_channel_x")
-        p.get("piezo_stage_channel_y")
-        p.get("piezo_stage_channel_z")
-        p.cd(["", "Config", "Positioning"])
-        p.get("piezo_stage_voltage_range_factor")
-        p.get("daq_voltage_range_factor")
-        p.get("piezo_stage_scaling_offset")
-        p.get("piezo_stage_scaling_gain")
-        p.cd(["", "Config", "Wiring", "Daq"])
-        p.get("ao_piezo_stage_616_3c_x")
-        p.get("ao_piezo_stage_616_3c_y")
-        p.get("ao_piezo_stage_616_3c_z")
-        p.get("di_clock")
-        # p.cd(["", "Config", "Positioning"])
-        # p.get("x_hysteresis_linearity")
-        # p.get("y_hysteresis_linearity")
-        result = await p.send()
-        return result["get"]
+        self.piezo = GCSDevice(devname=model, gcsdll=gcs_dll_path)
+        self.piezo.ConnectUSB(serial)
 
-    def on_get_config_xyz(self, config):
-        # Load the generic device
-        gcs_dll_path = str(Path.home())
-        gcs_dll_path += "\\Documents\\GitHub\\kolkowitz-nv-experiment-v1.0"
-        gcs_dll_path += "\\servers\\outputs\\GCSTranslator\\PI_GCS2_DLL_x64.dll"  ###I think this is still fine.
+        # Set command level with password 'advanced'
+        try:
+            command_level_password = "advanced"
+            self.piezo.CCL(1, command_level_password)
+        except GCSError as gcse:
+            logging.error(f"GCSError during setting command level: {gcse}")
+            raise
 
-        self.piezo = GCSDevice(devname=config[0], gcsdll=gcs_dll_path)
-        # Connect the specific device with the serial number
-        self.piezo.ConnectUSB(config[1])
+        self.axis_x = self.piezo.axes[0]
+        self.axis_y = self.piezo.axes[1]
+        self.axis_z = self.piezo.axes[2]
 
-        # Just one axis for this device
-        self.axis_0 = self.piezo.axes[0]
-        self.axis_1 = self.piezo.axes[1]
+        self.piezo_stage_voltage_range_factor = config["Wiring"][
+            "Piezo_Controller_E727"
+        ]["voltage_range_factor"]
+        self.daq_voltage_range_factor = config["Wiring"]["Daq"]["voltage_range_factor"]
 
-        self.piezo_stage_channel_x = config[2]
-        self.piezo_stage_channel_y = config[3]
-        self.piezo_stage_channel_y = config[4]
+        self.piezo_stage_scaling_offset = config["Wiring"]["Piezo_Controller_E727"][
+            "scaling_offset"
+        ]
+        self.piezo_stage_scaling_gain = config["Wiring"]["Piezo_Controller_E727"][
+            "scaling_gain"
+        ]
+        self.piezo_stage_channel_x = config["Wiring"]["Piezo_Controller_E727"][
+            "piezo_controller_channel_x"
+        ]
+        self.piezo_stage_channel_y = config["Wiring"]["Piezo_Controller_E727"][
+            "piezo_controller_channel_y"
+        ]
+        self.piezo_stage_channel_z = config["Wiring"]["Piezo_Controller_E727"][
+            "piezo_controller_channel_z"
+        ]
 
-        self.piezo_stage_voltage_range_factor = config[5]
-        self.daq_voltage_range_factor = config[6]
-
-        self.piezo_stage_scaling_offset = config[7]
-        self.piezo_stage_scaling_gain = config[8]
-        # The command SPA allows us to rewrite volatile memory parameters.
-        # The inputs are {item ID, Parameter ID, PArameter Value}
-
-        # First, we need to make sure the input range on the piezo stage is accepting +/-5 volts
-
+        # Determine the psvrf_value based on the voltage range factor
         if self.piezo_stage_voltage_range_factor == 5.0:
             psvrf_value = 1
         elif self.piezo_stage_voltage_range_factor == 10.0:
@@ -132,70 +111,60 @@ class PosXyzPi6163c(LabradServer):
             raise ValueError(
                 "Piezo stage voltage range factor must be either 5.0 or 10.0"
             )
-        self.piezo.SPA(self.piezo_stage_channel_x, 0x02000100, psvrf_value)
-        self.piezo.SPA(self.piezo_stage_channel_y, 0x02000100, psvrf_value)
-        self.piezo.SPA(self.piezo_stage_channel_z, 0x02000100, psvrf_value)
-        logging.debug("Piezo stage voltage range factor set to: {}".format(config[5]))
 
-        # NExt, we need to set the right scaling for the input voltage to what the controller sends the piezo stage.
-        # This is all defined in the E727 manual. The values below are for a stage
-        # that travels between 0 and 500 um, and the input signal's range matching that of the controller's range (both 5 or 10 V)
-        self.piezo.SPA(
-            self.piezo_stage_channel_x, 0x02000200, self.piezo_stage_scaling_offset
-        )  # offset
-        self.piezo.SPA(
-            self.piezo_stage_channel_x, 0x02000300, self.piezo_stage_scaling_gain
-        )  # gain
-        self.piezo.SPA(
-            self.piezo_stage_channel_y, 0x02000200, self.piezo_stage_scaling_offset
-        )  # offset
-        self.piezo.SPA(
-            self.piezo_stage_channel_y, 0x02000300, self.piezo_stage_scaling_gain
-        )  # gain
-        self.piezo.SPA(
-            self.piezo_stage_channel_z, 0x02000200, self.piezo_stage_scaling_offset
-        )  # offset
-        self.piezo.SPA(
-            self.piezo_stage_channel_z, 0x02000300, self.piezo_stage_scaling_gain
-        )  # gain
+        self.piezo.SPA(self.axis_x, 0x02000100, psvrf_value)
+        self.piezo.SPA(self.axis_y, 0x02000100, psvrf_value)
+        self.piezo.SPA(self.axis_z, 0x02000100, psvrf_value)
         logging.debug(
-            "Piezo stage scaling OFFSET set to: {}".format(
-                self.piezo_stage_scaling_offset
-            )
-        )
-        logging.debug("Piezo stage scaling GAIN set to: {}".format(config[8]))
-
-        # Finally, internally connect the controller's X/Y axis to the incomming signal on channels 4/5
-        self.piezo.SPA(
-            self.axis_0, 0x06000500, self.piezo_stage_channel_x
-        )  # Axis 0 will be controlled by channel 5
-        self.piezo.SPA(
-            self.axis_1, 0x06000500, self.piezo_stage_channel_y
-        )  # Axis 0 will be controlled by channel 6
-        self.piezo.SPA(
-            self.axis_2, 0x06000500, self.piezo_stage_channel_z
-        )  # Axis 0 will be controlled by channel 7
-        logging.debug(
-            "Piezo axis {} connected to channel {}".format(
-                self.axis_0, self.piezo_stage_channel_x
-            )
-        )
-        logging.debug(
-            "Piezo axis {} connected to channel {}".format(
-                self.axis_1, self.piezo_stage_channel_y
-            )
-        )
-        logging.debug(
-            "Piezo axis {} connected to channel {}".format(
-                self.axis_2, self.piezo_stage_channel_z
-            )
+            f"Piezo stage voltage range factor set to: {self.piezo_stage_voltage_range_factor}"
         )
 
-        self.daq_ao_piezo_stage_x = config[9]
-        self.daq_ao_piezo_stage_y = config[10]
-        self.daq_ao_piezo_stage_z = config[11]
-        self.daq_di_clock = config[12]
-        logging.debug("Init Complete")
+        # Set scaling parameters for the piezo stage
+        self.piezo.SPA(
+            self.axis_x, 0x02000200, self.piezo_stage_scaling_offset
+        )  # offset
+        self.piezo.SPA(self.axis_x, 0x02000300, self.piezo_stage_scaling_gain)  # gain
+        self.piezo.SPA(
+            self.axis_y, 0x02000200, self.piezo_stage_scaling_offset
+        )  # offset
+        self.piezo.SPA(self.axis_y, 0x02000300, self.piezo_stage_scaling_gain)  # gain
+        self.piezo.SPA(
+            self.axis_z, 0x02000200, self.piezo_stage_scaling_offset
+        )  # offset
+        self.piezo.SPA(self.axis_z, 0x02000300, self.piezo_stage_scaling_gain)  # gain
+        logging.debug(
+            f"Piezo stage scaling OFFSET set to: {self.piezo_stage_scaling_offset}"
+        )
+        logging.debug(
+            f"Piezo stage scaling GAIN set to: {self.piezo_stage_scaling_gain}"
+        )
+
+        # Connect the controller's axes to the incoming signals
+        self.piezo.SPA(
+            self.axis_x, 0x06000500, self.piezo_stage_channel_x
+        )  # Axis X controlled by channel X
+        self.piezo.SPA(
+            self.axis_y, 0x06000500, self.piezo_stage_channel_y
+        )  # Axis Y controlled by channel Y
+        self.piezo.SPA(
+            self.axis_z, 0x06000500, self.piezo_stage_channel_z
+        )  # Axis Z controlled by channel Z
+        logging.debug(
+            f"Piezo axis {self.axis_x} connected to channel {self.piezo_stage_channel_x}"
+        )
+        logging.debug(
+            f"Piezo axis {self.axis_y} connected to channel {self.piezo_stage_channel_y}"
+        )
+        logging.debug(
+            f"Piezo axis {self.axis_z} connected to channel {self.piezo_stage_channel_z}"
+        )
+
+        self.daq_ao_piezo_stage_x = config["Wiring"]["Daq"]["ao_piezo_stage_P616_3c_x"]
+        self.daq_ao_piezo_stage_y = config["Wiring"]["Daq"]["ao_piezo_stage_P616_3c_y"]
+        self.daq_ao_piezo_stage_z = config["Wiring"]["Daq"]["ao_piezo_stage_P616_3c_z"]
+        self.daq_di_clock = config["Wiring"]["Daq"]["di_clock"]
+
+        logging.debug("Initialization Complete")
 
     # %%
     def load_stream_writer_xy(self, c, task_name, voltages, period):
@@ -237,7 +206,6 @@ class PosXyzPi6163c(LabradServer):
         # Set the daq reference value to either 5 or 10 V
         channel_0.ao_dac_ref_val = self.daq_voltage_range_factor
         channel_1.ao_dac_ref_val = self.daq_voltage_range_factor
-
         # Set up the output stream
         output_stream = nidaqmx.task.OutStream(task)
         writer = stream_writers.AnalogMultiChannelWriter(output_stream)
@@ -321,53 +289,92 @@ class PosXyzPi6163c(LabradServer):
             self.task = None
         return 0
 
-    @setting(72, zVoltage="v[]")  ###???? Do i need to change the decorators ????
-    def write_z(self, c, zVoltage):
-        """Write the specified x and y voltages to the piezo stage"""
+    @setting(70, xVoltage="v[]")  # Voltage value for X-axis
+    def write_x(self, c, xVoltage):
+        """Write the specified x voltage to the piezo stage"""
 
-        # Close the stream task if it exists
-        # This can happen if we quit out early
+        # Close the existing task if there is one
         if self.task is not None:
             self.close_task_internal()
 
+        # Create a new task to write the voltage
         with nidaqmx.Task() as task:
-            # Set up the output channels
-            channel_2 = task.ao_channels.add_ao_voltage_chan(
-                self.daq_ao_piezo_stage_z,
-                min_val=-self.daq_voltage_range_factor,
-                max_val=self.daq_voltage_range_factor,
-            )
-
-            channel_2.ao_dac_ref_val = self.daq_voltage_range_factor
-            task.write([zVoltage])
-
-    @setting(
-        32, xVoltage="v[]", yVoltage="v[]"
-    )  ###???? Do i need to change the decorators ????
-    def write_xy(self, c, xVoltage, yVoltage):
-        """Write the specified x and y voltages to the piezo stage"""
-
-        # Close the stream task if it exists
-        # This can happen if we quit out early
-        if self.task is not None:
-            self.close_task_internal()
-
-        with nidaqmx.Task() as task:
-            # Set up the output channels
+            # Set up the output channel for X
             channel_0 = task.ao_channels.add_ao_voltage_chan(
                 self.daq_ao_piezo_stage_x,
                 min_val=-self.daq_voltage_range_factor,
                 max_val=self.daq_voltage_range_factor,
             )
+            channel_0.ao_dac_ref_val = self.daq_voltage_range_factor
 
-            channel_1 = task.ao_channels.add_ao_voltage_chan(
+            # Write the specified voltage to the channel
+            task.write([xVoltage])
+            # logging.debug(f"X-axis voltage set to {xVoltage} V")
+
+    @setting(71, yVoltage="v[]")  # Voltage value for Y-axis
+    def write_y(self, c, yVoltage):
+        """Write the specified y voltage to the piezo stage"""
+
+        # Close the existing task if there is one
+        if self.task is not None:
+            self.close_task_internal()
+
+        # Create a new task to write the voltage
+        with nidaqmx.Task() as task:
+            # Set up the output channel for Y
+            channel_0 = task.ao_channels.add_ao_voltage_chan(
                 self.daq_ao_piezo_stage_y,
                 min_val=-self.daq_voltage_range_factor,
                 max_val=self.daq_voltage_range_factor,
             )
-
             channel_0.ao_dac_ref_val = self.daq_voltage_range_factor
-            channel_1.ao_dac_ref_val = self.daq_voltage_range_factor
+
+            # Write the specified voltage to the channel
+            task.write([yVoltage])
+            # logging.debug(f"Y-axis voltage set to {yVoltage} V")
+
+    @setting(72, zVoltage="v[]")  # Voltage value for Z-axis
+    def write_z(self, c, zVoltage):
+        """Write the specified z voltage to the piezo stage"""
+
+        # Close the existing task if there is one
+        if self.task is not None:
+            self.close_task_internal()
+
+        # Create a new task to write the voltage
+        with nidaqmx.Task() as task:
+            # Set up the output channel for Z
+            channel_2 = task.ao_channels.add_ao_voltage_chan(
+                self.daq_ao_piezo_stage_z,
+                min_val=-self.daq_voltage_range_factor,
+                max_val=self.daq_voltage_range_factor,
+            )
+            channel_2.ao_dac_ref_val = self.daq_voltage_range_factor
+
+            task.write([zVoltage])
+            # logging.debug(f"Z-axis voltage set to {zVoltage} V")
+
+    @setting(32, xVoltage="v", yVoltage="v")
+    def write_xy(self, c, xVoltage, yVoltage):
+        """Write the specified x and y voltages to the piezo stage"""
+
+        # Close the stream task if it exists
+        if self.task is not None:
+            self.close_task_internal()
+
+        with nidaqmx.Task() as task:
+            # Set up the output channels
+            task.ao_channels.add_ao_voltage_chan(
+                self.daq_ao_piezo_stage_x,
+                min_val=-self.daq_voltage_range_factor,
+                max_val=self.daq_voltage_range_factor,
+            )
+
+            task.ao_channels.add_ao_voltage_chan(
+                self.daq_ao_piezo_stage_y,
+                min_val=-self.daq_voltage_range_factor,
+                max_val=self.daq_voltage_range_factor,
+            )
 
             task.write([xVoltage, yVoltage])
 
@@ -769,7 +776,7 @@ class PosXyzPi6163c(LabradServer):
         period="i",
         returns="*v[]",
     )
-    def load_scan_x(
+    def load_stream_x(
         self, c, x_center, y_center, z_center, scan_range, num_steps, period
     ):
         """Load a scan that will step through scan_range in x keeping y and z
@@ -819,7 +826,7 @@ class PosXyzPi6163c(LabradServer):
         period="i",
         returns="*v[]",
     )
-    def load_scan_y(
+    def load_stream_y(
         self, c, x_center, y_center, z_center, scan_range, num_steps, period
     ):
         """Load a scan that will step through scan_range in y keeping x and y
@@ -869,7 +876,7 @@ class PosXyzPi6163c(LabradServer):
         period="i",
         returns="*v[]",
     )
-    def load_scan_z(
+    def load_stream_z(
         self, c, x_center, y_center, z_center, scan_range, num_steps, period
     ):
         """Load a scan that will step through scan_range in z keeping x and y
@@ -933,7 +940,7 @@ class PosXyzPi6163c(LabradServer):
         return
 
 
-__server__ = PosXyzPi6163c()
+__server__ = PosxyzP616Digial()
 
 if __name__ == "__main__":
     from labrad import util

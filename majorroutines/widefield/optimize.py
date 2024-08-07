@@ -17,6 +17,7 @@ from numpy import inf
 from scipy.optimize import minimize
 from scipy.signal import correlate
 
+from majorroutines import optimize_xyz
 from majorroutines.optimize import expected_counts_check, main, stationary_count_lite
 from utils import common, widefield
 from utils import data_manager as dm
@@ -135,6 +136,28 @@ def optimize_pixel_and_z(nv_sig, do_plot=False):
         attempt_ind += 1
         if attempt_ind == num_attempts:
             raise RuntimeError("Optimization failed.")
+
+
+def optimize_xyz_using_piezo(nv_sig, do_plot=False):
+    num_attempts = 5
+    attempt_ind = 0
+
+    while attempt_ind < num_attempts:
+        try:
+            optimize_xyz.main(
+                nv_sig,
+                no_crash=True,
+                do_plot=do_plot,
+                axes_to_optimize=[0, 1, 2],
+                num_attempts=2,
+            )
+            break  # Exit the loop if optimization is successful
+        except Exception as e:
+            print(f"Optimization attempt {attempt_ind + 1} failed with error: {e}")
+            attempt_ind += 1
+
+    if attempt_ind == num_attempts:
+        raise RuntimeError("Optimization failed after multiple attempts.")
 
 
 def optimize_pixel(nv_sig, do_plot=False):

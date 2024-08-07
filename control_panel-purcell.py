@@ -16,6 +16,7 @@ import time
 import matplotlib.pyplot as plt
 import numpy as np
 
+from majorroutines import optimize_xyz
 from majorroutines.widefield import (
     ac_stark,
     calibrate_iq_delay,
@@ -128,6 +129,12 @@ def do_optimize_red(nv_sig, do_plot=True):
 
 def do_optimize_z(nv_sig, do_plot=True):
     optimize.main(nv_sig, no_crash=True, do_plot=do_plot, axes_to_optimize=[2])
+
+
+def do_optimize_xyz(nv_sig, do_plot=True):
+    optimize_xyz.main(
+        nv_sig, no_crash=True, do_plot=do_plot, axes_to_optimize=[0, 1, 2]
+    )
 
 
 def do_optimize_pixel(nv_sig):
@@ -588,12 +595,12 @@ def do_opx_constant_ac():
     # )
     # opx.constant_ac([1])  # Just laser
     # Green
-    # opx.constant_ac(
-    #     [4],  # Digital channels
-    #     [3, 4],  # Analog channels
-    #     [0.19, 0.19],  # Analog voltages
-    #     [110.0, 110.0],  # Analog frequencies
-    # )
+    opx.constant_ac(
+        [4],  # Digital channels
+        [3, 4],  # Analog channels
+        [0.19, 0.19],  # Analog voltages
+        [110.0, 110.0],  # Analog frequencies
+    )
     # # Green + red
     # opx.constant_ac(
     #     [4, 1],  # Digital channels
@@ -666,15 +673,15 @@ if __name__ == "__main__":
     pixel_coords_key = "pixel_coords"
 
     sample_name = "johnson"
-    z_coord = 4.27
-    magnet_angle = 90
+    z_coord = 3.85
+    # magnet_angle = 90
     date_str = "2024_03_12"
-    global_coords = [None, None, z_coord]
-
+    # global_coords = [None, None, z_coord]
+    global_coords = [0.0, 0.0, 0.0]
     # endregion
     # region Coords (publication set)
     pixel_coords_list = [
-        [87.003, 140.444],
+        [101.642, 109.278],
         [92.176, 143.419],
         [92.561, 150.425],
         [92.251, 160.428],
@@ -683,7 +690,7 @@ if __name__ == "__main__":
     ]
     num_nvs = len(pixel_coords_list)
     green_coords_list = [
-        [110.782, 109.581],
+        [110.0, 110.0],
         [110.249, 109.618],
         [110.26, 110.32],
         [110.245, 111.449],
@@ -701,7 +708,7 @@ if __name__ == "__main__":
     threshold_list = [79.5, 83.5, 85.5, 78.5, 79.5, 68.5]
     scc_duration_list = [140] * num_nvs
     scc_duration_list = [4 * round(el / 4) for el in scc_duration_list]
-    scc_amp_list = [1, 1, 1, 1, 1, 1]
+    scc_amp_list = [1] * num_nvs
 
     # nv_list[i] will have the ith coordinates from the above lists
     nv_list: list[NVSig] = []
@@ -793,25 +800,27 @@ if __name__ == "__main__":
 
         kpl.init_kplotlib()
         # tb.init_safe_stop()
-        #
+
         # widefield.reset_all_drift()
         # pos.reset_drift()  # Reset z drift
         # widefield.set_pixel_drift(
         #     np.array([93.093, 120.507])  # New coords
         #     - np.array([96.549, 119.583])  # Original coords
         # )
+        # widefield.reset_pixel_drift()
         # widefield.set_all_scanning_drift_from_pixel_drift()
 
         # do_optimize_z(nv_sig)
-
+        # do_optimize_xyz(nv_sig)
         # pos.set_xyz_on_nv(nv_sig)
+        # pos.set_xyz_on_nv(nv_sig, pos="pos_xyz")
 
         # for z in np.linspace(3.5, 5.0, 16):
         #     nv_sig.coords[CoordsKey.GLOBAL][2] = z
-        #     # do_scanning_image_sample(nv_sig)
-        #     do_widefield_image_sample(nv_sig, 50)
+        #     do_scanning_image_sample(nv_sig)
+        # do_widefield_image_sample(nv_sig, 50)
 
-        # do_scanning_image_sample(nv_sig)
+        do_scanning_image_sample(nv_sig)
         # do_scanning_image_sample_zoom(nv_sig)
         # do_widefield_image_sample(nv_sig, 50)
         # do_widefield_image_sample(nv_sig, 100)
@@ -825,6 +834,7 @@ if __name__ == "__main__":
         # do_image_single_nv(nv_sig)
 
         # optimize.optimize_pixel_and_z(nv_sig, do_plot=True)
+        # optimize_xyz.optimize_xyz(nv_sig, do_plot=True)
         # do_image_nv_list(nv_list)
         # for ind in range(20):
         # do_optimize_pixel(nv_sig)
