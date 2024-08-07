@@ -402,10 +402,6 @@ def prepare_microscope(nv_sig: NVSig):
     optics (filters, etc) and magnet, and sets the global coordinates. The
     laser set up must be handled by each routine
     """
-
-    # MCC to do
-    # Set filters according to config
-
     # Set the global positioners on this NV
     pos.set_xyz_on_nv(nv_sig)
 

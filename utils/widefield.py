@@ -655,6 +655,8 @@ def get_nv_pixel_coords(nv_sig, drift_adjust=True, drift=None):
 
 
 def set_all_scanning_drift_from_pixel_drift(pixel_drift=None):
+    if no_scanning_drifts:
+        return
     scanning_optics = _get_scanning_optics()
     for coords_key in scanning_optics:
         set_scanning_drift_from_pixel_drift(pixel_drift, coords_key)

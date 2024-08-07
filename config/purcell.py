@@ -18,6 +18,7 @@ from utils.constants import (
     ControlMode,
     CoordsKey,
     CountFormat,
+    DriftMode,
     LaserKey,
     LaserPosMode,
     ModMode,
@@ -147,23 +148,30 @@ config |= {
             "aod": True,
             "default_aod_suffix": "charge_pol",
             "opti_laser_key": LaserKey.IMAGING,
+            "drift_adjust": False,
         },
         red_laser: {
             "delay": 0,
             "mod_mode": ModMode.DIGITAL,
-            "pos_mode": LaserPosMode.SCANNING,
             "aod": True,
             "default_aod_suffix": "scc",
             "opti_laser_key": LaserKey.ION,
+            "drift_adjust": False,
         },
         yellow_laser: {
             "delay": 0,
             "mod_mode": ModMode.ANALOG,
             "pos_mode": LaserPosMode.WIDEFIELD,
+            "drift_adjust": False,
         },
+        #
         CoordsKey.GLOBAL: {
             "opti_laser_key": LaserKey.IMAGING,
+            "drift_adjust": True,
         },
+        CoordsKey.PIXEL: {
+            "drift_adjust": False,
+        }
         # Virtual lasers
         # LaserKey.IMAGING: {"name": green_laser, "duration": 50e6},
         LaserKey.IMAGING: {"name": green_laser, "duration": 30e6},
@@ -189,6 +197,7 @@ config |= {
     },
     ###
     "Positioning": {
+        "drift_mode": DriftMode.GLOBAL,
         green_laser: {
             "xy_control_mode": ControlMode.SEQUENCE,
             "xy_delay": int(400e3),  # 400 us for galvo
@@ -212,6 +221,7 @@ config |= {
             "z_nm_per_unit": 1000,
             "z_optimize_range": 0.1,
             "z_units": "Voltage (V)",
+            "xy_control_mode": ControlMode.STREAM,
             "xy_delay": int(5e6),
             "xy_dtype": float,
             "xy_nm_per_unit": 1000,
@@ -231,7 +241,7 @@ config |= {
         "magnet_rotation": "rotation_stage_thor_ell18k",
         "pos_xy": "piezo_stage_P616_3c_purcell",
         "pos_z": "piezo_stage_P616_3c_purcell",
-        "pos_xyz": "piezo_stage_P616_3c_purcell",
+        # "pos_xyz": "piezo_stage_P616_3c_purcell",
         # "pos_z": None,
         "pulse_gen": "QM_opx",
         "sig_gen_LOW": "sig_gen_STAN_sg394",

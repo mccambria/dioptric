@@ -269,6 +269,9 @@ def optimize_pixel_with_img_array(
     if set_scanning_drift:
         # widefield.set_scanning_drift_from_pixel_drift()
         widefield.set_all_scanning_drift_from_pixel_drift()
+    elif set_global_drift:
+        pos.set_drift()
+        pos.set_xyz_on_nv(nv_sig)
     opti_pixel_coords = opti_pixel_coords.tolist()
 
     if do_print:

@@ -79,6 +79,11 @@ class LaserPosMode(Enum):
     WIDEFIELD = auto()
 
 
+class DriftMode(Enum):
+    GLOBAL = auto()
+    MULTI = auto()
+
+
 class ControlMode(Enum):
     """
     STEP: Manual control with individual function calls

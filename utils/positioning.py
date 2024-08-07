@@ -191,7 +191,6 @@ def _set_xyz_ramp(coords):
 
 def set_xyz_on_nv(nv_sig, coords_key=CoordsKey.GLOBAL, drift_adjust=True):
     """Returns the coords actually used in the set"""
-    # print(f"set_xyz_on_nv called with pos={pos}")
     coords = get_nv_coords(nv_sig, coords_key, drift_adjust)
     set_xyz(coords, coords_key=coords_key, drift_adjust=False)
     return coords
@@ -340,7 +339,7 @@ def get_z_dtype(coords_key=CoordsKey.GLOBAL):
 # Example usage with debug output
 # print(get_axis_optimize_range(1, CoordsKey.GLOBAL))
 # print(get_axis_delay(1, CoordsKey.GLOBAL))
-# print(get_xy_dtype(CoordsKey.GLOBAL))
+print(get_xy_dtype(CoordsKey.GLOBAL))
 # print(get_z_dtype(CoordsKey.GLOBAL))
 
 
@@ -503,9 +502,9 @@ def get_scan_1d(center, scan_range, num_steps, dtype=np.float64):
     array(numeric)
         Scan coords
     """
-    print(f"Center: {center}, Scan Range: {scan_range}, Num Steps: {num_steps}")
-    if center is None or scan_range is None:
-        raise ValueError("Center or Scan Range is None")
+    # print(f"Center: {center}, Scan Range: {scan_range}, Num Steps: {num_steps}")
+    # if center is None or scan_range is None:
+    #     raise ValueError("Center or Scan Range is None")
 
     half_range = scan_range / 2
     low = center - half_range
