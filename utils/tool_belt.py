@@ -467,7 +467,7 @@ def determine_threshold(
         threshold = single_threshold
 
     # if not single_or_dual:
-    if True:
+    if False:
         smooth_x_vals = np.linspace(0, max_count, 10 * (max_count + 1))
         fig, ax = plt.subplots()
         max_data = max(counts_list)
@@ -644,7 +644,8 @@ def exp_t2(x, amp, decay, offset):
     return exp_stretch_decay(x, amp, decay, offset, 3)
 
 
-def gaussian(x, *params):
+# def gaussian(x, *params):
+def gaussian(x, coeff, mean, stdev, offset):
     """Calculates the value of a gaussian for the given input and parameters
 
     Params:
@@ -658,7 +659,7 @@ def gaussian(x, *params):
             3: constant y value to account for background
     """
 
-    coeff, mean, stdev, offset = params
+    # coeff, mean, stdev, offset = params
     var = stdev**2  # variance
     centDist = x - mean  # distance from the center
     return offset + coeff * np.exp(-(centDist**2) / (2 * var))

@@ -55,7 +55,7 @@ def main(nv_list, apparatus_img, image_data, histogram_data):
     ### Image
 
     img_array = np.array(image_data["img_array"])
-    img_array = widefield.adus_to_photons(img_array)
+    img_array = widefield.adus_to_photons(img_array, k_gain=5000)
 
     # Clean up dead pixel by taking average of nearby pixels
     # dead_pixel = [142, 109]
