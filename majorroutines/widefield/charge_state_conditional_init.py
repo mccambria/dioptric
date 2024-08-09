@@ -104,31 +104,61 @@ def process_and_plot(raw_data, mean_val=None):
 
     ### Inset histograms
 
-    # fig, ax = plt.subplots()
-    ax = fig.add_axes([0.38, 0.265, 0.6, 0.48])
+    # Separated
+    # gs = fig.add_gridspec(
+    #     1, 3, left=0.02, bottom=0.265, right=0.38 + 0.6, top=0.265 + 0.48
+    # )
+    # # fig = fig.subfigures(pos=[0.38, 0.265, 0.6, 0.48])
+    # # fig = fig.subfigures(pos=[0.38, 0.265, 0.6, 0.48])
+    # # axes_pack = fig.add_subplot(
+    # #     1,
+    # #     3,
+    # #     1,
+    # #     position=[0.38, 0.265, 0.6, 0.48],  # , sharex=True, sharey=True
+    # # )
+    # ax0 = fig.add_subplot(gs[0, 0])
+    # ax1 = fig.add_subplot(gs[0, 1], sharex=ax0, sharey=ax0)
+    # ax2 = fig.add_subplot(gs[0, 2], sharex=ax0, sharey=ax0)
+    # axes_pack = [ax0, ax1, ax2]
+
+    # Horizontal stack
+    # pos = [0.35, 0.265, 0.21, 0.42]
+    # ax0 = fig.add_axes(pos)
+    # pos[0] += 0.21
+    # ax1 = fig.add_axes(pos, sharex=ax0, sharey=ax0)
+    # pos[0] += 0.21
+    # ax2 = fig.add_axes(pos, sharex=ax0, sharey=ax0)
+
+    # Vertical stack
+    pos = [0.35, 0.265, 0.63, 0.16]
+    pos = [0.42, 0.265, 0.55, 0.16]
+    ax0 = fig.add_axes(pos)
+    pos[1] += 0.16
+    ax1 = fig.add_axes(pos, sharex=ax0, sharey=ax0)
+    pos[1] += 0.16
+    ax2 = fig.add_axes(pos, sharex=ax0, sharey=ax0)
+    axes_pack = [ax0, ax1, ax2]
+
+    # All in one
+    # ax = fig.add_axes([0.38, 0.265, 0.6, 0.48])
+
     nv_ind = 3
     # nv_ind = 9
     # for rep_ind in reps_vals:
-    hist_reps_vals = [0, 1, 3]
+    hist_reps_vals = [0, 1, 4]
+    hist_reps_vals = hist_reps_vals[::-1]
     # hist_reps_vals = [0, 1, 2, 3]
     num_hist_reps_vals = len(hist_reps_vals)
-    colors = [
-        kpl.KplColors.GRAY,
-        mpl.colors.cnames["goldenrod"],
-        kpl.KplColors.BROWN,
-    ]
-    # colors = [
-    #     kpl.KplColors.GRAY,
-    #     mpl.colors.cnames["steelblue"],
-    #     mpl.colors.cnames["darkslateblue"],
-    # ]
-    colors = [mpl.colors.rgb2hex(color) for color in colors]
+    colors = ["#e99c05", "#c96e15", "#6f2f14"]
     for ind in range(num_hist_reps_vals):
         rep_ind = hist_reps_vals[ind]
         # color_rgb = mpl.colormaps["inferno"](ind / (num_hist_reps_vals - 1))
-        color = colors[ind]
+        color = kpl.KplColors.ORANGE
+        # color = colors[ind]
+        # color = colors[1]
         # color = mpl.colors.rgb2hex(color_rgb)
         label = "1 attempt" if rep_ind == 1 else f"{rep_ind} attempts"
+        ax = axes_pack[ind]
         kpl.histogram(
             ax,
             counts[nv_ind, :, 0, rep_ind],
@@ -139,10 +169,21 @@ def process_and_plot(raw_data, mean_val=None):
             lw=1.5,
             label=label,
         )
-    ax.legend()
-    ax.set_xlabel("Integrated counts")
-    ax.set_ylabel("Probability")
-    ax.set_yticks([0.0, 0.02, 0.04, 0.06])
+        # ax.legend()
+        # ax.set_title(label, fontsize=17)
+        ax.text(68, 0.05, label)
+        ax.axvline(nv_list[nv_ind].threshold, color=kpl.KplColors.GRAY, ls="dashed")
+    ax = axes_pack[1]
+    axes_pack[0].set_xlabel("Integrated counts")
+    axes_pack[1].set_ylabel("Probability")
+    ax = axes_pack[1]
+    # ax.set_xticks([0, 40, 80])
+    ax.set_xticks([0, 25, 50, 75])
+    # ax.set_yticks([0.0, 0.02, 0.04, 0.06])
+    ax.set_yticks([0.0, 0.04])
+    # ax.set_xlim([0, 96])
+    ax.set_xlim([0, 80])
+    ax.set_ylim([0, 0.07])
 
     return fig
 
