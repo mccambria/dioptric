@@ -132,7 +132,7 @@ def _read_counts_counter_stream(axis_ind=None, scan_vals=None):
 
 def _read_counts_counter_step(axis_ind=None, scan_vals=None):
     if axis_ind is not None:
-        axis_write_fn = pos.get_axis_write_fn(axis_ind)
+        axis_write_fn = pos.get_axis_write_fn(axis_ind, pos="pos_xyz")
     counter = tb.get_server_counter()
     pulse_gen = tb.get_server_pulse_gen()
     counter.start_tag_stream()
@@ -151,7 +151,7 @@ def _read_counts_counter_step(axis_ind=None, scan_vals=None):
 
 def _read_counts_camera_step(nv_sig, axis_ind=None, scan_vals=None):
     if axis_ind is not None:
-        axis_write_fn = pos.get_axis_write_fn(axis_ind)
+        axis_write_fn = pos.get_axis_write_fn(axis_ind, pos="pos_xyz")
     pixel_coords = widefield.get_nv_pixel_coords(nv_sig)
     camera = tb.get_server_camera()
     pulse_gen = tb.get_server_pulse_gen()
@@ -189,8 +189,7 @@ def _read_counts_camera_sequence(
     scan_vals=None,
 ):
     """
-    Specific function for widefield setup - XY control from AODs,
-    Z control from objective piezo, imaged onto a camera
+    Specific function for widefield setup - XYZ control from piezo, imaged onto a camera
     """
     # Basic setup
     pixel_coords = widefield.get_nv_pixel_coords(nv_sig)
@@ -232,13 +231,14 @@ def _read_counts_camera_sequence(
         seq_args = [pol_coords, ion_coords]
         seq_file_name = "optimize_ionization_laser_coords.py"
         num_reps = 50
-    if axis_ind is None or axis_ind == 2:
+    # if axis_ind is None or axis_ind == 2:
+    if axis_ind is not None:
         seq_args_string = tb.encode_seq_args(seq_args)
         pulse_gen.stream_load(seq_file_name, seq_args_string, num_reps)
-    # # For z the sequence is the same every time and z is moved manually
-    if axis_ind == 2:
-        axis_write_fn = pos.get_axis_write_fn(axis_ind)
-
+        # For xyz the sequence is the same every time and xyz is moved manually
+    if axis_ind is not None:
+        axis_write_fn = pos.get_axis_write_fn(axis_ind, pos="pos_xyz")
+        # print(axis_write_fn)
     # print(seq_args)
     # return
 
@@ -252,16 +252,7 @@ def _read_counts_camera_sequence(
         # Modify the sequence as necessary and start the pulse generator
         if axis_ind is not None:
             val = scan_vals[ind]
-            if axis_ind in [0, 1]:
-                if laser_key == LaserKey.IMAGING:
-                    seq_args[-2 + axis_ind] = [val]
-                elif laser_key == LaserKey.ION:
-                    seq_args[1][axis_ind] = val
-                seq_args_string = tb.encode_seq_args(seq_args)
-
-                pulse_gen.stream_load(seq_file_name, seq_args_string, num_reps)
-            elif axis_ind == 2:
-                axis_write_fn(val)
+            axis_write_fn(val)
 
         # Read the camera images
         img_array_list = []
@@ -339,11 +330,11 @@ def _read_counts(
     # Position us at the starting point
     if coords is not None:
         if scan_vals is None:
-            pos.set_xyz(coords, coords_key)
+            pos.set_xyz(coords, coords_key, pos="pos_xyz")
         else:
             start_coords = np.copy(coords)
             start_coords[axis_ind] = scan_vals[-1]
-            pos.set_xyz(start_coords, coords_key)
+            pos.set_xyz(start_coords, coords_key, pos="pos_xyz")
 
     # Assume the lasers are sequence controlled if using camera
     if collection_mode == CollectionMode.CAMERA:
@@ -402,8 +393,12 @@ def prepare_microscope(nv_sig: NVSig):
     optics (filters, etc) and magnet, and sets the global coordinates. The
     laser set up must be handled by each routine
     """
+
+    # MCC to do
+    # Set filters according to config
+
     # Set the global positioners on this NV
-    pos.set_xyz_on_nv(nv_sig)
+    pos.set_xyz_on_nv(nv_sig, pos="pos_xyz")
 
     # Set the magnet rotation mount to the correct angle
     magnet_angle = nv_sig.magnet_angle
@@ -445,7 +440,7 @@ def main(
     tb.init_safe_stop()
 
     initial_coords = pos.get_nv_coords(nv_sig, coords_key, drift_adjust)
-
+    # print(initial_coords)
     start_time = time.time()
 
     # Default values for status variables
@@ -501,7 +496,7 @@ def main(
 
             for axis_ind in axes_to_optimize:
                 # Check if z optimization is necessary after xy optimization
-                if axis_ind == 2 and axes_to_optimize == [0, 1, 2]:
+                if axes_to_optimize == [0, 1, 2]:
                     current_counts = counts_check(opti_coords)
                     if expected_counts is not None and expected_counts_check(
                         nv_sig, current_counts

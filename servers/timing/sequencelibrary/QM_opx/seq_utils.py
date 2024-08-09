@@ -619,6 +619,7 @@ def _macro_pulse_list(
         list_2.append(duration_list)
     if amp_list is not None:
         list_1.append(_cache_amp)
+        amp_list = [float(el) for el in amp_list]
         list_2.append(amp_list)
     if target_list is not None:
         list_1.append(_cache_target)

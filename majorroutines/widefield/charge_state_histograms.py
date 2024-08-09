@@ -114,13 +114,17 @@ def process_and_plot(raw_data):
     prep_fidelity_list = []
     hist_figs = []
     # prior_thresholds = [27.5, 27.5, 24.5, 22.5, 25.5, 25.5, 20.5, 19.5, 16.5, 18.5]
+    DEFAULT_THRESHOLD = 0.0
     for ind in range(num_nvs):
         sig_counts_list = sig_counts_lists[ind]
         ref_counts_list = ref_counts_lists[ind]
         fig = create_histogram(sig_counts_list, ref_counts_list, density=True)
         hist_figs.append(fig)
         all_counts_list = np.append(sig_counts_list, ref_counts_list)
-        threshold = determine_threshold(all_counts_list, nvn_ratio=0.5)
+        try:
+            threshold = determine_threshold(all_counts_list, nvn_ratio=0.5)
+        except:
+            threshold = DEFAULT_THRESHOLD
         threshold_list.append(threshold)
         # threshold = prior_thresholds[ind]
         prep_fidelity_list.append(

@@ -270,7 +270,6 @@ def get_raw_data(file_name=None, file_id=None, use_cache=True, load_npz=False):
                 npz_data = np.load(BytesIO(npz_file_content))
                 data |= npz_data
                 break
-
     ### Add to cache and return the data
 
     # Update the cache manifest

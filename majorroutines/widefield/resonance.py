@@ -205,7 +205,7 @@ def main(
     uwave_ind_list=[0, 1],
 ):
     ### Some initial setup
-
+    print("Main function started")
     pulse_gen = tb.get_server_pulse_gen()
     freqs = calculate_freqs(freq_center, freq_range, num_steps)
     original_num_steps = num_steps
@@ -218,6 +218,9 @@ def main(
     def run_fn(step_inds):
         seq_args = [widefield.get_base_scc_seq_args(nv_list, uwave_ind_list), step_inds]
         seq_args_string = tb.encode_seq_args(seq_args)
+        # print(
+        #     f"Arguments passed to stream_load: {seq_file}, {seq_args_string}, {num_reps}"
+        # )
         pulse_gen.stream_load(seq_file, seq_args_string, num_reps)
 
     # def step_fn(step_ind):
@@ -392,7 +395,7 @@ if __name__ == "__main__":
     ref_img_array = np.mean(proc_img_arrays[:, :, adj_num_steps:, :], axis=(0, 1, 2, 3))
     proc_img_arrays = sig_img_arrays - ref_img_array
 
-    downsample_factor = 2
+    downsample_factor = 1
     proc_img_arrays = [
         widefield.downsample_img_array(el, downsample_factor) for el in proc_img_arrays
     ]

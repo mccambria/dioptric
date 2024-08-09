@@ -1,47 +1,45 @@
-# -*- coding: utf-8 -*-
-"""
-Output server for the Berkeley Nucleonics 835 microwave signal generator.
+import time
 
-Created on Wed Apr 10 12:53:38 2019
+import numpy as np
 
-@author: mccambria
+from utils import positioning as pos
 
-### BEGIN NODE INFO
-[info]
-name = test_server
-version = 1.0
-description =
+# Reset to origin coordinates
+# time.sleep(1.0)
+# print(f"Resetting XYZ coordinates to: {reset_coords}")
+# pos.set_xyz(reset_coords)
+reset_coords = [0.00, 0.00, 0.1]
+pos.set_xyz(reset_coords, pos="pos_xyz")
 
-[startup]
-cmdline = %PYTHON% %FILE%
-timeout = 20
+pos.get_axis_write_fn(1, pos="pos_xyz")
 
-[shutdown]
-message = 987654321
-timeout = 5
-### END NODE INFO
-"""
+# def test_write_xyz_loop():
+#     # Define the ranges and steps for the test loop
+#     x_range = np.linspace(-3.0, 3.0, num=10)
+#     y_range = np.linspace(-3.0, 3.0, num=10)
+#     z_range = np.linspace(-3.0, 3.0, num=10)
+#     sleep_time = 0.5
+#     for x in x_range:
+#         coords = [x, 0.0, 0]
+#         print(f"writing x coord to:{coords}")
+#         time.sleep()
+#         pos.get_axis_write_fn(coords[0], coords[1], coords[2])
+#         time.sleep(sleep_time)
+#     print("Test loop in x is completed")
+#     # Iterate over the ranges
+#     for x in x_range:
+#         for y in y_range:
+#             for z in z_range:
+#                 coords = [x, y, z]
+#                 print(f"Setting XYZ coordinates to: {coords}")
+#                 pos.set_xyz(coords)
+#                 time.sleep(
+#                     sleep_time
+#                 )  # Sleep to allow the system to process the update
 
-from labrad.server import LabradServer
-from labrad.server import setting
-from twisted.internet.defer import ensureDeferred
-import pyvisa as visa  # Docs here: https://pyvisa.readthedocs.io/en/master/
-import logging
-import socket
-from utils import common
 
+#     print("Test loop completed successfully.")
+# reset
 
-class TestServer(LabradServer):
-    name = "test_server"
-    pc_name = socket.gethostname()
-
-    def initServer(self):
-        logging.info("init complete")
-
-
-__server__ = TestServer()
-
-if __name__ == "__main__":
-    from labrad import util
-
-    util.runServer(__server__)
+# if __name__ == "__main__":
+#     test_write_xyz_loop()

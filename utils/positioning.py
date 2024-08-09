@@ -27,13 +27,41 @@ coords (nv_sig key "coords"). Otherwise we'll use the laser specific coords
 """
 
 
+# def set_xyz(coords, coords_key=CoordsKey.GLOBAL, drift_adjust=False, ramp=None):
+#     if drift_adjust:
+#         coords = adjust_coords_for_drift(coords, coords_key=coords_key)
+#     if ramp is None:
+#         config = common.get_config_dict()
+#         key = "set_xyz_ramp"
+#         ramp = key in config and config[key]
+#     if ramp:
+#         return _set_xyz_ramp(coords)
+#     else:
+#         return _set_xyz(coords, coords_key)
+
+
+# def _set_xyz(coords, coords_key):
+#     xy_dtype = get_xy_dtype(coords_key=coords_key)
+#     z_dtype = get_z_dtype(coords_key=coords_key)
+#     pos_xy_server = get_server_pos_xy(coords_key=coords_key)
+#     pos_z_server = get_server_pos_z(coords_key=coords_key)
+
+#     if pos_xy_server is not None:
+#         pos_xy_server.write_xy(xy_dtype(coords[0]), xy_dtype(coords[1]))
+#     if pos_z_server is not None:
+#         pos_z_server.write_z(z_dtype(coords[2]))
+#     # # Force some delay before proceeding to account for the effective write time
+#     # time.sleep(0.002)
+
+
 def set_xyz(coords, coords_key=CoordsKey.GLOBAL, drift_adjust=False, ramp=None):
     if drift_adjust:
         coords = adjust_coords_for_drift(coords, coords_key=coords_key)
+
     if ramp is None:
         config = common.get_config_dict()
-        key = "set_xyz_ramp"
-        ramp = key in config and config[key]
+        ramp = config.get("set_xyz_ramp", False)
+
     if ramp:
         return _set_xyz_ramp(coords)
     else:
@@ -43,14 +71,19 @@ def set_xyz(coords, coords_key=CoordsKey.GLOBAL, drift_adjust=False, ramp=None):
 def _set_xyz(coords, coords_key):
     xy_dtype = get_xy_dtype(coords_key=coords_key)
     z_dtype = get_z_dtype(coords_key=coords_key)
+    xyz_dtype = get_z_dtype(coords_key=coords_key)
+
     pos_xy_server = get_server_pos_xy(coords_key=coords_key)
     pos_z_server = get_server_pos_z(coords_key=coords_key)
-    if pos_xy_server is not None:
+
+    if pos_xy_server:
         pos_xy_server.write_xy(xy_dtype(coords[0]), xy_dtype(coords[1]))
-    if pos_z_server is not None:
+    if pos_z_server:
         pos_z_server.write_z(z_dtype(coords[2]))
-    # # Force some delay before proceeding to account for the effective write time
-    # time.sleep(0.002)
+
+
+# Optionally force a delay to account for write time
+# time.sleep(0.002)
 
 
 def _set_xyz_ramp(coords):
@@ -187,9 +220,9 @@ def set_nv_coords(nv_sig, coords, coords_key=CoordsKey.GLOBAL):
 
 
 # endregion
+
+
 # region Getters
-
-
 def get_laser_pos_mode(laser_name):
     config = common.get_config_dict()
     config_laser = config["Optics"][laser_name]
@@ -199,18 +232,77 @@ def get_laser_pos_mode(laser_name):
         return None
 
 
+# def _get_axis_value_sub(base_key, axis_ind, coords_key=CoordsKey.GLOBAL):
+#     label_dict = {0: "xy", 1: "xy", 2: "z"}
+#     label = label_dict[axis_ind]
+#     key = f"{label}_{base_key}"
+#     config = common.get_config_dict()
+#     config_pos = config["Positioning"]
+#     try:
+#         if coords_key in config_pos:
+#             return config_pos[coords_key][key]
+#         elif coords_key == CoordsKey.GLOBAL:
+#             return config_pos[key]
+#     except Exception:
+#         return None
+
+
+# def get_axis_delay(axis_ind, coords_key=CoordsKey.GLOBAL):
+#     return _get_axis_value_sub("delay", axis_ind, coords_key)
+
+
+# def get_axis_units(axis_ind, coords_key=CoordsKey.GLOBAL):
+#     return _get_axis_value_sub("units", axis_ind, coords_key)
+
+
+# def get_axis_control_mode(axis_ind, coords_key=CoordsKey.GLOBAL):
+#     return _get_axis_value_sub("control_mode", axis_ind, coords_key)
+
+
+# def get_axis_optimize_range(axis_ind, coords_key=CoordsKey.GLOBAL):
+#     return _get_axis_value_sub("optimize_range", axis_ind, coords_key)
+
+
+# def get_axis_dtype(axis_ind, coords_key=CoordsKey.GLOBAL):
+#     return _get_axis_value_sub("dtype", axis_ind, coords_key)
+
+
+# # def get_xy_dtype(coords_key=CoordsKey.GLOBAL):
+# #     axis_ind = 1
+# #     return get_axis_dtype(axis_ind, coords_key)
+
+
+# def get_xy_dtype(coords_key=CoordsKey.GLOBAL):
+#     return float
+
+
+# def get_z_dtype(coords_key=CoordsKey.GLOBAL):
+#     axis_ind = 2
+#     return get_axis_dtype(axis_ind, coords_key)
+
+
 def _get_axis_value_sub(base_key, axis_ind, coords_key=CoordsKey.GLOBAL):
     label_dict = {0: "xy", 1: "xy", 2: "z"}
     label = label_dict[axis_ind]
     key = f"{label}_{base_key}"
     config = common.get_config_dict()
     config_pos = config["Positioning"]
+
     try:
         if coords_key in config_pos:
-            return config_pos[coords_key][key]
+            if key in config_pos[coords_key]:
+                # print(f"Found {key} in {coords_key}")
+                return config_pos[coords_key][key]
+            else:
+                print(f"{key} not found in {coords_key}")
         elif coords_key == CoordsKey.GLOBAL:
-            return config_pos[key]
-    except Exception:
+            if key in config_pos:
+                # print(f"Found {key} in GLOBAL")
+                return config_pos[key]
+            else:
+                print(f"{key} not found in GLOBAL")
+    except Exception as e:
+        print(f"Exception: {e}")
         return None
 
 
@@ -235,13 +327,20 @@ def get_axis_dtype(axis_ind, coords_key=CoordsKey.GLOBAL):
 
 
 def get_xy_dtype(coords_key=CoordsKey.GLOBAL):
-    axis_ind = 0
+    axis_ind = 1
     return get_axis_dtype(axis_ind, coords_key)
 
 
 def get_z_dtype(coords_key=CoordsKey.GLOBAL):
     axis_ind = 2
     return get_axis_dtype(axis_ind, coords_key)
+
+
+# Example usage with debug output
+# print(get_axis_optimize_range(1, CoordsKey.GLOBAL))
+# print(get_axis_delay(1, CoordsKey.GLOBAL))
+print(get_xy_dtype(CoordsKey.GLOBAL))
+# print(get_z_dtype(CoordsKey.GLOBAL))
 
 
 def get_xy_control_mode(coords_key=CoordsKey.GLOBAL):
@@ -310,12 +409,13 @@ def get_axis_stream_fn(axis_ind, coords_key=CoordsKey.GLOBAL):
     if axis_ind == 1:
         stream_fn = server.load_stream_y
     if axis_ind == 2:
-        stream_fn = server.load_stream_z
-
+        # stream_fn = server.load_stream_z
+        stream_fn = server.load_scan_z
     return stream_fn
 
 
 # endregion
+
 # region Drift
 """Implemented with a drift tracking global stored on the registry"""
 
@@ -402,6 +502,9 @@ def get_scan_1d(center, scan_range, num_steps, dtype=np.float64):
     array(numeric)
         Scan coords
     """
+    # print(f"Center: {center}, Scan Range: {scan_range}, Num Steps: {num_steps}")
+    # if center is None or scan_range is None:
+    #     raise ValueError("Center or Scan Range is None")
 
     half_range = scan_range / 2
     low = center - half_range

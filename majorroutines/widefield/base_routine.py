@@ -349,7 +349,9 @@ def main(
                     # Record step order
                     step_ind_master_list[run_ind] = step_ind_list.copy()
 
-                    # Update coordinates
+                    # Update global coordinates (new)
+                    # optimize.optimize_xyz_using_piezo(repr_nv_sig)
+                    # Update pixel coordinates and objective z (old)
                     pixel_drift = optimize.optimize_pixel_and_z(repr_nv_sig)
                     pixel_drifts[run_ind, :] = pixel_drift
 

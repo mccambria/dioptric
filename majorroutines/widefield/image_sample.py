@@ -13,6 +13,7 @@ from multiprocessing import Pool
 
 import matplotlib.pyplot as plt
 import numpy as np
+from pipython import GCSDevice
 
 import majorroutines.optimize as optimize
 from majorroutines.widefield.optimize import optimize_pixel
