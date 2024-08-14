@@ -14,6 +14,7 @@ from functools import cache
 from importlib import import_module
 from pathlib import Path
 
+import cv2
 import matplotlib.pyplot as plt
 import numpy as np
 from matplotlib import animation
@@ -31,6 +32,7 @@ from utils.constants import (
     CollectionMode,
     CoordsKey,
     CountFormat,
+    DriftMode,
     LaserKey,
     LaserPosMode,
     NVSig,
@@ -526,11 +528,13 @@ def get_base_scc_seq_args(
     list
         Sequence arguments
     """
-    # Get lists
+    # Get coordinate lists
     pol_coords_list = get_coords_list(nv_list, LaserKey.CHARGE_POL)
     scc_coords_list = get_coords_list(
         nv_list, LaserKey.SCC, include_inds=scc_include_inds
     )
+
+    # Other lists
     scc_duration_list = get_scc_duration_list(nv_list, include_inds=scc_include_inds)
     scc_amp_list = get_scc_amp_list(nv_list, include_inds=scc_include_inds)
     spin_flip_ind_list = get_spin_flip_ind_list(nv_list)
@@ -551,8 +555,12 @@ def get_base_scc_seq_args(
 
 
 def get_coords_list(
-    nv_list: list[NVSig], laser_key, drift_adjust=True, include_inds=None
+    nv_list: list[NVSig], laser_key, drift_adjust=None, include_inds=None
 ):
+    if drift_adjust is None:
+        drift_mode = pos.get_drift_mode()
+        drift_adjust = drift_mode != DriftMode.GLOBAL
+
     laser_name = tb.get_laser_name(laser_key)
     drift = pos.get_drift(laser_name) if drift_adjust else None
     coords_list = [
@@ -654,9 +662,12 @@ def get_nv_pixel_coords(nv_sig, drift_adjust=True, drift=None):
     return pixel_coords
 
 
+def set_global_drift_from_pixel_drift(pixel_drift=None, coords_key=CoordsKey.GLOBAL):
+    scanning_drift = pixel_to_scanning_drift(pixel_drift, coords_key)
+    pos.set_drift(scanning_drift, coords_key)
+
+
 def set_all_scanning_drift_from_pixel_drift(pixel_drift=None):
-    if no_scanning_drifts:
-        return
     scanning_optics = _get_scanning_optics()
     for coords_key in scanning_optics:
         set_scanning_drift_from_pixel_drift(pixel_drift, coords_key)
@@ -677,9 +688,61 @@ def _get_scanning_optics():
     return scanning_optics
 
 
-def set_scanning_drift_from_pixel_drift(pixel_drift=None, coords_key=CoordsKey.GLOBAL):
+# def set_scanning_drift_from_pixel_drift(
+#     pixel_drift=None, coords_key=CoordsKey.GLOBAL, relative=False
+# ):
+#     scanning_drift = pixel_to_scanning_drift(pixel_drift, coords_key)
+#     prev_drift = pos.get_drift(coords_key)
+
+#     # If relative, retain the old scanning drift and add the new value on top
+#     if relative:
+#         if len(prev_drift) > len(scanning_drift):
+#             scanning_drift.append(0)
+#         new_drift = np.array(scanning_drift)
+#         scanning_drift = new_drift + prev_drift
+
+#     elif len(prev_drift) > len(scanning_drift):
+#         scanning_drift = [*scanning_drift, prev_drift[2]]
+
+#     pos.set_drift(scanning_drift, coords_key)
+
+
+def set_scanning_drift_from_pixel_drift(
+    pixel_drift=None, coords_key=CoordsKey.GLOBAL, relative=False
+):
+    # Calculate the scanning drift based on pixel drift
     scanning_drift = pixel_to_scanning_drift(pixel_drift, coords_key)
-    pos.set_drift(scanning_drift, coords_key)
+    prev_drift = pos.get_drift(coords_key)
+
+    # If relative, add the new drift to the previous drift directly
+    if relative:
+        # Extend scanning_drift and prev_drift to 3D if necessary
+        if len(prev_drift) < 3:
+            prev_drift = np.append(prev_drift, 0)
+        if len(scanning_drift) < 3:
+            scanning_drift = np.append(scanning_drift, 0)
+
+        # Compute the new drift by adding the old drift to the new one
+        new_drift = np.array(scanning_drift) + np.array(prev_drift)
+
+    else:
+        new_drift = scanning_drift
+        if len(prev_drift) > len(scanning_drift):
+            new_drift.append(prev_drift[2])
+
+    # Set the computed drift
+    pos.set_drift(new_drift.tolist(), coords_key)
+
+
+# def set_scanning_drift_from_pixel_drift(
+#     pixel_drift=None, coords_key=CoordsKey.GLOBAL, relative=False
+# ):
+#     scanning_drift = pixel_to_scanning_drift(pixel_drift, coords_key)
+#     if relative:
+#         prev_drift = pos.get_drift(coords_key)
+#         scanning_drift = prev_drift + scanning_drift
+#     # Set the updated drift
+#     pos.set_drift(scanning_drift, coords_key)
 
 
 def set_pixel_drift_from_scanning_drift(
@@ -689,14 +752,26 @@ def set_pixel_drift_from_scanning_drift(
     set_pixel_drift(pixel_drift)
 
 
+# def pixel_to_scanning_drift(pixel_drift=None, coords_key=CoordsKey.GLOBAL):
+#     if pixel_drift is None:
+#         pixel_drift = get_pixel_drift()
+#         scanning_drift = pos.get_drift(coords_key)
+#     transform_matrix = _get_affine_transform_matrix(
+#         coords_key, direction="pixel_to_scanning"
+#     )
+#     scanning_drift = np.dot(transform_matrix, np.append(pixel_drift, 1))[:2]
+#     return scanning_drift.tolist()
+
+
 def pixel_to_scanning_drift(pixel_drift=None, coords_key=CoordsKey.GLOBAL):
     if pixel_drift is None:
         pixel_drift = get_pixel_drift()
+
     transform_matrix = _get_affine_transform_matrix(
         coords_key, direction="pixel_to_scanning"
     )
-    scanning_drift = np.dot(transform_matrix, np.append(pixel_drift, 1))[:2]
-    return scanning_drift.tolist()
+    transformed_drift = np.dot(transform_matrix, np.append(pixel_drift, 1))[:2]
+    return transformed_drift.tolist()
 
 
 def scanning_to_pixel_drift(scanning_drift=None, coords_key=CoordsKey.GLOBAL):
@@ -711,8 +786,6 @@ def scanning_to_pixel_drift(scanning_drift=None, coords_key=CoordsKey.GLOBAL):
 
 # endregion
 # region Scanning to pixel calibration
-
-
 def set_nv_scanning_coords_from_pixel_coords(
     nv_sig, coords_key=CoordsKey.GLOBAL, drift_adjust=True
 ):
@@ -738,9 +811,25 @@ def pixel_to_scanning_coords(pixel_coords, coords_key=CoordsKey.GLOBAL):
     return scanning_coords.tolist()
 
 
+def scanning_to_pixel_coords(scanning_coords, coords_key=CoordsKey.GLOBAL):
+    transform_matrix = _get_affine_transform_matrix(
+        coords_key, direction="scanning_to_pixel"
+    )
+    pixel_coords = np.dot(transform_matrix, np.append(scanning_coords, 1))[:2]
+    return pixel_coords.tolist()
+
+
 def _get_affine_transform_matrix(
     coords_key=CoordsKey.GLOBAL, direction="pixel_to_scanning"
 ):
+    if coords_key == CoordsKey.GLOBAL:
+        # Retrieve the affine transformation matrix from the config for piezo votage to camera
+        config = common.get_config_dict()
+        affine_matrix = config["Positioning"]["AffineCalibration_voltage2pixel"]
+        inverse_affine_matrix = np.linalg.inv(affine_matrix)  # pixel to voltage
+        transform_matrix = np.array(inverse_affine_matrix)
+        return transform_matrix.T
+
     nv1, nv2, nv3 = get_widefield_calibration_nvs()
     nv1_scanning_coords = pos.get_nv_coords(nv1, coords_key, drift_adjust=False)
     nv1_pixel_coords = get_nv_pixel_coords(nv1, drift_adjust=False)
@@ -762,14 +851,6 @@ def _get_affine_transform_matrix(
     B = np.array(dest_coords)
     transform_matrix = np.linalg.lstsq(A, B, rcond=None)[0]
     return transform_matrix.T
-
-
-def scanning_to_pixel_coords(scanning_coords, coords_key=CoordsKey.GLOBAL):
-    transform_matrix = _get_affine_transform_matrix(
-        coords_key, direction="scanning_to_pixel"
-    )
-    pixel_coords = np.dot(transform_matrix, np.append(scanning_coords, 1))[:2]
-    return pixel_coords.tolist()
 
 
 # endregion
@@ -1466,6 +1547,140 @@ def plot_correlations(axes_pack, nv_list, x, counts):
 
 
 # endregion
+
+# region voltage to pixe calibration
+import pickle
+
+import cv2
+import numpy as np
+from skimage.measure import ransac
+from skimage.transform import AffineTransform
+
+
+class AffineCalibration:
+    def __init__(self, capture_func):
+        self.capture_func = capture_func
+        self.affine_model = None
+
+    def capture_image(self):
+        return self.capture_func()
+
+    @staticmethod
+    def ensure_color_image(image):
+        if image.dtype != np.uint8:
+            image = (255 * (image - np.min(image)) / np.ptp(image)).astype(np.uint8)
+        if len(image.shape) == 2:
+            return cv2.cvtColor(image, cv2.COLOR_GRAY2BGR)
+        return image
+
+    # def detect_keypoints(self, image):
+    #     image = self.ensure_color_image(image)
+    #     sift = cv2.SIFT_create()
+    #     keypoints, descriptors = sift.detectAndCompute(image, None)
+    #     return keypoints, descriptors
+
+    def detect_keypoints(self, image):
+        # Convert image to grayscale if it's not already
+        if len(image.shape) == 3:
+            gray_image = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
+        else:
+            gray_image = image
+
+        # Normalize the image to the range 0-255
+        normalized_image = cv2.normalize(gray_image, None, 0, 255, cv2.NORM_MINMAX)
+
+        # Convert the normalized image to 8-bit
+        image_8bit = normalized_image.astype(np.uint8)
+
+        # Apply a Gaussian blur to reduce noise and improve blob detection
+        blurred_image = cv2.GaussianBlur(image_8bit, (5, 5), 0)
+
+        # Set up the detector with default parameters
+        params = cv2.SimpleBlobDetector_Params()
+        params.filterByArea = True
+        params.minArea = 3  # Adjust this based on the size of the bright spots
+        params.maxArea = 6  # Adjust this as well based on the size of the bright spots
+
+        detector = cv2.SimpleBlobDetector_create(params)
+
+        # Detect blobs
+        keypoints = detector.detect(blurred_image)
+
+        # Convert keypoints to the format expected by the rest of your code
+        keypoints_np = np.array([kp.pt for kp in keypoints], dtype=np.float32)
+
+        return keypoints_np, None  # Second return value is placeholder for descriptors
+
+    def match_keypoints(self, desc1, desc2):
+        bf = cv2.BFMatcher(cv2.NORM_L2)
+        matches = bf.knnMatch(desc1, desc2, k=2)
+        good_matches = []
+        for m, n in matches:
+            if m.distance < 0.9 * n.distance:  # Apply ratio test
+                good_matches.append(m)
+        return good_matches
+
+    @staticmethod
+    def extract_matched_points(kp1, kp2, matches):
+        points1 = np.float32([kp1[m.queryIdx].pt for m in matches])
+        points2 = np.float32([kp2[m.trainIdx].pt for m in matches])
+        return points1, points2
+
+    def affine_calibrate_piezo(self, nv_sig):
+        coordinates = [
+            (-0.03, -0.03),
+            (0, -0.03),
+            (0.03, -0.03),
+            (-0.015, -0.015),
+            (-0.03, 0),
+            (0, 0),
+            (0.03, 0),
+            (-0.015, 0.015),
+            (-0.03, 0.03),
+            (0, 0.03),
+            (0.03, 0.03),
+        ]
+
+        points1_list = []
+        points2_list = []
+        reference_image = self.capture_image()
+        kp1, desc1 = self.detect_keypoints(reference_image)
+
+        for x, y in coordinates:
+            nv_sig.coords[CoordsKey.GLOBAL][0] = x
+            nv_sig.coords[CoordsKey.GLOBAL][1] = y
+            new_image = self.capture_image()
+            kp2, desc2 = self.detect_keypoints(new_image)
+            matches = self.match_keypoints(desc1, desc2)
+            if len(matches) < 3:  # Avoid low match situations
+                continue
+            points1, points2 = self.extract_matched_points(kp1, kp2, matches)
+            points1_list.append(points1)
+            points2_list.append(points2)
+
+        return points1_list, points2_list
+
+    def calculate_affine_transform(self, points1_list, points2_list):
+        points1 = np.concatenate(points1_list)
+        points2 = np.concatenate(points2_list)
+        model, inliers = ransac(
+            (points1, points2),
+            AffineTransform,
+            min_samples=4,
+            residual_threshold=1,
+            max_trials=1000,
+        )
+        self.affine_model = model
+        return model
+
+    def save_affine_model(self, filename):
+        with open(filename, "wb") as file:
+            pickle.dump(self.affine_model, file)
+
+    def load_affine_model(self, filename):
+        with open(filename, "rb") as file:
+            self.affine_model = pickle.load(file)
+        return self.affine_model
 
 
 if __name__ == "__main__":

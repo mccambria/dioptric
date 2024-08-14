@@ -27,33 +27,6 @@ coords (nv_sig key "coords"). Otherwise we'll use the laser specific coords
 """
 
 
-# def set_xyz(coords, coords_key=CoordsKey.GLOBAL, drift_adjust=False, ramp=None):
-#     if drift_adjust:
-#         coords = adjust_coords_for_drift(coords, coords_key=coords_key)
-#     if ramp is None:
-#         config = common.get_config_dict()
-#         key = "set_xyz_ramp"
-#         ramp = key in config and config[key]
-#     if ramp:
-#         return _set_xyz_ramp(coords)
-#     else:
-#         return _set_xyz(coords, coords_key)
-
-
-# def _set_xyz(coords, coords_key):
-#     xy_dtype = get_xy_dtype(coords_key=coords_key)
-#     z_dtype = get_z_dtype(coords_key=coords_key)
-#     pos_xy_server = get_server_pos_xy(coords_key=coords_key)
-#     pos_z_server = get_server_pos_z(coords_key=coords_key)
-
-#     if pos_xy_server is not None:
-#         pos_xy_server.write_xy(xy_dtype(coords[0]), xy_dtype(coords[1]))
-#     if pos_z_server is not None:
-#         pos_z_server.write_z(z_dtype(coords[2]))
-#     # # Force some delay before proceeding to account for the effective write time
-#     # time.sleep(0.002)
-
-
 def set_xyz(coords, coords_key=CoordsKey.GLOBAL, drift_adjust=False, ramp=None):
     if drift_adjust:
         coords = adjust_coords_for_drift(coords, coords_key=coords_key)
@@ -71,7 +44,6 @@ def set_xyz(coords, coords_key=CoordsKey.GLOBAL, drift_adjust=False, ramp=None):
 def _set_xyz(coords, coords_key):
     xy_dtype = get_xy_dtype(coords_key=coords_key)
     z_dtype = get_z_dtype(coords_key=coords_key)
-    xyz_dtype = get_z_dtype(coords_key=coords_key)
 
     pos_xy_server = get_server_pos_xy(coords_key=coords_key)
     pos_z_server = get_server_pos_z(coords_key=coords_key)
@@ -232,55 +204,6 @@ def get_laser_pos_mode(laser_name):
         return None
 
 
-# def _get_axis_value_sub(base_key, axis_ind, coords_key=CoordsKey.GLOBAL):
-#     label_dict = {0: "xy", 1: "xy", 2: "z"}
-#     label = label_dict[axis_ind]
-#     key = f"{label}_{base_key}"
-#     config = common.get_config_dict()
-#     config_pos = config["Positioning"]
-#     try:
-#         if coords_key in config_pos:
-#             return config_pos[coords_key][key]
-#         elif coords_key == CoordsKey.GLOBAL:
-#             return config_pos[key]
-#     except Exception:
-#         return None
-
-
-# def get_axis_delay(axis_ind, coords_key=CoordsKey.GLOBAL):
-#     return _get_axis_value_sub("delay", axis_ind, coords_key)
-
-
-# def get_axis_units(axis_ind, coords_key=CoordsKey.GLOBAL):
-#     return _get_axis_value_sub("units", axis_ind, coords_key)
-
-
-# def get_axis_control_mode(axis_ind, coords_key=CoordsKey.GLOBAL):
-#     return _get_axis_value_sub("control_mode", axis_ind, coords_key)
-
-
-# def get_axis_optimize_range(axis_ind, coords_key=CoordsKey.GLOBAL):
-#     return _get_axis_value_sub("optimize_range", axis_ind, coords_key)
-
-
-# def get_axis_dtype(axis_ind, coords_key=CoordsKey.GLOBAL):
-#     return _get_axis_value_sub("dtype", axis_ind, coords_key)
-
-
-# # def get_xy_dtype(coords_key=CoordsKey.GLOBAL):
-# #     axis_ind = 1
-# #     return get_axis_dtype(axis_ind, coords_key)
-
-
-# def get_xy_dtype(coords_key=CoordsKey.GLOBAL):
-#     return float
-
-
-# def get_z_dtype(coords_key=CoordsKey.GLOBAL):
-#     axis_ind = 2
-#     return get_axis_dtype(axis_ind, coords_key)
-
-
 def _get_axis_value_sub(base_key, axis_ind, coords_key=CoordsKey.GLOBAL):
     label_dict = {0: "xy", 1: "xy", 2: "z"}
     label = label_dict[axis_ind]
@@ -338,9 +261,6 @@ def get_z_dtype(coords_key=CoordsKey.GLOBAL):
 
 # Example usage with debug output
 # print(get_axis_optimize_range(1, CoordsKey.GLOBAL))
-# print(get_axis_delay(1, CoordsKey.GLOBAL))
-print(get_xy_dtype(CoordsKey.GLOBAL))
-# print(get_z_dtype(CoordsKey.GLOBAL))
 
 
 def get_xy_control_mode(coords_key=CoordsKey.GLOBAL):
@@ -421,9 +341,16 @@ def get_axis_stream_fn(axis_ind, coords_key=CoordsKey.GLOBAL):
 
 
 @cache
+def get_drift_mode():
+    config = common.get_config_dict()
+    return config["Positioning"]["drift_mode"]
+
+
+@cache
 def get_drift(coords_key=CoordsKey.GLOBAL):
     key = f"DRIFT-{coords_key}"
     drift = common.get_registry_entry(["State"], key)
+    # print(f"Retrieved drift: {drift}, Length: {len(drift)}")
     drift_dtype = []
     for ind in range(len(drift)):
         axis_dtype = get_axis_dtype(ind, coords_key)
@@ -438,6 +365,9 @@ def set_drift(drift, coords_key=CoordsKey.GLOBAL):
     get_drift.cache_clear()
     key = f"DRIFT-{coords_key}"
     return common.set_registry_entry(["State"], key, drift)
+
+
+# set_drift([0.0, 0.0, 0.0], coords_key=CoordsKey.GLOBAL)  # Reset z drift
 
 
 def reset_drift(coords_key=CoordsKey.GLOBAL):

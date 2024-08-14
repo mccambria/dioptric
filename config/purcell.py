@@ -33,22 +33,29 @@ yellow_laser = "laser_OPTO_589"
 red_laser = "laser_COBO_638"
 
 widefield_calibration_coords1 = {
+    # CoordsKey.GLOBAL: [0, 0, 2],
     CoordsKey.PIXEL: [90.65, 142.684],
     green_laser: [110.213, 109.828],
     red_laser: [74.783, 74.908],
 }
 widefield_calibration_coords2 = {
+    # CoordsKey.GLOBAL: [0, 0, 2],
     CoordsKey.PIXEL: [103.608, 165.433],
     green_laser: [108.876, 111.806],
     red_laser: [73.623, 77.103],
 }
 widefield_calibration_coords3 = {
+    # CoordsKey.GLOBAL: [0, 0, 2],
     CoordsKey.PIXEL: [101.79, 157.333],
     green_laser: [109.084, 111.052],
     red_laser: [74.076, 76.237],
 }
-
-
+# if coord key is CoordsKey.GLOBAL
+affine_voltage2pixel = [
+    [-144.78665454, 2.00333725, 44.85533396],
+    [1.26665749, -137.22997754, 105.43366496],
+    [0.00000000, 0.00000000, 1.0000000],
+]
 # endregion
 # region Base config
 
@@ -148,7 +155,6 @@ config |= {
             "aod": True,
             "default_aod_suffix": "charge_pol",
             "opti_laser_key": LaserKey.IMAGING,
-            "drift_adjust": False,
         },
         red_laser: {
             "delay": 0,
@@ -156,22 +162,15 @@ config |= {
             "aod": True,
             "default_aod_suffix": "scc",
             "opti_laser_key": LaserKey.ION,
-            "drift_adjust": False,
         },
         yellow_laser: {
             "delay": 0,
             "mod_mode": ModMode.ANALOG,
             "pos_mode": LaserPosMode.WIDEFIELD,
-            "drift_adjust": False,
         },
-        #
         CoordsKey.GLOBAL: {
             "opti_laser_key": LaserKey.IMAGING,
-            "drift_adjust": True,
         },
-        CoordsKey.PIXEL: {
-            "drift_adjust": False,
-        }
         # Virtual lasers
         # LaserKey.IMAGING: {"name": green_laser, "duration": 50e6},
         LaserKey.IMAGING: {"name": green_laser, "duration": 30e6},
@@ -192,7 +191,6 @@ config |= {
         # LaserKey.WIDEFIELD_SPIN_POL: {"name": yellow_laser, "duration": 1e6},
         LaserKey.WIDEFIELD_CHARGE_READOUT: {"name": yellow_laser, "duration": 100e6},
         # LaserKey.WIDEFIELD_CHARGE_READOUT: {"name": yellow_laser, "duration": 100e6},
-        #
         "scc_shelving_pulse": False,  # Whether or not to include a shelving pulse in SCC
     },
     ###
@@ -216,16 +214,16 @@ config |= {
         },
         CoordsKey.GLOBAL: {
             "z_control_mode": ControlMode.STREAM,
-            "z_delay": int(5e6),  # 5 ms for PIFOC xyz
+            "z_delay": int(1e6),  # 5 ms for PIFOC xyz
             "z_dtype": float,
             "z_nm_per_unit": 1000,
-            "z_optimize_range": 0.1,
+            "z_optimize_range": 0.09,
             "z_units": "Voltage (V)",
             "xy_control_mode": ControlMode.STREAM,
-            "xy_delay": int(5e6),
+            "xy_delay": int(1e6),
             "xy_dtype": float,
             "xy_nm_per_unit": 1000,
-            "xy_optimize_range": 0.1,
+            "xy_optimize_range": 0.07,
             "xy_small_response_delay": 800,
             "xy_units": "V",
             "xy_positional_accuracy": 0.002,
@@ -234,6 +232,7 @@ config |= {
         "widefield_calibration_coords1": widefield_calibration_coords1,
         "widefield_calibration_coords2": widefield_calibration_coords2,
         "widefield_calibration_coords3": widefield_calibration_coords3,
+        "AffineCalibration_voltage2pixel": affine_voltage2pixel,
     },
     ###
     "Servers": {

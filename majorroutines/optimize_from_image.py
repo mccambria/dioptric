@@ -10,20 +10,18 @@ Created on April 30th, 2022
 
 # %% Imports
 
-
-import utils.tool_belt as tool_belt
-import labrad
-import majorroutines.image_sample as image_sample
-import numpy as np
 import cv2
-import utils.image_processing as image_processing
+import labrad
+import numpy as np
 
+import majorroutines.image_sample as image_sample
+import utils.image_processing as image_processing
+import utils.tool_belt as tool_belt
 
 # %% Functions
 
 
 def find_offset(new_img_array, ref_image_data):
-
     ref_x_voltages = ref_image_data["x_positions_1d"]
     ref_y_voltages = ref_image_data["y_positions_1d"]
     ref_num_steps = ref_image_data["num_steps"]
@@ -79,7 +77,6 @@ def main(
     save_data=False,
     plot_data=False,
 ):
-
     with labrad.connect() as cxn:
         main_with_cxn(
             cxn, nv_sig, apd_indices, set_to_opti_coords, save_data, plot_data
@@ -95,7 +92,6 @@ def main_with_cxn(
     plot_data=False,
     set_drift=True,
 ):
-
     # Make sure there's a reference image
     if "reference_image" in nv_sig:
         ref_image_file = nv_sig["reference_image"]
@@ -122,7 +118,6 @@ def main_with_cxn(
 
 
 if __name__ == "__main__":
-    
     new_image_file = "2022_11_22-11_06_06-johnson-search"
     ref_image_file = "2022_11_22-10_52_34-johnson-search"
     # new_image_file = ref_image_file
