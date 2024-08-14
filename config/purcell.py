@@ -171,7 +171,7 @@ config |= {
         },
         CoordsKey.PIXEL: {
             "drift_adjust": False,
-        }
+        },
         # Virtual lasers
         # LaserKey.IMAGING: {"name": green_laser, "duration": 50e6},
         LaserKey.IMAGING: {"name": green_laser, "duration": 30e6},
