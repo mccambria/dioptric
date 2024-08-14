@@ -322,7 +322,23 @@ def main(
 if __name__ == "__main__":
     kpl.init_kplotlib()
 
-    data = dm.get_raw_data(file_id=1565478112406, load_npz=True, use_cache=False)
+    ##########
+    data = dm.get_raw_data(file_id=1565478112406, load_npz=False, use_cache=True)
+    nv_list = data["nv_list"]
+    num_nvs = len(nv_list)
+    num_steps = data["num_steps"]
+    num_runs = data["num_runs"]
+    num_reps = data["num_reps"]
+    freqs = data["freqs"]
+
+    avg_counts, avg_counts_ste, norms = widefield.process_counts(
+        nv_list, sig_counts, ref_counts, threshold=True
+    )
+    fit_fig = create_fit_figure(nv_list, freqs, avg_counts, avg_counts_ste, norms)
+
+    ##########
+
+    data = dm.get_raw_data(file_id=1565478112406, load_npz=False, use_cache=False)
 
     nv_list = data["nv_list"]
     num_nvs = len(nv_list)

@@ -253,7 +253,8 @@ if __name__ == "__main__":
     kpl.init_kplotlib()
 
     esr_data = dm.get_raw_data(file_id=1565478112406)
-    spin_echo_data = dm.get_raw_data(file_id=1548381879624)
+    # spin_echo_data = dm.get_raw_data(file_id=1548381879624)
+    spin_echo_data = None
 
     main(esr_data, spin_echo_data)
 

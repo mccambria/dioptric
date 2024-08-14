@@ -24,14 +24,14 @@ from utils import widefield as widefield
 
 def quartic_decay_base(
     tau,
-    # baseline,
+    baseline,
     revival_time,
     quartic_decay_time,
     amp1,
     amp2,
     osc_freqs=None,
 ):
-    baseline = 0.5
+    # baseline = 0.5
     amplitude = baseline
     val = 0
     # print(len(amplitudes))
@@ -45,8 +45,20 @@ def quartic_decay_base(
         if ind == 0 or osc_freqs is None:
             mod = 1
         else:
+            # freq_sum = osc_freqs[0] + osc_freqs[1]
+            # freq_diff = np.abs(osc_freqs[0] - osc_freqs[1])
+            # mod = (
+            #     1
+            #     - 2
+            #     * np.sin(2 * np.pi * freq_sum * tau / 2) ** 2
+            #     * np.sin(2 * np.pi * freq_diff * tau / 2) ** 2
+            #     # * np.sin(2 * np.pi * osc_freqs[0] * tau / 2) ** 2
+            #     # * np.sin(2 * np.pi * osc_freqs[1] * tau / 2) ** 2
+            # )
+            #
             mod = [np.cos(2 * np.pi * osc_freq * tau) for osc_freq in osc_freqs]
             mod = np.sum(mod, axis=0) / len(osc_freqs)
+            #
             # mod = [np.cos(2 * np.pi * osc_freq * tau) for osc_freq in osc_freqs]
             # mod = np.prod(mod, axis=0)
         amp = amps[ind]
@@ -57,7 +69,7 @@ def quartic_decay_base(
 
 def quartic_decay(
     tau,
-    # baseline,
+    baseline,
     revival_time,
     quartic_decay_time,
     T2_ms,
@@ -65,7 +77,7 @@ def quartic_decay(
 ):
     return quartic_decay_base(
         tau,
-        # baseline,
+        baseline,
         revival_time,
         quartic_decay_time,
         T2_ms,
@@ -75,7 +87,7 @@ def quartic_decay(
 
 def quartic_decay_one_osc(
     tau,
-    # baseline,
+    baseline,
     revival_time,
     quartic_decay_time,
     T2_ms,
@@ -85,7 +97,7 @@ def quartic_decay_one_osc(
     osc_freqs = [osc_freq0]
     return quartic_decay_base(
         tau,
-        # baseline,
+        baseline,
         revival_time,
         quartic_decay_time,
         T2_ms,
@@ -96,7 +108,7 @@ def quartic_decay_one_osc(
 
 def quartic_decay_two_osc(
     tau,
-    # baseline,
+    baseline,
     revival_time,
     quartic_decay_time,
     T2_ms,
@@ -107,7 +119,7 @@ def quartic_decay_two_osc(
     osc_freqs = [osc_freq0, osc_freq1]
     return quartic_decay_base(
         tau,
-        # baseline,
+        baseline,
         revival_time,
         quartic_decay_time,
         T2_ms,
@@ -229,10 +241,10 @@ def create_fit_figure(data, axes_pack=None, layout=None, no_legend=False):
         nv_counts = norm_counts[nv_ind]
         nv_counts_ste = norm_counts_ste[nv_ind]
         # Contrast, revival period, quartic decay tc, amp1, amp2
-        # guess_params = [0.53, 75.5, 7, 0.4, 0.4]
-        # bounds = [[0, 73, 0, 0, 0], [1, 77, np.inf, 1, 1]]
-        guess_params = [75.5, 7, 0.4, 0.4]
-        bounds = [[73, 0, 0, 0], [77, np.inf, 1, 1]]
+        guess_params = [0.53, 75.5, 7, 0.4, 0.4]
+        bounds = [[0, 73, 0, 0, 0], [1, 77, np.inf, 1, 1]]
+        # guess_params = [75.5, 7, 0.4, 0.4]
+        # bounds = [[73, 0, 0, 0], [77, np.inf, 1, 1]]
 
         # FFT to determine dominant frequency
         # even_counts = nv_counts[40:100] - 0.55

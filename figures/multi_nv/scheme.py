@@ -55,7 +55,7 @@ def main(nv_list, apparatus_img, image_data, histogram_data):
     ### Image
 
     img_array = np.array(image_data["img_array"])
-    img_array = widefield.adus_to_photons(img_array)
+    img_array = widefield.adus_to_photons(img_array, k_gain=5000)
 
     # Clean up dead pixel by taking average of nearby pixels
     # dead_pixel = [142, 109]
@@ -104,6 +104,14 @@ def main(nv_list, apparatus_img, image_data, histogram_data):
         density=True,
     )
     ax.set_xlim(-0.5, 90.5)
+    combined_counts = np.append(sig_counts_list, ref_counts_list)
+    threshold = widefield.determine_threshold(
+        combined_counts,
+        single_or_dual=True,
+        nvn_ratio=None,
+        no_print=True,
+    )
+    ax.axvline(threshold, color=kpl.KplColors.GRAY, ls="dashed")
 
     ### Adjustments
 

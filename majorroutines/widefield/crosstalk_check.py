@@ -9,6 +9,7 @@ Created on March 29th, 2024
 
 import matplotlib.pyplot as plt
 import numpy as np
+from scipy.optimize import curve_fit
 
 from majorroutines.widefield import base_routine
 from utils import data_manager as dm
@@ -137,16 +138,55 @@ def main(
 if __name__ == "__main__":
     kpl.init_kplotlib()
 
-    data = dm.get_raw_data(file_id=1488892009219, load_npz=True)
+    data = dm.get_raw_data(file_id=1488892009219, load_npz=False)
 
     nv_list = data["nv_list"]
     num_nvs = len(nv_list)
     num_steps = data["num_steps"]
     num_runs = data["num_runs"]
     num_reps = data["num_reps"]
-    freqs = data["freqs"]
+    aod_freq_range = data["aod_freq_range"]
     counts = np.array(data["counts"])
     sig_counts = counts[0]
     ref_counts = counts[1]
+    sig_counts, ref_counts = widefield.threshold_counts(nv_list, sig_counts, ref_counts)
+
+    ###
+
+    displacement_MHz = calculate_freqs(0, aod_freq_range, num_steps)
+    um_per_MHz = (1 / 24) * (165.329 - 34.67) / (73.735 - 71.483)
+    displacement = um_per_MHz * displacement_MHz
+    avg_snr, avg_snr_ste = widefield.calc_snr(sig_counts, ref_counts)
+    avg_snr = avg_snr[0]
+    avg_snr_ste = avg_snr_ste[0]
+
+    # Fit
+    def fit_fn(x, coeff, stdev, offset):
+        return tb.gaussian(x, coeff, 0, stdev, offset)
+
+    guess_params = [0.15, 0.5, 0.18]
+
+    popt, pcov = curve_fit(
+        fit_fn,
+        displacement,
+        avg_snr,
+        p0=guess_params,
+        sigma=avg_snr_ste,
+        absolute_sigma=True,
+    )
+    norm = popt[-1]
+    std = popt[-2]
+    errors = np.sqrt(np.diag(pcov))
+    stde = errors[-2]
+    print(std)
+    print(stde)
+
+    # Plot
+    fig, ax = plt.subplots()
+    kpl.plot_points(ax, displacement, avg_snr / norm, yerr=avg_snr_ste / norm)
+    smooth_x_vals = np.linspace(displacement[0], displacement[-1], 1000)
+    kpl.plot_line(ax, smooth_x_vals, fit_fn(smooth_x_vals, *popt) / norm)
+    ax.set_xlabel("Pulse displacement (µm)")
+    ax.set_ylabel("Normalized SNR")
 
     kpl.show(block=True)

@@ -82,6 +82,7 @@ def process_and_plot(raw_data, mean_val=None):
         absolute_sigma=True,
     )
     print(popt)
+    print(np.diag(np.sqrt(pcov)))
     print(fit_fn(1000, *popt))
     residuals = fit_fn(reps_vals, *popt) - avg_num_nvn
     chi_sq = np.sum((residuals / avg_num_nvn_ste) ** 2)
@@ -104,45 +105,46 @@ def process_and_plot(raw_data, mean_val=None):
 
     ### Inset histograms
 
-    # fig, ax = plt.subplots()
-    ax = fig.add_axes([0.38, 0.265, 0.6, 0.48])
-    nv_ind = 3
-    # nv_ind = 9
-    # for rep_ind in reps_vals:
-    hist_reps_vals = [0, 1, 3]
-    # hist_reps_vals = [0, 1, 2, 3]
-    num_hist_reps_vals = len(hist_reps_vals)
-    colors = [
-        kpl.KplColors.GRAY,
-        mpl.colors.cnames["goldenrod"],
-        kpl.KplColors.BROWN,
-    ]
-    # colors = [
-    #     kpl.KplColors.GRAY,
-    #     mpl.colors.cnames["steelblue"],
-    #     mpl.colors.cnames["darkslateblue"],
-    # ]
-    colors = [mpl.colors.rgb2hex(color) for color in colors]
-    for ind in range(num_hist_reps_vals):
-        rep_ind = hist_reps_vals[ind]
-        # color_rgb = mpl.colormaps["inferno"](ind / (num_hist_reps_vals - 1))
-        color = colors[ind]
-        # color = mpl.colors.rgb2hex(color_rgb)
-        label = "1 attempt" if rep_ind == 1 else f"{rep_ind} attempts"
-        kpl.histogram(
-            ax,
-            counts[nv_ind, :, 0, rep_ind],
-            color=color,
-            density=True,
-            # facecolor="none",
-            bin_size=4,
-            lw=1.5,
-            label=label,
-        )
-    ax.legend()
-    ax.set_xlabel("Integrated counts")
-    ax.set_ylabel("Probability")
-    ax.set_yticks([0.0, 0.02, 0.04, 0.06])
+    if False:
+        # fig, ax = plt.subplots()
+        ax = fig.add_axes([0.38, 0.265, 0.6, 0.48])
+        nv_ind = 3
+        # nv_ind = 9
+        # for rep_ind in reps_vals:
+        hist_reps_vals = [0, 1, 3]
+        # hist_reps_vals = [0, 1, 2, 3]
+        num_hist_reps_vals = len(hist_reps_vals)
+        colors = [
+            kpl.KplColors.GRAY,
+            mpl.colors.cnames["goldenrod"],
+            kpl.KplColors.BROWN,
+        ]
+        # colors = [
+        #     kpl.KplColors.GRAY,
+        #     mpl.colors.cnames["steelblue"],
+        #     mpl.colors.cnames["darkslateblue"],
+        # ]
+        colors = [mpl.colors.rgb2hex(color) for color in colors]
+        for ind in range(num_hist_reps_vals):
+            rep_ind = hist_reps_vals[ind]
+            # color_rgb = mpl.colormaps["inferno"](ind / (num_hist_reps_vals - 1))
+            color = colors[ind]
+            # color = mpl.colors.rgb2hex(color_rgb)
+            label = "1 attempt" if rep_ind == 1 else f"{rep_ind} attempts"
+            kpl.histogram(
+                ax,
+                counts[nv_ind, :, 0, rep_ind],
+                color=color,
+                density=True,
+                # facecolor="none",
+                bin_size=4,
+                lw=1.5,
+                label=label,
+            )
+        ax.legend()
+        ax.set_xlabel("Integrated counts")
+        ax.set_ylabel("Probability")
+        ax.set_yticks([0.0, 0.02, 0.04, 0.06])
 
     return fig
 

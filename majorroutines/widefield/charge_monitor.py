@@ -162,12 +162,14 @@ def process_check_readout_fidelity(data, fidelity_ax=None):
     else:
         fig = None
     fidelities = []
+    fidelity_errs = []
     for nv_ind in range(num_nvs):
         fidelity = (probs[0][nv_ind] + probs[1][nv_ind]) / 2
-        fidelities.append(fidelity)
         fidelity_err = (
             np.sqrt(prob_errs[0][nv_ind] ** 2 + prob_errs[1][nv_ind] ** 2) / 2
         )
+        fidelities.append(fidelity)
+        fidelity_errs.append(fidelity_err)
         nv_num = widefield.get_nv_num(nv_list[nv_ind])
         # kpl.plot_points(ax, nv_num, fidelity, yerr=fidelity_err)
         kpl.plot_bars(fidelity_ax, nv_num, fidelity, yerr=fidelity_err)
@@ -177,6 +179,7 @@ def process_check_readout_fidelity(data, fidelity_ax=None):
     fidelity_ax.set_xticks(range(num_nvs))
     fidelity_ax.set_ylim((0.5, 1.0))
     print(fidelities)
+    print(fidelity_errs)
 
     return fig
 
