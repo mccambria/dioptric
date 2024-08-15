@@ -10,9 +10,12 @@ Created on June 16th, 2023
 
 ### Imports
 
+import datetime
+import os
 import sys
 import time
 
+import cv2
 import matplotlib.pyplot as plt
 import numpy as np
 
@@ -595,21 +598,21 @@ def do_opx_constant_ac():
     # )
     # opx.constant_ac([1])  # Just laser
     # Green
-    opx.constant_ac(
-        [4],  # Digital channels
-        [3, 4],  # Analog channels
-        [0.19, 0.19],  # Analog voltages
-        [110.0, 110.0],  # Analog frequencies
-    )
-    # # Green + red
     # opx.constant_ac(
-    #     [4, 1],  # Digital channels
-    #     [3, 4, 2, 6],  # Analog channels
-    #     [0.19, 0.19, 0.17, 0.17],  # Analog voltages
-    #     # [109.409, 111.033, 73.0, 77.3],  # Analog frequencies
-    #     # [108.907, 112.362, 74.95, 78.65],  # Analog frequencies
-    #     [110, 110, 75, 75],
+    #     [4],  # Digital channels
+    #     [3, 4],  # Analog channels
+    #     [0.19, 0.19],  # Analog voltages
+    #     [110.0, 110.0],  # Analog frequencies
     # )
+    # Green + red
+    opx.constant_ac(
+        [4, 1],  # Digital channels
+        [3, 4, 2, 6],  # Analog channels
+        [0.19, 0.19, 0.17, 0.17],  # Analog voltages
+        # [109.409, 111.033, 73.0, 77.3],  # Analog frequencies
+        # [108.907, 112.362, 74.95, 78.65],  # Analog frequencies
+        [110, 110, 70, 70],
+    )
     # red
     # opx.constant_ac(
     #     [1],  # Digital channels
@@ -662,6 +665,32 @@ def compile_speed_test(nv_list):
     print(stop - start)
 
 
+def piezo_voltage_to_pixel_calibration():
+    cal_voltage_coords = np.array(
+        [[-0.1, 0.0], [-0.4, 0.0], [-0.25, -0.3]], dtype="float32"
+    )  # Voltage system coordinates
+    cal_pixel_coords = np.array(
+        [[59.334, 105.307], [102.77, 104.927], [80.451, 146.286]], dtype="float32"
+    )  # Corresponding pixel coordinates
+    # Compute the affine transformation matrix
+    M = cv2.getAffineTransform(cal_voltage_coords, cal_pixel_coords)
+    # Convert the 2x3 matrix to a 3x3 matrix
+    M = np.vstack([M, [0, 0, 1]])
+
+    # Format and print the matrix as a list of lists
+    affine_voltage2pixel = M.tolist()
+    print("affine_voltage2pixel = [")
+    for row in affine_voltage2pixel:
+        print("    [{:.8f}, {:.8f}, {:.8f}],".format(row[0], row[1], row[2]))
+    print("]")
+    # # Append a column of ones to the input coordinates to facilitate affine transformation
+    # ones_column = np.ones((voltage_coords.shape[0], 1))
+    # voltage_coords_homogeneous = np.hstack((voltage_coords, ones_column))
+    # # Perform the affine transformation
+    # pixel_coords = np.dot(voltage_coords_homogeneous, M.T)
+    # return pixel_coords
+
+
 ### Run the file
 
 
@@ -673,37 +702,37 @@ if __name__ == "__main__":
     pixel_coords_key = "pixel_coords"
 
     sample_name = "johnson"
-    z_coord = 3.85
+    # z_coord = 3.85
     # magnet_angle = 90
     date_str = "2024_03_12"
     # global_coords = [None, None, z_coord]
-    global_coords = [0.0, 0.0, 0.0]
+    global_coords = [0.0, 0.0, 0.9]
     # endregion
     # region Coords (publication set)
     pixel_coords_list = [
-        [101.642, 109.278],
-        [92.176, 143.419],
-        [92.561, 150.425],
-        [92.251, 160.428],
-        [101.79, 157.333],
-        [101.731, 164.294],
+        [140.022, 87.075],  # optimize
+        [69.986, 94.028],  # optimize
+        [43.995, 116.914],  # optimize
+        [112.596, 123.572],
+        # [74.037, 75.081],
     ]
     num_nvs = len(pixel_coords_list)
     green_coords_list = [
         [110.0, 110.0],
-        [110.249, 109.618],
-        [110.26, 110.32],
-        [110.245, 111.449],
-        [109.084, 111.052],
-        [109.048, 111.794],
+        [105.7, 107.081],  # optimize
+        [113.051, 108.398],  # optimize
+        [115.41, 110.892],  # optimize
+        [108.417, 111.261],
+        # [112.866, 112.453],
+        # [112.036, 106.578],
     ]
     red_coords_list = [
-        [75.369, 74.715],
-        [74.819, 74.939],
-        [74.84, 75.595],
-        [74.984, 76.737],
-        [74.076, 76.237],
-        [74.124, 77.099],
+        [78.667, 70.863],
+        [78.667, 70.863],
+        [78.667, 70.863],
+        [75.139, 77.288],
+        # [76.339, 74.832],
+        # [78.543, 67.724],
     ]
     threshold_list = [79.5, 83.5, 85.5, 78.5, 79.5, 68.5]
     scc_duration_list = [140] * num_nvs
@@ -802,6 +831,7 @@ if __name__ == "__main__":
         # tb.init_safe_stop()
 
         # widefield.reset_all_drift()
+
         # pos.reset_drift()  # Reset z drift
         # widefield.set_pixel_drift(
         #     np.array([93.093, 120.507])  # New coords
@@ -813,12 +843,13 @@ if __name__ == "__main__":
         # do_optimize_z(nv_sig)
         # do_optimize_xyz(nv_sig)
         # pos.set_xyz_on_nv(nv_sig)
-        # pos.set_xyz_on_nv(nv_sig, pos="pos_xyz")
 
-        # for z in np.linspace(3.5, 5.0, 16):
+        # for z in np.linspace(0.7, 1.3, 9):
         #     nv_sig.coords[CoordsKey.GLOBAL][2] = z
         #     do_scanning_image_sample(nv_sig)
         # do_widefield_image_sample(nv_sig, 50)
+
+        # piezo_voltage_to_pixel_calibration()
 
         do_scanning_image_sample(nv_sig)
         # do_scanning_image_sample_zoom(nv_sig)
@@ -834,7 +865,6 @@ if __name__ == "__main__":
         # do_image_single_nv(nv_sig)
 
         # optimize.optimize_pixel_and_z(nv_sig, do_plot=True)
-        # optimize_xyz.optimize_xyz(nv_sig, do_plot=True)
         # do_image_nv_list(nv_list)
         # for ind in range(20):
         # do_optimize_pixel(nv_sig)
@@ -926,8 +956,8 @@ if __name__ == "__main__":
         # print([res_mle[ind] == res_thresh[ind] for ind in range(num_nvs)])
 
         # region Cleanup
-    # do_optimize_green(nv_sig)
-    # do_optimize_red(nv_sig)
+        # do_optimize_green(nv_sig)
+        # do_optimize_red(nv_sig)
     except Exception as exc:
         if do_email:
             recipient = email_recipient

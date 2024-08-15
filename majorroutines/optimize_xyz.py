@@ -132,7 +132,7 @@ def _read_counts_counter_stream(axis_ind=None, scan_vals=None):
 
 def _read_counts_counter_step(axis_ind=None, scan_vals=None):
     if axis_ind is not None:
-        axis_write_fn = pos.get_axis_write_fn(axis_ind, pos="pos_xyz")
+        axis_write_fn = pos.get_axis_write_fn(axis_ind)
     counter = tb.get_server_counter()
     pulse_gen = tb.get_server_pulse_gen()
     counter.start_tag_stream()
@@ -151,7 +151,7 @@ def _read_counts_counter_step(axis_ind=None, scan_vals=None):
 
 def _read_counts_camera_step(nv_sig, axis_ind=None, scan_vals=None):
     if axis_ind is not None:
-        axis_write_fn = pos.get_axis_write_fn(axis_ind, pos="pos_xyz")
+        axis_write_fn = pos.get_axis_write_fn(axis_ind)
     pixel_coords = widefield.get_nv_pixel_coords(nv_sig)
     camera = tb.get_server_camera()
     pulse_gen = tb.get_server_pulse_gen()
@@ -237,7 +237,7 @@ def _read_counts_camera_sequence(
         pulse_gen.stream_load(seq_file_name, seq_args_string, num_reps)
         # For xyz the sequence is the same every time and xyz is moved manually
     if axis_ind is not None:
-        axis_write_fn = pos.get_axis_write_fn(axis_ind, pos="pos_xyz")
+        axis_write_fn = pos.get_axis_write_fn(axis_ind)
         # print(axis_write_fn)
     # print(seq_args)
     # return
@@ -330,11 +330,11 @@ def _read_counts(
     # Position us at the starting point
     if coords is not None:
         if scan_vals is None:
-            pos.set_xyz(coords, coords_key, pos="pos_xyz")
+            pos.set_xyz(coords, coords_key)
         else:
             start_coords = np.copy(coords)
             start_coords[axis_ind] = scan_vals[-1]
-            pos.set_xyz(start_coords, coords_key, pos="pos_xyz")
+            pos.set_xyz(start_coords, coords_key)
 
     # Assume the lasers are sequence controlled if using camera
     if collection_mode == CollectionMode.CAMERA:
@@ -398,7 +398,7 @@ def prepare_microscope(nv_sig: NVSig):
     # Set filters according to config
 
     # Set the global positioners on this NV
-    pos.set_xyz_on_nv(nv_sig, pos="pos_xyz")
+    pos.set_xyz_on_nv(nv_sig)
 
     # Set the magnet rotation mount to the correct angle
     magnet_angle = nv_sig.magnet_angle

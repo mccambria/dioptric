@@ -15,7 +15,7 @@ description =
 
 [startup]
 cmdline = %PYTHON% %FILE%
-timeout = 20
+timeout = 30
 
 [shutdown]
 message = 987654321
@@ -75,30 +75,45 @@ class PosxyzP616Digial(LabradServer):
         except GCSError as gcse:
             logging.error(f"GCSError during setting command level: {gcse}")
             raise
-
         self.axis_x = self.piezo.axes[0]
         self.axis_y = self.piezo.axes[1]
         self.axis_z = self.piezo.axes[2]
+        axes_list = [self.axis_x, self.axis_y, self.axis_z]
 
-        self.piezo_stage_voltage_range_factor = config["Wiring"][
-            "Piezo_Controller_E727"
-        ]["voltage_range_factor"]
-        self.daq_voltage_range_factor = config["Wiring"]["Daq"]["voltage_range_factor"]
+        # # Select the control algorithm for closed-loop operation
+        control_mode = 1  # 0 = None, 1 = PID, 2 = APC (if licensed)
+        for ax in [self.axis_x, self.axis_y, self.axis_z]:
+            self.piezo.SVO(ax, control_mode)
 
-        self.piezo_stage_scaling_offset = config["Wiring"]["Piezo_Controller_E727"][
-            "scaling_offset"
+        # self.get_servo_state(self.axis_x)
+        # self.get_servo_state(self.axis_y)
+        # self.get_servo_state(self.axis_z)
+
+        # check auto low tolt
+        # self.piezo.SPA(self.axis_x, 0x07000A00, -100.0)
+        # self.piezo.SPA(self.axis_x, 0x07000A01, 100.0)
+        for ax in axes_list:
+            self.check_overflow_state(ax)
+        self.perform_auto_zero()
+        for ax in axes_list:
+            self.check_overflow_state(ax)
+
+        config_wiring_daq = config["Wiring"]["Piezo_Controller_E727"]
+        self.daq_voltage_range_factor = config_wiring_daq["voltage_range_factor"]
+
+        config_wiring_piezo = config["Wiring"]["Piezo_Controller_E727"]
+        self.piezo_stage_voltage_range_factor = config_wiring_piezo[
+            "voltage_range_factor"
         ]
-        self.piezo_stage_scaling_gain = config["Wiring"]["Piezo_Controller_E727"][
-            "scaling_gain"
-        ]
-        self.piezo_stage_channel_x = config["Wiring"]["Piezo_Controller_E727"][
-            "piezo_controller_channel_x"
-        ]
-        self.piezo_stage_channel_y = config["Wiring"]["Piezo_Controller_E727"][
-            "piezo_controller_channel_y"
-        ]
-        self.piezo_stage_channel_z = config["Wiring"]["Piezo_Controller_E727"][
-            "piezo_controller_channel_z"
+        self.piezo_stage_scaling_offset = config_wiring_piezo["scaling_offset"]
+        self.piezo_stage_scaling_gain = config_wiring_piezo["scaling_gain"]
+        self.piezo_stage_channel_x = config_wiring_piezo["piezo_controller_channel_x"]
+        self.piezo_stage_channel_y = config_wiring_piezo["piezo_controller_channel_y"]
+        self.piezo_stage_channel_z = config_wiring_piezo["piezo_controller_channel_z"]
+        channels_list = [
+            self.piezo_stage_channel_x,
+            self.piezo_stage_channel_y,
+            self.piezo_stage_channel_z,
         ]
 
         # Determine the psvrf_value based on the voltage range factor
@@ -112,26 +127,17 @@ class PosxyzP616Digial(LabradServer):
                 "Piezo stage voltage range factor must be either 5.0 or 10.0"
             )
 
-        self.piezo.SPA(self.axis_x, 0x02000100, psvrf_value)
-        self.piezo.SPA(self.axis_y, 0x02000100, psvrf_value)
-        self.piezo.SPA(self.axis_z, 0x02000100, psvrf_value)
+        for ax in axes_list:
+            self.piezo.SPA(ax, 0x02000100, psvrf_value)
         logging.debug(
             f"Piezo stage voltage range factor set to: {self.piezo_stage_voltage_range_factor}"
         )
 
         # Set scaling parameters for the piezo stage
-        self.piezo.SPA(
-            self.axis_x, 0x02000200, self.piezo_stage_scaling_offset
-        )  # offset
-        self.piezo.SPA(self.axis_x, 0x02000300, self.piezo_stage_scaling_gain)  # gain
-        self.piezo.SPA(
-            self.axis_y, 0x02000200, self.piezo_stage_scaling_offset
-        )  # offset
-        self.piezo.SPA(self.axis_y, 0x02000300, self.piezo_stage_scaling_gain)  # gain
-        self.piezo.SPA(
-            self.axis_z, 0x02000200, self.piezo_stage_scaling_offset
-        )  # offset
-        self.piezo.SPA(self.axis_z, 0x02000300, self.piezo_stage_scaling_gain)  # gain
+        for ax in axes_list:
+            self.piezo.SPA(ax, 0x02000200, self.piezo_stage_scaling_offset)  # offset
+            self.piezo.SPA(ax, 0x02000300, self.piezo_stage_scaling_gain)  # gain
+
         logging.debug(
             f"Piezo stage scaling OFFSET set to: {self.piezo_stage_scaling_offset}"
         )
@@ -140,31 +146,109 @@ class PosxyzP616Digial(LabradServer):
         )
 
         # Connect the controller's axes to the incoming signals
-        self.piezo.SPA(
-            self.axis_x, 0x06000500, self.piezo_stage_channel_x
-        )  # Axis X controlled by channel X
-        self.piezo.SPA(
-            self.axis_y, 0x06000500, self.piezo_stage_channel_y
-        )  # Axis Y controlled by channel Y
-        self.piezo.SPA(
-            self.axis_z, 0x06000500, self.piezo_stage_channel_z
-        )  # Axis Z controlled by channel Z
-        logging.debug(
-            f"Piezo axis {self.axis_x} connected to channel {self.piezo_stage_channel_x}"
-        )
-        logging.debug(
-            f"Piezo axis {self.axis_y} connected to channel {self.piezo_stage_channel_y}"
-        )
-        logging.debug(
-            f"Piezo axis {self.axis_z} connected to channel {self.piezo_stage_channel_z}"
-        )
+        for ax, channel in zip(axes_list, channels_list):
+            self.piezo.SPA(ax, 0x06000500, channel)
+            logging.debug(f"Piezo axis {ax} connected to channel {channel}")
 
         self.daq_ao_piezo_stage_x = config["Wiring"]["Daq"]["ao_piezo_stage_P616_3c_x"]
         self.daq_ao_piezo_stage_y = config["Wiring"]["Daq"]["ao_piezo_stage_P616_3c_y"]
         self.daq_ao_piezo_stage_z = config["Wiring"]["Daq"]["ao_piezo_stage_P616_3c_z"]
         self.daq_di_clock = config["Wiring"]["Daq"]["di_clock"]
 
-        logging.debug("Initialization Complete")
+        logging.info("Initialization Complete")
+
+    # def perform_auto_zero(self):
+    #     """Perform AutoZero procedure for a single axis."""
+    #     try:
+    #         # Perform AutoZero on the x-axis
+    #         self.piezo.ATZ(self.axis_x, 0.0)
+
+    #         # Wait until the AutoZero process is complete
+    #         while True:
+    #             atz_status = self.piezo.send(f"ATZ? {self.axis_x}")
+    #             if atz_status == "0":  # AutoZero is complete if status returns '0'
+    #                 break
+    #             time.sleep(1)
+
+    #         logging.info("AutoZero procedure completed.")
+
+    #     except GCSError as gcse:
+    #         logging.error(f"GCSError occurred: {gcse}")
+    #     except Exception as e:
+    #         logging.error(f"An unexpected error occurred: {e}")
+    # raise
+
+    # def perform_auto_zero(self, axis):
+    #     try:
+    #         self.piezo.ATZ(axis, 0.0)
+
+    #         # Wait until the auto-zero process is complete
+    #         while True:
+    #             # Replace with the actual command that checks if the axis is ready
+    #             status = self.piezo.qONT(axis)
+    #             if status[axis] == 1:  # Assuming 1 indicates readiness
+    #                 break
+    #             time.sleep(5.0)  # Sleep briefly before checking again
+
+    #     except Exception as e:
+    #         self.logger.error(f"Error during auto-zero of axis {axis}: {e}")
+
+    # def perform_auto_zero(self, axis):
+    #     if not axis:
+    #         raise ValueError("Axis parameter is empty. Please provide a valid axis.")
+
+    #     try:
+    #         self.piezo.ATZ(axis, 0.0)
+    #         self.piezo.WAC(f"ONT? {axis} = 1")
+    #         logging.info(f"Auto-zero completed for axis {axis}")
+    #     except Exception as e:
+    #         logging.info(f"Error during auto-zero of axis {axis}: {e}")
+
+    def get_servo_state(self, axis):
+        """
+        Gets the current servo state for the given axis.
+        Args:
+            axis: The axis ID to query.
+        Returns:
+            The current servo state.
+        """
+        servo_state = self.piezo.qSVO(axis)
+        logging.info(
+            f"Servo state for axis {axis} is {'enabled' if servo_state else 'disabled'}."
+        )
+        return servo_state
+
+    def check_overflow_state(self, axis):
+        """
+        Checks if the given axis is in overflow state.
+        Args:
+            axis: The axis ID to query.
+        Returns:
+            Boolean indicating whether the axis is in overflow state.
+        """
+        overflow_state = self.piezo.qOVF(axis)
+        logging.info(
+            f"Overflow state for axis {axis} is {'detected' if overflow_state else 'not detected'}."
+        )
+        return overflow_state
+
+    def perform_auto_zero(self):
+        """Perform AutoZero procedure for all axes."""
+        axes = [self.axis_x, self.axis_y, self.axis_z]
+        try:
+            for ax in axes:
+                self.piezo.ATZ(ax, 0.0)
+                time.sleep(5)
+            # Save parameters to non-volatile memory (example command, adapt as needed)
+            self.piezo.send("SAV 0x02000200")
+            self.piezo.send("SAV 0x02000102")
+
+            logging.info("AutoZero procedure completed and parameters saved.")
+
+        except GCSError as gcse:
+            logging.error(f"GCSError occurred: {gcse}")
+        except Exception as e:
+            logging.error(f"An unexpected error occurred: {e}")
 
     # %%
     def load_stream_writer_xy(self, c, task_name, voltages, period):
