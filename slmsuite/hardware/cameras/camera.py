@@ -2,15 +2,17 @@
 Abstract camera functionality.
 """
 
-import time
 import sys
-import numpy as np
+import time
+
 import matplotlib.pyplot as plt
+import numpy as np
 from scipy.optimize import curve_fit
 
-sys.path.append('c:/Users/Saroj Chand/Documents/dioptric/servers/inputs')
+sys.path.append("c:/Users/Saroj Chand/Documents/dioptric/servers/inputs")
 from slmsuite.holography import analysis
 from slmsuite.misc.fitfunctions import lorentzian, lorentzian_jacobian
+
 
 class Camera:
     """
@@ -54,7 +56,7 @@ class Camera:
         rot="0",
         fliplr=False,
         flipud=False,
-        name="camera"
+        name="camera",
     ):
         """
         Initializes a camera.
@@ -96,7 +98,9 @@ class Camera:
             self.default_shape = (height, width)
 
         # Create image transformation.
-        self.transform = analysis.get_orientation_transformation(rot, fliplr=True, flipud=False)
+        self.transform = analysis.get_orientation_transformation(
+            rot, fliplr=False, flipud=True
+        )
 
         # Update WOI information.
         self.woi = (0, width, 0, height)
@@ -104,7 +108,7 @@ class Camera:
 
         # Set other useful parameters
         self.bitdepth = bitdepth
-        self.bitresolution = 2 ** bitdepth
+        self.bitresolution = 2**bitdepth
 
         # Spatial dimensions
         self.dx_um = dx_um
@@ -136,7 +140,8 @@ class Camera:
         list
             An empty list.
         """
-        if verbose: print(".info() NotImplemented.")
+        if verbose:
+            print(".info() NotImplemented.")
         return []
 
     def reset(self):
@@ -255,7 +260,7 @@ class Camera:
         window=None,
         average_count=5,
         timeout_s=5,
-        verbose=True
+        verbose=True,
     ):
         """
         Sets the exposure of the camera such that the maximum value is at ``set_fraction``
@@ -326,7 +331,10 @@ class Camera:
             err = np.abs(im_max - set_val) / self.bitresolution
 
             if verbose:
-                print("Reset exposure to %1.2fs; maximum image value = %d."%(exp, im_max))
+                print(
+                    "Reset exposure to %1.2fs; maximum image value = %d."
+                    % (exp, im_max)
+                )
 
         exp_fin = exp * 2 * set_fraction
 
@@ -398,7 +406,12 @@ class Camera:
         counts[0] = counts[1]
 
         popt0 = np.array(
-            [z_list[np.argmax(counts)], np.max(counts)-np.min(counts), np.min(counts), 100]
+            [
+                z_list[np.argmax(counts)],
+                np.max(counts) - np.min(counts),
+                np.min(counts),
+                100,
+            ]
         )
 
         try:
@@ -445,6 +458,7 @@ class Camera:
 
         return z_opt, imlist
 
+
 def _view_continuous(cameras, cmap=None, facecolor=None, dpi=300):
     """
     Continuously get camera frames and plot them. Intended for use in jupyter notebooks.
@@ -470,7 +484,7 @@ def _view_continuous(cameras, cmap=None, facecolor=None, dpi=300):
     # Get camera information.
     cam_count = len(cameras)
     cams_max_height = cams_max_width = 0
-    for (cam_idx, cam) in enumerate(cameras):
+    for cam_idx, cam in enumerate(cameras):
         cam_height = cam.shape[0]
         cam_width = cam.shape[1]
         cams_max_height = max(cams_max_height, cam_height)
@@ -478,10 +492,8 @@ def _view_continuous(cameras, cmap=None, facecolor=None, dpi=300):
 
     # Create figure.
     plt.ion()
-    figsize = np.array((cam_count * cams_max_width, cams_max_height)) * 2 ** -9
-    fig, axs = plt.subplots(
-        1, cam_count, figsize=figsize, facecolor=facecolor, dpi=dpi
-    )
+    figsize = np.array((cam_count * cams_max_width, cams_max_height)) * 2**-9
+    fig, axs = plt.subplots(1, cam_count, figsize=figsize, facecolor=facecolor, dpi=dpi)
     axs = np.reshape(axs, cam_count)
     fig.tight_layout()
     fig.show()

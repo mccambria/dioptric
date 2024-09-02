@@ -12,6 +12,7 @@ Created on June 16th, 2023
 
 import datetime
 import os
+import random
 import sys
 import time
 
@@ -61,7 +62,7 @@ def do_widefield_image_sample(nv_sig, num_reps=1):
 
 
 def do_scanning_image_sample(nv_sig):
-    scan_range = 7
+    scan_range = 9
     num_steps = 10
     image_sample.scanning(nv_sig, scan_range, scan_range, num_steps)
 
@@ -117,7 +118,7 @@ def do_optimize_green(nv_sig, do_plot=True):
     return opti_coords
 
 
-def do_optimize_red(nv_sig, do_plot=True):
+def do_optimize_red(nv_sig, do_plot=True, axes_to_optimize=[0, 1]):
     coords_key = red_laser
     ret_vals = optimize.main(
         nv_sig,
@@ -173,13 +174,13 @@ def do_optimize_loop(nv_list, coords_key, scanning_from_pixel=False):
                 opti_coords = do_optimize_green(nv)
             elif coords_key == red_laser:
                 opti_coords = do_optimize_red(nv)
-
             # Adjust for the drift that may have occurred since beginning the loop
-            optimize.optimize_pixel_and_z(repr_nv_sig, do_plot=False)
+            # optimize.optimize_pixel_and_z(repr_nv_sig, do_plot=False)
+            optimize.optimize_xyz_using_piezo(repr_nv_sig)
             drift = pos.get_drift(coords_key)
             drift = [-1 * el for el in drift]
             opti_coords = pos.adjust_coords_for_drift(opti_coords, drift=drift)
-
+            widefield.reset_scanning_optics_drift()  # reset drift before optimizing next NV
         opti_coords_list.append(opti_coords)
 
     # Report back
@@ -563,12 +564,12 @@ def do_opx_constant_ac():
     # opx.stream_start()
 
     # Yellow
-    # opx.constant_ac(
-    #     [],  # Digital channels
-    #     [7],  # Analog channels
-    #     [0.4],  # Analog voltages
-    #     [0],  # Analog frequencies
-    # )
+    opx.constant_ac(
+        [],  # Digital channels
+        [7],  # Analog channels
+        [0.25],  # Analog voltages
+        [0],  # Analog frequencies
+    )
 
     # opx.constant_ac([4])  # Just laser
     # Red
@@ -602,29 +603,29 @@ def do_opx_constant_ac():
     #     [4],  # Digital channels
     #     [3, 4],  # Analog channels
     #     [0.19, 0.19],  # Analog voltages
-    #     [110.0, 110.0],  # Analog frequencies
+    #     [108.49, 113.779],  # Analog frequencies
     # )
     # Green + red
-    opx.constant_ac(
-        [4, 1],  # Digital channels
-        [3, 4, 2, 6],  # Analog channels
-        [0.19, 0.19, 0.17, 0.17],  # Analog voltages
-        # [109.409, 111.033, 73.0, 77.3],  # Analog frequencies
-        # [108.907, 112.362, 74.95, 78.65],  # Analog frequencies
-        [110, 110, 70, 70],
-    )
+    # opx.constant_ac(
+    #     [4, 1],  # Digital channels
+    #     [3, 4, 2, 6],  # Analog channels
+    #     [0.19, 0.19, 0.17, 0.17],  # Analog voltages;
+    #     # [109.409, 111.033, 73.0, 77.3],  # Analog frequencies
+    #     # [108.907, 112.362, 74.95, 78.65],  # Analog frequencies
+    #     [108.597, 113.092, 75, 71],
+    # )
     # red
     # opx.constant_ac(
     #     [1],  # Digital channels
     #     [2, 6],  # Analog channels
     #     [0.17, 0.17],  # Analog voltages
-    #     [75.7, 74.95],  # Analog frequencies
+    #     [75.7, 76.4],  # Analog frequencies
     # )
     # Green + yellow
     # opx.constant_ac(
     #     [4],  # Digital channels
     #     [3, 4, 7],  # Analog channels
-    #     [0.19, 0.19, 0.4],  # Analog voltages
+    #     [0.19, 0.19, 0.3],  # Analog voltages
     #     [110, 110, 0],  # Analog frequencies
     # )
     # Red + green + Yellow
@@ -667,32 +668,96 @@ def compile_speed_test(nv_list):
 
 def piezo_voltage_to_pixel_calibration():
     cal_voltage_coords = np.array(
-        [[-0.1, 0.0], [-0.4, 0.0], [-0.25, -0.3]], dtype="float32"
+        [[0.0, 0.0], [-0.25, -0.25], [0.25, -0.25]], dtype="float32"
     )  # Voltage system coordinates
+    # cal_pixel_coords = np.array(
+    #     [[81.109, 110.177], [64.986, 94.177], [96.577, 95.047]], dtype="float32"
+    # )  # Corresponding pixel coordinates
     cal_pixel_coords = np.array(
-        [[59.334, 105.307], [102.77, 104.927], [80.451, 146.286]], dtype="float32"
+        [
+            [91.778, 122.027],
+            [109.388, 139.694],
+            [75.396, 138.755],
+        ],
+        dtype="float32",
     )  # Corresponding pixel coordinates
     # Compute the affine transformation matrix
     M = cv2.getAffineTransform(cal_voltage_coords, cal_pixel_coords)
     # Convert the 2x3 matrix to a 3x3 matrix
     M = np.vstack([M, [0, 0, 1]])
+    M_inv = np.linalg.inv(M)
 
-    # Format and print the matrix as a list of lists
+    # Format and print the affine matrix as a list of lists
     affine_voltage2pixel = M.tolist()
+    inverse_affine_voltage2pixel = M_inv.tolist()
     print("affine_voltage2pixel = [")
     for row in affine_voltage2pixel:
         print("    [{:.8f}, {:.8f}, {:.8f}],".format(row[0], row[1], row[2]))
     print("]")
-    # # Append a column of ones to the input coordinates to facilitate affine transformation
-    # ones_column = np.ones((voltage_coords.shape[0], 1))
-    # voltage_coords_homogeneous = np.hstack((voltage_coords, ones_column))
-    # # Perform the affine transformation
-    # pixel_coords = np.dot(voltage_coords_homogeneous, M.T)
-    # return pixel_coords
+
+    print("\nInverse affine matrix (M_inv) as a list of lists:")
+    print("[")
+    for row in inverse_affine_voltage2pixel:
+        print(f"    [{row[0]:.8f}, {row[1]:.8f}, {row[2]:.8f}],")
+    print("]")
+    return M_inv
+
+
+def pixel_to_voltage(initial_pixel_coords, final_pixel_coords):
+    # Convert initial and final pixel coordinates to homogeneous coordinates (x, y, 1)
+    initial_pixel_coords_h = np.array(
+        [initial_pixel_coords[0], initial_pixel_coords[1], 1.0]
+    )
+    final_pixel_coords_h = np.array([final_pixel_coords[0], final_pixel_coords[1], 1.0])
+
+    # Calculate pixel drift
+    pixel_drift = final_pixel_coords_h - initial_pixel_coords_h
+
+    # Get the inverse affine transformation matrix
+    M_inv = piezo_voltage_to_pixel_calibration()
+
+    # Calculate the corresponding voltage drift using the inverse affine matrix
+    voltage_drift_h = np.dot(M_inv, pixel_drift)  # No transpose needed
+
+    # Update only the x and y components of the global coordinates
+    final_voltage = np.array(
+        global_coords
+    )  # Start with all original global coordinates
+    final_voltage[:2] += voltage_drift_h[:2]  # Update x and y components with drift
+
+    print(f"Pixel drift: {pixel_drift[:2]}")
+    print(f"Voltage drift: {voltage_drift_h[:2]}")
+    print(f"Final voltage coordinates: {final_voltage.tolist()}")
+
+    return final_voltage.tolist()
+
+
+def do_optimize_SLM_calibation(nv_list, coords_key):
+    repr_nv_sig = widefield.get_repr_nv_sig(nv_list)
+    # Pixel optimization in parallel with widefield yellow
+    if coords_key is None:
+        num_reps = 50
+        img_array = do_widefield_image_sample(nv_sig, num_reps=num_reps)
+
+    opti_coords_list = []
+    for nv in nv_list:
+        # Pixel coords
+        if coords_key is None:
+            # imaging_laser = tb.get_laser_name(LaserKey.IMAGING)
+            opti_coords = do_optimize_pixel(nv)
+            # opti_coords = optimize.optimize_pixel_with_img_array(img_array, nv_sig=nv)
+            # widefield.reset_all_drift()
+            optimize.optimize_xyz_using_piezo(repr_nv_sig)
+            widefield.reset_scanning_optics_drift()  # reset drift before optimizing next NV
+        opti_coords_list.append(opti_coords)
+
+    # Report back
+    for opti_coords in opti_coords_list:
+        r_opti_coords = [round(el, 3) for el in opti_coords]
+        print(f"{r_opti_coords},")
 
 
 ### Run the file
-
 
 if __name__ == "__main__":
     # region Shared parameters
@@ -706,35 +771,31 @@ if __name__ == "__main__":
     # magnet_angle = 90
     date_str = "2024_03_12"
     # global_coords = [None, None, z_coord]
-    global_coords = [0.0, 0.0, 0.9]
-    # endregion
+    global_coords = [0.25, 0.111, 0.696]
+    initial_pixel_coords = np.array([72.42, 47.079, 0.0])
+    final_pixel_coords = np.array([92.155, 99.056, 0.0])  # Add homogeneous coordinate
+    # pixel_to_voltage(initial_pixel_coords, final_pixel_coords)
+
+    # global_coords = piezo_voltage_to_pixel_calibration(final_pixel_coords)
+    # # endregion
     # region Coords (publication set)
     pixel_coords_list = [
-        [140.022, 87.075],  # optimize
-        [69.986, 94.028],  # optimize
-        [43.995, 116.914],  # optimize
-        [112.596, 123.572],
-        # [74.037, 75.081],
+        [110.186, 129.281],
+        [128.233, 88.007],
+        [86.294, 103.0],
     ]
-    num_nvs = len(pixel_coords_list)
     green_coords_list = [
-        [110.0, 110.0],
-        [105.7, 107.081],  # optimize
-        [113.051, 108.398],  # optimize
-        [115.41, 110.892],  # optimize
-        [108.417, 111.261],
-        # [112.866, 112.453],
-        # [112.036, 106.578],
+        [109.029, 111.412],
+        [107.501, 106.867],
+        [111.851, 108.673],
     ]
     red_coords_list = [
-        [78.667, 70.863],
-        [78.667, 70.863],
-        [78.667, 70.863],
-        [75.139, 77.288],
-        # [76.339, 74.832],
-        # [78.543, 67.724],
+        [75.713, 75.883],
+        [74.27, 72.072],
+        [77.757, 73.465],
     ]
-    threshold_list = [79.5, 83.5, 85.5, 78.5, 79.5, 68.5]
+    num_nvs = len(pixel_coords_list)
+    threshold_list = [57.5] * num_nvs
     scc_duration_list = [140] * num_nvs
     scc_duration_list = [4 * round(el / 4) for el in scc_duration_list]
     scc_amp_list = [1] * num_nvs
@@ -760,9 +821,9 @@ if __name__ == "__main__":
     nv_list[0].representative = True
     nv_sig = widefield.get_repr_nv_sig(nv_list)
     nv_sig.expected_counts = None
-    # nv_sig.expected_counts = 1150
-    # nv_sig.expected_counts = 1200
-    # nv_sig.expected_counts = 1250
+    nv_sig.expected_counts = 737.0
+    # nv_sig.expected_counts = 1203.0
+    # nv_sig.expected_counts = 1101.0
     num_nvs = len(nv_list)
     # print(f"Final NV List: {nv_list}")
     # Ensure data is defined before accessing it
@@ -772,7 +833,7 @@ if __name__ == "__main__":
     #     pulse_gen.stream_load(seq_file, seq_args_string, num_reps)
     #     counts = np.array(data["counts"])[0] if data else None
     # except Exception as e:
-    #     print(f"Error occurred: {e}")
+    # print(f"Error occurred: {e}")
     # nv_inds = [0, 1]
     # nv_list = [nv_list[ind] for ind in range(num_nvs) if ind in nv_inds]
     # num_nvs = len(nv_list)
@@ -814,7 +875,7 @@ if __name__ == "__main__":
     #     print(f"{r_coords},")
     # sys.exit()
 
-    # nv_list = [nv_list[0], *nv_list[10:]]
+    # nv_list = [nv_list[
     # nv_list = [nv_list[2]]
     # nv_list = nv_list[: len(nv_list)]
 
@@ -826,12 +887,11 @@ if __name__ == "__main__":
     do_email = False
     try:
         # pass
-
         kpl.init_kplotlib()
         # tb.init_safe_stop()
 
         # widefield.reset_all_drift()
-
+        # widefield.reset_scanning_optics_drift()
         # pos.reset_drift()  # Reset z drift
         # widefield.set_pixel_drift(
         #     np.array([93.093, 120.507])  # New coords
@@ -843,15 +903,38 @@ if __name__ == "__main__":
         # do_optimize_z(nv_sig)
         # do_optimize_xyz(nv_sig)
         # pos.set_xyz_on_nv(nv_sig)
+        # piezo_voltage_to_pixel_calibration()
 
-        # for z in np.linspace(0.7, 1.3, 9):
+        # Generate points for forward diagonal motion
+        # x_values = np.linspace(0.3, -0.3, 6)
+        # y_values = np.linspace(0.3, -0.3, 6)
+        # Define the list of points in the triangle
+        # Example coordinates for the triangle
+        # p1 = (0.0, 0.0)
+        # p2 = (-0.25, -0.25)
+        # p3 = (0.50, 0)
+        # p4 = (-0.25, 0.25)
+        # points = [p1, p2, p3, p4]
+
+        # for point in points:
+        #     x, y = point
+        #     nv_sig.coords[CoordsKey.GLOBAL][0] += x
+        #     nv_sig.coords[CoordsKey.GLOBAL][1] += y
+        #     print(nv_sig.coords[CoordsKey.GLOBAL])
+        #     do_scanning_image_sample(nv_sig)
+
+        # Move diagonally forward
+        # for x, y in zip(x_values, y_values):
+        # nv_sig.coords[CoordsKey.GLOBAL][0] = x
+        # nv_sig.coords[CoordsKey.GLOBAL][1] = y
+        #     do_scanning_image_sample(nv_sig)
+
+        # for z in np.linspace(0.6, 1.1, 7):
         #     nv_sig.coords[CoordsKey.GLOBAL][2] = z
         #     do_scanning_image_sample(nv_sig)
         # do_widefield_image_sample(nv_sig, 50)
 
-        # piezo_voltage_to_pixel_calibration()
-
-        do_scanning_image_sample(nv_sig)
+        # do_scanning_image_sample(nv_sig)
         # do_scanning_image_sample_zoom(nv_sig)
         # do_widefield_image_sample(nv_sig, 50)
         # do_widefield_image_sample(nv_sig, 100)
@@ -875,7 +958,7 @@ if __name__ == "__main__":
         # widefield.reset_all_drift()
         # coords_key = None  # Pixel coords
         # coords_key = green_laser
-        # coords_key = red_laser
+        coords_key = red_laser
         # do_optimize_loop(nv_list, coords_key, scanning_from_pixel=False)
 
         # nv_list = nv_list[::-1]
@@ -887,6 +970,7 @@ if __name__ == "__main__":
         # do_rabi(nv_list)
         # do_resonance(nv_list)
         # do_spin_echo(nv_list)
+
         # do_power_rabi(nv_list)
         # do_correlation_test(nv_list)
         # do_ramsey(nv_list)
@@ -898,7 +982,7 @@ if __name__ == "__main__":
         # do_charge_quantum_jump(nv_list)
         # do_ac_stark(nv_list)
 
-        # do_opx_constant_ac()
+        do_opx_constant_ac()
         # do_opx_square_wave()
 
         # nv_list = nv_list[::-1]

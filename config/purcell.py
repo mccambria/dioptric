@@ -32,30 +32,51 @@ green_laser = "laser_INTE_520"
 yellow_laser = "laser_OPTO_589"
 red_laser = "laser_COBO_638"
 
+# clibration coords region
+calibration_pixel_coords_list = [
+    [110.186, 129.281],
+    [128.233, 88.007],
+    [86.294, 103.0],
+]
+calibration_green_coords_list = [
+    [109.029, 111.412],
+    [107.501, 106.867],
+    [111.851, 108.673],
+]
+calibration_red_coords_list = [
+    [75.72, 75.817],
+    [74.275, 72.194],
+    [77.801, 73.465],
+]
+# Create the dictionaries using the provided lists
 widefield_calibration_coords1 = {
     # CoordsKey.GLOBAL: [0, 0, 2],
-    CoordsKey.PIXEL: [90.65, 142.684],
-    green_laser: [110.213, 109.828],
-    red_laser: [74.783, 74.908],
+    CoordsKey.PIXEL: calibration_pixel_coords_list[0],
+    green_laser: calibration_green_coords_list[0],
+    red_laser: calibration_red_coords_list[0],
 }
+
 widefield_calibration_coords2 = {
     # CoordsKey.GLOBAL: [0, 0, 2],
-    CoordsKey.PIXEL: [103.608, 165.433],
-    green_laser: [108.876, 111.806],
-    red_laser: [73.623, 77.103],
+    CoordsKey.PIXEL: calibration_pixel_coords_list[1],
+    green_laser: calibration_green_coords_list[1],
+    red_laser: calibration_red_coords_list[1],
 }
+
 widefield_calibration_coords3 = {
     # CoordsKey.GLOBAL: [0, 0, 2],
-    CoordsKey.PIXEL: [101.79, 157.333],
-    green_laser: [109.084, 111.052],
-    red_laser: [74.076, 76.237],
+    CoordsKey.PIXEL: calibration_pixel_coords_list[2],
+    green_laser: calibration_green_coords_list[2],
+    red_laser: calibration_red_coords_list[2],
 }
+
 # if coord key is CoordsKey.GLOBAL
-affine_voltage2pixel = [
-    [-144.78665454, 2.00333725, 44.85533396],
-    [1.26665749, -137.22997754, 105.43366496],
-    [0.00000000, 0.00000000, 1.0000000],
+affine_pixel2voltage = [
+    [-0.01472387, 0.00052569, 1.28717911],
+    [0.00040197, -0.01455135, 1.73876545],
+    [0.00000000, 0.00000000, 1.00000000],
 ]
+
 # endregion
 # region Base config
 
@@ -131,15 +152,15 @@ config |= {
         "resolution": (512, 512),
         "spot_radius": 3,  # Radius for integrating NV counts in a camera image
         "bias_clamp": 300,  # (changing this won't actually change the value on the camera currently)
-        # "em_gain": 5000,
+        "em_gain": 5000,
         # "em_gain": 1000,
-        "em_gain": 10,
+        # "em_gain": 10,
         "temp": -60,
-        "timeout": 10e3,  # ms
+        "timeout": 30e3,  # ms
         # "timeout": -1,  # No timeout
         # Readout mode specifies EM vs conventional, as well as vertical and horizontal readout frequencies.
         # See camera server file for details
-        "readout_mode": 1,  # 16 for double horizontal readout rate
+        "readout_mode": 1,  # 16 for double horizontal readout rate (em mode)
         # "readout_mode": 6,  # Fast conventional
         "roi": (121, 110, 250, 250),  # offsetX, offsetY, width, height
         # "roi": None,  # offsetX, offsetY, width, height
@@ -159,6 +180,7 @@ config |= {
         red_laser: {
             "delay": 0,
             "mod_mode": ModMode.DIGITAL,
+            "pos_mode": LaserPosMode.SCANNING,
             "aod": True,
             "default_aod_suffix": "scc",
             "opti_laser_key": LaserKey.ION,
@@ -173,7 +195,7 @@ config |= {
         },
         # Virtual lasers
         # LaserKey.IMAGING: {"name": green_laser, "duration": 50e6},
-        LaserKey.IMAGING: {"name": green_laser, "duration": 30e6},
+        LaserKey.IMAGING: {"name": green_laser, "duration": 3e6},
         LaserKey.SPIN_READOUT: {"name": green_laser, "duration": 300},
         # LaserKey.CHARGE_POL: {"name": green_laser, "duration": 10e3},
         LaserKey.CHARGE_POL: {"name": green_laser, "duration": 1e3},
@@ -185,11 +207,11 @@ config |= {
         # LaserKey.SCC: {"name": red_laser, "duration": 248},
         LaserKey.SCC: {"name": red_laser, "duration": 124},
         # LaserKey.SCC: {"name": green_laser, "duration": 200},
-        LaserKey.WIDEFIELD_IMAGING: {"name": yellow_laser, "duration": 100e6},
+        LaserKey.WIDEFIELD_IMAGING: {"name": yellow_laser, "duration": 5e6},
         # LaserKey.WIDEFIELD_SPIN_POL: {"name": yellow_laser, "duration": 10e3},
         LaserKey.WIDEFIELD_SPIN_POL: {"name": yellow_laser, "duration": 100e3},
         # LaserKey.WIDEFIELD_SPIN_POL: {"name": yellow_laser, "duration": 1e6},
-        LaserKey.WIDEFIELD_CHARGE_READOUT: {"name": yellow_laser, "duration": 100e6},
+        LaserKey.WIDEFIELD_CHARGE_READOUT: {"name": yellow_laser, "duration": 12e6},
         # LaserKey.WIDEFIELD_CHARGE_READOUT: {"name": yellow_laser, "duration": 100e6},
         "scc_shelving_pulse": False,  # Whether or not to include a shelving pulse in SCC
     },
@@ -201,16 +223,18 @@ config |= {
             "xy_delay": int(400e3),  # 400 us for galvo
             "xy_dtype": float,
             "xy_nm_per_unit": 1000,
-            "xy_optimize_range": 1.0,
+            "xy_optimize_range": 0.8,
             "xy_units": "MHz",
+            "z_dtype": float,
         },
         red_laser: {
             "xy_control_mode": ControlMode.SEQUENCE,
             "xy_delay": int(400e3),  # 400 us for galvo
             "xy_dtype": float,
             "xy_nm_per_unit": 1000,
-            "xy_optimize_range": 2.0,
+            "xy_optimize_range": 2.4,
             "xy_units": "MHz",
+            "z_dtype": float,
         },
         CoordsKey.GLOBAL: {
             "z_control_mode": ControlMode.STREAM,
@@ -223,7 +247,7 @@ config |= {
             "xy_delay": int(1e6),
             "xy_dtype": float,
             "xy_nm_per_unit": 1000,
-            "xy_optimize_range": 0.07,
+            "xy_optimize_range": 0.09,
             "xy_small_response_delay": 800,
             "xy_units": "V",
             "xy_positional_accuracy": 0.002,
@@ -232,7 +256,7 @@ config |= {
         "widefield_calibration_coords1": widefield_calibration_coords1,
         "widefield_calibration_coords2": widefield_calibration_coords2,
         "widefield_calibration_coords3": widefield_calibration_coords3,
-        "AffineCalibration_voltage2pixel": affine_voltage2pixel,
+        "AffineCalibration_pixel2voltage": affine_pixel2voltage,
     },
     ###
     "Servers": {
@@ -761,7 +785,7 @@ opx_config = {
         # Yellow AOM
         "yellow_imaging": {"type": "constant", "sample": 0.40},  # 0.35
         # "yellow_imaging": {"type": "constant", "sample": 0.50},  # 0.35
-        "yellow_charge_readout": {"type": "constant", "sample": 0.37},  # 50e6
+        "yellow_charge_readout": {"type": "constant", "sample": 0.24},  # 50e6
         # "yellow_charge_readout": {"type": "constant", "sample": 0.32},  # 100e6
         "yellow_spin_pol": {"type": "constant", "sample": 0.38},
         # Other

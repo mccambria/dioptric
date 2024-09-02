@@ -160,6 +160,40 @@ def optimize_xyz_using_piezo(nv_sig, do_plot=False):
         raise RuntimeError("Optimization failed after multiple attempts.")
 
 
+def optimize_slm_calibration(nv_sig, do_plot=False):
+    num_attempts = 5
+    attempt_ind = 0
+    while True:
+        # xy
+        img_array = stationary_count_lite(nv_sig, ret_img_array=True)
+        opti_pixel_coords, pixel_drift = optimize_pixel_with_img_array(
+            img_array, nv_sig, None, do_plot, return_drift=True
+        )
+        counts = widefield.integrate_counts_from_adus(img_array, opti_pixel_coords)
+
+        if nv_sig.expected_counts is not None and expected_counts_check(nv_sig, counts):
+            return pixel_drift
+
+        # z
+        try:
+            _, counts = main(
+                nv_sig,
+                axes_to_optimize=[2],
+                opti_necessary=True,
+                do_plot=do_plot,
+                num_attempts=2,
+            )
+        except Exception:
+            pass
+
+        if nv_sig.expected_counts is None or expected_counts_check(nv_sig, counts):
+            return pixel_drift
+
+        attempt_ind += 1
+        if attempt_ind == num_attempts:
+            raise RuntimeError("Optimization failed.")
+
+
 def optimize_pixel(nv_sig, do_plot=False):
     img_array = stationary_count_lite(nv_sig, ret_img_array=True)
     return optimize_pixel_with_img_array(img_array, nv_sig, None, do_plot)
@@ -180,7 +214,9 @@ def optimize_pixel_with_img_array(
     # Default operations of the routine
     set_pixel_drift = nv_sig is not None
     set_scanning_drift = set_pixel_drift
-    pixel_drift_adjust = True
+    # set_pixel_drift = False
+    # set_scanning_drift = True
+    pixel_drift_adjust = False
     pixel_drift = None
     radius = None
     do_print = True
@@ -262,33 +298,13 @@ def optimize_pixel_with_img_array(
     # ax.set_ylim([pixel_coords[1] + 15, pixel_coords[1] - 15])
     # plt.show(block=True)
 
-    # opti_pixel_coords = popt[1:3]
-    # pixel_drift = np.array(opti_pixel_coords) - np.array(original_pixel_coords)
-    # pixel_drift = pixel_drift.tolist()
-
-    # drift_mode = pos.get_drift_mode()
-
-    # if drift_mode == DriftMode.GLOBAL:
-    #     widefield.set_scanning_drift_from_pixel_drift(
-    #         pixel_drift, coords_key=CoordsKey.GLOBAL, relative=True
-    #     )
-    #     pos.set_xyz_on_nv(nv_sig)
-    # else:
-    #     if set_pixel_drift:
-    #         widefield.set_pixel_drift(pixel_drift)
-    #     if set_scanning_drift:
-    #         widefield.set_all_scanning_drift_from_pixel_drift(pixel_drift)
-    # opti_pixel_coords = opti_pixel_coords.tolist()
-
-    # After obtaining optimized pixel coordinates
     opti_pixel_coords = popt[1:3]
     pixel_drift = np.array(opti_pixel_coords) - np.array(original_pixel_coords)
     pixel_drift = pixel_drift.tolist()
-
+    # print(pixel_drift)
     drift_mode = pos.get_drift_mode()
 
     if drift_mode == DriftMode.GLOBAL:
-        # Use the modified relative drift calculation
         widefield.set_scanning_drift_from_pixel_drift(
             pixel_drift, coords_key=CoordsKey.GLOBAL, relative=True
         )
@@ -297,11 +313,31 @@ def optimize_pixel_with_img_array(
         if set_pixel_drift:
             widefield.set_pixel_drift(pixel_drift)
         if set_scanning_drift:
-            # Use relative adjustment if necessary
-            widefield.set_all_scanning_drift_from_pixel_drift(
-                pixel_drift, relative=True
-            )
+            widefield.set_all_scanning_drift_from_pixel_drift(pixel_drift)
     opti_pixel_coords = opti_pixel_coords.tolist()
+
+    # # After obtaining optimized pixel coordinates
+    # opti_pixel_coords = popt[1:3]
+    # pixel_drift = np.array(opti_pixel_coords) - np.array(original_pixel_coords)
+    # pixel_drift = pixel_drift.tolist()
+
+    # drift_mode = pos.get_drift_mode()
+
+    # if drift_mode == DriftMode.GLOBAL:
+    #     # Use the modified relative drift calculation
+    #     widefield.set_scanning_drift_from_pixel_drift(
+    #         pixel_drift, coords_key=CoordsKey.GLOBAL, relative=True
+    #     )
+    #     pos.set_xyz_on_nv(nv_sig)
+    # else:
+    #     if set_pixel_drift:
+    #         widefield.set_pixel_drift(pixel_drift)
+    #     if set_scanning_drift:
+    #         # Use relative adjustment if necessary
+    #         widefield.set_all_scanning_drift_from_pixel_drift(
+    #             pixel_drift, relative=True
+    #         )
+    # opti_pixel_coords = opti_pixel_coords.tolist()
 
     if do_print:
         r_opti_pixel_coords = [round(el, 3) for el in opti_pixel_coords]

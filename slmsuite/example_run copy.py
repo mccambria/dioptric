@@ -1,38 +1,46 @@
-import os, sys, time
-# Add slmsuite to the python path (for the case where it isn't installed via pip).
-sys.path.append(os.path.join(os.getcwd(), 'c:/Users/Saroj Chand/Documents/dioptric'))
+import os
+import sys
+import time
 
+# Add slmsuite to the python path (for the case where it isn't installed via pip).
+sys.path.append(os.path.join(os.getcwd(), "c:/Users/Saroj Chand/Documents/dioptric"))
+
+import warnings
+
+import cv2
 import numpy as np
 import pandas as pd
-import cv2
 import scipy.ndimage as ndimage
-import warnings
+
 warnings.filterwarnings("ignore")
+import io
+
+import imageio
 import matplotlib as mpl
 import matplotlib.pyplot as plt
+
 # Generate a phase .gif
 from IPython.display import Image
-import imageio
-import io 
 from scipy.optimize import curve_fit
 
 from utils import tool_belt as tb
 
-mpl.rc('image', cmap='Blues')
+mpl.rc("image", cmap="Blues")
 
-from slmsuite.holography import analysis, toolbox
-from slmsuite.hardware.slms.thorlabs import ThorSLM
+from slmsuite import example_library
 from slmsuite.hardware.cameras.thorlabs import ThorCam
 from slmsuite.hardware.cameraslms import FourierSLM
+from slmsuite.hardware.slms.thorlabs import ThorSLM
+from slmsuite.holography import analysis, toolbox
 from slmsuite.holography.algorithms import FeedbackHologram, SpotHologram
-from slmsuite import example_library
 from slmsuite.misc import fitfunctions
+
 
 # funtions
 # region "plot_phase" function
 def plot_phase(phase, title="", zoom=True):
     # One plot if no camera; two otherwise.
-    _, axs = plt.subplots(1, 2 - (cam is None), figsize=(12,6))
+    _, axs = plt.subplots(1, 2 - (cam is None), figsize=(12, 6))
 
     if cam is None:
         axs = [axs]
@@ -40,11 +48,11 @@ def plot_phase(phase, title="", zoom=True):
     # Plot the phase.
     axs[0].set_title("SLM Phase")
     im = axs[0].imshow(
-        np.mod(phase, 2*np.pi),
+        np.mod(phase, 2 * np.pi),
         vmin=0,
-        vmax=2*np.pi,
+        vmax=2 * np.pi,
         interpolation="none",
-        cmap="gray"
+        cmap="gray",
     )
     plt.colorbar(im, ax=axs[0])
 
@@ -57,48 +65,50 @@ def plot_phase(phase, title="", zoom=True):
     if zoom:
         xlim = axs[1].get_xlim()
         ylim = axs[1].get_ylim()
-        axs[1].set_xlim([xlim[0] * .7 + xlim[1] * .3, xlim[0] * .3 + xlim[1] * .7])
-        axs[1].set_ylim([ylim[0] * .7 + ylim[1] * .3, ylim[0] * .3 + ylim[1] * .7])
+        axs[1].set_xlim([xlim[0] * 0.7 + xlim[1] * 0.3, xlim[0] * 0.3 + xlim[1] * 0.7])
+        axs[1].set_ylim([ylim[0] * 0.7 + ylim[1] * 0.3, ylim[0] * 0.3 + ylim[1] * 0.7])
 
     # Make a title, if given.
     plt.suptitle(title)
     plt.show()
 
+
 def update_plot(phase, angle):
     # Initialize the figure and axes outside the loop
     fig, ax = plt.subplots(1, 3, figsize=(15, 5))
     blaze_vector = (np.cos(np.radians(angle)), np.sin(np.radians(angle)))
-    
+
     # Update phase with live rotation
     delta_phase = toolbox.phase.blaze(grid=slm, vector=blaze_vector, offset=0)
     phase = None
-    
+
     # Display the phase pattern on the SLM
     slm.write(phase, settle=True)
-    
+
     # Capture image from the camera
     cam.set_exposure(0.0001)
     im = cam.get_image()
-    
+
     # Clear the axes and plot the phase, delta phase, and camera image
     ax[0].clear()
-    ax[0].imshow(phase, cmap='gray')
-    ax[0].set_title('Total Phase')
+    ax[0].imshow(phase, cmap="gray")
+    ax[0].set_title("Total Phase")
 
     ax[1].clear()
-    ax[1].imshow(delta_phase, cmap='gray')
-    ax[1].set_title('Delta Phase')
+    ax[1].imshow(delta_phase, cmap="gray")
+    ax[1].set_title("Delta Phase")
 
     ax[2].clear()
-    ax[2].imshow(im, cmap='gray')
-    ax[2].set_title('Camera Image')
+    ax[2].imshow(im, cmap="gray")
+    ax[2].set_title("Camera Image")
 
     plt.pause(0.01)
+
 
 # region "blaze" function
 def blaze():
     # Get .2 degrees in normalized units.
-    vector_deg = (.2, .2)
+    vector_deg = (0.2, 0.2)
     vector = toolbox.convert_blaze_vector(vector_deg, from_units="deg", to_units="norm")
 
     # Get the phase for the new vector
@@ -106,73 +116,107 @@ def blaze():
 
     plot_phase(blaze_phase, title="Blaze at {} deg".format(vector_deg))
 
+
 # region "calibration"
 def fourier_calibration():
-    cam.set_exposure(.006)               # Increase exposure because power will be split many ways
+    cam.set_exposure(0.001)  # Increase exposure because power will be split many ways
     fs.fourier_calibrate(
-        array_shape=[25, 16],           # Size of the calibration grid (Nx, Ny) [knm]
-        array_pitch=[30, 40],           # Pitch of the calibration grid (x, y) [knm]
-        plot=True
+        array_shape=[20, 12],  # Size of the calibration grid (Nx, Ny) [knm]
+        array_pitch=[20, 30],  # Pitch of the calibration grid (x, y) [knm]
+        plot=True,
     )
-    cam.set_exposure(.0001)
-    #save calibation
-    calibration_file = fs.save_fourier_calibration(path=r"C:\Users\Saroj Chand\Documents\fourier_calibration")
-    print("Fouri er calibration saved to:", calibration_file)
+    cam.set_exposure(0.001)
+    # save calibation
+    calibration_file = fs.save_fourier_calibration(
+        path=r"C:\Users\matth\GitHub\dioptric\slmsuite\fourier_calibration"
+    )
+    print("Fourier calibration saved to:", calibration_file)
+
 
 def test_wavefront_calibration():
-    cam.set_exposure(.001)
+    cam.set_exposure(0.001)
     movie = fs.wavefront_calibrate(
         interference_point=(600, 400),
-        field_point=(.25, 0),
+        field_point=(0.25, 0),
         field_point_units="freq",
         superpixel_size=60,
-        test_superpixel=(16, 16),           # Testing mode
+        test_superpixel=(16, 16),  # Testing mode
         autoexposure=False,
-        plot=3                              # Special mode to generate a phase .gif
+        plot=3,  # Special mode to generate a phase .gif
     )
-    imageio.mimsave('wavefront.gif', movie)
+    imageio.mimsave("wavefront.gif", movie)
     Image(filename="wavefront.gif")
 
+
 def wavefront_calibration():
-    cam.set_exposure(.001)
+    cam.set_exposure(0.001)
     fs.wavefront_calibrate(
         interference_point=(600, 400),
-        field_point=(.25, 0),
+        field_point=(0.25, 0),
         field_point_units="freq",
         superpixel_size=40,
-        autoexposure=False
+        autoexposure=False,
     )
-    #save calibation
-    calibration_file = fs.save_wavefront_calibration(path=r"C:\Users\Saroj Chand\Documents\wavefront_calibration")
+    # save calibation
+    calibration_file = fs.save_wavefront_calibration(
+        path=r"C:\Users\matth\GitHub\dioptric\slmsuite\wavefront_calibration"
+    )
     print("Fourier calibration saved to:", calibration_file)
-    
-# region "load calibration" 
+
+
+# region "load calibration"
 def load_fourier_calibration():
-    calibration_file_path = r"C:\Users\Saroj Chand\Documents\fourier_calibration\26438-SLM-fourier-calibration_00007.h5"
+    calibration_file_path = r"C:\Users\matth\GitHub\dioptric\slmsuite\fourier_calibration\26438-SLM-fourier-calibration_00003.h5"
     fs.load_fourier_calibration(calibration_file_path)
     print("Fourier calibration loaded from:", calibration_file_path)
 
+
 def load_wavefront_calibration():
-    calibration_file_path = r"C:\Users\Saroj Chand\Documents\wavefront_calibration\26438-SLM-wavefront-calibration_00004.h5"
+    calibration_file_path = r"C:\Users\matth\GitHub\dioptric\slmsuite\wavefront_calibration\26438-SLM-wavefront-calibration_00004.h5"
     fs.load_wavefront_calibration(calibration_file_path)
     print("Wavefront calibration loaded from:", calibration_file_path)
-    
-# region "cam_plot" function 
-def cam_plot():
-    cam.set_exposure(.0001)
-    img = cam.get_image()
 
+
+# region "cam_plot" function
+def cam_plot():
+    cam.set_exposure(0.0001)
+    img = cam.get_image()
     # Plot the result
     plt.figure(figsize=(12, 9))
     plt.imshow(img)
     plt.show()
-    
-# region "evaluate" function 
+
+
+# def cam_plot():
+#     cam.set_exposure(0.0001)
+#     img = cam.get_image()
+
+#     # Check if img is a numpy array and has a valid dtype
+#     if isinstance(img, np.ndarray):
+#         if img.dtype == object:
+#             print("Converting image data from dtype object to float32.")
+#             img = np.array(img, dtype=np.float32)
+#         elif img.dtype != np.uint8 and img.dtype != np.float32:
+#             print(f"Converting image data from dtype {img.dtype} to float32.")
+#             img = img.astype(np.float32)
+#     else:
+#         raise TypeError("Captured image is not a numpy array.")
+
+#     # Plot the result
+#     plt.figure(figsize=(12, 9))
+#     plt.imshow(img, cmap="gray")  # Adding cmap='gray' in case the image is grayscale
+#     plt.show()
+
+
+# region "evaluate" function
 def evaluate_uniformity(vectors=None, size=25):
     # Set exposure and capture image
-    cam.set_exposure(0.00001)
+    cam.set_exposure(0.0001)
     img = cam.get_image()
-
+    # cam.set_exposure(0.001)
+    # img = cam.get_image()
+    print("Images type:", type(img))
+    print("Images shape:", np.shape(img))
     # Extract subimages
     if vectors is None:
         subimages = analysis.take(img, vectors=None, size=size)
@@ -191,20 +235,25 @@ def evaluate_uniformity(vectors=None, size=25):
 
     # return subimages, powers
 
-# region "square" function 
+
+# region "square" function
 def square_array():
-    xlist = np.arange(550, 650, 25)                      # Get the coordinates for one edge
-    ylist = np.arange(450, 550, 25) 
+    xlist = np.arange(750, 950, 25)  # Get the coordinates for one edge
+    ylist = np.arange(400, 750, 25)
     xgrid, ygrid = np.meshgrid(xlist, ylist)
-    square = np.vstack((xgrid.ravel(), ygrid.ravel()))      # Make an array of points in a grid
-    hologram = SpotHologram(shape=(2048, 2048), spot_vectors=square, basis='ij', cameraslm=fs)
+    square = np.vstack(
+        (xgrid.ravel(), ygrid.ravel())
+    )  # Make an array of points in a grid
+    hologram = SpotHologram(
+        shape=(2048, 2048), spot_vectors=square, basis="ij", cameraslm=fs
+    )
 
     # Precondition computationally.
     hologram.optimize(
-        'WGS-Kim',
+        "WGS-Kim",
         maxiter=20,
-        feedback='computational_spot',
-        stat_groups=['computational_spot']
+        feedback="computational_spot",
+        stat_groups=["computational_spot"],
     )
     # hologram.plot_nearfield(title="Padded", padded=True)
     # hologram.plot_nearfield(title="Unpadded")
@@ -215,13 +264,13 @@ def square_array():
     # for ind in range(phase.shape[0]):
     #     for jnd in range(phase.shape[1]):
     #         phase[ind, jnd] += np.dot((ind, jnd), (0.03, 0.03))
-    quadratic_phase =  toolbox.phase.quadratic_phase(grid=slm, focal_length=25)
+    quadratic_phase = toolbox.phase.quadratic_phase(grid=slm, focal_length=25)
     gaussian_phase = toolbox.phase.gaussian(grid=slm, wx=60000, wy=60000)
     # Generate the initial phase with the gradient
-    phase += gaussian_phase
+    # phase += gaussian_phase
     # plot_phase(quadratic_phase)
-    slm.write(phase, settle=True)
-    cam_plot()
+    # slm.write(phase, settle=True)
+    # cam_plot()
     # evaluate_uniformity(vectors=square)
     # Hone the result with experimental feedback.
     # hologram.optimize(
@@ -236,207 +285,303 @@ def square_array():
     # cam_plot()
     # evaluate_uniformity(vectors=square)
 
-# region "circle" function 
+
+def square_array_cirle():
+    xlist = np.arange(450, 1050, 25)  # X coordinates for the grid
+    ylist = np.arange(350, 750, 25)  # Y coordinates for the grid
+    xgrid, ygrid = np.meshgrid(xlist, ylist)
+
+    # Flatten the grids to 1D arrays
+    xpoints = xgrid.ravel()
+    ypoints = ygrid.ravel()
+
+    # Calculate the center and radius for the circle
+    x_center = np.mean(xlist)
+    y_center = np.mean(ylist)
+    radius = min((xlist[-1] - xlist[0]), (ylist[-1] - ylist[0])) / 2
+
+    # Create a boolean mask for points within the circle
+    mask = (xpoints - x_center) ** 2 + (ypoints - y_center) ** 2 <= radius**2
+
+    # Apply the mask to filter the points
+    circular_points = np.vstack((xpoints[mask], ypoints[mask]))
+
+    hologram = SpotHologram(
+        shape=(2048, 2048), spot_vectors=circular_points, basis="ij", cameraslm=fs
+    )
+
+    # Precondition computationally.
+    hologram.optimize(
+        "WGS-Kim",
+        maxiter=20,
+        feedback="computational_spot",
+        stat_groups=["computational_spot"],
+    )
+
+    phase = hologram.extract_phase()
+    slm.write(phase, settle=True)
+    cam_plot()
+
+
+# region "circle" function
 def circle_pattern():
     cam.set_exposure(0.001)
-   # Define parameters for the circle
+    # Define parameters for the circle
     center = (850, 540)  # Center of the circle
     radius = 200  # Radius of the circle
 
     # Generate points within the circle using polar coordinates
     num_points = 30  # Number of points to generate
-    theta = np.linspace(0, 2*np.pi, num_points)  # Angle values
+    theta = np.linspace(0, 2 * np.pi, num_points)  # Angle values
     x_circle = center[0] + radius * np.cos(theta)  # X coordinates
     y_circle = center[1] + radius * np.sin(theta)  # Y coordinates
 
     # Convert to grid format if needed
     circle = np.vstack((x_circle, y_circle))
 
-    hologram = SpotHologram(shape=(2048, 2048), spot_vectors=circle, basis='ij', cameraslm=fs)
+    hologram = SpotHologram(
+        shape=(2048, 2048), spot_vectors=circle, basis="ij", cameraslm=fs
+    )
 
     # # Precondition computationally.
     hologram.optimize(
-        'WGS-Kim',
+        "WGS-Kim",
         maxiter=20,
-        feedback='computational_spot',
-        stat_groups=['computational_spot']
+        feedback="computational_spot",
+        stat_groups=["computational_spot"],
     )
     phase = hologram.extract_phase()
     slm.write(phase, settle=True)
     cam_plot()
     evaluate_uniformity(vectors=circle)
-
 
     # Hone the result with experimental feedback.
     hologram.optimize(
-        'WGS-Kim',
+        "WGS-Kim",
         maxiter=20,
-        feedback='experimental_spot',
-        stat_groups=['computational_spot', 'experimental_spot'],
-        fixed_phase=False
+        feedback="experimental_spot",
+        stat_groups=["computational_spot", "experimental_spot"],
+        fixed_phase=False,
     )
     phase = hologram.extract_phase()
     slm.write(phase, settle=True)
     cam_plot()
     evaluate_uniformity(vectors=circle)
 
+
 def circles():
-    cam.set_exposure(0.001)
-   # Define parameters for the circle
-    center = (580, 400)  # Center of the circle
+    cam.set_exposure(0.1)
+    # Define parameters for the circle
+    center = (750, 530)  # Center of the circle
     # Generate circles with radii ranging from 10 to 200
     radii = np.linspace(50, 200, num=4)  # Adjust the number of circles as needed
     # Generate points for each circle and create the hologram
     circle_points = []
     for radius in radii:
-        num_points = int(2 * np.pi * radius / 60)  # Adjust the number of points based on the radius
+        num_points = int(
+            2 * np.pi * radius / 60
+        )  # Adjust the number of points based on the radius
 
         # Generate points within the circle using polar coordinates
-        theta = np.linspace(0, 2*np.pi, num_points)  # Angle values
+        theta = np.linspace(0, 2 * np.pi, num_points)  # Angle values
         x_circle = center[0] + radius * np.cos(theta)  # X coordinates
         y_circle = center[1] + radius * np.sin(theta)  # Y coordinates
 
         # Convert to grid format for the current circle
         circle = np.vstack((x_circle, y_circle))
-        
+
         circle_points.append(circle)
 
     # Combine the points of all circles
     circles = np.concatenate(circle_points, axis=1)
-    hologram = SpotHologram(shape=(2048, 2048), spot_vectors=circles, basis='ij', cameraslm=fs)
+    hologram = SpotHologram(
+        shape=(2048, 2048), spot_vectors=circles, basis="ij", cameraslm=fs
+    )
 
     # # Precondition computationally.
     hologram.optimize(
-        'WGS-Kim',
+        "WGS-Kim",
         maxiter=20,
-        feedback='computational_spot',
-        stat_groups=['computational_spot']
+        feedback="computational_spot",
+        stat_groups=["computational_spot"],
     )
     phase = hologram.extract_phase()
     slm.write(phase, settle=True)
     cam_plot()
-    evaluate_uniformity(vectors=circle)
-
+    # evaluate_uniformity(vectors=circle)
 
     # Hone the result with experimental feedback.
     hologram.optimize(
-        'WGS-Kim',
+        "WGS-Kim",
         maxiter=20,
-        feedback='experimental_spot',
-        stat_groups=['computational_spot', 'experimental_spot'],
-        fixed_phase=False
+        feedback="experimental_spot",
+        stat_groups=["computational_spot", "experimental_spot"],
+        fixed_phase=False,
     )
     phase = hologram.extract_phase()
     slm.write(phase, settle=True)
     cam_plot()
-    evaluate_uniformity(vectors=circle)
-# region "scatter" function 
+    # evaluate_uniformity(vectors=circle)
+
+
+def calibration_triangle():
+    cam.set_exposure(0.1)
+
+    # Define parameters for the equilateral triangle
+    center = (750, 530)  # Center of the triangle
+    side_length = 120  # Length of each side of the triangle
+
+    # Calculate the coordinates of the three vertices of the equilateral triangle
+    theta = np.linspace(0, 2 * np.pi, 4)[:-1]  # Exclude the last point to avoid overlap
+    x_triangle = center[0] + side_length * np.cos(theta + np.pi / 6)  # X coordinates
+    y_triangle = center[1] + side_length * np.sin(theta + np.pi / 6)  # Y coordinates
+
+    # Combine the coordinates into a grid format
+    triangle_points = np.vstack((x_triangle, y_triangle))
+    print("thorcam coords:", triangle_points)
+    hologram = SpotHologram(
+        shape=(2048, 2048), spot_vectors=triangle_points, basis="ij", cameraslm=fs
+    )
+
+    # Precondition computationally
+    hologram.optimize(
+        "WGS-Kim",
+        maxiter=20,
+        feedback="computational_spot",
+        stat_groups=["computational_spot"],
+    )
+    phase = hologram.extract_phase()
+    slm.write(phase, settle=True)
+    cam_plot()
+
+
+# region "scatter" function
 def scatter_pattern():
-    lloyds_points = toolbox.lloyds_points(
-        grid=tuple(int(s/5) for s in fs.cam.shape), 
-        n_points=100, 
-        iterations=40
-        ) * 5
-    
-    hologram = SpotHologram((2048, 2048), lloyds_points, basis='ij', cameraslm=fs)
+    lloyds_points = (
+        toolbox.lloyds_points(
+            grid=tuple(int(s / 5) for s in fs.cam.shape), n_points=100, iterations=40
+        )
+        * 5
+    )
+
+    hologram = SpotHologram((2048, 2048), lloyds_points, basis="ij", cameraslm=fs)
 
     # Precondition computationally.
     hologram.optimize(
-        'WGS-Kim',
+        "WGS-Kim",
         maxiter=20,
-        feedback='computational_spot',
-        stat_groups=['computational_spot']
+        feedback="computational_spot",
+        stat_groups=["computational_spot", "experimental_spot"],
     )
     phase = hologram.extract_phase()
     slm.write(phase, settle=True)
     cam_plot()
     # # Hone the result with experimental feedback.
     hologram.optimize(
-        'WGS-Kim',
+        "WGS-Kim",
         maxiter=20,
-        feedback='experimental_spot',
-        stat_groups=['computational_spot', 'experimental_spot'],
-        fixed_phase=False
+        feedback="experimental_spot",
+        stat_groups=["computational_spot", "experimental_spot"],
+        fixed_phase=False,
     )
     phase = hologram.extract_phase()
     slm.write(phase, settle=True)
     cam_plot()
 
-# region "smiley" function 
+
+# region "smiley" function
+
 
 def smiley_pattern():
-  # Define points for the smiley face
+    # Define points for the smiley face
     x_eyes = [1100, 1200]  # X coordinates for the eyes
-    y_eyes = [400, 400]     # Y coordinates for the eyes
+    y_eyes = [400, 400]  # Y coordinates for the eyes
 
     # Define points for the mouth (a semi-circle)
     theta = np.linspace(0, np.pi, 15)  # Angle values for the semi-circle
     mouth_radius = 150  # Radius of the mouth
     x_mouth = 1150 + mouth_radius * np.cos(theta)  # X coordinates for the mouth
-    y_mouth = 500 + mouth_radius * np.sin(theta)   # Y coordinates for the mouth
+    y_mouth = 500 + mouth_radius * np.sin(theta)  # Y coordinates for the mouth
 
     # Combine all points into a single array
-    smiley = np.vstack((np.concatenate((x_eyes, x_mouth)), np.concatenate((y_eyes, y_mouth))))
-    hologram = SpotHologram(shape=(2048, 2048), spot_vectors=smiley, basis='ij', cameraslm=fs)
+    smiley = np.vstack(
+        (np.concatenate((x_eyes, x_mouth)), np.concatenate((y_eyes, y_mouth)))
+    )
+    hologram = SpotHologram(
+        shape=(2048, 2048), spot_vectors=smiley, basis="ij", cameraslm=fs
+    )
 
     # Precondition computationally.
     hologram.optimize(
-        'WGS-Kim',
+        "WGS-Kim",
         maxiter=20,
-        feedback='computational_spot',
-        stat_groups=['computational_spot']
+        feedback="computational_spot",
+        stat_groups=["computational_spot"],
     )
     phase = hologram.extract_phase()
     slm.write(phase, settle=True)
     cam_plot()
 
-# region "UCB"  function 
+
+# region "UCB"  function
 def UCB_pattern():
     # Define coordinates for each letter in "UCB"
     letters = {
-        'U': [(700, 400), (650, 500), (650, 600), (700, 700), (750, 600), (750, 500)],
-        'C': [(800, 500), (800, 600), (850, 600), (900, 550), (850, 500), (900, 500)],
-        'B': [(950, 500), (950, 600), (1000, 600), (1050, 550), (1000, 500), (1050, 500)],
+        "U": [(700, 400), (650, 500), (650, 600), (700, 700), (750, 600), (750, 500)],
+        "C": [(800, 500), (800, 600), (850, 600), (900, 550), (850, 500), (900, 500)],
+        "B": [
+            (950, 500),
+            (950, 600),
+            (1000, 600),
+            (1050, 550),
+            (1000, 500),
+            (1050, 500),
+        ],
     }
 
     # Combine coordinates for "UCB"
     ucb = np.vstack([letters[letter] for letter in "UCB"]).T
 
-    hologram = SpotHologram(shape=(2048, 2048), spot_vectors=ucb, basis='ij', cameraslm=fs)
+    hologram = SpotHologram(
+        shape=(2048, 2048), spot_vectors=ucb, basis="ij", cameraslm=fs
+    )
 
     # Precondition computationally.
     hologram.optimize(
-        'WGS-Kim',
+        "WGS-Kim",
         maxiter=20,
-        feedback='computational_spot',
-        stat_groups=['computational_spot']
+        feedback="computational_spot",
+        stat_groups=["computational_spot"],
     )
     phase = hologram.extract_phase()
     slm.write(phase, settle=True)
     cam_plot()
 
+
 def pattern_from_image():
-        # Load the image of the letters "UCB"
+    # Load the image of the letters "UCB"
     image = cv2.imread("cgn30eDI_400x400.png", cv2.IMREAD_GRAYSCALE)
-    
+
     # Threshold the image to obtain binary representation
     _, thresholded = cv2.threshold(image, 127, 255, cv2.THRESH_BINARY)
-    
+
     # Display the thresholded image for debugging
     cv2.imshow("Thresholded Image", thresholded)
     cv2.waitKey(0)
     cv2.destroyAllWindows()
-    
+
     # Find contours of the letters in the image
-    contours, _ = cv2.findContours(thresholded, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
-    
+    contours, _ = cv2.findContours(
+        thresholded, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE
+    )
+
     # Display the contours for debugging
     contour_image = np.zeros_like(image)
     cv2.drawContours(contour_image, contours, -1, (255), thickness=cv2.FILLED)
     cv2.imshow("Contours", contour_image)
     cv2.waitKey(0)
     cv2.destroyAllWindows()
-          # Extract the coordinates of the contours
+    # Extract the coordinates of the contours
     ucb_coords = []
     for contour in contours:
         for point in contour:
@@ -447,39 +592,46 @@ def pattern_from_image():
 
     # Convert ucb_coords to numpy array and transpose it
     ucb_coords = np.vstack(ucb_coords).T
-    
+
     # Print out ucb_coords after conversion for debugging
     print("ucb_coords after conversion:", ucb_coords)
 
     # Transpose the coordinates array to match the expected shape (2, N)
     ucb = ucb_coords
-    
-    hologram = SpotHologram(shape=(2048, 2048), spot_vectors=ucb, basis='ij', cameraslm=fs)
+
+    hologram = SpotHologram(
+        shape=(2048, 2048), spot_vectors=ucb, basis="ij", cameraslm=fs
+    )
     # Precondition computationally.
     hologram.optimize(
-        'WGS-Kim',
+        "WGS-Kim",
         maxiter=20,
-        feedback='computational_spot',
-        stat_groups=['computational_spot']
+        feedback="computational_spot",
+        stat_groups=["computational_spot"],
     )
     phase = hologram.extract_phase()
     slm.write(phase, settle=True)
     cam_plot()
 
+
 # integrate Intensity
 def integrate_intensity():
-    xlist = np.arange(650, 750, 25)                      # Get the coordinates for one edge
-    ylist = np.arange(340, 440, 25) 
+    xlist = np.arange(650, 750, 25)  # Get the coordinates for one edge
+    ylist = np.arange(340, 440, 25)
     xgrid, ygrid = np.meshgrid(xlist, ylist)
-    square = np.vstack((xgrid.ravel(), ygrid.ravel()))      # Make an array of points in a grid
-    hologram = SpotHologram(shape=(2048, 2048), spot_vectors=square, basis='ij', cameraslm=fs)
+    square = np.vstack(
+        (xgrid.ravel(), ygrid.ravel())
+    )  # Make an array of points in a grid
+    hologram = SpotHologram(
+        shape=(2048, 2048), spot_vectors=square, basis="ij", cameraslm=fs
+    )
 
     # Precondition computationally.
     hologram.optimize(
-        'WGS-Kim',
+        "WGS-Kim",
         maxiter=20,
-        feedback='computational_spot',
-        stat_groups=['computational_spot']
+        feedback="computational_spot",
+        stat_groups=["computational_spot"],
     )
     phase = hologram.extract_phase()
     # for ind in range(phase.shape[0]):
@@ -489,32 +641,41 @@ def integrate_intensity():
     # phase *= np.exp(1j * np.dot(np.meshgrid(phase.shape), (10,15))), 855,502.5
     slm.write(phase, settle=True)
     cam_plot()
-    cam.set_exposure(.0001)
+    cam.set_exposure(0.0001)
     img = cam.get_image()
     # Define the region of interest (ROI) around the center spot and compute intensity
     x, y = 700, 390  # Center spot coordinates, adjust as necessary
     roi_size = 110  # Size of the region around the center spot to analyze
-    center_intensity = img[y-roi_size:y+roi_size, x-roi_size:x+roi_size].sum()
+    center_intensity = img[
+        y - roi_size : y + roi_size, x - roi_size : x + roi_size
+    ].sum()
     roi_size = 50
     x, y = 830, 540
     # Compute intensities for each spot in the grid
-    total_intensity = img[y-roi_size:y+roi_size, x-roi_size:x+roi_size].sum()
+    total_intensity = img[
+        y - roi_size : y + roi_size, x - roi_size : x + roi_size
+    ].sum()
     # Print or plot the intensities for analysis
     print("Center spot intensity:", center_intensity)
     print(f"all intensity: {total_intensity}")
 
+
 # region dynamical optical tweezers
 def animate_wavefront_shifts():
-    initial_phase = np.load('initial_phase.npy')  # Load the saved phase
+    initial_phase = np.load("initial_phase.npy")  # Load the saved phase
 
     frames = []
-    shifts = np.linspace(0, 0.3, num=10)  # Define the range and number of steps for the shifts
+    shifts = np.linspace(
+        0, 0.3, num=10
+    )  # Define the range and number of steps for the shifts
 
     # Define the square path
     path = example_library.tweezers_square_path(shifts)
 
     for shift_x, shift_y in path:
-        shifted_phase = example_library.shift_phase(np.copy(initial_phase), shift_x=shift_x, shift_y=shift_y)
+        shifted_phase = example_library.shift_phase(
+            np.copy(initial_phase), shift_x=shift_x, shift_y=shift_y
+        )
         slm.write(shifted_phase, settle=True)
         cam.set_exposure(0.0001)
         im = cam.get_image()
@@ -523,7 +684,7 @@ def animate_wavefront_shifts():
             plt.draw()
             # Save the current figure to a buffer
             buffer = io.BytesIO()
-            plt.savefig(buffer, format='png')
+            plt.savefig(buffer, format="png")
             buffer.seek(0)
             image = imageio.imread(buffer)
             frames.append(image)
@@ -531,12 +692,13 @@ def animate_wavefront_shifts():
             plt.pause(0.01)  # Small pause to update the plot
 
     # Save frames as a GIF
-    imageio.mimsave('wavefront_shift_animation.gif', frames, fps=5)
+    imageio.mimsave("wavefront_shift_animation.gif", frames, fps=5)
     print("Animation saved as wavefront_shift_animation.gif")
 
     # # Ensure frames are in the correct format for imageio
     # frames = [np.array(frame, dtype=np.uint8) for frame in frames]
     # imageio.mimsave('wavefront_shift_animation_1.gif', frames, fps=30)
+
 
 def real_time_dynamical_tweezers():
     # Define parameters for the sqaure array
@@ -546,20 +708,20 @@ def real_time_dynamical_tweezers():
     # square = np.vstack((xgrid.ravel(), ygrid.ravel()))  # Make an array of points in a grid
     # hologram = SpotHologram(shape=(2048, 2048), spot_vectors=square, basis='ij', cameraslm=fs)
 
-#    # Define parameters for the circle
-#     center = (850, 540)  # Center of the circle
-#     radius = 100  # Radius of the circle
+    #    # Define parameters for the circle
+    #     center = (850, 540)  # Center of the circle
+    #     radius = 100  # Radius of the circle
 
-#     # Generate points within the circle using polar coordinates
-#     num_points = 30  # Number of points to generate
-#     theta = np.linspace(0, 2*np.pi, num_points)  # Angle values
-#     x_circle = center[0] + radius * np.cos(theta)  # X coordinates
-#     y_circle = center[1] + radius * np.sin(theta)  # Y coordinates
+    #     # Generate points within the circle using polar coordinates
+    #     num_points = 30  # Number of points to generate
+    #     theta = np.linspace(0, 2*np.pi, num_points)  # Angle values
+    #     x_circle = center[0] + radius * np.cos(theta)  # X coordinates
+    #     y_circle = center[1] + radius * np.sin(theta)  # Y coordinates
 
-#     # Convert to grid format if needed
-#     circle = np.vstack((x_circle, y_circle))
+    #     # Convert to grid format if needed
+    #     circle = np.vstack((x_circle, y_circle))
 
-#     hologram = SpotHologram(shape=(2048, 2048), spot_vectors=circle, basis='ij', cameraslm=fs)
+    #     hologram = SpotHologram(shape=(2048, 2048), spot_vectors=circle, basis='ij', cameraslm=fs)
 
     # Define parameters for the circles
     # center = (800, 550)  # Center of the circle
@@ -593,19 +755,20 @@ def real_time_dynamical_tweezers():
     # Convert to grid format
     spiral = np.vstack((x_spiral, y_spiral))
 
-    hologram = SpotHologram(shape=(2048, 2048), spot_vectors=spiral, basis='ij', cameraslm=fs)
-
+    hologram = SpotHologram(
+        shape=(2048, 2048), spot_vectors=spiral, basis="ij", cameraslm=fs
+    )
 
     # Precondition computationally
     hologram.optimize(
-        'WGS-Kim',
+        "WGS-Kim",
         maxiter=20,
-        feedback='computational_spot',
-        stat_groups=['computational_spot']
+        feedback="computational_spot",
+        stat_groups=["computational_spot"],
     )
 
     initial_phase = hologram.extract_phase()
-    slm.write(initial_phase,settle=True)
+    slm.write(initial_phase, settle=True)
     # time.sleep(10)
     # # Generate the square path for the tweezers
     # x1 = -0.5  # Lower bound of shift range
@@ -641,7 +804,9 @@ def real_time_dynamical_tweezers():
     #         print("Completed one loop of the square path, starting again...")
     frames = []
     for shift_x, shift_y in path:
-        shifted_phase = example_library.shift_phase(np.copy(initial_phase), shift_x=shift_x, shift_y=shift_y)
+        shifted_phase = example_library.shift_phase(
+            np.copy(initial_phase), shift_x=shift_x, shift_y=shift_y
+        )
         slm.write(shifted_phase, settle=True)
         cam.set_exposure(0.0001)
         im = cam.get_image()
@@ -650,7 +815,7 @@ def real_time_dynamical_tweezers():
             plt.draw()
             # Save the current figure to a buffer
             buffer = io.BytesIO()
-            plt.savefig(buffer, format='png')
+            plt.savefig(buffer, format="png")
             buffer.seek(0)
             image = imageio.imread(buffer)
             frames.append(image)
@@ -658,7 +823,7 @@ def real_time_dynamical_tweezers():
             plt.pause(0.01)  # Small pause to update the plot
 
     # Save frames as a GIF
-    imageio.mimsave('spiral_animation_1.gif', frames, fps=30)
+    imageio.mimsave("spiral_animation_1.gif", frames, fps=30)
     print("Animation saved as spira_animation.gif")
 
     # try:
@@ -688,13 +853,15 @@ def selected_dynamical_tweezers():
     # Combine x and y coordinates into an array of spot indices
     spot_indices = np.vstack((y_circle, x_circle)).astype(int)
 
-    hologram = SpotHologram(shape=(2048, 2048), spot_vectors=spot_indices, basis='ij', cameraslm=fs)
-   # Precondition computationally
+    hologram = SpotHologram(
+        shape=(2048, 2048), spot_vectors=spot_indices, basis="ij", cameraslm=fs
+    )
+    # Precondition computationally
     hologram.optimize(
-        'WGS-Kim',
+        "WGS-Kim",
         maxiter=20,
-        feedback='computational_spot',
-        stat_groups=['computational_spot']
+        feedback="computational_spot",
+        stat_groups=["computational_spot"],
     )
 
     initial_phase = hologram.extract_phase()
@@ -707,35 +874,38 @@ def selected_dynamical_tweezers():
         while True:
             for angle in range(0, 360, 30):  # Rotate in steps of 30 degrees
                 blaze_vector = (np.cos(np.radians(angle)), np.sin(np.radians(angle)))
-                
+
                 # Update phase with live rotation
-                delta_phase = toolbox.phase.blaze(grid=slm, vector=blaze_vector, offset=0)
+                delta_phase = toolbox.phase.blaze(
+                    grid=slm, vector=blaze_vector, offset=0
+                )
                 phase = initial_phase + delta_phase
-                
+
                 # Display the phase pattern on the SLM
                 slm.write(phase, settle=True)
-                
+
                 # Capture image from the camera
                 cam.set_exposure(0.0001)
                 im = cam.get_image()
-                
+
                 # Clear the axes and plot the phase, delta phase, and camera image
                 ax[0].clear()
-                ax[0].imshow(phase, cmap='gray')
-                ax[0].set_title('Total Phase')
+                ax[0].imshow(phase, cmap="gray")
+                ax[0].set_title("Total Phase")
 
                 ax[1].clear()
-                ax[1].imshow(delta_phase, cmap='gray')
-                ax[1].set_title('Delta Phase')
+                ax[1].imshow(delta_phase, cmap="gray")
+                ax[1].set_title("Delta Phase")
 
                 ax[2].clear()
-                ax[2].imshow(im, cmap='gray')
-                ax[2].set_title('Camera Image')
+                ax[2].imshow(im, cmap="gray")
+                ax[2].set_title("Camera Image")
                 plt.pause(0.01)
-       
+
                 plt.show()
     finally:
-            print("Real-time dynamical tweezers operation stopped.")
+        print("Real-time dynamical tweezers operation stopped.")
+
 
 def camp2phase_calibration():
     # Define parameters for the circle
@@ -751,23 +921,25 @@ def camp2phase_calibration():
     # Combine x and y coordinates into an array of spot indices
     spot_indices = np.vstack((y_circle, x_circle)).astype(int)
 
-    hologram = SpotHologram(shape=(2048, 2048), spot_vectors=spot_indices, basis='ij', cameraslm=fs)
-   # Precondition computationally
+    hologram = SpotHologram(
+        shape=(2048, 2048), spot_vectors=spot_indices, basis="ij", cameraslm=fs
+    )
+    # Precondition computationally
     hologram.optimize(
-        'WGS-Kim',
+        "WGS-Kim",
         maxiter=20,
-        feedback='computational_spot',
-        stat_groups=['computational_spot']
+        feedback="computational_spot",
+        stat_groups=["computational_spot"],
     )
 
     initial_phase = hologram.extract_phase()
 
     nuvu_pixel_coords = [
-        [131.144, 129.272], 
-       [261.477, 205.335], 
-       [435.139, 304.013], 
-       [310.023, 187.942], 
-       [444.169, 463.787], 
+        [131.144, 129.272],
+        [261.477, 205.335],
+        [435.139, 304.013],
+        [310.023, 187.942],
+        [444.169, 463.787],
     ]
     # Convert the list to a numpy array
     nuvu_pixel_coords_array = np.array(nuvu_pixel_coords)
@@ -779,26 +951,33 @@ def camp2phase_calibration():
     # calculate the phase shifts based on camera pixels cange
     phase_shifts = example_library.calculate_phaseshifts(thorcam_coords)
     for shift_x, shift_y in phase_shifts:
-        shifted_phase = example_library.shift_phase(np.copy(initial_phase), shift_x=shift_x, shift_y=shift_y)
+        shifted_phase = example_library.shift_phase(
+            np.copy(initial_phase), shift_x=shift_x, shift_y=shift_y
+        )
         print(shift_x)
         print(shift_y)
         slm.write(shifted_phase, settle=True)
         cam_plot()
 
-#region coords 
+
+# region coords
 # Example usage with a list of Nuvu pixel coordinates
 nuvu_pixel_coords = [
-    [131.144, 129.272], 
-    [161.477, 105.335], 
-    [135.139, 104.013], 
-    [110.023, 87.942], 
-    [144.169, 163.787], 
-    [173.93, 78.505], 
-    [171.074, 49.877], 
-    [170.501, 132.597], 
-    [137.025, 74.662], 
-    [58.628, 139.616]
+    [110.186, 129.281],
+    [128.233, 88.007],
+    [85.294, 102.5],
+    # [86.294, 103.0],
+    # [197.151, 56.105],  # not targeted
+    # [199.151, 26.105],  # not targeted
 ]
+# thesre are coord at which
+# 87.614, 104.484
+# 129.637, 89.599
+# 111.651, 130.532
+# nuvu_pixel_coords = [
+#     [176.251, 52.041],
+#     [197.151, 56.105],
+# ]
 # Convert the list to a numpy array
 nuvu_pixel_coords_array = np.array(nuvu_pixel_coords)
 
@@ -806,42 +985,58 @@ nuvu_pixel_coords_array = np.array(nuvu_pixel_coords)
 thorcam_coords = example_library.nuvu2thorcam_calibration(nuvu_pixel_coords_array)
 # thorcam_coords = thorcam_coords.T  #Transpose
 
+
 def nvs_demo():
-    hologram = SpotHologram(shape=(2048, 2048), spot_vectors=thorcam_coords, basis='ij', cameraslm=fs)
+    # Ensure thorcam_coords has shape (2, n)
+    thorcam_coords = example_library.nuvu2thorcam_calibration(nuvu_pixel_coords_array).T
+
+    if thorcam_coords.shape[0] != 2:
+        raise ValueError(
+            f"Expected thorcam_coords to have shape (2, n), but got {thorcam_coords.shape}"
+        )
+
+    hologram = SpotHologram(
+        shape=(2048, 2048), spot_vectors=thorcam_coords, basis="ij", cameraslm=fs
+    )
+
     # Precondition computationally
     hologram.optimize(
-        'WGS-Kim',
+        "WGS-Kim",
         maxiter=20,
-        feedback='computational_spot',
-        stat_groups=['computational_spot']
+        feedback="computational_spot",
+        stat_groups=["computational_spot"],
     )
 
     initial_phase = hologram.extract_phase()
-    slm.write(initial_phase,settle=True)
+    slm.write(initial_phase, settle=True)
     cam_plot()
+
 
 def initial_phase():
     xlist = np.arange(650, 750, 10)  # X coordinates for the grid
     ylist = np.arange(340, 440, 10)  # Y coordinates for the grid
     xgrid, ygrid = np.meshgrid(xlist, ylist)
     square = np.vstack((xgrid.ravel(), ygrid.ravel()))
-    hologram = SpotHologram(shape=(2048, 2048), spot_vectors=square, basis='ij', cameraslm=fs)
+    hologram = SpotHologram(
+        shape=(2048, 2048), spot_vectors=square, basis="ij", cameraslm=fs
+    )
 
     # Precondition computationally
     hologram.optimize(
-        'WGS-Kim',
+        "WGS-Kim",
         maxiter=20,
-        feedback='computational_spot',
-        stat_groups=['computational_spot']
+        feedback="computational_spot",
+        stat_groups=["computational_spot"],
     )
     initial_phase = hologram.extract_phase()
 
     # Define the path to save the phase data
-    path = r'C:\Users\Saroj Chand\Documents\slm_phase'
-    filename = 'initial_phase.npy'
-    
+    path = r"C:\Users\Saroj Chand\Documents\slm_phase"
+    filename = "initial_phase.npy"
+
     # Save the phase data
     save(initial_phase, path, filename)
+
 
 # Define the save function
 def save(data, path, filename):
@@ -849,10 +1044,11 @@ def save(data, path, filename):
         os.makedirs(path)
     np.save(os.path.join(path, filename), data)
 
+
 def optimize_array():
     # Import saved the phase data
-    path = r'C:\Users\Saroj Chand\Documents\slm_phase'
-    filename = 'initial_phase.npy'
+    path = r"C:\Users\Saroj Chand\Documents\slm_phase"
+    filename = "initial_phase.npy"
     initial_phase = np.load(os.path.join(path, filename))
     optimized_coords = []
     phase_shifts = example_library.calculate_phaseshifts(thorcam_coords)
@@ -866,7 +1062,9 @@ def optimize_array():
     plt.ion()
 
     for (shift_x, shift_y), (x0, y0) in zip(phase_shifts, thorcam_coords):
-        shifted_phase = example_library.shift_phase(np.copy(initial_phase), shift_x=shift_x, shift_y=shift_y)
+        shifted_phase = example_library.shift_phase(
+            np.copy(initial_phase), shift_x=shift_x, shift_y=shift_y
+        )
         slm.write(shifted_phase, settle=True)
         im = cam.get_image()
 
@@ -878,46 +1076,52 @@ def optimize_array():
 
             ax[0].clear()
             ax[0].imshow(im)
-            ax[0].set_title('Captured Image')
+            ax[0].set_title("Captured Image")
 
             x = np.linspace(0, im.shape[1] - 1, im.shape[1])
             y = np.linspace(0, im.shape[0] - 1, im.shape[0])
             x, y = np.meshgrid(x, y)
-            fitted_data =  example_library.gaussian2d((x, y), *fit_params).reshape(im.shape)
+            fitted_data = example_library.gaussian2d((x, y), *fit_params).reshape(
+                im.shape
+            )
 
             ax[1].clear()
             ax[1].imshow(fitted_data)
-            ax[1].set_title('Fitted Gaussian')
+            ax[1].set_title("Fitted Gaussian")
 
             plt.pause(0.01)
 
     plt.ioff()
     print("Optimized coordinates list:")
     print(optimized_coords)
-    
+
 
 def plot_laguerre_gaussian_phase():
     # Assuming `slm` is a valid instance and `toolbox` is properly defined with the phase method
-    laguerre_gaussian_phase =  toolbox.phase.laguerre_gaussian(grid=slm, l=12, p=0)  # Example values for l and p
+    laguerre_gaussian_phase = toolbox.phase.laguerre_gaussian(
+        grid=slm, l=12, p=0
+    )  # Example values for l and p
     plot_phase(laguerre_gaussian_phase)
+
 
 # region run funtions
 try:
-    # slm = ThorSLM(serialNumber='00429430')
-    # cam = ThorCam(serial="26438", verbose=True)
-    cam = tb.get_server_thorcam()
-    slm = tb.get_server_thorslm()
+    slm = ThorSLM(serialNumber="00429430")
+    cam = ThorCam(serial="26438", verbose=True)
+    # cam = tb.get_server_thorcam()
+    # slm = tb.get_server_thorslm()
 
     fs = FourierSLM(cam, slm)
 
     # blaze()
     # fourier_calibration()
-    # load_fourier_calibration()
+    load_fourier_calibration()
     # test_wavefront_calibration()
     # wavefront_calibration()
     # load_wavefront_calibration()
     # fs.process_wavefront_calibration(r2_threshold=.9, smooth=True, plot=True)
-    square_array()
+    # square_array()
+    # square_array_cirle()
     # save_initial_phase()
     # animate_wavefront_shifts()
     # real_time_dynamical_tweezers()
@@ -926,10 +1130,11 @@ try:
     # initial_phase()
     # optimize_array()
     # plot_laguerre_gaussian_phase()
-    # nvs_demo()
+    nvs_demo()
     # circles()
+    # calibration_triangle()
     # circle_pattern()
-    # smiley()pip i
+    # smiley()
     # scatter_pattern()
     # UCB_pattern()
     # pattern_from_image()
@@ -938,10 +1143,9 @@ try:
 
 finally:
     print("Closing")
-    # After you're done using the camera
-    cam.close()  # Add this line
-    # Then close the SDK
-    ThorCam.close_sdk()
-
-    # slm.close()
+    # After you're done using the slm and camera
+    slm.close_window()
+    slm.close_device()
+    cam.close()
+    # ThorCam.close_sdk()
 # endregions

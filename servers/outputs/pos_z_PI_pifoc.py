@@ -77,7 +77,7 @@ class PosZPiPifoc(LabradServer):
         self.daq_di_clock = daq_clock
 
         if "z_hysteresis_linearity" in config["Positioning"]:
-            linearity = config["Positioning"]["z_hysteresis_linearity"]
+            linearity = config["Positioning"]["xy_hysteresis_linearity"]
         else:
             linearity = 1
         self.z_hysteresis_b = linearity

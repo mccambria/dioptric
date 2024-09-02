@@ -32,6 +32,7 @@ import nidaqmx
 import nidaqmx.stream_writers as stream_writers
 import numpy
 from labrad.server import LabradServer, setting
+from numpy.polynomial.polynomial import Polynomial
 from pipython import GCSDevice, GCSError
 from twisted.internet.defer import ensureDeferred
 
@@ -80,23 +81,55 @@ class PosxyzP616Digial(LabradServer):
         self.axis_z = self.piezo.axes[2]
         axes_list = [self.axis_x, self.axis_y, self.axis_z]
 
-        # # Select the control algorithm for closed-loop operation
-        control_mode = 1  # 0 = None, 1 = PID, 2 = APC (if licensed)
-        for ax in [self.axis_x, self.axis_y, self.axis_z]:
-            self.piezo.SVO(ax, control_mode)
+        # Log responses from specific commands with separators
+        # try:
+        #     idn = self.piezo.qIDN()
+        #     logging.info("----- DEVICE IDENTIFICATION -----")
+        #     logging.info(f"IDN: {idn}")
+
+        #     ver = self.piezo.qVER()
+        #     logging.info("----- DEVICE VERSION -----")
+        #     logging.info(f"VER: {ver}")
+
+        #     cst = self.piezo.qCST()
+        #     logging.info("----- CONTROLLER STATUS -----")
+        #     logging.info(f"CST: {cst}")
+
+        #     hpa = self.piezo.qHPA()
+        #     logging.info("----- HARDWARE PARAMETERS -----")
+        #     logging.info(f"HPA: {hpa}")
+
+        #     spa = self.piezo.qSPA()
+        #     logging.info("----- SYSTEM PARAMETERS -----")
+        #     logging.info(f"SPA: {spa}")
+
+        # except GCSError as gcse:
+        #     logging.error(f"GCSError during command logging: {gcse}")
+
+        # Select the control algorithm for closed-loop operation
+        # control_mode = 1  # 0 = None, 1 = PID, 2 = APC (if licensed)
+        # for ax in [self.axis_x, self.axis_y, self.axis_z]:
+        #     self.piezo.SVO(ax, control_mode)
 
         # self.get_servo_state(self.axis_x)
         # self.get_servo_state(self.axis_y)
         # self.get_servo_state(self.axis_z)
+        #
+        # for ax in axes_list:
+        #     input_mode = self.piezo.qSPA(ax, 0x02010000)
+        #     logging.info(
+        #         f"Axis {ax} input mode: {'Analog' if input_mode == 1 else 'Digital'}"
+        #     )
 
-        # check auto low tolt
-        # self.piezo.SPA(self.axis_x, 0x07000A00, -100.0)
-        # self.piezo.SPA(self.axis_x, 0x07000A01, 100.0)
-        for ax in axes_list:
-            self.check_overflow_state(ax)
-        self.perform_auto_zero()
-        for ax in axes_list:
-            self.check_overflow_state(ax)
+        #     analog_channel = self.piezo.qSPA(ax, 0x06000500)
+        #     logging.info(f"Axis {ax} is using analog input channel: {analog_channel}")
+        # # for ax in axes_list:
+        #     self.check_overflow_state(ax)
+
+        # self.perform_auto_zero()
+
+        # for ax in axes_list:
+        #     self.check_overflow_state(ax)
 
         config_wiring_daq = config["Wiring"]["Piezo_Controller_E727"]
         self.daq_voltage_range_factor = config_wiring_daq["voltage_range_factor"]
@@ -155,54 +188,15 @@ class PosxyzP616Digial(LabradServer):
         self.daq_ao_piezo_stage_z = config["Wiring"]["Daq"]["ao_piezo_stage_P616_3c_z"]
         self.daq_di_clock = config["Wiring"]["Daq"]["di_clock"]
 
+        # # hysteris parameters xy
+        self.xy_hysteresis_b = 0.9410070861592449
+        self.xy_hysteresis_a = 1 - self.xy_hysteresis_b
+        # for z
+        linearity = 1
+        self.z_hysteresis_b = linearity
+        self.z_hysteresis_a = 1 - self.z_hysteresis_b
+
         logging.info("Initialization Complete")
-
-    # def perform_auto_zero(self):
-    #     """Perform AutoZero procedure for a single axis."""
-    #     try:
-    #         # Perform AutoZero on the x-axis
-    #         self.piezo.ATZ(self.axis_x, 0.0)
-
-    #         # Wait until the AutoZero process is complete
-    #         while True:
-    #             atz_status = self.piezo.send(f"ATZ? {self.axis_x}")
-    #             if atz_status == "0":  # AutoZero is complete if status returns '0'
-    #                 break
-    #             time.sleep(1)
-
-    #         logging.info("AutoZero procedure completed.")
-
-    #     except GCSError as gcse:
-    #         logging.error(f"GCSError occurred: {gcse}")
-    #     except Exception as e:
-    #         logging.error(f"An unexpected error occurred: {e}")
-    # raise
-
-    # def perform_auto_zero(self, axis):
-    #     try:
-    #         self.piezo.ATZ(axis, 0.0)
-
-    #         # Wait until the auto-zero process is complete
-    #         while True:
-    #             # Replace with the actual command that checks if the axis is ready
-    #             status = self.piezo.qONT(axis)
-    #             if status[axis] == 1:  # Assuming 1 indicates readiness
-    #                 break
-    #             time.sleep(5.0)  # Sleep briefly before checking again
-
-    #     except Exception as e:
-    #         self.logger.error(f"Error during auto-zero of axis {axis}: {e}")
-
-    # def perform_auto_zero(self, axis):
-    #     if not axis:
-    #         raise ValueError("Axis parameter is empty. Please provide a valid axis.")
-
-    #     try:
-    #         self.piezo.ATZ(axis, 0.0)
-    #         self.piezo.WAC(f"ONT? {axis} = 1")
-    #         logging.info(f"Auto-zero completed for axis {axis}")
-    #     except Exception as e:
-    #         logging.info(f"Error during auto-zero of axis {axis}: {e}")
 
     def get_servo_state(self, axis):
         """
@@ -240,8 +234,8 @@ class PosxyzP616Digial(LabradServer):
                 self.piezo.ATZ(ax, 0.0)
                 time.sleep(5)
             # Save parameters to non-volatile memory (example command, adapt as needed)
-            self.piezo.send("SAV 0x02000200")
-            self.piezo.send("SAV 0x02000102")
+            # self.piezo.send("SAV 0x02000200")
+            # self.piezo.send("SAV 0x02000102")
 
             logging.info("AutoZero procedure completed and parameters saved.")
 
@@ -250,7 +244,114 @@ class PosxyzP616Digial(LabradServer):
         except Exception as e:
             logging.error(f"An unexpected error occurred: {e}")
 
-    # %%
+        # %%
+
+    def compensate_hysteresis(self, position, axis, apply_compensation=False):
+        """
+        Compensate for hysteresis using a quadratic model on the specified axis (X, Y, or Z).
+
+        Parameters
+        ----------
+        position : float or ndarray(float)
+            Position (in this case the nominal voltage) the user intends
+            to move to for a linear response without hysteresis.
+
+        axis : str
+            The axis to compensate ('x', 'y', or 'z').
+
+        apply_compensation : bool, optional
+            Flag to determine whether to apply hysteresis compensation. Default is True.
+
+        Returns
+        -------
+        float or ndarray(float)
+            Compensated voltage to set.
+        """
+
+        if not apply_compensation:
+            return position
+
+        # Define hysteresis coefficients and state variables for each axis
+        if axis == "x":
+            a = self.xy_hysteresis_a
+            b = self.xy_hysteresis_b
+            last_position = self.x_last_position
+            current_direction = self.x_current_direction
+            last_turning_position = self.x_last_turning_position
+        elif axis == "y":
+            a = self.xy_hysteresis_a
+            b = self.xy_hysteresis_b
+            last_position = self.y_last_position
+            current_direction = self.y_current_direction
+            last_turning_position = self.y_last_turning_position
+        elif axis == "z":
+            a = self.z_hysteresis_a
+            b = self.z_hysteresis_b
+            last_position = self.z_last_position
+            current_direction = self.z_current_direction
+            last_turning_position = self.z_last_turning_position
+        else:
+            raise ValueError("Invalid axis. Choose 'x', 'y', or 'z'.")
+
+        # If coefficients are not provided, assume no hysteresis compensation is needed
+        if a == 0 and b == 0:
+            return position
+
+        single_value = False
+        if not isinstance(position, (numpy.ndarray, list)):
+            single_value = True
+            position = [position]
+
+        # Initialize state variables if they are not set
+        if None in [last_position, current_direction, last_turning_position]:
+            last_position = position[0]
+            current_direction = +1
+            last_turning_position = position[0]
+
+        compensated_voltage = []
+        for val in position:
+            movement_direction = numpy.sign(val - last_position)
+            if movement_direction == 0:
+                movement_direction = current_direction
+            elif movement_direction == -current_direction:
+                last_turning_position = last_position
+                current_direction = movement_direction
+
+            abs_p = abs(val - last_turning_position)
+            # Calculate compensated voltage based on the quadratic model
+            if a != 0:
+                discriminant = b**2 - 4 * a * (0 - abs_p)
+                if discriminant < 0:
+                    raise ValueError(
+                        "No real roots found for quadratic equation. Adjust hysteresis parameters."
+                    )
+                v = (-b + numpy.sqrt(discriminant)) / (2 * a)
+            else:
+                v = (val - last_turning_position) / b
+
+            result = last_turning_position + (movement_direction * v)
+            compensated_voltage.append(result)
+
+            last_position = val
+
+        # Update state variables
+        if axis == "x":
+            self.x_last_position = last_position
+            self.x_current_direction = movement_direction
+            self.x_last_turning_position = last_turning_position
+        elif axis == "y":
+            self.y_last_position = last_position
+            self.y_current_direction = movement_direction
+            self.y_last_turning_position = last_turning_position
+        elif axis == "z":
+            self.z_last_position = last_position
+            self.z_current_direction = movement_direction
+            self.z_last_turning_position = last_turning_position
+
+        return (
+            compensated_voltage[0] if single_value else numpy.array(compensated_voltage)
+        )
+
     def load_stream_writer_xy(self, c, task_name, voltages, period):
         # Close the existing task if there is one
         if self.task is not None:
@@ -260,7 +361,12 @@ class PosxyzP616Digial(LabradServer):
         num_voltages = voltages.shape[1]
         self.write_xy(c, voltages[0, 0], voltages[1, 0])
         stream_voltages = voltages[:, 1:num_voltages]
-        stream_voltages = numpy.ascontiguousarray(stream_voltages)
+        # Compensate hysteresis for both x and y axes
+        compensated_voltages = numpy.vstack(
+            self.compensate_hysteresis(stream_voltages[0], "x"),
+            self.compensate_hysteresis(stream_voltages[1], "y"),
+        )
+        stream_voltages = numpy.ascontiguousarray(compensated_voltages)
         num_stream_voltages = num_voltages - 1
         # Create a new task
         task = nidaqmx.Task(task_name)
@@ -319,7 +425,13 @@ class PosxyzP616Digial(LabradServer):
         num_voltages = voltages.shape[1]
         self.write_xyz(c, voltages[0, 0], voltages[1, 0], voltages[2, 0])
         stream_voltages = voltages[:, 1:num_voltages]
-        stream_voltages = numpy.ascontiguousarray(stream_voltages)
+        # Compensate hysteresis for both x and y axes
+        compensated_voltages = numpy.vstack(
+            self.compensate_hysteresis(stream_voltages[0], "x"),
+            self.compensate_hysteresis(stream_voltages[1], "y"),
+            self.compensate_hysteresis(stream_voltages[2], "z"),
+        )
+        stream_voltages = numpy.ascontiguousarray(compensated_voltages)
         num_stream_voltages = num_voltages - 1
         # Create a new task
         task = nidaqmx.Task(task_name)
@@ -380,7 +492,8 @@ class PosxyzP616Digial(LabradServer):
         # Close the existing task if there is one
         if self.task is not None:
             self.close_task_internal()
-
+        # Adjust voltage turn for hysteresis
+        xVoltage = self.compensate_hysteresis(xVoltage, "x")
         # Create a new task to write the voltage
         with nidaqmx.Task() as task:
             # Set up the output channel for X
@@ -402,7 +515,8 @@ class PosxyzP616Digial(LabradServer):
         # Close the existing task if there is one
         if self.task is not None:
             self.close_task_internal()
-
+        # Adjust voltage turn for hysteresis
+        yVoltage = self.compensate_hysteresis(yVoltage, "y")
         # Create a new task to write the voltage
         with nidaqmx.Task() as task:
             # Set up the output channel for Y
@@ -424,7 +538,8 @@ class PosxyzP616Digial(LabradServer):
         # Close the existing task if there is one
         if self.task is not None:
             self.close_task_internal()
-
+        # Adjust voltage turn for hysteresis
+        zVoltage = self.compensate_hysteresis(zVoltage, "z")
         # Create a new task to write the voltage
         with nidaqmx.Task() as task:
             # Set up the output channel for Z
@@ -445,6 +560,9 @@ class PosxyzP616Digial(LabradServer):
         # Close the stream task if it exists
         if self.task is not None:
             self.close_task_internal()
+        # Compensate hysteresis for both x and y axes
+        xVoltage = self.compensate_hysteresis(xVoltage, "x")
+        yVoltage = self.compensate_hysteresis(yVoltage, "y")
 
         with nidaqmx.Task() as task:
             # Set up the output channels
@@ -470,6 +588,10 @@ class PosxyzP616Digial(LabradServer):
         # This can happen if we quit out early
         if self.task is not None:
             self.close_task_internal()
+        # Compensate hysteresis for both x and y axes
+        xVoltage = self.compensate_hysteresis(xVoltage, "x")
+        yVoltage = self.compensate_hysteresis(yVoltage, "y")
+        zVoltage = self.compensate_hysteresis(yVoltage, "z")
 
         with nidaqmx.Task() as task:
             # Set up the output channels

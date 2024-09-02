@@ -15,6 +15,7 @@ python environment via ``pip``.
 import os
 import sys
 import time
+
 import numpy as np
 
 # sys.path.append('c:/Users/Saroj Chand/Documents/dioptric')
@@ -26,16 +27,19 @@ from slmsuite.hardware.cameras.camera import Camera
 #     "Interfaces\\SDK\\Native Toolkit\\dlls\\Native_64_lib"
 # )
 
-def configure_path():
-    absolute_path_to_dlls = "C:\\Users\\Saroj Chand\\Documents\\dioptric\\slmsuite\\hardware\\cameras\\dlls\\Native_64_lib"
 
-    os.environ['PATH'] = absolute_path_to_dlls + os.pathsep + os.environ['PATH']
+def configure_path():
+    absolute_path_to_dlls = "C:\\Users\\\matth\\GitHub\\dioptric\\slmsuite\\hardware\\cameras\\dlls\\Native_64_lib"
+
+    os.environ["PATH"] = absolute_path_to_dlls + os.pathsep + os.environ["PATH"]
 
     try:
         # Python 3.8 introduces a new method to specify dll directory
         os.add_dll_directory(absolute_path_to_dlls)
     except AttributeError:
         pass
+
+
 try:
     # if on Windows, use the provided setup script to add the DLLs folder to the PATH
     configure_path()
@@ -43,9 +47,11 @@ except ImportError:
     configure_path = None
 
 try:
-    from thorlabs_tsi_sdk.tl_camera import TLCameraSDK, ROI, OPERATION_MODE
+    from thorlabs_tsi_sdk.tl_camera import OPERATION_MODE, ROI, TLCameraSDK
 except ImportError:
-    print("thorlabs.py: thorlabs_tsi_sdk not installed. Install to use Thorlabs cameras.")
+    print(
+        "thorlabs.py: thorlabs_tsi_sdk not installed. Install to use Thorlabs cameras."
+    )
 
 
 class ThorCam(Camera):
@@ -122,7 +128,7 @@ class ThorCam(Camera):
             )
 
         if verbose:
-            print("ThorCam sn \"{}\" initializing... ".format(serial), end="")
+            print('ThorCam sn "{}" initializing... '.format(serial), end="")
         self.cam = ThorCam.sdk.open_camera(serial)
         # self.cam.frames_per_trigger_zero_for_unlimited = 0  # start camera in continuous mode
         # self.cam.image_poll_timeout_ms = 1000  # 1 second polling timeout
@@ -146,13 +152,12 @@ class ThorCam(Camera):
             dx_um=self.cam.sensor_pixel_width_um,
             dy_um=self.cam.sensor_pixel_height_um,
             name=serial,
-            **kwargs
+            **kwargs,
         )
 
         if verbose:
             print("success")
 
-        
     def close(self, close_sdk=False):
         """
         See :meth:`.Camera.close`.
@@ -168,9 +173,8 @@ class ThorCam(Camera):
         # We would want to use a lock to do this.
         if close_sdk:
             self.close_sdk()
-            
-        self.cam.dispose()
 
+        self.cam.dispose()
 
     @staticmethod
     def info(verbose=True):
@@ -206,7 +210,7 @@ class ThorCam(Camera):
         if verbose:
             print("ThorCam serials:")
             for serial in camera_list:
-                print("\"{}\"".format(serial))
+                print('"{}"'.format(serial))
 
         if close_sdk:
             ThorCam.close_sdk()
@@ -271,10 +275,12 @@ class ThorCam(Camera):
             woi = (
                 self.cam.roi_range.upper_left_x_pixels_min,
                 self.cam.roi_range.lower_right_x_pixels_max
-                - self.cam.roi_range.upper_left_x_pixels_min + 1,
+                - self.cam.roi_range.upper_left_x_pixels_min
+                + 1,
                 self.cam.roi_range.upper_left_y_pixels_min,
                 self.cam.roi_range.lower_right_y_pixels_max
-                - self.cam.roi_range.upper_left_y_pixels_min + 1,
+                - self.cam.roi_range.upper_left_y_pixels_min
+                + 1,
             )
 
         self.woi = woi
@@ -353,7 +359,7 @@ class ThorCam(Camera):
 
             self.profile = profile
 
-    def get_image(self, timeout_s=.1, trigger=True, grab=True, attempts=1):
+    def get_image(self, timeout_s=0.1, trigger=True, grab=True, attempts=1):
         """
         See :meth:`.Camera.get_image`. By default ``trigger=True`` and ``grab=True`` which
         will result in blocking image acquisition.
@@ -393,7 +399,11 @@ class ThorCam(Camera):
                 while time.time() - t < timeout_s and frame is None:
                     frame = self.cam.get_pending_frame_or_null()
 
-                ret = self.transform(np.copy(frame.image_buffer)) if frame is not None else None
+                ret = (
+                    self.transform(np.copy(frame.image_buffer))
+                    if frame is not None
+                    else None
+                )
 
                 if ret is not None:
                     break

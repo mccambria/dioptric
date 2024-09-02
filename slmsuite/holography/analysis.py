@@ -1,22 +1,29 @@
 """Helper functions for processing images."""
 
+from functools import reduce
+
 import cv2
-import numpy as np
 import matplotlib
 import matplotlib.pyplot as plt
-from functools import reduce
+import numpy as np
 from scipy.optimize import curve_fit, minimize
 
 from slmsuite.holography.toolbox import format_2vectors
-from slmsuite.misc.math import REAL_TYPES
 from slmsuite.misc.fitfunctions import gaussian2d
+from slmsuite.misc.math import REAL_TYPES
 
 
 def take(
-        images, vectors, size,
-        centered=True, integrate=False, clip=False,
-        return_mask=False, plot=False, mp=np
-    ):
+    images,
+    vectors,
+    size,
+    centered=True,
+    integrate=False,
+    clip=False,
+    return_mask=False,
+    plot=False,
+    mp=np,
+):
     """
     Crop integration regions around an array of ``vectors``, yielding an array of images.
 
@@ -81,20 +88,22 @@ def take(
     region_x, region_y = np.meshgrid(edge_x, edge_y)
 
     # Get the lists for the integration regions.
-    integration_x = np.around(np.add(
-        region_x.ravel()[:, np.newaxis].T, vectors[:][0][:, np.newaxis]
-    )).astype(int)
-    integration_y = np.around(np.add(
-        region_y.ravel()[:, np.newaxis].T, vectors[:][1][:, np.newaxis]
-    )).astype(int)
+    integration_x = np.around(
+        np.add(region_x.ravel()[:, np.newaxis].T, vectors[:][0][:, np.newaxis])
+    ).astype(int)
+    integration_y = np.around(
+        np.add(region_y.ravel()[:, np.newaxis].T, vectors[:][1][:, np.newaxis])
+    ).astype(int)
 
     images = mp.array(images, copy=False)
     shape = mp.shape(images)
 
     if clip:  # Prevent out-of-range errors by clipping.
         mask = (
-            (integration_x < 0) | (integration_x >= shape[-1]) |
-            (integration_y < 0) | (integration_y >= shape[-2])
+            (integration_x < 0)
+            | (integration_x >= shape[-1])
+            | (integration_y < 0)
+            | (integration_y >= shape[-2])
         )
 
         if np.any(mask):
@@ -166,11 +175,7 @@ def take_plot(images):
         ax = plt.subplot(M, M, x + 1)
 
         ax.imshow(
-            images[x, :, :],
-            vmin=vmin,
-            vmax=vmax,
-            extent=extent,
-            interpolation='none'
+            images[x, :, :], vmin=vmin, vmax=vmax, extent=extent, interpolation="none"
         )
         ax.axes.xaxis.set_visible(False)
         ax.axes.yaxis.set_visible(False)
@@ -211,7 +216,9 @@ def image_remove_field(images, deviations=1, out=None):
     # Parse images. Convert to float.
     images = np.array(images, copy=False)
     if not isinstance(images.dtype, np.floating):
-        images = np.array(images, copy=False, dtype=float)  # Hack to prevent integer underflow.
+        images = np.array(
+            images, copy=False, dtype=float
+        )  # Hack to prevent integer underflow.
 
     # Parse out.
     if out is None:
@@ -230,10 +237,9 @@ def image_remove_field(images, deviations=1, out=None):
     # Generate the threshold.
     if deviations is None:  # Median case
         threshold = np.nanmedian(images_, axis=(1, 2))
-    else:   # Mean + deviations * std case
-        threshold = (
-            np.nanmean(images_, axis=(1, 2))
-            + deviations*np.nanstd(images_, axis=(1, 2))
+    else:  # Mean + deviations * std case
+        threshold = np.nanmean(images_, axis=(1, 2)) + deviations * np.nanstd(
+            images_, axis=(1, 2)
         )
     if not single_image:
         threshold = np.reshape(threshold, (img_count, 1, 1))
@@ -321,7 +327,11 @@ def image_moment(images, moment=(1, 0), centers=(0, 0), normalize=True, nansum=F
     if normalize:
         normalization = np_sum(images, axis=(1, 2), keepdims=False)
         reciprical = np.reciprocal(
-            normalization, where=normalization != 0, out=np.zeros(img_count,)
+            normalization,
+            where=normalization != 0,
+            out=np.zeros(
+                img_count,
+            ),
         )
     else:
         reciprical = 1
@@ -350,7 +360,10 @@ def image_moment(images, moment=(1, 0), centers=(0, 0), normalize=True, nansum=F
         elif moment[0] == 0:  # only y case
             return np_sum(images * edge_y, axis=(1, 2), keepdims=False) * reciprical
         else:  # shear case
-            return np_sum(images * edge_x * edge_y, axis=(1, 2), keepdims=False) * reciprical
+            return (
+                np_sum(images * edge_x * edge_y, axis=(1, 2), keepdims=False)
+                * reciprical
+            )
 
 
 def image_normalization(images, nansum=False):
@@ -661,7 +674,7 @@ def image_fit(images, grid_ravel=None, function=gaussian2d, guess=None, plot=Fal
         grid_ravel = (grid[0].ravel(), grid[1].ravel())
 
     # Number of fit parameters the function accepts.
-    param_count =  function.__code__.co_argcount - 1
+    param_count = function.__code__.co_argcount - 1
 
     # Number of parameters to return.
     result_count = param_count + 1
@@ -672,25 +685,25 @@ def image_fit(images, grid_ravel=None, function=gaussian2d, guess=None, plot=Fal
         if function is gaussian2d:
             images_normalized = image_normalize(images, remove_field=True)
             centers = image_positions(images_normalized, normalize=False)
-            variances = image_variances(images_normalized, centers=centers, normalize=False)
+            variances = image_variances(
+                images_normalized, centers=centers, normalize=False
+            )
             maxs = np.amax(images, axis=(1, 2))
             mins = np.amin(images, axis=(1, 2))
 
-            guess = np.vstack((
-                centers,
-                maxs - mins,
-                mins,
-                np.sqrt(variances[0:2, :]),
-                variances[2, :]
-            ))
+            guess = np.vstack(
+                (
+                    centers,
+                    maxs - mins,
+                    mins,
+                    np.sqrt(variances[0:2, :]),
+                    variances[2, :],
+                )
+            )
 
-            guess_raw = np.vstack((
-                centers,
-                maxs - mins,
-                mins,
-                variances[0:2, :],
-                variances[2, :]
-            ))
+            guess_raw = np.vstack(
+                (centers, maxs - mins, mins, variances[0:2, :], variances[2, :])
+            )
 
     # Fit and plot each image.
     for img_idx in range(image_count):
@@ -704,18 +717,24 @@ def image_fit(images, grid_ravel=None, function=gaussian2d, guess=None, plot=Fal
         popt = None
 
         try:
-            popt, _ = curve_fit(function, grid_ravel, img, ftol=1e-5, p0=p0,)
-        except RuntimeError:    # The fit failed if scipy says so.
+            popt, _ = curve_fit(
+                function,
+                grid_ravel,
+                img,
+                ftol=1e-5,
+                p0=p0,
+            )
+        except RuntimeError:  # The fit failed if scipy says so.
             fit_succeeded = False
-        else:                   # The fit failed if any of the parameters aren't finite.
+        else:  # The fit failed if any of the parameters aren't finite.
             if np.any(np.logical_not(np.isfinite(popt))):
                 fit_succeeded = False
 
-        if fit_succeeded:   # Calculate r2.
+        if fit_succeeded:  # Calculate r2.
             ss_res = np.sum(np.square(img - function(grid_ravel, *popt)))
             ss_tot = np.sum(np.square(img - np.mean(img)))
             r2 = 1 - (ss_res / ss_tot)
-        else:               # r2 is nan and the fit parameters are the guess or nan.
+        else:  # r2 is nan and the fit parameters are the guess or nan.
             popt = p0 if p0 is not None else np.full(param_count, np.nan)
             r2 = np.nan
 
@@ -731,16 +750,20 @@ def image_fit(images, grid_ravel=None, function=gaussian2d, guess=None, plot=Fal
             else:
                 guess_ = np.zeros(img_shape)
             result_ = np.reshape(function(grid_ravel, *popt), img_shape)
-            vmin = np.min((
-                np.min(data),
-                np.min(guess_) if p0 is not None else np.inf,
-                np.min(result_)
-            ))
-            vmax = np.max((
-                np.max(data),
-                np.max(guess_) if p0 is not None else -np.inf,
-                np.max(result_)
-            ))
+            vmin = np.min(
+                (
+                    np.min(data),
+                    np.min(guess_) if p0 is not None else np.inf,
+                    np.min(result_),
+                )
+            )
+            vmax = np.max(
+                (
+                    np.max(data),
+                    np.max(guess_) if p0 is not None else -np.inf,
+                    np.max(result_),
+                )
+            )
 
             # Plot.
             fig, axs = plt.subplots(1, 3, figsize=(3 * 6.4, 4.8))
@@ -788,7 +811,9 @@ def fit_affine(x, y, guess_affine=None, plot=False):
         yc = np.nanmean(y, axis=1)[:, np.newaxis]
 
         if np.all(np.isnan(xc)) or np.all(np.isnan(yc)):
-            raise ValueError("analysis.py: vectors cannot contain a row of all-nan values")
+            raise ValueError(
+                "analysis.py: vectors cannot contain a row of all-nan values"
+            )
 
         x_ = x - xc
         y_ = y - yc
@@ -798,19 +823,49 @@ def fit_affine(x, y, guess_affine=None, plot=False):
         threshold = np.median(np.sqrt(np.sum(np.square(x_), axis=0))) / 2
 
         # Generate a guess transformation.
-        nan_list = np.full_like(y_[0,:], np.nan)
+        nan_list = np.full_like(y_[0, :], np.nan)
 
         # This could probably be vectorized more. Also not sure if all corner cases work.
-        M_guess = np.array([
+        M_guess = np.array(
             [
-                np.nanmean(np.divide(y_[0,:], x_[0,:], where=x_[0,:] > threshold, out=nan_list.copy())),
-                np.nanmean(np.divide(y_[0,:], x_[1,:], where=x_[1,:] > threshold, out=nan_list.copy()))
-            ],
-            [
-                np.nanmean(np.divide(y_[1,:], x_[0,:], where=x_[0,:] > threshold, out=nan_list.copy())),
-                np.nanmean(np.divide(y_[1,:], x_[1,:], where=x_[1,:] > threshold, out=nan_list.copy()))
+                [
+                    np.nanmean(
+                        np.divide(
+                            y_[0, :],
+                            x_[0, :],
+                            where=x_[0, :] > threshold,
+                            out=nan_list.copy(),
+                        )
+                    ),
+                    np.nanmean(
+                        np.divide(
+                            y_[0, :],
+                            x_[1, :],
+                            where=x_[1, :] > threshold,
+                            out=nan_list.copy(),
+                        )
+                    ),
+                ],
+                [
+                    np.nanmean(
+                        np.divide(
+                            y_[1, :],
+                            x_[0, :],
+                            where=x_[0, :] > threshold,
+                            out=nan_list.copy(),
+                        )
+                    ),
+                    np.nanmean(
+                        np.divide(
+                            y_[1, :],
+                            x_[1, :],
+                            where=x_[1, :] > threshold,
+                            out=nan_list.copy(),
+                        )
+                    ),
+                ],
             ]
-        ])
+        )
 
         # Fix nan instances. This means the matrix is no longer unique, so we choose the
         # case where the nans are mapped to zero.
@@ -819,11 +874,17 @@ def fit_affine(x, y, guess_affine=None, plot=False):
         # Back compute the offset.
         b_guess = yc - np.matmul(M_guess, xc)
     else:
-        if isinstance(guess_affine, dict) and "M" in guess_affine and "b" in guess_affine:
+        if (
+            isinstance(guess_affine, dict)
+            and "M" in guess_affine
+            and "b" in guess_affine
+        ):
             M_guess = guess_affine["M"]
             b_guess = guess_affine["b"]
         else:
-            raise ValueError("analysis.py: guess_affine must be a dictionary with 'M' and 'b' fields.")
+            raise ValueError(
+                "analysis.py: guess_affine must be a dictionary with 'M' and 'b' fields."
+            )
 
     # Least squares fit.
     def err(p):
@@ -834,33 +895,40 @@ def fit_affine(x, y, guess_affine=None, plot=False):
 
         return np.nansum(np.square(y_ - y))
 
-    guess = (M_guess[0,0], M_guess[0,1], M_guess[1,0], M_guess[1,1], b_guess[0,0], b_guess[1,0])
+    guess = (
+        M_guess[0, 0],
+        M_guess[0, 1],
+        M_guess[1, 0],
+        M_guess[1, 1],
+        b_guess[0, 0],
+        b_guess[1, 0],
+    )
 
-    try:        # Try with default scipy minimization. (Future: better opt than minimize?).
+    try:  # Try with default scipy minimization. (Future: better opt than minimize?).
         m = minimize(err, x0=guess)
         p = [float(pp) for pp in m.x]
 
         M = np.array([[p[0], p[1]], [p[2], p[3]]])
         b = format_2vectors([p[4], p[5]])
-    except:     # Fail elegantly (warn the user?).
+    except:  # Fail elegantly (warn the user?).
         M = M_guess
         b = b_guess
 
     # Debug plot if desired.
     if plot and x.shape[0] == 2:
-        plt.scatter(y[0,:], y[1,:], s=20, fc="b", ec="b")
+        plt.scatter(y[0, :], y[1, :], s=20, fc="b", ec="b")
 
         result_guess = np.matmul(M_guess, x) + b_guess
-        plt.scatter(result_guess[0,:], result_guess[1,:], s=40, fc="none", ec="r")
+        plt.scatter(result_guess[0, :], result_guess[1, :], s=40, fc="none", ec="r")
 
         result = np.matmul(M, x) + b
-        plt.scatter(result[0,:], result[1,:], s=60, fc="none", ec="g")
+        plt.scatter(result[0, :], result[1, :], s=60, fc="none", ec="g")
 
         plt.gca().set_aspect("equal")
         plt.show()
 
     # Return as a dictionary
-    return {"M":M, "b":b}
+    return {"M": M, "b": b}
 
 
 def blob_detect(
@@ -872,7 +940,7 @@ def blob_detect(
     axs=None,
     zoom=False,
     show=False,
-    **kwargs
+    **kwargs,
 ):
     """
     Detect blobs in an image.
@@ -963,7 +1031,7 @@ def blob_detect(
         blob_count = len(blobs)
         blob_centers = np.zeros((2, blob_count))
         blob_diameters = np.zeros(blob_count)
-        for (blob_idx, blob) in enumerate(blobs):
+        for blob_idx, blob in enumerate(blobs):
             blob_centers[:, blob_idx] = blob.pt
             blob_diameters[blob_idx] = blob.size
         blob_xs = blob_centers[0, :]
@@ -985,7 +1053,7 @@ def blob_detect(
         if zoom:
             ax0, ax1 = axs
         else:
-            ax0, = axs
+            (ax0,) = axs
         fig.suptitle(title)
 
         # Full image.
@@ -1000,13 +1068,13 @@ def blob_detect(
             xmin = 0.5
             xlims = (
                 np.clip((blob_xmin - zoom_padx), xmin, xmax),
-                np.clip((blob_xmax + zoom_padx), xmin, xmax)
+                np.clip((blob_xmax + zoom_padx), xmin, xmax),
             )
             ymax = img.shape[0] + 0.5
             ymin = 0.5
             ylims = (
                 np.clip((blob_ymin - zoom_pady), ymin, ymax),
-                np.clip((blob_ymax + zoom_pady), ymin, ymax)
+                np.clip((blob_ymax + zoom_pady), ymin, ymax),
             )
             ax1.set_xlim(xlims)
             ax1.set_ylim(np.flip(ylims))
@@ -1018,16 +1086,16 @@ def blob_detect(
 
         # Blob patches
         for blob_idx in range(blob_count):
-                patch = matplotlib.patches.Circle(
-                    (float(blob_centers[0, blob_idx]), float(blob_centers[1, blob_idx])),
-                    radius=float(blob_diameters[blob_idx] / 2),
-                    color="red",
-                    linewidth=1,
-                    fill=None
-                )
-                ax0.add_patch(patch)
-                if zoom:
-                    ax1.add_patch(patch)
+            patch = matplotlib.patches.Circle(
+                (float(blob_centers[0, blob_idx]), float(blob_centers[1, blob_idx])),
+                radius=float(blob_diameters[blob_idx] / 2),
+                color="red",
+                linewidth=1,
+                fill=None,
+            )
+            ax0.add_patch(patch)
+            if zoom:
+                ax1.add_patch(patch)
         if show:
             plt.show()
 
@@ -1091,13 +1159,13 @@ def blob_array_detect(
     """
     img_8it = _make_8bit(img)
 
-    if orientation is not None:     # If an orientation was provided, use this as a guess.
+    if orientation is not None:  # If an orientation was provided, use this as a guess.
         M = orientation["M"]
-    else:                           # Otherwise, find a guess orientation.
+    else:  # Otherwise, find a guess orientation.
         # FFT to find array pitch and orientation.
         # Take the largest dimension rounded up to nearest power of 2.
         # Future: clean this up to behave like other parts of the package.
-        fftsize = int(2 ** np.ceil(np.log2(np.max(np.shape(img))))) * 2 ** dft_padding
+        fftsize = int(2 ** np.ceil(np.log2(np.max(np.shape(img))))) * 2**dft_padding
         dft = np.fft.fftshift(np.fft.fft2(img_8it, s=[fftsize, fftsize]))
         fft_blur_size = (
             int(2 * np.ceil(fftsize / 1000)) + 1
@@ -1117,7 +1185,7 @@ def blob_array_detect(
         dft_fit_failed = len(blobs) < 5
 
         if plot:
-            fig, axs = plt.subplots(1, 2, figsize=(12, 6), facecolor='white')
+            fig, axs = plt.subplots(1, 2, figsize=(12, 6), facecolor="white")
 
             plt_img = _make_8bit(dft_amp.copy())
 
@@ -1142,8 +1210,10 @@ def blob_array_detect(
             # Plot a red rectangle to show the extents of the zoom region
             rect = plt.Rectangle(
                 (float(xl[0]), float(yl[0])),
-                float(np.diff(xl)), float(np.diff(yl)),
-                ec="r", fc="none"
+                float(np.diff(xl)),
+                float(np.diff(yl)),
+                ec="r",
+                fc="none",
             )
             axs[0].add_patch(rect)
             axs[0].set_title("DFT Result - Full")
@@ -1212,9 +1282,7 @@ def blob_array_detect(
             k[i, 1] = -1 / 2 + blob.pt[1] / dft_amp.shape[0]
 
             # Assumes max at 0th order.
-            blob_dist[i] = np.linalg.norm(
-                np.array([k[i, 0], k[i, 1]])
-            )
+            blob_dist[i] = np.linalg.norm(np.array([k[i, 0], k[i, 1]]))
 
         sort_ind = np.argsort(blob_dist)[:5]
         blobs = blobs[sort_ind]
@@ -1222,10 +1290,10 @@ def blob_array_detect(
         k = k[sort_ind]
 
         # 2.2) Calculate array metrics.
-        left =   np.argmin([k[:, 0]])  # Smallest x
-        right =  np.argmax([k[:, 0]])  # Largest x
+        left = np.argmin([k[:, 0]])  # Smallest x
+        right = np.argmax([k[:, 0]])  # Largest x
         bottom = np.argmin([k[:, 1]])  # Smallest y
-        top =    np.argmax([k[:, 1]])  # Largest y
+        top = np.argmax([k[:, 1]])  # Largest y
 
         # 2.3) Calculate the vectors in the imaging domain.
         x = 2 * (k[right, :] - k[left, :]) / (blob_dist[right] + blob_dist[left]) ** 2
@@ -1335,14 +1403,18 @@ def blob_array_detect(
 
                 integration_x, integration_y = np.meshgrid(edge, edge)
 
-                rotated_integration_x = np.around(np.add(
-                    integration_x.ravel()[:, np.newaxis].T,
-                    rotated_centers[:][0][:, np.newaxis],
-                )).astype(int)
-                rotated_integration_y = np.around(np.add(
-                    integration_y.ravel()[:, np.newaxis].T,
-                    rotated_centers[:][1][:, np.newaxis],
-                )).astype(int)
+                rotated_integration_x = np.around(
+                    np.add(
+                        integration_x.ravel()[:, np.newaxis].T,
+                        rotated_centers[:][0][:, np.newaxis],
+                    )
+                ).astype(int)
+                rotated_integration_y = np.around(
+                    np.add(
+                        integration_y.ravel()[:, np.newaxis].T,
+                        rotated_centers[:][1][:, np.newaxis],
+                    )
+                ).astype(int)
 
                 spotpowers = np.reshape(
                     np.sum(match[rotated_integration_y, rotated_integration_x], 1),
@@ -1411,7 +1483,10 @@ def blob_array_detect(
         guess_positions = np.matmul(orientation["M"], centers) + orientation["b"]
 
         # Calculate a point spread function (psf) integration window size.
-        psf = 2 * int(np.floor(np.amin(np.amax(np.abs(orientation["M"]), axis=0))) / 2) + 1
+        psf = (
+            2 * int(np.floor(np.amin(np.amax(np.abs(orientation["M"]), axis=0))) / 2)
+            + 1
+        )
         psf = np.max([3, psf])
 
         # Grab windows (sized by psf) about the guess_positions.
@@ -1420,7 +1495,9 @@ def blob_array_detect(
         )
 
         # Get the first order moment around each of the guess windows.
-        shift = image_positions(regions) - (guess_positions - np.around(guess_positions))
+        shift = image_positions(regions) - (
+            guess_positions - np.around(guess_positions)
+        )
 
         # Remove outliers.
         shift_error = np.sqrt(np.square(shift[0, :]) + np.square(shift[1, :]))
@@ -1479,8 +1556,10 @@ def blob_array_detect(
         # Plot a red rectangle to show the extents of the zoom region
         rect = plt.Rectangle(
             (float(xl[0]), float(yl[0])),
-            float(np.diff(xl)), float(np.diff(yl)),
-            ec="r", fc="none"
+            float(np.diff(xl)),
+            float(np.diff(yl)),
+            ec="r",
+            fc="none",
         )
         axs[0].add_patch(rect)
         axs[0].set_title("Result - Full")
@@ -1520,12 +1599,12 @@ def _make_8bit(img):
     img = img.astype(float)
 
     img -= np.amin(img)
-    img = img / np.amax(img) * (2 ** 8 - 1)
+    img = img / np.amax(img) * (2**8 - 1)
 
     return img.astype(np.uint8)
 
 
-def get_orientation_transformation(rot="0", fliplr=True, flipud=False):
+def get_orientation_transformation(rot="0", fliplr=False, flipud=False):
     """
     Compile a transformation lambda from simple rotates and flips.
 

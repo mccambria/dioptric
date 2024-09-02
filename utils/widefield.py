@@ -639,6 +639,12 @@ def reset_pixel_drift():
     return set_pixel_drift([0.0, 0.0])
 
 
+def reset_scanning_optics_drift():
+    scanning_optics = _get_scanning_optics()
+    for coords_key in scanning_optics:
+        pos.reset_drift(coords_key)
+
+
 def reset_all_drift():
     reset_pixel_drift()
     pos.reset_drift()
@@ -657,6 +663,7 @@ def adjust_pixel_coords_for_drift(pixel_coords, drift=None):
 
 def get_nv_pixel_coords(nv_sig, drift_adjust=True, drift=None):
     pixel_coords = nv_sig.coords[CoordsKey.PIXEL]
+
     if drift_adjust:
         pixel_coords = adjust_pixel_coords_for_drift(pixel_coords, drift)
     return pixel_coords
@@ -685,6 +692,7 @@ def _get_scanning_optics():
             and val["pos_mode"] == LaserPosMode.SCANNING
         ):
             scanning_optics.append(optic_name)
+
     return scanning_optics
 
 
@@ -703,7 +711,7 @@ def _get_scanning_optics():
 
 #     elif len(prev_drift) > len(scanning_drift):
 #         scanning_drift = [*scanning_drift, prev_drift[2]]
-
+#     print(scanning_drift)
 #     pos.set_drift(scanning_drift, coords_key)
 
 
@@ -713,7 +721,6 @@ def set_scanning_drift_from_pixel_drift(
     # Calculate the scanning drift based on pixel drift
     scanning_drift = pixel_to_scanning_drift(pixel_drift, coords_key)
     prev_drift = pos.get_drift(coords_key)
-
     # If relative, add the new drift to the previous drift directly
     if relative:
         # Extend scanning_drift and prev_drift to 3D if necessary
@@ -729,9 +736,8 @@ def set_scanning_drift_from_pixel_drift(
         new_drift = scanning_drift
         if len(prev_drift) > len(scanning_drift):
             new_drift.append(prev_drift[2])
-
     # Set the computed drift
-    pos.set_drift(new_drift.tolist(), coords_key)
+    pos.set_drift(new_drift, coords_key)
 
 
 # def set_scanning_drift_from_pixel_drift(
@@ -770,7 +776,8 @@ def pixel_to_scanning_drift(pixel_drift=None, coords_key=CoordsKey.GLOBAL):
     transform_matrix = _get_affine_transform_matrix(
         coords_key, direction="pixel_to_scanning"
     )
-    transformed_drift = np.dot(transform_matrix, np.append(pixel_drift, 1))[:2]
+    transformed_drift = np.dot(transform_matrix, np.append(pixel_drift, 0))[:2]
+
     return transformed_drift.tolist()
 
 
@@ -825,10 +832,9 @@ def _get_affine_transform_matrix(
     if coords_key == CoordsKey.GLOBAL:
         # Retrieve the affine transformation matrix from the config for piezo votage to camera
         config = common.get_config_dict()
-        affine_matrix = config["Positioning"]["AffineCalibration_voltage2pixel"]
-        inverse_affine_matrix = np.linalg.inv(affine_matrix)  # pixel to voltage
-        transform_matrix = np.array(inverse_affine_matrix)
-        return transform_matrix.T
+        affine_matrix = config["Positioning"]["AffineCalibration_pixel2voltage"]
+        transform_matrix = np.array(affine_matrix)
+        return transform_matrix
 
     nv1, nv2, nv3 = get_widefield_calibration_nvs()
     nv1_scanning_coords = pos.get_nv_coords(nv1, coords_key, drift_adjust=False)
@@ -845,13 +851,22 @@ def _get_affine_transform_matrix(
         source_coords = [nv1_scanning_coords, nv2_scanning_coords, nv3_scanning_coords]
         dest_coords = [nv1_pixel_coords, nv2_pixel_coords, nv3_pixel_coords]
 
-    A = np.array(
-        [source_coords[0] + [1], source_coords[1] + [1], source_coords[2] + [1]]
-    )
-    B = np.array(dest_coords)
-    transform_matrix = np.linalg.lstsq(A, B, rcond=None)[0]
-    return transform_matrix.T
+    # A = np.array(
+    #     [source_coords[0] + [1], source_coords[1] + [1], source_coords[2] + [1]]
+    # )
+    A = np.array(source_coords, dtype="float32")
+    B = np.array(dest_coords, dtype="float32")
+    # transform_matrix = np.linalg.lstsq(A, B, rcond=None)[0]
+    M = cv2.getAffineTransform(A, B)
+    # Convert the 2x3 matrix to a 3x3 matrix
+    transform_matrix = np.vstack([M, [0, 0, 1]])
+    return transform_matrix
 
+
+# Example usage
+# transform_matrix = _get_affine_transform_matrix(coords_key=green_laser, direction="pixel_to_scanning")
+# print("Affine Transformation Matrix:")
+# print(transform_matrix)
 
 # endregion
 

@@ -682,3 +682,114 @@ def get_scan_two_point_2d(first_coord_1, first_coord_2, second_coord_1, second_c
 
 
 # endregion
+
+# region hysteresis
+import matplotlib.pyplot as plt
+import numpy as np
+from scipy.optimize import curve_fit
+
+
+def analyze_hysteresis(target_positions, actual_positions):
+    """
+    Fit a hysteresis model to the data, print the fitted coefficients, and plot the results.
+
+    Parameters
+    ----------
+    target_positions : ndarray
+        Array of target positions (voltages).
+    actual_positions : ndarray
+        Array of actual measured positions (voltages).
+
+    Returns
+    -------
+    tuple
+        Fitted coefficients (a, b, c) of the hysteresis model.
+    """
+
+    # Define the quadratic model for hysteresis fitting
+    def hysteresis_model(x, a, b, c):
+        return a * x**2 + b * x + c
+
+    # # Define the cubic model for hysteresis fitting
+    # def hysteresis_model_cubic(x, a, b, c, d):
+    #     return a * x**3 + b * x**2 + c * x + d
+
+    # Flatten the 2D arrays for fitting
+    target_positions_flat = target_positions.flatten()
+    actual_positions_flat = actual_positions.flatten()
+    print(actual_positions_flat)
+    # Fit the model to the data
+    popt, pcov = curve_fit(
+        hysteresis_model, target_positions_flat, actual_positions_flat
+    )
+
+    # Extract the coefficients
+    a, b, c = popt
+    print(f"Fitted coefficients: a={a}, b={b}, c={c}")
+
+    # Calculate residuals
+    residuals = actual_positions_flat - hysteresis_model(target_positions_flat, *popt)
+    residual_sum_of_squares = np.sum(residuals**2)
+    total_sum_of_squares = np.sum(
+        (actual_positions_flat - np.mean(actual_positions_flat)) ** 2
+    )
+    r_squared = 1 - (residual_sum_of_squares / total_sum_of_squares)
+    print(f"R-squared: {r_squared}")
+
+    # Plot the results
+    plt.figure(figsize=(12, 6))
+
+    # Scatter plot of actual positions vs. target positions
+    plt.subplot(1, 2, 1)
+    plt.plot(target_positions_flat, actual_positions_flat, "o", label="Measured Data")
+    plt.plot(
+        target_positions_flat,
+        hysteresis_model(target_positions_flat, *popt),
+        "-",
+        label="Fitted Curve",
+    )
+    plt.xlabel("Target Position")
+    plt.ylabel("Actual Position")
+    plt.legend()
+    plt.title("Hysteresis Fit")
+
+    # Plot residuals
+    plt.subplot(1, 2, 2)
+    plt.plot(target_positions_flat, residuals, "o")
+    plt.axhline(0, color="red", linestyle="--")
+    plt.xlabel("Target Position")
+    plt.ylabel("Residuals")
+    plt.title("Residuals Plot")
+
+    plt.tight_layout()
+    plt.show()
+
+    return popt
+
+
+# Example usage
+if __name__ == "__main__":
+    # Example data (replace with your actual data)
+    target_positions = np.array(
+        [
+            [66.912, 94.016],
+            [75.951, 103.95],
+            [84.271, 113.12],
+            [93.216, 121.95],
+            [101.48, 131.22],
+            [109.155, 139.9],
+        ]
+    )
+    actual_positions = np.array(
+        [
+            [64.39, 92.966],
+            [72.086, 101.0],
+            [80.055, 110.0],
+            [88.34, 119.3],
+            [97.109, 128.3],
+            [106.106, 137.0],
+        ]
+    )
+
+    # Analyze hysteresis
+    analyze_hysteresis(target_positions, actual_positions)
