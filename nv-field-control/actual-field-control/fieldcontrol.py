@@ -56,12 +56,9 @@ def initialize(instrumentIP=None):
         print("the power supply " + instr.query_str('*IDN?') + " was connected at " + str(datetime.now()))
         return instr
     else:
-        try:
-            instr = Rs.RsInstrument(instrumentIP, True, False, "Simulate=False")
-            print("the power supply " + instr.query_str('*IDN?') + " was connected at " + str(datetime.now()))
-            return instr
-        except:
-            print("device "+ instrumentIP + " not found")
+        instr = Rs.RsInstrument(f'TCPIP::{instrumentIP}::INSTR', True, False, "Simulate=False")
+        print("the power supply " + instr.query_str('*IDN?') + " was connected at " + str(datetime.now()))
+        return instr
     
 
 def xCurrent(instr,I=None):
@@ -93,3 +90,7 @@ def allCurrent(instr,I=None):
         zCurrent(instr,I[2])
     else:
         return [xCurrent(instr),yCurrent(instr),zCurrent(instr)]
+    
+instr = initialize(instrumentIP="128.32.239.90")
+print(allCurrent(instr,I=[1,2,3]))
+instr.close()
