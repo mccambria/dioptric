@@ -36,6 +36,8 @@ from slmsuite.holography.algorithms import FeedbackHologram, SpotHologram
 from slmsuite.misc import fitfunctions
 
 
+from majorroutines.widefield import image_sample
+
 def cam_plot():
     cam.set_exposure(0.0001)
     img = cam.get_image()
@@ -79,14 +81,10 @@ def scanning_range(x1, x2, num_points=10):
     for shift in shifts:
         x_path.append((shift, -x2))  # Right
     for shift in shifts:
-        path.append((x2, shift))  # Up
-    for shift in shifts[::-1]:
-        path.append((shift, x2))  # Left
-    for shift in shifts[::-1]:
-        path.append((-x2, shift))  # Down
+        y_path.append((x2, shift))  # Up
     return path
 
-def opimize_slm_calibartion():
+def calculate_initial_phase():
     # Ensure thorcam_coords has shape (2, n)
     thorcam_coords = example_library.nuvu2thorcam_calibration(nuvu_pixel_coords_array).T
 
@@ -111,21 +109,23 @@ def opimize_slm_calibartion():
     # path = r"C:\Users\Saroj Chand\Documents\slm_phase"
     # filename = "initial_phase.npy"
     # save(initial_phase, path, filename)
-    try:
-        while True:
-            for angle in range(0, 360, 30):
-                # Update phase with live rotation
-                delta_phase = 
-                phase = initial_phase + delta_phase
 
-                # Display the phase pattern on the SLM
-                slm.write(phase, settle=True)
-
-                # Capture image from the camera
-                cam.set_exposure(0.001)
-                im = cam.get_image()
-    finally:
-        print("Real-time dynamical tweezers operation stopped.")
+    def opimize_slm_calibartion():
+        number_attempt = 5
+        try:
+            while num_attemp <number_attempt:
+                for angle in range(0, 360, 30):
+                    # Update phase with live rotation
+                    delta_phase = 
+                    phase = initial_phase + delta_phase
+                    # Display the phase pattern on the SLM
+                    slm.write(phase, settle=True)
+                    image_array = image_sample.widefield_image(nv_sig, num_reps)
+                    # Capture image from the camera
+                    cam.set_exposure(0.001)
+                    im = cam.get_image()
+        finally:
+            print("Real-time dynamical tweezers operation stopped.")
 
 
 # Define the save function
@@ -149,3 +149,5 @@ def main():
         slm.close_window()
         slm.close_device()
         cam.close()
+ 
+ if __name__ = "__main__"
