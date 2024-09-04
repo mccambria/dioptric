@@ -1008,7 +1008,20 @@ def nvs_demo():
     )
 
     initial_phase = hologram.extract_phase()
+    # Define the path to save the phase data
+    path = r"C:\Users\matth\GitHub\dioptric\slmsuite\Initial_phase"
+    filename = "initial_phase.npy"
+    # Save the phase data
+    save(initial_phase, path, filename)
     slm.write(initial_phase, settle=True)
+    cam_plot()
+
+
+def nvs_phase():
+    phase = np.load(
+        r"C:\Users\matth\GitHub\dioptric\slmsuite\Initial_phase\initial_phase.npy"
+    )
+    slm.write(phase, settle=True)
     cam_plot()
 
 
@@ -1130,7 +1143,8 @@ try:
     # initial_phase()
     # optimize_array()
     # plot_laguerre_gaussian_phase()
-    nvs_demo()
+    # nvs_demo()
+    nvs_phase()
     # circles()
     # calibration_triangle()
     # circle_pattern()

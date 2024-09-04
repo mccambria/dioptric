@@ -121,10 +121,10 @@ class ThorSLM(SLM):
         time.sleep(2.0)
 
         # Ask before closing the SLM display
-        user_input = input("Press Enter to close SLM display... ")
-        if user_input:
-            print("Window closing aborted by user")
-            return -1
+        # user_input = input("Press Enter to close SLM display... ")
+        # if user_input:
+        #     print("Window closing aborted by user")
+        #     return -1
 
         # CghDisplayCloseWindow(hdl)
         # return 0

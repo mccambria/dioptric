@@ -771,7 +771,7 @@ if __name__ == "__main__":
     # magnet_angle = 90
     date_str = "2024_03_12"
     # global_coords = [None, None, z_coord]
-    global_coords = [0.25, 0.111, 0.696]
+    global_coords = [0.0, -0.27, 0.5]
     initial_pixel_coords = np.array([72.42, 47.079, 0.0])
     final_pixel_coords = np.array([92.155, 99.056, 0.0])  # Add homogeneous coordinate
     # pixel_to_voltage(initial_pixel_coords, final_pixel_coords)
@@ -901,7 +901,7 @@ if __name__ == "__main__":
         # widefield.set_all_scanning_drift_from_pixel_drift()
 
         # do_optimize_z(nv_sig)
-        # do_optimize_xyz(nv_sig)
+        do_optimize_xyz(nv_sig)
         # pos.set_xyz_on_nv(nv_sig)
         # piezo_voltage_to_pixel_calibration()
 
@@ -929,14 +929,14 @@ if __name__ == "__main__":
         # nv_sig.coords[CoordsKey.GLOBAL][1] = y
         #     do_scanning_image_sample(nv_sig)
 
-        # for z in np.linspace(0.6, 1.1, 7):
+        # for z in np.linspace(0.2, 1.3, 11):
         #     nv_sig.coords[CoordsKey.GLOBAL][2] = z
         #     do_scanning_image_sample(nv_sig)
         # do_widefield_image_sample(nv_sig, 50)
 
         # do_scanning_image_sample(nv_sig)
         # do_scanning_image_sample_zoom(nv_sig)
-        # do_widefield_image_sample(nv_sig, 50)
+        do_widefield_image_sample(nv_sig, 50)
         # do_widefield_image_sample(nv_sig, 100)
 
         # do_image_nv_list(nv_list)
@@ -958,7 +958,7 @@ if __name__ == "__main__":
         # widefield.reset_all_drift()
         # coords_key = None  # Pixel coords
         # coords_key = green_laser
-        coords_key = red_laser
+        # coords_key = red_laser
         # do_optimize_loop(nv_list, coords_key, scanning_from_pixel=False)
 
         # nv_list = nv_list[::-1]
@@ -982,7 +982,7 @@ if __name__ == "__main__":
         # do_charge_quantum_jump(nv_list)
         # do_ac_stark(nv_list)
 
-        do_opx_constant_ac()
+        # do_opx_constant_ac()
         # do_opx_square_wave()
 
         # nv_list = nv_list[::-1]
