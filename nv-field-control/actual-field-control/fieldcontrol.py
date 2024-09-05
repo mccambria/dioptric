@@ -20,7 +20,7 @@ class RS_NGC103:
 
         self.open = False
         if start_open:
-            self.open_connection()
+            self.open_connection(IP)
 
     def open_connection(self, IP : str = None) -> None:
         """
@@ -44,8 +44,8 @@ class RS_NGC103:
 
         :return None:
         """
+        print("the power supply " + self.instr.query_str('*IDN?') + " was disconnected at " + str(datetime.now()))
         self.open = False
-
         self.instr.close()
     
     def current_for_field(self, x : float, y : float, z : float) -> list[float]:
@@ -148,7 +148,7 @@ class RS_NGC103:
 
         :return None:
         """
-        for n in self.direction_channels.values:
+        for n in self.direction_channels.values():
             self.activateChannel(n)
     
     def deactivateAll(self) -> None:
@@ -157,7 +157,7 @@ class RS_NGC103:
         
         :return None:
         """
-        for n in self.direction_channels.values:
+        for n in self.direction_channels.values():
             self.deactivateChannel(n)
 
     def activateMaster(self) -> None:

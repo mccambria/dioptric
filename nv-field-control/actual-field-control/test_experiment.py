@@ -8,7 +8,7 @@ Created on Mon May 27 15:41:33 2024
 
 import fieldcontrol as fc
 
-a = fc.RS_NGC103(start_open = True)
+a = fc.RS_NGC103(IP='128.32.239.90',start_open = True)
 
 a.set_current(1, 2)
 a.activateChannel(1)
@@ -16,5 +16,8 @@ a.activateMaster()
 
 print(a.get_current(1))
 print(a.get_current(3))
+
+a.deactivateMaster()
+a.deactivateAll()
 
 a.close_connection()
