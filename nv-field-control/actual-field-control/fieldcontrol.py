@@ -5,12 +5,13 @@ Created on Mon May 27 15:42:36 2024
 
 @author: sean, quinn
 """
+from datetime import datetime
+import threading
+import time
+from typing import Union
+
 import numpy as np
 import RsInstrument as Rs
-
-from datetime import datetime
-from typing import Union
-import time
 
 class RS_NGC103:
     def __init__(self, IP : str = None, direction_channels : dict[str, int] = {"x": 1, "y": 2, "z": 3}, start_open=False) -> None:
@@ -24,6 +25,7 @@ class RS_NGC103:
             self.open_connection(IP)
 
         self.maintaining = False
+        self.maintain_thread = None
 
     def open_connection(self, IP : str = None) -> None:
         """
@@ -48,9 +50,16 @@ class RS_NGC103:
         :return None:
         """
         print("the power supply " + self.instr.query_str('*IDN?') + " was disconnected at " + str(datetime.now()))
+        
+        # Close connection to device
         self.open = False
         self.instr.close()
-    
+
+        # Call the stop function, and then join thread to safely deactivate
+        if self.maintaining:
+            self.maintaining = False
+            self.maintain_thread.join()
+        
     def current_for_field(self, x : float, y : float, z : float) -> list[float]:
         """
         coordinate conventions (cartesian)
@@ -90,30 +99,39 @@ class RS_NGC103:
 
         return current
     
-    def maintain_current(self, which : Union[int, str], current : float, resistance_guess : float = 3.5) -> None:
+    def maintain_current(self, which : Union[int, str], current : float, voltage_start : float = 0.1) -> None:
         """
         Hack to maintain a specific current, despite the CC mode not working on the NGC103, we can still adjust the voltage to keep it at the correct level.
 
         :param int | str which: The channel to activate, either the channel number or axis name.
-        :param float resistance_guess: The initial value to be set for ohms, defaults to 3.5 
+        :param float voltage_start: The initial value to be set for volts, defaults to 0.1 
         :param float current: The desired current (amps) which you wish to maintain.
         """
-        
+
+        def maintain_loop(voltage_guess):
+
+            # Update the current accordingly every second
+            while True:
+                time.sleep(1)
+                if self.maintaining == False or self.open == False:
+                    break
+
+                # R = V / I
+                actual_current = self.measure_current(which)
+                actual_resistance = voltage_guess / actual_current
+
+                voltage_guess = current * actual_resistance
+                
+                self.set_voltage(which, voltage_guess)
+
         self.maintaining = True
-
-        resistance_guess = 3.5 # ohms
-        voltage_guess = current * resistance_guess
-
-        self.set_voltage(which, voltage_guess)
         
-        time.sleep(0.2)
+        # V = IR
+        voltage_guess = voltage_start
+        self.set_voltage(which, voltage_guess)
 
-        actual_current = self.measure_current(which)
-        actual_resistance = voltage_guess / actual_current
-
-        real_voltage = current * actual_resistance
-
-        self.set_voltage(which, real_voltage)
+        self.maintain_thread = threading.Thread(name="bg", target=maintain_loop, args=[voltage_guess], daemon=False)
+        self.maintain_thread.start()
 
     def set_voltage(self, which : Union[int, str], voltage : float) -> None:
         """
@@ -261,7 +279,7 @@ class RS_NGC103:
         
         :return None:
         """
-        self.instr.write_str("OUTP ON")
+        self.instr.write_str("OUTP:MAST ON")
 
     def deactivateMaster(self) -> None:
         """
@@ -269,4 +287,4 @@ class RS_NGC103:
         
         :return None:
         """
-        self.instr.write_str("OUTP OFF")
+        self.instr.write_str("OUTP:MAST OFF")
