@@ -10,6 +10,7 @@ import RsInstrument as Rs
 
 from datetime import datetime
 from typing import Union
+import time
 
 class RS_NGC103:
     def __init__(self, IP : str = None, direction_channels : dict[str, int] = {"x": 1, "y": 2, "z": 3}, start_open=False) -> None:
@@ -21,6 +22,8 @@ class RS_NGC103:
         self.open = False
         if start_open:
             self.open_connection(IP)
+
+        self.maintaining = False
 
     def open_connection(self, IP : str = None) -> None:
         """
@@ -87,6 +90,80 @@ class RS_NGC103:
 
         return current
     
+    def maintain_current(self, which : Union[int, str], current : float, resistance_guess : float = 3.5) -> None:
+        """
+        Hack to maintain a specific current, despite the CC mode not working on the NGC103, we can still adjust the voltage to keep it at the correct level.
+
+        :param int | str which: The channel to activate, either the channel number or axis name.
+        :param float resistance_guess: The initial value to be set for ohms, defaults to 3.5 
+        :param float current: The desired current (amps) which you wish to maintain.
+        """
+        
+        self.maintaining = True
+
+        resistance_guess = 3.5 # ohms
+        voltage_guess = current * resistance_guess
+
+        self.set_voltage(which, voltage_guess)
+        
+        time.sleep(0.2)
+
+        actual_current = self.measure_current(which)
+        actual_resistance = voltage_guess / actual_current
+
+        real_voltage = current * actual_resistance
+
+        self.set_voltage(which, real_voltage)
+
+    def set_voltage(self, which : Union[int, str], voltage : float) -> None:
+        """
+        Set voltage of a specific channel. 
+        
+        :param int | str which: The channel to activate, either the channel number or axis name.
+        :param float voltage: The amount of voltage to set, in volts.
+        :return None:
+        """
+        if isinstance(which, str):
+            which = self.direction_channels[which]
+        
+        self.instr.write_str(f"INST OUT{which}")
+        self.instr.write_str(f"VOLT {voltage}")
+    
+    def get_voltage(self, which : Union[int, str]) -> None:
+        """
+        Get voltage of a specific channel. 
+        
+        Note: This is not the voltage being currently pushed into the circuit, this is just the value which the voltage is set at. If you want a measurement, use RS_NGC103.measure_voltage().
+
+        :param int | str which: The channel to read, either the channel number or axis name.
+        :return voltage: The voltage active on the selected channel
+        """
+        if isinstance(which, str):
+            which = self.direction_channels[which]
+        
+        self.instr.write_str(f"INST OUT{which}")
+
+        str_out = self.instr.query("VOLT?")
+        return float(str_out)
+
+    def measure_voltage(self, which : Union[int, str]) -> None:
+        """
+        Measure the voltage currently being applied on the circuit
+        
+        Note: This is the voltage being currently pushed into the circuit. If you want this channel's set value, use RS_NGC103.get_voltage().
+
+        :param int | str which: The channel to read, either the channel number or axis name.
+        :return voltage: The voltage active on the selected channel
+        """
+
+        if isinstance(which, str):
+            which = self.direction_channels[which]
+
+        self.instr.write_str(f"INST OUT{which}")
+
+        str_out = self.instr.query("MEAS:VOLT?")
+        return float(str_out)
+
     def set_current(self, which : Union[int, str], current : float) -> None:
         """
         Set current of a specific channel. 
@@ -103,7 +180,7 @@ class RS_NGC103:
     
     def get_current(self, which : Union[int, str]) -> float:
         """
-        Get current of a specific channel.
+        Get current of a specific channel. Note: This is not the current being currently pushed into the circuit, this is just the value which the current is set at. If you want a measurement, use RS_NGC103.measure_current().
 
         :param int | str which: The channel to read, either the channel number or axis name.
         :return current: The current active on the selected channel
@@ -116,6 +193,24 @@ class RS_NGC103:
         str_out = self.instr.query("CURR?")
         return float(str_out)
     
+    def measure_current(self, which : Union[int, str]) -> None:
+        """
+        Measure the current currently being applied on the circuit
+        
+        Note: This is the current being currently pushed into the circuit. If you want this channel's set value, use RS_NGC103.get_current().
+
+        :param int | str which: The channel to read, either the channel number or axis name.
+        :return current: The current active on the selected channel
+        """
+
+        if isinstance(which, str):
+            which = self.direction_channels[which]
+
+        self.instr.write_str(f"INST OUT{which}")
+
+        str_out = self.instr.query("MEAS:CURR?")
+        return float(str_out)
+
     def activateChannel(self, which : Union[int, str]) -> None:
         """
         Activate a specific channel.
