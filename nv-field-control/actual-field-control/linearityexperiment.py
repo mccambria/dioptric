@@ -8,42 +8,57 @@ Created on Thu Sep  5 13:28:48 2024
 import time
 import numpy as np
 
-from gdx import gdx
+from godirect import GoDirect
 import fieldcontrol as fc
 
-gdx = gdx.gdx()
   
   
 
 def measure():
-    gdx.open(connection='usb', device_to_open='GDX-3MG 015002C9')
-    gdx.select_sensors([1,2,3])
-    gdx.start(50) 
+    godirect = GoDirect(use_ble=False, use_usb=True)
+    device = godirect.get_device(threshold=-100)
+    device.open()
+    device.enable_sensors([1,2,3])
+    device.start(period=1000) 
+    sensors = device.get_enabled_sensors() 
     
-    data = []
-    for i in range(0,20):
-        measurements = gdx.read()
-        if measurements == None:
-            break 
-        data.append(measurements)
+    data = {}
+    for sensor in sensors:
+        data[sensor.sensor_description] = []
 
-    gdx.stop()
-    gdx.close()
-    return np.mean(data,0)
+    for i in range(0,10):
+        if device.read():
+            for sensor in sensors:
+                data[sensor.sensor_description].extend(sensor.values)
+                sensor.clear()
+    device.stop()
+    device.close()
+    return data
     
-currents = np.linspace(0.1,2,20)
-a = fc.RS_NGC103(IP='128.32.239.90',start_open = True)
-a.set_current(1,0.05)
-a.activateChannel(1)
-a.activateMaster()
+currents = np.arange(0.1,1.6,0.1)
 
-for i in range(0,20):
+data = []
+for i in range(0,len(currents)):
+    
+    a = fc.RS_NGC103(IP='128.32.239.90',start_open = True)
+    a.set_current(1,0.05)
+    a.activateChannel(1)
+    a.activateMaster()
+    
     a.set_current(1, currents[i])
-    print(a.get_current(1),measure())
-    time.sleep(5)
+    a.maintain_current(1, currents[i])
+    
+    time.sleep(2)
+    
+    currentCurrent = a.get_current(1)
+    measurement = measure()
+    data.append([currentCurrent, measurement])
+    print(currentCurrent,measurement)
+    
+    time.sleep(2)
     
     
-a.deactivateMaster()
-a.deactivateAll()
-a.close_connection()
+    a.deactivateMaster()
+    a.deactivateAll()
+    a.close_connection()
 

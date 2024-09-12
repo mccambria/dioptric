@@ -112,7 +112,6 @@ class RS_NGC103:
 
             # Update the current accordingly every second
             while True:
-                time.sleep(1)
                 if self.maintaining == False or self.open == False:
                     break
 
@@ -123,6 +122,9 @@ class RS_NGC103:
                 voltage_guess = current * actual_resistance
                 
                 self.set_voltage(which, voltage_guess)
+                
+                time.sleep(1)
+                #print(f"voltage set to {voltage_guess}, intended current {current}")
 
         self.maintaining = True
         
