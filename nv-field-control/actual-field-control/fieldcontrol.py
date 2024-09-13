@@ -24,8 +24,8 @@ class RS_NGC103:
         if start_open:
             self.open_connection(IP)
 
-        self.maintaining = {1: False, 2: False, 3: False} # Which channels are currently being held
-        self.maintain_thread = {1: None, 2: None, 3: None} # The respective threads looping for each current lock
+        self.maintaining =     {1: False, 2: False, 3: False} # Which channels are currently being held
+        self.maintain_thread = {1: None,  2: None,  3: None } # The respective threads looping for each current lock
 
     def __write_command(self, cmd : str) -> None:
         """
@@ -67,8 +67,13 @@ class RS_NGC103:
         self.instr.close()
 
         # Call the stop function, and then join thread to safely deactivate
-        if any(v == True for v in self.maintaining.values()):
-            self.maintaining = dict.fromkeys(self.maintaining, False)
+        for channel, m in self.maintaining.items():
+            if m:
+                self.release_current(channel)
+
+        for thread in self.maintain_thread.values():
+            if thread:
+                thread.join()
         
     def current_for_field(self, x : float, y : float, z : float) -> list[float]:
         """
@@ -123,18 +128,20 @@ class RS_NGC103:
             # Update the current accordingly every second
             while True:
                 time.sleep(1)
-                if self.maintaining[which] == False or self.open == False:
+
+                # If device is totally disconnected, delete the thread. 
+                if self.open == False:
                     break
+
+                # For performance, just keep a thread open if it's been deactivated so we don't need to create a new one later.
+                if self.maintaining[which] == False:
+                    continue
 
                 # R = V / I
                 actual_current = self.measure_current(which)
                 actual_resistance = voltage_guess / actual_current
 
                 voltage_guess = current * actual_resistance
-
-                # print(actual_current)
-                # print(current, actual_resistance)
-                # print(voltage_guess)
                 
                 self.set_voltage(which, voltage_guess)
 
@@ -153,9 +160,13 @@ class RS_NGC103:
         # V = IR
         voltage_guess = voltage_start
         self.set_voltage(which, voltage_guess)
-        self.activateChannel(which)
+        
+        if activate_channel:
+            self.activateChannel(which)
 
-        self.maintain_thread[which] = threading.Thread(name=f"{which} loop", target=maintain_loop, args=[voltage_guess], daemon=False)
+        if not self.maintain_thread[which]:
+            self.maintain_thread[which] = threading.Thread(name=f"Channel {which} loop", target=maintain_loop, args=[voltage_guess], daemon=False)
+        
         self.maintain_thread[which].start()
 
     def release_current(self, which : Union[int, str], deactivate_channel : bool = False) -> None:
@@ -172,10 +183,10 @@ class RS_NGC103:
             which = self.direction_channels[which]
 
         if self.maintaining[which] == False:
+            print(f"WARNING: Attempted to release channel {which}'s current, but it wasn't being held.")
             return 
         
         self.maintaining[which] = False
-        self.maintain_thread[which] = None 
         time.sleep(1) # to allow the loop to safely deactivate
 
         if deactivate_channel:
