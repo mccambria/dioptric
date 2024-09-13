@@ -24,8 +24,19 @@ class RS_NGC103:
         if start_open:
             self.open_connection(IP)
 
-        self.maintaining = False
-        self.maintain_thread = None
+        self.maintaining = {1: False, 2: False, 3: False} # Which channels are currently being held
+        self.maintain_thread = {1: None, 2: None, 3: None} # The respective threads looping for each current lock
+
+    def __write_command(self, cmd : str) -> None:
+        """
+        Write buffered command to the instrument.
+
+        :return None:
+        """
+        # try:
+        self.instr.write_str(cmd)
+        self.instr.write_str("*WAI")
+        # except 
 
     def open_connection(self, IP : str = None) -> None:
         """
@@ -42,7 +53,7 @@ class RS_NGC103:
         else:
             self.instr = Rs.RsInstrument(f'TCPIP::{IP}::INSTR', True, False, "Simulate=False")
             print("the power supply " + self.instr.query_str('*IDN?') + " was connected at " + str(datetime.now()))
-        
+
     def close_connection(self) -> None:
         """
         Close connection with the device. Ensure to call this when you're done using the device.
@@ -56,9 +67,8 @@ class RS_NGC103:
         self.instr.close()
 
         # Call the stop function, and then join thread to safely deactivate
-        if self.maintaining:
-            self.maintaining = False
-            self.maintain_thread.join()
+        if any(v == True for v in self.maintaining.values()):
+            self.maintaining = dict.fromkeys(self.maintaining, False)
         
     def current_for_field(self, x : float, y : float, z : float) -> list[float]:
         """
@@ -99,20 +109,21 @@ class RS_NGC103:
 
         return current
     
-    def maintain_current(self, which : Union[int, str], current : float, voltage_start : float = 0.1) -> None:
+    def hold_current(self, which : Union[int, str], current : float, voltage_start : float = 0.1, activate_channel : bool = False) -> None:
         """
         Hack to maintain a specific current, despite the CC mode not working on the NGC103, we can still adjust the voltage to keep it at the correct level.
 
         :param int | str which: The channel to activate, either the channel number or axis name.
         :param float voltage_start: The initial value to be set for volts, defaults to 0.1 
         :param float current: The desired current (amps) which you wish to maintain.
+        :param bool activate_channel: If you also want to turn on the channel, defaults to False.
         """
 
         def maintain_loop(voltage_guess):
-
             # Update the current accordingly every second
             while True:
-                if self.maintaining == False or self.open == False:
+                time.sleep(1)
+                if self.maintaining[which] == False or self.open == False:
                     break
 
                 # R = V / I
@@ -120,21 +131,56 @@ class RS_NGC103:
                 actual_resistance = voltage_guess / actual_current
 
                 voltage_guess = current * actual_resistance
+
+                # print(actual_current)
+                # print(current, actual_resistance)
+                # print(voltage_guess)
                 
                 self.set_voltage(which, voltage_guess)
-                
-                time.sleep(1)
-                #print(f"voltage set to {voltage_guess}, intended current {current}")
 
-        self.maintaining = True
+
+        if isinstance(which, str):
+            which = self.direction_channels[which]
+        
+        if self.maintaining[which]:
+            print(f"Disabling previous current on channel {which}. ")
+            self.release_current(which)
+            time.sleep(1)
+
+        print(f"Activating new current on channel {which}, wait about 1 second to stabilize.")
+        self.maintaining[which] = True
         
         # V = IR
         voltage_guess = voltage_start
         self.set_voltage(which, voltage_guess)
+        self.activateChannel(which)
 
-        self.maintain_thread = threading.Thread(name="bg", target=maintain_loop, args=[voltage_guess], daemon=False)
-        self.maintain_thread.start()
+        self.maintain_thread[which] = threading.Thread(name=f"{which} loop", target=maintain_loop, args=[voltage_guess], daemon=False)
+        self.maintain_thread[which].start()
 
+    def release_current(self, which : Union[int, str], deactivate_channel : bool = False) -> None:
+        """
+        Releases a channel from being maintained at a specific current.
+
+        :param int | str which: The channel to activate, either the channel number or axis name.
+        :param bool deactivate_channel: If you also want to turn off the channel, defaults to False.
+        """
+        
+        print(f"Releasing channel {which}'s previous maintained current")
+        
+        if isinstance(which, str):
+            which = self.direction_channels[which]
+
+        if self.maintaining[which] == False:
+            return 
+        
+        self.maintaining[which] = False
+        self.maintain_thread[which] = None 
+        time.sleep(1) # to allow the loop to safely deactivate
+
+        if deactivate_channel:
+            self.deactivateChannel(which)
+        
     def set_voltage(self, which : Union[int, str], voltage : float) -> None:
         """
         Set voltage of a specific channel. 
@@ -254,6 +300,10 @@ class RS_NGC103:
         if isinstance(which, str):
             which = self.direction_channels[which]
         
+        if self.maintaining[which]:
+            self.release_current(which)
+            time.sleep(1)
+
         self.instr.write_str(f"INST OUT{which}")
         self.instr.write_str("OUTP:CHAN OFF")
     
