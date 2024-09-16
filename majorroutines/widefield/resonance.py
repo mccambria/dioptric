@@ -330,9 +330,9 @@ if __name__ == "__main__":
     num_runs = data["num_runs"]
     num_reps = data["num_reps"]
     freqs = data["freqs"]
-
+    counts = data["counts"]
     avg_counts, avg_counts_ste, norms = widefield.process_counts(
-        nv_list, sig_counts, ref_counts, threshold=True
+        nv_list, counts, threshold=True
     )
     fit_fig = create_fit_figure(nv_list, freqs, avg_counts, avg_counts_ste, norms)
 

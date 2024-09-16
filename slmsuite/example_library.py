@@ -42,13 +42,24 @@ def nuvu2thorcam_calibration(coords):
     Returns:
     np.ndarray: An array of shape (N, 2) containing transformed coordinates in the Thorlabs camera's system.
     """
-    # Define the corresponding points in both coordinate systems
-    cal_coords_nuvu = np.array(
-        [[131.091, 74.744], [130.013, 141.887], [69.072, 104.945]], dtype="float32"
-    )  # Points in (512, 512) coordinate system
+    # )  # Points in (512, 512) coordinate system
+    # cal_coords_thorcam = np.array(
+    #     [[853.92, 590.0], [646.07, 590.0], [750.0, 410.0]], dtype="float32"
+    # )  # Corresponding points in (1480, 1020) coordinate system
+    # cal_coords_nuvu = np.array(
+    #     [[128.706, 72.789], [128.443, 140.826], [69.922, 104.404]], dtype="float32"
+    # )  # Points in (512, 512) coordinate system
+    # )  # Points in (512, 512) coordinate system
     cal_coords_thorcam = np.array(
-        [[853.92, 590.0], [646.07, 590.0], [750.0, 410.0]], dtype="float32"
+        [[957.846, 750.0], [542.153, 750.0], [750.0, 390.0]], dtype="float32"
     )  # Corresponding points in (1480, 1020) coordinate system
+    cal_coords_nuvu = np.array(
+        [[184.776, 53.505], [190.579, 196.193], [60.514, 127.561]], dtype="float32"
+    )  # Points in (512, 512) coordinate system
+
+    # cal_coords_nuvu = np.array(
+    #     [[152.135, 37.074], [148.972, 175.277], [28.508, 102.314]], dtype="float32"
+    # )  # Points in (512, 512) coordinate system
 
     # Compute the affine transformation matrix
     M = cv2.getAffineTransform(cal_coords_nuvu, cal_coords_thorcam)

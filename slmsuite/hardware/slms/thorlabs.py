@@ -118,7 +118,7 @@ class ThorSLM(SLM):
         #     print("Show failed")
         # else:
         #     print("Show successfully")
-        time.sleep(2.0)
+        time.sleep(3.0)
 
         # Ask before closing the SLM display
         # user_input = input("Press Enter to close SLM display... ")

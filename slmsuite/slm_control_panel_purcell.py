@@ -90,13 +90,13 @@ def blaze():
 
 # region "calibration"
 def fourier_calibration():
-    cam.set_exposure(0.001)  # Increase exposure because power will be split many ways
+    cam.set_exposure(0.1)  # Increase exposure because power will be split many ways
     fs.fourier_calibrate(
         array_shape=[20, 12],  # Size of the calibration grid (Nx, Ny) [knm]
-        array_pitch=[20, 30],  # Pitch of the calibration grid (x, y) [knm]
+        array_pitch=[30, 40],  # Pitch of the calibration grid (x, y) [knm]
         plot=True,
     )
-    cam.set_exposure(0.001)
+    cam.set_exposure(0.01)
     # save calibation
     calibration_file = fs.save_fourier_calibration(
         path=r"C:\Users\matth\GitHub\dioptric\slmsuite\fourier_calibration"
@@ -362,9 +362,9 @@ try:
     # initial_phase()
     # optimize_array()
     # plot_laguerre_gaussian_phase()
-    nvs_demo()
+    # nvs_demo()
     # circles()
-    # calibration_triangle()
+    calibration_triangle()
     # circle_pattern()
     # smiley()
     # cam_plot()

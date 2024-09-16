@@ -18,7 +18,7 @@ import scipy.ndimage as ndimage
 from IPython.display import Image
 from scipy.optimize import curve_fit
 
-from majorroutines.widefield import image_sample
+from majorroutines.widefield import image_sample, optimize
 
 # Import slmsuite and related modules
 from slmsuite.hardware.cameras.thorlabs import ThorCam
@@ -136,89 +136,6 @@ def generate_initial_phase(fs, nv_centers, scanning_range=0.3, num_points=10):
     return hologram.extract_phase()
 
 
-def shift_phase(phase, shift_x, shift_y):
-    """
-    Shift the phase by adding a phase gradient.
-
-    Parameters:
-        phase (np.ndarray): The current phase array.
-        shift_x (float): The shift in the x direction.
-        shift_y (float): The shift in the y direction.
-
-    Returns:
-        np.ndarray: The shifted phase array.
-    """
-    y_indices, x_indices = np.indices(phase.shape)
-    phase_shift = shift_x * x_indices + shift_y * y_indices
-    shifted_phase = phase + phase_shift
-    return shifted_phase
-
-
-def evaluate_counts(image, target_coords, radius=3):
-    """
-    Evaluate the image by summing counts within a given radius around target coordinates.
-
-    Parameters:
-        image (np.ndarray): Image array.
-        target_coords (np.ndarray): Array of target coordinates.
-        radius (int): Radius for summing counts around target coordinates.
-
-    Returns:
-        int: Total counts around the target coordinates.
-    """
-    if target_coords.ndim == 1:
-        target_coords = np.array([target_coords])
-
-    total_counts = 0
-
-    for x, y in np.round(target_coords).astype(int):
-        y_indices, x_indices = np.ogrid[: image.shape[0], : image.shape[1]]
-        mask = (x_indices - x) ** 2 + (y_indices - y) ** 2 <= radius**2
-        total_counts += np.sum(image[mask])
-
-    return total_counts
-
-
-def collect_counts_for_shifts(
-    slm,
-    initial_phase,
-    target_coords,
-    shift_range=(-0.1, 0.1),
-    num_steps=10,
-):
-    """
-    Collect counts for different phase shifts.
-
-    Parameters:
-        slm (ThorSLM): The SLM object.
-        initial_phase (np.ndarray): The initial phase array.
-        target_coords (np.ndarray): Array of target coordinates.
-        shift_range (tuple): Range of phase shifts.
-        num_steps (int): Number of steps for shifting.
-
-    Returns:
-        np.ndarray: Phase shifts.
-        np.ndarray: Corresponding counts.
-    """
-    shifts = np.linspace(shift_range[0], shift_range[1], num_steps)
-    counts = np.zeros_like(shifts)
-
-    for i, shift in enumerate(shifts):
-        shifted_phase = shift_phase(initial_phase, shift, 0)
-        slm.write(shifted_phase)
-        image = take_image()
-        counts[i] = evaluate_counts(image, target_coords)
-
-    return shifts, counts
-
-
-# Define the save function
-def save(data, path, filename):
-    if not os.path.exists(path):
-        os.makedirs(path)
-    np.save(os.path.join(path, filename), data)
-
-
 def take_image(nv_sig=None, num_reps=20, display_image=False):
     """
     Capture an image using the SLM and camera.
@@ -287,7 +204,7 @@ def fit_gaussian_to_counts(shifts, counts):
     def gaussian(x, amplitude, mean, stddev, offset):
         return amplitude * np.exp(-((x - mean) ** 2) / (2 * stddev**2)) + offset
 
-    # Initial guesses for the Gaussian parameters
+    # Initial guesses for Gaussian parameters
     amplitude_guess = np.max(counts) - np.min(counts)
     mean_guess = shifts[np.argmax(counts)]
     stddev_guess = (np.max(shifts) - np.min(shifts)) / 4
@@ -299,13 +216,13 @@ def fit_gaussian_to_counts(shifts, counts):
             shifts,
             counts,
             p0=[amplitude_guess, mean_guess, stddev_guess, offset_guess],
+            maxfev=10000,  # Increase the number of function evaluations
         )
         optimal_shift = popt[1]  # The mean of the Gaussian fit
 
         # Generate the fitted Gaussian curve
         fitted_curve = gaussian(shifts, *popt)
 
-        # Print the fitted parameters
         print(
             f"Fitted parameters: Amplitude = {popt[0]:.4f}, Mean = {popt[1]:.4f}, "
             f"StdDev = {popt[2]:.4f}, Offset = {popt[3]:.4f}"
@@ -318,14 +235,86 @@ def fit_gaussian_to_counts(shifts, counts):
     return optimal_shift, fitted_curve
 
 
+def shift_phase(phase, shift_x, shift_y):
+    """
+    Shift the phase by adding a phase gradient.
+
+    Parameters:
+        phase (np.ndarray): The current phase array.
+        shift_x (float): The shift in the x direction.
+        shift_y (float): The shift in the y direction.
+
+    Returns:
+        np.ndarray: The shifted phase array.
+    """
+    y_indices, x_indices = np.indices(phase.shape)
+    phase_shift = shift_x * x_indices + shift_y * y_indices
+    shifted_phase = phase + phase_shift
+    return shifted_phase
+
+
+def evaluate_counts(image, target_coords, radius=3):
+    """
+    Evaluate the image by summing counts within a given radius around target coordinates.
+
+    Parameters:
+        image (np.ndarray): Image array.
+        target_coords (np.ndarray): Array of target coordinates.
+        radius (int): Radius for summing counts around target coordinates.
+
+    Returns:
+        int: Total counts around the target coordinates.
+    """
+    if target_coords.ndim == 1:
+        target_coords = np.array([target_coords])
+
+    total_counts = 0
+    for x, y in np.round(target_coords).astype(int):
+        y_indices, x_indices = np.ogrid[: image.shape[0], : image.shape[1]]
+        mask = (x_indices - x) ** 2 + (y_indices - y) ** 2 <= radius**2
+        total_counts += np.sum(image[mask])
+
+    return total_counts
+
+
+def collect_counts_for_shifts(
+    slm, initial_phase, target_coords, shift_range=(-0.1, 0.1), num_steps=10
+):
+    """
+    Collect counts for different phase shifts.
+
+    Parameters:
+        slm (ThorSLM): The SLM object.
+        initial_phase (np.ndarray): The initial phase array.
+        target_coords (np.ndarray): Array of target coordinates.
+        shift_range (tuple): Range of phase shifts.
+        num_steps (int): Number of steps for shifting.
+
+    Returns:
+        np.ndarray: Phase shifts.
+        np.ndarray: Corresponding counts.
+    """
+    shifts = np.linspace(shift_range[0], shift_range[1], num_steps)
+    counts = np.zeros_like(shifts)
+
+    for i, shift in enumerate(shifts):
+        shifted_phase = shift_phase(initial_phase, shift, 0)
+        slm.write(shifted_phase)
+        image = take_image()
+        counts[i] = evaluate_counts(image, target_coords)
+
+    return shifts, counts
+
+
 def optimize_phase_for_nv(
+    repr_nv_sig,
     slm,
     initial_phase,
     target_coord,
     nv_index,
-    shift_range_x=(-0.1, 0.1),
-    shift_range_y=(-0.1, 0.1),
-    num_steps=10,
+    shift_range_x=(-0.06, 0.06),
+    shift_range_y=(-0.06, 0.06),
+    num_steps=12,
     num_iterations=3,
     save_path="optimized_phases",
 ):
@@ -341,6 +330,7 @@ def optimize_phase_for_nv(
         shift_range_y (tuple): Range of phase shifts in the Y direction.
         num_steps (int): Number of steps for shifting.
         num_iterations (int): Number of iterations for optimization.
+        convergence_threshold (float): Threshold for convergence.
         save_path (str): Directory path to save the optimized phases.
     """
     phase = initial_phase.copy()
@@ -356,24 +346,25 @@ def optimize_phase_for_nv(
         phase = shift_phase(phase, optimal_shift_x, 0)
         slm.write(phase)
         image = take_image()
-        counts = evaluate_counts(image, target_coord)
-
+        evaluate_counts(image, target_coord)
+        # drift_trackinng
+        optimize.optimize_xyz_using_piezo(repr_nv_sig)
         # Optimize Y direction
         shifts_y, counts_y = collect_counts_for_shifts(
             slm, phase, target_coord, shift_range_y, num_steps
         )
         optimal_shift_y, fitted_curve_y = fit_gaussian_to_counts(shifts_y, counts_y)
-
+        # drift_trackinng
         # Apply the optimal Y phase shift
         phase = shift_phase(phase, 0, optimal_shift_y)
         slm.write(phase)
         image = take_image()
-        counts = evaluate_counts(image, target_coord)
+        evaluate_counts(image, target_coord)
 
+        # drift_trackinng
+        optimize.optimize_xyz_using_piezo(repr_nv_sig)
         # Display progress and fitted Gaussian curves
         plt.figure(figsize=(10, 5))
-
-        # X direction
         plt.subplot(1, 2, 1)
         plt.plot(shifts_x, counts_x, "o", label="Measured Counts X")
         plt.plot(shifts_x, fitted_curve_x, "-", label="Fitted Gaussian X")
@@ -383,7 +374,6 @@ def optimize_phase_for_nv(
         plt.legend()
         plt.title(f"Iteration {iteration + 1} - X direction")
 
-        # Y direction
         plt.subplot(1, 2, 2)
         plt.plot(shifts_y, counts_y, "o", label="Measured Counts Y")
         plt.plot(shifts_y, fitted_curve_y, "-", label="Fitted Gaussian Y")
@@ -392,7 +382,6 @@ def optimize_phase_for_nv(
         plt.ylabel("Counts")
         plt.legend()
         plt.title(f"Iteration {iteration + 1} - Y direction")
-
         plt.tight_layout()
         plt.show()
 
@@ -404,36 +393,41 @@ def optimize_phase_for_nv(
     return phase
 
 
-def main():
-    target_coords = np.array([[110.186, 129.281], [128.233, 88.007], [86.294, 103.0]])
+# Define the save function
+def save(data, path, filename):
+    if not os.path.exists(path):
+        os.makedirs(path)
+    np.save(os.path.join(path, filename), data)
 
+
+def main(repr_nv_sig, target_coords):
     slm = ThorSLM(serialNumber="00429430")
     cam = ThorCam(serial="26438", verbose=True)
     fs = FourierSLM(cam, slm)
 
     try:
-        fourer_calibration = load_calibration(fs, "fourier")
+        load_calibration(fs, "fourier")
         initial_phase = np.load(
             r"C:\Users\matth\GitHub\dioptric\slmsuite\Initial_phase\initial_phase.npy"
         )
 
         # Loop over each NV center and optimize its phase separately
-        for i, target_coord in enumerate(target_coords):
-            print(f"Optimizing phase for NV {i}")
-            optimize_phase_for_nv(
-                slm,
-                initial_phase,
-                target_coord,
-                nv_index=i,
-                save_path=r"C:\path\to\save\optimized_phases",
+        optimized_phases = []
+        for nv_index, target_coord in enumerate(target_coords):
+            optimized_phase = optimize_phase_for_nv(
+                repr_nv_sig, slm, initial_phase, target_coord, nv_index
             )
+            optimized_phases.append(optimized_phase)
 
-    finally:
-        print("Closing devices.")
-        slm.close_window()
-        slm.close_device()
-        cam.close()
+        print("Optimization completed for all NV centers.")
+        return optimized_phases
+
+    except Exception as e:
+        print("An error occurred during the optimization process:", e)
 
 
-if __name__ == "__main__":
-    main()
+# Run the optimization
+# if __name__ == "__main__":
+#     repr_nv_sig = np.random.rand(10)  # Example representative NV signature
+#     target_coords = np.array([[100, 200], [150, 250]])  # Example target coordinates
+#     main(repr_nv_sig, target_coords)
