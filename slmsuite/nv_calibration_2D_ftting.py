@@ -102,15 +102,15 @@ def plot_fitting(
 # Example usage
 if __name__ == "__main__":
     # Load the image array (replace this with your own method for loading image data)
-    data = dm.get_raw_data(file_id=1646287098153, load_npz=True)
+    data = dm.get_raw_data(file_id=1651529342359, load_npz=True)
     img_array = np.array(data["img_array"])
 
     # List of initial peak coordinates
     initial_peaks = np.array(
         [
-            [185.625, 52.36],
-            [59.631, 127.39],
-            [190.344, 195.81],
+            [187.861, 53.783],
+            [61.878, 128.096],
+            [193.086, 197.765],
         ]
     )
 

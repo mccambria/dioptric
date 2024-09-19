@@ -463,7 +463,8 @@ if __name__ == "__main__":
     # process_and_plot(data)
     # data = dm.get_raw_data(file_id=1538271354881)  # checkerboard
     # process_and_plot(data)
-    data = dm.get_raw_data(file_id=1540558251818)  # orientation
+    # data = dm.get_raw_data(file_id=1540558251818)  # orientation
+    data = dm.get_raw_data(file_id=285006998080)  # orientation
     process_and_plot(data)
 
     plt.show(block=True)

@@ -221,7 +221,7 @@ if __name__ == "__main__":
     # data = dm.get_raw_data(file_id=1646374739142, load_npz=True)
     # img_array = np.array(data["img_array"])
 
-    data = dm.get_raw_data(file_id=1647152929514, load_npz=True)
+    data = dm.get_raw_data(file_id=1651663986412, load_npz=True)
     img_array = np.array(data["ref_img_array"])
 
     # Parameters for detection and resolution
@@ -247,7 +247,7 @@ if __name__ == "__main__":
     )
 
     print(f"Number of NVs detected: {len(nv_coordinates)}")
-    # print(f"Detected NV coordinates (optimized): {nv_coordinates}")
+    print(f"Detected NV coordinates (optimized): {nv_coordinates}")
 
     # # Calculate and print the average FWHM
     # if len(spot_sizes) > 0:
@@ -266,7 +266,7 @@ if __name__ == "__main__":
     save_results(
         nv_coordinates,
         spot_sizes,
-        filename="nv_blob_filtered_214nvs.npz",
+        filename="nv_blob_filtered_76nvs.npz",
     )
 
     # image_ids = [

@@ -43,7 +43,8 @@ from majorroutines.widefield import (
     spin_pol_check,
     xy8,
 )
-from slmsuite import optimize_slm_calibration
+
+# from slmsuite import optimize_slm_calibration
 from utils import common, widefield
 from utils import data_manager as dm
 from utils import kplotlib as kpl
@@ -89,7 +90,7 @@ def do_charge_state_histograms(nv_list):
     num_reps = 300
     # num_reps = 100
     # num_runs = 50
-    num_runs = 10
+    num_runs = 7
     # num_runs = 10
     # num_runs = 2
     # for ion_include_inds in [None, [0, 1, 2, 3, 4, 5]]:
@@ -97,7 +98,7 @@ def do_charge_state_histograms(nv_list):
     #         nv_list, num_reps, num_runs, ion_include_inds=ion_include_inds
     #     )
     return charge_state_histograms.main(
-        nv_list, num_reps, num_runs, plot_histograms=False
+        nv_list, num_reps, num_runs, plot_histograms=True
     )
 
 
@@ -195,7 +196,7 @@ def do_optimize_loop(nv_list, coords_key, scanning_from_pixel=False):
 def optimize_slm_Phase_calibration(repr_nv_sig, target_coords):
     repr_nv_sig = widefield.get_repr_nv_sig(nv_list)
     target_coords = np.array([[110.186, 129.281], [128.233, 88.007], [86.294, 103.0]])
-    optimize_slm_calibration.main(repr_nv_sig, target_coords)
+    # optimize_slm_calibration.main(repr_nv_sig, target_coords)
 
 
 def do_calibrate_green_red_delay():
@@ -294,7 +295,7 @@ def do_resonance(nv_list):
 
     # Both refs
     num_reps = 2
-    num_runs = 500
+    num_runs = 300
 
     # num_runs = 2
 
@@ -576,7 +577,7 @@ def do_opx_constant_ac():
     opx.constant_ac(
         [],  # Digital channels
         [7],  # Analog channels
-        [0.4],  # Analog voltages
+        [0.45],  # Analog voltages
         [0],  # Analog frequencies
     )
 
@@ -802,7 +803,6 @@ def load_nv_coords(
 
 def load_thresholds(file_path="slmsuite/nv_blob_detection/threshold_list_nvs_162.npz"):
     with np.load(file_path) as data_file:
-        # Use 'arr_0' as the key to extract the data
         thresholds = data_file["arr_0"]
     return thresholds
 
@@ -821,22 +821,18 @@ if __name__ == "__main__":
     # magnet_angle = 90
     date_str = "2024_03_12"
     # global_coords = [None, None, z_coord]
-    global_coords = [-1.66, 1.15, 1.05]
+    global_coords = [-1.7, 1.6, 0.9]
     # pixel_to_voltage(initial_pixel_coords, final_pixel_coords)
-    # target_coords = [
-    #     [110.186, 129.281],
-    # ]
     # global_coords = piezo_voltage_to_pixel_calibration(final_pixel_coords)
-    # # endregion
-    # region Coords
-    # Load NV pixel coordinates
+
     # Load NV pixel coordinates
     pixel_coords_list = load_nv_coords(
-        file_path="slmsuite/nv_blob_detection/nv_blob_filtered_162nvs_ref.npz"
+        # file_path="slmsuite/nv_blob_detection/nv_blob_filtered_162nvs_ref.npz"
+        file_path="slmsuite/nv_blob_detection/nv_coords_integras_counts_filtered.npz",
     ).tolist()
 
-    print(len(pixel_coords_list))
-    print(pixel_coords_list[0])
+    print(f"Number of NVs: {len(pixel_coords_list)}")
+    print(f"Reference NV:{pixel_coords_list[0]}")
     green_coords_list = [
         [
             round(coord, 3)
@@ -860,22 +856,26 @@ if __name__ == "__main__":
     # print(pixel_coords_list[8])
 
     # pixel_coords_list = [
-    #     # [113.431, 149.95],
-    #     [80.813, 102.045],
+    #     [113.649, 149.301],
+    #     [80.765, 101.26],
+    #     [170.167, 94.837],
     # ]
     # green_coords_list = [
-    #     # [109.376, 111.368],
-    #     [115, 110],
+    #     [109.267, 111.334],
+    #     [113.322, 106.252],
+    #     [103.687, 104.862],
     # ]
     # red_coords_list = [
-    #     [74.638, 77.118],
-    #     [77.976, 73.293],
+    #     [74.649, 77.168],
+    #     [77.772, 72.945],
+    #     [69.921, 72.112],
     # ]
 
     num_nvs = len(pixel_coords_list)
-    threshold_list = load_thresholds(
-        file_path="slmsuite/nv_blob_detection/threshold_list_nvs_162.npz"
-    ).tolist()
+    threshold_list = [15.5] * num_nvs
+    # threshold_list = load_thresholds(
+    #     file_path="slmsuite/nv_blob_detection/threshold_list_nvs_162.npz"
+    # ).tolist()
     scc_duration_list = [140] * num_nvs
     scc_duration_list = [4 * round(el / 4) for el in scc_duration_list]
     scc_amp_list = [1] * num_nvs
@@ -904,7 +904,7 @@ if __name__ == "__main__":
     nv_sig.expected_counts = None
     nv_sig.expected_counts = 2249.0
     # nv_sig.expected_counts = 3062.0
-    # nv_sig.expected_counts = 1101.0
+    nv_sig.expected_counts = 2333.0
     # num_nvs = len(nv_list)
     # print(f"Final NV List: {nv_list}")
     # Ensure data is defined before accessing it
@@ -1050,7 +1050,7 @@ if __name__ == "__main__":
 
         # do_resonance_zoom(nv_list)
         # do_rabi(nv_list)
-        # do_resonance(nv_list)
+        do_resonance(nv_list)
         # do_spin_echo(nv_list)
 
         # do_power_rabi(nv_list)
@@ -1081,11 +1081,11 @@ if __name__ == "__main__":
         # for nv in nv_list:
         #     nv.spin_flip = False
         # Get the indices of well-separated NVs
-        selected_indices = widefield.select_well_separated_nvs(nv_list, 81)
-        for index in selected_indices:
-            nv = nv_list[index]
-            nv.spin_flip = True
-        do_simple_correlation_test(nv_list)
+        # selected_indices = widefield.select_well_separated_nvs(nv_list, 81)
+        # for index in selected_indices:
+        #     nv = nv_list[index]
+        #     nv.spin_flip = True
+        # do_simple_correlation_test(nv_list)
 
         # for nv in nv_list:
         #     nv.spin_flip = False

@@ -953,12 +953,6 @@ def select_well_separated_nvs(nv_list, num_nvs_to_select):
     return selected_indices
 
 
-# Example usage
-# nv_list = [(0, 0, 0), (1, 1, 1), (2, 2, 2), (3, 3, 3), (10, 10, 10), (20, 20, 20)]
-# selected_nvs = select_well_separated_nvs(nv_list)
-# print("Selected NVs:", selected_nvs)
-
-
 # region Camera getters - probably only needed internally
 
 

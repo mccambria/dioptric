@@ -763,7 +763,7 @@ def real_time_dynamical_tweezers():
     # Precondition computationally
     hologram.optimize(
         "WGS-Kim",
-        maxiter=20,
+        maxiter=30,
         feedback="computational_spot",
         stat_groups=["computational_spot"],
     )
@@ -962,113 +962,76 @@ def camp2phase_calibration():
 
 
 # Load the saved NV coordinates and radii from the .npz file
+
 # def load_nv_coords(
-#     file_path="slmsuite/nv_blob_detection/nv_detection_combined_results.npz",
+#     file_path="slmsuite/nv_blob_detection/nv_blob_filtered_162nvs_ref.npz",
+#     x_min=0,
+#     x_max=250,
+#     y_min=0,
+#     y_max=250,
 # ):
 #     """
-#     Load the NV coordinates and radii from a .npz file.
+#     Load the NV coordinates and radii from a .npz file and remove outliers based on min/max thresholds.
 
 #     Args:
 #     file_path: The file path to the .npz file.
+#     x_min: Minimum allowed value for x-coordinate.
+#     x_max: Maximum allowed value for x-coordinate.
+#     y_min: Minimum allowed value for y-coordinate.
+#     y_max: Maximum allowed value for y-coordinate.
 
 #     Returns:
-#     nv_coordinates: The loaded NV coordinates.
-#     nv_radii: The loaded NV radii.
+#     nv_coordinates_clean: The NV coordinates with outliers removed based on the given thresholds.
 #     """
 #     data = np.load(file_path)
 #     nv_coordinates = data["nv_coordinates"]
 
-#     return nv_coordinates
+#     # Create a mask based on the min/max thresholds for x and y
+#     mask = (
+#         (nv_coordinates[:, 0] >= x_min)
+#         & (nv_coordinates[:, 0] <= x_max)
+#         & (nv_coordinates[:, 1] >= y_min)
+#         & (nv_coordinates[:, 1] <= y_max)
+#     )
+
+#     # Filter out coordinates that fall outside the thresholds
+#     nv_coordinates_clean = nv_coordinates[mask]
+
+#     print(f"Filtered {np.sum(~mask)} outliers.")
+
+#     return nv_coordinates_clean
 
 
 def load_nv_coords(
-    file_path="slmsuite/nv_blob_detection/nv_blob_filtered_162nvs_ref.npz",
-    x_min=0,
-    x_max=250,
-    y_min=0,
-    y_max=250,
+    # file_path="slmsuite/nv_blob_detection/nv_blob_filtered_162nvs_ref.npz",
+    # file_path="slmsuite/nv_blob_detection/nv_coords_integras_counts_162nvs.npz",
+    file_path="slmsuite/nv_blob_detection/nv_coords_integras_counts_filtered.npz",
 ):
-    """
-    Load the NV coordinates and radii from a .npz file and remove outliers based on min/max thresholds.
-
-    Args:
-    file_path: The file path to the .npz file.
-    x_min: Minimum allowed value for x-coordinate.
-    x_max: Maximum allowed value for x-coordinate.
-    y_min: Minimum allowed value for y-coordinate.
-    y_max: Maximum allowed value for y-coordinate.
-
-    Returns:
-    nv_coordinates_clean: The NV coordinates with outliers removed based on the given thresholds.
-    """
     data = np.load(file_path)
     nv_coordinates = data["nv_coordinates"]
-
-    # Create a mask based on the min/max thresholds for x and y
-    mask = (
-        (nv_coordinates[:, 0] >= x_min)
-        & (nv_coordinates[:, 0] <= x_max)
-        & (nv_coordinates[:, 1] >= y_min)
-        & (nv_coordinates[:, 1] <= y_max)
-    )
-
-    # Filter out coordinates that fall outside the thresholds
-    nv_coordinates_clean = nv_coordinates[mask]
-
-    print(f"Filtered {np.sum(~mask)} outliers.")
-
-    return nv_coordinates_clean
+    spot_weights = data["spot_weights"]
+    return nv_coordinates, spot_weights
 
 
-# Example usage:
 # Set the threshold for x and y coordinates, assuming the SLM has a 2048x2048 pixel grid
-nuvu_pixel_coords = load_nv_coords(x_min=0, x_max=2048, y_min=0, y_max=2048).tolist()
-print(f"Total NV coordinates after filtering: {len(nuvu_pixel_coords)}")
-
-
-# region coords
-# Example usage with a list of Nuvu pixel coordinates
-# nuvu_pixel_coords = [
-#     [113.481, 150.522],
-#     [80.813, 102.045],
-#     [170.387, 95.987],
-# ]
-nuvu_pixel_coords = load_nv_coords().tolist()
+nuvu_pixel_coords, spot_weights = load_nv_coords()
 print(f"Total NV coordinates: {len(nuvu_pixel_coords)}")
-# print(f"Loaded NV coordinates: {nuvu_pixel_coords}")
-# nuvu_pixel_coords = random.sample(list(nuvu_pixel_coords), 3)
-# nuvu_pixel_coords = random.sample(nuvu_pixel_coords, 3)
-# Output the random coordinates
-# print(nuvu_pixel_coords)
-
-# Select specific NV coordinates at indices 9, 18, 21
-# selected_indices = [12, 15, 18]
-# nuvu_pixel_coords = [nuvu_pixel_coords[i] for i in selected_indices]
-# print(f"Loaded NV coordinates: {nuvu_pixel_coords}")
-# Print the output to check if data is being loaded correctly
-nuvu_pixel_coords_array = np.array(
-    nuvu_pixel_coords
-)  # Convert the list to a numpy array
-thorcam_coords = example_library.nuvu2thorcam_calibration(nuvu_pixel_coords_array)
+print(f"Total spot weigths: {len(spot_weights)}")
+thorcam_coords = example_library.nuvu2thorcam_calibration(nuvu_pixel_coords).T
 
 
 def nvs_demo():
-    # Ensure thorcam_coords has shape (2, n)
-    thorcam_coords = example_library.nuvu2thorcam_calibration(nuvu_pixel_coords_array).T
-
-    if thorcam_coords.shape[0] != 2:
-        raise ValueError(
-            f"Expected thorcam_coords to have shape (2, n), but got {thorcam_coords.shape}"
-        )
-
     hologram = SpotHologram(
-        shape=(2048, 2048), spot_vectors=thorcam_coords, basis="ij", cameraslm=fs
+        shape=(4096, 2048),
+        spot_vectors=thorcam_coords,
+        basis="ij",
+        spot_amp=spot_weights,
+        cameraslm=fs,
     )
-
     # Precondition computationally
     hologram.optimize(
         "WGS-Kim",
-        maxiter=20,
+        maxiter=30,
         feedback="computational_spot",
         stat_groups=["computational_spot"],
     )
@@ -1076,7 +1039,7 @@ def nvs_demo():
     initial_phase = hologram.extract_phase()
     # Define the path to save the phase data
     path = r"C:\Users\matth\GitHub\dioptric\slmsuite\Initial_phase"
-    filename = "initial_phase_fine_calibration.npy"
+    filename = "slm_phase_162nvs.npy"
     # Save the phase data
     save(initial_phase, path, filename)
     slm.write(initial_phase, settle=True)
@@ -1087,9 +1050,7 @@ def nvs_phase():
     # phase = np.load(
     #     r"C:\Users\matth\GitHub\dioptric\slmsuite\Initial_phase\initial_phase.npy"
     # )
-    phase = np.load(
-        r"C:\Users\matth\GitHub\dioptric\slmsuite\optimized_phases\optimized_phase_nv_0.npy"
-    )
+    phase = np.load("slmsuite\optimized_phases\optimized_phase_nv_0.npy")
     slm.write(phase, settle=True)
     cam_plot()
 
@@ -1213,7 +1174,7 @@ try:
     nvs_demo()
     # nvs_phase()
     # circles()
-    # calibration_triangle()
+    calibration_triangle()
     # circle_pattern()
     # smiley()
     # scatter_pattern()

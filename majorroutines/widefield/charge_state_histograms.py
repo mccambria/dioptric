@@ -31,6 +31,142 @@ from utils.tool_belt import determine_threshold
 # region Process and plotting functions
 
 
+# def create_histogram(
+#     sig_counts_list,
+#     ref_counts_list,
+#     no_title=True,
+#     no_text=None,
+#     ax=None,
+#     density=False,
+#     plot=False,  # Default to False to prevent histogram plotting
+# ):
+#     if not plot:
+#         return None  # Skip plotting if plot is set to False
+
+#     try:
+#         laser_dict = tb.get_optics_dict(LaserKey.WIDEFIELD_CHARGE_READOUT)
+#         readout = laser_dict["duration"]
+#         readout_ms = int(readout / 1e6)
+#         readout_s = readout / 1e9
+#     except Exception:
+#         readout_s = 0.05  # MCC default
+#         pass
+
+#     ### Histograms
+#     num_reps = len(ref_counts_list)
+#     labels = ["With ionization pulse", "Without ionization pulse"]
+#     colors = [kpl.KplColors.RED, kpl.KplColors.GREEN]
+#     counts_lists = [sig_counts_list, ref_counts_list]
+
+#     if ax is None:
+#         fig, ax = plt.subplots()
+#     else:
+#         fig = None
+#     if not no_title:
+#         ax.set_title(f"Charge prep hist, {num_reps} reps")
+#     ax.set_xlabel("Integrated counts")
+#     if density:
+#         ax.set_ylabel("Probability")
+#     else:
+#         ax.set_ylabel("Number of occurrences")
+
+#     for ind in range(2):
+#         counts_list = counts_lists[ind]
+#         label = labels[ind]
+#         color = colors[ind]
+#         kpl.histogram(ax, counts_list, label=label, color=color, density=density)
+
+#     ax.legend()
+
+#     # Calculate the normalized separation
+#     if not no_text:
+#         noise = np.sqrt(np.var(ref_counts_list) + np.var(sig_counts_list))
+#         signal = np.mean(ref_counts_list) - np.mean(sig_counts_list)
+#         snr = signal / noise
+#         snr_time = snr / np.sqrt(readout_s)
+#         snr = round(snr, 3)
+#         snr_time = round(snr_time, 3)
+#         snr_str = f"SNR:\n{snr} / sqrt(shots)\n{snr_time} / sqrt(s)"
+#         print(snr_str)
+#         snr_str = f"SNR: {snr}"
+#         kpl.anchored_text(ax, snr_str, "center right", size=kpl.Size.SMALL)
+
+#     if fig is not None:
+#         return fig
+
+
+# def process_and_plot(raw_data, plot_histograms=False):
+#     ### Setup
+#     nv_list = raw_data["nv_list"]
+#     num_nvs = len(nv_list)
+#     counts = np.array(raw_data["counts"])
+#     sig_counts_lists = [counts[0, nv_ind].flatten() for nv_ind in range(num_nvs)]
+#     ref_counts_lists = [counts[1, nv_ind].flatten() for nv_ind in range(num_nvs)]
+#     num_reps = raw_data["num_reps"]
+#     num_runs = raw_data["num_runs"]
+#     num_shots = num_reps * num_runs
+
+#     ### Histograms and thresholding
+#     threshold_list = []
+#     prep_fidelity_list = []
+#     hist_figs = []
+#     DEFAULT_THRESHOLD = 0.0
+
+#     for ind in range(num_nvs):
+#         sig_counts_list = sig_counts_lists[ind]
+#         ref_counts_list = ref_counts_lists[ind]
+
+#         # Conditionally plot histograms only if plot_histograms=True
+#         fig = create_histogram(
+#             sig_counts_list, ref_counts_list, density=True, plot=plot_histograms
+#         )
+#         if fig:
+#             hist_figs.append(fig)
+#         all_counts_list = np.append(sig_counts_list, ref_counts_list)
+
+#         try:
+#             threshold = determine_threshold(all_counts_list, nvn_ratio=0.5)
+#         except:
+#             threshold = DEFAULT_THRESHOLD
+#         threshold_list.append(threshold)
+
+#         prep_fidelity_list.append(
+#             np.sum(np.less(sig_counts_list, threshold)) / num_shots
+#         )
+
+#     print(threshold_list)
+#     print([round(el, 3) for el in prep_fidelity_list])
+
+#     ### Images
+#     if "img_arrays" not in raw_data:
+#         return
+
+#     laser_key = LaserKey.WIDEFIELD_CHARGE_READOUT
+#     laser_dict = tb.get_optics_dict(laser_key)
+#     readout_laser = laser_dict["name"]
+#     readout = laser_dict["duration"]
+#     readout_ms = readout / 10**6
+
+#     img_arrays = raw_data["img_arrays"]
+#     mean_img_arrays = np.mean(img_arrays, axis=(1, 2, 3))
+#     sig_img_array = mean_img_arrays[0]
+#     ref_img_array = mean_img_arrays[1]
+#     diff_img_array = sig_img_array - ref_img_array
+#     img_arrays_to_save = [sig_img_array, ref_img_array, diff_img_array]
+#     title_suffixes = ["sig", "ref", "diff"]
+#     img_figs = []
+
+#     for ind in range(3):
+#         img_array = img_arrays_to_save[ind]
+#         title_suffix = title_suffixes[ind]
+#         fig, ax = plt.subplots()
+#         title = f"{readout_laser}, {readout_ms} ms, {title_suffix}"
+#         kpl.imshow(ax, img_array, title=title, cbar_label="Photons")
+#         img_figs.append(fig)
+
+#     return img_arrays_to_save, img_figs, hist_figs
+
+
 def create_histogram(
     sig_counts_list,
     ref_counts_list,
@@ -39,6 +175,7 @@ def create_histogram(
     ax=None,
     density=False,
     plot=False,  # Default to False to prevent histogram plotting
+    nv_index=None,  # Add NV index as an optional parameter
 ):
     if not plot:
         return None  # Skip plotting if plot is set to False
@@ -78,7 +215,7 @@ def create_histogram(
 
     ax.legend()
 
-    # Calculate the normalized separation
+    # Calculate the normalized separation (SNR)
     if not no_text:
         noise = np.sqrt(np.var(ref_counts_list) + np.var(sig_counts_list))
         signal = np.mean(ref_counts_list) - np.mean(sig_counts_list)
@@ -86,9 +223,15 @@ def create_histogram(
         snr_time = snr / np.sqrt(readout_s)
         snr = round(snr, 3)
         snr_time = round(snr_time, 3)
-        snr_str = f"SNR:\n{snr} / sqrt(shots)\n{snr_time} / sqrt(s)"
+
+        # Add NV index in the SNR text
+        if nv_index is not None:
+            snr_str = f"nv{nv_index}\nSNR: {snr} / sqrt(shots)\n{snr_time} / sqrt(s)"
+        else:
+            snr_str = f"SNR:\n{snr} / sqrt(shots)\n{snr_time} / sqrt(s)"
+
         print(snr_str)
-        snr_str = f"SNR: {snr}"
+        snr_str = f"NV{nv_index} SNR: {snr}"  # Display NV index as well
         kpl.anchored_text(ax, snr_str, "center right", size=kpl.Size.SMALL)
 
     if fig is not None:
@@ -109,6 +252,7 @@ def process_and_plot(raw_data, plot_histograms=False):
     ### Histograms and thresholding
     threshold_list = []
     prep_fidelity_list = []
+    snr_list = []
     hist_figs = []
     DEFAULT_THRESHOLD = 0.0
 
@@ -116,9 +260,13 @@ def process_and_plot(raw_data, plot_histograms=False):
         sig_counts_list = sig_counts_lists[ind]
         ref_counts_list = ref_counts_lists[ind]
 
-        # Conditionally plot histograms only if plot_histograms=True
+        # Plot histograms with NV index and SNR included
         fig = create_histogram(
-            sig_counts_list, ref_counts_list, density=True, plot=plot_histograms
+            sig_counts_list,
+            ref_counts_list,
+            density=True,
+            plot=plot_histograms,
+            nv_index=ind,
         )
         if fig:
             hist_figs.append(fig)
@@ -133,10 +281,15 @@ def process_and_plot(raw_data, plot_histograms=False):
         prep_fidelity_list.append(
             np.sum(np.less(sig_counts_list, threshold)) / num_shots
         )
+        # Calculate SNR
+        noise = np.sqrt(np.var(ref_counts_list) + np.var(sig_counts_list))
+        signal = np.mean(ref_counts_list) - np.mean(sig_counts_list)
+        snr = signal / noise
+        snr_list.append(round(snr, 3))
 
-    print(threshold_list)
-    print([round(el, 3) for el in prep_fidelity_list])
-
+    print(f"Threshold: {threshold_list}")
+    print(f"Fidelity: {[round(el, 3) for el in prep_fidelity_list]}")
+    print(f"SNR: {snr_list}")
     ### Images
     if "img_arrays" not in raw_data:
         return
@@ -154,6 +307,7 @@ def process_and_plot(raw_data, plot_histograms=False):
     diff_img_array = sig_img_array - ref_img_array
     img_arrays_to_save = [sig_img_array, ref_img_array, diff_img_array]
     title_suffixes = ["sig", "ref", "diff"]
+
     img_figs = []
 
     for ind in range(3):
@@ -231,10 +385,19 @@ def main(
         )
 
         title_suffixes = ["sig", "ref", "diff"]
-        for ind in range(len(img_figs)):
+        num_figs = len(img_figs)
+        for ind in range(num_figs):
             fig = img_figs[ind]
             title = title_suffixes[ind]
             file_path = dm.get_file_path(__file__, timestamp, f"{repr_nv_name}-{title}")
+            dm.save_figure(fig, file_path)
+
+        num_nvs = len(nv_list)
+        for nv_ind in range(num_nvs):
+            fig = hist_figs[nv_ind]
+            nv_sig = nv_list[nv_ind]
+            nv_name = nv_sig.name
+            file_path = dm.get_file_path(__file__, timestamp, nv_name)
             dm.save_figure(fig, file_path)
 
         sig_img_array, ref_img_array, diff_img_array = imgs

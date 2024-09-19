@@ -98,9 +98,7 @@ def fourier_calibration():
     )
     cam.set_exposure(0.01)
     # save calibation
-    calibration_file = fs.save_fourier_calibration(
-        path=r"C:\Users\matth\GitHub\dioptric\slmsuite\fourier_calibration"
-    )
+    calibration_file = fs.save_fourier_calibration(path="slmsuite/fourier_calibration")
     print("Fourier calibration saved to:", calibration_file)
 
 
@@ -130,24 +128,27 @@ def wavefront_calibration():
     )
     # save calibation
     calibration_file = fs.save_wavefront_calibration(
-        path=r"C:\Users\matth\GitHub\dioptric\slmsuite\wavefront_calibration"
+        path="slmsuite/wavefront_calibration"
     )
     print("Fourier calibration saved to:", calibration_file)
 
 
 def load_fourier_calibration():
-    calibration_file_path = r"C:\Users\matth\GitHub\dioptric\slmsuite\fourier_calibration\26438-SLM-fourier-calibration_00003.h5"
+    calibration_file_path = (
+        "slmsuite/fourier_calibration/26438-SLM-fourier-calibration_00003.h5"
+    )
     fs.load_fourier_calibration(calibration_file_path)
     print("Fourier calibration loaded from:", calibration_file_path)
 
 
 def load_wavefront_calibration():
-    calibration_file_path = r"C:\Users\matth\GitHub\dioptric\slmsuite\wavefront_calibration\26438-SLM-wavefront-calibration_00004.h5"
+    calibration_file_path = (
+        "slmsuite/wavefront_calibration/26438-SLM-wavefront-calibration_00004.h5"
+    )
     fs.load_wavefront_calibration(calibration_file_path)
     print("Wavefront calibration loaded from:", calibration_file_path)
 
 
-# region "evaluate" function
 def evaluate_uniformity(vectors=None, size=25):
     # Set exposure and capture image
     cam.set_exposure(0.001)
@@ -160,10 +161,8 @@ def evaluate_uniformity(vectors=None, size=25):
 
     # Plot subimages
     analysis.take_plot(subimages)
-
     # Normalize subimages and compute powers
     powers = analysis.image_normalization(subimages)
-
     # Plot histogram of powers
     plt.hist(powers / np.mean(powers))
     plt.show()
@@ -229,8 +228,8 @@ def calibration_triangle():
     cam.set_exposure(0.1)
 
     # Define parameters for the equilateral triangle
-    center = (750, 530)  # Center of the triangle
-    side_length = 120  # Length of each side of the triangle
+    center = (750, 630)  # Center of the triangle
+    side_length = 240  # Length of each side of the triangle
 
     # Calculate the coordinates of the three vertices of the equilateral triangle
     theta = np.linspace(0, 2 * np.pi, 4)[:-1]  # Exclude the last point to avoid overlap
@@ -256,80 +255,63 @@ def calibration_triangle():
     cam_plot()
 
 
-def optimize_calibration():
-    pass
+def load_nv_coords(
+    # file_path="slmsuite/nv_blob_detection/nv_blob_filtered_162nvs_ref.npz",
+    # file_path="slmsuite/nv_blob_detection/nv_coords_integras_counts_162nvs.npz",
+    file_path="slmsuite/nv_blob_detection/nv_coords_integras_counts_filtered.npz",
+):
+    data = np.load(file_path)
+    nv_coordinates = data["nv_coordinates"]
+    spot_weights = data["spot_weights"]
+    return nv_coordinates, spot_weights
 
-    # region coords
 
-
-# Example usage with a list of Nuvu pixel coordinates
-nuvu_pixel_coords = [
-    [110.186, 129.281],
-    [128.233, 88.007],
-    [86.294, 103.0],
-    # [197.151, 56.105],  # not targeted
-    # [199.151, 26.105],  # not targeted
-]
-# thesre are coord at which
-# 87.614, 104.484
-# 129.637, 89.599
-# 111.651, 130.532
-nuvu_pixel_coords_array = np.array(nuvu_pixel_coords)
-# Calibrate the coordinates from Nuvu to Thorlabs system
-thorcam_coords = example_library.nuvu2thorcam_calibration(nuvu_pixel_coords_array)
-# thorcam_coords = thorcam_coords.T  #Transpose
+# Set the threshold for x and y coordinates, assuming the SLM has a 2048x2048 pixel grid
+nuvu_pixel_coords, spot_weights = load_nv_coords()
+# nuvu_pixel_coords = np.array(
+#     [
+#         [113.481, 150.522],
+#         [80.813, 102.045],
+#         [170.387, 95.987],
+#     ]
+# )
+print(f"Total NV coordinates: {len(nuvu_pixel_coords)}")
+thorcam_coords = example_library.nuvu2thorcam_calibration(nuvu_pixel_coords).T
 
 
 def nvs_demo():
-    # Ensure thorcam_coords has shape (2, n)
-    thorcam_coords = example_library.nuvu2thorcam_calibration(nuvu_pixel_coords_array).T
-
-    if thorcam_coords.shape[0] != 2:
-        raise ValueError(
-            f"Expected thorcam_coords to have shape (2, n), but got {thorcam_coords.shape}"
-        )
-
     hologram = SpotHologram(
-        shape=(2048, 2048), spot_vectors=thorcam_coords, basis="ij", cameraslm=fs
+        shape=(4096, 2048),
+        spot_vectors=thorcam_coords,
+        basis="ij",
+        spot_amp=spot_weights,
+        cameraslm=fs,
     )
-
     # Precondition computationally
     hologram.optimize(
         "WGS-Kim",
-        maxiter=20,
+        maxiter=30,
         feedback="computational_spot",
         stat_groups=["computational_spot"],
     )
 
     initial_phase = hologram.extract_phase()
+    # Define the path to save the phase data
+    path = r"C:\Users\matth\GitHub\dioptric\slmsuite\Initial_phase"
+    filename = "slm_phase_162nvs.npy"
+    # Save the phase data
+    save(initial_phase, path, filename)
     slm.write(initial_phase, settle=True)
     cam_plot()
 
 
-def initial_phase():
-    xlist = np.arange(650, 750, 10)  # X coordinates for the grid
-    ylist = np.arange(340, 440, 10)  # Y coordinates for the grid
-    xgrid, ygrid = np.meshgrid(xlist, ylist)
-    square = np.vstack((xgrid.ravel(), ygrid.ravel()))
-    hologram = SpotHologram(
-        shape=(2048, 2048), spot_vectors=square, basis="ij", cameraslm=fs
-    )
-
-    # Precondition computationally
-    hologram.optimize(
-        "WGS-Kim",
-        maxiter=20,
-        feedback="computational_spot",
-        stat_groups=["computational_spot"],
-    )
-    initial_phase = hologram.extract_phase()
-
-    # Define the path to save the phase data
-    path = r"C:\Users\Saroj Chand\Documents\slm_phase"
-    filename = "initial_phase.npy"
-
-    # Save the phase data
-    save(initial_phase, path, filename)
+def nvs_phase():
+    # phase = np.load(
+    #     r"C:\Users\matth\GitHub\dioptric\slmsuite\Initial_phase\initial_phase.npy"
+    # )
+    phase = np.load("slmsuite\optimized_phases\optimized_phase_nv_0.npy")
+    slm.write(phase, settle=True)
+    cam_plot()
 
 
 # Define the save function
@@ -345,26 +327,16 @@ try:
     cam = ThorCam(serial="26438", verbose=True)
     fs = FourierSLM(cam, slm)
     # cam = tb.get_server_thorcam()
-    # slm = tb.get_server_thorslm()
+    # slm = tb.get_server_thorslm()4
     # blaze()
     # fourier_calibration()
     load_fourier_calibration()
     # test_wavefront_calibration()
     # wavefront_calibration()
     # load_wavefront_calibration()
-    # fs.process_wavefront_calibration(r2_threshold=.9, smooth=True, plot=True)
-    # square_array()
-    # square_array_cirle()
-    # save_initial_phase()
-    # animate_wavefront_shifts()
-    # selected_dynamical_tweezers()
-    # camp2phase_calibration()
-    # initial_phase()
-    # optimize_array()
-    # plot_laguerre_gaussian_phase()
-    # nvs_demo()
+    nvs_demo()
     # circles()
-    calibration_triangle()
+    # calibration_triangle()
     # circle_pattern()
     # smiley()
     # cam_plot()
