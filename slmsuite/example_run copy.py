@@ -985,7 +985,6 @@ nuvu_pixel_coords_array = np.array(nuvu_pixel_coords)
 thorcam_coords = example_library.nuvu2thorcam_calibration(nuvu_pixel_coords_array)
 # thorcam_coords = thorcam_coords.T  #Transpose
 
-
 def nvs_demo():
     # Ensure thorcam_coords has shape (2, n)
     thorcam_coords = example_library.nuvu2thorcam_calibration(nuvu_pixel_coords_array).T
