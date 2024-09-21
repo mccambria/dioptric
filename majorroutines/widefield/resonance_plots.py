@@ -36,11 +36,11 @@ def process_data(data):
     """
     nv_list = data["nv_list"]
     freqs = data["freqs"]
-    counts = data["counts"]
+    counts = np.array(data["counts"])
 
     # Process the counts using the widefield utilities
     avg_counts, avg_counts_ste, norms = widefield.process_counts(
-        nv_list, counts, threshold=True
+        nv_list, counts, threshold=False
     )
 
     return avg_counts, avg_counts_ste, norms, freqs, nv_list
@@ -74,7 +74,9 @@ def plot_data(nv_list, freqs, avg_counts, avg_counts_ste):
     ax.legend(loc="best", ncol=2, fontsize=8)  # Add legend with NV labels
 
     plt.title("Raw Data for NV Centers")
-    plt.tight_layout()
+
+    # Manually adjust the layout
+    plt.subplots_adjust(left=0.1, right=0.95, top=0.9, bottom=0.1)
 
     return fig
 
@@ -111,7 +113,9 @@ def plot_fit_data(nv_list, freqs, avg_counts, avg_counts_ste, norms):
         ax.legend(loc="best", fontsize=8)
 
     ax.set_xlabel("Frequency (GHz)")
-    plt.tight_layout()
+
+    # Adjust the layout manually
+    plt.subplots_adjust(left=0.1, right=0.95, top=0.95, bottom=0.05, hspace=0.4)
 
     return fig
 
@@ -149,21 +153,241 @@ def visualize_large_nv_data(
     return fig_list
 
 
-if __name__ == "__main__":
-    # Load raw data
-    data = dm.get_raw_data(file_id=1647377018086, load_npz=False, use_cache=True)
+import matplotlib.patches as patches
 
-    # Process the data
-    avg_counts, avg_counts_ste, norms, freqs, nv_list = process_data(data)
 
-    # Plot raw data
-    raw_fig = plot_data(nv_list, freqs, avg_counts, avg_counts_ste)
+def plot_nv_resonance_data(
+    nv_list, freqs, avg_counts, avg_counts_ste, file_path, num_cols=4
+):
+    """
+    Plot the NV resonance data in multiple panels (grid) in the same figure and save the figure.
 
-    # Visualize large NV datasets (in batches if necessary)
-    fig_list = visualize_large_nv_data(
-        nv_list, freqs, avg_counts, avg_counts_ste, norms
+    Args:
+        nv_list: List of NV signatures.
+        freqs: Frequency data.
+        avg_counts: Averaged counts for NVs.
+        avg_counts_ste: Standard error of averaged counts.
+        file_path: Path where the figure will be saved.
+        num_cols: Number of columns for the grid layout.
+    """
+    # Number of NVs and rows/columns
+    num_nvs = len(nv_list)
+    num_rows = int(np.ceil(num_nvs / num_cols))  # Calculate the number of rows needed
+
+    # Create a figure with a grid of subplots (num_rows x num_cols)
+    fig, axes_pack = plt.subplots(
+        num_rows,
+        num_cols,
+        figsize=(num_cols * 3, num_rows * 1.0),  # Increase height slightly
+        sharex=True,
+    )
+    axes_pack = axes_pack.flatten()  # Flatten the axes array for easy indexing
+
+    # Plot each NV in the corresponding subplot
+    for nv_idx, ax in enumerate(axes_pack):
+        if nv_idx < num_nvs:
+            ax.errorbar(
+                freqs,
+                avg_counts[nv_idx],
+                yerr=avg_counts_ste[nv_idx],
+                fmt="o",
+                label=f"NV {nv_idx+1}",
+                markersize=4,
+                color="blue",
+            )
+            # Auto-scaling of y-axis to fit data better
+            ax.set_ylim([min(avg_counts[nv_idx]) - 0.05, max(avg_counts[nv_idx]) + 0.3])
+
+            # Only label the y-axis for the leftmost column
+            if nv_idx % num_cols == 0:
+                ax.set_ylabel("Norm. NV$^{-}$ Pop.")
+            else:
+                ax.set_yticklabels([])  # Remove y-axis ticks for non-leftmost subplots
+
+            # Only label the x-axis for the bottom row
+            if nv_idx >= (num_rows - 1) * num_cols:
+                ax.set_xlabel("Frequency (GHz)")
+            else:
+                ax.set_xticklabels([])  # Remove x-axis ticks for non-bottom subplots
+        else:
+            # Hide any unused subplots if the number of NVs is less than the grid size
+            ax.axis("off")
+
+    # Adjust layout to ensure nothing overlaps and reduce vertical gaps
+    plt.subplots_adjust(
+        left=0.1, right=0.95, top=0.95, bottom=0.03, hspace=0.03, wspace=0.03
     )
 
-    # Show plots
-    for fig in fig_list:
-        fig.show()
+    # Save the figure to the specified file path
+    plt.savefig(file_path, bbox_inches="tight")
+
+    # Close the figure to free up memory
+    plt.close(fig)
+
+
+import matplotlib.pyplot as plt
+import seaborn as sns
+
+
+def plot_nv_resonance_data_sns_with_freq_labels(
+    nv_list, freqs, avg_counts, avg_counts_ste, file_path, num_cols=3
+):
+    """
+    Plot the NV resonance data using Seaborn aesthetics in multiple panels (grid) in the same figure,
+    add frequency values at the bottom of each column, and save the figure.
+
+    Args:
+        nv_list: List of NV signatures.
+        freqs: Frequency data.
+        avg_counts: Averaged counts for NVs.
+        avg_counts_ste: Standard error of averaged counts.
+        file_path: Path where the figure will be saved.
+        num_cols: Number of columns for the grid layout.
+    """
+    # Use Seaborn style
+    sns.set(style="whitegrid", palette="muted")
+
+    # Number of NVs and rows/columns
+    num_nvs = len(nv_list)
+    num_rows = int(np.ceil(num_nvs / num_cols))  # Calculate the number of rows needed
+
+    # Create a figure with a grid of subplots (num_rows x num_cols)
+    fig, axes_pack = plt.subplots(
+        num_rows,
+        num_cols,
+        figsize=(
+            num_cols * 3,
+            num_rows * 1,
+        ),  # Adjust the figure size for better visibility
+        sharex=True,
+        sharey=False,  # Allow y-axis to scale individually for each subplot
+    )
+    axes_pack = axes_pack.flatten()  # Flatten the axes array for easy indexing
+
+    # Set a color palette
+    colors = sns.color_palette("deep", num_nvs)
+
+    # Plot each NV in the corresponding subplot
+    for nv_idx, ax in enumerate(axes_pack):
+        if nv_idx < num_nvs:
+            # Use Seaborn's smooth lines with matplotlib markers
+            sns.lineplot(
+                x=freqs,
+                y=avg_counts[nv_idx],
+                ax=ax,
+                color=colors[nv_idx % len(colors)],
+                lw=2,
+                marker="o",
+                markersize=5,
+                label=f"NV {nv_idx+1}",
+            )
+            # Add error bars manually using matplotlib
+            ax.errorbar(
+                freqs,
+                avg_counts[nv_idx],
+                yerr=avg_counts_ste[nv_idx],
+                fmt="none",
+                ecolor="gray",
+                alpha=0.6,
+            )
+
+            # Auto-scale y-axis for better view of resonance
+            ax.set_ylim(
+                [min(avg_counts[nv_idx]) - 0.01, max(avg_counts[nv_idx]) + 0.01]
+            )
+
+            # Only set y-tick labels for the leftmost column
+            if nv_idx % num_cols == 0:
+                ax.set_yticks(
+                    ax.get_yticks()
+                )  # Keep the default y-tick labels for the leftmost column
+            else:
+                ax.set_yticklabels([])
+            #  Add a single y-axis label for the entire figure
+            fig.text(
+                0.04,
+                0.5,
+                "Norm. NV$^{-}$ Pop.",
+                va="center",
+                rotation="vertical",
+                fontsize=12,
+            )
+            # Only label the x-axis for the bottom row
+            if nv_idx >= (num_rows - 1) * num_cols:
+                ax.set_xlabel("Frequency (GHz)")
+            else:
+                ax.set_xticklabels([])  # Remove x-axis ticks for non-bottom subplots
+
+            # Add grid for better visualization
+            ax.grid(True, which="both", linestyle="--", linewidth=0.5)
+        else:
+            # Hide any unused subplots if the number of NVs is less than the grid size
+            ax.axis("off")
+
+    # Add frequency values at the bottom of each column
+    for col in range(num_cols):
+        bottom_row_idx = (
+            num_rows * num_cols - num_cols + col
+        )  # Index of the bottom row in each column
+
+        if bottom_row_idx < len(axes_pack):  # Ensure the index is within bounds
+            ax = axes_pack[bottom_row_idx]
+            # Set fewer x-ticks (num_ticks) using np.linspace
+            tick_positions = np.linspace(min(freqs), max(freqs), 5)
+            ax.set_xticks(tick_positions)
+            ax.set_xticklabels(
+                [f"{tick:.2f}" for tick in tick_positions], rotation=45, fontsize=9
+            )
+            # Set the x-ticks to the frequencies for the bottom row of each column
+            # ax.set_xticks(freqs)
+            # ax.set_xticklabels([f"{f:.2f}" for f in freqs], rotation=45, fontsize=9)
+
+    # Adjust layout to ensure nothing overlaps and reduce vertical gaps
+    plt.subplots_adjust(
+        left=0.1, right=0.95, top=0.95, bottom=0.1, hspace=0.01, wspace=0.01
+    )
+
+    # Save the figure to the specified file path
+    plt.savefig(file_path, bbox_inches="tight")
+
+    # Close the figure to free up memory
+    plt.close(fig)
+
+
+if __name__ == "__main__":
+    # Load raw data
+    data = dm.get_raw_data(file_id=1652859661831, load_npz=False, use_cache=True)
+    nv_list = data["nv_list"]
+    num_nvs = len(nv_list)
+    counts = np.array(data["counts"])[0]
+    num_nvs = len(nv_list)
+    num_steps = data["num_steps"]
+    num_runs = data["num_runs"]
+    num_reps = data["num_reps"]
+    freqs = data["freqs"]
+    adj_num_steps = num_steps // 4
+    sig_counts_0 = counts[:, :, 0:adj_num_steps, :]
+    sig_counts_1 = counts[:, :, adj_num_steps : 2 * adj_num_steps, :]
+    sig_counts = np.append(sig_counts_0, sig_counts_1, axis=3)
+    ref_counts_0 = counts[:, :, 2 * adj_num_steps : 3 * adj_num_steps, :]
+    ref_counts_1 = counts[:, :, 3 * adj_num_steps :, :]
+    ref_counts = np.empty((num_nvs, num_runs, adj_num_steps, 2 * num_reps))
+    ref_counts[:, :, :, 0::2] = ref_counts_0
+    ref_counts[:, :, :, 1::2] = ref_counts_1
+
+    avg_counts, avg_counts_ste, norms = widefield.process_counts(
+        nv_list, sig_counts, ref_counts, threshold=True
+    )
+    # raw_fig = plot_data(nv_list, freqs, avg_counts, avg_counts_ste)
+    # fit_fig = visualize_large_nv_data(nv_list, freqs, avg_counts, avg_counts_ste, norms)
+
+    # Save plot to a file
+    file_path = "nv_data_plot.png"
+    # plot_nv_resonance_data(nv_list, freqs, avg_counts, avg_counts_ste, file_path)
+    file_path = "nv_resonance_plot_60steps_threshold.png"
+    plot_nv_resonance_data_sns_with_freq_labels(
+        nv_list, freqs, avg_counts, avg_counts_ste, file_path, num_cols=5
+    )
+
+    print(f"Plot saved to {file_path}")
+    plt.show()

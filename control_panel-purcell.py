@@ -256,7 +256,7 @@ def do_scc_snr_check(nv_list):
 
 
 def do_simple_correlation_test(nv_list):
-    num_reps = 600
+    num_reps = 400
     # num_runs = 2000
     num_runs = 600
     # num_runs = 2
@@ -287,7 +287,7 @@ def do_calibrate_iq_delay(nv_list):
 def do_resonance(nv_list):
     freq_center = 2.87
     freq_range = 0.180
-    num_steps = 40
+    num_steps = 60
     # Single ref
     # num_reps = 8
     # num_runs = 120
@@ -319,8 +319,8 @@ def do_rabi(nv_list):
     # max_tau = 480 + min_tau
     num_steps = 31
     num_reps = 10
-    # num_runs = 100
     num_runs = 200
+    # num_runs = 100
     # num_runs = 50
     # num_runs = 20
 
@@ -1050,7 +1050,7 @@ if __name__ == "__main__":
 
         # do_resonance_zoom(nv_list)
         # do_rabi(nv_list)
-        do_resonance(nv_list)
+        # do_resonance(nv_list)
         # do_spin_echo(nv_list)
 
         # do_power_rabi(nv_list)
@@ -1081,11 +1081,11 @@ if __name__ == "__main__":
         # for nv in nv_list:
         #     nv.spin_flip = False
         # Get the indices of well-separated NVs
-        # selected_indices = widefield.select_well_separated_nvs(nv_list, 81)
-        # for index in selected_indices:
-        #     nv = nv_list[index]
-        #     nv.spin_flip = True
-        # do_simple_correlation_test(nv_list)
+        selected_indices = widefield.select_well_separated_nvs(nv_list, 30)
+        for index in selected_indices:
+            nv = nv_list[index]
+            nv.spin_flip = True
+        do_simple_correlation_test(nv_list)
 
         # for nv in nv_list:
         #     nv.spin_flip = False

@@ -193,14 +193,14 @@ if __name__ == "__main__":
     reorder_coords_flag = True  # Set this flag to enable/disable reordering of NVs
 
     # data = dm.get_raw_data(file_id=1648773947273, load_npz=True)
-    data = dm.get_raw_data(file_id=1651643582072, load_npz=True)
+    data = dm.get_raw_data(file_id=1651663986412, load_npz=True)
     img_array = np.array(data["ref_img_array"])
     nv_coordinates = load_nv_coords().tolist()
     # Start merged coordinates with the reference NV
     # Reference NV to append as the first coordinate
-    reference_nv = [113.431, 149.95]
+    # reference_nv = [113.431, 149.95]
     reference_nv = [112.76, 150.887]
-    # # Start with the reference NV as the first element
+    # # # Start with the reference NV as the first element
     nv_coords = [reference_nv]
 
     # # Iterate through the rest of the NV coordinates
@@ -230,7 +230,7 @@ if __name__ == "__main__":
     # nv_coordinates = [nv_coordinates[i] for i in filtered_nv_indices]
 
     # Integrate intensities for each NV coordinate
-    sigma = 1.83
+    sigma = 3
     integrated_intensities = integrate_intensity(img_array, nv_coordinates, sigma)
     integrated_intensities = np.array(integrated_intensities)
 
@@ -273,7 +273,7 @@ if __name__ == "__main__":
     kpl.imshow(ax, img_array, title=title, cbar_label="Photons")
     # Draw circles and index numbers
     for idx, coord in enumerate(filtered_nv_coords):
-        circ = Circle(coord, sigma, color="black", fill=False, linewidth=1.0)
+        circ = Circle(coord, sigma, color="lightblue", fill=False, linewidth=0.5)
         ax.add_patch(circ)
         # Place text just above the circle
         ax.text(
