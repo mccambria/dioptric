@@ -149,6 +149,27 @@ def widefield_image(nv_sig, num_reps=1):
     return main(nv_sig, "widefield", num_reps)
 
 
+def widefield_scanning(nv_sig, x_range, y_range, num_steps):
+    laser_key = LaserKey.WIDEFIELD_IMAGING
+    laser_dict = tb.get_optics_dict(laser_key)
+    laser_name = laser_dict["name"]
+    x_center, y_center = [0, 0]
+    ret_vals = pos.get_scan_grid_2d(
+        x_center, y_center, x_range, y_range, num_steps, num_steps
+    )
+    x_coords, y_coords, x_coords_1d, y_coords_1d, _ = ret_vals
+    x_coords = list(x_coords)
+    y_coords = list(y_coords)
+    save_dict = {
+        "x_range": x_range,
+        "y_range": y_range,
+        "x_coords_1d": x_coords_1d,
+        "y_coords_1d": y_coords_1d,
+    }
+    num_reps = 1
+    return main(nv_sig, "scanning", num_reps, x_coords, y_coords, save_dict)
+
+
 def scanning(nv_sig, x_range, y_range, num_steps):
     laser_key = LaserKey.IMAGING
     laser_dict = tb.get_optics_dict(laser_key)

@@ -110,23 +110,62 @@ def _calc_dist_matrix(radius=None):
     return np.sqrt((x_crop_mesh) ** 2 + (y_crop_mesh) ** 2)
 
 
+# def integrate_counts(img_array, pixel_coords, radius=None):
+#     """Add up the counts around a target set of pixel coordinates in the passed image array.
+#     Use for getting the total number of photons coming from a target NV.
+
+#     Parameters
+#     ----------
+#     img_array : ndarray
+#         Image array in units of photons (convert from ADUs with adus_to_photons)
+#     pixel_coords : 2-tuple
+#         Pixel coordinates to integrate around
+#     radius : _type_, optional
+#         Radius of disk to integrate over, by default retrieved from config
+
+#     Returns
+#     -------
+#     float
+#         Integrated counts (just an estimate, as adus_to_photons is also just an estimate)
+#     """
+#     pixel_x = pixel_coords[0]
+#     pixel_y = pixel_coords[1]
+
+#     if radius is None:
+#         radius = _get_camera_spot_radius()
+
+#     # Don't work through all the pixels, just the ones that might be relevant
+#     left = round(pixel_x - radius)
+#     right = round(pixel_x + radius)
+#     top = round(pixel_y - radius)
+#     bottom = round(pixel_y + radius)
+#     img_array_crop = img_array[top : bottom + 1, left : right + 1]
+#     dist = _calc_dist_matrix()
+
+
+#     counts = np.sum(img_array_crop, where=dist < radius)
+#     return counts
+
+
+# SBC: update on 9/9/2024
 def integrate_counts(img_array, pixel_coords, radius=None):
-    """Add up the counts around a target set of pixel coordinates in the passed image array.
+    """
+    Add up the counts around a target set of pixel coordinates in the passed image array.
     Use for getting the total number of photons coming from a target NV.
 
     Parameters
     ----------
     img_array : ndarray
-        Image array in units of photons (convert from ADUs with adus_to_photons)
+        Image array in units of photons (convert from ADUs with adus_to_photons).
     pixel_coords : 2-tuple
-        Pixel coordinates to integrate around
-    radius : _type_, optional
-        Radius of disk to integrate over, by default retrieved from config
+        Pixel coordinates to integrate around.
+    radius : float, optional
+        Radius of disk to integrate over. Default is retrieved from config.
 
     Returns
     -------
     float
-        Integrated counts (just an estimate, as adus_to_photons is also just an estimate)
+        Integrated counts (estimate, as adus_to_photons is also an estimate).
     """
     pixel_x = pixel_coords[0]
     pixel_y = pixel_coords[1]
@@ -134,15 +173,22 @@ def integrate_counts(img_array, pixel_coords, radius=None):
     if radius is None:
         radius = _get_camera_spot_radius()
 
-    # Don't work through all the pixels, just the ones that might be relevant
-    left = round(pixel_x - radius)
-    right = round(pixel_x + radius)
-    top = round(pixel_y - radius)
-    bottom = round(pixel_y + radius)
-    img_array_crop = img_array[top : bottom + 1, left : right + 1]
-    dist = _calc_dist_matrix()
+    # Crop the region of interest based on the radius around the target pixel
+    left = max(0, round(pixel_x - radius))
+    right = min(img_array.shape[1] - 1, round(pixel_x + radius))
+    top = max(0, round(pixel_y - radius))
+    bottom = min(img_array.shape[0] - 1, round(pixel_y + radius))
 
-    counts = np.sum(img_array_crop, where=dist < radius)
+    img_array_crop = img_array[top : bottom + 1, left : right + 1]
+
+    # Calculate a distance matrix for the cropped image
+    y_coords, x_coords = np.ogrid[top : bottom + 1, left : right + 1]
+    dist = np.sqrt((x_coords - pixel_x) ** 2 + (y_coords - pixel_y) ** 2)
+
+    # Sum the pixel values within the specified radius
+    mask = dist < radius
+    counts = np.sum(img_array_crop[mask])
+
     return counts
 
 
@@ -286,7 +332,86 @@ def threshold_counts(nv_list, sig_counts, ref_counts=None, dynamic_thresh=False)
             )
             thresholds.append(threshold)
     else:
-        thresholds = [nv.threshold for nv in nv_list]
+        # thresholds = [nv.threshold for nv in nv_list]
+        thresholds = [
+            15.5,
+            14.5,
+            14.5,
+            16.5,
+            18.5,
+            12.5,
+            15.5,
+            15.5,
+            7.5,
+            15.5,
+            14.5,
+            14.5,
+            14.5,
+            16.5,
+            7.5,
+            11.5,
+            15.5,
+            18.5,
+            8.5,
+            0.0,
+            13.5,
+            20.5,
+            19.5,
+            13.5,
+            11.5,
+            21.5,
+            18.5,
+            13.5,
+            8.5,
+            11.5,
+            15.5,
+            16.5,
+            13.5,
+            16.5,
+            12.5,
+            14.5,
+            13.5,
+            14.5,
+            15.5,
+            12.5,
+            15.5,
+            15.5,
+            14.5,
+            13.5,
+            14.5,
+            17.5,
+            13.5,
+            7.5,
+            12.5,
+            12.5,
+            18.5,
+            14.5,
+            18.5,
+            13.5,
+            16.5,
+            19.5,
+            17.5,
+            0.0,
+            18.5,
+            15.5,
+            10.5,
+            17.5,
+            16.5,
+            17.5,
+            11.5,
+            15.5,
+            12.5,
+            14.5,
+            18.5,
+            15.5,
+            15.5,
+            13.5,
+            17.5,
+            12.5,
+            5.5,
+            4.5,
+            13.5,
+        ]
     print(thresholds)
     # thresholds = [28.5, 30.5, 31.5, 34.5, 26.5, 22.5, 26.5, 22.5, 30.5, 26.5]
     # thresholds = [29.5, 27.5, 29.5, 33.5, 25.5, 20.5, 24.5, 19.5, 28.5, 25.5]
@@ -384,7 +509,7 @@ def process_counts(nv_list, sig_counts, ref_counts=None, threshold=True):
     _validate_counts_structure(ref_counts)
     if threshold:
         sig_states_array, ref_states_array = threshold_counts(
-            nv_list, sig_counts, ref_counts, dynamic_thresh=True
+            nv_list, sig_counts, ref_counts, dynamic_thresh=False
         )
         return average_counts(sig_states_array, ref_states_array)
     else:
@@ -863,217 +988,49 @@ def _get_affine_transform_matrix(
     return transform_matrix
 
 
-# Example usage
-# transform_matrix = _get_affine_transform_matrix(coords_key=green_laser, direction="pixel_to_scanning")
-# print("Affine Transformation Matrix:")
-# print(transform_matrix)
+# Assuming nv_list is a list of NV centers with their (x, y, z) coordinates
+def select_well_separated_nvs(nv_list, num_nvs_to_select):
+    """
+    Selects a specified number of well-separated NVs from a list based on their pixel coordinates.
 
-# endregion
+    Args:
+        nv_list (list[NVSig]): List of NVs.
+        num_nvs_to_select (int): Number of NVs to select.
 
-# old linear calibration
+    Returns:
+        list: Indices of the selected NVs.
+    """
+    # Extract pixel coordinates from nv_list
+    pixel_coords_list = [nv.coords[CoordsKey.PIXEL] for nv in nv_list]
+    coords_array = np.array(pixel_coords_list)
 
-# # region Drift tracking
-# @cache
-# def get_pixel_drift():
-#     pixel_drift = common.get_registry_entry(["State"], "DRIFT-pixel")
-#     return np.array(pixel_drift)
+    # Calculate pairwise Euclidean distances between NVs
+    distances = np.linalg.norm(
+        coords_array[:, np.newaxis] - coords_array[np.newaxis, :], axis=2
+    )
 
+    # List to hold indices of selected NVs
+    selected_indices = []
 
-# def set_pixel_drift(drift):
-#     get_pixel_drift.cache_clear()
-#     return common.set_registry_entry(["State"], "DRIFT-pixel", drift)
+    # Initialize by selecting the first NV
+    selected_indices.append(0)
 
+    # Greedily select NVs that maximize the minimum distance to the already selected NVs
+    for _ in range(1, num_nvs_to_select):
+        max_min_distance = -np.inf
+        next_index = -1
+        for i in range(len(nv_list)):
+            if i in selected_indices:
+                continue
+            # Calculate the minimum distance of this NV to any of the already selected NVs
+            min_distance = min(distances[i, idx] for idx in selected_indices)
+            if min_distance > max_min_distance:
+                max_min_distance = min_distance
+                next_index = i
+        selected_indices.append(next_index)
 
-# def reset_pixel_drift():
-#     return set_pixel_drift([0.0, 0.0])
+    return selected_indices
 
-
-# def reset_all_drift():
-#     reset_pixel_drift()
-#     pos.reset_drift()
-#     scanning_optics = _get_scanning_optics()
-#     for coords_key in scanning_optics:
-#         pos.reset_drift(coords_key)
-
-
-# def adjust_pixel_coords_for_drift(pixel_coords, drift=None):
-#     """Current drift will be retrieved from registry if passed drift is None"""
-#     if drift is None:
-#         drift = get_pixel_drift()
-#     adjusted_coords = (np.array(pixel_coords) + np.array(drift)).tolist()
-#     return adjusted_coords
-
-
-# def get_nv_pixel_coords(nv_sig: NVSig, drift_adjust=True, drift=None):
-#     pixel_coords = nv_sig.coords[CoordsKey.PIXEL]
-#     if drift_adjust:
-#         pixel_coords = adjust_pixel_coords_for_drift(pixel_coords, drift)
-#     return pixel_coords
-
-
-# def set_all_scanning_drift_from_pixel_drift(pixel_drift=None):
-#     scanning_optics = _get_scanning_optics()
-#     for coords_key in scanning_optics:
-#         set_scanning_drift_from_pixel_drift(pixel_drift, coords_key)
-
-
-# def _get_scanning_optics():
-#     config = common.get_config_dict()
-#     config_optics = config["Optics"]
-#     scanning_optics = []
-#     for optic_name in config_optics:
-#         val = config_optics[optic_name]
-#         if (
-#             isinstance(val, dict)
-#             and "pos_mode" in val
-#             and val["pos_mode"] == LaserPosMode.SCANNING
-#         ):
-#             scanning_optics.append(optic_name)
-#     return scanning_optics
-
-
-# def set_scanning_drift_from_pixel_drift(pixel_drift=None, coords_key=CoordsKey.GLOBAL):
-#     scanning_drift = pixel_to_scanning_drift(pixel_drift, coords_key)
-#     pos.set_drift(scanning_drift, coords_key)
-
-
-# def set_pixel_drift_from_scanning_drift(
-#     scanning_drift=None, coords_key=CoordsKey.GLOBAL
-# ):
-#     pixel_drift = scanning_to_pixel_drift(scanning_drift, coords_key)
-#     set_pixel_drift(pixel_drift)
-
-
-# def pixel_to_scanning_drift(pixel_drift=None, coords_key=CoordsKey.GLOBAL):
-#     if pixel_drift is None:
-#         pixel_drift = get_pixel_drift()
-#     m_x, _, m_y, _ = _pixel_to_scanning_calibration(coords_key)
-#     scanning_drift = pos.get_drift(coords_key)
-#     if len(scanning_drift) > 2:
-#         z_scanning_drift = scanning_drift[2]
-#         return [m_x * pixel_drift[0], m_y * pixel_drift[1], z_scanning_drift]
-#     else:
-#         return [m_x * pixel_drift[0], m_y * pixel_drift[1]]
-
-
-# def scanning_to_pixel_drift(scanning_drift=None, coords_key=CoordsKey.GLOBAL):
-#     if scanning_drift is None:
-#         scanning_drift = pos.get_drift(coords_key)
-#     m_x, _, m_y, _ = _scanning_to_pixel_calibration(coords_key)
-#     return [m_x * scanning_drift[0], m_y * scanning_drift[1]]
-
-
-# # endregion
-# # region Scanning to pixel calibration
-
-
-# def set_nv_scanning_coords_from_pixel_coords(
-#     nv_sig, coords_key: str | CoordsKey = CoordsKey.GLOBAL, drift_adjust=True
-# ):
-#     pixel_coords = get_nv_pixel_coords(nv_sig, drift_adjust=drift_adjust)
-#     # pixel_coords = pos.get_nv_coords(
-#     #     nv_sig, "laser_INTE_520", drift_adjust=drift_adjust
-#     # )  # MCC
-#     scanning_coords = pixel_to_scanning_coords(pixel_coords, coords_key)
-#     pos.set_nv_coords(nv_sig, scanning_coords, coords_key)
-#     return scanning_coords
-
-
-# def get_widefield_calibration_nvs():
-#     module = common.get_config_module()
-#     nv1 = NVSig(coords=module.widefield_calibration_coords1)
-#     nv2 = NVSig(coords=module.widefield_calibration_coords2)
-#     return nv1, nv2
-
-
-# def pixel_to_scanning_coords(pixel_coords, coords_key=CoordsKey.GLOBAL):
-#     """Convert camera pixel coordinates to scanning coordinates (e.g. galvo voltages)
-#     using two calibrated NV coordinate pairs from the config file
-
-#     Parameters
-#     ----------
-#     pixel_coords : list(numeric)
-#         Camera pixel coordinates to convert
-
-#     Returns
-#     -------
-#     list(numeric)
-#         Scanning coordinates
-#     """
-#     m_x, b_x, m_y, b_y = _pixel_to_scanning_calibration(coords_key)
-#     scanning_coords = [m_x * pixel_coords[0] + b_x, m_y * pixel_coords[1] + b_y]
-#     return scanning_coords
-
-
-# def _pixel_to_scanning_calibration(coords_key=CoordsKey.GLOBAL):
-#     """Get the linear parameters for the conversion"""
-
-#     nv1, nv2 = get_widefield_calibration_nvs()
-#     nv1_scanning_coords = pos.get_nv_coords(nv1, coords_key, drift_adjust=False)
-#     nv1_pixel_coords = get_nv_pixel_coords(nv1, drift_adjust=False)
-#     nv2_scanning_coords = pos.get_nv_coords(nv2, coords_key, drift_adjust=False)
-#     nv2_pixel_coords = get_nv_pixel_coords(nv2, drift_adjust=False)
-
-#     # Assume (independent) linear relations for both x and y
-
-#     scanning_diff = nv2_scanning_coords[0] - nv1_scanning_coords[0]
-#     pixel_diff = nv2_pixel_coords[0] - nv1_pixel_coords[0]
-#     m_x = scanning_diff / pixel_diff
-#     b_x = nv1_scanning_coords[0] - m_x * nv1_pixel_coords[0]
-
-#     scanning_diff = nv2_scanning_coords[1] - nv1_scanning_coords[1]
-#     pixel_diff = nv2_pixel_coords[1] - nv1_pixel_coords[1]
-#     m_y = scanning_diff / pixel_diff
-#     b_y = nv1_scanning_coords[1] - m_y * nv1_pixel_coords[1]
-
-#     return m_x, b_x, m_y, b_y
-
-
-# def scanning_to_pixel_coords(scanning_coords, coords_key=CoordsKey.GLOBAL):
-#     """Convert scanning coordinates (e.g. galvo voltages) to camera pixel coordinates
-#     using two calibrated NV coordinate pairs from the config file
-
-#     Parameters
-#     ----------
-#     scanning_coords : list(numeric)
-#         Scanning coordinates to convert
-
-#     Returns
-#     -------
-#     list(numeric)
-#         Camera pixel coordinates
-#     """
-
-#     m_x, b_x, m_y, b_y = _scanning_to_pixel_calibration(coords_key)
-#     pixel_coords = [m_x * scanning_coords[0] + b_x, m_y * scanning_coords[1] + b_y]
-#     return pixel_coords
-
-
-# def _scanning_to_pixel_calibration(coords_key=CoordsKey.GLOBAL):
-#     """Get the linear parameters for the conversion"""
-
-#     nv1, nv2 = get_widefield_calibration_nvs()
-#     nv1_scanning_coords = pos.get_nv_coords(nv1, coords_key, drift_adjust=False)
-#     nv1_pixel_coords = get_nv_pixel_coords(nv1, drift_adjust=False)
-#     nv2_scanning_coords = pos.get_nv_coords(nv2, coords_key, drift_adjust=False)
-#     nv2_pixel_coords = get_nv_pixel_coords(nv2, drift_adjust=False)
-
-#     # Assume (independent) linear relations for both x and y
-
-#     pixel_diff = nv2_pixel_coords[0] - nv1_pixel_coords[0]
-#     scanning_diff = nv2_scanning_coords[0] - nv1_scanning_coords[0]
-#     m_x = pixel_diff / scanning_diff
-#     b_x = nv1_pixel_coords[0] - m_x * nv1_scanning_coords[0]
-
-#     pixel_diff = nv2_pixel_coords[1] - nv1_pixel_coords[1]
-#     scanning_diff = nv2_scanning_coords[1] - nv1_scanning_coords[1]
-#     m_y = pixel_diff / scanning_diff
-#     b_y = nv1_pixel_coords[1] - m_y * nv1_scanning_coords[1]
-
-#     return m_x, b_x, m_y, b_y
-
-
-# # endregion
 
 # region Camera getters - probably only needed internally
 
@@ -1563,139 +1520,36 @@ def plot_correlations(axes_pack, nv_list, x, counts):
 
 # endregion
 
-# region voltage to pixe calibration
-import pickle
+# Add this function to your widefield module
 
-import cv2
-import numpy as np
-from skimage.measure import ransac
-from skimage.transform import AffineTransform
+import matplotlib.patches as patches
 
 
-class AffineCalibration:
-    def __init__(self, capture_func):
-        self.capture_func = capture_func
-        self.affine_model = None
+def draw_circle_on_nv(
+    ax, center, radius, color=kpl.KplColors.RED, linestyle="solid", no_legend=True
+):
+    """
+    Draw a single circle on a detected NV center in the given axis.
 
-    def capture_image(self):
-        return self.capture_func()
+    Args:
+    ax: Matplotlib axis to draw on.
+    center: Tuple (x, y) representing the center coordinates of the NV.
+    radius: Radius of the circle to be drawn.
+    color: Color of the circle (default: RED).
+    linestyle: Line style of the circle (default: solid).
+    no_legend: Boolean to indicate whether to add the legend or not (default: True).
+    """
+    # Create a circle patch
+    circle = patches.Circle(
+        center, radius, edgecolor=color, facecolor="none", linestyle=linestyle
+    )
 
-    @staticmethod
-    def ensure_color_image(image):
-        if image.dtype != np.uint8:
-            image = (255 * (image - np.min(image)) / np.ptp(image)).astype(np.uint8)
-        if len(image.shape) == 2:
-            return cv2.cvtColor(image, cv2.COLOR_GRAY2BGR)
-        return image
+    # Add the circle to the axis
+    ax.add_patch(circle)
 
-    # def detect_keypoints(self, image):
-    #     image = self.ensure_color_image(image)
-    #     sift = cv2.SIFT_create()
-    #     keypoints, descriptors = sift.detectAndCompute(image, None)
-    #     return keypoints, descriptors
-
-    def detect_keypoints(self, image):
-        # Convert image to grayscale if it's not already
-        if len(image.shape) == 3:
-            gray_image = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
-        else:
-            gray_image = image
-
-        # Normalize the image to the range 0-255
-        normalized_image = cv2.normalize(gray_image, None, 0, 255, cv2.NORM_MINMAX)
-
-        # Convert the normalized image to 8-bit
-        image_8bit = normalized_image.astype(np.uint8)
-
-        # Apply a Gaussian blur to reduce noise and improve blob detection
-        blurred_image = cv2.GaussianBlur(image_8bit, (5, 5), 0)
-
-        # Set up the detector with default parameters
-        params = cv2.SimpleBlobDetector_Params()
-        params.filterByArea = True
-        params.minArea = 3  # Adjust this based on the size of the bright spots
-        params.maxArea = 6  # Adjust this as well based on the size of the bright spots
-
-        detector = cv2.SimpleBlobDetector_create(params)
-
-        # Detect blobs
-        keypoints = detector.detect(blurred_image)
-
-        # Convert keypoints to the format expected by the rest of your code
-        keypoints_np = np.array([kp.pt for kp in keypoints], dtype=np.float32)
-
-        return keypoints_np, None  # Second return value is placeholder for descriptors
-
-    def match_keypoints(self, desc1, desc2):
-        bf = cv2.BFMatcher(cv2.NORM_L2)
-        matches = bf.knnMatch(desc1, desc2, k=2)
-        good_matches = []
-        for m, n in matches:
-            if m.distance < 0.9 * n.distance:  # Apply ratio test
-                good_matches.append(m)
-        return good_matches
-
-    @staticmethod
-    def extract_matched_points(kp1, kp2, matches):
-        points1 = np.float32([kp1[m.queryIdx].pt for m in matches])
-        points2 = np.float32([kp2[m.trainIdx].pt for m in matches])
-        return points1, points2
-
-    def affine_calibrate_piezo(self, nv_sig):
-        coordinates = [
-            (-0.03, -0.03),
-            (0, -0.03),
-            (0.03, -0.03),
-            (-0.015, -0.015),
-            (-0.03, 0),
-            (0, 0),
-            (0.03, 0),
-            (-0.015, 0.015),
-            (-0.03, 0.03),
-            (0, 0.03),
-            (0.03, 0.03),
-        ]
-
-        points1_list = []
-        points2_list = []
-        reference_image = self.capture_image()
-        kp1, desc1 = self.detect_keypoints(reference_image)
-
-        for x, y in coordinates:
-            nv_sig.coords[CoordsKey.GLOBAL][0] = x
-            nv_sig.coords[CoordsKey.GLOBAL][1] = y
-            new_image = self.capture_image()
-            kp2, desc2 = self.detect_keypoints(new_image)
-            matches = self.match_keypoints(desc1, desc2)
-            if len(matches) < 3:  # Avoid low match situations
-                continue
-            points1, points2 = self.extract_matched_points(kp1, kp2, matches)
-            points1_list.append(points1)
-            points2_list.append(points2)
-
-        return points1_list, points2_list
-
-    def calculate_affine_transform(self, points1_list, points2_list):
-        points1 = np.concatenate(points1_list)
-        points2 = np.concatenate(points2_list)
-        model, inliers = ransac(
-            (points1, points2),
-            AffineTransform,
-            min_samples=4,
-            residual_threshold=1,
-            max_trials=1000,
-        )
-        self.affine_model = model
-        return model
-
-    def save_affine_model(self, filename):
-        with open(filename, "wb") as file:
-            pickle.dump(self.affine_model, file)
-
-    def load_affine_model(self, filename):
-        with open(filename, "rb") as file:
-            self.affine_model = pickle.load(file)
-        return self.affine_model
+    # Optionally handle the legend, here no_legend=True means no legend
+    if not no_legend:
+        ax.legend()
 
 
 if __name__ == "__main__":
