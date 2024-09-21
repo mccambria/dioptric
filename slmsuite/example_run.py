@@ -1019,7 +1019,6 @@ print(f"Total NV coordinates: {len(nuvu_pixel_coords)}")
 print(f"Total spot weigths: {len(spot_weights)}")
 thorcam_coords = example_library.nuvu2thorcam_calibration(nuvu_pixel_coords).T
 
-
 def nvs_demo():
     hologram = SpotHologram(
         shape=(4096, 2048),
