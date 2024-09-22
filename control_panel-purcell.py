@@ -821,7 +821,7 @@ if __name__ == "__main__":
     # magnet_angle = 90
     date_str = "2024_03_12"
     # global_coords = [None, None, z_coord]
-    global_coords = [-1.7, 1.6, 0.9]
+    global_coords = [-1.9, 1.6, 0.8]
     # pixel_to_voltage(initial_pixel_coords, final_pixel_coords)
     # global_coords = piezo_voltage_to_pixel_calibration(final_pixel_coords)
 
@@ -982,7 +982,7 @@ if __name__ == "__main__":
         # widefield.set_all_scanning_drift_from_pixel_drift()
 
         # do_optimize_z(nv_sig)
-        do_optimize_xyz(nv_sig)
+        # do_optimize_xyz(nv_sig)
         # pos.set_xyz_on_nv(nv_sig)
         # piezo_voltage_to_pixel_calibration()
 

@@ -134,7 +134,8 @@ config |= {
             "uwave_power": 2.3,
             "frequency": 2.8585669247525622,
             # "frequency": 2.9304468840166678,
-            "rabi_period": 128,
+            # "rabi_period": 128,
+            "rabi_period": 105,
             "iq_delay": 140,
         },
         "sig_gen_1": {
@@ -144,7 +145,8 @@ config |= {
             # "frequency": 3.05,
             # "frequency": 2.79,
             # "frequency": 2.8874701085827104,
-            "rabi_period": 128,
+            # "rabi_period": 128,
+            "rabi_period": 105,
         },
     },
     ###
@@ -152,9 +154,9 @@ config |= {
         "resolution": (512, 512),
         "spot_radius": 3,  # Radius for integrating NV counts in a camera image
         "bias_clamp": 300,  # (changing this won't actually change the value on the camera currently)
-        # "em_gain": 5000,
+        "em_gain": 5000,
         # "em_gain": 1000,
-        "em_gain": 10,
+        # "em_gain": 10,
         "temp": -60,
         "timeout": 30e3,  # ms
         # "timeout": -1,  # No timeout
