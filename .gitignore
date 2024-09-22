@@ -1,6 +1,5 @@
 # Ignore the local LabRAD manager script
 labrad_manager_local.bat
-labrad_logging/*.log
 
 # Ignore the entire data manager directory
 data_manager/

@@ -134,8 +134,7 @@ config |= {
             "uwave_power": 2.3,
             "frequency": 2.8585669247525622,
             # "frequency": 2.9304468840166678,
-            # "rabi_period": 128,
-            "rabi_period": 102,
+            "rabi_period": 128,
             "iq_delay": 140,
         },
         "sig_gen_1": {
@@ -145,8 +144,7 @@ config |= {
             # "frequency": 3.05,
             # "frequency": 2.79,
             # "frequency": 2.8874701085827104,
-            # "rabi_period": 128,
-            "rabi_period": 102,
+            "rabi_period": 128,
         },
     },
     ###
