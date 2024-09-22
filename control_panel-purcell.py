@@ -982,7 +982,7 @@ if __name__ == "__main__":
         # widefield.set_all_scanning_drift_from_pixel_drift()
 
         # do_optimize_z(nv_sig)
-        do_optimize_xyz(nv_sig)
+        # do_optimize_xyz(nv_sig)
         # pos.set_xyz_on_nv(nv_sig)
         # piezo_voltage_to_pixel_calibration()
 
@@ -1017,7 +1017,7 @@ if __name__ == "__main__":
 
         # do_scanning_image_sample(nv_sig)
         # do_scanning_image_sample_zoom(nv_sig)
-        # do_widefield_image_sample(nv_sig, 50)
+        do_widefield_image_sample(nv_sig, 50)
         # do_widefield_image_sample(nv_sig, 100)
 
         # do_image_nv_list(nv_list)
@@ -1081,11 +1081,11 @@ if __name__ == "__main__":
         # for nv in nv_list:
         #     nv.spin_flip = False
         # Get the indices of well-separated NVs
-        selected_indices = widefield.select_well_separated_nvs(nv_list, 30)
-        for index in selected_indices:
-            nv = nv_list[index]
-            nv.spin_flip = True
-        do_simple_correlation_test(nv_list)
+        # selected_indices = widefield.select_well_separated_nvs(nv_list, 30)
+        # for index in selected_indices:
+        #     nv = nv_list[index]
+        #     nv.spin_flip = True
+        # do_simple_correlation_test(nv_list)
 
         # for nv in nv_list:
         #     nv.spin_flip = False
