@@ -1,33 +1,26 @@
 import os
 import sys
-import time
-
-# Add slmsuite to the python path (for the case where it isn't installed via pip).
-sys.path.append(os.path.join(os.getcwd(), "c:/Users/Saroj Chand/Documents/dioptric"))
-
 import warnings
 
+# Add slmsuite to the Python path if not installed via pip.
+sys.path.append(os.path.join(os.getcwd(), "c:/Users/Saroj Chand/Documents/dioptric"))
+
+# Suppress warnings
+warnings.filterwarnings("ignore")
+
+# Import necessary libraries
 import cv2
+import imageio
+import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
 import scipy.ndimage as ndimage
-
-warnings.filterwarnings("ignore")
-import io
-
-import imageio
-import matplotlib as mpl
-import matplotlib.pyplot as plt
-
-# Generate a phase .gif
 from IPython.display import Image
 from scipy.optimize import curve_fit
 
-from utils import tool_belt as tb
+from majorroutines.widefield import image_sample, optimize
 
-mpl.rc("image", cmap="Blues")
-
-from slmsuite import example_library
+# Import slmsuite and related modules
 from slmsuite.hardware.cameras.thorlabs import ThorCam
 from slmsuite.hardware.cameraslms import FourierSLM
 from slmsuite.hardware.slms.thorlabs import ThorSLM
@@ -36,12 +29,10 @@ from slmsuite.holography.algorithms import FeedbackHologram, SpotHologram
 from slmsuite.misc import fitfunctions
 
 
-from majorroutines.widefield import image_sample
-
 def cam_plot():
     cam.set_exposure(0.0001)
     img = cam.get_image()
-    # Plot the result
+
     plt.figure(figsize=(12, 9))
     plt.imshow(img)
     plt.show()
@@ -81,10 +72,14 @@ def scanning_range(x1, x2, num_points=10):
     for shift in shifts:
         x_path.append((shift, -x2))  # Right
     for shift in shifts:
-        y_path.append((x2, shift))  # Up
+        path.append((x2, shift))  # Up
+    for shift in shifts[::-1]:
+        path.append((shift, x2))  # Left
+    for shift in shifts[::-1]:
+        path.append((-x2, shift))  # Down
     return path
 
-def calculate_initial_phase():
+def opimize_slm_calibartion():
     # Ensure thorcam_coords has shape (2, n)
     thorcam_coords = example_library.nuvu2thorcam_calibration(nuvu_pixel_coords_array).T
 
@@ -94,10 +89,8 @@ def calculate_initial_phase():
         )
 
     hologram = SpotHologram(
-        shape=(2048, 2048), spot_vectors=thorcam_coords, basis="ij", cameraslm=fs
+        shape=(2048, 2048), spot_vectors=nv_centers, basis="ij", cameraslm=fs
     )
-
-    # Precondition computationally
     hologram.optimize(
         "WGS-Kim",
         maxiter=20,
@@ -109,23 +102,21 @@ def calculate_initial_phase():
     # path = r"C:\Users\Saroj Chand\Documents\slm_phase"
     # filename = "initial_phase.npy"
     # save(initial_phase, path, filename)
+    try:
+        while True:
+            for angle in range(0, 360, 30):
+                # Update phase with live rotation
+                delta_phase = 
+                phase = initial_phase + delta_phase
 
-    def opimize_slm_calibartion():
-        number_attempt = 5
-        try:
-            while num_attemp <number_attempt:
-                for angle in range(0, 360, 30):
-                    # Update phase with live rotation
-                    delta_phase = 
-                    phase = initial_phase + delta_phase
-                    # Display the phase pattern on the SLM
-                    slm.write(phase, settle=True)
-                    image_array = image_sample.widefield_image(nv_sig, num_reps)
-                    # Capture image from the camera
-                    cam.set_exposure(0.001)
-                    im = cam.get_image()
-        finally:
-            print("Real-time dynamical tweezers operation stopped.")
+                # Display the phase pattern on the SLM
+                slm.write(phase, settle=True)
+
+                # Capture image from the camera
+                cam.set_exposure(0.001)
+                im = cam.get_image()
+    finally:
+        print("Real-time dynamical tweezers operation stopped.")
 
 
 # Define the save function
@@ -149,5 +140,3 @@ def main():
         slm.close_window()
         slm.close_device()
         cam.close()
- 
- if __name__ = "__main__"

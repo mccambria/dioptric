@@ -34,19 +34,19 @@ red_laser = "laser_COBO_638"
 
 # clibration coords region
 calibration_pixel_coords_list = [
-    [110.186, 129.281],
-    [128.233, 88.007],
-    [86.294, 103.0],
+    [113.649, 149.301],
+    [80.765, 101.26],
+    [170.167, 94.837],
 ]
 calibration_green_coords_list = [
-    [109.029, 111.412],
-    [107.501, 106.867],
-    [111.851, 108.673],
+    [109.267, 111.334],
+    [113.322, 106.252],
+    [103.687, 104.862],
 ]
 calibration_red_coords_list = [
-    [75.72, 75.817],
-    [74.275, 72.194],
-    [77.801, 73.465],
+    [74.649, 77.168],
+    [77.772, 72.945],
+    [69.921, 72.112],
 ]
 # Create the dictionaries using the provided lists
 widefield_calibration_coords1 = {
@@ -134,7 +134,8 @@ config |= {
             "uwave_power": 2.3,
             "frequency": 2.8585669247525622,
             # "frequency": 2.9304468840166678,
-            "rabi_period": 128,
+            # "rabi_period": 128,
+            "rabi_period": 105,
             "iq_delay": 140,
         },
         "sig_gen_1": {
@@ -144,7 +145,8 @@ config |= {
             # "frequency": 3.05,
             # "frequency": 2.79,
             # "frequency": 2.8874701085827104,
-            "rabi_period": 128,
+            # "rabi_period": 128,
+            "rabi_period": 105,
         },
     },
     ###
@@ -195,7 +197,7 @@ config |= {
         },
         # Virtual lasers
         # LaserKey.IMAGING: {"name": green_laser, "duration": 50e6},
-        LaserKey.IMAGING: {"name": green_laser, "duration": 3e6},
+        LaserKey.IMAGING: {"name": green_laser, "duration": 12e6},
         LaserKey.SPIN_READOUT: {"name": green_laser, "duration": 300},
         # LaserKey.CHARGE_POL: {"name": green_laser, "duration": 10e3},
         LaserKey.CHARGE_POL: {"name": green_laser, "duration": 1e3},
@@ -207,7 +209,7 @@ config |= {
         # LaserKey.SCC: {"name": red_laser, "duration": 248},
         LaserKey.SCC: {"name": red_laser, "duration": 124},
         # LaserKey.SCC: {"name": green_laser, "duration": 200},
-        LaserKey.WIDEFIELD_IMAGING: {"name": yellow_laser, "duration": 5e6},
+        LaserKey.WIDEFIELD_IMAGING: {"name": yellow_laser, "duration": 12e6},
         # LaserKey.WIDEFIELD_SPIN_POL: {"name": yellow_laser, "duration": 10e3},
         LaserKey.WIDEFIELD_SPIN_POL: {"name": yellow_laser, "duration": 100e3},
         # LaserKey.WIDEFIELD_SPIN_POL: {"name": yellow_laser, "duration": 1e6},
@@ -778,16 +780,16 @@ opx_config = {
         "green_aod_cw-scc": {"type": "constant", "sample": 0.15},
         # Red AOD
         # "red_aod_cw-opti": {"type": "constant", "sample": 0.10},
-        "red_aod_cw-opti": {"type": "constant", "sample": 0.17},
-        "red_aod_cw-ion": {"type": "constant", "sample": 0.17},
+        "red_aod_cw-opti": {"type": "constant", "sample": 0.15},
+        "red_aod_cw-ion": {"type": "constant", "sample": 0.15},
         # "red_aod_cw-scc": {"type": "constant", "sample": 0.135},
-        "red_aod_cw-scc": {"type": "constant", "sample": 0.17},
+        "red_aod_cw-scc": {"type": "constant", "sample": 0.15},
         # Yellow AOM
-        "yellow_imaging": {"type": "constant", "sample": 0.40},  # 0.35
+        "yellow_imaging": {"type": "constant", "sample": 0.45},  # 0.35
         # "yellow_imaging": {"type": "constant", "sample": 0.50},  # 0.35
-        "yellow_charge_readout": {"type": "constant", "sample": 0.24},  # 50e6
+        "yellow_charge_readout": {"type": "constant", "sample": 0.37},  # 50e6
         # "yellow_charge_readout": {"type": "constant", "sample": 0.32},  # 100e6
-        "yellow_spin_pol": {"type": "constant", "sample": 0.38},
+        "yellow_spin_pol": {"type": "constant", "sample": 0.39},
         # Other
         "aod_cw": {"type": "constant", "sample": 0.35},
         "cw": {"type": "constant", "sample": 0.5},
