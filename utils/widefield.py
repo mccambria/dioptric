@@ -360,7 +360,31 @@ def threshold_counts(nv_list, sig_counts, ref_counts=None, method='otsu'):
     _validate_counts_structure(ref_counts)
 
     num_nvs = len(nv_list)
+<<<<<<< HEAD
     sig_thresholds, ref_thresholds = [], []
+=======
+    if dynamic_thresh:
+        thresholds = []
+        for nv_ind in range(num_nvs):
+            combined_counts = np.append(
+                sig_counts[nv_ind].flatten(), ref_counts[nv_ind].flatten()
+            )
+            # threshold = determine_threshold(combined_counts)
+            threshold = determine_threshold(
+                combined_counts,
+                # sig_counts[nv_ind].flatten(),
+                single_or_dual=True,
+                nvn_ratio=None,
+                dual_threshold_min_fidelity=0.8,
+                no_print=True,
+            )
+            thresholds.append(threshold)
+    else:
+        thresholds = [nv.threshold for nv in nv_list]
+    print(thresholds)
+    # thresholds = [28.5, 30.5, 31.5, 34.5, 26.5, 22.5, 26.5, 22.5, 30.5, 26.5]
+    # thresholds = [29.5, 27.5, 29.5, 33.5, 25.5, 20.5, 24.5, 19.5, 28.5, 25.5]
+>>>>>>> 14bd6bc5782270b6a8a2f55a9c28d66c3235eff2
 
     # Process thresholds based on the selected method
     for nv_ind in range(num_nvs):

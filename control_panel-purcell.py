@@ -87,10 +87,10 @@ def do_image_single_nv(nv_sig):
 
 
 def do_charge_state_histograms(nv_list):
-    num_reps = 300
+    num_reps = 150
     # num_reps = 100
     # num_runs = 50
-    num_runs = 7
+    num_runs = 15
     # num_runs = 10
     # num_runs = 2
     # for ion_include_inds in [None, [0, 1, 2, 3, 4, 5]]:
@@ -290,12 +290,12 @@ def do_resonance(nv_list):
     num_steps = 60
     # Single ref
     # num_reps = 8
-    # num_runs = 120
+    num_runs = 60
     # num_runs = 50
 
     # Both refs
     num_reps = 2
-    num_runs = 300
+    # num_runs = 300
 
     # num_runs = 2
 
@@ -821,7 +821,7 @@ if __name__ == "__main__":
     # magnet_angle = 90
     date_str = "2024_03_12"
     # global_coords = [None, None, z_coord]
-    global_coords = [-1.7, 1.6, 0.9]
+    global_coords = [-1.44, 1.95, 0.6]
     # pixel_to_voltage(initial_pixel_coords, final_pixel_coords)
     # global_coords = piezo_voltage_to_pixel_calibration(final_pixel_coords)
 
@@ -862,12 +862,12 @@ if __name__ == "__main__":
     # ]
     # green_coords_list = [
     #     [109.267, 111.334],
-    #     [113.322, 106.252],
-    #     [103.687, 104.862],
+    #     [113.21, 106.333],
+    #     [103.604, 104.904],
     # ]
     # red_coords_list = [
-    #     [74.649, 77.168],
-    #     [77.772, 72.945],
+    #     [74.649, 76.966],
+    #     [77.841, 72.904],
     #     [69.921, 72.112],
     # ]
 
@@ -902,7 +902,7 @@ if __name__ == "__main__":
     # nv_list[1].representative = True
     nv_sig = widefield.get_repr_nv_sig(nv_list)
     nv_sig.expected_counts = None
-    nv_sig.expected_counts = 2249.0
+    # nv_sig.expected_counts = 2249.0
     # nv_sig.expected_counts = 3062.0
     nv_sig.expected_counts = 2333.0
     # num_nvs = len(nv_list)
@@ -1008,7 +1008,7 @@ if __name__ == "__main__":
         # for x, y in zip(x_values, y_values):
         # nv_sig.coords[CoordsKey.GLOBAL][0] = x
         # nv_sig.coords[CoordsKey.GLOBAL][1] = y
-        #     do_scanning_image_sample(nv_sig)
+        # do_scanning_image_sample(nv_sig)
 
         # for z in np.linspace(1.3, 2.0, 11):
         #     nv_sig.coords[CoordsKey.GLOBAL][2] = z
@@ -1050,8 +1050,8 @@ if __name__ == "__main__":
 
         # do_resonance_zoom(nv_list)
         # do_rabi(nv_list)
-        # do_resonance(nv_list)
-        # do_spin_echo(nv_list)
+        do_resonance(nv_list)
+        # do_spin_echo(nv_list)s
 
         # do_power_rabi(nv_list)
         # do_correlation_test(nv_list)
@@ -1081,11 +1081,11 @@ if __name__ == "__main__":
         # for nv in nv_list:
         #     nv.spin_flip = False
         # Get the indices of well-separated NVs
-        selected_indices = widefield.select_well_separated_nvs(nv_list, 30)
-        for index in selected_indices:
-            nv = nv_list[index]
-            nv.spin_flip = True
-        do_simple_correlation_test(nv_list)
+        # selected_indices = widefield.select_well_separated_nvs(nv_list, 30)
+        # for index in selected_indices:
+        #     nv = nv_list[index]
+        #     nv.spin_flip = True
+        # do_simple_correlation_test(nv_list)
 
         # for nv in nv_list:
         #     nv.spin_flip = False

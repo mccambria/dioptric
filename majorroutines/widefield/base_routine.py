@@ -252,7 +252,7 @@ def main(
     try:
         # Runs loop
         for run_ind in range(num_runs):
-            num_attempts = 15
+            num_attempts = 30
             attempt_ind = 0
 
             while True:

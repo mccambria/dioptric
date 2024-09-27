@@ -6,6 +6,7 @@ from random import shuffle
 
 import matplotlib.pyplot as plt
 import numpy as np
+import seaborn as sns
 
 from majorroutines.pulsed_resonance import fit_resonance, norm_voigt, voigt, voigt_split
 from majorroutines.widefield import base_routine, optimize
@@ -225,10 +226,6 @@ def plot_nv_resonance_data(
     plt.close(fig)
 
 
-import matplotlib.pyplot as plt
-import seaborn as sns
-
-
 def plot_nv_resonance_data_sns_with_freq_labels(
     nv_list, freqs, avg_counts, avg_counts_ste, file_path, num_cols=3, title = None
 ):
@@ -356,8 +353,12 @@ def plot_nv_resonance_data_sns_with_freq_labels(
 
 if __name__ == "__main__":
     # Load raw data
+<<<<<<< HEAD
     # data = dm.get_raw_data(file_id=1652859661831, load_npz=False, use_cache=True)
     data = dm.get_raw_data(file_id=1657565965228, load_npz=False, use_cache=True)
+=======
+    data = dm.get_raw_data(file_id=1656745941239, load_npz=False, use_cache=True)
+>>>>>>> 14bd6bc5782270b6a8a2f55a9c28d66c3235eff2
     nv_list = data["nv_list"]
     num_nvs = len(nv_list)
     counts = np.array(data["counts"])[0]
@@ -395,12 +396,21 @@ if __name__ == "__main__":
 
     # print(f"Plot saved to {file_path}")
     # plt.show()
+<<<<<<< HEAD
     # #  Save plot to a file
     # file_path = "nv_data_plot.png"
     # plot_nv_resonance_data(nv_list, freqs, avg_counts, avg_counts_ste, file_path)
     file_path = "nv_resonance_plot_none.png"
     plot_nv_resonance_data_sns_with_freq_labels(
         nv_list, freqs, avg_counts, avg_counts_ste, file_path, num_cols=5, title = "Rabi duration 128ns"
+=======
+    #  Save plot to a file
+    file_path = "nv_data_plot.png"
+    # plot_nv_resonance_data(nv_list, freqs, avg_counts, avg_counts_ste, file_path)
+    file_path = "nv_resonance_plot_60steps_threshold.png"
+    plot_nv_resonance_data_sns_with_freq_labels(
+        nv_list, freqs, avg_counts, avg_counts_ste, file_path, num_cols=5
+>>>>>>> 14bd6bc5782270b6a8a2f55a9c28d66c3235eff2
     )
 
     print(f"Plot saved to {file_path}")

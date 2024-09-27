@@ -176,7 +176,7 @@ def filter_by_snr(snr_list, threshold=0.5):
 
 def load_nv_coords(
     # file_path="slmsuite/nv_blob_detection/nv_blob_filtered_162nvs_ref.npz",
-    file_path="slmsuite/nv_blob_detection/nv_blob_filtered_77nvs.npz",
+    file_path="slmsuite/nv_blob_detection/nv_blob_filtered_77nvs_new.npz",
     # file_path="slmsuite/nv_blob_detection/nv_coords_integras_counts_filtered.npz",
 ):
     data = np.load(file_path)
@@ -193,7 +193,9 @@ if __name__ == "__main__":
     reorder_coords_flag = True  # Set this flag to enable/disable reordering of NVs
 
     # data = dm.get_raw_data(file_id=1648773947273, load_npz=True)
-    data = dm.get_raw_data(file_id=1651663986412, load_npz=True)
+    # data = dm.get_raw_data(file_id=1651663986412, load_npz=True)
+    data = dm.get_raw_data(file_id=1657492074649, load_npz=True)
+
     img_array = np.array(data["ref_img_array"])
     nv_coordinates = load_nv_coords().tolist()
     # Start merged coordinates with the reference NV
@@ -250,7 +252,7 @@ if __name__ == "__main__":
     # Convert filtered intensities to a NumPy array for element-wise operations
     filtered_intensities = np.array(filtered_intensities)
 
-    spot_weights = non_linear_weights(filtered_intensities, alpha=0.9)
+    spot_weights = non_linear_weights(filtered_intensities, alpha=1.0)
 
     # Print some diagnostics
     print(f"NV Coords: {filtered_nv_coords}")
@@ -260,12 +262,12 @@ if __name__ == "__main__":
     print(f"Number of NVs detected: {len(filtered_nv_coords)}")
 
     # Save the filtered results
-    # save_results(
-    #     filtered_nv_coords,
-    #     filtered_intensities,
-    #     spot_weights,
-    #     filename="slmsuite/nv_blob_detection/nv_coords_integras_counts_filtered.npz",
-    # )
+    save_results(
+        filtered_nv_coords,
+        filtered_intensities,
+        spot_weights,
+        filename="slmsuite/nv_blob_detection/nv_coords_integras_counts_filtered.npz",
+    )
 
     # Plot the original image with circles around each NV
     fig, ax = plt.subplots()
