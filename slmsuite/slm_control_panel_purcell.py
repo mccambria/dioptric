@@ -270,9 +270,9 @@ def load_nv_coords(
 nuvu_pixel_coords, spot_weights = load_nv_coords()
 # nuvu_pixel_coords = np.array(
 #     [
-#         [113.481, 150.522],
-#         [80.813, 102.045],
-#         [170.387, 95.987],
+#         [113.649, 149.301],
+#         [80.765, 101.26],
+#         [170.167, 94.837],
 #     ]
 # )
 print(f"Total NV coordinates: {len(nuvu_pixel_coords)}")
@@ -284,7 +284,7 @@ def nvs_demo():
         shape=(4096, 2048),
         spot_vectors=thorcam_coords,
         basis="ij",
-        spot_amp=spot_weights,
+        # spot_amp=spot_weights,
         cameraslm=fs,
     )
     # Precondition computationally
@@ -343,6 +343,6 @@ try:
 finally:
     print("Closing")
     slm.close_window()
-    slm.close_device()
+    # slm.close_device()
     cam.close()
 # endregions

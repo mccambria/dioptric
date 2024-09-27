@@ -221,7 +221,7 @@ if __name__ == "__main__":
     # data = dm.get_raw_data(file_id=1646374739142, load_npz=True)
     # img_array = np.array(data["img_array"])
 
-    data = dm.get_raw_data(file_id=1651663986412, load_npz=True)
+    data = dm.get_raw_data(file_id=1656557120837, load_npz=True)
     img_array = np.array(data["ref_img_array"])
 
     # Parameters for detection and resolution
@@ -234,7 +234,7 @@ if __name__ == "__main__":
 
     # Apply the blob detection and Gaussian fitting
     sigma = 1.83
-    lower_threshold = 0.12
+    lower_threshold = 0.06
     upper_threshold = 60
     smoothing_sigma = 1
 
@@ -266,7 +266,7 @@ if __name__ == "__main__":
     save_results(
         nv_coordinates,
         spot_sizes,
-        filename="nv_blob_filtered_76nvs.npz",
+        filename="nv_blob_filtered_77nvs_new.npz",
     )
 
     # image_ids = [
