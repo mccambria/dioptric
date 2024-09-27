@@ -308,126 +308,305 @@ def average_counts(sig_counts, ref_counts=None):
     return avg_counts, avg_counts_ste, norms
 
 
-def threshold_counts(nv_list, sig_counts, ref_counts=None, dynamic_thresh=False):
-    """Only actually thresholds counts for NVs with thresholds specified in their sigs.
-    If there's no threshold, then the raw counts are just averaged as normal."""
+# def threshold_counts(nv_list, sig_counts, ref_counts=None, dynamic_thresh=False):
+#     """Only actually thresholds counts for NVs with thresholds specified in their sigs.
+#     If there's no threshold, then the raw counts are just averaged as normal."""
+#     _validate_counts_structure(sig_counts)
+#     _validate_counts_structure(ref_counts)
+
+#     num_nvs = len(nv_list)
+#     if dynamic_thresh:
+#         thresholds = []
+#         for nv_ind in range(num_nvs):
+#             combined_counts = np.append(
+#                 sig_counts[nv_ind].flatten(), ref_counts[nv_ind].flatten()
+#             )
+#             # threshold = determine_threshold(combined_counts)
+#             threshold = determine_threshold(
+#                 combined_counts,
+#                 # sig_counts[nv_ind].flatten(),
+#                 single_or_dual=True,
+#                 nvn_ratio=None,
+#                 dual_threshold_min_fidelity=0.8,
+#                 no_print=True,
+#             )
+#             thresholds.append(threshold)
+#     else:
+#         thresholds = [nv.threshold for nv in nv_list]
+#         # thresholds = adaptive_threshold_counts()
+#     print(thresholds)
+#     # thresholds = [28.5, 30.5, 31.5, 34.5, 26.5, 22.5, 26.5, 22.5, 30.5, 26.5]
+#     # thresholds = [29.5, 27.5, 29.5, 33.5, 25.5, 20.5, 24.5, 19.5, 28.5, 25.5]
+
+#     shape = sig_counts.shape
+#     sig_states = np.empty(shape)
+#     for nv_ind in range(num_nvs):
+#         sig_states[nv_ind] = tb.threshold(sig_counts[nv_ind], thresholds[nv_ind])
+
+#     if ref_counts is not None:
+#         ref_states = np.empty(shape)
+#         for nv_ind in range(num_nvs):
+#             ref_states[nv_ind] = tb.threshold(ref_counts[nv_ind], thresholds[nv_ind])
+#         return sig_states, ref_states
+#     else:
+#         return sig_states
+import numpy as np
+from skimage.filters import threshold_otsu, threshold_triangle, threshold_li
+from sklearn.cluster import KMeans
+from sklearn.mixture import GaussianMixture
+def threshold_counts(nv_list, sig_counts, ref_counts=None, method='otsu'):
+    """Threshold counts for NVs based on the selected method."""
     _validate_counts_structure(sig_counts)
     _validate_counts_structure(ref_counts)
 
     num_nvs = len(nv_list)
-    if dynamic_thresh:
-        thresholds = []
-        for nv_ind in range(num_nvs):
-            combined_counts = np.append(
-                sig_counts[nv_ind].flatten(), ref_counts[nv_ind].flatten()
-            )
-            # threshold = determine_threshold(combined_counts)
-            threshold = determine_threshold(
-                combined_counts,
-                # sig_counts[nv_ind].flatten(),
-                single_or_dual=True,
-                nvn_ratio=None,
-                dual_threshold_min_fidelity=0.8,
-                no_print=True,
-            )
-            thresholds.append(threshold)
-    else:
-        # thresholds = [nv.threshold for nv in nv_list]
-        thresholds = [
-            15.5,
-            14.5,
-            14.5,
-            16.5,
-            18.5,
-            12.5,
-            15.5,
-            15.5,
-            7.5,
-            15.5,
-            14.5,
-            14.5,
-            14.5,
-            16.5,
-            7.5,
-            11.5,
-            15.5,
-            18.5,
-            8.5,
-            0.0,
-            13.5,
-            20.5,
-            19.5,
-            13.5,
-            11.5,
-            21.5,
-            18.5,
-            13.5,
-            8.5,
-            11.5,
-            15.5,
-            16.5,
-            13.5,
-            16.5,
-            12.5,
-            14.5,
-            13.5,
-            14.5,
-            15.5,
-            12.5,
-            15.5,
-            15.5,
-            14.5,
-            13.5,
-            14.5,
-            17.5,
-            13.5,
-            7.5,
-            12.5,
-            12.5,
-            18.5,
-            14.5,
-            18.5,
-            13.5,
-            16.5,
-            19.5,
-            17.5,
-            0.0,
-            18.5,
-            15.5,
-            10.5,
-            17.5,
-            16.5,
-            17.5,
-            11.5,
-            15.5,
-            12.5,
-            14.5,
-            18.5,
-            15.5,
-            15.5,
-            13.5,
-            17.5,
-            12.5,
-            5.5,
-            4.5,
-            13.5,
-        ]
-    print(thresholds)
-    # thresholds = [28.5, 30.5, 31.5, 34.5, 26.5, 22.5, 26.5, 22.5, 30.5, 26.5]
-    # thresholds = [29.5, 27.5, 29.5, 33.5, 25.5, 20.5, 24.5, 19.5, 28.5, 25.5]
+    sig_thresholds, ref_thresholds = [], []
 
-    shape = sig_counts.shape
-    sig_states = np.empty(shape)
+    # Process thresholds based on the selected method
     for nv_ind in range(num_nvs):
-        sig_states[nv_ind] = tb.threshold(sig_counts[nv_ind], thresholds[nv_ind])
+        combined_counts = np.append(
+            sig_counts[nv_ind].flatten(), ref_counts[nv_ind].flatten()
+        ) if ref_counts is not None else sig_counts[nv_ind].flatten()
+        
+        # Choose method for thresholding
+        if method == 'otsu':
+            threshold = threshold_otsu(combined_counts)
+        elif method == 'triangle':
+            threshold = threshold_triangle(combined_counts)
+        elif method == 'entropy':
+            threshold = threshold_li(combined_counts)
+        elif method == 'mean':
+            threshold = np.mean(combined_counts)
+        elif method == 'median':
+            threshold = np.median(combined_counts)
+        elif method == 'kmeans':
+            threshold = kmeans_threshold(combined_counts)
+        elif method == 'gmm':
+            threshold = gmm_threshold(combined_counts)
+        elif method == 'adaptive_mean':
+            threshold = adaptive_thresholding(sig_counts[nv_ind], method='mean')
+        elif method == 'adaptive_gaussian':
+            threshold = adaptive_thresholding(sig_counts[nv_ind], method='gaussian')
+        elif method == 'adaptive_kmeans':
+            threshold = adaptive_clustering_thresholding(sig_counts[nv_ind], method='kmeans')
+        elif method == 'adaptive_gmm':
+            threshold = adaptive_clustering_thresholding(sig_counts[nv_ind], method='gmm')
+        else:
+            raise ValueError(f"Unknown thresholding method: {method}")
+        
+        sig_thresholds.append(threshold)
+        if ref_counts is not None:
+            ref_thresholds.append(threshold)  # You can separate thresholds for ref if needed
 
+    # Apply thresholds to signal counts
+    sig_states = np.array([sig_counts[nv_ind] > sig_thresholds[nv_ind] for nv_ind in range(num_nvs)])
+    
     if ref_counts is not None:
-        ref_states = np.empty(shape)
-        for nv_ind in range(num_nvs):
-            ref_states[nv_ind] = tb.threshold(ref_counts[nv_ind], thresholds[nv_ind])
+        ref_states = np.array([ref_counts[nv_ind] > ref_thresholds[nv_ind] for nv_ind in range(num_nvs)])
         return sig_states, ref_states
     else:
         return sig_states
+
+# Adaptive thresholding function based on mean or gaussian
+def adaptive_thresholding(counts, method='gaussian'):
+    """
+    Applies adaptive thresholding to the input data (e.g., signal counts).
+    
+    Parameters:
+    - counts: Input array (e.g., signal counts).
+    - method: Type of adaptive thresholding ('mean' or 'gaussian').
+    
+    Returns:
+    - Thresholded data.
+    """
+    # Ensure the data is a single-channel array by flattening or reshaping if necessary
+    if len(counts.shape) > 2:
+        counts = counts.reshape(-1)  # Flatten the array if it's multi-dimensional
+
+    # Normalize counts to be between 0 and 255
+    normalized_counts = cv2.normalize(counts, None, 0, 255, cv2.NORM_MINMAX)
+    
+    # Convert counts to 8-bit unsigned integers (np.uint8)
+    counts_uint8 = normalized_counts.astype(np.uint8)
+
+    # Apply adaptive thresholding
+    if method == 'mean':
+        return cv2.adaptiveThreshold(
+            counts_uint8, 255, cv2.ADAPTIVE_THRESH_MEAN_C,
+            cv2.THRESH_BINARY, 11, 2
+        )
+    elif method == 'gaussian':
+        return cv2.adaptiveThreshold(
+            counts_uint8, 255, cv2.ADAPTIVE_THRESH_GAUSSIAN_C,
+            cv2.THRESH_BINARY, 11, 2
+        )
+    else:
+        raise ValueError(f"Unknown adaptive thresholding method: {method}")
+
+# Adaptive clustering-based thresholding (K-means or GMM)
+def adaptive_clustering_thresholding(counts, method='kmeans', block_size=11):
+    """Apply adaptive K-means or GMM thresholding to each block of data."""
+    adaptive_counts = np.zeros_like(counts)
+
+    # Divide data into blocks and apply thresholding
+    for i in range(0, counts.shape[0], block_size):
+        for j in range(0, counts.shape[1], block_size):
+            block = counts[i:i+block_size, j:j+block_size].flatten()
+
+            if method == 'kmeans':
+                threshold = kmeans_threshold(block)
+            elif method == 'gmm':
+                threshold = gmm_threshold(block)
+            else:
+                raise ValueError(f"Unknown adaptive clustering method: {method}")
+
+            # Apply threshold to the block
+            adaptive_counts[i:i+block_size, j:j+block_size] = block > threshold
+
+    return adaptive_counts
+
+# K-means thresholding function
+def kmeans_threshold(data):
+    kmeans = KMeans(n_clusters=2).fit(data.reshape(-1, 1))
+    cluster_centers = sorted(kmeans.cluster_centers_.flatten())
+    return np.mean(cluster_centers)
+
+# GMM thresholding function
+def gmm_threshold(data):
+    gmm = GaussianMixture(n_components=2).fit(data.reshape(-1, 1))
+    means = sorted(gmm.means_.flatten())
+    return np.mean(means)
+
+# import numpy as np
+# from skimage.filters import threshold_otsu
+# from concurrent.futures import ThreadPoolExecutor
+
+# def threshold_counts(nv_list, sig_counts, ref_counts=None, dynamic_thresh=False, thresh_range=None):
+#     """
+#     Thresholds signal and reference counts for NV centers, and filters NVs based on a value range if provided.
+    
+#     Parameters:
+#     - nv_list: List of NV centers.
+#     - sig_counts: Signal counts for each NV.
+#     - ref_counts: Reference counts for each NV (optional).
+#     - dynamic_thresh: Boolean, apply dynamic thresholding if True.
+#     - nv_range: Tuple indicating the range of NV counts to keep after thresholding (e.g., (12, 18)). 
+#                 If None, do not filter based on range.
+    
+#     Returns:
+#     - sig_states: Thresholded signal states for NVs within the specified range or all NVs if no range is provided.
+#     - ref_states: Thresholded reference states (if ref_counts is provided).
+#     """
+#     _validate_counts_structure(sig_counts)
+#     if ref_counts is not None:
+#         _validate_counts_structure(ref_counts)
+
+#     num_nvs = len(nv_list)
+
+#     if dynamic_thresh:
+#         # Dynamic thresholding for each NV (separate for signal and reference)
+#         thresholds = []
+#         for nv_ind in range(num_nvs):
+#             combined_counts = np.append(
+#                 sig_counts[nv_ind].flatten(), ref_counts[nv_ind].flatten()
+#             ) if ref_counts is not None else sig_counts[nv_ind].flatten()
+            
+#             # Apply dynamic threshold calculation
+#             threshold = determine_threshold(
+#                 combined_counts,
+#                 single_or_dual=True,
+#                 nvn_ratio=None,
+#                 dual_threshold_min_fidelity=0.8,
+#                 no_print=True,
+#             )
+#             thresholds.append(threshold)
+#     else:
+#         # Static Otsu thresholding for signal and reference counts
+#         sig_thresholds = adaptive_threshold_counts(nv_list, sig_counts)
+#         ref_thresholds = adaptive_threshold_counts(nv_list, ref_counts) if ref_counts is not None else None
+
+#         # Print thresholds rounded to 3 decimal places
+#         sig_thresholds_rounded = [round(sig_thresholds[i], 3) for i in range(num_nvs)]
+#         print(f"Signal Thresholds: {sig_thresholds_rounded}")
+        
+#         if ref_counts is not None:
+#             ref_thresholds_rounded = [round(ref_thresholds[i], 3) for i in range(num_nvs)]
+#             print(f"Reference Thresholds: {ref_thresholds_rounded}")
+
+#     # Apply thresholds to signal counts
+#     sig_states = np.empty(sig_counts.shape)
+#     ref_states = np.empty(ref_counts.shape) if ref_counts is not None else None
+#     filtered_nv_indices = []
+
+#     for nv_ind in range(num_nvs):
+#         # Apply threshold to signal counts
+#         sig_states[nv_ind] = np.where(sig_counts[nv_ind] > sig_thresholds[nv_ind], 1, 0)
+
+#         # If nv_range is provided, check if signal counts for this NV are within the specified range
+#         if thresh_range is not None:
+#             if np.any((sig_thresholds[nv_ind] >= thresh_range[0]) & (sig_thresholds[nv_ind] <= thresh_range[1])):
+#                 filtered_nv_indices.append(nv_ind)
+#         else:
+#             # If no range is provided, include all NVs
+#             filtered_nv_indices.append(nv_ind)
+
+#         if ref_counts is not None:
+#             # Apply threshold to reference counts
+#             ref_states[nv_ind] = np.where(ref_counts[nv_ind] > ref_thresholds[nv_ind], 1, 0)
+
+#     # Filter signal, reference states, and nv_list based on filtered NV indices
+#     sig_states_filtered = sig_states[filtered_nv_indices, :]
+#     filtered_nv_list = [nv_list[i] for i in filtered_nv_indices]
+    
+#     if ref_counts is not None:
+#         ref_states_filtered = ref_states[filtered_nv_indices, :]
+#         return  sig_states_filtered, ref_states_filtered, filtered_nv_list
+#     else:
+#         return sig_states_filtered, filtered_nv_list
+
+# def adaptive_threshold_counts(nv_list, sig_counts, ref_counts=None):
+#     """
+#     Dynamically calculates Otsu-based thresholds for each NV.
+    
+#     Parameters:
+#     - nv_list: List of NV centers.
+#     - sig_counts: Signal counts for each NV.
+#     - ref_counts: Reference counts for each NV (optional).
+    
+#     Returns:
+#     - thresholds: List of thresholds for each NV.
+#     """
+#     num_nvs = len(nv_list)
+
+#     def ostu_threshold_calculation(nv_ind):
+#         """Calculate Otsu's dynamic threshold for a single NV."""
+#         # Calculate Otsu's threshold for signal counts for each NV
+#         sig_threshold = threshold_otsu(sig_counts[nv_ind].flatten())
+
+#         # If reference counts are provided, calculate the threshold for reference counts
+#         if ref_counts is not None:
+#             ref_threshold = threshold_otsu(ref_counts[nv_ind].flatten())
+#             return sig_threshold, ref_threshold
+#         else:
+#             return sig_threshold
+
+#     # Use parallelization to calculate thresholds for each NV dynamically
+#     with ThreadPoolExecutor() as executor:
+#         if ref_counts is not None:
+#             thresholds = list(executor.map(ostu_threshold_calculation, range(num_nvs)))
+#             sig_thresholds, ref_thresholds = zip(*thresholds)  # Unpack thresholds
+#         else:
+#             sig_thresholds = list(executor.map(ostu_threshold_calculation, range(num_nvs)))
+
+#     if ref_counts is not None:
+#         return sig_thresholds, ref_thresholds
+#     else:
+#         return sig_thresholds
+
+# Usage:
+# sig_counts, ref_counts = threshold_counts(nv_list, sig_counts, ref_counts, dynamic_thresh=False, nv_range=(12, 18))
+# If you don't want to filter by range, pass `nv_range=None`
+
 
 
 def poisson_pmf_cont(k, mean):
@@ -503,18 +682,29 @@ def charge_state_mle(nv_list, img_array):
     return states
 
 
-def process_counts(nv_list, sig_counts, ref_counts=None, threshold=True):
-    """Alias for threshold_counts with a more generic name"""
+# def process_counts(nv_list, sig_counts, ref_counts=None, threshold=True):
+#     """Alias for threshold_counts with a more generic name"""
+#     _validate_counts_structure(sig_counts)
+#     _validate_counts_structure(ref_counts)
+#     if threshold:
+#         sig_states_array, ref_states_array = threshold_counts(
+#             nv_list, sig_counts, ref_counts, dynamic_thresh=False
+#         )
+#         return average_counts(sig_states_array, ref_states_array)
+#     else:
+#         return average_counts(sig_counts, ref_counts)
+
+def process_counts(nv_list, sig_counts, ref_counts=None, threshold=True, method='otsu'):
+    """Alias for threshold_counts with a more generic name."""
     _validate_counts_structure(sig_counts)
     _validate_counts_structure(ref_counts)
     if threshold:
         sig_states_array, ref_states_array = threshold_counts(
-            nv_list, sig_counts, ref_counts, dynamic_thresh=False
+            nv_list, sig_counts, ref_counts, method=method
         )
         return average_counts(sig_states_array, ref_states_array)
     else:
         return average_counts(sig_counts, ref_counts)
-
 
 def calc_snr(sig_counts, ref_counts):
     """Calculate SNR for a single shot"""

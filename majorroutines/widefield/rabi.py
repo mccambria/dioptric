@@ -314,6 +314,7 @@ if __name__ == "__main__":
         widefield.downsample_img_array(el, downsample_factor) for el in proc_img_arrays
     ]
     proc_img_arrays = np.array(proc_img_arrays)
+    proc_img_arrays = np.array(proc_img_arrays)
 
     widefield.animate(
         taus,

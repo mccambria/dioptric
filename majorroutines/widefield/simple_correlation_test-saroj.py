@@ -1,187 +1,623 @@
+# # -*- coding: utf-8 -*-
+# """
+
+# Created on December 16th, 2023
+
+# @author: Saroj Chand
+# """
+
+# import matplotlib.pyplot as plt
+# import numpy as np
+# import numpy.ma as ma
+# from matplotlib.ticker import MaxNLocator
+# from scipy.optimize import curve_fit
+
+# from majorroutines.widefield import base_routine
+# from utils import data_manager as dm
+# from utils import kplotlib as kpl
+# from utils import tool_belt as tb
+# from utils import widefield as widefield
+# from utils.constants import NVSig
+
+
+# def process_and_plot(
+#     data, ax=None, sig_or_ref=True, no_cbar=False, cbar_max=None, no_labels=False
+# ):
+#     ### Unpack
+
+#     nv_list = data["nv_list"]
+#     counts = np.array(data["counts"])
+#     num_nvs = len(nv_list)
+
+#     passed_cbar_max = cbar_max
+#     passed_ax = ax
+
+#     # Break down the counts array
+#     # experiment, nv, run, step, rep
+#     sig_counts = np.array(counts[0])
+#     ref_counts = np.array(counts[1])
+
+#     num_runs = data["num_runs"]
+#     # sig_counts = sig_counts[:, round(0.5 * num_runs) :]
+#     # ref_counts = ref_counts[:, round(0.5 * num_runs) :]
+#     # sig_counts = sig_counts[:, : round(0.5 * num_runs)]
+#     # ref_counts = ref_counts[:, : round(0.5 * num_runs)]
+#     # sig_counts = sig_counts[:, round(0.25 * num_runs) : round(0.75 * num_runs)]
+#     # ref_counts = ref_counts[:, round(0.25 * num_runs) : round(0.75 * num_runs)]
+
+#     sig_counts, ref_counts = widefield.threshold_counts(
+#         nv_list, sig_counts, ref_counts, dynamic_thresh=True
+#     )
+
+#     ### Calculate the correlations
+#     flattened_sig_counts = [sig_counts[ind].flatten() for ind in range(num_nvs)]
+#     flattened_ref_counts = [ref_counts[ind].flatten() for ind in range(num_nvs)]
+
+#     sig_corr_coeffs = tb.nan_corr_coef(flattened_sig_counts)
+#     ref_corr_coeffs = tb.nan_corr_coef(flattened_ref_counts)
+
+#     spin_flips = np.array([-1 if nv.spin_flip else +1 for nv in nv_list])
+#     if -1 not in spin_flips:
+#         spin_flips[0] = -1
+#         spin_flips[1] = -1
+#         spin_flips[4] = -1
+#         spin_flips[6] = -1
+#     ideal_sig_corr_coeffs = np.outer(spin_flips, spin_flips)
+#     ideal_sig_corr_coeffs = ideal_sig_corr_coeffs.astype(float)
+
+#     ideal_ref_corr_coeffs = np.outer([0] * num_nvs, [0] * num_nvs)
+#     ideal_ref_corr_coeffs = ideal_ref_corr_coeffs.astype(float)
+
+#     ### Plot
+
+#     figsize = kpl.figsize.copy()
+
+#     # figsize[0] *= 1.4
+#     # figsize[1] *= 0.85
+#     # titles = ["Ideal signal", "Signal"]
+#     # vals = [ideal_sig_corr_coeffs, sig_corr_coeffs]
+#     # titles = ["Ideal reference", "Reference"]
+#     # vals = [ideal_ref_corr_coeffs, ref_corr_coeffs]
+
+#     figsize[0] *= 2
+#     figsize[1] *= 0.85
+#     titles = ["Ideal signal", "Signal", "Reference"]
+#     vals = [ideal_sig_corr_coeffs, sig_corr_coeffs, ref_corr_coeffs]
+
+#     if passed_ax is None:
+#         num_plots = len(vals)
+#         fig, axes_pack = plt.subplots(ncols=num_plots, figsize=figsize)
+
+#     # Replace diagonals (Cii=1) with nan so they don't show
+#     for val in [
+#         ideal_ref_corr_coeffs,
+#         ideal_sig_corr_coeffs,
+#         sig_corr_coeffs,
+#         ref_corr_coeffs,
+#     ]:
+#         np.fill_diagonal(val, np.nan)
+
+#     # Make the colorbar symmetric about 0
+#     sig_max = np.nanmax(np.abs(sig_corr_coeffs))
+#     ref_max = np.nanmax(np.abs(ref_corr_coeffs))
+
+#     print(f"Sig mean mag: {np.nanmean(np.abs(sig_corr_coeffs))}")
+#     print(f"Ref mean: {np.nanmean(ref_corr_coeffs)}")
+#     print(f"Ref std: {np.nanstd(ref_corr_coeffs)}")
+#     print()
+
+#     # cbar_maxes = [sig_max, sig_max, 1]
+#     cbar_max = sig_max if passed_cbar_max is None else passed_cbar_max
+#     for ind in range(len(vals)):
+#         if passed_ax is None:
+#             # fig, ax = plt.subplots()
+#             # figs.append(fig)
+#             ax = axes_pack[ind]
+#         else:
+#             if sig_or_ref and ind != 1:
+#                 continue
+#             if not sig_or_ref and ind != 2:
+#                 continue
+#             ax = passed_ax
+#             ret_val = vals[ind]
+#         # if passed_cbar_max is not None:
+#         #     cbar_max = passed_cbar_max
+#         # else:
+#         #     cbar_max = cbar_maxes[ind]
+#         kpl.imshow(
+#             ax,
+#             vals[ind],
+#             title=titles[ind],
+#             cbar_label="Correlation coefficient",
+#             cmap="RdBu_r",
+#             vmin=-cbar_max,
+#             vmax=cbar_max,
+#             nan_color=kpl.KplColors.GRAY,
+#             no_cbar=no_cbar or ind < num_plots - 1,
+#         )
+#         ax.xaxis.set_major_locator(MaxNLocator(integer=True))
+#         ax.yaxis.set_major_locator(MaxNLocator(integer=True))
+#         ax.set_yticks([0, 2, 4, 6, 8])
+#         ax.set_xticks([0, 2, 4, 6, 8])
+#         # ax.tick_params(labelsize=16)
+#         if not no_labels:
+#             ax.set_xlabel("NV index")
+#             ax.set_ylabel("NV index")
+
+#         # import os
+#         # output_dir = f'data/correlation_matrix/orientation_1540558251818'
+#         # if not os.path.exists(output_dir):
+#         #     os.makedirs(output_dir)
+#         # np.save(os.path.join(output_dir, 'sig_corr_coeffs.npy'), sig_corr_coeffs)
+#         # np.save(os.path.join(output_dir, 'ref_corr_coeffs.npy'), ref_corr_coeffs)
+#         # np.save(os.path.join(output_dir, 'ideal_sig_corr_coeffs.npy'), ideal_sig_corr_coeffs)
+#         # np.save(os.path.join(output_dir, 'ideal_sig_corr_coeffs.npy'), ideal_ref_corr_coeffs)
+
+#         # # for fig, title in zip(figs, titles):
+#         # #     fig.savefig(os.path.join(output_dir, f"{title.replace(' ', '_')}.png"))
+
+#         # print(f"Data and figures saved to {output_dir}")
+
+#     if passed_ax is not None:
+#         return ret_val
+#     # return figs
+
+
+# import numpy as np
+# import matplotlib.pyplot as plt
+# from matplotlib.ticker import MaxNLocator
+
+# def clip_correlation_coeffs(corr_matrix, min_val=-0.01, max_val=0.01):
+#     """
+#     Clip the correlation coefficients to be within the specified range.
+#     """
+#     return np.clip(corr_matrix, min_val, max_val)
+
+# def remove_nans_from_data(sig_counts, ref_counts, nv_list):
+#     """
+#     Remove NVs that contain any NaN values in their signal or reference counts.
+#     """
+#     valid_indices = [
+#         i for i in range(len(nv_list)) 
+#         if not (np.isnan(sig_counts[i]).any() or np.isnan(ref_counts[i]).any())
+#     ]
+    
+#     # Filter the signal and reference counts and the NV list
+#     sig_counts_filtered = sig_counts[valid_indices]
+#     ref_counts_filtered = ref_counts[valid_indices]
+#     nv_list_filtered = [nv_list[i] for i in valid_indices]
+
+#     return sig_counts_filtered, ref_counts_filtered, nv_list_filtered
+
+# def reshuffle_by_spin(nv_list, sig_counts, ref_counts, sig_corr_coeffs, ref_corr_coeffs):
+#     """
+#     Reshuffle the NV list, counts, and correlation matrices such that
+#     spin +1 NVs are placed first and spin -1 NVs are placed at the end.
+#     """
+#     # Identify indices of NVs with spin +1 and spin -1
+#     spin_plus_indices = [i for i, nv in enumerate(nv_list) if nv.spin_flip == False]
+#     spin_minus_indices = [i for i, nv in enumerate(nv_list) if nv.spin_flip == True]
+
+#     # Reshuffle the NV list, counts, and correlation matrices
+#     reshuffled_indices = spin_plus_indices + spin_minus_indices
+#     nv_list_reshuffled = [nv_list[i] for i in reshuffled_indices]
+#     sig_counts_reshuffled = sig_counts[reshuffled_indices]
+#     ref_counts_reshuffled = ref_counts[reshuffled_indices]
+
+#     # Reshuffle correlation matrices by rows and columns
+#     sig_corr_reshuffled = sig_corr_coeffs[np.ix_(reshuffled_indices, reshuffled_indices)]
+#     ref_corr_reshuffled = ref_corr_coeffs[np.ix_(reshuffled_indices, reshuffled_indices)]
+
+#     return nv_list_reshuffled, sig_counts_reshuffled, ref_counts_reshuffled, sig_corr_reshuffled, ref_corr_reshuffled
+
+# def reshuffle_by_corr(nv_list, sig_counts, ref_counts, sig_corr_coeffs, ref_corr_coeffs):
+#     """
+#     Reshuffle the NV list, counts, and correlation matrices based on
+#     the average correlation coefficient of each NV, from positive to negative.
+#     """
+#     # Calculate the average correlation coefficient for each NV
+#     avg_corr_coeffs = np.nanmean(sig_corr_coeffs, axis=1)
+
+#     # Get the indices that would sort the NVs by their average correlation coefficients (descending order)
+#     reshuffled_indices = np.argsort(avg_corr_coeffs)[::-1]
+
+#     # Reshuffle the NV list, counts, and correlation matrices according to the sorted indices
+#     nv_list_reshuffled = [nv_list[i] for i in reshuffled_indices]
+#     sig_counts_reshuffled = sig_counts[reshuffled_indices]
+#     ref_counts_reshuffled = ref_counts[reshuffled_indices]
+
+#     # Reshuffle the correlation matrices (both rows and columns)
+#     sig_corr_reshuffled = sig_corr_coeffs[np.ix_(reshuffled_indices, reshuffled_indices)]
+#     ref_corr_reshuffled = ref_corr_coeffs[np.ix_(reshuffled_indices, reshuffled_indices)]
+
+#     return nv_list_reshuffled, sig_counts_reshuffled, ref_counts_reshuffled, sig_corr_reshuffled, ref_corr_reshuffled
+
+# def process_and_plot(
+#     data, ax=None, sig_or_ref=True, no_cbar=False, cbar_max=None, no_labels=False
+# ):
+#     ### Unpack
+#     nv_list = data["nv_list"]
+#     counts = np.array(data["counts"])
+#     num_nvs = len(nv_list)
+
+#     passed_cbar_max = cbar_max
+#     passed_ax = ax
+
+#     # Break down the counts array
+#     sig_counts = np.array(counts[0])
+#     ref_counts = np.array(counts[1])
+
+#     # Remove NVs with NaN values in their signal or reference counts
+#     sig_counts, ref_counts, nv_list = remove_nans_from_data(sig_counts, ref_counts, nv_list)
+#     num_nvs = len(nv_list)  # Update the number of NVs after filtering
+
+#     # Thresholding counts with dynamic thresholds
+#     sig_counts, ref_counts = widefield.threshold_counts(
+#         nv_list, sig_counts, ref_counts, dynamic_thresh=False
+#     )
+
+#     ### Calculate the correlations
+#     flattened_sig_counts = [sig_counts[ind].flatten() for ind in range(num_nvs)]
+#     flattened_ref_counts = [ref_counts[ind].flatten() for ind in range(num_nvs)]
+
+#     sig_corr_coeffs = tb.nan_corr_coef(flattened_sig_counts)
+#     ref_corr_coeffs = tb.nan_corr_coef(flattened_ref_counts)
+
+#     # Reshuffle NVs by spin: spin +1 first, spin -1 at the end
+#     # nv_list, sig_counts, ref_counts, sig_corr_coeffs, ref_corr_coeffs = reshuffle_by_corr(
+#     #     nv_list, sig_counts, ref_counts, sig_corr_coeffs, ref_corr_coeffs
+#     # )
+
+#     ### Ideal correlation matrix calculation after reshuffling
+#     spin_flips = np.array([-1 if nv.spin_flip else +1 for nv in nv_list])
+#     ideal_sig_corr_coeffs = np.outer(spin_flips, spin_flips).astype(float)
+#     ideal_ref_corr_coeffs = np.zeros((num_nvs, num_nvs), dtype=float)
+
+#     ### Plot
+
+#     ### Calculate average of positive and negative correlation coefficients
+#     positive_corrs = sig_corr_coeffs[sig_corr_coeffs > 0]
+#     negative_corrs = sig_corr_coeffs[sig_corr_coeffs < 0]
+
+#     avg_positive = np.nanmean(positive_corrs) if positive_corrs.size > 0 else 0
+#     avg_negative = np.nanmean(negative_corrs) if negative_corrs.size > 0 else 0
+
+#     vmin = avg_negative  # Set lower limit to average of negative correlations
+#     vmax = avg_positive  # Set upper limit to average of positive correlations
+
+#     ### Plot
+
+#     figsize = kpl.figsize.copy()
+#     figsize[0] *= 2
+#     figsize[1] *= 0.85
+#     titles = ["Ideal signal", "Signal", "Reference"]
+#     vals = [ideal_sig_corr_coeffs, sig_corr_coeffs, ref_corr_coeffs]
+
+#     if passed_ax is None:
+#         num_plots = len(vals)
+#         fig, axes_pack = plt.subplots(ncols=num_plots, figsize=figsize)
+
+#     # Replace diagonals with NaNs for cleaner visualization
+#     for val in vals:
+#         np.fill_diagonal(val, np.nan)
+
+#     # Set colorbar limits based on the average of positive and negative correlations
+#     for ind in range(len(vals)):
+#         if passed_ax is None:
+#             ax = axes_pack[ind]
+#         else:
+#             if sig_or_ref and ind != 1:
+#                 continue
+#             if not sig_or_ref and ind != 2:
+#                 continue
+#             ax = passed_ax
+#             ret_val = vals[ind]
+
+#         # Plot correlation matrix with calculated vmin and vmax
+#         kpl.imshow(
+#             ax,
+#             vals[ind],
+#             title=titles[ind],
+#             cbar_label="Correlation coefficient",
+#             cmap="RdBu_r",
+#             vmin=vmin,
+#             vmax=vmax,
+#             nan_color=kpl.KplColors.GRAY,
+#             no_cbar=no_cbar or ind < num_plots - 1,
+#         )
+
+#         # Dynamically set the ticks and tick intervals based on num_nvs
+#         max_ticks = 6  # Maximum number of ticks (adjustable)
+#         tick_interval = max(1, num_nvs // max_ticks)
+
+#         ax.xaxis.set_major_locator(MaxNLocator(integer=True, prune='both', nbins=max_ticks))
+#         ax.yaxis.set_major_locator(MaxNLocator(integer=True, prune='both', nbins=max_ticks))
+        
+#         # Set dynamic tick locations based on the number of NVs
+#         ax.set_xticks(np.arange(0, num_nvs, tick_interval))
+#         ax.set_yticks(np.arange(0, num_nvs, tick_interval))
+
+#         if not no_labels:
+#             ax.set_xlabel("NV index")
+#             ax.set_ylabel("NV index")
+
+#     if passed_ax is not None:
+#         return ret_val
+
+
+# def main(nv_list, num_reps, num_runs):
+#     ### Some initial setup
+#     uwave_ind_list = [0, 1]
+#     seq_file = "simple_correlation_test.py"
+#     num_steps = 1
+
+#     pulse_gen = tb.get_server_pulse_gen()
+
+#     ### Collect the data
+
+#     def run_fn(shuffled_step_inds):
+#         seq_args = [widefield.get_base_scc_seq_args(nv_list, uwave_ind_list)]
+#         # print(seq_args)
+#         seq_args_string = tb.encode_seq_args(seq_args)
+#         pulse_gen.stream_load(seq_file, seq_args_string, num_reps)
+
+#     raw_data = base_routine.main(
+#         nv_list,
+#         num_steps,
+#         num_reps,
+#         num_runs,
+#         run_fn=run_fn,
+#         uwave_ind_list=uwave_ind_list,
+#     )
+
+#     ### Process and plot
+
+#     # process_and_print(nv_list, counts)
+#     try:
+#         figs = process_and_plot(raw_data)
+#     except Exception:
+#         figs = None
+
+#     ### Clean up and save data
+
+#     tb.reset_cfm()
+
+#     kpl.show()
+
+#     timestamp = dm.get_time_stamp()
+#     raw_data |= {
+#         "timestamp": timestamp,
+#     }
+
+#     repr_nv_sig = widefield.get_repr_nv_sig(nv_list)
+#     repr_nv_name = repr_nv_sig.name
+#     file_path = dm.get_file_path(__file__, timestamp, repr_nv_name)
+#     dm.save_raw_data(raw_data, file_path)
+
+#     if figs is not None:
+#         for ind in range(len(figs)):
+#             fig = figs[ind]
+#             file_path = dm.get_file_path(__file__, timestamp, f"{repr_nv_name}-{ind}")
+#             dm.save_figure(fig, file_path)
+
+
+# if __name__ == "__main__":
+#     kpl.init_kplotlib()
+
+#     data = dm.get_raw_data(file_id=1653570783798)  # Block
+
+#     # Check if data is fetched successfully
+#     if data is not None:
+#         # Process and plot the data
+#         figs = process_and_plot(data)
+
+#         # Display the figures
+#         kpl.show()
+
+#         repr_nv_name = "nv0"
+#         timestamp = dm.get_time_stamp()
+
+#         # Save the figures if any were generated
+#         if figs is not None:
+#             for ind, fig in enumerate(figs):
+#                 file_path = dm.get_file_path(__file__, timestamp, f"{repr_nv_name}")
+#                 dm.save_figure(fig, file_path)
+
+#         # Show the plot with blocking to prevent the script from exiting immediately
+#         plt.show(block=True)
+#     else:
+#         print("Error: Failed to fetch the raw data.")
+
+
 # -*- coding: utf-8 -*-
 """
-
 Created on December 16th, 2023
-
 @author: Saroj Chand
 """
 
-import matplotlib.pyplot as plt
 import numpy as np
 import numpy.ma as ma
+import seaborn as sns
+import matplotlib.pyplot as plt
 from matplotlib.ticker import MaxNLocator
-from scipy.optimize import curve_fit
-
-from majorroutines.widefield import base_routine
 from utils import data_manager as dm
-from utils import kplotlib as kpl
-from utils import tool_belt as tb
-from utils import widefield as widefield
-from utils.constants import NVSig
+# from utils.tool_belt import nan_corr_coef
+from utils.widefield import threshold_counts
+# Optimized nan_corr_coef function
+def nan_corr_coef(arr):
+    """
+    Calculate Pearson correlation coefficients for a 2D array, ignoring NaN values.
+    
+    This version masks NaN values and computes the correlation coefficient between rows.
+    
+    Parameters:
+    - arr: 2D numpy array where each row represents a different set of data points.
+    
+    Returns:
+    - corr_coef_arr: Symmetric matrix of correlation coefficients, with NaN values handled.
+    """
+    arr = np.array(arr)
+    
+    # Mask NaN values in the array
+    masked_arr = ma.masked_invalid(arr)
 
+    # Compute the correlation coefficient using masked arrays, ignoring NaNs
+    corr_coef_arr = np.ma.corrcoef(masked_arr, rowvar=True)
+    
+    # Convert masked correlations back to a standard numpy array, filling masked entries with NaN
+    corr_coef_arr = corr_coef_arr.filled(np.nan)
+    
+    return corr_coef_arr
 
-def process_and_plot(
-    data, ax=None, sig_or_ref=True, no_cbar=False, cbar_max=None, no_labels=False
-):
-    ### Unpack
+def process_and_plot(data, rearrangement="spin_flip"):
+    """
+    Process and plot NV center correlation matrices with creative spin arrangements.
+    
+    Parameters:
+    data (dict): Dictionary containing 'nv_list' and 'counts'.
+    rearrangement (str): Method for rearranging NV centers ('spin_flip', 'checkerboard', 'block', 'spiral').
+    no_cbar (bool): If True, no color bar will be shown.
+    cbar_max (float): Maximum value for color bar scaling.
+    no_labels (bool): If True, axes labels will not be shown.
+    """
+    # Seaborn aesthetics
+    sns.set(style="whitegrid", context="talk", font_scale=1.2)
 
-    nv_list = data["nv_list"]
-    counts = np.array(data["counts"])
-    num_nvs = len(nv_list)
+    # Unpack data
+    nv_list = data.get("nv_list", [])
+    counts = np.array(data.get("counts", []))
 
-    passed_cbar_max = cbar_max
-    passed_ax = ax
+    if len(nv_list) == 0 or counts.size == 0:
+        print("Error: Data does not contain NV list or counts.")
+        return None
 
-    # Break down the counts array
-    # experiment, nv, run, step, rep
+    # Handle cases where counts may not have the expected dimensions
+    if counts.shape[0] < 2:
+        print("Warning: Counts array has insufficient dimensions. Skipping correlation plot.")
+        return None
+
+    # Separate signal and reference counts
     sig_counts = np.array(counts[0])
     ref_counts = np.array(counts[1])
 
-    num_runs = data["num_runs"]
-    # sig_counts = sig_counts[:, round(0.5 * num_runs) :]
-    # ref_counts = ref_counts[:, round(0.5 * num_runs) :]
-    # sig_counts = sig_counts[:, : round(0.5 * num_runs)]
-    # ref_counts = ref_counts[:, : round(0.5 * num_runs)]
-    # sig_counts = sig_counts[:, round(0.25 * num_runs) : round(0.75 * num_runs)]
-    # ref_counts = ref_counts[:, round(0.25 * num_runs) : round(0.75 * num_runs)]
+    # Remove NVs with NaN values
+    sig_counts, ref_counts, nv_list = remove_nans_from_data(sig_counts, ref_counts, nv_list)
+    num_nvs = len(nv_list)
 
-    sig_counts, ref_counts = widefield.threshold_counts(
-        nv_list, sig_counts, ref_counts, dynamic_thresh=True
-    )
-
-    ### Calculate the correlations
+    # Thresholding counts with dynamic thresholds
+    # sig_counts, ref_counts = threshold_counts(nv_list, sig_counts, ref_counts, dynamic_thresh=False)
+    # sig_counts, ref_counts, nv_list = threshold_counts(nv_list, sig_counts, ref_counts, dynamic_thresh=False, thresh_range=None)
+    num_nvs = len(nv_list)
+    # Flatten counts for each NV
     flattened_sig_counts = [sig_counts[ind].flatten() for ind in range(num_nvs)]
     flattened_ref_counts = [ref_counts[ind].flatten() for ind in range(num_nvs)]
 
-    sig_corr_coeffs = tb.nan_corr_coef(flattened_sig_counts)
-    ref_corr_coeffs = tb.nan_corr_coef(flattened_ref_counts)
+    # Calculate correlations
+    sig_corr_coeffs = nan_corr_coef(flattened_sig_counts)
+    ref_corr_coeffs = nan_corr_coef(flattened_ref_counts)
 
+    # Rearrange NV centers creatively, based on spin_flip or other methods
+    if rearrangement == "spin_flip":
+        nv_list, sig_corr_coeffs, ref_corr_coeffs = rearrange_spin_flip(nv_list, sig_corr_coeffs, ref_corr_coeffs)
+    elif rearrangement == "checkerboard":
+        nv_list, sig_corr_coeffs, ref_corr_coeffs = rearrange_checkerboard(nv_list, sig_corr_coeffs, ref_corr_coeffs)
+    elif rearrangement == "block":
+        nv_list, sig_corr_coeffs, ref_corr_coeffs = rearrange_block(nv_list, sig_corr_coeffs, ref_corr_coeffs)
+    elif rearrangement == "spiral":
+        nv_list, sig_corr_coeffs, ref_corr_coeffs = rearrange_spiral(nv_list, sig_corr_coeffs, ref_corr_coeffs)
+    elif rearrangement == "random":
+        nv_list, sig_corr_coeffs, ref_corr_coeffs = rearrange_random(nv_list, sig_corr_coeffs, ref_corr_coeffs)
+    elif rearrangement == "alternate_quadrants":
+        nv_list, sig_corr_coeffs, ref_corr_coeffs = rearrange_alternate_quadrants(nv_list, sig_corr_coeffs, ref_corr_coeffs)
+    elif rearrangement == "concentric_circles":
+        nv_list, sig_corr_coeffs, ref_corr_coeffs = rearrange_concentric_circles(nv_list, sig_corr_coeffs, ref_corr_coeffs)
+    else:  # Default to no rearrangement
+        pass
+
+    # Generate ideal correlation matrix based on spin flips
     spin_flips = np.array([-1 if nv.spin_flip else +1 for nv in nv_list])
-    if -1 not in spin_flips:
-        spin_flips[0] = -1
-        spin_flips[1] = -1
-        spin_flips[4] = -1
-        spin_flips[6] = -1
-    ideal_sig_corr_coeffs = np.outer(spin_flips, spin_flips)
-    ideal_sig_corr_coeffs = ideal_sig_corr_coeffs.astype(float)
+    ideal_sig_corr_coeffs = np.outer(spin_flips, spin_flips).astype(float)
+    ideal_ref_corr_coeffs = np.zeros((num_nvs, num_nvs), dtype=float)
 
-    ideal_ref_corr_coeffs = np.outer([0] * num_nvs, [0] * num_nvs)
-    ideal_ref_corr_coeffs = ideal_ref_corr_coeffs.astype(float)
+    # Calculate min and max correlation values for the actual signal and reference correlations
+    positive_corrs = sig_corr_coeffs[sig_corr_coeffs > 0]
+    negative_corrs = sig_corr_coeffs[sig_corr_coeffs < 0]
 
-    ### Plot
+    # Set vmin and vmax separately for signal/reference correlations
+    sig_vmax = np.nanmean(positive_corrs) 
+    sig_vmin = np.nanmean(negative_corrs)
+    sig_vmin = -sig_vmax
 
-    figsize = kpl.figsize.copy()
+    # For reference correlations (assuming reference should be scaled the same way as signal)
+    ref_vmin = sig_vmin
+    ref_vmax = sig_vmax
 
-    # figsize[0] *= 1.4
-    # figsize[1] *= 0.85
-    # titles = ["Ideal signal", "Signal"]
-    # vals = [ideal_sig_corr_coeffs, sig_corr_coeffs]
-    # titles = ["Ideal reference", "Reference"]
-    # vals = [ideal_ref_corr_coeffs, ref_corr_coeffs]
+    # Set vmin and vmax separately for the ideal correlation matrix
+    ideal_vmin = -1  # Since the ideal matrix is binary (-1 for anti-correlated, +1 for correlated)
+    ideal_vmax = 1
 
-    figsize[0] *= 2
-    figsize[1] *= 0.85
-    titles = ["Ideal signal", "Signal", "Reference"]
+    # Plotting setup
+    figsize = [15, 5]
+    fig, axes_pack = plt.subplots(ncols=3, figsize=figsize)
+    titles = ["Ideal Signal", "Signal", "Reference"]
     vals = [ideal_sig_corr_coeffs, sig_corr_coeffs, ref_corr_coeffs]
 
-    if passed_ax is None:
-        num_plots = len(vals)
-        fig, axes_pack = plt.subplots(ncols=num_plots, figsize=figsize)
+    # Use Seaborn heatmap for visualization
+    for ind, (val, title) in enumerate(zip(vals, titles)):
+        np.fill_diagonal(val, np.nan)  # Set diagonal to NaN for cleaner visualization
+        ax = axes_pack[ind]
 
-    # Replace diagonals (Cii=1) with nan so they don't show
-    for val in [
-        ideal_ref_corr_coeffs,
-        ideal_sig_corr_coeffs,
-        sig_corr_coeffs,
-        ref_corr_coeffs,
-    ]:
-        np.fill_diagonal(val, np.nan)
-
-    # Make the colorbar symmetric about 0
-    sig_max = np.nanmax(np.abs(sig_corr_coeffs))
-    ref_max = np.nanmax(np.abs(ref_corr_coeffs))
-
-    print(f"Sig mean mag: {np.nanmean(np.abs(sig_corr_coeffs))}")
-    print(f"Ref mean: {np.nanmean(ref_corr_coeffs)}")
-    print(f"Ref std: {np.nanstd(ref_corr_coeffs)}")
-    print()
-
-    # cbar_maxes = [sig_max, sig_max, 1]
-    cbar_max = sig_max if passed_cbar_max is None else passed_cbar_max
-    for ind in range(len(vals)):
-        if passed_ax is None:
-            # fig, ax = plt.subplots()
-            # figs.append(fig)
-            ax = axes_pack[ind]
+         # Set vmin and vmax depending on whether it's the ideal or actual data
+        if title == "Ideal Signal":
+            vmin, vmax = ideal_vmin, ideal_vmax
+        elif title == "Signal":
+            vmin, vmax = sig_vmin, sig_vmax
         else:
-            if sig_or_ref and ind != 1:
-                continue
-            if not sig_or_ref and ind != 2:
-                continue
-            ax = passed_ax
-            ret_val = vals[ind]
-        # if passed_cbar_max is not None:
-        #     cbar_max = passed_cbar_max
-        # else:
-        #     cbar_max = cbar_maxes[ind]
-        kpl.imshow(
-            ax,
-            vals[ind],
-            title=titles[ind],
-            cbar_label="Correlation coefficient",
-            cmap="RdBu_r",
-            vmin=-cbar_max,
-            vmax=cbar_max,
-            nan_color=kpl.KplColors.GRAY,
-            no_cbar=no_cbar or ind < num_plots - 1,
+            vmin, vmax = ref_vmin, ref_vmax
+
+        heatmap = sns.heatmap(
+            val,
+            ax=ax,
+            cmap="coolwarm",
+            cbar=True,
+            vmin=vmin,
+            vmax=vmax,
+            square=True,
+            mask=np.isnan(val),
+            annot=False,  # Set True if you want the values to appear on the heatmap
+            cbar_kws={"shrink": 0.6},  # Shrink colorbar for better fit
         )
-        ax.xaxis.set_major_locator(MaxNLocator(integer=True))
-        ax.yaxis.set_major_locator(MaxNLocator(integer=True))
-        ax.set_yticks([0, 2, 4, 6, 8])
-        ax.set_xticks([0, 2, 4, 6, 8])
-        # ax.tick_params(labelsize=16)
-        if not no_labels:
-            ax.set_xlabel("NV index")
-            ax.set_ylabel("NV index")
 
-        # import os
-        # output_dir = f'data/correlation_matrix/orientation_1540558251818'
-        # if not os.path.exists(output_dir):
-        #     os.makedirs(output_dir)
-        # np.save(os.path.join(output_dir, 'sig_corr_coeffs.npy'), sig_corr_coeffs)
-        # np.save(os.path.join(output_dir, 'ref_corr_coeffs.npy'), ref_corr_coeffs)
-        # np.save(os.path.join(output_dir, 'ideal_sig_corr_coeffs.npy'), ideal_sig_corr_coeffs)
-        # np.save(os.path.join(output_dir, 'ideal_sig_corr_coeffs.npy'), ideal_ref_corr_coeffs)
+        ax.set_title(title, fontsize=16)
+        
+        # Add a colorbar label
+        cbar = heatmap.collections[0].colorbar
+        cbar.set_label("Correlation coefficient", fontsize=16)
+        cbar.ax.tick_params(labelsize=16)
 
-        # # for fig, title in zip(figs, titles):
-        # #     fig.savefig(os.path.join(output_dir, f"{title.replace(' ', '_')}.png"))
+        # Set dynamic tick locations based on the number of NVs
+        max_ticks = 6  # Maximum number of ticks (adjustable)
+        tick_interval = max(1, num_nvs // max_ticks)
+        ax.set_xticks(np.arange(0, num_nvs, tick_interval))
+        ax.set_yticks(np.arange(0, num_nvs, tick_interval))
 
-        # print(f"Data and figures saved to {output_dir}")
+        # Set font size for ticks
+        ax.tick_params(axis='both', which='major', labelsize=16)
 
-    if passed_ax is not None:
-        return ret_val
-    # return figs
+        # Set x and y labels only for Signal and Reference
+        ax.set_xlabel("NV index", fontsize=16)
+        ax.set_ylabel("NV index", fontsize=16)
 
-
-import numpy as np
-import matplotlib.pyplot as plt
-from matplotlib.ticker import MaxNLocator
-
-def clip_correlation_coeffs(corr_matrix, min_val=-0.01, max_val=0.01):
-    """
-    Clip the correlation coefficients to be within the specified range.
-    """
-    return np.clip(corr_matrix, min_val, max_val)
+    # Adjust subplots for proper spacing
+    fig.subplots_adjust(left=0.05, right=0.88, bottom=0.05, top=0.95, wspace=0.3)
+    plt.show()
 
 def remove_nans_from_data(sig_counts, ref_counts, nv_list):
-    """
-    Remove NVs that contain any NaN values in their signal or reference counts.
-    """
+    """ Remove NVs that contain any NaN values in their signal or reference counts. """
     valid_indices = [
-        i for i in range(len(nv_list)) 
-        if not (np.isnan(sig_counts[i]).any() or np.isnan(ref_counts[i]).any())
+        i for i in range(len(nv_list)) if not (np.isnan(sig_counts[i]).any() or np.isnan(ref_counts[i]).any())
     ]
-    
+
     # Filter the signal and reference counts and the NV list
     sig_counts_filtered = sig_counts[valid_indices]
     ref_counts_filtered = ref_counts[valid_indices]
@@ -189,241 +625,104 @@ def remove_nans_from_data(sig_counts, ref_counts, nv_list):
 
     return sig_counts_filtered, ref_counts_filtered, nv_list_filtered
 
-def reshuffle_by_spin(nv_list, sig_counts, ref_counts, sig_corr_coeffs, ref_corr_coeffs):
-    """
-    Reshuffle the NV list, counts, and correlation matrices such that
-    spin +1 NVs are placed first and spin -1 NVs are placed at the end.
-    """
-    # Identify indices of NVs with spin +1 and spin -1
-    spin_plus_indices = [i for i, nv in enumerate(nv_list) if nv.spin_flip == False]
-    spin_minus_indices = [i for i, nv in enumerate(nv_list) if nv.spin_flip == True]
 
-    # Reshuffle the NV list, counts, and correlation matrices
+# Rearrangement Functions Based on Spin Flip
+
+def rearrange_spin_flip(nv_list, sig_corr, ref_corr):
+    """ Rearrange spins based on their flip status: +1 (spin up) followed by -1 (spin down). """
+    spin_plus_indices = [i for i, nv in enumerate(nv_list) if not nv.spin_flip]  # Spin up
+    spin_minus_indices = [i for i, nv in enumerate(nv_list) if nv.spin_flip]     # Spin down
     reshuffled_indices = spin_plus_indices + spin_minus_indices
-    nv_list_reshuffled = [nv_list[i] for i in reshuffled_indices]
-    sig_counts_reshuffled = sig_counts[reshuffled_indices]
-    ref_counts_reshuffled = ref_counts[reshuffled_indices]
+    return apply_rearrangement(nv_list, sig_corr, ref_corr, reshuffled_indices)
 
-    # Reshuffle correlation matrices by rows and columns
-    sig_corr_reshuffled = sig_corr_coeffs[np.ix_(reshuffled_indices, reshuffled_indices)]
-    ref_corr_reshuffled = ref_corr_coeffs[np.ix_(reshuffled_indices, reshuffled_indices)]
-
-    return nv_list_reshuffled, sig_counts_reshuffled, ref_counts_reshuffled, sig_corr_reshuffled, ref_corr_reshuffled
-
-def reshuffle_by_corr(nv_list, sig_counts, ref_counts, sig_corr_coeffs, ref_corr_coeffs):
-    """
-    Reshuffle the NV list, counts, and correlation matrices based on
-    the average correlation coefficient of each NV, from positive to negative.
-    """
-    # Calculate the average correlation coefficient for each NV
-    avg_corr_coeffs = np.nanmean(sig_corr_coeffs, axis=1)
-
-    # Get the indices that would sort the NVs by their average correlation coefficients (descending order)
-    reshuffled_indices = np.argsort(avg_corr_coeffs)[::-1]
-
-    # Reshuffle the NV list, counts, and correlation matrices according to the sorted indices
-    nv_list_reshuffled = [nv_list[i] for i in reshuffled_indices]
-    sig_counts_reshuffled = sig_counts[reshuffled_indices]
-    ref_counts_reshuffled = ref_counts[reshuffled_indices]
-
-    # Reshuffle the correlation matrices (both rows and columns)
-    sig_corr_reshuffled = sig_corr_coeffs[np.ix_(reshuffled_indices, reshuffled_indices)]
-    ref_corr_reshuffled = ref_corr_coeffs[np.ix_(reshuffled_indices, reshuffled_indices)]
-
-    return nv_list_reshuffled, sig_counts_reshuffled, ref_counts_reshuffled, sig_corr_reshuffled, ref_corr_reshuffled
-
-def process_and_plot(
-    data, ax=None, sig_or_ref=True, no_cbar=False, cbar_max=None, no_labels=False
-):
-    ### Unpack
-    nv_list = data["nv_list"]
-    counts = np.array(data["counts"])
-    num_nvs = len(nv_list)
-
-    passed_cbar_max = cbar_max
-    passed_ax = ax
-
-    # Break down the counts array
-    sig_counts = np.array(counts[0])
-    ref_counts = np.array(counts[1])
-
-    # Remove NVs with NaN values in their signal or reference counts
-    sig_counts, ref_counts, nv_list = remove_nans_from_data(sig_counts, ref_counts, nv_list)
-    num_nvs = len(nv_list)  # Update the number of NVs after filtering
-
-    # Thresholding counts with dynamic thresholds
-    sig_counts, ref_counts = widefield.threshold_counts(
-        nv_list, sig_counts, ref_counts, dynamic_thresh=False
-    )
-
-    ### Calculate the correlations
-    flattened_sig_counts = [sig_counts[ind].flatten() for ind in range(num_nvs)]
-    flattened_ref_counts = [ref_counts[ind].flatten() for ind in range(num_nvs)]
-
-    sig_corr_coeffs = tb.nan_corr_coef(flattened_sig_counts)
-    ref_corr_coeffs = tb.nan_corr_coef(flattened_ref_counts)
-
-    # Reshuffle NVs by spin: spin +1 first, spin -1 at the end
-    # nv_list, sig_counts, ref_counts, sig_corr_coeffs, ref_corr_coeffs = reshuffle_by_corr(
-    #     nv_list, sig_counts, ref_counts, sig_corr_coeffs, ref_corr_coeffs
-    # )
-
-    ### Ideal correlation matrix calculation after reshuffling
-    spin_flips = np.array([-1 if nv.spin_flip else +1 for nv in nv_list])
-    ideal_sig_corr_coeffs = np.outer(spin_flips, spin_flips).astype(float)
-    ideal_ref_corr_coeffs = np.zeros((num_nvs, num_nvs), dtype=float)
-
-    ### Plot
-
-    ### Calculate average of positive and negative correlation coefficients
-    positive_corrs = sig_corr_coeffs[sig_corr_coeffs > 0]
-    negative_corrs = sig_corr_coeffs[sig_corr_coeffs < 0]
-
-    avg_positive = np.nanmean(positive_corrs) if positive_corrs.size > 0 else 0
-    avg_negative = np.nanmean(negative_corrs) if negative_corrs.size > 0 else 0
-
-    vmin = avg_negative  # Set lower limit to average of negative correlations
-    vmax = avg_positive  # Set upper limit to average of positive correlations
-
-    ### Plot
-
-    figsize = kpl.figsize.copy()
-    figsize[0] *= 2
-    figsize[1] *= 0.85
-    titles = ["Ideal signal", "Signal", "Reference"]
-    vals = [ideal_sig_corr_coeffs, sig_corr_coeffs, ref_corr_coeffs]
-
-    if passed_ax is None:
-        num_plots = len(vals)
-        fig, axes_pack = plt.subplots(ncols=num_plots, figsize=figsize)
-
-    # Replace diagonals with NaNs for cleaner visualization
-    for val in vals:
-        np.fill_diagonal(val, np.nan)
-
-    # Set colorbar limits based on the average of positive and negative correlations
-    for ind in range(len(vals)):
-        if passed_ax is None:
-            ax = axes_pack[ind]
+def rearrange_checkerboard(nv_list, sig_corr, ref_corr):
+    """ Checkerboard pattern where alternating spins are up (+1) and down (-1). """
+    spin_plus_indices = [i for i, nv in enumerate(nv_list) if not nv.spin_flip]  # Spin up
+    spin_minus_indices = [i for i, nv in enumerate(nv_list) if nv.spin_flip]     # Spin down
+    reshuffled_indices = []
+    for i in range(len(nv_list)):
+        if i % 2 == 0:
+            reshuffled_indices.append(spin_plus_indices.pop(0) if spin_plus_indices else spin_minus_indices.pop(0))
         else:
-            if sig_or_ref and ind != 1:
-                continue
-            if not sig_or_ref and ind != 2:
-                continue
-            ax = passed_ax
-            ret_val = vals[ind]
+            reshuffled_indices.append(spin_minus_indices.pop(0) if spin_minus_indices else spin_plus_indices.pop(0))
+    return apply_rearrangement(nv_list, sig_corr, ref_corr, reshuffled_indices)
 
-        # Plot correlation matrix with calculated vmin and vmax
-        kpl.imshow(
-            ax,
-            vals[ind],
-            title=titles[ind],
-            cbar_label="Correlation coefficient",
-            cmap="RdBu_r",
-            vmin=vmin,
-            vmax=vmax,
-            nan_color=kpl.KplColors.GRAY,
-            no_cbar=no_cbar or ind < num_plots - 1,
-        )
+def rearrange_block(nv_list, sig_corr, ref_corr):
+    """ Block arrangement: first half spin up (+1), second half spin down (-1). """
+    half = len(nv_list) // 2
+    spin_plus_indices = [i for i, nv in enumerate(nv_list) if not nv.spin_flip]  # Spin up
+    spin_minus_indices = [i for i, nv in enumerate(nv_list) if nv.spin_flip]     # Spin down
+    reshuffled_indices = spin_plus_indices[:half] + spin_minus_indices[:half]
+    return apply_rearrangement(nv_list, sig_corr, ref_corr, reshuffled_indices)
 
-        # Dynamically set the ticks and tick intervals based on num_nvs
-        max_ticks = 6  # Maximum number of ticks (adjustable)
-        tick_interval = max(1, num_nvs // max_ticks)
+def rearrange_spiral(nv_list, sig_corr, ref_corr):
+    """ Spiral arrangement based on spin flip status. Spins in a spiral-like pattern. """
+    spin_plus_indices = [i for i, nv in enumerate(nv_list) if not nv.spin_flip]  # Spin up
+    spin_minus_indices = [i for i, nv in enumerate(nv_list) if nv.spin_flip]     # Spin down
+    reshuffled_indices = np.argsort([np.sin(i) for i in range(len(nv_list))])  # Simple spiral pattern
+    spin_up_first = [i for i in reshuffled_indices if not nv_list[i].spin_flip] + \
+                    [i for i in reshuffled_indices if nv_list[i].spin_flip]
+    return apply_rearrangement(nv_list, sig_corr, ref_corr, spin_up_first)
 
-        ax.xaxis.set_major_locator(MaxNLocator(integer=True, prune='both', nbins=max_ticks))
-        ax.yaxis.set_major_locator(MaxNLocator(integer=True, prune='both', nbins=max_ticks))
-        
-        # Set dynamic tick locations based on the number of NVs
-        ax.set_xticks(np.arange(0, num_nvs, tick_interval))
-        ax.set_yticks(np.arange(0, num_nvs, tick_interval))
+def rearrange_random(nv_list, sig_corr, ref_corr):
+    """ Random arrangement of spin-up and spin-down NV centers. """
+    np.random.seed(42)  # Ensure reproducibility
+    reshuffled_indices = np.random.permutation(len(nv_list))  # Random shuffle of indices
+    return apply_rearrangement(nv_list, sig_corr, ref_corr, reshuffled_indices)
 
-        if not no_labels:
-            ax.set_xlabel("NV index")
-            ax.set_ylabel("NV index")
+def rearrange_alternate_quadrants(nv_list, sig_corr, ref_corr):
+    """ Divide NV centers into four quadrants and alternate spin-up and spin-down in each quadrant. """
+    num_nvs = len(nv_list)
+    spin_plus_indices = [i for i, nv in enumerate(nv_list) if not nv.spin_flip]  # Spin up
+    spin_minus_indices = [i for i, nv in enumerate(nv_list) if nv.spin_flip]     # Spin down
+    reshuffled_indices = []
 
-    if passed_ax is not None:
-        return ret_val
+    # Alternate quadrants
+    for i in range(num_nvs):
+        if i < num_nvs // 4:
+            reshuffled_indices.append(spin_plus_indices.pop(0) if spin_plus_indices else spin_minus_indices.pop(0))
+        elif i < num_nvs // 2:
+            reshuffled_indices.append(spin_minus_indices.pop(0) if spin_minus_indices else spin_plus_indices.pop(0))
+        elif i < 3 * num_nvs // 4:
+            reshuffled_indices.append(spin_plus_indices.pop(0) if spin_plus_indices else spin_minus_indices.pop(0))
+        else:
+            reshuffled_indices.append(spin_minus_indices.pop(0) if spin_minus_indices else spin_plus_indices.pop(0))
 
+    return apply_rearrangement(nv_list, sig_corr, ref_corr, reshuffled_indices)
 
-def main(nv_list, num_reps, num_runs):
-    ### Some initial setup
-    uwave_ind_list = [0, 1]
-    seq_file = "simple_correlation_test.py"
-    num_steps = 1
+def rearrange_concentric_circles(nv_list, sig_corr, ref_corr):
+    """ Concentric circle pattern where inner circles are spin-up, outer circles are spin-down. """
+    spin_plus_indices = [i for i, nv in enumerate(nv_list) if not nv.spin_flip]  # Spin up
+    spin_minus_indices = [i for i, nv in enumerate(nv_list) if nv.spin_flip]     # Spin down
+    reshuffled_indices = []
 
-    pulse_gen = tb.get_server_pulse_gen()
+    # Divide into concentric circles (spiral-like arrangement)
+    num_rings = 4  # Define how many concentric circles
+    for i in range(num_rings):
+        if i % 2 == 0:  # Even rings are spin-up
+            reshuffled_indices.extend(spin_plus_indices[:len(spin_plus_indices) // num_rings])
+            spin_plus_indices = spin_plus_indices[len(spin_plus_indices) // num_rings:]
+        else:  # Odd rings are spin-down
+            reshuffled_indices.extend(spin_minus_indices[:len(spin_minus_indices) // num_rings])
+            spin_minus_indices = spin_minus_indices[len(spin_minus_indices) // num_rings:]
 
-    ### Collect the data
+    return apply_rearrangement(nv_list, sig_corr, ref_corr, reshuffled_indices)
 
-    def run_fn(shuffled_step_inds):
-        seq_args = [widefield.get_base_scc_seq_args(nv_list, uwave_ind_list)]
-        # print(seq_args)
-        seq_args_string = tb.encode_seq_args(seq_args)
-        pulse_gen.stream_load(seq_file, seq_args_string, num_reps)
-
-    raw_data = base_routine.main(
-        nv_list,
-        num_steps,
-        num_reps,
-        num_runs,
-        run_fn=run_fn,
-        uwave_ind_list=uwave_ind_list,
-    )
-
-    ### Process and plot
-
-    # process_and_print(nv_list, counts)
-    try:
-        figs = process_and_plot(raw_data)
-    except Exception:
-        figs = None
-
-    ### Clean up and save data
-
-    tb.reset_cfm()
-
-    kpl.show()
-
-    timestamp = dm.get_time_stamp()
-    raw_data |= {
-        "timestamp": timestamp,
-    }
-
-    repr_nv_sig = widefield.get_repr_nv_sig(nv_list)
-    repr_nv_name = repr_nv_sig.name
-    file_path = dm.get_file_path(__file__, timestamp, repr_nv_name)
-    dm.save_raw_data(raw_data, file_path)
-
-    if figs is not None:
-        for ind in range(len(figs)):
-            fig = figs[ind]
-            file_path = dm.get_file_path(__file__, timestamp, f"{repr_nv_name}-{ind}")
-            dm.save_figure(fig, file_path)
-
+def apply_rearrangement(nv_list, sig_corr, ref_corr, reshuffled_indices):
+    """ Apply rearrangement of NV centers based on the given indices. """
+    nv_list_reshuffled = [nv_list[i] for i in reshuffled_indices]
+    sig_corr_reshuffled = sig_corr[np.ix_(reshuffled_indices, reshuffled_indices)]
+    ref_corr_reshuffled = ref_corr[np.ix_(reshuffled_indices, reshuffled_indices)]
+    return nv_list_reshuffled, sig_corr_reshuffled, ref_corr_reshuffled
 
 if __name__ == "__main__":
-    kpl.init_kplotlib()
+    sns.set(style="white", context="talk")
+    data = dm.get_raw_data(file_id=1653570783798)  # Fetch data    
+    # data = dm.get_raw_data(file_id=1540048047866)  # Fetch data
 
-    data = dm.get_raw_data(file_id=1648658056651)  # Block
 
-    # Check if data is fetched successfully
     if data is not None:
-        # Process and plot the data
-        figs = process_and_plot(data)
-
-        # Display the figures
-        kpl.show()
-
-        repr_nv_name = "nv0"
-        timestamp = dm.get_time_stamp()
-
-        # Save the figures if any were generated
-        if figs is not None:
-            for ind, fig in enumerate(figs):
-                file_path = dm.get_file_path(__file__, timestamp, f"{repr_nv_name}")
-                dm.save_figure(fig, file_path)
-
-        # Show the plot with blocking to prevent the script from exiting immediately
-        plt.show(block=True)
+        # Process and plot the data with a specific rearrangement pattern
+        process_and_plot(data,  rearrangement="checkerboard")
     else:
         print("Error: Failed to fetch the raw data.")

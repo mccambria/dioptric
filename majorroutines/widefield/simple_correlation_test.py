@@ -281,7 +281,7 @@ def process_and_plot(
     # ref_counts = ref_counts[:, round(0.25 * num_runs) : round(0.75 * num_runs)]
 
     sig_counts, ref_counts = widefield.threshold_counts(
-        nv_list, sig_counts, ref_counts, dynamic_thresh=True
+        nv_list, sig_counts, ref_counts, dynamic_thresh=False
     )
 
     ### Calculate the correlations
@@ -464,7 +464,8 @@ if __name__ == "__main__":
     # data = dm.get_raw_data(file_id=1538271354881)  # checkerboard
     # process_and_plot(data)
     # data = dm.get_raw_data(file_id=1540558251818)  # orientation
-    data = dm.get_raw_data(file_id=285006998080)  # orientation
+    # data = dm.get_raw_data(file_id=1655494429496)  # orientation
+    data = dm.get_raw_data(file_id=1653570783798) 
     process_and_plot(data)
 
     plt.show(block=True)

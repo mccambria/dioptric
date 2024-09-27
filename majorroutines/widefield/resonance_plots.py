@@ -230,7 +230,7 @@ import seaborn as sns
 
 
 def plot_nv_resonance_data_sns_with_freq_labels(
-    nv_list, freqs, avg_counts, avg_counts_ste, file_path, num_cols=3
+    nv_list, freqs, avg_counts, avg_counts_ste, file_path, num_cols=3, title = None
 ):
     """
     Plot the NV resonance data using Seaborn aesthetics in multiple panels (grid) in the same figure,
@@ -293,7 +293,7 @@ def plot_nv_resonance_data_sns_with_freq_labels(
 
             # Auto-scale y-axis for better view of resonance
             ax.set_ylim(
-                [min(avg_counts[nv_idx]) - 0.01, max(avg_counts[nv_idx]) + 0.01]
+                [min(avg_counts[nv_idx]), max(avg_counts[nv_idx])+0.03]
             )
 
             # Only set y-tick labels for the leftmost column
@@ -356,7 +356,8 @@ def plot_nv_resonance_data_sns_with_freq_labels(
 
 if __name__ == "__main__":
     # Load raw data
-    data = dm.get_raw_data(file_id=1652859661831, load_npz=False, use_cache=True)
+    # data = dm.get_raw_data(file_id=1652859661831, load_npz=False, use_cache=True)
+    data = dm.get_raw_data(file_id=1657565965228, load_npz=False, use_cache=True)
     nv_list = data["nv_list"]
     num_nvs = len(nv_list)
     counts = np.array(data["counts"])[0]
@@ -375,28 +376,31 @@ if __name__ == "__main__":
     ref_counts[:, :, :, 0::2] = ref_counts_0
     ref_counts[:, :, :, 1::2] = ref_counts_1
 
+    # avg_counts, avg_counts_ste, norms = widefield.process_counts(
+    #     nv_list, sig_counts, ref_counts, threshold=False
+    # )
     avg_counts, avg_counts_ste, norms = widefield.process_counts(
-        nv_list, sig_counts, ref_counts, threshold=True
+        nv_list, sig_counts, ref_counts, threshold=True, method= "otsu"
     )
     # raw_fig = plot_data(nv_list, freqs, avg_counts, avg_counts_ste)
     # fit_fig = visualize_large_nv_data(nv_list, freqs, avg_counts, avg_counts_ste, norms)
 
     # Save plot to a file
-    file_path = "nv_data_plot.png"
-    # plot_nv_resonance_data(nv_list, freqs, avg_counts, avg_counts_ste, file_path)
-    file_path = "nv_resonance_plot_60stepspng"
-    plot_nv_resonance_data_sns_with_freq_labels(
-        nv_list, freqs, avg_counts, avg_counts_ste, file_path, num_cols=5
-    )
+    # file_path = "nv_data_plot.png"
+    # # plot_nv_resonance_data(nv_list, freqs, avg_counts, avg_counts_ste, file_path)
+    # file_path = "nv_resonance_plot_60stepspng"
+    # plot_nv_resonance_data_sns_with_freq_labels(
+    #     nv_list, freqs, avg_counts, avg_counts_ste, file_path, num_cols=5
+    # )
 
-    print(f"Plot saved to {file_path}")
-    plt.show()
-    #  Save plot to a file
-    file_path = "nv_data_plot.png"
+    # print(f"Plot saved to {file_path}")
+    # plt.show()
+    # #  Save plot to a file
+    # file_path = "nv_data_plot.png"
     # plot_nv_resonance_data(nv_list, freqs, avg_counts, avg_counts_ste, file_path)
-    file_path = "nv_resonance_plot_60steps_threshold.png"
+    file_path = "nv_resonance_plot_none.png"
     plot_nv_resonance_data_sns_with_freq_labels(
-        nv_list, freqs, avg_counts, avg_counts_ste, file_path, num_cols=5
+        nv_list, freqs, avg_counts, avg_counts_ste, file_path, num_cols=5, title = "Rabi duration 128ns"
     )
 
     print(f"Plot saved to {file_path}")
