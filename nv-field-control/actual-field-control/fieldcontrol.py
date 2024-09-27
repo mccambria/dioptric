@@ -24,8 +24,27 @@ class RS_NGC103:
         if start_open:
             self.open_connection(IP)
 
-        self.maintaining = False
-        self.maintain_thread = None
+        self.maintaining =     {1: False, 2: False, 3: False} # Which channels are currently being held
+        self.maintain_thread = {1: None,  2: None,  3: None } # The respective threads looping for each current lock
+        self.current_maintained = {1: 0, 2: 0, 3: 0}
+
+    def _write_command(self, cmd : str) -> None:
+        """
+        Write buffered command to the instrument.
+
+        :return None:
+        """
+        # try:
+        self.instr.write_str(cmd + "; *WAI")
+        # except 
+
+    def _query_command(self, cmd : str) -> any:
+        """
+        Query buffered command.
+
+        :return any:
+        """
+        return self.instr.query_str(cmd + "; *WAI")
 
     def open_connection(self, IP : str = None) -> None:
         """
@@ -38,27 +57,31 @@ class RS_NGC103:
     
         if IP == None:
             self.instr = Rs.RsInstrument('TCPIP::192.168.56.101::hislip0', True, False, "Simulate=True")
-            print("the power supply " + self.instr.query_str('*IDN?') + " was connected at " + str(datetime.now()))
+            print("the power supply " + self._query_command('*IDN?') + " was connected at " + str(datetime.now()))
         else:
             self.instr = Rs.RsInstrument(f'TCPIP::{IP}::INSTR', True, False, "Simulate=False")
-            print("the power supply " + self.instr.query_str('*IDN?') + " was connected at " + str(datetime.now()))
-        
+            print("the power supply " + self._query_command('*IDN?') + " was connected at " + str(datetime.now()))
+
     def close_connection(self) -> None:
         """
         Close connection with the device. Ensure to call this when you're done using the device.
 
         :return None:
         """
-        print("the power supply " + self.instr.query_str('*IDN?') + " was disconnected at " + str(datetime.now()))
+        print("the power supply " + self._query_command('*IDN?') + " was disconnected at " + str(datetime.now()))
         
         # Close connection to device
         self.open = False
         self.instr.close()
 
         # Call the stop function, and then join thread to safely deactivate
-        if self.maintaining:
-            self.maintaining = False
-            self.maintain_thread.join()
+        for channel, m in self.maintaining.items():
+            if m:
+                self.release_current(channel)
+
+        for thread in self.maintain_thread.values():
+            if thread:
+                thread.join()
         
     def current_for_field(self, x : float, y : float, z : float) -> list[float]:
         """
@@ -99,42 +122,88 @@ class RS_NGC103:
 
         return current
     
-    def maintain_current(self, which : Union[int, str], current : float, voltage_start : float = 0.1) -> None:
+    def hold_current(self, which : Union[int, str], current : float, voltage_start : float = 0.1, activate_channel : bool = False) -> None:
         """
-        Hack to maintain a specific current, despite the CC mode not working on the NGC103, we can still adjust the voltage to keep it at the correct level.
+        NO LONGER NECESSARY: Hack to maintain a specific current, despite the CC mode not working on the NGC103, we can still adjust the voltage to keep it at the correct level.
 
         :param int | str which: The channel to activate, either the channel number or axis name.
         :param float voltage_start: The initial value to be set for volts, defaults to 0.1 
         :param float current: The desired current (amps) which you wish to maintain.
+        :param bool activate_channel: If you also want to turn on the channel, defaults to False.
         """
 
         def maintain_loop(voltage_guess):
-
             # Update the current accordingly every second
             while True:
-                if self.maintaining == False or self.open == False:
+                time.sleep(1)
+
+                # If device is totally disconnected, delete the thread. 
+                if self.open == False:
                     break
+
+                # For performance, just keep a thread open if it's been deactivated so we don't need to create a new one later.
+                if self.maintaining[which] == False:
+                    continue
 
                 # R = V / I
                 actual_current = self.measure_current(which)
+                print(actual_current)
+
+                if actual_current == 0:
+                    print("WARNING: Measured current is zero, either there's a disconnect or you're trying to set current to zero. For the latter, call release_current instead.")
                 actual_resistance = voltage_guess / actual_current
 
-                voltage_guess = current * actual_resistance
+                voltage_guess = self.current_maintained[which] * actual_resistance
                 
                 self.set_voltage(which, voltage_guess)
-                
-                time.sleep(1)
-                #print(f"voltage set to {voltage_guess}, intended current {current}")
 
-        self.maintaining = True
+
+        if isinstance(which, str):
+            which = self.direction_channels[which]
+        
+        if self.maintaining[which]:
+            print(f"Disabling previous current on channel {which}. ")
+            self.release_current(which)
+            time.sleep(1)
+
+        print(f"Activating new current on channel {which}, wait about 1 second to stabilize.")
+        self.maintaining[which] = True
         
         # V = IR
         voltage_guess = voltage_start
         self.set_voltage(which, voltage_guess)
+        self.current_maintained[which] = current
+        
+        if activate_channel:
+            self.activateChannel(which)
 
-        self.maintain_thread = threading.Thread(name="bg", target=maintain_loop, args=[voltage_guess], daemon=False)
-        self.maintain_thread.start()
+        if not self.maintain_thread[which]:
+            self.maintain_thread[which] = threading.Thread(name=f"Channel {which} loop", target=maintain_loop, args=[voltage_guess], daemon=False)
+            self.maintain_thread[which].start()
 
+    def release_current(self, which : Union[int, str], deactivate_channel : bool = False) -> None:
+        """
+        NO LONGER NECESSARY: Releases a channel from being maintained at a specific current.
+
+        :param int | str which: The channel to activate, either the channel number or axis name.
+        :param bool deactivate_channel: If you also want to turn off the channel, defaults to False.
+        """
+        
+        print(f"Releasing channel {which}'s previous maintained current")
+        
+        if isinstance(which, str):
+            which = self.direction_channels[which]
+
+        if self.maintaining[which] == False:
+            print(f"WARNING: Attempted to release channel {which}'s current, but it wasn't being held.")
+            return 
+        
+        self.maintaining[which] = False
+        time.sleep(1) # to allow the loop to safely deactivate
+
+        if deactivate_channel:
+            self.deactivateChannel(which)
+        
     def set_voltage(self, which : Union[int, str], voltage : float) -> None:
         """
         Set voltage of a specific channel. 
@@ -146,8 +215,8 @@ class RS_NGC103:
         if isinstance(which, str):
             which = self.direction_channels[which]
         
-        self.instr.write_str(f"INST OUT{which}")
-        self.instr.write_str(f"VOLT {voltage}")
+        self._write_command(f"INST OUT{which}")
+        self._write_command(f"VOLT {voltage}")
     
     def get_voltage(self, which : Union[int, str]) -> None:
         """
@@ -161,7 +230,7 @@ class RS_NGC103:
         if isinstance(which, str):
             which = self.direction_channels[which]
         
-        self.instr.write_str(f"INST OUT{which}")
+        self._write_command(f"INST OUT{which}")
 
         str_out = self.instr.query("VOLT?")
         return float(str_out)
@@ -179,7 +248,7 @@ class RS_NGC103:
         if isinstance(which, str):
             which = self.direction_channels[which]
 
-        self.instr.write_str(f"INST OUT{which}")
+        self._write_command(f"INST OUT{which}")
 
         str_out = self.instr.query("MEAS:VOLT?")
         return float(str_out)
@@ -195,8 +264,8 @@ class RS_NGC103:
         if isinstance(which, str):
             which = self.direction_channels[which]
         
-        self.instr.write_str(f"INST OUT{which}")
-        self.instr.write_str(f"CURR {current}")
+        self._write_command(f"INST OUT{which}")
+        self._write_command(f"CURR {current}")
     
     def get_current(self, which : Union[int, str]) -> float:
         """
@@ -208,7 +277,7 @@ class RS_NGC103:
         if isinstance(which, str):
             which = self.direction_channels[which]
         
-        self.instr.write_str(f"INST OUT{which}")
+        self._write_command(f"INST OUT{which}")
 
         str_out = self.instr.query("CURR?")
         return float(str_out)
@@ -226,7 +295,7 @@ class RS_NGC103:
         if isinstance(which, str):
             which = self.direction_channels[which]
 
-        self.instr.write_str(f"INST OUT{which}")
+        self._write_command(f"INST OUT{which}")
 
         str_out = self.instr.query("MEAS:CURR?")
         return float(str_out)
@@ -241,8 +310,8 @@ class RS_NGC103:
         if isinstance(which, str):
             which = self.direction_channels[which]
 
-        self.instr.write_str(f"INST OUT{which}")
-        self.instr.write_str("OUTP:CHAN ON")
+        self._write_command(f"INST OUT{which}")
+        self._write_command("OUTP:CHAN ON")
     
     def deactivateChannel(self, which : Union[int, str]) -> None:
         """
@@ -254,8 +323,12 @@ class RS_NGC103:
         if isinstance(which, str):
             which = self.direction_channels[which]
         
-        self.instr.write_str(f"INST OUT{which}")
-        self.instr.write_str("OUTP:CHAN OFF")
+        if self.maintaining[which]:
+            self.release_current(which)
+            time.sleep(1)
+
+        self._write_command(f"INST OUT{which}")
+        self._write_command("OUTP:CHAN OFF")
     
     def activateAll(self) -> None:
         """
@@ -281,7 +354,7 @@ class RS_NGC103:
         
         :return None:
         """
-        self.instr.write_str("OUTP:MAST ON")
+        self._write_command("OUTP:MAST ON")
 
     def deactivateMaster(self) -> None:
         """
@@ -289,4 +362,4 @@ class RS_NGC103:
         
         :return None:
         """
-        self.instr.write_str("OUTP:MAST OFF")
+        self._write_command("OUTP:MAST OFF")
