@@ -286,11 +286,11 @@ def do_calibrate_iq_delay(nv_list):
 
 def do_resonance(nv_list):
     freq_center = 2.87
-    freq_range = 0.180
+    freq_range = 0.240
     num_steps = 60
     # Single ref
     # num_reps = 8
-    num_runs = 60
+    num_runs = 300
     # num_runs = 50
 
     # Both refs
@@ -373,8 +373,7 @@ def do_power_rabi(nv_list):
         uwave_ind_list,
     )
 
-
-def do_spin_echo(nv_list):
+    # def do_spin_echo(nv_list):
     min_tau = 200
     max_tau = 84e3 + min_tau
     num_steps = 29
@@ -821,7 +820,7 @@ if __name__ == "__main__":
     # magnet_angle = 90
     date_str = "2024_03_12"
     # global_coords = [None, None, z_coord]
-    global_coords = [-1.44, 1.95, 0.6]
+    global_coords = [-2.0, 2.75, 0.2]
     # pixel_to_voltage(initial_pixel_coords, final_pixel_coords)
     # global_coords = piezo_voltage_to_pixel_calibration(final_pixel_coords)
 
@@ -1081,7 +1080,7 @@ if __name__ == "__main__":
         # for nv in nv_list:
         #     nv.spin_flip = False
         # Get the indices of well-separated NVs
-        # selected_indices = widefield.select_well_separated_nvs(nv_list, 30)
+        # selected_indices = widefield.select_well_separated_nvs(nv_list, 24)
         # for index in selected_indices:
         #     nv = nv_list[index]
         #     nv.spin_flip = True

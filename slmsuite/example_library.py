@@ -54,7 +54,7 @@ def nuvu2thorcam_calibration(coords):
         [[957.846, 750.0], [542.153, 750.0], [750.0, 390.0]], dtype="float32"
     )  # Corresponding points in (1480, 1020) coordinate system
     cal_coords_nuvu = np.array(
-        [[186.104, 54.219], [191.338, 197.369], [60.985, 128.141]], dtype="float32"
+        [[187.082, 54.815], [190.305, 195.338], [60.959, 128.551]], dtype="float32"
     )  # Points in (512, 512) coordinate system
 
     # cal_coords_nuvu = np.array(

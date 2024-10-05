@@ -145,6 +145,43 @@ def non_linear_weights(intensities, alpha=1):
     return weights
 
 
+def linear_weights(intensities, alpha=1):
+    weights = np.power(intensities, alpha)
+    weights = weights / np.max(weights)  # Normalize to avoid extreme values
+    return weights
+
+
+def non_linear_weights_adjusted(intensities, alpha=1, beta=0.5, threshold=0.7):
+    """
+    Adjust weights such that bright NVs keep the same weight and low-intensity NVs get scaled.
+
+    Parameters:
+    - intensities: Array of intensities for NV centers.
+    - alpha: Controls the non-linearity for low intensities.
+    - beta: Controls the sharpness of the transition around the threshold.
+    - threshold: Intensity value above which weights are not changed.
+
+    Returns:
+    - weights: Adjusted weights where bright NVs have weight ~1, and low-intensity NVs are scaled.
+    """
+    # Normalize the intensities between 0 and 1
+    norm_intensities = intensities / np.max(intensities)
+
+    # Apply a non-linear transformation to only the lower intensities
+    weights = np.where(
+        norm_intensities > threshold,
+        1,  # Keep bright NVs the same
+        1
+        / (1 + np.exp(-beta * (norm_intensities - threshold)))
+        ** alpha,  # Non-linear scaling for low intensities
+    )
+
+    # Ensure that the weights are normalized
+    weights = weights / np.max(weights)
+
+    return weights
+
+
 # Save the results to a file
 def save_results(nv_coordinates, integrated_intensities, spot_weights, filename):
     """
@@ -176,12 +213,82 @@ def filter_by_snr(snr_list, threshold=0.5):
 
 def load_nv_coords(
     # file_path="slmsuite/nv_blob_detection/nv_blob_filtered_162nvs_ref.npz",
-    file_path="slmsuite/nv_blob_detection/nv_blob_filtered_77nvs_new.npz",
-    # file_path="slmsuite/nv_blob_detection/nv_coords_integras_counts_filtered.npz",
+    # file_path="slmsuite/nv_blob_detection/nv_blob_filtered_77nvs_new.npz",
+    file_path="slmsuite/nv_blob_detection/nv_coords_updated_spot_weights.npz",
 ):
     data = np.load(file_path)
     nv_coordinates = data["nv_coordinates"]
-    return nv_coordinates
+    spot_weights = data["spot_weights"]
+    return nv_coordinates, spot_weights
+
+
+def sigmoid_weight_update(
+    fidelities, spot_weights, intensities, alpha=1, beta=10, fidelity_threshold=0.90
+):
+    """
+    Update the spot weights using a sigmoid function. Low-fidelity NVs are adjusted more,
+    while high-fidelity NVs remain largely unchanged.
+
+    Parameters:
+    - fidelities: Array of fidelity values for NV centers.
+    - intensities: Array of integrated intensities for NV centers.
+    - alpha: Controls the non-linearity of the weight update for low-fidelity NVs.
+    - beta: Controls the steepness of the sigmoid function transition.
+    - fidelity_threshold: Fidelity value below which weights should be updated.
+
+    Returns:
+    - updated_weights: Array of updated spot weights.
+    """
+    # Normalize intensities between 0 and 1
+    norm_intensities = intensities / np.max(intensities)
+
+    # Initialize updated weights as 1 (i.e., no change for high-fidelity NVs)
+    updated_weights = np.copy(spot_weights)
+
+    # Loop over each NV and update weights for those with fidelity < fidelity_threshold
+    for i, fidelity in enumerate(fidelities):
+        if fidelity < fidelity_threshold:
+            # Use a sigmoid to adjust the weight based on intensity
+            updated_weights[i] = (
+                1 / (1 + np.exp(-beta * (norm_intensities[i]))) ** alpha
+            )
+
+    # Normalize the updated weights to avoid extreme values
+    updated_weights = updated_weights / np.max(updated_weights)
+
+    return updated_weights
+
+
+def manual_sigmoid_weight_update(
+    spot_weights, intensities, alpha, beta, update_indices
+):
+    """
+    Update spot weights only for NVs with specified indices using a sigmoid function.
+    Prints the weights before and after updates.
+
+    Parameters:
+    - spot_weights: Current spot weights for each NV.
+    - intensities: Integrated intensities for each NV.
+    - alpha, beta: Parameters for the sigmoid function.
+    - update_indices: List of NV indices to update the weights.
+
+    Returns:
+    - updated_spot_weights: List of updated spot weights for each NV.
+    """
+    updated_spot_weights = (
+        spot_weights.copy()
+    )  # Make a copy to avoid mutating the original list
+    norm_intensities = intensities / np.max(intensities)
+    for idx in update_indices:
+        print(f"NV Index {idx}: Weight before update: {updated_spot_weights[idx]}")
+
+        # Apply the sigmoid weight update for the specific NV
+        weight_update = 1 / (1 + np.exp(-beta * (norm_intensities[idx]))) ** alpha
+        updated_spot_weights[idx] = weight_update  # Update weight for this NV
+
+        print(f"NV Index {idx}: Weight after update: {updated_spot_weights[idx]}")
+
+    return updated_spot_weights
 
 
 # Main section of the code
@@ -194,25 +301,27 @@ if __name__ == "__main__":
 
     # data = dm.get_raw_data(file_id=1648773947273, load_npz=True)
     # data = dm.get_raw_data(file_id=1651663986412, load_npz=True)
-    data = dm.get_raw_data(file_id=1657492074649, load_npz=True)
+    data = dm.get_raw_data(file_id=1661612183741, load_npz=True)
 
     img_array = np.array(data["ref_img_array"])
-    nv_coordinates = load_nv_coords().tolist()
+    nv_coordinates, spot_weights = load_nv_coords()
+    nv_coordinates = nv_coordinates.tolist()
+    spot_weights = spot_weights.tolist()
     # Start merged coordinates with the reference NV
     # Reference NV to append as the first coordinate
     # reference_nv = [113.431, 149.95]
-    reference_nv = [112.76, 150.887]
+    # reference_nv = [112.76, 150.887]
     # # # Start with the reference NV as the first element
-    nv_coords = [reference_nv]
+    # nv_coords = [reference_nv]
 
     # # Iterate through the rest of the NV coordinates
-    for coord in nv_coordinates:
-        # Calculate the distance between the current NV and the reference NV
-        distance = np.linalg.norm(np.array(reference_nv) - np.array(coord))
+    # for coord in nv_coordinates:
+    #     # Calculate the distance between the current NV and the reference NV
+    #     distance = np.linalg.norm(np.array(reference_nv) - np.array(coord))
 
-        # Append NV if it's farther than 3 pixels away from the reference NV
-        if distance >= 3:
-            nv_coords.append(coord)
+    #     # Append NV if it's farther than 3 pixels away from the reference NV
+    #     if distance >= 3:
+    #         nv_coords.append(coord)
 
     # Fit 2D Gaussian to each NV and get optimized coordinates
     # optimal_nv_coords = []
@@ -222,7 +331,7 @@ if __name__ == "__main__":
 
     # # Round each coordinate to 3 decimal places
     # rounded_nv_coords = [(round(x, 3), round(y, 3)) for x, y in optimal_nv_coords]
-    nv_coordinates = nv_coords
+    # nv_coordinates = nv_coords
     # manual removal of the nvs
     # manual_removal_indices = [41]
     # nv_coordinates = remove_manual_indices(nv_coordinates, manual_removal_indices)
@@ -252,21 +361,128 @@ if __name__ == "__main__":
     # Convert filtered intensities to a NumPy array for element-wise operations
     filtered_intensities = np.array(filtered_intensities)
 
-    spot_weights = non_linear_weights(filtered_intensities, alpha=1.0)
-
+    # spot_weights = non_linear_weights(filtered_intensities, alpha=0.9)
+    # spot_weights = linear_weights(filtered_intensities, alpha=1)
+    # spot_weights = non_linear_weights_adjusted(
+    #     filtered_intensities, alpha=0.9, beta=0.3, threshold=0.9
+    # )
     # Print some diagnostics
-    print(f"NV Coords: {filtered_nv_coords}")
-    print(f"Filtered integrated intensities: {filtered_intensities}")
-    print(f"Filtered NV coordinates: {len(filtered_nv_coords)} NVs")
-    print(f"Normalized spot weights: {spot_weights}")
-    print(f"Number of NVs detected: {len(filtered_nv_coords)}")
+    fidelities = [
+        1.116,
+        1.178,
+        1.178,
+        1.156,
+        1.073,
+        1.421,
+        1.116,
+        1.213,
+        1.094,
+        0.343,
+        1.202,
+        1.087,
+        1.481,
+        1.112,
+        1.083,
+        1.261,
+        1.151,
+        1.331,
+        1.193,
+        0.822,
+        1.195,
+        1.274,
+        1.138,
+        1.362,
+        1.19,
+        1.007,
+        1.188,
+        0.976,
+        1.124,
+        1.347,
+        0.996,
+        1.162,
+        1.429,
+        1.184,
+        1.233,
+        1.181,
+        1.066,
+        0.99,
+        0.973,
+        1.207,
+        1.17,
+        1.107,
+        1.167,
+        1.287,
+        1.091,
+        1.108,
+        0.982,
+        0.571,
+        1.137,
+        0.986,
+        1.141,
+        1.008,
+        1.198,
+        1.054,
+        1.086,
+        1.365,
+        1.011,
+        1.025,
+        1.204,
+        0.807,
+        1.255,
+        1.337,
+        0.377,
+        1.345,
+        0.714,
+        1.31,
+        0.952,
+        0.932,
+        1.191,
+        1.22,
+        1.36,
+        1.075,
+        1.335,
+        0.887,
+        0.977,
+        1.217,
+        1.181,
+    ]
+    # Update spot weights for NVs with low fidelity
+
+    # updated_spot_weights = sigmoid_weight_update(
+    #     fidelities,
+    #     spot_weights,
+    #     integrated_intensities,
+    #     alpha=1.0,
+    #     beta=6,
+    #     fidelity_threshold=1.0,
+    # )
+    # Calculate the spot weights based on the integrated intensities
+    # spot_weights = non_linear_weights(filtered_intensities, alpha=0.9)
+    # Define the NV indices you want to update
+    indices_to_update = [11, 14, 18, 19, 25, 30, 36, 42, 43, 45, 48, 56, 72]
+    indices_to_update = np.arange(0, 77).tolist()
+    # Calculate the updated spot weights
+    updated_spot_weights = manual_sigmoid_weight_update(
+        spot_weights,
+        integrated_intensities,
+        alpha=0.9,
+        beta=6.0,
+        update_indices=indices_to_update,
+    )
+
+    # print(f"NV Coords: {filtered_nv_coords}")
+    # print(f"Filtered integrated intensities: {filtered_intensities}")
+    # print(f"Filtered NV coordinates: {len(filtered_nv_coords)} NVs")
+    # print(f"Normalized spot weights: {spot_weights}")
+    # print(f"Normalized spot weights: {updated_spot_weights}")
+    # print(f"Number of NVs detected: {len(filtered_nv_coords)}")
 
     # Save the filtered results
     save_results(
         filtered_nv_coords,
         filtered_intensities,
-        spot_weights,
-        filename="slmsuite/nv_blob_detection/nv_coords_integras_counts_filtered.npz",
+        updated_spot_weights,
+        filename="slmsuite/nv_blob_detection/nv_coords_updated_spot_weights_manual_update.npz",
     )
 
     # Plot the original image with circles around each NV

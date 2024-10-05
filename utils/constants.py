@@ -67,6 +67,7 @@ class LaserKey(Enum):
     CHARGE_POL = auto()
     SPIN_POL = auto()
     SHELVING = auto()
+    YELLOW_SHELVING = auto()
     SPIN_READOUT = auto()  # Standard spin readout
     # Widefield mode functions
     WIDEFIELD_IMAGING = auto()

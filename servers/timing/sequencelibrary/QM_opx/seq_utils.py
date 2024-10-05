@@ -119,7 +119,7 @@ def macro_polarize(
     pol_coords_list : list(coordinate pairs)
         List of coordinate pairs to target
     """
-
+    print("macro_scc function called")
     global _cache_charge_pol_incomplete
     global _cache_target_list
 
@@ -202,15 +202,26 @@ def macro_scc(
     ion_duration : numeric
         Duration of the pulse in clock cycles (4 ns)
     """
-
     config = common.get_config_dict()
-    do_shelving_pulse = config["Optics"]["scc_shelving_pulse"]
-
-    if do_shelving_pulse:
+    do_green_shelving_pulse = config["Optics"]["scc_green_shelving_pulse"]
+    do_yellow_shelving_pulse = config["Optics"]["scc_yellow_shelving_pulse"]
+    if do_yellow_shelving_pulse:
+        _macro_scc_yellow_shelving(
+            scc_coords_list,
+            scc_duration_list,
+            scc_duration_override,
+            scc_amp_list,
+            scc_amp_override,
+            spin_flip_ind_list,
+            uwave_ind_list,
+            exp_spin_flip=exp_spin_flip,
+            ref_spin_flip=ref_spin_flip,
+        )
+    elif do_green_shelving_pulse:
         # if spin_flip_ind_list is not None:
         #     msg = "Shelving SCC with spin_flips not yet implemented."
         #     raise NotImplementedError(msg)
-        _macro_scc_shelving(
+        _macro_scc_green_shelving(
             scc_coords_list,
             scc_duration_list,
             spin_flip_ind_list,
@@ -232,7 +243,96 @@ def macro_scc(
         )
 
 
-def _macro_scc_shelving(
+def _macro_scc_yellow_shelving(
+    coords_list,
+    duration_list=None,
+    duration_override=None,
+    amp_list=None,
+    amp_override=None,
+    exp_spin_flip_ind_list=None,
+    uwave_ind_list=None,
+    exp_spin_flip=True,
+    ref_spin_flip=False,
+):
+    # shelving region
+    shelving_laser_name = tb.get_laser_name(LaserKey.YELLOW_SHELVING)
+    shelving_laser_el = get_laser_mod_element(shelving_laser_name)
+    shelving_laser_dict = tb.get_optics_dict(LaserKey.YELLOW_SHELVING)
+    shelving_pulse_duration = shelving_laser_dict["duration"]
+    buffer = get_widefield_operation_buffer()
+    qua.align()
+    qua.play("shelving", shelving_laser_el)
+    qua.wait(buffer + shelving_pulse_duration, shelving_laser_el)
+
+    # Basic setup for scc
+    ion_laser_name = tb.get_laser_name(LaserKey.SCC)
+    ion_pulse_name = "scc"
+    macro_run_aods([ion_laser_name], aod_suffices=[ion_pulse_name])
+
+    if exp_spin_flip_ind_list is None:
+        exp_spin_flip_ind_list = []
+
+    num_nvs = len(coords_list)
+    first_coords_list = [
+        coords_list[ind] for ind in range(num_nvs) if ind not in exp_spin_flip_ind_list
+    ]
+    first_duration_list = [
+        duration_list[ind]
+        for ind in range(num_nvs)
+        if ind not in exp_spin_flip_ind_list
+    ]
+    first_amp_list = [
+        amp_list[ind] for ind in range(num_nvs) if ind not in exp_spin_flip_ind_list
+    ]
+
+    # Actual commands
+
+    if ref_spin_flip:
+        macro_pi_pulse(uwave_ind_list)
+
+    # MCC antiphase by orientation
+    # if exp_spin_flip:
+    #     macro_pi_pulse(uwave_ind_list[:1])
+
+    _macro_pulse_list(
+        ion_laser_name,
+        ion_pulse_name,
+        first_coords_list,
+        duration_list=first_duration_list,
+        duration_override=duration_override,
+        amp_list=first_amp_list,
+        amp_override=amp_override,
+    )
+
+    # Just exit here if all NVs are SCC'ed in the first batch
+    if len(exp_spin_flip_ind_list) == 0:
+        return
+
+    second_coords_list = [
+        coords_list[ind] for ind in range(num_nvs) if ind in exp_spin_flip_ind_list
+    ]
+    second_duration_list = [
+        duration_list[ind] for ind in range(num_nvs) if ind in exp_spin_flip_ind_list
+    ]
+    second_amp_list = [
+        amp_list[ind] for ind in range(num_nvs) if ind in exp_spin_flip_ind_list
+    ]
+
+    if exp_spin_flip:
+        macro_pi_pulse(uwave_ind_list)
+
+    _macro_pulse_list(
+        ion_laser_name,
+        ion_pulse_name,
+        second_coords_list,
+        duration_list=second_duration_list,
+        duration_override=duration_override,
+        amp_list=second_amp_list,
+        amp_override=amp_override,
+    )
+
+
+def _macro_scc_green_shelving(
     scc_coords_list,
     scc_duration_list,
     spin_flip_ind_list,
@@ -298,7 +398,6 @@ def _macro_scc_no_shelving(
     ref_spin_flip=False,
 ):
     # Basic setup
-
     ion_laser_name = tb.get_laser_name(LaserKey.SCC)
     ion_pulse_name = "scc"
     macro_run_aods([ion_laser_name], aod_suffices=[ion_pulse_name])
@@ -655,8 +754,8 @@ def macro_multi_pulse(
         duration_list = [None for ind in range(num_pulses)]
 
     qua.align()
-    # for ind in range(num_pulses):
-    for ind in [1]:
+    for ind in range(num_pulses):
+        # for ind in [1]:
         laser_name = laser_name_list[ind]
         coords = coords_list[ind]
         pulse_name = pulse_name_list[ind]
