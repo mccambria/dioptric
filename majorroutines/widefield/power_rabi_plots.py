@@ -16,6 +16,7 @@ from random import shuffle
 import matplotlib.pyplot as plt
 import numpy as np
 import seaborn as sns
+from scipy.optimize import curve_fit
 
 from majorroutines.pulsed_resonance import fit_resonance, voigt, voigt_split
 from majorroutines.widefield import base_routine, optimize
@@ -35,135 +36,135 @@ def create_raw_data_figure(data):
     powers = data["powers"]
     counts = np.array(data["states"])
 
-    # Extract the signal and reference counts
+
+# Define a Gaussian function to fit the resonance peak
+def gaussian(x, a, x0, sigma):
+    return a * np.exp(-((x - x0) ** 2) / (2 * sigma**2))
+
+
+def find_optimal_power(powers, norm_counts):
+    """
+    Find the optimal microwave power by fitting the data to a Gaussian and identifying the peak.
+
+    Parameters:
+    powers (ndarray): Array of microwave power values.
+    norm_counts (ndarray): Array of normalized NV- population counts.
+
+    Returns:
+    optimal_power (float): The optimal microwave power at the peak of the fitted curve.
+    popt (ndarray): The optimized parameters of the fitted Gaussian.
+    """
+    # Initial guess for the Gaussian fit parameters: amplitude, center, and width
+    initial_guess = [np.max(norm_counts), powers[np.argmax(norm_counts)], 1.0]
+
+    try:
+        # Perform Gaussian curve fitting
+        popt, _ = curve_fit(gaussian, powers, norm_counts, p0=initial_guess)
+        optimal_power = popt[
+            1
+        ]  # Extract the optimal power (center of the Gaussian curve)
+    except RuntimeError:
+        # If fitting fails, return None for both values
+        optimal_power = np.nan
+        popt = None
+
+    return optimal_power, popt
+
+
+def plot_all_nv_data(nv_list, powers, norm_counts_list, num_cols=3):
+    """
+    Plot the NV resonance data for all NVs using Seaborn aesthetics and return the optimal power for each NV.
+
+    Parameters:
+    nv_list (list): List of NVs to plot.
+    powers (ndarray): Array of microwave power values.
+    norm_counts_list (ndarray): List of normalized NV population data for each NV.
+    num_cols (int): Number of columns in the subplot grid.
+
+    Returns:
+    optimal_powers (list): List of optimal microwave powers for each NV.
+    """
+    sns.set(style="whitegrid", palette="muted")
+
+    num_nvs = len(nv_list)
+    num_rows = int(np.ceil(num_nvs / num_cols))  # Calculate number of rows needed
+
+    fig, axes_pack = plt.subplots(
+        num_rows, num_cols, figsize=(num_cols * 5, num_rows * 4), sharex=True
+    )
+    axes_pack = axes_pack.flatten()
+
+    optimal_powers = []  # List to store the optimal power for each NV
+
+    for nv_idx, ax in enumerate(axes_pack):
+        if nv_idx < num_nvs:
+            # Get normalized counts for this NV
+            norm_counts = norm_counts_list[nv_idx]
+
+            # Find the optimal microwave power using the Gaussian fit
+            optimal_power, popt = find_optimal_power(powers, norm_counts)
+            optimal_powers.append(optimal_power)
+
+            # Plot the raw data and the fitted Gaussian curve
+            sns.lineplot(
+                x=powers, y=norm_counts, ax=ax, lw=2, marker="o", label=f"NV {nv_idx+1}"
+            )
+            if not np.isnan(optimal_power):
+                ax.plot(powers, gaussian(powers, *popt), "r-", label="Gaussian fit")
+                ax.axvline(
+                    optimal_power,
+                    color="green",
+                    linestyle="--",
+                    label=f"Opt. Power = {optimal_power:.2f} dBm",
+                )
+
+            # Set labels and grid
+            ax.set_xlabel("Microwave Power (dBm)")
+            ax.set_ylabel("Normalized NV- Population")
+            ax.grid(True, linestyle="--", linewidth=0.5)
+            ax.legend()
+
+        else:
+            ax.axis("off")  # Hide unused subplots if number of NVs < grid size
+
+    plt.tight_layout()
+    plt.show()
+
+    return optimal_powers
+
+
+def main(file_id=1661020621314, num_cols=3):
+    """
+    Main function to load the data, process it, and plot NVs.
+
+    Parameters:
+    file_id: ID or path of the data file.
+    num_cols: Number of columns for the grid layout.
+    """
+    # Load data using dm.get_raw_data
+    data = dm.get_raw_data(file_id=file_id)
+
+    # Extract necessary information from the data
+    nv_list = data["nv_list"]
+    powers = data["powers"]  # Assuming powers correspond to microwave power sweep
+    counts = np.array(data["states"])
     sig_counts, ref_counts = counts[0], counts[1]
 
     # Process counts (replace widefield.process_counts with correct function)
     avg_counts, avg_counts_ste, norms = widefield.process_counts(
         nv_list, sig_counts, ref_counts, threshold=False
     )
+    norm_counts_list = avg_counts - norms[0][:, np.newaxis]
 
-    norm_counts = avg_counts - norms[0][:, np.newaxis]
-    norm_counts_ste = avg_counts_ste
-
-    # Set up seaborn style for better aesthetics
-    sns.set(style="whitegrid", palette="muted")
-
-    # Dynamically calculate the number of rows and columns for the mosaic
-    num_cols = min(6, num_nvs)  # Limit to 6 columns for readability
-    num_rows = (num_nvs + num_cols - 1) // num_cols  # Calculate rows dynamically
-
-    fig, axes_pack = plt.subplots(
-        num_rows, num_cols, figsize=(num_cols * 4, num_rows * 3)
-    )
-    axes_pack = axes_pack.flatten()  # Flatten to easily iterate over the axes
-
-    colors = sns.color_palette("deep", num_nvs)
-
-    # Plot each NV in its respective subplot
-    for i, ax in enumerate(axes_pack):
-        if i < num_nvs:
-            nv = nv_list[i]
-            ax.errorbar(
-                powers,
-                norm_counts[i],
-                yerr=norm_counts_ste[i],
-                fmt="o",
-                color=colors[i % len(colors)],
-                label=f"NV {nv.name}",
-            )
-            sns.lineplot(
-                x=powers, y=norm_counts[i], ax=ax, color=colors[i % len(colors)], lw=2
-            )
-
-            # Add labels and title for each subplot
-            ax.set_title(f"NV {nv.name}")
-            ax.set_xlabel("Microwave Power (dBm)")
-            ax.set_ylabel("Normalized NV- Population")
-            ax.grid(True)
-
-        else:
-            ax.axis("off")  # Hide any empty subplots if num_nvs < grid size
-
-    plt.tight_layout()
-    return fig
-
-
-def main(
-    nv_list: list[NVSig],
-    num_steps,
-    num_reps,
-    num_runs,
-    power_range,
-    uwave_ind_list=[0, 1],
-):
-    ### Some initial setup
-
-    pulse_gen = tb.get_server_pulse_gen()
-    powers = calculate_powers(0, power_range, num_steps)
-    # powers = np.linspace(0, power_range, num_steps) + 1
-
-    seq_file = "resonance_ref.py"
-
-    ### Collect the data
-
-    def run_fn(step_inds):
-        seq_args = [widefield.get_base_scc_seq_args(nv_list, uwave_ind_list), step_inds]
-        seq_args_string = tb.encode_seq_args(seq_args)
-        pulse_gen.stream_load(seq_file, seq_args_string, num_reps)
-
-    def step_fn(step_ind):
-        power = powers[step_ind]
-        for ind in uwave_ind_list:
-            uwave_dict = tb.get_uwave_dict(ind)
-            uwave_power = uwave_dict["uwave_power"]
-            sig_gen = tb.get_server_sig_gen(ind=ind)
-            sig_gen.set_amp(round(uwave_power + power, 3))
-
-    data = base_routine.main(
-        nv_list,
-        num_steps,
-        num_reps,
-        num_runs,
-        run_fn,
-        step_fn,
-        uwave_ind_list=uwave_ind_list,
+    # Plot all NV data and return the optimal powers
+    optimal_powers = plot_all_nv_data(
+        nv_list, powers, norm_counts_list, num_cols=num_cols
     )
 
-    ### Process and plot
-
-    data["powers"] = powers
-    try:
-        raw_fig = create_raw_data_figure(data)
-    except Exception as exc:
-        print(exc)
-        raw_fig = None
-
-    ### Clean up and return
-
-    tb.reset_cfm()
-    kpl.show()
-
-    timestamp = dm.get_time_stamp()
-    data |= {
-        "timestamp": timestamp,
-        "power-units": "GHz",
-        "power_range": power_range,
-    }
-
-    repr_nv_sig = widefield.get_repr_nv_sig(nv_list)
-    repr_nv_name = repr_nv_sig.name
-    file_path = dm.get_file_path(__file__, timestamp, repr_nv_name)
-    dm.save_raw_data(data, file_path)
-    if raw_fig is not None:
-        dm.save_figure(raw_fig, file_path)
+    # Print the optimal powers for each NV
+    for idx, nv in enumerate(nv_list):
+        print(f"Optimal power for NV {nv.name}: {optimal_powers[idx]:.2f} dBm")
 
 
 if __name__ == "__main__":
-    kpl.init_kplotlib()
-
-    data = dm.get_raw_data(file_id=1661020621314)
-    # print(data.keys())
-    raw_fig = create_raw_data_figure(data)
-
-    kpl.show(block=True)
+    main(num_cols=7)

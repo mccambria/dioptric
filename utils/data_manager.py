@@ -312,7 +312,11 @@ def get_img(file_name=None, ext=None, file_id=None):
     img = np.asarray(img)
     return np.asarray(img)
 
-
+def get_fileids_from_folder(folder_id):
+    folder = client.folder(folder_id).get_items()
+    for item in folder:
+        if item.type == 'file' and item.name.endswith('.txt'):
+            print(f"File Name: {item.name}, File ID: {item.id}")
 # endregion
 # region Misc public functions
 
@@ -353,8 +357,6 @@ def get_nv_sig_units():
     except Exception:
         nv_sig_units = ""
     return nv_sig_units
-
-
 # endregion
 # region Private functions
 
