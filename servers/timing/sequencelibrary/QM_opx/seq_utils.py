@@ -255,9 +255,9 @@ def _macro_scc_yellow_shelving(
     ref_spin_flip=False,
 ):
     # shelving region
-    shelving_laser_name = tb.get_laser_name(LaserKey.YELLOW_SHELVING)
+    shelving_laser_name = tb.get_laser_name(LaserKey.WIDEFIELD_SHELVING)
     shelving_laser_el = get_laser_mod_element(shelving_laser_name)
-    shelving_laser_dict = tb.get_optics_dict(LaserKey.YELLOW_SHELVING)
+    shelving_laser_dict = tb.get_optics_dict(LaserKey.WIDEFIELD_SHELVING)
     shelving_pulse_duration = shelving_laser_dict["duration"]
     buffer = get_widefield_operation_buffer()
     qua.align()

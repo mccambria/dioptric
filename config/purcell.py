@@ -209,7 +209,7 @@ config |= {
         # LaserKey.SCC: {"name": red_laser, "duration": 248},
         LaserKey.SCC: {"name": red_laser, "duration": 124},
         # LaserKey.SCC: {"name": green_laser, "duration": 200},
-        LaserKey.YELLOW_SHELVING: {"name": yellow_laser, "duration": 60},
+        LaserKey.WIDEFIELD_SHELVING: {"name": yellow_laser, "duration": 60},
         LaserKey.WIDEFIELD_IMAGING: {"name": yellow_laser, "duration": 12e6},
         # LaserKey.WIDEFIELD_SPIN_POL: {"name": yellow_laser, "duration": 10e3},
         LaserKey.WIDEFIELD_SPIN_POL: {"name": yellow_laser, "duration": 100e3},
@@ -217,7 +217,7 @@ config |= {
         LaserKey.WIDEFIELD_CHARGE_READOUT: {"name": yellow_laser, "duration": 24e6},
         # LaserKey.WIDEFIELD_CHARGE_READOUT: {"name": yellow_laser, "duration": 100e6},
         "scc_green_shelving_pulse": False,  # Whether or not to include a shelving pulse in SCC
-        "scc_yellow_shelving_pulse": True,
+        "scc_yellow_shelving_pulse": False,
     },
     ###
     "Positioning": {
@@ -665,7 +665,7 @@ opx_config = {
         },
         "yellow_shelving": {
             "operation": "control",
-            "length": config["Optics"][LaserKey.YELLOW_SHELVING]["duration"],
+            "length": config["Optics"][LaserKey.WIDEFIELD_SHELVING]["duration"],
             "waveforms": {"single": "yellow_shelving"},
         },
         #
