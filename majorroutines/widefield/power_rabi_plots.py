@@ -133,15 +133,9 @@ def plot_all_nv_data(nv_list, powers, norm_counts_list, num_cols=3):
     return optimal_powers
 
 
-def main(file_id=1661020621314, num_cols=3):
-    """
-    Main function to load the data, process it, and plot NVs.
-
-    Parameters:
-    file_id: ID or path of the data file.
-    num_cols: Number of columns for the grid layout.
-    """
+if __name__ == "__main__":
     # Load data using dm.get_raw_data
+    file_id = 1661020621314
     data = dm.get_raw_data(file_id=file_id)
 
     # Extract necessary information from the data
@@ -157,14 +151,8 @@ def main(file_id=1661020621314, num_cols=3):
     norm_counts_list = avg_counts - norms[0][:, np.newaxis]
 
     # Plot all NV data and return the optimal powers
-    optimal_powers = plot_all_nv_data(
-        nv_list, powers, norm_counts_list, num_cols=num_cols
-    )
+    optimal_powers = plot_all_nv_data(nv_list, powers, norm_counts_list, num_cols=6)
 
     # Print the optimal powers for each NV
     for idx, nv in enumerate(nv_list):
         print(f"Optimal power for NV {nv.name}: {optimal_powers[idx]:.2f} dBm")
-
-
-if __name__ == "__main__":
-    main(num_cols=7)

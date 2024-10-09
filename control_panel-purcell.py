@@ -373,7 +373,8 @@ def do_power_rabi(nv_list):
         uwave_ind_list,
     )
 
-    # def do_spin_echo(nv_list):
+
+def do_spin_echo(nv_list):
     min_tau = 200
     max_tau = 84e3 + min_tau
     num_steps = 29
@@ -820,7 +821,7 @@ if __name__ == "__main__":
     # magnet_angle = 90
     date_str = "2024_03_12"
     # global_coords = [None, None, z_coord]
-    global_coords = [-1.8, 2.7, 0.25]
+    global_coords = [-1.7, 2.8, 0.15]
     # pixel_to_voltage(initial_pixel_coords, final_pixel_coords)
     # global_coords = piezo_voltage_to_pixel_calibration(final_pixel_coords)
 
@@ -981,7 +982,7 @@ if __name__ == "__main__":
         # widefield.set_all_scanning_drift_from_pixel_drift()
 
         # do_optimize_z(nv_sig)
-        do_optimize_xyz(nv_sig)
+        # do_optimize_xyz(nv_sig)
         # pos.set_xyz_on_nv(nv_sig)
         # piezo_voltage_to_pixel_calibration()
 
@@ -1014,7 +1015,7 @@ if __name__ == "__main__":
         # do_scanning_image_sample(nv_sig)
         # do_widefield_image_sample(nv_sig, 50)
 
-        # do_scanning_image_sample(nv_sig)
+        do_scanning_image_sample(nv_sig)
         # do_scanning_image_sample_zoom(nv_sig)
         # do_widefield_image_sample(nv_sig, 50)
         # do_widefield_image_sample(nv_sig, 100)
@@ -1080,11 +1081,11 @@ if __name__ == "__main__":
         # for nv in nv_list:
         #     nv.spin_flip = False
         # Get the indices of well-separated NVs
-        selected_indices = widefield.select_well_separated_nvs(nv_list, 15)
-        for index in selected_indices:
-            nv = nv_list[index]
-            nv.spin_flip = True
-        do_simple_correlation_test(nv_list)
+        # selected_indices = widefield.select_well_separated_nvs(nv_list, 15)
+        # for index in selected_indices:
+        #     nv = nv_list[index]
+        #     nv.spin_flip = True
+        # do_simple_correlation_test(nv_list)
 
         # for nv in nv_list:
         #     nv.spin_flip = False
