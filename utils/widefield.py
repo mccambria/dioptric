@@ -13,13 +13,16 @@ import itertools
 from functools import cache
 from importlib import import_module
 from pathlib import Path
-
+import numpy as np
+from skimage.filters import threshold_otsu, threshold_triangle, threshold_li
+from sklearn.cluster import KMeans
+from sklearn.mixture import GaussianMixture
 import cv2
 import matplotlib.pyplot as plt
+import matplotlib.patches as patches
 import numpy as np
 from matplotlib import animation
 from numpy import inf
-from scipy.ndimage import affine_transform
 from scipy.special import gamma
 from scipy.stats import poisson
 
@@ -145,7 +148,6 @@ def _calc_dist_matrix(radius=None):
 
 #     counts = np.sum(img_array_crop, where=dist < radius)
 #     return counts
-
 
 # SBC: update on 9/9/2024
 def integrate_counts(img_array, pixel_coords, radius=None):
@@ -307,7 +309,6 @@ def average_counts(sig_counts, ref_counts=None):
 
     return avg_counts, avg_counts_ste, norms
 
-
 # def threshold_counts(nv_list, sig_counts, ref_counts=None, dynamic_thresh=False):
 #     """Only actually thresholds counts for NVs with thresholds specified in their sigs.
 #     If there's no threshold, then the raw counts are just averaged as normal."""
@@ -350,10 +351,19 @@ def average_counts(sig_counts, ref_counts=None):
 #         return sig_states, ref_states
 #     else:
 #         return sig_states
-import numpy as np
-from skimage.filters import threshold_otsu, threshold_triangle, threshold_li
-from sklearn.cluster import KMeans
-from sklearn.mixture import GaussianMixture
+
+# def process_counts(nv_list, sig_counts, ref_counts=None, threshold=True):
+#     """Alias for threshold_counts with a more generic name"""
+#     _validate_counts_structure(sig_counts)
+#     _validate_counts_structure(ref_counts)
+#     if threshold:
+#         sig_states_array, ref_states_array = threshold_counts(
+#             nv_list, sig_counts, ref_counts, dynamic_thresh=False
+#         )
+#         return average_counts(sig_states_array, ref_states_array)
+#     else:
+#         return average_counts(sig_counts, ref_counts)
+
 def threshold_counts(nv_list, sig_counts, ref_counts=None, method='otsu'):
     """Threshold counts for NVs based on the selected method."""
     _validate_counts_structure(sig_counts)
@@ -398,7 +408,6 @@ def threshold_counts(nv_list, sig_counts, ref_counts=None, method='otsu'):
         return sig_states, ref_states
     else:
         return sig_states
-
 
 # Adaptive thresholding function based on mean or gaussian
 def adaptive_thresholding(counts, method='gaussian'):
@@ -495,7 +504,6 @@ def gmm_threshold(data, use_intersection=False):
     
     return weighted_mean
 
-
 def poisson_pmf_cont(k, mean):
     return mean**k * np.exp(-mean) / gamma(k + 1)
 
@@ -567,19 +575,6 @@ def charge_state_mle(nv_list, img_array):
     states = [charge_state_mle_single(nv, img_array) for nv in nv_list]
 
     return states
-
-
-# def process_counts(nv_list, sig_counts, ref_counts=None, threshold=True):
-#     """Alias for threshold_counts with a more generic name"""
-#     _validate_counts_structure(sig_counts)
-#     _validate_counts_structure(ref_counts)
-#     if threshold:
-#         sig_states_array, ref_states_array = threshold_counts(
-#             nv_list, sig_counts, ref_counts, dynamic_thresh=False
-#         )
-#         return average_counts(sig_states_array, ref_states_array)
-#     else:
-#         return average_counts(sig_counts, ref_counts)
 
 def process_counts(nv_list, sig_counts, ref_counts=None, threshold=True, method='otsu'):
     """Alias for threshold_counts with a more generic name."""
@@ -897,26 +892,6 @@ def _get_scanning_optics():
 
     return scanning_optics
 
-
-# def set_scanning_drift_from_pixel_drift(
-#     pixel_drift=None, coords_key=CoordsKey.GLOBAL, relative=False
-# ):
-#     scanning_drift = pixel_to_scanning_drift(pixel_drift, coords_key)
-#     prev_drift = pos.get_drift(coords_key)
-
-#     # If relative, retain the old scanning drift and add the new value on top
-#     if relative:
-#         if len(prev_drift) > len(scanning_drift):
-#             scanning_drift.append(0)
-#         new_drift = np.array(scanning_drift)
-#         scanning_drift = new_drift + prev_drift
-
-#     elif len(prev_drift) > len(scanning_drift):
-#         scanning_drift = [*scanning_drift, prev_drift[2]]
-#     print(scanning_drift)
-#     pos.set_drift(scanning_drift, coords_key)
-
-
 def set_scanning_drift_from_pixel_drift(
     pixel_drift=None, coords_key=CoordsKey.GLOBAL, relative=False
 ):
@@ -942,33 +917,11 @@ def set_scanning_drift_from_pixel_drift(
     pos.set_drift(new_drift, coords_key)
 
 
-# def set_scanning_drift_from_pixel_drift(
-#     pixel_drift=None, coords_key=CoordsKey.GLOBAL, relative=False
-# ):
-#     scanning_drift = pixel_to_scanning_drift(pixel_drift, coords_key)
-#     if relative:
-#         prev_drift = pos.get_drift(coords_key)
-#         scanning_drift = prev_drift + scanning_drift
-#     # Set the updated drift
-#     pos.set_drift(scanning_drift, coords_key)
-
-
 def set_pixel_drift_from_scanning_drift(
     scanning_drift=None, coords_key=CoordsKey.GLOBAL
 ):
     pixel_drift = scanning_to_pixel_drift(scanning_drift, coords_key)
     set_pixel_drift(pixel_drift)
-
-
-# def pixel_to_scanning_drift(pixel_drift=None, coords_key=CoordsKey.GLOBAL):
-#     if pixel_drift is None:
-#         pixel_drift = get_pixel_drift()
-#         scanning_drift = pos.get_drift(coords_key)
-#     transform_matrix = _get_affine_transform_matrix(
-#         coords_key, direction="pixel_to_scanning"
-#     )
-#     scanning_drift = np.dot(transform_matrix, np.append(pixel_drift, 1))[:2]
-#     return scanning_drift.tolist()
 
 
 def pixel_to_scanning_drift(pixel_drift=None, coords_key=CoordsKey.GLOBAL):
@@ -992,8 +945,8 @@ def scanning_to_pixel_drift(scanning_drift=None, coords_key=CoordsKey.GLOBAL):
     pixel_drift = np.dot(transform_matrix, np.append(scanning_drift, 1))[:2]
     return pixel_drift.tolist()
 
-
 # endregion
+
 # region Scanning to pixel calibration
 def set_nv_scanning_coords_from_pixel_coords(
     nv_sig, coords_key=CoordsKey.GLOBAL, drift_adjust=True
@@ -1593,15 +1546,9 @@ def plot_correlations(axes_pack, nv_list, x, counts):
 
             # size = kpl.Size.SMALL
             # kpl.plot_points(ax, x, corrs, size=size)
-
-
 # endregion
 
 # Add this function to your widefield module
-
-import matplotlib.patches as patches
-
-
 def draw_circle_on_nv(
     ax, center, radius, color=kpl.KplColors.RED, linestyle="solid", no_legend=True
 ):

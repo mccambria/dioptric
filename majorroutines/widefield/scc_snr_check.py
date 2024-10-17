@@ -29,9 +29,12 @@ def process_and_plot(data):
     ref_counts = counts[1]
 
     if threshold:
-        sig_counts, ref_counts = widefield.threshold_counts(
-            nv_list, sig_counts, ref_counts, dynamic_thresh=True
-        )
+        # sig_counts, ref_counts = widefield.threshold_counts(
+        #     nv_list, sig_counts, ref_counts, dynamic_thresh=True
+        # )
+        thresh_method= "otsu"
+        sig_counts, ref_counts = widefield.threshold_counts(nv_list, sig_counts, ref_counts, method=thresh_method)
+
 
     ### Report the results and return
 
@@ -181,7 +184,7 @@ def main(nv_list, num_reps, num_runs, scc_include_inds=None, uwave_ind_list=[0, 
 if __name__ == "__main__":
     kpl.init_kplotlib()
 
-    data = dm.get_raw_data(file_id=1576977691052)
+    data = dm.get_raw_data(file_id=1664917535036)
     # data = dm.get_raw_data(file_id=1575309155682)
     # data = dm.get_raw_data(file_id=1575323838562)
     figs = process_and_plot(data)

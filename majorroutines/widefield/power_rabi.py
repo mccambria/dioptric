@@ -27,6 +27,16 @@ from utils import widefield as widefield
 from utils.constants import NVSig, NVSpinState
 from utils.positioning import get_scan_1d as calculate_powers
 
+def get_lower_left_ax(axes_pack):
+    """Helper function to find the lower-left axis from axes_pack."""
+    if isinstance(axes_pack, dict):
+        # Assuming the axes_pack dictionary has keys indicating positions (like a mosaic)
+        # Let's extract the keys and find the one in the lower left
+        lower_left_key = min(axes_pack.keys())  # Assuming keys represent positions and lower-left is smallest
+        return axes_pack[lower_left_key]
+    else:
+        # If it's a list or something else, return the last axis
+        return axes_pack[-1]
 
 def create_raw_data_figure(data):
     nv_list = data["nv_list"]
@@ -45,8 +55,13 @@ def create_raw_data_figure(data):
 
     widefield.plot_fit(axes_pack, nv_list, powers, norm_counts, norm_counts_ste)
 
-    kpl.set_shared_ax_xlabel(fig, axes_pack, layout, "Microwave power (dBm)")
-    kpl.set_shared_ax_ylabel(fig, axes_pack, layout, "Normalized NV- population")
+    # kpl.set_shared_ax_xlabel(fig, axes_pack, layout, "Microwave power (dBm)")
+    # kpl.set_shared_ax_ylabel(fig, axes_pack, layout, "Normalized NV- population")
+
+    # Find the lower-left axis dynamically using the helper function
+    lower_left_ax = get_lower_left_ax(axes_pack)
+    kpl.set_shared_ax_xlabel(lower_left_ax, "Microwave power (dBm)")
+    kpl.set_shared_ax_ylabel(lower_left_ax, "Normalized NV- population")
 
     return fig
 
@@ -125,6 +140,7 @@ if __name__ == "__main__":
     kpl.init_kplotlib()
 
     data = dm.get_raw_data(file_id=1547288098999)
+    data = dm.get_raw_data(file_id=1666943042304)
 
     raw_fig = create_raw_data_figure(data)
 
