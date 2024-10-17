@@ -134,19 +134,17 @@ config |= {
             "uwave_power": 2.3,
             "frequency": 2.8585669247525622,
             # "frequency": 2.9304468840166678,
-            # "rabi_period": 128,
             "rabi_period": 128,
             "iq_delay": 140,
         },
         "sig_gen_1": {
             "name": "sig_gen_STAN_sg394_2",
             "uwave_power": 8.1,
-            "frequency": 2.8124502997156644,
+            "frequency": 2.812,
             # "frequency": 3.05,
             # "frequency": 2.79,
             # "frequency": 2.8874701085827104,
             "rabi_period": 128,
-            # "rabi_period": 124,
         },
     },
     ###
@@ -209,13 +207,15 @@ config |= {
         # LaserKey.SCC: {"name": red_laser, "duration": 248},
         LaserKey.SCC: {"name": red_laser, "duration": 124},
         # LaserKey.SCC: {"name": green_laser, "duration": 200},
+        LaserKey.WIDEFIELD_SHELVING: {"name": yellow_laser, "duration": 60},
         LaserKey.WIDEFIELD_IMAGING: {"name": yellow_laser, "duration": 12e6},
         # LaserKey.WIDEFIELD_SPIN_POL: {"name": yellow_laser, "duration": 10e3},
         LaserKey.WIDEFIELD_SPIN_POL: {"name": yellow_laser, "duration": 100e3},
         # LaserKey.WIDEFIELD_SPIN_POL: {"name": yellow_laser, "duration": 1e6},
-        LaserKey.WIDEFIELD_CHARGE_READOUT: {"name": yellow_laser, "duration": 12e6},
+        LaserKey.WIDEFIELD_CHARGE_READOUT: {"name": yellow_laser, "duration": 24e6},
         # LaserKey.WIDEFIELD_CHARGE_READOUT: {"name": yellow_laser, "duration": 100e6},
-        "scc_shelving_pulse": False,  # Whether or not to include a shelving pulse in SCC
+        "scc_green_shelving_pulse": False,  # Whether or not to include a shelving pulse in SCC
+        "scc_yellow_shelving_pulse": False,
     },
     ###
     "Positioning": {
@@ -467,6 +467,7 @@ opx_config = {
                 "off": "ao_off",
                 "charge_readout": "yellow_charge_readout",
                 "spin_pol": "yellow_spin_pol",
+                "shelving": "yellow_shelving",
             },
         },
         "ao_laser_OPTO_589_am_sticky": {
@@ -660,6 +661,11 @@ opx_config = {
             "length": config["Optics"][LaserKey.WIDEFIELD_SPIN_POL]["duration"],
             "waveforms": {"single": "yellow_spin_pol"},
         },
+        "yellow_shelving": {
+            "operation": "control",
+            "length": config["Optics"][LaserKey.WIDEFIELD_SHELVING]["duration"],
+            "waveforms": {"single": "yellow_shelving"},
+        },
         #
         "ao_cw": {
             "operation": "control",
@@ -790,7 +796,8 @@ opx_config = {
         # "yellow_imaging": {"type": "constant", "sample": 0.50},  # 0.35
         "yellow_charge_readout": {"type": "constant", "sample": 0.36},  # 50e6
         # "yellow_charge_readout": {"type": "constant", "sample": 0.25},  # 100e6
-        "yellow_spin_pol": {"type": "constant", "sample": 0.37},
+        "yellow_spin_pol": {"type": "constant", "sample": 0.39},
+        "yellow_shelving": {"type": "constant", "sample": 0.33},
         # Other
         "aod_cw": {"type": "constant", "sample": 0.35},
         "cw": {"type": "constant", "sample": 0.5},

@@ -15,6 +15,8 @@ from random import shuffle
 
 import matplotlib.pyplot as plt
 import numpy as np
+import seaborn as sns
+from scipy.optimize import curve_fit
 
 from majorroutines.pulsed_resonance import fit_resonance, voigt, voigt_split
 from majorroutines.widefield import base_routine, optimize
@@ -28,23 +30,26 @@ from utils.constants import NVSig, NVSpinState
 from utils.positioning import get_scan_1d as calculate_powers
 
 
-import numpy as np
-import matplotlib.pyplot as plt
-import seaborn as sns
-from scipy.optimize import curve_fit
+def create_raw_data_figure(data):
+    nv_list = data["nv_list"]
+    num_nvs = len(nv_list)
+    powers = data["powers"]
+    counts = np.array(data["states"])
+
 
 # Define a Gaussian function to fit the resonance peak
 def gaussian(x, a, x0, sigma):
-    return a * np.exp(-(x - x0) ** 2 / (2 * sigma ** 2))
+    return a * np.exp(-((x - x0) ** 2) / (2 * sigma**2))
+
 
 def find_optimal_power(powers, norm_counts):
     """
     Find the optimal microwave power by fitting the data to a Gaussian and identifying the peak.
-    
+
     Parameters:
     powers (ndarray): Array of microwave power values.
     norm_counts (ndarray): Array of normalized NV- population counts.
-    
+
     Returns:
     optimal_power (float): The optimal microwave power at the peak of the fitted curve.
     popt (ndarray): The optimized parameters of the fitted Gaussian.
@@ -55,12 +60,14 @@ def find_optimal_power(powers, norm_counts):
     try:
         # Perform Gaussian curve fitting
         popt, _ = curve_fit(gaussian, powers, norm_counts, p0=initial_guess)
-        optimal_power = popt[1]  # Extract the optimal power (center of the Gaussian curve)
+        optimal_power = popt[
+            1
+        ]  # Extract the optimal power (center of the Gaussian curve)
     except RuntimeError:
         # If fitting fails, return None for both values
         optimal_power = np.nan
         popt = None
-    
+
     return optimal_power, popt
 
 
@@ -107,6 +114,8 @@ def plot_all_nv_data(nv_list, powers, norm_counts_list, num_cols=3):
 
             # Set labels, grid, and legend
             ax.set_xlabel("Microwave Power (dBm)")
+            ax.set_ylabel("Normalized NV- Population")
+            ax.grid(True, linestyle="--", linewidth=0.5)
             ax.set_ylabel("Normalized NV Population")
             ax.grid(True, linestyle='--', linewidth=0.5)
             ax.legend()
@@ -143,6 +152,7 @@ def extract_optimal_power(norm_counts, powers):
 
 if __name__ == "__main__":
     # Load data using dm.get_raw_data
+    file_id = 1661020621314
     file_id = 1666943042304
     data = dm.get_raw_data(file_id=file_id)
 
@@ -160,5 +170,9 @@ if __name__ == "__main__":
 
     # Plot all NV data and return the optimal powers
     optimal_powers = plot_all_nv_data(nv_list, powers, norm_counts_list)
+
+    # Print the optimal powers for each NV
+    for idx, nv in enumerate(nv_list):
+        print(f"Optimal power for NV {nv.name}: {optimal_powers[idx]:.2f} dBm")
 
     print(f"Optimal Powers for each NV: {optimal_powers}")

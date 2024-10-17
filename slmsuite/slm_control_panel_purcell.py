@@ -1,11 +1,7 @@
 import os
 import sys
-import time
-
-# Add slmsuite to the python path (for the case where it isn't installed via pip).
-sys.path.append(os.path.join(os.getcwd(), "c:/Users/Saroj Chand/Documents/dioptric"))
-
 import warnings
+from datetime import datetime
 
 import cv2
 import numpy as np
@@ -23,6 +19,7 @@ import matplotlib.pyplot as plt
 from IPython.display import Image
 from scipy.optimize import curve_fit
 
+from utils import data_manager as dm
 from utils import tool_belt as tb
 
 mpl.rc("image", cmap="Blues")
@@ -77,14 +74,10 @@ def cam_plot():
     plt.show()
 
 
-def blaze():
+def blaze(vector_deg=(0.2, 0.2)):
     # Get .2 degrees in normalized units.
-    vector_deg = (0.2, 0.2)
     vector = toolbox.convert_blaze_vector(vector_deg, from_units="deg", to_units="norm")
-
-    # Get the phase for the new vector
     blaze_phase = toolbox.phase.blaze(grid=slm, vector=vector)
-
     plot_phase(blaze_phase, title="Blaze at {} deg".format(vector_deg))
 
 
@@ -171,16 +164,11 @@ def evaluate_uniformity(vectors=None, size=25):
 # Test pattern
 def circles():
     cam.set_exposure(0.1)
-    # Define parameters for the circle
     center = (750, 530)  # Center of the circle
-    # Generate circles with radii ranging from 10 to 200
     radii = np.linspace(50, 200, num=4)  # Adjust the number of circles as needed
-    # Generate points for each circle and create the hologram
     circle_points = []
     for radius in radii:
-        num_points = int(
-            2 * np.pi * radius / 60
-        )  # Adjust the number of points based on the radius
+        num_points = int(2 * np.pi * radius / 60)
 
         # Generate points within the circle using polar coordinates
         theta = np.linspace(0, 2 * np.pi, num_points)  # Angle values
@@ -224,6 +212,7 @@ def circles():
     # evaluate_uniformity(vectors=circle)
 
 
+# region "nv phase calulation"
 def calibration_triangle():
     cam.set_exposure(0.1)
 
@@ -255,10 +244,47 @@ def calibration_triangle():
     cam_plot()
 
 
+def nuvu2thorcam_calibration(coords):
+    """
+    Calibrates and transforms coordinates from the Nuvu camera's coordinate system
+    to the Thorlabs camera's coordinate system using an affine transformation.
+
+    Parameters:
+    coords (np.ndarray): An array of shape (N, 2) containing coordinates in the Nuvu camera's system.
+
+    Returns:
+    np.ndarray: An array of shape (N, 2) containing transformed coordinates in the Thorlabs camera's system.
+    """
+    # cal_coords_thorcam = np.array(
+    #     [[853.92, 590.0], [646.07, 590.0], [750.0, 410.0]], dtype="float32"
+    # )
+    # cal_coords_nuvu = np.array(
+    #     [[128.706, 72.789], [128.443, 140.826], [69.922, 104.404]], dtype="float32"
+    # )
+    cal_coords_thorcam = np.array(
+        [[957.846, 750.0], [542.153, 750.0], [750.0, 390.0]], dtype="float32"
+    )
+    cal_coords_nuvu = np.array(
+        [[187.082, 54.815], [190.305, 195.338], [60.959, 128.551]], dtype="float32"
+    )
+
+    # Compute the affine transformation matrix
+    M = cv2.getAffineTransform(cal_coords_nuvu, cal_coords_thorcam)
+    # Append a column of ones to the input coordinates to facilitate affine transformation
+    ones_column = np.ones((coords.shape[0], 1))
+    coords_homogeneous = np.hstack((coords, ones_column))
+    thorcam_coords = np.dot(
+        coords_homogeneous, M.T
+    )  # Perform the affine transformation
+
+    return thorcam_coords
+
+
 def load_nv_coords(
     # file_path="slmsuite/nv_blob_detection/nv_blob_filtered_162nvs_ref.npz",
     # file_path="slmsuite/nv_blob_detection/nv_coords_integras_counts_162nvs.npz",
-    file_path="slmsuite/nv_blob_detection/nv_coords_integras_counts_filtered.npz",
+    # file_path="slmsuite/nv_blob_detection/nv_coords_updated_spot_weights.npz",
+    file_path="slmsuite/nv_blob_detection/nv_coords_updated_spot_weights_manual_update.npz",
 ):
     data = np.load(file_path)
     nv_coordinates = data["nv_coordinates"]
@@ -276,15 +302,15 @@ nuvu_pixel_coords, spot_weights = load_nv_coords()
 #     ]
 # )
 print(f"Total NV coordinates: {len(nuvu_pixel_coords)}")
-thorcam_coords = example_library.nuvu2thorcam_calibration(nuvu_pixel_coords).T
+thorcam_coords = nuvu2thorcam_calibration(nuvu_pixel_coords).T
 
 
-def nvs_demo():
+def compute_nvs_phase():
     hologram = SpotHologram(
         shape=(4096, 2048),
         spot_vectors=thorcam_coords,
         basis="ij",
-        # spot_amp=spot_weights,
+        spot_amp=spot_weights,
         cameraslm=fs,
     )
     # Precondition computationally
@@ -297,19 +323,24 @@ def nvs_demo():
 
     initial_phase = hologram.extract_phase()
     # Define the path to save the phase data
-    path = r"C:\Users\matth\GitHub\dioptric\slmsuite\Initial_phase"
-    filename = "slm_phase_162nvs.npy"
+    file_path = r"slmsuite\computed_phase"
+    num_nvs = len(nuvu_pixel_coords)
+    now = datetime.now()
+    date_time_str = now.strftime("%Y%m%d_%H%M%S")  # Format: YYYYMMDD_HHMMSS
+    filename = f"slm_phase_{num_nvs}nvs_{date_time_str}.npy"
+    # file_path = dm.get_file_path(__file__, filename)
     # Save the phase data
-    save(initial_phase, path, filename)
+    save(initial_phase, file_path, filename)
     slm.write(initial_phase, settle=True)
     cam_plot()
 
 
-def nvs_phase():
+def write_nvs_phase():
     # phase = np.load(
     #     r"C:\Users\matth\GitHub\dioptric\slmsuite\Initial_phase\initial_phase.npy"
     # )
-    phase = np.load("slmsuite\optimized_phases\optimized_phase_nv_0.npy")
+    # phase = np.load("slmsuite\computed_phase\slm_phase_77nvs_20240926_182348.npy")
+    phase = np.load("slmsuite\computed_phase\slm_phase_77nvs_20241001_181243.npy")
     slm.write(phase, settle=True)
     cam_plot()
 
@@ -334,7 +365,8 @@ try:
     # test_wavefront_calibration()
     # wavefront_calibration()
     # load_wavefront_calibration()
-    nvs_demo()
+    # compute_nvs_phase()
+    write_nvs_phase()
     # circles()
     # calibration_triangle()
     # circle_pattern()
@@ -343,6 +375,6 @@ try:
 finally:
     print("Closing")
     slm.close_window()
-    # slm.close_device()
+    slm.close_device()
     cam.close()
 # endregions
