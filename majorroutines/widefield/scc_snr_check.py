@@ -29,9 +29,12 @@ def process_and_plot(data):
     ref_counts = counts[1]
 
     if threshold:
-        sig_counts, ref_counts = widefield.threshold_counts(
-            nv_list, sig_counts, ref_counts, dynamic_thresh=True
-        )
+        # sig_counts, ref_counts = widefield.threshold_counts(
+        #     nv_list, sig_counts, ref_counts, dynamic_thresh=True
+        # )
+        thresh_method= "otsu"
+        sig_counts, ref_counts = widefield.threshold_counts(nv_list, sig_counts, ref_counts, method=thresh_method)
+
 
     ### Report the results and return
 

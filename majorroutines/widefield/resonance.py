@@ -323,7 +323,7 @@ if __name__ == "__main__":
     kpl.init_kplotlib()
 
     ##########
-    data = dm.get_raw_data(file_id=1647377018086, load_npz=False, use_cache=True)
+    data = dm.get_raw_data(file_id=1663484946120, load_npz=False, use_cache=True)
     nv_list = data["nv_list"]
     num_nvs = len(nv_list)
     num_steps = data["num_steps"]

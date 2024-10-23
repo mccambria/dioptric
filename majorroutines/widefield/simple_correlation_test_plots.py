@@ -1,3 +1,6 @@
+
+
+# -*- coding: utf-8 -*-
 """
 Created on Semptember 16th, 2024
 @author: Saroj Chand
@@ -36,7 +39,6 @@ def nan_corr_coef(arr):
 
     # Mask NaN values in the array
     masked_arr = ma.masked_invalid(arr)
-
     # Compute the correlation coefficient using masked arrays, ignoring NaNs
     corr_coef_arr = np.ma.corrcoef(masked_arr, rowvar=True)
 
@@ -70,6 +72,11 @@ def process_and_plot(data, rearrangement="spin_flip", file_path=None):
     ref_counts = np.array(counts[1])
 
     # Remove NVs with NaN values
+    num_nvs = len(nv_list)
+
+    # Thresholding counts with dynamic thresholds
+    thresh_method = "otsu"
+    sig_counts, ref_counts = threshold_counts(nv_list, sig_counts, ref_counts, thresh_method)
     sig_counts, ref_counts, nv_list = remove_nans_from_data(
         sig_counts, ref_counts, nv_list
     )
@@ -561,7 +568,6 @@ def draw_curved_edges(
         # Add the edge to the axis
         ax.add_patch(curve)
 
-
 def plot_nv_network(data):
     """
     Plot a network graph where NV centers are represented as nodes,
@@ -645,8 +651,19 @@ def plot_nv_network(data):
     for i in range(sig_corr_coeffs.shape[0]):
         for j in range(i + 1, sig_corr_coeffs.shape[1]):
             if abs(sig_corr_coeffs[i, j]) > threshold:
+            # if sig_corr_coeffs[i, j] < threshold:  # Only anticorrelations (negative values)
                 G.add_edge(i, j)
                 edges.append((i, j))
+                edge_colors.append(sig_corr_coeffs[i, j])  # Correlation value as the edge color
+                # edge_widths.append(0.5)  # Edge width proportional to correlation
+                edge_widths.append(5 * abs(sig_corr_coeffs[i, j]))  # Edge width proportional to correlation
+                edge_alphas.append(0.5 + 0.5 * abs(sig_corr_coeffs[i, j]))  # Transparency proportional to correlation
+                # edge_alphas.append(0.5)     
+                # Normalize edge colors between -1 and 1 for the colormap
+                # mean_corr = np.nanmean(sig_corr_coeffs<0)
+                # std_corr = np.nanstd(sig_corr_coeffs)
+                # vmax = mean_corr + 0.1*std_corr
+                vmax = 0.01
                 edge_colors.append(
                     sig_corr_coeffs[i, j]
                 )  # Correlation value as the edge color
@@ -681,6 +698,9 @@ def plot_nv_network(data):
     # Set title and legend
     plt.title("NV Center Network Graph", fontsize=16)
     plt.legend(scatterpoints=1)
+    
+    if fig is not None:
+        dm.save_figure(fig, file_path)
 
     if fig is not None:
         dm.save_figure(fig, file_path)
@@ -697,6 +717,9 @@ if __name__ == "__main__":
 
     now = datetime.now()
     date_time_str = now.strftime("%Y%m%d_%H%M%S")
+    # file_id =  1662370749488
+    file_id =  1667457284652
+    data = dm.get_raw_data(file_id= file_id)
     file_id = 1662370749488
     data = dm.get_raw_data(file_id=file_id)
     file_name = dm.get_file_name(file_id=file_id)
@@ -706,7 +729,7 @@ if __name__ == "__main__":
     if data is not None:
         # Process and plot the data with a specific rearrangement pattern
         # process_and_plot(data,  rearrangement="by_corr_sign_alternate_block")
-        # process_and_plot(data, rearrangement="corr_sign", file_path=file_path)
-        plot_nv_network(data)
+        # process_and_plot(data, rearrangement="checkerboard", file_path=file_path)
+        plot_nv_network(data, file_path)
     else:
         print("Error: Failed to fetch the raw data.")

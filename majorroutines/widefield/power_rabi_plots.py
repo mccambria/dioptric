@@ -73,12 +73,12 @@ def find_optimal_power(powers, norm_counts):
 
 def plot_all_nv_data(nv_list, powers, norm_counts_list, num_cols=3):
     """
-    Plot the NV resonance data for all NVs using Seaborn aesthetics and return the optimal power for each NV.
-
+    Plot NV resonance data for all NVs using Seaborn aesthetics and return the optimal power for each NV.
+    
     Parameters:
     nv_list (list): List of NVs to plot.
     powers (ndarray): Array of microwave power values.
-    norm_counts_list (ndarray): List of normalized NV population data for each NV.
+    norm_counts_list (ndarray): Normalized NV population data for each NV.
     num_cols (int): Number of columns in the subplot grid.
 
     Returns:
@@ -89,41 +89,36 @@ def plot_all_nv_data(nv_list, powers, norm_counts_list, num_cols=3):
     num_nvs = len(nv_list)
     num_rows = int(np.ceil(num_nvs / num_cols))  # Calculate number of rows needed
 
-    fig, axes_pack = plt.subplots(
+    fig, axes = plt.subplots(
         num_rows, num_cols, figsize=(num_cols * 5, num_rows * 4), sharex=True
     )
-    axes_pack = axes_pack.flatten()
+    axes = axes.flatten()
 
     optimal_powers = []  # List to store the optimal power for each NV
 
-    for nv_idx, ax in enumerate(axes_pack):
+    for nv_idx, ax in enumerate(axes):
         if nv_idx < num_nvs:
             # Get normalized counts for this NV
             norm_counts = norm_counts_list[nv_idx]
 
-            # Find the optimal microwave power using the Gaussian fit
-            optimal_power, popt = find_optimal_power(powers, norm_counts)
+            # Find the optimal microwave power
+            optimal_power, max_population = extract_optimal_power(norm_counts, powers)
             optimal_powers.append(optimal_power)
 
-            # Plot the raw data and the fitted Gaussian curve
-            sns.lineplot(
-                x=powers, y=norm_counts, ax=ax, lw=2, marker="o", label=f"NV {nv_idx+1}"
-            )
-            if not np.isnan(optimal_power):
-                ax.plot(powers, gaussian(powers, *popt), "r-", label="Gaussian fit")
-                ax.axvline(
-                    optimal_power,
-                    color="green",
-                    linestyle="--",
-                    label=f"Opt. Power = {optimal_power:.2f} dBm",
-                )
+            # Plot the raw data
+            sns.lineplot(x=powers, y=norm_counts, ax=ax, lw=2, marker="o", label=f"NV {nv_idx+1}")
 
-            # Set labels and grid
+            # If the optimal power was found, plot the Gaussian fit and the optimal line
+            if not np.isnan(optimal_power):
+                ax.axvline(optimal_power, color='green', linestyle='--', label=f'Opt. Power = {optimal_power:.2f} dBm')
+
+            # Set labels, grid, and legend
             ax.set_xlabel("Microwave Power (dBm)")
             ax.set_ylabel("Normalized NV- Population")
             ax.grid(True, linestyle="--", linewidth=0.5)
+            ax.set_ylabel("Normalized NV Population")
+            ax.grid(True, linestyle='--', linewidth=0.5)
             ax.legend()
-
         else:
             ax.axis("off")  # Hide unused subplots if number of NVs < grid size
 
@@ -132,10 +127,33 @@ def plot_all_nv_data(nv_list, powers, norm_counts_list, num_cols=3):
 
     return optimal_powers
 
+def extract_optimal_power(norm_counts, powers):
+    """
+    Extract the optimal microwave power based on NV population data.
+
+    Parameters:
+    norm_counts (ndarray): Normalized NV population for different powers.
+    powers (ndarray): Array of microwave power values.
+
+    Returns:
+    optimal_power (float): The microwave power where the NV population is maximized.
+    max_population (float): The maximum NV population value at the optimal power.
+    """
+    # Average the population over all NVs if needed
+    avg_population = np.mean(norm_counts, axis=0) if norm_counts.ndim > 1 else norm_counts
+
+    # Find the index of the maximum population
+    optimal_index = np.argmax(avg_population)
+    
+    # Get the corresponding power value
+    optimal_power = powers[optimal_index]
+
+    return optimal_power, avg_population[optimal_index]
 
 if __name__ == "__main__":
     # Load data using dm.get_raw_data
     file_id = 1661020621314
+    file_id = 1666943042304
     data = dm.get_raw_data(file_id=file_id)
 
     # Extract necessary information from the data
@@ -144,15 +162,17 @@ if __name__ == "__main__":
     counts = np.array(data["states"])
     sig_counts, ref_counts = counts[0], counts[1]
 
-    # Process counts (replace widefield.process_counts with correct function)
+    # Process counts (replace widefield.process_counts with the correct function)
     avg_counts, avg_counts_ste, norms = widefield.process_counts(
         nv_list, sig_counts, ref_counts, threshold=False
     )
     norm_counts_list = avg_counts - norms[0][:, np.newaxis]
 
     # Plot all NV data and return the optimal powers
-    optimal_powers = plot_all_nv_data(nv_list, powers, norm_counts_list, num_cols=6)
+    optimal_powers = plot_all_nv_data(nv_list, powers, norm_counts_list)
 
     # Print the optimal powers for each NV
     for idx, nv in enumerate(nv_list):
         print(f"Optimal power for NV {nv.name}: {optimal_powers[idx]:.2f} dBm")
+
+    print(f"Optimal Powers for each NV: {optimal_powers}")
