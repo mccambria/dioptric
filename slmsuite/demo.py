@@ -117,24 +117,49 @@ import cv2
 import numpy as np
 
 # Given pixel coordinates and corresponding red coordinates
-pixel_coords_list = np.array([[110.186, 129.281], [86.294, 103.0]])
-red_coords_list = np.array([[75.49, 75.692], [77.801, 73.465]])
+pixel_coords_list = np.array([[121.871, 134.932], [66.975, 80.231], [44.024, 128.687]])
+red_coords_list = np.array([[110.496, 110.236], [116.479, 104.755], [118.499, 110.231]])
+
+pixel_coords_list = np.array(
+    [[109.267, 111.334], [113.322, 106.252], [103.687, 104.862]]
+)
+red_coords_list = np.array(
+    [
+        [74.649, 77.168],
+        [77.772, 72.945],
+        [69.921, 72.112],
+    ]
+)
 
 # For two points, a simpler method is necessary, but let's try using cv2.estimateAffinePartial2D
 if len(pixel_coords_list) >= 3:
     # Use cv2.estimateAffinePartial2D to get the affine transformation matrix
-    M, _ = cv2.estimateAffinePartial2D(
+    M = cv2.getAffineTransform(
         np.float32(pixel_coords_list), np.float32(red_coords_list)
     )
 
     # New pixel coordinate for which we want to find the corresponding red coordinate
-    new_pixel_coord = np.array([[128.233, 88.007]], dtype=np.float32)
+    new_pixel_coord = np.array(
+        [
+            [110.043, 113.011],
+            [115.779, 106.042],
+            [107.253, 118.327],
+            [98.279, 107.437],
+        ],
+        dtype=np.float32,
+    )
 
     # Apply the affine transformation to the new pixel coordinate
     new_red_coord = cv2.transform(np.array([new_pixel_coord]), M)
 
     # Print the corresponding red coordinates
-    print("Corresponding red coordinates:", new_red_coord[0][0])
+    # print("Corresponding red coordinates:", new_red_coord[0][0])
+    # Print the corresponding red coordinates
+    print("[")
+    for coord in new_red_coord[0]:
+        rounded_coord = [round(x, 3) for x in coord]
+        print(f"    {rounded_coord},")
+    print("]")
 else:
     # Calculate manually if only two points are available
     def simple_transform(pixel_point, src_points, dst_points):
@@ -157,7 +182,7 @@ else:
         return np.array([new_x, new_y])
 
     # Calculate using simple linear transform
-    new_red_coord = simple_transform(
-        [128.233, 88.007], pixel_coords_list, red_coords_list
-    )
-    print("Corresponding red coordinates:", new_red_coord)
+    # new_red_coord = simple_transform(
+    #     [42.749, 125.763], pixel_coords_list, red_coords_list
+    # )
+    # print("Corresponding red coordinates:", new_red_coord)

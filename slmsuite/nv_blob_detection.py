@@ -113,7 +113,9 @@ def detect_nv_coordinates_blob(
     optimized_coords = np.array(optimized_coords)
 
     fig, ax = plt.subplots()
-    cax = ax.imshow(img_array, cmap="hot")
+    title = "24ms, Ref"
+    cax = kpl.imshow(ax, img_array, title=title, cbar_label="Photons")
+    # cax = ax.imshow(img_array, cmap="hot")
     ax.set_title("NV Detection with Blob and Gaussian Fitting")
     ax.axis("off")
 
@@ -221,22 +223,27 @@ if __name__ == "__main__":
     # data = dm.get_raw_data(file_id=1646374739142, load_npz=True)
     # img_array = np.array(data["img_array"])
 
-    data = dm.get_raw_data(file_id=1656557120837, load_npz=True)
-    img_array = np.array(data["ref_img_array"])
+    data = dm.get_raw_data(file_id=1680236956179, load_npz=True)
+    # data = dm.get_raw_data(file_id=1680026835865, load_npz=True)
 
-    # Parameters for detection and resolution
+    img_array = np.array(data["ref_img_array"])
+    # img_array = np.array(data["diff_img_array"])
+    # img_array = -img_array
+    print(type(img_array), img_array.dtype, img_array.shape)
+
+    # # Parameters for detection and resolution
     wavelength = 0.65  # Wavelength in micrometers (650 nm)
     NA = 1.45  # Numerical Aperture of objective
 
-    # Calculate the resolution (in micrometers)
+    # # Calculate the resolution (in micrometers)
     resolution = calculate_resolution(wavelength, NA)
-    print(f"Resolution: {round(resolution,3)} µm")
+    # print(f"Resolution: {round(resolution,3)} µm")
 
     # Apply the blob detection and Gaussian fitting
     sigma = 1.83
-    lower_threshold = 0.06
-    upper_threshold = 60
-    smoothing_sigma = 1
+    lower_threshold = 0.2
+    upper_threshold = None
+    smoothing_sigma = 0.0
 
     nv_coordinates, spot_sizes = detect_nv_coordinates_blob(
         img_array,
@@ -249,34 +256,37 @@ if __name__ == "__main__":
     print(f"Number of NVs detected: {len(nv_coordinates)}")
     print(f"Detected NV coordinates (optimized): {nv_coordinates}")
 
-    # # Calculate and print the average FWHM
-    # if len(spot_sizes) > 0:
-    #     avg_fwhm = np.mean([(fwhm_x + fwhm_y) / 2 for fwhm_x, fwhm_y in spot_sizes])
-    #     print(f"Average FWHM (in pixels): {round(avg_fwhm,3)}")
+    # Calculate and print the average FWHM
+    if len(spot_sizes) > 0:
+        avg_fwhm = np.mean([(fwhm_x + fwhm_y) / 2 for fwhm_x, fwhm_y in spot_sizes])
+        print(f"Average FWHM (in pixels): {round(avg_fwhm,3)}")
 
-    #     # Estimate and print the pixel-to-µm conversion factor
-    #     conversion_factor = pixel_to_um_conversion_factor(avg_fwhm, resolution)
-    #     print(
-    #         f"Pixel-to-µm conversion factor: {round(conversion_factor,3)} µm per pixel"
-    #     )
-    # else:
-    #     print("No spots detected. Unable to calculate conversion factor.")
+        # Estimate and print the pixel-to-µm conversion factor
+        conversion_factor = pixel_to_um_conversion_factor(avg_fwhm, resolution)
+        print(
+            f"Pixel-to-µm conversion factor: {round(conversion_factor,3)} µm per pixel"
+        )
+    else:
+        print("No spots detected. Unable to calculate conversion factor.")
 
     # Save the results
     save_results(
         nv_coordinates,
         spot_sizes,
-        filename="nv_blob_filtered_77nvs_new.npz",
+        filename="nv_blob_filtered_155nvs.npz",
     )
 
     # image_ids = [
-    #     1646567454201,
-    #     1646568448063,
-    #     1646568129546,
-    #     1646570902936,
-    #     1646574676133,
-    #     # 1646573882036,
-    #     1646573066020,
+    #     1679871908428,
+    #     1679874278209,
+    #     1679872688533,
+    #     1679871364006,
+    #     1679879341220,
+    #     1679875544782,
+    #     1679879096913,
+    #     1679871587183,
+    #     1679879168640,
+    #     1679874767869,
     # ]  # Add more image IDs as needed
     # # Process multiple images and remove duplicates
     # unique_nv_coordinates, spot_sizes = process_multiple_images(
@@ -286,10 +296,11 @@ if __name__ == "__main__":
     #     upper_threshold=upper_threshold,
     #     smoothing_sigma=smoothing_sigma,
     # )
-
+    # print(f"Number of NVs detected: {len(unique_nv_coordinates)}")
+    # # print(f"Detected NV coordinates (optimized): {nv_coordinates}")
     # # Save the results
     # save_results(
     #     unique_nv_coordinates,
     #     spot_sizes,
-    #     filename="nv_blob_filtered_multiple.npz",
+    #     filename="nv_blob_filtered_multiple_1.npz",
     # )

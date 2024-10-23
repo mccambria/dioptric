@@ -33,20 +33,35 @@ yellow_laser = "laser_OPTO_589"
 red_laser = "laser_COBO_638"
 
 # clibration coords region
+# calibration_pixel_coords_list = [
+#     [113.649, 149.301],
+#     [80.765, 101.26],
+#     [170.167, 94.837],
+# ]
+# calibration_green_coords_list = [
+#     [109.267, 111.334],
+#     [113.322, 106.252],
+#     [103.687, 104.862],
+# ]
+# calibration_red_coords_list = [
+#     [74.649, 77.168],
+#     [77.772, 72.945],
+#     [69.921, 72.112],
+# ]
 calibration_pixel_coords_list = [
-    [113.649, 149.301],
-    [80.765, 101.26],
-    [170.167, 94.837],
+    [73.767, 91.394],
+    [142.545, 210.183],
+    [234.876, 116.946],
 ]
 calibration_green_coords_list = [
-    [109.267, 111.334],
-    [113.322, 106.252],
-    [103.687, 104.862],
+    [115.779, 106.042],
+    [107.253, 118.327],
+    [98.279, 107.437],
 ]
 calibration_red_coords_list = [
-    [74.649, 77.168],
-    [77.772, 72.945],
-    [69.921, 72.112],
+    [79.256, 72.672],
+    [72.849, 82.663],
+    [65.189, 74.169],
 ]
 # Create the dictionaries using the provided lists
 widefield_calibration_coords1 = {
@@ -162,7 +177,8 @@ config |= {
         # See camera server file for details
         "readout_mode": 1,  # 16 for double horizontal readout rate (em mode)
         # "readout_mode": 6,  # Fast conventional
-        "roi": (121, 110, 250, 250),  # offsetX, offsetY, width, height
+        # "roi": (121, 110, 250, 250),  # offsetX, offsetY, width, height"roi": (121, 110, 250, 250),  # offsetX, offsetY, width, height
+        "roi": (130, 105, 250, 250),  # offsetX, offsetY, width, height
         # "roi": None,  # offsetX, offsetY, width, height
         "scale": 24,  # pixels / micron
     },
@@ -794,9 +810,9 @@ opx_config = {
         # Yellow AOM
         "yellow_imaging": {"type": "constant", "sample": 0.45},  # 0.35
         # "yellow_imaging": {"type": "constant", "sample": 0.50},  # 0.35
-        "yellow_charge_readout": {"type": "constant", "sample": 0.36},  # 50e6
+        "yellow_charge_readout": {"type": "constant", "sample": 0.45},  # 50e6
         # "yellow_charge_readout": {"type": "constant", "sample": 0.25},  # 100e6
-        "yellow_spin_pol": {"type": "constant", "sample": 0.39},
+        "yellow_spin_pol": {"type": "constant", "sample": 0.40},
         "yellow_shelving": {"type": "constant", "sample": 0.33},
         # Other
         "aod_cw": {"type": "constant", "sample": 0.35},

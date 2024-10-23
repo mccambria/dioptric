@@ -98,7 +98,7 @@ def do_charge_state_histograms(nv_list):
     #         nv_list, num_reps, num_runs, ion_include_inds=ion_include_inds
     #     )
     return charge_state_histograms.main(
-        nv_list, num_reps, num_runs, plot_histograms=True
+        nv_list, num_reps, num_runs, plot_histograms=False
     )
 
 
@@ -290,7 +290,7 @@ def do_resonance(nv_list):
     num_steps = 60
     # Single ref
     # num_reps = 8
-    num_runs = 300
+    num_runs = 500
     # num_runs = 50
 
     # Both refs
@@ -781,13 +781,13 @@ def do_optimize_SLM_calibation(nv_list, coords_key):
 
 # Load the saved NV coordinates and radii from the .npz file
 def load_nv_coords(
-    file_path="slmsuite/nv_blob_detection/nv_detection_combined_results.npz",
+    file_path="slmsuite/nv_blob_detection/nv_blob_filtered_multiple_nv302.npz",
     x_min=0,
     x_max=250,
     y_min=0,
     y_max=250,
 ):
-    data = np.load(file_path)
+    data = np.load(file_path, allow_pickle=True)
     nv_coordinates = data["nv_coordinates"]
 
     # Create a mask based on the min/max thresholds for x and y
@@ -821,14 +821,14 @@ if __name__ == "__main__":
     # magnet_angle = 90
     date_str = "2024_03_12"
     # global_coords = [None, None, z_coord]
-    global_coords = [-1.7, 2.8, 0.15]
+    global_coords = [0.7, 0.2, 1.243]
     # pixel_to_voltage(initial_pixel_coords, final_pixel_coords)
     # global_coords = piezo_voltage_to_pixel_calibration(final_pixel_coords)
 
     # Load NV pixel coordinates
     pixel_coords_list = load_nv_coords(
         # file_path="slmsuite/nv_blob_detection/nv_blob_filtered_162nvs_ref.npz"
-        file_path="slmsuite/nv_blob_detection/nv_coords_integras_counts_filtered.npz",
+        file_path="slmsuite/nv_blob_detection/nv_blob_filtered_155nvs_updated.npz",
     ).tolist()
 
     print(f"Number of NVs: {len(pixel_coords_list)}")
@@ -856,19 +856,22 @@ if __name__ == "__main__":
     # print(pixel_coords_list[8])
 
     # pixel_coords_list = [
-    #     [113.649, 149.301],
-    #     [80.765, 101.26],
-    #     [170.167, 94.837],
+    #     [121.475, 159.155],
+    #     [73.767, 91.394],
+    #     [142.545, 210.183],
+    #     [234.876, 116.946],
     # ]
     # green_coords_list = [
-    #     [109.267, 111.334],
-    #     [113.21, 106.333],
-    #     [103.604, 104.904],
+    #     [110.043, 113.011],
+    #     [115.779, 106.042],
+    #     [107.253, 118.327],
+    #     [98.279, 107.437],
     # ]
     # red_coords_list = [
-    #     [74.649, 76.966],
-    #     [77.841, 72.904],
-    #     [69.921, 72.112],
+    #     [74.889, 78.533],
+    #     [79.256, 72.672],
+    #     [72.849, 82.663],
+    #     [65.189, 74.169],
     # ]
 
     num_nvs = len(pixel_coords_list)
@@ -903,8 +906,8 @@ if __name__ == "__main__":
     nv_sig = widefield.get_repr_nv_sig(nv_list)
     nv_sig.expected_counts = None
     # nv_sig.expected_counts = 2249.0
-    # nv_sig.expected_counts = 3062.0
-    nv_sig.expected_counts = 2333.0
+    # nv_sig.expected_counts = 3359.0
+    nv_sig.expected_counts = 2448.0
     # num_nvs = len(nv_list)
     # print(f"Final NV List: {nv_list}")
     # Ensure data is defined before accessing it
@@ -982,7 +985,7 @@ if __name__ == "__main__":
         # widefield.set_all_scanning_drift_from_pixel_drift()
 
         # do_optimize_z(nv_sig)
-        # do_optimize_xyz(nv_sig)
+        do_optimize_xyz(nv_sig)
         # pos.set_xyz_on_nv(nv_sig)
         # piezo_voltage_to_pixel_calibration()
 
@@ -1010,12 +1013,12 @@ if __name__ == "__main__":
         # nv_sig.coords[CoordsKey.GLOBAL][1] = y
         # do_scanning_image_sample(nv_sig)
 
-        # for z in np.linspace(1.3, 2.0, 11):
+        # for z in np.linspace(-0.6, 0.0, 11):
         #     nv_sig.coords[CoordsKey.GLOBAL][2] = z
-        # do_scanning_image_sample(nv_sig)
+        #     do_scanning_image_sample(nv_sig)
         # do_widefield_image_sample(nv_sig, 50)
 
-        do_scanning_image_sample(nv_sig)
+        # do_scanning_image_sample(nv_sig)
         # do_scanning_image_sample_zoom(nv_sig)
         # do_widefield_image_sample(nv_sig, 50)
         # do_widefield_image_sample(nv_sig, 100)
@@ -1039,7 +1042,7 @@ if __name__ == "__main__":
         # widefield.reset_all_drift()
         # coords_key = None  # Pixel coords
         # coords_key = green_laser
-        # coords_key = red_laser
+        coords_key = red_laser
         # do_optimize_loop(nv_list, coords_key, scanning_from_pixel=False)
         # optimize_slm_Phase_calibration(nv_sig, target_coords=target_coords)
 
