@@ -8,16 +8,18 @@ import os
 import sys
 import time
 import traceback
+from datetime import datetime
 from random import shuffle
+
 import matplotlib.pyplot as plt
-from matplotlib.patches import Circle
 import numpy as np
 import seaborn as sns
-from scipy.optimize import curve_fit
-from scipy.optimize import least_squares
+from matplotlib.patches import Circle
+
+# from pykrige.ok import OrdinaryKriging
 from scipy.interpolate import Rbf
-from pykrige.ok import OrdinaryKriging
-from datetime import datetime
+from scipy.optimize import curve_fit, least_squares
+
 from majorroutines.pulsed_resonance import fit_resonance, norm_voigt, voigt, voigt_split
 from majorroutines.widefield import base_routine, optimize
 from utils import common
@@ -163,6 +165,7 @@ def visualize_large_nv_data(
 
     return fig_list
 
+
 def plot_nv_resonance_data(
     nv_list, freqs, avg_counts, avg_counts_ste, file_path, num_cols=4
 ):
@@ -233,7 +236,14 @@ def plot_nv_resonance_data(
 
 
 def plot_nv_resonance_data_sns_with_freq_labels(
-    nv_list, freqs, avg_counts, avg_counts_ste, file_id, file_path, num_cols=3, threshold_method= None
+    nv_list,
+    freqs,
+    avg_counts,
+    avg_counts_ste,
+    file_id,
+    file_path,
+    num_cols=3,
+    threshold_method=None,
 ):
     """
     Plot the NV resonance data using Seaborn aesthetics in multiple panels (grid) in the same figure,
@@ -295,9 +305,7 @@ def plot_nv_resonance_data_sns_with_freq_labels(
             )
 
             # Auto-scale y-axis for better view of resonance
-            ax.set_ylim(
-                [min(avg_counts[nv_idx]), max(avg_counts[nv_idx])+0.03]
-            )
+            ax.set_ylim([min(avg_counts[nv_idx]), max(avg_counts[nv_idx]) + 0.03])
 
             # Only set y-tick labels for the leftmost column
             if nv_idx % num_cols == 0:
@@ -362,8 +370,16 @@ def plot_nv_resonance_data_sns_with_freq_labels(
     # Close the figure to free up memory
     plt.close(fig)
 
+
 def plot_nv_resonance_data_sns_with_fit(
-    nv_list, freqs, avg_counts, avg_counts_ste, file_id, file_path, num_cols=3, threshold_method=None
+    nv_list,
+    freqs,
+    avg_counts,
+    avg_counts_ste,
+    file_id,
+    file_path,
+    num_cols=3,
+    threshold_method=None,
 ):
     """
     Plot the NV resonance data using Seaborn aesthetics in multiple panels (grid) in the same figure,
@@ -406,7 +422,7 @@ def plot_nv_resonance_data_sns_with_fit(
     fit_fns = []
     popts = []
     center_freqs = []
-    
+
     # Plot each NV in the corresponding subplot
     for nv_idx, ax in enumerate(axes_pack):
         if nv_idx < num_nvs:
@@ -432,14 +448,20 @@ def plot_nv_resonance_data_sns_with_fit(
             )
 
             # Smart way to set ylim
-            ymin = min(avg_counts[nv_idx]) - 0.05 * (max(avg_counts[nv_idx]) - min(avg_counts[nv_idx]))
-            ymax = max(avg_counts[nv_idx]) + 0.05 * (max(avg_counts[nv_idx]) - min(avg_counts[nv_idx]))
+            ymin = min(avg_counts[nv_idx]) - 0.05 * (
+                max(avg_counts[nv_idx]) - min(avg_counts[nv_idx])
+            )
+            ymax = max(avg_counts[nv_idx]) + 0.05 * (
+                max(avg_counts[nv_idx]) - min(avg_counts[nv_idx])
+            )
             ax.set_ylim([ymin, ymax])
             ax.set_ylim([0, 1])
             # Fitting part
             num_resonances = 2  # Assuming 2 resonances
-            low_freq_guess = freqs[np.argmax(avg_counts[nv_idx][:len(freqs) // 2])]
-            high_freq_guess = freqs[np.argmax(avg_counts[nv_idx][len(freqs) // 2:]) + len(freqs) // 2]
+            low_freq_guess = freqs[np.argmax(avg_counts[nv_idx][: len(freqs) // 2])]
+            high_freq_guess = freqs[
+                np.argmax(avg_counts[nv_idx][len(freqs) // 2 :]) + len(freqs) // 2
+            ]
             guess_params = [5, 5, low_freq_guess, 5, 5, high_freq_guess]
             bounds = [[0] * len(guess_params), [np.inf] * len(guess_params)]
             for ind in [0, 1, 3, 4]:
@@ -448,9 +470,13 @@ def plot_nv_resonance_data_sns_with_fit(
             def fit_fn(freq, *args):
                 return norm_voigt(freq, *args[:3]) + norm_voigt(freq, *args[3:])
 
-
             _, popt, _ = fit_resonance(
-                freqs, avg_counts[nv_idx], avg_counts_ste[nv_idx], fit_func=fit_fn, guess_params=guess_params, bounds=bounds
+                freqs,
+                avg_counts[nv_idx],
+                avg_counts_ste[nv_idx],
+                fit_func=fit_fn,
+                guess_params=guess_params,
+                bounds=bounds,
             )
 
             # Save fit function and parameters for the fit figure
@@ -462,13 +488,22 @@ def plot_nv_resonance_data_sns_with_fit(
             # fit_data = fit_fn(freqs, *popt)
             # ax.plot(freqs, fit_data, "--", color="black", label="Fit", lw=1.5)
             fit_data = fit_fn(freqs, *popt)
-            ax.plot(freqs, fit_data, "-", color=colors[nv_idx % len(colors)], label="Fit", lw=2)
+            ax.plot(
+                freqs,
+                fit_data,
+                "-",
+                color=colors[nv_idx % len(colors)],
+                label="Fit",
+                lw=2,
+            )
             # Only set y-tick labels for the leftmost column
             if nv_idx % num_cols == 0:
-                ax.set_yticks(ax.get_yticks())  # Keep the default y-tick labels for the leftmost column
+                ax.set_yticks(
+                    ax.get_yticks()
+                )  # Keep the default y-tick labels for the leftmost column
             else:
                 ax.set_yticklabels([])
-            
+
             # Add a single y-axis label for the entire figure
             fig.text(
                 0.04,
@@ -493,20 +528,28 @@ def plot_nv_resonance_data_sns_with_fit(
 
     # Add frequency values at the bottom of each column
     for col in range(num_cols):
-        bottom_row_idx = num_rows * num_cols - num_cols + col  # Index of the bottom row in each column
+        bottom_row_idx = (
+            num_rows * num_cols - num_cols + col
+        )  # Index of the bottom row in each column
         if bottom_row_idx < len(axes_pack):  # Ensure the index is within bounds
             ax = axes_pack[bottom_row_idx]
             tick_positions = np.linspace(min(freqs), max(freqs), 5)
             ax.set_xticks(tick_positions)
-            ax.set_xticklabels([f"{tick:.2f}" for tick in tick_positions], rotation=45, fontsize=9)
+            ax.set_xticklabels(
+                [f"{tick:.2f}" for tick in tick_positions], rotation=45, fontsize=9
+            )
 
     # Set title for the entire figure
     if threshold_method is not None:
-        title = f"NV Resonance Data (Threshold: {threshold_method}, data_id = {file_id})"
+        title = (
+            f"NV Resonance Data (Threshold: {threshold_method}, data_id = {file_id})"
+        )
         fig.suptitle(title, fontsize=16, y=0.97)
 
     # Adjust layout to ensure nothing overlaps and reduce vertical gaps
-    plt.subplots_adjust(left=0.1, right=0.95, top=0.95, bottom=0.1, hspace=0.01, wspace=0.01)
+    plt.subplots_adjust(
+        left=0.1, right=0.95, top=0.95, bottom=0.1, hspace=0.01, wspace=0.01
+    )
 
     # Save the figure to the specified file path
     if fig is not None:
@@ -515,12 +558,19 @@ def plot_nv_resonance_data_sns_with_fit(
     # Close the figure to free up memory
     plt.close(fig)
 
+
 def plot_nv_resonance_fits_and_residuals(
-    nv_list, freqs, avg_counts, avg_counts_ste, file_id, num_cols=3, threshold_method=None
+    nv_list,
+    freqs,
+    avg_counts,
+    avg_counts_ste,
+    file_id,
+    num_cols=3,
+    threshold_method=None,
 ):
     """
     Plot NV resonance data with fitted Voigt profiles (including background), with residuals and contrast values.
-    
+
     Args:
         nv_list: List of NV signatures.
         freqs: Frequency data.
@@ -561,17 +611,23 @@ def plot_nv_resonance_fits_and_residuals(
     # # Define the Voigt function with a background and shared width for both peaks
     # def voigt_with_background(freq, amp1, amp2, center1, center2, width, bg_offset, bg_slope):
     #     """Voigt profile for two peaks with a linear background."""
-    #     return (amp1 * norm_voigt(freq, width, width, center1) + 
-    #             amp2 * norm_voigt(freq, width, width, center2) + 
+    #     return (amp1 * norm_voigt(freq, width, width, center1) +
+    #             amp2 * norm_voigt(freq, width, width, center2) +
     #             bg_offset + bg_slope * freq)
 
-    def voigt_with_background(freq, amp1, amp2, center1, center2, width, bg_offset, bg_slope):
+    def voigt_with_background(
+        freq, amp1, amp2, center1, center2, width, bg_offset, bg_slope
+    ):
         """Voigt profile for two peaks with a linear background."""
-        freq = np.array(freq)  # Ensure freq is a NumPy array for element-wise operations
-        return (amp1 * norm_voigt(freq, width, width, center1) + 
-                amp2 * norm_voigt(freq, width, width, center2) + 
-                bg_offset + bg_slope * freq)
-
+        freq = np.array(
+            freq
+        )  # Ensure freq is a NumPy array for element-wise operations
+        return (
+            amp1 * norm_voigt(freq, width, width, center1)
+            + amp2 * norm_voigt(freq, width, width, center2)
+            + bg_offset
+            + bg_slope * freq
+        )
 
     # Perform the fitting and plot the contrast
     for nv_idx, ax in enumerate(axes_fitting):
@@ -605,7 +661,7 @@ def plot_nv_resonance_fits_and_residuals(
             # low_freq_guess = freqs[np.argmax(avg_counts[nv_idx][:len(freqs) // 2])]
             # high_freq_guess = freqs[np.argmax(avg_counts[nv_idx][len(freqs) // 2:]) + len(freqs) // 2]
             # guess_params = [np.max(nv_counts), np.max(nv_counts), low_freq_guess, high_freq_guess, 5, np.min(nv_counts), 0]
-            
+
             # # Bounds for fitting: amplitudes and widths are positive, centers within range
             # bounds = (
             #     [0, 0, min(freqs), min(freqs), 0, -np.inf, -np.inf],  # Lower bounds
@@ -618,19 +674,43 @@ def plot_nv_resonance_fits_and_residuals(
             # )
 
             # Improved initial guess and relaxed bounds
-            low_freq_guess = freqs[np.argmax(avg_counts[nv_idx][:len(freqs) // 2])]
-            high_freq_guess = freqs[np.argmax(avg_counts[nv_idx][len(freqs) // 2:]) + len(freqs) // 2]
+            low_freq_guess = freqs[np.argmax(avg_counts[nv_idx][: len(freqs) // 2])]
+            high_freq_guess = freqs[
+                np.argmax(avg_counts[nv_idx][len(freqs) // 2 :]) + len(freqs) // 2
+            ]
             max_amp = np.max(nv_counts)
 
-            guess_params = [max_amp, max_amp, low_freq_guess, high_freq_guess, 5, np.min(nv_counts), 0]
+            guess_params = [
+                max_amp,
+                max_amp,
+                low_freq_guess,
+                high_freq_guess,
+                5,
+                np.min(nv_counts),
+                0,
+            ]
             bounds = (
                 [0, 0, min(freqs), min(freqs), 0, -np.inf, -np.inf],  # Lower bounds
-                [np.inf, np.inf, max(freqs), max(freqs), np.inf, np.inf, np.inf]  # Upper bounds
+                [
+                    np.inf,
+                    np.inf,
+                    max(freqs),
+                    max(freqs),
+                    np.inf,
+                    np.inf,
+                    np.inf,
+                ],  # Upper bounds
             )
 
             # Increased maxfev for more iterations
             popt, pcov = curve_fit(
-                voigt_with_background, freqs, nv_counts, p0=guess_params, sigma=nv_counts_ste, bounds=bounds, maxfev=10000
+                voigt_with_background,
+                freqs,
+                nv_counts,
+                p0=guess_params,
+                sigma=nv_counts_ste,
+                bounds=bounds,
+                maxfev=10000,
             )
 
             # Track parameters for plotting and residuals
@@ -643,7 +723,14 @@ def plot_nv_resonance_fits_and_residuals(
 
             # Plot fitted data on the same subplot
             fit_data = voigt_with_background(freqs, *popt)
-            ax.plot(freqs, fit_data, "-", color=colors[nv_idx % len(colors)], label="Fit", lw=2)
+            ax.plot(
+                freqs,
+                fit_data,
+                "-",
+                color=colors[nv_idx % len(colors)],
+                label="Fit",
+                lw=2,
+            )
 
             # Calculate residuals
             residuals = nv_counts - fit_data
@@ -665,7 +752,9 @@ def plot_nv_resonance_fits_and_residuals(
 
             # Y-tick labels for the leftmost column
             if nv_idx % num_cols == 0:
-                ax.set_yticks(ax.get_yticks())  # Keep default y-tick labels for leftmost column
+                ax.set_yticks(
+                    ax.get_yticks()
+                )  # Keep default y-tick labels for leftmost column
             else:
                 ax.set_yticklabels([])
 
@@ -696,7 +785,9 @@ def plot_nv_resonance_fits_and_residuals(
         fig_fitting.suptitle(title, fontsize=16, y=0.97)
 
     # Adjust layout for the fitting figure
-    plt.subplots_adjust(left=0.1, right=0.95, top=0.95, bottom=0.1, hspace=0.01, wspace=0.01)
+    plt.subplots_adjust(
+        left=0.1, right=0.95, top=0.95, bottom=0.1, hspace=0.01, wspace=0.01
+    )
     now = datetime.now()
     date_time_str = now.strftime("%Y%m%d_%H%M%S")
     file_name = dm.get_file_name(file_id=file_id)
@@ -762,11 +853,19 @@ def plot_nv_resonance_fits_and_residuals(
             ax.axis("off")
 
     # Set title for the residuals figure
-    fig_residuals.suptitle(f"NV Resonance Residuals and Contrast (data_id = {file_id})", fontsize=16, y=0.97)
+    fig_residuals.suptitle(
+        f"NV Resonance Residuals and Contrast (data_id = {file_id})",
+        fontsize=16,
+        y=0.97,
+    )
 
     # Adjust layout for the residuals figure
-    plt.subplots_adjust(left=0.1, right=0.95, top=0.95, bottom=0.1, hspace=0.01, wspace=0.01)
-    file_path = dm.get_file_path(__file__, file_name, f"{file_id}_{date_time_str}_residuals")
+    plt.subplots_adjust(
+        left=0.1, right=0.95, top=0.95, bottom=0.1, hspace=0.01, wspace=0.01
+    )
+    file_path = dm.get_file_path(
+        __file__, file_name, f"{file_id}_{date_time_str}_residuals"
+    )
     # Save the residuals and contrast figure
     dm.save_figure(fig_residuals, file_path)
 
@@ -774,38 +873,54 @@ def plot_nv_resonance_fits_and_residuals(
     plt.close(fig_residuals)
 
 
-def voigt_with_background(freq, amp1, amp2, center1, center2, width, bg_offset, bg_slope):
+def voigt_with_background(
+    freq, amp1, amp2, center1, center2, width, bg_offset, bg_slope
+):
     """Voigt profile for two peaks with a linear background."""
     freq = np.array(freq)  # Ensure freq is a NumPy array for element-wise operations
-    return (amp1 * norm_voigt(freq, width, width, center1) + 
-            amp2 * norm_voigt(freq, width, width, center2) + 
-            bg_offset + bg_slope * freq)
+    return (
+        amp1 * norm_voigt(freq, width, width, center1)
+        + amp2 * norm_voigt(freq, width, width, center2)
+        + bg_offset
+        + bg_slope * freq
+    )
+
 
 def residuals_fn(params, freq, nv_counts, nv_counts_ste):
     """Compute residuals for least_squares optimization."""
     amp1, amp2, center1, center2, width, bg_offset, bg_slope = params
-    fit_vals = voigt_with_background(freq, amp1, amp2, center1, center2, width, bg_offset, bg_slope)
+    fit_vals = voigt_with_background(
+        freq, amp1, amp2, center1, center2, width, bg_offset, bg_slope
+    )
     return (nv_counts - fit_vals) / nv_counts_ste  # Weighted residuals
+
 
 def calculate_contrast(amp1, amp2, bg_offset):
     """Calculate contrast based on the fitted amplitudes and background average."""
     alpha0 = (amp1 + amp2) / 2  # Average of the two peak amplitudes
     alpha1 = bg_offset  # Fitted background level
-    
+
     # Print fitted values to diagnose negative contrast issues
     # print(f"Fitted Amp1: {amp1}, Fitted Amp2: {amp2}, Fitted Background: {bg_offset}")
-    
+
     # Calculate contrast
     contrast = 1 - (alpha1 / (alpha0 + alpha1))
     # contrast = (alpha1 - alpha0)
     return contrast
 
+
 def plot_nv_resonance_fits_and_residuals(
-    nv_list, freqs, avg_counts, avg_counts_ste, file_id, num_cols=3, threshold_method=None
+    nv_list,
+    freqs,
+    avg_counts,
+    avg_counts_ste,
+    file_id,
+    num_cols=3,
+    threshold_method=None,
 ):
     """
     Plot NV resonance data with fitted Voigt profiles (including background), with residuals and contrast values.
-    
+
     Args:
         nv_list: List of NV signatures.
         freqs: Frequency data.
@@ -834,33 +949,65 @@ def plot_nv_resonance_fits_and_residuals(
 
     ### 1. Fitting and Contrast Figure ###
     fig_fitting, axes_fitting = plt.subplots(
-        num_rows, num_cols, figsize=(num_cols * 3, num_rows * 1), sharex=True, sharey=False
+        num_rows,
+        num_cols,
+        figsize=(num_cols * 3, num_rows * 1),
+        sharex=True,
+        sharey=False,
     )
     axes_fitting = axes_fitting.flatten()
 
     for nv_idx, ax in enumerate(axes_fitting):
         if nv_idx < num_nvs:
             sns.lineplot(
-                x=freqs, y=avg_counts[nv_idx], ax=ax, color=colors[nv_idx % len(colors)], lw=2, 
-                marker="o", markersize=5, label=f"NV {nv_idx+1}",
+                x=freqs,
+                y=avg_counts[nv_idx],
+                ax=ax,
+                color=colors[nv_idx % len(colors)],
+                lw=2,
+                marker="o",
+                markersize=5,
+                label=f"NV {nv_idx+1}",
             )
             ax.errorbar(
-                freqs, avg_counts[nv_idx], yerr=avg_counts_ste[nv_idx], fmt="none",
-                ecolor="gray", alpha=0.6
+                freqs,
+                avg_counts[nv_idx],
+                yerr=avg_counts_ste[nv_idx],
+                fmt="none",
+                ecolor="gray",
+                alpha=0.6,
             )
 
             nv_counts = avg_counts[nv_idx]
             nv_counts_ste = avg_counts_ste[nv_idx]
 
             # Initial guess: amplitudes, centers, shared width, and background (linear)
-            low_freq_guess = freqs[np.argmax(avg_counts[nv_idx][:len(freqs) // 2])]
-            high_freq_guess = freqs[np.argmax(avg_counts[nv_idx][len(freqs) // 2:]) + len(freqs) // 2]
+            low_freq_guess = freqs[np.argmax(avg_counts[nv_idx][: len(freqs) // 2])]
+            high_freq_guess = freqs[
+                np.argmax(avg_counts[nv_idx][len(freqs) // 2 :]) + len(freqs) // 2
+            ]
             max_amp = np.max(nv_counts)
 
-            guess_params = [max_amp, max_amp, low_freq_guess, high_freq_guess, 5, np.min(nv_counts), 0]
+            guess_params = [
+                max_amp,
+                max_amp,
+                low_freq_guess,
+                high_freq_guess,
+                5,
+                np.min(nv_counts),
+                0,
+            ]
             bounds = (
                 [0, 0, min(freqs), min(freqs), 0, -np.inf, -np.inf],  # Lower bounds
-                [np.inf, np.inf, max(freqs), max(freqs), np.inf, np.inf, np.inf]  # Upper bounds
+                [
+                    np.inf,
+                    np.inf,
+                    max(freqs),
+                    max(freqs),
+                    np.inf,
+                    np.inf,
+                    np.inf,
+                ],  # Upper bounds
             )
 
             # Visualize initial guess
@@ -869,7 +1016,11 @@ def plot_nv_resonance_fits_and_residuals(
 
             # Perform the least_squares fitting
             result = least_squares(
-                residuals_fn, guess_params, args=(freqs, nv_counts, nv_counts_ste), bounds=bounds, max_nfev=20000
+                residuals_fn,
+                guess_params,
+                args=(freqs, nv_counts, nv_counts_ste),
+                bounds=bounds,
+                max_nfev=20000,
             )
             popt = result.x
 
@@ -881,7 +1032,14 @@ def plot_nv_resonance_fits_and_residuals(
 
             # Plot fitted data on the same subplot
             fit_data = voigt_with_background(freqs, *popt)
-            ax.plot(freqs, fit_data, "-", color=colors[nv_idx % len(colors)], label="Fit", lw=2)
+            ax.plot(
+                freqs,
+                fit_data,
+                "-",
+                color=colors[nv_idx % len(colors)],
+                label="Fit",
+                lw=2,
+            )
 
             residuals = nv_counts - fit_data
             residuals_list.append(residuals)
@@ -898,7 +1056,11 @@ def plot_nv_resonance_fits_and_residuals(
 
             # Add contrast to the plot
             ax.text(
-                0.05, 0.85, f"Contrast: {contrast:.2f}", transform=ax.transAxes, fontsize=10,
+                0.05,
+                0.85,
+                f"Contrast: {contrast:.2f}",
+                transform=ax.transAxes,
+                fontsize=10,
                 bbox=dict(facecolor="white", alpha=0.6),
             )
 
@@ -908,19 +1070,34 @@ def plot_nv_resonance_fits_and_residuals(
             else:
                 ax.set_yticklabels([])
 
-            fig_fitting.text(0.04, 0.5, "NV$^{-}$ Population", va="center", rotation="vertical", fontsize=12)
+            fig_fitting.text(
+                0.04,
+                0.5,
+                "NV$^{-}$ Population",
+                va="center",
+                rotation="vertical",
+                fontsize=12,
+            )
 
             # if nv_idx >= (num_rows - 1) * num_cols:  # Bottom row
             #     ax.set_xlabel("Frequency (GHz)")
             #     ax.set_xticks(np.linspace(min(freqs), max(freqs), 5))  # Set custom tick locations
-                    # Add frequency values at the bottom of each column
+            # Add frequency values at the bottom of each column
             for col in range(num_cols):
-                bottom_row_idx = num_rows * num_cols - num_cols + col  # Index of the bottom row in each column
-                if bottom_row_idx < len(axes_fitting):  # Ensure the index is within bounds
+                bottom_row_idx = (
+                    num_rows * num_cols - num_cols + col
+                )  # Index of the bottom row in each column
+                if bottom_row_idx < len(
+                    axes_fitting
+                ):  # Ensure the index is within bounds
                     ax = axes_fitting[bottom_row_idx]
                     tick_positions = np.linspace(min(freqs), max(freqs), 5)
                     ax.set_xticks(tick_positions)
-                    ax.set_xticklabels([f"{tick:.2f}" for tick in tick_positions], rotation=45, fontsize=9)
+                    ax.set_xticklabels(
+                        [f"{tick:.2f}" for tick in tick_positions],
+                        rotation=45,
+                        fontsize=9,
+                    )
                     ax.set_xlabel("Frequency (GHz)")
                 else:
                     ax.set_xticklabels([])
@@ -933,8 +1110,10 @@ def plot_nv_resonance_fits_and_residuals(
         title = f"NV Resonance Fitting and Contrast (data_id = {file_id})"
         fig_fitting.suptitle(title, fontsize=16, y=0.97)
 
-    plt.subplots_adjust(left=0.1, right=0.95, top=0.95, bottom=0.1, hspace=0.01, wspace=0.01)
-    
+    plt.subplots_adjust(
+        left=0.1, right=0.95, top=0.95, bottom=0.1, hspace=0.01, wspace=0.01
+    )
+
     now = datetime.now()
     date_time_str = now.strftime("%Y%m%d_%H%M%S")
     file_name = dm.get_file_name(file_id=file_id)
@@ -944,33 +1123,57 @@ def plot_nv_resonance_fits_and_residuals(
 
     ### 2. Residuals and Contrast Figure ###
     fig_residuals, axes_residuals = plt.subplots(
-        num_rows, num_cols, figsize=(num_cols * 3, num_rows * 1), sharex=True, sharey=False
+        num_rows,
+        num_cols,
+        figsize=(num_cols * 3, num_rows * 1),
+        sharex=True,
+        sharey=False,
     )
     axes_residuals = axes_residuals.flatten()
 
     for nv_idx, ax in enumerate(axes_residuals):
         if nv_idx < num_nvs:
             sns.lineplot(
-                x=freqs, y=residuals_list[nv_idx], ax=ax, color=colors[nv_idx % len(colors)], lw=2,
-                marker="o", markersize=5, label=f"NV {nv_idx+1} Residuals"
+                x=freqs,
+                y=residuals_list[nv_idx],
+                ax=ax,
+                color=colors[nv_idx % len(colors)],
+                lw=2,
+                marker="o",
+                markersize=5,
+                label=f"NV {nv_idx+1} Residuals",
             )
 
             ax.grid(True, which="both", linestyle="--", linewidth=0.5)
 
-            fig_residuals.text(0.04, 0.5, "Residuals", va="center", rotation="vertical", fontsize=12)
+            fig_residuals.text(
+                0.04, 0.5, "Residuals", va="center", rotation="vertical", fontsize=12
+            )
 
             ax.text(
-                0.05, 0.85, f"Chi-sq: {chi_squared_list[nv_idx]:.2f}", transform=ax.transAxes, fontsize=10,
+                0.05,
+                0.85,
+                f"Chi-sq: {chi_squared_list[nv_idx]:.2f}",
+                transform=ax.transAxes,
+                fontsize=10,
                 bbox=dict(facecolor="white", alpha=0.6),
             )
 
             for col in range(num_cols):
-                bottom_row_idx = num_rows * num_cols - num_cols + col  # Index of the bottom row in each column
-                if bottom_row_idx < len(axes_residuals):  # Ensure the index is within bounds
+                bottom_row_idx = (
+                    num_rows * num_cols - num_cols + col
+                )  # Index of the bottom row in each column
+                if bottom_row_idx < len(
+                    axes_residuals
+                ):  # Ensure the index is within bounds
                     ax = axes_residuals[bottom_row_idx]
                     tick_positions = np.linspace(min(freqs), max(freqs), 5)
                     ax.set_xticks(tick_positions)
-                    ax.set_xticklabels([f"{tick:.2f}" for tick in tick_positions], rotation=45, fontsize=9)
+                    ax.set_xticklabels(
+                        [f"{tick:.2f}" for tick in tick_positions],
+                        rotation=45,
+                        fontsize=9,
+                    )
                     ax.set_xlabel("Frequency (GHz)")
                 else:
                     ax.set_xticklabels([])
@@ -988,19 +1191,29 @@ def plot_nv_resonance_fits_and_residuals(
         else:
             ax.axis("off")
 
-    fig_residuals.suptitle(f"NV Resonance Residuals and Chi-Square (data_id = {file_id})", fontsize=16, y=0.97)
+    fig_residuals.suptitle(
+        f"NV Resonance Residuals and Chi-Square (data_id = {file_id})",
+        fontsize=16,
+        y=0.97,
+    )
 
-    plt.subplots_adjust(left=0.1, right=0.95, top=0.95, bottom=0.1, hspace=0.01, wspace=0.01)
-    file_path = dm.get_file_path(__file__, file_name, f"{file_id}_{date_time_str}_residuals")
+    plt.subplots_adjust(
+        left=0.1, right=0.95, top=0.95, bottom=0.1, hspace=0.01, wspace=0.01
+    )
+    file_path = dm.get_file_path(
+        __file__, file_name, f"{file_id}_{date_time_str}_residuals"
+    )
     dm.save_figure(fig_residuals, file_path)
     plt.close(fig_residuals)
 
 
-def nv_resonance_splitting(nv_list, freqs, avg_counts, avg_counts_ste, threshold=0.06, bins=30):
+def nv_resonance_splitting(
+    nv_list, freqs, avg_counts, avg_counts_ste, threshold=0.06, bins=30
+):
     """
     Calculate the frequency splitting between two NV resonances by fitting a Voigt profile to two resonance peaks,
     and plot the histogram of frequency splitting values with the given threshold.
-    
+
     Args:
         nv_list: List of NV signatures.
         freqs: Frequency data.
@@ -1008,7 +1221,7 @@ def nv_resonance_splitting(nv_list, freqs, avg_counts, avg_counts_ste, threshold
         avg_counts_ste: Standard error of averaged counts.
         threshold: Threshold for classifying splitting (default: 0.06 GHz).
         bins: Number of bins for the histogram (default: 30).
-        
+
     Returns:
         freq_splitting: Frequency splitting values for all NVs.
         fitted_peaks: List of tuples with the two fitted resonance frequencies for each NV.
@@ -1024,8 +1237,10 @@ def nv_resonance_splitting(nv_list, freqs, avg_counts, avg_counts_ste, threshold
     for nv_idx in range(len(nv_list)):
         # Fitting part using the provided method
         num_resonances = 2  # Assuming 2 resonances
-        low_freq_guess = freqs[np.argmax(avg_counts[nv_idx][:len(freqs) // 2])]
-        high_freq_guess = freqs[np.argmax(avg_counts[nv_idx][len(freqs) // 2:]) + len(freqs) // 2]
+        low_freq_guess = freqs[np.argmax(avg_counts[nv_idx][: len(freqs) // 2])]
+        high_freq_guess = freqs[
+            np.argmax(avg_counts[nv_idx][len(freqs) // 2 :]) + len(freqs) // 2
+        ]
 
         # Guess parameters and bounds
         guess_params = [5, 5, low_freq_guess, 5, 5, high_freq_guess]
@@ -1038,23 +1253,31 @@ def nv_resonance_splitting(nv_list, freqs, avg_counts, avg_counts_ste, threshold
 
         # Fit the resonance frequencies using the Voigt profile
         _, popt, _ = fit_resonance(
-            freqs, avg_counts[nv_idx], avg_counts_ste[nv_idx], fit_func=fit_fn, guess_params=guess_params, bounds=bounds
+            freqs,
+            avg_counts[nv_idx],
+            avg_counts_ste[nv_idx],
+            fit_func=fit_fn,
+            guess_params=guess_params,
+            bounds=bounds,
         )
 
         # Save fit function and parameters for the fit figure
         fit_fns.append(fit_fn)
         popts.append(popt)
-        center_freqs.append((popt[2], popt[5]))  # Extract the two center frequencies for each NV
+        center_freqs.append(
+            (popt[2], popt[5])
+        )  # Extract the two center frequencies for each NV
 
     # Calculate frequency splitting for each NV
     freq_splitting = [abs(f[1] - f[0]) for f in center_freqs]
     # plot_histogram_with_threshold(freq_splitting, threshold, bins)
     return freq_splitting
 
+
 def plot_histogram_with_threshold(freq_splitting, threshold, bins=30):
     """
     Plot a histogram of frequency splitting values with a vertical line indicating the threshold.
-    
+
     Args:
         freq_splitting: List of frequency splitting values for NVs.
         threshold: Threshold value for classification.
@@ -1062,23 +1285,32 @@ def plot_histogram_with_threshold(freq_splitting, threshold, bins=30):
     """
     # Create a histogram of the frequency splitting values
     plt.figure(figsize=(8, 6))
-    plt.hist(freq_splitting, bins=bins, color='blue', alpha=0.7, edgecolor='black')
-    
+    plt.hist(freq_splitting, bins=bins, color="blue", alpha=0.7, edgecolor="black")
+
     # Plot a vertical line at the threshold
-    plt.axvline(x=threshold, color='red', linestyle='--', linewidth=2, label=f'Threshold = {threshold}')
-    
+    plt.axvline(
+        x=threshold,
+        color="red",
+        linestyle="--",
+        linewidth=2,
+        label=f"Threshold = {threshold}",
+    )
+
     # Add labels and title
-    plt.title('Histogram of Frequency Splitting with Threshold', fontsize=14)
-    plt.xlabel('Frequency Splitting (GHz)', fontsize=12)
-    plt.ylabel('Count', fontsize=12)
-    
+    plt.title("Histogram of Frequency Splitting with Threshold", fontsize=14)
+    plt.xlabel("Frequency Splitting (GHz)", fontsize=12)
+    plt.ylabel("Count", fontsize=12)
+
     # Add a legend
     plt.legend()
 
     # Display the plot
     plt.show()
 
-def estimate_magnetic_field_direction(field_splitting, gyromagnetic_ratio=28.0, threshold=0.06):
+
+def estimate_magnetic_field_direction(
+    field_splitting, gyromagnetic_ratio=28.0, threshold=0.06
+):
     """
     Estimate the direction of the magnetic field based on resonance frequency splitting in NV centers,
     and return the relative magnetic field direction in degrees for small, medium, and large splitting cases.
@@ -1109,9 +1341,9 @@ def estimate_magnetic_field_direction(field_splitting, gyromagnetic_ratio=28.0, 
     # nv_orientations = np.array([[-1, 1, 1], [1, 1, -1]]) / np.sqrt(3) #good
     nv_orientations = np.array([[1, -1, 1], [1, 1, -1]]) / np.sqrt(3)
     # Initialize a result dictionary
-    avg_splitting = np.array([avg_small_split,avg_large_split])
-        # Convert splitting into an array and scale by gyromagnetic ratio
-    B_proj = avg_splitting /  gyromagnetic_ratio  # Magnetic field projections in Tesla
+    avg_splitting = np.array([avg_small_split, avg_large_split])
+    # Convert splitting into an array and scale by gyromagnetic ratio
+    B_proj = avg_splitting / gyromagnetic_ratio  # Magnetic field projections in Tesla
 
     # Solve the system of linear equations to estimate the magnetic field components
     B_components, _, _, _ = np.linalg.lstsq(nv_orientations, B_proj, rcond=None)
@@ -1130,13 +1362,17 @@ def estimate_magnetic_field_direction(field_splitting, gyromagnetic_ratio=28.0, 
     print(B_direction_deg)
     return B_direction_deg
 
+
 def calculate_magnetic_fields(
-    nv_list, field_splitting, zero_field_splitting=0.0, 
-    gyromagnetic_ratio=28.0, threshold=0.09
-    ):
+    nv_list,
+    field_splitting,
+    zero_field_splitting=0.0,
+    gyromagnetic_ratio=28.0,
+    threshold=0.09,
+):
     """
     Calculate magnetic fields for each NV center based on frequency splitting and adjust based on the magnetic field direction.
-    
+
     Args:
         nv_list: List of NV center identifiers.
         field_splitting: List of frequency splitting values corresponding to the NV centers.
@@ -1144,7 +1380,7 @@ def calculate_magnetic_fields(
         gyromagnetic_ratio: Gyromagnetic ratio (28 GHz/T).
         threshold1: First threshold to classify small splitting (default: 0.06 GHz).
         threshold2: Second threshold to classify medium splitting (default: 0.12 GHz).
-    
+
     Returns:
         result: A list of magnetic field values for each NV center, in the same order as nv_list.
     """
@@ -1152,7 +1388,9 @@ def calculate_magnetic_fields(
     magnetic_fields = []
 
     # Get magnetic field directions for small, medium, and large splitting cases
-    magnetic_field_directions = estimate_magnetic_field_direction(field_splitting, threshold)
+    magnetic_field_directions = estimate_magnetic_field_direction(
+        field_splitting, threshold
+    )
     # Extract angles for each category
     theta_deg_small = magnetic_field_directions[0]
     # theta_deg_medium = magnetic_field_directions[1]
@@ -1162,7 +1400,9 @@ def calculate_magnetic_fields(
         if split > threshold:
             # Large splitting (orientation 3)
             B_3 = (split - zero_field_splitting) / gyromagnetic_ratio
-            B_3 = abs(B_3 / np.cos(np.deg2rad(theta_deg_large)))  # Adjust by direction angle for large splitting
+            B_3 = abs(
+                B_3 / np.cos(np.deg2rad(theta_deg_large))
+            )  # Adjust by direction angle for large splitting
             magnetic_fields.append(B_3)
         # elif threshold1 < split <= threshold2:
         #     # Medium splitting (orientation 2)
@@ -1172,14 +1412,21 @@ def calculate_magnetic_fields(
         else:
             # Small splitting (orientation 1)
             B_1 = (split - zero_field_splitting) / gyromagnetic_ratio
-            B_1 = abs(B_1 / np.cos(np.deg2rad(theta_deg_small)))  # Adjust by direction angle for small splitting
+            B_1 = abs(
+                B_1 / np.cos(np.deg2rad(theta_deg_small))
+            )  # Adjust by direction angle for small splitting
             magnetic_fields.append(B_1)
 
     # Return the magnetic fields in the same order as the input NV list
     return magnetic_fields
 
+
 def estimate_magnetic_field_from_fitting(
-    nv_list, field_splitting, zero_field_splitting=2.87, gyromagnetic_ratio=28.0, threshold=0.05
+    nv_list,
+    field_splitting,
+    zero_field_splitting=2.87,
+    gyromagnetic_ratio=28.0,
+    threshold=0.05,
 ):
     """
     Estimate magnetic fields at each NV based on resonance frequency splitting.
@@ -1212,10 +1459,11 @@ def estimate_magnetic_field_from_fitting(
 
     return magnetic_fields
 
+
 def remove_outliers(B_values, nv_list):
     """
     Remove outliers using the IQR (Interquartile Range) method and corresponding NV centers.
-    
+
     Args:
         B_values: Array of magnetic field values.
         nv_list: List of NV centers.
@@ -1226,21 +1474,24 @@ def remove_outliers(B_values, nv_list):
     # Calculate Q1 (25th percentile) and Q3 (75th percentile)
     Q1 = np.percentile(B_values, 25)
     Q3 = np.percentile(B_values, 75)
-    
+
     # Calculate IQR
     IQR = Q3 - Q1
-    
+
     # Define outlier bounds
     lower_bound = Q1 - 1.5 * IQR
     upper_bound = Q3 + 1.5 * IQR
-    
+
     # Filter out the outliers in B_values and corresponding nv_list
     mask = (B_values >= lower_bound) & (B_values <= upper_bound)
-    
+
     # Return cleaned data
     return B_values[mask], [nv for i, nv in enumerate(nv_list) if mask[i]]
 
-def generate_2d_magnetic_field_map_kriging(nv_list, magnetic_fields, dist_conversion_factor, grid_size=100):
+
+def generate_2d_magnetic_field_map_kriging(
+    nv_list, magnetic_fields, dist_conversion_factor, grid_size=100
+):
     """
     Generate a 2D map of the magnetic field using Kriging interpolation.
 
@@ -1255,12 +1506,18 @@ def generate_2d_magnetic_field_map_kriging(nv_list, magnetic_fields, dist_conver
         Z: Interpolated magnetic field values over the grid.
     """
     # Convert magnetic fields from Tesla to Gauss
-    B_values = np.array(magnetic_fields) * 1e4  # Convert Tesla to Gauss (1 Tesla = 10,000 Gauss)
+    B_values = (
+        np.array(magnetic_fields) * 1e4
+    )  # Convert Tesla to Gauss (1 Tesla = 10,000 Gauss)
     # Remove outliers and corresponding NV centers
     B_values, nv_list = remove_outliers(B_values, nv_list)
     # Extract NV positions (convert pixel coordinates to real-world distance)
-    x_coords = np.array([nv.coords["pixel"][0] for nv in nv_list]) * dist_conversion_factor
-    y_coords = np.array([nv.coords["pixel"][1] for nv in nv_list]) * dist_conversion_factor
+    x_coords = (
+        np.array([nv.coords["pixel"][0] for nv in nv_list]) * dist_conversion_factor
+    )
+    y_coords = (
+        np.array([nv.coords["pixel"][1] for nv in nv_list]) * dist_conversion_factor
+    )
 
     # Create a grid for interpolation
     x_min, x_max = min(x_coords), max(x_coords)
@@ -1270,27 +1527,35 @@ def generate_2d_magnetic_field_map_kriging(nv_list, magnetic_fields, dist_conver
     )
 
     # Perform Kriging interpolation
-    kriging_interpolator = OrdinaryKriging(x_coords, y_coords, B_values, variogram_model='linear')
-    Z_grid, _ = kriging_interpolator.execute('grid', np.linspace(x_min, x_max, grid_size), np.linspace(y_min, y_max, grid_size))
+    kriging_interpolator = OrdinaryKriging(
+        x_coords, y_coords, B_values, variogram_model="linear"
+    )
+    Z_grid, _ = kriging_interpolator.execute(
+        "grid",
+        np.linspace(x_min, x_max, grid_size),
+        np.linspace(y_min, y_max, grid_size),
+    )
     # Plot the 2D magnetic field map using matplotlib
     plt.figure(figsize=(8, 6))
-    contour = plt.contourf(X_grid, Y_grid, Z_grid, levels=100, cmap='plasma')
-    plt.colorbar(contour, label='Magnetic Field (G)')
-    
+    contour = plt.contourf(X_grid, Y_grid, Z_grid, levels=100, cmap="plasma")
+    plt.colorbar(contour, label="Magnetic Field (G)")
+
     # for x, y in zip(x_coords, y_coords):
     #     circle = Circle((x, y), radius=3, facecolor=None, edgecolor="lightblue")
     #     ax.add_patch(circle)
     # Scatter the NV positions and label their magnetic field values
     # plt.scatter(x_coords, y_coords, edgecolor='lightblue', s=50)
-    plt.scatter(x_coords, y_coords, facecolor='none', edgecolor='lightblue', s=30, linewidth=1.0)
+    plt.scatter(
+        x_coords, y_coords, facecolor="none", edgecolor="lightblue", s=30, linewidth=1.0
+    )
     # plt.colorbar(scatter, label='Magnetic Field (G)')
-    
+
     # for i, (x, y, b) in enumerate(zip(x_coords, y_coords, B_values)):
     #     plt.text(x, y, f'{b:.2f} G', fontsize=8, color='white', ha='center', va='center')
 
-    plt.title('2D Magnetic Field Map (Kriging Interpolation)')
-    plt.xlabel('X Position (µm)')
-    plt.ylabel('Y Position (µm)')
+    plt.title("2D Magnetic Field Map (Kriging Interpolation)")
+    plt.xlabel("X Position (µm)")
+    plt.ylabel("Y Position (µm)")
     plt.xticks(np.linspace(x_min, x_max, 5))
     plt.yticks(np.linspace(y_min, y_max, 5))
     plt.show()
@@ -1300,13 +1565,13 @@ def generate_2d_magnetic_field_map_kriging(nv_list, magnetic_fields, dist_conver
 
 if __name__ == "__main__":
     file_id = 1663484946120
-    # file_id = 1665469062859
-    data = dm.get_raw_data(file_id=file_id , load_npz=False, use_cache=True)
+    # file_id = 1682139880704
+    data = dm.get_raw_data(file_id=file_id, load_npz=False, use_cache=True)
     nv_list = data["nv_list"]
     num_nvs = len(nv_list)
     counts = np.array(data["counts"])[0]
     num_nvs = len(nv_list)
-    num_steps = data["num_steps"] 
+    num_steps = data["num_steps"]
     num_runs = data["num_runs"]
     num_reps = data["num_reps"]
     freqs = data["freqs"]
@@ -1320,9 +1585,9 @@ if __name__ == "__main__":
     ref_counts[:, :, :, 0::2] = ref_counts_0
     ref_counts[:, :, :, 1::2] = ref_counts_1
 
-    thresh_method= "otsu"
+    thresh_method = "otsu"
     avg_counts, avg_counts_ste, norms = widefield.process_counts(
-        nv_list, sig_counts, ref_counts, threshold=True, method= thresh_method
+        nv_list, sig_counts, ref_counts, threshold=True, method=thresh_method
     )
     now = datetime.now()
     date_time_str = now.strftime("%Y%m%d_%H%M%S")
@@ -1333,15 +1598,21 @@ if __name__ == "__main__":
     # fig = plot_nv_resonance_data_sns_with_fit(
     #     nv_list, freqs, avg_counts, avg_counts_ste, file_id, file_path, num_cols=5,threshold_method=thresh_method
     #     )
-    
+
     plot_nv_resonance_fits_and_residuals(
-    nv_list, freqs, avg_counts, avg_counts_ste, file_id, num_cols=6, threshold_method=thresh_method
+        nv_list,
+        freqs,
+        avg_counts,
+        avg_counts_ste,
+        file_id,
+        num_cols=6,
+        threshold_method=thresh_method,
     )
     print(f"Plot saved to {file_path}")
     # plt.show()
     # freq_splitting = nv_resonance_splitting(nv_list, freqs, avg_counts, avg_counts_ste)
     # magnetic_fields = calculate_magnetic_fields(
-    #     nv_list, field_splitting=freq_splitting, zero_field_splitting=0.0, 
+    #     nv_list, field_splitting=freq_splitting, zero_field_splitting=0.0,
     #     gyromagnetic_ratio=28.0, threshold=0.09
     # )
 
@@ -1355,16 +1626,16 @@ if __name__ == "__main__":
     # generate_2d_magnetic_field_map_kriging(nv_list, magnetic_fields, dist_conversion_factor, grid_size=100)
 
     # # List of file IDs to process
-    # file_ids = [1647377018086, 
-    #             1651762931005, 
+    # file_ids = [1647377018086,
+    #             1651762931005,
     #             1652859661831,
     #             1654734385295]  # Add more file IDs as needed
-    
+
     # # Iterate over each file_id
     # for file_id in file_ids:
     #     # Load raw data
     #     data = dm.get_raw_data(file_id=file_id, load_npz=False, use_cache=True)
-        
+
     #     nv_list = data["nv_list"]
     #     num_nvs = len(nv_list)
     #     counts = np.array(data["counts"])[0]
@@ -1372,12 +1643,12 @@ if __name__ == "__main__":
     #     num_runs = data["num_runs"]
     #     num_reps = data["num_reps"]
     #     freqs = data["freqs"]
-        
+
     #     adj_num_steps = num_steps // 4
     #     sig_counts_0 = counts[:, :, 0:adj_num_steps, :]
     #     sig_counts_1 = counts[:, :, adj_num_steps : 2 * adj_num_steps, :]
     #     sig_counts = np.append(sig_counts_0, sig_counts_1, axis=3)
-        
+
     #     ref_counts_0 = counts[:, :, 2 * adj_num_steps : 3 * adj_num_steps, :]
     #     ref_counts_1 = counts[:, :, 3 * adj_num_steps :, :]
     #     ref_counts = np.empty((num_nvs, num_runs, adj_num_steps, 2 * num_reps))

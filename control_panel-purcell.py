@@ -98,7 +98,7 @@ def do_charge_state_histograms(nv_list):
     #         nv_list, num_reps, num_runs, ion_include_inds=ion_include_inds
     #     )
     return charge_state_histograms.main(
-        nv_list, num_reps, num_runs, plot_histograms=False
+        nv_list, num_reps, num_runs, plot_histograms=True
     )
 
 
@@ -290,7 +290,7 @@ def do_resonance(nv_list):
     num_steps = 60
     # Single ref
     # num_reps = 8
-    num_runs = 500
+    num_runs = 300
     # num_runs = 50
 
     # Both refs
@@ -828,7 +828,7 @@ if __name__ == "__main__":
     # Load NV pixel coordinates
     pixel_coords_list = load_nv_coords(
         # file_path="slmsuite/nv_blob_detection/nv_blob_filtered_162nvs_ref.npz"
-        file_path="slmsuite/nv_blob_detection/nv_blob_filtered_155nvs_updated.npz",
+        file_path="slmsuite/nv_blob_detection/nv_blob_filtered_128nvs_updated.npz",
     ).tolist()
 
     print(f"Number of NVs: {len(pixel_coords_list)}")
@@ -907,7 +907,7 @@ if __name__ == "__main__":
     nv_sig.expected_counts = None
     # nv_sig.expected_counts = 2249.0
     # nv_sig.expected_counts = 3359.0
-    nv_sig.expected_counts = 2448.0
+    nv_sig.expected_counts = 1280.0
     # num_nvs = len(nv_list)
     # print(f"Final NV List: {nv_list}")
     # Ensure data is defined before accessing it
@@ -1042,12 +1042,12 @@ if __name__ == "__main__":
         # widefield.reset_all_drift()
         # coords_key = None  # Pixel coords
         # coords_key = green_laser
-        coords_key = red_laser
+        # coords_key = red_laser
         # do_optimize_loop(nv_list, coords_key, scanning_from_pixel=False)
         # optimize_slm_Phase_calibration(nv_sig, target_coords=target_coords)
 
         # nv_list = nv_list[::-1]
-        # do_charge_state_histograms(nv_list)
+        do_charge_state_histograms(nv_list)
         # do_charge_state_conditional_init(nv_list)
         # do_check_readout_fidelity(nv_list)
 

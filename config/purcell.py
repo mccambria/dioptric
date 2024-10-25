@@ -165,7 +165,7 @@ config |= {
     ###
     "Camera": {
         "resolution": (512, 512),
-        "spot_radius": 3,  # Radius for integrating NV counts in a camera image
+        "spot_radius": 2,  # Radius for integrating NV counts in a camera image
         "bias_clamp": 300,  # (changing this won't actually change the value on the camera currently)
         "em_gain": 5000,
         # "em_gain": 1000,
@@ -228,7 +228,7 @@ config |= {
         # LaserKey.WIDEFIELD_SPIN_POL: {"name": yellow_laser, "duration": 10e3},
         LaserKey.WIDEFIELD_SPIN_POL: {"name": yellow_laser, "duration": 100e3},
         # LaserKey.WIDEFIELD_SPIN_POL: {"name": yellow_laser, "duration": 1e6},
-        LaserKey.WIDEFIELD_CHARGE_READOUT: {"name": yellow_laser, "duration": 24e6},
+        LaserKey.WIDEFIELD_CHARGE_READOUT: {"name": yellow_laser, "duration": 48e6},
         # LaserKey.WIDEFIELD_CHARGE_READOUT: {"name": yellow_laser, "duration": 100e6},
         "scc_green_shelving_pulse": False,  # Whether or not to include a shelving pulse in SCC
         "scc_yellow_shelving_pulse": False,
@@ -810,9 +810,9 @@ opx_config = {
         # Yellow AOM
         "yellow_imaging": {"type": "constant", "sample": 0.45},  # 0.35
         # "yellow_imaging": {"type": "constant", "sample": 0.50},  # 0.35
-        "yellow_charge_readout": {"type": "constant", "sample": 0.45},  # 50e6
+        "yellow_charge_readout": {"type": "constant", "sample": 0.38},  # 50e6
         # "yellow_charge_readout": {"type": "constant", "sample": 0.25},  # 100e6
-        "yellow_spin_pol": {"type": "constant", "sample": 0.40},
+        "yellow_spin_pol": {"type": "constant", "sample": 0.39},
         "yellow_shelving": {"type": "constant", "sample": 0.33},
         # Other
         "aod_cw": {"type": "constant", "sample": 0.35},

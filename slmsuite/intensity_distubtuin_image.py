@@ -337,33 +337,42 @@ if __name__ == "__main__":
     # data = dm.get_raw_data(file_id=1648773947273, load_npz=True)
     # data = dm.get_raw_data(file_id=1651663986412, load_npz=True)
     # data = dm.get_raw_data(file_id=1680236956179, load_npz=True)
-    data = dm.get_raw_data(file_id=1680663611567, load_npz=True)
+    data = dm.get_raw_data(file_id=1681853425454, load_npz=True)
 
     img_array = np.array(data["ref_img_array"])
     # img_array = np.array(data["diff_img_array"])
     nv_coordinates, spot_weights = load_nv_coords(
-        file_path="slmsuite/nv_blob_detection/nv_blob_filtered_155nvs_updated.npz"
+        file_path="slmsuite/nv_blob_detection/nv_blob_filtered_128nvs_updated.npz"
     )
     nv_coordinates = nv_coordinates.tolist()
     # spot_weights = spot_weights.tolist()
     # spot_weights = np.array(spot_weights)
     # print(spot_weights)
+
     # Start merged coordinates with the reference NV
     # Reference NV to append as the first coordinate
     # reference_nv = [113.431, 149.95]
-    reference_nv = [121.354, 159.075]
+    reference_nv = [122.502, 159.336]
     # # # Start with the reference NV as the first element
     nv_coords = [reference_nv]
 
     # # Iterate through the rest of the NV coordinates
+    # Iterate through the rest of the NV coordinates
     for coord in nv_coordinates:
-        # Calculate the distance between the current NV and the reference NV
-        distance = np.linalg.norm(np.array(reference_nv) - np.array(coord))
+        # Check if the new NV coordinate is far enough from all accepted NVs
+        keep_coord = True  # Assume the coordinate is valid
 
-        # Append NV if it's farther than 3 pixels away from the reference NV
-        if distance >= 3:
+        for existing_coord in nv_coords:
+            # Calculate the distance between the current NV and each existing NV
+            distance = np.linalg.norm(np.array(existing_coord) - np.array(coord))
+
+            if distance < 6:
+                keep_coord = False  # If too close, mark it for exclusion
+                break  # No need to check further distances
+
+        # If the coordinate passed the distance check, add it to the list
+        if keep_coord:
             nv_coords.append(coord)
-
     # Fit 2D Gaussian to each NV and get optimized coordinates
     # optimal_nv_coords = []
     # for coord in nv_coords:
@@ -378,11 +387,11 @@ if __name__ == "__main__":
 
     # Filter NVs by peak intensity
     filtered_nv_coords, filtered_counts = filter_by_peak_intensity(
-        fitted_data, threshold=0.5
+        fitted_data, threshold=0.9
     )
     # # Round each coordinate to 3 decimal places
     rounded_nv_coords = [(round(x, 3), round(y, 3)) for x, y in filtered_nv_coords]
-    nv_coordinates = filtered_nv_coords
+    filtered_nv_coords = rounded_nv_coords
     # manual removal of the nvs
     # manual_removal_indices = [41]
     # nv_coordinates = remove_manual_indices(nv_coordinates, manual_removal_indices)
@@ -412,7 +421,7 @@ if __name__ == "__main__":
     # Convert filtered intensities to a NumPy array for element-wise operations
     filtered_counts = np.array(filtered_counts)
 
-    updated_spot_weights = non_linear_weights(filtered_counts, alpha=0.2)
+    updated_spot_weights = non_linear_weights(filtered_counts, alpha=0.3)
     # spot_weights = linear_weights(filtered_intensities, alpha=0.2)
     # spot_weights = non_linear_weights_adjusted(
     #     filtered_intensities, alpha=0.9, beta=0.3, threshold=0.9
@@ -423,7 +432,7 @@ if __name__ == "__main__":
 
     # updated_spot_weights = sigmoid_weight_update(
     #     fidelities,
-    #     spot_weights,
+    #     spot_weights,1
     #     integrated_intensities,
     #     alpha=1.0,
     #     beta=6,
@@ -460,7 +469,7 @@ if __name__ == "__main__":
         filtered_nv_coords,
         filtered_counts,
         updated_spot_weights,
-        filename="slmsuite/nv_blob_detection/nv_blob_filtered_155nvs_updated.npz",
+        filename="slmsuite/nv_blob_detection/nv_blob_filtered_128nvs_updated.npz",
     )
 
     # Plot the original image with circles around each NV

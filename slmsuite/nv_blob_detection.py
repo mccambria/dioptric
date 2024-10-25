@@ -105,7 +105,7 @@ def detect_nv_coordinates_blob(
             valid_blobs.append(blob)
 
             # Perform Gaussian fitting and get the FWHM
-            optimized_coord, fwhm, _ = fit_gaussian_2d_local(img_array, (x, y), size=3)
+            optimized_coord, fwhm, _ = fit_gaussian_2d_local(img_array, (x, y), size=2)
             optimized_coords.append(optimized_coord)
             spot_sizes.append(fwhm)  # Append the FWHM for the spot
 
@@ -119,7 +119,7 @@ def detect_nv_coordinates_blob(
     ax.set_title("NV Detection with Blob and Gaussian Fitting")
     ax.axis("off")
 
-    fig.colorbar(cax, ax=ax, orientation="vertical", label="Intensity")
+    # fig.colorbar(cax, ax=ax, orientation="vertical", label="Intensity")
 
     for idx, blob in enumerate(valid_blobs, start=1):
         y, x, r = blob
@@ -185,7 +185,7 @@ def remove_duplicates(coords, threshold=3):
 
 # Process multiple images and remove duplicate NV coordinates
 def process_multiple_images(
-    image_ids, sigma=3.0, lower_threshold=30.0, upper_threshold=None, smoothing_sigma=1
+    image_ids, sigma=2.0, lower_threshold=30.0, upper_threshold=None, smoothing_sigma=1
 ):
     all_nv_coordinates = []
     all_spot_sizes = []
@@ -223,8 +223,10 @@ if __name__ == "__main__":
     # data = dm.get_raw_data(file_id=1646374739142, load_npz=True)
     # img_array = np.array(data["img_array"])
 
-    data = dm.get_raw_data(file_id=1680236956179, load_npz=True)
+    # data = dm.get_raw_data(file_id=1680868340409, load_npz=True)
     # data = dm.get_raw_data(file_id=1680026835865, load_npz=True)
+    # data = dm.get_raw_data(file_id=1681681506476, load_npz=True)
+    data = dm.get_raw_data(file_id=1681804007439, load_npz=True)
 
     img_array = np.array(data["ref_img_array"])
     # img_array = np.array(data["diff_img_array"])
@@ -253,8 +255,27 @@ if __name__ == "__main__":
         smoothing_sigma=smoothing_sigma,
     )
 
-    print(f"Number of NVs detected: {len(nv_coordinates)}")
-    print(f"Detected NV coordinates (optimized): {nv_coordinates}")
+    # List to store valid NV coordinates after filtering
+    filtered_nv_coords = []
+
+    # Iterate through detected NV coordinates and apply distance filtering
+    for coord in nv_coordinates:
+        # Assume the coordinate is valid initially
+        keep_coord = True
+
+        # Check distance with all previously accepted NVs
+        for existing_coord in filtered_nv_coords:
+            distance = np.linalg.norm(np.array(existing_coord) - np.array(coord))
+
+            if distance < 5:
+                keep_coord = False  # Mark it for exclusion if too close
+                break  # No need to check further distances
+
+        # If the coordinate passes the distance check, add it to the list
+        if keep_coord:
+            filtered_nv_coords.append(coord)
+    print(f"Number of NVs detected: {len(filtered_nv_coords)}")
+    print(f"Detected NV coordinates (optimized): {filtered_nv_coords}")
 
     # Calculate and print the average FWHM
     if len(spot_sizes) > 0:
@@ -273,7 +294,7 @@ if __name__ == "__main__":
     save_results(
         nv_coordinates,
         spot_sizes,
-        filename="nv_blob_filtered_155nvs.npz",
+        filename="nv_blob_filtered_134nvs.npz",
     )
 
     # image_ids = [
