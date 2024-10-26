@@ -8,14 +8,15 @@ Created on August 15th, 2023
 
 # region Imports and constants
 
-import dataclasses
-import itertools
+import pickle
 from functools import cache
 from importlib import import_module
 from pathlib import Path
 
 import cv2
 import matplotlib.patches as patches
+
+# import cv2
 import matplotlib.pyplot as plt
 import numpy as np
 from matplotlib import animation
@@ -23,6 +24,8 @@ from numpy import inf
 from scipy.special import gamma
 from scipy.stats import poisson
 from skimage.filters import threshold_li, threshold_otsu, threshold_triangle
+from skimage.measure import ransac
+from skimage.transform import AffineTransform
 from sklearn.cluster import KMeans
 from sklearn.mixture import GaussianMixture
 

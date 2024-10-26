@@ -100,6 +100,8 @@ def main():
         ax.set_xlabel("Number of NVs")
         ax.set_ylabel("Time to unit SNR (s)")
 
+        ax.legend(loc=kpl.Loc.UPPER_LEFT, prop={"size": 16})
+
         # Vs integration time
 
         ax = axes_pack[1]
@@ -115,10 +117,9 @@ def main():
                 params[ind],
             )
             kpl.plot_line(ax, integration_times_linspace, plot_vals, label=labels[ind])
-        ax.legend(loc=kpl.Loc.LOWER_RIGHT, prop={"size": 14})
         ax.set_xscale("log")
         ax.set_yscale("log")
-        ax.set_xlabel("Integration time (s)")
+        ax.set_xlabel("Interrogation time (s)")
         ax.set_ylabel("Time to unit SNR (s)")
         ax.set_xticks(np.logspace(-8, -1, 8))
 
