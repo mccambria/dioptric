@@ -16,7 +16,7 @@ import numpy as np
 
 from utils import common
 from utils import tool_belt as tb
-from utils.constants import CoordsKey, NVSig, PosControlMode
+from utils.constants import SAMPLE, CoordsKey, NVSig, PosControlMode
 
 # endregion
 # region Simple sets
@@ -259,8 +259,10 @@ def get_z_dtype(coords_key=CoordsKey.GLOBAL):
     return get_axis_dtype(axis_ind, coords_key)
 
 
-# Example usage with debug output
-# print(get_axis_optimize_range(1, CoordsKey.GLOBAL))
+def get_sample_pos_axes():
+    config = common.get_config_dict()
+    config_pos = config["Positioning"]
+    return config_pos[SAMPLE]["axes"]
 
 
 def get_xy_control_mode(coords_key=CoordsKey.GLOBAL):

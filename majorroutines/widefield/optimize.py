@@ -18,7 +18,7 @@ from scipy.optimize import minimize
 from scipy.signal import correlate
 
 from majorroutines import optimize_xyz
-from majorroutines.optimize import expected_counts_check, main, stationary_count_lite
+from majorroutines.targeting import expected_counts_check, main, stationary_count_lite
 from utils import common, widefield
 from utils import data_manager as dm
 from utils import kplotlib as kpl

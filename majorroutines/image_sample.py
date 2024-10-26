@@ -17,7 +17,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 from scipy import ndimage
 
-import majorroutines.optimize as optimize
+import majorroutines.targeting as targeting
 from utils import common
 from utils import kplotlib as kpl
 from utils import positioning as pos
@@ -119,7 +119,7 @@ def main_with_cxn(
     tb.reset_cfm(cxn)
     center_coords = pos.adjust_coords_for_drift(nv_sig["coords"])
     x_center, y_center, z_center = center_coords
-    optimize.prepare_microscope(cxn, nv_sig)
+    targeting.pos.set_xyz_on_nv(cxn, nv_sig)
     pos_server = (
         pos.get_server_pos_xy(cxn)
         if scan_axes == ScanAxes.XY

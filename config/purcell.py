@@ -704,7 +704,6 @@ opx_config = {
         },
         "do_green_spin_pol": {
             "operation": "control",
-            "length": 1000,
             "digital_marker": "on",
         },
         "do_pi_pulse_0": {

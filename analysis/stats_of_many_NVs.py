@@ -17,7 +17,7 @@ from scipy import ndimage
 from scipy.optimize import curve_fit
 from scipy.special import binom
 
-import majorroutines.optimize as optimize
+import majorroutines.targeting as targeting
 from majorroutines.widefield.optimize import optimize_pixel_with_img_array
 from utils import common
 from utils import kplotlib as kpl

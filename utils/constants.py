@@ -70,6 +70,10 @@ class LaserKey(Enum):
     WIDEFIELD_SPIN_POL = auto()
 
 
+# coords_key for positioning the sample itself
+SAMPLE = "sample"
+
+
 class PosControlMode(Enum):
     """
     Different ways to control a positioner

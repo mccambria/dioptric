@@ -5,21 +5,23 @@ Created on Mon Apr 10 12:08:27 2023
 @author: kolkowitz
 """
 
-import utils.tool_belt as tool_belt
-import numpy as np
+import copy
+import json
 import os
 import time
+from random import shuffle
+
 import labrad
 import matplotlib.pyplot as plt
+import numpy as np
 from scipy.optimize import curve_fit
-from random import shuffle
-from utils.tool_belt import States
+
+import majorroutines.targeting as targeting
 import utils.kplotlib as kpl
+import utils.tool_belt as tool_belt
 from utils.kplotlib import KplColors
-import copy
-import matplotlib.pyplot as plt
-import majorroutines.optimize as optimize
-import json
+from utils.tool_belt import States
+
 
 def plot_readout_duration_optimization(max_readout, num_reps, sig_tags, ref_tags):
     """Generate two plots: 1, the total counts vs readout duration for each of
@@ -28,7 +30,7 @@ def plot_readout_duration_optimization(max_readout, num_reps, sig_tags, ref_tags
 
     kpl.init_kplotlib()
 
-    fig, axes_pack = plt.subplots(2, 1, figsize=(6,10))
+    fig, axes_pack = plt.subplots(2, 1, figsize=(6, 10))
 
     num_points = 101
     readouts_with_zero = np.linspace(0, max_readout, num_points + 1)
@@ -80,7 +82,7 @@ def plot_readout_duration_optimization(max_readout, num_reps, sig_tags, ref_tags
     ref_rates = ref_hist / (readout_window_sec * num_reps * 1000)
     # print(integrated_ref_tags)
     bin_centers = (readouts_with_zero[:-1] + readouts) / 2
-    
+
     ax = axes_pack[0]
     kpl.plot_line(
         ax, bin_centers, sig_rates, color=KplColors.GREEN, label=r"$m_{s}=\pm 1$"
@@ -89,7 +91,7 @@ def plot_readout_duration_optimization(max_readout, num_reps, sig_tags, ref_tags
     ax.set_ylabel("Count rate (kcps)")
     ax.set_xlabel("Time since readout began (ns)")
     ax.legend()
-    
+
     # ax2=ax.twinx()
 
     ax = axes_pack[1]
@@ -103,15 +105,16 @@ def plot_readout_duration_optimization(max_readout, num_reps, sig_tags, ref_tags
 
     return fig
 
-file = '2023_02_16-20_15_12-siena-nv0_2023_02_16'
 
-file_name = file + '.txt'
+file = "2023_02_16-20_15_12-siena-nv0_2023_02_16"
+
+file_name = file + ".txt"
 with open(file_name) as f:
     data = json.load(f)
 
-sig_tags = data['sig_tags']
-ref_tags = data['ref_tags']
-num_reps = data['num_reps']
-nv_sig = data['nv_sig']
-max_readout=nv_sig["spin_readout_dur"]
+sig_tags = data["sig_tags"]
+ref_tags = data["ref_tags"]
+num_reps = data["num_reps"]
+nv_sig = data["nv_sig"]
+max_readout = nv_sig["spin_readout_dur"]
 plot_readout_duration_optimization(max_readout, num_reps, sig_tags, ref_tags)

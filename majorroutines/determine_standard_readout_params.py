@@ -13,21 +13,21 @@ Created on July 13th, 2022
 # %% Imports
 
 
-import utils.tool_belt as tool_belt
-import numpy as np
+import copy
 import os
 import time
+from random import shuffle
+
 import labrad
 import matplotlib.pyplot as plt
+import numpy as np
 from scipy.optimize import curve_fit
-from random import shuffle
-from utils.tool_belt import States
-import utils.kplotlib as kpl
-from utils.kplotlib import KplColors
-import copy
-import matplotlib.pyplot as plt
-import majorroutines.optimize as optimize
 
+import majorroutines.targeting as targeting
+import utils.kplotlib as kpl
+import utils.tool_belt as tool_belt
+from utils.kplotlib import KplColors
+from utils.tool_belt import States
 
 # region Functions
 
@@ -149,7 +149,6 @@ def plot_readout_duration_optimization(max_readout, num_reps, sig_tags, ref_tags
 
 
 def optimize_readout_duration_sub(cxn, nv_sig, num_reps, state=States.LOW):
-
     tool_belt.reset_cfm(cxn)
     tagger_server = tool_belt.get_server_tagger(cxn)
     pulsegen_server = tool_belt.get_server_pulse_gen(cxn)
@@ -157,7 +156,7 @@ def optimize_readout_duration_sub(cxn, nv_sig, num_reps, state=States.LOW):
     seq_file = "rabi.py"
 
     ### the opx needs a specific rabi time tagging sequence because the normal rabi sequence doesn't record time tags
-    if pulsegen_server.name == 'QM_opx':
+    if pulsegen_server.name == "QM_opx":
         seq_file = "rabi_time_tagging.py"
 
     laser_key = "spin_laser"
@@ -195,13 +194,12 @@ def optimize_readout_duration_sub(cxn, nv_sig, num_reps, state=States.LOW):
     channels = []
 
     while num_reps_remaining > 0:
-
         # Break out of the while if the user says stop
         if tool_belt.safe_stop():
             break
 
         # Optimize and save the coords we found
-        opti_coords = optimize.main_with_cxn(cxn, nv_sig)
+        opti_coords = targeting.main_with_cxn(cxn, nv_sig)
         opti_coords_list.append(opti_coords)
 
         # Set up the microwaves and laser. Then load the pulse streamer
@@ -250,12 +248,11 @@ def optimize_readout_duration_sub(cxn, nv_sig, num_reps, state=States.LOW):
 
 
 def optimize_readout_duration(cxn, nv_sig, num_reps, state=States.LOW):
-
     max_readout = nv_sig["spin_readout_dur"]
 
     # Get gate channels for apds
     apd_wiring = tool_belt.get_tagger_wiring(cxn)
-    apd_gate_channel = apd_wiring['di_apd_gate']
+    apd_gate_channel = apd_wiring["di_apd_gate"]
     timetags, channels, opti_coords_list = optimize_readout_duration_sub(
         cxn, nv_sig, num_reps, state
     )
@@ -287,15 +284,15 @@ def optimize_readout_duration(cxn, nv_sig, num_reps, state=States.LOW):
 
 # region Main
 
-def main(nv_sig, num_reps,
-         max_readouts, powers=None, filters=None, state=States.LOW):
 
+def main(nv_sig, num_reps, max_readouts, powers=None, filters=None, state=States.LOW):
     with labrad.connect() as cxn:
-        main_with_cxn(cxn, nv_sig, num_reps,
-                      max_readouts, powers, filters, state)
+        main_with_cxn(cxn, nv_sig, num_reps, max_readouts, powers, filters, state)
 
-def main_with_cxn(cxn, nv_sig, num_reps,
-              max_readouts, powers=None, filters=None, state=States.LOW):
+
+def main_with_cxn(
+    cxn, nv_sig, num_reps, max_readouts, powers=None, filters=None, state=States.LOW
+):
     """
     Determine optimized SNR for each pairing of max_readout, power/filter.
     Ie we'll test max_readout[i] and power[i]/filter[i] at the same time. For
@@ -311,7 +308,6 @@ def main_with_cxn(cxn, nv_sig, num_reps,
     num_exps = len(max_readouts)
 
     for ind in range(num_exps):
-
         # Break out of the while if the user says stop
         if tool_belt.safe_stop():
             break
@@ -324,13 +320,12 @@ def main_with_cxn(cxn, nv_sig, num_reps,
         if filters is not None:
             adjusted_nv_sig["spin_laser_filter"] = filters[ind]
 
-        optimize_readout_duration(cxn, adjusted_nv_sig,
-                                  num_reps, state)
+        optimize_readout_duration(cxn, adjusted_nv_sig, num_reps, state)
+
 
 # endregion
 
 if __name__ == "__main__":
-
     file_name = "2022_12_05-14_16_25-15micro-nv1_zfs_vs_t"
     data = tool_belt.get_raw_data(file_name)
 

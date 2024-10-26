@@ -24,7 +24,7 @@ from utils import data_manager as dm
 from utils import kplotlib as kpl
 from utils import positioning as pos
 from utils import tool_belt as tb
-from utils.constants import CollectionMode, CoordsKey, LaserKey, NVSig, PosControlMode
+from utils.constants import SAMPLE, CollectionMode, LaserKey, NVSig, PosControlMode
 
 # endregion
 # region Plotting functions
@@ -173,7 +173,7 @@ def _read_counts_camera_step(nv_sig, axis_ind=None, scan_vals=None):
 
 
 def _get_opti_laser_key(coords_key):
-    if coords_key is CoordsKey.GLOBAL:
+    if coords_key is SAMPLE:
         laser_key = LaserKey.IMAGING
     else:
         laser_dict = tb.get_optics_dict(coords_key)
@@ -184,7 +184,7 @@ def _get_opti_laser_key(coords_key):
 def _read_counts_camera_sequence(
     nv_sig: NVSig,
     coords=None,
-    coords_key=CoordsKey.GLOBAL,
+    coords_key=SAMPLE,
     axis_ind=None,
     scan_vals=None,
 ):
@@ -295,7 +295,7 @@ def _optimize_on_axis(nv_sig: NVSig, coords, coords_key, axis_ind, fig=None):
     # optimizing on the actual target NV. Useful if the real target NV is poorly isolated.
     # Only works with global coordinates
     opti_offset = nv_sig.opti_offset
-    if opti_offset is not None and coords_key == CoordsKey.GLOBAL:
+    if opti_offset is not None and coords_key == SAMPLE:
         coords += np.array(opti_offset)
     axis_center = coords[axis_ind]
     scan_vals = pos.get_scan_1d(axis_center, scan_range, num_steps)
@@ -320,7 +320,7 @@ def _optimize_on_axis(nv_sig: NVSig, coords, coords_key, axis_ind, fig=None):
 def _read_counts(
     nv_sig,
     coords=None,
-    coords_key=CoordsKey.GLOBAL,
+    coords_key=SAMPLE,
     axis_ind=None,
     scan_vals=None,
 ):
@@ -380,11 +380,11 @@ def _read_counts(
 def stationary_count_lite(
     nv_sig,
     coords=None,
-    coords_key=CoordsKey.GLOBAL,
+    coords_key=SAMPLE,
     ret_img_array=False,
 ):
     # Set up
-    prepare_microscope(nv_sig)
+    pos.set_xyz_on_nv(nv_sig)
 
     ret_vals = _read_counts(nv_sig, coords, coords_key)
     counts = ret_vals[0]
@@ -396,22 +396,6 @@ def stationary_count_lite(
     return avg_counts
 
 
-def prepare_microscope(nv_sig: NVSig):
-    """
-    Prepares the microscope for a measurement. In particular, sets up the
-    optics (filters, etc) and magnet, and sets the global coordinates. The
-    laser set up must be handled by each routine
-    """
-    # Set the global positioners on this NV
-    pos.set_xyz_on_nv(nv_sig)
-
-    # Set the magnet rotation mount to the correct angle
-    magnet_angle = nv_sig.magnet_angle
-    if magnet_angle is not None:
-        rotation_stage_server = tb.get_server_magnet_rotation()
-        rotation_stage_server.set_angle(magnet_angle)
-
-
 def expected_counts_check(nv_sig, counts):
     expected_counts = nv_sig.expected_counts
     lower_bound = 0.95 * expected_counts
@@ -419,16 +403,28 @@ def expected_counts_check(nv_sig, counts):
     return lower_bound < counts < upper_bound
 
 
-def main(
+def track_drift():
+    
+    ### Check if we can actively correct for drift by adjusting the sample position
+    if 
+    
+    ### Otherwise adjust the optical paths
+    
+    
+def optimize():
+    
+
+
+def _optimize(
     nv_sig: NVSig,
-    coords_key: str | CoordsKey = CoordsKey.GLOBAL,
+    coords_key: str = SAMPLE,
     axes_to_optimize=[0, 1, 2],
     no_crash=False,
     do_plot=False,
     opti_necessary=None,
     num_attempts=5,
 ):
-    prepare_microscope(nv_sig)
+    pos.set_xyz_on_nv(nv_sig)
 
     # If optimize is disabled, just do prep and return
     if nv_sig.disable_opt:
@@ -454,7 +450,7 @@ def main(
 
     # Only check expected counts for the imaging laser
     imaging_laser_name = tb.get_laser_name(LaserKey.IMAGING)
-    if coords_key in [CoordsKey.GLOBAL, imaging_laser_name]:
+    if coords_key in [SAMPLE, imaging_laser_name]:
         expected_counts = nv_sig.expected_counts
     else:
         expected_counts = None
@@ -555,7 +551,7 @@ def main(
 
     if opti_succeeded:
         print("Optimization succeeded!")
-    prepare_microscope(nv_sig)
+    pos.set_xyz_on_nv(nv_sig)
     if not opti_necessary or opti_succeeded:
         r_opti_coords = []
         r_drift = []

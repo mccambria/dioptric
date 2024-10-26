@@ -15,20 +15,19 @@ Created on Wed Apr 24 15:01:04 2019
 # %% Imports
 
 
-import utils.tool_belt as tool_belt
-from scipy.optimize import minimize_scalar
-from numpy import pi
-import numpy
 import time
-import matplotlib.pyplot as plt
 from random import shuffle
-import labrad
-from utils.tool_belt import States
-from scipy.optimize import curve_fit
-from numpy.linalg import eigvals
-import majorroutines.optimize as optimize
-from utils.tool_belt import NormStyle
 
+import labrad
+import matplotlib.pyplot as plt
+import numpy
+from numpy import pi
+from numpy.linalg import eigvals
+from scipy.optimize import curve_fit, minimize_scalar
+
+import majorroutines.targeting as targeting
+import utils.tool_belt as tool_belt
+from utils.tool_belt import NormStyle, States
 
 # %% Constants
 
@@ -60,9 +59,7 @@ def calc_single_hamiltonian(theta_B, center_freq, mag_B):
 def calc_hamiltonian(theta_B, center_freq, mag_B):
     fit_vec = [center_freq, mag_B]
     if (type(theta_B) is list) or (type(theta_B) is numpy.ndarray):
-        hamiltonian_list = [
-            calc_single_hamiltonian(val, *fit_vec) for val in theta_B
-        ]
+        hamiltonian_list = [calc_single_hamiltonian(val, *fit_vec) for val in theta_B]
         return hamiltonian_list
     else:
         return calc_single_hamiltonian(theta_B, *fit_vec)
@@ -85,20 +82,17 @@ def zfs_cost_func(center_freq, mag_B, theta_B, meas_res_low, meas_res_high):
     calc_res_low, calc_res_high = calc_res_pair(theta_B, center_freq, mag_B)
     diff_low = calc_res_low - meas_res_low
     diff_high = calc_res_high - meas_res_high
-    return numpy.sqrt(diff_low ** 2 + diff_high ** 2)
+    return numpy.sqrt(diff_low**2 + diff_high**2)
 
 
-def theta_B_cost_func(
-    theta_B, center_freq, mag_B, meas_res_low, meas_res_high
-):
+def theta_B_cost_func(theta_B, center_freq, mag_B, meas_res_low, meas_res_high):
     calc_res_low, calc_res_high = calc_res_pair(theta_B, center_freq, mag_B)
     diff_low = calc_res_low - meas_res_low
     diff_high = calc_res_high - meas_res_high
-    return numpy.sqrt(diff_low ** 2 + diff_high ** 2)
+    return numpy.sqrt(diff_low**2 + diff_high**2)
 
 
 def plot_resonances_vs_theta_B(data, center_freq=None):
-
     # %% Setup
 
     fit_func, popt, stes, fit_fig = fit_data(data)
@@ -135,11 +129,7 @@ def plot_resonances_vs_theta_B(data, center_freq=None):
     if result.success:
         theta_B = result.x
         theta_B_deg = theta_B * 180 / pi
-        print(
-            "theta_B = {:.4f} radians, {:.3f} degrees".format(
-                theta_B, theta_B_deg
-            )
-        )
+        print("theta_B = {:.4f} radians, {:.3f} degrees".format(theta_B, theta_B_deg))
         print("cost = {:.3e}".format(result.fun))
     else:
         print("minimize_scalar failed to find theta_B")
@@ -196,7 +186,7 @@ def plot_resonances_vs_theta_B(data, center_freq=None):
 
 def mag_B_from_revival_time(revival_time, revival_time_ste=None):
     # 1071 Hz/G is the C13 Larmor precession frequency
-    mag_B = ((revival_time / 10 ** 9) * 1071) ** -1
+    mag_B = ((revival_time / 10**9) * 1071) ** -1
     if revival_time_ste is not None:
         mag_B_ste = mag_B * (revival_time_ste / revival_time)
         return mag_B, mag_B_ste
@@ -214,7 +204,6 @@ def quartic(tau, offset, revival_time, decay_time, *amplitudes):
 
 
 def fit_data(data):
-
     precession_dur_range = data["precession_time_range"]
     sig_counts = data["sig_counts"]
     ref_counts = data["ref_counts"]
@@ -247,9 +236,7 @@ def fit_data(data):
     # %% Normalization and uncertainty
 
     avg_sig_counts = numpy.average(sig_counts[::], axis=0)
-    ste_sig_counts = numpy.std(sig_counts[::], axis=0, ddof=1) / numpy.sqrt(
-        num_runs
-    )
+    ste_sig_counts = numpy.std(sig_counts[::], axis=0, ddof=1) / numpy.sqrt(num_runs)
 
     # Assume reference is constant and can be approximated to one value
     avg_ref = numpy.average(ref_counts[::])
@@ -308,12 +295,12 @@ def fit_data(data):
     # print(dominant_freqs)
     for freq in dominant_freqs:
         # print(freq)
-        revival_time = 60e3#1 / freq
+        revival_time = 60e3  # 1 / freq
         # print(revival_time)
-        num_revivals = 2#round(max_precession_dur / revival_time)
+        num_revivals = 2  # round(max_precession_dur / revival_time)
         # print(num_revivals)
         amplitudes = [amplitude for el in range(0, int(1.0 + num_revivals))]
-        print('amps',amplitudes)
+        print("amps", amplitudes)
         # print(num_revivals)
 
         revival_time_us = revival_time / 1000
@@ -350,13 +337,11 @@ def fit_data(data):
 
             fit_func_lambda = lambda tau: fit_func(tau, *popt)
             residuals = fit_func_lambda(tau_pis_us) - norm_avg_sig
-            chi_sq = numpy.sum((residuals ** 2) / (norm_avg_sig_ste ** 2))
+            chi_sq = numpy.sum((residuals**2) / (norm_avg_sig_ste**2))
             scaled_chi_sq = chi_sq * len(popt)
             # print(scaled_chi_sq)
             # print('test1',popt)
-            if best_scaled_chi_sq is None or (
-                scaled_chi_sq < best_scaled_chi_sq
-            ):
+            if best_scaled_chi_sq is None or (scaled_chi_sq < best_scaled_chi_sq):
                 # print('here')
                 best_scaled_chi_sq = scaled_chi_sq
                 best_popt = popt
@@ -365,7 +350,7 @@ def fit_data(data):
 
         except Exception as e:
             print(e)
-            
+
     # print(popt)
 
     popt = best_popt
@@ -386,7 +371,7 @@ def fit_data(data):
             fit_func,
             popt,
         )
-        
+
     return fit_func, popt, stes, fit_fig
 
 
@@ -399,7 +384,6 @@ def create_fit_figure(
     fit_func,
     popt,
 ):
-
     min_precession_dur = precession_dur_range[0]
     max_precession_dur = precession_dur_range[1]
     taus = numpy.linspace(
@@ -413,9 +397,7 @@ def create_fit_figure(
     pi_pulse_dur = tool_belt.get_pi_pulse_dur(rabi_period)
     tau_pis = taus + pi_pulse_dur
 
-    linspace_taus = numpy.linspace(
-        min_precession_dur, max_precession_dur, num=1000
-    )
+    linspace_taus = numpy.linspace(min_precession_dur, max_precession_dur, num=1000)
     linspace_tau_pis = linspace_taus + pi_pulse_dur
 
     fit_fig, ax = plt.subplots(figsize=(8.5, 8.5))
@@ -470,9 +452,8 @@ def main(
     num_reps,
     num_runs,
     state=States.LOW,
-    do_dq = False
+    do_dq=False,
 ):
-
     with labrad.connect() as cxn:
         angle = main_with_cxn(
             cxn,
@@ -482,7 +463,7 @@ def main(
             num_reps,
             num_runs,
             state,
-            do_dq
+            do_dq,
         )
         return angle
 
@@ -495,12 +476,11 @@ def main_with_cxn(
     num_reps,
     num_runs,
     state=States.LOW,
-    do_dq = False
+    do_dq=False,
 ):
-    
     counter_server = tool_belt.get_server_counter(cxn)
     pulsegen_server = tool_belt.get_server_pulse_gen(cxn)
-    
+
     tool_belt.reset_cfm(cxn)
 
     # %% Sequence setup
@@ -511,7 +491,7 @@ def main_with_cxn(
     laser_power = tool_belt.set_laser_power(cxn, nv_sig, laser_key)
     polarization_time = nv_sig["spin_pol_dur"]
     gate_time = nv_sig["spin_readout_dur"]
-    norm_style = nv_sig['norm_style']
+    norm_style = nv_sig["norm_style"]
 
     rabi_period = nv_sig["rabi_{}".format(state.name)]
     uwave_freq = nv_sig["resonance_{}".format(state.name)]
@@ -526,7 +506,7 @@ def main_with_cxn(
     if do_dq:
         do_ramsey = False
         seq_file_name = "spin_echo_dq.py"
-        
+
         rabi_period_low = nv_sig["rabi_{}".format(States.LOW.name)]
         uwave_freq_low = nv_sig["resonance_{}".format(States.LOW.name)]
         uwave_power_low = nv_sig["uwave_power_{}".format(States.LOW.name)]
@@ -537,8 +517,7 @@ def main_with_cxn(
         uwave_power_high = nv_sig["uwave_power_{}".format(States.HIGH.name)]
         uwave_pi_pulse_high = tool_belt.get_pi_pulse_dur(rabi_period_high)
         uwave_pi_on_2_pulse_high = tool_belt.get_pi_on_2_pulse_dur(rabi_period_high)
-        
-        
+
         if state.value == States.LOW.value:
             state_activ = States.LOW
             state_proxy = States.HIGH
@@ -562,7 +541,7 @@ def main_with_cxn(
     # print(taus)
     # Account for the pi/2 pulse on each side of a tau
     # plot_taus = (taus + uwave_pi_pulse) / 1000
-    plot_taus = (2*taus) / 1000
+    plot_taus = (2 * taus) / 1000
 
     # %% Fix the length of the sequence to account for odd amount of elements
 
@@ -602,7 +581,7 @@ def main_with_cxn(
     tau_index_master_list = [[] for i in range(num_runs)]
 
     # %% Analyze the sequence
-    
+
     num_reps = int(num_reps)
     if do_dq:
         seq_args = [
@@ -616,9 +595,9 @@ def main_with_cxn(
             max_precession_time,
             state_activ.value,
             state_proxy.value,
-            laser_name, 
-            laser_power, 
-            do_ramsey
+            laser_name,
+            laser_power,
+            do_ramsey,
         ]
     else:
         seq_args = [
@@ -642,18 +621,16 @@ def main_with_cxn(
 
     # %% Let the user know how long this will take
 
-    seq_time_s = seq_time / (10 ** 9)  # to seconds
-    expected_run_time_s = (
-        (num_steps / 2) * num_reps * num_runs * seq_time_s
-    )  # s
+    seq_time_s = seq_time / (10**9)  # to seconds
+    expected_run_time_s = (num_steps / 2) * num_reps * num_runs * seq_time_s  # s
     expected_run_time_m = expected_run_time_s / 60  # to minutes
 
     print(" \nExpected run time: {:.1f} minutes. ".format(expected_run_time_m))
     #    return
-    
+
     # create figure
     raw_fig, axes_pack = plt.subplots(1, 2, figsize=(17, 8.5))
-    
+
     # %% Get the starting time of the function, to be used to calculate run time
 
     startFunctionTime = time.time()
@@ -665,7 +642,6 @@ def main_with_cxn(
     tool_belt.init_safe_stop()
 
     for run_ind in range(num_runs):
-
         print(" \nRun index: {}".format(run_ind))
 
         # Break out of the while if the user says stop
@@ -673,7 +649,7 @@ def main_with_cxn(
             break
 
         # Optimize
-        opti_coords = optimize.main_with_cxn(cxn, nv_sig)
+        opti_coords = targeting.main_with_cxn(cxn, nv_sig)
         opti_coords_list.append(opti_coords)
 
         # Set up the microwaves
@@ -691,7 +667,7 @@ def main_with_cxn(
             sig_gen_high_cxn.set_freq(uwave_freq_high)
             sig_gen_high_cxn.set_amp(uwave_power_high)
             sig_gen_high_cxn.uwave_on()
-            
+
         # Set up the laser
         tool_belt.set_filter(cxn, nv_sig, laser_key)
         laser_power = tool_belt.set_laser_power(cxn, nv_sig, laser_key)
@@ -703,7 +679,6 @@ def main_with_cxn(
         shuffle(tau_ind_list)
 
         for tau_ind in tau_ind_list:
-
             # 'Flip a coin' to determine which tau (long/shrt) is used first
             rand_boolean = numpy.random.randint(0, high=2)
 
@@ -738,8 +713,8 @@ def main_with_cxn(
                     state_activ.value,
                     state_proxy.value,
                     laser_name,
-                    laser_power, 
-                    do_ramsey
+                    laser_power,
+                    do_ramsey,
                 ]
             else:
                 seq_args = [
@@ -756,23 +731,20 @@ def main_with_cxn(
             seq_args_string = tool_belt.encode_seq_args(seq_args)
             # Clear the tagger buffer of any excess counts
             counter_server.clear_buffer()
-            pulsegen_server.stream_immediate(
-                seq_file_name, num_reps, seq_args_string
-            )
-            
+            pulsegen_server.stream_immediate(seq_file_name, num_reps, seq_args_string)
+
             new_counts = counter_server.read_counter_modulo_gates(4, 1)
             sample_counts = new_counts[0]
-            
+
             sig_counts[run_ind, tau_ind_first] = sample_counts[0]
             ref_counts[run_ind, tau_ind_first] = sample_counts[1]
             sig_counts[run_ind, tau_ind_second] = sample_counts[2]
             ref_counts[run_ind, tau_ind_second] = sample_counts[3]
-            
 
         counter_server.stop_tag_stream()
 
         # %% incremental plotting
-        
+
         # Average the counts over the iterations
         inc_sig_counts = sig_counts[: run_ind + 1]
         inc_ref_counts = ref_counts[: run_ind + 1]
@@ -785,8 +757,7 @@ def main_with_cxn(
             norm_avg_sig,
             norm_avg_sig_ste,
         ) = ret_vals
-        
-        
+
         ax = axes_pack[0]
         ax.cla()
         ax.plot(plot_taus, sig_counts_avg_kcps, "r-", label="signal")
@@ -795,7 +766,7 @@ def main_with_cxn(
         # ax.set_xlabel(r"$\tau + \pi$ ($\mathrm{\mu s}$)")
         ax.set_ylabel("Counts")
         ax.legend()
-        
+
         ax = axes_pack[1]
         ax.cla()
         ax.plot(plot_taus, norm_avg_sig, "b-")
@@ -803,17 +774,23 @@ def main_with_cxn(
         ax.set_xlabel(r"$T = 2\tau$ ($\mathrm{\mu s}$)")
         # ax.set_xlabel(r"$\tau + \pi$ ($\mathrm{\mu s}$)")
         ax.set_ylabel("Contrast (arb. units)")
-        
-        text_popt = 'Run # {}/{}'.format(run_ind+1,num_runs)
 
-        props = dict(boxstyle='round', facecolor='wheat', alpha=0.5)
-        ax.text(0.8, 0.9, text_popt,transform=ax.transAxes,
-                verticalalignment='top', bbox=props)
-        
+        text_popt = "Run # {}/{}".format(run_ind + 1, num_runs)
+
+        props = dict(boxstyle="round", facecolor="wheat", alpha=0.5)
+        ax.text(
+            0.8,
+            0.9,
+            text_popt,
+            transform=ax.transAxes,
+            verticalalignment="top",
+            bbox=props,
+        )
+
         raw_fig.canvas.draw()
         raw_fig.set_tight_layout(True)
         raw_fig.canvas.flush_events()
-        
+
         # %% Save the data we have incrementally for long T1s
 
         raw_data = {
@@ -863,14 +840,16 @@ def main_with_cxn(
 
     # %% Plot the data
 
-    ret_vals = tool_belt.process_counts(sig_counts, ref_counts, num_reps, gate_time, norm_style)
+    ret_vals = tool_belt.process_counts(
+        sig_counts, ref_counts, num_reps, gate_time, norm_style
+    )
     (
         sig_counts_avg_kcps,
         ref_counts_avg_kcps,
         norm_avg_sig,
         norm_avg_sig_ste,
     ) = ret_vals
-    
+
     # print(numpy.average(norm_avg_sig))
     # print(numpy.average(norm_avg_sig_ste))
     ax = axes_pack[0]
@@ -951,12 +930,14 @@ def main_with_cxn(
 
         file_path_fit = tool_belt.get_file_path(__file__, timestamp, nv_name + "-fit")
         tool_belt.save_figure(fit_fig, file_path_fit)
-        file_path_angle = tool_belt.get_file_path(__file__, timestamp, nv_name + "-angle")
+        file_path_angle = tool_belt.get_file_path(
+            __file__, timestamp, nv_name + "-angle"
+        )
         tool_belt.save_figure(angle_fig, file_path_angle)
     except Exception:
         print("Fit Failed")
         theta_B_deg = None
-        
+
     return theta_B_deg
 
 
@@ -964,7 +945,6 @@ def main_with_cxn(
 
 
 if __name__ == "__main__":
-
     # plt.ion()
 
     # file_names = [
@@ -990,59 +970,63 @@ if __name__ == "__main__":
     #     ret_vals = plot_resonances_vs_theta_B(data)
     #     fit_func, popt, stes, fit_fig, theta_B_deg, angle_fig = ret_vals
     #     # print(popt)
-    
+
     if True:
         file_name = "2023_01_23-21_42_12-siena-nv4_2023_01_16"
-        folder = 'pc_rabi/branch_master/spin_echo/2023_01'
+        folder = "pc_rabi/branch_master/spin_echo/2023_01"
         data = tool_belt.get_raw_data(file_name, folder)
-        nv_name = data['nv_sig']["name"]
-        timestamp = data['timestamp']
+        nv_name = data["nv_sig"]["name"]
+        timestamp = data["timestamp"]
         # data['sig_counts'] = data['sig_counts'][:5]
         # data['ref_counts'] = data['ref_counts'][:5]
         # data['num_runs'] = 5
-        
+
         # ret_vals = plot_resonances_vs_theta_B(data)
         # fit_func, popt, stes, fit_fig, theta_B_deg, angle_fig = ret_vals
         # file_path_fit = tool_belt.get_file_path(__file__, timestamp, nv_name + "-fit_redo")
         # plt.show()
         # tool_belt.save_figure(fit_fig, file_path_fit)
-        
+
         #### T2 time
-        
-        norm_avg_sig = data['norm_avg_sig']
-        sig_counts = data['sig_counts']
-        ref_counts = data['ref_counts']
-        precession_time_range = data['precession_time_range']
-        num_steps = data['num_steps']
-        num_reps = data['num_reps']
-        do_dq = data['do_dq']
-        nv_sig = data['nv_sig']
-        readout = nv_sig['spin_readout_dur']
+
+        norm_avg_sig = data["norm_avg_sig"]
+        sig_counts = data["sig_counts"]
+        ref_counts = data["ref_counts"]
+        precession_time_range = data["precession_time_range"]
+        num_steps = data["num_steps"]
+        num_reps = data["num_reps"]
+        do_dq = data["do_dq"]
+        nv_sig = data["nv_sig"]
+        readout = nv_sig["spin_readout_dur"]
         norm_style = NormStyle.SINGLE_VALUED
-        
-        ret_vals = tool_belt.process_counts(sig_counts, ref_counts, num_reps, readout, norm_style)
+
+        ret_vals = tool_belt.process_counts(
+            sig_counts, ref_counts, num_reps, readout, norm_style
+        )
         (
             sig_counts_avg_kcps,
             ref_counts_avg_kcps,
             norm_avg_sig,
             norm_avg_sig_ste,
         ) = ret_vals
-        
+
         min_precession_time = int(precession_time_range[0])
         max_precession_time = int(precession_time_range[1])
-    
+
         taus = numpy.linspace(
             min_precession_time,
             max_precession_time,
             num=num_steps,
         )
-        
-        taus_ms = numpy.array(taus)*2/1e6
-        
-        
-        guess_params = [0.05, 0.5,]# 0.85]
-        fit_func = lambda x, a, b:  tool_belt.exp_t2(x, a, b ,0.8545)
-        
+
+        taus_ms = numpy.array(taus) * 2 / 1e6
+
+        guess_params = [
+            0.05,
+            0.5,
+        ]  # 0.85]
+        fit_func = lambda x, a, b: tool_belt.exp_t2(x, a, b, 0.8545)
+
         popt, pcov = curve_fit(
             fit_func,
             taus_ms,
@@ -1053,25 +1037,30 @@ if __name__ == "__main__":
         )
         print(popt)
         print(numpy.sqrt(numpy.diag(pcov)))
-        
-        
-        taus_ms_linspace = numpy.linspace(taus_ms[0], taus_ms[-1],
-                              num=1000)
-    
+
+        taus_ms_linspace = numpy.linspace(taus_ms[0], taus_ms[-1], num=1000)
+
         fig_fit, ax = plt.subplots(1, 1, figsize=(10, 8))
-        ax.errorbar(taus_ms, norm_avg_sig,fmt = 'bo', yerr = norm_avg_sig_ste, label='data')
-        ax.plot(taus_ms_linspace, fit_func(taus_ms_linspace,*popt),'r',label='fit')
-        ax.set_xlabel(r'Free precesion time (ms)')
-        ax.set_ylabel('Contrast (arb. units)')
+        ax.errorbar(
+            taus_ms, norm_avg_sig, fmt="bo", yerr=norm_avg_sig_ste, label="data"
+        )
+        ax.plot(taus_ms_linspace, fit_func(taus_ms_linspace, *popt), "r", label="fit")
+        ax.set_xlabel(r"Free precesion time (ms)")
+        ax.set_ylabel("Contrast (arb. units)")
         ax.legend()
-        
-            
+
         if do_dq:
             ax.set_title("Spin echo DQ baiss")
         else:
             ax.set_title("Spin echo SQ baiss")
-                
-        text = r"$T_2 =$ " + '%.2f'%(popt[1]) + r' $\pm$ '+ '%.2f'%(numpy.sqrt(pcov[1][1])) + r" ms" 
+
+        text = (
+            r"$T_2 =$ "
+            + "%.2f" % (popt[1])
+            + r" $\pm$ "
+            + "%.2f" % (numpy.sqrt(pcov[1][1]))
+            + r" ms"
+        )
         props = dict(boxstyle="round", facecolor="wheat", alpha=0.5)
         ax.text(
             0.65,
@@ -1081,5 +1070,4 @@ if __name__ == "__main__":
             transform=ax.transAxes,
             verticalalignment="top",
             bbox=props,
-    )
-    
+        )
