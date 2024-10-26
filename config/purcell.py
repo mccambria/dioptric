@@ -15,13 +15,14 @@ from config.default import config
 from utils.constants import (
     ChargeStateEstimationMode,
     CollectionMode,
-    ControlMode,
     CoordsKey,
     CountFormat,
     DriftMode,
     LaserKey,
     LaserPosMode,
     ModMode,
+    PosControlMode,
+    SamplePosAxes,
 )
 
 home = Path.home()
@@ -32,22 +33,6 @@ green_laser = "laser_INTE_520"
 yellow_laser = "laser_OPTO_589"
 red_laser = "laser_COBO_638"
 
-# clibration coords region
-# calibration_pixel_coords_list = [
-#     [113.649, 149.301],
-#     [80.765, 101.26],
-#     [170.167, 94.837],
-# ]
-# calibration_green_coords_list = [
-#     [109.267, 111.334],
-#     [113.322, 106.252],
-#     [103.687, 104.862],
-# ]
-# calibration_red_coords_list = [
-#     [74.649, 77.168],
-#     [77.772, 72.945],
-#     [69.921, 72.112],
-# ]
 calibration_pixel_coords_list = [
     [73.767, 91.394],
     [142.545, 210.183],
@@ -138,13 +123,15 @@ config |= {
     },
     ###
     "Microwaves": {
+        # Sig gen servers (corresponding to physical sig gens)
         "sig_gen_BERK_bnc835": {"delay": 151, "fm_mod_bandwidth": 100000.0},
         "sig_gen_STAN_sg394": {"delay": 104, "fm_mod_bandwidth": 100000.0},
         "sig_gen_TEKT_tsg4104a": {"delay": 57},
         "iq_comp_amp": 0.5,
         "iq_delay": 630,
+        # Virtual sig gens
         "sig_gen_0": {
-            "name": "sig_gen_STAN_sg394",
+            "server": "sig_gen_STAN_sg394",
             # "uwave_power": 6.05,
             "uwave_power": 2.3,
             "frequency": 2.8585669247525622,
@@ -153,7 +140,7 @@ config |= {
             "iq_delay": 140,
         },
         "sig_gen_1": {
-            "name": "sig_gen_STAN_sg394_2",
+            "server": "sig_gen_STAN_sg394_2",
             "uwave_power": 8.1,
             "frequency": 2.812,
             # "frequency": 3.05,
@@ -164,6 +151,7 @@ config |= {
     },
     ###
     "Camera": {
+        "server": "camera_NUVU_hnu512gamma",
         "resolution": (512, 512),
         "spot_radius": 2,  # Radius for integrating NV counts in a camera image
         "bias_clamp": 300,  # (changing this won't actually change the value on the camera currently)
@@ -188,7 +176,6 @@ config |= {
         green_laser: {
             "delay": 0,
             "mod_mode": ModMode.DIGITAL,
-            "pos_mode": LaserPosMode.SCANNING,
             "aod": True,
             "default_aod_suffix": "charge_pol",
             "opti_laser_key": LaserKey.IMAGING,
@@ -196,7 +183,6 @@ config |= {
         red_laser: {
             "delay": 0,
             "mod_mode": ModMode.DIGITAL,
-            "pos_mode": LaserPosMode.SCANNING,
             "aod": True,
             "default_aod_suffix": "scc",
             "opti_laser_key": LaserKey.ION,
@@ -204,10 +190,6 @@ config |= {
         yellow_laser: {
             "delay": 0,
             "mod_mode": ModMode.ANALOG,
-            "pos_mode": LaserPosMode.WIDEFIELD,
-        },
-        CoordsKey.GLOBAL: {
-            "opti_laser_key": LaserKey.IMAGING,
         },
         # Virtual lasers
         # LaserKey.IMAGING: {"name": green_laser, "duration": 50e6},
@@ -230,46 +212,38 @@ config |= {
         # LaserKey.WIDEFIELD_SPIN_POL: {"name": yellow_laser, "duration": 1e6},
         LaserKey.WIDEFIELD_CHARGE_READOUT: {"name": yellow_laser, "duration": 48e6},
         # LaserKey.WIDEFIELD_CHARGE_READOUT: {"name": yellow_laser, "duration": 100e6},
+        #
         "scc_green_shelving_pulse": False,  # Whether or not to include a shelving pulse in SCC
         "scc_yellow_shelving_pulse": False,
     },
     ###
     "Positioning": {
-        "drift_mode": DriftMode.GLOBAL,
+        "sample": {
+            "axes": "xyz",
+            "server": "piezo_stage_P616_3c_purcell",
+            "control_mode": PosControlMode.STREAM,
+            "delay": int(1e6),  # 5 ms for PIFOC xyz
+            "dtype": float,
+            "nm_per_unit": 1000,
+            "optimize_range": 0.09,
+            "units": "Voltage (V)",
+        },
         green_laser: {
-            "xy_control_mode": ControlMode.SEQUENCE,
-            "xy_delay": int(400e3),  # 400 us for galvo
-            "xy_dtype": float,
-            "xy_nm_per_unit": 1000,
-            "xy_optimize_range": 0.8,
-            "xy_units": "MHz",
-            "z_dtype": float,
+            "control_mode": PosControlMode.SEQUENCE,
+            "delay": int(400e3),  # 400 us for galvo
+            "dtype": float,
+            "nm_per_unit": 1000,
+            "optimize_range": 0.8,
+            "units": "MHz",
         },
         red_laser: {
-            "xy_control_mode": ControlMode.SEQUENCE,
-            "xy_delay": int(400e3),  # 400 us for galvo
-            "xy_dtype": float,
-            "xy_nm_per_unit": 1000,
-            "xy_optimize_range": 2.4,
-            "xy_units": "MHz",
+            "control_mode": PosControlMode.SEQUENCE,
+            "delay": int(400e3),  # 400 us for galvo
+            "dtype": float,
+            "nm_per_unit": 1000,
+            "optimize_range": 2.4,
+            "units": "MHz",
             "z_dtype": float,
-        },
-        CoordsKey.GLOBAL: {
-            "z_control_mode": ControlMode.STREAM,
-            "z_delay": int(1e6),  # 5 ms for PIFOC xyz
-            "z_dtype": float,
-            "z_nm_per_unit": 1000,
-            "z_optimize_range": 0.09,
-            "z_units": "Voltage (V)",
-            "xy_control_mode": ControlMode.STREAM,
-            "xy_delay": int(1e6),
-            "xy_dtype": float,
-            "xy_nm_per_unit": 1000,
-            "xy_optimize_range": 0.09,
-            "xy_small_response_delay": 800,
-            "xy_units": "V",
-            "xy_positional_accuracy": 0.002,
-            "xy_timeout": 1,
         },
         "widefield_calibration_coords1": widefield_calibration_coords1,
         "widefield_calibration_coords2": widefield_calibration_coords2,
@@ -277,20 +251,8 @@ config |= {
         "AffineCalibration_pixel2voltage": affine_pixel2voltage,
     },
     ###
-    "Servers": {
-        "counter": "QM_opx",
-        "magnet_rotation": "rotation_stage_thor_ell18k",
-        "pos_xy": "piezo_stage_P616_3c_purcell",
-        "pos_z": "piezo_stage_P616_3c_purcell",
-        # "pos_xyz": "piezo_stage_P616_3c_purcell",
-        # "pos_z": None,
+    "Servers": {  # Bucket for miscellaneous servers not otherwise listed above
         "pulse_gen": "QM_opx",
-        "sig_gen_LOW": "sig_gen_STAN_sg394",
-        "sig_gen_HIGH": "sig_gen_STAN_sg394_2",
-        "sig_gen_0": "sig_gen_STAN_sg394",
-        "sig_gen_1": "sig_gen_STAN_sg394_2",
-        "tagger": "QM_opx",
-        "camera": "camera_NUVU_hnu512gamma",
         "thorslm": "slm_THOR_exulus_hd2",
     },
     ###

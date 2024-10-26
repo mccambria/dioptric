@@ -16,7 +16,7 @@ import numpy as np
 
 from utils import common
 from utils import tool_belt as tb
-from utils.constants import ControlMode, CoordsKey, NVSig
+from utils.constants import CoordsKey, NVSig, PosControlMode
 
 # endregion
 # region Simple sets
@@ -314,7 +314,7 @@ def get_axis_write_fn(axis_ind, coords_key=CoordsKey.GLOBAL):
 def get_axis_stream_fn(axis_ind, coords_key=CoordsKey.GLOBAL):
     """Return the stream function for a given axis (0:x, 1:y, 2:z)"""
     control_mode = get_axis_control_mode(axis_ind)
-    if control_mode != ControlMode.STREAM:
+    if control_mode != PosControlMode.STREAM:
         return None
 
     if axis_ind in [0, 1]:
@@ -338,12 +338,6 @@ def get_axis_stream_fn(axis_ind, coords_key=CoordsKey.GLOBAL):
 
 # region Drift
 """Implemented with a drift tracking global stored on the registry"""
-
-
-@cache
-def get_drift_mode():
-    config = common.get_config_dict()
-    return config["Positioning"]["drift_mode"]
 
 
 @cache

@@ -24,7 +24,7 @@ from utils import data_manager as dm
 from utils import kplotlib as kpl
 from utils import positioning as pos
 from utils import tool_belt as tb
-from utils.constants import CollectionMode, ControlMode, CoordsKey, LaserKey, NVSig
+from utils.constants import CollectionMode, CoordsKey, LaserKey, NVSig, PosControlMode
 
 # endregion
 # region Plotting functions
@@ -356,9 +356,9 @@ def _read_counts(
         seq_args_string = tb.encode_seq_args(seq_args)
         pulse_gen.stream_load(seq_file_name, seq_args_string)
 
-        if control_mode == ControlMode.STEP:
+        if control_mode == PosControlMode.STEP:
             ret_vals = _read_counts_counter_step(axis_ind, scan_vals)
-        elif control_mode == ControlMode.STREAM:
+        elif control_mode == PosControlMode.STREAM:
             ret_vals = _read_counts_counter_stream(axis_ind, scan_vals)
 
     return ret_vals

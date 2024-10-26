@@ -35,11 +35,6 @@ class NVSig:
     nvn_dist_params: tuple | None = None  # bg, amp, sigma
 
 
-class CoordsKey(StrEnum):
-    GLOBAL = "global"
-    PIXEL = "pixel"
-
-
 class CollectionMode(Enum):
     COUNTER = auto()  # Count all photons incident on a detector (e.g. APD)
     CAMERA = auto()  # Collect photons onto a camera
@@ -60,7 +55,7 @@ class CountFormat(Enum):
 # Laser keys describe virtual lasers, which accomplish one and only one function and
 # must be associated with a physical laser in config
 class LaserKey(Enum):
-    # Scanning mode functions
+    # Scanning virtual lasers
     IMAGING = auto()
     ION = auto()
     SCC = auto()
@@ -68,25 +63,16 @@ class LaserKey(Enum):
     SPIN_POL = auto()
     SHELVING = auto()
     SPIN_READOUT = auto()  # Standard spin readout
-    # Widefield mode functions
+    # Widefield virtual lasers
     WIDEFIELD_SHELVING = auto()
     WIDEFIELD_IMAGING = auto()
     WIDEFIELD_CHARGE_READOUT = auto()
     WIDEFIELD_SPIN_POL = auto()
 
 
-class LaserPosMode(Enum):
-    SCANNING = auto()
-    WIDEFIELD = auto()
-
-
-class DriftMode(Enum):
-    GLOBAL = auto()
-    MULTI = auto()
-
-
-class ControlMode(Enum):
+class PosControlMode(Enum):
     """
+    Different ways to control a positioner
     STEP: Manual control with individual function calls
     STREAM: A stream of values can be loaded onto the controller - the controller will step
         through the stream automatically in response to a clock signal from the pulse generator

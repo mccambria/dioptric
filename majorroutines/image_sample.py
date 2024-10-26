@@ -9,19 +9,20 @@ Created on April 9th, 2019
 """
 
 
+import time
+from enum import Enum, auto
+
+import labrad
 import matplotlib.pyplot as plt
 import numpy as np
-import time
-import labrad
+from scipy import ndimage
+
 import majorroutines.optimize as optimize
-from utils.constants import ControlMode
-from utils import tool_belt as tb
 from utils import common
-from utils.constants import CollectionMode, CountFormat, LaserKey
 from utils import kplotlib as kpl
 from utils import positioning as pos
-from scipy import ndimage
-from enum import Enum, auto
+from utils import tool_belt as tb
+from utils.constants import CollectionMode, CountFormat, LaserKey, PosControlMode
 
 
 class ScanAxes(Enum):
@@ -107,10 +108,13 @@ def main_with_cxn(
     z_control_mode = pos.get_z_control_mode()
     if scan_axes == ScanAxes.XY:
         control_mode = xy_control_mode
-    elif xy_control_mode == ControlMode.STREAM and z_control_mode == ControlMode.STREAM:
-        control_mode = ControlMode.STREAM
+    elif (
+        xy_control_mode == PosControlMode.STREAM
+        and z_control_mode == PosControlMode.STREAM
+    ):
+        control_mode = PosControlMode.STREAM
     else:
-        control_mode = ControlMode.STEP
+        control_mode = PosControlMode.STEP
 
     tb.reset_cfm(cxn)
     center_coords = pos.adjust_coords_for_drift(nv_sig["coords"])
@@ -203,7 +207,7 @@ def main_with_cxn(
     coords_1, coords_2, coords_1_1d, coords_2_1d, extent = ret_vals
     num_pixels = num_steps_1 * num_steps_2
 
-    if control_mode == ControlMode.STREAM:
+    if control_mode == PosControlMode.STREAM:
         if scan_axes == ScanAxes.XY:
             pos_server.load_stream_xy(coords_1, coords_2)
         elif scan_axes == ScanAxes.XZ:
@@ -257,7 +261,7 @@ def main_with_cxn(
         counter.start_tag_stream()
     tb.init_safe_stop()
 
-    if control_mode == ControlMode.STEP:
+    if control_mode == PosControlMode.STEP:
         for ind in range(total_num_samples):
             if tb.safe_stop():
                 break
@@ -282,7 +286,7 @@ def main_with_cxn(
                 img_array_kcps[:] = (img_array[:] / 1000) / readout_sec
                 kpl.imshow_update(ax, img_array_kcps)
 
-    elif control_mode == ControlMode.STREAM:
+    elif control_mode == PosControlMode.STREAM:
         if collection_mode == CollectionMode.CAMERA:
             camera.arm()
 
