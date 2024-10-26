@@ -5,7 +5,6 @@
 Created on Semptember 16th, 2024
 @author: Saroj Chand
 """
-
 import matplotlib.cm as cm
 import matplotlib.colors as mcolors
 import matplotlib.pyplot as plt
@@ -15,12 +14,10 @@ import numpy.ma as ma
 import seaborn as sns
 from matplotlib import patches
 from matplotlib.ticker import MaxNLocator
-
+from datetime import datetime
 from utils import data_manager as dm
-
 # from utils.tool_belt import nan_corr_coef
 from utils.widefield import threshold_counts
-
 
 # Optimized nan_corr_coef function
 def nan_corr_coef(arr):
@@ -711,16 +708,11 @@ def plot_nv_network(data):
 
 if __name__ == "__main__":
     sns.set(style="white", context="talk")
-    # data = dm.get_raw_data(file_id=1653570783798)  # Fetch data
-    # data = dm.get_raw_data(file_id=1540048047866)  # Fetch data
-    from datetime import datetime
-
     now = datetime.now()
     date_time_str = now.strftime("%Y%m%d_%H%M%S")
     # file_id =  1662370749488
-    file_id =  1667457284652
-    data = dm.get_raw_data(file_id= file_id)
-    file_id = 1662370749488
+    # file_id =  1667457284652
+    file_id = 1669079684844
     data = dm.get_raw_data(file_id=file_id)
     file_name = dm.get_file_name(file_id=file_id)
     timestamp = dm.get_time_stamp()

@@ -2,8 +2,10 @@
 """Various utility functions for widefield imaging and camera data processing
 
 Created on August 15th, 2023
-
 @author: mccambria
+
+Updated on September 16th, 2024
+@author: sbchand
 """
 
 # region Imports and constants
@@ -277,38 +279,6 @@ def img_str_to_array(img_str):
         img_array = img_array[0:, offset_x : offset_x + width]
     return img_array, baseline
 
-
-run_ax = 1
-rep_ax = 3
-run_rep_axes = (run_ax, rep_ax)
-
-
-def average_counts(sig_counts, ref_counts=None):
-    """Gets average and standard error for counts data structure.
-    Counts arrays must have the structure [nv_ind, run_ind, freq_ind, rep_ind].
-    Returns the structure [nv_ind, freq_ind] for avg_counts and avg_counts_ste.
-    Returns the [nv_ind] for norms.
-    """
-    _validate_counts_structure(sig_counts)
-    _validate_counts_structure(ref_counts)
-
-    avg_counts = np.mean(sig_counts, axis=run_rep_axes)
-    num_shots = sig_counts.shape[rep_ax] * sig_counts.shape[run_ax]
-    avg_counts_std = np.std(sig_counts, axis=run_rep_axes, ddof=1)
-    avg_counts_ste = avg_counts_std / np.sqrt(num_shots)
-
-    if ref_counts is None:
-        norms = None
-    else:
-        ms0_ref_counts = ref_counts[:, :, :, 0::2]
-        ms1_ref_counts = ref_counts[:, :, :, 1::2]
-        norms = [
-            np.mean(ms0_ref_counts, axis=(1, 2, 3)),
-            np.mean(ms1_ref_counts, axis=(1, 2, 3)),
-        ]
-
-    return avg_counts, avg_counts_ste, norms
-
 # def threshold_counts(nv_list, sig_counts, ref_counts=None, dynamic_thresh=False):
 #     """Only actually thresholds counts for NVs with thresholds specified in their sigs.
 #     If there's no threshold, then the raw counts are just averaged as normal."""
@@ -364,6 +334,10 @@ def average_counts(sig_counts, ref_counts=None):
 #     else:
 #         return average_counts(sig_counts, ref_counts)
 
+run_ax = 1
+rep_ax = 3
+run_rep_axes = (run_ax, rep_ax)
+
 def threshold_counts(nv_list, sig_counts, ref_counts=None, method='otsu'):
     """Threshold counts for NVs based on the selected method."""
     _validate_counts_structure(sig_counts)
@@ -408,64 +382,6 @@ def threshold_counts(nv_list, sig_counts, ref_counts=None, method='otsu'):
         return sig_states, ref_states
     else:
         return sig_states
-
-# Adaptive thresholding function based on mean or gaussian
-def adaptive_thresholding(counts, method='gaussian'):
-    """
-    Applies adaptive thresholding to the input data (e.g., signal counts).
-    
-    Parameters:
-    - counts: Input array (e.g., signal counts).
-    - method: Type of adaptive thresholding ('mean' or 'gaussian').
-    
-    Returns:
-    - Thresholded data.
-    """
-    # Ensure the data is a single-channel array by flattening or reshaping if necessary
-    if len(counts.shape) > 2:
-        counts = counts.reshape(-1)  # Flatten the array if it's multi-dimensional
-
-    # Normalize counts to be between 0 and 255
-    normalized_counts = cv2.normalize(counts, None, 0, 255, cv2.NORM_MINMAX)
-    
-    # Convert counts to 8-bit unsigned integers (np.uint8)
-    counts_uint8 = normalized_counts.astype(np.uint8)
-
-    # Apply adaptive thresholding
-    if method == 'mean':
-        return cv2.adaptiveThreshold(
-            counts_uint8, 255, cv2.ADAPTIVE_THRESH_MEAN_C,
-            cv2.THRESH_BINARY, 11, 2
-        )
-    elif method == 'gaussian':
-        return cv2.adaptiveThreshold(
-            counts_uint8, 255, cv2.ADAPTIVE_THRESH_GAUSSIAN_C,
-            cv2.THRESH_BINARY, 11, 2
-        )
-    else:
-        raise ValueError(f"Unknown adaptive thresholding method: {method}")
-
-# Adaptive clustering-based thresholding (K-means or GMM)
-def adaptive_clustering_thresholding(counts, method='kmeans', block_size=11):
-    """Apply adaptive K-means or GMM thresholding to each block of data."""
-    adaptive_counts = np.zeros_like(counts)
-
-    # Divide data into blocks and apply thresholding
-    for i in range(0, counts.shape[0], block_size):
-        for j in range(0, counts.shape[1], block_size):
-            block = counts[i:i+block_size, j:j+block_size].flatten()
-
-            if method == 'kmeans':
-                threshold = kmeans_threshold(block)
-            elif method == 'gmm':
-                threshold = gmm_threshold(block)
-            else:
-                raise ValueError(f"Unknown adaptive clustering method: {method}")
-
-            # Apply threshold to the block
-            adaptive_counts[i:i+block_size, j:j+block_size] = block > threshold
-
-    return adaptive_counts
 
 # K-means thresholding function
 def kmeans_threshold(data):
@@ -568,7 +484,6 @@ def charge_state_mle_single(nv_sig, img_array):
     nv0_prob = np.nanprod(nv0_probs)
     return int(nvn_prob > nv0_prob)
 
-
 def charge_state_mle(nv_list, img_array):
     """Maximum likelihood estimator of state based on image"""
 
@@ -622,6 +537,31 @@ def _validate_counts_structure(counts):
         raise RuntimeError("Passed counts object has the wrong number of dimensions.")
 
 
+def average_counts(sig_counts, ref_counts=None):
+    """Gets average and standard error for counts data structure.
+    Counts arrays must have the structure [nv_ind, run_ind, freq_ind, rep_ind].
+    Returns the structure [nv_ind, freq_ind] for avg_counts and avg_counts_ste.
+    Returns the [nv_ind] for norms.
+    """
+    _validate_counts_structure(sig_counts)
+    _validate_counts_structure(ref_counts)
+
+    avg_counts = np.mean(sig_counts, axis=run_rep_axes)
+    num_shots = sig_counts.shape[rep_ax] * sig_counts.shape[run_ax]
+    avg_counts_std = np.std(sig_counts, axis=run_rep_axes, ddof=1)
+    avg_counts_ste = avg_counts_std / np.sqrt(num_shots)
+
+    if ref_counts is None:
+        norms = None
+    else:
+        ms0_ref_counts = ref_counts[:, :, :, 0::2]
+        ms1_ref_counts = ref_counts[:, :, :, 1::2]
+        norms = [
+            np.mean(ms0_ref_counts, axis=(1, 2, 3)),
+            np.mean(ms1_ref_counts, axis=(1, 2, 3)),
+        ]
+
+    return avg_counts, avg_counts_ste, norms
 # endregion
 # region Miscellaneous public functions
 
