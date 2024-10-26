@@ -15,7 +15,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 from pipython import GCSDevice
 
-import majorroutines.optimize as optimize
+import majorroutines.targeting as targeting
 from majorroutines.widefield.optimize import optimize_pixel
 from utils import common, widefield
 from utils import data_manager as dm
@@ -210,7 +210,7 @@ def main(
         if caller_fn_name == "widefield"
         else LaserKey.IMAGING
     )
-    optimize.prepare_microscope(nv_sig)
+    targeting.pos.set_xyz_on_nv(nv_sig)
     camera = tb.get_server_camera()
     pulse_gen = tb.get_server_pulse_gen()
 

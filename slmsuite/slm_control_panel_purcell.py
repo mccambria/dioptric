@@ -217,7 +217,7 @@ def calibration_triangle():
     cam.set_exposure(0.1)
 
     # Define parameters for the equilateral triangle
-    center = (750, 630)  # Center of the triangle
+    center = (750, 600)  # Center of the triangle
     side_length = 240  # Length of each side of the triangle
 
     # Calculate the coordinates of the three vertices of the equilateral triangle
@@ -262,10 +262,10 @@ def nuvu2thorcam_calibration(coords):
     #     [[128.706, 72.789], [128.443, 140.826], [69.922, 104.404]], dtype="float32"
     # )
     cal_coords_thorcam = np.array(
-        [[957.846, 750.0], [542.153, 750.0], [750.0, 390.0]], dtype="float32"
+        [[957.846, 720.0], [542.153, 720.0], [750.0, 360.0]], dtype="float32"
     )
     cal_coords_nuvu = np.array(
-        [[187.082, 54.815], [190.305, 195.338], [60.959, 128.551]], dtype="float32"
+        [[187.721, 49.52], [193.469, 192.543], [63.039, 123.164]], dtype="float32"
     )
 
     # Compute the affine transformation matrix
@@ -281,12 +281,13 @@ def nuvu2thorcam_calibration(coords):
 
 
 def load_nv_coords(
-    # file_path="slmsuite/nv_blob_detection/nv_blob_filtered_162nvs_ref.npz",
+    file_path="slmsuite/nv_blob_detection/nv_blob_filtered_128nvs_updated.npz",
     # file_path="slmsuite/nv_blob_detection/nv_coords_integras_counts_162nvs.npz",
     # file_path="slmsuite/nv_blob_detection/nv_coords_updated_spot_weights.npz",
-    file_path="slmsuite/nv_blob_detection/nv_coords_updated_spot_weights_manual_update.npz",
+    # file_path="slmsuite/nv_blob_detection/nv_coords_updated_spot_weights_manual_update.npz",
 ):
-    data = np.load(file_path)
+    # data = np.load(file_path)
+    data = np.load(file_path, allow_pickle=True)
     nv_coordinates = data["nv_coordinates"]
     spot_weights = data["spot_weights"]
     return nv_coordinates, spot_weights
@@ -296,9 +297,12 @@ def load_nv_coords(
 nuvu_pixel_coords, spot_weights = load_nv_coords()
 # nuvu_pixel_coords = np.array(
 #     [
-#         [113.649, 149.301],
-#         [80.765, 101.26],
-#         [170.167, 94.837],
+#         [121.354, 159.075],
+#         [134.394, 102.232],
+#         [170.84, 131.657],
+#         [67.855, 208.226],
+#         [87.583, 101.898],
+#         [168.499, 196.189],
 #     ]
 # )
 print(f"Total NV coordinates: {len(nuvu_pixel_coords)}")
@@ -358,18 +362,18 @@ try:
     cam = ThorCam(serial="26438", verbose=True)
     fs = FourierSLM(cam, slm)
     # cam = tb.get_server_thorcam()
-    # slm = tb.get_server_thorslm()4
+    # slm = tb.get_server_thorslm()
     # blaze()
     # fourier_calibration()
     load_fourier_calibration()
     # test_wavefront_calibration()
     # wavefront_calibration()
     # load_wavefront_calibration()
-    # compute_nvs_phase()
-    write_nvs_phase()
-    # circles()
+    compute_nvs_phase()
+    # write_nvs_phase()
     # calibration_triangle()
     # circle_pattern()
+    # circles()
     # smiley()
     # cam_plot()
 finally:

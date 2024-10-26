@@ -102,23 +102,22 @@ def plot_fitting(
 # Example usage
 if __name__ == "__main__":
     # Load the image array (replace this with your own method for loading image data)
-    data = dm.get_raw_data(file_id=1663033194603, load_npz=True)
-    data = dm.get_raw_data(file_id=1660610324445, load_npz=True)
+    data = dm.get_raw_data(file_id=1679828409408, load_npz=True)
     img_array = np.array(data["img_array"])
 
     # List of initial peak coordinates
     initial_peaks = np.array(
         [
-            [186.81, 52.631],
-            [60.892, 126.778],
-            [189.726, 197.611],
+            [187.861, 48.558],
+            [63.62, 122.871],
+            [193.667, 192.54],
         ]
     )
 
     # Fit Gaussian to each peak
     optimized_coords = []
     for peak in initial_peaks:
-        coords, _ = fit_gaussian_2d_local(img_array, peak, size=15)
+        coords, _ = fit_gaussian_2d_local(img_array, peak, size=30)
         optimized_coords.append(coords)
 
     optimized_coords = np.array(optimized_coords)

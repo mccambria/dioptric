@@ -12,12 +12,12 @@ from pathlib import Path
 from config.default import config
 from utils.constants import (
     CollectionMode,
-    ControlMode,
     CoordsKey,
     CountFormat,
     LaserKey,
     LaserPosMode,
     ModMode,
+    PosControlMode,
 )
 
 home = Path.home()
@@ -152,7 +152,7 @@ config |= {
     ###
     "Positioning": {
         green_laser: {
-            "xy_control_mode": ControlMode.SEQUENCE,
+            "xy_control_mode": PosControlMode.SEQUENCE,
             "xy_delay": int(400e3),  # 400 us for galvo
             "xy_dtype": float,
             "xy_nm_per_unit": 1000,
@@ -160,7 +160,7 @@ config |= {
             "xy_units": "MHz",
         },
         red_laser: {
-            "xy_control_mode": ControlMode.SEQUENCE,
+            "xy_control_mode": PosControlMode.SEQUENCE,
             "xy_delay": int(400e3),  # 400 us for galvo
             "xy_dtype": float,
             "xy_nm_per_unit": 1000,
@@ -168,7 +168,7 @@ config |= {
             "xy_units": "MHz",
         },
         CoordsKey.GLOBAL: {
-            "z_control_mode": ControlMode.STREAM,
+            "z_control_mode": PosControlMode.STREAM,
             "z_delay": int(5e6),  # 5 ms for PIFOC
             "z_dtype": float,
             "z_nm_per_unit": 1000,

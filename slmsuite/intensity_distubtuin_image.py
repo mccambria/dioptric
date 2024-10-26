@@ -32,45 +32,57 @@ def gaussian_2d(xy, amplitude, xo, yo, sigma_x, sigma_y, theta, offset):
 # Function to fit a 2D Gaussian around NV coordinates
 def fit_gaussian(image, coord, window_size=3):
     x0, y0 = coord
-    img_shape_y, img_shape_x = image.shape  # Get image dimensions
+    img_shape_y, img_shape_x = image.shape
 
-    # Ensure the window doesn't go out of bounds
+    # Ensure the window is within image bounds
     x_min = max(int(x0 - window_size), 0)
     x_max = min(int(x0 + window_size + 1), img_shape_x)
     y_min = max(int(y0 - window_size), 0)
     y_max = min(int(y0 + window_size + 1), img_shape_y)
 
-    # If the cutout region is too small or invalid, return original coordinates
     if (x_max - x_min) <= 1 or (y_max - y_min) <= 1:
         print(
             f"Invalid cutout for NV at ({x0}, {y0}): Region too small or out of bounds"
         )
-        return x0, y0  # Return original coordinates
+        return x0, y0
 
-    # Generate the mesh grid for the fitting region
+    # Extract cutout and mesh grid
     x_range = np.arange(x_min, x_max)
     y_range = np.arange(y_min, y_max)
     x, y = np.meshgrid(x_range, y_range)
-
-    # Extract the cutout region from the image
     image_cutout = image[y_min:y_max, x_min:x_max]
 
-    # Check if the cutout is valid and non-zero in size
+    # Check for valid cutout size
     if image_cutout.size == 0:
         print(f"Zero-size cutout for NV at ({x0}, {y0})")
         return x0, y0
 
-    # Initial guess parameters for the Gaussian fit
-    initial_guess = (np.max(image_cutout), x0, y0, 3, 3, 0, np.min(image_cutout))
+    # Normalize the image cutout
+    image_cutout = (image_cutout - np.min(image_cutout)) / (
+        np.max(image_cutout) - np.min(image_cutout)
+    )
 
-    # Perform the 2D Gaussian fit
+    # Initial guess parameters
+    initial_guess = (1, x0, y0, 3, 3, 0, 0)  # Amplitude normalized to 1
+
     try:
-        popt, _ = curve_fit(gaussian_2d, (x, y), image_cutout.ravel(), p0=initial_guess)
-        _, fitted_x, fitted_y, _, _, _, _ = popt  # Extract fitted X and Y coordinates
-        return fitted_x, fitted_y  # Return optimized coordinates
+        # Apply bounds to avoid unreasonable parameter values
+        bounds = (
+            (0, x_min, y_min, 0, 0, -np.pi, 0),  # Lower bounds
+            (np.inf, x_max, y_max, np.inf, np.inf, np.pi, np.inf),  # Upper bounds
+        )
+
+        # Perform the Gaussian fit
+        popt, _ = curve_fit(
+            gaussian_2d, (x, y), image_cutout.ravel(), p0=initial_guess, bounds=bounds
+        )
+        amplitude, fitted_x, fitted_y, _, _, _, _ = popt
+
+        return fitted_x, fitted_y, amplitude
+
     except Exception as e:
         print(f"Fit failed for NV at ({x0}, {y0}): {e}")
-        return x0, y0  # Return original coordinates if fitting fails
+        return x0, y0, 0
 
 
 def integrate_intensity(image_array, nv_coords, sigma):
@@ -91,10 +103,10 @@ def remove_outliers(intensities, nv_coords):
     IQR = Q3 - Q1
 
     # Define bounds for identifying outliers
-    # lower_bound = Q1 - 1.5 * IQR
-    # upper_bound = Q3 + 2.8 * IQR
-    lower_bound = 3.3
-    upper_bound = 100
+    lower_bound = Q1 - 1.0 * IQR
+    upper_bound = Q3 + 6.5 * IQR
+    # lower_bound = 10
+    # upper_bound = 100
 
     # Filter out the outliers and corresponding NV coordinates
     filtered_intensities = []
@@ -135,7 +147,7 @@ def sigmoid_weights(intensities, threshold, beta=1):
     threshold: intensity value at which the function starts transitioning
     beta: steepness parameter (higher beta makes the transition steeper)
     """
-    weights = 1 / (1 + np.exp(beta * (intensities - threshold)))
+    weights = np.exp(beta * (intensities - threshold))
     return weights / np.max(weights)  # Normalize the weights
 
 
@@ -214,9 +226,10 @@ def filter_by_snr(snr_list, threshold=0.5):
 def load_nv_coords(
     # file_path="slmsuite/nv_blob_detection/nv_blob_filtered_162nvs_ref.npz",
     # file_path="slmsuite/nv_blob_detection/nv_blob_filtered_77nvs_new.npz",
-    file_path="slmsuite/nv_blob_detection/nv_coords_updated_spot_weights.npz",
+    file_path="slmsuite/nv_blob_detection/nv_blob_filtered_240nvs.npz",
 ):
     data = np.load(file_path)
+    print(data.keys)
     nv_coordinates = data["nv_coordinates"]
     spot_weights = data["spot_weights"]
     return nv_coordinates, spot_weights
@@ -291,6 +304,28 @@ def manual_sigmoid_weight_update(
     return updated_spot_weights
 
 
+def filter_by_peak_intensity(fitted_data, threshold=0.5):
+    """
+    Filter NVs based on peak intensity.
+
+    Args:
+        fitted_data: List of tuples (x, y, peak_intensity) from Gaussian fitting.
+        threshold: Minimum peak intensity required to keep the NV.
+
+    Returns:
+        Filtered NV coordinates and their intensities.
+    """
+    filtered_coords = []
+    filtered_intensities = []
+
+    for x, y, intensity in fitted_data:
+        if intensity >= threshold:
+            filtered_coords.append((x, y))
+            filtered_intensities.append(intensity)
+
+    return filtered_coords, filtered_intensities
+
+
 # Main section of the code
 if __name__ == "__main__":
     kpl.init_kplotlib()
@@ -301,37 +336,62 @@ if __name__ == "__main__":
 
     # data = dm.get_raw_data(file_id=1648773947273, load_npz=True)
     # data = dm.get_raw_data(file_id=1651663986412, load_npz=True)
-    data = dm.get_raw_data(file_id=1661612183741, load_npz=True)
+    # data = dm.get_raw_data(file_id=1680236956179, load_npz=True)
+    data = dm.get_raw_data(file_id=1681853425454, load_npz=True)
 
     img_array = np.array(data["ref_img_array"])
-    nv_coordinates, spot_weights = load_nv_coords()
+    # img_array = np.array(data["diff_img_array"])
+    nv_coordinates, spot_weights = load_nv_coords(
+        file_path="slmsuite/nv_blob_detection/nv_blob_filtered_128nvs_updated.npz"
+    )
     nv_coordinates = nv_coordinates.tolist()
-    spot_weights = spot_weights.tolist()
+    # spot_weights = spot_weights.tolist()
+    # spot_weights = np.array(spot_weights)
+    # print(spot_weights)
+
     # Start merged coordinates with the reference NV
     # Reference NV to append as the first coordinate
     # reference_nv = [113.431, 149.95]
-    # reference_nv = [112.76, 150.887]
+    reference_nv = [122.502, 159.336]
     # # # Start with the reference NV as the first element
-    # nv_coords = [reference_nv]
+    nv_coords = [reference_nv]
 
     # # Iterate through the rest of the NV coordinates
-    # for coord in nv_coordinates:
-    #     # Calculate the distance between the current NV and the reference NV
-    #     distance = np.linalg.norm(np.array(reference_nv) - np.array(coord))
+    # Iterate through the rest of the NV coordinates
+    for coord in nv_coordinates:
+        # Check if the new NV coordinate is far enough from all accepted NVs
+        keep_coord = True  # Assume the coordinate is valid
 
-    #     # Append NV if it's farther than 3 pixels away from the reference NV
-    #     if distance >= 3:
-    #         nv_coords.append(coord)
+        for existing_coord in nv_coords:
+            # Calculate the distance between the current NV and each existing NV
+            distance = np.linalg.norm(np.array(existing_coord) - np.array(coord))
 
+            if distance < 6:
+                keep_coord = False  # If too close, mark it for exclusion
+                break  # No need to check further distances
+
+        # If the coordinate passed the distance check, add it to the list
+        if keep_coord:
+            nv_coords.append(coord)
     # Fit 2D Gaussian to each NV and get optimized coordinates
     # optimal_nv_coords = []
     # for coord in nv_coords:
     #     optimized_x, optimized_y = fit_gaussian(img_array, coord)
     #     optimal_nv_coords.append((optimized_x, optimized_y))
 
+    # Fit 2D Gaussian and collect peak intensities
+    fitted_data = []
+    for coord in nv_coords:
+        optimized_x, optimized_y, peak_intensity = fit_gaussian(img_array, coord)
+        fitted_data.append((optimized_x, optimized_y, peak_intensity))
+
+    # Filter NVs by peak intensity
+    filtered_nv_coords, filtered_counts = filter_by_peak_intensity(
+        fitted_data, threshold=0.9
+    )
     # # Round each coordinate to 3 decimal places
-    # rounded_nv_coords = [(round(x, 3), round(y, 3)) for x, y in optimal_nv_coords]
-    # nv_coordinates = nv_coords
+    rounded_nv_coords = [(round(x, 3), round(y, 3)) for x, y in filtered_nv_coords]
+    filtered_nv_coords = rounded_nv_coords
     # manual removal of the nvs
     # manual_removal_indices = [41]
     # nv_coordinates = remove_manual_indices(nv_coordinates, manual_removal_indices)
@@ -342,115 +402,37 @@ if __name__ == "__main__":
 
     # Integrate intensities for each NV coordinate
     sigma = 3
-    integrated_intensities = integrate_intensity(img_array, nv_coordinates, sigma)
-    integrated_intensities = np.array(integrated_intensities)
+    # integrated_intensities = integrate_intensity(img_array, nv_coordinates, sigma)
+    # integrated_intensities = np.array(integrated_intensities)
 
-    if remove_outliers_flag:
-        # Remove outliers and corresponding NV coordinates
-        filtered_intensities, filtered_nv_coords = remove_outliers(
-            integrated_intensities, nv_coordinates
-        )
-    else:
-        filtered_intensities = integrated_intensities
-        filtered_nv_coords = nv_coordinates
+    # if remove_outliers_flag:
+    #     # Remove outliers and corresponding NV coordinates
+    #     filtered_intensities, filtered_nv_coords = remove_outliers(
+    #         integrated_intensities, nv_coordinates
+    #     )
+    # else:
+    #     filtered_intensities = integrated_intensities
+    #     filtered_nv_coords = nv_coordinates
 
     # Reorder NV coordinates based on Euclidean distances from the first NV
     if reorder_coords_flag:
         filtered_nv_coords = reorder_coords(filtered_nv_coords)
 
     # Convert filtered intensities to a NumPy array for element-wise operations
-    filtered_intensities = np.array(filtered_intensities)
+    filtered_counts = np.array(filtered_counts)
 
-    # spot_weights = non_linear_weights(filtered_intensities, alpha=0.9)
-    # spot_weights = linear_weights(filtered_intensities, alpha=1)
+    updated_spot_weights = non_linear_weights(filtered_counts, alpha=0.3)
+    # spot_weights = linear_weights(filtered_intensities, alpha=0.2)
     # spot_weights = non_linear_weights_adjusted(
     #     filtered_intensities, alpha=0.9, beta=0.3, threshold=0.9
     # )
+    # spot_weights = sigmoid_weights(filtered_intensities, threshold=0, beta=0.005)
     # Print some diagnostics
-    fidelities = [
-        1.116,
-        1.178,
-        1.178,
-        1.156,
-        1.073,
-        1.421,
-        1.116,
-        1.213,
-        1.094,
-        0.343,
-        1.202,
-        1.087,
-        1.481,
-        1.112,
-        1.083,
-        1.261,
-        1.151,
-        1.331,
-        1.193,
-        0.822,
-        1.195,
-        1.274,
-        1.138,
-        1.362,
-        1.19,
-        1.007,
-        1.188,
-        0.976,
-        1.124,
-        1.347,
-        0.996,
-        1.162,
-        1.429,
-        1.184,
-        1.233,
-        1.181,
-        1.066,
-        0.99,
-        0.973,
-        1.207,
-        1.17,
-        1.107,
-        1.167,
-        1.287,
-        1.091,
-        1.108,
-        0.982,
-        0.571,
-        1.137,
-        0.986,
-        1.141,
-        1.008,
-        1.198,
-        1.054,
-        1.086,
-        1.365,
-        1.011,
-        1.025,
-        1.204,
-        0.807,
-        1.255,
-        1.337,
-        0.377,
-        1.345,
-        0.714,
-        1.31,
-        0.952,
-        0.932,
-        1.191,
-        1.22,
-        1.36,
-        1.075,
-        1.335,
-        0.887,
-        0.977,
-        1.217,
-        1.181,
-    ]
     # Update spot weights for NVs with low fidelity
 
     # updated_spot_weights = sigmoid_weight_update(
     #     fidelities,
-    #     spot_weights,
+    #     spot_weights,1
     #     integrated_intensities,
     #     alpha=1.0,
     #     beta=6,
@@ -459,20 +441,25 @@ if __name__ == "__main__":
     # Calculate the spot weights based on the integrated intensities
     # spot_weights = non_linear_weights(filtered_intensities, alpha=0.9)
     # Define the NV indices you want to update
-    indices_to_update = [11, 14, 18, 19, 25, 30, 36, 42, 43, 45, 48, 56, 72]
-    indices_to_update = np.arange(0, 77).tolist()
+    # indices_to_update = [11, 14, 18, 19, 25, 30, 36, 42, 43, 45, 48, 56, 72]
+    # indices_to_update = np.arange(0, 77).tolist()
     # Calculate the updated spot weights
-    updated_spot_weights = manual_sigmoid_weight_update(
-        spot_weights,
-        integrated_intensities,
-        alpha=0.9,
-        beta=6.0,
-        update_indices=indices_to_update,
-    )
-
+    # updated_spot_weights = manual_sigmoid_weight_update(
+    #     spot_weights,
+    #     integrated_intensities,
+    #     alpha=0.9,
+    #     beta=6.0,
+    #     update_indices=indices_to_update,
+    # )
+    print(f"Filtered NV coordinates: {len(filtered_nv_coords)} NVs")
+    print("NV Index | Spot Weight | Updated Spot Weight | Counts")
+    print("-" * 50)
+    for idx, (weight, updated_weight, counts) in enumerate(
+        zip(spot_weights, updated_spot_weights, filtered_counts)
+    ):
+        print(f"{idx:<8} | {weight:.3f} | {updated_weight:.3f} | {counts:.3f}")
     # print(f"NV Coords: {filtered_nv_coords}")
     # print(f"Filtered integrated intensities: {filtered_intensities}")
-    # print(f"Filtered NV coordinates: {len(filtered_nv_coords)} NVs")
     # print(f"Normalized spot weights: {spot_weights}")
     # print(f"Normalized spot weights: {updated_spot_weights}")
     # print(f"Number of NVs detected: {len(filtered_nv_coords)}")
@@ -480,14 +467,14 @@ if __name__ == "__main__":
     # Save the filtered results
     save_results(
         filtered_nv_coords,
-        filtered_intensities,
+        filtered_counts,
         updated_spot_weights,
-        filename="slmsuite/nv_blob_detection/nv_coords_updated_spot_weights_manual_update.npz",
+        filename="slmsuite/nv_blob_detection/nv_blob_filtered_128nvs_updated.npz",
     )
 
     # Plot the original image with circles around each NV
     fig, ax = plt.subplots()
-    title = "12 ms, Ref"
+    title = "24ms, Ref"
     kpl.imshow(ax, img_array, title=title, cbar_label="Photons")
     # Draw circles and index numbers
     for idx, coord in enumerate(filtered_nv_coords):
@@ -507,7 +494,7 @@ if __name__ == "__main__":
     sns.set(style="whitegrid")
 
     plt.figure(figsize=(6, 5))
-    sns.histplot(filtered_intensities, bins=45, kde=False, color="blue")
+    sns.histplot(filtered_counts, bins=45, kde=False, color="blue")
 
     plt.xlabel("Integrated Intensity")
     plt.ylabel("Frequency")

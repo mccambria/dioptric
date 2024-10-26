@@ -12,22 +12,21 @@ Created on Fri Aug 5 2022
 # %% Imports
 
 
-import utils.tool_belt as tool_belt
-import utils.kplotlib as kpl
-from utils.kplotlib import KplColors
-import majorroutines.optimize as optimize
-from scipy.optimize import minimize_scalar
-from utils.tool_belt import NormStyle
-from numpy import pi
-import numpy
 import time
-import matplotlib.pyplot as plt
 from random import shuffle
-import labrad
-from utils.tool_belt import States
-from scipy.optimize import curve_fit
-from numpy.linalg import eigvals
 
+import labrad
+import matplotlib.pyplot as plt
+import numpy
+from numpy import pi
+from numpy.linalg import eigvals
+from scipy.optimize import curve_fit, minimize_scalar
+
+import majorroutines.targeting as targeting
+import utils.kplotlib as kpl
+import utils.tool_belt as tool_belt
+from utils.kplotlib import KplColors
+from utils.tool_belt import NormStyle, States
 
 # %% Constants
 
@@ -35,6 +34,7 @@ from numpy.linalg import eigvals
 im = 0 + 1j
 inv_sqrt_2 = 1 / numpy.sqrt(2)
 gmuB = 2.8e-3  # gyromagnetic ratio in GHz / G
+
 
 def create_fit_figure(
     taus,
@@ -45,17 +45,21 @@ def create_fit_figure(
     do_dq,
     fit_func,
     popt,
-    pcov
+    pcov,
 ):
+    tau_T = 2 * taus * pi_pulse_reps / 1000
 
-    tau_T = 2*taus*pi_pulse_reps/1000
-
-    smooth_taus = numpy.linspace(
-        tau_T[0], tau_T[-1], num=1000
-    )
+    smooth_taus = numpy.linspace(tau_T[0], tau_T[-1], num=1000)
 
     fit_fig, ax = plt.subplots()
-    kpl.plot_points(ax, tau_T, norm_avg_sig, yerr=norm_avg_sig_ste, color = KplColors.BLUE, label = 'data')
+    kpl.plot_points(
+        ax,
+        tau_T,
+        norm_avg_sig,
+        yerr=norm_avg_sig_ste,
+        color=KplColors.BLUE,
+        label="data",
+    )
     kpl.plot_line(
         ax,
         smooth_taus,
@@ -67,9 +71,9 @@ def create_fit_figure(
     ax.set_ylabel("Contrast (arb. units)")
     ax.set_title("CPMG-{}".format(pi_pulse_reps))
     # ax.legend()
-    
-    t2_us = popt[1]/1000
-    t2_unc_us = numpy.sqrt(pcov[1][1])/1000
+
+    t2_us = popt[1] / 1000
+    t2_unc_us = numpy.sqrt(pcov[1][1]) / 1000
     text_popt = "\n".join(
         (
             r"$S(T) = e^{(- (T/T_2)^3)}$",
@@ -77,7 +81,7 @@ def create_fit_figure(
         )
     )
     kpl.anchored_text(ax, text_popt, kpl.Loc.UPPER_RIGHT, size=kpl.Size.SMALL)
-    
+
     if do_dq:
         ax.set_title("CPMG-{} DQ basis".format(pi_pulse_reps))
     else:
@@ -89,52 +93,62 @@ def create_fit_figure(
 
     return fit_fig
 
-def fit_t2_12C(data, fixed_offset = None, incremental=False):
-    '''
+
+def fit_t2_12C(data, fixed_offset=None, incremental=False):
+    """
     for isotopically pure samples, this will fit t2
-    '''
-    
+    """
+
     if incremental:
-        run_ind = data['run_ind']
-        sig_counts = data['sig_counts']
-        ref_counts = data['ref_counts']
-        nv_sig = data['nv_sig']
-        gate_time = nv_sig['spin_readout_dur']
+        run_ind = data["run_ind"]
+        sig_counts = data["sig_counts"]
+        ref_counts = data["ref_counts"]
+        nv_sig = data["nv_sig"]
+        gate_time = nv_sig["spin_readout_dur"]
         norm_style = NormStyle.SINGLE_VALUED
-        num_reps = data['num_reps']
-        ret_vals = tool_belt.process_counts(sig_counts[: run_ind ], ref_counts[: run_ind + 1], num_reps, gate_time, norm_style)
+        num_reps = data["num_reps"]
+        ret_vals = tool_belt.process_counts(
+            sig_counts[:run_ind],
+            ref_counts[: run_ind + 1],
+            num_reps,
+            gate_time,
+            norm_style,
+        )
         (
-             sig_counts_avg_kcps,
-             ref_counts_avg_kcps,
-             norm_avg_sig,
-             norm_avg_sig_ste,
+            sig_counts_avg_kcps,
+            ref_counts_avg_kcps,
+            norm_avg_sig,
+            norm_avg_sig_ste,
         ) = ret_vals
-    
+
     else:
-        norm_avg_sig = data['norm_avg_sig']
-        norm_avg_sig_ste = data['norm_avg_sig_ste']
-    
-    
-    plot_taus = data['plot_taus']
-    num_steps = data['num_steps']
-    pi_pulse_reps = data['pi_pulse_reps']
-    do_dq=data['do_dq']
-    taus = numpy.array(data['taus'])
-    
+        norm_avg_sig = data["norm_avg_sig"]
+        norm_avg_sig_ste = data["norm_avg_sig_ste"]
+
+    plot_taus = data["plot_taus"]
+    num_steps = data["num_steps"]
+    pi_pulse_reps = data["pi_pulse_reps"]
+    do_dq = data["do_dq"]
+    taus = numpy.array(data["taus"])
+
     if fixed_offset:
-        fit_func = lambda x, amp, decay:tool_belt.exp_stretch_decay(x, amp, decay, fixed_offset, 3)
-        init_params = [ -0.01, 1000]
+        fit_func = lambda x, amp, decay: tool_belt.exp_stretch_decay(
+            x, amp, decay, fixed_offset, 3
+        )
+        init_params = [-0.01, 1000]
     else:
-        fit_func = lambda x, amp, decay, offset:tool_belt.exp_stretch_decay(x, amp, decay, offset, 3)
-        init_params = [ -0.05, 3000, 1.05]
-    
+        fit_func = lambda x, amp, decay, offset: tool_belt.exp_stretch_decay(
+            x, amp, decay, offset, 3
+        )
+        init_params = [-0.05, 3000, 1.05]
+
     popt, pcov = curve_fit(
         fit_func,
         plot_taus,
         norm_avg_sig,
         p0=init_params,
-        absolute_sigma = True,
-        sigma=norm_avg_sig_ste
+        absolute_sigma=True,
+        sigma=norm_avg_sig_ste,
     )
     print(popt)
     # popt = [-0.01, 1000]
@@ -147,59 +161,62 @@ def fit_t2_12C(data, fixed_offset = None, incremental=False):
         do_dq,
         fit_func,
         popt,
-        pcov)
-    
-    return fig
-    
+        pcov,
+    )
 
-def compile_12C_data(file_list, do_save = True):
-    '''
+    return fig
+
+
+def compile_12C_data(file_list, do_save=True):
+    """
     for a bunch of 12C files of the same type, combine data
-    '''
+    """
     sig_counts = []
     ref_counts = []
     num_runs = 0
     for file in file_list:
         data = tool_belt.get_raw_data(file)
-        sig_counts_i = data['sig_counts']
-        ref_counts_i = data['ref_counts']
-        num_runs_i = data['num_runs']
-        
-        sig_counts = sig_counts+sig_counts_i
-        ref_counts = ref_counts+ref_counts_i
-        num_runs  = num_runs + num_runs_i
-        
-    nv_sig = data['nv_sig']
+        sig_counts_i = data["sig_counts"]
+        ref_counts_i = data["ref_counts"]
+        num_runs_i = data["num_runs"]
+
+        sig_counts = sig_counts + sig_counts_i
+        ref_counts = ref_counts + ref_counts_i
+        num_runs = num_runs + num_runs_i
+
+    nv_sig = data["nv_sig"]
     norm_style = NormStyle.SINGLE_VALUED
     # norm_style = NormStyle.POINT_TO_POINT
-    gate_time = nv_sig['spin_readout_dur']
-    num_reps = data['num_reps']
-    ret_vals = tool_belt.process_counts(sig_counts, ref_counts, num_reps, gate_time, norm_style)
+    gate_time = nv_sig["spin_readout_dur"]
+    num_reps = data["num_reps"]
+    ret_vals = tool_belt.process_counts(
+        sig_counts, ref_counts, num_reps, gate_time, norm_style
+    )
     (
-         sig_counts_avg_kcps,
-         ref_counts_avg_kcps,
-         norm_avg_sig,
-         norm_avg_sig_ste,
+        sig_counts_avg_kcps,
+        ref_counts_avg_kcps,
+        norm_avg_sig,
+        norm_avg_sig_ste,
     ) = ret_vals
-    
-    data['sig_counts']= sig_counts
-    data['ref_counts']= ref_counts
-    data['norm_avg_sig']= norm_avg_sig.tolist()
-    data['norm_avg_sig_ste']= norm_avg_sig_ste.tolist()
-    nv_sig['norm_style'] = norm_style
-    data['nv_sig'] = nv_sig
-    data['num_runs']= num_runs
-    data['file_list']= file_list
-    
+
+    data["sig_counts"] = sig_counts
+    data["ref_counts"] = ref_counts
+    data["norm_avg_sig"] = norm_avg_sig.tolist()
+    data["norm_avg_sig_ste"] = norm_avg_sig_ste.tolist()
+    nv_sig["norm_style"] = norm_style
+    data["nv_sig"] = nv_sig
+    data["num_runs"] = num_runs
+    data["file_list"] = file_list
+
     fig = fit_t2_12C(data)
-    
+
     if do_save:
         timestamp = tool_belt.get_time_stamp()
         nv_name = nv_sig["name"]
         file_path = tool_belt.get_file_path(__file__, timestamp, nv_name)
         tool_belt.save_figure(fig, file_path)
         tool_belt.save_raw_data(data, file_path)
-    
+
 
 # %% Main
 
@@ -213,14 +230,13 @@ def main(
     num_runs,
     taus=[],
     state=States.HIGH,
-    do_dq = False,
-    do_scc = False,
-    comp_wait_time = 80,
-    dd_wait_time = 200,
-    do_plot = True,
-    do_save = True
+    do_dq=False,
+    do_scc=False,
+    comp_wait_time=80,
+    dd_wait_time=200,
+    do_plot=True,
+    do_save=True,
 ):
-
     with labrad.connect() as cxn:
         sig_counts, ref_counts = main_with_cxn(
             cxn,
@@ -237,7 +253,7 @@ def main(
             comp_wait_time,
             dd_wait_time,
             do_plot,
-            do_save
+            do_save,
         )
         return sig_counts, ref_counts
 
@@ -252,24 +268,22 @@ def main_with_cxn(
     num_runs,
     taus=[],
     state=States.HIGH,
-    do_dq = False,
-    do_scc = False,
-    comp_wait_time = 80,
-    dd_wait_time = 200,
-    do_plot = True,
-    do_save = True
+    do_dq=False,
+    do_scc=False,
+    comp_wait_time=80,
+    dd_wait_time=200,
+    do_plot=True,
+    do_save=True,
 ):
-
     counter_server = tool_belt.get_server_counter(cxn)
     pulsegen_server = tool_belt.get_server_pulse_gen(cxn)
     arbwavegen_server = tool_belt.get_server_arb_wave_gen(cxn)
-    
+
     tool_belt.reset_cfm(cxn)
     kpl.init_kplotlib()
 
     # %% Sequence setup
 
-    
     if do_scc:
         laser_tag = "nv-_reionization"
         laser_key = "{}_laser".format(laser_tag)
@@ -295,9 +309,8 @@ def main_with_cxn(
         laser_power = tool_belt.set_laser_power(cxn, nv_sig, laser_key)
         polarization_time = nv_sig["spin_pol_dur"]
         readout = nv_sig["spin_readout_dur"]
-        
-    norm_style = nv_sig['norm_style']
-        
+
+    norm_style = nv_sig["norm_style"]
 
     uwave_freq = nv_sig["resonance_{}".format(state.name)]
     uwave_power = nv_sig["uwave_power_{}".format(state.name)]
@@ -305,12 +318,10 @@ def main_with_cxn(
     # Get pulse frequencies
     uwave_pi_pulse = nv_sig["pi_pulse_{}".format(state.name)]
     uwave_pi_on_2_pulse = nv_sig["pi_on_2_pulse_{}".format(state.name)]
-    
 
     # set up to drive transition through zero
     if do_dq:
-        
-       # rabi_period_low = nv_sig["rabi_{}".format(States.LOW.name)]
+        # rabi_period_low = nv_sig["rabi_{}".format(States.LOW.name)]
         uwave_freq_low = nv_sig["resonance_{}".format(States.LOW.name)]
         uwave_power_low = nv_sig["uwave_power_{}".format(States.LOW.name)]
         uwave_pi_pulse_low = nv_sig["pi_pulse_{}".format(States.LOW.name)]
@@ -319,15 +330,14 @@ def main_with_cxn(
         uwave_power_high = nv_sig["uwave_power_{}".format(States.HIGH.name)]
         uwave_pi_pulse_high = nv_sig["pi_pulse_{}".format(States.HIGH.name)]
         uwave_pi_on_2_pulse_high = nv_sig["pi_on_2_pulse_{}".format(States.HIGH.name)]
-        
-        
+
         if state.value == States.LOW.value:
             state_activ = States.LOW
             state_proxy = States.HIGH
         elif state.value == States.HIGH.value:
             state_activ = States.HIGH
             state_proxy = States.LOW
-    
+
     # %% Create the array of relaxation times
 
     # Array of times to sweep through
@@ -347,7 +357,7 @@ def main_with_cxn(
     # return
     # Convert to ms
     plot_taus = (taus * 2 * pi_pulse_reps) / 1000
-    #if do_dq:
+    # if do_dq:
     #    plot_taus = (2* coh_pulse_dur + (2*taus + echo_pulse_dur)  * 2 *4 * pi_pulse_reps) / 1000
 
     # %% Fix the length of the sequence to account for odd amount of elements
@@ -388,7 +398,7 @@ def main_with_cxn(
     tau_index_master_list = [[] for i in range(num_runs)]
 
     # %% Analyze the sequence
-    
+
     num_reps = int(num_reps)
 
     if do_dq:
@@ -418,7 +428,7 @@ def main_with_cxn(
         else:
             seq_file_name = "dynamical_decoupling_dq.py"
             seq_args = [
-                  taus[0],
+                taus[0],
                 polarization_time,
                 readout,
                 uwave_pi_pulse_low,
@@ -430,68 +440,66 @@ def main_with_cxn(
                 pi_pulse_reps,
                 state_activ.value,
                 state_proxy.value,
-                laser_name, 
-                laser_power
+                laser_name,
+                laser_power,
             ]
     else:
-        if do_scc:    
+        if do_scc:
             seq_file_name = "dynamical_decoupling_scc.py"
             seq_args = [
-                  taus[0],
-                  polarization_dur,
-                  ionization_dur,
-                  readout,
-                  uwave_pi_pulse,
-                  uwave_pi_on_2_pulse,
-                  taus[-1],
-                  dd_wait_time,
-                  pi_pulse_reps,
-                  state.value,
-                  pol_laser_name,
-                  pol_laser_power,
-                  ion_laser_name,
-                  ion_laser_power,
-                  readout_laser_name,
-                  readout_laser_power,
-              ]
+                taus[0],
+                polarization_dur,
+                ionization_dur,
+                readout,
+                uwave_pi_pulse,
+                uwave_pi_on_2_pulse,
+                taus[-1],
+                dd_wait_time,
+                pi_pulse_reps,
+                state.value,
+                pol_laser_name,
+                pol_laser_power,
+                ion_laser_name,
+                ion_laser_power,
+                readout_laser_name,
+                readout_laser_power,
+            ]
         else:
             seq_file_name = "dynamical_decoupling.py"
             seq_args = [
-                  taus[0],
-                  polarization_time,
-                  readout,
-                  uwave_pi_pulse,
-                  uwave_pi_on_2_pulse,
-                  taus[-1],
-                  dd_wait_time,
-                  pi_pulse_reps,
-                  state.value,
-                  laser_name,
-                  laser_power,
-              ]
+                taus[0],
+                polarization_time,
+                readout,
+                uwave_pi_pulse,
+                uwave_pi_on_2_pulse,
+                taus[-1],
+                dd_wait_time,
+                pi_pulse_reps,
+                state.value,
+                laser_name,
+                laser_power,
+            ]
     seq_args_string = tool_belt.encode_seq_args(seq_args)
     ret_vals = pulsegen_server.stream_load(seq_file_name, seq_args_string)
     seq_time = ret_vals[0]
     print(seq_file_name)
     print(seq_args)
     # return
-        # print(seq_time)
+    # print(seq_time)
 
     # %% Let the user know how long this will take
 
-    seq_time_s = seq_time / (10 ** 9)  # to seconds
-    expected_run_time_s = (
-        (num_steps / 2) * num_reps * num_runs * seq_time_s
-    )  # s
+    seq_time_s = seq_time / (10**9)  # to seconds
+    expected_run_time_s = (num_steps / 2) * num_reps * num_runs * seq_time_s  # s
     expected_run_time_m = expected_run_time_s / 60  # to minutes
 
     print(" \nExpected run time: {:.1f} minutes. ".format(expected_run_time_m))
     # return
-    
+
     # create figure
     if do_plot:
         raw_fig, axes_pack = plt.subplots(1, 2, figsize=(17, 8.5))
-    
+
     # %% Get the starting time of the function, to be used to calculate run time
 
     startFunctionTime = time.time()
@@ -503,7 +511,6 @@ def main_with_cxn(
     tool_belt.init_safe_stop()
 
     for run_ind in range(num_runs):
-
         print(" \nRun index: {}".format(run_ind))
 
         # Break out of the while if the user says stop
@@ -511,11 +518,11 @@ def main_with_cxn(
             break
 
         # Optimize
-        opti_coords = optimize.main_with_cxn(cxn, nv_sig)
+        opti_coords = targeting.main_with_cxn(cxn, nv_sig)
         opti_coords_list.append(opti_coords)
 
         # Set up the microwaves
-        
+
         if do_dq:
             sig_gen_low_cxn = tool_belt.get_server_sig_gen(cxn, States.LOW)
             sig_gen_low_cxn.set_freq(uwave_freq_low)
@@ -531,17 +538,18 @@ def main_with_cxn(
             sig_gen_cxn.set_freq(uwave_freq)
             sig_gen_cxn.set_amp(uwave_power)
             sig_gen_cxn.load_iq()
-            sig_gen_cxn.uwave_on() 
+            sig_gen_cxn.uwave_on()
         arbwavegen_server.load_cpmg(pi_pulse_reps)
-        
 
         # Set up the laser
         tool_belt.set_filter(cxn, nv_sig, laser_key)
         laser_power = tool_belt.set_laser_power(cxn, nv_sig, laser_key)
-        
+
         if do_scc:
             charge_readout_laser_server = tool_belt.get_server_charge_readout_laser(cxn)
-            charge_readout_laser_server.load_feedthrough(nv_sig["charge_readout_laser_power"])
+            charge_readout_laser_server.load_feedthrough(
+                nv_sig["charge_readout_laser_power"]
+            )
 
         # Load the APD
         counter_server.start_tag_stream()
@@ -550,11 +558,9 @@ def main_with_cxn(
         shuffle(tau_ind_list)
 
         for tau_ind in tau_ind_list:
-
             # 'Flip a coin' to determine which tau (long/shrt) is used first
             rand_boolean = numpy.random.randint(0, high=2)
-            #rand_boolean = 1
-            
+            # rand_boolean = 1
 
             if rand_boolean == 1:
                 tau_ind_first = tau_ind
@@ -574,7 +580,6 @@ def main_with_cxn(
             print(" \nFirst relaxation time: {}".format(taus[tau_ind_first]))
             print("Second relaxation time: {}".format(taus[tau_ind_second]))
 
-            
             if do_dq:
                 if do_scc:
                     seq_args = [
@@ -613,52 +618,50 @@ def main_with_cxn(
                         state_activ.value,
                         state_proxy.value,
                         laser_name,
-                        laser_power, 
+                        laser_power,
                     ]
             else:
-                if do_scc:    
+                if do_scc:
                     # seq_file_name = "dynamical_decoupling_scc.py"
                     seq_args = [
-                          taus[tau_ind_first],
-                          polarization_dur,
-                          ionization_dur,
-                          readout,
-                          uwave_pi_pulse,
-                          uwave_pi_on_2_pulse,
-                          taus[tau_ind_second],
-                          dd_wait_time,
-                          pi_pulse_reps,
-                          state.value,
-                          pol_laser_name,
-                          pol_laser_power,
-                          ion_laser_name,
-                          ion_laser_power,
-                          readout_laser_name,
-                          readout_laser_power,
-                      ]
+                        taus[tau_ind_first],
+                        polarization_dur,
+                        ionization_dur,
+                        readout,
+                        uwave_pi_pulse,
+                        uwave_pi_on_2_pulse,
+                        taus[tau_ind_second],
+                        dd_wait_time,
+                        pi_pulse_reps,
+                        state.value,
+                        pol_laser_name,
+                        pol_laser_power,
+                        ion_laser_name,
+                        ion_laser_power,
+                        readout_laser_name,
+                        readout_laser_power,
+                    ]
                 else:
                     # seq_file_name = "dynamical_decoupling.py"
                     seq_args = [
-                          taus[tau_ind_first],
-                          polarization_time,
-                          readout,
-                          uwave_pi_pulse,
-                          uwave_pi_on_2_pulse,
-                          taus[tau_ind_second],
-                          dd_wait_time,
-                          pi_pulse_reps,
-                          state.value,
-                          laser_name,
-                          laser_power,
-                      ]
+                        taus[tau_ind_first],
+                        polarization_time,
+                        readout,
+                        uwave_pi_pulse,
+                        uwave_pi_on_2_pulse,
+                        taus[tau_ind_second],
+                        dd_wait_time,
+                        pi_pulse_reps,
+                        state.value,
+                        laser_name,
+                        laser_power,
+                    ]
             # print(seq_args)
             # return
             seq_args_string = tool_belt.encode_seq_args(seq_args)
             # Clear the tagger buffer of any excess counts
             # counter_server.clear_buffer()
-            pulsegen_server.stream_immediate(
-                seq_file_name, num_reps, seq_args_string
-            )
+            pulsegen_server.stream_immediate(seq_file_name, num_reps, seq_args_string)
 
             # Each sample is of the form [*(<sig_shrt>, <ref_shrt>, <sig_long>, <ref_long>)]
             # So we can sum on the values for similar index modulus 4 to
@@ -686,7 +689,7 @@ def main_with_cxn(
         counter_server.stop_tag_stream()
 
         # %% incremental plotting
-      
+
         # Average the counts over the iterations
         inc_sig_counts = sig_counts[: run_ind + 1]
         inc_ref_counts = ref_counts[: run_ind + 1]
@@ -699,54 +702,71 @@ def main_with_cxn(
             norm_avg_sig,
             norm_avg_sig_ste,
         ) = ret_vals
-        
-        
+
         if do_plot:
             ax = axes_pack[0]
             ax.cla()
-            kpl.plot_line(ax,plot_taus, sig_counts_avg_kcps,color = KplColors.RED, label="signal")
-            kpl.plot_line(ax,plot_taus, ref_counts_avg_kcps, color = KplColors.GREEN, label="reference")
+            kpl.plot_line(
+                ax, plot_taus, sig_counts_avg_kcps, color=KplColors.RED, label="signal"
+            )
+            kpl.plot_line(
+                ax,
+                plot_taus,
+                ref_counts_avg_kcps,
+                color=KplColors.GREEN,
+                label="reference",
+            )
             ax.set_xlabel(r"Precession time, $T = 2 N \tau (\mathrm{\mu s}$)")
             ax.set_ylabel("kcps")
             ax.legend()
-            
+
             ax = axes_pack[1]
             ax.cla()
-            
-            kpl.plot_points(ax, plot_taus, norm_avg_sig, yerr=norm_avg_sig_ste, color = KplColors.BLUE)
+
+            kpl.plot_points(
+                ax, plot_taus, norm_avg_sig, yerr=norm_avg_sig_ste, color=KplColors.BLUE
+            )
             # ax.plot(plot_taus, norm_avg_sig, "b-")
             if do_dq:
-                dq_text = 'DQ'
+                dq_text = "DQ"
             else:
-                dq_text = 'SQ'
+                dq_text = "SQ"
             if do_scc:
-                ax.set_title("CPMG-{} {} SCC Measurement".format(pi_pulse_reps, dq_text))
+                ax.set_title(
+                    "CPMG-{} {} SCC Measurement".format(pi_pulse_reps, dq_text)
+                )
             else:
                 ax.set_title("CPMG-{} {} Measurement".format(pi_pulse_reps, dq_text))
-                
+
             ax.set_xlabel(r"Precession time, $T = 2 N \tau (\mathrm{\mu s}$)")
             ax.set_ylabel("Contrast (arb. units)")
-            
-            text_popt = 'Run # {}/{}'.format(run_ind+1,num_runs)
-    
-            props = dict(boxstyle='round', facecolor='wheat', alpha=0.5)
-            ax.text(0.8, 0.9, text_popt,transform=ax.transAxes,
-                    verticalalignment='top', bbox=props)
-            
+
+            text_popt = "Run # {}/{}".format(run_ind + 1, num_runs)
+
+            props = dict(boxstyle="round", facecolor="wheat", alpha=0.5)
+            ax.text(
+                0.8,
+                0.9,
+                text_popt,
+                transform=ax.transAxes,
+                verticalalignment="top",
+                bbox=props,
+            )
+
             raw_fig.canvas.draw()
             raw_fig.set_tight_layout(True)
             raw_fig.canvas.flush_events()
-        
+
         # %% Save the data we have incrementally for long T1s
         if do_save:
             raw_data = {
                 "start_timestamp": start_timestamp,
                 "nv_sig": nv_sig,
                 "nv_sig-units": tool_belt.get_nv_sig_units(cxn),
-                'pi_pulse_reps': pi_pulse_reps,
+                "pi_pulse_reps": pi_pulse_reps,
                 "do_dq": do_dq,
                 "do_scc": do_scc,
-                'comp_wait_time': comp_wait_time,
+                "comp_wait_time": comp_wait_time,
                 "uwave_freq": uwave_freq,
                 "uwave_freq-units": "GHz",
                 "uwave_power": uwave_power,
@@ -760,9 +780,9 @@ def main_with_cxn(
                 "state": state.name,
                 "num_steps": num_steps,
                 "num_reps": num_reps,
-                "run_ind": run_ind,	
-                "taus": taus.tolist(),	
-                "plot_taus":plot_taus.tolist(),	
+                "run_ind": run_ind,
+                "taus": taus.tolist(),
+                "plot_taus": plot_taus.tolist(),
                 "taus-units": "ns",
                 "tau_index_master_list": tau_index_master_list,
                 "opti_coords_list": opti_coords_list,
@@ -771,9 +791,9 @@ def main_with_cxn(
                 "sig_counts-units": "counts",
                 "ref_counts": ref_counts.astype(int).tolist(),
                 "ref_counts-units": "counts",
-                "norm_avg_sig_ste": norm_avg_sig_ste.tolist()
+                "norm_avg_sig_ste": norm_avg_sig_ste.tolist(),
             }
-    
+
             # This will continuously be the same file path so we will overwrite
             # the existing file with the latest version
             file_path = tool_belt.get_file_path(
@@ -789,39 +809,47 @@ def main_with_cxn(
 
     # %% Plot the data
 
-    ret_vals = tool_belt.process_counts(sig_counts, ref_counts, num_reps, readout, norm_style)
+    ret_vals = tool_belt.process_counts(
+        sig_counts, ref_counts, num_reps, readout, norm_style
+    )
     (
         sig_counts_avg_kcps,
         ref_counts_avg_kcps,
         norm_avg_sig,
         norm_avg_sig_ste,
     ) = ret_vals
-    
+
     if do_plot:
         ax = axes_pack[0]
         ax.cla()
-        kpl.plot_line(ax,plot_taus, sig_counts_avg_kcps,color = KplColors.RED, label="signal")
-        kpl.plot_line(ax,plot_taus, ref_counts_avg_kcps, color = KplColors.GREEN, label="reference")
+        kpl.plot_line(
+            ax, plot_taus, sig_counts_avg_kcps, color=KplColors.RED, label="signal"
+        )
+        kpl.plot_line(
+            ax, plot_taus, ref_counts_avg_kcps, color=KplColors.GREEN, label="reference"
+        )
         ax.set_xlabel(r"Precession time, $T = 2 N \tau (\mathrm{\mu s}$)")
         ax.set_ylabel("kcps")
         ax.legend()
-    
+
         ax = axes_pack[1]
         ax.cla()
-        #ax.plot(plot_taus, norm_avg_sig, "b-")
-        kpl.plot_points(ax, plot_taus, norm_avg_sig, yerr=norm_avg_sig_ste, color = KplColors.BLUE)
+        # ax.plot(plot_taus, norm_avg_sig, "b-")
+        kpl.plot_points(
+            ax, plot_taus, norm_avg_sig, yerr=norm_avg_sig_ste, color=KplColors.BLUE
+        )
         ax.set_xlabel(r"Precession time, $T = 2 N \tau (\mathrm{\mu s}$)")
         ax.set_ylabel("Contrast (arb. units)")
-    
+
         if do_dq:
-            dq_text = 'DQ'
+            dq_text = "DQ"
         else:
-            dq_text = 'SQ'
+            dq_text = "SQ"
         if do_scc:
             ax.set_title("CPMG-{} {} SCC Measurement".format(pi_pulse_reps, dq_text))
         else:
             ax.set_title("CPMG-{} {} Measurement".format(pi_pulse_reps, dq_text))
-                
+
         raw_fig.canvas.draw()
         raw_fig.set_tight_layout(True)
         raw_fig.canvas.flush_events()
@@ -840,10 +868,10 @@ def main_with_cxn(
             "timeElapsed": timeElapsed,
             "nv_sig": nv_sig,
             "nv_sig-units": tool_belt.get_nv_sig_units(cxn),
-            'pi_pulse_reps': pi_pulse_reps,
+            "pi_pulse_reps": pi_pulse_reps,
             "do_dq": do_dq,
             "do_scc": do_scc,
-            'comp_wait_time': comp_wait_time,
+            "comp_wait_time": comp_wait_time,
             "uwave_freq": uwave_freq,
             "uwave_freq-units": "GHz",
             "uwave_power": uwave_power,
@@ -857,9 +885,9 @@ def main_with_cxn(
             "state": state.name,
             "num_steps": num_steps,
             "num_reps": num_reps,
-            "num_runs": num_runs,	
-            "taus": taus.tolist(),	
-            "plot_taus":plot_taus.tolist(),	
+            "num_runs": num_runs,
+            "taus": taus.tolist(),
+            "plot_taus": plot_taus.tolist(),
             "taus-units": "ns",
             "tau_index_master_list": tau_index_master_list,
             "opti_coords_list": opti_coords_list,
@@ -870,9 +898,9 @@ def main_with_cxn(
             "ref_counts-units": "counts",
             "norm_avg_sig": norm_avg_sig.astype(float).tolist(),
             "norm_avg_sig-units": "arb",
-            "norm_avg_sig_ste": norm_avg_sig_ste.tolist()
+            "norm_avg_sig_ste": norm_avg_sig_ste.tolist(),
         }
-    
+
         nv_name = nv_sig["name"]
         file_path = tool_belt.get_file_path(__file__, timestamp, nv_name)
         tool_belt.save_figure(raw_fig, file_path)
@@ -881,52 +909,49 @@ def main_with_cxn(
 
     # Fit and save figs
 
-
     return sig_counts, ref_counts
 
 
-    
 # %% Run the file
 
 
 if __name__ == "__main__":
     kpl.init_kplotlib()
 
-    folder = 'pc_rabi/branch_master/dynamical_decoupling_cpmg/2022_12'   
-    
-    file1 = '2022_11_14-11_02_50-siena-nv1_2022_10_27'
-    file2 = '2022_11_14-11_02_59-siena-nv1_2022_10_27'
-    file4 = '2022_11_14-11_03_05-siena-nv1_2022_10_27'
-    file8 = '2022_11_14-11_00_01-siena-nv1_2022_10_27'
-    file16 = '2022_12_19-15_48_05-siena-nv1_2022_10_27'
-    
-    folder_relaxation = 'pc_rabi/branch_master/t1_dq_main/2022_11'
-    file_t1 = '2022_11_22-08_15_49-siena-nv1_2022_10_27'
-    
+    folder = "pc_rabi/branch_master/dynamical_decoupling_cpmg/2022_12"
+
+    file1 = "2022_11_14-11_02_50-siena-nv1_2022_10_27"
+    file2 = "2022_11_14-11_02_59-siena-nv1_2022_10_27"
+    file4 = "2022_11_14-11_03_05-siena-nv1_2022_10_27"
+    file8 = "2022_11_14-11_00_01-siena-nv1_2022_10_27"
+    file16 = "2022_12_19-15_48_05-siena-nv1_2022_10_27"
+
+    folder_relaxation = "pc_rabi/branch_master/t1_dq_main/2022_11"
+    file_t1 = "2022_11_22-08_15_49-siena-nv1_2022_10_27"
+
     data = tool_belt.get_raw_data(file16, folder)
     # fit_t2_decay(data)
-    
+
     # file_list = [file16_1, file16_2, file16_3]
     # folder_list = [folder, folder, folder]
     # tool_belt.save_combine_data(file_list, folder_list, 'dynamical_decoupling_cpmg.py')
-    
+
     # file_list = [
-    #             file1, 
-    #               file2, 
-    #               file4, 
-    #               file8, 
-    #                 file16, 
+    #             file1,
+    #               file2,
+    #               file4,
+    #               file8,
+    #                 file16,
     #               file_t1
     #              ]
-    # color_list = ['red', 
-    #                'blue', 
-    #               'orange', 
+    # color_list = ['red',
+    #                'blue',
+    #               'orange',
     #                 'green',
-    #                 'purple', 
+    #                 'purple',
     #                'black'
     #               ]
-    
-    
+
     # if True:
     # # if False:
     #     fig, ax = plt.subplots(figsize=(8.5, 8.5))
@@ -934,11 +959,11 @@ if __name__ == "__main__":
     #     # offset = 0.931
     #     for f in range(len(file_list)):
     #         file = file_list[f]
-             
+
     #         # if f == 10:
     #         #     w = 1
-    #         if f == len(file_list)-1: 
-    #             data = tool_belt.get_raw_data(file, folder_relaxation)  
+    #         if f == len(file_list)-1:
+    #             data = tool_belt.get_raw_data(file, folder_relaxation)
     #             relaxation_time_range = data['relaxation_time_range']
     #             min_relaxation_time = int(relaxation_time_range[0])
     #             max_relaxation_time = int(relaxation_time_range[1])
@@ -947,18 +972,18 @@ if __name__ == "__main__":
     #                 min_relaxation_time,
     #                 max_relaxation_time,
     #                 num=num_steps,
-    #               )  
+    #               )
     #             tau_T_us = tau_T / 1000
     #             norm_avg_sig = data['norm_avg_sig']
     #             ax.plot([],[],"-o", color= color_list[f], label = "T1")
-                
+
     #             A0 = 0.098
     #             amplitude = 2/3 * 2*A0
     #             offset = 1 - amplitude
-                
+
     #             fit_func = lambda x, amp, decay: tool_belt.exp_decay(x, amp, decay, offset)
     #             init_params = [0.069, 5000]
-                
+
     #             popt, pcov = curve_fit(
     #                 fit_func,
     #                 tau_T_us,
@@ -969,22 +994,21 @@ if __name__ == "__main__":
     #             )
     #             print(popt)
     #             print(numpy.sqrt(numpy.diag(pcov)))
-                
-    #         else:  
-    #             data = tool_belt.get_raw_data(file, folder)  
+
+    #         else:
+    #             data = tool_belt.get_raw_data(file, folder)
     #             popt, fit_func = fit_t2_decay(data, do_plot= False)
-            
+
     #             taus = numpy.array(data['taus'])
     #             num_steps = data['num_steps']
     #             norm_avg_sig = data['norm_avg_sig']
     #             pi_pulse_reps = data['pi_pulse_reps']
-            
+
     #             tau_T = 2*taus*pi_pulse_reps
-                   
-               
+
     #             # for legend
     #             ax.plot([],[],"-o", color= color_list[f], label = "CPMG-{}".format(pi_pulse_reps))
-            
+
     #         # linspace_T = numpy.linspace(
     #         #     tau_T[0], tau_T[-1], num=1000
     #         linspace_T = numpy.linspace(
@@ -998,56 +1022,79 @@ if __name__ == "__main__":
     #             fit_func(linspace_T/1000, *popt),
     #             "-", color= color_list[f]
     #         )
-            
+
     #     ax.set_xlabel(r"$T = 2 \tau$ ($\mathrm{\mu s}$)")
     #     ax.set_ylabel("Contrast (arb. units)")
     #     ax.set_title("CPMG-N")
     #     ax.legend()
     #     ax.set_xscale('log')
     #     ax.set_yscale('log')
-  
-    
-    file_name_t1 = "2023_04_04-16_07_22-siena-nv0_2023_03_20" #t1
-    file_name_dq2 = "2023_04_04-20_39_28-siena-nv0_2023_03_20" #DQ2
-    file_name_dq4 = "2023_04_04-23_12_35-siena-nv0_2023_03_20" #DQ4
-    file_name_dq8 = "2023_04_05-01_45_08-siena-nv0_2023_03_20" #DQ8
-    file_name_dq16 = "2023_04_05-04_18_02-siena-nv0_2023_03_20" #DQ16
-    file_name_dq32 = "2023_04_05-06_51_29-siena-nv0_2023_03_20" #DQ32
-    file_name_dq64 = "2023_04_05-09_24_50-siena-nv0_2023_03_20" #DQ64
+
+    file_name_t1 = "2023_04_04-16_07_22-siena-nv0_2023_03_20"  # t1
+    file_name_dq2 = "2023_04_04-20_39_28-siena-nv0_2023_03_20"  # DQ2
+    file_name_dq4 = "2023_04_04-23_12_35-siena-nv0_2023_03_20"  # DQ4
+    file_name_dq8 = "2023_04_05-01_45_08-siena-nv0_2023_03_20"  # DQ8
+    file_name_dq16 = "2023_04_05-04_18_02-siena-nv0_2023_03_20"  # DQ16
+    file_name_dq32 = "2023_04_05-06_51_29-siena-nv0_2023_03_20"  # DQ32
+    file_name_dq64 = "2023_04_05-09_24_50-siena-nv0_2023_03_20"  # DQ64
     # file_name_sq4 = '2023_04_02-01_32_44-siena-nv0_2023_03_20'
-    
-    file_list = [file_name_t1,file_name_dq2, file_name_dq4, file_name_dq8, file_name_dq16, file_name_dq32, file_name_dq64]
-    label_list=['T1', 'DQ CPMG-2', 'DQ CPMG-4', 'DQ CPMG-8', 'DQ CPMG-16', 'DQ CPMG-32', 'DQ CPMG-64']
-    file_list = [file_name_t1,file_name_dq2, file_name_dq8, file_name_dq16, file_name_dq64]
-    label_list=['T1', 'DQ CPMG-2', 'DQ CPMG-8', 'DQ CPMG-16',  'DQ CPMG-64']
+
+    file_list = [
+        file_name_t1,
+        file_name_dq2,
+        file_name_dq4,
+        file_name_dq8,
+        file_name_dq16,
+        file_name_dq32,
+        file_name_dq64,
+    ]
+    label_list = [
+        "T1",
+        "DQ CPMG-2",
+        "DQ CPMG-4",
+        "DQ CPMG-8",
+        "DQ CPMG-16",
+        "DQ CPMG-32",
+        "DQ CPMG-64",
+    ]
+    file_list = [
+        file_name_t1,
+        file_name_dq2,
+        file_name_dq8,
+        file_name_dq16,
+        file_name_dq64,
+    ]
+    label_list = ["T1", "DQ CPMG-2", "DQ CPMG-8", "DQ CPMG-16", "DQ CPMG-64"]
     fit_fig, ax = plt.subplots()
     for f in range(len(file_list)):
         file = file_list[f]
         data = tool_belt.get_raw_data(file)
-        norm_avg_sig = data['norm_avg_sig']
-        norm_avg_sig_ste = data['norm_avg_sig_ste']
-        plot_taus = data['plot_taus']
-        num_steps = data['num_steps']
-        pi_pulse_reps = data['pi_pulse_reps']
-        do_dq=data['do_dq']
-        taus = numpy.array(data['taus'])
-        
-        tau_T = 2*taus*pi_pulse_reps/1000
+        norm_avg_sig = data["norm_avg_sig"]
+        norm_avg_sig_ste = data["norm_avg_sig_ste"]
+        plot_taus = data["plot_taus"]
+        num_steps = data["num_steps"]
+        pi_pulse_reps = data["pi_pulse_reps"]
+        do_dq = data["do_dq"]
+        taus = numpy.array(data["taus"])
 
-        kpl.plot_points(ax, tau_T, norm_avg_sig, yerr=norm_avg_sig_ste,  label = label_list[f])
+        tau_T = 2 * taus * pi_pulse_reps / 1000
+
+        kpl.plot_points(
+            ax, tau_T, norm_avg_sig, yerr=norm_avg_sig_ste, label=label_list[f]
+        )
         # ax.set_xscale('log')
         ax.set_xlabel(r"$T = 2 \tau$ ($\mathrm{\mu s}$)")
         ax.set_ylabel("Contrast (arb. units)")
         ax.set_title("CPMG-{}".format(pi_pulse_reps))
         ax.legend()
-        
-    
-    file_name = '2023_04_05-06_51_29-siena-nv0_2023_03_20'
+
+    file_name = "2023_04_05-06_51_29-siena-nv0_2023_03_20"
     data = tool_belt.get_raw_data(file_name)
-    fit_t2_12C(data, )#fixed_offset = 1.06)
+    fit_t2_12C(
+        data,
+    )  # fixed_offset = 1.06)
     # fit_t2_12C(data,fixed_offset = 1.06, incremental = True)
-    
-    
+
     # file_list = ['2023_03_24-23_02_52-siena-nv0_2023_03_20', # SQ CPMG-2
     #               '2023_03_27-21_12_39-siena-nv0_2023_03_20'
     #     ]
@@ -1057,25 +1104,26 @@ if __name__ == "__main__":
     # file_list = ['2023_03_27-02_35_40-siena-nv0_2023_03_20', # DQ CPMG-4
     #               '2023_03_28-03_47_24-siena-nv0_2023_03_20'
     #                 ]
-    file_list = ['2023_03_27-05_34_19-siena-nv0_2023_03_20', # DQ CPMG-8
-                  '2023_03_28-09_44_49-siena-nv0_2023_03_20'
-                    ]
-    
-    # compile_12C_data(file_list, 
+    file_list = [
+        "2023_03_27-05_34_19-siena-nv0_2023_03_20",  # DQ CPMG-8
+        "2023_03_28-09_44_49-siena-nv0_2023_03_20",
+    ]
+
+    # compile_12C_data(file_list,
     #                   do_save = True
     #                     )
-    
-    file_name = '2023_04_03-19_56_14-siena-nv0_2023_03_20'
+
+    file_name = "2023_04_03-19_56_14-siena-nv0_2023_03_20"
     data = tool_belt.get_raw_data(file_name)
-    sig_counts = data['sig_counts']
-    ref_counts = data['ref_counts']
-    num_runs = data['num_runs']
-    num_steps = data['num_steps']
+    sig_counts = data["sig_counts"]
+    ref_counts = data["ref_counts"]
+    num_runs = data["num_runs"]
+    num_steps = data["num_steps"]
     # print(sig_counts)
     sig_counts_avg = numpy.average(sig_counts, axis=0)
     # print(sig_counts_avg)
-    
-    norm_array =  numpy.zeros([num_runs, num_steps])
+
+    norm_array = numpy.zeros([num_runs, num_steps])
     sig_points = []
     ref_points = []
     norm_array[:] = numpy.nan
@@ -1085,23 +1133,23 @@ if __name__ == "__main__":
         for e in range(num_steps):
             n = sig_row[e] / ref_row[e]
             norm_array[r][e] = n
-            if e==0:
+            if e == 0:
                 # print(sig_row[e])
                 sig_points.append(sig_row[e])
                 ref_points.append(ref_row[e])
-                
+
     # raw_fig, ax = plt.subplots()
-    
+
     # ax.plot(numpy.linspace(0,len(sig_points),len(sig_points)), sig_points)
     # ax.plot(numpy.linspace(0,len(ref_points),len(ref_points)), ref_points)
     up_to = 6
     # print(numpy.average(sig_points[:up_to]))
     # print(numpy.average(ref_points[:up_to]))
     # print(norm_array)
-    norm_avg_sig = numpy.average(norm_array, axis = 0)
-    norm_avg_sig_ste = data['norm_avg_sig_ste']
+    norm_avg_sig = numpy.average(norm_array, axis=0)
+    norm_avg_sig_ste = data["norm_avg_sig_ste"]
     # print(norm_avg_sig[0])
-    
+
     # run_ind = data['run_ind']
     # num_reps= data['num_reps']
     # nv_sig = data['nv_sig']
@@ -1123,7 +1171,7 @@ if __name__ == "__main__":
     #     norm_avg_sig,
     #     norm_avg_sig_ste,
     # ) = ret_vals
-    
+
     # plot_taus = data['plot_taus']
     # raw_fig, ax = plt.subplots()
     # ax = axes_pack[0]
@@ -1133,10 +1181,10 @@ if __name__ == "__main__":
     # ax.set_xlabel(r"Precession time, $T = 2 N \tau (\mathrm{\mu s}$)")
     # ax.set_ylabel("kcps")
     # ax.legend()
-    
+
     # ax = axes_pack[1]
     # ax.cla()
-    
+
     # kpl.plot_points(ax, plot_taus, norm_avg_sig, yerr=norm_avg_sig_ste, color = KplColors.BLUE)
     # # ax.errorbar(plot_taus, norm_avg_sig,yerr= norm_avg_sig_ste, color = 'b')
     # # ax.plot(plot_taus, norm_avg_sig, "b-")
@@ -1148,17 +1196,16 @@ if __name__ == "__main__":
     #     ax.set_title("CPMG-{} {} SCC Measurement".format(pi_pulse_reps, dq_text))
     # else:
     #     ax.set_title("CPMG-{} {} Measurement".format(pi_pulse_reps, dq_text))
-        
+
     # ax.set_xlabel(r"Precession time, $T = 2 N \tau (\mathrm{\mu s}$)")
     # ax.set_ylabel("Contrast (arb. units)")
-    
+
     # # text_popt = 'Run # {}/{}'.format(run_ind+1,num_runs)
 
     # # props = dict(boxstyle='round', facecolor='wheat', alpha=0.5)
     # # ax.text(0.8, 0.9, text_popt,transform=ax.transAxes,
     # #         verticalalignment='top', bbox=props)
-    
+
     # raw_fig.canvas.draw()
     # raw_fig.set_tight_layout(True)
     # raw_fig.canvas.flush_events()
-            

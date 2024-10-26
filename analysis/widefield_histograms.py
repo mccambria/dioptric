@@ -8,20 +8,22 @@ Created on November 14th, 2023
 """
 
 
-import matplotlib.pyplot as plt
-import numpy as np
-import majorroutines.optimize as optimize
-from utils import tool_belt as tb
-from utils import common
-from utils import widefield as widefield_utils
-from utils.constants import LaserKey
-from utils import kplotlib as kpl
-from utils import positioning as pos
-from scipy import ndimage
 import os
 import time
-from majorroutines.widefield.optimize import optimize_pixel_with_img_array
 from pathlib import Path
+
+import matplotlib.pyplot as plt
+import numpy as np
+from scipy import ndimage
+
+import majorroutines.targeting as targeting
+from majorroutines.widefield.optimize import optimize_pixel_with_img_array
+from utils import common
+from utils import kplotlib as kpl
+from utils import positioning as pos
+from utils import tool_belt as tb
+from utils import widefield as widefield_utils
+from utils.constants import LaserKey
 from utils.kplotlib import HistType
 
 

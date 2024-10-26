@@ -10,23 +10,26 @@ Updated on September 16th, 2024
 
 # region Imports and constants
 
-import dataclasses
-import itertools
+import pickle
 from functools import cache
 from importlib import import_module
 from pathlib import Path
-import numpy as np
-from skimage.filters import threshold_otsu, threshold_triangle, threshold_li
-from sklearn.cluster import KMeans
-from sklearn.mixture import GaussianMixture
+
 import cv2
-import matplotlib.pyplot as plt
 import matplotlib.patches as patches
+
+# import cv2
+import matplotlib.pyplot as plt
 import numpy as np
 from matplotlib import animation
 from numpy import inf
 from scipy.special import gamma
 from scipy.stats import poisson
+from skimage.filters import threshold_li, threshold_otsu, threshold_triangle
+from skimage.measure import ransac
+from skimage.transform import AffineTransform
+from sklearn.cluster import KMeans
+from sklearn.mixture import GaussianMixture
 
 from utils import common
 from utils import data_manager as dm
@@ -37,7 +40,6 @@ from utils.constants import (
     CollectionMode,
     CoordsKey,
     CountFormat,
-    DriftMode,
     LaserKey,
     LaserPosMode,
     NVSig,
@@ -90,9 +92,9 @@ def crop_img_arrays(img_arrays, offsets=[0, 0], buffer=20):
                 for rep_ind in range(shape[2]):
                     img_array = img_arrays[exp_ind, run_ind, step_ind, rep_ind]
                     cropped_img_array = crop_img_array(img_array, offset, buffer)
-                    cropped_img_arrays[exp_ind, run_ind, step_ind, rep_ind] = (
-                        cropped_img_array
-                    )
+                    cropped_img_arrays[
+                        exp_ind, run_ind, step_ind, rep_ind
+                    ] = cropped_img_array
     return cropped_img_arrays
 
 
@@ -150,6 +152,7 @@ def _calc_dist_matrix(radius=None):
 
 #     counts = np.sum(img_array_crop, where=dist < radius)
 #     return counts
+
 
 # SBC: update on 9/9/2024
 def integrate_counts(img_array, pixel_coords, radius=None):
@@ -279,6 +282,39 @@ def img_str_to_array(img_str):
         img_array = img_array[0:, offset_x : offset_x + width]
     return img_array, baseline
 
+
+run_ax = 1
+rep_ax = 3
+run_rep_axes = (run_ax, rep_ax)
+
+
+def average_counts(sig_counts, ref_counts=None):
+    """Gets average and standard error for counts data structure.
+    Counts arrays must have the structure [nv_ind, run_ind, freq_ind, rep_ind].
+    Returns the structure [nv_ind, freq_ind] for avg_counts and avg_counts_ste.
+    Returns the [nv_ind] for norms.
+    """
+    _validate_counts_structure(sig_counts)
+    _validate_counts_structure(ref_counts)
+
+    avg_counts = np.mean(sig_counts, axis=run_rep_axes)
+    num_shots = sig_counts.shape[rep_ax] * sig_counts.shape[run_ax]
+    avg_counts_std = np.std(sig_counts, axis=run_rep_axes, ddof=1)
+    avg_counts_ste = avg_counts_std / np.sqrt(num_shots)
+
+    if ref_counts is None:
+        norms = None
+    else:
+        ms0_ref_counts = ref_counts[:, :, :, 0::2]
+        ms1_ref_counts = ref_counts[:, :, :, 1::2]
+        norms = [
+            np.mean(ms0_ref_counts, axis=(1, 2, 3)),
+            np.mean(ms1_ref_counts, axis=(1, 2, 3)),
+        ]
+
+    return avg_counts, avg_counts_ste, norms
+
+
 # def threshold_counts(nv_list, sig_counts, ref_counts=None, dynamic_thresh=False):
 #     """Only actually thresholds counts for NVs with thresholds specified in their sigs.
 #     If there's no threshold, then the raw counts are just averaged as normal."""
@@ -334,11 +370,8 @@ def img_str_to_array(img_str):
 #     else:
 #         return average_counts(sig_counts, ref_counts)
 
-run_ax = 1
-rep_ax = 3
-run_rep_axes = (run_ax, rep_ax)
 
-def threshold_counts(nv_list, sig_counts, ref_counts=None, method='otsu'):
+def threshold_counts(nv_list, sig_counts, ref_counts=None, method="otsu"):
     """Threshold counts for NVs based on the selected method."""
     _validate_counts_structure(sig_counts)
     _validate_counts_structure(ref_counts)
@@ -348,40 +381,107 @@ def threshold_counts(nv_list, sig_counts, ref_counts=None, method='otsu'):
 
     # Process thresholds based on the selected method
     for nv_ind in range(num_nvs):
-        combined_counts = np.append(
-            sig_counts[nv_ind].flatten(), ref_counts[nv_ind].flatten()
-        ) if ref_counts is not None else sig_counts[nv_ind].flatten()
+        combined_counts = (
+            np.append(sig_counts[nv_ind].flatten(), ref_counts[nv_ind].flatten())
+            if ref_counts is not None
+            else sig_counts[nv_ind].flatten()
+        )
 
         # Choose method for thresholding
-        if method == 'otsu':
+        if method == "otsu":
             threshold = threshold_otsu(combined_counts)
-        elif method == 'triangle':
+        elif method == "triangle":
             threshold = threshold_triangle(combined_counts)
-        elif method == 'entropy':
+        elif method == "entropy":
             threshold = threshold_li(combined_counts)
-        elif method == 'mean':
+        elif method == "mean":
             threshold = np.mean(combined_counts)
-        elif method == 'median':
+        elif method == "median":
             threshold = np.median(combined_counts)
-        elif method == 'kmeans':
+        elif method == "kmeans":
             threshold = kmeans_threshold(combined_counts)
-        elif method == 'gmm':
+        elif method == "gmm":
             threshold = gmm_threshold(combined_counts, use_intersection=False)
         else:
             raise ValueError(f"Unknown thresholding method: {method}")
 
         sig_thresholds.append(threshold)
         if ref_counts is not None:
-            ref_thresholds.append(threshold)  # You can separate thresholds for ref if needed
+            ref_thresholds.append(
+                threshold
+            )  # You can separate thresholds for ref if needed
 
     # Apply thresholds to signal counts (assuming single threshold value per NV)
-    sig_states = np.array([sig_counts[nv_ind] > sig_thresholds[nv_ind] for nv_ind in range(num_nvs)])
+    sig_states = np.array(
+        [sig_counts[nv_ind] > sig_thresholds[nv_ind] for nv_ind in range(num_nvs)]
+    )
     print(sig_thresholds)
     if ref_counts is not None:
-        ref_states = np.array([ref_counts[nv_ind] > ref_thresholds[nv_ind] for nv_ind in range(num_nvs)])
+        ref_states = np.array(
+            [ref_counts[nv_ind] > ref_thresholds[nv_ind] for nv_ind in range(num_nvs)]
+        )
         return sig_states, ref_states
     else:
         return sig_states
+
+
+# Adaptive thresholding function based on mean or gaussian
+def adaptive_thresholding(counts, method="gaussian"):
+    """
+    Applies adaptive thresholding to the input data (e.g., signal counts).
+
+    Parameters:
+    - counts: Input array (e.g., signal counts).
+    - method: Type of adaptive thresholding ('mean' or 'gaussian').
+
+    Returns:
+    - Thresholded data.
+    """
+    # Ensure the data is a single-channel array by flattening or reshaping if necessary
+    if len(counts.shape) > 2:
+        counts = counts.reshape(-1)  # Flatten the array if it's multi-dimensional
+
+    # Normalize counts to be between 0 and 255
+    normalized_counts = cv2.normalize(counts, None, 0, 255, cv2.NORM_MINMAX)
+
+    # Convert counts to 8-bit unsigned integers (np.uint8)
+    counts_uint8 = normalized_counts.astype(np.uint8)
+
+    # Apply adaptive thresholding
+    if method == "mean":
+        return cv2.adaptiveThreshold(
+            counts_uint8, 255, cv2.ADAPTIVE_THRESH_MEAN_C, cv2.THRESH_BINARY, 11, 2
+        )
+    elif method == "gaussian":
+        return cv2.adaptiveThreshold(
+            counts_uint8, 255, cv2.ADAPTIVE_THRESH_GAUSSIAN_C, cv2.THRESH_BINARY, 11, 2
+        )
+    else:
+        raise ValueError(f"Unknown adaptive thresholding method: {method}")
+
+
+# Adaptive clustering-based thresholding (K-means or GMM)
+def adaptive_clustering_thresholding(counts, method="kmeans", block_size=11):
+    """Apply adaptive K-means or GMM thresholding to each block of data."""
+    adaptive_counts = np.zeros_like(counts)
+
+    # Divide data into blocks and apply thresholding
+    for i in range(0, counts.shape[0], block_size):
+        for j in range(0, counts.shape[1], block_size):
+            block = counts[i : i + block_size, j : j + block_size].flatten()
+
+            if method == "kmeans":
+                threshold = kmeans_threshold(block)
+            elif method == "gmm":
+                threshold = gmm_threshold(block)
+            else:
+                raise ValueError(f"Unknown adaptive clustering method: {method}")
+
+            # Apply threshold to the block
+            adaptive_counts[i : i + block_size, j : j + block_size] = block > threshold
+
+    return adaptive_counts
+
 
 # K-means thresholding function
 def kmeans_threshold(data):
@@ -389,36 +489,38 @@ def kmeans_threshold(data):
     cluster_centers = sorted(kmeans.cluster_centers_.flatten())
     return np.mean(cluster_centers)
 
+
 # GMM thresholding function
 def gmm_threshold(data, use_intersection=False):
     """
     Finds a threshold for separating data using a Gaussian Mixture Model (GMM).
-    
+
     Parameters:
     - data: Input data to find threshold for (1D array).
     - use_intersection: If True, computes the intersection point between the two Gaussians.
-    
+
     Returns:
     - threshold: The calculated threshold (weighted mean or intersection of the two Gaussians).
     """
     data = data.reshape(-1, 1)  # Reshape data to 2D for GMM fitting
     gmm = GaussianMixture(n_components=2).fit(data)
-    
+
     means = sorted(gmm.means_.flatten())  # Get the means of the two Gaussians
     weights = gmm.weights_  # Get the mixing weights of the two Gaussians
     covariances = np.sqrt(gmm.covariances_).flatten()  # Standard deviations
-    
+
     if use_intersection:
         # Find the intersection of the two Gaussian distributions
         mean1, mean2 = means
         std1, std2 = covariances
         intersection = (mean1 * std2**2 - mean2 * std1**2) / (std2**2 - std1**2)
         return intersection
-    
+
     # Compute a weighted average of the means (more robust if one Gaussian dominates)
     weighted_mean = np.average(means, weights=weights)
-    
+
     return weighted_mean
+
 
 def poisson_pmf_cont(k, mean):
     return mean**k * np.exp(-mean) / gamma(k + 1)
@@ -491,7 +593,8 @@ def charge_state_mle(nv_list, img_array):
 
     return states
 
-def process_counts(nv_list, sig_counts, ref_counts=None, threshold=True, method='otsu'):
+
+def process_counts(nv_list, sig_counts, ref_counts=None, threshold=True, method="otsu"):
     """Alias for threshold_counts with a more generic name."""
     _validate_counts_structure(sig_counts)
     _validate_counts_structure(ref_counts)
@@ -502,6 +605,7 @@ def process_counts(nv_list, sig_counts, ref_counts=None, threshold=True, method=
         return average_counts(sig_states_array, ref_states_array)
     else:
         return average_counts(sig_counts, ref_counts)
+
 
 def calc_snr(sig_counts, ref_counts):
     """Calculate SNR for a single shot"""
@@ -692,12 +796,8 @@ def get_base_scc_seq_args(
 
 
 def get_coords_list(
-    nv_list: list[NVSig], laser_key, drift_adjust=None, include_inds=None
+    nv_list: list[NVSig], laser_key, drift_adjust=False, include_inds=None
 ):
-    if drift_adjust is None:
-        drift_mode = pos.get_drift_mode()
-        drift_adjust = drift_mode != DriftMode.GLOBAL
-
     laser_name = tb.get_laser_name(laser_key)
     drift = pos.get_drift(laser_name) if drift_adjust else None
     coords_list = [
@@ -832,6 +932,7 @@ def _get_scanning_optics():
 
     return scanning_optics
 
+
 def set_scanning_drift_from_pixel_drift(
     pixel_drift=None, coords_key=CoordsKey.GLOBAL, relative=False
 ):
@@ -885,7 +986,9 @@ def scanning_to_pixel_drift(scanning_drift=None, coords_key=CoordsKey.GLOBAL):
     pixel_drift = np.dot(transform_matrix, np.append(scanning_drift, 1))[:2]
     return pixel_drift.tolist()
 
+
 # endregion
+
 
 # region Scanning to pixel calibration
 def set_nv_scanning_coords_from_pixel_coords(
@@ -1486,7 +1589,10 @@ def plot_correlations(axes_pack, nv_list, x, counts):
 
             # size = kpl.Size.SMALL
             # kpl.plot_points(ax, x, corrs, size=size)
+
+
 # endregion
+
 
 # Add this function to your widefield module
 def draw_circle_on_nv(
