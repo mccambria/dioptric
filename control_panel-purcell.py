@@ -20,7 +20,6 @@ import cv2
 import matplotlib.pyplot as plt
 import numpy as np
 
-from majorroutines import optimize_xyz
 from majorroutines.widefield import (
     ac_stark,
     calibrate_iq_delay,
@@ -140,8 +139,8 @@ def do_optimize_z(nv_sig, do_plot=True):
 
 
 def do_optimize_xyz(nv_sig, do_plot=True):
-    optimize_xyz.main(
-        nv_sig, no_crash=True, do_plot=do_plot, axes_to_optimize=[0, 1, 2]
+    optimize.optimize_xyz_using_piezo(
+        nv_sig, do_plot=do_plot, axes_to_optimize=[0, 1, 2]
     )
 
 
@@ -1042,7 +1041,7 @@ if __name__ == "__main__":
         # optimize_slm_Phase_calibration(nv_sig, target_coords=target_coords)
 
         # nv_list = nv_list[::-1]
-        do_charge_state_histograms(nv_list)
+        # do_charge_state_histograms(nv_list)
         # do_charge_state_conditional_init(nv_list)
         # do_check_readout_fidelity(nv_list)
 
