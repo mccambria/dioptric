@@ -14,19 +14,19 @@ Created on Fri Aug 5 2022
 # %% Imports
 
 
-import utils.tool_belt as tool_belt
-import majorroutines.optimize as optimize
-from scipy.optimize import minimize_scalar
-from numpy import pi
-import numpy
 import time
-import matplotlib.pyplot as plt
 from random import shuffle
-import labrad
-from utils.tool_belt import States
-from scipy.optimize import curve_fit
-from numpy.linalg import eigvals
 
+import labrad
+import matplotlib.pyplot as plt
+import numpy
+from numpy import pi
+from numpy.linalg import eigvals
+from scipy.optimize import curve_fit, minimize_scalar
+
+import majorroutines.targeting as targeting
+import utils.tool_belt as tool_belt
+from utils.tool_belt import States
 
 # %% Constants
 
@@ -34,7 +34,6 @@ from numpy.linalg import eigvals
 im = 0 + 1j
 inv_sqrt_2 = 1 / numpy.sqrt(2)
 gmuB = 2.8e-3  # gyromagnetic ratio in GHz / G
-
 
 
 # %% Main
@@ -49,7 +48,6 @@ def main(
     num_runs,
     state=States.LOW,
 ):
-
     with labrad.connect() as cxn:
         angle = main_with_cxn(
             cxn,
@@ -74,7 +72,6 @@ def main_with_cxn(
     num_runs,
     state=States.LOW,
 ):
-
     counter_server = tool_belt.get_counter_server(cxn)
     pulsegen_server = tool_belt.get_pulsegen_server(cxn)
     arbwavegen_server = tool_belt.get_arb_wave_gen_server(cxn)
@@ -97,8 +94,8 @@ def main_with_cxn(
     uwave_pi_pulse = tool_belt.get_pi_pulse_dur(rabi_period)
     uwave_pi_on_2_pulse = tool_belt.get_pi_on_2_pulse_dur(rabi_period)
     # pi pulses are slightly different than just half of the rabi period
-    # uwave_pi_pulse = nv_sig["pi_pulse_{}".format(state.name)] 
-    # uwave_pi_on_2_pulse = nv_sig["pi_on_2_pulse_{}".format(state.name)] 
+    # uwave_pi_pulse = nv_sig["pi_pulse_{}".format(state.name)]
+    # uwave_pi_on_2_pulse = nv_sig["pi_on_2_pulse_{}".format(state.name)]
 
     seq_file_name = "dynamical_decoupling.py"
 
@@ -118,8 +115,8 @@ def main_with_cxn(
     # taus = taus + 500
     print(taus)
     # Convert to ms
-    #plot_taus = taus / 1000
-    plot_taus = (taus * 2 *8* num_xy8_reps) / 1000
+    # plot_taus = taus / 1000
+    plot_taus = (taus * 2 * 8 * num_xy8_reps) / 1000
 
     # %% Fix the length of the sequence to account for odd amount of elements
 
@@ -159,10 +156,10 @@ def main_with_cxn(
     tau_index_master_list = [[] for i in range(num_runs)]
 
     # %% Analyze the sequence
-    
+
     num_reps = int(num_reps)
 
-    pi_pulse_reps = num_xy8_reps*8
+    pi_pulse_reps = num_xy8_reps * 8
     seq_args = [
         taus[0],
         polarization_time,
@@ -184,18 +181,16 @@ def main_with_cxn(
 
     # %% Let the user know how long this will take
 
-    seq_time_s = seq_time / (10 ** 9)  # to seconds
-    expected_run_time_s = (
-        (num_steps / 2) * num_reps * num_runs * seq_time_s
-    )  # s
+    seq_time_s = seq_time / (10**9)  # to seconds
+    expected_run_time_s = (num_steps / 2) * num_reps * num_runs * seq_time_s  # s
     expected_run_time_m = expected_run_time_s / 60  # to minutes
 
     print(" \nExpected run time: {:.1f} minutes. ".format(expected_run_time_m))
     # return
-    
+
     # create figure
     raw_fig, axes_pack = plt.subplots(1, 2, figsize=(17, 8.5))
-    
+
     # %% Get the starting time of the function, to be used to calculate run time
 
     startFunctionTime = time.time()
@@ -207,7 +202,6 @@ def main_with_cxn(
     tool_belt.init_safe_stop()
 
     for run_ind in range(num_runs):
-
         print(" \nRun index: {}".format(run_ind))
 
         # Break out of the while if the user says stop
@@ -215,7 +209,7 @@ def main_with_cxn(
             break
 
         # Optimize
-        opti_coords = optimize.main_with_cxn(cxn, nv_sig)
+        opti_coords = targeting.main_with_cxn(cxn, nv_sig)
         opti_coords_list.append(opti_coords)
 
         # Set up the microwaves
@@ -224,9 +218,8 @@ def main_with_cxn(
         sig_gen_cxn.set_amp(uwave_power)
         sig_gen_cxn.load_iq()
         sig_gen_cxn.uwave_on()
-        
+
         arbwavegen_server.load_xy8n(num_xy8_reps)
-        
 
         # Set up the laser
         tool_belt.set_filter(cxn, nv_sig, laser_key)
@@ -239,7 +232,6 @@ def main_with_cxn(
         shuffle(tau_ind_list)
 
         for tau_ind in tau_ind_list:
-
             # 'Flip a coin' to determine which tau (long/shrt) is used first
             rand_boolean = numpy.random.randint(0, high=2)
 
@@ -278,9 +270,7 @@ def main_with_cxn(
             seq_args_string = tool_belt.encode_seq_args(seq_args)
             # Clear the tagger buffer of any excess counts
             # counter_server.clear_buffer()
-            pulsegen_server.stream_immediate(
-                seq_file_name, num_reps, seq_args_string
-            )
+            pulsegen_server.stream_immediate(seq_file_name, num_reps, seq_args_string)
 
             # Each sample is of the form [*(<sig_shrt>, <ref_shrt>, <sig_long>, <ref_long>)]
             # So we can sum on the values for similar index modulus 4 to
@@ -308,10 +298,10 @@ def main_with_cxn(
         counter_server.stop_tag_stream()
 
         # %% incremental plotting
-        
-        #Average the counts over the iterations
-        avg_sig_counts = numpy.average(sig_counts[:(run_ind+1)], axis=0)
-        avg_ref_counts = numpy.average(ref_counts[:(run_ind+1)], axis=0)
+
+        # Average the counts over the iterations
+        avg_sig_counts = numpy.average(sig_counts[: (run_ind + 1)], axis=0)
+        avg_ref_counts = numpy.average(ref_counts[: (run_ind + 1)], axis=0)
         # print(numpy.average(avg_ref_counts))
         try:
             norm_avg_sig = avg_sig_counts / numpy.average(avg_ref_counts)
@@ -320,8 +310,7 @@ def main_with_cxn(
             inf_mask = numpy.isinf(norm_avg_sig)
             # Assign to 0 based on the passed conditional array
             norm_avg_sig[inf_mask] = 0
-        
-        
+
         ax = axes_pack[0]
         ax.cla()
         ax.plot(plot_taus, avg_sig_counts, "r-", label="signal")
@@ -329,31 +318,37 @@ def main_with_cxn(
         ax.set_xlabel(r"Precession time, $T = 2*8*N*\tau (\mathrm{\mu s}$)")
         ax.set_ylabel("Counts")
         ax.legend()
-        
+
         ax = axes_pack[1]
         ax.cla()
         ax.plot(plot_taus, norm_avg_sig, "b-")
         ax.set_title("XY8-{} Measurement".format(num_xy8_reps))
         ax.set_xlabel(r"Precession time, $T = 2*8*N*\tau (\mathrm{\mu s}$)")
         ax.set_ylabel("Contrast (arb. units)")
-        
-        text_popt = 'Run # {}/{}'.format(run_ind+1,num_runs)
 
-        props = dict(boxstyle='round', facecolor='wheat', alpha=0.5)
-        ax.text(0.8, 0.9, text_popt,transform=ax.transAxes,
-                verticalalignment='top', bbox=props)
-        
+        text_popt = "Run # {}/{}".format(run_ind + 1, num_runs)
+
+        props = dict(boxstyle="round", facecolor="wheat", alpha=0.5)
+        ax.text(
+            0.8,
+            0.9,
+            text_popt,
+            transform=ax.transAxes,
+            verticalalignment="top",
+            bbox=props,
+        )
+
         raw_fig.canvas.draw()
         raw_fig.set_tight_layout(True)
         raw_fig.canvas.flush_events()
-        
+
         # %% Save the data we have incrementally for long T1s
 
         raw_data = {
             "start_timestamp": start_timestamp,
             "nv_sig": nv_sig,
             "nv_sig-units": tool_belt.get_nv_sig_units(),
-            'num_xy8_reps': num_xy8_reps,
+            "num_xy8_reps": num_xy8_reps,
             "gate_time": gate_time,
             "gate_time-units": "ns",
             "uwave_freq": uwave_freq,
@@ -371,7 +366,7 @@ def main_with_cxn(
             "num_reps": num_reps,
             "run_ind": run_ind,
             "taus": taus.tolist(),
-            "plot_taus":plot_taus.tolist(),
+            "plot_taus": plot_taus.tolist(),
             "taus-units": "ns",
             "tau_index_master_list": tau_index_master_list,
             "opti_coords_list": opti_coords_list,
@@ -428,7 +423,7 @@ def main_with_cxn(
         "timeElapsed": timeElapsed,
         "nv_sig": nv_sig,
         "nv_sig-units": tool_belt.get_nv_sig_units(),
-        'num_xy8_reps': num_xy8_reps,
+        "num_xy8_reps": num_xy8_reps,
         "gate_time": gate_time,
         "gate_time-units": "ns",
         "uwave_freq": uwave_freq,
@@ -446,7 +441,7 @@ def main_with_cxn(
         "num_reps": num_reps,
         "num_runs": num_runs,
         "taus": taus.tolist(),
-        "plot_taus":plot_taus.tolist(),
+        "plot_taus": plot_taus.tolist(),
         "taus-units": "ns",
         "tau_index_master_list": tau_index_master_list,
         "opti_coords_list": opti_coords_list,
@@ -466,13 +461,11 @@ def main_with_cxn(
 
     # %% Fit and save figs
 
-
-    return 
+    return
 
 
 # %% Run the file
 
 
 if __name__ == "__main__":
-
     aa = 1

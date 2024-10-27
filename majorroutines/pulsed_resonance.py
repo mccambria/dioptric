@@ -21,7 +21,7 @@ from scipy.optimize import brute, curve_fit
 from scipy.signal import find_peaks
 from scipy.special import voigt_profile as scipy_voigt
 
-import majorroutines.optimize as optimize
+import majorroutines.targeting as targeting
 import utils.kplotlib as kpl
 import utils.tool_belt as tool_belt
 from utils.constants import NormMode, NVSpinState
@@ -929,10 +929,10 @@ def main_with_cxn(
 
         # Optimize and save the coords we found
         if opti_nv_sig:
-            ret_vals = optimize.main_with_cxn(cxn, opti_nv_sig)
+            ret_vals = targeting.main_with_cxn(cxn, opti_nv_sig)
             opti_coords = ret_vals[0]
         else:
-            opti_coords = optimize.main_with_cxn(cxn, nv_sig)
+            opti_coords = targeting.main_with_cxn(cxn, nv_sig)
         opti_coords_list.append(opti_coords)
 
         # Set up the microwaves and laser. Then load the pulse streamer

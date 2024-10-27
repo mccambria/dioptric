@@ -18,13 +18,13 @@ from scipy.optimize import minimize
 from scipy.signal import correlate
 
 from majorroutines import optimize_xyz
-from majorroutines.optimize import expected_counts_check, main, stationary_count_lite
+from majorroutines.targeting import check_expected_counts, main, stationary_count_lite
 from utils import common, widefield
 from utils import data_manager as dm
 from utils import kplotlib as kpl
 from utils import positioning as pos
 from utils import tool_belt as tb
-from utils.constants import CoordsKey, DriftMode, LaserKey
+from utils.constants import CoordsKey, LaserKey
 
 # region Internal
 
@@ -115,7 +115,7 @@ def optimize_pixel_and_z(nv_sig, do_plot=False):
         )
         counts = widefield.integrate_counts_from_adus(img_array, opti_pixel_coords)
 
-        if nv_sig.expected_counts is not None and expected_counts_check(nv_sig, counts):
+        if nv_sig.expected_counts is not None and check_expected_counts(nv_sig, counts):
             return pixel_drift
 
         # z
@@ -130,7 +130,7 @@ def optimize_pixel_and_z(nv_sig, do_plot=False):
         except Exception:
             pass
 
-        if nv_sig.expected_counts is None or expected_counts_check(nv_sig, counts):
+        if nv_sig.expected_counts is None or check_expected_counts(nv_sig, counts):
             return pixel_drift
 
         attempt_ind += 1
@@ -171,7 +171,7 @@ def optimize_slm_calibration(nv_sig, do_plot=False):
         )
         counts = widefield.integrate_counts_from_adus(img_array, opti_pixel_coords)
 
-        if nv_sig.expected_counts is not None and expected_counts_check(nv_sig, counts):
+        if nv_sig.expected_counts is not None and check_expected_counts(nv_sig, counts):
             return pixel_drift
 
         # z
@@ -186,7 +186,7 @@ def optimize_slm_calibration(nv_sig, do_plot=False):
         except Exception:
             pass
 
-        if nv_sig.expected_counts is None or expected_counts_check(nv_sig, counts):
+        if nv_sig.expected_counts is None or check_expected_counts(nv_sig, counts):
             return pixel_drift
 
         attempt_ind += 1
@@ -299,45 +299,12 @@ def optimize_pixel_with_img_array(
     # plt.show(block=True)
 
     opti_pixel_coords = popt[1:3]
-    pixel_drift = np.array(opti_pixel_coords) - np.array(original_pixel_coords)
-    pixel_drift = pixel_drift.tolist()
-    # print(pixel_drift)
-    drift_mode = pos.get_drift_mode()
-
-    if drift_mode == DriftMode.GLOBAL:
-        widefield.set_scanning_drift_from_pixel_drift(
-            pixel_drift, coords_key=CoordsKey.GLOBAL, relative=True
-        )
-        pos.set_xyz_on_nv(nv_sig)
-    else:
-        if set_pixel_drift:
-            widefield.set_pixel_drift(pixel_drift)
-        if set_scanning_drift:
-            widefield.set_all_scanning_drift_from_pixel_drift(pixel_drift)
+    if set_pixel_drift:
+        drift = (np.array(opti_pixel_coords) - np.array(original_pixel_coords)).tolist()
+        widefield.set_pixel_drift(drift)
+    if set_scanning_drift:
+        widefield.set_all_scanning_drift_from_pixel_drift()
     opti_pixel_coords = opti_pixel_coords.tolist()
-
-    # # After obtaining optimized pixel coordinates
-    # opti_pixel_coords = popt[1:3]
-    # pixel_drift = np.array(opti_pixel_coords) - np.array(original_pixel_coords)
-    # pixel_drift = pixel_drift.tolist()
-
-    # drift_mode = pos.get_drift_mode()
-
-    # if drift_mode == DriftMode.GLOBAL:
-    #     # Use the modified relative drift calculation
-    #     widefield.set_scanning_drift_from_pixel_drift(
-    #         pixel_drift, coords_key=CoordsKey.GLOBAL, relative=True
-    #     )
-    #     pos.set_xyz_on_nv(nv_sig)
-    # else:
-    #     if set_pixel_drift:
-    #         widefield.set_pixel_drift(pixel_drift)
-    #     if set_scanning_drift:
-    #         # Use relative adjustment if necessary
-    #         widefield.set_all_scanning_drift_from_pixel_drift(
-    #             pixel_drift, relative=True
-    #         )
-    # opti_pixel_coords = opti_pixel_coords.tolist()
 
     if do_print:
         r_opti_pixel_coords = [round(el, 3) for el in opti_pixel_coords]

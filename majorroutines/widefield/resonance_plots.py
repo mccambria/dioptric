@@ -3,7 +3,6 @@
 Created on October 17th, 2024
 @author: Saroj Chand
 """
-
 import os
 import sys
 import time
@@ -894,29 +893,42 @@ def residuals_fn(params, freq, nv_counts, nv_counts_ste):
     )
     return (nv_counts - fit_vals) / nv_counts_ste  # Weighted residuals
 
-
-def calculate_contrast(amp1, amp2, bg_offset):
-    """Calculate contrast based on the fitted amplitudes and background average."""
-    alpha0 = (amp1 + amp2) / 2  # Average of the two peak amplitudes
-    alpha1 = bg_offset  # Fitted background level
-
-    # Print fitted values to diagnose negative contrast issues
-    # print(f"Fitted Amp1: {amp1}, Fitted Amp2: {amp2}, Fitted Background: {bg_offset}")
-
-    # Calculate contrast
-    contrast = 1 - (alpha1 / (alpha0 + alpha1))
-    # contrast = (alpha1 - alpha0)
+def calculate_contrast(amp1, amp2, bg_offset, chi_squared):
+    """
+    Calculate contrast for an NV center signal.
+    
+    Args:
+        amp1: Amplitude of the first peak.
+        amp2: Amplitude of the second peak.
+        bg_offset: Fitted background level (offset).
+    
+    Returns:
+        Contrast value between 0 and 1.
+    """
+    alpha0 = (amp1 + amp2) / 2  # Average peak amplitude (bright state)
+    alpha1 = bg_offset           # Background level (dark state)
+    
+    # Ensure contrast lies between 0 and 1
+    # Set contrast to 0 if it exceeds 1
+    contrast = max(0, (alpha0 + alpha1)/ (alpha1) - 1) if alpha0 > 0 else 0
+    if contrast > 0.4:
+        contrast = 0
+    if chi_squared < 39.0:
+        contrast = 0
+    # if snr < 1.0:
+    #     contrast = 0  
     return contrast
+
+def calculate_snr(sig_counts, ref_counts):
+    """Calculate the signal-to-noise ratio (SNR)."""
+    avg_sig = np.mean(sig_counts)
+    avg_ref = np.mean(ref_counts)
+    noise = np.sqrt(np.std(sig_counts) ** 2 + np.std(ref_counts) ** 2)
+    return (avg_sig - avg_ref) / noise if noise != 0 else 0
 
 
 def plot_nv_resonance_fits_and_residuals(
-    nv_list,
-    freqs,
-    avg_counts,
-    avg_counts_ste,
-    file_id,
-    num_cols=3,
-    threshold_method=None,
+    nv_list, freqs, sig_counts, ref_counts, file_id, num_cols=3, threshold_method=None
 ):
     """
     Plot NV resonance data with fitted Voigt profiles (including background), with residuals and contrast values.
@@ -930,13 +942,31 @@ def plot_nv_resonance_fits_and_residuals(
         num_cols: Number of columns for the grid layout.
         threshold_method: Optional method for thresholding.
     """
+    avg_counts, avg_counts_ste, norms = widefield.process_counts(
+        nv_list, sig_counts, ref_counts, threshold=True, method= thresh_method
+    )
     # Normalize counts from 0 to 1
-    avg_counts = [(ac - min(ac)) / (max(ac) - min(ac)) for ac in avg_counts]
+    # avg_counts = [(ac) / (max(ac)) for ac in avg_counts]
+    from sklearn.cluster import KMeans
 
-    sns.set(style="whitegrid", palette="muted")
+    # List to store NV orientations based on fitted peak centers
+    orientation_clusters = []
+    center_freqs_all = []  # Store center frequencies for clustering
+    # Indices to remove
+    indices_to_remove = {9, 26, 33, 35, 36, 45, 47, 53, 56, 58, 59, 60, 61, 62, 63}
 
+    # Filter nv_list, avg_counts, and avg_counts_ste based on indices to keep
+    nv_list = [nv for idx, nv in enumerate(nv_list) if idx not in indices_to_remove]
+    avg_counts = [ac for idx, ac in enumerate(avg_counts) if idx not in indices_to_remove]
+    avg_counts_ste = [ste for idx, ste in enumerate(avg_counts_ste) if idx not in indices_to_remove]
+
+    # num_nvs = len(nv_list)
+    # num_rows = int(np.ceil(num_nvs / num_cols))  # Calculate the number of rows needed
+
+    # Update num_nvs and re-calculate number of rows
     num_nvs = len(nv_list)
-    num_rows = int(np.ceil(num_nvs / num_cols))  # Calculate the number of rows needed
+    num_rows = int(np.ceil(num_nvs / num_cols))  # Recalculate rows
+    sns.set(style="whitegrid", palette="muted")
 
     colors = sns.color_palette("deep", num_nvs)
     fit_fns = []
@@ -946,7 +976,6 @@ def plot_nv_resonance_fits_and_residuals(
     chi_squared_list = []
     center_freqs = []
     center_freq_errs = []
-
     ### 1. Fitting and Contrast Figure ###
     fig_fitting, axes_fitting = plt.subplots(
         num_rows,
@@ -959,6 +988,7 @@ def plot_nv_resonance_fits_and_residuals(
 
     for nv_idx, ax in enumerate(axes_fitting):
         if nv_idx < num_nvs:
+
             sns.lineplot(
                 x=freqs,
                 y=avg_counts[nv_idx],
@@ -1024,6 +1054,9 @@ def plot_nv_resonance_fits_and_residuals(
             )
             popt = result.x
 
+            # Store center frequencies (two peaks for each NV)
+            center_freqs_all.append([popt[2], popt[3]])
+
             # Track parameters for plotting and residuals
             fit_fns.append(voigt_with_background)
             popts.append(popt)
@@ -1052,8 +1085,23 @@ def plot_nv_resonance_fits_and_residuals(
             amp1 = popt[0]  # First peak amplitude
             amp2 = popt[1]  # Second peak amplitude
             bg_offset = popt[5]  # Background level (constant offset)
-            contrast = calculate_contrast(amp1, amp2, bg_offset)
+            # contrast = calculate_contrast(amp1, amp2, bg_offset)
+            contrast = calculate_contrast(amp1, amp2, bg_offset, chi_squared)
+            # snr = calculate_snr(sig_counts, ref_counts)
+            # contrast,_ = widefield.calc_contrast(sig_counts, ref_counts)
+            # contrast, contrast_ste = widefield.calc_contrast(
+            # sig_counts[nv_idx][np.newaxis, ...], 
+            # ref_counts[nv_idx][np.newaxis, ...]
+            # )
+            # snr, snr_ste = widefield.calc_snr(
+            # sig_counts[nv_idx][np.newaxis, ...], 
+            # ref_counts[nv_idx][np.newaxis, ...]
+            # )
+            # Ensure contrast is a scalar value
+            # if isinstance(contrast, np.ndarray):
+            #     contrast = np.mean(contrast)
 
+            # contrast, contrast_ste = widefield.calc_contrast(sig_counts[nv_idx], ref_counts[nv_idx])
             # Add contrast to the plot
             ax.text(
                 0.05,
@@ -1207,9 +1255,48 @@ def plot_nv_resonance_fits_and_residuals(
     plt.close(fig_residuals)
 
 
-def nv_resonance_splitting(
-    nv_list, freqs, avg_counts, avg_counts_ste, threshold=0.06, bins=30
-):
+    ### 3. Residuals and Contrast Figure ###
+    # Use K-means clustering to group NVs by orientation (assuming 3 orientations)
+    kmeans = KMeans(n_clusters=4, random_state=0).fit(center_freqs_all)
+    cluster_labels = kmeans.labels_  # Cluster labels indicating orientation
+
+    # Organize NVs by their orientations
+    nv_orientations = {0: [], 1: [], 2: [], 3: []}
+    for nv_idx, orientation in enumerate(cluster_labels):
+        nv_orientations[orientation].append(nv_idx)
+
+    # Plotting the NVs grouped by orientation
+    fig, axes = plt.subplots(4, 1, figsize=(8, 10), sharex=True)
+    colors = sns.color_palette("deep", len(nv_orientations[0]))
+
+    for orientation, ax in enumerate(axes):
+        for nv_idx in nv_orientations[orientation]:
+            ax.plot(
+                freqs, avg_counts[nv_idx], label=f"NV {nv_idx}", lw=2,
+                color=colors[nv_idx % len(colors)], marker="o", markersize=5
+            )
+            ax.errorbar(
+                freqs, avg_counts[nv_idx], yerr=avg_counts_ste[nv_idx], fmt="none",
+                ecolor="gray", alpha=0.6
+            )
+            ax.set_title(f"Orientation {orientation + 1}")
+            ax.grid(True, which="both", linestyle="--", linewidth=0.5)
+            ax.legend()
+
+    fig.suptitle("NV Resonance Data Grouped by Orientation", fontsize=16)
+    plt.xlabel("Frequency (GHz)")
+    fig.text(0.04, 0.5, "NV$^{-}$ Population", va="center", rotation="vertical", fontsize=12)
+
+    plt.subplots_adjust(left=0.1, right=0.95, top=0.95, bottom=0.1, hspace=0.4)
+    now = datetime.now()
+    date_time_str = now.strftime("%Y%m%d_%H%M%S")
+    file_name = dm.get_file_name(file_id=file_id)
+    file_path = dm.get_file_path(__file__, file_name, f"{file_id}_{date_time_str}_grouped_by_orientation")
+    dm.save_figure(fig, file_path)
+    plt.close(fig)
+
+
+def nv_resonance_splitting(nv_list, freqs, avg_counts, avg_counts_ste, threshold=0.06, bins=30):
     """
     Calculate the frequency splitting between two NV resonances by fitting a Voigt profile to two resonance peaks,
     and plot the histogram of frequency splitting values with the given threshold.
@@ -1565,8 +1652,8 @@ def generate_2d_magnetic_field_map_kriging(
 
 if __name__ == "__main__":
     file_id = 1663484946120
-    # file_id = 1682139880704
-    data = dm.get_raw_data(file_id=file_id, load_npz=False, use_cache=True)
+    # file_id = 1669079684844
+    data = dm.get_raw_data(file_id=file_id , load_npz=False, use_cache=True)
     nv_list = data["nv_list"]
     num_nvs = len(nv_list)
     counts = np.array(data["counts"])[0]
@@ -1584,29 +1671,20 @@ if __name__ == "__main__":
     ref_counts = np.empty((num_nvs, num_runs, adj_num_steps, 2 * num_reps))
     ref_counts[:, :, :, 0::2] = ref_counts_0
     ref_counts[:, :, :, 1::2] = ref_counts_1
-
-    thresh_method = "otsu"
-    avg_counts, avg_counts_ste, norms = widefield.process_counts(
-        nv_list, sig_counts, ref_counts, threshold=True, method=thresh_method
-    )
+    # 
     now = datetime.now()
     date_time_str = now.strftime("%Y%m%d_%H%M%S")
     file_name = dm.get_file_name(file_id=file_id)
     file_path = dm.get_file_path(__file__, file_name, f"{file_id}_{date_time_str}")
+
     # fig = plot_nv_resonance_data_sns_with_freq_labels(
     #     nv_list, freqs, avg_counts, avg_counts_ste, file_id, file_path, num_cols=5,threshold_method=thresh_method)
     # fig = plot_nv_resonance_data_sns_with_fit(
     #     nv_list, freqs, avg_counts, avg_counts_ste, file_id, file_path, num_cols=5,threshold_method=thresh_method
     #     )
-
+    thresh_method= "otsu"
     plot_nv_resonance_fits_and_residuals(
-        nv_list,
-        freqs,
-        avg_counts,
-        avg_counts_ste,
-        file_id,
-        num_cols=6,
-        threshold_method=thresh_method,
+    nv_list, freqs, sig_counts, ref_counts, file_id, num_cols=4, threshold_method=thresh_method
     )
     print(f"Plot saved to {file_path}")
     # plt.show()

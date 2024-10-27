@@ -13,26 +13,26 @@ Created on November 25th, 2018
 # region Imports and constants
 
 
-import labrad
-import numpy as np
-import time
 import copy
-import utils.tool_belt as tool_belt
-import majorroutines.image_sample as image_sample
-import majorroutines.optimize as optimize
-import majorroutines.stationary_count as stationary_count
-import majorroutines.resonance as resonance
-import majorroutines.pulsed_resonance as pulsed_resonance
-import majorroutines.optimize_magnet_angle as optimize_magnet_angle
-import majorroutines.rabi as rabi
-import majorroutines.g2_measurement as g2_measurement
-import majorroutines.t1_dq_main as t1_dq_main
-import majorroutines.ramsey as ramsey
-import majorroutines.spin_echo as spin_echo
-import majorroutines.determine_standard_readout_params as determine_standard_readout_params
-from utils.tool_belt import States
 import time
 
+import labrad
+import numpy as np
+
+import majorroutines.determine_standard_readout_params as determine_standard_readout_params
+import majorroutines.g2_measurement as g2_measurement
+import majorroutines.image_sample as image_sample
+import majorroutines.optimize_magnet_angle as optimize_magnet_angle
+import majorroutines.pulsed_resonance as pulsed_resonance
+import majorroutines.rabi as rabi
+import majorroutines.ramsey as ramsey
+import majorroutines.resonance as resonance
+import majorroutines.spin_echo as spin_echo
+import majorroutines.stationary_count as stationary_count
+import majorroutines.t1_dq_main as t1_dq_main
+import majorroutines.targeting as targeting
+import utils.tool_belt as tool_belt
+from utils.tool_belt import States
 
 # endregion
 # region Routines
@@ -44,7 +44,6 @@ def do_image_sample(
     cbarmin=None,
     cbarmax=None,
 ):
-
     # scan_range = 0.2
     # num_steps = 60
 
@@ -64,7 +63,6 @@ def do_image_sample(
 
 
 def do_image_sample_zoom(nv_sig):
-
     scan_range = 0.05
     num_steps = 30
 
@@ -77,8 +75,7 @@ def do_image_sample_zoom(nv_sig):
 
 
 def do_optimize(nv_sig):
-
-    optimize.main(
+    targeting.main(
         nv_sig,
         set_to_opti_coords=False,
         save_data=True,
@@ -92,7 +89,6 @@ def do_stationary_count(
     nv_minus_initialization=False,
     nv_zero_initialization=False,
 ):
-
     run_time = 3 * 60 * 10**9  # ns
 
     stationary_count.main(
@@ -105,7 +101,6 @@ def do_stationary_count(
 
 
 def do_g2_measurement(nv_sig, apd_a_index, apd_b_index):
-
     run_time = 60 * 10  # s
     diff_window = 200  # ns
 
@@ -113,7 +108,6 @@ def do_g2_measurement(nv_sig, apd_a_index, apd_b_index):
 
 
 def do_resonance(nv_sig, freq_center=2.87, freq_range=0.2):
-
     num_steps = 51
     num_runs = 20
     uwave_power = -5.0
@@ -130,7 +124,6 @@ def do_resonance(nv_sig, freq_center=2.87, freq_range=0.2):
 
 
 def do_resonance_state(nv_sig, state):
-
     freq_center = nv_sig["resonance_{}".format(state.name)]
     uwave_power = -5.0
 
@@ -154,7 +147,6 @@ def do_resonance_state(nv_sig, state):
 
 
 def do_determine_standard_readout_params(nv_sig):
-
     num_reps = 1e5
     max_readouts = [1e6]
     filters = ["nd_0"]
@@ -170,7 +162,6 @@ def do_determine_standard_readout_params(nv_sig):
 
 
 def do_pulsed_resonance(nv_sig, freq_center=2.87, freq_range=0.2):
-
     num_steps = 51
 
     num_reps = 2e4
@@ -195,7 +186,6 @@ def do_pulsed_resonance(nv_sig, freq_center=2.87, freq_range=0.2):
 
 
 def do_pulsed_resonance_state(nv_sig, state):
-
     freq_range = 0.020
     num_steps = 51
     num_reps = 2e4
@@ -224,7 +214,6 @@ def do_pulsed_resonance_state(nv_sig, state):
 
 
 def do_scc_pulsed_resonance(nv_sig, state):
-
     opti_nv_sig = nv_sig
     freq_center = nv_sig["resonance_{}".format(state)]
     uwave_power = nv_sig["uwave_power_{}".format(state)]
@@ -248,7 +237,6 @@ def do_scc_pulsed_resonance(nv_sig, state):
 
 
 def do_determine_charge_readout_params(nv_sig):
-
     readout_durs = [10e6]
     readout_durs = [int(el) for el in readout_durs]
     max_readout_dur = max(readout_durs)
@@ -268,7 +256,6 @@ def do_determine_charge_readout_params(nv_sig):
 
 
 def do_optimize_magnet_angle(nv_sig):
-
     angle_range = [0, 150]
     num_angle_steps = 6
     freq_center = 2.87
@@ -301,7 +288,6 @@ def do_optimize_magnet_angle(nv_sig):
 
 
 def do_rabi(nv_sig, state, uwave_time_range=[0, 200]):
-
     num_steps = 51
     num_reps = 2e4
     num_runs = 16
@@ -318,7 +304,6 @@ def do_rabi(nv_sig, state, uwave_time_range=[0, 200]):
 
 
 def do_t1_dq(nv_sig):
-
     # T1 experiment parameters, formatted:
     # [[init state, read state], relaxation_time_range, num_steps, num_reps]
     num_runs = 500
@@ -345,7 +330,6 @@ def do_t1_dq(nv_sig):
 
 
 def do_ramsey(nv_sig):
-
     detuning = 2.5  # MHz
     precession_time_range = [0, 4 * 10**3]
     num_steps = 151
@@ -363,7 +347,6 @@ def do_ramsey(nv_sig):
 
 
 def do_spin_echo(nv_sig):
-
     # T2* in nanodiamond NVs is just a couple us at 300 K
     # In bulk it"s more like 100 us at 300 K
     max_time = 120  # us
@@ -389,7 +372,6 @@ def do_spin_echo(nv_sig):
 
 
 if __name__ == "__main__":
-
     ### Shared parameters
 
     green_laser = "laserglow_532"
@@ -423,7 +405,6 @@ if __name__ == "__main__":
     ### Routines to execute
 
     try:
-
         tool_belt.init_safe_stop()
 
         # tool_belt.set_drift([0.0, 0.0, 0.0])  # Totally reset

@@ -13,21 +13,21 @@ Created on Fri Aug 5 2022
 # %% Imports
 
 
-import utils.tool_belt as tool_belt
-import utils.kplotlib as kpl
-from utils.kplotlib import KplColors
-import majorroutines.optimize as optimize
-from scipy.optimize import minimize_scalar
-from numpy import pi
-import numpy
 import time
-import matplotlib.pyplot as plt
 from random import shuffle
-import labrad
-from utils.tool_belt import States
-from scipy.optimize import curve_fit
-from numpy.linalg import eigvals
 
+import labrad
+import matplotlib.pyplot as plt
+import numpy
+from numpy import pi
+from numpy.linalg import eigvals
+from scipy.optimize import curve_fit, minimize_scalar
+
+import majorroutines.targeting as targeting
+import utils.kplotlib as kpl
+import utils.tool_belt as tool_belt
+from utils.kplotlib import KplColors
+from utils.tool_belt import States
 
 # %% Constants
 
@@ -35,7 +35,6 @@ from numpy.linalg import eigvals
 im = 0 + 1j
 inv_sqrt_2 = 1 / numpy.sqrt(2)
 gmuB = 2.8e-3  # gyromagnetic ratio in GHz / G
-
 
 
 # %% Main
@@ -50,13 +49,12 @@ def main(
     num_runs,
     taus=[],
     state=States.HIGH,
-    do_dq = False,
-    do_scc = False,
-    comp_wait_time = 80,
-    do_plot = True,
-    do_save = True
+    do_dq=False,
+    do_scc=False,
+    comp_wait_time=80,
+    do_plot=True,
+    do_save=True,
 ):
-
     with labrad.connect() as cxn:
         angle = main_with_cxn(
             cxn,
@@ -68,11 +66,11 @@ def main(
             num_runs,
             taus,
             state,
-            do_dq ,
+            do_dq,
             do_scc,
-            comp_wait_time ,
+            comp_wait_time,
             do_plot,
-            do_save
+            do_save,
         )
         return angle
 
@@ -85,15 +83,14 @@ def main_with_cxn(
     num_steps,
     num_reps,
     num_runs,
-    taus = [],
+    taus=[],
     state=States.HIGH,
-    do_dq = False,
-    do_scc = False,
-    comp_wait_time = 80,
-    do_plot = True,
-    do_save = True
+    do_dq=False,
+    do_scc=False,
+    comp_wait_time=80,
+    do_plot=True,
+    do_save=True,
 ):
-
     counter_server = tool_belt.get_server_counter(cxn)
     pulsegen_server = tool_belt.get_server_pulse_gen(cxn)
     arbwavegen_server = tool_belt.get_server_arb_wave_gen(cxn)
@@ -126,9 +123,8 @@ def main_with_cxn(
         laser_power = tool_belt.set_laser_power(cxn, nv_sig, laser_key)
         polarization_time = nv_sig["spin_pol_dur"]
         readout = nv_sig["spin_readout_dur"]
-        
-    norm_style = nv_sig['norm_style']
-        
+
+    norm_style = nv_sig["norm_style"]
 
     uwave_freq = nv_sig["resonance_{}".format(state.name)]
     uwave_power = nv_sig["uwave_power_{}".format(state.name)]
@@ -136,12 +132,10 @@ def main_with_cxn(
     # Get pulse frequencies
     uwave_pi_pulse = nv_sig["pi_pulse_{}".format(state.name)]
     uwave_pi_on_2_pulse = nv_sig["pi_on_2_pulse_{}".format(state.name)]
-    
 
     # set up to drive transition through zero
     if do_dq:
-        
-       # rabi_period_low = nv_sig["rabi_{}".format(States.LOW.name)]
+        # rabi_period_low = nv_sig["rabi_{}".format(States.LOW.name)]
         uwave_freq_low = nv_sig["resonance_{}".format(States.LOW.name)]
         uwave_power_low = nv_sig["uwave_power_{}".format(States.LOW.name)]
         uwave_pi_pulse_low = nv_sig["pi_pulse_{}".format(States.LOW.name)]
@@ -150,22 +144,21 @@ def main_with_cxn(
         uwave_power_high = nv_sig["uwave_power_{}".format(States.HIGH.name)]
         uwave_pi_pulse_high = nv_sig["pi_pulse_{}".format(States.HIGH.name)]
         uwave_pi_on_2_pulse_high = nv_sig["pi_on_2_pulse_{}".format(States.HIGH.name)]
-        
-        
+
         if state.value == States.LOW.value:
             state_activ = States.LOW
             state_proxy = States.HIGH
         elif state.value == States.HIGH.value:
             state_activ = States.HIGH
             state_proxy = States.LOW
-    
+
     # %% Create the array of relaxation times
 
     # Array of times to sweep through
     # Must be ints
     min_precession_time = int(precession_time_range[0])
     max_precession_time = int(precession_time_range[1])
-    
+
     if len(taus) == 0:
         taus = numpy.linspace(
             min_precession_time,
@@ -176,8 +169,8 @@ def main_with_cxn(
     # taus = taus + 500
     print(taus)
     # Convert to ms
-    #plot_taus = taus / 1000
-    plot_taus = (taus * 2 *4 * num_xy4_reps) / 1000
+    # plot_taus = taus / 1000
+    plot_taus = (taus * 2 * 4 * num_xy4_reps) / 1000
     # %% Fix the length of the sequence to account for odd amount of elements
 
     # Our sequence pairs the longest time with the shortest time, and steps
@@ -216,11 +209,11 @@ def main_with_cxn(
     tau_index_master_list = [[] for i in range(num_runs)]
 
     # %% Analyze the sequence
-    
+
     num_reps = int(num_reps)
 
-    pi_pulse_reps = num_xy4_reps*4
-    
+    pi_pulse_reps = num_xy4_reps * 4
+
     if do_dq:
         if do_scc:
             seq_file_name = "dynamical_decoupling_dq_scc.py"
@@ -248,7 +241,7 @@ def main_with_cxn(
         else:
             seq_file_name = "dynamical_decoupling_dq.py"
             seq_args = [
-                  taus[0],
+                taus[0],
                 polarization_time,
                 readout,
                 uwave_pi_pulse_low,
@@ -260,46 +253,46 @@ def main_with_cxn(
                 pi_pulse_reps,
                 state_activ.value,
                 state_proxy.value,
-                laser_name, 
-                laser_power
+                laser_name,
+                laser_power,
             ]
     else:
-        if do_scc:    
+        if do_scc:
             seq_file_name = "dynamical_decoupling_scc.py"
             seq_args = [
-                  taus[0],
-                  polarization_dur,
-                  ionization_dur,
-                  readout,
-                  uwave_pi_pulse,
-                  uwave_pi_on_2_pulse,
-                  taus[-1],
-                  100,
-                  pi_pulse_reps,
-                  state.value,
-                  pol_laser_name,
-                  pol_laser_power,
-                  ion_laser_name,
-                  ion_laser_power,
-                  readout_laser_name,
-                  readout_laser_power,
-              ]
+                taus[0],
+                polarization_dur,
+                ionization_dur,
+                readout,
+                uwave_pi_pulse,
+                uwave_pi_on_2_pulse,
+                taus[-1],
+                100,
+                pi_pulse_reps,
+                state.value,
+                pol_laser_name,
+                pol_laser_power,
+                ion_laser_name,
+                ion_laser_power,
+                readout_laser_name,
+                readout_laser_power,
+            ]
         else:
             seq_file_name = "dynamical_decoupling.py"
             seq_args = [
-                  taus[0],
-                  polarization_time,
-                  readout,
-                  uwave_pi_pulse,
-                  uwave_pi_on_2_pulse,
-                  taus[-1],
-                  100,
-                  pi_pulse_reps,
-                  state.value,
-                  laser_name,
-                  laser_power,
-              ]
-        
+                taus[0],
+                polarization_time,
+                readout,
+                uwave_pi_pulse,
+                uwave_pi_on_2_pulse,
+                taus[-1],
+                100,
+                pi_pulse_reps,
+                state.value,
+                laser_name,
+                laser_power,
+            ]
+
     seq_args_string = tool_belt.encode_seq_args(seq_args)
     ret_vals = pulsegen_server.stream_load(seq_file_name, seq_args_string)
     seq_time = ret_vals[0]
@@ -309,19 +302,17 @@ def main_with_cxn(
 
     # %% Let the user know how long this will take
 
-    seq_time_s = seq_time / (10 ** 9)  # to seconds
-    expected_run_time_s = (
-        (num_steps / 2) * num_reps * num_runs * seq_time_s
-    )  # s
+    seq_time_s = seq_time / (10**9)  # to seconds
+    expected_run_time_s = (num_steps / 2) * num_reps * num_runs * seq_time_s  # s
     expected_run_time_m = expected_run_time_s / 60  # to minutes
 
     print(" \nExpected run time: {:.1f} minutes. ".format(expected_run_time_m))
-    #return
-    
+    # return
+
     # create figure
     if do_plot:
         raw_fig, axes_pack = plt.subplots(1, 2, figsize=(17, 8.5))
-    
+
     # %% Get the starting time of the function, to be used to calculate run time
 
     startFunctionTime = time.time()
@@ -333,7 +324,6 @@ def main_with_cxn(
     tool_belt.init_safe_stop()
 
     for run_ind in range(num_runs):
-
         print(" \nRun index: {}".format(run_ind))
 
         # Break out of the while if the user says stop
@@ -341,9 +331,8 @@ def main_with_cxn(
             break
 
         # Optimize
-        opti_coords = optimize.main_with_cxn(cxn, nv_sig)
+        opti_coords = targeting.main_with_cxn(cxn, nv_sig)
         opti_coords_list.append(opti_coords)
-
 
         if do_dq:
             sig_gen_low_cxn = tool_belt.get_server_sig_gen(cxn, States.LOW)
@@ -361,17 +350,18 @@ def main_with_cxn(
             sig_gen_cxn.set_amp(uwave_power)
             sig_gen_cxn.load_iq()
             sig_gen_cxn.uwave_on()
-        
+
         arbwavegen_server.load_xy4n(num_xy4_reps)
-        
 
         # Set up the laser
         tool_belt.set_filter(cxn, nv_sig, laser_key)
         laser_power = tool_belt.set_laser_power(cxn, nv_sig, laser_key)
-        
+
         if do_scc:
             charge_readout_laser_server = tool_belt.get_server_charge_readout_laser(cxn)
-            charge_readout_laser_server.load_feedthrough(nv_sig["charge_readout_laser_power"])
+            charge_readout_laser_server.load_feedthrough(
+                nv_sig["charge_readout_laser_power"]
+            )
 
         # Load the APD
         counter_server.start_tag_stream()
@@ -380,7 +370,6 @@ def main_with_cxn(
         shuffle(tau_ind_list)
 
         for tau_ind in tau_ind_list:
-
             # 'Flip a coin' to determine which tau (long/shrt) is used first
             rand_boolean = numpy.random.randint(0, high=2)
 
@@ -440,53 +429,51 @@ def main_with_cxn(
                         state_activ.value,
                         state_proxy.value,
                         laser_name,
-                        laser_power, 
+                        laser_power,
                     ]
             else:
-                if do_scc:    
+                if do_scc:
                     # seq_file_name = "dynamical_decoupling_scc.py"
                     seq_args = [
-                          taus[tau_ind_first],
-                          polarization_dur,
-                          ionization_dur,
-                          readout,
-                          uwave_pi_pulse,
-                          uwave_pi_on_2_pulse,
-                          taus[tau_ind_second],
-                          100,
-                          pi_pulse_reps,
-                          state.value,
-                          pol_laser_name,
-                          pol_laser_power,
-                          ion_laser_name,
-                          ion_laser_power,
-                          readout_laser_name,
-                          readout_laser_power,
-                      ]
+                        taus[tau_ind_first],
+                        polarization_dur,
+                        ionization_dur,
+                        readout,
+                        uwave_pi_pulse,
+                        uwave_pi_on_2_pulse,
+                        taus[tau_ind_second],
+                        100,
+                        pi_pulse_reps,
+                        state.value,
+                        pol_laser_name,
+                        pol_laser_power,
+                        ion_laser_name,
+                        ion_laser_power,
+                        readout_laser_name,
+                        readout_laser_power,
+                    ]
                 else:
                     # seq_file_name = "dynamical_decoupling.py"
                     seq_args = [
-                          taus[tau_ind_first],
-                          polarization_time,
-                          readout,
-                          uwave_pi_pulse,
-                          uwave_pi_on_2_pulse,
-                          taus[tau_ind_second],
-                          100,
-                          pi_pulse_reps,
-                          state.value,
-                          laser_name,
-                          laser_power,
-                      ]
-        
+                        taus[tau_ind_first],
+                        polarization_time,
+                        readout,
+                        uwave_pi_pulse,
+                        uwave_pi_on_2_pulse,
+                        taus[tau_ind_second],
+                        100,
+                        pi_pulse_reps,
+                        state.value,
+                        laser_name,
+                        laser_power,
+                    ]
+
             # print(seq_args)
             # return
             seq_args_string = tool_belt.encode_seq_args(seq_args)
             # Clear the tagger buffer of any excess counts
             # counter_server.clear_buffer()
-            pulsegen_server.stream_immediate(
-                seq_file_name, num_reps, seq_args_string
-            )
+            pulsegen_server.stream_immediate(seq_file_name, num_reps, seq_args_string)
 
             # Each sample is of the form [*(<sig_shrt>, <ref_shrt>, <sig_long>, <ref_long>)]
             # So we can sum on the values for similar index modulus 4 to
@@ -514,7 +501,7 @@ def main_with_cxn(
         counter_server.stop_tag_stream()
 
         # %% incremental plotting
-        
+
         # Average the counts over the iterations
         inc_sig_counts = sig_counts[: run_ind + 1]
         inc_ref_counts = ref_counts[: run_ind + 1]
@@ -527,52 +514,63 @@ def main_with_cxn(
             norm_avg_sig,
             norm_avg_sig_ste,
         ) = ret_vals
-        
-        
+
         ax = axes_pack[0]
         ax.cla()
-        kpl.plot_line(ax,plot_taus, sig_counts_avg_kcps,color = KplColors.RED, label="signal")
-        kpl.plot_line(ax,plot_taus, ref_counts_avg_kcps, color = KplColors.GREEN, label="reference")
+        kpl.plot_line(
+            ax, plot_taus, sig_counts_avg_kcps, color=KplColors.RED, label="signal"
+        )
+        kpl.plot_line(
+            ax, plot_taus, ref_counts_avg_kcps, color=KplColors.GREEN, label="reference"
+        )
         ax.set_xlabel(r"Precession time, $T = 2*4*N*\tau (\mathrm{\mu s}$)")
         ax.set_ylabel("kcps")
         ax.legend()
-        
+
         ax = axes_pack[1]
         ax.cla()
-        kpl.plot_points(ax, plot_taus, norm_avg_sig, yerr=norm_avg_sig_ste, color = KplColors.BLUE)
+        kpl.plot_points(
+            ax, plot_taus, norm_avg_sig, yerr=norm_avg_sig_ste, color=KplColors.BLUE
+        )
         # ax.set_title("XY4-{} Measurement".format(num_xy4_reps))
         ax.set_xlabel(r"Precession time, $T = 2*4*N*\tau (\mathrm{\mu s}$)")
         ax.set_ylabel("Contrast (arb. units)")
-        
+
         if do_dq:
-            dq_text = 'DQ'
+            dq_text = "DQ"
         else:
-            dq_text = 'SQ'
+            dq_text = "SQ"
         if do_scc:
             ax.set_title("XY4-{} {} SCC Measurement".format(num_xy4_reps, dq_text))
         else:
             ax.set_title("XY4-{} {} Measurement".format(num_xy4_reps, dq_text))
-                
-        text_popt = 'Run # {}/{}'.format(run_ind+1,num_runs)
 
-        props = dict(boxstyle='round', facecolor='wheat', alpha=0.5)
-        ax.text(0.8, 0.9, text_popt,transform=ax.transAxes,
-                verticalalignment='top', bbox=props)
-        
+        text_popt = "Run # {}/{}".format(run_ind + 1, num_runs)
+
+        props = dict(boxstyle="round", facecolor="wheat", alpha=0.5)
+        ax.text(
+            0.8,
+            0.9,
+            text_popt,
+            transform=ax.transAxes,
+            verticalalignment="top",
+            bbox=props,
+        )
+
         raw_fig.canvas.draw()
         raw_fig.set_tight_layout(True)
         raw_fig.canvas.flush_events()
-        
+
         # %% Save the data we have incrementally for long T1s
 
         raw_data = {
             "start_timestamp": start_timestamp,
             "nv_sig": nv_sig,
             "nv_sig-units": tool_belt.get_nv_sig_units(cxn),
-            'num_xy4_reps': num_xy4_reps,
+            "num_xy4_reps": num_xy4_reps,
             "do_dq": do_dq,
             "do_scc": do_scc,
-            'comp_wait_time': comp_wait_time,
+            "comp_wait_time": comp_wait_time,
             "uwave_freq": uwave_freq,
             "uwave_freq-units": "GHz",
             "uwave_power": uwave_power,
@@ -588,7 +586,7 @@ def main_with_cxn(
             "num_reps": num_reps,
             "run_ind": run_ind,
             "taus": taus.tolist(),
-            "plot_taus":plot_taus.tolist(),
+            "plot_taus": plot_taus.tolist(),
             "taus-units": "ns",
             "tau_index_master_list": tau_index_master_list,
             "opti_coords_list": opti_coords_list,
@@ -613,34 +611,41 @@ def main_with_cxn(
 
     # %% Plot the data
 
-    ret_vals = tool_belt.process_counts(sig_counts, ref_counts, num_reps, readout, norm_style)
+    ret_vals = tool_belt.process_counts(
+        sig_counts, ref_counts, num_reps, readout, norm_style
+    )
     (
         sig_counts_avg_kcps,
         ref_counts_avg_kcps,
         norm_avg_sig,
         norm_avg_sig_ste,
     ) = ret_vals
-    
-        
+
     ax = axes_pack[0]
     ax.cla()
-    kpl.plot_line(ax,plot_taus, sig_counts_avg_kcps,color = KplColors.RED, label="signal")
-    kpl.plot_line(ax,plot_taus, ref_counts_avg_kcps, color = KplColors.GREEN, label="reference")
+    kpl.plot_line(
+        ax, plot_taus, sig_counts_avg_kcps, color=KplColors.RED, label="signal"
+    )
+    kpl.plot_line(
+        ax, plot_taus, ref_counts_avg_kcps, color=KplColors.GREEN, label="reference"
+    )
     ax.set_xlabel(r"Precession time, $T = 2*4*N*\tau (\mathrm{\mu s}$)")
     ax.set_ylabel("kcps")
     ax.legend()
-    
+
     ax = axes_pack[1]
     ax.cla()
-    kpl.plot_points(ax, plot_taus, norm_avg_sig, yerr=norm_avg_sig_ste, color = KplColors.BLUE)
+    kpl.plot_points(
+        ax, plot_taus, norm_avg_sig, yerr=norm_avg_sig_ste, color=KplColors.BLUE
+    )
     # ax.set_title("XY4-{} Measurement".format(num_xy4_reps))
     ax.set_xlabel(r"Precession time, $T = 2*4*N*\tau (\mathrm{\mu s}$)")
     ax.set_ylabel("Contrast (arb. units)")
-    
+
     if do_dq:
-        dq_text = 'DQ'
+        dq_text = "DQ"
     else:
-        dq_text = 'SQ'
+        dq_text = "SQ"
     if do_scc:
         ax.set_title("XY4-{} {} SCC Measurement".format(num_xy4_reps, dq_text))
     else:
@@ -663,7 +668,7 @@ def main_with_cxn(
         "timeElapsed": timeElapsed,
         "nv_sig": nv_sig,
         "nv_sig-units": tool_belt.get_nv_sig_units(cxn),
-        'num_xy4_reps': num_xy4_reps,
+        "num_xy4_reps": num_xy4_reps,
         "do_dq": do_dq,
         # "gate_time": gate_time,
         # "gate_time-units": "ns",
@@ -681,9 +686,9 @@ def main_with_cxn(
         "num_steps": num_steps,
         "num_reps": num_reps,
         "num_runs": num_runs,
-        "run_ind" : run_ind,
+        "run_ind": run_ind,
         "taus": taus.tolist(),
-        "plot_taus":plot_taus.tolist(),
+        "plot_taus": plot_taus.tolist(),
         "taus-units": "ns",
         "tau_index_master_list": tau_index_master_list,
         "opti_coords_list": opti_coords_list,
@@ -704,23 +709,20 @@ def main_with_cxn(
 
     # %% Fit and save figs
 
-
-    return 
+    return
 
 
 # %% Run the file
 
 
 if __name__ == "__main__":
-    
-    folder4= 'pc_rabi/branch_master/dynamical_decoupling_xy4/2022_10/incremental'
-    file1 = '2022_10_30-00_01_51-siena-nv1_2022_10_27'
-    file2 = '2022_09_16-12_33_42-rubin-nv8_2022_08_10'
-    file4= '2022_09_19-13_28_29-rubin-nv1_2022_08_10'
-    folder8= 'pc_rabi/branch_master/dynamical_decoupling_xy8/2022_09'
-    file8 = '2022_09_04-07_49_33-rubin-nv4_2022_08_10'
-    
-    
+    folder4 = "pc_rabi/branch_master/dynamical_decoupling_xy4/2022_10/incremental"
+    file1 = "2022_10_30-00_01_51-siena-nv1_2022_10_27"
+    file2 = "2022_09_16-12_33_42-rubin-nv8_2022_08_10"
+    file4 = "2022_09_19-13_28_29-rubin-nv1_2022_08_10"
+    folder8 = "pc_rabi/branch_master/dynamical_decoupling_xy8/2022_09"
+    file8 = "2022_09_04-07_49_33-rubin-nv4_2022_08_10"
+
     file_list = [file1]
     # fig, ax = plt.subplots()
 
@@ -736,12 +738,12 @@ if __name__ == "__main__":
     #     run_ind = 25
     #     sig_counts = data['sig_counts']
     #     ref_counts = data['ref_counts']
-        
+
     #     avg_sig_counts = numpy.average(sig_counts[:(run_ind+1)], axis=0)
     #     avg_ref_counts = numpy.average(ref_counts[:(run_ind+1)], axis=0)
     #     # print(numpy.average(avg_ref_counts))
     #     norm_avg_sig = avg_sig_counts / numpy.average(avg_ref_counts)
-    
+
     #     fig, axes_pack = plt.subplots(1, 2, figsize=(17, 8.5))
     #     ax = axes_pack[0]
     #     ax.cla()
@@ -750,37 +752,34 @@ if __name__ == "__main__":
     #     ax.set_xlabel(r"Precession time, $T = 2*4*N*\tau (\mathrm{\mu s}$)")
     #     ax.set_ylabel("Counts")
     #     ax.legend()
-        
+
     #     ax = axes_pack[1]
     #     ax.cla()
     #     ax.plot(plot_taus, norm_avg_sig, "b-")
     #     ax.set_title("XY4-{} Measurement".format(num_xy4_reps))
     #     ax.set_xlabel(r"Precession time, $T = 2*4*N*\tau (\mathrm{\mu s}$)")
     #     ax.set_ylabel("Contrast (arb. units)")
-        
-        
+
     #     fig.canvas.draw()
     #     fig.set_tight_layout(True)
     #     fig.canvas.flush_events()
-        
-    
-        # ax.plot(plot_taus, norm_avg_sig, 'o-', label = "XY4-{}".format(num_xy4_reps))
-        # # ax.set_title("XY4-{} Measurement".format(num_xy4_reps))
-        # ax.set_xlabel(r"Precession time, T (\mathrm{\mu s}$)")
-        # ax.set_ylabel("Contrast (arb. units)")
-        # ax.legend()
-        
+
+    # ax.plot(plot_taus, norm_avg_sig, 'o-', label = "XY4-{}".format(num_xy4_reps))
+    # # ax.set_title("XY4-{} Measurement".format(num_xy4_reps))
+    # ax.set_xlabel(r"Precession time, T (\mathrm{\mu s}$)")
+    # ax.set_ylabel("Contrast (arb. units)")
+    # ax.legend()
 
     # #### just plot revivials
     # tau_step = taus[1]-taus[0]
     # plot_taus = (taus * 2 *4* num_xy4_reps) / 1000
-    
+
     # ax.plot(plot_taus, norm_avg_sig, 'bo', label = "XY4-{}".format(num_xy4_reps))
     # ax.set_title("XY4-{} Measurement".format(num_xy4_reps))
     # ax.set_xlabel(r"Precession time, T ($\mathrm{\mu s}$)")
     # ax.set_ylabel("Contrast (arb. units)")
     # ax.legend()
-    
+
     # revival_t = nv_sig['t2_revival_time']/1e3
     # for i in range(6+1):
     #     rev_t_mod = i * revival_t * 2 * 4 * num_xy4_reps
@@ -788,51 +787,65 @@ if __name__ == "__main__":
 
     ### just revivals ###
     # This data set took measurements at the revivals and midway between them
-    
+
     if True:
         file_name = "2022_12_16-13_06_55-siena-nv1_2022_10_27"
-        data = tool_belt.get_raw_data(file_name, 'pc_rabi/branch_master/dynamical_decoupling_xy4/2022_12')
-        norm_avg_sig = data['norm_avg_sig']
-        norm_avg_sig_ste = data['norm_avg_sig_ste']
-        plot_taus = data['plot_taus']
-        
+        data = tool_belt.get_raw_data(
+            file_name, "pc_rabi/branch_master/dynamical_decoupling_xy4/2022_12"
+        )
+        norm_avg_sig = data["norm_avg_sig"]
+        norm_avg_sig_ste = data["norm_avg_sig_ste"]
+        plot_taus = data["plot_taus"]
+
         contrast = 0.2
-        
+
         tau_lin = numpy.linspace(plot_taus[0], plot_taus[-1], 1000)
-        
+
         fig, ax = plt.subplots()
-        ax.errorbar(plot_taus, norm_avg_sig, yerr = norm_avg_sig_ste, fmt= "o")
-        
-        fit_func = lambda x, amp, decay, offset:tool_belt.exp_stretch_decay(x, amp, decay, offset, 3)
-        init_params = [ 0.1, 200, 0.9]
+        ax.errorbar(plot_taus, norm_avg_sig, yerr=norm_avg_sig_ste, fmt="o")
+
+        fit_func = lambda x, amp, decay, offset: tool_belt.exp_stretch_decay(
+            x, amp, decay, offset, 3
+        )
+        init_params = [0.1, 200, 0.9]
         popt, pcov = curve_fit(
             fit_func,
             plot_taus,
             norm_avg_sig,
             p0=init_params,
-            absolute_sigma = True,
-            sigma=norm_avg_sig_ste
+            absolute_sigma=True,
+            sigma=norm_avg_sig_ste,
         )
-        print('{} +/- {} us'.format(popt[1], numpy.sqrt(pcov[1][1])))
+        print("{} +/- {} us".format(popt[1], numpy.sqrt(pcov[1][1])))
         ax.plot(
-                tau_lin,
-                fit_func(tau_lin, *popt),
-                "r-",
-                label="fit",
-            ) 
-        
-        text_popt = '\n'.join((
-                            r'y = A + C exp(-(T / d)^3)',
-                            r'd = ' + '%.2f'%(popt[1]) + ' +/- ' + '%.2f'%(numpy.sqrt(pcov[1][1])) + ' us'
-                            ))
-    
-        props = dict(boxstyle='round', facecolor='wheat', alpha=0.5)
-        ax.text(0.05, 0.3, text_popt, transform=ax.transAxes, fontsize=12,
-                verticalalignment='top', bbox=props)
-        
-        
-        
+            tau_lin,
+            fit_func(tau_lin, *popt),
+            "r-",
+            label="fit",
+        )
+
+        text_popt = "\n".join(
+            (
+                r"y = A + C exp(-(T / d)^3)",
+                r"d = "
+                + "%.2f" % (popt[1])
+                + " +/- "
+                + "%.2f" % (numpy.sqrt(pcov[1][1]))
+                + " us",
+            )
+        )
+
+        props = dict(boxstyle="round", facecolor="wheat", alpha=0.5)
+        ax.text(
+            0.05,
+            0.3,
+            text_popt,
+            transform=ax.transAxes,
+            fontsize=12,
+            verticalalignment="top",
+            bbox=props,
+        )
+
         ax.set_title("Revivals of XY4")
         ax.set_xlabel(r"Coherence time, T ($\mathrm{\mu s}$)")
         ax.set_ylabel("Normalized signal (arb. units)")
-        

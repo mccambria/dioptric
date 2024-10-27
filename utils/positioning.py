@@ -16,7 +16,7 @@ import numpy as np
 
 from utils import common
 from utils import tool_belt as tb
-from utils.constants import ControlMode, CoordsKey, NVSig
+from utils.constants import SAMPLE, CoordsKey, LaserKey, NVSig, PosControlMode
 
 # endregion
 # region Simple sets
@@ -259,8 +259,31 @@ def get_z_dtype(coords_key=CoordsKey.GLOBAL):
     return get_axis_dtype(axis_ind, coords_key)
 
 
-# Example usage with debug output
-# print(get_axis_optimize_range(1, CoordsKey.GLOBAL))
+def get_sample_pos_axes():
+    config = common.get_config_dict()
+    config_pos = config["Positioning"]
+    return config_pos[SAMPLE]["axes"]
+
+
+def has_sample_xy_positioner():
+    axes = list(get_sample_pos_axes())
+    return all(el in axes for el in (0, 1))
+
+
+def has_sample_z_positioner():
+    axes = list(get_sample_pos_axes())
+    return all(el in axes for el in (2))
+    return 2 in axes
+
+
+def has_sample_xyz_positioner():
+    return has_sample_xy_positioner() and has_sample_z_positioner()
+
+
+def get_laser_positioner(laser_key: LaserKey):
+    config = common.get_config_dict()
+    physical_laser = config["Optics"]["VirtualLasers"][laser_key]["physical_laser"]
+    return config["Optics"]["VirtualLasers"][physical_laser]["positioner"]
 
 
 def get_xy_control_mode(coords_key=CoordsKey.GLOBAL):
@@ -314,7 +337,7 @@ def get_axis_write_fn(axis_ind, coords_key=CoordsKey.GLOBAL):
 def get_axis_stream_fn(axis_ind, coords_key=CoordsKey.GLOBAL):
     """Return the stream function for a given axis (0:x, 1:y, 2:z)"""
     control_mode = get_axis_control_mode(axis_ind)
-    if control_mode != ControlMode.STREAM:
+    if control_mode != PosControlMode.STREAM:
         return None
 
     if axis_ind in [0, 1]:
@@ -338,12 +361,6 @@ def get_axis_stream_fn(axis_ind, coords_key=CoordsKey.GLOBAL):
 
 # region Drift
 """Implemented with a drift tracking global stored on the registry"""
-
-
-@cache
-def get_drift_mode():
-    config = common.get_config_dict()
-    return config["Positioning"]["drift_mode"]
 
 
 @cache
