@@ -74,6 +74,12 @@ class LaserKey(Enum):
 SAMPLE = "sample"
 
 
+class Axes(Enum):
+    XY = (0, 1)
+    Z = (2,)
+    XYZ = (0, 1, 2)
+
+
 class PosControlMode(Enum):
     """
     Different ways to control a positioner

@@ -18,7 +18,7 @@ from scipy.optimize import minimize
 from scipy.signal import correlate
 
 from majorroutines import optimize_xyz
-from majorroutines.targeting import expected_counts_check, main, stationary_count_lite
+from majorroutines.targeting import check_expected_counts, main, stationary_count_lite
 from utils import common, widefield
 from utils import data_manager as dm
 from utils import kplotlib as kpl
@@ -115,7 +115,7 @@ def optimize_pixel_and_z(nv_sig, do_plot=False):
         )
         counts = widefield.integrate_counts_from_adus(img_array, opti_pixel_coords)
 
-        if nv_sig.expected_counts is not None and expected_counts_check(nv_sig, counts):
+        if nv_sig.expected_counts is not None and check_expected_counts(nv_sig, counts):
             return pixel_drift
 
         # z
@@ -130,7 +130,7 @@ def optimize_pixel_and_z(nv_sig, do_plot=False):
         except Exception:
             pass
 
-        if nv_sig.expected_counts is None or expected_counts_check(nv_sig, counts):
+        if nv_sig.expected_counts is None or check_expected_counts(nv_sig, counts):
             return pixel_drift
 
         attempt_ind += 1
@@ -171,7 +171,7 @@ def optimize_slm_calibration(nv_sig, do_plot=False):
         )
         counts = widefield.integrate_counts_from_adus(img_array, opti_pixel_coords)
 
-        if nv_sig.expected_counts is not None and expected_counts_check(nv_sig, counts):
+        if nv_sig.expected_counts is not None and check_expected_counts(nv_sig, counts):
             return pixel_drift
 
         # z
@@ -186,7 +186,7 @@ def optimize_slm_calibration(nv_sig, do_plot=False):
         except Exception:
             pass
 
-        if nv_sig.expected_counts is None or expected_counts_check(nv_sig, counts):
+        if nv_sig.expected_counts is None or check_expected_counts(nv_sig, counts):
             return pixel_drift
 
         attempt_ind += 1

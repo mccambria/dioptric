@@ -16,7 +16,7 @@ import numpy as np
 
 from utils import common
 from utils import tool_belt as tb
-from utils.constants import SAMPLE, CoordsKey, NVSig, PosControlMode
+from utils.constants import SAMPLE, CoordsKey, LaserKey, NVSig, PosControlMode
 
 # endregion
 # region Simple sets
@@ -263,6 +263,27 @@ def get_sample_pos_axes():
     config = common.get_config_dict()
     config_pos = config["Positioning"]
     return config_pos[SAMPLE]["axes"]
+
+
+def has_sample_xy_positioner():
+    axes = list(get_sample_pos_axes())
+    return all(el in axes for el in (0, 1))
+
+
+def has_sample_z_positioner():
+    axes = list(get_sample_pos_axes())
+    return all(el in axes for el in (2))
+    return 2 in axes
+
+
+def has_sample_xyz_positioner():
+    return has_sample_xy_positioner() and has_sample_z_positioner()
+
+
+def get_laser_positioner(laser_key: LaserKey):
+    config = common.get_config_dict()
+    physical_laser = config["Optics"]["VirtualLasers"][laser_key]["physical_laser"]
+    return config["Optics"]["VirtualLasers"][physical_laser]["positioner"]
 
 
 def get_xy_control_mode(coords_key=CoordsKey.GLOBAL):
