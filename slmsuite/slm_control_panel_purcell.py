@@ -281,7 +281,7 @@ def nuvu2thorcam_calibration(coords):
 
 
 def load_nv_coords(
-    file_path="slmsuite/nv_blob_detection/nv_blob_filtered_128nvs_updated.npz",
+    file_path="slmsuite/nv_blob_detection/nv_blob_filtered_116nvs_updated.npz",
     # file_path="slmsuite/nv_blob_detection/nv_coords_integras_counts_162nvs.npz",
     # file_path="slmsuite/nv_blob_detection/nv_coords_updated_spot_weights.npz",
     # file_path="slmsuite/nv_blob_detection/nv_coords_updated_spot_weights_manual_update.npz",

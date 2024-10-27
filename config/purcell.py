@@ -33,21 +33,6 @@ yellow_laser = "laser_OPTO_589"
 red_laser = "laser_COBO_638"
 
 # clibration coords region
-# calibration_pixel_coords_list = [
-#     [113.649, 149.301],
-#     [80.765, 101.26],
-#     [170.167, 94.837],
-# ]
-# calibration_green_coords_list = [
-#     [109.267, 111.334],
-#     [113.322, 106.252],
-#     [103.687, 104.862],
-# ]
-# calibration_red_coords_list = [
-#     [74.649, 77.168],
-#     [77.772, 72.945],
-#     [69.921, 72.112],
-# ]
 calibration_pixel_coords_list = [
     [73.767, 91.394],
     [142.545, 210.183],
@@ -63,6 +48,21 @@ calibration_red_coords_list = [
     [72.849, 82.663],
     [65.189, 74.169],
 ]
+# calibration_pixel_coords_list = [
+#     [125.000, 160.887],
+#     [75.302, 95.265],
+#     [199.053, 94.250],
+# ]
+# calibration_green_coords_list = [
+#     [109.504, 113.073],
+#     [115.361, 106.287],
+#     [102.128, 105.29],
+# ]
+# calibration_red_coords_list = [
+#     [74.367, 78.506],
+#     [78.919, 72.896],
+#     [68.183, 72.361],
+# ]
 # Create the dictionaries using the provided lists
 widefield_calibration_coords1 = {
     # CoordsKey.GLOBAL: [0, 0, 2],
@@ -228,7 +228,7 @@ config |= {
         # LaserKey.WIDEFIELD_SPIN_POL: {"name": yellow_laser, "duration": 10e3},
         LaserKey.WIDEFIELD_SPIN_POL: {"name": yellow_laser, "duration": 100e3},
         # LaserKey.WIDEFIELD_SPIN_POL: {"name": yellow_laser, "duration": 1e6},
-        LaserKey.WIDEFIELD_CHARGE_READOUT: {"name": yellow_laser, "duration": 48e6},
+        LaserKey.WIDEFIELD_CHARGE_READOUT: {"name": yellow_laser, "duration": 36e6},
         # LaserKey.WIDEFIELD_CHARGE_READOUT: {"name": yellow_laser, "duration": 100e6},
         "scc_green_shelving_pulse": False,  # Whether or not to include a shelving pulse in SCC
         "scc_yellow_shelving_pulse": False,

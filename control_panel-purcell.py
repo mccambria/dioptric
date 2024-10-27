@@ -822,13 +822,11 @@ if __name__ == "__main__":
     date_str = "2024_03_12"
     # global_coords = [None, None, z_coord]
     global_coords = [0.7, 0.2, 1.243]
-    # pixel_to_voltage(initial_pixel_coords, final_pixel_coords)
-    # global_coords = piezo_voltage_to_pixel_calibration(final_pixel_coords)
 
     # Load NV pixel coordinates
     pixel_coords_list = load_nv_coords(
         # file_path="slmsuite/nv_blob_detection/nv_blob_filtered_162nvs_ref.npz"
-        file_path="slmsuite/nv_blob_detection/nv_blob_filtered_128nvs_updated.npz",
+        file_path="slmsuite/nv_blob_detection/nv_blob_filtered_116nvs_updated.npz",
     ).tolist()
 
     print(f"Number of NVs: {len(pixel_coords_list)}")
@@ -842,7 +840,7 @@ if __name__ == "__main__":
         ]
         for nv_pixel_coords in pixel_coords_list
     ]
-    print(green_coords_list[0])
+    # print(green_coords_list[0])
     red_coords_list = [
         [
             round(coord, 3)
@@ -852,26 +850,23 @@ if __name__ == "__main__":
         ]
         for nv_pixel_coords in pixel_coords_list
     ]
-    print(red_coords_list[0])
+    # print(red_coords_list[0])
     # print(pixel_coords_list[8])
 
     # pixel_coords_list = [
-    #     [121.475, 159.155],
-    #     [73.767, 91.394],
-    #     [142.545, 210.183],
-    #     [234.876, 116.946],
+    #     [125.000, 160.887],
+    #     [75.302, 95.265],
+    #     [199.053, 94.250],
     # ]
     # green_coords_list = [
-    #     [110.043, 113.011],
-    #     [115.779, 106.042],
-    #     [107.253, 118.327],
-    #     [98.279, 107.437],
+    #     [109.504, 113.073],
+    #     [115.361, 106.287],
+    #     [102.128, 105.29],
     # ]
     # red_coords_list = [
-    #     [74.889, 78.533],
-    #     [79.256, 72.672],
-    #     [72.849, 82.663],
-    #     [65.189, 74.169],
+    #     [74.367, 78.506],
+    #     [78.919, 72.896],
+    #     [68.183, 72.361],
     # ]
 
     num_nvs = len(pixel_coords_list)
@@ -907,7 +902,7 @@ if __name__ == "__main__":
     nv_sig.expected_counts = None
     # nv_sig.expected_counts = 2249.0
     # nv_sig.expected_counts = 3359.0
-    nv_sig.expected_counts = 1280.0
+    nv_sig.expected_counts = 1050.0
     # num_nvs = len(nv_list)
     # print(f"Final NV List: {nv_list}")
     # Ensure data is defined before accessing it
@@ -985,7 +980,7 @@ if __name__ == "__main__":
         # widefield.set_all_scanning_drift_from_pixel_drift()
 
         # do_optimize_z(nv_sig)
-        do_optimize_xyz(nv_sig)
+        # do_optimize_xyz(nv_sig)
         # pos.set_xyz_on_nv(nv_sig)
         # piezo_voltage_to_pixel_calibration()
 
@@ -1052,7 +1047,7 @@ if __name__ == "__main__":
         # do_check_readout_fidelity(nv_list)
 
         # do_resonance_zoom(nv_list)
-        # do_rabi(nv_list)
+        # do_rabi(nv_l ist)
         # do_resonance(nv_list)
         # do_spin_echo(nv_list)s
 

@@ -93,7 +93,7 @@ def detect_nv_coordinates_blob(
     valid_blobs = []
     optimized_coords = []
     spot_sizes = []  # List to store FWHM sizes for each spot
-
+    integrated_counts = []
     for blob in blobs:
         y, x, r = blob
         rr, cc = disk((y, x), integration_radius, shape=img_array.shape)
@@ -108,6 +108,7 @@ def detect_nv_coordinates_blob(
             optimized_coord, fwhm, _ = fit_gaussian_2d_local(img_array, (x, y), size=2)
             optimized_coords.append(optimized_coord)
             spot_sizes.append(fwhm)  # Append the FWHM for the spot
+            integrated_counts.append(integrated_intensity)
 
     valid_blobs = np.array(valid_blobs)
     optimized_coords = np.array(optimized_coords)
@@ -132,13 +133,13 @@ def detect_nv_coordinates_blob(
 
     kpl.show(block=True)
 
-    return optimized_coords, spot_sizes
+    return optimized_coords, integrated_counts, spot_sizes
 
 
 # Save the results to a file
 def save_results(
     nv_coordinates,
-    spot_sizes,
+    integrated_counts,
     path="slmsuite/nv_blob_detection",
     filename="nv_detection_results_with_gaussian_fit.npz",
 ):
@@ -147,7 +148,11 @@ def save_results(
 
     full_filepath = os.path.join(path, filename)
 
-    np.savez(full_filepath, nv_coordinates=nv_coordinates, spot_sizes=spot_sizes)
+    np.savez(
+        full_filepath,
+        nv_coordinates=nv_coordinates,
+        integrated_counts=integrated_counts,
+    )
 
 
 # Calculate the diffraction-limited resolution
@@ -178,9 +183,6 @@ def remove_duplicates(coords, threshold=3):
         ):
             unique_coords.append(coord)
     return unique_coords
-
-
-# Blob detection and Gaussian fitting functions remain the same as before
 
 
 # Process multiple images and remove duplicate NV coordinates
@@ -226,7 +228,7 @@ if __name__ == "__main__":
     # data = dm.get_raw_data(file_id=1680868340409, load_npz=True)
     # data = dm.get_raw_data(file_id=1680026835865, load_npz=True)
     # data = dm.get_raw_data(file_id=1681681506476, load_npz=True)
-    data = dm.get_raw_data(file_id=1681804007439, load_npz=True)
+    data = dm.get_raw_data(file_id=1682946042852, load_npz=True)
 
     img_array = np.array(data["ref_img_array"])
     # img_array = np.array(data["diff_img_array"])
@@ -242,12 +244,12 @@ if __name__ == "__main__":
     # print(f"Resolution: {round(resolution,3)} µm")
 
     # Apply the blob detection and Gaussian fitting
-    sigma = 1.83
-    lower_threshold = 0.2
+    sigma = 2
+    lower_threshold = 0.17
     upper_threshold = None
     smoothing_sigma = 0.0
 
-    nv_coordinates, spot_sizes = detect_nv_coordinates_blob(
+    nv_coordinates, integrated_counts, spot_sizes = detect_nv_coordinates_blob(
         img_array,
         sigma=sigma,
         lower_threshold=lower_threshold,
@@ -274,27 +276,29 @@ if __name__ == "__main__":
         # If the coordinate passes the distance check, add it to the list
         if keep_coord:
             filtered_nv_coords.append(coord)
+            spot_weigths = integrated_counts
     print(f"Number of NVs detected: {len(filtered_nv_coords)}")
-    print(f"Detected NV coordinates (optimized): {filtered_nv_coords}")
+
+    # print(f"Detected NV coordinates (optimized): {filtered_nv_coords}")
 
     # Calculate and print the average FWHM
-    if len(spot_sizes) > 0:
-        avg_fwhm = np.mean([(fwhm_x + fwhm_y) / 2 for fwhm_x, fwhm_y in spot_sizes])
-        print(f"Average FWHM (in pixels): {round(avg_fwhm,3)}")
+    # if len(spot_sizes) > 0:
+    #     avg_fwhm = np.mean([(fwhm_x + fwhm_y) / 2 for fwhm_x, fwhm_y in spot_sizes])
+    #     print(f"Average FWHM (in pixels): {round(avg_fwhm,3)}")
 
-        # Estimate and print the pixel-to-µm conversion factor
-        conversion_factor = pixel_to_um_conversion_factor(avg_fwhm, resolution)
-        print(
-            f"Pixel-to-µm conversion factor: {round(conversion_factor,3)} µm per pixel"
-        )
-    else:
-        print("No spots detected. Unable to calculate conversion factor.")
+    #     # Estimate and print the pixel-to-µm conversion factor
+    #     conversion_factor = pixel_to_um_conversion_factor(avg_fwhm, resolution)
+    #     print(
+    #         f"Pixel-to-µm conversion factor: {round(conversion_factor,3)} µm per pixel"
+    #     )
+    # else:
+    #     print("No spots detected. Unable to calculate conversion factor.")
 
     # Save the results
     save_results(
         nv_coordinates,
-        spot_sizes,
-        filename="nv_blob_filtered_134nvs.npz",
+        integrated_counts,
+        filename="nv_blob_filtered_120nvs.npz",
     )
 
     # image_ids = [
