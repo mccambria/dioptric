@@ -5,8 +5,6 @@ Config file for the PC rabi
 Created July 20th, 2023
 
 @author: mccambria
-
-updated by @author: sbchand
 """
 
 from pathlib import Path
@@ -15,15 +13,18 @@ import numpy as np
 
 from config.default import config
 from utils.constants import (
+    SAMPLE,
+    Axes,
     ChargeStateEstimationMode,
     CollectionMode,
-    ControlMode,
     CoordsKey,
     CountFormat,
     DriftMode,
     LaserKey,
     LaserPosMode,
     ModMode,
+    PosControlMode,
+    SamplePosAxes,
 )
 
 home = Path.home()
@@ -34,7 +35,6 @@ green_laser = "laser_INTE_520"
 yellow_laser = "laser_OPTO_589"
 red_laser = "laser_COBO_638"
 
-# clibration coords region
 calibration_pixel_coords_list = [
     [73.767, 91.394],
     [142.545, 210.183],
@@ -50,21 +50,6 @@ calibration_red_coords_list = [
     [72.849, 82.663],
     [65.189, 74.169],
 ]
-# calibration_pixel_coords_list = [
-#     [125.000, 160.887],
-#     [75.302, 95.265],
-#     [199.053, 94.250],
-# ]
-# calibration_green_coords_list = [
-#     [109.504, 113.073],
-#     [115.361, 106.287],
-#     [102.128, 105.29],
-# ]
-# calibration_red_coords_list = [
-#     [74.367, 78.506],
-#     [78.919, 72.896],
-#     [68.183, 72.361],
-# ]
 # Create the dictionaries using the provided lists
 widefield_calibration_coords1 = {
     # CoordsKey.GLOBAL: [0, 0, 2],
@@ -140,32 +125,37 @@ config |= {
     },
     ###
     "Microwaves": {
-        "sig_gen_BERK_bnc835": {"delay": 151, "fm_mod_bandwidth": 100000.0},
-        "sig_gen_STAN_sg394": {"delay": 104, "fm_mod_bandwidth": 100000.0},
-        "sig_gen_TEKT_tsg4104a": {"delay": 57},
+        "PhysicalSigGens": {
+            "sig_gen_BERK_bnc835": {"delay": 151, "fm_mod_bandwidth": 100000.0},
+            "sig_gen_STAN_sg394": {"delay": 104, "fm_mod_bandwidth": 100000.0},
+            "sig_gen_TEKT_tsg4104a": {"delay": 57},
+        },
         "iq_comp_amp": 0.5,
         "iq_delay": 630,
-        "sig_gen_0": {
-            "name": "sig_gen_STAN_sg394",
-            # "uwave_power": 6.05,
-            "uwave_power": 2.3,
-            "frequency": 2.8585669247525622,
-            # "frequency": 2.9304468840166678,
-            "rabi_period": 128,
-            "iq_delay": 140,
-        },
-        "sig_gen_1": {
-            "name": "sig_gen_STAN_sg394_2",
-            "uwave_power": 8.1,
-            "frequency": 2.812,
-            # "frequency": 3.05,
-            # "frequency": 2.79,
-            # "frequency": 2.8874701085827104,
-            "rabi_period": 128,
+        "VirtualSigGens": {
+            "sig_gen_0": {
+                "server": "sig_gen_STAN_sg394",
+                # "uwave_power": 6.05,
+                "uwave_power": 2.3,
+                "frequency": 2.8585669247525622,
+                # "frequency": 2.9304468840166678,
+                "rabi_period": 128,
+                "iq_delay": 140,
+            },
+            "sig_gen_1": {
+                "server": "sig_gen_STAN_sg394_2",
+                "uwave_power": 8.1,
+                "frequency": 2.812,
+                # "frequency": 3.05,
+                # "frequency": 2.79,
+                # "frequency": 2.8874701085827104,
+                "rabi_period": 128,
+            },
         },
     },
     ###
     "Camera": {
+        "server": "camera_NUVU_hnu512gamma",
         "resolution": (512, 512),
         "spot_radius": 2,  # Radius for integrating NV counts in a camera image
         "bias_clamp": 300,  # (changing this won't actually change the value on the camera currently)
@@ -186,92 +176,97 @@ config |= {
     },
     ###
     "Optics": {
-        # Physical lasers
-        green_laser: {
-            "delay": 0,
-            "mod_mode": ModMode.DIGITAL,
-            "pos_mode": LaserPosMode.SCANNING,
-            "aod": True,
-            "default_aod_suffix": "charge_pol",
-            "opti_laser_key": LaserKey.IMAGING,
+        "PhysicalLasers": {
+            green_laser: {
+                "delay": 0,
+                "mod_mode": ModMode.DIGITAL,
+                "positioner": f"{green_laser}_AOD",
+            },
+            red_laser: {
+                "delay": 0,
+                "mod_mode": ModMode.DIGITAL,
+                "positioner": f"{red_laser}_AOD",
+            },
+            yellow_laser: {
+                "delay": 0,
+                "mod_mode": ModMode.ANALOG,
+            },
         },
-        red_laser: {
-            "delay": 0,
-            "mod_mode": ModMode.DIGITAL,
-            "pos_mode": LaserPosMode.SCANNING,
-            "aod": True,
-            "default_aod_suffix": "scc",
-            "opti_laser_key": LaserKey.ION,
+        "VirtualLasers": {
+            # LaserKey.IMAGING: {"physical_laser": green_laser, "duration": 50e6},
+            LaserKey.IMAGING: {"physical_laser": green_laser, "duration": 12e6},
+            LaserKey.SPIN_READOUT: {"physical_laser": green_laser, "duration": 300},
+            # LaserKey.CHARGE_POL: {"physical_laser": green_laser, "duration": 10e3},
+            LaserKey.CHARGE_POL: {"physical_laser": green_laser, "duration": 1e3},
+            # LaserKey.CHARGE_POL: {"physical_laser": green_laser, "duration": 60},
+            LaserKey.SPIN_POL: {"physical_laser": green_laser, "duration": 10e3},
+            LaserKey.SHELVING: {"physical_laser": green_laser, "duration": 60},
+            LaserKey.ION: {"physical_laser": red_laser, "duration": 10e3},
+            # SCC: 180 mW, 0.13 V, no shelving
+            # LaserKey.SCC: {"physical_laser": red_laser, "duration": 248},
+            LaserKey.SCC: {"physical_laser": red_laser, "duration": 124},
+            # LaserKey.SCC: {"physical_laser": green_laser, "duration": 200},
+            LaserKey.WIDEFIELD_SHELVING: {
+                "physical_laser": yellow_laser,
+                "duration": 60,
+            },
+            LaserKey.WIDEFIELD_IMAGING: {
+                "physical_laser": yellow_laser,
+                "duration": 12e6,
+            },
+            # LaserKey.WIDEFIELD_SPIN_POL: {"physical_laser": yellow_laser, "duration": 10e3},
+            LaserKey.WIDEFIELD_SPIN_POL: {
+                "physical_laser": yellow_laser,
+                "duration": 100e3,
+            },
+            # LaserKey.WIDEFIELD_SPIN_POL: {"physical_laser": yellow_laser, "duration": 1e6},
+            LaserKey.WIDEFIELD_CHARGE_READOUT: {
+                "physical_laser": yellow_laser,
+                "duration": 48e6,
+            },
+            # LaserKey.WIDEFIELD_CHARGE_READOUT: {"physical_laser": yellow_laser, "duration": 100e6},
         },
-        yellow_laser: {
-            "delay": 0,
-            "mod_mode": ModMode.ANALOG,
-            "pos_mode": LaserPosMode.WIDEFIELD,
-        },
-        CoordsKey.GLOBAL: {
-            "opti_laser_key": LaserKey.IMAGING,
-        },
-        # Virtual lasers
-        # LaserKey.IMAGING: {"name": green_laser, "duration": 50e6},
-        LaserKey.IMAGING: {"name": green_laser, "duration": 12e6},
-        LaserKey.SPIN_READOUT: {"name": green_laser, "duration": 300},
-        # LaserKey.CHARGE_POL: {"name": green_laser, "duration": 10e3},
-        LaserKey.CHARGE_POL: {"name": green_laser, "duration": 1e3},
-        # LaserKey.CHARGE_POL: {"name": green_laser, "duration": 60},
-        LaserKey.SPIN_POL: {"name": green_laser, "duration": 10e3},
-        LaserKey.SHELVING: {"name": green_laser, "duration": 60},
-        LaserKey.ION: {"name": red_laser, "duration": 10e3},
-        # SCC: 180 mW, 0.13 V, no shelving
-        # LaserKey.SCC: {"name": red_laser, "duration": 248},
-        LaserKey.SCC: {"name": red_laser, "duration": 124},
-        # LaserKey.SCC: {"name": green_laser, "duration": 200},
-        LaserKey.WIDEFIELD_SHELVING: {"name": yellow_laser, "duration": 60},
-        LaserKey.WIDEFIELD_IMAGING: {"name": yellow_laser, "duration": 12e6},
-        # LaserKey.WIDEFIELD_SPIN_POL: {"name": yellow_laser, "duration": 10e3},
-        LaserKey.WIDEFIELD_SPIN_POL: {"name": yellow_laser, "duration": 100e3},
-        # LaserKey.WIDEFIELD_SPIN_POL: {"name": yellow_laser, "duration": 1e6},
-        LaserKey.WIDEFIELD_CHARGE_READOUT: {"name": yellow_laser, "duration": 36e6},
-        # LaserKey.WIDEFIELD_CHARGE_READOUT: {"name": yellow_laser, "duration": 100e6},
+        #
         "scc_green_shelving_pulse": False,  # Whether or not to include a shelving pulse in SCC
         "scc_yellow_shelving_pulse": False,
     },
     ###
     "Positioning": {
-        "drift_mode": DriftMode.GLOBAL,
-        green_laser: {
-            "xy_control_mode": ControlMode.SEQUENCE,
-            "xy_delay": int(400e3),  # 400 us for galvo
-            "xy_dtype": float,
-            "xy_nm_per_unit": 1000,
-            "xy_optimize_range": 0.8,
-            "xy_units": "MHz",
-            "z_dtype": float,
-        },
-        red_laser: {
-            "xy_control_mode": ControlMode.SEQUENCE,
-            "xy_delay": int(400e3),  # 400 us for galvo
-            "xy_dtype": float,
-            "xy_nm_per_unit": 1000,
-            "xy_optimize_range": 2.4,
-            "xy_units": "MHz",
-            "z_dtype": float,
-        },
-        CoordsKey.GLOBAL: {
-            "z_control_mode": ControlMode.STREAM,
-            "z_delay": int(1e6),  # 5 ms for PIFOC xyz
-            "z_dtype": float,
-            "z_nm_per_unit": 1000,
-            "z_optimize_range": 0.09,
-            "z_units": "Voltage (V)",
-            "xy_control_mode": ControlMode.STREAM,
-            "xy_delay": int(1e6),
-            "xy_dtype": float,
-            "xy_nm_per_unit": 1000,
-            "xy_optimize_range": 0.09,
-            "xy_small_response_delay": 800,
-            "xy_units": "V",
-            "xy_positional_accuracy": 0.002,
-            "xy_timeout": 1,
+        "Positioners": {
+            SAMPLE: {
+                "axes": Axes.XYZ,
+                "server": "piezo_stage_P616_3c_purcell",
+                "control_mode": PosControlMode.STREAM,
+                "delay": int(1e6),  # 5 ms for PIFOC xyz
+                "dtype": float,
+                "nm_per_unit": 1000,
+                "optimize_range": 0.09,
+                "units": "Voltage (V)",
+                "opti_laser_key": LaserKey.IMAGING,
+            },
+            f"{green_laser}_aod": {
+                "control_mode": PosControlMode.SEQUENCE,
+                "delay": int(400e3),  # 400 us for galvo
+                "dtype": float,
+                "nm_per_unit": 1000,
+                "optimize_range": 0.8,
+                "units": "MHz",
+                "opti_laser_key": LaserKey.IMAGING,
+                "aod": True,
+                "default_aod_suffix": "scc",
+            },
+            f"{red_laser}_aod": {
+                "control_mode": PosControlMode.SEQUENCE,
+                "delay": int(400e3),  # 400 us for galvo
+                "dtype": float,
+                "nm_per_unit": 1000,
+                "optimize_range": 2.4,
+                "units": "MHz",
+                "z_dtype": float,
+                "opti_laser_key": LaserKey.ION,
+                "aod": True,
+                "default_aod_suffix": "charge_pol",
+            },
         },
         "widefield_calibration_coords1": widefield_calibration_coords1,
         "widefield_calibration_coords2": widefield_calibration_coords2,
@@ -279,20 +274,8 @@ config |= {
         "AffineCalibration_pixel2voltage": affine_pixel2voltage,
     },
     ###
-    "Servers": {
-        "counter": "QM_opx",
-        "magnet_rotation": "rotation_stage_thor_ell18k",
-        "pos_xy": "piezo_stage_P616_3c_purcell",
-        "pos_z": "piezo_stage_P616_3c_purcell",
-        # "pos_xyz": "piezo_stage_P616_3c_purcell",
-        # "pos_z": None,
+    "Servers": {  # Bucket for miscellaneous servers not otherwise listed above
         "pulse_gen": "QM_opx",
-        "sig_gen_LOW": "sig_gen_STAN_sg394",
-        "sig_gen_HIGH": "sig_gen_STAN_sg394_2",
-        "sig_gen_0": "sig_gen_STAN_sg394",
-        "sig_gen_1": "sig_gen_STAN_sg394_2",
-        "tagger": "QM_opx",
-        "camera": "camera_NUVU_hnu512gamma",
         "thorslm": "slm_THOR_exulus_hd2",
     },
     ###
@@ -744,7 +727,6 @@ opx_config = {
         },
         "do_green_spin_pol": {
             "operation": "control",
-            "length": 1000,
             "digital_marker": "on",
         },
         "do_pi_pulse_0": {
