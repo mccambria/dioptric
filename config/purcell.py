@@ -20,11 +20,11 @@ from utils.constants import (
     CoordsKey,
     CountFormat,
     DriftMode,
-    LaserKey,
     LaserPosMode,
     ModMode,
     PosControlMode,
     SamplePosAxes,
+    VirtualLaser,
 )
 
 home = Path.home()
@@ -194,33 +194,33 @@ config |= {
         },
         "VirtualLasers": {
             # LaserKey.IMAGING: {"physical_laser": green_laser, "duration": 50e6},
-            LaserKey.IMAGING: {"physical_laser": green_laser, "duration": 12e6},
-            LaserKey.SPIN_READOUT: {"physical_laser": green_laser, "duration": 300},
+            VirtualLaser.IMAGING: {"physical_laser": green_laser, "duration": 12e6},
+            VirtualLaser.SPIN_READOUT: {"physical_laser": green_laser, "duration": 300},
             # LaserKey.CHARGE_POL: {"physical_laser": green_laser, "duration": 10e3},
-            LaserKey.CHARGE_POL: {"physical_laser": green_laser, "duration": 1e3},
+            VirtualLaser.CHARGE_POL: {"physical_laser": green_laser, "duration": 1e3},
             # LaserKey.CHARGE_POL: {"physical_laser": green_laser, "duration": 60},
-            LaserKey.SPIN_POL: {"physical_laser": green_laser, "duration": 10e3},
-            LaserKey.SHELVING: {"physical_laser": green_laser, "duration": 60},
-            LaserKey.ION: {"physical_laser": red_laser, "duration": 10e3},
+            VirtualLaser.SPIN_POL: {"physical_laser": green_laser, "duration": 10e3},
+            VirtualLaser.SHELVING: {"physical_laser": green_laser, "duration": 60},
+            VirtualLaser.ION: {"physical_laser": red_laser, "duration": 10e3},
             # SCC: 180 mW, 0.13 V, no shelving
             # LaserKey.SCC: {"physical_laser": red_laser, "duration": 248},
-            LaserKey.SCC: {"physical_laser": red_laser, "duration": 124},
+            VirtualLaser.SCC: {"physical_laser": red_laser, "duration": 124},
             # LaserKey.SCC: {"physical_laser": green_laser, "duration": 200},
-            LaserKey.WIDEFIELD_SHELVING: {
+            VirtualLaser.WIDEFIELD_SHELVING: {
                 "physical_laser": yellow_laser,
                 "duration": 60,
             },
-            LaserKey.WIDEFIELD_IMAGING: {
+            VirtualLaser.WIDEFIELD_IMAGING: {
                 "physical_laser": yellow_laser,
                 "duration": 12e6,
             },
             # LaserKey.WIDEFIELD_SPIN_POL: {"physical_laser": yellow_laser, "duration": 10e3},
-            LaserKey.WIDEFIELD_SPIN_POL: {
+            VirtualLaser.WIDEFIELD_SPIN_POL: {
                 "physical_laser": yellow_laser,
                 "duration": 100e3,
             },
             # LaserKey.WIDEFIELD_SPIN_POL: {"physical_laser": yellow_laser, "duration": 1e6},
-            LaserKey.WIDEFIELD_CHARGE_READOUT: {
+            VirtualLaser.WIDEFIELD_CHARGE_READOUT: {
                 "physical_laser": yellow_laser,
                 "duration": 48e6,
             },
@@ -242,7 +242,7 @@ config |= {
                 "nm_per_unit": 1000,
                 "optimize_range": 0.09,
                 "units": "Voltage (V)",
-                "opti_laser_key": LaserKey.IMAGING,
+                "opti_laser_key": VirtualLaser.IMAGING,
             },
             f"{green_laser}_aod": {
                 "control_mode": PosControlMode.SEQUENCE,
@@ -251,7 +251,7 @@ config |= {
                 "nm_per_unit": 1000,
                 "optimize_range": 0.8,
                 "units": "MHz",
-                "opti_laser_key": LaserKey.IMAGING,
+                "opti_laser_key": VirtualLaser.IMAGING,
                 "aod": True,
                 "default_aod_suffix": "scc",
             },
@@ -263,7 +263,7 @@ config |= {
                 "optimize_range": 2.4,
                 "units": "MHz",
                 "z_dtype": float,
-                "opti_laser_key": LaserKey.ION,
+                "opti_laser_key": VirtualLaser.ION,
                 "aod": True,
                 "default_aod_suffix": "charge_pol",
             },
@@ -659,12 +659,12 @@ opx_config = {
         },
         "yellow_spin_pol": {
             "operation": "control",
-            "length": config["Optics"][LaserKey.WIDEFIELD_SPIN_POL]["duration"],
+            "length": config["Optics"][VirtualLaser.WIDEFIELD_SPIN_POL]["duration"],
             "waveforms": {"single": "yellow_spin_pol"},
         },
         "yellow_shelving": {
             "operation": "control",
-            "length": config["Optics"][LaserKey.WIDEFIELD_SHELVING]["duration"],
+            "length": config["Optics"][VirtualLaser.WIDEFIELD_SHELVING]["duration"],
             "waveforms": {"single": "yellow_shelving"},
         },
         #
@@ -707,22 +707,22 @@ opx_config = {
         },
         "do_scc": {
             "operation": "control",
-            "length": config["Optics"][LaserKey.SCC]["duration"],
+            "length": config["Optics"][VirtualLaser.SCC]["duration"],
             "digital_marker": "on",
         },
         "do_ion": {
             "operation": "control",
-            "length": config["Optics"][LaserKey.ION]["duration"],
+            "length": config["Optics"][VirtualLaser.ION]["duration"],
             "digital_marker": "on",
         },
         "do_charge_pol": {
             "operation": "control",
-            "length": config["Optics"][LaserKey.CHARGE_POL]["duration"],
+            "length": config["Optics"][VirtualLaser.CHARGE_POL]["duration"],
             "digital_marker": "on",
         },
         "do_shelving": {
             "operation": "control",
-            "length": config["Optics"][LaserKey.SHELVING]["duration"],
+            "length": config["Optics"][VirtualLaser.SHELVING]["duration"],
             "digital_marker": "on",
         },
         "do_green_spin_pol": {

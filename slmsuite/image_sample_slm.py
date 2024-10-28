@@ -6,7 +6,7 @@ from utils import common, widefield
 from utils import data_manager as dm
 from utils import kplotlib as kpl
 from utils import tool_belt as tb
-from utils.constants import LaserKey
+from utils.constants import VirtualLaser
 
 
 def shift_phase(phase, shift_x, shift_y):
@@ -67,7 +67,7 @@ def capture_image(num_reps=1, display_image=False):
         np.ndarray: Averaged image array.
     """
     tb.reset_cfm()
-    laser_key = LaserKey.WIDEFIELD_IMAGING
+    laser_key = VirtualLaser.WIDEFIELD_IMAGING
     laser_dict = tb.get_optics_dict(laser_key)
     readout_laser = laser_dict["name"]
     readout_duration = laser_dict["duration"]

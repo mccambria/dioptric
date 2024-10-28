@@ -54,7 +54,7 @@ class CountFormat(Enum):
 
 # Laser keys describe virtual lasers, which accomplish one and only one function and
 # must be associated with a physical laser in config
-class LaserKey(Enum):
+class VirtualLaser(Enum):
     # Scanning virtual lasers
     IMAGING = auto()
     ION = auto()

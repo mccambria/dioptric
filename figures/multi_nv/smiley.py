@@ -21,7 +21,7 @@ from utils import data_manager as dm
 from utils import kplotlib as kpl
 from utils import positioning as pos
 from utils import tool_belt as tb
-from utils.constants import LaserKey, NVSig
+from utils.constants import NVSig, VirtualLaser
 from utils.widefield import crop_img_array
 
 pixel_coords_list = [

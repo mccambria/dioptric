@@ -28,7 +28,7 @@ from utils import data_manager as dm
 from utils import kplotlib as kpl
 from utils import positioning as pos
 from utils import tool_belt as tb
-from utils.constants import LaserKey, NVSig
+from utils.constants import NVSig, VirtualLaser
 from utils.tool_belt import determine_threshold
 
 # region Process and plotting functions
@@ -169,8 +169,8 @@ def main(
     ### Collect the data
 
     def run_fn(shuffled_step_inds):
-        ion_coords_list = widefield.get_coords_list(nv_list, LaserKey.ION)
-        pol_coords_list = widefield.get_coords_list(nv_list, LaserKey.CHARGE_POL)
+        ion_coords_list = widefield.get_coords_list(nv_list, VirtualLaser.ION)
+        pol_coords_list = widefield.get_coords_list(nv_list, VirtualLaser.CHARGE_POL)
         seq_args = [ion_coords_list, pol_coords_list]
         seq_args_string = tb.encode_seq_args(seq_args)
         pulse_gen.stream_load(seq_file, seq_args_string, num_reps)

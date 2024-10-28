@@ -24,7 +24,7 @@ from utils import kplotlib as kpl
 from utils import positioning as pos
 from utils import tool_belt as tb
 from utils import widefield as widefield_utils
-from utils.constants import LaserKey
+from utils.constants import VirtualLaser
 from utils.kplotlib import HistType
 
 

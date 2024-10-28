@@ -40,9 +40,9 @@ from utils.constants import (
     CollectionMode,
     CoordsKey,
     CountFormat,
-    LaserKey,
     LaserPosMode,
     NVSig,
+    VirtualLaser,
 )
 from utils.tool_belt import determine_threshold
 
@@ -586,6 +586,7 @@ def charge_state_mle_single(nv_sig, img_array):
     nv0_prob = np.nanprod(nv0_probs)
     return int(nvn_prob > nv0_prob)
 
+
 def charge_state_mle(nv_list, img_array):
     """Maximum likelihood estimator of state based on image"""
 
@@ -666,6 +667,8 @@ def average_counts(sig_counts, ref_counts=None):
         ]
 
     return avg_counts, avg_counts_ste, norms
+
+
 # endregion
 # region Miscellaneous public functions
 
@@ -770,9 +773,9 @@ def get_base_scc_seq_args(
         Sequence arguments
     """
     # Get coordinate lists
-    pol_coords_list = get_coords_list(nv_list, LaserKey.CHARGE_POL)
+    pol_coords_list = get_coords_list(nv_list, VirtualLaser.CHARGE_POL)
     scc_coords_list = get_coords_list(
-        nv_list, LaserKey.SCC, include_inds=scc_include_inds
+        nv_list, VirtualLaser.SCC, include_inds=scc_include_inds
     )
 
     # Other lists
@@ -822,7 +825,7 @@ def get_scc_duration_list(nv_list: list[NVSig], include_inds=None):
         scc_duration = nv.scc_duration
         if scc_duration is None:
             config = common.get_config_dict()
-            scc_duration = config["Optics"][LaserKey.SCC]["duration"]
+            scc_duration = config["Optics"][VirtualLaser.SCC]["duration"]
         if not (scc_duration % 4 == 0 and scc_duration >= 16):
             raise RuntimeError("SCC pulse duration not valid for OPX.")
         scc_duration_list.append(scc_duration)

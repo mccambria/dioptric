@@ -9,24 +9,24 @@ Created on November 29th, 2023
 """
 
 
-from random import shuffle
+import os
 import sys
+import time
+from random import shuffle
+
 import matplotlib.pyplot as plt
 import numpy as np
+from scipy.optimize import curve_fit
+
 from majorroutines.widefield import optimize
-from utils import tool_belt as tb
-from utils import data_manager as dm
 from utils import common
-from utils import widefield as widefield
-from utils.constants import LaserKey
+from utils import data_manager as dm
 from utils import kplotlib as kpl
 from utils import positioning as pos
-from utils import data_manager as dm
-from utils.constants import NVSpinState
-import os
-import time
+from utils import tool_belt as tb
+from utils import widefield as widefield
+from utils.constants import NVSpinState, VirtualLaser
 from utils.positioning import get_scan_1d as calculate_freqs
-from scipy.optimize import curve_fit
 
 degrees_1095 = 109.5 * (2 * np.pi / 360)
 degrees_120 = 120 * (2 * np.pi / 360)

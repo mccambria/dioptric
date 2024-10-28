@@ -24,7 +24,7 @@ from utils import data_manager as dm
 from utils import kplotlib as kpl
 from utils import positioning as pos
 from utils import tool_belt as tb
-from utils.constants import CoordsKey, LaserKey
+from utils.constants import CoordsKey, VirtualLaser
 
 # region Internal
 

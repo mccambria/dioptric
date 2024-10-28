@@ -14,10 +14,10 @@ from utils.constants import (
     CollectionMode,
     CoordsKey,
     CountFormat,
-    LaserKey,
     LaserPosMode,
     ModMode,
     PosControlMode,
+    VirtualLaser,
 )
 
 home = Path.home()
@@ -135,15 +135,15 @@ config |= {
             "pos_mode": LaserPosMode.SCANNING,
             "aod": True,
         },
-        LaserKey.IMAGING: {"name": "laser_INTE_520", "duration": 50e6},
-        LaserKey.WIDEFIELD_IMAGING: {
+        VirtualLaser.IMAGING: {"name": "laser_INTE_520", "duration": 50e6},
+        VirtualLaser.WIDEFIELD_IMAGING: {
             "name": "laser_OPTO_589",
             "duration": 30e6,
         },  # 35e6
-        LaserKey.SPIN_READOUT: {"name": "laser_INTE_520", "duration": 300},
-        LaserKey.POLARIZATION: {"name": "laser_INTE_520", "duration": 10e3},
-        LaserKey.IONIZATION: {"name": "laser_COBO_638", "duration": 112},
-        LaserKey.CHARGE_READOUT: {
+        VirtualLaser.SPIN_READOUT: {"name": "laser_INTE_520", "duration": 300},
+        VirtualLaser.POLARIZATION: {"name": "laser_INTE_520", "duration": 10e3},
+        VirtualLaser.IONIZATION: {"name": "laser_COBO_638", "duration": 112},
+        VirtualLaser.CHARGE_READOUT: {
             "name": "laser_OPTO_589",
             "duration": 30e6,
             # "duration": 100e6,
@@ -532,7 +532,7 @@ opx_config = {
         },
         "do_ionization": {
             "operation": "control",
-            "length": config["Optics"][LaserKey.IONIZATION]["duration"],
+            "length": config["Optics"][VirtualLaser.IONIZATION]["duration"],
             "digital_marker": "on",
         },
         "do_long_ionization": {
@@ -542,7 +542,7 @@ opx_config = {
         },
         "do_polarization": {
             "operation": "control",
-            "length": config["Optics"][LaserKey.POLARIZATION]["duration"],
+            "length": config["Optics"][VirtualLaser.POLARIZATION]["duration"],
             "digital_marker": "on",
         },
         "do_pi_pulse_0": {

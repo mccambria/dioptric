@@ -16,7 +16,7 @@ import numpy as np
 
 from utils import common
 from utils import tool_belt as tb
-from utils.constants import SAMPLE, CoordsKey, LaserKey, NVSig, PosControlMode
+from utils.constants import SAMPLE, CoordsKey, NVSig, PosControlMode, VirtualLaser
 
 # endregion
 # region Simple sets
@@ -195,6 +195,29 @@ def set_nv_coords(nv_sig, coords, coords_key=CoordsKey.GLOBAL):
 
 
 # region Getters
+
+
+@cache
+def _get_virtual_lasers():
+    config = common.get_config_dict()
+    return config["Optics"]["VirtualLasers"]
+
+
+@cache
+def _get_physical_lasers():
+    config = common.get_config_dict()
+    return config["Optics"]["PhysicalLasers"]
+
+
+def get_virtual_laser_positioner(virtual_laser):
+    virtual_laser = VirtualLaser.IMAGING
+    virtual_lasers = _get_virtual_lasers()
+    physical_laser = virtual_lasers[virtual_laser]["physical_laser"]
+    physical_lasers = _get_physical_lasers()
+    positioner = physical_lasers[physical_laser]["positioner"]
+    return positioner
+
+
 def get_laser_pos_mode(laser_name):
     config = common.get_config_dict()
     config_laser = config["Optics"][laser_name]
@@ -280,7 +303,7 @@ def has_sample_xyz_positioner():
     return has_sample_xy_positioner() and has_sample_z_positioner()
 
 
-def get_laser_positioner(laser_key: LaserKey):
+def get_laser_positioner(laser_key: VirtualLaser):
     config = common.get_config_dict()
     physical_laser = config["Optics"]["VirtualLasers"][laser_key]["physical_laser"]
     return config["Optics"]["VirtualLasers"][physical_laser]["positioner"]

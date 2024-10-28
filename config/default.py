@@ -14,10 +14,10 @@ import numpy as np
 from utils.constants import (
     CollectionMode,
     CountFormat,
-    LaserKey,
     LaserPosMode,
     ModMode,
     PosControlMode,
+    VirtualLaser,
 )
 
 home = Path.home()

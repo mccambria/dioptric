@@ -25,7 +25,7 @@ from utils import data_manager as dm
 from utils import kplotlib as kpl
 from utils import positioning as pos
 from utils import tool_belt as tb
-from utils.constants import LaserKey, NVSig
+from utils.constants import NVSig, VirtualLaser
 from utils.tool_belt import determine_threshold
 
 # region Process and plotting functions
@@ -181,7 +181,7 @@ def create_histogram(
         return None  # Skip plotting if plot is set to False
 
     try:
-        laser_dict = tb.get_optics_dict(LaserKey.WIDEFIELD_CHARGE_READOUT)
+        laser_dict = tb.get_optics_dict(VirtualLaser.WIDEFIELD_CHARGE_READOUT)
         readout = laser_dict["duration"]
         readout_ms = int(readout / 1e6)
         readout_s = readout / 1e9
@@ -294,7 +294,7 @@ def process_and_plot(raw_data, plot_histograms=False):
     if "img_arrays" not in raw_data:
         return
 
-    laser_key = LaserKey.WIDEFIELD_CHARGE_READOUT
+    laser_key = VirtualLaser.WIDEFIELD_CHARGE_READOUT
     laser_dict = tb.get_optics_dict(laser_key)
     readout_laser = laser_dict["name"]
     readout = laser_dict["duration"]
@@ -348,9 +348,9 @@ def main(
     ### Collect the data
 
     def run_fn(shuffled_step_inds):
-        pol_coords_list = widefield.get_coords_list(nv_list, LaserKey.CHARGE_POL)
+        pol_coords_list = widefield.get_coords_list(nv_list, VirtualLaser.CHARGE_POL)
         ion_coords_list = widefield.get_coords_list(
-            nv_list, LaserKey.ION, include_inds=ion_include_inds
+            nv_list, VirtualLaser.ION, include_inds=ion_include_inds
         )
         seq_args = [
             pol_coords_list,

@@ -14,15 +14,15 @@ from qm.simulate import SimulationConfig
 from servers.timing.sequencelibrary.QM_opx import seq_utils
 from utils import common
 from utils import tool_belt as tb
-from utils.constants import LaserKey
+from utils.constants import VirtualLaser
 
 
 def get_seq(pol_coords, ion_coords, num_reps):
     if num_reps is None:
         num_reps = 1
 
-    green_laser = tb.get_laser_name(LaserKey.CHARGE_POL)
-    red_laser = tb.get_laser_name(LaserKey.ION)
+    green_laser = tb.get_laser_name(VirtualLaser.CHARGE_POL)
+    red_laser = tb.get_laser_name(VirtualLaser.ION)
 
     with qua.program() as seq:
         seq_utils.init()
