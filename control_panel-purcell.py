@@ -821,7 +821,7 @@ if __name__ == "__main__":
     # magnet_angle = 90
     date_str = "2024_03_12"
     # global_coords = [None, None, z_coord]
-    global_coords = [0.7, 0.2, 1.243]
+    global_coords = [2.4, 1.8, 1.5]
     # pixel_to_voltage(initial_pixel_coords, final_pixel_coords)
     # global_coords = piezo_voltage_to_pixel_calibration(final_pixel_coords)
 
@@ -855,24 +855,25 @@ if __name__ == "__main__":
     print(red_coords_list[0])
     # print(pixel_coords_list[8])
 
-    # pixel_coords_list = [
-    #     [121.475, 159.155],
-    #     [73.767, 91.394],
-    #     [142.545, 210.183],
-    #     [234.876, 116.946],
-    # ]
-    # green_coords_list = [
-    #     [110.043, 113.011],
-    #     [115.779, 106.042],
-    #     [107.253, 118.327],
-    #     [98.279, 107.437],
-    # ]
-    # red_coords_list = [
-    #     [74.889, 78.533],
-    #     [79.256, 72.672],
-    #     [72.849, 82.663],
-    #     [65.189, 74.169],
-    # ]
+    pixel_coords_list = [
+        [121.475, 159.155],
+        [73.767, 91.394],
+        [142.545, 210.183],
+        [234.876, 116.946],
+    ]
+    green_coords_list = [
+        [110.043, 116.011],
+        # [110.043, 113.011],
+        [115.779, 106.042],
+        [107.253, 118.327],
+        [98.279, 107.437],
+    ]
+    red_coords_list = [
+        [74.889, 78.533],
+        [79.256, 72.672],
+        [72.849, 82.663],
+        [65.189, 74.169],
+    ]
 
     num_nvs = len(pixel_coords_list)
     threshold_list = [15.5] * num_nvs
@@ -985,7 +986,7 @@ if __name__ == "__main__":
         # widefield.set_all_scanning_drift_from_pixel_drift()
 
         # do_optimize_z(nv_sig)
-        do_optimize_xyz(nv_sig)
+        # do_optimize_xyz(nv_sig)
         # pos.set_xyz_on_nv(nv_sig)
         # piezo_voltage_to_pixel_calibration()
 
@@ -1018,7 +1019,7 @@ if __name__ == "__main__":
         #     do_scanning_image_sample(nv_sig)
         # do_widefield_image_sample(nv_sig, 50)
 
-        # do_scanning_image_sample(nv_sig)
+        do_scanning_image_sample(nv_sig)
         # do_scanning_image_sample_zoom(nv_sig)
         # do_widefield_image_sample(nv_sig, 50)
         # do_widefield_image_sample(nv_sig, 100)
