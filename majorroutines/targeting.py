@@ -16,8 +16,9 @@ import time
 
 import matplotlib.pyplot as plt
 import numpy as np
+from numba import njit
 from numpy import inf
-from scipy.optimize import curve_fit
+from scipy.optimize import curve_fit, minimize
 
 from utils import common, widefield
 from utils import data_manager as dm
@@ -159,7 +160,7 @@ def _read_counts_counter_step(axis_ind=None, scan_vals=None):
 def _read_counts_camera_step(nv_sig, axis_ind=None, scan_vals=None):
     if axis_ind is not None:
         axis_write_fn = pos.get_axis_write_fn(axis_ind)
-    pixel_coords = widefield.get_nv_pixel_coords(nv_sig)
+    pixel_coords = pos.get_nv_coords(nv_sig, CoordsKey.PIXEL)
     camera = tb.get_server_camera()
     pulse_gen = tb.get_server_pulse_gen()
     counts = []
@@ -200,7 +201,7 @@ def _read_counts_camera_sequence(
     Z control from objective piezo, imaged onto a camera
     """
     # Basic setup
-    pixel_coords = widefield.get_nv_pixel_coords(nv_sig)
+    pixel_coords = pos.get_nv_coords(nv_sig, CoordsKey.PIXEL)
     camera = tb.get_server_camera()
     pulse_gen = tb.get_server_pulse_gen()
     if axis_ind is not None:
@@ -306,14 +307,123 @@ def _find_center_coords(nv_sig: NVSig, positioner, axis_ind, fig=None):
 
     ### Plot, fit, return
 
-    f_counts = counts
     if fig is not None:
-        _update_figure(fig, axis_ind, scan_vals, f_counts)
+        _update_figure(fig, axis_ind, scan_vals, counts)
     laser_key = _get_opti_virtual_laser_key(positioner)
     positive_amplitude = laser_key != VirtualLaserKey.ION
-    opti_coord = _fit_gaussian(scan_vals, f_counts, axis_ind, positive_amplitude, fig)
+    opti_coord = _fit_gaussian(scan_vals, counts, axis_ind, positive_amplitude, fig)
 
-    return opti_coord, scan_vals, f_counts
+    return opti_coord, scan_vals, counts
+
+
+def _find_center_pixel_coords(nv_sig, do_plot=False):
+    img_array = stationary_count_lite(nv_sig, ret_img_array=True)
+    return _find_center_pixel_coords_with_img_array(img_array, nv_sig, None, do_plot)
+
+
+def _find_center_pixel_coords_with_img_array(
+    img_array,
+    nv_sig=None,
+    pixel_coords=None,
+    do_plot=False,
+    return_popt=False,
+):
+    if do_plot:
+        fig, ax = plt.subplots()
+        kpl.imshow(ax, img_array, cbar_label="ADUs")
+
+    # Default operations of the routine
+    radius = None
+    do_print = True
+
+    if nv_sig is not None and pixel_coords is not None:
+        raise RuntimeError(
+            "nv_sig and pixel_coords cannot both be passed to optimize_pixel_with_img_array"
+        )
+
+    # Get coordinates
+    if pixel_coords is None:
+        pixel_coords = pos.get_nv_coords(nv_sig, CoordsKey.PIXEL)
+    if radius is None:
+        radius = widefield._get_camera_spot_radius()
+    initial_x = pixel_coords[0]
+    initial_y = pixel_coords[1]
+
+    # Limit the range to the NV we're looking at
+    half_range = radius
+    left = round(initial_x - half_range)
+    right = round(initial_x + half_range)
+    top = round(initial_y - half_range)
+    bottom = round(initial_y + half_range)
+    x_crop = np.linspace(left, right, right - left + 1)
+    y_crop = np.linspace(top, bottom, bottom - top + 1)
+    x_crop_mesh, y_crop_mesh = np.meshgrid(x_crop, y_crop)
+    img_array_crop = img_array[top : bottom + 1, left : right + 1]
+
+    # Bounds and guesses
+    min_img_array_crop = np.min(img_array_crop)
+    max_img_array_crop = np.max(img_array_crop)
+    bg_guess = min_img_array_crop
+    amp_guess = int(img_array[round(initial_y), round(initial_x)] - bg_guess)
+    radius_guess = radius / 2
+    guess = (amp_guess, initial_x, initial_y, radius_guess, bg_guess)
+    diam = radius * 2
+
+    bounds = (
+        (0, max_img_array_crop - min_img_array_crop),
+        (left, right),
+        (top, bottom),
+        (1, diam),
+        (0, max_img_array_crop),
+    )
+
+    args = (x_crop_mesh, y_crop_mesh, img_array_crop)
+    res = minimize(
+        _optimize_pixel_cost,
+        guess,
+        bounds=bounds,
+        args=args,
+        jac=_optimize_pixel_cost_jac,
+    )
+    popt = res.x
+
+    # Testing
+    # opti_pixel_coords = popt[1:3]
+    # print(_optimize_pixel_cost(guess, *args))
+    # print(_optimize_pixel_cost(popt, *args))
+    # print(guess)
+    # print(popt)
+    # fig, ax = plt.subplots()
+    # # gaussian_array = _circle_gaussian(x, y, *popt)
+    # # ax.plot(popt[2], popt[1], color="white", zorder=100, marker="o", ms=6)
+    # ax.plot(*opti_pixel_coords, color="white", zorder=100, marker="o", ms=6)
+    # if type(radius) is list:
+    #     for ind in range(len(radius)):
+    #         for sub_radius in radius[ind]:
+    #             circle = plt.Circle(opti_pixel_coords, sub_radius, fill=False, color="white")
+    #             ax.add_patch(circle)
+    # else:
+    #     circle = plt.Circle(opti_pixel_coords, single_radius, fill=False, color="white")
+    #     ax.add_patch(circle)
+    # kpl.imshow(ax, img_array)
+    # ax.set_xlim([pixel_coords[0] - 15, pixel_coords[0] + 15])
+    # ax.set_ylim([pixel_coords[1] + 15, pixel_coords[1] - 15])
+    # plt.show(block=True)
+
+    opti_pixel_coords = popt[1:3].tolist()
+
+    if do_print:
+        r_opti_pixel_coords = [round(el, 3) for el in opti_pixel_coords]
+        counts = widefield.integrate_counts_from_adus(img_array, opti_pixel_coords)
+        r_counts = round(counts, 3)
+        print(f"Optimized pixel coordinates: {r_opti_pixel_coords}")
+        print(f"Counts at optimized pixel coordinates: {r_counts}")
+        print()
+
+    if return_popt:
+        return popt
+    else:
+        return opti_pixel_coords
 
 
 def _read_counts(
@@ -363,7 +473,7 @@ def _read_counts(
     return ret_vals
 
 
-def _create_opti_nv_sig(nv_sig, opti_coords, positioner):
+def _create_opti_nv_sig(nv_sig, opti_coords, coords_key):
     """Make a copy of nv_sig with coords updated so that positioner
     is set to opti_coords after adjusting for drift
 
@@ -378,11 +488,56 @@ def _create_opti_nv_sig(nv_sig, opti_coords, positioner):
     """
 
     opti_nv_sig = copy.deepcopy(nv_sig)
-    drift = pos.get_drift(positioner)
+    drift = pos.get_drift(coords_key)
     drift = [-1 * el for el in drift]
     adj_opti_coords = pos.adjust_coords_for_drift(opti_coords, drift)
-    pos.set_nv_coords(opti_nv_sig, adj_opti_coords, positioner)
+    pos.set_nv_coords(opti_nv_sig, adj_opti_coords, coords_key)
     return opti_nv_sig
+
+
+# endregion
+# region Misc private functions
+
+
+@njit(cache=True)
+def _2d_gaussian_exp(x0, y0, sigma, x_crop_mesh, y_crop_mesh):
+    return np.exp(
+        -(((x_crop_mesh - x0) ** 2) + ((y_crop_mesh - y0) ** 2)) / (2 * sigma**2)
+    )
+
+
+@njit(cache=True)
+def _optimize_pixel_cost(fit_params, x_crop_mesh, y_crop_mesh, img_array_crop):
+    amp, x0, y0, sigma, offset = fit_params
+    gaussian_array = offset + amp * _2d_gaussian_exp(
+        x0, y0, sigma, x_crop_mesh, y_crop_mesh
+    )
+    diff_array = gaussian_array - img_array_crop
+    return np.sum(diff_array**2)
+
+
+@njit(cache=True)
+def _optimize_pixel_cost_jac(fit_params, x_crop_mesh, y_crop_mesh, img_array_crop):
+    amp, x0, y0, sigma, offset = fit_params
+    inv_twice_var = 1 / (2 * sigma**2)
+    gaussian_exp = _2d_gaussian_exp(x0, y0, sigma, x_crop_mesh, y_crop_mesh)
+    x_diff = x_crop_mesh - x0
+    y_diff = y_crop_mesh - y0
+    spatial_der_coeff = 2 * amp * gaussian_exp * inv_twice_var
+    gaussian_jac_0 = gaussian_exp
+    gaussian_jac_1 = spatial_der_coeff * x_diff
+    gaussian_jac_2 = spatial_der_coeff * y_diff
+    gaussian_jac_3 = amp * gaussian_exp * (x_diff**2 + y_diff**2) / (sigma**3)
+    gaussian_jac_4 = 1
+    coeff = 2 * ((offset + amp * gaussian_exp) - img_array_crop)
+    cost_jac = [
+        np.sum(coeff * gaussian_jac_0),
+        np.sum(coeff * gaussian_jac_1),
+        np.sum(coeff * gaussian_jac_2),
+        np.sum(coeff * gaussian_jac_3),
+        np.sum(coeff * gaussian_jac_4),
+    ]
+    return np.array(cost_jac)
 
 
 # endregion
@@ -447,21 +602,17 @@ def compensate_for_drift(nv_sig: NVSig, no_crash=False):
     ### Compensation is necessary - find the center coordinates along each available axis
 
     # Determine what axes are available and what positioner to use
-    sample_positioner_axes = pos.get_sample_positioner_axes()
-    if 0 in sample_positioner_axes:
-        xy_positioner = CoordsKey.SAMPLE
-    else:
-        xy_positioner = pos.get_laser_positioner(VirtualLaserKey.IMAGING)
+    xy_coords_key = pos.determine_drift_xy_coords_key()
     disable_z_drift_compensation = config.get("disable_z_drift_compensation", False)
     if not disable_z_drift_compensation and pos.has_sample_z_positioner():
         axes = list(Axes.XYZ)
-        z_positioner = CoordsKey.SAMPLE
+        z_coords_key = CoordsKey.SAMPLE
     else:
         axes = list(Axes.XY)
 
-    passed_coords = pos.get_nv_coords(nv_sig, xy_positioner, drift_adjust=False)
-    if 2 in axes and z_positioner is not xy_positioner:
-        passed_z_coord = pos.get_nv_coords(nv_sig, z_positioner, drift_adjust=False)[2]
+    passed_coords = pos.get_nv_coords(nv_sig, xy_coords_key, drift_adjust=False)
+    if 2 in axes and z_coords_key is not xy_coords_key:
+        passed_z_coord = pos.get_nv_coords(nv_sig, z_coords_key, drift_adjust=False)[2]
         passed_coords.append(passed_z_coord)
     opti_succeeded = False
     num_attempts = 5
@@ -487,9 +638,14 @@ def compensate_for_drift(nv_sig: NVSig, no_crash=False):
                     break
 
             # Perform the optimization
-            positioner = xy_positioner if axis_ind <= 1 else z_positioner
-            ret_vals = _find_center_coords(nv_sig, positioner, axis_ind)
-            opti_coord = ret_vals[0]
+            if axis_ind <= 1 and xy_coords_key is CoordsKey.PIXEL:
+                if axis_ind == 0:
+                    opti_xy_coords = _find_center_pixel_coords(nv_sig)
+                opti_coord = opti_xy_coords[axis_ind]
+            else:
+                positioner = xy_coords_key if axis_ind <= 1 else z_coords_key
+                ret_vals = _find_center_coords(nv_sig, positioner, axis_ind)
+                opti_coord = ret_vals[0]
 
             # Set drift if we succeeded
             if opti_coord is None:
@@ -526,8 +682,8 @@ def compensate_for_drift(nv_sig: NVSig, no_crash=False):
     print()
 
 
-def optimize(nv_sig: NVSig, positioner: str = CoordsKey.SAMPLE, axes: Axes = None):
-    """Optimize coords for the passed NV and positioner, leaving other positioners fixed.
+def optimize(nv_sig: NVSig, coords_key: str = CoordsKey.SAMPLE, axes: Axes = None):
+    """Optimize coords for the passed NV and coords_key, leaving other positioners fixed.
     Returns actual optimal coordinates without drift compensation. Use this when first
     characterizing an NV
 
@@ -535,7 +691,7 @@ def optimize(nv_sig: NVSig, positioner: str = CoordsKey.SAMPLE, axes: Axes = Non
     ----------
     nv_sig : NVSig
         _description_
-    positioner : str, optional
+    coords_key : str, optional
         _description_, by default CoordsKey.SAMPLE
     axes : Axes, optional
         _description_, by default None
@@ -546,13 +702,29 @@ def optimize(nv_sig: NVSig, positioner: str = CoordsKey.SAMPLE, axes: Axes = Non
         (opti_coords, final_counts)
     """
 
+    # Divert for pixel coords since we can just take a picture
+    if coords_key is CoordsKey.PIXEL:
+        opti_coords = _find_center_pixel_coords(nv_sig)
+
+        # Make a copy of the passed NV, but with coords updated so that the
+        # positioner is set to the opti_coords after adjusting for drift
+        opti_nv_sig = _create_opti_nv_sig(nv_sig, opti_coords, coords_key)
+
+        virtual_laser_key = VirtualLaserKey.IMAGING
+        final_counts = stationary_count_lite(opti_nv_sig, virtual_laser_key)
+
+        print(f"Optimized coordinates: {opti_coords}")
+        print(f"Counts at optimized coordinates: {final_counts}")
+
+        return
+
     ### Setup
 
     start_time = time.time()
 
     # Default to values from the config
     if axes is None:
-        if positioner is CoordsKey.SAMPLE:
+        if coords_key is CoordsKey.SAMPLE:
             axes = pos.get_sample_positioner_axes()
         else:
             axes = Axes.XY
@@ -566,7 +738,7 @@ def optimize(nv_sig: NVSig, positioner: str = CoordsKey.SAMPLE, axes: Axes = Non
     ### Perform the optimizations
 
     for axis_ind in axes:
-        ret_vals = _find_center_coords(nv_sig, positioner, axis_ind, fig)
+        ret_vals = _find_center_coords(nv_sig, coords_key, axis_ind, fig)
         opti_coord = ret_vals[0]
         if opti_coord is not None:
             opti_coords[axis_ind] = opti_coord
@@ -576,9 +748,9 @@ def optimize(nv_sig: NVSig, positioner: str = CoordsKey.SAMPLE, axes: Axes = Non
 
     # Make a copy of the passed NV, but with coords updated so that the
     # positioner is set to the opti_coords after adjusting for drift
-    opti_nv_sig = _create_opti_nv_sig(nv_sig, opti_coords, positioner)
+    opti_nv_sig = _create_opti_nv_sig(nv_sig, opti_coords, coords_key)
 
-    virtual_laser_key = _get_opti_virtual_laser_key(positioner)
+    virtual_laser_key = _get_opti_virtual_laser_key(coords_key)
     final_counts = stationary_count_lite(opti_nv_sig, virtual_laser_key)
 
     print(f"Optimized coordinates: {opti_coords}")

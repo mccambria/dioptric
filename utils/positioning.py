@@ -17,7 +17,14 @@ import numpy as np
 
 from utils import common
 from utils import tool_belt as tb
-from utils.constants import Axes, CoordsKey, NVSig, PosControlMode, VirtualLaserKey
+from utils.constants import (
+    Axes,
+    CollectionMode,
+    CoordsKey,
+    NVSig,
+    PosControlMode,
+    VirtualLaserKey,
+)
 
 # endregion
 # region Simple sets
@@ -424,7 +431,25 @@ def get_coordinate_transformation_matrix(source_coords_key, dest_coords_key):
 
 
 @cache
-def get_drift_transformation_matrix(source_coords_key, dest_coords_key):
+def determine_drift_coords_key():
+    """Determine what coordinate space we store the xy drift in.
+    Z is always in sample positioner space if we have a sample positioner
+    that can move in z. Otherwise there's no way to keep track of z drift.
+    """
+    config = common.get_config_dict()
+    collection_mode = config["collection_mode"]
+    if collection_mode == CollectionMode.CAMERA:
+        return CoordsKey.PIXEL
+    sample_positioner_axes = get_sample_positioner_axes()
+    if 0 in sample_positioner_axes:
+        return CoordsKey.SAMPLE
+    positioner = get_laser_positioner(VirtualLaserKey.IMAGING)
+    return positioner
+
+
+@cache
+def get_drift_transformation_matrix(dest_coords_key):
+    source_coords_key = determine_drift_coords_key()
     return _get_transformation_matrix(source_coords_key, dest_coords_key, relative=True)
 
 
