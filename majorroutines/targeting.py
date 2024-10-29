@@ -446,8 +446,13 @@ def compensate_for_drift(nv_sig: NVSig, no_crash=False):
     else:
         axes = list(Axes.XY)
 
-    initial_coords = pos.get_nv_coords(nv_sig, positioner)
+    # Get
+    initial_coords = [None] * 3
+    initial_coords[0:2] = pos.get_nv_coords(nv_sig, xy_positioner)[0:2]
+    if 2 in axes:
+        initial_coords[2] = pos.get_nv_coords(nv_sig, z_positioner)[2]
     opti_coords = initial_coords.copy()
+
     opti_succeeded = False
     num_attempts = 5
 
@@ -470,11 +475,12 @@ def compensate_for_drift(nv_sig: NVSig, no_crash=False):
                 if expected_counts is not None and check_expected_counts(
                     nv_sig, current_counts
                 ):
-                    print("Z optimization unnecessary.")
+                    print("Z drift compensation unnecessary.")
                     opti_succeeded = True
                     break
 
             # Perform the optimization
+            positioner = xy_positioner if axis_ind <= 1 else z_positioner
             ret_vals = _find_center_coords(nv_sig, opti_coords, positioner, axis_ind)
             opti_coord = ret_vals[0]
             axis_failed = opti_coord is None
