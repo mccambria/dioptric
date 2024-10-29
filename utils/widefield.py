@@ -42,7 +42,7 @@ from utils.constants import (
     CountFormat,
     LaserPosMode,
     NVSig,
-    VirtualLaser,
+    VirtualLaserKey,
 )
 from utils.tool_belt import determine_threshold
 
@@ -773,9 +773,9 @@ def get_base_scc_seq_args(
         Sequence arguments
     """
     # Get coordinate lists
-    pol_coords_list = get_coords_list(nv_list, VirtualLaser.CHARGE_POL)
+    pol_coords_list = get_coords_list(nv_list, VirtualLaserKey.CHARGE_POL)
     scc_coords_list = get_coords_list(
-        nv_list, VirtualLaser.SCC, include_inds=scc_include_inds
+        nv_list, VirtualLaserKey.SCC, include_inds=scc_include_inds
     )
 
     # Other lists
@@ -825,7 +825,7 @@ def get_scc_duration_list(nv_list: list[NVSig], include_inds=None):
         scc_duration = nv.scc_duration
         if scc_duration is None:
             config = common.get_config_dict()
-            scc_duration = config["Optics"][VirtualLaser.SCC]["duration"]
+            scc_duration = config["Optics"][VirtualLaserKey.SCC]["duration"]
         if not (scc_duration % 4 == 0 and scc_duration >= 16):
             raise RuntimeError("SCC pulse duration not valid for OPX.")
         scc_duration_list.append(scc_duration)

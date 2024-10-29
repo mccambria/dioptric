@@ -18,7 +18,7 @@ from servers.timing.sequencelibrary.QM_opx import seq_utils
 from servers.timing.sequencelibrary.QM_opx.camera import base_scc_sequence
 from utils import common
 from utils import tool_belt as tb
-from utils.constants import VirtualLaser
+from utils.constants import VirtualLaserKey
 
 
 def get_seq(
@@ -75,7 +75,7 @@ def get_seq(
 
             # Always look at ms=0 counts for the reference
             ref_exp = reference and exp_ind == num_exps_per_rep - 1
-            if laser_name == tb.get_laser_name(VirtualLaser.ION):
+            if laser_name == tb.get_laser_name(VirtualLaserKey.ION):
                 pulse_name = "scc"
             seq_utils.macro_pulse(
                 laser_name,

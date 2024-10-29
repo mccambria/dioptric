@@ -25,12 +25,12 @@ from utils import kplotlib as kpl
 from utils import positioning as pos
 from utils import tool_belt as tb
 from utils.constants import (
-    SAMPLE,
     Axes,
     CollectionMode,
+    CoordsKey,
     NVSig,
     PosControlMode,
-    VirtualLaser,
+    VirtualLaserKey,
 )
 
 # endregion
@@ -179,21 +179,21 @@ def _read_counts_camera_step(nv_sig, axis_ind=None, scan_vals=None):
     return [np.array(counts, dtype=int), img_array]
 
 
-def _get_opti_laser_key(positioner):
-    if positioner is SAMPLE:
-        laser_key = VirtualLaser.IMAGING
+def _get_opti_virtual_laser_key(positioner):
+    if positioner is CoordsKey.SAMPLE:
+        laser_key = VirtualLaserKey.IMAGING
     else:
         laser_dict = tb.get_optics_dict(positioner)
-        laser_key = laser_dict["opti_laser_key"]
+        laser_key = laser_dict["opti_virtual_laser_key"]
     return laser_key
 
 
 def _read_counts_camera_sequence(
     nv_sig: NVSig,
-    coords=None,
-    positioner=SAMPLE,
+    positioner=None,
     axis_ind=None,
     scan_vals=None,
+    virtual_laser_key=None,
 ):
     """
     Specific function for widefield setup - XY control from AODs,
@@ -208,18 +208,18 @@ def _read_counts_camera_sequence(
     else:
         num_steps = 1
 
-    laser_key = _get_opti_laser_key(positioner)
+    if positioner is not None:
+        virtual_laser_key = _get_opti_virtual_laser_key(positioner)
+    elif virtual_laser_key is None:
+        virtual_laser_key = VirtualLaserKey.IMAGING
 
     # Sequence setup
 
-    if laser_key == VirtualLaser.IMAGING:
-        imaging_laser_dict = tb.get_optics_dict(VirtualLaser.IMAGING)
+    if virtual_laser_key == VirtualLaserKey.IMAGING:
+        imaging_laser_dict = tb.get_optics_dict(VirtualLaserKey.IMAGING)
         imaging_laser_name = imaging_laser_dict["name"]
         imaging_readout = imaging_laser_dict["duration"]
-        if coords is None or positioner != imaging_laser_name:
-            laser_coords = pos.get_nv_coords(nv_sig, imaging_laser_name)
-        else:
-            laser_coords = coords
+        laser_coords = pos.get_nv_coords(nv_sig, imaging_laser_name)
         seq_args = [
             imaging_readout,
             imaging_laser_name,
@@ -228,14 +228,11 @@ def _read_counts_camera_sequence(
         ]
         seq_file_name = "simple_readout-scanning.py"
         num_reps = 1
-    elif laser_key == VirtualLaser.ION:
-        pol_laser = tb.get_laser_name(VirtualLaser.CHARGE_POL)
+    elif virtual_laser_key == VirtualLaserKey.ION:
+        pol_laser = tb.get_laser_name(VirtualLaserKey.CHARGE_POL)
         pol_coords = pos.get_nv_coords(nv_sig, positioner=pol_laser)
-        if coords is None:
-            ion_laser = tb.get_laser_name(VirtualLaser.ION)
-            ion_coords = pos.get_nv_coords(nv_sig, positioner=ion_laser)
-        else:
-            ion_coords = coords
+        ion_laser = tb.get_laser_name(VirtualLaserKey.ION)
+        ion_coords = pos.get_nv_coords(nv_sig, positioner=ion_laser)
         seq_args = [pol_coords, ion_coords]
         seq_file_name = "optimize_ionization_laser_coords.py"
         num_reps = 50
@@ -260,9 +257,9 @@ def _read_counts_camera_sequence(
         if axis_ind is not None:
             val = scan_vals[ind]
             if axis_ind in [0, 1]:
-                if laser_key == VirtualLaser.IMAGING:
+                if virtual_laser_key == VirtualLaserKey.IMAGING:
                     seq_args[-2 + axis_ind] = [val]
-                elif laser_key == VirtualLaser.ION:
+                elif virtual_laser_key == VirtualLaserKey.ION:
                     seq_args[1][axis_ind] = val
                 seq_args_string = tb.encode_seq_args(seq_args)
 
@@ -290,7 +287,7 @@ def _read_counts_camera_sequence(
     return [np.array(counts, dtype=int), img_array]
 
 
-def _find_center_coords(nv_sig: NVSig, coords, positioner, axis_ind, fig=None):
+def _find_center_coords(nv_sig: NVSig, positioner, axis_ind, fig=None):
     """Optimize on just one axis (0, 1, 2) for (x, y, z)"""
 
     ### Basic setup and definitions
@@ -298,18 +295,13 @@ def _find_center_coords(nv_sig: NVSig, coords, positioner, axis_ind, fig=None):
     num_steps = 20
     scan_range = pos.get_axis_optimize_range(axis_ind, positioner)
 
-    # The opti_offset flag allows a different NV at a specified offset to be used as a proxy for
-    # optimizing on the actual target NV. Useful if the real target NV is poorly isolated.
-    # Only works with global coordinates
-    opti_offset = nv_sig.opti_offset
-    if opti_offset is not None and positioner == SAMPLE:
-        coords += np.array(opti_offset)
+    coords = pos.get_nv_coords(nv_sig, positioner)
     axis_center = coords[axis_ind]
     scan_vals = pos.get_scan_1d(axis_center, scan_range, num_steps)
 
     ### Record the counts
 
-    ret_vals = _read_counts(nv_sig, coords, positioner, axis_ind, scan_vals)
+    ret_vals = _read_counts(nv_sig, positioner, axis_ind, scan_vals)
     counts = ret_vals[0]
 
     ### Plot, fit, return
@@ -317,54 +309,45 @@ def _find_center_coords(nv_sig: NVSig, coords, positioner, axis_ind, fig=None):
     f_counts = counts
     if fig is not None:
         _update_figure(fig, axis_ind, scan_vals, f_counts)
-    laser_key = _get_opti_laser_key(positioner)
-    positive_amplitude = laser_key != VirtualLaser.ION
+    laser_key = _get_opti_virtual_laser_key(positioner)
+    positive_amplitude = laser_key != VirtualLaserKey.ION
     opti_coord = _fit_gaussian(scan_vals, f_counts, axis_ind, positive_amplitude, fig)
 
     return opti_coord, scan_vals, f_counts
 
 
 def _read_counts(
-    nv_sig,
-    coords=None,
-    positioner=SAMPLE,
-    axis_ind=None,
-    scan_vals=None,
+    nv_sig, positioner=None, axis_ind=None, scan_vals=None, virtual_laser_key=None
 ):
+    # Position us at the starting point
+    pos.set_xyz_on_nv(nv_sig)
+
     # How we conduct the scan depends on the config
     config = common.get_config_dict()
     collection_mode = config["collection_mode"]
     pulse_gen = tb.get_server_pulse_gen()
 
-    laser_key = _get_opti_laser_key(positioner)
-    laser_dict = tb.get_optics_dict(laser_key)
-    laser_name = tb.get_laser_name(laser_key)
-    if axis_ind is not None:
-        delay = pos.get_axis_delay(axis_ind, positioner=positioner)
-        control_mode = pos.get_axis_control_mode(axis_ind, positioner)
-
-    # Position us at the starting point
-    if coords is not None:
-        if scan_vals is None:
-            pos.set_xyz(coords, positioner)
-        else:
-            start_coords = np.copy(coords)
-            start_coords[axis_ind] = scan_vals[-1]
-            pos.set_xyz(start_coords, positioner)
-
     # Assume the lasers are sequence controlled if using camera
     if collection_mode == CollectionMode.CAMERA:
         ret_vals = _read_counts_camera_sequence(
-            nv_sig, coords, positioner, axis_ind, scan_vals
+            nv_sig, positioner, axis_ind, scan_vals, virtual_laser_key
         )
 
     elif collection_mode == CollectionMode.COUNTER:
-        if positioner != CoordsKey.GLOBAL:
+        laser_key = _get_opti_virtual_laser_key(positioner)
+        laser_dict = tb.get_optics_dict(laser_key)
+        laser_name = tb.get_laser_name(laser_key)
+
+        if positioner != CoordsKey.SAMPLE:
             msg = "Optimization with a counter is only implemented for global coordinates."
             raise NotImplementedError(msg)
-        if laser_key != VirtualLaser.IMAGING:
+        if laser_key != VirtualLaserKey.IMAGING:
             msg = "Optimization with a counter is only implemented for imaging lasers."
             raise NotImplementedError(msg)
+
+        if axis_ind is not None:
+            delay = pos.get_axis_delay(axis_ind, positioner=positioner)
+            control_mode = pos.get_axis_control_mode(axis_ind, positioner)
 
         seq_file_name = "simple_readout.py"
         readout = laser_dict["duration"]
@@ -385,14 +368,9 @@ def _read_counts(
 
 
 def stationary_count_lite(
-    nv_sig,
-    coords=None,
-    positioner=SAMPLE,
-    ret_img_array=False,
+    nv_sig, virtual_laser_key=VirtualLaserKey.IMAGING, ret_img_array=False
 ):
-    ret_vals = _read_counts(nv_sig, coords, positioner)
-
-    # Return
+    ret_vals = _read_counts(nv_sig, virtual_laser_key=virtual_laser_key)
     counts = ret_vals[0]
     avg_counts = np.average(counts)
     if ret_img_array:
@@ -431,47 +409,40 @@ def compensate_for_drift(nv_sig: NVSig, no_crash=False):
         print("Drift compensation unnecessary.")
         return
 
-    ### Find the center coordinates along each available axis
+    ### Compensation is necessary - find the center coordinates along each available axis
 
     # Determine what axes are available and what positioner to use
-    if pos.has_sample_xy_positioner():
-        xy_positioner = SAMPLE
+    sample_positioner_axes = pos.get_sample_positioner_axes()
+    if 0 in sample_positioner_axes:
+        xy_positioner = CoordsKey.SAMPLE
     else:
-        virtual_laser = VirtualLaser.IMAGING
-        xy_positioner = pos.get_virtual_laser_positioner(virtual_laser)
+        xy_positioner = pos.get_laser_positioner(VirtualLaserKey.IMAGING)
     disable_z_drift_compensation = config.get("disable_z_drift_compensation", False)
     if not disable_z_drift_compensation and pos.has_sample_z_positioner():
         axes = list(Axes.XYZ)
-        z_positioner = SAMPLE
+        z_positioner = CoordsKey.SAMPLE
     else:
         axes = list(Axes.XY)
 
-    # Get
-    initial_coords = [None] * 3
-    initial_coords[0:2] = pos.get_nv_coords(nv_sig, xy_positioner)[0:2]
-    if 2 in axes:
-        initial_coords[2] = pos.get_nv_coords(nv_sig, z_positioner)[2]
-    opti_coords = initial_coords.copy()
-
+    passed_coords = pos.get_nv_coords(nv_sig, xy_positioner, drift_adjust=False)
+    if 2 in axes and z_positioner is not xy_positioner:
+        passed_z_coord = pos.get_nv_coords(nv_sig, z_positioner, drift_adjust=False)[2]
+        passed_coords.append(passed_z_coord)
     opti_succeeded = False
     num_attempts = 5
 
     # Loop through attempts until we succeed or give up
     for ind in range(num_attempts):
-        ### Attempt setup
-
+        # Setup
         if opti_succeeded or tb.safe_stop():
             break
         print(f"Attempt number {ind+1}")
 
-        ### Loop through the axes
-
+        # Main loop
         for axis_ind in axes:
             # Check if z optimization is necessary after xy optimization
             if axis_ind == 2 and axes == [0, 1, 2]:
-                current_counts = stationary_count_lite(
-                    nv_sig, opti_coords, xy_positioner
-                )
+                current_counts = stationary_count_lite(nv_sig)
                 if expected_counts is not None and check_expected_counts(
                     nv_sig, current_counts
                 ):
@@ -481,20 +452,21 @@ def compensate_for_drift(nv_sig: NVSig, no_crash=False):
 
             # Perform the optimization
             positioner = xy_positioner if axis_ind <= 1 else z_positioner
-            ret_vals = _find_center_coords(nv_sig, opti_coords, positioner, axis_ind)
+            ret_vals = _find_center_coords(nv_sig, positioner, axis_ind)
             opti_coord = ret_vals[0]
+
+            # Set drift if we succeeded
             axis_failed = opti_coord is None
             if not axis_failed:
-                opti_coords[axis_ind] = opti_coord
-
-        ### Attempt wrap-up
+                drift_val = opti_coord - passed_coords[axis_ind]
+                pos.set_drift_val(drift_val, axis_ind)
 
         # Try again if any individual axis failed
         if axis_failed:
             continue
 
         # Check the counts - if the threshold is not set, we just do one pass and succeed
-        current_counts = stationary_count_lite(nv_sig, opti_coords, xy_positioner)
+        current_counts = stationary_count_lite(nv_sig)
         print(f"Value at optimized coordinates: {round(current_counts, 1)}")
         if expected_counts is None or check_expected_counts(nv_sig, current_counts):
             opti_succeeded = True
@@ -502,22 +474,6 @@ def compensate_for_drift(nv_sig: NVSig, no_crash=False):
             print("Value at optimized coordinates out of bounds.")
 
     ### Calculate the drift relative to the passed coordinates
-
-    passed_coords = pos.get_nv_coords(nv_sig, positioner, drift_adjust=False)
-    drift = []
-    for ind in range(len(passed_coords)):
-        opti_coord = opti_coords[ind]
-        passed_coord = passed_coords[ind]
-        if opti_coord is None or passed_coord is None:
-            drift_coord = 0.0
-        else:
-            drift_coord = opti_coords[ind] - passed_coords[ind]
-        drift.append(drift_coord)
-    if opti_succeeded:
-        pos.set_drift(drift, positioner=positioner)
-
-    ### Report the results and set to the optimized coordinates if requested
-    disable_z_drift_compensation = config.get("disable_z_drift_compensation", False)
 
     if opti_succeeded:
         print("Optimization succeeded!")
@@ -545,36 +501,70 @@ def compensate_for_drift(nv_sig: NVSig, no_crash=False):
     print()
 
 
-def optimize(nv_sig: NVSig, positioner: str = SAMPLE, axes: Axes = None):
+def _create_opti_nv_sig(nv_sig, opti_coords, positioner):
+    """Make a copy of nv_sig with coords updated so that positioner
+    is set to opti_coords after adjusting for drift
+
+    Parameters
+    ----------
+    nv_sig : _type_
+        _description_
+    opti_coords : _type_
+        _description_
+    positioner : _type_
+        _description_
+    """
+
+    opti_nv_sig = copy.deepcopy(nv_sig)
+    drift = pos.get_drift(positioner)
+    drift = [-1 * el for el in drift]
+    adj_opti_coords = pos.adjust_coords_for_drift(opti_coords, drift)
+    pos.set_nv_coords(opti_nv_sig, adj_opti_coords, positioner)
+    return opti_nv_sig
+
+
+def optimize(nv_sig: NVSig, positioner: str = CoordsKey.SAMPLE, axes: Axes = None):
     # Optimize coords for the passed NV and positioner, leaving other positioners fixed.
     # Returns actual optimal coordinates without drift compensation. Use this when first
     # characterizing an NV
+
+    ### Setup
 
     start_time = time.time()
 
     # Default to values from the config
     if axes is None:
-        config = common.get_config_dict()
-        positioners = config["Positioning"]["Positioners"][positioner]
-        axes = positioners["axes"]
+        if positioner is CoordsKey.SAMPLE:
+            axes = pos.get_sample_positioner_axes()
+        else:
+            axes = Axes.XY
     axes = list(axes.value)
 
     fig = _create_figure()
     scan_vals_by_axis = [None] * 3
     counts_by_axis = [None] * 3
+    opti_coords = [None] * 3
 
-    initial_coords = pos.get_nv_coords(nv_sig, positioner)
-    opti_coords = initial_coords.copy()
+    ### Perform the optimizations
 
-    # Perform the optimizations
     for axis_ind in axes:
-        ret_vals = _find_center_coords(nv_sig, opti_coords, positioner, axis_ind, fig)
+        ret_vals = _find_center_coords(nv_sig, positioner, axis_ind, fig)
         opti_coord = ret_vals[0]
         if opti_coord is not None:
             opti_coords[axis_ind] = opti_coord
         scan_vals_by_axis[axis_ind] = ret_vals[1]
 
-    final_counts = stationary_count_lite(nv_sig, opti_coords, positioner)
+    ### Check the counts at the optimized coordinates and report the results
+
+    # Make a copy of the passed NV, but with coords updated so that the
+    # positioner is set to the opti_coords after adjusting for drift
+    opti_nv_sig = _create_opti_nv_sig(nv_sig, opti_coords, positioner)
+
+    virtual_laser_key = _get_opti_virtual_laser_key(positioner)
+    final_counts = stationary_count_lite(opti_nv_sig, virtual_laser_key)
+
+    print(f"Optimized coordinates: {opti_coords}")
+    print(f"Counts at optimized coordinates: {final_counts}")
 
     ### Clean up and save the data
 
@@ -618,112 +608,6 @@ def optimize(nv_sig: NVSig, positioner: str = SAMPLE, axes: Axes = None):
     return opti_coords, final_counts
 
 
-def temp(
-    nv_sig: NVSig,
-    positioner: str = SAMPLE,
-    axes=Axes.XYZ,
-    no_crash=False,
-    do_plot=False,
-    opti_necessary=None,
-    num_attempts=5,
-):
-    pos.set_xyz_on_nv(nv_sig)
-
-    # If optimize is disabled, just do prep and return
-    if nv_sig.disable_opt:
-        return [], None
-
-    axes = list(axes.value)
-
-    ### Setup
-
-    # Default routine operations
-    set_drift = True
-    drift_adjust = True
-    do_save = do_plot
-
-    tb.reset_cfm()
-    tb.init_safe_stop()
-
-    initial_coords = pos.get_nv_coords(nv_sig, positioner, drift_adjust)
-
-    start_time = time.time()
-
-    # Default values for status variables
-    opti_succeeded = False
-    opti_coords = initial_coords.copy()
-
-    # Only check expected counts for the imaging laser
-    imaging_laser_name = tb.get_laser_name(VirtualLaser.IMAGING)
-    if positioner in [SAMPLE, imaging_laser_name]:
-        expected_counts = nv_sig.expected_counts
-    else:
-        expected_counts = None
-
-    def counts_check(coords):
-        return stationary_count_lite(nv_sig, coords, positioner)
-
-    ### Try to optimize.
-
-    if opti_necessary:
-        # Check if z optimization is disabled
-        if nv_sig.disable_z_opt and 2 in axes:
-            axes.remove(2)
-
-        # Loop through attempts until we succeed or give up
-        for ind in range(num_attempts):
-            ### Attempt setup
-
-            if opti_succeeded or tb.safe_stop():
-                break
-            print(f"Attempt number {ind+1}")
-
-            # Tracking lists for each axis
-            scan_vals_by_axis = [None] * 3
-            counts_by_axis = [None] * 3
-            axis_failed = False
-
-            ### Loop through the axes
-
-            for axis_ind in axes:
-                # Check if z optimization is necessary after xy optimization
-                if axis_ind == 2 and axes == [0, 1, 2]:
-                    current_counts = counts_check(opti_coords)
-                    if expected_counts is not None and check_expected_counts(
-                        nv_sig, current_counts
-                    ):
-                        print("Z optimization unnecessary.")
-                        scan_vals_by_axis.append(np.array([]))
-                        opti_succeeded = True
-                        break
-
-                # Perform the optimization
-                ret_vals = _find_center_coords(
-                    nv_sig, opti_coords, positioner, axis_ind, fig
-                )
-                opti_coord = ret_vals[0]
-                if opti_coord is not None:
-                    opti_coords[axis_ind] = opti_coord
-                else:
-                    axis_failed = True
-                scan_vals_by_axis[axis_ind] = ret_vals[1]
-                counts_by_axis[axis_ind] = ret_vals[2]
-
-            ### Attempt wrap-up
-
-            # Try again if any individual axis failed
-            if axis_failed:
-                continue
-
-            # Check the counts - if the threshold is not set, we just do one pass and succeed
-            current_counts = counts_check(opti_coords)
-            print(f"Value at optimized coordinates: {round(current_counts, 1)}")
-            if expected_counts is None or check_expected_counts(nv_sig, current_counts):
-                opti_succeeded = True
-            elif expected_counts is not None:
-                print("Value at optimized coordinates out of bounds.")
-
-
 # endregion
 
 if __name__ == "__main__":
@@ -737,6 +621,6 @@ if __name__ == "__main__":
         scan_vals = data[f"{keys[axis_ind]}_scan_vals"]
         count_vals = data[f"{keys[axis_ind]}_counts"]
         _update_figure(fig, axis_ind, scan_vals, count_vals)
-        _fit_gaussian(scan_vals, count_vals, axis_ind, positive_amplitude, fig)
+        _fit_gaussian(scan_vals, count_vals, axis_ind, True, fig)
 
     plt.show(block=True)

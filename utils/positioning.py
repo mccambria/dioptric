@@ -16,7 +16,14 @@ import numpy as np
 
 from utils import common
 from utils import tool_belt as tb
-from utils.constants import SAMPLE, NVSig, PosControlMode, VirtualLaser
+from utils.constants import (
+    SAMPLE,
+    Axes,
+    CoordsKey,
+    NVSig,
+    PosControlMode,
+    VirtualLaserKey,
+)
 
 # endregion
 # region Simple sets
@@ -157,11 +164,17 @@ def _set_xyz_ramp(coords):
     time.sleep(total_movement_delay / 1e9)
 
 
-def set_xyz_on_nv(nv_sig, positioner=SAMPLE, drift_adjust=True):
+def set_xyz_on_nv(nv_sig, positioner=None, drift_adjust=True):
     """Returns the coords actually used in the set"""
-    coords = get_nv_coords(nv_sig, positioner, drift_adjust)
-    set_xyz(coords, positioner=positioner, drift_adjust=False)
-    return coords
+    if positioner is None:
+        config = common.get_config_dict()
+        positioners = list(config["Positioning"]["Positioners"].keys())
+        for el in positioners:
+            set_xyz_on_nv(nv_sig, positioner=el, drift_adjust=drift_adjust)
+    else:
+        coords = get_nv_coords(nv_sig, positioner, drift_adjust)
+        set_xyz(coords, positioner=positioner, drift_adjust=False)
+        return coords
 
 
 def get_nv_coords(nv_sig: NVSig, positioner=SAMPLE, drift_adjust=True, drift=None):
@@ -198,27 +211,6 @@ def set_nv_coords(nv_sig, coords, positioner=SAMPLE):
 
 
 # region Getters
-
-
-@cache
-def _get_virtual_lasers():
-    config = common.get_config_dict()
-    return config["Optics"]["VirtualLasers"]
-
-
-@cache
-def _get_physical_lasers():
-    config = common.get_config_dict()
-    return config["Optics"]["PhysicalLasers"]
-
-
-def get_virtual_laser_positioner(virtual_laser):
-    virtual_laser = VirtualLaser.IMAGING
-    virtual_lasers = _get_virtual_lasers()
-    physical_laser = virtual_lasers[virtual_laser]["physical_laser"]
-    physical_lasers = _get_physical_lasers()
-    positioner = physical_lasers[physical_laser]["positioner"]
-    return positioner
 
 
 def get_laser_pos_mode(laser_name):
@@ -285,30 +277,20 @@ def get_z_dtype(positioner=SAMPLE):
     return get_axis_dtype(axis_ind, positioner)
 
 
-def get_sample_pos_axes():
+def get_sample_positioner_axes():
     config = common.get_config_dict()
     config_pos = config["Positioning"]
-    return config_pos[SAMPLE]["axes"]
+    try:
+        return config_pos[CoordsKey.SAMPLE]["axes"]
+    except Exception:
+        return Axes.NONE
 
 
-def has_sample_xy_positioner():
-    axes = list(get_sample_pos_axes())
-    return all(el in axes for el in (0, 1))
-
-
-def has_sample_z_positioner():
-    axes = list(get_sample_pos_axes())
-    return all(el in axes for el in (2))
-    return 2 in axes
-
-
-def has_sample_xyz_positioner():
-    return has_sample_xy_positioner() and has_sample_z_positioner()
-
-
-def get_laser_positioner(laser_key: VirtualLaser):
+def get_laser_positioner(virtual_laser_key: VirtualLaserKey):
     config = common.get_config_dict()
-    physical_laser = config["Optics"]["VirtualLasers"][laser_key]["physical_laser"]
+    physical_laser = config["Optics"]["VirtualLasers"][virtual_laser_key][
+        "physical_laser"
+    ]
     return config["Optics"]["VirtualLasers"][physical_laser]["positioner"]
 
 
@@ -390,18 +372,26 @@ def get_axis_stream_fn(axis_ind, positioner=SAMPLE):
 
 
 @cache
-def get_drift(positioner=SAMPLE):
-    key = f"DRIFT-{positioner}"
+def get_drift():
+    key = "DRIFT"
     drift = common.get_registry_entry(["State"], key)
     # print(f"Retrieved drift: {drift}, Length: {len(drift)}")
     drift_dtype = []
     for ind in range(len(drift)):
-        axis_dtype = get_axis_dtype(ind, positioner)
+        axis_dtype = get_axis_dtype(ind)
         if axis_dtype is not None:
             drift_dtype.append(axis_dtype(drift[ind]))
         else:
             drift_dtype.append(None)
     return np.array(drift_dtype)
+
+
+def set_drift_val(drift_val, axis_ind):
+    drift = get_drift()
+    get_drift.cache_clear()
+    key = "DRIFT"
+    drift[axis_ind] = drift_val
+    return common.set_registry_entry(["State"], key, drift)
 
 
 def set_drift(drift, positioner=SAMPLE):

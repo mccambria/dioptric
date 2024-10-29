@@ -25,7 +25,7 @@ from utils import kplotlib as kpl
 from utils import positioning as pos
 from utils import tool_belt as tb
 from utils import widefield as widefield
-from utils.constants import NVSpinState, VirtualLaser
+from utils.constants import NVSpinState, VirtualLaserKey
 from utils.positioning import get_scan_1d as calculate_freqs
 
 degrees_1095 = 109.5 * (2 * np.pi / 360)

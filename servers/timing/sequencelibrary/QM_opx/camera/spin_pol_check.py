@@ -18,7 +18,7 @@ from servers.timing.sequencelibrary.QM_opx import seq_utils
 from servers.timing.sequencelibrary.QM_opx.camera import base_scc_sequence
 from utils import common
 from utils import tool_belt as tb
-from utils.constants import VirtualLaser
+from utils.constants import VirtualLaserKey
 
 
 def get_seq(
@@ -30,7 +30,7 @@ def get_seq(
 ):
     sig_gen_el = seq_utils.get_sig_gen_element(uwave_ind)
     buffer = seq_utils.get_widefield_operation_buffer()
-    laser_name = tb.get_laser_name(VirtualLaser.POLARIZATION)
+    laser_name = tb.get_laser_name(VirtualLaserKey.POLARIZATION)
 
     if num_reps is None:
         num_reps = 1

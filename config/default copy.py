@@ -17,7 +17,7 @@ from utils.constants import (
     LaserPosMode,
     ModMode,
     PosControlMode,
-    VirtualLaser,
+    VirtualLaserKey,
 )
 
 home = Path.home()

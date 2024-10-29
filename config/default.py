@@ -9,17 +9,6 @@ Created August 8th, 2023
 
 from pathlib import Path
 
-import numpy as np
-
-from utils.constants import (
-    CollectionMode,
-    CountFormat,
-    LaserPosMode,
-    ModMode,
-    PosControlMode,
-    VirtualLaser,
-)
-
 home = Path.home()
 
 config = {

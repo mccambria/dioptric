@@ -13,18 +13,14 @@ import numpy as np
 
 from config.default import config
 from utils.constants import (
-    SAMPLE,
     Axes,
     ChargeStateEstimationMode,
     CollectionMode,
     CoordsKey,
     CountFormat,
-    DriftMode,
-    LaserPosMode,
     ModMode,
     PosControlMode,
-    SamplePosAxes,
-    VirtualLaser,
+    VirtualLaserKey,
 )
 
 home = Path.home()
@@ -194,33 +190,39 @@ config |= {
         },
         "VirtualLasers": {
             # LaserKey.IMAGING: {"physical_laser": green_laser, "duration": 50e6},
-            VirtualLaser.IMAGING: {"physical_laser": green_laser, "duration": 12e6},
-            VirtualLaser.SPIN_READOUT: {"physical_laser": green_laser, "duration": 300},
+            VirtualLaserKey.IMAGING: {"physical_laser": green_laser, "duration": 12e6},
+            VirtualLaserKey.SPIN_READOUT: {
+                "physical_laser": green_laser,
+                "duration": 300,
+            },
             # LaserKey.CHARGE_POL: {"physical_laser": green_laser, "duration": 10e3},
-            VirtualLaser.CHARGE_POL: {"physical_laser": green_laser, "duration": 1e3},
+            VirtualLaserKey.CHARGE_POL: {
+                "physical_laser": green_laser,
+                "duration": 1e3,
+            },
             # LaserKey.CHARGE_POL: {"physical_laser": green_laser, "duration": 60},
-            VirtualLaser.SPIN_POL: {"physical_laser": green_laser, "duration": 10e3},
-            VirtualLaser.SHELVING: {"physical_laser": green_laser, "duration": 60},
-            VirtualLaser.ION: {"physical_laser": red_laser, "duration": 10e3},
+            VirtualLaserKey.SPIN_POL: {"physical_laser": green_laser, "duration": 10e3},
+            VirtualLaserKey.SHELVING: {"physical_laser": green_laser, "duration": 60},
+            VirtualLaserKey.ION: {"physical_laser": red_laser, "duration": 10e3},
             # SCC: 180 mW, 0.13 V, no shelving
             # LaserKey.SCC: {"physical_laser": red_laser, "duration": 248},
-            VirtualLaser.SCC: {"physical_laser": red_laser, "duration": 124},
+            VirtualLaserKey.SCC: {"physical_laser": red_laser, "duration": 124},
             # LaserKey.SCC: {"physical_laser": green_laser, "duration": 200},
-            VirtualLaser.WIDEFIELD_SHELVING: {
+            VirtualLaserKey.WIDEFIELD_SHELVING: {
                 "physical_laser": yellow_laser,
                 "duration": 60,
             },
-            VirtualLaser.WIDEFIELD_IMAGING: {
+            VirtualLaserKey.WIDEFIELD_IMAGING: {
                 "physical_laser": yellow_laser,
                 "duration": 12e6,
             },
             # LaserKey.WIDEFIELD_SPIN_POL: {"physical_laser": yellow_laser, "duration": 10e3},
-            VirtualLaser.WIDEFIELD_SPIN_POL: {
+            VirtualLaserKey.WIDEFIELD_SPIN_POL: {
                 "physical_laser": yellow_laser,
                 "duration": 100e3,
             },
             # LaserKey.WIDEFIELD_SPIN_POL: {"physical_laser": yellow_laser, "duration": 1e6},
-            VirtualLaser.WIDEFIELD_CHARGE_READOUT: {
+            VirtualLaserKey.WIDEFIELD_CHARGE_READOUT: {
                 "physical_laser": yellow_laser,
                 "duration": 48e6,
             },
@@ -233,7 +235,7 @@ config |= {
     ###
     "Positioning": {
         "Positioners": {
-            SAMPLE: {
+            CoordsKey.SAMPLE: {
                 "axes": Axes.XYZ,
                 "server": "piezo_stage_P616_3c_purcell",
                 "control_mode": PosControlMode.STREAM,
@@ -242,7 +244,7 @@ config |= {
                 "nm_per_unit": 1000,
                 "optimize_range": 0.09,
                 "units": "Voltage (V)",
-                "opti_laser_key": VirtualLaser.IMAGING,
+                "opti_virtual_laser_key": VirtualLaserKey.IMAGING,
             },
             f"{green_laser}_aod": {
                 "control_mode": PosControlMode.SEQUENCE,
@@ -251,7 +253,7 @@ config |= {
                 "nm_per_unit": 1000,
                 "optimize_range": 0.8,
                 "units": "MHz",
-                "opti_laser_key": VirtualLaser.IMAGING,
+                "opti_virtual_laser_key": VirtualLaserKey.IMAGING,
                 "aod": True,
                 "default_aod_suffix": "scc",
             },
@@ -263,7 +265,7 @@ config |= {
                 "optimize_range": 2.4,
                 "units": "MHz",
                 "z_dtype": float,
-                "opti_laser_key": VirtualLaser.ION,
+                "opti_virtual_laser_key": VirtualLaserKey.ION,
                 "aod": True,
                 "default_aod_suffix": "charge_pol",
             },
@@ -303,7 +305,7 @@ config |= {
             "do_laser_INTE_520_dm": 3,
             "do_laser_OPTO_589_dm": 3,
             "do_laser_COBO_638_dm": 7,
-            "do_sample_clock": 0,
+            "do_CoordsKey.SAMPLE_clock": 0,
             "do_sig_gen_BERK_bnc835_gate": 1,
             "do_sig_gen_STAN_sg394_gate": 10,
             "do_camera_trigger": 5,
@@ -317,8 +319,8 @@ config |= {
 
 default_pulse_duration = config["CommonDurations"]["default_pulse_duration"]
 default_int_freq = 75e6
-rabi_period_0 = config["Microwaves"]["sig_gen_0"]["rabi_period"]
-rabi_period_1 = config["Microwaves"]["sig_gen_1"]["rabi_period"]
+rabi_period_0 = config["Microwaves"]["VirtualSigGens"]["sig_gen_0"]["rabi_period"]
+rabi_period_1 = config["Microwaves"]["VirtualSigGens"]["sig_gen_1"]["rabi_period"]
 ramp_to_zero_duration = 64
 iq_buffer = 0
 
@@ -659,12 +661,16 @@ opx_config = {
         },
         "yellow_spin_pol": {
             "operation": "control",
-            "length": config["Optics"][VirtualLaser.WIDEFIELD_SPIN_POL]["duration"],
+            "length": config["Optics"]["VirtualLasers"][
+                VirtualLaserKey.WIDEFIELD_SPIN_POL
+            ]["duration"],
             "waveforms": {"single": "yellow_spin_pol"},
         },
         "yellow_shelving": {
             "operation": "control",
-            "length": config["Optics"][VirtualLaser.WIDEFIELD_SHELVING]["duration"],
+            "length": config["Optics"]["VirtualLasers"][
+                VirtualLaserKey.WIDEFIELD_SHELVING
+            ]["duration"],
             "waveforms": {"single": "yellow_shelving"},
         },
         #
@@ -707,22 +713,30 @@ opx_config = {
         },
         "do_scc": {
             "operation": "control",
-            "length": config["Optics"][VirtualLaser.SCC]["duration"],
+            "length": config["Optics"]["VirtualLasers"][VirtualLaserKey.SCC][
+                "duration"
+            ],
             "digital_marker": "on",
         },
         "do_ion": {
             "operation": "control",
-            "length": config["Optics"][VirtualLaser.ION]["duration"],
+            "length": config["Optics"]["VirtualLasers"][VirtualLaserKey.ION][
+                "duration"
+            ],
             "digital_marker": "on",
         },
         "do_charge_pol": {
             "operation": "control",
-            "length": config["Optics"][VirtualLaser.CHARGE_POL]["duration"],
+            "length": config["Optics"]["VirtualLasers"][VirtualLaserKey.CHARGE_POL][
+                "duration"
+            ],
             "digital_marker": "on",
         },
         "do_shelving": {
             "operation": "control",
-            "length": config["Optics"][VirtualLaser.SHELVING]["duration"],
+            "length": config["Optics"]["VirtualLasers"][VirtualLaserKey.SHELVING][
+                "duration"
+            ],
             "digital_marker": "on",
         },
         "do_green_spin_pol": {
@@ -774,40 +788,40 @@ opx_config = {
     ### Analog
     "waveforms": {
         # Green AOD
-        "green_aod_cw-opti": {"type": "constant", "sample": 0.09},
-        # "green_aod_cw-opti": {"type": "constant", "sample": 0.07},
-        # "green_aod_cw-opti": {"type": "constant", "sample": 0.05},
-        # "green_aod_cw-opti": {"type": "constant", "sample": 0.03},
-        # "green_aod_cw-charge_pol": {"type": "constant", "sample": 0.13},
-        # "green_aod_cw-charge_pol": {"type": "constant", "sample": 0.06},  # Negative
-        "green_aod_cw-charge_pol": {"type": "constant", "sample": 0.11},
-        "green_aod_cw-spin_pol": {"type": "constant", "sample": 0.05},
-        "green_aod_cw-shelving": {"type": "constant", "sample": 0.05},
-        "green_aod_cw-scc": {"type": "constant", "sample": 0.15},
+        "green_aod_cw-opti": {"type": "constant", "CoordsKey.SAMPLE": 0.09},
+        # "green_aod_cw-opti": {"type": "constant", "CoordsKey.SAMPLE": 0.07},
+        # "green_aod_cw-opti": {"type": "constant", "CoordsKey.SAMPLE": 0.05},
+        # "green_aod_cw-opti": {"type": "constant", "CoordsKey.SAMPLE": 0.03},
+        # "green_aod_cw-charge_pol": {"type": "constant", "CoordsKey.SAMPLE": 0.13},
+        # "green_aod_cw-charge_pol": {"type": "constant", "CoordsKey.SAMPLE": 0.06},  # Negative
+        "green_aod_cw-charge_pol": {"type": "constant", "CoordsKey.SAMPLE": 0.11},
+        "green_aod_cw-spin_pol": {"type": "constant", "CoordsKey.SAMPLE": 0.05},
+        "green_aod_cw-shelving": {"type": "constant", "CoordsKey.SAMPLE": 0.05},
+        "green_aod_cw-scc": {"type": "constant", "CoordsKey.SAMPLE": 0.15},
         # Red AOD
-        # "red_aod_cw-opti": {"type": "constant", "sample": 0.10},
-        "red_aod_cw-opti": {"type": "constant", "sample": 0.12},
-        # "red_aod_cw-ion": {"type": "constant", "sample": 0.09},
-        "red_aod_cw-ion": {"type": "constant", "sample": 0.12},
-        # "red_aod_cw-scc": {"type": "constant", "sample": 0.135},
-        "red_aod_cw-scc": {"type": "constant", "sample": 0.12},
+        # "red_aod_cw-opti": {"type": "constant", "CoordsKey.SAMPLE": 0.10},
+        "red_aod_cw-opti": {"type": "constant", "CoordsKey.SAMPLE": 0.12},
+        # "red_aod_cw-ion": {"type": "constant", "CoordsKey.SAMPLE": 0.09},
+        "red_aod_cw-ion": {"type": "constant", "CoordsKey.SAMPLE": 0.12},
+        # "red_aod_cw-scc": {"type": "constant", "CoordsKey.SAMPLE": 0.135},
+        "red_aod_cw-scc": {"type": "constant", "CoordsKey.SAMPLE": 0.12},
         # Yellow AOM
-        "yellow_imaging": {"type": "constant", "sample": 0.45},  # 0.35
-        # "yellow_imaging": {"type": "constant", "sample": 0.50},  # 0.35
-        "yellow_charge_readout": {"type": "constant", "sample": 0.38},  # 50e6
-        # "yellow_charge_readout": {"type": "constant", "sample": 0.25},  # 100e6
-        "yellow_spin_pol": {"type": "constant", "sample": 0.39},
-        "yellow_shelving": {"type": "constant", "sample": 0.33},
+        "yellow_imaging": {"type": "constant", "CoordsKey.SAMPLE": 0.45},  # 0.35
+        # "yellow_imaging": {"type": "constant", "CoordsKey.SAMPLE": 0.50},  # 0.35
+        "yellow_charge_readout": {"type": "constant", "CoordsKey.SAMPLE": 0.38},  # 50e6
+        # "yellow_charge_readout": {"type": "constant", "CoordsKey.SAMPLE": 0.25},  # 100e6
+        "yellow_spin_pol": {"type": "constant", "CoordsKey.SAMPLE": 0.39},
+        "yellow_shelving": {"type": "constant", "CoordsKey.SAMPLE": 0.33},
         # Other
-        "aod_cw": {"type": "constant", "sample": 0.35},
-        "cw": {"type": "constant", "sample": 0.5},
-        "off": {"type": "constant", "sample": 0.0},
+        "aod_cw": {"type": "constant", "CoordsKey.SAMPLE": 0.35},
+        "cw": {"type": "constant", "CoordsKey.SAMPLE": 0.5},
+        "off": {"type": "constant", "CoordsKey.SAMPLE": 0.0},
     },
     ### Digital, format is list of tuples: (on/off, ns)
     "digital_waveforms": {
-        "on": {"samples": [(1, 0)]},
-        "off": {"samples": [(0, 0)]},
-        "square": {"samples": [(1, 100), (0, 100)]},
+        "on": {"CoordsKey.SAMPLEs": [(1, 0)]},
+        "off": {"CoordsKey.SAMPLEs": [(0, 0)]},
+        "square": {"CoordsKey.SAMPLEs": [(1, 100), (0, 100)]},
     },
     # endregion
 }
@@ -818,4 +832,5 @@ ref_img_array = np.array([])
 
 if __name__ == "__main__":  #
     # print(config)
-    print(config["DeviceIDs"]["gcs_dll_path"])
+    Positioners = list(config["Positioning"]["Positioners"].keys())
+    print(Positioners)

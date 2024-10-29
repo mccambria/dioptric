@@ -38,7 +38,7 @@ from utils import common, widefield
 from utils import kplotlib as kpl
 from utils import positioning as pos
 from utils import tool_belt as tb
-from utils.constants import NVSig, NVSpinState, VirtualLaser
+from utils.constants import NVSig, NVSpinState, VirtualLaserKey
 
 green_laser = "laser_INTE_520"
 red_laser = "laser_COBO_638"
@@ -51,21 +51,21 @@ yellow_laser_dict = {"name": yellow_laser, "duration": 35e6}
 
 
 def do_widefield_image_sample(nv_sig, num_reps=1):
-    nv_sig[VirtualLaser.IMAGING] = yellow_laser_dict
+    nv_sig[VirtualLaserKey.IMAGING] = yellow_laser_dict
     image_sample.widefield_image(nv_sig, num_reps)
 
 
 def do_scanning_image_sample(nv_sig):
     scan_range = 4
     num_steps = 60
-    nv_sig[VirtualLaser.IMAGING] = green_laser_dict
+    nv_sig[VirtualLaserKey.IMAGING] = green_laser_dict
     image_sample.scanning(nv_sig, scan_range, scan_range, num_steps)
 
 
 def do_scanning_image_sample_zoom(nv_sig):
     scan_range = 0.2
     num_steps = 30
-    nv_sig[VirtualLaser.IMAGING] = green_laser_dict
+    nv_sig[VirtualLaserKey.IMAGING] = green_laser_dict
     image_sample.scanning(nv_sig, scan_range, scan_range, num_steps)
 
 
@@ -74,7 +74,7 @@ def do_image_nv_list(nv_list):
 
 
 def do_image_single_nv(nv_sig):
-    nv_sig[VirtualLaser.IMAGING] = green_laser_dict
+    nv_sig[VirtualLaserKey.IMAGING] = green_laser_dict
     return image_sample.single_nv(nv_sig)
 
 
@@ -84,7 +84,7 @@ def do_charge_state_histograms(nv_list, num_reps):
 
 
 def do_optimize_green(nv_sig, do_plot=True):
-    coords_suffix = tb.get_laser_name(VirtualLaser.IMAGING)
+    coords_suffix = tb.get_laser_name(VirtualLaserKey.IMAGING)
     ret_vals = optimize.main(
         nv_sig, coords_suffix=coords_suffix, no_crash=True, do_plot=do_plot
     )
@@ -93,7 +93,7 @@ def do_optimize_green(nv_sig, do_plot=True):
 
 
 def do_optimize_red(nv_sig, do_plot=True):
-    laser_key = VirtualLaser.IONIZATION
+    laser_key = VirtualLaserKey.IONIZATION
     coords_suffix = red_laser
     ret_vals = optimize.main(
         nv_sig,
@@ -122,7 +122,7 @@ def do_optimize_loop(nv_list, coords_suffix, scanning_from_pixel=False):
     for nv in nv_list:
         # Pixel coords
         if coords_suffix is None:
-            imaging_laser = tb.get_laser_name(VirtualLaser.IMAGING)
+            imaging_laser = tb.get_laser_name(VirtualLaserKey.IMAGING)
             if scanning_from_pixel:
                 widefield.set_nv_scanning_coords_from_pixel_coords(nv, imaging_laser)
             opti_coords = do_optimize_pixel(nv)

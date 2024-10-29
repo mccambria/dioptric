@@ -49,7 +49,7 @@ from utils import data_manager as dm
 from utils import kplotlib as kpl
 from utils import positioning as pos
 from utils import tool_belt as tb
-from utils.constants import CoordsKey, NVSig, VirtualLaser
+from utils.constants import CoordsKey, NVSig, VirtualLaserKey
 
 green_laser = "laser_INTE_520"
 red_laser = "laser_COBO_638"
@@ -109,7 +109,7 @@ def do_charge_state_conditional_init(nv_list):
 
 
 def do_optimize_green(nv_sig, do_plot=True):
-    coords_key = tb.get_laser_name(VirtualLaser.IMAGING)
+    coords_key = tb.get_laser_name(VirtualLaserKey.IMAGING)
     ret_vals = optimize.main(
         nv_sig,
         coords_key=coords_key,

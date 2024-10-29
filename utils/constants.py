@@ -52,9 +52,9 @@ class CountFormat(Enum):
     RAW = auto()  # Just the raw number of counts
 
 
-# Laser keys describe virtual lasers, which accomplish one and only one function and
-# must be associated with a physical laser in config
-class VirtualLaser(Enum):
+# Virtual laser keys are the names of virtual lasers, which accomplish one and only
+# one function and must be associated with a physical laser in config
+class VirtualLaserKey(Enum):
     # Scanning virtual lasers
     IMAGING = auto()
     ION = auto()
@@ -70,11 +70,16 @@ class VirtualLaser(Enum):
     WIDEFIELD_SPIN_POL = auto()
 
 
-# coords_key for positioning the sample itself
-SAMPLE = "sample"
+# Coords keys are the names associated with the various physical coordinates
+# for each NV. Each positioner name is a coords key. CoordsKey.PIXEL is associated
+# with the location of the NV on a camera's pixel grid.
+class CoordsKey(StrEnum):
+    SAMPLE = "sample"
+    PIXEL = "pixel"
 
 
 class Axes(Enum):
+    NONE = ()
     XY = (0, 1)
     Z = (2,)
     XYZ = (0, 1, 2)
