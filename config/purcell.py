@@ -67,11 +67,9 @@ calibration_coords_nv3 = {
     red_laser_aod: calibration_coords_red[2],
 }
 
-# if coord key is CoordsKey.GLOBAL
-affine_pixel2voltage = [
+pixel_to_sample_affine_transformation_matrix = [
     [-0.01472387, 0.00052569, 1.28717911],
     [0.00040197, -0.01455135, 1.73876545],
-    [0.00000000, 0.00000000, 1.00000000],
 ]
 
 # endregion
@@ -128,8 +126,8 @@ config |= {
         "iq_comp_amp": 0.5,
         "iq_delay": 630,
         "VirtualSigGens": {
-            "sig_gen_0": {
-                "server": "sig_gen_STAN_sg394",
+            0: {
+                "physical_sig_gen_name": "sig_gen_STAN_sg394",
                 # "uwave_power": 6.05,
                 "uwave_power": 2.3,
                 "frequency": 2.8585669247525622,
@@ -137,8 +135,8 @@ config |= {
                 "rabi_period": 128,
                 "iq_delay": 140,
             },
-            "sig_gen_1": {
-                "server": "sig_gen_STAN_sg394_2",
+            1: {
+                "physical_sig_gen_name": "sig_gen_STAN_sg394_2",
                 "uwave_power": 8.1,
                 "frequency": 2.812,
                 # "frequency": 3.05,
@@ -150,7 +148,7 @@ config |= {
     },
     ###
     "Camera": {
-        "server": "camera_NUVU_hnu512gamma",
+        "server_name": "camera_NUVU_hnu512gamma",
         "resolution": (512, 512),
         "spot_radius": 2,  # Radius for integrating NV counts in a camera image
         "bias_clamp": 300,  # (changing this won't actually change the value on the camera currently)
@@ -188,44 +186,53 @@ config |= {
             },
         },
         "VirtualLasers": {
-            # LaserKey.IMAGING: {"physical_laser": green_laser, "duration": 50e6},
-            VirtualLaserKey.IMAGING: {"physical_laser": green_laser, "duration": 12e6},
+            # LaserKey.IMAGING: {"physical_laser_name": green_laser, "duration": 50e6},
+            VirtualLaserKey.IMAGING: {
+                "physical_laser_name": green_laser,
+                "duration": 12e6,
+            },
             VirtualLaserKey.SPIN_READOUT: {
-                "physical_laser": green_laser,
+                "physical_laser_name": green_laser,
                 "duration": 300,
             },
-            # LaserKey.CHARGE_POL: {"physical_laser": green_laser, "duration": 10e3},
+            # LaserKey.CHARGE_POL: {"physical_laser_name": green_laser, "duration": 10e3},
             VirtualLaserKey.CHARGE_POL: {
-                "physical_laser": green_laser,
+                "physical_laser_name": green_laser,
                 "duration": 1e3,
             },
-            # LaserKey.CHARGE_POL: {"physical_laser": green_laser, "duration": 60},
-            VirtualLaserKey.SPIN_POL: {"physical_laser": green_laser, "duration": 10e3},
-            VirtualLaserKey.SHELVING: {"physical_laser": green_laser, "duration": 60},
-            VirtualLaserKey.ION: {"physical_laser": red_laser, "duration": 10e3},
+            # LaserKey.CHARGE_POL: {"physical_laser_name": green_laser, "duration": 60},
+            VirtualLaserKey.SPIN_POL: {
+                "physical_laser_name": green_laser,
+                "duration": 10e3,
+            },
+            VirtualLaserKey.SHELVING: {
+                "physical_laser_name": green_laser,
+                "duration": 60,
+            },
+            VirtualLaserKey.ION: {"physical_laser_name": red_laser, "duration": 10e3},
             # SCC: 180 mW, 0.13 V, no shelving
-            # LaserKey.SCC: {"physical_laser": red_laser, "duration": 248},
-            VirtualLaserKey.SCC: {"physical_laser": red_laser, "duration": 124},
-            # LaserKey.SCC: {"physical_laser": green_laser, "duration": 200},
+            # LaserKey.SCC: {"physical_laser_name": red_laser, "duration": 248},
+            VirtualLaserKey.SCC: {"physical_laser_name": red_laser, "duration": 124},
+            # LaserKey.SCC: {"physical_laser_name": green_laser, "duration": 200},
             VirtualLaserKey.WIDEFIELD_SHELVING: {
-                "physical_laser": yellow_laser,
+                "physical_laser_name": yellow_laser,
                 "duration": 60,
             },
             VirtualLaserKey.WIDEFIELD_IMAGING: {
-                "physical_laser": yellow_laser,
+                "physical_laser_name": yellow_laser,
                 "duration": 12e6,
             },
-            # LaserKey.WIDEFIELD_SPIN_POL: {"physical_laser": yellow_laser, "duration": 10e3},
+            # LaserKey.WIDEFIELD_SPIN_POL: {"physical_laser_name": yellow_laser, "duration": 10e3},
             VirtualLaserKey.WIDEFIELD_SPIN_POL: {
-                "physical_laser": yellow_laser,
+                "physical_laser_name": yellow_laser,
                 "duration": 100e3,
             },
-            # LaserKey.WIDEFIELD_SPIN_POL: {"physical_laser": yellow_laser, "duration": 1e6},
+            # LaserKey.WIDEFIELD_SPIN_POL: {"physical_laser_name": yellow_laser, "duration": 1e6},
             VirtualLaserKey.WIDEFIELD_CHARGE_READOUT: {
-                "physical_laser": yellow_laser,
+                "physical_laser_name": yellow_laser,
                 "duration": 48e6,
             },
-            # LaserKey.WIDEFIELD_CHARGE_READOUT: {"physical_laser": yellow_laser, "duration": 100e6},
+            # LaserKey.WIDEFIELD_CHARGE_READOUT: {"physical_laser_name": yellow_laser, "duration": 100e6},
         },
         #
         "scc_green_shelving_pulse": False,  # Whether or not to include a shelving pulse in SCC
@@ -272,11 +279,12 @@ config |= {
         "calibration_coords_nv1": calibration_coords_nv1,
         "calibration_coords_nv2": calibration_coords_nv2,
         "calibration_coords_nv3": calibration_coords_nv3,
-        "AffineCalibration_pixel2voltage": affine_pixel2voltage,
+        "pixel_to_sample_affine_transformation_matrix": pixel_to_sample_affine_transformation_matrix,
     },
     ###
     "Servers": {  # Bucket for miscellaneous servers not otherwise listed above
         "pulse_gen": "QM_opx",
+        "camera": "camera_NUVU_hnu512gamma",
         "thorslm": "slm_THOR_exulus_hd2",
     },
     ###
@@ -319,8 +327,8 @@ config |= {
 default_pulse_duration = config["CommonDurations"]["default_pulse_duration"]
 default_int_freq = 75e6
 virtual_sig_gens_dict = config["Microwaves"]["VirtualSigGens"]
-rabi_period_0 = virtual_sig_gens_dict["sig_gen_0"]["rabi_period"]
-rabi_period_1 = virtual_sig_gens_dict["sig_gen_1"]["rabi_period"]
+rabi_period_0 = virtual_sig_gens_dict[0]["rabi_period"]
+rabi_period_1 = virtual_sig_gens_dict[1]["rabi_period"]
 ramp_to_zero_duration = 64
 iq_buffer = 0
 virtual_lasers_dict = config["Optics"]["VirtualLasers"]
@@ -824,5 +832,8 @@ opx_config = {
 ref_img_array = np.array([])
 
 
-if __name__ == "__main__":  #
-    print(virtual_lasers_dict[VirtualLaserKey.WIDEFIELD_SPIN_POL]["duration"])
+if __name__ == "__main__":
+    key = "pixel_to_sample_affine_transformation_matrix"
+    mat = np.array(config["Positioning"][key])
+    mat[:, 2] = [0, 0]
+    print(mat)

@@ -344,15 +344,14 @@ def determine_threshold(
     std = np.std(counts_list)
 
     # counts_list = counts_list[counts_list < median + 10 * std]
-    
-    #Saroj:Instead of a hard threshold (median + 10 * std), 
-    # more adaptive or robust interquartile range (IQR) for outlier detection. 
+
+    # Saroj:Instead of a hard threshold (median + 10 * std),
+    # more adaptive or robust interquartile range (IQR) for outlier detection.
     q1, q3 = np.percentile(counts_list, [25, 75])
     iqr = q3 - q1
     lower_bound = q1 - 1.5 * iqr
     upper_bound = q3 + 1.5 * iqr
     counts_list = counts_list[(counts_list > lower_bound) & (counts_list < upper_bound)]
-
 
     # Histogram the counts
     counts_list = np.array([round(el) for el in counts_list])
@@ -917,14 +916,32 @@ def get_common_duration(key):
 
 
 @cache
-def get_optics_dict(optics_key):
+def get_virtual_laser_dict(virtual_laser_key):
     config = common.get_config_dict()
-    return config["Optics"][optics_key]
+    return config["Optics"]["VirtualLasers"][virtual_laser_key]
+
+
+@cache
+def get_physical_laser_dict(physical_laser_name):
+    config = common.get_config_dict()
+    return config["Optics"]["PhysicalLasers"][physical_laser_name]
+
+
+@cache
+def get_physical_sig_gen_dict(physical_sig_gen_name):
+    config = common.get_config_dict()
+    return config["Microwaves"]["PhysicalSigGens"][physical_sig_gen_name]
+
+
+@cache
+def get_virtual_sig_gen_dict(sig_gen_ind):
+    config = common.get_config_dict()
+    return config["Microwaves"]["VirtualSigGens"][sig_gen_ind]
 
 
 @cache
 def get_laser_name(laser_key):
-    return get_optics_dict(laser_key)["name"]
+    return get_virtual_laser_dict(laser_key)["name"]
 
 
 @cache

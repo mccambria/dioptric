@@ -139,7 +139,7 @@ def nv_list(nv_list, num_reps=1):
 def _nv_list_sub(nv_list, caller_fn_name, save_dict=None, num_reps=1):
     nv_sig = nv_list[0]
     laser_key = VirtualLaserKey.IMAGING
-    laser_dict = tb.get_optics_dict(laser_key)
+    laser_dict = tb.get_virtual_laser_dict(laser_key)
     laser_name = laser_dict["name"]
     adj_coords_list = [pos.get_nv_coords(nv, laser_name) for nv in nv_list]
     x_coords = [coords[0] for coords in adj_coords_list]
@@ -153,7 +153,7 @@ def widefield_image(nv_sig, num_reps=1):
 
 def widefield_scanning(nv_sig, x_range, y_range, num_steps):
     laser_key = VirtualLaserKey.WIDEFIELD_IMAGING
-    laser_dict = tb.get_optics_dict(laser_key)
+    laser_dict = tb.get_virtual_laser_dict(laser_key)
     laser_name = laser_dict["name"]
     x_center, y_center = [0, 0]
     ret_vals = pos.get_scan_grid_2d(
@@ -174,7 +174,7 @@ def widefield_scanning(nv_sig, x_range, y_range, num_steps):
 
 def scanning(nv_sig, x_range, y_range, num_steps):
     laser_key = VirtualLaserKey.IMAGING
-    laser_dict = tb.get_optics_dict(laser_key)
+    laser_dict = tb.get_virtual_laser_dict(laser_key)
     laser_name = laser_dict["name"]
     center_coords = pos.get_nv_coords(nv_sig, laser_name)
     x_center, y_center = center_coords[0:2]
@@ -216,8 +216,8 @@ def main(
     camera = tb.get_server_camera()
     pulse_gen = tb.get_server_pulse_gen()
 
-    laser_dict = tb.get_optics_dict(laser_key)
-    readout_laser = laser_dict["name"]
+    laser_dict = tb.get_virtual_laser_dict(laser_key)
+    readout_laser = laser_dict["physical_laser_name"]
 
     pos.set_xyz_on_nv(nv_sig)
 

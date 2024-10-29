@@ -181,7 +181,7 @@ def create_histogram(
         return None  # Skip plotting if plot is set to False
 
     try:
-        laser_dict = tb.get_optics_dict(VirtualLaserKey.WIDEFIELD_CHARGE_READOUT)
+        laser_dict = tb.get_virtual_laser_dict(VirtualLaserKey.WIDEFIELD_CHARGE_READOUT)
         readout = laser_dict["duration"]
         readout_ms = int(readout / 1e6)
         readout_s = readout / 1e9
@@ -295,7 +295,7 @@ def process_and_plot(raw_data, plot_histograms=False):
         return
 
     laser_key = VirtualLaserKey.WIDEFIELD_CHARGE_READOUT
-    laser_dict = tb.get_optics_dict(laser_key)
+    laser_dict = tb.get_virtual_laser_dict(laser_key)
     readout_laser = laser_dict["name"]
     readout = laser_dict["duration"]
     readout_ms = readout / 10**6

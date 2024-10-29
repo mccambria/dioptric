@@ -68,7 +68,7 @@ def capture_image(num_reps=1, display_image=False):
     """
     tb.reset_cfm()
     laser_key = VirtualLaserKey.WIDEFIELD_IMAGING
-    laser_dict = tb.get_optics_dict(laser_key)
+    laser_dict = tb.get_virtual_laser_dict(laser_key)
     readout_laser = laser_dict["name"]
     readout_duration = laser_dict["duration"]
 

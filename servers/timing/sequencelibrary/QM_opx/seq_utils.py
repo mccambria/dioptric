@@ -246,7 +246,7 @@ def _macro_scc_shelving(
     shelving_pulse_name = "shelving"
     ion_pulse_name = "scc"
     pulse_name_list = [shelving_pulse_name, ion_pulse_name]
-    shelving_laser_dict = tb.get_optics_dict(VirtualLaserKey.SHELVING)
+    shelving_laser_dict = tb.get_virtual_laser_dict(VirtualLaserKey.SHELVING)
     shelving_pulse_duration = shelving_laser_dict["duration"]
     shelving_scc_gap_ns = 0
     scc_delay = convert_ns_to_cc(shelving_pulse_duration + shelving_scc_gap_ns)
@@ -737,7 +737,9 @@ def convert_ns_to_cc(duration_ns, allow_rounding=False, allow_zero=False):
 
 @cache
 def get_default_charge_readout_duration():
-    readout_laser_dict = tb.get_optics_dict(VirtualLaserKey.WIDEFIELD_CHARGE_READOUT)
+    readout_laser_dict = tb.get_virtual_laser_dict(
+        VirtualLaserKey.WIDEFIELD_CHARGE_READOUT
+    )
     readout_duration_ns = readout_laser_dict["duration"]
     return convert_ns_to_cc(readout_duration_ns)
 
@@ -772,8 +774,8 @@ def get_common_duration_cc(key):
 
 @cache
 def get_laser_mod_element(laser_name, sticky=False):
-    config = common.get_config_dict()
-    mod_mode = config["Optics"][laser_name]["mod_mode"]
+    physical_laser_dict = tb.get_physical_laser_dict(laser_name)
+    mod_mode = physical_laser_dict["mod_mode"]
     if sticky:
         if mod_mode == ModMode.ANALOG:
             laser_mod_element = f"ao_{laser_name}_am_sticky"
@@ -789,16 +791,16 @@ def get_laser_mod_element(laser_name, sticky=False):
 
 @cache
 def get_sig_gen_element(uwave_ind=0):
-    config = common.get_config_dict()
-    sig_gen_name = config["Microwaves"][f"sig_gen_{uwave_ind}"]["name"]
+    virtual_sig_gen_dict = tb.get_virtual_sig_gen_dict(uwave_ind)
+    sig_gen_name = virtual_sig_gen_dict["physical_sig_gen_name"]
     sig_gen_element = f"do_{sig_gen_name}_dm"
     return sig_gen_element
 
 
 @cache
 def get_iq_mod_elements(uwave_ind=0):
-    config = common.get_config_dict()
-    sig_gen_name = config["Microwaves"][f"sig_gen_{uwave_ind}"]["name"]
+    virtual_sig_gen_dict = tb.get_virtual_sig_gen_dict(uwave_ind)
+    sig_gen_name = virtual_sig_gen_dict["physical_sig_gen_name"]
     i_el = f"ao_{sig_gen_name}_i"
     q_el = f"ao_{sig_gen_name}_q"
     return i_el, q_el
@@ -806,8 +808,8 @@ def get_iq_mod_elements(uwave_ind=0):
 
 @cache
 def get_rabi_period(uwave_ind=0):
-    config = common.get_config_dict()
-    rabi_period_ns = config["Microwaves"][f"sig_gen_{uwave_ind}"]["rabi_period"]
+    virtual_sig_gen_dict = tb.get_virtual_sig_gen_dict(uwave_ind)
+    rabi_period_ns = virtual_sig_gen_dict["rabi_period"]
     rabi_period = convert_ns_to_cc(rabi_period_ns)
     return rabi_period
 

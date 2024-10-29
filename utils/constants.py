@@ -122,3 +122,7 @@ class Digital(IntEnum):
 
 
 Boltzmann = 8.617e-2  # meV / K
+
+
+if __name__ == "__main__":
+    print(Axes.XYZ.value)

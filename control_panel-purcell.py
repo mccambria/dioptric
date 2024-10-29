@@ -889,10 +889,10 @@ if __name__ == "__main__":
     nv_list: list[NVSig] = []
     for ind in range(num_nvs):
         coords = {
-            CoordsKey.GLOBAL: global_coords,
+            CoordsKey.SAMPLE: global_coords,
             CoordsKey.PIXEL: pixel_coords_list.pop(0),
-            green_laser: green_coords_list.pop(0),
-            red_laser: red_coords_list.pop(0),
+            green_laser_aod: green_coords_list.pop(0),
+            red_laser_aod: red_coords_list.pop(0),
         }
         nv_sig = NVSig(
             name=f"{sample_name}-nv{ind}_{date_str}",
@@ -1004,19 +1004,19 @@ if __name__ == "__main__":
 
         # for point in points:
         #     x, y = point
-        #     nv_sig.coords[CoordsKey.GLOBAL][0] += x
-        #     nv_sig.coords[CoordsKey.GLOBAL][1] += y
-        #     print(nv_sig.coords[CoordsKey.GLOBAL])
+        #     nv_sig.coords[CoordsKey.SAMPLE][0] += x
+        #     nv_sig.coords[CoordsKey.SAMPLE][1] += y
+        #     print(nv_sig.coords[CoordsKey.SAMPLE])
         #     do_scanning_image_sample(nv_sig)
 
         # Move diagonally forward
         # for x, y in zip(x_values, y_values):
-        # nv_sig.coords[CoordsKey.GLOBAL][0] = x
-        # nv_sig.coords[CoordsKey.GLOBAL][1] = y
+        # nv_sig.coords[CoordsKey.SAMPLE][0] = x
+        # nv_sig.coords[CoordsKey.SAMPLE][1] = y
         # do_scanning_image_sample(nv_sig)
 
         # for z in np.linspace(-0.6, 0.0, 11):
-        #     nv_sig.coords[CoordsKey.GLOBAL][2] = z
+        #     nv_sig.coords[CoordsKey.SAMPLE][2] = z
         #     do_scanning_image_sample(nv_sig)
         # do_widefield_image_sample(nv_sig, 50)
 

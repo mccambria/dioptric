@@ -210,7 +210,7 @@ def should_drift_adjust(coords_key):
         return True
     else:
         sample_positioner_axes = get_sample_positioner_axes()
-        return 0 not in sample_positioner_axes
+        return 0 not in sample_positioner_axes.value
 
 
 def set_nv_coords(nv_sig, coords, coords_key=CoordsKey.SAMPLE):
@@ -389,18 +389,19 @@ def get_axis_stream_fn(axis_ind, positioner=CoordsKey.SAMPLE):
 def get_drift(coords_key=None):
     key = "DRIFT"
     drift = common.get_registry_entry(["State"], key)
-    drift_dtype = []
-    for ind in range(len(drift)):
-        axis_dtype = get_axis_dtype(ind)
-        if axis_dtype is not None:
-            drift_dtype.append(axis_dtype(drift[ind]))
-        else:
-            drift_dtype.append(None)
-    drift = np.array(drift_dtype)
+    drift = np.array(drift)
+    # drift_dtype = []
+    # for ind in range(len(drift)):
+    #     axis_dtype = get_axis_dtype(ind)
+    #     if axis_dtype is not None:
+    #         drift_dtype.append(axis_dtype(drift[ind]))
+    #     else:
+    #         drift_dtype.append(None)
+    # drift = np.array(drift_dtype)
     if coords_key is not None:
-        return transform_drift(drift, coords_key)
-    else:
-        return drift
+        transformed_drift = transform_drift(drift[0:2], coords_key)
+        drift[0:2] = transformed_drift
+    return drift
 
 
 def transform_drift(drift, dest_coords_key):
@@ -412,17 +413,20 @@ def transform_drift(drift, dest_coords_key):
     if dest_coords_key is CoordsKey.SAMPLE:
         return drift
 
-    transform_matrix = get_drift_transformation_matrix(dest_coords_key)
-    transformed_drift = np.dot(transform_matrix, np.append(drift, 0))[:2]
-
-    return transformed_drift.tolist()
+    transformation_matrix = get_drift_transformation_matrix(dest_coords_key)
+    return apply_affine_transformation(drift, transformation_matrix)
 
 
 def transform_coords(source_coords, source_coords_key, dest_coords_key):
     transformation_matrix = get_coordinate_transformation_matrix(
         source_coords_key, dest_coords_key
     )
-    return np.dot(transformation_matrix, source_coords)
+    return apply_affine_transformation(source_coords, transformation_matrix)
+
+
+def apply_affine_transformation(source_coords, transformation_matrix):
+    # MCC
+    return np.dot(transformation_matrix, np.append(source_coords, 1))
 
 
 @cache
@@ -456,6 +460,15 @@ def get_drift_transformation_matrix(dest_coords_key):
 
 
 def _get_transformation_matrix(source_coords_key, dest_coords_key, relative):
+    # MCC
+    if source_coords_key is CoordsKey.PIXEL and dest_coords_key is CoordsKey.SAMPLE:
+        config = common.get_config_dict()
+        key = "pixel_to_sample_affine_transformation_matrix"
+        transformation_matrix = np.array(config["Postioning"][key])
+        if relative:
+            transformation_matrix[:, 2] = [0, 0]
+        return transformation_matrix
+
     nvs = _get_coordinate_calibration_nvs()
 
     source_coords_arr = []
@@ -469,17 +482,20 @@ def _get_transformation_matrix(source_coords_key, dest_coords_key, relative):
             if ind == 0:
                 ref_source_coords = source_coords
                 ref_dest_coords = dest_coords
-            source_coords_arr.append(source_coords - ref_source_coords)
-            dest_coords_arr.append(dest_coords - ref_dest_coords)
+
+            source_coords_diff = np.array(source_coords) - np.array(ref_source_coords)
+            source_coords_arr.append(source_coords_diff)
+            dest_coords_diff = np.array(dest_coords) - np.array(ref_dest_coords)
+            dest_coords_arr.append(dest_coords_diff)
         else:
             source_coords_arr.append(source_coords)
             dest_coords_arr.append(dest_coords)
 
     source_coords_arr = np.array(source_coords_arr, dtype="float32")
     dest_coords_arr = np.array(dest_coords_arr, dtype="float32")
-    transform_matrix = cv2.getAffineTransform(source_coords_arr, dest_coords_arr)
+    transformation_matrix = cv2.getAffineTransform(source_coords_arr, dest_coords_arr)
 
-    return transform_matrix
+    return transformation_matrix
 
 
 def _get_coordinate_calibration_nvs():
@@ -498,19 +514,19 @@ def set_drift_val(drift_val, axis_ind):
     return common.set_registry_entry(["State"], key, drift)
 
 
-def set_drift(drift, positioner=CoordsKey.SAMPLE):
+def set_drift(drift):
     get_drift.cache_clear()
-    key = f"DRIFT-{positioner}"
+    key = "DRIFT"
     return common.set_registry_entry(["State"], key, drift)
 
 
-def reset_drift(positioner=CoordsKey.SAMPLE):
+def reset_drift():
     try:
-        drift = get_drift(positioner)
+        drift = get_drift()
         len_drift = len(drift)
     except Exception:
         len_drift = 3
-    return set_drift([0.0] * len_drift, positioner)
+    return set_drift([0.0] * len_drift)
 
 
 def reset_xy_drift(positioner=CoordsKey.SAMPLE):

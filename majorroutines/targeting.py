@@ -184,7 +184,7 @@ def _get_opti_virtual_laser_key(positioner):
     if positioner is CoordsKey.SAMPLE:
         laser_key = VirtualLaserKey.IMAGING
     else:
-        laser_dict = tb.get_optics_dict(positioner)
+        laser_dict = tb.get_virtual_laser_dict(positioner)
         laser_key = laser_dict["opti_virtual_laser_key"]
     return laser_key
 
@@ -217,7 +217,7 @@ def _read_counts_camera_sequence(
     # Sequence setup
 
     if virtual_laser_key == VirtualLaserKey.IMAGING:
-        imaging_laser_dict = tb.get_optics_dict(VirtualLaserKey.IMAGING)
+        imaging_laser_dict = tb.get_virtual_laser_dict(VirtualLaserKey.IMAGING)
         imaging_laser_name = imaging_laser_dict["name"]
         imaging_readout = imaging_laser_dict["duration"]
         laser_coords = pos.get_nv_coords(nv_sig, imaging_laser_name)
@@ -445,7 +445,7 @@ def _read_counts(
 
     elif collection_mode == CollectionMode.COUNTER:
         laser_key = _get_opti_virtual_laser_key(positioner)
-        laser_dict = tb.get_optics_dict(laser_key)
+        laser_dict = tb.get_virtual_laser_dict(laser_key)
         laser_name = tb.get_laser_name(laser_key)
 
         if positioner != CoordsKey.SAMPLE:
