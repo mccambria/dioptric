@@ -27,7 +27,6 @@ from scipy.special import gamma
 from scipy.stats import poisson
 from skimage.filters import threshold_li, threshold_otsu, threshold_triangle
 from skimage.measure import ransac
-from skimage.transform import AffineTransform
 from sklearn.cluster import KMeans
 from sklearn.mixture import GaussianMixture
 
@@ -87,9 +86,9 @@ def crop_img_arrays(img_arrays, offsets=[0, 0], buffer=20):
                 for rep_ind in range(shape[2]):
                     img_array = img_arrays[exp_ind, run_ind, step_ind, rep_ind]
                     cropped_img_array = crop_img_array(img_array, offset, buffer)
-                    cropped_img_arrays[
-                        exp_ind, run_ind, step_ind, rep_ind
-                    ] = cropped_img_array
+                    cropped_img_arrays[exp_ind, run_ind, step_ind, rep_ind] = (
+                        cropped_img_array
+                    )
     return cropped_img_arrays
 
 

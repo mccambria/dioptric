@@ -2,9 +2,10 @@
 """
 Widefield extension of the standard optimize in majorroutines
 
-Created Fall 2023
+Created 29 Oct, 2024
 
 @author: mccambria
+@author: sbchand
 """
 
 import copy
@@ -17,7 +18,7 @@ from numpy import inf
 from scipy.optimize import minimize
 from scipy.signal import correlate
 
-from majorroutines import optimize_xyz, targeting
+from majorroutines.targeting import optimize
 from utils import common, widefield
 from utils import data_manager as dm
 from utils import kplotlib as kpl
@@ -26,51 +27,60 @@ from utils import tool_belt as tb
 from utils.constants import Axes, CoordsKey, NVSig, VirtualLaserKey
 
 
-def optimize_slm_calibration(nv_sig, do_plot=False):
-    num_attempts = 5
-    attempt_ind = 0
-    while True:
-        # xy
-        img_array = stationary_count_lite(nv_sig, ret_img_array=True)
-        opti_pixel_coords, pixel_drift = optimize_pixel_with_img_array(
-            img_array, nv_sig, None, do_plot, return_drift=True
-        )
-        counts = widefield.integrate_counts_from_adus(img_array, opti_pixel_coords)
+def optimize_pixel(nv_sig):
+    """Optimize pixel-based coordinates."""
+    try:
+        return optimize(nv_sig, coords_key=CoordsKey.PIXEL)
+    except Exception as e:
+        print(f"Error during pixel optimization: {e}")
+        return None
 
-        if nv_sig.expected_counts is not None and check_expected_counts(nv_sig, counts):
-            return pixel_drift
 
-        # z
-        try:
-            _, counts = main(
-                nv_sig,
-                axes_to_optimize=[2],
-                opti_necessary=True,
-                do_plot=do_plot,
-                num_attempts=2,
-            )
-        except Exception:
-            pass
+def optimize_sample(nv_sig):
+    """Optimize sample-based coordinates."""
+    try:
+        return optimize(nv_sig, coords_key=CoordsKey.SAMPLE)
+    except Exception as e:
+        print(f"Error during sample optimization: {e}")
+        return None
 
-        if nv_sig.expected_counts is None or check_expected_counts(nv_sig, counts):
-            return pixel_drift
 
-        attempt_ind += 1
-        if attempt_ind == num_attempts:
-            raise RuntimeError("Optimization failed.")
+def optimize_sample_xy(nv_sig):
+    """Optimize sample-based coordinates along XY axes."""
+    try:
+        return optimize(nv_sig, coords_key=CoordsKey.SAMPLE, axes=Axes.XY)
+    except Exception as e:
+        print(f"Error during XY sample optimization: {e}")
+        return None
+
+
+def optimize_sample_z(nv_sig):
+    """Optimize sample-based coordinates along the Z-axis."""
+    try:
+        return optimize(nv_sig, coords_key=CoordsKey.SAMPLE, axes=Axes.Z)
+    except Exception as e:
+        print(f"Error during Z-axis sample optimization: {e}")
+        return None
 
 
 if __name__ == "__main__":
-    kpl.init_kplotlib()
+    try:
+        # Initialize plotting
+        kpl.init_kplotlib()
 
-    data = dm.get_raw_data(file_id=1521874556597, load_npz=True)
-    img_array = np.array(data["img_array"])
+        # Load data from the data manager
+        data = dm.get_raw_data(file_id=1521874556597, load_npz=True)
+        img_array = np.array(data["img_array"])
 
-    print(widefield.integrate_counts_from_adus(img_array, (126.687, 128.27)))
-    print(widefield.integrate_counts_from_adus(img_array, (126.687 - 0.2, 128.27)))
-    # data = dm.get_raw_data(file_id=1522533978767, load_npz=True)
-    # ref_img_array = np.array(data["img_array"])
+        # Perform some widefield operations for testing
+        counts1 = widefield.integrate_counts_from_adus(img_array, (126.687, 128.27))
+        counts2 = widefield.integrate_counts_from_adus(img_array, (126.487, 128.27))
 
-    # optimize_pixel_by_ref_img_array(img_array, ref_img_array)
+        print(f"Counts at (126.687, 128.27): {counts1}")
+        print(f"Counts at (126.487, 128.27): {counts2}")
 
-    plt.show(block=True)
+        # Show the plots
+        plt.show(block=True)
+
+    except Exception as e:
+        print(f"An error occurred in the main block: {e}")

@@ -427,7 +427,9 @@ def transform_coords(source_coords, source_coords_key, dest_coords_key):
 
 @cache
 def get_coordinate_transformation_matrix(source_coords_key, dest_coords_key):
-    _get_transformation_matrix(source_coords_key, dest_coords_key, relative=False)
+    return _get_transformation_matrix(
+        source_coords_key, dest_coords_key, relative=False
+    )
 
 
 @cache
@@ -473,9 +475,9 @@ def _get_transformation_matrix(source_coords_key, dest_coords_key, relative):
             source_coords_arr.append(source_coords)
             dest_coords_arr.append(dest_coords)
 
-    source_coords_arr = np.array(source_coords, dtype="float32")
-    dest_coords_arr = np.array(dest_coords, dtype="float32")
-    transform_matrix = cv2.getAffineTransform(source_coords, dest_coords)
+    source_coords_arr = np.array(source_coords_arr, dtype="float32")
+    dest_coords_arr = np.array(dest_coords_arr, dtype="float32")
+    transform_matrix = cv2.getAffineTransform(source_coords_arr, dest_coords_arr)
 
     return transform_matrix
 

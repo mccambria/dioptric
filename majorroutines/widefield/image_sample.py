@@ -16,7 +16,7 @@ import numpy as np
 from pipython import GCSDevice
 
 import majorroutines.targeting as targeting
-from majorroutines.widefield.targeting import optimize_pixel
+from majorroutines.targeting import optimize_pixel
 from utils import common, widefield
 from utils import data_manager as dm
 from utils import kplotlib as kpl
@@ -86,16 +86,18 @@ def _charge_state_prep_diff(nv_sig, caller_fn_name, num_reps=1):
         img_array = img_arrays[ind]
         title = titles[ind]
 
-        nv_pixel_coords = optimize_pixel(
-            img_array,
-            nv_sig,
-            set_scanning_drift=False,
-            set_pixel_drift=False,
-            pixel_drift_adjust=False,
-        )
-        nv_counts = widefield.counts_from_img_array(
-            img_array, nv_pixel_coords, drift_adjust=False
-        )
+        # nv_pixel_coords = optimize_pixel(
+        #     img_array,
+        #     nv_sig,
+        #     set_scanning_drift=False,
+        #     set_pixel_drift=False,
+        #     pixel_drift_adjust=False,
+        # )
+        # nv_counts = widefield.counts_from_img_array(
+        #     img_array, nv_pixel_coords, drift_adjust=False
+        # )
+        nv_pixel_coords, nv_counts = optimize_pixel(nv_sig, img_array)
+
         bg_pixel_coords = [
             nv_pixel_coords[0] + bg_offset[0],
             nv_pixel_coords[1] + bg_offset[1],

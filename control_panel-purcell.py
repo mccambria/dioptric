@@ -54,6 +54,8 @@ from utils.constants import CoordsKey, NVSig, VirtualLaserKey
 green_laser = "laser_INTE_520"
 red_laser = "laser_COBO_638"
 yellow_laser = "laser_OPTO_589"
+green_laser_aod = f"{green_laser}_aod"
+red_laser_aod = f"{red_laser}_aod"
 
 ### Major Routines
 
@@ -830,25 +832,31 @@ if __name__ == "__main__":
 
     print(f"Number of NVs: {len(pixel_coords_list)}")
     print(f"Reference NV:{pixel_coords_list[0]}")
+
+    # Define transformations using `transform_coords`
     green_coords_list = [
         [
             round(coord, 3)
-            for coord in widefield.pixel_to_scanning_coords(
-                nv_pixel_coords, coords_key=green_laser
+            for coord in pos.transform_coords(
+                nv_pixel_coords, CoordsKey.PIXEL, green_laser_aod
             )
         ]
         for nv_pixel_coords in pixel_coords_list
     ]
-    # print(green_coords_list[0])
+
     red_coords_list = [
         [
             round(coord, 3)
-            for coord in widefield.pixel_to_scanning_coords(
-                nv_pixel_coords, coords_key=red_laser
+            for coord in pos.transform_coords(
+                nv_pixel_coords, CoordsKey.PIXEL, red_laser_aod
             )
         ]
         for nv_pixel_coords in pixel_coords_list
     ]
+
+    # Optional: Print first coordinate set for verification
+    print(f"First Green Laser Coordinates: {green_coords_list[0]}")
+    print(f"First Red Laser Coordinates: {red_coords_list[0]}")
     # print(red_coords_list[0])
     # print(pixel_coords_list[8])
 
@@ -1014,7 +1022,7 @@ if __name__ == "__main__":
 
         # do_scanning_image_sample(nv_sig)
         # do_scanning_image_sample_zoom(nv_sig)
-        # do_widefield_image_sample(nv_sig, 50)
+        do_widefield_image_sample(nv_sig, 50)
         # do_widefield_image_sample(nv_sig, 100)
 
         # do_image_nv_list(nv_list)
