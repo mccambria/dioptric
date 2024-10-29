@@ -860,21 +860,22 @@ if __name__ == "__main__":
     # print(red_coords_list[0])
     # print(pixel_coords_list[8])
 
-    # pixel_coords_list = [
-    #     [125.000, 160.887],
-    #     [75.302, 95.265],
-    #     [199.053, 94.250],
-    # ]
-    # green_coords_list = [
-    #     [109.504, 113.073],
-    #     [115.361, 106.287],
-    #     [102.128, 105.29],
-    # ]
-    # red_coords_list = [
-    #     [74.367, 78.506],
-    #     [78.919, 72.896],
-    #     [68.183, 72.361],
-    # ]
+    pixel_coords_list = [
+        [125.000, 160.887],
+        [75.302, 95.265],
+        [199.053, 94.250],
+    ]
+    green_coords_list = [
+        [110.110, 110.073],
+        # [109.504, 113.073],
+        [115.361, 106.287],
+        [102.128, 105.29],
+    ]
+    red_coords_list = [
+        [74.367, 78.506],
+        [78.919, 72.896],
+        [68.183, 72.361],
+    ]
 
     num_nvs = len(pixel_coords_list)
     threshold_list = [15.5] * num_nvs
@@ -1020,9 +1021,9 @@ if __name__ == "__main__":
         #     do_scanning_image_sample(nv_sig)
         # do_widefield_image_sample(nv_sig, 50)
 
-        # do_scanning_image_sample(nv_sig)
+        do_scanning_image_sample(nv_sig)
         # do_scanning_image_sample_zoom(nv_sig)
-        do_widefield_image_sample(nv_sig, 50)
+        # do_widefield_image_sample(nv_sig, 50)
         # do_widefield_image_sample(nv_sig, 100)
 
         # do_image_nv_list(nv_list)

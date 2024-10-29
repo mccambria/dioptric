@@ -301,11 +301,10 @@ def get_sample_positioner_axes():
 
 
 def get_laser_positioner(virtual_laser_key: VirtualLaserKey):
-    config = common.get_config_dict()
-    physical_laser = config["Optics"]["VirtualLasers"][virtual_laser_key][
-        "physical_laser"
-    ]
-    return config["Optics"]["VirtualLasers"][physical_laser]["positioner"]
+    virtual_laser_dict = tb.get_virtual_laser_dict(virtual_laser_key)
+    physical_laser_name = virtual_laser_dict["physical_laser_name"]
+    physical_laser_dict = tb.get_physical_laser_dict(physical_laser_name)
+    return physical_laser_dict["positioner"]
 
 
 def get_xy_control_mode(positioner=CoordsKey.SAMPLE):

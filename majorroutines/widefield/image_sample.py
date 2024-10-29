@@ -174,9 +174,8 @@ def widefield_scanning(nv_sig, x_range, y_range, num_steps):
 
 def scanning(nv_sig, x_range, y_range, num_steps):
     laser_key = VirtualLaserKey.IMAGING
-    laser_dict = tb.get_virtual_laser_dict(laser_key)
-    laser_name = laser_dict["name"]
-    center_coords = pos.get_nv_coords(nv_sig, laser_name)
+    positioner = pos.get_laser_positioner(laser_key)
+    center_coords = pos.get_nv_coords(nv_sig, positioner)
     x_center, y_center = center_coords[0:2]
     ret_vals = pos.get_scan_grid_2d(
         x_center, y_center, x_range, y_range, num_steps, num_steps

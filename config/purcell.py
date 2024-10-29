@@ -152,9 +152,9 @@ config |= {
         "resolution": (512, 512),
         "spot_radius": 2,  # Radius for integrating NV counts in a camera image
         "bias_clamp": 300,  # (changing this won't actually change the value on the camera currently)
-        "em_gain": 5000,
+        # "em_gain": 5000,
         # "em_gain": 1000,
-        # "em_gain": 10,
+        "em_gain": 10,
         "temp": -60,
         "timeout": 30e3,  # ms
         # "timeout": -1,  # No timeout
@@ -173,12 +173,12 @@ config |= {
             green_laser: {
                 "delay": 0,
                 "mod_mode": ModMode.DIGITAL,
-                "positioner": f"{green_laser}_AOD",
+                "positioner": green_laser_aod,
             },
             red_laser: {
                 "delay": 0,
                 "mod_mode": ModMode.DIGITAL,
-                "positioner": f"{red_laser}_AOD",
+                "positioner": red_laser_aod,
             },
             yellow_laser: {
                 "delay": 0,
