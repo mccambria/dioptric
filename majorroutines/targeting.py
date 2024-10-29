@@ -24,7 +24,14 @@ from utils import data_manager as dm
 from utils import kplotlib as kpl
 from utils import positioning as pos
 from utils import tool_belt as tb
-from utils.constants import SAMPLE, CollectionMode, VirtualLaser, NVSig, PosControlMode, Axes
+from utils.constants import (
+    SAMPLE,
+    Axes,
+    CollectionMode,
+    NVSig,
+    PosControlMode,
+    VirtualLaser,
+)
 
 # endregion
 # region Plotting functions
@@ -383,13 +390,10 @@ def stationary_count_lite(
     positioner=SAMPLE,
     ret_img_array=False,
 ):
-    # Set up
-    pos.set_xyz_on_nv(nv_sig)
-
     ret_vals = _read_counts(nv_sig, coords, positioner)
-    counts = ret_vals[0]
 
     # Return
+    counts = ret_vals[0]
     avg_counts = np.average(counts)
     if ret_img_array:
         return ret_vals[1]
@@ -403,17 +407,17 @@ def check_expected_counts(nv_sig, counts):
     return lower_bound < counts < upper_bound
 
 
-def compensate_for_drift(nv_sig: NVSig):
+def compensate_for_drift(nv_sig: NVSig, no_crash=False):
     # Compensate for drift either by adjusting the sample position to recenter the sample
     # or by adjusting the laser positioners to account for the drift
-    
+
     ### Check if drift compensation is globally disabled
-    
+
     config = common.get_config_dict()
     disable_drift_compensation = config.get("disable_drift_compensation", False)
     if disable_drift_compensation:
-        return 
-    
+        return
+
     ### Check if drift compensation is necessary by reading counts at current coordinates
 
     expected_counts = nv_sig.expected_counts
@@ -426,9 +430,9 @@ def compensate_for_drift(nv_sig: NVSig):
     if not compensation_necessary:
         print("Drift compensation unnecessary.")
         return
-    
+
     ### Find the center coordinates along each available axis
-    
+
     # Determine what axes are available and what positioner to use
     if pos.has_sample_xy_positioner():
         xy_positioner = SAMPLE
@@ -441,30 +445,58 @@ def compensate_for_drift(nv_sig: NVSig):
         z_positioner = SAMPLE
     else:
         axes = list(Axes.XY)
-        
-    for axis_ind in axes:
-        
-    
-    ### Check if we can actively correct for drift by adjusting the sample position
-    if 
-    if pos.has_sample_xy_positioner():
-        center_coords = _find_center_coords(
-            nv_sig,
-            positioner,
-            axes,
-            no_crash=False,
-            do_plot=False,
-            opti_necessary=None,
-            num_attempts=5,
-        )
-    
-    ### Otherwise adjust the optical paths and do z separately after
-    else:
-        
-        
+
+    initial_coords = pos.get_nv_coords(nv_sig, positioner)
+    opti_coords = initial_coords.copy()
+    opti_succeeded = False
+    num_attempts = 5
+
+    # Loop through attempts until we succeed or give up
+    for ind in range(num_attempts):
+        ### Attempt setup
+
+        if opti_succeeded or tb.safe_stop():
+            break
+        print(f"Attempt number {ind+1}")
+
+        ### Loop through the axes
+
+        for axis_ind in axes:
+            # Check if z optimization is necessary after xy optimization
+            if axis_ind == 2 and axes == [0, 1, 2]:
+                current_counts = stationary_count_lite(
+                    nv_sig, opti_coords, xy_positioner
+                )
+                if expected_counts is not None and check_expected_counts(
+                    nv_sig, current_counts
+                ):
+                    print("Z optimization unnecessary.")
+                    opti_succeeded = True
+                    break
+
+            # Perform the optimization
+            ret_vals = _find_center_coords(nv_sig, opti_coords, positioner, axis_ind)
+            opti_coord = ret_vals[0]
+            axis_failed = opti_coord is None
+            if not axis_failed:
+                opti_coords[axis_ind] = opti_coord
+
+        ### Attempt wrap-up
+
+        # Try again if any individual axis failed
+        if axis_failed:
+            continue
+
+        # Check the counts - if the threshold is not set, we just do one pass and succeed
+        current_counts = stationary_count_lite(nv_sig, opti_coords, xy_positioner)
+        print(f"Value at optimized coordinates: {round(current_counts, 1)}")
+        if expected_counts is None or check_expected_counts(nv_sig, current_counts):
+            opti_succeeded = True
+        elif expected_counts is not None:
+            print("Value at optimized coordinates out of bounds.")
 
     ### Calculate the drift relative to the passed coordinates
-    
+
     passed_coords = pos.get_nv_coords(nv_sig, positioner, drift_adjust=False)
     drift = []
     for ind in range(len(passed_coords)):
@@ -475,10 +507,8 @@ def compensate_for_drift(nv_sig: NVSig):
         else:
             drift_coord = opti_coords[ind] - passed_coords[ind]
         drift.append(drift_coord)
-    if opti_succeeded and set_drift:
+    if opti_succeeded:
         pos.set_drift(drift, positioner=positioner)
-        
-        
 
     ### Report the results and set to the optimized coordinates if requested
     disable_z_drift_compensation = config.get("disable_z_drift_compensation", False)
@@ -486,7 +516,7 @@ def compensate_for_drift(nv_sig: NVSig):
     if opti_succeeded:
         print("Optimization succeeded!")
     pos.set_xyz_on_nv(nv_sig)
-    if not opti_necessary or opti_succeeded:
+    if opti_succeeded:
         r_opti_coords = []
         r_drift = []
         for ind in range(len(drift)):
@@ -507,35 +537,37 @@ def compensate_for_drift(nv_sig: NVSig):
         raise RuntimeError("Drift compensation failed.")
 
     print()
-        
-    
-def optimize(nv_sig: NVSig,
-    positioner: str = SAMPLE,
-    axes=Axes.XYZ):
-    # Optimize coords for the passed NV and positioner, leaving other positioners fixed. 
-    # Returns actual optimal coordinates without drift compensation. Use this when first 
-    # characterizing an NV 
-    
+
+
+def optimize(nv_sig: NVSig, positioner: str = SAMPLE, axes: Axes = None):
+    # Optimize coords for the passed NV and positioner, leaving other positioners fixed.
+    # Returns actual optimal coordinates without drift compensation. Use this when first
+    # characterizing an NV
+
     start_time = time.time()
-    
+
+    # Default to values from the config
+    if axes is None:
+        config = common.get_config_dict()
+        positioners = config["Positioning"]["Positioners"][positioner]
+        axes = positioners["axes"]
     axes = list(axes.value)
+
     fig = _create_figure()
     scan_vals_by_axis = [None] * 3
     counts_by_axis = [None] * 3
-    
+
     initial_coords = pos.get_nv_coords(nv_sig, positioner)
     opti_coords = initial_coords.copy()
 
     # Perform the optimizations
     for axis_ind in axes:
-        ret_vals = _find_center_coords(
-            nv_sig, opti_coords, positioner, axis_ind, fig
-        )
+        ret_vals = _find_center_coords(nv_sig, opti_coords, positioner, axis_ind, fig)
         opti_coord = ret_vals[0]
         if opti_coord is not None:
             opti_coords[axis_ind] = opti_coord
         scan_vals_by_axis[axis_ind] = ret_vals[1]
-        
+
     final_counts = stationary_count_lite(nv_sig, opti_coords, positioner)
 
     ### Clean up and save the data
@@ -594,7 +626,7 @@ def temp(
     # If optimize is disabled, just do prep and return
     if nv_sig.disable_opt:
         return [], None
-    
+
     axes = list(axes.value)
 
     ### Setup
@@ -639,7 +671,6 @@ def temp(
             if opti_succeeded or tb.safe_stop():
                 break
             print(f"Attempt number {ind+1}")
-
 
             # Tracking lists for each axis
             scan_vals_by_axis = [None] * 3

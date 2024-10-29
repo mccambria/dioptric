@@ -294,38 +294,31 @@ if __name__ == "__main__":
     # else:
     #     print("No spots detected. Unable to calculate conversion factor.")
 
-    # Save the results
-    save_results(
-        nv_coordinates,
-        integrated_counts,
-        filename="nv_blob_filtered_120nvs.npz",
-    )
-
-    # image_ids = [
-    #     1679871908428,
-    #     1679874278209,
-    #     1679872688533,
-    #     1679871364006,
-    #     1679879341220,
-    #     1679875544782,
-    #     1679879096913,
-    #     1679871587183,
-    #     1679879168640,
-    #     1679874767869,
-    # ]  # Add more image IDs as needed
-    # # Process multiple images and remove duplicates
-    # unique_nv_coordinates, spot_sizes = process_multiple_images(
-    #     image_ids,
-    #     sigma=sigma,
-    #     lower_threshold=lower_threshold,
-    #     upper_threshold=upper_threshold,
-    #     smoothing_sigma=smoothing_sigma,
-    # )
-    # print(f"Number of NVs detected: {len(unique_nv_coordinates)}")
-    # # print(f"Detected NV coordinates (optimized): {nv_coordinates}")
     # # Save the results
     # save_results(
-    #     unique_nv_coordinates,
-    #     spot_sizes,
-    #     filename="nv_blob_filtered_multiple_1.npz",
+    #     nv_coordinates,
+    #     integrated_counts,
+    #     filename="nv_blob_filtered_120nvs.npz",
     # )
+
+    image_ids = [
+        1685105882211,
+        1685083303088,
+        1685090985352,
+    ]  # Add more image IDs as needed
+    # Process multiple images and remove duplicates
+    unique_nv_coordinates, spot_sizes = process_multiple_images(
+        image_ids,
+        sigma=sigma,
+        lower_threshold=lower_threshold,
+        upper_threshold=upper_threshold,
+        smoothing_sigma=smoothing_sigma,
+    )
+    print(f"Number of NVs detected: {len(unique_nv_coordinates)}")
+    # print(f"Detected NV coordinates (optimized): {nv_coordinates}")
+    # Save the results
+    save_results(
+        unique_nv_coordinates,
+        spot_sizes,
+        filename="nv_blob_filtered_multiple_1.npz",
+    )
