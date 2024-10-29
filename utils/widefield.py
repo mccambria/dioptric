@@ -1027,43 +1027,6 @@ def scanning_to_pixel_coords(scanning_coords, coords_key=CoordsKey.GLOBAL):
     return pixel_coords.tolist()
 
 
-def _get_affine_transform_matrix(
-    coords_key=CoordsKey.GLOBAL, direction="pixel_to_scanning"
-):
-    if coords_key == CoordsKey.GLOBAL:
-        # Retrieve the affine transformation matrix from the config for piezo votage to camera
-        config = common.get_config_dict()
-        affine_matrix = config["Positioning"]["AffineCalibration_pixel2voltage"]
-        transform_matrix = np.array(affine_matrix)
-        return transform_matrix
-
-    nv1, nv2, nv3 = get_widefield_calibration_nvs()
-    nv1_scanning_coords = pos.get_nv_coords(nv1, coords_key, drift_adjust=False)
-    nv1_pixel_coords = get_nv_pixel_coords(nv1, drift_adjust=False)
-    nv2_scanning_coords = pos.get_nv_coords(nv2, coords_key, drift_adjust=False)
-    nv2_pixel_coords = get_nv_pixel_coords(nv2, drift_adjust=False)
-    nv3_scanning_coords = pos.get_nv_coords(nv3, coords_key, drift_adjust=False)
-    nv3_pixel_coords = get_nv_pixel_coords(nv3, drift_adjust=False)
-
-    if direction == "pixel_to_scanning":
-        source_coords = [nv1_pixel_coords, nv2_pixel_coords, nv3_pixel_coords]
-        dest_coords = [nv1_scanning_coords, nv2_scanning_coords, nv3_scanning_coords]
-    else:  # scanning_to_pixel
-        source_coords = [nv1_scanning_coords, nv2_scanning_coords, nv3_scanning_coords]
-        dest_coords = [nv1_pixel_coords, nv2_pixel_coords, nv3_pixel_coords]
-
-    # A = np.array(
-    #     [source_coords[0] + [1], source_coords[1] + [1], source_coords[2] + [1]]
-    # )
-    A = np.array(source_coords, dtype="float32")
-    B = np.array(dest_coords, dtype="float32")
-    # transform_matrix = np.linalg.lstsq(A, B, rcond=None)[0]
-    M = cv2.getAffineTransform(A, B)
-    # Convert the 2x3 matrix to a 3x3 matrix
-    transform_matrix = np.vstack([M, [0, 0, 1]])
-    return transform_matrix
-
-
 # Assuming nv_list is a list of NV centers with their (x, y, z) coordinates
 def select_well_separated_nvs(nv_list, num_nvs_to_select):
     """

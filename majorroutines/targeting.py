@@ -363,6 +363,28 @@ def _read_counts(
     return ret_vals
 
 
+def _create_opti_nv_sig(nv_sig, opti_coords, positioner):
+    """Make a copy of nv_sig with coords updated so that positioner
+    is set to opti_coords after adjusting for drift
+
+    Parameters
+    ----------
+    nv_sig : _type_
+        _description_
+    opti_coords : _type_
+        _description_
+    positioner : _type_
+        _description_
+    """
+
+    opti_nv_sig = copy.deepcopy(nv_sig)
+    drift = pos.get_drift(positioner)
+    drift = [-1 * el for el in drift]
+    adj_opti_coords = pos.adjust_coords_for_drift(opti_coords, drift)
+    pos.set_nv_coords(opti_nv_sig, adj_opti_coords, positioner)
+    return opti_nv_sig
+
+
 # endregion
 # region General public functions
 
@@ -386,8 +408,21 @@ def check_expected_counts(nv_sig, counts):
 
 
 def compensate_for_drift(nv_sig: NVSig, no_crash=False):
-    # Compensate for drift either by adjusting the sample position to recenter the sample
-    # or by adjusting the laser positioners to account for the drift
+    """Compensate for drift either by adjusting the sample position to recenter the sample
+    or by adjusting the laser positioners to account for the drift
+
+    Parameters
+    ----------
+    nv_sig : NVSig
+        NV to optimize on
+    no_crash : bool, optional
+        flag to disable RuntimeError raised if drift compensation fails, by default False
+
+    Raises
+    ------
+    RuntimeError
+        Crashes out if drift compensation fails - disable by setting the no_crash flag
+    """
 
     ### Check if drift compensation is globally disabled
 
@@ -437,6 +472,7 @@ def compensate_for_drift(nv_sig: NVSig, no_crash=False):
         if opti_succeeded or tb.safe_stop():
             break
         print(f"Attempt number {ind+1}")
+        axis_failed = False
 
         # Main loop
         for axis_ind in axes:
@@ -456,8 +492,9 @@ def compensate_for_drift(nv_sig: NVSig, no_crash=False):
             opti_coord = ret_vals[0]
 
             # Set drift if we succeeded
-            axis_failed = opti_coord is None
-            if not axis_failed:
+            if opti_coord is None:
+                axis_failed = True
+            else:
                 drift_val = opti_coord - passed_coords[axis_ind]
                 pos.set_drift_val(drift_val, axis_ind)
 
@@ -467,66 +504,47 @@ def compensate_for_drift(nv_sig: NVSig, no_crash=False):
 
         # Check the counts - if the threshold is not set, we just do one pass and succeed
         current_counts = stationary_count_lite(nv_sig)
-        print(f"Value at optimized coordinates: {round(current_counts, 1)}")
-        if expected_counts is None or check_expected_counts(nv_sig, current_counts):
+        print(f"Counts after drift compensation: {round(current_counts, 1)}")
+        if expected_counts is None:
             opti_succeeded = True
-        elif expected_counts is not None:
-            print("Value at optimized coordinates out of bounds.")
+            break
+        elif check_expected_counts(nv_sig, current_counts):
+            opti_succeeded = True
+        else:
+            print("Counts after drift compensation out of bounds.")
 
-    ### Calculate the drift relative to the passed coordinates
+    ### Cleanup and return
 
-    if opti_succeeded:
-        print("Optimization succeeded!")
+    # Make sure we're sitting back on the NV regardless of what happened
     pos.set_xyz_on_nv(nv_sig)
+
     if opti_succeeded:
-        r_opti_coords = []
-        r_drift = []
-        for ind in range(len(drift)):
-            opti_coord = opti_coords[ind]
-            drift_coord = drift[ind]
-            if opti_coord is None:
-                r_opti_coords.append(None)
-            else:
-                r_opti_coords.append(round(opti_coord, 3))
-            if drift_coord is None:
-                r_drift.append(None)
-            else:
-                r_drift.append(round(drift_coord, 3))
-        print(f"Optimized coordinates: {r_opti_coords}")
-        print(f"Drift: {r_drift}")
-    # Just crash if we failed
+        print("Drift compensation succeeded!")
     elif not no_crash:
         raise RuntimeError("Drift compensation failed.")
 
     print()
 
 
-def _create_opti_nv_sig(nv_sig, opti_coords, positioner):
-    """Make a copy of nv_sig with coords updated so that positioner
-    is set to opti_coords after adjusting for drift
+def optimize(nv_sig: NVSig, positioner: str = CoordsKey.SAMPLE, axes: Axes = None):
+    """Optimize coords for the passed NV and positioner, leaving other positioners fixed.
+    Returns actual optimal coordinates without drift compensation. Use this when first
+    characterizing an NV
 
     Parameters
     ----------
-    nv_sig : _type_
+    nv_sig : NVSig
         _description_
-    opti_coords : _type_
-        _description_
-    positioner : _type_
-        _description_
+    positioner : str, optional
+        _description_, by default CoordsKey.SAMPLE
+    axes : Axes, optional
+        _description_, by default None
+
+    Returns
+    -------
+    (list, int)
+        (opti_coords, final_counts)
     """
-
-    opti_nv_sig = copy.deepcopy(nv_sig)
-    drift = pos.get_drift(positioner)
-    drift = [-1 * el for el in drift]
-    adj_opti_coords = pos.adjust_coords_for_drift(opti_coords, drift)
-    pos.set_nv_coords(opti_nv_sig, adj_opti_coords, positioner)
-    return opti_nv_sig
-
-
-def optimize(nv_sig: NVSig, positioner: str = CoordsKey.SAMPLE, axes: Axes = None):
-    # Optimize coords for the passed NV and positioner, leaving other positioners fixed.
-    # Returns actual optimal coordinates without drift compensation. Use this when first
-    # characterizing an NV
 
     ### Setup
 

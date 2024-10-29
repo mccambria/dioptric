@@ -47,21 +47,21 @@ calibration_red_coords_list = [
     [65.189, 74.169],
 ]
 # Create the dictionaries using the provided lists
-widefield_calibration_coords1 = {
+coordinate_calibration_coords1 = {
     # CoordsKey.GLOBAL: [0, 0, 2],
     CoordsKey.PIXEL: calibration_pixel_coords_list[0],
     green_laser: calibration_green_coords_list[0],
     red_laser: calibration_red_coords_list[0],
 }
 
-widefield_calibration_coords2 = {
+coordinate_calibration_coords2 = {
     # CoordsKey.GLOBAL: [0, 0, 2],
     CoordsKey.PIXEL: calibration_pixel_coords_list[1],
     green_laser: calibration_green_coords_list[1],
     red_laser: calibration_red_coords_list[1],
 }
 
-widefield_calibration_coords3 = {
+coordinate_calibration_coords3 = {
     # CoordsKey.GLOBAL: [0, 0, 2],
     CoordsKey.PIXEL: calibration_pixel_coords_list[2],
     green_laser: calibration_green_coords_list[2],
@@ -270,9 +270,9 @@ config |= {
                 "default_aod_suffix": "charge_pol",
             },
         },
-        "widefield_calibration_coords1": widefield_calibration_coords1,
-        "widefield_calibration_coords2": widefield_calibration_coords2,
-        "widefield_calibration_coords3": widefield_calibration_coords3,
+        "coordinate_calibration_coords1": coordinate_calibration_coords1,
+        "coordinate_calibration_coords2": coordinate_calibration_coords2,
+        "coordinate_calibration_coords3": coordinate_calibration_coords3,
         "AffineCalibration_pixel2voltage": affine_pixel2voltage,
     },
     ###
