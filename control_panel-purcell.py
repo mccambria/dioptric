@@ -29,7 +29,6 @@ from majorroutines.widefield import (
     correlation_test,
     crosstalk_check,
     image_sample,
-    optimize,
     optimize_scc,
     power_rabi,
     rabi,
@@ -40,6 +39,7 @@ from majorroutines.widefield import (
     simple_correlation_test,
     spin_echo,
     spin_pol_check,
+    targeting,
     xy8,
 )
 
@@ -110,7 +110,7 @@ def do_charge_state_conditional_init(nv_list):
 
 def do_optimize_green(nv_sig, do_plot=True):
     coords_key = tb.get_laser_name(VirtualLaserKey.IMAGING)
-    ret_vals = optimize.main(
+    ret_vals = targeting.main(
         nv_sig,
         coords_key=coords_key,
         no_crash=True,
@@ -123,7 +123,7 @@ def do_optimize_green(nv_sig, do_plot=True):
 
 def do_optimize_red(nv_sig, do_plot=True, axes_to_optimize=[0, 1]):
     coords_key = red_laser
-    ret_vals = optimize.main(
+    ret_vals = targeting.main(
         nv_sig,
         coords_key=coords_key,
         no_crash=True,
@@ -135,17 +135,17 @@ def do_optimize_red(nv_sig, do_plot=True, axes_to_optimize=[0, 1]):
 
 
 def do_optimize_z(nv_sig, do_plot=True):
-    optimize.main(nv_sig, no_crash=True, do_plot=do_plot, axes_to_optimize=[2])
+    targeting.main(nv_sig, no_crash=True, do_plot=do_plot, axes_to_optimize=[2])
 
 
 def do_optimize_xyz(nv_sig, do_plot=True):
-    optimize.optimize_xyz_using_piezo(
+    targeting.optimize_xyz_using_piezo(
         nv_sig, do_plot=do_plot, axes_to_optimize=[0, 1, 2]
     )
 
 
 def do_optimize_pixel(nv_sig):
-    opti_coords = optimize.optimize_pixel(nv_sig, do_plot=True)
+    opti_coords = targeting.optimize_pixel(nv_sig, do_plot=True)
     return opti_coords
 
 
@@ -179,7 +179,7 @@ def do_optimize_loop(nv_list, coords_key, scanning_from_pixel=False):
                 opti_coords = do_optimize_red(nv)
             # Adjust for the drift that may have occurred since beginning the loop
             # optimize.optimize_pixel_and_z(repr_nv_sig, do_plot=False)
-            optimize.optimize_xyz_using_piezo(repr_nv_sig)
+            targeting.optimize_xyz_using_piezo(repr_nv_sig)
             drift = pos.get_drift(coords_key)
             drift = [-1 * el for el in drift]
             opti_coords = pos.adjust_coords_for_drift(opti_coords, drift=drift)
@@ -768,7 +768,7 @@ def do_optimize_SLM_calibation(nv_list, coords_key):
             opti_coords = do_optimize_pixel(nv)
             # opti_coords = optimize.optimize_pixel_with_img_array(img_array, nv_sig=nv)
             # widefield.reset_all_drift()
-            optimize.optimize_xyz_using_piezo(repr_nv_sig)
+            targeting.optimize_xyz_using_piezo(repr_nv_sig)
             widefield.reset_scanning_optics_drift()  # reset drift before optimizing next NV
         opti_coords_list.append(opti_coords)
 

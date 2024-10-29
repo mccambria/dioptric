@@ -15,7 +15,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 
 import majorroutines.targeting as targeting
-from majorroutines.widefield.optimize import optimize_pixel
+from majorroutines.widefield.targeting import optimize_pixel
 from utils import common, widefield
 from utils import data_manager as dm
 from utils import kplotlib as kpl

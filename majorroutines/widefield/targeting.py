@@ -17,14 +17,13 @@ from numpy import inf
 from scipy.optimize import minimize
 from scipy.signal import correlate
 
-from majorroutines import optimize_xyz
-from majorroutines.targeting import check_expected_counts, main, stationary_count_lite
+from majorroutines import optimize_xyz, targeting
 from utils import common, widefield
 from utils import data_manager as dm
 from utils import kplotlib as kpl
 from utils import positioning as pos
 from utils import tool_belt as tb
-from utils.constants import CoordsKey, VirtualLaserKey
+from utils.constants import Axes, CoordsKey, NVSig, VirtualLaserKey
 
 # region Internal
 
@@ -73,93 +72,6 @@ def _optimize_pixel_cost_jac(fit_params, x_crop_mesh, y_crop_mesh, img_array_cro
 # endregion
 
 
-def optimize_pixel_by_ref_img_array(img_array, ref_img_array=None, margin=10):
-    """Correlate images to track drift. Not fully implemented yet"""
-    if ref_img_array is None:
-        config = common.get_config_module()
-        ref_img_array = config.ref_img_array
-
-    current_drift = np.array([-2, -3])
-    # current_drift = widefield.get_pixel_drift()
-
-    shape = ref_img_array.shape
-    ref_center = np.array([shape[1] / 2, shape[0] / 2])
-
-    expected_center = ref_center + current_drift
-    crop_img_array = img_array[
-        current_drift[1] + margin : current_drift[1] + shape[0] - margin,
-        current_drift[0] + margin : current_drift[0] + shape[1] - margin,
-    ]
-
-    corr = correlate(ref_img_array, crop_img_array, mode="valid")
-    new_drift = np.unravel_index(np.argmax(corr), corr.shape)
-
-    fig, ax = plt.subplots()
-    kpl.imshow(ax, ref_img_array)
-    fig, ax = plt.subplots()
-    kpl.imshow(ax, img_array)
-    fig, ax = plt.subplots()
-    kpl.imshow(ax, corr)
-
-    print(new_drift)
-
-
-def optimize_pixel_and_z(nv_sig, do_plot=False):
-    num_attempts = 5
-    attempt_ind = 0
-    while True:
-        # xy
-        img_array = stationary_count_lite(nv_sig, ret_img_array=True)
-        opti_pixel_coords, pixel_drift = optimize_pixel_with_img_array(
-            img_array, nv_sig, None, do_plot, return_drift=True
-        )
-        counts = widefield.integrate_counts_from_adus(img_array, opti_pixel_coords)
-
-        if nv_sig.expected_counts is not None and check_expected_counts(nv_sig, counts):
-            return pixel_drift
-
-        # z
-        try:
-            _, counts = main(
-                nv_sig,
-                axes_to_optimize=[2],
-                opti_necessary=True,
-                do_plot=do_plot,
-                num_attempts=2,
-            )
-        except Exception:
-            pass
-
-        if nv_sig.expected_counts is None or check_expected_counts(nv_sig, counts):
-            return pixel_drift
-
-        attempt_ind += 1
-        if attempt_ind == num_attempts:
-            raise RuntimeError("Optimization failed.")
-
-
-def optimize_xyz_using_piezo(nv_sig, do_plot=False):
-    num_attempts = 5
-    attempt_ind = 0
-
-    while attempt_ind < num_attempts:
-        try:
-            optimize_xyz.main(
-                nv_sig,
-                no_crash=True,
-                do_plot=do_plot,
-                axes_to_optimize=[0, 1, 2],
-                num_attempts=2,
-            )
-            break  # Exit the loop if optimization is successful
-        except Exception as e:
-            print(f"Optimization attempt {attempt_ind + 1} failed with error: {e}")
-            attempt_ind += 1
-
-    if attempt_ind == num_attempts:
-        raise RuntimeError("Optimization failed after multiple attempts.")
-
-
 def optimize_slm_calibration(nv_sig, do_plot=False):
     num_attempts = 5
     attempt_ind = 0
@@ -194,18 +106,24 @@ def optimize_slm_calibration(nv_sig, do_plot=False):
             raise RuntimeError("Optimization failed.")
 
 
-def optimize_pixel(nv_sig, do_plot=False):
-    img_array = stationary_count_lite(nv_sig, ret_img_array=True)
-    return optimize_pixel_with_img_array(img_array, nv_sig, None, do_plot)
+def optimize(nv_sig: NVSig, coords_key: str = CoordsKey.SAMPLE, axes: Axes = None):
+    if coords_key is CoordsKey.PIXEL:
+        return _find_center_pixel_coords(nv_sig)
+    else:
+        return targeting._find_center_coords(nv_sig, positioner=coords_key, axes=axes)
 
 
-def optimize_pixel_with_img_array(
+def _find_center_pixel_coords(nv_sig, do_plot=False):
+    img_array = targeting.stationary_count_lite(nv_sig, ret_img_array=True)
+    return _find_center_pixel_coords_with_img_array(img_array, nv_sig, None, do_plot)
+
+
+def _find_center_pixel_coords_with_img_array(
     img_array,
     nv_sig=None,
     pixel_coords=None,
     do_plot=False,
     return_popt=False,
-    return_drift=False,
 ):
     if do_plot:
         fig, ax = plt.subplots()
@@ -298,26 +216,18 @@ def optimize_pixel_with_img_array(
     # ax.set_ylim([pixel_coords[1] + 15, pixel_coords[1] - 15])
     # plt.show(block=True)
 
-    opti_pixel_coords = popt[1:3]
-    if set_pixel_drift:
-        drift = (np.array(opti_pixel_coords) - np.array(original_pixel_coords)).tolist()
-        widefield.set_pixel_drift(drift)
-    if set_scanning_drift:
-        widefield.set_all_scanning_drift_from_pixel_drift()
-    opti_pixel_coords = opti_pixel_coords.tolist()
+    opti_pixel_coords = popt[1:3].tolist()
 
     if do_print:
         r_opti_pixel_coords = [round(el, 3) for el in opti_pixel_coords]
-        print(f"Optimized pixel coordinates: {r_opti_pixel_coords}")
         counts = widefield.integrate_counts_from_adus(img_array, opti_pixel_coords)
         r_counts = round(counts, 3)
-        print(f"Counts at optimized coordinates: {r_counts}")
+        print(f"Optimized pixel coordinates: {r_opti_pixel_coords}")
+        print(f"Counts at optimized pixel coordinates: {r_counts}")
         print()
 
     if return_popt:
         return popt
-    elif return_drift:
-        return opti_pixel_coords, pixel_drift
     else:
         return opti_pixel_coords
 

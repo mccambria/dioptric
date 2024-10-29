@@ -18,7 +18,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 from scipy.optimize import curve_fit
 
-from majorroutines.widefield import optimize
+from majorroutines.widefield import targeting
 from utils import common
 from utils import data_manager as dm
 from utils import kplotlib as kpl

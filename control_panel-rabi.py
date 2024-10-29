@@ -24,7 +24,6 @@ from majorroutines.widefield import (
     charge_state_histograms,
     correlation_test,
     image_sample,
-    optimize,
     optimize_scc,
     rabi,
     ramsey,
@@ -32,6 +31,7 @@ from majorroutines.widefield import (
     resonance,
     scc_snr_check,
     spin_echo,
+    targeting,
     xy8,
 )
 from utils import common, widefield
@@ -85,7 +85,7 @@ def do_charge_state_histograms(nv_list, num_reps):
 
 def do_optimize_green(nv_sig, do_plot=True):
     coords_suffix = tb.get_laser_name(VirtualLaserKey.IMAGING)
-    ret_vals = optimize.main(
+    ret_vals = targeting.main(
         nv_sig, coords_suffix=coords_suffix, no_crash=True, do_plot=do_plot
     )
     opti_coords = ret_vals[0]
@@ -95,7 +95,7 @@ def do_optimize_green(nv_sig, do_plot=True):
 def do_optimize_red(nv_sig, do_plot=True):
     laser_key = VirtualLaserKey.IONIZATION
     coords_suffix = red_laser
-    ret_vals = optimize.main(
+    ret_vals = targeting.main(
         nv_sig,
         laser_key=laser_key,
         coords_suffix=coords_suffix,
@@ -107,11 +107,11 @@ def do_optimize_red(nv_sig, do_plot=True):
 
 
 def do_optimize_z(nv_sig, do_plot=False):
-    optimize.main(nv_sig, no_crash=True, do_plot=do_plot, axes_to_optimize=[2])
+    targeting.main(nv_sig, no_crash=True, do_plot=do_plot, axes_to_optimize=[2])
 
 
 def do_optimize_pixel(nv_sig):
-    opti_coords = optimize.optimize_pixel(nv_sig, do_plot=True)
+    opti_coords = targeting.optimize_pixel(nv_sig, do_plot=True)
     return opti_coords
 
 
@@ -154,7 +154,7 @@ def do_optimize_loop(nv_list, coords_suffix, scanning_from_pixel=False):
 
 def do_optimize_widefield_calibration():
     with common.labrad_connect() as cxn:
-        optimize.optimize_widefield_calibration(cxn)
+        targeting.optimize_widefield_calibration(cxn)
 
 
 def do_optimize_scc(nv_list):

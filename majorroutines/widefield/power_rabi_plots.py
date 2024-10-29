@@ -19,7 +19,7 @@ import seaborn as sns
 from scipy.optimize import curve_fit
 
 from majorroutines.pulsed_resonance import fit_resonance, voigt, voigt_split
-from majorroutines.widefield import base_routine, optimize
+from majorroutines.widefield import base_routine, targeting
 from utils import common
 from utils import data_manager as dm
 from utils import kplotlib as kpl
@@ -74,7 +74,7 @@ def find_optimal_power(powers, norm_counts):
 def plot_all_nv_data(nv_list, powers, norm_counts_list, num_cols=3):
     """
     Plot NV resonance data for all NVs using Seaborn aesthetics and return the optimal power for each NV.
-    
+
     Parameters:
     nv_list (list): List of NVs to plot.
     powers (ndarray): Array of microwave power values.
@@ -106,18 +106,25 @@ def plot_all_nv_data(nv_list, powers, norm_counts_list, num_cols=3):
             optimal_powers.append(optimal_power)
 
             # Plot the raw data
-            sns.lineplot(x=powers, y=norm_counts, ax=ax, lw=2, marker="o", label=f"NV {nv_idx+1}")
+            sns.lineplot(
+                x=powers, y=norm_counts, ax=ax, lw=2, marker="o", label=f"NV {nv_idx+1}"
+            )
 
             # If the optimal power was found, plot the Gaussian fit and the optimal line
             if not np.isnan(optimal_power):
-                ax.axvline(optimal_power, color='green', linestyle='--', label=f'Opt. Power = {optimal_power:.2f} dBm')
+                ax.axvline(
+                    optimal_power,
+                    color="green",
+                    linestyle="--",
+                    label=f"Opt. Power = {optimal_power:.2f} dBm",
+                )
 
             # Set labels, grid, and legend
             ax.set_xlabel("Microwave Power (dBm)")
             ax.set_ylabel("Normalized NV- Population")
             ax.grid(True, linestyle="--", linewidth=0.5)
             ax.set_ylabel("Normalized NV Population")
-            ax.grid(True, linestyle='--', linewidth=0.5)
+            ax.grid(True, linestyle="--", linewidth=0.5)
             ax.legend()
         else:
             ax.axis("off")  # Hide unused subplots if number of NVs < grid size
@@ -126,6 +133,7 @@ def plot_all_nv_data(nv_list, powers, norm_counts_list, num_cols=3):
     plt.show()
 
     return optimal_powers
+
 
 def extract_optimal_power(norm_counts, powers):
     """
@@ -140,15 +148,18 @@ def extract_optimal_power(norm_counts, powers):
     max_population (float): The maximum NV population value at the optimal power.
     """
     # Average the population over all NVs if needed
-    avg_population = np.mean(norm_counts, axis=0) if norm_counts.ndim > 1 else norm_counts
+    avg_population = (
+        np.mean(norm_counts, axis=0) if norm_counts.ndim > 1 else norm_counts
+    )
 
     # Find the index of the maximum population
     optimal_index = np.argmax(avg_population)
-    
+
     # Get the corresponding power value
     optimal_power = powers[optimal_index]
 
     return optimal_power, avg_population[optimal_index]
+
 
 if __name__ == "__main__":
     # Load data using dm.get_raw_data

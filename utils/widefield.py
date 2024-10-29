@@ -36,14 +36,7 @@ from utils import data_manager as dm
 from utils import kplotlib as kpl
 from utils import positioning as pos
 from utils import tool_belt as tb
-from utils.constants import (
-    CollectionMode,
-    CoordsKey,
-    CountFormat,
-    LaserPosMode,
-    NVSig,
-    VirtualLaserKey,
-)
+from utils.constants import CoordsKey, NVSig, VirtualLaserKey
 from utils.tool_belt import determine_threshold
 
 # endregion
@@ -69,7 +62,9 @@ def mask_img_array(img_array, nv_list, pixel_drift):
     mask = np.zeros(shape)
     radius = _get_camera_spot_radius()
     for nv in nv_list:
-        pixel_coords = get_nv_pixel_coords(nv, drift=pixel_drift)
+        pixel_coords = pos.get_nv_coords(
+            nv, CoordsKey.PIXEL, drift_adjust=True, drift=pixel_drift
+        )
         dist = np.sqrt(
             (x_mesh - pixel_coords[0]) ** 2 + (y_mesh - pixel_coords[1]) ** 2
         )
@@ -564,7 +559,7 @@ def charge_state_mle_single(nv_sig, img_array):
     if nvn_dist_params is None:
         return None
 
-    x0, y0 = get_nv_pixel_coords(nv_sig)
+    x0, y0 = pos.get_nv_coords(nv_sig, CoordsKey.PIXEL)
     radius = _get_mle_radius()
     half_range = radius
     left = round(x0 - half_range)
@@ -860,171 +855,7 @@ def get_threshold_list(nv_list: list[NVSig], include_inds=None):
     return threshold_list
 
 
-# updated affine calibration (July 2024)
-# region Drift tracking
-
-
-@cache
-def get_pixel_drift():
-    pixel_drift = common.get_registry_entry(["State"], "DRIFT-pixel")
-    return np.array(pixel_drift)
-
-
-def set_pixel_drift(drift):
-    get_pixel_drift.cache_clear()
-    return common.set_registry_entry(["State"], "DRIFT-pixel", drift)
-
-
-def reset_pixel_drift():
-    return set_pixel_drift([0.0, 0.0])
-
-
-def reset_scanning_optics_drift():
-    scanning_optics = _get_scanning_optics()
-    for coords_key in scanning_optics:
-        pos.reset_drift(coords_key)
-
-
-def reset_all_drift():
-    reset_pixel_drift()
-    pos.reset_drift()
-    scanning_optics = _get_scanning_optics()
-    for coords_key in scanning_optics:
-        pos.reset_drift(coords_key)
-
-
-def adjust_pixel_coords_for_drift(pixel_coords, drift=None):
-    """Current drift will be retrieved from registry if passed drift is None"""
-    if drift is None:
-        drift = get_pixel_drift()
-    adjusted_coords = (np.array(pixel_coords) + np.array(drift)).tolist()
-    return adjusted_coords
-
-
-def get_nv_pixel_coords(nv_sig, drift_adjust=True, drift=None):
-    pixel_coords = nv_sig.coords[CoordsKey.PIXEL]
-
-    if drift_adjust:
-        pixel_coords = adjust_pixel_coords_for_drift(pixel_coords, drift)
-    return pixel_coords
-
-
-def set_global_drift_from_pixel_drift(pixel_drift=None, coords_key=CoordsKey.GLOBAL):
-    scanning_drift = pixel_to_scanning_drift(pixel_drift, coords_key)
-    pos.set_drift(scanning_drift, coords_key)
-
-
-def set_all_scanning_drift_from_pixel_drift(pixel_drift=None):
-    scanning_optics = _get_scanning_optics()
-    for coords_key in scanning_optics:
-        set_scanning_drift_from_pixel_drift(pixel_drift, coords_key)
-
-
-def _get_scanning_optics():
-    config = common.get_config_dict()
-    config_optics = config["Optics"]
-    scanning_optics = []
-    for optic_name in config_optics:
-        val = config_optics[optic_name]
-        if (
-            isinstance(val, dict)
-            and "pos_mode" in val
-            and val["pos_mode"] == LaserPosMode.SCANNING
-        ):
-            scanning_optics.append(optic_name)
-
-    return scanning_optics
-
-
-def set_scanning_drift_from_pixel_drift(
-    pixel_drift=None, coords_key=CoordsKey.GLOBAL, relative=False
-):
-    # Calculate the scanning drift based on pixel drift
-    scanning_drift = pixel_to_scanning_drift(pixel_drift, coords_key)
-    prev_drift = pos.get_drift(coords_key)
-    # If relative, add the new drift to the previous drift directly
-    if relative:
-        # Extend scanning_drift and prev_drift to 3D if necessary
-        if len(prev_drift) < 3:
-            prev_drift = np.append(prev_drift, 0)
-        if len(scanning_drift) < 3:
-            scanning_drift = np.append(scanning_drift, 0)
-
-        # Compute the new drift by adding the old drift to the new one
-        new_drift = np.array(scanning_drift) + np.array(prev_drift)
-
-    else:
-        new_drift = scanning_drift
-        if len(prev_drift) > len(scanning_drift):
-            new_drift.append(prev_drift[2])
-    # Set the computed drift
-    pos.set_drift(new_drift, coords_key)
-
-
-def set_pixel_drift_from_scanning_drift(
-    scanning_drift=None, coords_key=CoordsKey.GLOBAL
-):
-    pixel_drift = scanning_to_pixel_drift(scanning_drift, coords_key)
-    set_pixel_drift(pixel_drift)
-
-
-def pixel_to_scanning_drift(pixel_drift=None, coords_key=CoordsKey.GLOBAL):
-    if pixel_drift is None:
-        pixel_drift = get_pixel_drift()
-
-    transform_matrix = _get_affine_transform_matrix(
-        coords_key, direction="pixel_to_scanning"
-    )
-    transformed_drift = np.dot(transform_matrix, np.append(pixel_drift, 0))[:2]
-
-    return transformed_drift.tolist()
-
-
-def scanning_to_pixel_drift(scanning_drift=None, coords_key=CoordsKey.GLOBAL):
-    if scanning_drift is None:
-        scanning_drift = pos.get_drift(coords_key)
-    transform_matrix = _get_affine_transform_matrix(
-        coords_key, direction="scanning_to_pixel"
-    )
-    pixel_drift = np.dot(transform_matrix, np.append(scanning_drift, 1))[:2]
-    return pixel_drift.tolist()
-
-
 # endregion
-
-
-# region Scanning to pixel calibration
-def set_nv_scanning_coords_from_pixel_coords(
-    nv_sig, coords_key=CoordsKey.GLOBAL, drift_adjust=True
-):
-    pixel_coords = get_nv_pixel_coords(nv_sig, drift_adjust=drift_adjust)
-    scanning_coords = pixel_to_scanning_coords(pixel_coords, coords_key)
-    pos.set_nv_coords(nv_sig, scanning_coords, coords_key)
-    return scanning_coords
-
-
-def get_widefield_calibration_nvs():
-    module = common.get_config_module()
-    nv1 = NVSig(coords=module.widefield_calibration_coords1)
-    nv2 = NVSig(coords=module.widefield_calibration_coords2)
-    nv3 = NVSig(coords=module.widefield_calibration_coords3)
-    return nv1, nv2, nv3
-
-
-def pixel_to_scanning_coords(pixel_coords, coords_key=CoordsKey.GLOBAL):
-    transform_matrix = _get_affine_transform_matrix(
-        coords_key, direction="pixel_to_scanning"
-    )
-    scanning_coords = np.dot(transform_matrix, np.append(pixel_coords, 1))[:2]
-    return scanning_coords.tolist()
-
-
-def scanning_to_pixel_coords(scanning_coords, coords_key=CoordsKey.GLOBAL):
-    transform_matrix = _get_affine_transform_matrix(
-        coords_key, direction="scanning_to_pixel"
-    )
-    pixel_coords = np.dot(transform_matrix, np.append(scanning_coords, 1))[:2]
-    return pixel_coords.tolist()
 
 
 # Assuming nv_list is a list of NV centers with their (x, y, z) coordinates
@@ -1192,7 +1023,12 @@ def draw_circles_on_nvs(
     scale = get_camera_scale()
     passed_color = color
     if pixel_coords_list is None:
-        pixel_coords_list = [get_nv_pixel_coords(nv, drift=drift) for nv in nv_list]
+        pixel_coords_list = []
+        for nv in nv_list:
+            pixel_coords = pos.get_nv_coords(
+                nv, CoordsKey.PIXEL, drift_adjust=True, drift=drift
+            )
+            pixel_coords_list.append(pixel_coords)
     num_nvs = len(pixel_coords_list)
     points = []
     for ind in range(num_nvs):

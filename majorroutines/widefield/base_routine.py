@@ -13,7 +13,7 @@ from random import shuffle
 
 import numpy as np
 
-from majorroutines.widefield import optimize
+from majorroutines.widefield import targeting
 from utils import common, widefield
 from utils import positioning as pos
 from utils import tool_belt as tb
@@ -299,12 +299,12 @@ def main(
                                     )
                                 ret_vals = read_and_process_image(nv_list)
                                 img_array, counts_list, states_list = ret_vals
-                                counts[exp_ind, :, run_ind, step_ind, rep_ind] = (
-                                    counts_list
-                                )
-                                states[exp_ind, :, run_ind, step_ind, rep_ind] = (
-                                    states_list
-                                )
+                                counts[
+                                    exp_ind, :, run_ind, step_ind, rep_ind
+                                ] = counts_list
+                                states[
+                                    exp_ind, :, run_ind, step_ind, rep_ind
+                                ] = states_list
 
                                 if save_images:
                                     if save_images_downsample_factor is not None:
@@ -350,7 +350,7 @@ def main(
                     step_ind_master_list[run_ind] = step_ind_list.copy()
 
                     # Update global coordinates (new)
-                    optimize.optimize_xyz_using_piezo(repr_nv_sig)
+                    targeting.optimize_xyz_using_piezo(repr_nv_sig)
                     # Update pixel coordinates and objective z (old)
                     # pixel_drift = optimize.optimize_pixel_and_z(repr_nv_sig)
                     # pixel_drifts[run_ind, :] = pixel_drift

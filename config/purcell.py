@@ -31,41 +31,38 @@ green_laser = "laser_INTE_520"
 yellow_laser = "laser_OPTO_589"
 red_laser = "laser_COBO_638"
 
-calibration_pixel_coords_list = [
+calibration_coords_pixel = [
     [73.767, 91.394],
     [142.545, 210.183],
     [234.876, 116.946],
 ]
-calibration_green_coords_list = [
+calibration_coords_green = [
     [115.779, 106.042],
     [107.253, 118.327],
     [98.279, 107.437],
 ]
-calibration_red_coords_list = [
+calibration_coords_red = [
     [79.256, 72.672],
     [72.849, 82.663],
     [65.189, 74.169],
 ]
 # Create the dictionaries using the provided lists
-coordinate_calibration_coords1 = {
-    # CoordsKey.GLOBAL: [0, 0, 2],
-    CoordsKey.PIXEL: calibration_pixel_coords_list[0],
-    green_laser: calibration_green_coords_list[0],
-    red_laser: calibration_red_coords_list[0],
+calibration_coords_nv1 = {
+    CoordsKey.PIXEL: calibration_coords_pixel[0],
+    green_laser: calibration_coords_green[0],
+    red_laser: calibration_coords_red[0],
 }
 
-coordinate_calibration_coords2 = {
-    # CoordsKey.GLOBAL: [0, 0, 2],
-    CoordsKey.PIXEL: calibration_pixel_coords_list[1],
-    green_laser: calibration_green_coords_list[1],
-    red_laser: calibration_red_coords_list[1],
+calibration_coords_nv2 = {
+    CoordsKey.PIXEL: calibration_coords_pixel[1],
+    green_laser: calibration_coords_green[1],
+    red_laser: calibration_coords_red[1],
 }
 
-coordinate_calibration_coords3 = {
-    # CoordsKey.GLOBAL: [0, 0, 2],
-    CoordsKey.PIXEL: calibration_pixel_coords_list[2],
-    green_laser: calibration_green_coords_list[2],
-    red_laser: calibration_red_coords_list[2],
+calibration_coords_nv3 = {
+    CoordsKey.PIXEL: calibration_coords_pixel[2],
+    green_laser: calibration_coords_green[2],
+    red_laser: calibration_coords_red[2],
 }
 
 # if coord key is CoordsKey.GLOBAL
@@ -270,9 +267,9 @@ config |= {
                 "default_aod_suffix": "charge_pol",
             },
         },
-        "coordinate_calibration_coords1": coordinate_calibration_coords1,
-        "coordinate_calibration_coords2": coordinate_calibration_coords2,
-        "coordinate_calibration_coords3": coordinate_calibration_coords3,
+        "calibration_coords_nv1": calibration_coords_nv1,
+        "calibration_coords_nv2": calibration_coords_nv2,
+        "calibration_coords_nv3": calibration_coords_nv3,
         "AffineCalibration_pixel2voltage": affine_pixel2voltage,
     },
     ###

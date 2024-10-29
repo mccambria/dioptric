@@ -396,50 +396,60 @@ def get_drift(coords_key=None):
         return drift
 
 
-def transform_drift(drift, coords_key):
+def transform_drift(drift, dest_coords_key):
     # Get the drift stored in the registry and use the calibration in the config
     # to convert it from the space in which it was calculated (i.e. imaging laser
     # positioner coordinates) to the space of the passed coords_key (e.g. SCC
     # laser positioner coordinates)
 
-    if coords_key is CoordsKey.SAMPLE:
+    if dest_coords_key is CoordsKey.SAMPLE:
         return drift
 
-    transform_matrix = _get_drift_transformation_matrix(coords_key)
+    transform_matrix = get_drift_transformation_matrix(dest_coords_key)
     transformed_drift = np.dot(transform_matrix, np.append(drift, 0))[:2]
 
     return transformed_drift.tolist()
 
 
-@cache
-def _get_coordinate_transformation_matrix(source_coords_key, dest_coords_key):
-    nv1, nv2, nv3 = _get_coordinate_calibration_nvs()
-
-    source_coords = []
-    dest_coords = []
-    for nv in [nv1, nv2, nv3]:
-        source_coords.append(get_nv_coords(nv, source_coords_key, drift_adjust=False))
-        dest_coords.append(get_nv_coords(nv, dest_coords_key, drift_adjust=False))
-
-    source_coords = np.array(source_coords, dtype="float32")
-    dest_coords = np.array(dest_coords, dtype="float32")
-    transform_matrix = cv2.getAffineTransform(source_coords, dest_coords)
-
-    return transform_matrix
+def transform_coords(source_coords, source_coords_key, dest_coords_key):
+    transformation_matrix = get_coordinate_transformation_matrix(
+        source_coords_key, dest_coords_key
+    )
+    return np.dot(transformation_matrix, source_coords)
 
 
 @cache
-def _get_drift_transformation_matrix(source_coords_key, dest_coords_key):
-    nv1, nv2, nv3 = _get_coordinate_calibration_nvs()
+def get_coordinate_transformation_matrix(source_coords_key, dest_coords_key):
+    _get_transformation_matrix(source_coords_key, dest_coords_key, relative=False)
 
-    source_coords = []
-    dest_coords = []
-    for nv in [nv1, nv2, nv3]:
-        source_coords.append(get_nv_coords(nv, source_coords_key, drift_adjust=False))
-        dest_coords.append(get_nv_coords(nv, dest_coords_key, drift_adjust=False))
 
-    source_coords = np.array(source_coords, dtype="float32")
-    dest_coords = np.array(dest_coords, dtype="float32")
+@cache
+def get_drift_transformation_matrix(source_coords_key, dest_coords_key):
+    return _get_transformation_matrix(source_coords_key, dest_coords_key, relative=True)
+
+
+def _get_transformation_matrix(source_coords_key, dest_coords_key, relative):
+    nvs = _get_coordinate_calibration_nvs()
+
+    source_coords_arr = []
+    dest_coords_arr = []
+    for ind in range(3):
+        nv = nvs[ind]
+        source_coords = get_nv_coords(nv, source_coords_key, drift_adjust=False)
+        dest_coords = get_nv_coords(nv, dest_coords_key, drift_adjust=False)
+
+        if relative:
+            if ind == 0:
+                ref_source_coords = source_coords
+                ref_dest_coords = dest_coords
+            source_coords_arr.append(source_coords - ref_source_coords)
+            dest_coords_arr.append(dest_coords - ref_dest_coords)
+        else:
+            source_coords_arr.append(source_coords)
+            dest_coords_arr.append(dest_coords)
+
+    source_coords_arr = np.array(source_coords, dtype="float32")
+    dest_coords_arr = np.array(dest_coords, dtype="float32")
     transform_matrix = cv2.getAffineTransform(source_coords, dest_coords)
 
     return transform_matrix
@@ -447,9 +457,9 @@ def _get_drift_transformation_matrix(source_coords_key, dest_coords_key):
 
 def _get_coordinate_calibration_nvs():
     module = common.get_config_module()
-    nv1 = NVSig(coords=module.coordinate_calibration_coords1)
-    nv2 = NVSig(coords=module.coordinate_calibration_coords2)
-    nv3 = NVSig(coords=module.coordinate_calibration_coords3)
+    nv1 = NVSig(coords=module.calibration_coords_nv1)
+    nv2 = NVSig(coords=module.calibration_coords_nv2)
+    nv3 = NVSig(coords=module.calibration_coords_nv3)
     return nv1, nv2, nv3
 
 
