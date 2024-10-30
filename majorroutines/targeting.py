@@ -651,8 +651,18 @@ def compensate_for_drift(nv_sig: NVSig, no_crash=False):
             if opti_coord is None:
                 axis_failed = True
             else:
+                # Determine if the drift should be added on to the existing drift
+                # or calculated from scratch. It should be added if the drift is
+                # compensated for by moving the sample but we measured the drift
+                # in a different coordinate space
+                sample_positioner_has_xy_axes = pos.sample_positioner_has_xy_axes()
+                cumulative = (
+                    sample_positioner_has_xy_axes
+                    and xy_coords_key is not CoordsKey.SAMPLE
+                )
+
                 drift_val = opti_coord - passed_coords[axis_ind]
-                pos.set_drift_val(drift_val, axis_ind)
+                pos.set_drift_val(drift_val, axis_ind, cumulative)
 
         # Try again if any individual axis failed
         if axis_failed:
