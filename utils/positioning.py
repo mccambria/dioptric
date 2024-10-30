@@ -300,6 +300,11 @@ def get_sample_positioner_axes():
         return Axes.NONE
 
 
+def sample_positioner_has_xy_axes():
+    sample_positioner_axes = get_sample_positioner_axes()
+    return 0 in sample_positioner_axes.value
+
+
 def get_laser_positioner(virtual_laser_key: VirtualLaserKey):
     virtual_laser_dict = tb.get_virtual_laser_dict(virtual_laser_key)
     physical_laser_name = virtual_laser_dict["physical_laser_name"]
@@ -436,7 +441,7 @@ def get_coordinate_transformation_matrix(source_coords_key, dest_coords_key):
 
 
 @cache
-def determine_drift_coords_key():
+def determine_drift_xy_coords_key():
     """Determine what coordinate space we store the xy drift in.
     Z is always in sample positioner space if we have a sample positioner
     that can move in z. Otherwise there's no way to keep track of z drift.
@@ -454,7 +459,7 @@ def determine_drift_coords_key():
 
 @cache
 def get_drift_transformation_matrix(dest_coords_key):
-    source_coords_key = determine_drift_coords_key()
+    source_coords_key = determine_drift_xy_coords_key()
     return _get_transformation_matrix(source_coords_key, dest_coords_key, relative=True)
 
 
@@ -505,11 +510,14 @@ def _get_coordinate_calibration_nvs():
     return nv1, nv2, nv3
 
 
-def set_drift_val(drift_val, axis_ind):
+def set_drift_val(drift_val, axis_ind, cumulative=False):
     drift = get_drift()
     get_drift.cache_clear()
     key = "DRIFT"
-    drift[axis_ind] = drift_val
+    if cumulative:
+        drift[axis_ind] += drift_val
+    else:
+        drift[axis_ind] = drift_val
     return common.set_registry_entry(["State"], key, drift)
 
 
