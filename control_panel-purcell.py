@@ -658,7 +658,7 @@ def do_opx_constant_ac():
     #     [0.19, 0.19, 0.17, 0.17, 0.3],  # Analog voltages
     #     [110, 110, 75, 75, 0],  # Analog frequencies
     # )
-    input("Press enter to stop...")
+    # input("Press enter to stop...")
     # sig_gen.uwave_off()
 
 
@@ -822,7 +822,7 @@ if __name__ == "__main__":
     # magnet_angle = 90
     date_str = "2024_03_12"
     # global_coords = [None, None, z_coord]
-    global_coords = [0.7, 0.2, 1.243]
+    global_coords = [0.7, 0.2, 0.0]
 
     # Load NV pixel coordinates
     pixel_coords_list = load_nv_coords(
@@ -1016,12 +1016,12 @@ if __name__ == "__main__":
         # nv_sig.coords[CoordsKey.SAMPLE][1] = y
         # do_scanning_image_sample(nv_sig)
 
-        # for z in np.linspace(-0.6, 0.0, 11):
-        #     nv_sig.coords[CoordsKey.SAMPLE][2] = z
-        #     do_scanning_image_sample(nv_sig)
+        for z in np.linspace(-1.0, 2.0, 15):
+            nv_sig.coords[CoordsKey.SAMPLE][2] = z
+            do_scanning_image_sample(nv_sig)
         # do_widefield_image_sample(nv_sig, 50)
 
-        do_scanning_image_sample(nv_sig)
+        # do_scanning_image_sample(nv_sig)
         # do_scanning_image_sample_zoom(nv_sig)
         # do_widefield_image_sample(nv_sig, 50)
         # do_widefield_image_sample(nv_sig, 100)

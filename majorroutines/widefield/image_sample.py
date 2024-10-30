@@ -211,7 +211,7 @@ def main(
         if caller_fn_name == "widefield"
         else VirtualLaserKey.IMAGING
     )
-    targeting.pos.set_xyz_on_nv(nv_sig)
+    # targeting.pos.set_xyz_on_nv(nv_sig)
     camera = tb.get_server_camera()
     pulse_gen = tb.get_server_pulse_gen()
 

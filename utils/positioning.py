@@ -13,7 +13,9 @@ import time
 from functools import cache
 
 import cv2
+import matplotlib.pyplot as plt
 import numpy as np
+from scipy.optimize import curve_fit
 
 from utils import common
 from utils import tool_belt as tb
@@ -39,7 +41,7 @@ def set_xyz(coords, positioner=CoordsKey.SAMPLE, drift_adjust=None, ramp=None):
     if drift_adjust is None:
         drift_adjust = should_drift_adjust(positioner)
     if drift_adjust:
-        coords = adjust_coords_for_drift(coords, positioner=positioner)
+        coords = adjust_coords_for_drift(coords, coords_key=positioner)
 
     if ramp is None:
         config = common.get_config_dict()
@@ -168,12 +170,15 @@ def _set_xyz_ramp(coords):
 
 
 def set_xyz_on_nv(nv_sig, positioner=None, drift_adjust=None):
-    """Returns the coords actually used in the set"""
+    """Sets XYZ coordinates for the NV. If positioner is None, set all available
+    positioners.
+    """
     if positioner is None:
         config = common.get_config_dict()
-        positioners = list(config["Positioning"]["Positioners"].keys())
+        positioners = config["Positioning"]["Positioners"].keys()
         for el in positioners:
-            set_xyz_on_nv(nv_sig, positioner=el, drift_adjust=drift_adjust)
+            coords = get_nv_coords(nv_sig, el, drift_adjust)
+            set_xyz(coords, positioner=el, drift_adjust=drift_adjust)
     else:
         if drift_adjust is None:
             drift_adjust = should_drift_adjust(positioner)
@@ -832,11 +837,6 @@ def get_scan_two_point_2d(first_coord_1, first_coord_2, second_coord_1, second_c
 
 # endregion
 
-# region hysteresis
-import matplotlib.pyplot as plt
-import numpy as np
-from scipy.optimize import curve_fit
-
 
 def analyze_hysteresis(target_positions, actual_positions):
     """
@@ -918,27 +918,33 @@ def analyze_hysteresis(target_positions, actual_positions):
 
 # Example usage
 if __name__ == "__main__":
-    # Example data (replace with your actual data)
-    target_positions = np.array(
-        [
-            [66.912, 94.016],
-            [75.951, 103.95],
-            [84.271, 113.12],
-            [93.216, 121.95],
-            [101.48, 131.22],
-            [109.155, 139.9],
-        ]
-    )
-    actual_positions = np.array(
-        [
-            [64.39, 92.966],
-            [72.086, 101.0],
-            [80.055, 110.0],
-            [88.34, 119.3],
-            [97.109, 128.3],
-            [106.106, 137.0],
-        ]
-    )
+    config = common.get_config_dict()
+    positioners = config["Positioning"]["Positioners"].keys()
+    for el in positioners:
+        print(el)
 
-    # Analyze hysteresis
-    analyze_hysteresis(target_positions, actual_positions)
+    ### Analyze hysteresis
+
+    # # Example data (replace with your actual data)
+    # target_positions = np.array(
+    #     [
+    #         [66.912, 94.016],
+    #         [75.951, 103.95],
+    #         [84.271, 113.12],
+    #         [93.216, 121.95],
+    #         [101.48, 131.22],
+    #         [109.155, 139.9],
+    #     ]
+    # )
+    # actual_positions = np.array(
+    #     [
+    #         [64.39, 92.966],
+    #         [72.086, 101.0],
+    #         [80.055, 110.0],
+    #         [88.34, 119.3],
+    #         [97.109, 128.3],
+    #         [106.106, 137.0],
+    #     ]
+    # )
+
+    # analyze_hysteresis(target_positions, actual_positions)
