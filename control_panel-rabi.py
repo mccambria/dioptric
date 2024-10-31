@@ -84,7 +84,7 @@ def do_charge_state_histograms(nv_list, num_reps):
 
 
 def do_optimize_green(nv_sig, do_plot=True):
-    coords_suffix = tb.get_laser_name(VirtualLaserKey.IMAGING)
+    coords_suffix = tb.get_physical_laser_name(VirtualLaserKey.IMAGING)
     ret_vals = targeting.main(
         nv_sig, coords_suffix=coords_suffix, no_crash=True, do_plot=do_plot
     )
@@ -122,7 +122,7 @@ def do_optimize_loop(nv_list, coords_suffix, scanning_from_pixel=False):
     for nv in nv_list:
         # Pixel coords
         if coords_suffix is None:
-            imaging_laser = tb.get_laser_name(VirtualLaserKey.IMAGING)
+            imaging_laser = tb.get_physical_laser_name(VirtualLaserKey.IMAGING)
             if scanning_from_pixel:
                 widefield.set_nv_scanning_coords_from_pixel_coords(nv, imaging_laser)
             opti_coords = do_optimize_pixel(nv)

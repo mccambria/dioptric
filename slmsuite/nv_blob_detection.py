@@ -197,7 +197,7 @@ def process_multiple_images(
         data = dm.get_raw_data(file_id=image_id, load_npz=True)
         img_array = np.array(data["img_array"])  # Load image data
 
-        nv_coordinates, spot_sizes = detect_nv_coordinates_blob(
+        nv_coordinates, spot_sizes, *_ = detect_nv_coordinates_blob(
             img_array,
             sigma=sigma,
             lower_threshold=lower_threshold,
@@ -245,39 +245,39 @@ if __name__ == "__main__":
 
     # Apply the blob detection and Gaussian fitting
     sigma = 2
-    lower_threshold = 0.17
+    lower_threshold = 24
     upper_threshold = None
     smoothing_sigma = 0.0
 
-    nv_coordinates, integrated_counts, spot_sizes = detect_nv_coordinates_blob(
-        img_array,
-        sigma=sigma,
-        lower_threshold=lower_threshold,
-        upper_threshold=upper_threshold,
-        smoothing_sigma=smoothing_sigma,
-    )
+    # nv_coordinates, integrated_counts, spot_sizes = detect_nv_coordinates_blob(
+    #     img_array,
+    #     sigma=sigma,
+    #     lower_threshold=lower_threshold,
+    #     upper_threshold=upper_threshold,
+    #     smoothing_sigma=smoothing_sigma,
+    # )
 
-    # List to store valid NV coordinates after filtering
-    filtered_nv_coords = []
+    # # List to store valid NV coordinates after filtering
+    # filtered_nv_coords = []
 
-    # Iterate through detected NV coordinates and apply distance filtering
-    for coord in nv_coordinates:
-        # Assume the coordinate is valid initially
-        keep_coord = True
+    # # Iterate through detected NV coordinates and apply distance filtering
+    # for coord in nv_coordinates:
+    #     # Assume the coordinate is valid initially
+    #     keep_coord = True
 
-        # Check distance with all previously accepted NVs
-        for existing_coord in filtered_nv_coords:
-            distance = np.linalg.norm(np.array(existing_coord) - np.array(coord))
+    #     # Check distance with all previously accepted NVs
+    #     for existing_coord in filtered_nv_coords:
+    #         distance = np.linalg.norm(np.array(existing_coord) - np.array(coord))
 
-            if distance < 5:
-                keep_coord = False  # Mark it for exclusion if too close
-                break  # No need to check further distances
+    #         if distance < 5:
+    #             keep_coord = False  # Mark it for exclusion if too close
+    #             break  # No need to check further distances
 
-        # If the coordinate passes the distance check, add it to the list
-        if keep_coord:
-            filtered_nv_coords.append(coord)
-            spot_weigths = integrated_counts
-    print(f"Number of NVs detected: {len(filtered_nv_coords)}")
+    #     # If the coordinate passes the distance check, add it to the list
+    #     if keep_coord:
+    #         filtered_nv_coords.append(coord)
+    #         spot_weigths = integrated_counts
+    # print(f"Number of NVs detected: {len(filtered_nv_coords)}")
 
     # print(f"Detected NV coordinates (optimized): {filtered_nv_coords}")
 
@@ -302,9 +302,16 @@ if __name__ == "__main__":
     # )
 
     image_ids = [
-        1685105882211,
-        1685083303088,
-        1685090985352,
+        1687524695111,
+        1687527215288,
+        1687535231497,
+        1687529329904,
+        1687529329904,
+        1687521779062,
+        1687527177537,
+        1687523389670,
+        1687529276539,
+        1687604605890,
     ]  # Add more image IDs as needed
     # Process multiple images and remove duplicates
     unique_nv_coordinates, spot_sizes = process_multiple_images(
@@ -314,11 +321,28 @@ if __name__ == "__main__":
         upper_threshold=upper_threshold,
         smoothing_sigma=smoothing_sigma,
     )
-    print(f"Number of NVs detected: {len(unique_nv_coordinates)}")
-    # print(f"Detected NV coordinates (optimized): {nv_coordinates}")
+    # Filter out-of-bounds coordinates and their corresponding spot sizes
+    filtered_nv_coordinates = []
+    filtered_spot_sizes = []
+
+    for coord, size in zip(unique_nv_coordinates, spot_sizes):
+        x, y = int(coord[0]), int(coord[1])
+        if not (0 <= x < 250 and 0 <= y < 250):
+            print(f"Skipping NV at ({coord[0]:.2f}, {coord[1]:.2f}) - Out of bounds")
+            continue  # Skip this coordinate and its spot size if out of bounds
+
+        filtered_nv_coordinates.append(coord)
+        filtered_spot_sizes.append(size)
+
+    # Print the results
+    print(f"Number of NVs detected: {len(filtered_nv_coordinates)}")
+    # Optionally print NV coordinates and spot sizes for debugging
+    # print(f"Detected NV coordinates (optimized): {filtered_nv_coordinates}")
+    # print(f"Corresponding spot sizes: {filtered_spot_sizes}")
+
     # Save the results
     save_results(
-        unique_nv_coordinates,
-        spot_sizes,
-        filename="nv_blob_filtered_multiple_1.npz",
+        filtered_nv_coordinates,
+        filtered_spot_sizes,
+        filename="nv_blob_filtered_29nvs.npz",
     )

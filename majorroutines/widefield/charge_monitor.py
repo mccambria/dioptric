@@ -20,7 +20,7 @@ from scipy.optimize import curve_fit
 from scipy.special import factorial
 from scipy.stats import poisson
 
-from majorroutines.widefield import base_routine, targeting
+from majorroutines.widefield import base_routine
 from utils import common, widefield
 from utils import data_manager as dm
 from utils import kplotlib as kpl

@@ -11,7 +11,7 @@ from utils import positioning as pos
 reset_coords = [0.00, 0.00, 0.1]
 pos.set_xyz(reset_coords, pos="pos_xyz")
 
-pos.get_axis_write_fn(1, pos="pos_xyz")
+pos.get_positioner_write_fn(1, pos="pos_xyz")
 
 # def test_write_xyz_loop():
 #     # Define the ranges and steps for the test loop

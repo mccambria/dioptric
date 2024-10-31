@@ -13,7 +13,6 @@ import numpy as np
 
 from config.default import config
 from utils.constants import (
-    Axes,
     ChargeStateEstimationMode,
     CollectionMode,
     CoordsKey,
@@ -83,6 +82,7 @@ config |= {
     # "charge_state_estimation_mode": ChargeStateEstimationMode.MLE,
     "charge_state_estimation_mode": ChargeStateEstimationMode.THRESHOLDING,
     "windows_repo_path": home / "GitHub/dioptric",
+    "disable_z_drift_compensation": False,
     ###
     # Common durations are in ns
     "CommonDurations": {
@@ -150,7 +150,7 @@ config |= {
     "Camera": {
         "server_name": "camera_NUVU_hnu512gamma",
         "resolution": (512, 512),
-        "spot_radius": 2,  # Radius for integrating NV counts in a camera image
+        "spot_radius": 2.5,  # Radius for integrating NV counts in a camera image
         "bias_clamp": 300,  # (changing this won't actually change the value on the camera currently)
         # "em_gain": 5000,
         # "em_gain": 1000,
@@ -209,10 +209,16 @@ config |= {
                 "physical_laser_name": green_laser,
                 "duration": 60,
             },
-            VirtualLaserKey.ION: {"physical_laser_name": red_laser, "duration": 10e3},
+            VirtualLaserKey.ION: {
+                "physical_laser_name": red_laser,
+                "duration": 10e3,
+            },
             # SCC: 180 mW, 0.13 V, no shelving
             # LaserKey.SCC: {"physical_laser_name": red_laser, "duration": 248},
-            VirtualLaserKey.SCC: {"physical_laser_name": red_laser, "duration": 124},
+            VirtualLaserKey.SCC: {
+                "physical_laser_name": red_laser,
+                "duration": 124,
+            },
             # LaserKey.SCC: {"physical_laser_name": green_laser, "duration": 200},
             VirtualLaserKey.WIDEFIELD_SHELVING: {
                 "physical_laser_name": yellow_laser,
@@ -242,11 +248,18 @@ config |= {
     "Positioning": {
         "Positioners": {
             CoordsKey.SAMPLE: {
-                "axes": Axes.XYZ,
-                "server": "piezo_stage_P616_3c_purcell",
+                "physical_name": "pos_xyz_PI_p616_3c",
                 "control_mode": PosControlMode.STREAM,
                 "delay": int(1e6),  # 5 ms for PIFOC xyz
-                "dtype": float,
+                "nm_per_unit": 1000,
+                "optimize_range": 0.09,
+                "units": "Voltage (V)",
+                "opti_virtual_laser_key": VirtualLaserKey.IMAGING,
+            },
+            CoordsKey.Z: {
+                "physical_name": "pos_xyz_PI_p616_3c",
+                "control_mode": PosControlMode.STREAM,
+                "delay": int(1e6),  # 5 ms for PIFOC xyz
                 "nm_per_unit": 1000,
                 "optimize_range": 0.09,
                 "units": "Voltage (V)",
@@ -255,7 +268,6 @@ config |= {
             green_laser_aod: {
                 "control_mode": PosControlMode.SEQUENCE,
                 "delay": int(400e3),  # 400 us for galvo
-                "dtype": float,
                 "nm_per_unit": 1000,
                 "optimize_range": 0.8,
                 "units": "MHz",
@@ -266,11 +278,9 @@ config |= {
             red_laser_aod: {
                 "control_mode": PosControlMode.SEQUENCE,
                 "delay": int(400e3),  # 400 us for galvo
-                "dtype": float,
                 "nm_per_unit": 1000,
                 "optimize_range": 2.4,
                 "units": "MHz",
-                "z_dtype": float,
                 "opti_virtual_laser_key": VirtualLaserKey.ION,
                 "aod": True,
                 "default_aod_suffix": "charge_pol",

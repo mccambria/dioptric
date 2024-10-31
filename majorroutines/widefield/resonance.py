@@ -18,7 +18,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 
 from majorroutines.pulsed_resonance import fit_resonance, norm_voigt, voigt, voigt_split
-from majorroutines.widefield import base_routine, targeting
+from majorroutines.widefield import base_routine
 from utils import common
 from utils import data_manager as dm
 from utils import kplotlib as kpl

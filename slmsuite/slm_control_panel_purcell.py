@@ -281,7 +281,7 @@ def nuvu2thorcam_calibration(coords):
 
 
 def load_nv_coords(
-    file_path="slmsuite/nv_blob_detection/nv_blob_filtered_116nvs_updated.npz",
+    file_path="slmsuite/nv_blob_detection/nv_blob_filtered_290nvs.npz",
     # file_path="slmsuite/nv_blob_detection/nv_coords_integras_counts_162nvs.npz",
     # file_path="slmsuite/nv_blob_detection/nv_coords_updated_spot_weights.npz",
     # file_path="slmsuite/nv_blob_detection/nv_coords_updated_spot_weights_manual_update.npz",
@@ -289,7 +289,8 @@ def load_nv_coords(
     # data = np.load(file_path)
     data = np.load(file_path, allow_pickle=True)
     nv_coordinates = data["nv_coordinates"]
-    spot_weights = data["spot_weights"]
+    # spot_weights = data["spot_weights"]
+    spot_weights = data["integrated_counts"]
     return nv_coordinates, spot_weights
 
 
@@ -314,7 +315,7 @@ def compute_nvs_phase():
         shape=(4096, 2048),
         spot_vectors=thorcam_coords,
         basis="ij",
-        spot_amp=spot_weights,
+        # spot_amp=spot_weights,
         cameraslm=fs,
     )
     # Precondition computationally

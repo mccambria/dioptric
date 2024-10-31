@@ -795,7 +795,7 @@ def get_base_scc_seq_args(
 def get_coords_list(
     nv_list: list[NVSig], laser_key, drift_adjust=False, include_inds=None
 ):
-    laser_name = tb.get_laser_name(laser_key)
+    laser_name = tb.get_physical_laser_name(laser_key)
     drift = pos.get_drift(laser_name) if drift_adjust else None
     coords_list = [
         pos.get_nv_coords(

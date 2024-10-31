@@ -21,8 +21,8 @@ def get_seq(pol_coords, ion_coords, num_reps):
     if num_reps is None:
         num_reps = 1
 
-    green_laser = tb.get_laser_name(VirtualLaserKey.CHARGE_POL)
-    red_laser = tb.get_laser_name(VirtualLaserKey.ION)
+    green_laser = tb.get_physical_laser_name(VirtualLaserKey.CHARGE_POL)
+    red_laser = tb.get_physical_laser_name(VirtualLaserKey.ION)
 
     with qua.program() as seq:
         seq_utils.init()

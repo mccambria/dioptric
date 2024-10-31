@@ -123,7 +123,7 @@ def macro_polarize(
     global _cache_charge_pol_incomplete
     global _cache_target_list
 
-    pol_laser_name = tb.get_laser_name(VirtualLaserKey.CHARGE_POL)
+    pol_laser_name = tb.get_physical_laser_name(VirtualLaserKey.CHARGE_POL)
     pulse_name = "charge_pol"
     macro_run_aods(laser_names=[pol_laser_name], aod_suffices=[pulse_name])
 
@@ -153,7 +153,9 @@ def macro_polarize(
 
     # Spin polarization with widefield yellow
     if spin_pol:
-        spin_pol_laser_name = tb.get_laser_name(VirtualLaserKey.WIDEFIELD_SPIN_POL)
+        spin_pol_laser_name = tb.get_physical_laser_name(
+            VirtualLaserKey.WIDEFIELD_SPIN_POL
+        )
         spin_pol_laser_el = get_laser_mod_element(spin_pol_laser_name)
         buffer = get_widefield_operation_buffer()
         qua.align()
@@ -174,7 +176,7 @@ def macro_ionize(ion_coords_list):
     ion_coords_list : list(coordinate pairs)
         List of coordinate pairs to target
     """
-    ion_laser_name = tb.get_laser_name(VirtualLaserKey.ION)
+    ion_laser_name = tb.get_physical_laser_name(VirtualLaserKey.ION)
     macro_run_aods([ion_laser_name], aod_suffices=["ion"])
     ion_pulse_name = "ion"
     _macro_pulse_list(ion_laser_name, ion_pulse_name, ion_coords_list)
@@ -240,8 +242,8 @@ def _macro_scc_shelving(
     shelving_coords_list,
     exp_spin_flip=True,
 ):
-    shelving_laser_name = tb.get_laser_name(VirtualLaserKey.SHELVING)
-    ion_laser_name = tb.get_laser_name(VirtualLaserKey.SCC)
+    shelving_laser_name = tb.get_physical_laser_name(VirtualLaserKey.SHELVING)
+    ion_laser_name = tb.get_physical_laser_name(VirtualLaserKey.SCC)
     laser_name_list = [shelving_laser_name, ion_laser_name]
     shelving_pulse_name = "shelving"
     ion_pulse_name = "scc"
@@ -299,7 +301,7 @@ def _macro_scc_no_shelving(
 ):
     # Basic setup
 
-    ion_laser_name = tb.get_laser_name(VirtualLaserKey.SCC)
+    ion_laser_name = tb.get_physical_laser_name(VirtualLaserKey.SCC)
     ion_pulse_name = "scc"
     macro_run_aods([ion_laser_name], aod_suffices=[ion_pulse_name])
 
@@ -422,7 +424,9 @@ def get_macro_pi_on_2_pulse_duration(uwave_ind_list):
 
 
 def macro_charge_state_readout(readout_duration_ns=None):
-    readout_laser_name = tb.get_laser_name(VirtualLaserKey.WIDEFIELD_CHARGE_READOUT)
+    readout_laser_name = tb.get_physical_laser_name(
+        VirtualLaserKey.WIDEFIELD_CHARGE_READOUT
+    )
     readout_laser_el = get_laser_mod_element(readout_laser_name, sticky=True)
 
     camera_el = "do_camera_trigger"

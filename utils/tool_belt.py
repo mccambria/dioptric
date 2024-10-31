@@ -940,8 +940,8 @@ def get_virtual_sig_gen_dict(sig_gen_ind):
 
 
 @cache
-def get_laser_name(laser_key):
-    return get_virtual_laser_dict(laser_key)["name"]
+def get_physical_laser_name(laser_key):
+    return get_virtual_laser_dict(laser_key)["physical_laser_name"]
 
 
 @cache

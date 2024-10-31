@@ -30,7 +30,7 @@ def get_seq(
 ):
     sig_gen_el = seq_utils.get_sig_gen_element(uwave_ind)
     buffer = seq_utils.get_widefield_operation_buffer()
-    laser_name = tb.get_laser_name(VirtualLaserKey.POLARIZATION)
+    laser_name = tb.get_physical_laser_name(VirtualLaserKey.POLARIZATION)
 
     if num_reps is None:
         num_reps = 1

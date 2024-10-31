@@ -76,6 +76,7 @@ class VirtualLaserKey(Enum):
 class CoordsKey(StrEnum):
     SAMPLE = "sample"
     PIXEL = "pixel"
+    Z = "z"
 
 
 class Axes(Enum):

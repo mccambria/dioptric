@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 """
-Output server for the PI nanocube E727.CDA 3-axis piezo.
+Output server for the PI nanocube P606.3C piezo.
 Sending commands over usb
 
 Created on Wed July  3 15:58:30 2024
@@ -9,7 +9,7 @@ Created on Wed July  3 15:58:30 2024
 
 ### BEGIN NODE INFO
 [info]
-name = piezo_stage_P616_3c_purcell
+name = pos_xyz_PI_p616_3c
 version = 1.0
 description =
 
@@ -40,8 +40,8 @@ from utils import common
 from utils import tool_belt as tb
 
 
-class PosxyzP616Digial(LabradServer):
-    name = "piezo_stage_P616_3c_purcell"
+class PosXyzPiP6163c(LabradServer):
+    name = "pos_xyz_PI_p616_3c"
     pc_name = socket.gethostname()
 
     def initServer(self):
@@ -1146,11 +1146,9 @@ class PosxyzP616Digial(LabradServer):
         return
 
 
-__server__ = PosxyzP616Digial()
+__server__ = PosXyzPiP6163c()
 
 if __name__ == "__main__":
     from labrad import util
 
     util.runServer(__server__)
-
-# %%

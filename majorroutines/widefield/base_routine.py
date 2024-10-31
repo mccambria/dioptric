@@ -13,7 +13,7 @@ from random import shuffle
 
 import numpy as np
 
-from majorroutines.widefield import targeting
+from majorroutines import targeting
 from utils import common, widefield
 from utils import positioning as pos
 from utils import tool_belt as tb
@@ -299,12 +299,12 @@ def main(
                                     )
                                 ret_vals = read_and_process_image(nv_list)
                                 img_array, counts_list, states_list = ret_vals
-                                counts[
-                                    exp_ind, :, run_ind, step_ind, rep_ind
-                                ] = counts_list
-                                states[
-                                    exp_ind, :, run_ind, step_ind, rep_ind
-                                ] = states_list
+                                counts[exp_ind, :, run_ind, step_ind, rep_ind] = (
+                                    counts_list
+                                )
+                                states[exp_ind, :, run_ind, step_ind, rep_ind] = (
+                                    states_list
+                                )
 
                                 if save_images:
                                     if save_images_downsample_factor is not None:
