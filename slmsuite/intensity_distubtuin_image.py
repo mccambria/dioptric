@@ -349,8 +349,9 @@ if __name__ == "__main__":
     # data = dm.get_raw_data(file_id=1651663986412, load_npz=True)
     # data = dm.get_raw_data(file_id=1680236956179, load_npz=True)
     # data = dm.get_raw_data(file_id=1681853425454, load_npz=True)
-    data = dm.get_raw_data(file_id=1688298946808, load_npz=True)
-    data = dm.get_raw_data(file_id=1688328009205, load_npz=True)
+    # data = dm.get_raw_data(file_id=1688298946808, load_npz=True)
+    # data = dm.get_raw_data(file_id=1688328009205, load_npz=True)
+    data = dm.get_raw_data(file_id=1688554695897, load_npz=True)
 
     #
     img_array = np.array(data["ref_img_array"])
