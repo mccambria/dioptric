@@ -37,23 +37,24 @@ def create_raw_data_figure(nv_list, freqs, counts, counts_errs):
     return fig
 
 
-def reformat_counts_for_normalization(data):
-    nv_list = data["nv_list"]
-    counts = data["counts"]
-    counts = data["counts"]
-    num_nvs = len(nv_list)
+def reformat_counts(counts):
+    counts = np.array(data["counts"])
+    num_nvs = counts.shape[1]
+    num_steps = counts.shape[3]
     adj_num_steps = num_steps // 4
-    counts = np.array(data["counts"])[0]
-    sig_counts_0 = counts[:, :, 0:adj_num_steps, :]
-    sig_counts_1 = counts[:, :, adj_num_steps : 2 * adj_num_steps, :]
+    exp_rep = 0  # Everything, signal and ref, are under the same exp_rep for resonance
+
+    sig_counts_0 = counts[exp_rep, :, :, 0:adj_num_steps, :]
+    sig_counts_1 = counts[exp_rep, :, :, adj_num_steps : 2 * adj_num_steps, :]
     sig_counts = np.append(sig_counts_0, sig_counts_1, axis=3)
-    ref_counts_0 = counts[:, :, 2 * adj_num_steps : 3 * adj_num_steps, :]
-    ref_counts_1 = counts[:, :, 3 * adj_num_steps :, :]
+    ref_counts_0 = counts[exp_rep, :, :, 2 * adj_num_steps : 3 * adj_num_steps, :]
+    ref_counts_1 = counts[exp_rep, :, :, 3 * adj_num_steps :, :]
     ref_counts = np.empty((num_nvs, num_runs, adj_num_steps, 2 * num_reps))
     ref_counts[:, :, :, 0::2] = ref_counts_0
     ref_counts[:, :, :, 1::2] = ref_counts_1
 
-    return sig_counts, ref_counts
+    reformatted_counts = np.stack(sig_counts, ref_counts)
+    return reformatted_counts
 
 
 def create_fit_figure(
@@ -76,7 +77,7 @@ def create_fit_figure(
         norm = 1
         if isinstance(freq, list):
             return [norm] * len(freq)
-        elif type(freq) == np.ndarray:
+        if isinstance(freq, np.ndarray):
             return np.array([norm] * len(freq))
         else:
             return norm
@@ -287,20 +288,10 @@ def main(
     ### Process and plot
 
     try:
-        # Manipulate the counts into the format expected for normalization
-        adj_num_steps = num_steps // 4
-        counts = np.array(raw_data["counts"])[0]
-        sig_counts_0 = counts[:, :, 0:adj_num_steps, :]
-        sig_counts_1 = counts[:, :, adj_num_steps : 2 * adj_num_steps, :]
-        sig_counts = np.append(sig_counts_0, sig_counts_1, axis=3)
-        ref_counts_0 = counts[:, :, 2 * adj_num_steps : 3 * adj_num_steps, :]
-        ref_counts_1 = counts[:, :, 3 * adj_num_steps :, :]
-        ref_counts = np.empty((num_nvs, num_runs, adj_num_steps, 2 * num_reps))
-        ref_counts[:, :, :, 0::2] = ref_counts_0
-        ref_counts[:, :, :, 1::2] = ref_counts_1
-
-        sig_counts = counts[0]
-        ref_counts = counts[1]
+        counts = data["counts"]
+        reformatted_counts = reformat_counts(counts)
+        sig_counts = reformatted_counts[0]
+        ref_counts = reformatted_counts[1]
 
         avg_counts, avg_counts_ste, norms = widefield.process_counts(
             nv_list, sig_counts, ref_counts, threshold=True
@@ -366,17 +357,10 @@ if __name__ == "__main__":
     # freqs = data["freqs"]
 
     # # Manipulate the counts into the format expected for normalization
-    # num_nvs = len(nv_list)
-    adj_num_steps = num_steps // 4
-    # counts = np.array(data["counts"])[0]
-    # sig_counts_0 = counts[:, :, 0:adj_num_steps, :]
-    # sig_counts_1 = counts[:, :, adj_num_steps : 2 * adj_num_steps, :]
-    # sig_counts = np.append(sig_counts_0, sig_counts_1, axis=3)
-    # ref_counts_0 = counts[:, :, 2 * adj_num_steps : 3 * adj_num_steps, :]
-    # ref_counts_1 = counts[:, :, 3 * adj_num_steps :, :]
-    # ref_counts = np.empty((num_nvs, num_runs, adj_num_steps, 2 * num_reps))
-    # ref_counts[:, :, :, 0::2] = ref_counts_0
-    # ref_counts[:, :, :, 1::2] = ref_counts_1
+    # counts = data["counts"]
+    # reformatted_counts = reformat_counts(counts)
+    # sig_counts = reformatted_counts[0]
+    # ref_counts = reformatted_counts[1]
 
     # avg_counts, avg_counts_ste, norms = widefield.process_counts(
     #     nv_list, sig_counts, ref_counts, threshold=True
