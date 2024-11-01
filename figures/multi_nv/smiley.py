@@ -15,13 +15,13 @@ import matplotlib.pyplot as plt
 import numpy as np
 
 import majorroutines.targeting as targeting
-from majorroutines.widefield.optimize import optimize_pixel
+from majorroutines.widefield.targeting import optimize_pixel
 from utils import common, widefield
 from utils import data_manager as dm
 from utils import kplotlib as kpl
 from utils import positioning as pos
 from utils import tool_belt as tb
-from utils.constants import LaserKey, NVSig
+from utils.constants import NVSig, VirtualLaserKey
 from utils.widefield import crop_img_array
 
 pixel_coords_list = [

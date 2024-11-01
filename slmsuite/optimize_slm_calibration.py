@@ -18,7 +18,7 @@ import scipy.ndimage as ndimage
 from IPython.display import Image
 from scipy.optimize import curve_fit
 
-from majorroutines.widefield import image_sample, optimize
+from majorroutines.widefield import image_sample, targeting
 
 # Import slmsuite and related modules
 from slmsuite.hardware.cameras.thorlabs import ThorCam

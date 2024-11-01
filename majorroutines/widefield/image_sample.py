@@ -16,13 +16,13 @@ import numpy as np
 from pipython import GCSDevice
 
 import majorroutines.targeting as targeting
-from majorroutines.widefield.optimize import optimize_pixel
+from majorroutines.targeting import optimize_pixel
 from utils import common, widefield
 from utils import data_manager as dm
 from utils import kplotlib as kpl
 from utils import positioning as pos
 from utils import tool_belt as tb
-from utils.constants import LaserKey, NVSig
+from utils.constants import NVSig, VirtualLaserKey
 
 
 def single_nv(nv_sig, num_reps=1):
@@ -86,16 +86,18 @@ def _charge_state_prep_diff(nv_sig, caller_fn_name, num_reps=1):
         img_array = img_arrays[ind]
         title = titles[ind]
 
-        nv_pixel_coords = optimize_pixel(
-            img_array,
-            nv_sig,
-            set_scanning_drift=False,
-            set_pixel_drift=False,
-            pixel_drift_adjust=False,
-        )
-        nv_counts = widefield.counts_from_img_array(
-            img_array, nv_pixel_coords, drift_adjust=False
-        )
+        # nv_pixel_coords = optimize_pixel(
+        #     img_array,
+        #     nv_sig,
+        #     set_scanning_drift=False,
+        #     set_pixel_drift=False,
+        #     pixel_drift_adjust=False,
+        # )
+        # nv_counts = widefield.counts_from_img_array(
+        #     img_array, nv_pixel_coords, drift_adjust=False
+        # )
+        nv_pixel_coords, nv_counts = optimize_pixel(nv_sig, img_array)
+
         bg_pixel_coords = [
             nv_pixel_coords[0] + bg_offset[0],
             nv_pixel_coords[1] + bg_offset[1],
@@ -136,8 +138,8 @@ def nv_list(nv_list, num_reps=1):
 
 def _nv_list_sub(nv_list, caller_fn_name, save_dict=None, num_reps=1):
     nv_sig = nv_list[0]
-    laser_key = LaserKey.IMAGING
-    laser_dict = tb.get_optics_dict(laser_key)
+    laser_key = VirtualLaserKey.IMAGING
+    laser_dict = tb.get_virtual_laser_dict(laser_key)
     laser_name = laser_dict["name"]
     adj_coords_list = [pos.get_nv_coords(nv, laser_name) for nv in nv_list]
     x_coords = [coords[0] for coords in adj_coords_list]
@@ -150,8 +152,8 @@ def widefield_image(nv_sig, num_reps=1):
 
 
 def widefield_scanning(nv_sig, x_range, y_range, num_steps):
-    laser_key = LaserKey.WIDEFIELD_IMAGING
-    laser_dict = tb.get_optics_dict(laser_key)
+    laser_key = VirtualLaserKey.WIDEFIELD_IMAGING
+    laser_dict = tb.get_virtual_laser_dict(laser_key)
     laser_name = laser_dict["name"]
     x_center, y_center = [0, 0]
     ret_vals = pos.get_scan_grid_2d(
@@ -171,10 +173,9 @@ def widefield_scanning(nv_sig, x_range, y_range, num_steps):
 
 
 def scanning(nv_sig, x_range, y_range, num_steps):
-    laser_key = LaserKey.IMAGING
-    laser_dict = tb.get_optics_dict(laser_key)
-    laser_name = laser_dict["name"]
-    center_coords = pos.get_nv_coords(nv_sig, laser_name)
+    laser_key = VirtualLaserKey.IMAGING
+    positioner = pos.get_laser_positioner(laser_key)
+    center_coords = pos.get_nv_coords(nv_sig, positioner)
     x_center, y_center = center_coords[0:2]
     ret_vals = pos.get_scan_grid_2d(
         x_center, y_center, x_range, y_range, num_steps, num_steps
@@ -206,16 +207,16 @@ def main(
 
     tb.reset_cfm()
     laser_key = (
-        LaserKey.WIDEFIELD_IMAGING
+        VirtualLaserKey.WIDEFIELD_IMAGING
         if caller_fn_name == "widefield"
-        else LaserKey.IMAGING
+        else VirtualLaserKey.IMAGING
     )
-    targeting.pos.set_xyz_on_nv(nv_sig)
+    # targeting.pos.set_xyz_on_nv(nv_sig)
     camera = tb.get_server_camera()
     pulse_gen = tb.get_server_pulse_gen()
 
-    laser_dict = tb.get_optics_dict(laser_key)
-    readout_laser = laser_dict["name"]
+    laser_dict = tb.get_virtual_laser_dict(laser_key)
+    readout_laser = tb.get_physical_laser_name(laser_key)
 
     pos.set_xyz_on_nv(nv_sig)
 

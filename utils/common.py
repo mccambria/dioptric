@@ -102,6 +102,15 @@ def get_server(server_key):
 
 
 @cache
+def get_server_by_name(server_name):
+    try:
+        cxn = labrad_connect()
+        return cxn[server_name]
+    except Exception:
+        return None
+
+
+@cache
 def get_server_name(server_key):
     config = get_config_dict()
     confg_servers = config["Servers"]

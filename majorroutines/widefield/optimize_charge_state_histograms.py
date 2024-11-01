@@ -8,19 +8,22 @@ Created on Oct 26, 2024
 """
 
 import os
-import numpy as np
-import matplotlib.pyplot as plt
 import traceback
 from datetime import datetime
-from scipy.stats import gaussian_kde
 from time import sleep  # For real-time updates
-from slmsuite.hardware.cameras.thorlabs import ThorCam
-from slmsuite.hardware.slms.thorlabs import ThorSLM
-from slmsuite.hardware.cameraslms import FourierSLM
-from slmsuite.holography.algorithms import SpotHologram
-from utils.tool_belt import determine_threshold
-from utils import data_manager as dm
+
+import matplotlib.pyplot as plt
+import numpy as np
+from scipy.stats import gaussian_kde
+
 from majorroutines.widefield import base_routine
+from slmsuite.hardware.cameras.thorlabs import ThorCam
+from slmsuite.hardware.cameraslms import FourierSLM
+from slmsuite.hardware.slms.thorlabs import ThorSLM
+from slmsuite.holography.algorithms import SpotHologram
+from utils import data_manager as dm
+from utils.tool_belt import determine_threshold
+
 
 # Connect devices
 def connect_devices():
@@ -34,6 +37,7 @@ def connect_devices():
         print(f"Error connecting devices: {e}")
         raise
 
+
 # Update SLM phase based on weights
 def update_slm_phase(slm, fs, coords, weights):
     try:
@@ -46,6 +50,15 @@ def update_slm_phase(slm, fs, coords, weights):
     except Exception as e:
         print(f"SLM phase update error: {e}")
 
+
+# Capture and plot feedback from the camera
+def capture_and_plot(cam):
+    img = cam.get_image()
+    plt.imshow(img, cmap="gray")
+    plt.title("Camera Feedback")
+    plt.show()
+
+
 # Process histograms and calculate fidelity
 def process_histograms(sig_counts, ref_counts):
     noise = np.sqrt(np.var(sig_counts) + np.var(ref_counts))
@@ -56,11 +69,13 @@ def process_histograms(sig_counts, ref_counts):
     print(f"SNR: {snr}, Fidelity: {fidelity}")
     return fidelity, snr
 
+
 # Adjust weights based on fidelity
 def adjust_weights(weights, fidelity, threshold=0.9):
     if fidelity < threshold:
         weights *= 1.1  # Increase weight for low-fidelity NVs
     return weights / np.max(weights)
+
 
 # Save data from each step
 def save_step_data(step, data, timestamp):
@@ -68,34 +83,40 @@ def save_step_data(step, data, timestamp):
     dm.save_raw_data(data, file_path)
     print(f"Step {step} data saved.")
 
+
 # Apply new weights to the SLM
 def apply_slm_weights(slm, coords, weights):
     hologram = SpotHologram(shape=(4096, 2048), spot_vectors=coords.T, spot_amp=weights)
     hologram.optimize("WGS-Kim", maxiter=30)
     slm.write(hologram.extract_phase(), settle=True)
 
+
 # Load NV coordinates and weights
-def load_nv_coords(file_path="slmsuite/nv_blob_detection/nv_blob_filtered_128nvs_updated.npz"):
+def load_nv_coords(
+    file_path="slmsuite/nv_blob_detection/nv_blob_filtered_128nvs_updated.npz",
+):
     data = np.load(file_path, allow_pickle=True)
     return data["nv_coordinates"], data["spot_weights"]
+
 
 # Adjust total power configuration
 def adjust_total_power(target_power):
     config_path = "path/to/purcell_config.py"
     with open(config_path, "r") as f:
         config = f.read()
-    
+
     new_config = config.replace(
         '"yellow_charge_readout": {"type": "constant", "sample": 0.36}',
-        f'"yellow_charge_readout": {{"type": "constant", "sample": {target_power}}}'
+        f'"yellow_charge_readout": {{"type": "constant", "sample": {target_power}}}',
     ).replace(
         '"green_aod_cw-charge_pol": {"type": "constant", "sample": 0.11}',
-        f'"green_aod_cw-charge_pol": {{"type": "constant", "sample": {target_power}}}'
+        f'"green_aod_cw-charge_pol": {{"type": "constant", "sample": {target_power}}}',
     )
-    
+
     with open(config_path, "w") as f:
         f.write(new_config)
     print(f"Updated power to {target_power}")
+
 
 # Real-time acquisition and optimization loop
 def real_time_acquisition(slm, nv_list, steps=10, target_power=0.4):
@@ -146,6 +167,7 @@ def real_time_acquisition(slm, nv_list, steps=10, target_power=0.4):
 
         sleep(1)  # Pause for real-time updates
 
+
 # Main function to connect devices and run optimization
 def main(nv_list):
     try:
@@ -157,6 +179,7 @@ def main(nv_list):
         slm.close_window()
         slm.close_device()
         cam.close()
+
 
 if __name__ == "__main__":
     main()

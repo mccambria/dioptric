@@ -18,15 +18,15 @@ from servers.timing.sequencelibrary.QM_opx import seq_utils
 from servers.timing.sequencelibrary.QM_opx.camera import base_scc_sequence
 from utils import common
 from utils import tool_belt as tb
-from utils.constants import LaserKey
+from utils.constants import VirtualLaserKey
 
 
 def get_seq(period, num_reps=1):
     half_period_cc = seq_utils.convert_ns_to_cc(period / 2, allow_rounding=True)
     buffer = seq_utils.get_widefield_operation_buffer()
 
-    green_laser = tb.get_laser_name(LaserKey.POLARIZATION)
-    red_laser = tb.get_laser_name(LaserKey.IONIZATION)
+    green_laser = tb.get_physical_laser_name(VirtualLaserKey.POLARIZATION)
+    red_laser = tb.get_physical_laser_name(VirtualLaserKey.IONIZATION)
     green_el = seq_utils.get_laser_mod_element(green_laser)
     red_el = seq_utils.get_laser_mod_element(red_laser)
 

@@ -20,7 +20,7 @@ import cv2
 import matplotlib.pyplot as plt
 import numpy as np
 
-from majorroutines import optimize_xyz
+from majorroutines import targeting
 from majorroutines.widefield import (
     ac_stark,
     calibrate_iq_delay,
@@ -30,7 +30,6 @@ from majorroutines.widefield import (
     correlation_test,
     crosstalk_check,
     image_sample,
-    optimize,
     optimize_scc,
     power_rabi,
     rabi,
@@ -50,11 +49,13 @@ from utils import data_manager as dm
 from utils import kplotlib as kpl
 from utils import positioning as pos
 from utils import tool_belt as tb
-from utils.constants import CoordsKey, LaserKey, NVSig
+from utils.constants import Axes, CoordsKey, NVSig, VirtualLaserKey
 
 green_laser = "laser_INTE_520"
 red_laser = "laser_COBO_638"
 yellow_laser = "laser_OPTO_589"
+green_laser_aod = f"{green_laser}_aod"
+red_laser_aod = f"{red_laser}_aod"
 
 ### Major Routines
 
@@ -98,7 +99,7 @@ def do_charge_state_histograms(nv_list):
     #         nv_list, num_reps, num_runs, ion_include_inds=ion_include_inds
     #     )
     return charge_state_histograms.main(
-        nv_list, num_reps, num_runs, plot_histograms=True
+        nv_list, num_reps, num_runs, plot_histograms=False
     )
 
 
@@ -109,44 +110,49 @@ def do_charge_state_conditional_init(nv_list):
     return charge_state_conditional_init.main(nv_list, num_reps, num_runs)
 
 
-def do_optimize_green(nv_sig, do_plot=True):
-    coords_key = tb.get_laser_name(LaserKey.IMAGING)
-    ret_vals = optimize.main(
-        nv_sig,
-        coords_key=coords_key,
-        no_crash=True,
-        do_plot=do_plot,
-        axes_to_optimize=[0, 1],
-    )
+def do_optimize_green(nv_sig):
+    ret_vals = targeting.optimize(nv_sig, coords_key=green_laser_aod)
     opti_coords = ret_vals[0]
     return opti_coords
 
 
-def do_optimize_red(nv_sig, do_plot=True, axes_to_optimize=[0, 1]):
-    coords_key = red_laser
-    ret_vals = optimize.main(
-        nv_sig,
-        coords_key=coords_key,
-        no_crash=True,
-        do_plot=do_plot,
-        axes_to_optimize=[0, 1],
-    )
+def do_optimize_red(nv_sig):
+    ret_vals = targeting.optimize(nv_sig, coords_key=red_laser_aod)
     opti_coords = ret_vals[0]
     return opti_coords
 
 
-def do_optimize_z(nv_sig, do_plot=True):
-    optimize.main(nv_sig, no_crash=True, do_plot=do_plot, axes_to_optimize=[2])
+def do_optimize_z(nv_sig):
+    ret_vals = targeting.optimize(nv_sig, coords_key=CoordsKey.Z)
+    opti_coords = ret_vals[0]
+    return opti_coords
+
+
+def do_compensate_for_drift(nv_sig):
+    return targeting.compensate_for_drift(nv_sig)
 
 
 def do_optimize_xyz(nv_sig, do_plot=True):
-    optimize_xyz.main(
-        nv_sig, no_crash=True, do_plot=do_plot, axes_to_optimize=[0, 1, 2]
+    targeting.optimize_xyz_using_piezo(
+        nv_sig, do_plot=do_plot, axes_to_optimize=[0, 1, 2]
     )
 
 
+def do_optimize_sample(nv_sig):
+    opti_coords = targeting.optimize_sample(nv_sig)
+    if not opti_coords:
+        print("Optimization failed: No coordinates found.")
+    return opti_coords
+
+
+# def do_optimize_sample(nv_sig):
+#     opti_coords = targeting.optimize_sample(nv_sig)
+# return opti_coords
+
+
 def do_optimize_pixel(nv_sig):
-    opti_coords = optimize.optimize_pixel(nv_sig, do_plot=True)
+    ret_vals = targeting.optimize(nv_sig, coords_key=CoordsKey.PIXEL)
+    opti_coords = ret_vals[0]
     return opti_coords
 
 
@@ -180,7 +186,7 @@ def do_optimize_loop(nv_list, coords_key, scanning_from_pixel=False):
                 opti_coords = do_optimize_red(nv)
             # Adjust for the drift that may have occurred since beginning the loop
             # optimize.optimize_pixel_and_z(repr_nv_sig, do_plot=False)
-            optimize.optimize_xyz_using_piezo(repr_nv_sig)
+            targeting.optimize_xyz_using_piezo(repr_nv_sig)
             drift = pos.get_drift(coords_key)
             drift = [-1 * el for el in drift]
             opti_coords = pos.adjust_coords_for_drift(opti_coords, drift=drift)
@@ -769,7 +775,7 @@ def do_optimize_SLM_calibation(nv_list, coords_key):
             opti_coords = do_optimize_pixel(nv)
             # opti_coords = optimize.optimize_pixel_with_img_array(img_array, nv_sig=nv)
             # widefield.reset_all_drift()
-            optimize.optimize_xyz_using_piezo(repr_nv_sig)
+            targeting.optimize_xyz_using_piezo(repr_nv_sig)
             widefield.reset_scanning_optics_drift()  # reset drift before optimizing next NV
         opti_coords_list.append(opti_coords)
 
@@ -820,58 +826,69 @@ if __name__ == "__main__":
     # z_coord = 3.85
     # magnet_angle = 90
     date_str = "2024_03_12"
-    # global_coords = [None, None, z_coord]
-    global_coords = [0.7, 0.2, 1.243]
-    # pixel_to_voltage(initial_pixel_coords, final_pixel_coords)
-    # global_coords = piezo_voltage_to_pixel_calibration(final_pixel_coords)
+    sample_coords = [2.0, 0.6]
+    z_coord = 0.3
 
     # Load NV pixel coordinates
     pixel_coords_list = load_nv_coords(
         # file_path="slmsuite/nv_blob_detection/nv_blob_filtered_162nvs_ref.npz"
-        file_path="slmsuite/nv_blob_detection/nv_blob_filtered_128nvs_updated.npz",
+        file_path="slmsuite/nv_blob_detection/nv_blob_filtered_144nvs.npz",
     ).tolist()
-
+    # pixel_coords_list = [
+    #     [129.985, 121.129],
+    # ]
     print(f"Number of NVs: {len(pixel_coords_list)}")
     print(f"Reference NV:{pixel_coords_list[0]}")
+
+    # Define transformations using `transform_coords`
     green_coords_list = [
         [
             round(coord, 3)
-            for coord in widefield.pixel_to_scanning_coords(
-                nv_pixel_coords, coords_key=green_laser
+            for coord in pos.transform_coords(
+                nv_pixel_coords, CoordsKey.PIXEL, green_laser_aod
             )
         ]
         for nv_pixel_coords in pixel_coords_list
     ]
-    print(green_coords_list[0])
+
     red_coords_list = [
         [
             round(coord, 3)
-            for coord in widefield.pixel_to_scanning_coords(
-                nv_pixel_coords, coords_key=red_laser
+            for coord in pos.transform_coords(
+                nv_pixel_coords, CoordsKey.PIXEL, red_laser_aod
             )
         ]
         for nv_pixel_coords in pixel_coords_list
     ]
-    print(red_coords_list[0])
+
+    # Optional: Print first coordinate set for verification
+    print(f"Green Laser Coordinates: {green_coords_list[0]}")
+    print(f"Red Laser Coordinates: {red_coords_list[0]}")
+    # print(red_coords_list[0])
     # print(pixel_coords_list[8])
 
     # pixel_coords_list = [
-    #     [121.475, 159.155],
-    #     [73.767, 91.394],
-    #     [142.545, 210.183],
-    #     [234.876, 116.946],
+    #     [125.000, 160.887],
+    #     [75.302, 95.265],
+    #     [199.053, 94.250],
+    # ]
+    # pixel_coords_list = [
+    #     [129.985, 121.129],
     # ]
     # green_coords_list = [
-    #     [110.043, 113.011],
-    #     [115.779, 106.042],
-    #     [107.253, 118.327],
-    #     [98.279, 107.437],
+    #     [109.279, 108.600],
+    #     # [102.279, 110.600],
+    # ]
+    # green_coords_list = [
+    #     [110.110, 110.073],
+    #     # [109.504, 113.073],
+    #     [115.361, 106.287],
+    #     [102.128, 105.29],
     # ]
     # red_coords_list = [
-    #     [74.889, 78.533],
-    #     [79.256, 72.672],
-    #     [72.849, 82.663],
-    #     [65.189, 74.169],
+    #     [74.367, 78.506],
+    #     [78.919, 72.896],
+    #     [68.183, 72.361],
     # ]
 
     num_nvs = len(pixel_coords_list)
@@ -887,10 +904,11 @@ if __name__ == "__main__":
     nv_list: list[NVSig] = []
     for ind in range(num_nvs):
         coords = {
-            CoordsKey.GLOBAL: global_coords,
+            CoordsKey.SAMPLE: sample_coords,
+            CoordsKey.Z: z_coord,
             CoordsKey.PIXEL: pixel_coords_list.pop(0),
-            green_laser: green_coords_list.pop(0),
-            red_laser: red_coords_list.pop(0),
+            green_laser_aod: green_coords_list.pop(0),
+            red_laser_aod: red_coords_list.pop(0),
         }
         nv_sig = NVSig(
             name=f"{sample_name}-nv{ind}_{date_str}",
@@ -900,18 +918,22 @@ if __name__ == "__main__":
             threshold=threshold_list[ind],
         )
         nv_list.append(nv_sig)
+
     # Additional properties for the representative NV
     nv_list[0].representative = True
     # nv_list[1].representative = True
     nv_sig = widefield.get_repr_nv_sig(nv_list)
+    # print(f"Created NV: {nv_sig.name}, Coords: {nv_sig.coords}")
     nv_sig.expected_counts = None
-    # nv_sig.expected_counts = 2249.0
+    # nv_sig.expected_co1unts = 2580.0
     # nv_sig.expected_counts = 3359.0
-    nv_sig.expected_counts = 1280.0
+    nv_sig.expected_counts = 1812.0
     # num_nvs = len(nv_list)
     # print(f"Final NV List: {nv_list}")
     # Ensure data is defined before accessing it
     # data = None
+
+    # nv_sig.coords[green_laser_aod] = [111.56373974967805, 111.0353971667772]
 
     # try:
     #     pulse_gen.stream_load(seq_file, seq_args_string, num_reps)
@@ -984,13 +1006,15 @@ if __name__ == "__main__":
         # widefield.reset_pixel_drift()
         # widefield.set_all_scanning_drift_from_pixel_drift()
 
+        #
         # do_optimize_z(nv_sig)
-        do_optimize_xyz(nv_sig)
+        # do_optimize_xyz(nv_sig)
         # pos.set_xyz_on_nv(nv_sig)
-        # piezo_voltage_to_pixel_calibration()
+
+        do_compensate_for_drift(nv_sig)
 
         # Generate points for forward diagonal motion
-        # x_values = np.linspace(0.3, -0.3, 6)
+        # x_values = np.linspace(0.3, -0.3, 6)c
         # y_values = np.linspace(0.3, -0.3, 6)
         # Define the list of points in the triangle
         # Example coordinates for the triangle
@@ -1002,21 +1026,24 @@ if __name__ == "__main__":
 
         # for point in points:
         #     x, y = point
-        #     nv_sig.coords[CoordsKey.GLOBAL][0] += x
-        #     nv_sig.coords[CoordsKey.GLOBAL][1] += y
-        #     print(nv_sig.coords[CoordsKey.GLOBAL])
+        #     nv_sig.coords[CoordsKey.SAMPLE][0] += x
+        #     nv_sig.coords[CoordsKey.SAMPLE][1] += y
+        #     print(nv_sig.coords[CoordsKey.SAMPLE])
         #     do_scanning_image_sample(nv_sig)
 
         # Move diagonally forward
         # for x, y in zip(x_values, y_values):
-        # nv_sig.coords[CoordsKey.GLOBAL][0] = x
-        # nv_sig.coords[CoordsKey.GLOBAL][1] = y
+        # nv_sig.coords[CoordsKey.SAMPLE][0] = x
+        # nv_sig.coords[CoordsKey.SAMPLE][1] = y
         # do_scanning_image_sample(nv_sig)
 
-        # for z in np.linspace(-0.6, 0.0, 11):
-        #     nv_sig.coords[CoordsKey.GLOBAL][2] = z
+        # for z in np.linspace(-0.3, 0.3, 11):
+        #     nv_sig.coords[CoordsKey.SAMPLE][2] = z
         #     do_scanning_image_sample(nv_sig)
         # do_widefield_image_sample(nv_sig, 50)
+
+        # nv_sig.coords[CoordsKey.SAMPLE][2] = 0.4
+        # do_scanning_image_sample(nv_sig)
 
         # do_scanning_image_sample(nv_sig)
         # do_scanning_image_sample_zoom(nv_sig)
@@ -1035,9 +1062,12 @@ if __name__ == "__main__":
         # do_image_nv_list(nv_list)
         # for ind in range(20):
         # do_optimize_pixel(nv_sig)
-        # do_optimize_z(nv_sig)
         # do_optimize_green(nv_sig)
         # do_optimize_red(nv_sig)
+        # do_optimize_z(nv_sig)
+        ## do_optimize_sample(nv_sig)
+
+        # do_compensate_for_drift(nv_sig)
 
         # widefield.reset_all_drift()
         # coords_key = None  # Pixel coords
@@ -1052,7 +1082,7 @@ if __name__ == "__main__":
         # do_check_readout_fidelity(nv_list)
 
         # do_resonance_zoom(nv_list)
-        # do_rabi(nv_list)
+        # do_rabi(nv_l ist)
         # do_resonance(nv_list)
         # do_spin_echo(nv_list)s
 

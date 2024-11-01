@@ -22,7 +22,7 @@ from utils import common
 from utils import kplotlib as kpl
 from utils import positioning as pos
 from utils import tool_belt as tb
-from utils.constants import CollectionMode, CountFormat, LaserKey, PosControlMode
+from utils.constants import CollectionMode, CountFormat, PosControlMode, VirtualLaserKey
 
 
 class ScanAxes(Enum):
@@ -131,7 +131,7 @@ def main_with_cxn(
         camera = tb.get_server_camera(cxn)
     pulse_gen = tb.get_server_pulse_gen(cxn)
 
-    laser_key = LaserKey.IMAGING
+    laser_key = VirtualLaserKey.IMAGING
     laser_dict = nv_sig[laser_key]
     readout_laser = laser_dict["name"]
     tb.set_filter(cxn, nv_sig, laser_key)

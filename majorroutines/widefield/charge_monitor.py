@@ -20,13 +20,13 @@ from scipy.optimize import curve_fit
 from scipy.special import factorial
 from scipy.stats import poisson
 
-from majorroutines.widefield import base_routine, optimize
+from majorroutines.widefield import base_routine
 from utils import common, widefield
 from utils import data_manager as dm
 from utils import kplotlib as kpl
 from utils import positioning as pos
 from utils import tool_belt as tb
-from utils.constants import ChargeStateEstimationMode, LaserKey, NVSig
+from utils.constants import ChargeStateEstimationMode, NVSig, VirtualLaserKey
 
 
 def detect_cosmic_rays(nv_list, num_reps, num_runs, dark_time):
@@ -205,7 +205,7 @@ def main(
     ### Collect the data
 
     def run_fn(shuffled_step_inds):
-        pol_coords_list = widefield.get_coords_list(nv_list, LaserKey.CHARGE_POL)
+        pol_coords_list = widefield.get_coords_list(nv_list, VirtualLaserKey.CHARGE_POL)
         seq_args = [pol_coords_list, charge_prep, dark_time]
         seq_args_string = tb.encode_seq_args(seq_args)
         pulse_gen.stream_load(seq_file, seq_args_string, num_reps)

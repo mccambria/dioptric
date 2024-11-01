@@ -17,7 +17,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 
 from majorroutines.pulsed_resonance import fit_resonance, voigt, voigt_split
-from majorroutines.widefield import base_routine, optimize
+from majorroutines.widefield import base_routine
 from utils import common
 from utils import data_manager as dm
 from utils import kplotlib as kpl
@@ -27,16 +27,20 @@ from utils import widefield as widefield
 from utils.constants import NVSig, NVSpinState
 from utils.positioning import get_scan_1d as calculate_powers
 
+
 def get_lower_left_ax(axes_pack):
     """Helper function to find the lower-left axis from axes_pack."""
     if isinstance(axes_pack, dict):
         # Assuming the axes_pack dictionary has keys indicating positions (like a mosaic)
         # Let's extract the keys and find the one in the lower left
-        lower_left_key = min(axes_pack.keys())  # Assuming keys represent positions and lower-left is smallest
+        lower_left_key = min(
+            axes_pack.keys()
+        )  # Assuming keys represent positions and lower-left is smallest
         return axes_pack[lower_left_key]
     else:
         # If it's a list or something else, return the last axis
         return axes_pack[-1]
+
 
 def create_raw_data_figure(data):
     nv_list = data["nv_list"]
@@ -94,7 +98,7 @@ def main(
         for ind in uwave_ind_list:
             uwave_dict = tb.get_uwave_dict(ind)
             uwave_power = uwave_dict["uwave_power"]
-            sig_gen = tb.get_server_sig_gen(ind=ind)
+            sig_gen = tb.get_server_sig_gen(ind)
             sig_gen.set_amp(round(uwave_power + power, 3))
 
     data = base_routine.main(

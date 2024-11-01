@@ -17,7 +17,7 @@ from scipy import ndimage
 from scipy.optimize import curve_fit
 from scipy.special import factorial
 
-from majorroutines.widefield import optimize
+from majorroutines.widefield import targeting
 from utils import common, widefield
 from utils import data_manager as dm
 from utils import kplotlib as kpl

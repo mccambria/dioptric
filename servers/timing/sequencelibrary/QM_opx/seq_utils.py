@@ -15,7 +15,7 @@ from qm import qua
 
 from utils import common
 from utils import tool_belt as tb
-from utils.constants import LaserKey, ModMode
+from utils.constants import ModMode, VirtualLaserKey
 
 # region QUA macros
 
@@ -123,7 +123,7 @@ def macro_polarize(
     global _cache_charge_pol_incomplete
     global _cache_target_list
 
-    pol_laser_name = tb.get_laser_name(LaserKey.CHARGE_POL)
+    pol_laser_name = tb.get_physical_laser_name(VirtualLaserKey.CHARGE_POL)
     pulse_name = "charge_pol"
     macro_run_aods(laser_names=[pol_laser_name], aod_suffices=[pulse_name])
 
@@ -153,7 +153,9 @@ def macro_polarize(
 
     # Spin polarization with widefield yellow
     if spin_pol:
-        spin_pol_laser_name = tb.get_laser_name(LaserKey.WIDEFIELD_SPIN_POL)
+        spin_pol_laser_name = tb.get_physical_laser_name(
+            VirtualLaserKey.WIDEFIELD_SPIN_POL
+        )
         spin_pol_laser_el = get_laser_mod_element(spin_pol_laser_name)
         buffer = get_widefield_operation_buffer()
         qua.align()
@@ -174,7 +176,7 @@ def macro_ionize(ion_coords_list):
     ion_coords_list : list(coordinate pairs)
         List of coordinate pairs to target
     """
-    ion_laser_name = tb.get_laser_name(LaserKey.ION)
+    ion_laser_name = tb.get_physical_laser_name(VirtualLaserKey.ION)
     macro_run_aods([ion_laser_name], aod_suffices=["ion"])
     ion_pulse_name = "ion"
     _macro_pulse_list(ion_laser_name, ion_pulse_name, ion_coords_list)
@@ -240,13 +242,13 @@ def _macro_scc_shelving(
     shelving_coords_list,
     exp_spin_flip=True,
 ):
-    shelving_laser_name = tb.get_laser_name(LaserKey.SHELVING)
-    ion_laser_name = tb.get_laser_name(LaserKey.SCC)
+    shelving_laser_name = tb.get_physical_laser_name(VirtualLaserKey.SHELVING)
+    ion_laser_name = tb.get_physical_laser_name(VirtualLaserKey.SCC)
     laser_name_list = [shelving_laser_name, ion_laser_name]
     shelving_pulse_name = "shelving"
     ion_pulse_name = "scc"
     pulse_name_list = [shelving_pulse_name, ion_pulse_name]
-    shelving_laser_dict = tb.get_optics_dict(LaserKey.SHELVING)
+    shelving_laser_dict = tb.get_virtual_laser_dict(VirtualLaserKey.SHELVING)
     shelving_pulse_duration = shelving_laser_dict["duration"]
     shelving_scc_gap_ns = 0
     scc_delay = convert_ns_to_cc(shelving_pulse_duration + shelving_scc_gap_ns)
@@ -299,7 +301,7 @@ def _macro_scc_no_shelving(
 ):
     # Basic setup
 
-    ion_laser_name = tb.get_laser_name(LaserKey.SCC)
+    ion_laser_name = tb.get_physical_laser_name(VirtualLaserKey.SCC)
     ion_pulse_name = "scc"
     macro_run_aods([ion_laser_name], aod_suffices=[ion_pulse_name])
 
@@ -422,7 +424,9 @@ def get_macro_pi_on_2_pulse_duration(uwave_ind_list):
 
 
 def macro_charge_state_readout(readout_duration_ns=None):
-    readout_laser_name = tb.get_laser_name(LaserKey.WIDEFIELD_CHARGE_READOUT)
+    readout_laser_name = tb.get_physical_laser_name(
+        VirtualLaserKey.WIDEFIELD_CHARGE_READOUT
+    )
     readout_laser_el = get_laser_mod_element(readout_laser_name, sticky=True)
 
     camera_el = "do_camera_trigger"
@@ -737,7 +741,9 @@ def convert_ns_to_cc(duration_ns, allow_rounding=False, allow_zero=False):
 
 @cache
 def get_default_charge_readout_duration():
-    readout_laser_dict = tb.get_optics_dict(LaserKey.WIDEFIELD_CHARGE_READOUT)
+    readout_laser_dict = tb.get_virtual_laser_dict(
+        VirtualLaserKey.WIDEFIELD_CHARGE_READOUT
+    )
     readout_duration_ns = readout_laser_dict["duration"]
     return convert_ns_to_cc(readout_duration_ns)
 
@@ -772,8 +778,8 @@ def get_common_duration_cc(key):
 
 @cache
 def get_laser_mod_element(laser_name, sticky=False):
-    config = common.get_config_dict()
-    mod_mode = config["Optics"][laser_name]["mod_mode"]
+    physical_laser_dict = tb.get_physical_laser_dict(laser_name)
+    mod_mode = physical_laser_dict["mod_mode"]
     if sticky:
         if mod_mode == ModMode.ANALOG:
             laser_mod_element = f"ao_{laser_name}_am_sticky"
@@ -789,16 +795,16 @@ def get_laser_mod_element(laser_name, sticky=False):
 
 @cache
 def get_sig_gen_element(uwave_ind=0):
-    config = common.get_config_dict()
-    sig_gen_name = config["Microwaves"][f"sig_gen_{uwave_ind}"]["name"]
+    virtual_sig_gen_dict = tb.get_virtual_sig_gen_dict(uwave_ind)
+    sig_gen_name = virtual_sig_gen_dict["physical_sig_gen_name"]
     sig_gen_element = f"do_{sig_gen_name}_dm"
     return sig_gen_element
 
 
 @cache
 def get_iq_mod_elements(uwave_ind=0):
-    config = common.get_config_dict()
-    sig_gen_name = config["Microwaves"][f"sig_gen_{uwave_ind}"]["name"]
+    virtual_sig_gen_dict = tb.get_virtual_sig_gen_dict(uwave_ind)
+    sig_gen_name = virtual_sig_gen_dict["physical_sig_gen_name"]
     i_el = f"ao_{sig_gen_name}_i"
     q_el = f"ao_{sig_gen_name}_q"
     return i_el, q_el
@@ -806,8 +812,8 @@ def get_iq_mod_elements(uwave_ind=0):
 
 @cache
 def get_rabi_period(uwave_ind=0):
-    config = common.get_config_dict()
-    rabi_period_ns = config["Microwaves"][f"sig_gen_{uwave_ind}"]["rabi_period"]
+    virtual_sig_gen_dict = tb.get_virtual_sig_gen_dict(uwave_ind)
+    rabi_period_ns = virtual_sig_gen_dict["rabi_period"]
     rabi_period = convert_ns_to_cc(rabi_period_ns)
     return rabi_period
 

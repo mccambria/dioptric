@@ -12,24 +12,35 @@ Created on Decemeber 1st, 2022
 import time
 from functools import cache
 
+import cv2
+import matplotlib.pyplot as plt
 import numpy as np
+from scipy.optimize import curve_fit
 
 from utils import common
 from utils import tool_belt as tb
-from utils.constants import SAMPLE, CoordsKey, NVSig, PosControlMode
+from utils.constants import (
+    CollectionMode,
+    CoordsKey,
+    NVSig,
+    PosControlMode,
+    VirtualLaserKey,
+)
 
 # endregion
 # region Simple sets
 """
 If a specific laser is not passed, then the set will just use the global
 coords (nv_sig key "coords"). Otherwise we'll use the laser specific coords
-(nv_sig key f"coords-{coords_key}")
+(nv_sig key f"coords-{positioner}")
 """
 
 
-def set_xyz(coords, coords_key=CoordsKey.GLOBAL, drift_adjust=False, ramp=None):
+def set_xyz(coords, positioner=CoordsKey.SAMPLE, drift_adjust=None, ramp=None):
+    if drift_adjust is None:
+        drift_adjust = should_drift_adjust(positioner)
     if drift_adjust:
-        coords = adjust_coords_for_drift(coords, coords_key=coords_key)
+        coords = adjust_coords_for_drift(coords, coords_key=positioner)
 
     if ramp is None:
         config = common.get_config_dict()
@@ -38,27 +49,36 @@ def set_xyz(coords, coords_key=CoordsKey.GLOBAL, drift_adjust=False, ramp=None):
     if ramp:
         return _set_xyz_ramp(coords)
     else:
-        return _set_xyz(coords, coords_key)
+        return _set_xyz(coords, positioner)
 
 
-def _set_xyz(coords, coords_key):
-    xy_dtype = get_xy_dtype(coords_key=coords_key)
-    z_dtype = get_z_dtype(coords_key=coords_key)
+# def _set_xyz(coords, positioner):
+#     # dtype version
+#     xy_dtype = get_xy_dtype(positioner=positioner)
+#     z_dtype = get_z_dtype(positioner=positioner)
 
-    pos_xy_server = get_server_pos_xy(coords_key=coords_key)
-    pos_z_server = get_server_pos_z(coords_key=coords_key)
+#     pos_xy_server = get_server_pos_xy(positioner=positioner)
+#     pos_z_server = get_server_pos_z(positioner=positioner)
 
-    if pos_xy_server:
-        pos_xy_server.write_xy(xy_dtype(coords[0]), xy_dtype(coords[1]))
-    if pos_z_server:
-        pos_z_server.write_z(z_dtype(coords[2]))
-
-
-# Optionally force a delay to account for write time
-# time.sleep(0.002)
+#     if pos_xy_server:
+#         pos_xy_server.write_xy(xy_dtype(coords[0]), xy_dtype(coords[1]))
+#     if pos_z_server:
+#         pos_z_server.write_z(z_dtype(coords[2]))
 
 
-def _set_xyz_ramp(coords):
+def _set_xyz(coords, positioner):
+    positioner_server = get_positioner_server(positioner)
+
+    if positioner_server is None:
+        return
+
+    if positioner is CoordsKey.Z:
+        positioner_server.write_z(coords)
+    else:
+        positioner_server.write_xy(coords[0], coords[1])
+
+
+def _set_xyz_ramp(coords, positioner):
     """Not up to date: Step incrementally to this position from the current position"""
 
     config = common.get_config_dict()
@@ -79,7 +99,7 @@ def _set_xyz_ramp(coords):
     else:
         total_movement_delay = z_delay
 
-    xyz_server = get_server_pos_xyz()
+    xyz_server = get_positioner_server(positioner)
     pulse_gen = tb.get_server_pulse_gen()
 
     # if the movement type is int, just skip this and move to the desired position
@@ -161,16 +181,27 @@ def _set_xyz_ramp(coords):
     time.sleep(total_movement_delay / 1e9)
 
 
-def set_xyz_on_nv(nv_sig, coords_key=CoordsKey.GLOBAL, drift_adjust=True):
-    """Returns the coords actually used in the set"""
-    coords = get_nv_coords(nv_sig, coords_key, drift_adjust)
-    set_xyz(coords, coords_key=coords_key, drift_adjust=False)
-    return coords
+def set_xyz_on_nv(nv_sig, positioner=None, drift_adjust=None):
+    """Sets XYZ coordinates for the NV. If positioner is None, set all available
+    positioners.
+    """
+    if positioner is None:
+        config = common.get_config_dict()
+        positioners = config["Positioning"]["Positioners"].keys()
+        for el in positioners:
+            set_xyz_on_nv(nv_sig, positioner=el, drift_adjust=drift_adjust)
+    else:
+        coords = get_nv_coords(nv_sig, positioner, drift_adjust)
+        set_xyz(coords, positioner=positioner, drift_adjust=False)
+        return coords
 
 
 def get_nv_coords(
-    nv_sig: NVSig, coords_key=CoordsKey.GLOBAL, drift_adjust=True, drift=None
+    nv_sig: NVSig, coords_key=CoordsKey.SAMPLE, drift_adjust=None, drift=None
 ):
+    if drift_adjust is None:
+        drift_adjust = should_drift_adjust(coords_key)
+
     coords_val = nv_sig.coords
     if isinstance(coords_val, dict):
         coords = coords_val[coords_key]
@@ -183,7 +214,19 @@ def get_nv_coords(
     return coords
 
 
-def set_nv_coords(nv_sig, coords, coords_key=CoordsKey.GLOBAL):
+def should_drift_adjust(coords_key):
+    """Check whether or not we should adjust the coordinates associated with the
+    passed coords_key for drift. Assume that we compensate for drift by adjusting
+    the sample positioner if we can. Otherwise, we adjust the coordinates
+    associated with the optical paths
+    """
+    if coords_key in [CoordsKey.SAMPLE, CoordsKey.Z]:
+        return True
+    else:
+        return not has_sample_positioner()
+
+
+def set_nv_coords(nv_sig, coords, coords_key=CoordsKey.SAMPLE):
     coords_val = nv_sig.coords
     if isinstance(coords_val, list):
         nv_sig.coords = coords
@@ -195,6 +238,8 @@ def set_nv_coords(nv_sig, coords, coords_key=CoordsKey.GLOBAL):
 
 
 # region Getters
+
+
 def get_laser_pos_mode(laser_name):
     config = common.get_config_dict()
     config_laser = config["Optics"][laser_name]
@@ -204,102 +249,56 @@ def get_laser_pos_mode(laser_name):
         return None
 
 
-def _get_axis_value_sub(base_key, axis_ind, coords_key=CoordsKey.GLOBAL):
-    label_dict = {0: "xy", 1: "xy", 2: "z"}
-    label = label_dict[axis_ind]
-    key = f"{label}_{base_key}"
+def has_sample_positioner():
     config = common.get_config_dict()
-    config_pos = config["Positioning"]
-
-    try:
-        if coords_key in config_pos:
-            if key in config_pos[coords_key]:
-                # print(f"Found {key} in {coords_key}")
-                return config_pos[coords_key][key]
-            else:
-                print(f"{key} not found in {coords_key}")
-        elif coords_key == CoordsKey.GLOBAL:
-            if key in config_pos:
-                # print(f"Found {key} in GLOBAL")
-                return config_pos[key]
-            else:
-                print(f"{key} not found in GLOBAL")
-    except Exception as e:
-        print(f"Exception: {e}")
-        return None
+    return CoordsKey.SAMPLE in config["Positioning"]["Positioners"]
 
 
-def get_axis_delay(axis_ind, coords_key=CoordsKey.GLOBAL):
-    return _get_axis_value_sub("delay", axis_ind, coords_key)
-
-
-def get_axis_units(axis_ind, coords_key=CoordsKey.GLOBAL):
-    return _get_axis_value_sub("units", axis_ind, coords_key)
-
-
-def get_axis_control_mode(axis_ind, coords_key=CoordsKey.GLOBAL):
-    return _get_axis_value_sub("control_mode", axis_ind, coords_key)
-
-
-def get_axis_optimize_range(axis_ind, coords_key=CoordsKey.GLOBAL):
-    return _get_axis_value_sub("optimize_range", axis_ind, coords_key)
-
-
-def get_axis_dtype(axis_ind, coords_key=CoordsKey.GLOBAL):
-    return _get_axis_value_sub("dtype", axis_ind, coords_key)
-
-
-def get_xy_dtype(coords_key=CoordsKey.GLOBAL):
-    axis_ind = 1
-    return get_axis_dtype(axis_ind, coords_key)
-
-
-def get_z_dtype(coords_key=CoordsKey.GLOBAL):
-    axis_ind = 2
-    return get_axis_dtype(axis_ind, coords_key)
-
-
-def get_sample_pos_axes():
+def has_z_positioner():
     config = common.get_config_dict()
-    config_pos = config["Positioning"]
-    return config_pos[SAMPLE]["axes"]
+    return CoordsKey.Z in config["Positioning"]["Positioners"]
 
 
-def get_xy_control_mode(coords_key=CoordsKey.GLOBAL):
-    axis_ind = 0
-    return get_axis_control_mode(axis_ind, coords_key)
+def get_laser_positioner(virtual_laser_key: VirtualLaserKey):
+    virtual_laser_dict = tb.get_virtual_laser_dict(virtual_laser_key)
+    physical_laser_name = virtual_laser_dict["physical_name"]
+    physical_laser_dict = tb.get_physical_laser_dict(physical_laser_name)
+    return physical_laser_dict["positioner"]
 
 
-def get_z_control_mode(coords_key=CoordsKey.GLOBAL):
-    axis_ind = 2
-    return get_axis_control_mode(axis_ind, coords_key)
-
-
-def _get_positioning_server(base_key, coords_key):
-    server = common.get_server(f"{base_key}-{coords_key}")
-    if server is None and coords_key == CoordsKey.GLOBAL:
-        server = common.get_server(base_key)
+def get_positioner_server(positioner):
+    physical_name = _get_positioner_attr(positioner, "physical_name")
+    server = common.get_server_by_name(physical_name)
     return server
 
 
-def get_server_pos_xy(coords_key=CoordsKey.GLOBAL):
-    return _get_positioning_server("pos_xy", coords_key)
+def get_positioner_control_mode(positioner):
+    return _get_positioner_attr(positioner, "control_mode")
 
 
-def get_server_pos_z(coords_key=CoordsKey.GLOBAL):
-    return _get_positioning_server("pos_z", coords_key)
+def get_positioner_units(positioner):
+    return _get_positioner_attr(positioner, "units")
 
 
-def get_server_pos_xyz(coords_key=CoordsKey.GLOBAL):
-    return _get_positioning_server("pos_xyz", coords_key)
+def get_positioner_optimize_range(positioner):
+    return _get_positioner_attr(positioner, "optimize_range")
 
 
-def get_axis_write_fn(axis_ind, coords_key=CoordsKey.GLOBAL):
+def _get_positioner_attr(positioner, key):
+    config = common.get_config_dict()
+    positioner_dict = config["Positioning"]["Positioners"][positioner]
+    if key in positioner_dict:
+        return positioner_dict[key]
+    else:
+        return None
+
+
+def get_positioner_write_fn(positioner, axis_ind):
     """Return the write function for a given axis (0:x, 1:y, 2:z)"""
     if axis_ind in [0, 1]:
-        server = get_server_pos_xy(coords_key)
+        server = get_positioner_server(positioner)
     elif axis_ind == 2:
-        server = get_server_pos_z(coords_key)
+        server = get_positioner_server(positioner)
     if server is None:
         return None
 
@@ -313,16 +312,16 @@ def get_axis_write_fn(axis_ind, coords_key=CoordsKey.GLOBAL):
     return write_fn
 
 
-def get_axis_stream_fn(axis_ind, coords_key=CoordsKey.GLOBAL):
+def get_positioner_stream_fn(positioner, axis_ind):
     """Return the stream function for a given axis (0:x, 1:y, 2:z)"""
-    control_mode = get_axis_control_mode(axis_ind)
+    control_mode = get_positioner_control_mode(axis_ind)
     if control_mode != PosControlMode.STREAM:
         return None
 
     if axis_ind in [0, 1]:
-        server = get_server_pos_xy(coords_key)
+        server = get_positioner_server(positioner)
     elif axis_ind == 2:
-        server = get_server_pos_z(coords_key)
+        server = get_positioner_server(positioner)
     if server is None:
         return None
 
@@ -343,54 +342,172 @@ def get_axis_stream_fn(axis_ind, coords_key=CoordsKey.GLOBAL):
 
 
 @cache
-def get_drift(coords_key=CoordsKey.GLOBAL):
-    key = f"DRIFT-{coords_key}"
+def get_drift(coords_key=None):
+    key = "DRIFT"
     drift = common.get_registry_entry(["State"], key)
-    # print(f"Retrieved drift: {drift}, Length: {len(drift)}")
-    drift_dtype = []
-    for ind in range(len(drift)):
-        axis_dtype = get_axis_dtype(ind, coords_key)
-        if axis_dtype is not None:
-            drift_dtype.append(axis_dtype(drift[ind]))
+    drift = np.array(drift)
+    drift_xy_coords_key = get_drift_xy_coords_key()
+    if coords_key is None:
+        return drift
+    elif coords_key is CoordsKey.Z:
+        return drift[2]
+    elif coords_key is drift_xy_coords_key:
+        return drift[0:2]
+
+    # Drift must be transformed
+    drift = transform_drift(drift[0:2], coords_key)
+
+    # For sample compensation, we have to move opposite the measured direction
+    if coords_key is CoordsKey.SAMPLE:
+        drift = [-1 * el for el in drift]
+    return drift
+
+
+def transform_drift(drift, dest_coords_key):
+    # Get the drift stored in the registry and use the calibration in the config
+    # to convert it from the space in which it was calculated (i.e. imaging laser
+    # positioner coordinates) to the space of the passed coords_key (e.g. SCC
+    # laser positioner coordinates)
+    transformation_matrix = get_drift_transformation_matrix(dest_coords_key)
+    return apply_affine_transformation(drift, transformation_matrix)
+
+
+def transform_coords(source_coords, source_coords_key, dest_coords_key):
+    transformation_matrix = get_coordinate_transformation_matrix(
+        source_coords_key, dest_coords_key
+    )
+    return apply_affine_transformation(source_coords, transformation_matrix)
+
+
+def apply_affine_transformation(source_coords, transformation_matrix):
+    # MCC
+    return np.dot(transformation_matrix, np.append(source_coords, 1))
+
+
+@cache
+def get_coordinate_transformation_matrix(source_coords_key, dest_coords_key):
+    return _get_transformation_matrix(
+        source_coords_key, dest_coords_key, relative=False
+    )
+
+
+@cache
+def get_drift_xy_coords_key():
+    """Determine what coordinate space we store the xy drift in.
+    Z is always in sample positioner space if we have a sample positioner
+    that can move in z. Otherwise there's no way to keep track of z drift.
+    """
+    config = common.get_config_dict()
+    collection_mode = config["collection_mode"]
+    if collection_mode == CollectionMode.CAMERA:
+        return CoordsKey.PIXEL
+    if has_sample_positioner():
+        return CoordsKey.SAMPLE
+    positioner = get_laser_positioner(VirtualLaserKey.IMAGING)
+    return positioner
+
+
+@cache
+def get_drift_transformation_matrix(dest_coords_key):
+    source_coords_key = get_drift_xy_coords_key()
+    return _get_transformation_matrix(source_coords_key, dest_coords_key, relative=True)
+
+
+def _get_transformation_matrix(source_coords_key, dest_coords_key, relative):
+    # MCC
+    if source_coords_key is CoordsKey.PIXEL and dest_coords_key is CoordsKey.SAMPLE:
+        config = common.get_config_dict()
+        key = "pixel_to_sample_affine_transformation_matrix"
+        transformation_matrix = np.array(config["Positioning"][key])
+        if relative:
+            transformation_matrix[:, 2] = [0, 0]
+        return transformation_matrix
+
+    nvs = _get_coordinate_calibration_nvs()
+
+    source_coords_arr = []
+    dest_coords_arr = []
+    for ind in range(3):
+        nv = nvs[ind]
+        source_coords = get_nv_coords(nv, source_coords_key, drift_adjust=False)
+        dest_coords = get_nv_coords(nv, dest_coords_key, drift_adjust=False)
+
+        if relative:
+            if ind == 0:
+                ref_source_coords = source_coords
+                ref_dest_coords = dest_coords
+
+            source_coords_diff = np.array(source_coords) - np.array(ref_source_coords)
+            source_coords_arr.append(source_coords_diff)
+            dest_coords_diff = np.array(dest_coords) - np.array(ref_dest_coords)
+            dest_coords_arr.append(dest_coords_diff)
         else:
-            drift_dtype.append(None)
-    return np.array(drift_dtype)
+            source_coords_arr.append(source_coords)
+            dest_coords_arr.append(dest_coords)
+
+    source_coords_arr = np.array(source_coords_arr, dtype="float32")
+    dest_coords_arr = np.array(dest_coords_arr, dtype="float32")
+    transformation_matrix = cv2.getAffineTransform(source_coords_arr, dest_coords_arr)
+
+    return transformation_matrix
 
 
-def set_drift(drift, coords_key=CoordsKey.GLOBAL):
+def _get_coordinate_calibration_nvs():
+    module = common.get_config_module()
+    nv1 = NVSig(coords=module.calibration_coords_nv1)
+    nv2 = NVSig(coords=module.calibration_coords_nv2)
+    nv3 = NVSig(coords=module.calibration_coords_nv3)
+    return nv1, nv2, nv3
+
+
+def set_drift_val(drift_val, axis_ind, cumulative=False):
+    drift = get_drift()
     get_drift.cache_clear()
-    key = f"DRIFT-{coords_key}"
+
+    key = "DRIFT"
+    if cumulative:
+        drift[axis_ind] += drift_val
+    else:
+        drift[axis_ind] = drift_val
     return common.set_registry_entry(["State"], key, drift)
 
 
-# set_drift([0.0, 0.0, 0.0], coords_key=CoordsKey.GLOBAL)  # Reset z drift
+def set_drift(drift):
+    get_drift.cache_clear()
+    key = "DRIFT"
+    return common.set_registry_entry(["State"], key, drift)
 
 
-def reset_drift(coords_key=CoordsKey.GLOBAL):
+def reset_drift():
     try:
-        drift = get_drift(coords_key)
+        drift = get_drift()
         len_drift = len(drift)
     except Exception:
         len_drift = 3
-    return set_drift([0.0] * len_drift, coords_key)
+    return set_drift([0.0] * len_drift)
 
 
-def reset_xy_drift(coords_key=CoordsKey.GLOBAL):
-    drift = get_drift(coords_key)
+def reset_xy_drift():
+    drift = get_drift()
     if len(drift) == 2:
-        return set_drift([0.0, 0.0], coords_key)
+        return set_drift([0.0, 0.0])
     else:
-        return set_drift([0.0, 0.0, drift[2]], coords_key)
+        return set_drift([0.0, 0.0, drift[2]])
 
 
 def adjust_coords_for_drift(
-    coords=None, drift=None, nv_sig=None, coords_key=CoordsKey.GLOBAL
+    coords=None, drift=None, nv_sig=None, coords_key=CoordsKey.SAMPLE
 ):
     """Current drift will be retrieved from registry if passed drift is None"""
     if coords is None:
         coords = get_nv_coords(nv_sig, coords_key, drift_adjust=False)
     if drift is None:
         drift = get_drift(coords_key)
+
+    scalar_coords = not hasattr(coords, "__len__")
+    if scalar_coords:
+        return coords + drift
+
     adjusted_coords = []
     for ind in range(len(coords)):
         coords_val = coords[ind]
@@ -679,11 +796,6 @@ def get_scan_two_point_2d(first_coord_1, first_coord_2, second_coord_1, second_c
 
 # endregion
 
-# region hysteresis
-import matplotlib.pyplot as plt
-import numpy as np
-from scipy.optimize import curve_fit
-
 
 def analyze_hysteresis(target_positions, actual_positions):
     """
@@ -765,27 +877,36 @@ def analyze_hysteresis(target_positions, actual_positions):
 
 # Example usage
 if __name__ == "__main__":
-    # Example data (replace with your actual data)
-    target_positions = np.array(
-        [
-            [66.912, 94.016],
-            [75.951, 103.95],
-            [84.271, 113.12],
-            [93.216, 121.95],
-            [101.48, 131.22],
-            [109.155, 139.9],
-        ]
-    )
-    actual_positions = np.array(
-        [
-            [64.39, 92.966],
-            [72.086, 101.0],
-            [80.055, 110.0],
-            [88.34, 119.3],
-            [97.109, 128.3],
-            [106.106, 137.0],
-        ]
-    )
+    green_laser = "laser_INTE_520"
+    yellow_laser = "laser_OPTO_589"
+    red_laser = "laser_COBO_638"
+    green_laser_aod = f"{green_laser}_aod"
+    red_laser_aod = f"{red_laser}_aod"
 
-    # Analyze hysteresis
-    analyze_hysteresis(target_positions, actual_positions)
+    print(get_drift(coords_key=CoordsKey.SAMPLE))
+
+    ### Analyze hysteresis
+
+    # # Example data (replace with your actual data)
+    # target_positions = np.array(
+    #     [
+    #         [66.912, 94.016],
+    #         [75.951, 103.95],
+    #         [84.271, 113.12],
+    #         [93.216, 121.95],
+    #         [101.48, 131.22],
+    #         [109.155, 139.9],
+    #     ]
+    # )
+    # actual_positions = np.array(
+    #     [
+    #         [64.39, 92.966],
+    #         [72.086, 101.0],
+    #         [80.055, 110.0],
+    #         [88.34, 119.3],
+    #         [97.109, 128.3],
+    #         [106.106, 137.0],
+    #     ]
+    # )
+
+    # analyze_hysteresis(target_positions, actual_positions)

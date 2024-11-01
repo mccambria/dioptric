@@ -1,28 +1,20 @@
+import io
 import os
 import sys
 import warnings
 from datetime import datetime
 
 import cv2
+import imageio
+import matplotlib as mpl
+import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
 import scipy.ndimage as ndimage
 
-warnings.filterwarnings("ignore")
-import io
-
-import imageio
-import matplotlib as mpl
-import matplotlib.pyplot as plt
-
 # Generate a phase .gif
 from IPython.display import Image
 from scipy.optimize import curve_fit
-
-from utils import data_manager as dm
-from utils import tool_belt as tb
-
-mpl.rc("image", cmap="Blues")
 
 from slmsuite import example_library
 from slmsuite.hardware.cameras.thorlabs import ThorCam
@@ -31,6 +23,11 @@ from slmsuite.hardware.slms.thorlabs import ThorSLM
 from slmsuite.holography import analysis, toolbox
 from slmsuite.holography.algorithms import FeedbackHologram, SpotHologram
 from slmsuite.misc import fitfunctions
+from utils import data_manager as dm
+from utils import tool_belt as tb
+
+warnings.filterwarnings("ignore")
+mpl.rc("image", cmap="Blues")
 
 
 def plot_phase(phase, angle):
@@ -281,7 +278,7 @@ def nuvu2thorcam_calibration(coords):
 
 
 def load_nv_coords(
-    file_path="slmsuite/nv_blob_detection/nv_blob_filtered_128nvs_updated.npz",
+    file_path="slmsuite/nv_blob_detection/nv_blob_filtered_144nvs.npz",
     # file_path="slmsuite/nv_blob_detection/nv_coords_integras_counts_162nvs.npz",
     # file_path="slmsuite/nv_blob_detection/nv_coords_updated_spot_weights.npz",
     # file_path="slmsuite/nv_blob_detection/nv_coords_updated_spot_weights_manual_update.npz",
@@ -290,6 +287,7 @@ def load_nv_coords(
     data = np.load(file_path, allow_pickle=True)
     nv_coordinates = data["nv_coordinates"]
     spot_weights = data["spot_weights"]
+    # spot_weights = data["integrated_counts"]
     return nv_coordinates, spot_weights
 
 
@@ -314,7 +312,7 @@ def compute_nvs_phase():
         shape=(4096, 2048),
         spot_vectors=thorcam_coords,
         basis="ij",
-        spot_amp=spot_weights,
+        # spot_amp=spot_weights,
         cameraslm=fs,
     )
     # Precondition computationally
