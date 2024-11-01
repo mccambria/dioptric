@@ -14,7 +14,6 @@ import traceback
 from datetime import datetime
 from scipy.stats import gaussian_kde
 from time import sleep  # For real-time updates
-
 from slmsuite.hardware.cameras.thorlabs import ThorCam
 from slmsuite.hardware.slms.thorlabs import ThorSLM
 from slmsuite.hardware.cameraslms import FourierSLM
@@ -47,13 +46,6 @@ def update_slm_phase(slm, fs, coords, weights):
     except Exception as e:
         print(f"SLM phase update error: {e}")
 
-# Capture and plot feedback from the camera
-def capture_and_plot(cam):
-    img = cam.get_image()
-    plt.imshow(img, cmap="gray")
-    plt.title("Camera Feedback")
-    plt.show()
-
 # Process histograms and calculate fidelity
 def process_histograms(sig_counts, ref_counts):
     noise = np.sqrt(np.var(sig_counts) + np.var(ref_counts))
@@ -77,7 +69,7 @@ def save_step_data(step, data, timestamp):
     print(f"Step {step} data saved.")
 
 # Apply new weights to the SLM
-def apply_slm_weights(coords, weights):
+def apply_slm_weights(slm, coords, weights):
     hologram = SpotHologram(shape=(4096, 2048), spot_vectors=coords.T, spot_amp=weights)
     hologram.optimize("WGS-Kim", maxiter=30)
     slm.write(hologram.extract_phase(), settle=True)
@@ -106,7 +98,7 @@ def adjust_total_power(target_power):
     print(f"Updated power to {target_power}")
 
 # Real-time acquisition and optimization loop
-def real_time_acquisition(nv_list, steps=10, target_power=0.4):
+def real_time_acquisition(slm, nv_list, steps=10, target_power=0.4):
     timestamp = dm.get_time_stamp()
     coords, weights = load_nv_coords()
     fixed_weights = np.zeros(len(nv_list), dtype=bool)
@@ -132,7 +124,12 @@ def real_time_acquisition(nv_list, steps=10, target_power=0.4):
         save_step_data(step, raw_data, timestamp)
 
         # Update SLM with new weights
-        apply_slm_weights(coords, weights)
+        apply_slm_weights(slm, nv_list, weights)
+
+        hologram = SpotHologram(shape=(4096, 2048), spot_vectors=coords.T, spot_amp=weights)
+        hologram.optimize("WGS-Kim", maxiter=30)
+        slm.write(hologram.extract_phase(), settle=True)
+
 
         # Plot histograms in real time
         for i, (sig, ref) in enumerate(zip(sig_counts, ref_counts)):
@@ -144,8 +141,8 @@ def real_time_acquisition(nv_list, steps=10, target_power=0.4):
             plt.show()
 
         # Adjust total power if necessary
-        if np.sum(weights) < 0.8:
-            adjust_total_power(target_power)
+        # if np.sum(weights) < 0.8:
+        #     adjust_total_power(target_power)
 
         sleep(1)  # Pause for real-time updates
 
@@ -153,7 +150,8 @@ def real_time_acquisition(nv_list, steps=10, target_power=0.4):
 def main(nv_list):
     try:
         slm, cam, fs = connect_devices()
-        real_time_acquisition(nv_list)
+        fs.load_fourier_calibration("slmsuite/fourier_calibration/26438-SLM-fourier-calibration_00003.h5")
+        real_time_acquisition(slm, nv_list)
     finally:
         print("Closing devices...")
         slm.close_window()
