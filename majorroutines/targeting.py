@@ -605,16 +605,15 @@ def compensate_for_drift(nv_sig: NVSig, no_crash=False):
 
     # Determine what axes are available and what positioner to use
     xy_coords_key = pos.get_drift_xy_coords_key()
-    disable_z_drift_compensation = config.get("disable_z_drift_compensation", False)
-    if not disable_z_drift_compensation and pos.has_z_positioner():
-        axes = Axes.XYZ.value
-    else:
-        axes = Axes.XY.value
-
     passed_coords = pos.get_nv_coords(nv_sig, xy_coords_key, drift_adjust=False)
-    if 2 in axes and CoordsKey.Z is not xy_coords_key:
+    disable_z_drift_compensation = config.get("disable_z_drift_compensation", False)
+    if disable_z_drift_compensation or not pos.has_z_positioner():
+        axes = Axes.XY.value
+    else:
+        axes = Axes.XYZ.value
         passed_z_coord = pos.get_nv_coords(nv_sig, CoordsKey.Z, drift_adjust=False)
         passed_coords.append(passed_z_coord)
+
     opti_succeeded = False
     num_attempts = 5
 
@@ -688,7 +687,7 @@ def compensate_for_drift(nv_sig: NVSig, no_crash=False):
     if opti_succeeded:
         print("Drift compensation succeeded!")
     elif not no_crash:
-        raise RuntimeError("Drift compensation failed.")
+        raise RuntimeError("Maxed out number of attempts. Drift compensation failed.")
 
     print()
 

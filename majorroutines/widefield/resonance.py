@@ -37,6 +37,25 @@ def create_raw_data_figure(nv_list, freqs, counts, counts_errs):
     return fig
 
 
+def reformat_counts_for_normalization(data):
+    nv_list = data["nv_list"]
+    counts = data["counts"]
+    counts = data["counts"]
+    num_nvs = len(nv_list)
+    adj_num_steps = num_steps // 4
+    counts = np.array(data["counts"])[0]
+    sig_counts_0 = counts[:, :, 0:adj_num_steps, :]
+    sig_counts_1 = counts[:, :, adj_num_steps : 2 * adj_num_steps, :]
+    sig_counts = np.append(sig_counts_0, sig_counts_1, axis=3)
+    ref_counts_0 = counts[:, :, 2 * adj_num_steps : 3 * adj_num_steps, :]
+    ref_counts_1 = counts[:, :, 3 * adj_num_steps :, :]
+    ref_counts = np.empty((num_nvs, num_runs, adj_num_steps, 2 * num_reps))
+    ref_counts[:, :, :, 0::2] = ref_counts_0
+    ref_counts[:, :, :, 1::2] = ref_counts_1
+
+    return sig_counts, ref_counts
+
+
 def create_fit_figure(
     nv_list,
     freqs,
@@ -205,7 +224,6 @@ def main(
     uwave_ind_list=[0, 1],
 ):
     ### Some initial setup
-    print("Main function started")
     pulse_gen = tb.get_server_pulse_gen()
     freqs = calculate_freqs(freq_center, freq_range, num_steps)
     original_num_steps = num_steps
@@ -270,7 +288,7 @@ def main(
 
     try:
         # Manipulate the counts into the format expected for normalization
-        adj_num_steps = num_steps
+        adj_num_steps = num_steps // 4
         counts = np.array(raw_data["counts"])[0]
         sig_counts_0 = counts[:, :, 0:adj_num_steps, :]
         sig_counts_1 = counts[:, :, adj_num_steps : 2 * adj_num_steps, :]
@@ -348,6 +366,7 @@ if __name__ == "__main__":
     # freqs = data["freqs"]
 
     # # Manipulate the counts into the format expected for normalization
+    # num_nvs = len(nv_list)
     adj_num_steps = num_steps // 4
     # counts = np.array(data["counts"])[0]
     # sig_counts_0 = counts[:, :, 0:adj_num_steps, :]

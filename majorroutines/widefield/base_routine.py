@@ -361,9 +361,9 @@ def main(
 
                     nuvu_237 = "NuvuException: 237"
                     nuvu_214 = "NuvuException: 214"
-                    if "NuvuException: 237" in str(exc):
+                    if nuvu_237 in str(exc):
                         print(nuvu_237)
-                    elif "NuvuException: 214" in str(exc):
+                    elif nuvu_214 in str(exc):
                         print(nuvu_214)
                     else:
                         print(traceback.format_exc())
