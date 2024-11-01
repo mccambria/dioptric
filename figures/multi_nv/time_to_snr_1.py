@@ -16,7 +16,6 @@ from scipy.optimize import curve_fit
 from scipy.special import comb
 
 from majorroutines.widefield.charge_monitor import process_check_readout_fidelity
-from majorroutines.widefield.charge_state_histograms import create_histogram
 from utils import common
 from utils import data_manager as dm
 from utils import kplotlib as kpl

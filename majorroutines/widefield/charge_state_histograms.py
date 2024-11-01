@@ -28,29 +28,22 @@ from utils import tool_belt as tb
 from utils.constants import NVSig, VirtualLaserKey
 from utils.tool_belt import determine_threshold
 
-
 # region Process and plotting functions
-def create_histogram(
+
+
+def plot_histograms(
     sig_counts_list,
     ref_counts_list,
     no_title=True,
     no_text=None,
     ax=None,
     density=False,
-    plot=False,  # Default to False to prevent histogram plotting
     nv_index=None,  # Add NV index as an optional parameter
 ):
-    if not plot:
-        return None  # Skip plotting if plot is set to False
-
-    try:
-        laser_dict = tb.get_virtual_laser_dict(VirtualLaserKey.WIDEFIELD_CHARGE_READOUT)
-        readout = laser_dict["duration"]
-        readout_ms = int(readout / 1e6)
-        readout_s = readout / 1e9
-    except Exception:
-        readout_s = 0.05  # MCC default
-        pass
+    laser_dict = tb.get_virtual_laser_dict(VirtualLaserKey.WIDEFIELD_CHARGE_READOUT)
+    readout = laser_dict["duration"]
+    readout_ms = int(readout / 1e6)
+    readout_s = readout / 1e9
 
     ### Histograms
     num_reps = len(ref_counts_list)
@@ -101,7 +94,7 @@ def create_histogram(
         return fig
 
 
-def process_and_plot(raw_data, plot_histograms=False):
+def process_and_plot(raw_data, do_plot_histograms=False):
     ### Setup
     nv_list = raw_data["nv_list"]
     num_nvs = len(nv_list)
@@ -117,28 +110,22 @@ def process_and_plot(raw_data, plot_histograms=False):
     prep_fidelity_list = []
     snr_list = []
     hist_figs = []
-    DEFAULT_THRESHOLD = 0.0
 
     for ind in range(num_nvs):
         sig_counts_list = sig_counts_lists[ind]
         ref_counts_list = ref_counts_lists[ind]
 
         # Plot histograms with NV index and SNR included
-        fig = create_histogram(
-            sig_counts_list,
-            ref_counts_list,
-            density=True,
-            plot=plot_histograms,
-            nv_index=ind,
-        )
+        fig = None
+        if do_plot_histograms:
+            fig = plot_histograms(
+                sig_counts_list, ref_counts_list, density=True, nv_index=ind
+            )
         if fig:
             hist_figs.append(fig)
         all_counts_list = np.append(sig_counts_list, ref_counts_list)
 
-        try:
-            threshold = determine_threshold(all_counts_list, nvn_ratio=0.5)
-        except:
-            threshold = DEFAULT_THRESHOLD
+        threshold = determine_threshold(all_counts_list, nvn_ratio=0.5)
         threshold_list.append(threshold)
 
         prep_fidelity_list.append(
@@ -195,7 +182,7 @@ def main(
     diff_polarize=False,
     diff_ionize=True,
     ion_include_inds=None,
-    plot_histograms=False,  # Set plot_histograms default to False
+    plot_histograms=False,
 ):
     ### Initial setup
     seq_file = "charge_state_histograms.py"
@@ -244,9 +231,10 @@ def main(
 
     try:
         imgs, img_figs, hist_figs = process_and_plot(
-            raw_data, plot_histograms=plot_histograms
+            raw_data, do_plot_histograms=plot_histograms
         )
 
+        # Save the images
         title_suffixes = ["sig", "ref", "diff"]
         num_figs = len(img_figs)
         for ind in range(num_figs):
@@ -254,15 +242,14 @@ def main(
             title = title_suffixes[ind]
             file_path = dm.get_file_path(__file__, timestamp, f"{repr_nv_name}-{title}")
             dm.save_figure(fig, file_path)
-
-        num_nvs = len(nv_list)
-        for nv_ind in range(num_nvs):
-            fig = hist_figs[nv_ind]
-            nv_sig = nv_list[nv_ind]
-            nv_name = nv_sig.name
-            file_path = dm.get_file_path(__file__, timestamp, nv_name)
-            dm.save_figure(fig, file_path)
-
+        if hist_figs is not None:
+            num_nvs = len(nv_list)
+            for nv_ind in range(num_nvs):
+                fig = hist_figs[nv_ind]
+                nv_sig = nv_list[nv_ind]
+                nv_name = nv_sig.name
+                file_path = dm.get_file_path(__file__, timestamp, nv_name)
+                dm.save_figure(fig, file_path)
         sig_img_array, ref_img_array, diff_img_array = imgs
         keys_to_compress = ["sig_img_array", "ref_img_array", "diff_img_array"]
 
@@ -300,4 +287,4 @@ def main(
 if __name__ == "__main__":
     kpl.init_kplotlib()
     data = dm.get_raw_data(file_id=1642395666145)
-    process_and_plot(data, plot_histograms=False)  # Ensure histograms are not plotted
+    process_and_plot(data, do_plot_histograms=False)
