@@ -241,6 +241,7 @@ if __name__ == "__main__":
     # data = dm.get_raw_data(file_id=1680026835865, load_npz=True)
     # data = dm.get_raw_data(file_id=1681681506476, load_npz=True)
     data = dm.get_raw_data(file_id=1688298946808, load_npz=True)
+    data = dm.get_raw_data(file_id=1688328009205, load_npz=True)
 
     img_array = np.array(data["ref_img_array"])
     # img_array = np.array(data["diff_img_array"])
@@ -257,8 +258,8 @@ if __name__ == "__main__":
 
     # Apply the blob detection and Gaussian fitting
     sigma = 2
-    lower_threshold = 0.11
-    upper_threshold = 50
+    lower_threshold = 0.06
+    upper_threshold = 47
     smoothing_sigma = 0.0
 
     nv_coordinates, integrated_counts, spot_sizes = detect_nv_coordinates_blob(
@@ -310,7 +311,7 @@ if __name__ == "__main__":
     save_results(
         nv_coordinates,
         integrated_counts,
-        filename="nv_blob_filtered_145nvs.npz",
+        filename="nv_blob_filtered_144nvs.npz",
     )
 
     # image_ids = [

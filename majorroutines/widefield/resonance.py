@@ -232,7 +232,7 @@ def main(
             freq = freqs[step_ind % original_num_steps]
 
             uwave_ind = uwave_ind_list[0]
-            uwave_dict = tb.get_uwave_dict(uwave_ind)
+            uwave_dict = tb.get_virtual_sig_gen_dict(uwave_ind)
             sig_gen = tb.get_server_sig_gen(uwave_ind)
             sig_gen.set_amp(uwave_dict["uwave_power"])
             sig_gen.set_freq(freq)
@@ -248,7 +248,7 @@ def main(
                 sig_gen.uwave_off()
         else:  # ms=+/-1 ref
             for uwave_ind in uwave_ind_list:
-                uwave_dict = tb.get_uwave_dict(uwave_ind)
+                uwave_dict = tb.get_virtual_sig_gen_dict(uwave_ind)
                 sig_gen = tb.get_server_sig_gen(uwave_ind)
                 sig_gen.set_amp(uwave_dict["uwave_power"])
                 sig_gen.set_freq(uwave_dict["frequency"])
@@ -271,7 +271,7 @@ def main(
     try:
         # Manipulate the counts into the format expected for normalization
         adj_num_steps = num_steps
-        counts = np.array(data["counts"])[0]
+        counts = np.array(raw_data["counts"])[0]
         sig_counts_0 = counts[:, :, 0:adj_num_steps, :]
         sig_counts_1 = counts[:, :, adj_num_steps : 2 * adj_num_steps, :]
         sig_counts = np.append(sig_counts_0, sig_counts_1, axis=3)

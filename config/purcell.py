@@ -242,8 +242,9 @@ config |= {
             # LaserKey.WIDEFIELD_CHARGE_READOUT: {"physical_name": yellow_laser, "duration": 100e6},
         },
         #
-        "scc_green_shelving_pulse": False,  # Whether or not to include a shelving pulse in SCC
-        "scc_yellow_shelving_pulse": False,
+        "PulseSettings": {
+            "scc_shelving_pulse": False,  # Example setting
+        },  # Whether or not to include a shelving pulse in SCC
     },
     ###
     "Positioning": {
@@ -821,7 +822,7 @@ opx_config = {
         # Yellow AOM
         "yellow_imaging": {"type": "constant", "sample": 0.45},  # 0.35
         # "yellow_imaging": {"type": "constant", "sample": 0.50},  # 0.35
-        "yellow_charge_readout": {"type": "constant", "sample": 0.38},  # 50e6
+        "yellow_charge_readout": {"type": "constant", "sample": 0.39},  # 50e6
         # "yellow_charge_readout": {"type": "constant", "sample": 0.25},  # 100e6
         "yellow_spin_pol": {"type": "constant", "sample": 0.39},
         "yellow_shelving": {"type": "constant", "sample": 0.33},

@@ -99,7 +99,7 @@ def do_charge_state_histograms(nv_list):
     #         nv_list, num_reps, num_runs, ion_include_inds=ion_include_inds
     #     )
     return charge_state_histograms.main(
-        nv_list, num_reps, num_runs, plot_histograms=False
+        nv_list, num_reps, num_runs, plot_histograms=True
     )
 
 
@@ -296,7 +296,7 @@ def do_resonance(nv_list):
     num_steps = 60
     # Single ref
     # num_reps = 8
-    num_runs = 300
+    num_runs = 500
     # num_runs = 50
 
     # Both refs
@@ -748,9 +748,7 @@ def pixel_to_voltage(initial_pixel_coords, final_pixel_coords):
     voltage_drift_h = np.dot(M_inv, pixel_drift)  # No transpose needed
 
     # Update only the x and y components of the global coordinates
-    final_voltage = np.array(
-        global_coords
-    )  # Start with all original global coordinates
+    final_voltage = np.array()  # Start with all original global coordinates
     final_voltage[:2] += voltage_drift_h[:2]  # Update x and y components with drift
 
     print(f"Pixel drift: {pixel_drift[:2]}")
@@ -827,12 +825,12 @@ if __name__ == "__main__":
     # magnet_angle = 90
     date_str = "2024_03_12"
     sample_coords = [2.0, 0.6]
-    z_coord = 0.3
+    z_coord = 0.33
 
     # Load NV pixel coordinates
     pixel_coords_list = load_nv_coords(
         # file_path="slmsuite/nv_blob_detection/nv_blob_filtered_162nvs_ref.npz"
-        file_path="slmsuite/nv_blob_detection/nv_blob_filtered_144nvs.npz",
+        file_path="slmsuite/nv_blob_detection/nv_blob_filtered_128nvs_updated.npz",
     ).tolist()
     # pixel_coords_list = [
     #     [129.985, 121.129],
@@ -927,7 +925,8 @@ if __name__ == "__main__":
     nv_sig.expected_counts = None
     # nv_sig.expected_co1unts = 2580.0
     # nv_sig.expected_counts = 3359.0
-    nv_sig.expected_counts = 1812.0
+    # nv_sig.expected_counts = 1800.0
+    nv_sig.expected_counts = 1500.0
     # num_nvs = len(nv_list)
     # print(f"Final NV List: {nv_list}")
     # Ensure data is defined before accessing it
@@ -1011,7 +1010,7 @@ if __name__ == "__main__":
         # do_optimize_xyz(nv_sig)
         # pos.set_xyz_on_nv(nv_sig)
 
-        do_compensate_for_drift(nv_sig)
+        # do_compensate_for_drift(nv_sig)
 
         # Generate points for forward diagonal motion
         # x_values = np.linspace(0.3, -0.3, 6)c
@@ -1063,7 +1062,6 @@ if __name__ == "__main__":
         # for ind in range(20):
         # do_optimize_pixel(nv_sig)
         # do_optimize_green(nv_sig)
-        # do_optimize_red(nv_sig)
         # do_optimize_z(nv_sig)
         ## do_optimize_sample(nv_sig)
 
@@ -1077,13 +1075,13 @@ if __name__ == "__main__":
         # optimize_slm_Phase_calibration(nv_sig, target_coords=target_coords)
 
         # nv_list = nv_list[::-1]
-        do_charge_state_histograms(nv_list)
+        # do_charge_state_histograms(nv_list)
         # do_charge_state_conditional_init(nv_list)
         # do_check_readout_fidelity(nv_list)
 
         # do_resonance_zoom(nv_list)
         # do_rabi(nv_l ist)
-        # do_resonance(nv_list)
+        do_resonance(nv_list)
         # do_spin_echo(nv_list)s
 
         # do_power_rabi(nv_list)
