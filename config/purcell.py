@@ -121,13 +121,14 @@ config |= {
         "PhysicalSigGens": {
             "sig_gen_BERK_bnc835": {"delay": 151, "fm_mod_bandwidth": 100000.0},
             "sig_gen_STAN_sg394": {"delay": 104, "fm_mod_bandwidth": 100000.0},
+            "sig_gen_STAN_sg394_2": {"delay": 151, "fm_mod_bandwidth": 100000.0},
             "sig_gen_TEKT_tsg4104a": {"delay": 57},
         },
         "iq_comp_amp": 0.5,
         "iq_delay": 630,
         "VirtualSigGens": {
             0: {
-                "physical_sig_gen_name": "sig_gen_STAN_sg394",
+                "physical_name": "sig_gen_STAN_sg394",
                 # "uwave_power": 6.05,
                 "uwave_power": 2.3,
                 "frequency": 2.8585669247525622,
@@ -136,7 +137,7 @@ config |= {
                 "iq_delay": 140,
             },
             1: {
-                "physical_sig_gen_name": "sig_gen_STAN_sg394_2",
+                "physical_name": "sig_gen_STAN_sg394_2",
                 "uwave_power": 8.1,
                 "frequency": 2.812,
                 # "frequency": 3.05,
@@ -152,9 +153,9 @@ config |= {
         "resolution": (512, 512),
         "spot_radius": 2.5,  # Radius for integrating NV counts in a camera image
         "bias_clamp": 300,  # (changing this won't actually change the value on the camera currently)
-        # "em_gain": 5000,
+        "em_gain": 5000,
         # "em_gain": 1000,
-        "em_gain": 10,
+        # "em_gain": 10,
         "temp": -60,
         "timeout": 30e3,  # ms
         # "timeout": -1,  # No timeout
@@ -186,59 +187,59 @@ config |= {
             },
         },
         "VirtualLasers": {
-            # LaserKey.IMAGING: {"physical_laser_name": green_laser, "duration": 50e6},
+            # LaserKey.IMAGING: {"physical_name": green_laser, "duration": 50e6},
             VirtualLaserKey.IMAGING: {
-                "physical_laser_name": green_laser,
+                "physical_name": green_laser,
                 "duration": 12e6,
             },
             VirtualLaserKey.SPIN_READOUT: {
-                "physical_laser_name": green_laser,
+                "physical_name": green_laser,
                 "duration": 300,
             },
-            # LaserKey.CHARGE_POL: {"physical_laser_name": green_laser, "duration": 10e3},
+            # LaserKey.CHARGE_POL: {"physical_name": green_laser, "duration": 10e3},
             VirtualLaserKey.CHARGE_POL: {
-                "physical_laser_name": green_laser,
+                "physical_name": green_laser,
                 "duration": 1e3,
             },
-            # LaserKey.CHARGE_POL: {"physical_laser_name": green_laser, "duration": 60},
+            # LaserKey.CHARGE_POL: {"physical_name": green_laser, "duration": 60},
             VirtualLaserKey.SPIN_POL: {
-                "physical_laser_name": green_laser,
+                "physical_name": green_laser,
                 "duration": 10e3,
             },
             VirtualLaserKey.SHELVING: {
-                "physical_laser_name": green_laser,
+                "physical_name": green_laser,
                 "duration": 60,
             },
             VirtualLaserKey.ION: {
-                "physical_laser_name": red_laser,
+                "physical_name": red_laser,
                 "duration": 10e3,
             },
             # SCC: 180 mW, 0.13 V, no shelving
-            # LaserKey.SCC: {"physical_laser_name": red_laser, "duration": 248},
+            # LaserKey.SCC: {"physical_name": red_laser, "duration": 248},
             VirtualLaserKey.SCC: {
-                "physical_laser_name": red_laser,
+                "physical_name": red_laser,
                 "duration": 124,
             },
-            # LaserKey.SCC: {"physical_laser_name": green_laser, "duration": 200},
+            # LaserKey.SCC: {"physical_name": green_laser, "duration": 200},
             VirtualLaserKey.WIDEFIELD_SHELVING: {
-                "physical_laser_name": yellow_laser,
+                "physical_name": yellow_laser,
                 "duration": 60,
             },
             VirtualLaserKey.WIDEFIELD_IMAGING: {
-                "physical_laser_name": yellow_laser,
+                "physical_name": yellow_laser,
                 "duration": 12e6,
             },
-            # LaserKey.WIDEFIELD_SPIN_POL: {"physical_laser_name": yellow_laser, "duration": 10e3},
+            # LaserKey.WIDEFIELD_SPIN_POL: {"physical_name": yellow_laser, "duration": 10e3},
             VirtualLaserKey.WIDEFIELD_SPIN_POL: {
-                "physical_laser_name": yellow_laser,
+                "physical_name": yellow_laser,
                 "duration": 100e3,
             },
-            # LaserKey.WIDEFIELD_SPIN_POL: {"physical_laser_name": yellow_laser, "duration": 1e6},
+            # LaserKey.WIDEFIELD_SPIN_POL: {"physical_name": yellow_laser, "duration": 1e6},
             VirtualLaserKey.WIDEFIELD_CHARGE_READOUT: {
-                "physical_laser_name": yellow_laser,
-                "duration": 48e6,
+                "physical_name": yellow_laser,
+                "duration": 24e6,
             },
-            # LaserKey.WIDEFIELD_CHARGE_READOUT: {"physical_laser_name": yellow_laser, "duration": 100e6},
+            # LaserKey.WIDEFIELD_CHARGE_READOUT: {"physical_name": yellow_laser, "duration": 100e6},
         },
         #
         "scc_green_shelving_pulse": False,  # Whether or not to include a shelving pulse in SCC

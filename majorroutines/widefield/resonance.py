@@ -233,23 +233,23 @@ def main(
 
             uwave_ind = uwave_ind_list[0]
             uwave_dict = tb.get_uwave_dict(uwave_ind)
-            sig_gen = tb.get_server_sig_gen(ind=uwave_ind)
+            sig_gen = tb.get_server_sig_gen(uwave_ind)
             sig_gen.set_amp(uwave_dict["uwave_power"])
             sig_gen.set_freq(freq)
             sig_gen.uwave_on()
 
             uwave_ind = uwave_ind_list[1]
-            sig_gen = tb.get_server_sig_gen(ind=uwave_ind)
+            sig_gen = tb.get_server_sig_gen(uwave_ind)
             sig_gen.uwave_off()
 
         elif step_ind < (3 / 4) * num_steps:  # ms=0 ref
             for uwave_ind in uwave_ind_list:
-                sig_gen = tb.get_server_sig_gen(ind=uwave_ind)
+                sig_gen = tb.get_server_sig_gen(uwave_ind)
                 sig_gen.uwave_off()
         else:  # ms=+/-1 ref
             for uwave_ind in uwave_ind_list:
                 uwave_dict = tb.get_uwave_dict(uwave_ind)
-                sig_gen = tb.get_server_sig_gen(ind=uwave_ind)
+                sig_gen = tb.get_server_sig_gen(uwave_ind)
                 sig_gen.set_amp(uwave_dict["uwave_power"])
                 sig_gen.set_freq(uwave_dict["frequency"])
                 sig_gen.uwave_on()

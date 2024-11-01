@@ -216,7 +216,7 @@ def main(
     pulse_gen = tb.get_server_pulse_gen()
 
     laser_dict = tb.get_virtual_laser_dict(laser_key)
-    readout_laser = laser_dict["physical_laser_name"]
+    readout_laser = tb.get_physical_laser_name(laser_key)
 
     pos.set_xyz_on_nv(nv_sig)
 

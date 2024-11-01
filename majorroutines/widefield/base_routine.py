@@ -17,7 +17,7 @@ from majorroutines import targeting
 from utils import common, widefield
 from utils import positioning as pos
 from utils import tool_belt as tb
-from utils.constants import ChargeStateEstimationMode
+from utils.constants import ChargeStateEstimationMode, CoordsKey
 
 
 def charge_prep_no_verification(rep_ind, nv_list, initial_states_list=None):
@@ -114,7 +114,7 @@ def read_and_process_image(nv_list):
     img_array = widefield.adus_to_photons(img_array_adus, baseline=baseline)
 
     def get_counts(nv_sig):
-        pixel_coords = widefield.get_nv_pixel_coords(nv_sig)
+        pixel_coords = pos.get_nv_coords(nv_sig, CoordsKey.PIXEL)
         return widefield.integrate_counts(img_array, pixel_coords)
 
     counts_list = [get_counts(nv) for nv in nv_list]
@@ -216,13 +216,14 @@ def main(
         uwave_ind_list = [uwave_ind_list]
     for ind in range(len(uwave_ind_list)):
         uwave_ind = uwave_ind_list[ind]
-        uwave_dict = tb.get_uwave_dict(uwave_ind)
+        uwave_dict = tb.get_virtual_sig_gen_dict(uwave_ind)
         uwave_power = uwave_dict["uwave_power"]
         if uwave_freq_list is None:
             freq = uwave_dict["frequency"]
         else:
             freq = uwave_freq_list[uwave_ind]
-        sig_gen = tb.get_server_sig_gen(ind=uwave_ind)
+        uwave_dict = tb.get_virtual_sig_gen_dict(uwave_ind)
+        sig_gen = tb.get_server_sig_gen(uwave_ind)
         # if load_iq:  # MCC
         #     uwave_power += 0.4
         sig_gen.set_amp(uwave_power)
@@ -263,7 +264,7 @@ def main(
                     first_step = True
 
                     for ind in uwave_ind_list:
-                        sig_gen = tb.get_server_sig_gen(ind=ind)
+                        sig_gen = tb.get_server_sig_gen(ind)
                         sig_gen.uwave_on()
                         # if load_iq:
                         #     sig_gen.load_iq()
@@ -343,17 +344,14 @@ def main(
                     pulse_gen.halt()
                     camera.disarm()
                     for ind in uwave_ind_list:
-                        sig_gen = tb.get_server_sig_gen(ind=ind)
+                        sig_gen = tb.get_server_sig_gen(ind)
                         sig_gen.uwave_off()
 
                     # Record step order
                     step_ind_master_list[run_ind] = step_ind_list.copy()
 
                     # Update global coordinates (new)
-                    targeting.optimize_xyz_using_piezo(repr_nv_sig)
-                    # Update pixel coordinates and objective z (old)
-                    # pixel_drift = optimize.optimize_pixel_and_z(repr_nv_sig)
-                    # pixel_drifts[run_ind, :] = pixel_drift
+                    targeting.compensate_for_drift(repr_nv_sig)
 
                     break
 

@@ -218,9 +218,9 @@ def _read_counts_camera_sequence(
     # Sequence setup
 
     if virtual_laser_key == VirtualLaserKey.IMAGING:
-        imaging_laser_dict = tb.get_virtual_laser_dict(VirtualLaserKey.IMAGING)
-        imaging_laser_name = imaging_laser_dict["physical_laser_name"]
-        imaging_laser_positioner = pos.get_laser_positioner(VirtualLaserKey.IMAGING)
+        imaging_laser_dict = tb.get_virtual_laser_dict(virtual_laser_key)
+        imaging_laser_name = tb.get_physical_laser_name(virtual_laser_key)
+        imaging_laser_positioner = pos.get_laser_positioner(virtual_laser_key)
         imaging_readout = imaging_laser_dict["duration"]
         laser_coords = pos.get_nv_coords(nv_sig, imaging_laser_positioner)
         seq_args = [

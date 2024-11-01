@@ -261,7 +261,7 @@ def has_z_positioner():
 
 def get_laser_positioner(virtual_laser_key: VirtualLaserKey):
     virtual_laser_dict = tb.get_virtual_laser_dict(virtual_laser_key)
-    physical_laser_name = virtual_laser_dict["physical_laser_name"]
+    physical_laser_name = virtual_laser_dict["physical_name"]
     physical_laser_dict = tb.get_physical_laser_dict(physical_laser_name)
     return physical_laser_dict["positioner"]
 

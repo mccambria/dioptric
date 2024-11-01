@@ -296,7 +296,7 @@ def process_and_plot(raw_data, plot_histograms=False):
 
     laser_key = VirtualLaserKey.WIDEFIELD_CHARGE_READOUT
     laser_dict = tb.get_virtual_laser_dict(laser_key)
-    readout_laser = laser_dict["name"]
+    readout_laser = laser_dict["physical_name"]
     readout = laser_dict["duration"]
     readout_ms = readout / 10**6
 
@@ -393,12 +393,12 @@ def main(
             dm.save_figure(fig, file_path)
 
         num_nvs = len(nv_list)
-        for nv_ind in range(num_nvs):
-            fig = hist_figs[nv_ind]
-            nv_sig = nv_list[nv_ind]
-            nv_name = nv_sig.name
-            file_path = dm.get_file_path(__file__, timestamp, nv_name)
-            dm.save_figure(fig, file_path)
+        # for nv_ind in range(num_nvs):
+        #     fig = hist_figs[nv_ind]
+        #     nv_sig = nv_list[nv_ind]
+        #     nv_name = nv_sig.name
+        #     file_path = dm.get_file_path(__file__, timestamp, nv_name)
+        #     dm.save_figure(fig, file_path)
 
         sig_img_array, ref_img_array, diff_img_array = imgs
         keys_to_compress = ["sig_img_array", "ref_img_array", "diff_img_array"]

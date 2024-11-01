@@ -99,7 +99,7 @@ def do_charge_state_histograms(nv_list):
     #         nv_list, num_reps, num_runs, ion_include_inds=ion_include_inds
     #     )
     return charge_state_histograms.main(
-        nv_list, num_reps, num_runs, plot_histograms=True
+        nv_list, num_reps, num_runs, plot_histograms=False
     )
 
 
@@ -663,7 +663,7 @@ def do_opx_constant_ac():
     #     [0.19, 0.19, 0.17, 0.17, 0.3],  # Analog voltages
     #     [110, 110, 75, 75, 0],  # Analog frequencies
     # )
-    # input("Press enter to stop...")
+    input("Press enter to stop...")
     # sig_gen.uwave_off()
 
 
@@ -827,16 +827,16 @@ if __name__ == "__main__":
     # magnet_angle = 90
     date_str = "2024_03_12"
     sample_coords = [2.0, 0.6]
-    z_coord = 0.4
+    z_coord = 0.3
 
     # Load NV pixel coordinates
-    # pixel_coords_list = load_nv_coords(
-    #     # file_path="slmsuite/nv_blob_detection/nv_blob_filtered_162nvs_ref.npz"
-    #     file_path="slmsuite/nv_blob_detection/nv_blob_filtered_116nvs_updated.npz",
-    # ).tolist()
-    pixel_coords_list = [
-        [129.985, 121.129],
-    ]
+    pixel_coords_list = load_nv_coords(
+        # file_path="slmsuite/nv_blob_detection/nv_blob_filtered_162nvs_ref.npz"
+        file_path="slmsuite/nv_blob_detection/nv_blob_filtered_144nvs.npz",
+    ).tolist()
+    # pixel_coords_list = [
+    #     [129.985, 121.129],
+    # ]
     print(f"Number of NVs: {len(pixel_coords_list)}")
     print(f"Reference NV:{pixel_coords_list[0]}")
 
@@ -872,13 +872,13 @@ if __name__ == "__main__":
     #     [75.302, 95.265],
     #     [199.053, 94.250],
     # ]
-    pixel_coords_list = [
-        [129.985, 121.129],
-    ]
-    green_coords_list = [
-        # [109.279, 108.600],
-        [102.279, 110.600],
-    ]
+    # pixel_coords_list = [
+    #     [129.985, 121.129],
+    # ]
+    # green_coords_list = [
+    #     [109.279, 108.600],
+    #     # [102.279, 110.600],
+    # ]
     # green_coords_list = [
     #     [110.110, 110.073],
     #     # [109.504, 113.073],
@@ -925,9 +925,9 @@ if __name__ == "__main__":
     nv_sig = widefield.get_repr_nv_sig(nv_list)
     # print(f"Created NV: {nv_sig.name}, Coords: {nv_sig.coords}")
     nv_sig.expected_counts = None
-    nv_sig.expected_counts = 2580.0
+    # nv_sig.expected_co1unts = 2580.0
     # nv_sig.expected_counts = 3359.0
-    # nv_sig.expected_counts = 1050.0
+    nv_sig.expected_counts = 1812.0
     # num_nvs = len(nv_list)
     # print(f"Final NV List: {nv_list}")
     # Ensure data is defined before accessing it
@@ -1010,8 +1010,8 @@ if __name__ == "__main__":
         # do_optimize_z(nv_sig)
         # do_optimize_xyz(nv_sig)
         # pos.set_xyz_on_nv(nv_sig)
-        # do_compensate_for_drift(nv_sig)
-        # piezo_voltage_to_pixel_calibration()
+
+        do_compensate_for_drift(nv_sig)
 
         # Generate points for forward diagonal motion
         # x_values = np.linspace(0.3, -0.3, 6)c
@@ -1045,7 +1045,7 @@ if __name__ == "__main__":
         # nv_sig.coords[CoordsKey.SAMPLE][2] = 0.4
         # do_scanning_image_sample(nv_sig)
 
-        do_scanning_image_sample(nv_sig)
+        # do_scanning_image_sample(nv_sig)
         # do_scanning_image_sample_zoom(nv_sig)
         # do_widefield_image_sample(nv_sig, 50)
         # do_widefield_image_sample(nv_sig, 100)
@@ -1077,7 +1077,7 @@ if __name__ == "__main__":
         # optimize_slm_Phase_calibration(nv_sig, target_coords=target_coords)
 
         # nv_list = nv_list[::-1]
-        # do_charge_state_histograms(nv_list)
+        do_charge_state_histograms(nv_list)
         # do_charge_state_conditional_init(nv_list)
         # do_check_readout_fidelity(nv_list)
 

@@ -941,7 +941,7 @@ def get_virtual_sig_gen_dict(sig_gen_ind):
 
 @cache
 def get_physical_laser_name(laser_key):
-    return get_virtual_laser_dict(laser_key)["physical_laser_name"]
+    return get_virtual_laser_dict(laser_key)["physical_name"]
 
 
 @cache
@@ -997,12 +997,12 @@ def get_server_power_supply():
     return common.get_server("power_supply")
 
 
-def get_server_sig_gen(state=None, ind=0):
-    """Get the signal generator that controls transitions to the specified NV state"""
-    if state is not None:
-        return common.get_server(f"sig_gen_{state.name}")
-    else:
-        return common.get_server(f"sig_gen_{ind}")
+def get_server_sig_gen(virtual_sig_gen_ind):
+    """Retrieve the signal generator server based on the physical signal generator name."""
+    # Fetch server connection based on the physical signal generator name
+    virtual_sig_gen_dict = get_virtual_sig_gen_dict(virtual_sig_gen_ind)
+    physical_sig_gen_name = virtual_sig_gen_dict["physical_name"]
+    return common.get_server_by_name(physical_sig_gen_name)
 
 
 def get_server_magnet_rotation():
