@@ -206,7 +206,8 @@ def macro_scc(
     """
 
     config = common.get_config_dict()
-    do_shelving_pulse = config["Optics"]["scc_shelving_pulse"]
+    # print(config)
+    do_shelving_pulse = config["Optics"]["PulseSettings"]["scc_shelving_pulse"]
 
     if do_shelving_pulse:
         # if spin_flip_ind_list is not None:
@@ -796,7 +797,7 @@ def get_laser_mod_element(laser_name, sticky=False):
 @cache
 def get_sig_gen_element(uwave_ind=0):
     virtual_sig_gen_dict = tb.get_virtual_sig_gen_dict(uwave_ind)
-    sig_gen_name = virtual_sig_gen_dict["physical_sig_gen_name"]
+    sig_gen_name = virtual_sig_gen_dict["physical_name"]
     sig_gen_element = f"do_{sig_gen_name}_dm"
     return sig_gen_element
 
@@ -804,7 +805,7 @@ def get_sig_gen_element(uwave_ind=0):
 @cache
 def get_iq_mod_elements(uwave_ind=0):
     virtual_sig_gen_dict = tb.get_virtual_sig_gen_dict(uwave_ind)
-    sig_gen_name = virtual_sig_gen_dict["physical_sig_gen_name"]
+    sig_gen_name = virtual_sig_gen_dict["physical_name"]
     i_el = f"ao_{sig_gen_name}_i"
     q_el = f"ao_{sig_gen_name}_q"
     return i_el, q_el
