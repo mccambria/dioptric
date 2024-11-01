@@ -1671,7 +1671,7 @@ def generate_2d_magnetic_field_map_kriging(
 
 if __name__ == "__main__":
     file_id = 1663484946120
-    # file_id = 1669079684844
+    file_id = 1688862951667
     data = dm.get_raw_data(file_id=file_id, load_npz=False, use_cache=True)
     nv_list = data["nv_list"]
     num_nvs = len(nv_list)
