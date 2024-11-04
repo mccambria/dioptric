@@ -26,7 +26,7 @@ from utils import kplotlib as kpl
 from utils import positioning as pos
 from utils import tool_belt as tb
 from utils.constants import NVSig, VirtualLaserKey
-from utils.tool_belt import determine_threshold
+from utils.tool_belt import determine_charge_state_threshold, fit_charge_state_histogram
 
 # region Process and plotting functions
 
@@ -40,7 +40,8 @@ def plot_histograms(
     density=False,
     nv_index=None,  # Add NV index as an optional parameter
 ):
-    laser_dict = tb.get_virtual_laser_dict(VirtualLaserKey.WIDEFIELD_CHARGE_READOUT)
+    laser_key = VirtualLaserKey.WIDEFIELD_CHARGE_READOUT
+    laser_dict = tb.get_virtual_laser_dict(laser_key)
     readout = laser_dict["duration"]
     readout_ms = int(readout / 1e6)
     readout_s = readout / 1e9
@@ -96,6 +97,7 @@ def plot_histograms(
 
 def process_and_plot(raw_data, do_plot_histograms=False):
     ### Setup
+
     nv_list = raw_data["nv_list"]
     num_nvs = len(nv_list)
     counts = np.array(raw_data["counts"])
@@ -106,7 +108,9 @@ def process_and_plot(raw_data, do_plot_histograms=False):
     num_shots = num_reps * num_runs
 
     ### Histograms and thresholding
+
     threshold_list = []
+    readout_fidelity_list = []
     prep_fidelity_list = []
     snr_list = []
     hist_figs = []
@@ -116,31 +120,56 @@ def process_and_plot(raw_data, do_plot_histograms=False):
         ref_counts_list = ref_counts_lists[ind]
 
         # Plot histograms with NV index and SNR included
-        fig = None
         if do_plot_histograms:
             fig = plot_histograms(
                 sig_counts_list, ref_counts_list, density=True, nv_index=ind
             )
-        if fig:
-            hist_figs.append(fig)
+            if fig:
+                hist_figs.append(fig)
+
         all_counts_list = np.append(sig_counts_list, ref_counts_list)
-
-        threshold = determine_threshold(all_counts_list, nvn_ratio=0.5)
-        threshold_list.append(threshold)
-
-        prep_fidelity_list.append(
-            np.sum(np.less(sig_counts_list, threshold)) / num_shots
+        threshold, readout_fidelity = determine_charge_state_threshold(
+            all_counts_list, nvn_ratio=0.5, no_print=True, ret_fidelity=True
         )
+        threshold_list.append(threshold)
+        readout_fidelity_list.append(readout_fidelity)
+        popt = fit_charge_state_histogram(ref_counts_list, no_print=True)
+        if popt is not None:
+            prep_fidelity = 1 - popt[0]
+        else:
+            prep_fidelity = np.nan
+        prep_fidelity_list.append(prep_fidelity)
+
         # Calculate SNR
         noise = np.sqrt(np.var(ref_counts_list) + np.var(sig_counts_list))
         signal = np.mean(ref_counts_list) - np.mean(sig_counts_list)
         snr = signal / noise
         snr_list.append(round(snr, 3))
 
-    print(f"Threshold: {threshold_list}")
-    print(f"Fidelity: {[round(el, 3) for el in prep_fidelity_list]}")
-    print(f"SNR: {snr_list}")
-    ### Images
+    # Report out the results
+
+    # print(f"Threshold: {threshold_list}")
+    # print(f"Fidelity: {[round(el, 3) for el in prep_fidelity_list]}")
+    # print(f"SNR: {snr_list}")
+
+    threshold_list = np.array(threshold_list)
+    readout_fidelity_list = np.array(readout_fidelity_list)
+    prep_fidelity_list = np.array(prep_fidelity_list)
+
+    fig, ax = plt.subplots()
+    kpl.plot_points(ax, readout_fidelity_list, prep_fidelity_list)
+    ax.set_xlabel("Readout fidelity")
+    ax.set_ylabel("NV- preparation fidelity")
+
+    avg_readout_fidelity = np.nanmean(readout_fidelity_list)
+    std_readout_fidelity = np.nanstd(readout_fidelity_list)
+    avg_prep_fidelity = np.nanmean(prep_fidelity_list)
+    std_prep_fidelity = np.nanstd(prep_fidelity_list)
+    print(f"Average readout fidelity: {avg_readout_fidelity}({std_readout_fidelity})")
+    print(f"Average NV- preparation fidelity: {avg_prep_fidelity}({std_prep_fidelity})")
+
+    ### Image plotting
+
     if "img_arrays" not in raw_data:
         return
 
@@ -286,7 +315,6 @@ def main(
 
 if __name__ == "__main__":
     kpl.init_kplotlib()
-    data = dm.get_raw_data(file_id=1642395666145)
-    process_and_plot(
-        data, do_plot_histograms=False
-    )  # Ensure histograms are not plotted
+    data = dm.get_raw_data(file_id=1688554695897, load_npz=False)
+    process_and_plot(data, do_plot_histograms=False)
+    kpl.show(block=True)

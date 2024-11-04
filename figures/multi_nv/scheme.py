@@ -105,7 +105,7 @@ def main(nv_list, apparatus_img, image_data, histogram_data):
     )
     ax.set_xlim(-0.5, 90.5)
     combined_counts = np.append(sig_counts_list, ref_counts_list)
-    threshold = widefield.determine_threshold(
+    threshold = widefield.determine_charge_state_threshold(
         combined_counts,
         single_or_dual=True,
         nvn_ratio=None,

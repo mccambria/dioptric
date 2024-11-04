@@ -33,7 +33,7 @@ from utils import kplotlib as kpl
 from utils import positioning as pos
 from utils import tool_belt as tb
 from utils.constants import CoordsKey, NVSig, VirtualLaserKey
-from utils.tool_belt import determine_threshold
+from utils.tool_belt import determine_charge_state_threshold
 
 # endregion
 # region Image processing

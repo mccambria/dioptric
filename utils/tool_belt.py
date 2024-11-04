@@ -328,7 +328,7 @@ def skew_gaussian_cdf(x, mean, std, skew):
     return skewnorm(a=skew, loc=mean, scale=std).cdf(x)
 
 
-def fit_counts_histogram(counts_list):
+def fit_charge_state_histogram(counts_list, no_print=False):
     """counts_list should have some population in both NV- and NV0"""
 
     counts_list = counts_list.flatten()
@@ -353,19 +353,32 @@ def fit_counts_histogram(counts_list):
     guess_params = (
         0.7,
         mean_nv0_guess,
-        2 * np.sqrt(mean_nv0_guess),  # 1.5 factor for broadening
+        2 * np.sqrt(mean_nv0_guess),
         2,
         mean_nvn_guess,
         2 * np.sqrt(mean_nvn_guess),
         -2,
     )
-    popt, _ = curve_fit(fit_fn, x_vals, hist, p0=guess_params)
-    if not no_print:
-        print(popt)
+    try:
+        popt, _ = curve_fit(fit_fn, x_vals, hist, p0=guess_params)
+        if not no_print:
+            print(popt)
+        return popt
+    except Exception:
+        return None
 
 
-def determine_threshold(counts_list, nvn_ratio=None, no_print=False):
-    popt = fit_counts_histogram(counts_list)
+def determine_charge_state_threshold(
+    counts_list, nvn_ratio=None, no_print=False, ret_fidelity=False
+):
+    popt = fit_charge_state_histogram(counts_list, no_print)
+
+    # Popt will be None
+    if popt is None:
+        if ret_fidelity:
+            return None, None
+        else:
+            return None
 
     if nvn_ratio is None:
         nvn_ratio = 1 - popt[0]
@@ -373,7 +386,7 @@ def determine_threshold(counts_list, nvn_ratio=None, no_print=False):
 
     # Assume some kind of bimodal distribution where each mode has the same form
     # and there is one parameter that describes the relative weight of each mode.
-    num_single_dist_params = len((popt - 1) / 2)
+    num_single_dist_params = int((len(popt) - 1) / 2)
 
     # Calculate fidelities for given threshold
     mean_counts_nv0, mean_counts_nvn = popt[1], popt[1 + num_single_dist_params]
@@ -398,27 +411,16 @@ def determine_threshold(counts_list, nvn_ratio=None, no_print=False):
         fidelities.append(fidelity)
         left_fidelities.append(left_fidelity)
         right_fidelities.append(right_fidelity)
-    best_fidelity = np.max(fidelities)
-
-    # Calculate normalized probabilities for given integrated counts value
-    norm_nv0_probs = []
-    norm_nvn_probs = []
-    for val in x_vals:
-        nv0_prob = skew_gaussian_pdf(val, *popt[1 : 1 + num_single_dist_params])
-        nvn_prob = skew_gaussian_pdf(val, *popt[1 + num_single_dist_params :])
-        norm_nv0_prob = (
-            nv0_ratio * nv0_prob / (nv0_ratio * nv0_prob + nvn_ratio * nvn_prob)
-        )
-        norm_nvn_prob = (
-            nvn_ratio * nvn_prob / (nv0_ratio * nv0_prob + nvn_ratio * nvn_prob)
-        )
-        norm_nv0_probs.append(norm_nv0_prob)
-        norm_nvn_probs.append(norm_nvn_prob)
+    fidelity = np.max(fidelities)
+    threshold = thresh_options[np.argmax(fidelities)]
 
     if not no_print:
-        print(f"Optimum threshold: {threshold}")
+        print(f"Optimum readout fidelity {fidelity} achieved at threshold {threshold}")
 
-    return threshold
+    if ret_fidelity:
+        return threshold, fidelity
+    else:
+        return threshold
 
 
 def determine_dual_threshold(

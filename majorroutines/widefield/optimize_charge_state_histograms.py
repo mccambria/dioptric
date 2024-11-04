@@ -22,7 +22,7 @@ from slmsuite.hardware.cameraslms import FourierSLM
 from slmsuite.hardware.slms.thorlabs import ThorSLM
 from slmsuite.holography.algorithms import SpotHologram
 from utils import data_manager as dm
-from utils.tool_belt import determine_threshold
+from utils.tool_belt import determine_charge_state_threshold
 
 
 # Connect devices
