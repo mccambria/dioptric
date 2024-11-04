@@ -98,7 +98,8 @@ def _fit_gaussian(scan_vals, count_vals, axis_ind, positive_amplitude=True, fig=
         linspace_scan_vals = np.linspace(low, high, num=1000)
         fit_count_vals = fit_func(linspace_scan_vals, *popt)
         # Add popt to the axes
-        text = "a={:.3f}\n $\mu$={:.3f}\n $\sigma$={:.3f}\n offset={:.3f}".format(*popt)
+        r_popt = [round(el, 3) for el in popt]
+        text = rf"a={r_popt[0]}\n $\mu$={r_popt[1]}\n $\sigma$={r_popt[2]}\n offset={r_popt[3]}"
         _update_figure(fig, axis_ind, linspace_scan_vals, fit_count_vals, text)
 
     center = None
