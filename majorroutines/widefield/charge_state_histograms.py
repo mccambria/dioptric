@@ -72,25 +72,6 @@ def plot_histograms(
 
     ax.legend()
 
-    # Calculate the normalized separation (SNR)
-    if not no_text:
-        noise = np.sqrt(np.var(ref_counts_list) + np.var(sig_counts_list))
-        signal = np.mean(ref_counts_list) - np.mean(sig_counts_list)
-        snr = signal / noise
-        snr_time = snr / np.sqrt(readout_s)
-        snr = round(snr, 3)
-        snr_time = round(snr_time, 3)
-
-        # Add NV index in the SNR text
-        if nv_index is not None:
-            snr_str = f"nv{nv_index}\nSNR: {snr} / sqrt(shots)\n{snr_time} / sqrt(s)"
-        else:
-            snr_str = f"SNR:\n{snr} / sqrt(shots)\n{snr_time} / sqrt(s)"
-
-        print(snr_str)
-        snr_str = f"NV{nv_index} SNR: {snr}"  # Display NV index as well
-        kpl.anchored_text(ax, snr_str, "center right", size=kpl.Size.SMALL)
-
     if fig is not None:
         return fig
 
@@ -112,20 +93,13 @@ def process_and_plot(raw_data, do_plot_histograms=False):
     threshold_list = []
     readout_fidelity_list = []
     prep_fidelity_list = []
-    snr_list = []
     hist_figs = []
 
     for ind in range(num_nvs):
+        # if ind < 11:
+        #     continue
         sig_counts_list = sig_counts_lists[ind]
         ref_counts_list = ref_counts_lists[ind]
-
-        # Plot histograms with NV index and SNR included
-        if do_plot_histograms:
-            fig = plot_histograms(
-                sig_counts_list, ref_counts_list, density=True, nv_index=ind
-            )
-            if fig:
-                hist_figs.append(fig)
 
         all_counts_list = np.append(sig_counts_list, ref_counts_list)
         threshold, readout_fidelity = determine_charge_state_threshold(
@@ -140,11 +114,30 @@ def process_and_plot(raw_data, do_plot_histograms=False):
             prep_fidelity = np.nan
         prep_fidelity_list.append(prep_fidelity)
 
-        # Calculate SNR
-        noise = np.sqrt(np.var(ref_counts_list) + np.var(sig_counts_list))
-        signal = np.mean(ref_counts_list) - np.mean(sig_counts_list)
-        snr = signal / noise
-        snr_list.append(round(snr, 3))
+        # Plot histograms with NV index and SNR included
+        if do_plot_histograms:
+            fig = plot_histograms(sig_counts_list, ref_counts_list, density=True)
+            ax = fig.gca()
+
+            # Add the ref counts fit line
+            x_vals = np.linspace(0, np.max(ref_counts_list), 1000)
+            kpl.plot_line(ax, x_vals, tb.bimodal_skew_gaussian(x_vals, *popt))
+            # popt[0] = 1.0
+            # kpl.plot_line(ax, x_vals, tb.bimodal_skew_gaussian(x_vals, *popt))
+            # popt[0] = 0.0
+            # kpl.plot_line(ax, x_vals, tb.bimodal_skew_gaussian(x_vals, *popt))
+
+            # Add threshold line
+            ax.axvline(threshold, color=kpl.KplColors.GRAY, ls="dashed")
+
+            # Add text of the fidelities
+            snr_str = f"NV{ind}\nReadout fidelity: {round(readout_fidelity,3)}\nCharge prep. fidelity {round(prep_fidelity,3)}"  # Display NV index as well
+            kpl.anchored_text(ax, snr_str, "center right", size=kpl.Size.SMALL)
+
+            kpl.show(block=True)
+
+            if fig is not None:
+                hist_figs.append(fig)
 
     # Report out the results
 
@@ -165,8 +158,12 @@ def process_and_plot(raw_data, do_plot_histograms=False):
     std_readout_fidelity = np.nanstd(readout_fidelity_list)
     avg_prep_fidelity = np.nanmean(prep_fidelity_list)
     std_prep_fidelity = np.nanstd(prep_fidelity_list)
-    print(f"Average readout fidelity: {avg_readout_fidelity}({std_readout_fidelity})")
-    print(f"Average NV- preparation fidelity: {avg_prep_fidelity}({std_prep_fidelity})")
+    print(
+        f"Average readout fidelity: {tb.round_for_print(avg_readout_fidelity, std_readout_fidelity)}"
+    )
+    print(
+        f"Average NV- preparation fidelity: {tb.round_for_print(avg_prep_fidelity, std_prep_fidelity)})"
+    )
 
     ### Image plotting
 
@@ -211,7 +208,7 @@ def main(
     diff_polarize=False,
     diff_ionize=True,
     ion_include_inds=None,
-    plot_histograms=False,
+    do_plot_histograms=False,
 ):
     ### Initial setup
     seq_file = "charge_state_histograms.py"
@@ -260,7 +257,7 @@ def main(
 
     try:
         imgs, img_figs, hist_figs = process_and_plot(
-            raw_data, do_plot_histograms=plot_histograms
+            raw_data, do_plot_histograms=do_plot_histograms
         )
 
         # Save the images

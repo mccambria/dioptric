@@ -99,7 +99,7 @@ def do_charge_state_histograms(nv_list):
     #         nv_list, num_reps, num_runs, ion_include_inds=ion_include_inds
     #     )
     return charge_state_histograms.main(
-        nv_list, num_reps, num_runs, plot_histograms=True
+        nv_list, num_reps, num_runs, do_plot_histograms=False
     )
 
 

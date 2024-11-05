@@ -342,7 +342,7 @@ def fit_charge_state_histogram(counts_list, no_print=False):
     counts_list = np.array([round(el) for el in counts_list])
     max_count = max(counts_list)
     x_vals = np.linspace(0, max_count, max_count + 1)
-    hist, _ = np.histogram(
+    hist, bin_edges = np.histogram(
         counts_list, bins=max_count + 1, range=(0, max_count), density=True
     )
 
@@ -359,8 +359,13 @@ def fit_charge_state_histogram(counts_list, no_print=False):
         2 * np.sqrt(mean_nvn_guess),
         -2,
     )
+    skew_lim = 5
+    bounds = (
+        (0, 0, 0, -skew_lim, 0, 0, -skew_lim),
+        (1, np.inf, np.inf, skew_lim, np.inf, np.inf, skew_lim),
+    )
     try:
-        popt, _ = curve_fit(fit_fn, x_vals, hist, p0=guess_params)
+        popt, _ = curve_fit(fit_fn, x_vals, hist, p0=guess_params, bounds=bounds)
         if not no_print:
             print(popt)
         return popt
