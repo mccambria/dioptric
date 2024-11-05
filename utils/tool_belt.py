@@ -328,13 +328,7 @@ def skew_gaussian_cdf(x, mean, std, skew):
     return skewnorm(a=skew, loc=mean, scale=std).cdf(x)
 
 
-def determine_threshold(
-    counts_list,
-    single_or_dual=True,
-    nvn_ratio=None,
-    dual_threshold_min_fidelity=0.9,
-    no_print=False,
-):
+def fit_charge_state_histogram(counts_list, no_print=False):
     """counts_list should have some population in both NV- and NV0"""
 
     counts_list = counts_list.flatten()
@@ -342,16 +336,115 @@ def determine_threshold(
     # Remove outliers
     median = np.median(counts_list)
     std = np.std(counts_list)
+    counts_list = counts_list[counts_list < median + 10 * std]
 
-    # counts_list = counts_list[counts_list < median + 10 * std]
+    # Histogram the counts
+    counts_list = np.array([round(el) for el in counts_list])
+    max_count = max(counts_list)
+    x_vals = np.linspace(0, max_count, max_count + 1)
+    hist, bin_edges = np.histogram(
+        counts_list, bins=max_count + 1, range=(0, max_count), density=True
+    )
 
-    # Saroj:Instead of a hard threshold (median + 10 * std),
-    # more adaptive or robust interquartile range (IQR) for outlier detection.
-    q1, q3 = np.percentile(counts_list, [25, 75])
-    iqr = q3 - q1
-    lower_bound = q1 - 1.5 * iqr
-    upper_bound = q3 + 1.5 * iqr
-    counts_list = counts_list[(counts_list > lower_bound) & (counts_list < upper_bound)]
+    # Fit the histogram
+    fit_fn = bimodal_skew_gaussian
+    mean_nv0_guess = round(np.quantile(counts_list, 0.2))
+    mean_nvn_guess = round(np.quantile(counts_list, 0.98))
+    guess_params = (
+        0.7,
+        mean_nv0_guess,
+        2 * np.sqrt(mean_nv0_guess),
+        2,
+        mean_nvn_guess,
+        2 * np.sqrt(mean_nvn_guess),
+        -2,
+    )
+    skew_lim = 5
+    bounds = (
+        (0, 0, 0, -skew_lim, 0, 0, -skew_lim),
+        (1, np.inf, np.inf, skew_lim, np.inf, np.inf, skew_lim),
+    )
+    try:
+        popt, _ = curve_fit(fit_fn, x_vals, hist, p0=guess_params, bounds=bounds)
+        if not no_print:
+            print(popt)
+        return popt
+    except Exception:
+        return None
+
+
+def determine_charge_state_threshold(
+    counts_list, nvn_ratio=None, no_print=False, ret_fidelity=False
+):
+    popt = fit_charge_state_histogram(counts_list, no_print)
+
+    # Popt will be None
+    if popt is None:
+        if ret_fidelity:
+            return None, None
+        else:
+            return None
+
+    if nvn_ratio is None:
+        nvn_ratio = 1 - popt[0]
+    nv0_ratio = 1 - nvn_ratio
+
+    # Assume some kind of bimodal distribution where each mode has the same form
+    # and there is one parameter that describes the relative weight of each mode.
+    num_single_dist_params = int((len(popt) - 1) / 2)
+
+    # Calculate fidelities for given threshold
+    mean_counts_nv0, mean_counts_nvn = popt[1], popt[1 + num_single_dist_params]
+    mean_counts_nv0 = round(mean_counts_nv0)
+    mean_counts_nvn = round(mean_counts_nvn)
+    thresh_options = np.arange(0.5, np.max(counts_list) + 0.5, 1)
+    fidelities = []
+    left_fidelities = []
+    right_fidelities = []
+    for val in thresh_options:
+        nv0_left_prob = skew_gaussian_cdf(val, *popt[1 : 1 + num_single_dist_params])
+        nvn_left_prob = skew_gaussian_cdf(val, *popt[1 + num_single_dist_params :])
+        nv0_right_prob = 1 - nv0_left_prob
+        nvn_right_prob = 1 - nvn_left_prob
+        fidelity = nv0_ratio * nv0_left_prob + nvn_ratio * nvn_right_prob
+        left_fidelity = (nv0_ratio * nv0_left_prob) / (
+            nv0_ratio * nv0_left_prob + nvn_ratio * nvn_left_prob
+        )
+        right_fidelity = (nvn_ratio * nvn_right_prob) / (
+            nvn_ratio * nvn_right_prob + nv0_ratio * nv0_right_prob
+        )
+        fidelities.append(fidelity)
+        left_fidelities.append(left_fidelity)
+        right_fidelities.append(right_fidelity)
+    fidelity = np.max(fidelities)
+    threshold = thresh_options[np.argmax(fidelities)]
+
+    if not no_print:
+        print(f"Optimum readout fidelity {fidelity} achieved at threshold {threshold}")
+
+    if ret_fidelity:
+        return threshold, fidelity
+    else:
+        return threshold
+
+
+def determine_dual_threshold(
+    counts_list,
+    nvn_ratio=None,
+    min_fidelity=0.9,
+    no_print=False,
+):
+    """Not fully implemented yet. Version of determine_threshold for a trinary
+    threshold system where for a < b: if counts < a, we call dark state; if
+    counts > b, we call bright state; and if a < counts < b, we make no call.
+    """
+
+    counts_list = counts_list.flatten()
+
+    # Remove outliers
+    median = np.median(counts_list)
+    std = np.std(counts_list)
+    counts_list = counts_list[counts_list < median + 10 * std]
 
     # Histogram the counts
     counts_list = np.array([round(el) for el in counts_list])
@@ -361,11 +454,7 @@ def determine_threshold(
         counts_list, bins=max_count + 1, range=(0, max_count), density=True
     )
 
-    def double_gaussian(x, mean_nv0, std_nv0, mean_nvn, std_nvn):
-        return gaussian_pdf(x, mean_nv0, std_nv0) + gaussian_pdf(x, mean_nvn, std_nvn)
-
     # Fit the histogram
-    # fit_fn = bimodal_gaussian
     fit_fn = bimodal_skew_gaussian
     num_single_dist_params = 3
     mean_nv0_guess = round(np.quantile(counts_list, 0.2))
@@ -378,7 +467,6 @@ def determine_threshold(
         mean_nvn_guess,
         2 * np.sqrt(mean_nvn_guess),
         -2,
-        # 0.002,
     )
     popt, _ = curve_fit(fit_fn, x_vals, hist, p0=guess_params)
     if not no_print:
@@ -398,17 +486,11 @@ def determine_threshold(
     left_fidelities = []
     right_fidelities = []
     for val in thresh_options:
-        # nv0_fid = poisson_cdf(val, mean_counts_nv0)
-        # nvn_fid = 1 - poisson_cdf(val, mean_counts_nvn)
-        # nv0_fid = gaussian_cdf(val, *popt[1:3])
-        # nvn_fid = 1 - gaussian_cdf(val, *popt[3:])
         nv0_left_prob = skew_gaussian_cdf(val, *popt[1 : 1 + num_single_dist_params])
         nvn_left_prob = skew_gaussian_cdf(val, *popt[1 + num_single_dist_params :])
         nv0_right_prob = 1 - nv0_left_prob
         nvn_right_prob = 1 - nvn_left_prob
         fidelity = nv0_ratio * nv0_left_prob + nvn_ratio * nvn_right_prob
-        # fidelity = nv0_ratio * nv0_left_prob + nvn_ratio * nvn_left_prob
-        # fidelity = -((fidelity - nv0_ratio) ** 2)
         left_fidelity = (nv0_ratio * nv0_left_prob) / (
             nv0_ratio * nv0_left_prob + nvn_ratio * nvn_left_prob
         )
@@ -459,12 +541,8 @@ def determine_threshold(
         ### PDF
         norm_nv0_probs = np.array(norm_nv0_probs)
         norm_nvn_probs = np.array(norm_nvn_probs)
-        adj_norm_nv0_probs = np.where(
-            norm_nv0_probs > dual_threshold_min_fidelity, norm_nv0_probs, 1
-        )
-        adj_norm_nvn_probs = np.where(
-            norm_nvn_probs > dual_threshold_min_fidelity, norm_nvn_probs, 1
-        )
+        adj_norm_nv0_probs = np.where(norm_nv0_probs > min_fidelity, norm_nv0_probs, 1)
+        adj_norm_nvn_probs = np.where(norm_nvn_probs > min_fidelity, norm_nvn_probs, 1)
         threshold = [
             x_vals[np.argmin(adj_norm_nv0_probs)] + 0.5,
             x_vals[np.argmin(adj_norm_nvn_probs)] - 0.5,

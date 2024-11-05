@@ -15,10 +15,7 @@ from functools import cache
 from importlib import import_module
 from pathlib import Path
 
-import cv2
 import matplotlib.patches as patches
-
-# import cv2
 import matplotlib.pyplot as plt
 import numpy as np
 from matplotlib import animation
@@ -36,7 +33,7 @@ from utils import kplotlib as kpl
 from utils import positioning as pos
 from utils import tool_belt as tb
 from utils.constants import CoordsKey, NVSig, VirtualLaserKey
-from utils.tool_belt import determine_threshold
+from utils.tool_belt import determine_charge_state_threshold
 
 # endregion
 # region Image processing
@@ -86,9 +83,9 @@ def crop_img_arrays(img_arrays, offsets=[0, 0], buffer=20):
                 for rep_ind in range(shape[2]):
                     img_array = img_arrays[exp_ind, run_ind, step_ind, rep_ind]
                     cropped_img_array = crop_img_array(img_array, offset, buffer)
-                    cropped_img_arrays[exp_ind, run_ind, step_ind, rep_ind] = (
-                        cropped_img_array
-                    )
+                    cropped_img_arrays[
+                        exp_ind, run_ind, step_ind, rep_ind
+                    ] = cropped_img_array
     return cropped_img_arrays
 
 
@@ -420,38 +417,38 @@ def threshold_counts(nv_list, sig_counts, ref_counts=None, method="otsu"):
 
 
 # Adaptive thresholding function based on mean or gaussian
-def adaptive_thresholding(counts, method="gaussian"):
-    """
-    Applies adaptive thresholding to the input data (e.g., signal counts).
+# def adaptive_thresholding(counts, method="gaussian"):
+#     """
+#     Applies adaptive thresholding to the input data (e.g., signal counts).
 
-    Parameters:
-    - counts: Input array (e.g., signal counts).
-    - method: Type of adaptive thresholding ('mean' or 'gaussian').
+#     Parameters:
+#     - counts: Input array (e.g., signal counts).
+#     - method: Type of adaptive thresholding ('mean' or 'gaussian').
 
-    Returns:
-    - Thresholded data.
-    """
-    # Ensure the data is a single-channel array by flattening or reshaping if necessary
-    if len(counts.shape) > 2:
-        counts = counts.reshape(-1)  # Flatten the array if it's multi-dimensional
+#     Returns:
+#     - Thresholded data.
+#     """
+#     # Ensure the data is a single-channel array by flattening or reshaping if necessary
+#     if len(counts.shape) > 2:
+#         counts = counts.reshape(-1)  # Flatten the array if it's multi-dimensional
 
-    # Normalize counts to be between 0 and 255
-    normalized_counts = cv2.normalize(counts, None, 0, 255, cv2.NORM_MINMAX)
+#     # Normalize counts to be between 0 and 255
+#     normalized_counts = cv2.normalize(counts, None, 0, 255, cv2.NORM_MINMAX)
 
-    # Convert counts to 8-bit unsigned integers (np.uint8)
-    counts_uint8 = normalized_counts.astype(np.uint8)
+#     # Convert counts to 8-bit unsigned integers (np.uint8)
+#     counts_uint8 = normalized_counts.astype(np.uint8)
 
-    # Apply adaptive thresholding
-    if method == "mean":
-        return cv2.adaptiveThreshold(
-            counts_uint8, 255, cv2.ADAPTIVE_THRESH_MEAN_C, cv2.THRESH_BINARY, 11, 2
-        )
-    elif method == "gaussian":
-        return cv2.adaptiveThreshold(
-            counts_uint8, 255, cv2.ADAPTIVE_THRESH_GAUSSIAN_C, cv2.THRESH_BINARY, 11, 2
-        )
-    else:
-        raise ValueError(f"Unknown adaptive thresholding method: {method}")
+#     # Apply adaptive thresholding
+#     if method == "mean":
+#         return cv2.adaptiveThreshold(
+#             counts_uint8, 255, cv2.ADAPTIVE_THRESH_MEAN_C, cv2.THRESH_BINARY, 11, 2
+#         )
+#     elif method == "gaussian":
+#         return cv2.adaptiveThreshold(
+#             counts_uint8, 255, cv2.ADAPTIVE_THRESH_GAUSSIAN_C, cv2.THRESH_BINARY, 11, 2
+#         )
+#     else:
+#         raise ValueError(f"Unknown adaptive thresholding method: {method}")
 
 
 # Adaptive clustering-based thresholding (K-means or GMM)

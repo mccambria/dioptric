@@ -26,31 +26,25 @@ from utils import kplotlib as kpl
 from utils import positioning as pos
 from utils import tool_belt as tb
 from utils.constants import NVSig, VirtualLaserKey
-from utils.tool_belt import determine_threshold
-
+from utils.tool_belt import determine_charge_state_threshold, fit_charge_state_histogram
 
 # region Process and plotting functions
-def create_histogram(
+
+
+def plot_histograms(
     sig_counts_list,
     ref_counts_list,
     no_title=True,
     no_text=None,
     ax=None,
     density=False,
-    plot=False,  # Default to False to prevent histogram plotting
     nv_index=None,  # Add NV index as an optional parameter
 ):
-    if not plot:
-        return None  # Skip plotting if plot is set to False
-
-    try:
-        laser_dict = tb.get_virtual_laser_dict(VirtualLaserKey.WIDEFIELD_CHARGE_READOUT)
-        readout = laser_dict["duration"]
-        readout_ms = int(readout / 1e6)
-        readout_s = readout / 1e9
-    except Exception:
-        readout_s = 0.05  # MCC default
-        pass
+    laser_key = VirtualLaserKey.WIDEFIELD_CHARGE_READOUT
+    laser_dict = tb.get_virtual_laser_dict(laser_key)
+    readout = laser_dict["duration"]
+    readout_ms = int(readout / 1e6)
+    readout_s = readout / 1e9
 
     ### Histograms
     num_reps = len(ref_counts_list)
@@ -78,31 +72,13 @@ def create_histogram(
 
     ax.legend()
 
-    # Calculate the normalized separation (SNR)
-    if not no_text:
-        noise = np.sqrt(np.var(ref_counts_list) + np.var(sig_counts_list))
-        signal = np.mean(ref_counts_list) - np.mean(sig_counts_list)
-        snr = signal / noise
-        snr_time = snr / np.sqrt(readout_s)
-        snr = round(snr, 3)
-        snr_time = round(snr_time, 3)
-
-        # Add NV index in the SNR text
-        if nv_index is not None:
-            snr_str = f"nv{nv_index}\nSNR: {snr} / sqrt(shots)\n{snr_time} / sqrt(s)"
-        else:
-            snr_str = f"SNR:\n{snr} / sqrt(shots)\n{snr_time} / sqrt(s)"
-
-        print(snr_str)
-        snr_str = f"NV{nv_index} SNR: {snr}"  # Display NV index as well
-        kpl.anchored_text(ax, snr_str, "center right", size=kpl.Size.SMALL)
-
     if fig is not None:
         return fig
 
 
-def process_and_plot(raw_data, plot_histograms=False):
+def process_and_plot(raw_data, do_plot_histograms=False):
     ### Setup
+
     nv_list = raw_data["nv_list"]
     num_nvs = len(nv_list)
     counts = np.array(raw_data["counts"])
@@ -113,47 +89,84 @@ def process_and_plot(raw_data, plot_histograms=False):
     num_shots = num_reps * num_runs
 
     ### Histograms and thresholding
+
     threshold_list = []
+    readout_fidelity_list = []
     prep_fidelity_list = []
-    snr_list = []
     hist_figs = []
-    DEFAULT_THRESHOLD = 0.0
 
     for ind in range(num_nvs):
+        # if ind < 11:
+        #     continue
         sig_counts_list = sig_counts_lists[ind]
         ref_counts_list = ref_counts_lists[ind]
 
-        # Plot histograms with NV index and SNR included
-        fig = create_histogram(
-            sig_counts_list,
-            ref_counts_list,
-            density=True,
-            plot=plot_histograms,
-            nv_index=ind,
-        )
-        if fig:
-            hist_figs.append(fig)
         all_counts_list = np.append(sig_counts_list, ref_counts_list)
-
-        try:
-            threshold = determine_threshold(all_counts_list, nvn_ratio=0.5)
-        except:
-            threshold = DEFAULT_THRESHOLD
-        threshold_list.append(threshold)
-
-        prep_fidelity_list.append(
-            np.sum(np.less(sig_counts_list, threshold)) / num_shots
+        threshold, readout_fidelity = determine_charge_state_threshold(
+            all_counts_list, nvn_ratio=0.5, no_print=True, ret_fidelity=True
         )
-        # Calculate SNR
-        noise = np.sqrt(np.var(ref_counts_list) + np.var(sig_counts_list))
-        signal = np.mean(ref_counts_list) - np.mean(sig_counts_list)
-        snr = signal / noise
-        snr_list.append(round(snr, 3))
+        threshold_list.append(threshold)
+        readout_fidelity_list.append(readout_fidelity)
+        popt = fit_charge_state_histogram(ref_counts_list, no_print=True)
+        if popt is not None:
+            prep_fidelity = 1 - popt[0]
+        else:
+            prep_fidelity = np.nan
+        prep_fidelity_list.append(prep_fidelity)
 
-    print(f"Threshold: {threshold_list}")
-    print(f"Fidelity: {[round(el, 3) for el in prep_fidelity_list]}")
-    print(f"SNR: {snr_list}")
-    ### Images
+        # Plot histograms with NV index and SNR included
+        if do_plot_histograms:
+            fig = plot_histograms(sig_counts_list, ref_counts_list, density=True)
+            ax = fig.gca()
+
+            # Add the ref counts fit line
+            x_vals = np.linspace(0, np.max(ref_counts_list), 1000)
+            kpl.plot_line(ax, x_vals, tb.bimodal_skew_gaussian(x_vals, *popt))
+            # popt[0] = 1.0
+            # kpl.plot_line(ax, x_vals, tb.bimodal_skew_gaussian(x_vals, *popt))
+            # popt[0] = 0.0
+            # kpl.plot_line(ax, x_vals, tb.bimodal_skew_gaussian(x_vals, *popt))
+
+            # Add threshold line
+            ax.axvline(threshold, color=kpl.KplColors.GRAY, ls="dashed")
+
+            # Add text of the fidelities
+            snr_str = f"NV{ind}\nReadout fidelity: {round(readout_fidelity,3)}\nCharge prep. fidelity {round(prep_fidelity,3)}"  # Display NV index as well
+            kpl.anchored_text(ax, snr_str, "center right", size=kpl.Size.SMALL)
+
+            kpl.show(block=True)
+
+            if fig is not None:
+                hist_figs.append(fig)
+
+    # Report out the results
+
+    # print(f"Threshold: {threshold_list}")
+    # print(f"Fidelity: {[round(el, 3) for el in prep_fidelity_list]}")
+    # print(f"SNR: {snr_list}")
+
+    threshold_list = np.array(threshold_list)
+    readout_fidelity_list = np.array(readout_fidelity_list)
+    prep_fidelity_list = np.array(prep_fidelity_list)
+
+    fig, ax = plt.subplots()
+    kpl.plot_points(ax, readout_fidelity_list, prep_fidelity_list)
+    ax.set_xlabel("Readout fidelity")
+    ax.set_ylabel("NV- preparation fidelity")
+
+    avg_readout_fidelity = np.nanmean(readout_fidelity_list)
+    std_readout_fidelity = np.nanstd(readout_fidelity_list)
+    avg_prep_fidelity = np.nanmean(prep_fidelity_list)
+    std_prep_fidelity = np.nanstd(prep_fidelity_list)
+    print(
+        f"Average readout fidelity: {tb.round_for_print(avg_readout_fidelity, std_readout_fidelity)}"
+    )
+    print(
+        f"Average NV- preparation fidelity: {tb.round_for_print(avg_prep_fidelity, std_prep_fidelity)})"
+    )
+
+    ### Image plotting
+
     if "img_arrays" not in raw_data:
         return
 
@@ -195,7 +208,7 @@ def main(
     diff_polarize=False,
     diff_ionize=True,
     ion_include_inds=None,
-    plot_histograms=False,  # Set plot_histograms default to False
+    do_plot_histograms=False,
 ):
     ### Initial setup
     seq_file = "charge_state_histograms.py"
@@ -244,9 +257,10 @@ def main(
 
     try:
         imgs, img_figs, hist_figs = process_and_plot(
-            raw_data, plot_histograms=plot_histograms
+            raw_data, do_plot_histograms=do_plot_histograms
         )
 
+        # Save the images
         title_suffixes = ["sig", "ref", "diff"]
         num_figs = len(img_figs)
         for ind in range(num_figs):
@@ -254,15 +268,14 @@ def main(
             title = title_suffixes[ind]
             file_path = dm.get_file_path(__file__, timestamp, f"{repr_nv_name}-{title}")
             dm.save_figure(fig, file_path)
-
-        # num_nvs = len(nv_list)
-        # for nv_ind in range(num_nvs):
-        #     fig = hist_figs[nv_ind]
-        #     nv_sig = nv_list[nv_ind]
-        #     nv_name = nv_sig.name
-        #     file_path = dm.get_file_path(__file__, timestamp, nv_name)
-        #     dm.save_figure(fig, file_path)
-
+        if hist_figs is not None:
+            # num_nvs = len(nv_list)
+            # for nv_ind in range(num_nvs):
+            #     fig = hist_figs[nv_ind]
+            #     nv_sig = nv_list[nv_ind]
+            #     nv_name = nv_sig.name
+            #     file_path = dm.get_file_path(__file__, timestamp, nv_name)
+            #     dm.save_figure(fig, file_path)
         sig_img_array, ref_img_array, diff_img_array = imgs
         keys_to_compress = ["sig_img_array", "ref_img_array", "diff_img_array"]
 
@@ -299,5 +312,6 @@ def main(
 
 if __name__ == "__main__":
     kpl.init_kplotlib()
-    data = dm.get_raw_data(file_id=1642395666145)
-    process_and_plot(data, plot_histograms=False)  # Ensure histograms are not plotted
+    data = dm.get_raw_data(file_id=1688554695897, load_npz=False)
+    process_and_plot(data, do_plot_histograms=False)
+    kpl.show(block=True)
