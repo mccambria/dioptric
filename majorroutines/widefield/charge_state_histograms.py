@@ -149,21 +149,35 @@ def process_and_plot(raw_data, do_plot_histograms=False):
     readout_fidelity_list = np.array(readout_fidelity_list)
     prep_fidelity_list = np.array(prep_fidelity_list)
 
+    # Scatter readout vs prep fidelity
     fig, ax = plt.subplots()
     kpl.plot_points(ax, readout_fidelity_list, prep_fidelity_list)
     ax.set_xlabel("Readout fidelity")
     ax.set_ylabel("NV- preparation fidelity")
 
+    # Plot prep fidelity vs distance from center
+    green_laser_key = "laser_INTE_520_aod"
+    distances = []
+    for nv in nv_list:
+        coords = pos.get_nv_coords(nv, green_laser_key, drift_adjust=False)
+        dist = np.sqrt((110 - coords[0]) ** 2 + (110 - coords[1]) ** 2)
+        distances.append(dist)
+    fig, ax = plt.subplots()
+    kpl.plot_points(ax, distances, prep_fidelity_list)
+    ax.set_xlabel("Distance from center frequencies (MHz)")
+    ax.set_ylabel("NV- preparation fidelity")
+
+    # Report averages
     avg_readout_fidelity = np.nanmean(readout_fidelity_list)
     std_readout_fidelity = np.nanstd(readout_fidelity_list)
     avg_prep_fidelity = np.nanmean(prep_fidelity_list)
     std_prep_fidelity = np.nanstd(prep_fidelity_list)
-    print(
-        f"Average readout fidelity: {tb.round_for_print(avg_readout_fidelity, std_readout_fidelity)}"
+    str_readout_fidelity = tb.round_for_print(
+        avg_readout_fidelity, std_readout_fidelity
     )
-    print(
-        f"Average NV- preparation fidelity: {tb.round_for_print(avg_prep_fidelity, std_prep_fidelity)})"
-    )
+    str_prep_fidelity = tb.round_for_print(avg_prep_fidelity, std_prep_fidelity)
+    print(f"Average readout fidelity: {str_readout_fidelity}")
+    print(f"Average NV- preparation fidelity: {str_prep_fidelity})")
 
     ### Image plotting
 
