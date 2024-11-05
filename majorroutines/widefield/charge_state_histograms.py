@@ -103,7 +103,7 @@ def process_and_plot(raw_data, do_plot_histograms=False):
 
         all_counts_list = np.append(sig_counts_list, ref_counts_list)
         threshold, readout_fidelity = determine_charge_state_threshold(
-            all_counts_list, nvn_ratio=0.5, no_print=True, ret_fidelity=True
+            ref_counts_list, nvn_ratio=0.5, no_print=True, ret_fidelity=True
         )
         threshold_list.append(threshold)
         readout_fidelity_list.append(readout_fidelity)
