@@ -66,7 +66,7 @@ def cam_plot():
     cam.set_exposure(0.0001)
     img = cam.get_image()
     # Plot the result
-    plt.figure(figsize=(12, 9))
+    plt.figure(figsize=(6, 5))
     plt.imshow(img)
     plt.show()
 
@@ -214,7 +214,7 @@ def calibration_triangle():
     cam.set_exposure(0.1)
 
     # Define parameters for the equilateral triangle
-    center = (750, 600)  # Center of the triangle
+    center = (720, 550)  # Center of the triangle
     side_length = 240  # Length of each side of the triangle
 
     # Calculate the coordinates of the three vertices of the equilateral triangle
@@ -259,10 +259,10 @@ def nuvu2thorcam_calibration(coords):
     #     [[128.706, 72.789], [128.443, 140.826], [69.922, 104.404]], dtype="float32"
     # )
     cal_coords_thorcam = np.array(
-        [[957.846, 720.0], [542.153, 720.0], [750.0, 360.0]], dtype="float32"
+        [[927.846, 670.0], [512.153, 670.0], [720.0, 310.0]], dtype="float32"
     )
     cal_coords_nuvu = np.array(
-        [[187.721, 49.52], [193.469, 192.543], [63.039, 123.164]], dtype="float32"
+        [[179.063, 52.744], [180.162, 195.947], [52.318, 123.246]], dtype="float32"
     )
 
     # Compute the affine transformation matrix
@@ -279,6 +279,7 @@ def nuvu2thorcam_calibration(coords):
 
 def load_nv_coords(
     file_path="slmsuite/nv_blob_detection/nv_blob_filtered_128nvs_updated.npz",
+    # file_path="slmsuite/nv_blob_detection/nv_blob_filtered_200nvs_updated.npz",
     # file_path="slmsuite/nv_blob_detection/nv_coords_integras_counts_162nvs.npz",
     # file_path="slmsuite/nv_blob_detection/nv_coords_updated_spot_weights.npz",
     # file_path="slmsuite/nv_blob_detection/nv_coords_updated_spot_weights_manual_update.npz",
@@ -294,16 +295,14 @@ def load_nv_coords(
 
 # Set the threshold for x and y coordinates, assuming the SLM has a 2048x2048 pixel grid
 nuvu_pixel_coords, spot_weights = load_nv_coords()
-# nuvu_pixel_coords = np.array(
-#     [
-#         [121.354, 159.075],
-#         [134.394, 102.232],
-#         [170.84, 131.657],
-#         [67.855, 208.226],
-#         [87.583, 101.898],
-#         [168.499, 196.189],
-#     ]
-# )
+nuvu_pixel_coords = np.array(
+    [
+        [120.137, 121.811],
+        [134.422, 90.781],
+        [76.93, 140.496],
+        [161.085, 169.104],
+    ]
+)
 print(f"Total NV coordinates: {len(nuvu_pixel_coords)}")
 thorcam_coords = nuvu2thorcam_calibration(nuvu_pixel_coords).T
 
@@ -313,7 +312,7 @@ def compute_nvs_phase():
         shape=(4096, 2048),
         spot_vectors=thorcam_coords,
         basis="ij",
-        spot_amp=spot_weights,
+        # spot_amp=spot_weights,
         cameraslm=fs,
     )
     # Precondition computationally
@@ -371,7 +370,6 @@ try:
     compute_nvs_phase()
     # write_nvs_phase()
     # calibration_triangle()
-    # circle_pattern()
     # circles()
     # smiley()
     # cam_plot()

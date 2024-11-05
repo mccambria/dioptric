@@ -134,19 +134,45 @@ def remove_manual_indices(nv_coords, indices_to_remove):
     ]
 
 
-def reorder_coords(nv_coords, *data_arrays):
+def filter_and_reorder_nv_coords(
+    nv_coordinates, integrated_intensities, reference_nv, min_distance=3
+):
+    """
+    Filters NV coordinates based on distance from each other and reorders based on distance from a reference NV.
+
+    Parameters:
+    - nv_coordinates: List of NV coordinates to filter and reorder.
+    - integrated_intensities: Corresponding intensities for each NV coordinate.
+    - reference_nv: Reference NV coordinate to include and base reordering on.
+    - min_distance: Minimum allowable distance between NVs.
+
+    Returns:
+    - reordered_coords: Filtered and reordered NV coordinates.
+    - reordered_intensities: Corresponding reordered intensities.
+    """
+    nv_coords = [reference_nv]  # Initialize with the reference NV
+
+    # Filter NV coordinates based on minimum distance
+    for coord in nv_coordinates:
+        keep_coord = True
+        for existing_coord in nv_coords:
+            distance = np.linalg.norm(np.array(existing_coord) - np.array(coord))
+            if distance < min_distance:
+                keep_coord = False
+                break
+        if keep_coord:
+            nv_coords.append(coord)
+
+    # Reorder based on distance to the reference NV
     distances = [
-        np.linalg.norm(np.array(coord) - np.array(nv_coords[0])) for coord in nv_coords
+        np.linalg.norm(np.array(coord) - np.array(reference_nv)) for coord in nv_coords
     ]
     sorted_indices = np.argsort(distances)
 
     reordered_coords = [nv_coords[idx] for idx in sorted_indices]
+    reordered_intensities = [integrated_intensities[idx] for idx in sorted_indices]
 
-    reordered_data_arrays = tuple(
-        [array[idx] for idx in sorted_indices] for array in data_arrays
-    )
-
-    return reordered_coords, *reordered_data_arrays
+    return reordered_coords, reordered_intensities
 
 
 def sigmoid_weights(intensities, threshold, beta=1):
@@ -362,45 +388,26 @@ if __name__ == "__main__":
     # data = dm.get_raw_data(file_id=1688298946808, load_npz=True)
     data = dm.get_raw_data(file_id=1688328009205, load_npz=True)
     data = dm.get_raw_data(file_id=1688554695897, load_npz=True)
+    data = dm.get_raw_data(file_id=1688266024467, load_npz=True)
 
     #
     img_array = np.array(data["ref_img_array"])
-    # img_array = -np.array(data["diff_img_array"])
     nv_coordinates, integrated_intensities = load_nv_coords(
-        file_path="slmsuite/nv_blob_detection/nv_blob_filtered_144nvs.npz"
+        # file_path="slmsuite/nv_blob_detection/nv_blob_filtered_144nvs.npz"
+        file_path="slmsuite/nv_blob_detection/nv_blob_filtered_200nvs.npz"
     )
     nv_coordinates = nv_coordinates.tolist()
     integrated_intensities = integrated_intensities.tolist()
-    # spot_weights = np.array(spot_weights)
     # print(spot_weights)
-    reference_nv = [129.985, 121.129]
-    # reference_nv = [150.316, 116.627]
-    nv_coords = [reference_nv]
-    # Iterate through the rest of the NV coordinates
-    for coord in nv_coordinates:
-        # Check if the new NV coordinate is far enough from all accepted NVs
-        keep_coord = True  # Assume the coordinate is valid
-
-        for existing_coord in nv_coords:
-            # Calculate the distance between the current NV and each existing NV
-            distance = np.linalg.norm(np.array(existing_coord) - np.array(coord))
-
-            if distance < 5:
-                keep_coord = False  # If too close, mark it for exclusion
-                break  # No need to check further distances
-        if keep_coord:
-            nv_coords.append(coord)
-
-    # print(filtered_nv_coords)
-    integrated_intensities = np.array(integrated_intensities)
-    # Integrate intensities for each filtered NV coordinate with the correct order
     sigma = 2.5
+    reference_nv = [129.985, 121.129]
+    filtered_reordered_coords, filtered_reordered_counts = filter_and_reorder_nv_coords(
+        nv_coordinates, integrated_intensities, reference_nv, min_distance=3
+    )
+    print("Filter:", filtered_reordered_counts)
+    # print("Filtered and Reordered NV Coordinates:", filtered_reordered_coords)
+    # print("Filtered and Reordered NV Coordinates:", integrated_intensities)
 
-    # Reorder NV coordinates and intensities if the flag is set
-    if reorder_coords_flag:
-        reordered_nv_coords, reordered_intensities = reorder_coords(
-            nv_coords, integrated_intensities
-        )
     # integrated_intensities = integrate_intensity(img_array, reordered_nv_coords, sigma)
     # integrated_intensities = np.array(integrated_intensities)
     # Initialize lists to store the results
@@ -410,9 +417,8 @@ if __name__ == "__main__":
     #     fitted_amplitudes.append(amplitude)
 
     # Calculate weights based on the fitted intensities
-    spot_weights = linear_weights(reordered_intensities, alpha=0.6)
+    spot_weights = linear_weights(filtered_reordered_counts, alpha=0.3)
     updated_spot_weights = spot_weights
-
     # spot_weights = linear_weights(filtered_intensities, alpha=0.2)
     # spot_weights = non_linear_weights_adjusted(
     #     filtered_intensities, alpha=0.9, beta=0.3, threshold=0.9
@@ -585,22 +591,22 @@ if __name__ == "__main__":
     # )
 
     # Get indices of NVs that meet the SNR threshold
-    threshold = 0.7
-    filtered_indices = filter_by_snr(snr, threshold)
+    # threshold = 0.0
+    # filtered_indices = filter_by_snr(snr, threshold)
 
     # Filter NV coordinates and associated data based on these indices
-    filtered_nv_coords = [reordered_nv_coords[i] for i in filtered_indices]
-    filtered_spot_weights = [spot_weights[i] for i in filtered_indices]
-    filtered_integrated_intensities = [
-        integrated_intensities[i] for i in filtered_indices
-    ]
-    print(f"Filtered NV coordinates: {len(filtered_nv_coords)} NVs")
-    # print("NV Index | Spot Weight | Updated Spot Weight | Counts")
-    # print("-" * 50)
-    # for idx, (weight, updated_weight, counts) in enumerate(
-    #     zip(spot_weights, updated_spot_weights, reordered_intensities)
-    # ):
-    #     print(f"{idx:<8} | {weight:.3f} | {updated_weight:.3f} | {counts:.3f}")
+    # filtered_nv_coords = [reordered_nv_coords[i] for i in filtered_indices]
+    # filtered_spot_weights = [spot_weights[i] for i in filtered_indices]
+    # filtered_integrated_intensities = [
+    #     integrated_intensities[i] for i in filtered_indices
+    # ]
+    # print(f"Filtered NV coordinates: {len(filtered_nv_coords)} NVs")
+    print("NV Index | Spot Weight | Updated Spot Weight | Counts")
+    print("-" * 50)
+    for idx, (weight, updated_weight, counts) in enumerate(
+        zip(spot_weights, updated_spot_weights, filtered_reordered_counts)
+    ):
+        print(f"{idx:<8} | {weight:.3f} | {updated_weight:.3f} | {counts:.3f}")
     # print(f"NV Coords: {filtered_nv_coords}")
     # print(f"Filtered integrated intensities: {filtered_intensities}")
     # print(f"Normalized spot weights: {spot_weights}")
@@ -614,19 +620,19 @@ if __name__ == "__main__":
     #     spot_weights,
     #     filename="slmsuite/nv_blob_detection/nv_blob_filtered_297.npz",
     # )
-    # save_results(
-    #     filtered_nv_coords,
-    #     filtered_integrated_intensities,
-    #     filtered_spot_weights,
-    #     filename="slmsuite/nv_blob_detection/nv_blob_filtered_128nvs_updated.npz",
-    # )
+    save_results(
+        filtered_reordered_coords,
+        filtered_reordered_counts,
+        spot_weights,
+        filename="slmsuite/nv_blob_detection/nv_blob_filtered_200nvs_updated.npz",
+    )
 
     # Plot the original image with circles around each NV
     fig, ax = plt.subplots()
     title = "24ms, Ref"
     kpl.imshow(ax, img_array, title=title, cbar_label="Photons")
     # Draw circles and index numbers
-    for idx, coord in enumerate(filtered_nv_coords):
+    for idx, coord in enumerate(filtered_reordered_coords):
         circ = Circle(coord, sigma, color="lightblue", fill=False, linewidth=0.5)
         ax.add_patch(circ)
         # Place text just above the circle

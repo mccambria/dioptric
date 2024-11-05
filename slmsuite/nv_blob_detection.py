@@ -241,7 +241,8 @@ if __name__ == "__main__":
     # data = dm.get_raw_data(file_id=1680026835865, load_npz=True)
     # data = dm.get_raw_data(file_id=1681681506476, load_npz=True)
     data = dm.get_raw_data(file_id=1688298946808, load_npz=True)
-    data = dm.get_raw_data(file_id=1688328009205, load_npz=True)
+    data = dm.get_raw_data(file_id=1691393168458, load_npz=True)
+    # data = dm.get_raw_data(file_id=1688266024467, load_npz=True)
 
     img_array = np.array(data["ref_img_array"])
     # img_array = np.array(data["diff_img_array"])
@@ -258,8 +259,8 @@ if __name__ == "__main__":
 
     # Apply the blob detection and Gaussian fitting
     sigma = 2
-    lower_threshold = 0.06
-    upper_threshold = 47
+    lower_threshold = 0.051
+    upper_threshold = 43
     smoothing_sigma = 0.0
 
     nv_coordinates, integrated_counts, spot_sizes = detect_nv_coordinates_blob(
@@ -271,26 +272,54 @@ if __name__ == "__main__":
     )
 
     # List to store valid NV coordinates after filtering
-    # filtered_nv_coords = []
-
+    filtered_nv_coords = []
+    filtered_counts = []
     # Iterate through detected NV coordinates and apply distance filtering
-    # for coord in nv_coordinates:
-    #     # Assume the coordinate is valid initially
-    #     keep_coord = True
+    for coord, count in zip(nv_coordinates, integrated_counts):
+        # Assume the coordinate is valid initially
+        keep_coord = True
 
-    #     # Check distance with all previously accepted NVs
-    #     for existing_coord in filtered_nv_coords:
-    #         distance = np.linalg.norm(np.array(existing_coord) - np.array(coord))
+        # Check distance with all previously accepted NVs
+        for existing_coord in filtered_nv_coords:
+            distance = np.linalg.norm(np.array(existing_coord) - np.array(coord))
 
-    #         if distance < 6:
-    #             keep_coord = False  # Mark it for exclusion if too close
-    #             break  # No need to check further distances
+            if distance < 5:
+                keep_coord = False  # Mark it for exclusion if too close
+                break  # No need to check further distances
 
-    #     # If the coordinate passes the distance check, add it to the list
-    #     if keep_coord:
-    #         filtered_nv_coords.append(coord)
-    #         spot_weigths = integrated_counts
-    print(f"Number of NVs detected: {len(nv_coordinates)}")
+        # If the coordinate passes the distance check, add it to the list
+        if keep_coord:
+            filtered_nv_coords.append(coord)
+            filtered_counts.append(count)
+
+    print(f"Number of NVs detected: {len(filtered_nv_coords)}")
+    for idx, (coord, count) in enumerate(
+        zip(filtered_nv_coords, filtered_counts), start=1
+    ):
+        print(f"NV {idx}: Coordinate = {coord}, Count = {count}")
+    # Plotting the results
+    # Verify if reversing coordinates resolves the offset
+    default_radius = 2.5
+    fig, ax = plt.subplots()
+    title = "24ms, Ref"
+    cax = kpl.imshow(ax, img_array, title=title, cbar_label="Photons")
+    ax.set_title("NV Detection with Blob and Gaussian Fitting")
+    ax.axis("off")
+
+    for idx, (x, y) in enumerate(filtered_nv_coords, start=1):  # Swapped y, x to x, y
+        circ = plt.Circle((x, y), default_radius, color="red", linewidth=1, fill=False)
+        ax.add_patch(circ)
+        ax.text(
+            x,
+            y - default_radius - 2,
+            f"{idx}",
+            color="black",
+            fontsize=8,
+            ha="center",
+            va="center",
+        )
+
+    kpl.show(block=True)
 
     # print(f"Detected NV coordinates (optimized): {filtered_nv_coords}")
 
@@ -308,11 +337,11 @@ if __name__ == "__main__":
     #     print("No spots detected. Unable to calculate conversion factor.")
 
     # Save the results
-    save_results(
-        nv_coordinates,
-        integrated_counts,
-        filename="nv_blob_filtered_144nvs.npz",
-    )
+    # save_results(
+    #     filtered_nv_coords,
+    #     filtered_counts,
+    #     filename="nv_blob_filtered_200nvs.npz",
+    # )
 
     # image_ids = [
     #     1687524695111,

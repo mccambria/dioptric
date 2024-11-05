@@ -38,14 +38,14 @@ calibration_coords_pixel = [
     [234.876, 116.946],
 ]
 calibration_coords_green = [
-    [115.779, 106.042],
-    [107.253, 118.327],
-    [98.279, 107.437],
+    [112.636, 104.089],
+    [104.110, 116.374],
+    [95.136, 105.484],
 ]
 calibration_coords_red = [
-    [79.256, 72.672],
-    [72.849, 82.663],
-    [65.189, 74.169],
+    [76.113, 70.719],
+    [69.706, 80.710],
+    [62.046, 72.216],
 ]
 # Create the dictionaries using the provided lists
 calibration_coords_nv1 = {
@@ -151,7 +151,7 @@ config |= {
     "Camera": {
         "server_name": "camera_NUVU_hnu512gamma",
         "resolution": (512, 512),
-        "spot_radius": 2.5,  # Radius for integrating NV counts in a camera image
+        "spot_radius": 3,  # Radius for integrating NV counts in a camera image
         "bias_clamp": 300,  # (changing this won't actually change the value on the camera currently)
         "em_gain": 5000,
         # "em_gain": 1000,
@@ -164,7 +164,7 @@ config |= {
         "readout_mode": 1,  # 16 for double horizontal readout rate (em mode)
         # "readout_mode": 6,  # Fast conventional
         # "roi": (121, 110, 250, 250),  # offsetX, offsetY, width, height"roi": (121, 110, 250, 250),  # offsetX, offsetY, width, height
-        "roi": (130, 105, 250, 250),  # offsetX, offsetY, width, height
+        "roi": (134, 105, 250, 250),  # offsetX, offsetY, width, height
         # "roi": None,  # offsetX, offsetY, width, height
         "scale": 24,  # pixels / micron
     },
@@ -822,7 +822,7 @@ opx_config = {
         # Yellow AOM
         "yellow_imaging": {"type": "constant", "sample": 0.45},  # 0.35
         # "yellow_imaging": {"type": "constant", "sample": 0.50},  # 0.35
-        "yellow_charge_readout": {"type": "constant", "sample": 0.39},  # 50e6
+        "yellow_charge_readout": {"type": "constant", "sample": 0.27},  # 50e6
         # "yellow_charge_readout": {"type": "constant", "sample": 0.25},  # 100e6
         "yellow_spin_pol": {"type": "constant", "sample": 0.39},
         "yellow_shelving": {"type": "constant", "sample": 0.33},

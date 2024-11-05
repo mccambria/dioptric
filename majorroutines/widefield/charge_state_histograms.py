@@ -255,13 +255,13 @@ def main(
             file_path = dm.get_file_path(__file__, timestamp, f"{repr_nv_name}-{title}")
             dm.save_figure(fig, file_path)
 
-        num_nvs = len(nv_list)
-        for nv_ind in range(num_nvs):
-            fig = hist_figs[nv_ind]
-            nv_sig = nv_list[nv_ind]
-            nv_name = nv_sig.name
-            file_path = dm.get_file_path(__file__, timestamp, nv_name)
-            dm.save_figure(fig, file_path)
+        # num_nvs = len(nv_list)
+        # for nv_ind in range(num_nvs):
+        #     fig = hist_figs[nv_ind]
+        #     nv_sig = nv_list[nv_ind]
+        #     nv_name = nv_sig.name
+        #     file_path = dm.get_file_path(__file__, timestamp, nv_name)
+        #     dm.save_figure(fig, file_path)
 
         sig_img_array, ref_img_array, diff_img_array = imgs
         keys_to_compress = ["sig_img_array", "ref_img_array", "diff_img_array"]

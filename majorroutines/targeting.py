@@ -232,10 +232,16 @@ def _read_counts_camera_sequence(
         seq_file_name = "simple_readout-scanning.py"
         num_reps = 1
     elif virtual_laser_key == VirtualLaserKey.ION:
-        pol_laser = tb.get_physical_laser_name(VirtualLaserKey.CHARGE_POL)
-        pol_coords = pos.get_nv_coords(nv_sig, positioner=pol_laser)
-        ion_laser = tb.get_physical_laser_name(VirtualLaserKey.ION)
-        ion_coords = pos.get_nv_coords(nv_sig, positioner=ion_laser)
+        # Get the coordinates for the charge polarization laser
+        pol_laser_name = tb.get_physical_laser_name(VirtualLaserKey.CHARGE_POL)
+        pol_laser_positioner = pos.get_laser_positioner(VirtualLaserKey.CHARGE_POL)
+        pol_coords = pos.get_nv_coords(nv_sig, pol_laser_positioner)
+
+        # Get the coordinates for the ionization laser
+        ion_laser_name = tb.get_physical_laser_name(VirtualLaserKey.ION)
+        ion_laser_positioner = pos.get_laser_positioner(VirtualLaserKey.ION)
+        ion_coords = pos.get_nv_coords(nv_sig, ion_laser_positioner)
+
         seq_args = [pol_coords, ion_coords]
         seq_file_name = "optimize_ionization_laser_coords.py"
         num_reps = 50
@@ -772,6 +778,7 @@ def optimize(nv_sig: NVSig, coords_key: str = CoordsKey.SAMPLE):
     virtual_laser_key = _get_opti_virtual_laser_key(coords_key)
     final_counts = stationary_count_lite(opti_nv_sig, virtual_laser_key)
 
+    opti_coords = [round(coord, 3) for coord in opti_coords]
     print(f"Optimized coordinates: {opti_coords}")
     print(f"Counts at optimized coordinates: {final_counts}")
 
