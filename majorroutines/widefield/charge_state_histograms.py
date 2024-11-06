@@ -156,10 +156,10 @@ def process_and_plot(raw_data, do_plot_histograms=False):
     ax.set_ylabel("NV- preparation fidelity")
 
     # Plot prep fidelity vs distance from center
-    green_laser_key = "laser_INTE_520_aod"
+    coords_key = "laser_INTE_520_aod"
     distances = []
     for nv in nv_list:
-        coords = pos.get_nv_coords(nv, green_laser_key, drift_adjust=False)
+        coords = pos.get_nv_coords(nv, coords_key, drift_adjust=False)
         dist = np.sqrt((110 - coords[0]) ** 2 + (110 - coords[1]) ** 2)
         distances.append(dist)
     fig, ax = plt.subplots()
