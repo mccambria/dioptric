@@ -29,8 +29,8 @@ home = Path.home()
 green_laser = "laser_INTE_520"
 yellow_laser = "laser_OPTO_589"
 red_laser = "laser_COBO_638"
-green_laser_aod = f"{green_laser}_aod"
-red_laser_aod = f"{red_laser}_aod"
+green_laser_aod = "laser_INTE_520_aod"
+red_laser_aod = "laser_COBO_638_aod"
 
 calibration_coords_pixel = [
     [73.767, 91.394],
