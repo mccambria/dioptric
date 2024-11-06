@@ -116,11 +116,16 @@ def do_optimize_green(nv_sig):
     return opti_coords
 
 
-def do_optimize_red(nv_sig):
+def do_optimize_red(nv_sig, ref_nv_sig):
     opti_coords = []
-    for axes in [Axes.X, Axes.Y]:
+    axes_list = [Axes.X, Axes.Y]
+    for ind in range(2):
+        axes = axes_list[ind]
         ret_vals = targeting.optimize(nv_sig, coords_key=red_laser_aod, axes=axes)
         opti_coords.append(ret_vals[0])
+        # Compensate for drift after first optimization along X axis
+        if ind == 0:
+            do_compensate_for_drift(ref_nv_sig)
     return opti_coords
 
 
@@ -166,7 +171,7 @@ def do_optimize_loop(nv_list, coords_key):
         if coords_key == green_laser:
             opti_coords = do_optimize_green(nv)
         elif coords_key == red_laser:
-            opti_coords = do_optimize_red(nv)
+            opti_coords = do_optimize_red(nv, repr_nv_sig)
         # Adjust for the drift that may have occurred since beginning the loop
         do_compensate_for_drift(repr_nv_sig)
         opti_coords_list.append(opti_coords)
@@ -913,6 +918,7 @@ if __name__ == "__main__":
     # Additional properties for the representative NV
     nv_list[0].representative = True
     # nv_list[1].representative = True
+    repr_nv_sig = widefield.get_repr_nv_sig(nv_list)
     nv_sig = widefield.get_repr_nv_sig(nv_list)
     # print(f"Created NV: {nv_sig.name}, Coords: {nv_sig.coords}")
     # nv_sig.expected_counts = 1650
@@ -1054,7 +1060,7 @@ if __name__ == "__main__":
         # for ind in range(20):
         # do_optimize_pixel(nv_sig)
         # do_optimize_green(nv_sig)
-        # do_optimize_red(nv_sig)
+        # do_optimize_red(nv_sig, repr_nv_sig)
         # do_optimize_z(nv_sig)
         ## do_optimize_sample(nv_sig)
 
@@ -1149,7 +1155,7 @@ if __name__ == "__main__":
 
         # region Cleanup
         # do_optimize_green(nv_sig)
-        # do_optimize_red(nv_sig)
+        # do_optimize_red(nv_sig, repr_nv_sig)
     except Exception as exc:
         if do_email:
             recipient = email_recipient
