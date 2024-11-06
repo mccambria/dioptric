@@ -117,8 +117,10 @@ def do_optimize_green(nv_sig):
 
 
 def do_optimize_red(nv_sig):
-    ret_vals = targeting.optimize(nv_sig, coords_key=red_laser_aod)
-    opti_coords = ret_vals[0]
+    opti_coords = []
+    for axes in [Axes.X, Axes.Y]:
+        ret_vals = targeting.optimize(nv_sig, coords_key=red_laser_aod, axes=axes)
+        opti_coords.append(ret_vals[0])
     return opti_coords
 
 
