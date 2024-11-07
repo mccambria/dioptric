@@ -386,25 +386,50 @@ if __name__ == "__main__":
     # data = dm.get_raw_data(file_id=1680236956179, load_npz=True)
     # data = dm.get_raw_data(file_id=1681853425454, load_npz=True)
     # data = dm.get_raw_data(file_id=1688298946808, load_npz=True)
-    data = dm.get_raw_data(file_id=1688328009205, load_npz=True)
-    data = dm.get_raw_data(file_id=1688554695897, load_npz=True)
-    data = dm.get_raw_data(file_id=1688266024467, load_npz=True)
+    # data = dm.get_raw_data(file_id=1688328009205, load_npz=True)
+    # data = dm.get_raw_data(file_id=1688554695897, load_npz=True)
+    # data = dm.get_raw_data(file_id=1693166192526, load_npz=True)
+    data = dm.get_raw_data(file_id=1693412457124, load_npz=True)
+    data = dm.get_raw_data(file_id=1693686359757, load_npz=True)
 
-    #
     img_array = np.array(data["ref_img_array"])
     nv_coordinates, integrated_intensities = load_nv_coords(
         # file_path="slmsuite/nv_blob_detection/nv_blob_filtered_144nvs.npz"
-        file_path="slmsuite/nv_blob_detection/nv_blob_filtered_200nvs.npz"
+        file_path="slmsuite/nv_blob_detection/nv_blob_filtered_167nvs.npz"
     )
     nv_coordinates = nv_coordinates.tolist()
     integrated_intensities = integrated_intensities.tolist()
-    # print(spot_weights)
-    sigma = 2.5
-    reference_nv = [129.985, 121.129]
+    # Filter NV coordinates based on x and y ranges (0 to 240)
+    filtered_coords = []
+    filtered_intensities = []
+    for coord, intensity in zip(nv_coordinates, integrated_intensities):
+        x, y = coord
+        if 0 <= x <= 248 and 0 <= y <= 248:
+            filtered_coords.append(coord)
+            filtered_intensities.append(intensity)
+
+    # Filter and reorder NV coordinates based on reference NV
+    sigma = 2.0
+    reference_nv = [106.923, 120.549]
+    # reference_nv = [134.954, 83.925]
+    # reference_nv = [92.998, 146.61]
     filtered_reordered_coords, filtered_reordered_counts = filter_and_reorder_nv_coords(
-        nv_coordinates, integrated_intensities, reference_nv, min_distance=3
+        filtered_coords, filtered_intensities, reference_nv, min_distance=3
     )
-    print("Filter:", filtered_reordered_counts)
+
+    # Manually remove NVs with specified indices
+    indices_to_remove = [1, 155]  # Example indices to remove
+    filtered_reordered_coords = [
+        coord
+        for i, coord in enumerate(filtered_reordered_coords)
+        if i not in indices_to_remove
+    ]
+    filtered_reordered_counts = [
+        count
+        for i, count in enumerate(filtered_reordered_counts)
+        if i not in indices_to_remove
+    ]
+    # print("Filter:", filtered_reordered_counts)
     # print("Filtered and Reordered NV Coordinates:", filtered_reordered_coords)
     # print("Filtered and Reordered NV Coordinates:", integrated_intensities)
 
@@ -412,14 +437,15 @@ if __name__ == "__main__":
     # integrated_intensities = np.array(integrated_intensities)
     # Initialize lists to store the results
     # fitted_amplitudes = []
-    # for coord in reordered_nv_coords:
+    # for coord in filtered_reordered_coords:
     #     fitted_x, fitted_y, amplitude = fit_gaussian(img_array, coord, window_size=2)
     #     fitted_amplitudes.append(amplitude)
 
     # Calculate weights based on the fitted intensities
-    spot_weights = linear_weights(filtered_reordered_counts, alpha=0.3)
-    updated_spot_weights = spot_weights
-    # spot_weights = linear_weights(filtered_intensities, alpha=0.2)
+    spot_weights = linear_weights(filtered_reordered_counts, alpha=0.1)
+    # updated_spot_weights = filtered_reordered_counts
+    # spot_weights = updated_spot_weights
+    # spot_weights = linear_weights(filtered_reordered_counts, alpha=0.9)
     # spot_weights = non_linear_weights_adjusted(
     #     filtered_intensities, alpha=0.9, beta=0.3, threshold=0.9
     # )
@@ -440,152 +466,7 @@ if __name__ == "__main__":
     #     beta=6.0,
     #     update_indices=indices_to_update,
     # )
-    snr = [
-        0.833,
-        0.975,
-        0.66,
-        1.386,
-        1.203,
-        1.208,
-        0.655,
-        1.16,
-        1.339,
-        0.956,
-        0.889,
-        1.112,
-        1.276,
-        1.177,
-        1.122,
-        0.929,
-        0.639,
-        1.003,
-        0.23,
-        1.219,
-        0.955,
-        1.284,
-        0.805,
-        1.359,
-        1.161,
-        1.124,
-        0.728,
-        1.103,
-        1.184,
-        1.08,
-        1.119,
-        1.236,
-        1.035,
-        1.374,
-        1.152,
-        0.977,
-        1.123,
-        1.175,
-        1.117,
-        1.102,
-        1.055,
-        0.73,
-        1.072,
-        1.028,
-        0.812,
-        0.492,
-        1.311,
-        1.386,
-        1.176,
-        0.817,
-        1.165,
-        1.306,
-        1.334,
-        1.161,
-        1.066,
-        1.159,
-        1.313,
-        1.353,
-        1.198,
-        1.129,
-        1.299,
-        1.09,
-        1.136,
-        1.099,
-        1.261,
-        1.05,
-        0.892,
-        0.642,
-        1.283,
-        1.265,
-        1.23,
-        1.081,
-        0.871,
-        0.908,
-        0.722,
-        0.721,
-        0.885,
-        1.078,
-        1.102,
-        1.168,
-        1.103,
-        1.147,
-        1.007,
-        0.603,
-        1.205,
-        1.214,
-        1.149,
-        1.171,
-        1.332,
-        1.194,
-        1.601,
-        1.2,
-        0.849,
-        1.264,
-        1.216,
-        1.077,
-        1.023,
-        1.273,
-        1.188,
-        1.042,
-        1.168,
-        0.948,
-        1.158,
-        1.247,
-        1.246,
-        0.989,
-        1.203,
-        1.053,
-        1.171,
-        1.333,
-        0.273,
-        0.5,
-        1.171,
-        1.16,
-        1.143,
-        0.272,
-        0.965,
-        1.168,
-        1.176,
-        0.401,
-        1.147,
-        0.891,
-        1.221,
-        1.17,
-        0.713,
-        0.537,
-        0.991,
-        0.925,
-        1.059,
-        0.894,
-        1.234,
-        0.913,
-        0.975,
-        1.007,
-        0.684,
-        0.992,
-        1.196,
-        0.354,
-        1.101,
-        0.825,
-        0.857,
-        0.096,
-        0.121,
-        0.772,
-    ]
+
     # updated_spot_weights = adjust_weights_sigmoid(
     #     spot_weights, snr, alpha=0.0, beta=0.3
     # )
@@ -600,13 +481,20 @@ if __name__ == "__main__":
     # filtered_integrated_intensities = [
     #     integrated_intensities[i] for i in filtered_indices
     # ]
-    # print(f"Filtered NV coordinates: {len(filtered_nv_coords)} NVs")
-    print("NV Index | Spot Weight | Updated Spot Weight | Counts")
-    print("-" * 50)
-    for idx, (weight, updated_weight, counts) in enumerate(
-        zip(spot_weights, updated_spot_weights, filtered_reordered_counts)
+    print(f"Filtered NV coordinates: {len(filtered_reordered_coords)} NVs")
+    print("NV Index | Coords    |    Counts")
+    print("-" * 60)
+    for idx, (coords, counts, weight) in enumerate(
+        zip(filtered_reordered_coords, filtered_reordered_counts, spot_weights)
     ):
-        print(f"{idx:<8} | {weight:.3f} | {updated_weight:.3f} | {counts:.3f}")
+        print(f"{idx:<8} | {coords} | {counts:.3f} | {weight:.3f}")
+
+    # print("NV Index | Spot Weight | Updated Spot Weight | Counts")
+    # print("-" * 50)
+    # for idx, (weight, updated_weight, counts) in enumerate(
+    #     zip(spot_weights, updated_spot_weights, filtered_reordered_counts)
+    # ):
+    #     print(f"{idx:<8} | {weight:.3f} | {updated_weight:.3f} | {counts:.3f}")
     # print(f"NV Coords: {filtered_nv_coords}")
     # print(f"Filtered integrated intensities: {filtered_intensities}")
     # print(f"Normalized spot weights: {spot_weights}")
@@ -624,7 +512,7 @@ if __name__ == "__main__":
         filtered_reordered_coords,
         filtered_reordered_counts,
         spot_weights,
-        filename="slmsuite/nv_blob_detection/nv_blob_filtered_200nvs_updated.npz",
+        filename="slmsuite/nv_blob_detection/nv_blob_filtered_164nvs_reordered.npz",
     )
 
     # Plot the original image with circles around each NV
@@ -645,7 +533,7 @@ if __name__ == "__main__":
             ha="center",
         )
 
-    # # Plot histogram of the filtered integrated intensities using Seaborn
+    # Plot histogram of the filtered integrated intensities using Seaborn
     # sns.set(style="whitegrid")
 
     # plt.figure(figsize=(6, 5))

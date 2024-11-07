@@ -240,14 +240,17 @@ if __name__ == "__main__":
     # data = dm.get_raw_data(file_id=1680868340409, load_npz=True)
     # data = dm.get_raw_data(file_id=1680026835865, load_npz=True)
     # data = dm.get_raw_data(file_id=1681681506476, load_npz=True)
-    data = dm.get_raw_data(file_id=1688298946808, load_npz=True)
-    data = dm.get_raw_data(file_id=1691393168458, load_npz=True)
-    # data = dm.get_raw_data(file_id=1688266024467, load_npz=True)
+    # data = dm.get_raw_data(file_id=1688298946808, load_npz=True)
+    # data = dm.get_raw_data(file_id=1691393168458, load_npz=True)
+    # data = dm.get_raw_data(file_id=1692695881803, load_npz=True)
+    # data = dm.get_raw_data(file_id=1693166192526, load_npz=True)
+    data = dm.get_raw_data(file_id=1693412457124, load_npz=True)
+    data = dm.get_raw_data(file_id=1693686359757, load_npz=True)
 
     img_array = np.array(data["ref_img_array"])
     # img_array = np.array(data["diff_img_array"])
     # img_array = -img_array
-    print(type(img_array), img_array.dtype, img_array.shape)
+    # print(type(img_array), img_array.dtype, img_array.shape)
 
     # # Parameters for detection and resolution
     wavelength = 0.65  # Wavelength in micrometers (650 nm)
@@ -258,9 +261,9 @@ if __name__ == "__main__":
     # print(f"Resolution: {round(resolution,3)} µm")
 
     # Apply the blob detection and Gaussian fitting
-    sigma = 2
-    lower_threshold = 0.051
-    upper_threshold = 43
+    sigma = 2.0
+    lower_threshold = 0.06
+    upper_threshold = None
     smoothing_sigma = 0.0
 
     nv_coordinates, integrated_counts, spot_sizes = detect_nv_coordinates_blob(
@@ -283,7 +286,7 @@ if __name__ == "__main__":
         for existing_coord in filtered_nv_coords:
             distance = np.linalg.norm(np.array(existing_coord) - np.array(coord))
 
-            if distance < 5:
+            if distance < 6:
                 keep_coord = False  # Mark it for exclusion if too close
                 break  # No need to check further distances
 
@@ -299,7 +302,7 @@ if __name__ == "__main__":
         print(f"NV {idx}: Coordinate = {coord}, Count = {count}")
     # Plotting the results
     # Verify if reversing coordinates resolves the offset
-    default_radius = 2.5
+    default_radius = 2.0
     fig, ax = plt.subplots()
     title = "24ms, Ref"
     cax = kpl.imshow(ax, img_array, title=title, cbar_label="Photons")
@@ -313,7 +316,7 @@ if __name__ == "__main__":
             x,
             y - default_radius - 2,
             f"{idx}",
-            color="black",
+            # color="black",
             fontsize=8,
             ha="center",
             va="center",
@@ -321,7 +324,7 @@ if __name__ == "__main__":
 
     kpl.show(block=True)
 
-    # print(f"Detected NV coordinates (optimized): {filtered_nv_coords}")
+    print(f"Detected NV coordinates (optimized): {filtered_nv_coords}")
 
     # Calculate and print the average FWHM
     # if len(spot_sizes) > 0:
@@ -337,23 +340,22 @@ if __name__ == "__main__":
     #     print("No spots detected. Unable to calculate conversion factor.")
 
     # Save the results
-    # save_results(
-    #     filtered_nv_coords,
-    #     filtered_counts,
-    #     filename="nv_blob_filtered_200nvs.npz",
-    # )
+    save_results(
+        filtered_nv_coords,
+        filtered_counts,
+        filename="nv_blob_filtered_167nvs.npz",
+    )
 
     # image_ids = [
-    #     1687524695111,
-    #     1687527215288,
-    #     1687535231497,
-    #     1687529329904,
-    #     1687529329904,
-    #     1687521779062,
-    #     1687527177537,
-    #     1687523389670,
-    #     1687529276539,
-    #     1687604605890,
+    #     1693359304252,
+    #     1693375930943,
+    #     1693374155876,
+    #     1693372069315,
+    #     1693363033340,
+    #     1693376854962,
+    #     1693361128042,
+    #     1693376833728,
+    #     1693379996949,
     # ]  # Add more image IDs as needed
     # # Process multiple images and remove duplicates
     # unique_nv_coordinates, spot_sizes = process_multiple_images(
@@ -386,5 +388,5 @@ if __name__ == "__main__":
     # save_results(
     #     filtered_nv_coordinates,
     #     filtered_spot_sizes,
-    #     filename="nv_blob_filtered_290nvs.npz",
+    #     filename="nv_blob_filtered_265nvs.npz",
     # )

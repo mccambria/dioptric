@@ -27,6 +27,7 @@ from majorroutines.widefield import (
     charge_monitor,
     charge_state_conditional_init,
     charge_state_histograms,
+    charge_state_histograms_images,
     correlation_test,
     crosstalk_check,
     image_sample,
@@ -91,16 +92,30 @@ def do_charge_state_histograms(nv_list):
     num_reps = 150
     # num_reps = 100
     # num_runs = 50
-    # num_runs = 15
-    num_runs = 10
+    num_runs = 15
+    # num_runs = 10
     # num_runs = 2
     # for ion_include_inds in [None, [0, 1, 2, 3, 4, 5]]:
     #     charge_state_histograms.main(
     #         nv_list, num_reps, num_runs, ion_include_inds=ion_include_inds
     #     )
     return charge_state_histograms.main(
-        nv_list, num_reps, num_runs, do_plot_histograms=False
+        nv_list, num_reps, num_runs, do_plot_histograms=True
     )
+
+
+def do_charge_state_histograms_images(nv_list):
+    num_reps = 150
+    # num_reps = 100
+    # num_runs = 50
+    num_runs = 10
+    # num_runs = 10
+    # num_runs = 2
+    # for ion_include_inds in [None, [0, 1, 2, 3, 4, 5]]:
+    #     charge_state_histograms.main(
+    #         nv_list, num_reps, num_runs, ion_include_inds=ion_include_inds
+    #     )
+    return charge_state_histograms_images.main(nv_list, num_reps, num_runs)
 
 
 def do_charge_state_conditional_init(nv_list):
@@ -560,7 +575,7 @@ def do_opx_constant_ac():
     opx.constant_ac(
         [],  # Digital channels
         [7],  # Analog channels
-        [0.30],  # Analog voltages
+        [0.39],  # Analog voltages
         [0],  # Analog frequencies
     )
 
@@ -599,14 +614,14 @@ def do_opx_constant_ac():
     #     [105.0, 105.0],  # Analog frequencies
     # )
     # Green + red
-    opx.constant_ac(
-        [4, 1],  # Digital channels
-        [3, 4, 2, 6],  # Analog channels
-        [0.19, 0.19, 0.17, 0.17],  # Analog voltages;
-        # [109.409, 111.033, 73.0, 77.3],  # Analog frequencies
-        # [108.907, 112.362, 74.95, 78.65],  # Analog frequencies
-        [105.181, 105.867, 68.123, 75.932],
-    )
+    # opx.constant_ac(
+    #     [4, 1],  # Digital channels
+    #     [3, 4, 2, 6],  # Analog channels
+    #     [0.19, 0.19, 0.17, 0.17],  # Analog voltages;
+    #     # [109.409, 111.033, 73.0, 77.3],  # Analog frequencies
+    #     # [108.907, 112.362, 74.95, 78.65],  # Analog frequencies
+    #     [105.181, 105.867, 68.123, 75.932],
+    # )
     #   green_coords_list = [
     #     [107.336, 107.16],
     #     [106.36, 103.736],
@@ -801,20 +816,19 @@ if __name__ == "__main__":
     # z_coord = 3.85
     # magnet_angle = 90
     date_str = "2024_03_12"
-    sample_coords = [-0.2, -0.3]
-    z_coord = 0.5
+    sample_coords = [2.0, 0.0]
+    z_coord = 0.05
     # Load NV pixel coordinates
     pixel_coords_list = load_nv_coords(
         # file_path="slmsuite/nv_blob_detection/nv_blob_filtered_162nvs_ref.npz"
-        file_path="slmsuite/nv_blob_detection/nv_blob_filtered_128nvs_updated.npz",
+        # file_path="slmsuite/nv_blob_detection/nv_blob_filtered_128nvs_updated.npz",
+        file_path="slmsuite/nv_blob_detection/nv_blob_filtered_163nvs_reordered.npz",
     ).tolist()
 
-    pixel_coords_list = [
-        [120.137, 121.811],
-        [134.401, 91.245],
-        [77.112, 140.593],
-        [160.916, 170.478],
-    ]
+    # pixel_coords_list = [
+    #     [106.923, 120.549],
+    #     # [125.0, 125.0],
+    # ]
     print(f"Number of NVs: {len(pixel_coords_list)}")
     print(f"Reference NV:{pixel_coords_list[0]}")
 
@@ -858,28 +872,24 @@ if __name__ == "__main__":
     # print(pixel_coords_list[8])
 
     # pixel_coords_list = [
-    #     [125.000, 160.887],
-    #     [75.302, 95.265],
-    #     [199.053, 94.250],
+    #     [120.137, 121.811],
+    #     [133.937, 91.407],
+    #     [76.778, 140.585],
+    #     [160.878, 169.528],
     # ]
-    pixel_coords_list = [
-        [120.137, 121.811],
-        [133.937, 91.407],
-        [76.778, 140.585],
-        [160.878, 169.528],
-    ]
-    green_coords_list = [
-        [107.336, 107.16],
-        [106.36, 103.736],
-        [111.622, 109.491],
-        [102.181, 111.867],
-    ]
-    red_coords_list = [
-        [72.315, 72.37],
-        [71.331, 69.193],
-        [76.013, 74.892],
-        [68.405, 77.161],
-    ]
+    # green_coords_list = [
+    #     [102.34, 108.922],
+    #     # [107.34, 107.132],
+    #     [106.424, 103.858],
+    #     [111.64, 109.517],
+    #     [102.156, 111.903],
+    # ]
+    # red_coords_list = [
+    #     [72.315, 72.395],
+    #     [71.424, 69.681],
+    #     [76.013, 74.892],
+    #     [68.405, 76.289],
+    # ]
     num_nvs = len(pixel_coords_list)
     threshold_list = [15.5] * num_nvs
     # threshold_list = load_thresholds
@@ -914,10 +924,9 @@ if __name__ == "__main__":
     nv_sig = widefield.get_repr_nv_sig(nv_list)
     # print(f"Created NV: {nv_sig.name}, Coords: {nv_sig.coords}")
     # nv_sig.expected_counts = 1650
-    # nv_sig.expected_counts = 2580.0
     # nv_sig.expected_counts = 3359.0
-    # nv_sig.expected_counts = 1750.0
-    nv_sig.expected_counts = 1897.0
+    # nv_sig.expected_counts = 2000.0
+    nv_sig.expected_counts = 1600
     # num_nvs = len(nv_list)
     # print(f"Final NV List: {nv_list}")
     # Ensure data is defined before accessing it
@@ -1036,7 +1045,7 @@ if __name__ == "__main__":
 
         # do_scanning_image_sample(nv_sig)
         # do_scanning_image_sample_zoom(nv_sig)
-        # do_widefield_image_sample(nv_sig, 50)
+        do_widefield_image_sample(nv_sig, 50)
         # do_widefield_image_sample(nv_sig, 100)
 
         # do_image_nv_list(nv_list)
@@ -1061,13 +1070,14 @@ if __name__ == "__main__":
         # widefield.reset_all_drift()
         # coords_key = None  # Pixel coords
         # coords_key = green_laser
-        coords_key = red_laser
-        do_optimize_loop(nv_list, coords_key)
+        # coords_key = red_laser
+        # do_optimize_loop(nv_list, coords_key)
 
         # nv_list = nv_list[::-1]
-        # do_charge_state_histograms(nv_list)
+        do_charge_state_histograms(nv_list)
+        # do_charge_state_histograms_images(nv_list)
         # do_charge_state_conditional_init(nv_list)
-        # do_check_readout_fidelity(nv_list)
+        # do_check_readout_fidelity(nv_list)x
 
         # do_resonance_zoom(nv_list)
         # do_rabi(nv_l ist)

@@ -33,19 +33,19 @@ green_laser_aod = f"{green_laser}_aod"
 red_laser_aod = f"{red_laser}_aod"
 
 calibration_coords_pixel = [
-    [73.767, 91.394],
-    [142.545, 210.183],
-    [234.876, 116.946],
+    [133.937, 91.407],
+    [76.778, 140.585],
+    [160.878, 169.528],
 ]
 calibration_coords_green = [
-    [112.636, 104.089],
-    [104.110, 116.374],
-    [95.136, 105.484],
+    [106.424, 103.858],
+    [111.64, 109.517],
+    [102.156, 111.903],
 ]
 calibration_coords_red = [
-    [76.113, 70.719],
-    [69.706, 80.710],
-    [62.046, 72.216],
+    [71.424, 69.681],
+    [76.013, 74.892],
+    [68.405, 76.289],
 ]
 # Create the dictionaries using the provided lists
 calibration_coords_nv1 = {
@@ -151,7 +151,7 @@ config |= {
     "Camera": {
         "server_name": "camera_NUVU_hnu512gamma",
         "resolution": (512, 512),
-        "spot_radius": 3,  # Radius for integrating NV counts in a camera image
+        "spot_radius": 2.5,  # Radius for integrating NV counts in a camera image
         "bias_clamp": 300,  # (changing this won't actually change the value on the camera currently)
         "em_gain": 5000,
         # "em_gain": 1000,
@@ -802,27 +802,27 @@ opx_config = {
     ### Analog
     "waveforms": {
         # Green AOD
-        "green_aod_cw-opti": {"type": "constant", "sample": 0.09},
+        "green_aod_cw-opti": {"type": "constant", "sample": 0.11},
         # "green_aod_cw-opti": {"type": "constant", "sample": 0.07},
         # "green_aod_cw-opti": {"type": "constant", "sample": 0.05},
         # "green_aod_cw-opti": {"type": "constant", "sample": 0.03},
         # "green_aod_cw-charge_pol": {"type": "constant", "sample": 0.13},
         # "green_aod_cw-charge_pol": {"type": "constant", "sample": 0.06},  # Negative
-        "green_aod_cw-charge_pol": {"type": "constant", "sample": 0.11},
+        "green_aod_cw-charge_pol": {"type": "constant", "sample": 0.13},
         "green_aod_cw-spin_pol": {"type": "constant", "sample": 0.05},
         "green_aod_cw-shelving": {"type": "constant", "sample": 0.05},
         "green_aod_cw-scc": {"type": "constant", "sample": 0.15},
         # Red AOD
         # "red_aod_cw-opti": {"type": "constant", "sample": 0.10},
-        "red_aod_cw-opti": {"type": "constant", "sample": 0.12},
+        "red_aod_cw-opti": {"type": "constant", "sample": 0.14},
         # "red_aod_cw-ion": {"type": "constant", "sample": 0.09},
-        "red_aod_cw-ion": {"type": "constant", "sample": 0.12},
+        "red_aod_cw-ion": {"type": "constant", "sample": 0.14},
         # "red_aod_cw-scc": {"type": "constant", "sample": 0.135},
-        "red_aod_cw-scc": {"type": "constant", "sample": 0.12},
+        "red_aod_cw-scc": {"type": "constant", "sample": 0.14},
         # Yellow AOM
         "yellow_imaging": {"type": "constant", "sample": 0.45},  # 0.35
         # "yellow_imaging": {"type": "constant", "sample": 0.50},  # 0.35
-        "yellow_charge_readout": {"type": "constant", "sample": 0.27},  # 50e6
+        "yellow_charge_readout": {"type": "constant", "sample": 0.39},  # 50e6
         # "yellow_charge_readout": {"type": "constant", "sample": 0.25},  # 100e6
         "yellow_spin_pol": {"type": "constant", "sample": 0.39},
         "yellow_shelving": {"type": "constant", "sample": 0.33},

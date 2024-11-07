@@ -101,7 +101,8 @@ def process_and_plot(raw_data, do_plot_histograms=False):
         sig_counts_list = sig_counts_lists[ind]
         ref_counts_list = ref_counts_lists[ind]
 
-        all_counts_list = np.append(sig_counts_list, ref_counts_list)
+        # all_counts_list = np.append(sig_counts_list, ref_counts_list)
+        all_counts_list = ref_counts_list  # only use ref counts
         threshold, readout_fidelity = determine_charge_state_threshold(
             all_counts_list, nvn_ratio=0.5, no_print=True, ret_fidelity=True
         )
@@ -134,7 +135,8 @@ def process_and_plot(raw_data, do_plot_histograms=False):
             snr_str = f"NV{ind}\nReadout fidelity: {round(readout_fidelity,3)}\nCharge prep. fidelity {round(prep_fidelity,3)}"  # Display NV index as well
             kpl.anchored_text(ax, snr_str, "center right", size=kpl.Size.SMALL)
 
-            kpl.show(block=True)
+            # kpl.show(block=True)
+            kpl.show()
 
             if fig is not None:
                 hist_figs.append(fig)
@@ -269,13 +271,13 @@ def main(
             file_path = dm.get_file_path(__file__, timestamp, f"{repr_nv_name}-{title}")
             dm.save_figure(fig, file_path)
         if hist_figs is not None:
-            # num_nvs = len(nv_list)
-            # for nv_ind in range(num_nvs):
-            #     fig = hist_figs[nv_ind]
-            #     nv_sig = nv_list[nv_ind]
-            #     nv_name = nv_sig.name
-            #     file_path = dm.get_file_path(__file__, timestamp, nv_name)
-            #     dm.save_figure(fig, file_path)
+            num_nvs = len(nv_list)
+            for nv_ind in range(num_nvs):
+                fig = hist_figs[nv_ind]
+                nv_sig = nv_list[nv_ind]
+                nv_name = nv_sig.name
+                file_path = dm.get_file_path(__file__, timestamp, nv_name)
+                dm.save_figure(fig, file_path)
         sig_img_array, ref_img_array, diff_img_array = imgs
         keys_to_compress = ["sig_img_array", "ref_img_array", "diff_img_array"]
 

@@ -4,6 +4,7 @@ import sys
 import warnings
 from datetime import datetime
 
+# os.environ["QT_QPA_PLATFORM"] = "offscreen"
 import cv2
 import imageio
 import matplotlib as mpl
@@ -67,8 +68,18 @@ def cam_plot():
     img = cam.get_image()
     # Plot the result
     plt.figure(figsize=(6, 5))
-    plt.imshow(img)
+    plt.imshow(img, cmap="gray")  # Adjust 'cmap' as needed for color maps
     plt.show()
+
+    # Save the image
+    save_path = "captured_image.png"  # You can change the filename and path as needed
+    plt.imsave(save_path, img, cmap="gray")
+    print(f"Image saved at {save_path}")
+
+    # Save raw data
+    raw_data_path = "captured_image_raw.npy"  # Change filename as needed
+    np.save(raw_data_path, img)
+    print(f"Raw data saved at {raw_data_path}")
 
 
 def blaze(vector_deg=(0.2, 0.2)):
@@ -278,8 +289,11 @@ def nuvu2thorcam_calibration(coords):
 
 
 def load_nv_coords(
-    file_path="slmsuite/nv_blob_detection/nv_blob_filtered_128nvs_updated.npz",
-    # file_path="slmsuite/nv_blob_detection/nv_blob_filtered_200nvs_updated.npz",
+    # file_path="slmsuite/nv_blob_detection/nv_blob_filtered_128nvs_updated.npz",
+    # file_path="slmsuite/nv_blob_detection/nv_blob_filtered_177nvs_reordered.npz",
+    # file_path="slmsuite/nv_blob_detection/nv_blob_filtered_155nvs_reordered.npz",
+    # file_path="slmsuite/nv_blob_detection/nv_blob_filtered_144nvs_reordered.npz",
+    file_path="slmsuite/nv_blob_detection/nv_blob_filtered_164nvs_reordered.npz",
     # file_path="slmsuite/nv_blob_detection/nv_coords_integras_counts_162nvs.npz",
     # file_path="slmsuite/nv_blob_detection/nv_coords_updated_spot_weights.npz",
     # file_path="slmsuite/nv_blob_detection/nv_coords_updated_spot_weights_manual_update.npz",
@@ -288,21 +302,21 @@ def load_nv_coords(
     data = np.load(file_path, allow_pickle=True)
     nv_coordinates = data["nv_coordinates"]
     spot_weights = data["spot_weights"]
-    print(spot_weights)
+    # print(spot_weights)
     # spot_weights = data["integrated_counts"]
     return nv_coordinates, spot_weights
 
 
 # Set the threshold for x and y coordinates, assuming the SLM has a 2048x2048 pixel grid
 nuvu_pixel_coords, spot_weights = load_nv_coords()
-nuvu_pixel_coords = np.array(
-    [
-        [120.137, 121.811],
-        [134.422, 90.781],
-        [76.93, 140.496],
-        [161.085, 169.104],
-    ]
-)
+# nuvu_pixel_coords = np.array(
+#     [
+#         [120.137, 121.811],
+#         [134.422, 90.781],
+#         [76.93, 140.496],
+#         [161.085, 169.104],
+#     ]
+# )
 print(f"Total NV coordinates: {len(nuvu_pixel_coords)}")
 thorcam_coords = nuvu2thorcam_calibration(nuvu_pixel_coords).T
 
@@ -312,7 +326,7 @@ def compute_nvs_phase():
         shape=(4096, 2048),
         spot_vectors=thorcam_coords,
         basis="ij",
-        # spot_amp=spot_weights,
+        spot_amp=spot_weights,
         cameraslm=fs,
     )
     # Precondition computationally
@@ -342,7 +356,8 @@ def write_nvs_phase():
     #     r"C:\Users\matth\GitHub\dioptric\slmsuite\Initial_phase\initial_phase.npy"
     # )
     # phase = np.load("slmsuite\computed_phase\slm_phase_77nvs_20240926_182348.npy")
-    phase = np.load("slmsuite\computed_phase\slm_phase_77nvs_20241001_181243.npy")
+    # phase = np.load("slmsuite\computed_phase\slm_phase_155nvs_20241106_095934.npy")
+    phase = np.load("slmsuite\computed_phase\slm_phase_155nvs_20241106_151648.npy")
     slm.write(phase, settle=True)
     cam_plot()
 
@@ -366,7 +381,7 @@ try:
     load_fourier_calibration()
     # test_wavefront_calibration()
     # wavefront_calibration()
-    # load_wavefront_calibration()
+    # load_wavefront_calibration()s
     compute_nvs_phase()
     # write_nvs_phase()
     # calibration_triangle()
