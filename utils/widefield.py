@@ -83,9 +83,9 @@ def crop_img_arrays(img_arrays, offsets=[0, 0], buffer=20):
                 for rep_ind in range(shape[2]):
                     img_array = img_arrays[exp_ind, run_ind, step_ind, rep_ind]
                     cropped_img_array = crop_img_array(img_array, offset, buffer)
-                    cropped_img_arrays[
-                        exp_ind, run_ind, step_ind, rep_ind
-                    ] = cropped_img_array
+                    cropped_img_arrays[exp_ind, run_ind, step_ind, rep_ind] = (
+                        cropped_img_array
+                    )
     return cropped_img_arrays
 
 
@@ -347,7 +347,7 @@ def process_counts(nv_list, sig_counts, ref_counts=None, threshold=True):
     _validate_counts_structure(ref_counts)
     if threshold:
         sig_states_array, ref_states_array = threshold_counts(
-            nv_list, sig_counts, ref_counts, dynamic_thresh=False
+            nv_list, sig_counts, ref_counts, dynamic_thresh=True
         )
         return average_counts(sig_states_array, ref_states_array)
     else:
@@ -1080,7 +1080,8 @@ def plot_raw_data(ax, nv_list, x, ys, yerrs=None, subset_inds=None):
         nv_sig = nv_list[nv_ind]
         # nv_num = get_nv_num(nv_sig)
         nv_num = nv_ind
-        color = kpl.data_color_cycler[nv_num]
+        num_colors = len(kpl.data_color_cycler)
+        color = kpl.data_color_cycler[nv_num % num_colors]
         kpl.plot_points(
             ax,
             x,
@@ -1156,7 +1157,8 @@ def plot_fit(
         nv_sig = nv_list[nv_ind]
         nv_num = nv_ind
         # nv_num = get_nv_num(nv_sig)
-        color = kpl.data_color_cycler[nv_num]
+        num_colors = len(kpl.data_color_cycler)
+        color = kpl.data_color_cycler[nv_num % num_colors]
 
         ax = axes_pack[nv_ind]
 

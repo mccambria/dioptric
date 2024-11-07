@@ -306,26 +306,26 @@ if __name__ == "__main__":
     kpl.init_kplotlib()
 
     # # Tweezered NVs
-    data = dm.get_raw_data(file_id=1693166192526, load_npz=True)
-    img_array = data["ref_img_array"]
-    fig, ax = plt.subplots()
-    kpl.imshow(ax, img_array, no_cbar=True)
-    ax.axis("off")
-    scale = 4 * (2.3 / 0.29714285714)
-    kpl.scale_bar(ax, scale, "4 µm", kpl.Loc.LOWER_RIGHT)
-    kpl.show(block=True)
-    sys.exit()
+    # data = dm.get_raw_data(file_id=1693166192526, load_npz=True)
+    # img_array = data["ref_img_array"]
+    # fig, ax = plt.subplots()
+    # kpl.imshow(ax, img_array, cbar_label="Photons")
+    # ax.axis("off")
+    # scale = 4 * (2.3 / 0.29714285714)
+    # kpl.scale_bar(ax, scale, "4 µm", kpl.Loc.LOWER_RIGHT)
+    # kpl.show(block=True)
+    # sys.exit()
 
     # # Tweezer pattern
-    data = np.load("/home/mccambria/Downloads/captured_image_raw.npy")
-    data = np.rot90(
-        data,
-    )
-    fig, ax = plt.subplots()
-    kpl.imshow(ax, data, no_cbar=True)
-    ax.axis("off")
-    kpl.show(block=True)
-    sys.exit()
+    # data = np.load("/home/mccambria/Downloads/captured_image_raw.npy")
+    # data = np.rot90(
+    #     data,
+    # )
+    # fig, ax = plt.subplots()
+    # kpl.imshow(ax, data, no_cbar=True)
+    # ax.axis("off")
+    # kpl.show(block=True)
+    # sys.exit()
 
     # Composite green
     file_names = [
@@ -341,11 +341,12 @@ if __name__ == "__main__":
     img_arrays = []
     for file_name in file_names:
         data = dm.get_raw_data(file_name, load_npz=True)
-        img_arrays.append(data["img_array"])
+        img_array = np.array(data["img_array"])
+        img_array -= 300
+        img_array = img_array / np.median(img_array)
+        img_arrays.append(img_array)
     img_arrays = np.array(img_arrays)
     img_array = np.max(img_arrays, axis=0)
-    bg = np.median(img_arrays, axis=0)
-    img_array -= bg
     # img_array = widefield.adus_to_photons(img_array, em_gain=10)
     fig, ax = plt.subplots()
     kpl.imshow(ax, img_array)
