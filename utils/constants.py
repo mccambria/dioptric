@@ -81,8 +81,10 @@ class CoordsKey(StrEnum):
 
 class Axes(Enum):
     NONE = ()
-    XY = (0, 1)
+    X = (0,)
+    Y = (1,)
     Z = (2,)
+    XY = (0, 1)
     XYZ = (0, 1, 2)
 
 

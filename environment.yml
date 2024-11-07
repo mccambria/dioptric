@@ -20,7 +20,7 @@ dependencies:
   - numba
   - pywin32
   - scikit-image
-  - opencv-python
+  - opencv
   - pip:
       - colorutils
       - nidaqmx

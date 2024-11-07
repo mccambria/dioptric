@@ -104,7 +104,7 @@ def process_and_plot(raw_data, do_plot_histograms=False):
         # all_counts_list = np.append(sig_counts_list, ref_counts_list)
         all_counts_list = ref_counts_list  # only use ref counts
         threshold, readout_fidelity = determine_charge_state_threshold(
-            all_counts_list, nvn_ratio=0.5, no_print=True, ret_fidelity=True
+            ref_counts_list, nvn_ratio=0.5, no_print=True, ret_fidelity=True
         )
         threshold_list.append(threshold)
         readout_fidelity_list.append(readout_fidelity)
@@ -151,21 +151,35 @@ def process_and_plot(raw_data, do_plot_histograms=False):
     readout_fidelity_list = np.array(readout_fidelity_list)
     prep_fidelity_list = np.array(prep_fidelity_list)
 
+    # Scatter readout vs prep fidelity
     fig, ax = plt.subplots()
     kpl.plot_points(ax, readout_fidelity_list, prep_fidelity_list)
     ax.set_xlabel("Readout fidelity")
     ax.set_ylabel("NV- preparation fidelity")
 
+    # Plot prep fidelity vs distance from center
+    coords_key = "laser_INTE_520_aod"
+    distances = []
+    for nv in nv_list:
+        coords = pos.get_nv_coords(nv, coords_key, drift_adjust=False)
+        dist = np.sqrt((110 - coords[0]) ** 2 + (110 - coords[1]) ** 2)
+        distances.append(dist)
+    fig, ax = plt.subplots()
+    kpl.plot_points(ax, distances, prep_fidelity_list)
+    ax.set_xlabel("Distance from center frequencies (MHz)")
+    ax.set_ylabel("NV- preparation fidelity")
+
+    # Report averages
     avg_readout_fidelity = np.nanmean(readout_fidelity_list)
     std_readout_fidelity = np.nanstd(readout_fidelity_list)
     avg_prep_fidelity = np.nanmean(prep_fidelity_list)
     std_prep_fidelity = np.nanstd(prep_fidelity_list)
-    print(
-        f"Average readout fidelity: {tb.round_for_print(avg_readout_fidelity, std_readout_fidelity)}"
+    str_readout_fidelity = tb.round_for_print(
+        avg_readout_fidelity, std_readout_fidelity
     )
-    print(
-        f"Average NV- preparation fidelity: {tb.round_for_print(avg_prep_fidelity, std_prep_fidelity)})"
-    )
+    str_prep_fidelity = tb.round_for_print(avg_prep_fidelity, std_prep_fidelity)
+    print(f"Average readout fidelity: {str_readout_fidelity}")
+    print(f"Average NV- preparation fidelity: {str_prep_fidelity})")
 
     ### Image plotting
 
@@ -315,5 +329,6 @@ def main(
 if __name__ == "__main__":
     kpl.init_kplotlib()
     data = dm.get_raw_data(file_id=1688554695897, load_npz=False)
+    # data = dm.get_raw_data(file_id=1691569540529, load_npz=False)
     process_and_plot(data, do_plot_histograms=False)
     kpl.show(block=True)

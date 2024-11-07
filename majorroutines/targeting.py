@@ -234,12 +234,10 @@ def _read_counts_camera_sequence(
         num_reps = 1
     elif virtual_laser_key == VirtualLaserKey.ION:
         # Get the coordinates for the charge polarization laser
-        pol_laser_name = tb.get_physical_laser_name(VirtualLaserKey.CHARGE_POL)
         pol_laser_positioner = pos.get_laser_positioner(VirtualLaserKey.CHARGE_POL)
         pol_coords = pos.get_nv_coords(nv_sig, pol_laser_positioner)
 
         # Get the coordinates for the ionization laser
-        ion_laser_name = tb.get_physical_laser_name(VirtualLaserKey.ION)
         ion_laser_positioner = pos.get_laser_positioner(VirtualLaserKey.ION)
         ion_coords = pos.get_nv_coords(nv_sig, ion_laser_positioner)
 
@@ -721,7 +719,9 @@ def optimize_pixel(nv_sig, img_array=None):
     return opti_coords, final_counts
 
 
-def optimize(nv_sig: NVSig, coords_key: str = CoordsKey.SAMPLE):
+def optimize(
+    nv_sig: NVSig, coords_key: str = CoordsKey.SAMPLE, axes: Axes | None = None
+):
     """Optimize coords for the passed NV and coords_key, leaving other positioners fixed.
     Returns actual optimal coordinates without drift compensation. Use this when first
     characterizing an NV
@@ -749,27 +749,22 @@ def optimize(nv_sig: NVSig, coords_key: str = CoordsKey.SAMPLE):
 
     start_time = time.time()
 
-    axes = [2] if coords_key == CoordsKey.Z else [0, 1]
-    num_axes = len(axes)
+    if axes is None:
+        axes = Axes.Z if coords_key == CoordsKey.Z else Axes.XY
+    axes = axes.value
 
     fig = _create_figure(coords_key)
-    if num_axes > 1:
-        scan_vals = []
-        scan_counts = []
-        opti_coords = []
+    scan_vals = [None] * 3
+    scan_counts = [None] * 3
+    opti_coords = [None] * 3
 
     ### Perform the optimizations
 
     for axis_ind in axes:
         ret_vals = _find_center_coords(nv_sig, coords_key, axis_ind, fig)
-        if num_axes == 1:
-            opti_coords = ret_vals[0]
-            scan_vals = ret_vals[1]
-            scan_counts = ret_vals[2]
-        else:
-            opti_coords.append(ret_vals[0])
-            scan_vals.append(ret_vals[1])
-            scan_counts.append(ret_vals[2])
+        opti_coords[axis_ind] = ret_vals[0]
+        scan_vals[axis_ind] = ret_vals[1]
+        scan_counts[axis_ind] = ret_vals[2]
 
     ### Check the counts at the optimized coordinates and report the results
 

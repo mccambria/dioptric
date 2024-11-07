@@ -10,6 +10,7 @@ Created on June 22nd, 2022
 
 # region Imports and constants
 
+import itertools
 import re
 import string
 import sys
@@ -26,6 +27,7 @@ from strenum import StrEnum
 import utils.common as common
 
 alphabet = tuple(string.ascii_lowercase)
+double_alphabet = tuple("".join(el) for el in itertools.product(alphabet, repeat=2))
 
 
 # matplotlib semantic locations for legends and text boxes
@@ -223,7 +225,7 @@ def calc_mosaic_layout(num_panels, num_rows=None):
     num_axes = num_cols * num_rows
 
     shape = (num_rows, num_cols)
-    vals = np.reshape(alphabet[:num_axes], shape)
+    vals = np.reshape(double_alphabet[:num_axes], shape)
     if num_panels != num_axes:
         vals[0, num_panels - num_axes :] = "."
 
