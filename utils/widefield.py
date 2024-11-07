@@ -320,7 +320,11 @@ def threshold_counts(nv_list, sig_counts, ref_counts=None, dynamic_thresh=False)
                 sig_counts[nv_ind].flatten(), ref_counts[nv_ind].flatten()
             )
             # threshold = determine_threshold(combined_counts)
-            threshold = determine_charge_state_threshold(combined_counts, no_print=True)
+            if nv_ind == 21:  # MCC
+                test = 1
+            threshold = determine_charge_state_threshold(
+                combined_counts, nvn_ratio=0.5, no_print=True
+            )
             thresholds.append(threshold)
     else:
         thresholds = [nv.threshold for nv in nv_list]

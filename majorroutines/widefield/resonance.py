@@ -87,8 +87,12 @@ def create_fit_figure(
     # contrast = norms_ms1_newaxis - norms_ms0_newaxis
     # norm_counts = (counts - norms_ms0_newaxis) / contrast
     # norm_counts_ste = counts_ste / contrast
+    #
     norm_counts = counts - norms_ms0_newaxis
     norm_counts_ste = counts_ste
+    #
+    # norm_counts = (counts / norms_ms0_newaxis) - 1
+    # norm_counts_ste = counts_ste / norms_ms0_newaxis
 
     fit_fns = []
     pcovs = []
@@ -204,7 +208,7 @@ def create_fit_figure(
     kpl.set_shared_ax_xlabel(ax, "Frequency (GHz)")
     # kpl.set_shared_ax_ylabel(ax, "Norm. NV$^{-}$ population")
     # kpl.set_shared_ax_ylabel(ax, "Norm. NV$^{-}$ pop.")
-    kpl.set_shared_ax_ylabel(ax, "Change in NV$^{-}$ pop.")
+    kpl.set_shared_ax_ylabel(ax, "Relative change in fluorescence")
     # ax.set_yticks([0, 1])
 
     # ax = axes_pack[layout[-1, 0]]
@@ -340,7 +344,10 @@ def main(
 if __name__ == "__main__":
     kpl.init_kplotlib()
 
-    data = dm.get_raw_data(file_id=1688862951667, load_npz=False, use_cache=True)
+    # file_id = 1688862951667  # > 100 but mostly bad
+    file_id = 1663484946120  # 77 good traces
+
+    data = dm.get_raw_data(file_id=file_id, load_npz=False, use_cache=True)
 
     nv_list = data["nv_list"]
     num_nvs = len(nv_list)
@@ -356,10 +363,10 @@ if __name__ == "__main__":
     ref_counts = reformatted_counts[1]
 
     avg_counts, avg_counts_ste, norms = widefield.process_counts(
-        nv_list, sig_counts, ref_counts, threshold=False
+        nv_list, sig_counts, ref_counts, threshold=True
     )
 
-    raw_fig = create_raw_data_figure(nv_list, freqs, avg_counts, avg_counts_ste)
+    # raw_fig = create_raw_data_figure(nv_list, freqs, avg_counts, avg_counts_ste)
     fit_fig = create_fit_figure(nv_list, freqs, avg_counts, avg_counts_ste, norms)
 
     ###
