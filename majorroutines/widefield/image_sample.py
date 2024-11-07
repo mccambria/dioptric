@@ -13,7 +13,6 @@ from multiprocessing import Pool
 
 import matplotlib.pyplot as plt
 import numpy as np
-from pipython import GCSDevice
 
 import majorroutines.targeting as targeting
 from majorroutines.targeting import optimize_pixel
@@ -305,6 +304,31 @@ def main(
 
 if __name__ == "__main__":
     kpl.init_kplotlib()
+
+    file_names = [
+        "2024_11_05-20_07_31-johnson-nv0_2024_03_12",
+        "2024_11_05-20_07_54-johnson-nv0_2024_03_12",
+        "2024_11_05-20_09_07-johnson-nv0_2024_03_12",
+        "2024_11_05-20_09_39-johnson-nv0_2024_03_12",
+        "2024_11_05-20_10_06-johnson-nv0_2024_03_12",
+        "2024_11_05-20_10_41-johnson-nv0_2024_03_12",
+        "2024_11_05-20_11_06-johnson-nv0_2024_03_12",
+        "2024_11_05-20_06_45-johnson-nv0_2024_03_12",
+    ]
+    img_arrays = []
+    for file_name in file_names:
+        data = dm.get_raw_data(file_name, load_npz=True)
+        img_arrays.append(data["img_array"])
+    img_arrays = np.array(img_arrays)
+    img_array = np.max(img_arrays, axis=0)
+    img_array = widefield.adus_to_photons(img_array, em_gain=10)
+    fig, ax = plt.subplots()
+    kpl.imshow(ax, img_array)
+    ax.axis("off")
+    scale = 10 * (4.5 / 0.29714285714)
+    kpl.scale_bar(ax, scale, "10 µm", kpl.Loc.LOWER_RIGHT)
+    kpl.show(block=True)
+    sys.exit()
 
     ######
 
