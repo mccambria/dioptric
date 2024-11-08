@@ -20,7 +20,7 @@ from scipy.interpolate import Rbf
 from scipy.optimize import curve_fit, least_squares
 
 from majorroutines.pulsed_resonance import fit_resonance, norm_voigt, voigt, voigt_split
-from majorroutines.widefield import base_routine, targeting
+from majorroutines.widefield import base_routine
 from utils import common
 from utils import data_manager as dm
 from utils import kplotlib as kpl
@@ -558,318 +558,318 @@ def plot_nv_resonance_data_sns_with_fit(
     plt.close(fig)
 
 
-def plot_nv_resonance_fits_and_residuals(
-    nv_list,
-    freqs,
-    avg_counts,
-    avg_counts_ste,
-    file_id,
-    num_cols=3,
-    threshold_method=None,
-):
-    """
-    Plot NV resonance data with fitted Voigt profiles (including background), with residuals and contrast values.
+# def plot_nv_resonance_fits_and_residuals(
+#     nv_list,
+#     freqs,
+#     avg_counts,
+#     avg_counts_ste,
+#     file_id,
+#     num_cols=3,
+#     threshold_method=None,
+# ):
+#     """
+#     Plot NV resonance data with fitted Voigt profiles (including background), with residuals and contrast values.
 
-    Args:
-        nv_list: List of NV signatures.
-        freqs: Frequency data.
-        avg_counts: Averaged counts for NVs.
-        avg_counts_ste: Standard error of averaged counts.
-        file_id: ID for saving the file.
-        num_cols: Number of columns for the grid layout.
-        threshold_method: Optional method for thresholding.
-    """
-    # Use Seaborn style
-    sns.set(style="whitegrid", palette="muted")
+#     Args:
+#         nv_list: List of NV signatures.
+#         freqs: Frequency data.
+#         avg_counts: Averaged counts for NVs.
+#         avg_counts_ste: Standard error of averaged counts.
+#         file_id: ID for saving the file.
+#         num_cols: Number of columns for the grid layout.
+#         threshold_method: Optional method for thresholding.
+#     """
+#     # Use Seaborn style
+#     sns.set(style="whitegrid", palette="muted")
 
-    # Number of NVs and rows/columns
-    num_nvs = len(nv_list)
-    num_rows = int(np.ceil(num_nvs / num_cols))  # Calculate the number of rows needed
+#     # Number of NVs and rows/columns
+#     num_nvs = len(nv_list)
+#     num_rows = int(np.ceil(num_nvs / num_cols))  # Calculate the number of rows needed
 
-    # Set up colors
-    colors = sns.color_palette("deep", num_nvs)
+#     # Set up colors
+#     colors = sns.color_palette("deep", num_nvs)
 
-    fit_fns = []
-    popts = []
-    pcovs = []
-    residuals_list = []
-    chi_squared_list = []
-    center_freqs = []
-    center_freq_errs = []
+#     fit_fns = []
+#     popts = []
+#     pcovs = []
+#     residuals_list = []
+#     chi_squared_list = []
+#     center_freqs = []
+#     center_freq_errs = []
 
-    ### 1. Fitting and Contrast Figure ###
-    fig_fitting, axes_fitting = plt.subplots(
-        num_rows,
-        num_cols,
-        figsize=(num_cols * 3, num_rows * 1),
-        sharex=True,
-        sharey=False,
-    )
-    axes_fitting = axes_fitting.flatten()  # Flatten the axes array for easy indexing
+#     ### 1. Fitting and Contrast Figure ###
+#     fig_fitting, axes_fitting = plt.subplots(
+#         num_rows,
+#         num_cols,
+#         figsize=(num_cols * 3, num_rows * 1),
+#         sharex=True,
+#         sharey=False,
+#     )
+#     axes_fitting = axes_fitting.flatten()  # Flatten the axes array for easy indexing
 
-    # # Define the Voigt function with a background and shared width for both peaks
-    # def voigt_with_background(freq, amp1, amp2, center1, center2, width, bg_offset, bg_slope):
-    #     """Voigt profile for two peaks with a linear background."""
-    #     return (amp1 * norm_voigt(freq, width, width, center1) +
-    #             amp2 * norm_voigt(freq, width, width, center2) +
-    #             bg_offset + bg_slope * freq)
+#     # # Define the Voigt function with a background and shared width for both peaks
+#     # def voigt_with_background(freq, amp1, amp2, center1, center2, width, bg_offset, bg_slope):
+#     #     """Voigt profile for two peaks with a linear background."""
+#     #     return (amp1 * norm_voigt(freq, width, width, center1) +
+#     #             amp2 * norm_voigt(freq, width, width, center2) +
+#     #             bg_offset + bg_slope * freq)
 
-    def voigt_with_background(
-        freq, amp1, amp2, center1, center2, width, bg_offset, bg_slope
-    ):
-        """Voigt profile for two peaks with a linear background."""
-        freq = np.array(
-            freq
-        )  # Ensure freq is a NumPy array for element-wise operations
-        return (
-            amp1 * norm_voigt(freq, width, width, center1)
-            + amp2 * norm_voigt(freq, width, width, center2)
-            + bg_offset
-            + bg_slope * freq
-        )
+#     def voigt_with_background(
+#         freq, amp1, amp2, center1, center2, width, bg_offset, bg_slope
+#     ):
+#         """Voigt profile for two peaks with a linear background."""
+#         freq = np.array(
+#             freq
+#         )  # Ensure freq is a NumPy array for element-wise operations
+#         return (
+#             amp1 * norm_voigt(freq, width, width, center1)
+#             + amp2 * norm_voigt(freq, width, width, center2)
+#             + bg_offset
+#             + bg_slope * freq
+#         )
 
-    # Perform the fitting and plot the contrast
-    for nv_idx, ax in enumerate(axes_fitting):
-        if nv_idx < num_nvs:
-            # Plot raw data
-            sns.lineplot(
-                x=freqs,
-                y=avg_counts[nv_idx],
-                ax=ax,
-                color=colors[nv_idx % len(colors)],
-                lw=2,
-                marker="o",
-                markersize=5,
-                label=f"NV {nv_idx+1}",
-            )
-            # Add error bars manually using matplotlib
-            ax.errorbar(
-                freqs,
-                avg_counts[nv_idx],
-                yerr=avg_counts_ste[nv_idx],
-                fmt="none",
-                ecolor="gray",
-                alpha=0.6,
-            )
+#     # Perform the fitting and plot the contrast
+#     for nv_idx, ax in enumerate(axes_fitting):
+#         if nv_idx < num_nvs:
+#             # Plot raw data
+#             sns.lineplot(
+#                 x=freqs,
+#                 y=avg_counts[nv_idx],
+#                 ax=ax,
+#                 color=colors[nv_idx % len(colors)],
+#                 lw=2,
+#                 marker="o",
+#                 markersize=5,
+#                 label=f"NV {nv_idx+1}",
+#             )
+#             # Add error bars manually using matplotlib
+#             ax.errorbar(
+#                 freqs,
+#                 avg_counts[nv_idx],
+#                 yerr=avg_counts_ste[nv_idx],
+#                 fmt="none",
+#                 ecolor="gray",
+#                 alpha=0.6,
+#             )
 
-            # Get NV data and guess initial parameters for fitting
-            nv_counts = avg_counts[nv_idx]
-            nv_counts_ste = avg_counts_ste[nv_idx]
+#             # Get NV data and guess initial parameters for fitting
+#             nv_counts = avg_counts[nv_idx]
+#             nv_counts_ste = avg_counts_ste[nv_idx]
 
-            # # Initial guess: amplitudes, centers, shared width, and background (linear)
-            # low_freq_guess = freqs[np.argmax(avg_counts[nv_idx][:len(freqs) // 2])]
-            # high_freq_guess = freqs[np.argmax(avg_counts[nv_idx][len(freqs) // 2:]) + len(freqs) // 2]
-            # guess_params = [np.max(nv_counts), np.max(nv_counts), low_freq_guess, high_freq_guess, 5, np.min(nv_counts), 0]
+#             # # Initial guess: amplitudes, centers, shared width, and background (linear)
+#             # low_freq_guess = freqs[np.argmax(avg_counts[nv_idx][:len(freqs) // 2])]
+#             # high_freq_guess = freqs[np.argmax(avg_counts[nv_idx][len(freqs) // 2:]) + len(freqs) // 2]
+#             # guess_params = [np.max(nv_counts), np.max(nv_counts), low_freq_guess, high_freq_guess, 5, np.min(nv_counts), 0]
 
-            # # Bounds for fitting: amplitudes and widths are positive, centers within range
-            # bounds = (
-            #     [0, 0, min(freqs), min(freqs), 0, -np.inf, -np.inf],  # Lower bounds
-            #     [np.inf, np.inf, max(freqs), max(freqs), np.inf, np.inf, np.inf]  # Upper bounds
-            # )
+#             # # Bounds for fitting: amplitudes and widths are positive, centers within range
+#             # bounds = (
+#             #     [0, 0, min(freqs), min(freqs), 0, -np.inf, -np.inf],  # Lower bounds
+#             #     [np.inf, np.inf, max(freqs), max(freqs), np.inf, np.inf, np.inf]  # Upper bounds
+#             # )
 
-            # # Fit the Voigt profile with background
-            # popt, pcov = curve_fit(
-            #     voigt_with_background, freqs, nv_counts, p0=guess_params, sigma=nv_counts_ste, bounds=bounds
-            # )
+#             # # Fit the Voigt profile with background
+#             # popt, pcov = curve_fit(
+#             #     voigt_with_background, freqs, nv_counts, p0=guess_params, sigma=nv_counts_ste, bounds=bounds
+#             # )
 
-            # Improved initial guess and relaxed bounds
-            low_freq_guess = freqs[np.argmax(avg_counts[nv_idx][: len(freqs) // 2])]
-            high_freq_guess = freqs[
-                np.argmax(avg_counts[nv_idx][len(freqs) // 2 :]) + len(freqs) // 2
-            ]
-            max_amp = np.max(nv_counts)
+#             # Improved initial guess and relaxed bounds
+#             low_freq_guess = freqs[np.argmax(avg_counts[nv_idx][: len(freqs) // 2])]
+#             high_freq_guess = freqs[
+#                 np.argmax(avg_counts[nv_idx][len(freqs) // 2 :]) + len(freqs) // 2
+#             ]
+#             max_amp = np.max(nv_counts)
 
-            guess_params = [
-                max_amp,
-                max_amp,
-                low_freq_guess,
-                high_freq_guess,
-                5,
-                np.min(nv_counts),
-                0,
-            ]
-            bounds = (
-                [0, 0, min(freqs), min(freqs), 0, -np.inf, -np.inf],  # Lower bounds
-                [
-                    np.inf,
-                    np.inf,
-                    max(freqs),
-                    max(freqs),
-                    np.inf,
-                    np.inf,
-                    np.inf,
-                ],  # Upper bounds
-            )
+#             guess_params = [
+#                 max_amp,
+#                 max_amp,
+#                 low_freq_guess,
+#                 high_freq_guess,
+#                 5,
+#                 np.min(nv_counts),
+#                 0,
+#             ]
+#             bounds = (
+#                 [0, 0, min(freqs), min(freqs), 0, -np.inf, -np.inf],  # Lower bounds
+#                 [
+#                     np.inf,
+#                     np.inf,
+#                     max(freqs),
+#                     max(freqs),
+#                     np.inf,
+#                     np.inf,
+#                     np.inf,
+#                 ],  # Upper bounds
+#             )
 
-            # Increased maxfev for more iterations
-            popt, pcov = curve_fit(
-                voigt_with_background,
-                freqs,
-                nv_counts,
-                p0=guess_params,
-                sigma=nv_counts_ste,
-                bounds=bounds,
-                maxfev=10000,
-            )
+#             # Increased maxfev for more iterations
+#             popt, pcov = curve_fit(
+#                 voigt_with_background,
+#                 freqs,
+#                 nv_counts,
+#                 p0=guess_params,
+#                 sigma=nv_counts_ste,
+#                 bounds=bounds,
+#                 maxfev=10000,
+#             )
 
-            # Track parameters for plotting and residuals
-            fit_fns.append(voigt_with_background)
-            popts.append(popt)
-            pcovs.append(pcov)
+#             # Track parameters for plotting and residuals
+#             fit_fns.append(voigt_with_background)
+#             popts.append(popt)
+#             pcovs.append(pcov)
 
-            # Extract center frequencies for the two peaks
-            center_freqs.append((popt[2], popt[3]))
+#             # Extract center frequencies for the two peaks
+#             center_freqs.append((popt[2], popt[3]))
 
-            # Plot fitted data on the same subplot
-            fit_data = voigt_with_background(freqs, *popt)
-            ax.plot(
-                freqs,
-                fit_data,
-                "-",
-                color=colors[nv_idx % len(colors)],
-                label="Fit",
-                lw=2,
-            )
+#             # Plot fitted data on the same subplot
+#             fit_data = voigt_with_background(freqs, *popt)
+#             ax.plot(
+#                 freqs,
+#                 fit_data,
+#                 "-",
+#                 color=colors[nv_idx % len(colors)],
+#                 label="Fit",
+#                 lw=2,
+#             )
 
-            # Calculate residuals
-            residuals = nv_counts - fit_data
-            residuals_list.append(residuals)
+#             # Calculate residuals
+#             residuals = nv_counts - fit_data
+#             residuals_list.append(residuals)
 
-            # Compute chi-squared value
-            chi_squared = np.sum((residuals / nv_counts_ste) ** 2)
-            chi_squared_list.append(chi_squared)
+#             # Compute chi-squared value
+#             chi_squared = np.sum((residuals / nv_counts_ste) ** 2)
+#             chi_squared_list.append(chi_squared)
 
-            # Add text annotation for chi-squared value
-            ax.text(
-                0.05,
-                0.85,
-                f"Chi-sq: {chi_squared:.2f}",
-                transform=ax.transAxes,
-                fontsize=10,
-                bbox=dict(facecolor="white", alpha=0.6),
-            )
+#             # Add text annotation for chi-squared value
+#             ax.text(
+#                 0.05,
+#                 0.85,
+#                 f"Chi-sq: {chi_squared:.2f}",
+#                 transform=ax.transAxes,
+#                 fontsize=10,
+#                 bbox=dict(facecolor="white", alpha=0.6),
+#             )
 
-            # Y-tick labels for the leftmost column
-            if nv_idx % num_cols == 0:
-                ax.set_yticks(
-                    ax.get_yticks()
-                )  # Keep default y-tick labels for leftmost column
-            else:
-                ax.set_yticklabels([])
+#             # Y-tick labels for the leftmost column
+#             if nv_idx % num_cols == 0:
+#                 ax.set_yticks(
+#                     ax.get_yticks()
+#                 )  # Keep default y-tick labels for leftmost column
+#             else:
+#                 ax.set_yticklabels([])
 
-            # Add a single y-axis label for the entire figure
-            fig_fitting.text(
-                0.04,
-                0.5,
-                "NV$^{-}$ Population",
-                va="center",
-                rotation="vertical",
-                fontsize=12,
-            )
+#             # Add a single y-axis label for the entire figure
+#             fig_fitting.text(
+#                 0.04,
+#                 0.5,
+#                 "NV$^{-}$ Population",
+#                 va="center",
+#                 rotation="vertical",
+#                 fontsize=12,
+#             )
 
-            # Label x-axis for the bottom row
-            if nv_idx >= (num_rows - 1) * num_cols:
-                ax.set_xlabel("Frequency (GHz)")
-            else:
-                ax.set_xticklabels([])
+#             # Label x-axis for the bottom row
+#             if nv_idx >= (num_rows - 1) * num_cols:
+#                 ax.set_xlabel("Frequency (GHz)")
+#             else:
+#                 ax.set_xticklabels([])
 
-            # Add grid for better visualization
-            ax.grid(True, which="both", linestyle="--", linewidth=0.5)
-        else:
-            ax.axis("off")
+#             # Add grid for better visualization
+#             ax.grid(True, which="both", linestyle="--", linewidth=0.5)
+#         else:
+#             ax.axis("off")
 
-    # Set title for the fitting figure
-    if threshold_method is not None:
-        title = f"NV Resonance Fitting and Contrast (data_id = {file_id})"
-        fig_fitting.suptitle(title, fontsize=16, y=0.97)
+#     # Set title for the fitting figure
+#     if threshold_method is not None:
+#         title = f"NV Resonance Fitting and Contrast (data_id = {file_id})"
+#         fig_fitting.suptitle(title, fontsize=16, y=0.97)
 
-    # Adjust layout for the fitting figure
-    plt.subplots_adjust(
-        left=0.1, right=0.95, top=0.95, bottom=0.1, hspace=0.01, wspace=0.01
-    )
-    now = datetime.now()
-    date_time_str = now.strftime("%Y%m%d_%H%M%S")
-    file_name = dm.get_file_name(file_id=file_id)
-    file_path = dm.get_file_path(__file__, file_name, f"{file_id}_{date_time_str}")
-    # Save the fitting and contrast figure
-    dm.save_figure(fig_fitting, file_path)
+#     # Adjust layout for the fitting figure
+#     plt.subplots_adjust(
+#         left=0.1, right=0.95, top=0.95, bottom=0.1, hspace=0.01, wspace=0.01
+#     )
+#     now = datetime.now()
+#     date_time_str = now.strftime("%Y%m%d_%H%M%S")
+#     file_name = dm.get_file_name(file_id=file_id)
+#     file_path = dm.get_file_path(__file__, file_name, f"{file_id}_{date_time_str}")
+#     # Save the fitting and contrast figure
+#     dm.save_figure(fig_fitting, file_path)
 
-    # Close the fitting figure to free up memory
-    plt.close(fig_fitting)
+#     # Close the fitting figure to free up memory
+#     plt.close(fig_fitting)
 
-    ### 2. Residuals and Contrast Figure ###
-    fig_residuals, axes_residuals = plt.subplots(
-        num_rows,
-        num_cols,
-        figsize=(num_cols * 3, num_rows * 1),
-        sharex=True,
-        sharey=False,
-    )
-    axes_residuals = axes_residuals.flatten()
+#     ### 2. Residuals and Contrast Figure ###
+#     fig_residuals, axes_residuals = plt.subplots(
+#         num_rows,
+#         num_cols,
+#         figsize=(num_cols * 3, num_rows * 1),
+#         sharex=True,
+#         sharey=False,
+#     )
+#     axes_residuals = axes_residuals.flatten()
 
-    # Plot the residuals and contrast
-    for nv_idx, ax in enumerate(axes_residuals):
-        if nv_idx < num_nvs:
-            # Plot residuals for each NV
-            sns.lineplot(
-                x=freqs,
-                y=residuals_list[nv_idx],
-                ax=ax,
-                color=colors[nv_idx % len(colors)],
-                lw=2,
-                marker="o",
-                markersize=5,
-                label=f"NV {nv_idx+1} Residuals",
-            )
+#     # Plot the residuals and contrast
+#     for nv_idx, ax in enumerate(axes_residuals):
+#         if nv_idx < num_nvs:
+#             # Plot residuals for each NV
+#             sns.lineplot(
+#                 x=freqs,
+#                 y=residuals_list[nv_idx],
+#                 ax=ax,
+#                 color=colors[nv_idx % len(colors)],
+#                 lw=2,
+#                 marker="o",
+#                 markersize=5,
+#                 label=f"NV {nv_idx+1} Residuals",
+#             )
 
-            # Add grid for better visualization
-            ax.grid(True, which="both", linestyle="--", linewidth=0.5)
+#             # Add grid for better visualization
+#             ax.grid(True, which="both", linestyle="--", linewidth=0.5)
 
-            # Add a single y-axis label for the entire figure
-            fig_residuals.text(
-                0.04,
-                0.5,
-                "Residuals",
-                va="center",
-                rotation="vertical",
-                fontsize=12,
-            )
+#             # Add a single y-axis label for the entire figure
+#             fig_residuals.text(
+#                 0.04,
+#                 0.5,
+#                 "Residuals",
+#                 va="center",
+#                 rotation="vertical",
+#                 fontsize=12,
+#             )
 
-            # Only label the x-axis for the bottom row
-            if nv_idx >= (num_rows - 1) * num_cols:
-                ax.set_xlabel("Frequency (GHz)")
-            else:
-                ax.set_xticklabels([])
+#             # Only label the x-axis for the bottom row
+#             if nv_idx >= (num_rows - 1) * num_cols:
+#                 ax.set_xlabel("Frequency (GHz)")
+#             else:
+#                 ax.set_xticklabels([])
 
-            # Add y-tick labels for the leftmost column only
-            if nv_idx % num_cols == 0:
-                ax.set_yticks(ax.get_yticks())
-            else:
-                ax.set_yticklabels([])
+#             # Add y-tick labels for the leftmost column only
+#             if nv_idx % num_cols == 0:
+#                 ax.set_yticks(ax.get_yticks())
+#             else:
+#                 ax.set_yticklabels([])
 
-        else:
-            # Hide any unused subplots if there are fewer NVs than grid size
-            ax.axis("off")
+#         else:
+#             # Hide any unused subplots if there are fewer NVs than grid size
+#             ax.axis("off")
 
-    # Set title for the residuals figure
-    fig_residuals.suptitle(
-        f"NV Resonance Residuals and Contrast (data_id = {file_id})",
-        fontsize=16,
-        y=0.97,
-    )
+#     # Set title for the residuals figure
+#     fig_residuals.suptitle(
+#         f"NV Resonance Residuals and Contrast (data_id = {file_id})",
+#         fontsize=16,
+#         y=0.97,
+#     )
 
-    # Adjust layout for the residuals figure
-    plt.subplots_adjust(
-        left=0.1, right=0.95, top=0.95, bottom=0.1, hspace=0.01, wspace=0.01
-    )
-    file_path = dm.get_file_path(
-        __file__, file_name, f"{file_id}_{date_time_str}_residuals"
-    )
-    # Save the residuals and contrast figure
-    dm.save_figure(fig_residuals, file_path)
+#     # Adjust layout for the residuals figure
+#     plt.subplots_adjust(
+#         left=0.1, right=0.95, top=0.95, bottom=0.1, hspace=0.01, wspace=0.01
+#     )
+#     file_path = dm.get_file_path(
+#         __file__, file_name, f"{file_id}_{date_time_str}_residuals"
+#     )
+#     # Save the residuals and contrast figure
+#     dm.save_figure(fig_residuals, file_path)
 
-    # Close the residuals figure to free up memory
-    plt.close(fig_residuals)
+#     # Close the residuals figure to free up memory
+#     plt.close(fig_residuals)
 
 
 def voigt_with_background(
@@ -945,7 +945,7 @@ def plot_nv_resonance_fits_and_residuals(
         threshold_method: Optional method for thresholding.
     """
     avg_counts, avg_counts_ste, norms = widefield.process_counts(
-        nv_list, sig_counts, ref_counts, threshold=True, method=thresh_method
+        nv_list, sig_counts, ref_counts, threshold=False, method=thresh_method
     )
     # Normalize counts from 0 to 1
     # avg_counts = [(ac) / (max(ac)) for ac in avg_counts]
@@ -955,16 +955,16 @@ def plot_nv_resonance_fits_and_residuals(
     orientation_clusters = []
     center_freqs_all = []  # Store center frequencies for clustering
     # Indices to remove
-    indices_to_remove = {9, 26, 33, 35, 36, 45, 47, 53, 56, 58, 59, 60, 61, 62, 63}
+    # indices_to_remove = {9, 26, 33, 35, 36, 45, 47, 53, 56, 58, 59, 60, 61, 62, 63}
 
     # Filter nv_list, avg_counts, and avg_counts_ste based on indices to keep
-    nv_list = [nv for idx, nv in enumerate(nv_list) if idx not in indices_to_remove]
-    avg_counts = [
-        ac for idx, ac in enumerate(avg_counts) if idx not in indices_to_remove
-    ]
-    avg_counts_ste = [
-        ste for idx, ste in enumerate(avg_counts_ste) if idx not in indices_to_remove
-    ]
+    # nv_list = [nv for idx, nv in enumerate(nv_list) if idx not in indices_to_remove]
+    # avg_counts = [
+    #     ac for idx, ac in enumerate(avg_counts) if idx not in indices_to_remove
+    # ]
+    # avg_counts_ste = [
+    #     ste for idx, ste in enumerate(avg_counts_ste) if idx not in indices_to_remove
+    # ]
 
     # num_nvs = len(nv_list)
     # num_rows = int(np.ceil(num_nvs / num_cols))  # Calculate the number of rows needed
@@ -1108,14 +1108,14 @@ def plot_nv_resonance_fits_and_residuals(
 
             # contrast, contrast_ste = widefield.calc_contrast(sig_counts[nv_idx], ref_counts[nv_idx])
             # Add contrast to the plot
-            ax.text(
-                0.05,
-                0.85,
-                f"Contrast: {contrast:.2f}",
-                transform=ax.transAxes,
-                fontsize=10,
-                bbox=dict(facecolor="white", alpha=0.6),
-            )
+            # ax.text(
+            #     0.05,
+            #     0.85,
+            #     f"Contrast: {contrast:.2f}",
+            #     transform=ax.transAxes,
+            #     fontsize=10,
+            #     bbox=dict(facecolor="white", alpha=0.6),
+            # )
 
             # Y-tick labels for the leftmost column
             if nv_idx % num_cols == 0:
@@ -1259,59 +1259,38 @@ def plot_nv_resonance_fits_and_residuals(
     dm.save_figure(fig_residuals, file_path)
     plt.close(fig_residuals)
 
-    ### 3. Residuals and Contrast Figure ###
-    # Use K-means clustering to group NVs by orientation (assuming 3 orientations)
-    kmeans = KMeans(n_clusters=4, random_state=0).fit(center_freqs_all)
-    cluster_labels = kmeans.labels_  # Cluster labels indicating orientation
+    # Calculate differences between the two center frequencies for each NV
+    center_freq_differences = [abs(cf[1] - cf[0]) for cf in center_freqs_all]
+    fig_freq_diff =   plt.figure(figsize=(6, 5))
+    plt.scatter(
+    range(len(center_freq_differences)),
+    center_freq_differences,
+    color='teal',
+    alpha=0.8,
+    edgecolors='k',
+    s=120  # Larger point size for emphasis
+)
+    plt.xlabel('NV Index', fontsize=12, labelpad=10)
+    plt.ylabel('Center Frequency Difference (GHz)', fontsize=12, labelpad=10)
+    plt.title('Center Frequency Differences for NV Resonance Fits', fontsize=14, pad=15)
 
-    # Organize NVs by their orientations
-    nv_orientations = {0: [], 1: [], 2: [], 3: []}
-    for nv_idx, orientation in enumerate(cluster_labels):
-        nv_orientations[orientation].append(nv_idx)
-
-    # Plotting the NVs grouped by orientation
-    fig, axes = plt.subplots(4, 1, figsize=(8, 10), sharex=True)
-    colors = sns.color_palette("deep", len(nv_orientations[0]))
-
-    for orientation, ax in enumerate(axes):
-        for nv_idx in nv_orientations[orientation]:
-            ax.plot(
-                freqs,
-                avg_counts[nv_idx],
-                label=f"NV {nv_idx}",
-                lw=2,
-                color=colors[nv_idx % len(colors)],
-                marker="o",
-                markersize=5,
-            )
-            ax.errorbar(
-                freqs,
-                avg_counts[nv_idx],
-                yerr=avg_counts_ste[nv_idx],
-                fmt="none",
-                ecolor="gray",
-                alpha=0.6,
-            )
-            ax.set_title(f"Orientation {orientation + 1}")
-            ax.grid(True, which="both", linestyle="--", linewidth=0.5)
-            ax.legend()
-
-    fig.suptitle("NV Resonance Data Grouped by Orientation", fontsize=16)
-    plt.xlabel("Frequency (GHz)")
-    fig.text(
-        0.04, 0.5, "NV$^{-}$ Population", va="center", rotation="vertical", fontsize=12
+    # Customizing x-axis ticks using tick_positions
+    tick_positions = np.linspace(0, len(center_freq_differences) - 1, num=10, dtype=int)  # 5 tick positions evenly spaced
+    plt.xticks(
+        tick_positions,
+        [f'NV {int(i+1)}' for i in tick_positions],
+        rotation=45,
+        fontsize=10
     )
 
-    plt.subplots_adjust(left=0.1, right=0.95, top=0.95, bottom=0.1, hspace=0.4)
-    now = datetime.now()
-    date_time_str = now.strftime("%Y%m%d_%H%M%S")
-    file_name = dm.get_file_name(file_id=file_id)
+    plt.yticks(fontsize=10)
+    plt.grid(True, linestyle='--', alpha=0.6)
+    plt.tight_layout()
     file_path = dm.get_file_path(
-        __file__, file_name, f"{file_id}_{date_time_str}_grouped_by_orientation"
+        __file__, file_name, f"{file_id}_{date_time_str}_center_freq"
     )
-    dm.save_figure(fig, file_path)
-    plt.close(fig)
-
+    dm.save_figure(fig_freq_diff, file_path)
+    plt.close(fig_freq_diff)
 
 def nv_resonance_splitting(
     nv_list, freqs, avg_counts, avg_counts_ste, threshold=0.06, bins=30
@@ -1671,7 +1650,7 @@ def generate_2d_magnetic_field_map_kriging(
 
 if __name__ == "__main__":
     file_id = 1663484946120
-    file_id = 1688862951667
+    file_id = 1695092317631
     data = dm.get_raw_data(file_id=file_id, load_npz=False, use_cache=True)
     nv_list = data["nv_list"]
     num_nvs = len(nv_list)
@@ -1708,12 +1687,15 @@ if __name__ == "__main__":
         sig_counts,
         ref_counts,
         file_id,
-        num_cols=4,
+        num_cols=6,
         threshold_method=thresh_method,
     )
     print(f"Plot saved to {file_path}")
     # plt.show()
     # freq_splitting = nv_resonance_splitting(nv_list, freqs, avg_counts, avg_counts_ste)
+    
+    
+    
     # magnetic_fields = calculate_magnetic_fields(
     #     nv_list, field_splitting=freq_splitting, zero_field_splitting=0.0,
     #     gyromagnetic_ratio=28.0, threshold=0.09
