@@ -3,7 +3,7 @@ channels:
   - defaults
   - conda-forge
 dependencies:
-  - python=3.10
+  - python
   - ipython
   - pip
   - matplotlib
@@ -18,13 +18,15 @@ dependencies:
   - keyring
   - chardet
   - numba
+  - pywin32
+  - scikit-image
+  - opencv
   - pip:
       - colorutils
       - nidaqmx
       - pylabrad
       - strenum
       - twisted
-      - pywin32
       - mpmath
       - qualang-tools
       - qm-qua

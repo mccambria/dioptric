@@ -29,23 +29,23 @@ home = Path.home()
 green_laser = "laser_INTE_520"
 yellow_laser = "laser_OPTO_589"
 red_laser = "laser_COBO_638"
-green_laser_aod = f"{green_laser}_aod"
-red_laser_aod = f"{red_laser}_aod"
+green_laser_aod = "laser_INTE_520_aod"
+red_laser_aod = "laser_COBO_638_aod"
 
 calibration_coords_pixel = [
-    [73.767, 91.394],
-    [142.545, 210.183],
-    [234.876, 116.946],
+    [133.937, 91.407],
+    [76.778, 140.585],
+    [160.878, 169.528],
 ]
 calibration_coords_green = [
-    [115.779, 106.042],
-    [107.253, 118.327],
-    [98.279, 107.437],
+    [106.424, 103.858],
+    [111.64, 109.517],
+    [102.156, 111.903],
 ]
 calibration_coords_red = [
-    [79.256, 72.672],
-    [72.849, 82.663],
-    [65.189, 74.169],
+    [71.424, 69.681],
+    [76.013, 74.892],
+    [68.405, 76.289],
 ]
 # Create the dictionaries using the provided lists
 calibration_coords_nv1 = {
@@ -164,7 +164,7 @@ config |= {
         "readout_mode": 1,  # 16 for double horizontal readout rate (em mode)
         # "readout_mode": 6,  # Fast conventional
         # "roi": (121, 110, 250, 250),  # offsetX, offsetY, width, height"roi": (121, 110, 250, 250),  # offsetX, offsetY, width, height
-        "roi": (130, 105, 250, 250),  # offsetX, offsetY, width, height
+        "roi": (134, 105, 250, 250),  # offsetX, offsetY, width, height
         # "roi": None,  # offsetX, offsetY, width, height
         "scale": 24,  # pixels / micron
     },
@@ -802,23 +802,23 @@ opx_config = {
     ### Analog
     "waveforms": {
         # Green AOD
-        "green_aod_cw-opti": {"type": "constant", "sample": 0.09},
+        "green_aod_cw-opti": {"type": "constant", "sample": 0.11},
         # "green_aod_cw-opti": {"type": "constant", "sample": 0.07},
         # "green_aod_cw-opti": {"type": "constant", "sample": 0.05},
         # "green_aod_cw-opti": {"type": "constant", "sample": 0.03},
         # "green_aod_cw-charge_pol": {"type": "constant", "sample": 0.13},
         # "green_aod_cw-charge_pol": {"type": "constant", "sample": 0.06},  # Negative
-        "green_aod_cw-charge_pol": {"type": "constant", "sample": 0.11},
+        "green_aod_cw-charge_pol": {"type": "constant", "sample": 0.13},
         "green_aod_cw-spin_pol": {"type": "constant", "sample": 0.05},
         "green_aod_cw-shelving": {"type": "constant", "sample": 0.05},
         "green_aod_cw-scc": {"type": "constant", "sample": 0.15},
         # Red AOD
         # "red_aod_cw-opti": {"type": "constant", "sample": 0.10},
-        "red_aod_cw-opti": {"type": "constant", "sample": 0.12},
+        "red_aod_cw-opti": {"type": "constant", "sample": 0.14},
         # "red_aod_cw-ion": {"type": "constant", "sample": 0.09},
-        "red_aod_cw-ion": {"type": "constant", "sample": 0.12},
+        "red_aod_cw-ion": {"type": "constant", "sample": 0.14},
         # "red_aod_cw-scc": {"type": "constant", "sample": 0.135},
-        "red_aod_cw-scc": {"type": "constant", "sample": 0.12},
+        "red_aod_cw-scc": {"type": "constant", "sample": 0.14},
         # Yellow AOM
         "yellow_imaging": {"type": "constant", "sample": 0.45},  # 0.35
         # "yellow_imaging": {"type": "constant", "sample": 0.50},  # 0.35

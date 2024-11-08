@@ -224,6 +224,7 @@ def main(
             freq = uwave_freq_list[uwave_ind]
         uwave_dict = tb.get_virtual_sig_gen_dict(uwave_ind)
         sig_gen = tb.get_server_sig_gen(uwave_ind)
+
         # if load_iq:  # MCC
         #     uwave_power += 0.4
         sig_gen.set_amp(uwave_power)
@@ -361,9 +362,9 @@ def main(
 
                     nuvu_237 = "NuvuException: 237"
                     nuvu_214 = "NuvuException: 214"
-                    if "NuvuException: 237" in str(exc):
+                    if nuvu_237 in str(exc):
                         print(nuvu_237)
-                    elif "NuvuException: 214" in str(exc):
+                    elif nuvu_214 in str(exc):
                         print(nuvu_214)
                     else:
                         print(traceback.format_exc())

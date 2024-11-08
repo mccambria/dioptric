@@ -4,6 +4,9 @@ labrad_manager_local.bat
 # Ignore the entire data manager directory
 data_manager/
 
+# Local vscode settings
+.vscode/
+
 # Ignore Python bytecode files in the labrad_logging utils directory
 labrad_logging/utils/__pycache__/*.pyc
 

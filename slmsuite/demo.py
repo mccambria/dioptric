@@ -117,17 +117,16 @@ import cv2
 import numpy as np
 
 # Given pixel coordinates and corresponding red coordinates
-pixel_coords_list = np.array([[121.871, 134.932], [66.975, 80.231], [44.024, 128.687]])
-red_coords_list = np.array([[110.496, 110.236], [116.479, 104.755], [118.499, 110.231]])
-
 pixel_coords_list = np.array(
-    [[109.267, 111.334], [113.322, 106.252], [103.687, 104.862]]
+    [
+        [133.937, 91.407],
+        [160.878, 169.528],
+    ]
 )
 red_coords_list = np.array(
     [
-        [74.649, 77.168],
-        [77.772, 72.945],
-        [69.921, 72.112],
+        [71.331, 69.193],
+        [68.566, 76.391],
     ]
 )
 
@@ -141,10 +140,10 @@ if len(pixel_coords_list) >= 3:
     # New pixel coordinate for which we want to find the corresponding red coordinate
     new_pixel_coord = np.array(
         [
-            [110.043, 113.011],
-            [115.779, 106.042],
-            [107.253, 118.327],
-            [98.279, 107.437],
+            [107.297, 107.085],
+            [106.358, 103.823],
+            [111.522, 109.523],
+            [102.178, 111.893],
         ],
         dtype=np.float32,
     )
@@ -153,8 +152,6 @@ if len(pixel_coords_list) >= 3:
     new_red_coord = cv2.transform(np.array([new_pixel_coord]), M)
 
     # Print the corresponding red coordinates
-    # print("Corresponding red coordinates:", new_red_coord[0][0])
-    # Print the corresponding red coordinates
     print("[")
     for coord in new_red_coord[0]:
         rounded_coord = [round(x, 3) for x in coord]
@@ -162,6 +159,7 @@ if len(pixel_coords_list) >= 3:
     print("]")
 else:
     # Calculate manually if only two points are available
+    # Define the simple transformation function
     def simple_transform(pixel_point, src_points, dst_points):
         # Calculate scaling and translation manually
         scale_x = (dst_points[1][0] - dst_points[0][0]) / (
@@ -181,8 +179,77 @@ else:
 
         return np.array([new_x, new_y])
 
+    # New pixel coordinates to transform
+    new_pixel_coord = np.array(
+        [
+            [120.137, 121.811],
+            [133.937, 91.407],
+            [76.778, 140.585],
+            [160.878, 169.528],
+        ],
+        dtype=np.float32,
+    )
+
+    # Apply the transformation to each new pixel coordinate
+    transformed_red_coords = [
+        simple_transform(coord, pixel_coords_list, red_coords_list)
+        for coord in new_pixel_coord
+    ]
+
+    # Print the transformed red coordinates
+    print("[")
+    for coord in transformed_red_coords:
+        rounded_coord = [round(x, 3) for x in coord]
+        print(f"    {rounded_coord},")
+    print("]")
+
     # Calculate using simple linear transform
     # new_red_coord = simple_transform(
     #     [42.749, 125.763], pixel_coords_list, red_coords_list
     # )
     # print("Corresponding red coordinates:", new_red_coord)
+
+
+# # Updating plot with center frequencies in the legend
+# import matplotlib.pyplot as plt
+# import numpy as np
+
+# # Given data
+# green_aod_freq_MHz = np.array([90, 95, 100, 105, 110, 115, 120, 125])
+# green_laser_power_uW = np.array([260, 310, 330, 350, 360, 340, 240, 140])
+
+# red_aod_freq_MHz = np.array([55, 60, 65, 70, 75, 80, 85, 90])
+# red_laser_power_uW = np.array([112, 200, 255, 260, 270, 260, 205, 110])
+
+# # Define center frequencies and compute x-axis difference
+# green_center_freq = 110  # MHz
+# red_center_freq = 75  # MHz
+
+# green_x_diff = green_aod_freq_MHz - green_center_freq
+# red_x_diff = red_aod_freq_MHz - red_center_freq
+
+# # Normalize the laser powers using 0 uW as the minimum
+# green_laser_power_normalized = green_laser_power_uW / green_laser_power_uW.max()
+# red_laser_power_normalized = red_laser_power_uW / red_laser_power_uW.max()
+# # Plotting
+
+# plt.figure(figsize=(7, 5))
+# plt.plot(
+#     green_x_diff,
+#     green_laser_power_normalized,
+#     label="Green Laser Power (Center: 110 MHz)",
+#     marker="o",
+# )
+# plt.plot(
+#     red_x_diff,
+#     red_laser_power_normalized,
+#     label="Red Laser Power (Center: 75 MHz)",
+#     marker="s",
+# )
+
+# plt.xlabel("Frequency Difference from Center (MHz)")
+# plt.ylabel("Normalized Laser Power (uW)")
+# plt.title("Normalized Laser Power vs Frequency Difference from Center")
+# plt.legend()
+# plt.grid(True)
+# plt.show()

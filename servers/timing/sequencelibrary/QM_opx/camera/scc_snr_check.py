@@ -80,10 +80,10 @@ def get_seq(base_scc_seq_args, num_reps=1):
 
         base_scc_sequence.macro(
             base_scc_seq_args,
-            # [uwave_macro_sig, uwave_macro_ref],
-            [uwave_macro_sig],
+            [uwave_macro_sig, uwave_macro_ref],
+            # [uwave_macro_sig],
             num_reps=num_reps,
-            reference=True,
+            reference=False,
         )
 
     seq_ret_vals = []

@@ -15,7 +15,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 
 import majorroutines.targeting as targeting
-from majorroutines.widefield.targeting import optimize_pixel
+from majorroutines.targeting import optimize_pixel
 from utils import common, widefield
 from utils import data_manager as dm
 from utils import kplotlib as kpl
@@ -71,10 +71,18 @@ def main(
         for run_ind in range(data["num_runs"]):
             for rep_ind in range(data["num_reps"]):
                 state_arr = states[1, :, run_ind, 0, rep_ind]
-                num_dark = 4 - (
-                    state_arr[3] + state_arr[4] + state_arr[5] + state_arr[6]
+                target_num_dark = 4
+                num_dark = target_num_dark - (
+                    # state_arr[3] + state_arr[4] + state_arr[5] + state_arr[6]
+                    # state_arr[0] #
+                    # + state_arr[1] #
+                    +state_arr[2]  #
+                    + state_arr[3]  #
+                    # + state_arr[4]  #
+                    + state_arr[5]  #
+                    + state_arr[6]  #
                 )
-                if num_dark != 4:
+                if num_dark != target_num_dark:
                     img_arrays[1, run_ind, 0, rep_ind, :, :] = np.nan
 
         if diff:  # diff
@@ -103,9 +111,9 @@ def main(
                     img_array, offset=offset, buffer=buffer
                 )
                 cropped_img_arrays.append(cropped_img_array)
-            img_array = np.mean(cropped_img_arrays, axis=(0))
+            img_array = np.nanmean(cropped_img_arrays, axis=(0))
         else:
-            img_array = np.mean(img_arrays, axis=(0, 1, 2))
+            img_array = np.nanmean(img_arrays, axis=(0, 1, 2))
             img_array = crop_img_array(
                 img_array, offset=img_array_offset, buffer=buffer
             )

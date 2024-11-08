@@ -15,7 +15,7 @@ import numpy as np
 from scipy.optimize import curve_fit
 
 from majorroutines.widefield.charge_monitor import process_check_readout_fidelity
-from majorroutines.widefield.charge_state_histograms import create_histogram
+from majorroutines.widefield.charge_state_histograms import plot_histograms
 from utils import common
 from utils import data_manager as dm
 from utils import kplotlib as kpl
@@ -95,7 +95,7 @@ def main(nv_list, apparatus_img, image_data, histogram_data):
     sig_counts_list = sig_counts_lists[nv_ind]
     ref_counts_list = ref_counts_lists[nv_ind]
     ax = axes_pack["histogram"]
-    fig = create_histogram(
+    fig = plot_histograms(
         sig_counts_list,
         ref_counts_list,
         ax=ax,
@@ -105,7 +105,7 @@ def main(nv_list, apparatus_img, image_data, histogram_data):
     )
     ax.set_xlim(-0.5, 90.5)
     combined_counts = np.append(sig_counts_list, ref_counts_list)
-    threshold = widefield.determine_threshold(
+    threshold = widefield.determine_charge_state_threshold(
         combined_counts,
         single_or_dual=True,
         nvn_ratio=None,

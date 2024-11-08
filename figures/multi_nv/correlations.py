@@ -71,7 +71,7 @@ def main(block_data, checkerboard_data, orientation_data):
     seq_ax.spines[["bottom"]].set_visible(False)
     seq_ax.patch.set_alpha(0)
 
-    labels = [*[f"NV {ind}" for ind in range(3)], "...", "NV $\it{n}$", "Global"]
+    labels = [*[f"NV {ind}" for ind in range(3)], "...", r"NV $\it{n}$", "Global"]
     for ind in range(nrows):
         ax = seq_axes_pack[ind]
         if ind == nrows - 3:
