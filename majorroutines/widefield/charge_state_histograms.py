@@ -78,7 +78,6 @@ def plot_histograms(
 
 def process_and_plot(raw_data, do_plot_histograms=False):
     ### Setup
-
     nv_list = raw_data["nv_list"]
     num_nvs = len(nv_list)
     counts = np.array(raw_data["counts"])
@@ -89,20 +88,16 @@ def process_and_plot(raw_data, do_plot_histograms=False):
     num_shots = num_reps * num_runs
 
     ### Histograms and thresholding
-
     threshold_list = []
     readout_fidelity_list = []
     prep_fidelity_list = []
     hist_figs = []
 
     for ind in range(num_nvs):
-        # if ind < 11:
-        #     continue
         sig_counts_list = sig_counts_lists[ind]
         ref_counts_list = ref_counts_lists[ind]
 
-        # all_counts_list = np.append(sig_counts_list, ref_counts_list)
-        all_counts_list = ref_counts_list  # only use ref counts
+        # Only use ref counts for threshold determination
         threshold, readout_fidelity = determine_charge_state_threshold(
             ref_counts_list, nvn_ratio=0.5, no_print=True, ret_fidelity=True
         )
@@ -120,33 +115,27 @@ def process_and_plot(raw_data, do_plot_histograms=False):
             fig = plot_histograms(sig_counts_list, ref_counts_list, density=True)
             ax = fig.gca()
 
-            # Add the ref counts fit line
-            x_vals = np.linspace(0, np.max(ref_counts_list), 1000)
-            kpl.plot_line(ax, x_vals, tb.bimodal_skew_gaussian(x_vals, *popt))
-            # popt[0] = 1.0
-            # kpl.plot_line(ax, x_vals, tb.bimodal_skew_gaussian(x_vals, *popt))
-            # popt[0] = 0.0
-            # kpl.plot_line(ax, x_vals, tb.bimodal_skew_gaussian(x_vals, *popt))
+            # Add the ref counts fit line if popt is not None
+            if popt is not None:
+                x_vals = np.linspace(0, np.max(ref_counts_list), 1000)
+                kpl.plot_line(ax, x_vals, tb.bimodal_skew_gaussian(x_vals, *popt))
 
-            # Add threshold line
-            ax.axvline(threshold, color=kpl.KplColors.GRAY, ls="dashed")
-
+            # Try to add threshold line, handle potential issues gracefully
+            try:
+                if threshold is not None:
+                    ax.axvline(threshold, color=kpl.KplColors.GRAY, ls="dashed")
+            except TypeError as e:
+                print(f"Could not add threshold line due to: {e}")
             # Add text of the fidelities
-            snr_str = f"NV{ind}\nReadout fidelity: {round(readout_fidelity,3)}\nCharge prep. fidelity {round(prep_fidelity,3)}"  # Display NV index as well
+            snr_str = f"NV{ind}\nReadout fidelity: {round(readout_fidelity, 3)}\nCharge prep. fidelity {round(prep_fidelity, 3)}"  # Display NV index as well
             kpl.anchored_text(ax, snr_str, "center right", size=kpl.Size.SMALL)
 
-            # kpl.show(block=True)
             kpl.show()
 
             if fig is not None:
                 hist_figs.append(fig)
 
     # Report out the results
-
-    # print(f"Threshold: {threshold_list}")
-    # print(f"Fidelity: {[round(el, 3) for el in prep_fidelity_list]}")
-    # print(f"SNR: {snr_list}")
-
     threshold_list = np.array(threshold_list)
     readout_fidelity_list = np.array(readout_fidelity_list)
     prep_fidelity_list = np.array(prep_fidelity_list)
@@ -179,10 +168,9 @@ def process_and_plot(raw_data, do_plot_histograms=False):
     )
     str_prep_fidelity = tb.round_for_print(avg_prep_fidelity, std_prep_fidelity)
     print(f"Average readout fidelity: {str_readout_fidelity}")
-    print(f"Average NV- preparation fidelity: {str_prep_fidelity})")
+    print(f"Average NV- preparation fidelity: {str_prep_fidelity}")
 
     ### Image plotting
-
     if "img_arrays" not in raw_data:
         return
 

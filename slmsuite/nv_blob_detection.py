@@ -244,8 +244,9 @@ if __name__ == "__main__":
     # data = dm.get_raw_data(file_id=1691393168458, load_npz=True)
     # data = dm.get_raw_data(file_id=1692695881803, load_npz=True)
     # data = dm.get_raw_data(file_id=1693166192526, load_npz=True)
-    data = dm.get_raw_data(file_id=1693412457124, load_npz=True)
-    data = dm.get_raw_data(file_id=1693686359757, load_npz=True)
+    # data = dm.get_raw_data(file_id=1693412457124, load_npz=True)
+    # data = dm.get_raw_data(file_id=1693686359757, load_npz=True)
+    data = dm.get_raw_data(file_id=1694279622270, load_npz=True)
 
     img_array = np.array(data["ref_img_array"])
     # img_array = np.array(data["diff_img_array"])
@@ -262,7 +263,7 @@ if __name__ == "__main__":
 
     # Apply the blob detection and Gaussian fitting
     sigma = 2.0
-    lower_threshold = 0.06
+    lower_threshold = 0.09
     upper_threshold = None
     smoothing_sigma = 0.0
 
@@ -302,7 +303,7 @@ if __name__ == "__main__":
         print(f"NV {idx}: Coordinate = {coord}, Count = {count}")
     # Plotting the results
     # Verify if reversing coordinates resolves the offset
-    default_radius = 2.0
+    default_radius = 2.4
     fig, ax = plt.subplots()
     title = "24ms, Ref"
     cax = kpl.imshow(ax, img_array, title=title, cbar_label="Photons")
@@ -343,7 +344,7 @@ if __name__ == "__main__":
     save_results(
         filtered_nv_coords,
         filtered_counts,
-        filename="nv_blob_filtered_167nvs.npz",
+        filename="nv_blob_filtered_161nvs.npz",
     )
 
     # image_ids = [

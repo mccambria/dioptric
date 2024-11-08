@@ -249,7 +249,7 @@ def save_results(nv_coordinates, integrated_intensities, spot_weights, filename)
     np.savez(
         filename,
         nv_coordinates=nv_coordinates,
-        integrated_intensities=integrated_intensities,
+        integrated_counts=integrated_intensities,
         spot_weights=spot_weights,
     )
 
@@ -266,8 +266,8 @@ def load_nv_coords(
     data = np.load(file_path)
     print(data.keys())
     nv_coordinates = data["nv_coordinates"]
-    # spot_weights = data["spot_weights"]
-    spot_weights = data["integrated_counts"]
+    spot_weights = data["spot_weights"]
+    # spot_weights = data["integrated_counts"]
     return nv_coordinates, spot_weights
 
 
@@ -389,13 +389,14 @@ if __name__ == "__main__":
     # data = dm.get_raw_data(file_id=1688328009205, load_npz=True)
     # data = dm.get_raw_data(file_id=1688554695897, load_npz=True)
     # data = dm.get_raw_data(file_id=1693166192526, load_npz=True)
-    data = dm.get_raw_data(file_id=1693412457124, load_npz=True)
-    data = dm.get_raw_data(file_id=1693686359757, load_npz=True)
+    # data = dm.get_raw_data(file_id=1693412457124, load_npz=True)
+    # data = dm.get_raw_data(file_id=1693686359757, load_npz=True)
+    data = dm.get_raw_data(file_id=1694298949680, load_npz=True)
 
     img_array = np.array(data["ref_img_array"])
     nv_coordinates, integrated_intensities = load_nv_coords(
         # file_path="slmsuite/nv_blob_detection/nv_blob_filtered_144nvs.npz"
-        file_path="slmsuite/nv_blob_detection/nv_blob_filtered_167nvs.npz"
+        file_path="slmsuite/nv_blob_detection/nv_blob_filtered_163nvs_reordered.npz"
     )
     nv_coordinates = nv_coordinates.tolist()
     integrated_intensities = integrated_intensities.tolist()
@@ -409,7 +410,7 @@ if __name__ == "__main__":
             filtered_intensities.append(intensity)
 
     # Filter and reorder NV coordinates based on reference NV
-    sigma = 2.0
+    sigma = 2.5
     reference_nv = [106.923, 120.549]
     # reference_nv = [134.954, 83.925]
     # reference_nv = [92.998, 146.61]
@@ -418,17 +419,17 @@ if __name__ == "__main__":
     )
 
     # Manually remove NVs with specified indices
-    indices_to_remove = [1, 155]  # Example indices to remove
-    filtered_reordered_coords = [
-        coord
-        for i, coord in enumerate(filtered_reordered_coords)
-        if i not in indices_to_remove
-    ]
-    filtered_reordered_counts = [
-        count
-        for i, count in enumerate(filtered_reordered_counts)
-        if i not in indices_to_remove
-    ]
+    # indices_to_remove = [1]  # Example indices to remove
+    # filtered_reordered_coords = [
+    #     coord
+    #     for i, coord in enumerate(filtered_reordered_coords)
+    #     if i not in indices_to_remove
+    # ]
+    # filtered_reordered_counts = [
+    #     count
+    #     for i, count in enumerate(filtered_reordered_counts)
+    #     if i not in indices_to_remove
+    # ]
     # print("Filter:", filtered_reordered_counts)
     # print("Filtered and Reordered NV Coordinates:", filtered_reordered_coords)
     # print("Filtered and Reordered NV Coordinates:", integrated_intensities)
@@ -442,7 +443,7 @@ if __name__ == "__main__":
     #     fitted_amplitudes.append(amplitude)
 
     # Calculate weights based on the fitted intensities
-    spot_weights = linear_weights(filtered_reordered_counts, alpha=0.1)
+    spot_weights = linear_weights(filtered_reordered_counts, alpha=0.9)
     # updated_spot_weights = filtered_reordered_counts
     # spot_weights = updated_spot_weights
     # spot_weights = linear_weights(filtered_reordered_counts, alpha=0.9)
@@ -508,12 +509,12 @@ if __name__ == "__main__":
     #     spot_weights,
     #     filename="slmsuite/nv_blob_detection/nv_blob_filtered_297.npz",
     # )
-    save_results(
-        filtered_reordered_coords,
-        filtered_reordered_counts,
-        spot_weights,
-        filename="slmsuite/nv_blob_detection/nv_blob_filtered_164nvs_reordered.npz",
-    )
+    # save_results(
+    #     filtered_reordered_coords,
+    #     filtered_reordered_counts,
+    #     spot_weights,
+    #     filename="slmsuite/nv_blob_detection/nv_blob_filtered_160nvs_reordered.npz",
+    # )
 
     # Plot the original image with circles around each NV
     fig, ax = plt.subplots()
