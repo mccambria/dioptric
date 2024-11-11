@@ -9,6 +9,7 @@ Created on November 11th, 2024
 """
 
 from enum import Enum, auto
+from inspect import signature
 
 import numpy as np
 from scipy.optimize import curve_fit
@@ -18,37 +19,44 @@ from scipy.stats import norm, skewnorm
 # region Probability distributions
 
 
-class ProbabilityDistribution(Enum):
+class ProbDist(Enum):
     POISSON = auto()
+    BROADENED_POISSON = auto()
     GAUSSIAN = auto()
     SKEW_GAUSSIAN = auto()
 
 
-def get_single_mode_pdf(dist: ProbabilityDistribution):
-    if dist is ProbabilityDistribution.POISSON:
+def get_single_mode_num_params(prob_dist: ProbDist):
+    single_mode_pdf = get_single_mode_pdf(prob_dist)
+    sig = signature(single_mode_pdf)
+    return len(sig.parameters) - 1
+
+
+def get_single_mode_pdf(prob_dist: ProbDist):
+    if prob_dist is ProbDist.POISSON:
         return poisson_pdf
-    if dist is ProbabilityDistribution.GAUSSIAN:
+    if prob_dist is ProbDist.GAUSSIAN:
         return gaussian_pdf
-    if dist is ProbabilityDistribution.SKEW_GAUSSIAN:
+    if prob_dist is ProbDist.SKEW_GAUSSIAN:
         return skew_gaussian_pdf
 
 
-def get_single_mode_cdf(dist: ProbabilityDistribution):
-    if dist is ProbabilityDistribution.POISSON:
+def get_single_mode_cdf(prob_dist: ProbDist):
+    if prob_dist is ProbDist.POISSON:
         return poisson_cdf
-    if dist is ProbabilityDistribution.GAUSSIAN:
+    if prob_dist is ProbDist.GAUSSIAN:
         return gaussian_cdf
-    if dist is ProbabilityDistribution.SKEW_GAUSSIAN:
+    if prob_dist is ProbDist.SKEW_GAUSSIAN:
         return skew_gaussian_cdf
 
 
-def get_bimodal_pdf(dist: ProbabilityDistribution):
-    single_mode_fn = get_single_mode_pdf(dist)
+def get_bimodal_pdf(prob_dist: ProbDist):
+    single_mode_fn = get_single_mode_pdf(prob_dist)
     return _get_bimodal_fn(single_mode_fn)
 
 
-def get_bimodal_cdf(dist: ProbabilityDistribution):
-    single_mode_fn = get_single_mode_cdf(dist)
+def get_bimodal_cdf(prob_dist: ProbDist):
+    single_mode_fn = get_single_mode_cdf(prob_dist)
     return _get_bimodal_fn(single_mode_fn)
 
 
@@ -97,8 +105,7 @@ def skew_gaussian_cdf(x, mean, std, skew):
 
 
 def fit_bimodal_histogram(
-    counts_list,
-    no_print=False,
+    counts_list, no_print=False, prob_dist: ProbDist = ProbDist.SKEW_GAUSSIAN
 ):
     """counts_list should have some population in both modes"""
 
@@ -118,28 +125,24 @@ def fit_bimodal_histogram(
     )
 
     # Fit the histogram
-    single_mode_pdf = poisson_pdf
-
-    def fit_fn(x, first_mode_weight, *params):
-        return bimodal_pdf(x, single_mode_pdf, first_mode_weight, *params)
-
-    mean_nv0_guess = round(np.quantile(counts_list, 0.2))
-    mean_nvn_guess = round(np.quantile(counts_list, 0.98))
+    fit_fn = get_bimodal_pdf(prob_dist)
+    mean_dark_guess = round(np.quantile(counts_list, 0.2))
+    mean_bright_guess = round(np.quantile(counts_list, 0.98))
     guess_params = (
         0.7,
-        mean_nv0_guess,
-        # 2 * np.sqrt(mean_nv0_guess),
+        mean_dark_guess,
+        # 2 * np.sqrt(mean_dark_guess),
         # 2,
-        mean_nvn_guess,
-        # 2 * np.sqrt(mean_nvn_guess),
+        mean_bright_guess,
+        # 2 * np.sqrt(mean_bright_guess),
         # -2,
     )
     skew_lim = 5
-    mean_nv0_min = round(np.quantile(counts_list, 0.02))
-    mean_nvn_max = round(np.quantile(counts_list, 0.98))
+    mean_dark_min = round(np.quantile(counts_list, 0.02))
+    mean_bright_max = round(np.quantile(counts_list, 0.98))
     bounds = (
-        (0, mean_nv0_min, 0, -skew_lim, mean_nv0_min, 0, -skew_lim),
-        (1, mean_nvn_max, np.inf, skew_lim, mean_nvn_max, np.inf, skew_lim),
+        (0, mean_dark_min, 0, -skew_lim, mean_dark_min, 0, -skew_lim),
+        (1, mean_bright_max, np.inf, skew_lim, mean_bright_max, np.inf, skew_lim),
     )
     bounds = (-np.inf, np.inf)
     try:
@@ -152,9 +155,13 @@ def fit_bimodal_histogram(
 
 
 def determine_threshold(
-    counts_list, nvn_ratio=None, no_print=False, ret_fidelity=False
+    counts_list,
+    bright_ratio=None,
+    no_print=False,
+    ret_fidelity=False,
+    prob_dist: ProbDist = ProbDist.SKEW_GAUSSIAN,
 ):
-    popt = fit_bimodal_histogram(counts_list, no_print)
+    popt = fit_bimodal_histogram(counts_list, no_print, prob_dist)
 
     # Popt will be None
     if popt is None:
@@ -163,41 +170,39 @@ def determine_threshold(
         else:
             return None
 
-    if nvn_ratio is None:
-        nvn_ratio = 1 - popt[0]
-    nv0_ratio = 1 - nvn_ratio
+    if bright_ratio is None:
+        bright_ratio = 1 - popt[0]
+    dark_ratio = 1 - bright_ratio
 
-    # Assume some kind of bimodal distribution where each mode has the same form
-    # and there is one parameter that describes the relative weight of each mode.
-    num_single_dist_params = int((len(popt) - 1) / 2)
+    num_single_mode_params = get_single_mode_num_params(prob_dist)
 
-    # Calculate fidelities for given threshold
-    mean_counts_nv0, mean_counts_nvn = popt[1], popt[1 + num_single_dist_params]
-    mean_counts_nv0 = round(mean_counts_nv0)
-    mean_counts_nvn = round(mean_counts_nvn)
+    # Calculate fidelity (probability of calling state correctly) for given threshold
+    mean_counts_dark, mean_counts_bright = popt[1], popt[1 + num_single_mode_params]
+    mean_counts_dark = round(mean_counts_dark)
+    mean_counts_bright = round(mean_counts_bright)
     thresh_options = np.arange(0.5, np.max(counts_list) + 0.5, 1)
     fidelities = []
     left_fidelities = []
     right_fidelities = []
-    prob_errs = []
-    # cdf = skew_gaussian_cdf
-    cdf = poisson_cdf
+    single_mode_cdf = get_single_mode_cdf(prob_dist)
     for val in thresh_options:
-        nv0_left_prob = cdf(val, *popt[1 : 1 + num_single_dist_params])
-        nvn_left_prob = cdf(val, *popt[1 + num_single_dist_params :])
-        nv0_right_prob = 1 - nv0_left_prob
-        nvn_right_prob = 1 - nvn_left_prob
-        prob_errs.append(np.abs(nvn_ratio - nvn_left_prob))
-        fidelity = nv0_ratio * nv0_left_prob + nvn_ratio * nvn_right_prob
-        left_fidelity = (nv0_ratio * nv0_left_prob) / (
-            nv0_ratio * nv0_left_prob + nvn_ratio * nvn_left_prob
-        )
-        right_fidelity = (nvn_ratio * nvn_right_prob) / (
-            nvn_ratio * nvn_right_prob + nv0_ratio * nv0_right_prob
-        )
+        dark_left_prob = single_mode_cdf(val, *popt[1 : 1 + num_single_mode_params])
+        dark_right_prob = 1 - dark_left_prob
+        bright_left_prob = single_mode_cdf(val, *popt[1 + num_single_mode_params :])
+        bright_right_prob = 1 - bright_left_prob
+
+        fidelity = dark_ratio * dark_left_prob + bright_ratio * bright_right_prob
         fidelities.append(fidelity)
-        left_fidelities.append(left_fidelity)
-        right_fidelities.append(right_fidelity)
+
+        # Two-sided
+        # left_fidelity = (dark_ratio * dark_left_prob) / (
+        #     dark_ratio * dark_left_prob + bright_ratio * bright_left_prob
+        # )
+        # right_fidelity = (bright_ratio * bright_right_prob) / (
+        #     bright_ratio * bright_right_prob + dark_ratio * dark_right_prob
+        # )
+        # left_fidelities.append(left_fidelity)
+        # right_fidelities.append(right_fidelity)
     fidelity = np.max(fidelities)
     threshold = thresh_options[np.argmax(fidelities)]
 
@@ -212,7 +217,7 @@ def determine_threshold(
 
 def determine_dual_threshold(
     counts_list,
-    nvn_ratio=None,
+    bright_ratio=None,
     min_fidelity=0.9,
     no_print=False,
 ):
@@ -239,45 +244,45 @@ def determine_dual_threshold(
     # Fit the histogram
     fit_fn = bimodal_skew_gaussian_pdf
     num_single_dist_params = 3
-    mean_nv0_guess = round(np.quantile(counts_list, 0.2))
-    mean_nvn_guess = round(np.quantile(counts_list, 0.98))
+    mean_dark_guess = round(np.quantile(counts_list, 0.2))
+    mean_bright_guess = round(np.quantile(counts_list, 0.98))
     guess_params = (
         0.7,
-        mean_nv0_guess,
-        2 * np.sqrt(mean_nv0_guess),  # 1.5 factor for broadening
+        mean_dark_guess,
+        2 * np.sqrt(mean_dark_guess),  # 1.5 factor for broadening
         2,
-        mean_nvn_guess,
-        2 * np.sqrt(mean_nvn_guess),
+        mean_bright_guess,
+        2 * np.sqrt(mean_bright_guess),
         -2,
     )
     popt, _ = curve_fit(fit_fn, x_vals, hist, p0=guess_params)
     if not no_print:
         print(popt)
 
-    if nvn_ratio is None:
-        nvn_ratio = 1 - popt[0]
-    nv0_ratio = 1 - nvn_ratio
+    if bright_ratio is None:
+        bright_ratio = 1 - popt[0]
+    dark_ratio = 1 - bright_ratio
 
     # Calculate fidelities for given threshold
-    mean_counts_nv0, mean_counts_nvn = popt[1], popt[1 + num_single_dist_params]
-    mean_counts_nv0 = round(mean_counts_nv0)
-    mean_counts_nvn = round(mean_counts_nvn)
+    mean_counts_dark, mean_counts_bright = popt[1], popt[1 + num_single_dist_params]
+    mean_counts_dark = round(mean_counts_dark)
+    mean_counts_bright = round(mean_counts_bright)
     thresh_options = np.arange(0.5, np.max(counts_list) + 0.5, 1)
     num_options = len(thresh_options)
     fidelities = []
     left_fidelities = []
     right_fidelities = []
     for val in thresh_options:
-        nv0_left_prob = skew_gaussian_cdf(val, *popt[1 : 1 + num_single_dist_params])
-        nvn_left_prob = skew_gaussian_cdf(val, *popt[1 + num_single_dist_params :])
-        nv0_right_prob = 1 - nv0_left_prob
-        nvn_right_prob = 1 - nvn_left_prob
-        fidelity = nv0_ratio * nv0_left_prob + nvn_ratio * nvn_right_prob
-        left_fidelity = (nv0_ratio * nv0_left_prob) / (
-            nv0_ratio * nv0_left_prob + nvn_ratio * nvn_left_prob
+        dark_left_prob = skew_gaussian_cdf(val, *popt[1 : 1 + num_single_dist_params])
+        bright_left_prob = skew_gaussian_cdf(val, *popt[1 + num_single_dist_params :])
+        dark_right_prob = 1 - dark_left_prob
+        bright_right_prob = 1 - bright_left_prob
+        fidelity = dark_ratio * dark_left_prob + bright_ratio * bright_right_prob
+        left_fidelity = (dark_ratio * dark_left_prob) / (
+            dark_ratio * dark_left_prob + bright_ratio * bright_left_prob
         )
-        right_fidelity = (nvn_ratio * nvn_right_prob) / (
-            nvn_ratio * nvn_right_prob + nv0_ratio * nv0_right_prob
+        right_fidelity = (bright_ratio * bright_right_prob) / (
+            bright_ratio * bright_right_prob + dark_ratio * dark_right_prob
         )
         fidelities.append(fidelity)
         left_fidelities.append(left_fidelity)
@@ -286,19 +291,23 @@ def determine_dual_threshold(
     best_fidelity = np.max(fidelities)
 
     # Calculate normalized probabilities for given integrated counts value
-    norm_nv0_probs = []
-    norm_nvn_probs = []
+    norm_dark_probs = []
+    norm_bright_probs = []
     for val in x_vals:
-        nv0_prob = skew_gaussian_pdf(val, *popt[1 : 1 + num_single_dist_params])
-        nvn_prob = skew_gaussian_pdf(val, *popt[1 + num_single_dist_params :])
-        norm_nv0_prob = (
-            nv0_ratio * nv0_prob / (nv0_ratio * nv0_prob + nvn_ratio * nvn_prob)
+        dark_prob = skew_gaussian_pdf(val, *popt[1 : 1 + num_single_dist_params])
+        bright_prob = skew_gaussian_pdf(val, *popt[1 + num_single_dist_params :])
+        norm_dark_prob = (
+            dark_ratio
+            * dark_prob
+            / (dark_ratio * dark_prob + bright_ratio * bright_prob)
         )
-        norm_nvn_prob = (
-            nvn_ratio * nvn_prob / (nv0_ratio * nv0_prob + nvn_ratio * nvn_prob)
+        norm_bright_prob = (
+            bright_ratio
+            * bright_prob
+            / (dark_ratio * dark_prob + bright_ratio * bright_prob)
         )
-        norm_nv0_probs.append(norm_nv0_prob)
-        norm_nvn_probs.append(norm_nvn_prob)
+        norm_dark_probs.append(norm_dark_prob)
+        norm_bright_probs.append(norm_bright_prob)
     if not single_or_dual:
         ### Manual approach
         # threshold = [single_threshold - 4, single_threshold + 1]
@@ -321,13 +330,17 @@ def determine_dual_threshold(
         #         threshold[1] = thresh_option
 
         ### PDF
-        norm_nv0_probs = np.array(norm_nv0_probs)
-        norm_nvn_probs = np.array(norm_nvn_probs)
-        adj_norm_nv0_probs = np.where(norm_nv0_probs > min_fidelity, norm_nv0_probs, 1)
-        adj_norm_nvn_probs = np.where(norm_nvn_probs > min_fidelity, norm_nvn_probs, 1)
+        norm_dark_probs = np.array(norm_dark_probs)
+        norm_bright_probs = np.array(norm_bright_probs)
+        adj_norm_dark_probs = np.where(
+            norm_dark_probs > min_fidelity, norm_dark_probs, 1
+        )
+        adj_norm_bright_probs = np.where(
+            norm_bright_probs > min_fidelity, norm_bright_probs, 1
+        )
         threshold = [
-            x_vals[np.argmin(adj_norm_nv0_probs)] + 0.5,
-            x_vals[np.argmin(adj_norm_nvn_probs)] - 0.5,
+            x_vals[np.argmin(adj_norm_dark_probs)] + 0.5,
+            x_vals[np.argmin(adj_norm_bright_probs)] - 0.5,
         ]
 
     # if there's no ambiguous zone for dual-thresholding just use a single value
@@ -361,7 +374,7 @@ def determine_dual_threshold(
             density=True,
         )
         # ax.plot(x_vals, fit_fn(x_vals, *guess_params))
-        # popt: prob_nv0, mean_nv0, std_nv0, skew_nv0, mean_nvn, std_nvn, skew_nvn
+        # popt: prob_dark, mean_dark, std_dark, skew_dark, mean_bright, std_bright, skew_bright
         ax.plot(
             smooth_x_vals,
             popt[0] * skew_gaussian_pdf(smooth_x_vals, *popt[1:4]),

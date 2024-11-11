@@ -19,7 +19,12 @@ from scipy import ndimage
 from scipy.optimize import curve_fit
 from scipy.special import factorial
 
-from analysis.bimodal_histogram import determine_threshold, fit_bimodal_histogram
+from analysis import bimodal_histogram
+from analysis.bimodal_histogram import (
+    ProbDist,
+    determine_threshold,
+    fit_bimodal_histogram,
+)
 from majorroutines.widefield import base_routine
 from utils import common, widefield
 from utils import data_manager as dm
@@ -74,7 +79,9 @@ def plot_histograms(
         return fig
 
 
-def process_and_plot(raw_data, do_plot_histograms=False):
+def process_and_plot(
+    raw_data, do_plot_histograms=False, prob_dist: ProbDist = ProbDist.POISSON
+):
     ### Setup
     nv_list = raw_data["nv_list"]
     num_nvs = len(nv_list)
@@ -97,11 +104,17 @@ def process_and_plot(raw_data, do_plot_histograms=False):
 
         # Only use ref counts for threshold determination
         threshold, readout_fidelity = determine_threshold(
-            ref_counts_list, nvn_ratio=0.5, no_print=True, ret_fidelity=True
+            ref_counts_list,
+            bright_ratio=0.5,
+            no_print=True,
+            ret_fidelity=True,
+            prob_dist=prob_dist,
         )
         threshold_list.append(threshold)
         readout_fidelity_list.append(readout_fidelity)
-        popt = fit_bimodal_histogram(ref_counts_list, no_print=True)
+        popt = fit_bimodal_histogram(
+            ref_counts_list, no_print=True, prob_dist=prob_dist
+        )
         if popt is not None:
             prep_fidelity = 1 - popt[0]
         else:
@@ -115,23 +128,21 @@ def process_and_plot(raw_data, do_plot_histograms=False):
 
             # Ref counts fit line
             if popt is not None:
-                single_mode_pdf = tb.poisson_pdf
-                half_num_params = (len(popt) - 1) // 2
-
-                def fit_fn(x, first_mode_weight, *params):
-                    return tb.bimodal_pdf(
-                        x, single_mode_pdf, first_mode_weight, *params
-                    )
+                single_mode_num_params = bimodal_histogram.get_single_mode_num_params(
+                    prob_dist
+                )
+                single_mode_pdf = bimodal_histogram.get_single_mode_pdf(prob_dist)
+                bimodal_pdf = bimodal_histogram.get_bimodal_pdf(prob_dist)
 
                 x_vals = np.linspace(0, np.max(ref_counts_list), 1000)
-                line = fit_fn(x_vals, *popt)
+                line = bimodal_pdf(x_vals, *popt)
                 kpl.plot_line(ax, x_vals, line, color=kpl.KplColors.BLUE)
-                line = popt[0] * tb.skew_gaussian_pdf(
-                    x_vals, *popt[1 : 1 + half_num_params]
+                line = popt[0] * single_mode_pdf(
+                    x_vals, *popt[1 : 1 + single_mode_num_params]
                 )
                 kpl.plot_line(ax, x_vals, line, color=kpl.KplColors.RED)
-                line = (1 - popt[0]) * tb.skew_gaussian_pdf(
-                    x_vals, *popt[1 + half_num_params :]
+                line = (1 - popt[0]) * single_mode_pdf(
+                    x_vals, *popt[1 + single_mode_num_params :]
                 )
                 kpl.plot_line(ax, x_vals, line, color=kpl.KplColors.GREEN)
 
