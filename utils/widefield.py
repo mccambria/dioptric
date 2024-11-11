@@ -27,13 +27,13 @@ from skimage.measure import ransac
 from sklearn.cluster import KMeans
 from sklearn.mixture import GaussianMixture
 
+from analysis.bimodal_histogram import determine_threshold
 from utils import common
 from utils import data_manager as dm
 from utils import kplotlib as kpl
 from utils import positioning as pos
 from utils import tool_belt as tb
 from utils.constants import CoordsKey, NVSig, VirtualLaserKey
-from utils.tool_belt import determine_charge_state_threshold
 
 # endregion
 # region Image processing
@@ -320,7 +320,7 @@ def threshold_counts(nv_list, sig_counts, ref_counts=None, dynamic_thresh=False)
                 sig_counts[nv_ind].flatten(), ref_counts[nv_ind].flatten()
             )
             # threshold = determine_threshold(combined_counts)
-            threshold = determine_charge_state_threshold(
+            threshold = determine_threshold(
                 combined_counts, nvn_ratio=0.5, no_print=True
             )
             thresholds.append(threshold)
