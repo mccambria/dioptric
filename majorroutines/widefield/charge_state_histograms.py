@@ -19,6 +19,7 @@ from scipy import ndimage
 from scipy.optimize import curve_fit
 from scipy.special import factorial
 
+from analysis.bimodal_histogram import determine_threshold, fit_bimodal_histogram
 from majorroutines.widefield import base_routine
 from utils import common, widefield
 from utils import data_manager as dm
@@ -26,7 +27,6 @@ from utils import kplotlib as kpl
 from utils import positioning as pos
 from utils import tool_belt as tb
 from utils.constants import NVSig, VirtualLaserKey
-from utils.tool_belt import determine_charge_state_threshold, fit_charge_state_histogram
 
 # region Process and plotting functions
 
@@ -35,10 +35,8 @@ def plot_histograms(
     sig_counts_list,
     ref_counts_list,
     no_title=True,
-    no_text=None,
     ax=None,
     density=False,
-    nv_index=None,  # Add NV index as an optional parameter
 ):
     laser_key = VirtualLaserKey.WIDEFIELD_CHARGE_READOUT
     laser_dict = tb.get_virtual_laser_dict(laser_key)
@@ -98,12 +96,12 @@ def process_and_plot(raw_data, do_plot_histograms=False):
         ref_counts_list = ref_counts_lists[ind]
 
         # Only use ref counts for threshold determination
-        threshold, readout_fidelity = determine_charge_state_threshold(
+        threshold, readout_fidelity = determine_threshold(
             ref_counts_list, nvn_ratio=0.5, no_print=True, ret_fidelity=True
         )
         threshold_list.append(threshold)
         readout_fidelity_list.append(readout_fidelity)
-        popt = fit_charge_state_histogram(ref_counts_list, no_print=True)
+        popt = fit_bimodal_histogram(ref_counts_list, no_print=True)
         if popt is not None:
             prep_fidelity = 1 - popt[0]
         else:
@@ -115,22 +113,43 @@ def process_and_plot(raw_data, do_plot_histograms=False):
             fig = plot_histograms(sig_counts_list, ref_counts_list, density=True)
             ax = fig.gca()
 
-            # Add the ref counts fit line if popt is not None
+            # Ref counts fit line
             if popt is not None:
+                single_mode_pdf = tb.poisson_pdf
+                half_num_params = (len(popt) - 1) // 2
+
+                def fit_fn(x, first_mode_weight, *params):
+                    return tb.bimodal_pdf(
+                        x, single_mode_pdf, first_mode_weight, *params
+                    )
+
                 x_vals = np.linspace(0, np.max(ref_counts_list), 1000)
-                kpl.plot_line(ax, x_vals, tb.bimodal_skew_gaussian(x_vals, *popt))
+                line = fit_fn(x_vals, *popt)
+                kpl.plot_line(ax, x_vals, line, color=kpl.KplColors.BLUE)
+                line = popt[0] * tb.skew_gaussian_pdf(
+                    x_vals, *popt[1 : 1 + half_num_params]
+                )
+                kpl.plot_line(ax, x_vals, line, color=kpl.KplColors.RED)
+                line = (1 - popt[0]) * tb.skew_gaussian_pdf(
+                    x_vals, *popt[1 + half_num_params :]
+                )
+                kpl.plot_line(ax, x_vals, line, color=kpl.KplColors.GREEN)
 
-            # Try to add threshold line, handle potential issues gracefully
-            try:
-                if threshold is not None:
-                    ax.axvline(threshold, color=kpl.KplColors.GRAY, ls="dashed")
-            except TypeError as e:
-                print(f"Could not add threshold line due to: {e}")
+            # Threshold line
+            if threshold is not None:
+                ax.axvline(threshold, color=kpl.KplColors.GRAY, ls="dashed")
+
             # Add text of the fidelities
-            snr_str = f"NV{ind}\nReadout fidelity: {round(readout_fidelity, 3)}\nCharge prep. fidelity {round(prep_fidelity, 3)}"  # Display NV index as well
-            kpl.anchored_text(ax, snr_str, "center right", size=kpl.Size.SMALL)
+            snr_str = (
+                f"NV{ind}\n"
+                f"Readout fidelity: {round(readout_fidelity, 3)}\n"
+                f"Charge prep. fidelity {round(prep_fidelity, 3)}"
+            )
+            kpl.anchored_text(ax, snr_str, kpl.Loc.CENTER_RIGHT, size=kpl.Size.SMALL)
 
-            kpl.show()
+            kpl.show(block=True)
+            # plt.close(fig)
+            # fig = None
 
             if fig is not None:
                 hist_figs.append(fig)
@@ -320,5 +339,5 @@ if __name__ == "__main__":
     kpl.init_kplotlib()
     data = dm.get_raw_data(file_id=1688554695897, load_npz=False)
     # data = dm.get_raw_data(file_id=1691569540529, load_npz=False)
-    process_and_plot(data, do_plot_histograms=False)
+    process_and_plot(data, do_plot_histograms=True)
     kpl.show(block=True)
