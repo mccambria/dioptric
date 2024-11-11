@@ -131,7 +131,7 @@ config |= {
                 "physical_name": "sig_gen_STAN_sg394",
                 # "uwave_power": 6.05,
                 "uwave_power": 2.3,
-                "frequency": 2.8585669247525622,
+                "frequency": 2.858,
                 # "frequency": 2.9304468840166678,
                 "rabi_period": 128,
                 "iq_delay": 140,
@@ -237,7 +237,7 @@ config |= {
             # LaserKey.WIDEFIELD_SPIN_POL: {"physical_name": yellow_laser, "duration": 1e6},
             VirtualLaserKey.WIDEFIELD_CHARGE_READOUT: {
                 "physical_name": yellow_laser,
-                "duration": 24e6,
+                "duration": 50e6,
             },
             # LaserKey.WIDEFIELD_CHARGE_READOUT: {"physical_name": yellow_laser, "duration": 100e6},
         },
@@ -808,7 +808,7 @@ opx_config = {
         # "green_aod_cw-opti": {"type": "constant", "sample": 0.03},
         # "green_aod_cw-charge_pol": {"type": "constant", "sample": 0.13},
         # "green_aod_cw-charge_pol": {"type": "constant", "sample": 0.06},  # Negative
-        "green_aod_cw-charge_pol": {"type": "constant", "sample": 0.13},
+        "green_aod_cw-charge_pol": {"type": "constant", "sample": 0.12},
         "green_aod_cw-spin_pol": {"type": "constant", "sample": 0.05},
         "green_aod_cw-shelving": {"type": "constant", "sample": 0.05},
         "green_aod_cw-scc": {"type": "constant", "sample": 0.15},

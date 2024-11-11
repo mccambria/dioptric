@@ -294,9 +294,9 @@ def do_resonance(nv_list):
     num_steps = 60
     # Single ref
     # num_reps = 8
-    # num_runs = 500
+    num_runs = 400
     # num_runs = 50
-    num_runs = 10
+    # num_runs = 10
 
     # Both refs
     num_reps = 2
@@ -824,12 +824,12 @@ if __name__ == "__main__":
     # magnet_angle = 90
     date_str = "2024_03_12"
     sample_coords = [2.0, 0.0]
-    z_coord = 0.05
+    z_coord = 0.0
     # Load NV pixel coordinates
     pixel_coords_list = load_nv_coords(
         # file_path="slmsuite/nv_blob_detection/nv_blob_filtered_162nvs_ref.npz"
         # file_path="slmsuite/nv_blob_detection/nv_blob_filtered_128nvs_updated.npz",
-        file_path="slmsuite/nv_blob_detection/nv_blob_filtered_163nvs_reordered.npz",
+        file_path="slmsuite/nv_blob_detection/nv_blob_filtered_160nvs_reordered.npz",
     ).tolist()
 
     # pixel_coords_list = [
@@ -1020,17 +1020,6 @@ if __name__ == "__main__":
 
         do_compensate_for_drift(nv_sig)
 
-        # Generate points for forward diagonal motion
-        # x_values = np.linspace(0.3, -0.3, 6)c
-        # y_values = np.linspace(0.3, -0.3, 6)
-        # Define the list of points in the triangle
-        # Example coordinates for the triangle
-        # p1 = (0.0, 0.0)
-        # p2 = (-0.25, -0.25)
-        # p3 = (0.50, 0)
-        # p4 = (-0.25, 0.25)
-        # points = [p1, p2, p3, p4]
-
         # for point in points:
         #     x, y = point
         #     nv_sig.coords[CoordsKey.SAMPLE][0] += x
@@ -1082,13 +1071,13 @@ if __name__ == "__main__":
         # do_optimize_loop(nv_list, coords_key)
 
         # nv_list = nv_list[::-1]
-        do_charge_state_histograms(nv_list)
+        # do_charge_state_histograms(nv_list)
         # do_charge_state_histograms_images(nv_list)
         # do_charge_state_conditional_init(nv_list)
         # do_check_readout_fidelity(nv_list)x
 
         # do_resonance_zoom(nv_list)
-        # do_rabi(nv_l ist)
+        do_rabi(nv_list)
         # do_resonance(nv_list)
         # do_spin_echo(nv_list)s
 
