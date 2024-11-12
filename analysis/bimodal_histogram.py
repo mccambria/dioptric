@@ -85,6 +85,10 @@ def poisson_cdf(x, rate):
     return val
 
 
+def broadened_poisson_pdf(x, rate, width):
+    
+
+
 def gaussian_pdf(x, mean, std):
     return norm(loc=mean, scale=std).pdf(x)
 
