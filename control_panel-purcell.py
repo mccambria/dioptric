@@ -1046,7 +1046,7 @@ if __name__ == "__main__":
 
         # do_scanning_image_sample(nv_sig)
         # do_scanning_image_sample_zoom(nv_sig)
-        # do_widefield_image_sample(nv_sig, 50)
+        do_widefield_image_sample(nv_sig, 50)
         # do_widefield_image_sample(nv_sig, 100)
 
         # do_image_nv_list(nv_list)
@@ -1061,8 +1061,8 @@ if __name__ == "__main__":
         # do_image_nv_list(nv_list)
         # for ind in range(20):
         # do_optimize_pixel(nv_sig)
-        do_optimize_green(nv_sig)
-        # do_optimize_red(nv_sig, repr_nv_sig)
+        # do_optimize_green(nv_sig)
+        do_optimize_red(nv_sig, repr_nv_sig)
         # do_optimize_z(nv_sig)
         ## do_optimize_sample(nv_sig)
 

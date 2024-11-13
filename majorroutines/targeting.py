@@ -493,20 +493,29 @@ def _create_opti_nv_sig(nv_sig, opti_coords, coords_key):
     """
 
     opti_nv_sig = copy.deepcopy(nv_sig)
-    if pos.should_drift_adjust(coords_key):
-        drift = pos.get_drift(coords_key)
-        if coords_key is CoordsKey.Z:
-            drift *= -1
-            # First two positions in opti_coords are None, just get last position (for Z)
-            opti_coords = opti_coords[-1]
-        else:  # XY coords_key
-            drift = [-1 * el for el in drift]
-            # Last position in opti_coords is None, just get first two positions (for XY)
-            opti_coords = opti_coords[:2]
-        adj_opti_coords = pos.adjust_coords_for_drift(opti_coords, drift)
+
+    # For Z we just need to work with single value
+    if coords_key is CoordsKey.Z:
+        opti_coord = opti_coords[-1]
+        if pos.should_drift_adjust(coords_key):
+            drift = -1 * pos.get_drift(coords_key)
+            value_to_set = pos.adjust_coords_for_drift(opti_coord, drift)
+        else:
+            value_to_set = opti_coord
+    # For XY we need to work with a list [x_coord, y_coord]
     else:
-        adj_opti_coords = opti_coords
-    pos.set_nv_coords(opti_nv_sig, adj_opti_coords, coords_key)
+        opti_coords = opti_coords[:2]
+        # If we only optimized on one axis, opti_coords will have None for the axis we
+        # did not optimize on. Fill this position in with the current value from the sig
+        for ind in range(2):
+            if opti_coords[ind] is None:
+                opti_coords[ind] = pos.get_nv_coords(nv_sig, coords_key)[ind]
+        if pos.should_drift_adjust(coords_key):
+            drift = [-1 * el for el in pos.get_drift(coords_key)]
+            value_to_set = pos.adjust_coords_for_drift(opti_coords, drift)
+        else:
+            value_to_set = opti_coords
+    pos.set_nv_coords(opti_nv_sig, value_to_set, coords_key)
     return opti_nv_sig
 
 
