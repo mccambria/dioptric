@@ -97,6 +97,7 @@ def process_and_plot(
     readout_fidelity_list = []
     prep_fidelity_list = []
     hist_figs = []
+    shapes = []
 
     for ind in range(num_nvs):
         sig_counts_list = sig_counts_lists[ind]
@@ -115,6 +116,8 @@ def process_and_plot(
         popt = fit_bimodal_histogram(
             ref_counts_list, no_print=True, prob_dist=prob_dist
         )
+        # shapes.append(popt[2])
+        shapes.append(popt[4])
         if popt is not None:
             prep_fidelity = 1 - popt[0]
         else:
@@ -164,6 +167,9 @@ def process_and_plot(
 
             if fig is not None:
                 hist_figs.append(fig)
+
+    fig, ax = plt.subplots()
+    kpl.histogram(ax, shapes, hist_type=kpl.HistType.STEP)
 
     # Report out the results
     threshold_list = np.array(threshold_list)
@@ -348,5 +354,7 @@ if __name__ == "__main__":
     kpl.init_kplotlib()
     data = dm.get_raw_data(file_id=1688554695897, load_npz=False)
     # data = dm.get_raw_data(file_id=1691569540529, load_npz=False)
-    process_and_plot(data, do_plot_histograms=True)
+    process_and_plot(
+        data, do_plot_histograms=True, prob_dist=ProbDist.BROADENED_POISSON
+    )
     kpl.show(block=True)
