@@ -403,11 +403,13 @@ def determine_charge_state_threshold(
     fidelities = []
     left_fidelities = []
     right_fidelities = []
+    prob_errs = []
     for val in thresh_options:
         nv0_left_prob = skew_gaussian_cdf(val, *popt[1 : 1 + num_single_dist_params])
         nvn_left_prob = skew_gaussian_cdf(val, *popt[1 + num_single_dist_params :])
         nv0_right_prob = 1 - nv0_left_prob
         nvn_right_prob = 1 - nvn_left_prob
+        prob_errs.append(np.abs(nvn_ratio - nvn_left_prob))
         fidelity = nv0_ratio * nv0_left_prob + nvn_ratio * nvn_right_prob
         left_fidelity = (nv0_ratio * nv0_left_prob) / (
             nv0_ratio * nv0_left_prob + nvn_ratio * nvn_left_prob
