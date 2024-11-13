@@ -8,13 +8,18 @@ Created on November 11th, 2024
 @author: mccambria
 """
 
+import inspect
+import sys
 from enum import Enum, auto
 from inspect import signature
 
 import numpy as np
+from matplotlib import pyplot as plt
 from scipy.optimize import curve_fit
-from scipy.special import factorial
+from scipy.special import factorial, gammainc
 from scipy.stats import norm, skewnorm
+
+from utils import kplotlib as kpl
 
 # region Probability distributions
 
@@ -29,7 +34,14 @@ class ProbDist(Enum):
 def get_single_mode_num_params(prob_dist: ProbDist):
     single_mode_pdf = get_single_mode_pdf(prob_dist)
     sig = signature(single_mode_pdf)
-    return len(sig.parameters) - 1
+    # Loop through params, count only non-optional
+    num_params = 0
+    for param in sig.parameters.values():
+        if param.default is param.empty:
+            num_params += 1
+
+    # Exclude first param, x, the point to evaluate at
+    return num_params - 1
 
 
 def get_single_mode_pdf(prob_dist: ProbDist):
@@ -39,6 +51,8 @@ def get_single_mode_pdf(prob_dist: ProbDist):
         return gaussian_pdf
     if prob_dist is ProbDist.SKEW_GAUSSIAN:
         return skew_gaussian_pdf
+    if prob_dist is ProbDist.BROADENED_POISSON:
+        return broadened_poisson_pdf
 
 
 def get_single_mode_cdf(prob_dist: ProbDist):
@@ -48,6 +62,8 @@ def get_single_mode_cdf(prob_dist: ProbDist):
         return gaussian_cdf
     if prob_dist is ProbDist.SKEW_GAUSSIAN:
         return skew_gaussian_cdf
+    if prob_dist is ProbDist.BROADENED_POISSON:
+        return broadened_poisson_cdf
 
 
 def get_bimodal_pdf(prob_dist: ProbDist):
@@ -76,17 +92,36 @@ def poisson_pdf(x, rate):
 
 
 def poisson_cdf(x, rate):
+    return _calc_cdf(ProbDist.POISSON, x, rate)
+
+
+def _calc_cdf(prob_dist, x, *params):
     """Cumulative distribution function for poisson pdf. Integrates
     up to and including x"""
+    pdf = get_single_mode_pdf(prob_dist)
     x_floor = int(np.floor(x))
     val = 0
     for ind in range(x_floor):
-        val += poisson_pdf(ind, rate)
+        val += pdf(ind, *params)
     return val
 
 
-def broadened_poisson_pdf(x, rate, width):
-    
+def broadened_poisson_pdf(x, rate, shape, do_norm=True):
+    adj_rate = rate * shape
+    if do_norm:
+        x_vals = np.array(range(100), dtype=int)
+        norm = np.sum(broadened_poisson_pdf(x_vals, rate, shape, do_norm=False))
+        return (1 / norm) * poisson_pdf(x / shape, rate)
+    else:
+        return poisson_pdf(x / shape, rate)
+    # norm = np.exp(-rate) * exponential_integral(1 / shape, rate ** (1 / shape))
+
+    # # norm = 1
+    # return (1 / norm) * poisson_pdf(x / shape, rate)
+
+
+def broadened_poisson_cdf(x, rate, stretch_factor):
+    return _calc_cdf(ProbDist.BROADENED_POISSON, x, rate, stretch_factor)
 
 
 def gaussian_pdf(x, mean, std):
@@ -103,6 +138,10 @@ def skew_gaussian_pdf(x, mean, std, skew):
 
 def skew_gaussian_cdf(x, mean, std, skew):
     return skewnorm(a=skew, loc=mean, scale=std).cdf(x)
+
+
+def exponential_integral(nu, z):
+    return (z ** (nu - 1)) * gammainc(1 - nu, z)
 
 
 # endregion
@@ -128,27 +167,30 @@ def fit_bimodal_histogram(
         counts_list, bins=max_count + 1, range=(0, max_count), density=True
     )
 
-    # Fit the histogram
-    fit_fn = get_bimodal_pdf(prob_dist)
+    ### Fit the histogram
+
+    # Get guess params
     mean_dark_guess = round(np.quantile(counts_list, 0.2))
     mean_bright_guess = round(np.quantile(counts_list, 0.98))
-    guess_params = (
-        0.7,
-        mean_dark_guess,
-        # 2 * np.sqrt(mean_dark_guess),
-        # 2,
-        mean_bright_guess,
-        # 2 * np.sqrt(mean_bright_guess),
-        # -2,
-    )
-    skew_lim = 5
-    mean_dark_min = round(np.quantile(counts_list, 0.02))
-    mean_bright_max = round(np.quantile(counts_list, 0.98))
-    bounds = (
-        (0, mean_dark_min, 0, -skew_lim, mean_dark_min, 0, -skew_lim),
-        (1, mean_bright_max, np.inf, skew_lim, mean_bright_max, np.inf, skew_lim),
-    )
-    bounds = (-np.inf, np.inf)
+    bounds = (-np.inf, np.inf)  # Default bounds
+    if prob_dist is ProbDist.SKEW_GAUSSIAN:
+        guess_params = [0.7]
+        guess_params.extend([mean_dark_guess, 2 * np.sqrt(mean_dark_guess), 2])
+        guess_params.extend([mean_bright_guess, 2 * np.sqrt(mean_bright_guess), -2])
+        skew_lim = 5
+        mean_dark_min = round(np.quantile(counts_list, 0.02))
+        mean_bright_max = round(np.quantile(counts_list, 0.98))
+        bounds = (
+            (0, mean_dark_min, 0, -skew_lim, mean_dark_min, 0, -skew_lim),
+            (1, mean_bright_max, np.inf, skew_lim, mean_bright_max, np.inf, skew_lim),
+        )
+    elif prob_dist is ProbDist.POISSON:
+        guess_params = (0.7, mean_dark_guess, mean_bright_guess)
+    elif prob_dist is ProbDist.BROADENED_POISSON:
+        guess_params = (0.7, mean_dark_guess, 1, mean_bright_guess, 1)
+
+    # Fit
+    fit_fn = get_bimodal_pdf(prob_dist)
     try:
         popt, _ = curve_fit(fit_fn, x_vals, hist, p0=guess_params, bounds=bounds)
         if not no_print:
@@ -416,3 +458,22 @@ def determine_dual_threshold(
             print(f"Fidelity: {best_fidelity}")
 
     return threshold
+
+
+if __name__ == "__main__":
+    print(get_single_mode_num_params(ProbDist.BROADENED_POISSON))
+    sys.exit()
+
+    kpl.init_kplotlib()
+    fig, ax = plt.subplots()
+    x_vals = np.linspace(0, 50, 1000)
+    poisson_pdf = get_single_mode_pdf(ProbDist.POISSON)
+    kpl.plot_line(ax, x_vals, poisson_pdf(x_vals, 20), label="Poisson")
+    stretched_poisson_pdf = get_single_mode_pdf(ProbDist.BROADENED_POISSON)
+    kpl.plot_line(
+        ax,
+        x_vals,
+        stretched_poisson_pdf(x_vals, 20, 2),
+        label="Stretched Poisson",
+    )
+    kpl.show(block=True)

@@ -92,20 +92,6 @@ def charge_prep_base(
         pass
 
 
-# def read_image_and_get_counts(nv_list):
-#     img_str = camera.read()
-#     img_array_adus, baseline = widefield.img_str_to_array(img_str)
-#     # baseline = 300
-#     img_array = widefield.adus_to_photons(img_array_adus, baseline=baseline)
-
-#     def get_counts(pixel_coords):
-#         return widefield.integrate_counts(img_array, pixel_coords)
-
-#     counts_list = [get_counts(el) for el in nv_list]
-
-#     return img_array, counts_list
-
-
 def read_and_process_image(nv_list):
     camera = tb.get_server_camera()
     img_str = camera.read()
