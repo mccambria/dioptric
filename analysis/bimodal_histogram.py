@@ -11,6 +11,7 @@ Created on November 11th, 2024
 import inspect
 import sys
 from enum import Enum, auto
+from functools import cache
 from inspect import signature
 
 import numpy as np
@@ -21,6 +22,8 @@ from scipy.special import factorial, gammainc
 from scipy.stats import norm, skewnorm
 
 from utils import kplotlib as kpl
+
+inv_root_2_pi = 1 / np.sqrt(2 * np.pi)
 
 # region Probability distributions
 
@@ -88,6 +91,7 @@ def _get_bimodal_fn(single_mode_fn):
     return bimodal_fn
 
 
+# @cache
 def poisson_pdf(x, rate):
     return (rate**x) * np.exp(-rate) / factorial(x)
 
@@ -115,8 +119,8 @@ def broadened_poisson_pdf(x, rate, sigma, do_norm=True):
     def integrand(y):
         return poisson_pdf(y, rate) * gaussian_pdf(x - y, 0, sigma)
 
-    lower_lim = round(max(0, rate - 5 * np.sqrt(rate)))
-    upper_lim = round(rate + 5 * np.sqrt(rate))
+    lower_lim = round(max(0, x - 4 * sigma))
+    upper_lim = round(x + 4 * sigma)
 
     ret_val = np.sum(integrand(np.arange(lower_lim, upper_lim, 1, dtype=np.float64)))
     return ret_val
@@ -134,12 +138,14 @@ def broadened_poisson_pdf(x, rate, sigma, do_norm=True):
     # return (1 / norm) * poisson_pdf(x / shape, rate)
 
 
-def broadened_poisson_cdf(x, rate, stretch_factor):
-    return _calc_cdf(ProbDist.BROADENED_POISSON, x, rate, stretch_factor)
+def broadened_poisson_cdf(x, rate, sigma):
+    return _calc_cdf(ProbDist.BROADENED_POISSON, x, rate, sigma)
 
 
+# @cache
 def gaussian_pdf(x, mean, std):
-    return norm(loc=mean, scale=std).pdf(x)
+    return inv_root_2_pi * (1 / std) * np.exp(-0.5 * ((x - mean) / std) ** 2)
+    # return norm(loc=mean, scale=std).pdf(x)
 
 
 def gaussian_cdf(x, mean, std):
@@ -184,13 +190,14 @@ def fit_bimodal_histogram(
     ### Fit the histogram
 
     # Get guess params
-    mean_dark_guess = round(np.quantile(counts_list, 0.2))
-    mean_bright_guess = round(np.quantile(counts_list, 0.98))
+    mean_dark_guess = round(np.quantile(counts_list, 0.15))
+    mean_bright_guess = round(np.quantile(counts_list, 0.65))
     mean_dark_min = round(np.quantile(counts_list, 0.02))
     mean_bright_max = round(np.quantile(counts_list, 0.98))
+    ratio_guess = 0.3
     bounds = (-np.inf, np.inf)  # Default bounds
     if prob_dist is ProbDist.SKEW_GAUSSIAN:
-        guess_params = [0.7]
+        guess_params = [ratio_guess]
         guess_params.extend([mean_dark_guess, 2 * np.sqrt(mean_dark_guess), 2])
         guess_params.extend([mean_bright_guess, 2 * np.sqrt(mean_bright_guess), -2])
         skew_lim = 5
@@ -199,13 +206,15 @@ def fit_bimodal_histogram(
             (1, mean_bright_max, np.inf, skew_lim, mean_bright_max, np.inf, skew_lim),
         )
     elif prob_dist is ProbDist.POISSON:
-        guess_params = (0.7, mean_dark_guess, mean_bright_guess)
+        guess_params = (ratio_guess, mean_dark_guess, mean_bright_guess)
     elif prob_dist is ProbDist.BROADENED_POISSON:
-        guess_params = (0.7, mean_dark_guess, 2, mean_bright_guess, 2)
+        guess_params = (ratio_guess, mean_dark_guess, 3, mean_bright_guess, 3)
         bounds = (
-            (0, mean_dark_min, 0, mean_dark_min, 0),
+            (0, mean_dark_min, 1, mean_dark_min, 1),
             (1, mean_bright_max, np.inf, mean_bright_max, np.inf),
         )
+
+    # return guess_params
 
     # Fit
     fit_fn = get_bimodal_pdf(prob_dist)
@@ -223,9 +232,11 @@ def determine_threshold(
     bright_ratio=None,
     no_print=False,
     ret_fidelity=False,
+    popt=None,
     prob_dist: ProbDist = ProbDist.SKEW_GAUSSIAN,
 ):
-    popt = fit_bimodal_histogram(counts_list, no_print, prob_dist)
+    if popt is None:
+        popt = fit_bimodal_histogram(counts_list, no_print, prob_dist)
 
     # Popt will be None
     if popt is None:
