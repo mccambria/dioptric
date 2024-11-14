@@ -11,6 +11,7 @@ Updated on September 16th, 2024
 # region Imports and constants
 
 import pickle
+import sys
 from functools import cache
 from importlib import import_module
 from pathlib import Path
@@ -1414,6 +1415,8 @@ def draw_circle_on_nv(
 
 
 if __name__ == "__main__":
+    print(adus_to_photons(700))
+    sys.exit()
     kpl.init_kplotlib()
     fig, ax = plt.subplots()
     kpl.imshow(ax, _img_array_iris((250, 512)))
