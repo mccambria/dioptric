@@ -66,6 +66,9 @@ def process_rabi_data(nv_list, taus, counts, counts_ste, norms):
     contrast = norms_ms1_newaxis - norms_ms0_newaxis
     norm_counts = (counts - norms_ms0_newaxis) / contrast
     norm_counts_ste = counts_ste / contrast
+    print("Contrast values:", contrast)
+    print("Norm counts:", norm_counts)
+    print("Norm counts ste:", norm_counts_ste)
 
     fit_fns = []
     popts = []
@@ -174,7 +177,7 @@ def plot_rabi_fit_seaborn(nv_list, taus, norm_counts, norm_counts_ste, fit_fns, 
 
     # Set up the Seaborn style and palette
     sns.set(style="whitegrid")
-    fig, axes = plt.subplots(num_rows, num_cols, figsize=(num_cols * 4, num_rows * 3), sharex=True, sharey=True, constrained_layout=False)
+    fig, axes = plt.subplots(num_rows, num_cols, figsize=(num_cols * 2, num_rows * 3), sharex=True, sharey=True, constrained_layout=False)
     axes = axes.flatten()  # Flatten the grid for easy access
 
     # Color palette for different NVs
@@ -191,24 +194,27 @@ def plot_rabi_fit_seaborn(nv_list, taus, norm_counts, norm_counts_ste, fit_fns, 
                 y=norm_counts[nv_idx],
                 ax=ax,
                 color=colors[nv_idx % len(colors)],
-                s=30,  # Size of the dots
+                s=15,  # Size of the dots
                 label=f"NV {nv_idx+1}"
             )
-            if popts[nv_idx] is not None:
-                # Fit line using standard matplotlib plot
-                ax.plot(taus, fit_fns[nv_idx](taus, *popts[nv_idx]), color="r", label="Fit")
-                # Calculate and print the Rabi period
-                rabi_freq = popts[nv_idx][0]  # The first parameter should be the frequency
-                rabi_period = 1 / rabi_freq
-                print(f"NV {nv_idx + 1} Rabi period: {rabi_period:.2f} ns")
+            ax.legend(fontsize=8)
+            # if popts[nv_idx] is not None:
+            #     # Fit line using standard matplotlib plot
+            #     ax.plot(taus, fit_fns[nv_idx](taus, *popts[nv_idx]), color="r", label="Fit")
+            #     # Calculate and print the Rabi period
+            #     rabi_freq = popts[nv_idx][0]  # The first parameter should be the frequency
+            #     rabi_period = 1 / rabi_freq
+            #     print(f"NV {nv_idx + 1} Rabi period: {rabi_period:.2f} ns")
 
-            # Set the title for each NV
-            ax.set_title(f"NV {nv_idx + 1}", fontsize=10)
+            # # Set the title for each NV
+            # ax.set_title(f"NV {nv_idx + 1}", fontsize=10)
 
             # Dynamically adjust y-axis limits for better view of Rabi oscillations
-            y_min = min(norm_counts[nv_idx]) + 1  # Small buffer below the min value
-            y_max = max(norm_counts[nv_idx]) + 0.05  # Small buffer above the max value
-            ax.set_ylim([y_min, y_max])
+            y_min = min(norm_counts[nv_idx])   # Small buffer below the min value
+            y_max = max(norm_counts[nv_idx])  # Small buffer above the max value
+            # ax.set_ylim([y_min, y_max])
+            if np.isfinite(y_min) and np.isfinite(y_max):
+                ax.set_ylim([y_min, y_max])
 
         else:
             # Hide unused subplots if the number of NVs is less than the grid size
@@ -261,102 +267,104 @@ def filter_rabi_periods(popts, period_range=(95, 105)):
     return filtered_nv_indices, average_filtered_period
 
 
-def process_rabi_data(nv_list, taus, avg_counts, avg_counts_ste, norms):
-    """
-    Process the Rabi data to fit each NV's Rabi oscillation, and filter NVs with Rabi periods within a specific range.
+# def process_rabi_data(nv_list, taus, avg_counts, avg_counts_ste, norms):
+#     """
+#     Process the Rabi data to fit each NV's Rabi oscillation, and filter NVs with Rabi periods within a specific range.
 
-    Args:
-        nv_list: List of NV signatures.
-        taus: Pulse durations (ns).
-        avg_counts: Averaged counts for NVs.
-        avg_counts_ste: Standard error of averaged counts.
-        norms: Normalization data for NVs.
+#     Args:
+#         nv_list: List of NV signatures.
+#         taus: Pulse durations (ns).
+#         avg_counts: Averaged counts for NVs.
+#         avg_counts_ste: Standard error of averaged counts.
+#         norms: Normalization data for NVs.
 
-    Returns:
-        fit_fns: List of fitted functions for each NV.
-        popts: List of optimized parameters for each NV fit.
-        norm_counts: Normalized counts for NVs.
-        norm_counts_ste: Standard error of normalized counts.
-    """
-    num_nvs = len(nv_list)
-    fit_fns = []
-    popts = []
-    norm_counts = []
-    norm_counts_ste = []
+#     Returns:
+#         fit_fns: List of fitted functions for each NV.
+#         popts: List of optimized parameters for each NV fit.
+#         norm_counts: Normalized counts for NVs.
+#         norm_counts_ste: Standard error of normalized counts.
+#     """
+#     num_nvs = len(nv_list)
+#     fit_fns = []
+#     popts = []
+#     norm_counts = []
+#     norm_counts_ste = []
 
-    for nv_idx in range(num_nvs):
-        # Normalized counts and standard error
-        norm_count = (avg_counts[nv_idx] - norms[0][nv_idx]) / (norms[1][nv_idx] - norms[0][nv_idx])
-        norm_count_ste = avg_counts_ste[nv_idx] / (norms[1][nv_idx] - norms[0][nv_idx])
-        norm_counts.append(norm_count)
-        norm_counts_ste.append(norm_count_ste)
+#     for nv_idx in range(num_nvs):
+#         # Normalized counts and standard error
+#         norm_count = (avg_counts[nv_idx] - norms[0][nv_idx]) / (norms[1][nv_idx] - norms[0][nv_idx])
+#         norm_count_ste = avg_counts_ste[nv_idx] / (norms[1][nv_idx] - norms[0][nv_idx])
+#         norm_counts.append(norm_count)
+#         norm_counts_ste.append(norm_count_ste)
 
-        # Define the cosine decay function
-        def cos_decay(tau, freq, decay, tau_phase):
-            amp = 0.5
-            envelope = np.exp(-tau / abs(decay)) * amp
-            cos_part = np.cos(2 * np.pi * freq * (tau - tau_phase))
-            return amp - envelope * cos_part
+#         # Define the cosine decay function
+#         def cos_decay(tau, freq, decay, tau_phase):
+#             amp = 0.5
+#             envelope = np.exp(-tau / abs(decay)) * amp
+#             cos_part = np.cos(2 * np.pi * freq * (tau - tau_phase))
+#             return amp - envelope * cos_part
 
-        # Initial guess for fitting: frequency, decay time, and phase offset
-        guess_params = [0.005, 1000, 0]  # Example values
+#         # Initial guess for fitting: frequency, decay time, and phase offset
+#         guess_params = [0.005, 1000, 0]  # Example values
 
-        try:
-            popt, _ = curve_fit(cos_decay, taus, norm_count, p0=guess_params, sigma=norm_count_ste, absolute_sigma=True)
-        except Exception as e:
-            popt = None
+#         try:
+#             popt, _ = curve_fit(cos_decay, taus, norm_count, p0=guess_params, sigma=norm_count_ste, absolute_sigma=True)
+#         except Exception as e:
+#             popt = None
 
-        fit_fns.append(cos_decay if popt is not None else None)
-        popts.append(popt)
+#         fit_fns.append(cos_decay if popt is not None else None)
+#         popts.append(popt)
 
-    # Filter NVs with Rabi periods within 100 ns ± 10 ns
-    filtered_nv_indices, avg_filtered_period = filter_rabi_periods(popts, period_range=(90, 110))
+#     # Filter NVs with Rabi periods within 100 ns ± 10 ns
+#     filtered_nv_indices, avg_filtered_period = filter_rabi_periods(popts, period_range=(90, 110))
 
-    # Print the filtered NV indices and their average Rabi period
-    print("Filtered NV indices with Rabi period 100 ± 10 ns:", filtered_nv_indices)
-    if avg_filtered_period:
-        print(f"Average Rabi period of filtered NVs: {avg_filtered_period:.2f} ns")
-    else:
-        print("No NVs found within the specified Rabi period range.")
+#     # Print the filtered NV indices and their average Rabi period
+#     print("Filtered NV indices with Rabi period 100 ± 10 ns:", filtered_nv_indices)
+#     if avg_filtered_period:
+#         print(f"Average Rabi period of filtered NVs: {avg_filtered_period:.2f} ns")
+#     else:
+#         print("No NVs found within the specified Rabi period range.")
 
-    return fit_fns, popts, norm_counts, norm_counts_ste
-
-
-if __name__ == "__main__":
-    # Load raw data
-    data = dm.get_raw_data(file_id=1652952342615, load_npz=True, use_cache=False)
-    nv_list = data["nv_list"]
-    taus = data["taus"]
-    counts = np.array(data["states"])
-
-    sig_counts = counts[0]
-    ref_counts = counts[1]
-
-    # Process Rabi data for NVs
-    avg_counts, avg_counts_ste, norms = widefield.process_counts(nv_list, sig_counts, ref_counts, threshold=False)
-    fit_fns, popts, norm_counts, norm_counts_ste = process_rabi_data(nv_list, taus, avg_counts, avg_counts_ste, norms)
+#     return fit_fns, popts, norm_counts, norm_counts_ste
 
 
 # if __name__ == "__main__":
-#     kpl.init_kplotlib()
+#     # Load raw data
+#     data = dm.get_raw_data(file_id=1652952342615, load_npz=True, use_cache=False)
+#     nv_list = data["nv_list"]
+#     taus = data["taus"]
+#     counts = np.array(data["states"])
 
-#     # Suppress warnings for covariance estimation issues
-#     with warnings.catch_warnings():
-#         warnings.simplefilter("ignore", category=OptimizeWarning)
+#     sig_counts = counts[0]
+#     ref_counts = counts[1]
+
+#     # Process Rabi data for NVs
+#     avg_counts, avg_counts_ste, norms = widefield.process_counts(nv_list, sig_counts, ref_counts, threshold=False)
+#     fit_fns, popts, norm_counts, norm_counts_ste = process_rabi_data(nv_list, taus, avg_counts, avg_counts_ste, norms)
+
+
+if __name__ == "__main__":
+    kpl.init_kplotlib()
+
+    # Suppress warnings for covariance estimation issues
+    with warnings.catch_warnings():
+        warnings.simplefilter("ignore", category=OptimizeWarning)
+        # data = dm.get_raw_data(file_id=1652952342615, load_npz=True, use_cache=False)
+        # data = dm.get_raw_data(file_id=1697111534197, load_npz=True, use_cache=False)
+        data = dm.get_raw_data(file_id=1698301105306, load_npz=True, use_cache=False)
         
-#         data = dm.get_raw_data(file_id=1652952342615, load_npz=True, use_cache=False)
-#         nv_list = data["nv_list"]
-#         counts = np.array(data["states"])
-#         taus = data["taus"]
+        nv_list = data["nv_list"]
+        counts = np.array(data["states"])
+        taus = data["taus"]
 
-#         sig_counts = counts[0]
-#         ref_counts = counts[1]
+        sig_counts = counts[0]
+        ref_counts = counts[1]
 
-#         avg_counts, avg_counts_ste, norms = widefield.process_counts(nv_list, sig_counts, ref_counts, threshold=False)
+        avg_counts, avg_counts_ste, norms = widefield.process_counts(nv_list, sig_counts, ref_counts, threshold=True)
 
-#         # Process the Rabi data
-#         fit_fns, popts, norm_counts, norm_counts_ste = process_rabi_data(nv_list, taus, avg_counts, avg_counts_ste, norms)
+        # Process the Rabi data
+        fit_fns, popts, norm_counts, norm_counts_ste = process_rabi_data(nv_list, taus, avg_counts, avg_counts_ste, norms)
 
-#         file_path = "nv_rabi_plot.png"
-#         # Plot using seaborn
-#         plot_rabi_fit_seaborn(nv_list, taus, norm_counts, norm_counts_ste, fit_fns, popts, file_path, num_cols=6)
+        file_path = "nv_rabi_plot.png"
+        # Plot using seaborn
+        plot_rabi_fit_seaborn(nv_list, taus, norm_counts, norm_counts_ste, fit_fns, popts, file_path, num_cols=6)

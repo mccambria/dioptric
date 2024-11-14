@@ -19,6 +19,7 @@ from matplotlib.patches import Circle
 # from pykrige.ok import OrdinaryKriging
 from scipy.interpolate import Rbf
 from scipy.optimize import curve_fit, least_squares
+from sklearn.cluster import KMeans
 
 from majorroutines.pulsed_resonance import fit_resonance, norm_voigt, voigt, voigt_split
 from majorroutines.widefield import base_routine
@@ -946,12 +947,9 @@ def plot_nv_resonance_fits_and_residuals(
         threshold_method: Optional method for thresholding.
     """
     avg_counts, avg_counts_ste, norms = widefield.process_counts(
-        nv_list, sig_counts, ref_counts, threshold=False, method=thresh_method
-    )
+        nv_list, sig_counts, ref_counts, threshold=True)
     # Normalize counts from 0 to 1
     # avg_counts = [(ac) / (max(ac)) for ac in avg_counts]
-    from sklearn.cluster import KMeans
-
     # List to store NV orientations based on fitted peak centers
     orientation_clusters = []
     center_freqs_all = []  # Store center frequencies for clustering
@@ -1293,104 +1291,128 @@ def plot_nv_resonance_fits_and_residuals(
     dm.save_figure(fig_freq_diff, file_path)
     plt.close(fig_freq_diff)
 
-def nv_resonance_splitting(
-    nv_list, freqs, avg_counts, avg_counts_ste, threshold=0.06, bins=30
+def plot_selected_nv_resonance_fits_comparison(
+    nv_list, freqs, sig_counts, ref_counts, file_id, selected_nv_indices
 ):
     """
-    Calculate the frequency splitting between two NV resonances by fitting a Voigt profile to two resonance peaks,
-    and plot the histogram of frequency splitting values with the given threshold.
+    Plot resonance data and fitted Voigt profiles for selected NVs in a single column for comparison,
+    focusing on peak differences.
 
     Args:
         nv_list: List of NV signatures.
         freqs: Frequency data.
-        avg_counts: Averaged counts for NVs.
-        avg_counts_ste: Standard error of averaged counts.
-        threshold: Threshold for classifying splitting (default: 0.06 GHz).
-        bins: Number of bins for the histogram (default: 30).
-
-    Returns:
-        freq_splitting: Frequency splitting values for all NVs.
-        fitted_peaks: List of tuples with the two fitted resonance frequencies for each NV.
+        sig_counts: Signal counts for NVs.
+        ref_counts: Reference counts for NVs.
+        file_id: ID for saving the file.
+        selected_nv_indices: List of indices of NVs to plot.
     """
-    # Normalize counts from 0 to 1
-    avg_counts = [(ac - min(ac)) / (max(ac) - min(ac)) for ac in avg_counts]
+    # Filter NVs and corresponding data based on selected indices
+    filtered_nv_list = [nv_list[i] for i in selected_nv_indices]
+    filtered_sig_counts = np.array([sig_counts[i] for i in selected_nv_indices])
+    filtered_ref_counts = np.array([ref_counts[i] for i in selected_nv_indices])
 
-    # Initialize lists to store fit functions, fit parameters, and center frequencies
-    fit_fns = []
-    popts = []
-    center_freqs = []
-
-    for nv_idx in range(len(nv_list)):
-        # Fitting part using the provided method
-        num_resonances = 2  # Assuming 2 resonances
-        low_freq_guess = freqs[np.argmax(avg_counts[nv_idx][: len(freqs) // 2])]
-        high_freq_guess = freqs[
-            np.argmax(avg_counts[nv_idx][len(freqs) // 2 :]) + len(freqs) // 2
-        ]
-
-        # Guess parameters and bounds
-        guess_params = [5, 5, low_freq_guess, 5, 5, high_freq_guess]
-        bounds = [[0] * len(guess_params), [np.inf] * len(guess_params)]
-        for ind in [0, 1, 3, 4]:
-            bounds[1][ind] = 10
-
-        def fit_fn(freq, *args):
-            return norm_voigt(freq, *args[:3]) + norm_voigt(freq, *args[3:])
-
-        # Fit the resonance frequencies using the Voigt profile
-        _, popt, _ = fit_resonance(
-            freqs,
-            avg_counts[nv_idx],
-            avg_counts_ste[nv_idx],
-            fit_func=fit_fn,
-            guess_params=guess_params,
-            bounds=bounds,
-        )
-
-        # Save fit function and parameters for the fit figure
-        fit_fns.append(fit_fn)
-        popts.append(popt)
-        center_freqs.append(
-            (popt[2], popt[5])
-        )  # Extract the two center frequencies for each NV
-
-    # Calculate frequency splitting for each NV
-    freq_splitting = [abs(f[1] - f[0]) for f in center_freqs]
-    # plot_histogram_with_threshold(freq_splitting, threshold, bins)
-    return freq_splitting
-
-
-def plot_histogram_with_threshold(freq_splitting, threshold, bins=30):
-    """
-    Plot a histogram of frequency splitting values with a vertical line indicating the threshold.
-
-    Args:
-        freq_splitting: List of frequency splitting values for NVs.
-        threshold: Threshold value for classification.
-        bins: Number of bins for the histogram (default: 30).
-    """
-    # Create a histogram of the frequency splitting values
-    plt.figure(figsize=(8, 6))
-    plt.hist(freq_splitting, bins=bins, color="blue", alpha=0.7, edgecolor="black")
-
-    # Plot a vertical line at the threshold
-    plt.axvline(
-        x=threshold,
-        color="red",
-        linestyle="--",
-        linewidth=2,
-        label=f"Threshold = {threshold}",
+    avg_counts, avg_counts_ste, norms = widefield.process_counts(
+        filtered_nv_list, filtered_sig_counts, filtered_ref_counts, threshold=False
     )
 
-    # Add labels and title
-    plt.title("Histogram of Frequency Splitting with Threshold", fontsize=14)
-    plt.xlabel("Frequency Splitting (GHz)", fontsize=12)
-    plt.ylabel("Count", fontsize=12)
+    num_nvs = len(filtered_nv_list)
+    sns.set(style="whitegrid", palette="muted")
+    colors = sns.color_palette("deep", num_nvs)
 
-    # Add a legend
-    plt.legend()
+    fig, axes = plt.subplots(
+        num_nvs, 1, figsize=(7, 2 * num_nvs), sharex=True, sharey=False
+    )
 
-    # Display the plot
+    if num_nvs == 1:
+        axes = [axes]  # Ensure axes is always iterable
+
+    fit_fns = []
+    popts = []
+    center_freqs_all = []
+
+    for plot_idx, nv_idx in enumerate(selected_nv_indices):
+        ax = axes[plot_idx]
+
+        sns.lineplot(
+            x=freqs,
+            y=avg_counts[plot_idx],
+            ax=ax,
+            color=colors[plot_idx % len(colors)],
+            lw=2,
+            marker="o",
+            markersize=5,
+            label=f"NV {nv_idx+1}",
+        )
+        ax.errorbar(
+            freqs,
+            avg_counts[plot_idx],
+            yerr=avg_counts_ste[plot_idx],
+            fmt="none",
+            ecolor="gray",
+            alpha=0.6,
+        )
+ 
+        nv_counts = avg_counts[plot_idx]
+        nv_counts_ste = avg_counts_ste[plot_idx]
+
+        # Initial guesses and fitting logic
+        low_freq_guess = freqs[np.argmax(avg_counts[plot_idx][: len(freqs) // 2])]
+        high_freq_guess = freqs[
+            np.argmax(avg_counts[plot_idx][len(freqs) // 2:]) + len(freqs) // 2
+        ]
+        max_amp = np.max(nv_counts)
+        guess_params = [max_amp, max_amp, low_freq_guess, high_freq_guess, 5, np.min(nv_counts), 0]
+        bounds = (
+            [0, 0, min(freqs), min(freqs), 0, -np.inf, -np.inf],
+            [np.inf, np.inf, max(freqs), max(freqs), np.inf, np.inf, np.inf],
+        )
+
+        result = least_squares(
+            residuals_fn, guess_params, args=(freqs, nv_counts, nv_counts_ste),
+            bounds=bounds, max_nfev=20000
+        )
+        popt = result.x
+        center_freqs_all.append([popt[2], popt[3]])
+        fit_fns.append(voigt_with_background)
+        popts.append(popt)
+
+        fit_data = voigt_with_background(freqs, *popt)
+        ax.plot(freqs, fit_data, "-", color=colors[plot_idx % len(colors)], label="Fit", lw=2)
+
+         # Enhanced Vertical lines for fitted peaks
+        ax.axvline(popt[2], color="teal", linestyle="--", linewidth=1.8, alpha=0.7)
+        ax.axvline(popt[3], color="teal", linestyle="--", linewidth=1.8, alpha=0.7)
+
+        # Enhanced Annotations for fitted peaks with background box
+        bbox_props = dict(boxstyle="round,pad=0.3", edgecolor="none", facecolor="lavender", alpha=0.8)
+        ax.text(
+            popt[2], max(nv_counts) * 0.9, f"{popt[2]:.3f} GHz", color="purple", ha="center", fontsize=11, bbox=bbox_props
+        )
+        ax.text(
+            popt[3], max(nv_counts) * 0.9, f"{popt[3]:.3f} GHz", color="purple", ha="center", fontsize=11, bbox=bbox_props
+        )
+
+        # Calculate and annotate the difference between peaks
+        peak_diff = abs(popt[3] - popt[2])
+        diff_text_props = dict(boxstyle="round,pad=0.4", edgecolor="none", facecolor="honeydew", alpha=0.9)
+        ax.text(
+            (popt[2] + popt[3]) / 2, max(nv_counts) * 0.95, f"Δ: {peak_diff:.3f} GHz",
+            color="darkorange", ha="center", fontsize=12, bbox=diff_text_props
+        )
+                    # Y-tick labels for the leftmost column
+     
+        # ax.set_yticklabels([])
+        ax.set_ylabel("NV$^{-}$ Population", fontsize=12)
+        print(f"NV {nv_idx + 1} fitted peaks: {popt[2]:.6f} GHz, {popt[3]:.6f} GHz (Difference: {peak_diff:.6f} GHz)")
+    
+    axes[-1].set_xlabel("Frequency (GHz)")
+    fig.suptitle(f"Selected NV Orientations", fontsize=12)
+    plt.tight_layout()
+    file_path = dm.get_file_path(
+        __file__, file_name, f"{file_id}_{date_time_str}_NV_Orientations"
+    )
+    # dm.save_figure(fig, file_path)
+    # plt.close(fig)
     plt.show()
 
 
@@ -1650,8 +1672,10 @@ def generate_2d_magnetic_field_map_kriging(
 
 
 if __name__ == "__main__":
-    file_id = 1663484946120
-    file_id = 1695092317631
+    # file_id = 1663484946120
+    # file_id = 1695092317631
+    # file_id = 1698088573367
+    file_id = 1699853891683
     data = dm.get_raw_data(file_id=file_id, load_npz=False, use_cache=True)
     nv_list = data["nv_list"]
     num_nvs = len(nv_list)
@@ -1676,11 +1700,6 @@ if __name__ == "__main__":
     file_name = dm.get_file_name(file_id=file_id)
     file_path = dm.get_file_path(__file__, file_name, f"{file_id}_{date_time_str}")
 
-    # fig = plot_nv_resonance_data_sns_with_freq_labels(
-    #     nv_list, freqs, avg_counts, avg_counts_ste, file_id, file_path, num_cols=5,threshold_method=thresh_method)
-    # fig = plot_nv_resonance_data_sns_with_fit(
-    #     nv_list, freqs, avg_counts, avg_counts_ste, file_id, file_path, num_cols=5,threshold_method=thresh_method
-    #     )
     thresh_method = "otsu"
     plot_nv_resonance_fits_and_residuals(
         nv_list,
@@ -1688,10 +1707,15 @@ if __name__ == "__main__":
         sig_counts,
         ref_counts,
         file_id,
-        num_cols=6,
-        threshold_method=thresh_method,
+        num_cols=9,
     )
-    print(f"Plot saved to {file_path}")
+    # print(f"Plot saved to {file_path}")
+    
+    # selected_nv_indices = [22, 10, 25, 12]
+    # plot_selected_nv_resonance_fits_comparison(
+    #     nv_list, freqs, sig_counts, ref_counts, file_id, selected_nv_indices
+    # )
+
     # plt.show()
     # freq_splitting = nv_resonance_splitting(nv_list, freqs, avg_counts, avg_counts_ste)
     
@@ -1741,6 +1765,5 @@ if __name__ == "__main__":
     #     ref_counts[:, :, :, 0::2] = ref_counts_0
     #     ref_counts[:, :, :, 1::2] = ref_counts_1
 
-    #     # Assuming avg_counts and avg_counts_ste are calculated or loaded elsewhere
     #     avg_counts = np.mean(sig_counts, axis=1)
     #     avg_counts_ste = np.std(sig_counts, axis=1) / np.sqrt(num_runs)
