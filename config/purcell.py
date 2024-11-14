@@ -131,7 +131,7 @@ config |= {
                 "physical_name": "sig_gen_STAN_sg394",
                 # "uwave_power": 6.05,
                 "uwave_power": 2.3,
-                "frequency": 2.858,
+                "frequency": 2.856,
                 # "frequency": 2.9304468840166678,
                 "rabi_period": 128,
                 "iq_delay": 140,
@@ -139,9 +139,9 @@ config |= {
             1: {
                 "physical_name": "sig_gen_STAN_sg394_2",
                 "uwave_power": 8.1,
-                "frequency": 2.812,
+                # "frequency": 2.812,
                 # "frequency": 3.05,
-                # "frequency": 2.79,
+                "frequency": 2.799,
                 # "frequency": 2.8874701085827104,
                 "rabi_period": 128,
             },
@@ -814,11 +814,11 @@ opx_config = {
         "green_aod_cw-scc": {"type": "constant", "sample": 0.15},
         # Red AOD
         # "red_aod_cw-opti": {"type": "constant", "sample": 0.10},
-        "red_aod_cw-opti": {"type": "constant", "sample": 0.14},
+        "red_aod_cw-opti": {"type": "constant", "sample": 0.16},
         # "red_aod_cw-ion": {"type": "constant", "sample": 0.09},
-        "red_aod_cw-ion": {"type": "constant", "sample": 0.14},
+        "red_aod_cw-ion": {"type": "constant", "sample": 0.16},
         # "red_aod_cw-scc": {"type": "constant", "sample": 0.135},
-        "red_aod_cw-scc": {"type": "constant", "sample": 0.14},
+        "red_aod_cw-scc": {"type": "constant", "sample": 0.16},
         # Yellow AOM
         "yellow_imaging": {"type": "constant", "sample": 0.45},  # 0.35
         # "yellow_imaging": {"type": "constant", "sample": 0.50},  # 0.35

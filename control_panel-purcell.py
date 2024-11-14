@@ -7,9 +7,7 @@ Created on June 16th, 2023
 @author: mccambria
 """
 
-
 ### Imports
-
 import datetime
 import os
 import random
@@ -294,7 +292,7 @@ def do_resonance(nv_list):
     num_steps = 60
     # Single ref
     # num_reps = 8
-    num_runs = 400
+    num_runs = 500
     # num_runs = 50
     # num_runs = 10
 
@@ -324,7 +322,7 @@ def do_rabi(nv_list):
     # max_tau = 480 + min_tau
     num_steps = 31
     num_reps = 10
-    num_runs = 200
+    num_runs = 300
     # num_runs = 100
     # num_runs = 50
     # num_runs = 20
@@ -361,7 +359,8 @@ def do_power_rabi(nv_list):
     # power_center = -3.6
     power_range = 6
     num_steps = 16
-    num_reps = 20
+    num_reps = 24
+    # num_reps = 20
     num_runs = 150
     # num_runs = 50
     # num_runs = 2
@@ -527,7 +526,7 @@ def do_spin_pol_check(nv_sig):
 
 def do_detect_cosmic_rays(nv_list):
     num_reps = 60
-    num_runs = 6 * 60
+    num_runs = 10 * 60
     # num_runs = 2
     dark_time = 1e9
 
@@ -542,8 +541,7 @@ def do_check_readout_fidelity(nv_list):
 
 
 def do_charge_quantum_jump(nv_list):
-    num_reps = 2000
-
+    num_reps = 3000
     charge_monitor.charge_quantum_jump(nv_list, num_reps)
 
 
@@ -824,7 +822,7 @@ if __name__ == "__main__":
     # magnet_angle = 90
     date_str = "2024_03_12"
     sample_coords = [2.0, 0.0]
-    z_coord = 0.0
+    z_coord = 0.25
     # Load NV pixel coordinates
     pixel_coords_list = load_nv_coords(
         # file_path="slmsuite/nv_blob_detection/nv_blob_filtered_162nvs_ref.npz"
@@ -835,6 +833,12 @@ if __name__ == "__main__":
     # pixel_coords_list = [
     #     [106.923, 120.549],
     #     # [125.0, 125.0],
+    # ]
+    # pixel_coords_list = [
+    #     [106.923, 120.549],
+    #     [34.489, 57.566],
+    #     [95.999, 201.219],
+    #     [135.319, 83.844],
     # ]
     print(f"Number of NVs: {len(pixel_coords_list)}")
     print(f"Reference NV:{pixel_coords_list[0]}")
@@ -859,7 +863,8 @@ if __name__ == "__main__":
         ]
         for nv_pixel_coords in pixel_coords_list
     ]
-
+    # print(green_coords_list)
+    # print(red_coords_list)
     # Calculate and print min and max values for green laser coordinates
     # green_x, green_y = zip(*green_coords_list)
     # print(
@@ -878,25 +883,24 @@ if __name__ == "__main__":
     # print(red_coords_list[0])
     # print(pixel_coords_list[8])
 
-    # pixel_coords_list = [
-    #     [120.137, 121.811],
-    #     [133.937, 91.407],
-    #     [76.778, 140.585],
-    #     [160.878, 169.528],
-    # ]
-    # green_coords_list = [
-    #     [102.34, 108.922],
-    #     # [107.34, 107.132],
-    #     [106.424, 103.858],
-    #     [111.64, 109.517],
-    #     [102.156, 111.903],
-    # ]
-    # red_coords_list = [
-    #     [72.315, 72.395],
-    #     [71.424, 69.681],
-    #     [76.013, 74.892],
-    #     [68.405, 76.289],
-    # ]
+    pixel_coords_list = [
+        [106.923, 120.549],
+        [34.489, 57.566],
+        [95.999, 201.219],
+        [135.319, 83.844],
+    ]
+    green_coords_list = [
+        [108.784, 107.156],
+        [117.632, 101.077],
+        [108.507, 115.775],
+        [106.412, 103.047],
+    ]
+    red_coords_list = [
+        [73.543, 72.672],
+        [80.417, 68.063],
+        [73.818, 80.045],
+        [71.367, 68.985],
+    ]
     num_nvs = len(pixel_coords_list)
     threshold_list = [15.5] * num_nvs
     # threshold_list = load_thresholds
@@ -1058,7 +1062,7 @@ if __name__ == "__main__":
         # for ind in range(20):
         # do_optimize_pixel(nv_sig)
         # do_optimize_green(nv_sig)
-        # do_optimize_red(nv_sig, repr_nv_sig)
+        do_optimize_red(nv_sig, repr_nv_sig)
         # do_optimize_z(nv_sig)
         ## do_optimize_sample(nv_sig)
 
@@ -1077,7 +1081,7 @@ if __name__ == "__main__":
         # do_check_readout_fidelity(nv_list)x
 
         # do_resonance_zoom(nv_list)
-        do_rabi(nv_list)
+        # do_rabi(nv_list)
         # do_resonance(nv_list)
         # do_spin_echo(nv_list)s
 

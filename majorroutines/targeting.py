@@ -99,7 +99,7 @@ def _fit_gaussian(scan_vals, count_vals, axis_ind, positive_amplitude=True, fig=
         fit_count_vals = fit_func(linspace_scan_vals, *popt)
         # Add popt to the axes
         r_popt = [round(el, 3) for el in popt]
-        text = rf"a={r_popt[0]}\n $\mu$={r_popt[1]}\n $\sigma$={r_popt[2]}\n offset={r_popt[3]}"
+        text = f"a={r_popt[0]}\n$\mu$={r_popt[1]}\n$\sigma$={r_popt[2]}\noffset={r_popt[3]}"
         _update_figure(fig, axis_ind, linspace_scan_vals, fit_count_vals, text)
 
     center = None
@@ -485,20 +485,37 @@ def _create_opti_nv_sig(nv_sig, opti_coords, coords_key):
     ----------
     nv_sig : _type_
         _description_
-    opti_coords : _type_
-        _description_
+    opti_coords : list(float)
+        list of optimized coordinates - contains 3 values, one for each
+        x, y, and z
     positioner : _type_
         _description_
     """
 
     opti_nv_sig = copy.deepcopy(nv_sig)
-    drift = pos.get_drift(coords_key)
+
+    # For Z we just need to work with single value
     if coords_key is CoordsKey.Z:
-        drift *= -1
+        opti_coord = opti_coords[-1]
+        if pos.should_drift_adjust(coords_key):
+            drift = -1 * pos.get_drift(coords_key)
+            value_to_set = pos.adjust_coords_for_drift(opti_coord, drift)
+        else:
+            value_to_set = opti_coord
+    # For XY we need to work with a list [x_coord, y_coord]
     else:
-        drift = [-1 * el for el in drift]
-    adj_opti_coords = pos.adjust_coords_for_drift(opti_coords, drift)
-    pos.set_nv_coords(opti_nv_sig, adj_opti_coords, coords_key)
+        opti_coords = opti_coords[:2]
+        # If we only optimized on one axis, opti_coords will have None for the axis we
+        # did not optimize on. Fill this position in with the current value from the sig
+        for ind in range(2):
+            if opti_coords[ind] is None:
+                opti_coords[ind] = pos.get_nv_coords(nv_sig, coords_key)[ind]
+        if pos.should_drift_adjust(coords_key):
+            drift = [-1 * el for el in pos.get_drift(coords_key)]
+            value_to_set = pos.adjust_coords_for_drift(opti_coords, drift)
+        else:
+            value_to_set = opti_coords
+    pos.set_nv_coords(opti_nv_sig, value_to_set, coords_key)
     return opti_nv_sig
 
 
@@ -774,7 +791,10 @@ def optimize(
     virtual_laser_key = _get_opti_virtual_laser_key(coords_key)
     final_counts = stationary_count_lite(opti_nv_sig, virtual_laser_key)
 
-    opti_coords = [round(coord, 3) for coord in opti_coords]
+    for ind in range(3):
+        coord = opti_coords[ind]
+        if coord is not None:
+            opti_coords[ind] = round(coord, 3)
     print(f"Optimized coordinates: {opti_coords}")
     print(f"Counts at optimized coordinates: {final_counts}")
 
@@ -812,8 +832,8 @@ def optimize(
 if __name__ == "__main__":
     file_name = "2023_09_21-21_07_51-widefield_calibration_nv1"
     data = dm.get_raw_data(file_name)
-
-    fig = _create_figure()
+    positioner = "laser_INTE_520_aod"
+    fig = _create_figure(positioner)
     nv_sig = data["nv_sig"]
     keys = ["x", "y", "z"]
     for axis_ind in range(3):
@@ -821,5 +841,9 @@ if __name__ == "__main__":
         count_vals = data[f"{keys[axis_ind]}_counts"]
         _update_figure(fig, axis_ind, scan_vals, count_vals)
         _fit_gaussian(scan_vals, count_vals, axis_ind, True, fig)
+    r_popt = [1, 2, 3, 4]
+    text = f"a={r_popt[0]}\n$\mu$={r_popt[1]}\n$\sigma$={r_popt[2]}\noffset={r_popt[3]}"
+    ax = fig.gca()
+    kpl.anchored_text(ax, text, kpl.Loc.LOWER_RIGHT)
 
     plt.show(block=True)

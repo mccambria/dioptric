@@ -237,16 +237,10 @@ if __name__ == "__main__":
     # data = dm.get_raw_data(file_id=1646374739142, load_npz=True)
     # img_array = np.array(data["img_array"])
 
-    # data = dm.get_raw_data(file_id=1680868340409, load_npz=True)
-    # data = dm.get_raw_data(file_id=1680026835865, load_npz=True)
-    # data = dm.get_raw_data(file_id=1681681506476, load_npz=True)
-    # data = dm.get_raw_data(file_id=1688298946808, load_npz=True)
-    # data = dm.get_raw_data(file_id=1691393168458, load_npz=True)
-    # data = dm.get_raw_data(file_id=1692695881803, load_npz=True)
-    # data = dm.get_raw_data(file_id=1693166192526, load_npz=True)
-    # data = dm.get_raw_data(file_id=1693412457124, load_npz=True)
     # data = dm.get_raw_data(file_id=1693686359757, load_npz=True)
-    data = dm.get_raw_data(file_id=1694279622270, load_npz=True)
+    # data = dm.get_raw_data(file_id=1694279622270, load_npz=True)
+    # data = dm.get_raw_data(file_id=1697710844436, load_npz=True)
+    data = dm.get_raw_data(file_id=1698496302146, load_npz=True)
 
     img_array = np.array(data["ref_img_array"])
     # img_array = np.array(data["diff_img_array"])
@@ -287,7 +281,7 @@ if __name__ == "__main__":
         for existing_coord in filtered_nv_coords:
             distance = np.linalg.norm(np.array(existing_coord) - np.array(coord))
 
-            if distance < 6:
+            if distance < 5.6:
                 keep_coord = False  # Mark it for exclusion if too close
                 break  # No need to check further distances
 
@@ -325,7 +319,7 @@ if __name__ == "__main__":
 
     kpl.show(block=True)
 
-    print(f"Detected NV coordinates (optimized): {filtered_nv_coords}")
+    print(f"Detected NV coordinates (optimized): {len(filtered_nv_coords)}")
 
     # Calculate and print the average FWHM
     # if len(spot_sizes) > 0:
@@ -341,11 +335,11 @@ if __name__ == "__main__":
     #     print("No spots detected. Unable to calculate conversion factor.")
 
     # Save the results
-    save_results(
-        filtered_nv_coords,
-        filtered_counts,
-        filename="nv_blob_filtered_161nvs.npz",
-    )
+    # save_results(
+    #     filtered_nv_coords,
+    #     filtered_counts,
+    #     filename="nv_blob_filtered_160nvs.npz",
+    # )
 
     # image_ids = [
     #     1693359304252,

@@ -268,6 +268,7 @@ def load_nv_coords(
     nv_coordinates = data["nv_coordinates"]
     spot_weights = data["spot_weights"]
     # spot_weights = data["integrated_counts"]
+    # spot_weights = data["integrated_counts"]
     return nv_coordinates, spot_weights
 
 
@@ -390,16 +391,25 @@ if __name__ == "__main__":
     # data = dm.get_raw_data(file_id=1688554695897, load_npz=True)
     # data = dm.get_raw_data(file_id=1693166192526, load_npz=True)
     # data = dm.get_raw_data(file_id=1693412457124, load_npz=True)
-    # data = dm.get_raw_data(file_id=1693686359757, load_npz=True)
-    data = dm.get_raw_data(file_id=1694298949680, load_npz=True)
-
+    data = dm.get_raw_data(file_id=1698496302146, load_npz=True)
+    #
     img_array = np.array(data["ref_img_array"])
     nv_coordinates, integrated_intensities = load_nv_coords(
         # file_path="slmsuite/nv_blob_detection/nv_blob_filtered_144nvs.npz"
-        file_path="slmsuite/nv_blob_detection/nv_blob_filtered_163nvs_reordered.npz"
+        # file_path="slmsuite/nv_blob_detection/nv_blob_filtered_163nvs_reordered.npz"
+        file_path="slmsuite/nv_blob_detection/nv_blob_filtered_160nvs_reordered.npz"
     )
     nv_coordinates = nv_coordinates.tolist()
-    integrated_intensities = integrated_intensities.tolist()
+    # nv_coordinates[62] = [142.513, 181.832]
+    # print(nv_coordinates[62])
+    # integrated_intensities = integrated_intensities.tolist()
+    integrated_intensities = []
+    integration_radius = 3
+    for coord in nv_coordinates:
+        x, y = coord[:2]  # Assuming `coord` contains at least two elements (y, x)
+        rr, cc = disk((y, x), integration_radius, shape=img_array.shape)
+        sum_value = np.sum(img_array[rr, cc])
+        integrated_intensities.append(sum_value)  # Append to the list
     # Filter NV coordinates based on x and y ranges (0 to 240)
     filtered_coords = []
     filtered_intensities = []
@@ -409,17 +419,17 @@ if __name__ == "__main__":
             filtered_coords.append(coord)
             filtered_intensities.append(intensity)
 
-    # Filter and reorder NV coordinates based on reference NV
+    # # Filter and reorder NV coordinates based on reference NV
     sigma = 2.5
     reference_nv = [106.923, 120.549]
-    # reference_nv = [134.954, 83.925]
-    # reference_nv = [92.998, 146.61]
     filtered_reordered_coords, filtered_reordered_counts = filter_and_reorder_nv_coords(
         filtered_coords, filtered_intensities, reference_nv, min_distance=3
     )
 
+    # Integration over disk region around each NV coordinate
+
     # Manually remove NVs with specified indices
-    # indices_to_remove = [1]  # Example indices to remove
+    # indices_to_remove = [1, 137, 161]  # Example indices to remove
     # filtered_reordered_coords = [
     #     coord
     #     for i, coord in enumerate(filtered_reordered_coords)
@@ -443,7 +453,8 @@ if __name__ == "__main__":
     #     fitted_amplitudes.append(amplitude)
 
     # Calculate weights based on the fitted intensities
-    spot_weights = linear_weights(filtered_reordered_counts, alpha=0.9)
+    spot_weights = linear_weights(filtered_reordered_counts, alpha=0.6)
+    # print(len(spot_weights))
     # updated_spot_weights = filtered_reordered_counts
     # spot_weights = updated_spot_weights
     # spot_weights = linear_weights(filtered_reordered_counts, alpha=0.9)
@@ -488,7 +499,7 @@ if __name__ == "__main__":
     for idx, (coords, counts, weight) in enumerate(
         zip(filtered_reordered_coords, filtered_reordered_counts, spot_weights)
     ):
-        print(f"{idx:<8} | {coords} | {counts:.3f} | {weight:.3f}")
+        print(f"{idx+1:<8} | {coords} | {counts:.3f} | {weight:.3f}")
 
     # print("NV Index | Spot Weight | Updated Spot Weight | Counts")
     # print("-" * 50)
@@ -518,7 +529,7 @@ if __name__ == "__main__":
 
     # Plot the original image with circles around each NV
     fig, ax = plt.subplots()
-    title = "24ms, Ref"
+    title = "50ms, Ref"
     kpl.imshow(ax, img_array, title=title, cbar_label="Photons")
     # Draw circles and index numbers
     for idx, coord in enumerate(filtered_reordered_coords):
@@ -528,7 +539,7 @@ if __name__ == "__main__":
         ax.text(
             coord[0],
             coord[1] - sigma - 1,
-            str(idx),
+            str(idx + 1),
             color="white",
             fontsize=8,
             ha="center",

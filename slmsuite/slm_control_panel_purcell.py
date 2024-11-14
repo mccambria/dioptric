@@ -247,7 +247,15 @@ def calibration_triangle():
         feedback="computational_spot",
         stat_groups=["computational_spot"],
     )
+
     phase = hologram.extract_phase()
+    file_path = r"slmsuite\calibration"
+    num_nvs = len(nuvu_pixel_coords)
+    now = datetime.now()
+    date_time_str = now.strftime("%Y%m%d_%H%M%S")  # Format: YYYYMMDD_HHMMSS
+    filename = f"slm_calibration_{num_nvs}nvs_{date_time_str}.npy"
+    # Save the phase data
+    save(phase, file_path, filename)
     slm.write(phase, settle=True)
     cam_plot()
 
@@ -273,7 +281,7 @@ def nuvu2thorcam_calibration(coords):
         [[927.846, 670.0], [512.153, 670.0], [720.0, 310.0]], dtype="float32"
     )
     cal_coords_nuvu = np.array(
-        [[179.063, 52.744], [180.162, 195.947], [52.318, 123.246]], dtype="float32"
+        [[178.958, 52.88], [180.214, 196.693], [53.48, 123.739]], dtype="float32"
     )
 
     # Compute the affine transformation matrix
@@ -302,7 +310,8 @@ def load_nv_coords(
     data = np.load(file_path, allow_pickle=True)
     nv_coordinates = data["nv_coordinates"]
     spot_weights = data["spot_weights"]
-    # print(spot_weights)
+    # spot_weights = data["integrated_counts"]
+    print(len(spot_weights))
     # spot_weights = data["integrated_counts"]
     return nv_coordinates, spot_weights
 
@@ -357,7 +366,8 @@ def write_nvs_phase():
     # )
     # phase = np.load("slmsuite\computed_phase\slm_phase_77nvs_20240926_182348.npy")
     # phase = np.load("slmsuite\computed_phase\slm_phase_155nvs_20241106_095934.npy")
-    phase = np.load("slmsuite\computed_phase\slm_phase_155nvs_20241106_151648.npy")
+    # phase = np.load("slmsuite\computed_phase\slm_phase_161nvs_20241108_020407.npy")
+    phase = np.load("slmsuite\computed_phase\slm_phase_160nvs_20241111_205639.npy")
     slm.write(phase, settle=True)
     cam_plot()
 
@@ -381,7 +391,7 @@ try:
     load_fourier_calibration()
     # test_wavefront_calibration()
     # wavefront_calibration()
-    # load_wavefront_calibration()s
+    # load_wavefront_calibration()
     compute_nvs_phase()
     # write_nvs_phase()
     # calibration_triangle()

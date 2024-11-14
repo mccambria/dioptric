@@ -134,7 +134,9 @@ def process_and_plot(raw_data, do_plot_histograms=False):
 
             if fig is not None:
                 hist_figs.append(fig)
-
+    # prep fidality
+    print(f"readout_fidelity_list:{readout_fidelity_list}")
+    print(f"prep_fidelity_list:{prep_fidelity_list}")
     # Report out the results
     threshold_list = np.array(threshold_list)
     readout_fidelity_list = np.array(readout_fidelity_list)

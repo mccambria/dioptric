@@ -629,31 +629,31 @@ def _validate_counts_structure(counts):
         raise RuntimeError("Passed counts object has the wrong number of dimensions.")
 
 
-def average_counts(sig_counts, ref_counts=None):
-    """Gets average and standard error for counts data structure.
-    Counts arrays must have the structure [nv_ind, run_ind, freq_ind, rep_ind].
-    Returns the structure [nv_ind, freq_ind] for avg_counts and avg_counts_ste.
-    Returns the [nv_ind] for norms.
-    """
-    _validate_counts_structure(sig_counts)
-    _validate_counts_structure(ref_counts)
+# def average_counts(sig_counts, ref_counts=None):
+#     """Gets average and standard error for counts data structure.
+#     Counts arrays must have the structure [nv_ind, run_ind, freq_ind, rep_ind].
+#     Returns the structure [nv_ind, freq_ind] for avg_counts and avg_counts_ste.
+#     Returns the [nv_ind] for norms.
+#     """
+#     _validate_counts_structure(sig_counts)
+#     _validate_counts_structure(ref_counts)
 
-    avg_counts = np.mean(sig_counts, axis=run_rep_axes)
-    num_shots = sig_counts.shape[rep_ax] * sig_counts.shape[run_ax]
-    avg_counts_std = np.std(sig_counts, axis=run_rep_axes, ddof=1)
-    avg_counts_ste = avg_counts_std / np.sqrt(num_shots)
+#     avg_counts = np.mean(sig_counts, axis=run_rep_axes)
+#     num_shots = sig_counts.shape[rep_ax] * sig_counts.shape[run_ax]
+#     avg_counts_std = np.std(sig_counts, axis=run_rep_axes, ddof=1)
+#     avg_counts_ste = avg_counts_std / np.sqrt(num_shots)
 
-    if ref_counts is None:
-        norms = None
-    else:
-        ms0_ref_counts = ref_counts[:, :, :, 0::2]
-        ms1_ref_counts = ref_counts[:, :, :, 1::2]
-        norms = [
-            np.mean(ms0_ref_counts, axis=(1, 2, 3)),
-            np.mean(ms1_ref_counts, axis=(1, 2, 3)),
-        ]
+#     if ref_counts is None:
+#         norms = None
+#     else:
+#         ms0_ref_counts = ref_counts[:, :, :, 0::2]
+#         ms1_ref_counts = ref_counts[:, :, :, 1::2]
+#         norms = [
+#             np.mean(ms0_ref_counts, axis=(1, 2, 3)),
+#             np.mean(ms1_ref_counts, axis=(1, 2, 3)),
+#         ]
 
-    return avg_counts, avg_counts_ste, norms
+#     return avg_counts, avg_counts_ste, norms
 
 
 # endregion

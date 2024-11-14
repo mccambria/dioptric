@@ -95,10 +95,11 @@ def main(
 
     def step_fn(step_ind):
         power = powers[step_ind]
-        for ind in uwave_ind_list:
-            uwave_dict = tb.get_uwave_dict(ind)
+        for uwave_ind in uwave_ind_list:
+            uwave_dict = tb.get_virtual_sig_gen_dict(uwave_ind)
+            sig_gen = tb.get_server_sig_gen(uwave_ind)
             uwave_power = uwave_dict["uwave_power"]
-            sig_gen = tb.get_server_sig_gen(ind)
+            sig_gen = tb.get_server_sig_gen(uwave_ind)
             sig_gen.set_amp(round(uwave_power + power, 3))
 
     data = base_routine.main(

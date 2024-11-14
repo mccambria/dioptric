@@ -258,8 +258,9 @@ def main(
 
     def rep_fn(rep_ind):
         img_str = camera.read()
-        sub_img_array, _ = widefield.img_str_to_array(img_str)
+        sub_img_array, baseline = widefield.img_str_to_array(img_str)
         img_array_list.append(sub_img_array)
+        # print(baseline)
 
     seq_args_string = tb.encode_seq_args(seq_args)
     pulse_gen.stream_load(seq_file, seq_args_string, num_reps)
