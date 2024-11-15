@@ -18,8 +18,8 @@ import numpy as np
 from matplotlib import pyplot as plt
 from scipy.integrate import quad
 from scipy.optimize import curve_fit
-from scipy.special import factorial, gammainc
-from scipy.stats import norm, skewnorm
+from scipy.special import factorial, gammainc, gammaln
+from scipy.stats import norm, poisson, skewnorm
 
 from utils import kplotlib as kpl
 
@@ -31,6 +31,7 @@ inv_root_2_pi = 1 / np.sqrt(2 * np.pi)
 class ProbDist(Enum):
     POISSON = auto()
     BROADENED_POISSON = auto()
+    COMPOUND_POISSON = auto()
     GAUSSIAN = auto()
     SKEW_GAUSSIAN = auto()
 
@@ -49,25 +50,13 @@ def get_single_mode_num_params(prob_dist: ProbDist):
 
 
 def get_single_mode_pdf(prob_dist: ProbDist):
-    if prob_dist is ProbDist.POISSON:
-        return poisson_pdf
-    if prob_dist is ProbDist.GAUSSIAN:
-        return gaussian_pdf
-    if prob_dist is ProbDist.SKEW_GAUSSIAN:
-        return skew_gaussian_pdf
-    if prob_dist is ProbDist.BROADENED_POISSON:
-        return broadened_poisson_pdf
+    fn_name = f"{prob_dist.name.lower()}_pdf"
+    return eval(fn_name)
 
 
 def get_single_mode_cdf(prob_dist: ProbDist):
-    if prob_dist is ProbDist.POISSON:
-        return poisson_cdf
-    if prob_dist is ProbDist.GAUSSIAN:
-        return gaussian_cdf
-    if prob_dist is ProbDist.SKEW_GAUSSIAN:
-        return skew_gaussian_cdf
-    if prob_dist is ProbDist.BROADENED_POISSON:
-        return broadened_poisson_cdf
+    fn_name = f"{prob_dist.name.lower()}_cdf"
+    return eval(fn_name)
 
 
 def get_bimodal_pdf(prob_dist: ProbDist):
@@ -93,6 +82,7 @@ def _get_bimodal_fn(single_mode_fn):
 
 # @cache
 def poisson_pdf(x, rate):
+    # return poisson(mu=rate).pmf(x)
     return (rate**x) * np.exp(-rate) / factorial(x)
 
 
@@ -111,6 +101,43 @@ def _calc_cdf(prob_dist, x, *params):
     return val
 
 
+def compound_poisson_pdf(x, rate):
+    if isinstance(x, (list, np.ndarray)):
+        ret_vals = [compound_poisson_pdf(el, rate) for el in x]
+        return np.array(ret_vals)
+
+    if x == 0:
+
+        def integrand(y):
+            return (rate**y) * np.exp(-(rate + y)) / factorial(y)
+    else:
+
+        def integrand(y):
+            # Straightforward version below can overflow
+            # return (
+            #     (rate**y) * (y**x) * np.exp(-(rate + y)) / (factorial(x) * factorial(y))
+            # )
+            # Calculate exp(log(integrand)) instead
+            exp_arg = (
+                y * np.log(rate)
+                + x * np.log(y)
+                - (rate + y)
+                - gammaln(x + 1)
+                - gammaln(y + 1)
+            )
+            return np.exp(exp_arg)
+
+    lower_lim = round(max(0 if x == 0 else 1, rate - 5 * np.sqrt(rate)))
+    upper_lim = round(rate + 5 * np.sqrt(rate))
+    integral_points = np.arange(lower_lim, upper_lim, 1, dtype=np.float64)
+    ret_val = np.sum(integrand(integral_points))
+    return ret_val
+
+
+def compound_poisson_cdf(x, rate):
+    return _calc_cdf(ProbDist.COMPOUND_POISSON, x, rate)
+
+
 def broadened_poisson_pdf(x, rate, sigma, do_norm=True):
     if isinstance(x, (list, np.ndarray)):
         ret_vals = [broadened_poisson_pdf(el, rate, sigma) for el in x]
@@ -122,20 +149,9 @@ def broadened_poisson_pdf(x, rate, sigma, do_norm=True):
     lower_lim = round(max(0, x - 4 * sigma))
     upper_lim = round(x + 4 * sigma)
 
-    ret_val = np.sum(integrand(np.arange(lower_lim, upper_lim, 1, dtype=np.float64)))
+    integral_points = np.arange(lower_lim, upper_lim, 1, dtype=np.float64)
+    ret_val = np.sum(integrand(integral_points))
     return ret_val
-
-    adj_rate = rate * sigma
-    if do_norm:
-        x_vals = np.array(range(100), dtype=int)
-        norm = np.sum(broadened_poisson_pdf(x_vals, rate, sigma, do_norm=False))
-        return (1 / norm) * poisson_pdf(x / sigma, rate)
-    else:
-        return poisson_pdf(x / sigma, rate)
-    # norm = np.exp(-rate) * exponential_integral(1 / shape, rate ** (1 / shape))
-
-    # # norm = 1
-    # return (1 / norm) * poisson_pdf(x / shape, rate)
 
 
 def broadened_poisson_cdf(x, rate, sigma):
@@ -211,7 +227,13 @@ def fit_bimodal_histogram(
         guess_params = (ratio_guess, mean_dark_guess, 3, mean_bright_guess, 3)
         bounds = (
             (0, mean_dark_min, 1, mean_dark_min, 1),
-            (1, mean_bright_max, np.inf, mean_bright_max, np.inf),
+            (1, mean_bright_max, mean_dark_guess, mean_bright_max, mean_dark_guess),
+        )
+    elif prob_dist is ProbDist.COMPOUND_POISSON:
+        guess_params = (ratio_guess, mean_dark_guess, mean_bright_guess)
+        bounds = (
+            (0, mean_dark_min, mean_dark_min),
+            (1, mean_bright_max, mean_bright_max),
         )
 
     # return guess_params
@@ -490,14 +512,19 @@ def determine_dual_threshold(
 
 
 if __name__ == "__main__":
+    kpl.init_kplotlib()
     # print(get_single_mode_num_params(ProbDist.BROADENED_POISSON))
     # sys.exit()
+    # print(compound_poisson_pdf(80, 20))
+    # sys.exit()
 
-    kpl.init_kplotlib()
     fig, ax = plt.subplots()
-    x_vals = np.linspace(0, 50, 1000)
-    kpl.plot_line(ax, x_vals, poisson_pdf(x_vals, 20), label="Poisson")
-    kpl.plot_line(
-        ax, x_vals, broadened_poisson_pdf(x_vals, 20, 5), label="Broadened Poisson"
-    )
+    x_vals = np.linspace(0, 20, 1000)
+    for ind in range(10):
+        kpl.plot_line(ax, x_vals, poisson_pdf(x_vals, ind), label="Poisson")
+    # kpl.plot_line(ax, x_vals, poisson_pdf(x_vals, 40), label="Poisson")
+    # kpl.plot_line(
+    #     ax, x_vals, compound_poisson_pdf(x_vals, 40), label="Compound Poisson"
+    # )
+    # ax.legend()
     kpl.show(block=True)
