@@ -118,10 +118,10 @@ def process_and_plot(
         )
         threshold_list.append(threshold)
         readout_fidelity_list.append(readout_fidelity)
-        modes.append(popt[1])
-        modes.append(popt[3])
-        shapes.append(popt[2])
-        shapes.append(popt[4])
+        # modes.append(popt[1])
+        # modes.append(popt[3])
+        # shapes.append(popt[2])
+        # shapes.append(popt[4])
         if popt is not None:
             prep_fidelity = 1 - popt[0]
         else:
@@ -359,7 +359,5 @@ if __name__ == "__main__":
     kpl.init_kplotlib()
     data = dm.get_raw_data(file_id=1688554695897, load_npz=False)
     # data = dm.get_raw_data(file_id=1691569540529, load_npz=False)
-    process_and_plot(
-        data, do_plot_histograms=False, prob_dist=ProbDist.BROADENED_POISSON
-    )
+    process_and_plot(data, do_plot_histograms=True, prob_dist=ProbDist.COMPOUND_POISSON)
     kpl.show(block=True)
