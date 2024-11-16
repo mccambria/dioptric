@@ -80,7 +80,7 @@ def plot_histograms(
 
 
 def process_and_plot(
-    raw_data, do_plot_histograms=False, prob_dist: ProbDist = ProbDist.POISSON
+    raw_data, do_plot_histograms=False, prob_dist: ProbDist = ProbDist.COMPOUND_POISSON
 ):
     ### Setup
     nv_list = raw_data["nv_list"]
@@ -105,23 +105,12 @@ def process_and_plot(
         ref_counts_list = ref_counts_lists[ind]
 
         # Only use ref counts for threshold determination
-        popt = fit_bimodal_histogram(
-            ref_counts_list, no_print=True, prob_dist=prob_dist
-        )
+        popt = fit_bimodal_histogram(ref_counts_list, prob_dist, no_print=True)
         threshold, readout_fidelity = determine_threshold(
-            ref_counts_list,
-            bright_ratio=0.5,
-            no_print=True,
-            ret_fidelity=True,
-            popt=popt,
-            prob_dist=prob_dist,
+            popt, prob_dist, dark_mode_weight=0.5, no_print=True, ret_fidelity=True
         )
         threshold_list.append(threshold)
         readout_fidelity_list.append(readout_fidelity)
-        # modes.append(popt[1])
-        # modes.append(popt[3])
-        # shapes.append(popt[2])
-        # shapes.append(popt[4])
         if popt is not None:
             prep_fidelity = 1 - popt[0]
         else:
@@ -165,17 +154,12 @@ def process_and_plot(
             )
             kpl.anchored_text(ax, snr_str, kpl.Loc.CENTER_RIGHT, size=kpl.Size.SMALL)
 
-            kpl.show(block=True)
+            # kpl.show(block=True)
             # plt.close(fig)
             # fig = None
 
             if fig is not None:
                 hist_figs.append(fig)
-
-    fig, ax = plt.subplots()
-    kpl.histogram(ax, shapes, hist_type=kpl.HistType.STEP)
-    fig, ax = plt.subplots()
-    kpl.plot_points(ax, modes, shapes)
 
     # Report out the results
     threshold_list = np.array(threshold_list)
@@ -360,5 +344,5 @@ if __name__ == "__main__":
     kpl.init_kplotlib()
     data = dm.get_raw_data(file_id=1688554695897, load_npz=False)
     # data = dm.get_raw_data(file_id=1691569540529, load_npz=False)
-    process_and_plot(data, do_plot_histograms=True, prob_dist=ProbDist.COMPOUND_POISSON)
+    process_and_plot(data, do_plot_histograms=True)
     kpl.show(block=True)

@@ -70,12 +70,12 @@ def get_bimodal_cdf(prob_dist: ProbDist):
 
 
 def _get_bimodal_fn(single_mode_fn):
-    def bimodal_fn(x, first_mode_weight, *params):
-        second_mode_weight = 1 - first_mode_weight
+    def bimodal_fn(x, dark_mode_weight, *params):
+        second_mode_weight = 1 - dark_mode_weight
         half_num_params = len(params) // 2
         first_mode_val = single_mode_fn(x, *params[:half_num_params])
         second_mode_val = single_mode_fn(x, *params[half_num_params:])
-        return first_mode_weight * first_mode_val + second_mode_weight * second_mode_val
+        return dark_mode_weight * first_mode_val + second_mode_weight * second_mode_val
 
     return bimodal_fn
 
@@ -183,10 +183,24 @@ def exponential_integral(nu, z):
 # endregion
 
 
-def fit_bimodal_histogram(
-    counts_list, no_print=False, prob_dist: ProbDist = ProbDist.SKEW_GAUSSIAN
-):
-    """counts_list should have some population in both modes"""
+def fit_bimodal_histogram(counts_list, prob_dist: ProbDist, no_print=False):
+    """Fit the passed probability distribution to a histogram of the passed counts_list.
+    counts_list should have some population in both modes
+
+    Parameters
+    ----------
+    counts_list : list | np.ndarray
+        Array-like of recorded counts from an NV
+    prob_dist : ProbDist
+        Probability distribution to use for the fit
+    no_print : bool, optional
+        Whether to skip printing out the results of the fit, by default False
+
+    Returns
+    -------
+    np.ndarray(float)
+        popt, the optimized fit parameters
+    """
 
     counts_list = counts_list.flatten()
 
@@ -250,26 +264,38 @@ def fit_bimodal_histogram(
 
 
 def determine_threshold(
-    counts_list,
-    bright_ratio=None,
-    no_print=False,
-    ret_fidelity=False,
-    popt=None,
-    prob_dist: ProbDist = ProbDist.SKEW_GAUSSIAN,
+    popt, prob_dist: ProbDist, dark_mode_weight=None, no_print=False, ret_fidelity=False
 ):
-    if popt is None:
-        popt = fit_bimodal_histogram(counts_list, no_print, prob_dist)
+    """Determine the optimal threshold for assigning a state based on a measured number of counts
 
-    # Popt will be None
+    Parameters
+    ----------
+    popt : np.ndarray
+        Optimized fit parameters
+    prob_dist : ProbDist
+        Probability distribution uses in the fit
+    dark_mode_weight : float, optional
+        Portion of measurements that project into the dark mode, by default popt[0],
+        the dark mode weight parameter from the fit
+    no_print : bool, optional
+        Whether to skip printing out the results of the determination, by default False
+    ret_fidelity : bool, optional
+        Whether to return the readout fidelity expected under the optimal threshold, by default False
+
+    Returns
+    -------
+    float | list(float)
+        The threshold or the threshold and the expected readout fidelity
+    """
     if popt is None:
         if ret_fidelity:
             return None, None
         else:
             return None
 
-    if bright_ratio is None:
-        bright_ratio = 1 - popt[0]
-    dark_ratio = 1 - bright_ratio
+    if dark_mode_weight is None:
+        dark_mode_weight = popt[0]
+    bright_mode_weight = 1 - dark_mode_weight
 
     num_single_mode_params = get_single_mode_num_params(prob_dist)
 
@@ -277,7 +303,7 @@ def determine_threshold(
     mean_counts_dark, mean_counts_bright = popt[1], popt[1 + num_single_mode_params]
     mean_counts_dark = round(mean_counts_dark)
     mean_counts_bright = round(mean_counts_bright)
-    thresh_options = np.arange(0.5, np.max(counts_list) + 0.5, 1)
+    thresh_options = np.arange(0.5, mean_counts_bright + 0.5, 1)
     fidelities = []
     left_fidelities = []
     right_fidelities = []
@@ -288,7 +314,9 @@ def determine_threshold(
         bright_left_prob = single_mode_cdf(val, *popt[1 + num_single_mode_params :])
         bright_right_prob = 1 - bright_left_prob
 
-        fidelity = dark_ratio * dark_left_prob + bright_ratio * bright_right_prob
+        fidelity = (
+            dark_mode_weight * dark_left_prob + bright_mode_weight * bright_right_prob
+        )
         fidelities.append(fidelity)
 
         # Two-sided
