@@ -394,7 +394,7 @@ if __name__ == "__main__":
     data = dm.get_raw_data(file_id=1700650667777, load_npz=True)
     data = dm.get_raw_data(file_id=1700668458198, load_npz=True)
     data = dm.get_raw_data(file_id=1700710358100, load_npz=True)
-    data = dm.get_raw_data(file_id=1700735475922, load_npz=True)
+    data = dm.get_raw_data(file_id=1701553383934, load_npz=True)
 
     img_array = np.array(data["ref_img_array"])
     nv_coordinates, integrated_intensities = load_nv_coords(
@@ -472,7 +472,7 @@ if __name__ == "__main__":
     indices = [4, 27, 30, 41, 117, 130, 139, 155]
     # Apply linear weights to all counts
     # calcualted_spot_weights = linear_weights(filtered_reordered_counts, alpha=0.2)
-    updated_spot_weights = linear_weights(filtered_reordered_counts, alpha=0.8)
+    updated_spot_weights = linear_weights(filtered_reordered_counts, alpha=0.9)
 
     # Create a copy or initialize spot weights for modification
     # updated_spot_weights = (
@@ -551,13 +551,13 @@ if __name__ == "__main__":
     # print(f"Number of NVs detected: {len(filtered_nv_coords)}")
 
     # Save the filtered results
-    # save_results(
-    #     filtered_reordered_coords,
-    #     filtered_reordered_counts,
-    #     spot_weights,
-    #     updated_spot_weights,
-    #     filename="slmsuite/nv_blob_detection/nv_blob_filtered_160nvs_reordered.npz",
-    # )
+    save_results(
+        filtered_reordered_coords,
+        filtered_reordered_counts,
+        spot_weights,
+        updated_spot_weights,
+        filename="slmsuite/nv_blob_detection/nv_blob_filtered_160nvs_reordered.npz",
+    )
 
     # Plot the original image with circles around each NV
 
