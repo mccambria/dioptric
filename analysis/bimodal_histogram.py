@@ -109,7 +109,10 @@ def compound_poisson_pdf(x, rate):
     if x == 0:
 
         def integrand(y):
-            return (rate**y) * np.exp(-(rate + y)) / factorial(y)
+            # Straightforward version below can overflow
+            # return (rate**y) * np.exp(-(rate + y)) / factorial(y)
+            # Calculate exp(log(integrand)) instead
+            return np.exp(y * np.log(rate) - (rate + y) - gammaln(y + 1))
     else:
 
         def integrand(y):
