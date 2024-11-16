@@ -33,19 +33,19 @@ green_laser_aod = "laser_INTE_520_aod"
 red_laser_aod = "laser_COBO_638_aod"
 
 calibration_coords_pixel = [
-    [133.937, 91.407],
-    [76.778, 140.585],
-    [160.878, 169.528],
+    [52.761, 64.24],
+    [95.923, 201.438],
+    [207.435, 74.049],
 ]
 calibration_coords_green = [
-    [106.424, 103.858],
-    [111.64, 109.517],
-    [102.156, 111.903],
+    [115.698, 101.385],
+    [108.913, 115.777],
+    [98.342, 101.054],
 ]
 calibration_coords_red = [
-    [71.424, 69.681],
-    [76.013, 74.892],
-    [68.405, 76.289],
+    [78.674, 67.831],
+    [73.831, 79.615],
+    [65.056, 67.6],
 ]
 # Create the dictionaries using the provided lists
 calibration_coords_nv1 = {
@@ -814,11 +814,11 @@ opx_config = {
         "green_aod_cw-scc": {"type": "constant", "sample": 0.15},
         # Red AOD
         # "red_aod_cw-opti": {"type": "constant", "sample": 0.10},
-        "red_aod_cw-opti": {"type": "constant", "sample": 0.16},
+        "red_aod_cw-opti": {"type": "constant", "sample": 0.15},
         # "red_aod_cw-ion": {"type": "constant", "sample": 0.09},
-        "red_aod_cw-ion": {"type": "constant", "sample": 0.16},
+        "red_aod_cw-ion": {"type": "constant", "sample": 0.15},
         # "red_aod_cw-scc": {"type": "constant", "sample": 0.135},
-        "red_aod_cw-scc": {"type": "constant", "sample": 0.16},
+        "red_aod_cw-scc": {"type": "constant", "sample": 0.15},
         # Yellow AOM
         "yellow_imaging": {"type": "constant", "sample": 0.45},  # 0.35
         # "yellow_imaging": {"type": "constant", "sample": 0.50},  # 0.35

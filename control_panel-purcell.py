@@ -131,8 +131,9 @@ def do_optimize_green(nv_sig):
 
 def do_optimize_red(nv_sig, ref_nv_sig):
     opti_coords = []
-    axes_list = [Axes.X, Axes.Y]
-    for ind in range(2):
+    # axes_list = [Axes.X, Axes.Y]
+    axes_list = [Axes.Y, Axes.X]
+    for ind in range(1):
         axes = axes_list[ind]
         ret_vals = targeting.optimize(nv_sig, coords_key=red_laser_aod, axes=axes)
         opti_coords.append(ret_vals[0])
@@ -822,7 +823,7 @@ if __name__ == "__main__":
     # magnet_angle = 90
     date_str = "2024_03_12"
     sample_coords = [2.0, 0.0]
-    z_coord = 0.25
+    z_coord = 0.5
     # Load NV pixel coordinates
     pixel_coords_list = load_nv_coords(
         # file_path="slmsuite/nv_blob_detection/nv_blob_filtered_162nvs_ref.npz"
@@ -834,11 +835,10 @@ if __name__ == "__main__":
     #     [106.923, 120.549],
     #     # [125.0, 125.0],
     # ]
-    # pixel_coords_list = [
     #     [106.923, 120.549],
-    #     [34.489, 57.566],
-    #     [95.999, 201.219],
-    #     [135.319, 83.844],
+    #     [52.761, 64.24],
+    #     [95.923, 201.438],
+    #     [207.435, 74.049],
     # ]
     print(f"Number of NVs: {len(pixel_coords_list)}")
     print(f"Reference NV:{pixel_coords_list[0]}")
@@ -883,24 +883,24 @@ if __name__ == "__main__":
     # print(red_coords_list[0])
     # print(pixel_coords_list[8])
 
-    pixel_coords_list = [
-        [106.923, 120.549],
-        [34.489, 57.566],
-        [95.999, 201.219],
-        [135.319, 83.844],
-    ]
-    green_coords_list = [
-        [108.784, 107.156],
-        [117.632, 101.077],
-        [108.507, 115.775],
-        [106.412, 103.047],
-    ]
-    red_coords_list = [
-        [73.543, 72.672],
-        [80.417, 68.063],
-        [73.818, 80.045],
-        [71.367, 68.985],
-    ]
+    # pixel_coords_list = [
+    #     [106.923, 120.549],
+    #     [52.761, 64.24],
+    #     [95.923, 201.438],
+    #     [207.435, 74.049],
+    # ]
+    # green_coords_list = [
+    #     [108.69, 107.015],
+    #     [115.698, 101.385],
+    #     [108.913, 115.777],
+    #     [98.342, 101.054],
+    # ]
+    # red_coords_list = [
+    #     [73.525, 72.483],
+    #     [78.674, 67.831],
+    #     [73.831, 79.615],
+    #     [65.056, 67.6],
+    # ]
     num_nvs = len(pixel_coords_list)
     threshold_list = [15.5] * num_nvs
     # threshold_list = load_thresholds
@@ -1062,7 +1062,7 @@ if __name__ == "__main__":
         # for ind in range(20):
         # do_optimize_pixel(nv_sig)
         # do_optimize_green(nv_sig)
-        do_optimize_red(nv_sig, repr_nv_sig)
+        # do_optimize_red(nv_sig, repr_nv_sig)
         # do_optimize_z(nv_sig)
         ## do_optimize_sample(nv_sig)
 
@@ -1075,7 +1075,7 @@ if __name__ == "__main__":
         # do_optimize_loop(nv_list, coords_key)
 
         # nv_list = nv_list[::-1]
-        # do_charge_state_histograms(nv_list)
+        do_charge_state_histograms(nv_list)
         # do_charge_state_histograms_images(nv_list)
         # do_charge_state_conditional_init(nv_list)
         # do_check_readout_fidelity(nv_list)x
@@ -1083,7 +1083,7 @@ if __name__ == "__main__":
         # do_resonance_zoom(nv_list)
         # do_rabi(nv_list)
         # do_resonance(nv_list)
-        # do_spin_echo(nv_list)s
+        # do_spin_echo(nv_list)
 
         # do_power_rabi(nv_list)
         # do_correlation_test(nv_list)

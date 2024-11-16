@@ -241,6 +241,7 @@ if __name__ == "__main__":
     # data = dm.get_raw_data(file_id=1694279622270, load_npz=True)
     # data = dm.get_raw_data(file_id=1697710844436, load_npz=True)
     data = dm.get_raw_data(file_id=1698496302146, load_npz=True)
+    data = dm.get_raw_data(file_id=1699573772441, load_npz=True)
 
     img_array = np.array(data["ref_img_array"])
     # img_array = np.array(data["diff_img_array"])
@@ -257,7 +258,7 @@ if __name__ == "__main__":
 
     # Apply the blob detection and Gaussian fitting
     sigma = 2.0
-    lower_threshold = 0.09
+    lower_threshold = 0.12
     upper_threshold = None
     smoothing_sigma = 0.0
 
@@ -334,7 +335,7 @@ if __name__ == "__main__":
     # else:
     #     print("No spots detected. Unable to calculate conversion factor.")
 
-    # Save the results
+    # # Save the results
     # save_results(
     #     filtered_nv_coords,
     #     filtered_counts,
