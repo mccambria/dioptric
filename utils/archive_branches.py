@@ -139,7 +139,6 @@ if __name__ == "__main__":
     # List of branches to archive
     branches_to_archive = [
         "robust_fitting",
-        "multi_nv_automation",
     ]
 
     skip_merged_check = False
