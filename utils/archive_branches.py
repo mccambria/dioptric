@@ -127,9 +127,12 @@ if __name__ == "__main__":
 
     # List of branches to archive
     branches_to_archive = [
-        "robust_fitting",
+        "restore_point",
+        "instructional-lab",
+        "instructional-lab-v2",
+        "working_branch_sam",
     ]
 
-    skip_merged_check = False
+    skip_merged_check = True
 
     main(repo_path, branches_to_archive, skip_merged_check)
