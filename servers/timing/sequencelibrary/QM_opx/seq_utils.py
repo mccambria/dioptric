@@ -106,6 +106,7 @@ def macro_polarize(
     spin_pol=True,
     targeted_polarization=False,
     verify_charge_states=False,
+    polarization_amp=None,  # New parameter to control power
 ):
     """Apply a polarization pulse to each coordinate pair in the passed coords_list.
     Pulses are applied in series
@@ -125,7 +126,11 @@ def macro_polarize(
 
     pol_laser_name = tb.get_physical_laser_name(VirtualLaserKey.CHARGE_POL)
     pulse_name = "charge_pol"
-    macro_run_aods(laser_names=[pol_laser_name], aod_suffices=[pulse_name])
+    macro_run_aods(
+        laser_names=[pol_laser_name],
+        aod_suffices=[pulse_name],
+        amps=[polarization_amp],  # Pass the amplitude here
+    )
 
     def macro_sub():
         target_list = _cache_target_list if targeted_polarization else None
@@ -424,7 +429,32 @@ def get_macro_pi_on_2_pulse_duration(uwave_ind_list):
     return duration
 
 
-def macro_charge_state_readout(readout_duration_ns=None):
+# def macro_charge_state_readout(readout_duration_ns=None):
+#     readout_laser_name = tb.get_physical_laser_name(
+#         VirtualLaserKey.WIDEFIELD_CHARGE_READOUT
+#     )
+#     readout_laser_el = get_laser_mod_element(readout_laser_name, sticky=True)
+
+#     camera_el = "do_camera_trigger"
+
+#     default_duration = get_default_pulse_duration()
+#     if readout_duration_ns is not None:
+#         readout_duration = convert_ns_to_cc(readout_duration_ns)
+#     else:
+#         readout_duration = get_default_charge_readout_duration()
+#     wait_duration = readout_duration - default_duration
+
+#     qua.align()
+#     qua.play("charge_readout", readout_laser_el)
+#     qua.play("on", camera_el)
+#     qua.wait(wait_duration, readout_laser_el)
+#     qua.wait(wait_duration, camera_el)
+#     qua.ramp_to_zero(readout_laser_el)
+#     qua.ramp_to_zero(camera_el)
+
+
+def macro_charge_state_readout(readout_duration_ns=None, readout_amp=None):
+    print("Entering macro_charge_state_readout")
     readout_laser_name = tb.get_physical_laser_name(
         VirtualLaserKey.WIDEFIELD_CHARGE_READOUT
     )
@@ -439,8 +469,14 @@ def macro_charge_state_readout(readout_duration_ns=None):
         readout_duration = get_default_charge_readout_duration()
     wait_duration = readout_duration - default_duration
 
+    print(f" Readout Laser Power: {readout_amp}")
+
     qua.align()
-    qua.play("charge_readout", readout_laser_el)
+
+    if readout_amp is not None:
+        qua.play("charge_readout" * qua.amp(readout_amp), readout_laser_el)
+    else:
+        qua.play("charge_readout", readout_laser_el)
     qua.play("on", camera_el)
     qua.wait(wait_duration, readout_laser_el)
     qua.wait(wait_duration, camera_el)

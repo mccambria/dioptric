@@ -472,7 +472,7 @@ if __name__ == "__main__":
     indices = [4, 27, 30, 41, 117, 130, 139, 155]
     # Apply linear weights to all counts
     # calcualted_spot_weights = linear_weights(filtered_reordered_counts, alpha=0.2)
-    updated_spot_weights = linear_weights(filtered_reordered_counts, alpha=0.9)
+    updated_spot_weights = linear_weights(filtered_reordered_counts, alpha=0.6)
 
     # Create a copy or initialize spot weights for modification
     # updated_spot_weights = (

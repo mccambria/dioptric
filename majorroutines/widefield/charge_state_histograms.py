@@ -33,9 +33,8 @@ from utils import positioning as pos
 from utils import tool_belt as tb
 from utils.constants import NVSig, VirtualLaserKey
 
+
 # region Process and plotting functions
-
-
 def plot_histograms(
     sig_counts_list,
     ref_counts_list,
