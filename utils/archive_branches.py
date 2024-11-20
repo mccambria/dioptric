@@ -127,10 +127,7 @@ if __name__ == "__main__":
 
     # List of branches to archive
     branches_to_archive = [
-        "restore_point",
-        "instructional-lab",
-        "instructional-lab-v2",
-        "working_branch_sam",
+        "branch",
     ]
 
     skip_merged_check = True
