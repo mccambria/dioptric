@@ -126,8 +126,6 @@ def process_and_plot(
                 bimodal_pdf = bimodal_histogram.get_bimodal_pdf(prob_dist)
 
                 x_vals = np.linspace(0, np.max(ref_counts_list), 1000)
-                line = bimodal_pdf(x_vals, *popt)
-                kpl.plot_line(ax, x_vals, line, color=kpl.KplColors.BLUE)
                 line = popt[0] * single_mode_pdf(
                     x_vals, *popt[1 : 1 + single_mode_num_params]
                 )
@@ -136,6 +134,8 @@ def process_and_plot(
                     x_vals, *popt[1 + single_mode_num_params :]
                 )
                 kpl.plot_line(ax, x_vals, line, color=kpl.KplColors.GREEN)
+                line = bimodal_pdf(x_vals, *popt)
+                kpl.plot_line(ax, x_vals, line, color=kpl.KplColors.BLUE)
 
             # Threshold line
             if threshold is not None:
