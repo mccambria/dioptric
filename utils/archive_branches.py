@@ -3,21 +3,21 @@
 done working with it so that it doesn't clutter the repo. Generally we want
 a record of our work so we don't want to delete branches outright.
 
-Archiving is done by tagging them as archive/<branchname>-<unix_timestamp> and 
-deleting them both locally and remotely. 
+Archiving is done by tagging them as archive/<branchname>-<unix_timestamp> and
+deleting them both locally and remotely.
 
 Created on June 10th, 2019
 
 @author: mccambria
 """
 
-
 import time
-from git import Repo
 from pathlib import Path
 
+from git import Repo
 
-def parse_string_array(string_array):
+
+def _parse_string_array(string_array):
     """Raw git commands return string arrays, such as:
     [' ', ' ', 'd', 'e', 'b', 'u', 'g', '-', 'f', 'u', 'n', 'c',
     't', 'i', 'o', 'n', '\n', ' ', 'm', 'a', 's', 't', 'e', 'r']
@@ -38,32 +38,31 @@ def parse_string_array(string_array):
 
 
 def main(repo_path, branches_to_archive, skip_merged_check=False):
-
     # Get the repo and the remote origin
     repo = Repo(repo_path)
     repo_git = repo.git
     origin = repo.remotes.origin
 
     # Get fully merged branches
-    merged_branches = parse_string_array(repo_git.branch("--merged", "master"))
+    merged_branches = _parse_string_array(repo_git.branch("--merged", "master"))
     merged_branches = [
         branch
         for branch in merged_branches
-        if branch != "" and not "*" in branch and not branch == "master"
+        if branch != "" and "*" not in branch and not branch == "master"
     ]
     print("Merged branches:")
     print(merged_branches)
 
     # Get all local branches
-    local_branches = parse_string_array(repo_git.branch("-l"))
+    local_branches = _parse_string_array(repo_git.branch("-l"))
     local_branches = [
         branch
         for branch in local_branches
-        if branch != "" and not "*" in branch and not branch == "master"
+        if branch != "" and "*" not in branch and not branch == "master"
     ]
     print("\nLocal branches:")
     print(local_branches)
-    
+
     print()
 
     for branch in branches_to_archive:
@@ -73,9 +72,7 @@ def main(repo_path, branches_to_archive, skip_merged_check=False):
         remote_deleted = False
         local_deleted = False
         if branch == "master":
-            print(
-                "I'm sorry Dave. I'm afraid I can't archive the master branch."
-            )
+            print("I'm sorry Dave. I'm afraid I can't archive the master branch.")
             do_archive = False
         elif branch not in local_branches:
             print(
@@ -129,20 +126,20 @@ def main(repo_path, branches_to_archive, skip_merged_check=False):
             except Exception as exc:
                 print(f"Failed to delete local branch {branch}")
                 print(exc)
-        
+
         if tag_created and tag_pushed and remote_deleted and local_deleted:
             print(f"Branch {branch} successfully archived.")
         print()
 
 
 if __name__ == "__main__":
-
     # Path to your local checkout of the repo
     repo_path = Path.home() / "Documents/GitHub/dioptric"
 
     # List of branches to archive
     branches_to_archive = [
-        "none",
+        "robust_fitting",
+        "multi_nv_automation",
     ]
 
     skip_merged_check = False
