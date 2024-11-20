@@ -281,7 +281,7 @@ def nuvu2thorcam_calibration(coords):
         [[927.846, 670.0], [512.153, 670.0], [720.0, 310.0]], dtype="float32"
     )
     cal_coords_nuvu = np.array(
-        [[178.958, 52.88], [180.214, 196.693], [53.48, 123.739]], dtype="float32"
+        [[178.181, 53.632], [179.371, 196.398], [52.372, 123.413]], dtype="float32"
     )
 
     # Compute the affine transformation matrix
@@ -368,7 +368,9 @@ def write_nvs_phase():
     # phase = np.load("slmsuite\computed_phase\slm_phase_77nvs_20240926_182348.npy")
     # phase = np.load("slmsuite\computed_phase\slm_phase_155nvs_20241106_095934.npy")
     # phase = np.load("slmsuite\computed_phase\slm_phase_161nvs_20241108_020407.npy")
-    phase = np.load("slmsuite\computed_phase\slm_phase_160nvs_20241111_205639.npy")
+    # phase = np.load("slmsuite\computed_phase\slm_phase_160nvs_20241111_205639.npy")
+    phase = np.load("slmsuite\computed_phase\slm_phase_160nvs_20241114_191804.npy")
+    # phase = np.load("slmsuite\computed_phase\slm_phase_160nvs_20241115_152130.npy")
     slm.write(phase, settle=True)
     cam_plot()
 
@@ -393,8 +395,8 @@ try:
     # test_wavefront_calibration()
     # wavefront_calibration()
     # load_wavefront_calibration()
-    compute_nvs_phase()
-    # write_nvs_phase()
+    # compute_nvs_phase()
+    write_nvs_phase()
     # calibration_triangle()
     # circles()
     # smiley()

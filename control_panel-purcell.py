@@ -103,15 +103,15 @@ def do_charge_state_histograms(nv_list):
 
 
 def do_charge_state_histograms_images(nv_list, vary_pol_laser=False):
-    aom_voltage_center = 0.39
-    aom_voltage_range = 0.02
-    num_steps = 5
+    aom_voltage_center = 1.0
+    aom_voltage_range = 0.1
+    num_steps = 6
     # num_reps = 15
     # num_reps = 100
     # num_runs = 50
     # num_runs = 100
-    num_runs = 2
-    num_reps = 2
+    num_reps = 20
+    num_runs = 60
     # for ion_include_inds in [None, [0, 1, 2, 3, 4, 5]]:
     #     charge_state_histograms.main(
     #         nv_list, num_reps, num_runs, ion_include_inds=ion_include_inds
@@ -833,7 +833,7 @@ if __name__ == "__main__":
     # magnet_angle = 90
     date_str = "2024_03_12"
     sample_coords = [2.0, 0.0]
-    z_coord = 0.6
+    z_coord = 0.7
     # Load NV pixel coordinates
     pixel_coords_list = load_nv_coords(
         file_path="slmsuite/nv_blob_detection/nv_blob_filtered_160nvs_reordered.npz",
@@ -873,24 +873,24 @@ if __name__ == "__main__":
     print(f"Green Laser Coordinates: {green_coords_list[0]}")
     print(f"Red Laser Coordinates: {red_coords_list[0]}")
 
-    pixel_coords_list = [
-        [106.923, 120.549],
-        [52.761, 64.24],
-        [95.923, 201.438],
-        [207.435, 74.049],
-    ]
-    green_coords_list = [
-        [108.698, 106.906],
-        [115.706, 101.357],
-        [108.952, 115.581],
-        [98.327, 100.87],
-    ]
-    red_coords_list = [
-        [73.525, 72.483],
-        [78.674, 67.831],
-        [73.831, 79.615],
-        [65.056, 67.6],
-    ]
+    # pixel_coords_list = [
+    #     [106.923, 120.549],
+    #     [52.761, 64.24],
+    #     [95.923, 201.438],
+    #     [207.435, 74.049],
+    # ]
+    # green_coords_list = [
+    #     [108.698, 106.906],
+    #     [115.706, 101.357],
+    #     [108.952, 115.581],
+    #     [98.327, 100.87],
+    # ]
+    # red_coords_list = [
+    #     [73.525, 72.483],
+    #     [78.674, 67.831],
+    #     [73.831, 79.615],
+    #     [65.056, 67.6],
+    # ]
     num_nvs = len(pixel_coords_list)
     threshold_list = [15.5] * num_nvs
     # threshold_list = load_thresholds
@@ -928,7 +928,7 @@ if __name__ == "__main__":
     # nv_sig.expected_counts = 1650
     # nv_sig.expected_counts = 3359.0
     # nv_sig.expected_counts = 2000.0
-    nv_sig.expected_counts = 1550
+    nv_sig.expected_counts = 1600
     # num_nvs = len(nv_list)
     # print(f"Final NV List: {nv_list}")
     # Ensure data is defined before accessing it
@@ -1012,7 +1012,7 @@ if __name__ == "__main__":
         # do_optimize_xyz(nv_sig)
         # pos.set_xyz_on_nv(nv_sig)
 
-        # do_compensate_for_drift(nv_sig)
+        do_compensate_for_drift(nv_sig)
 
         # for point in points:
         #     x, y = point
@@ -1036,7 +1036,7 @@ if __name__ == "__main__":
 
         # do_scanning_image_sample(nv_sig)
         # do_scanning_image_sample_zoom(nv_sig)
-        # do_widefield_image_sample(nv_sig, 50)
+        do_widefield_image_sample(nv_sig, 50)
         # do_widefield_image_sample(nv_sig, 100)
 
         # do_image_nv_list(nv_list)
@@ -1066,7 +1066,7 @@ if __name__ == "__main__":
 
         # nv_list = nv_list[::-1]
         # do_charge_state_histograms(nv_list)
-        do_charge_state_histograms_images(nv_list, vary_pol_laser=False)
+        do_charge_state_histograms_images(nv_list, vary_pol_laser=True)
         # do_charge_state_conditional_init(nv_list)
         # do_check_readout_fidelity(nv_list)x
 

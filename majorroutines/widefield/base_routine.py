@@ -286,7 +286,7 @@ def main(
                                         initial_states_list=states_list,
                                     )
                                 ret_vals = read_and_process_image(nv_list)
-                                print(f"rep_ind: {rep_ind}, step_ind: {step_ind}")
+                                # print(f"rep_ind: {rep_ind}, step_ind: {step_ind}")
                                 img_array, counts_list, states_list = ret_vals
                                 counts[exp_ind, :, run_ind, step_ind, rep_ind] = (
                                     counts_list
