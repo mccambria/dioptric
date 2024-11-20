@@ -36,11 +36,7 @@ from utils.constants import NVSig, VirtualLaserKey
 
 # region Process and plotting functions
 def plot_histograms(
-    sig_counts_list,
-    ref_counts_list,
-    no_title=True,
-    ax=None,
-    density=False,
+    sig_counts_list, ref_counts_list, no_title=True, ax=None, density=False
 ):
     laser_key = VirtualLaserKey.WIDEFIELD_CHARGE_READOUT
     laser_dict = tb.get_virtual_laser_dict(laser_key)
@@ -82,6 +78,7 @@ def process_and_plot(
     raw_data, do_plot_histograms=False, prob_dist: ProbDist = ProbDist.COMPOUND_POISSON
 ):
     ### Setup
+
     nv_list = raw_data["nv_list"]
     num_nvs = len(nv_list)
     counts = np.array(raw_data["counts"])
@@ -92,12 +89,11 @@ def process_and_plot(
     num_shots = num_reps * num_runs
 
     ### Histograms and thresholding
+
     threshold_list = []
     readout_fidelity_list = []
     prep_fidelity_list = []
     hist_figs = []
-    modes = []
-    shapes = []
 
     for ind in range(num_nvs):
         sig_counts_list = sig_counts_lists[ind]
