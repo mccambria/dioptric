@@ -39,94 +39,93 @@ from utils.positioning import get_scan_1d as calculate_aom_voltage_range
 
 def process_and_extract(raw_data, prob_dist: ProbDist = ProbDist.COMPOUND_POISSON):
     ### Setup
+    print(raw_data.keys())
     nv_list = raw_data["nv_list"]
     num_nvs = len(nv_list)
     counts = np.array(raw_data["counts"])
-    sig_counts_lists = [counts[0, nv_ind].flatten() for nv_ind in range(num_nvs)]
-    ref_counts_lists = [counts[1, nv_ind].flatten() for nv_ind in range(num_nvs)]
+    num_steps = raw_data["num_steps"]
     num_reps = raw_data["num_reps"]
     num_runs = raw_data["num_runs"]
     num_shots = num_reps * num_runs
 
-    ### Histograms and thresholding (without plotting)
-    threshold_list = []
-    readout_fidelity_list = []
-    prep_fidelity_list = []
+    # Correct the calculation of aom_voltages to ensure it's a list or array
+    aom_voltage_center = 1.0
+    aom_voltage_range = 0.1
 
-    for ind in range(num_nvs):
-        sig_counts_list = sig_counts_lists[ind]
-        ref_counts_list = ref_counts_lists[ind]
-
-        # Only use ref counts for threshold determination
-        popt = fit_bimodal_histogram(ref_counts_list, prob_dist, no_print=True)
-        threshold, readout_fidelity = determine_threshold(
-            popt, prob_dist, dark_mode_weight=0.5, no_print=True, ret_fidelity=True
-        )
-        threshold_list.append(threshold)
-        readout_fidelity_list.append(readout_fidelity)
-        if popt is not None:
-            prep_fidelity = 1 - popt[0]
-        else:
-            prep_fidelity = np.nan
-        prep_fidelity_list.append(prep_fidelity)
-
-    # Prep fidelity
-    print(f"readout_fidelity_list: {readout_fidelity_list}")
-    print(f"prep_fidelity_list: {prep_fidelity_list}")
-
-    # Report out the results
-    threshold_list = np.array(threshold_list)
-    readout_fidelity_list = np.array(readout_fidelity_list)
-    prep_fidelity_list = np.array(prep_fidelity_list)
-
-    # Scatter readout vs prep fidelity
-    fig, ax = plt.subplots()
-    kpl.plot_points(ax, readout_fidelity_list, prep_fidelity_list)
-    ax.set_xlabel("Readout fidelity")
-    ax.set_ylabel("NV- preparation fidelity")
-
-    # Plot prep fidelity vs distance from center
-    coords_key = "laser_INTE_520_aod"
-    distances = []
-    for nv in nv_list:
-        coords = pos.get_nv_coords(nv, coords_key, drift_adjust=False)
-        dist = np.sqrt((110 - coords[0]) ** 2 + (110 - coords[1]) ** 2)
-        distances.append(dist)
-    fig, ax = plt.subplots()
-    kpl.plot_points(ax, distances, prep_fidelity_list)
-    ax.set_xlabel("Distance from center frequencies (MHz)")
-    ax.set_ylabel("NV- preparation fidelity")
-
-    # Report averages
-    avg_readout_fidelity = np.nanmean(readout_fidelity_list)
-    std_readout_fidelity = np.nanstd(readout_fidelity_list)
-    avg_prep_fidelity = np.nanmean(prep_fidelity_list)
-    std_prep_fidelity = np.nanstd(prep_fidelity_list)
-    str_readout_fidelity = tb.round_for_print(
-        avg_readout_fidelity, std_readout_fidelity
+    aom_voltages = calculate_aom_voltage_range(
+        aom_voltage_center, aom_voltage_range, num_steps
     )
-    str_prep_fidelity = tb.round_for_print(avg_prep_fidelity, std_prep_fidelity)
-    print(f"Average readout fidelity: {str_readout_fidelity}")
-    print(f"Average NV- preparation fidelity: {str_prep_fidelity}")
+    aom_voltages = aom_voltages * 0.39
+    # Assuming counts shape is (2, num_nvs, num_runs, num_steps, num_reps)
+    counts = counts.reshape(2, num_nvs, num_runs, num_steps, -1)
 
-    ### Image extraction (without plotting histograms)
-    if "img_arrays" not in raw_data:
-        return
+    ### Histograms and thresholding per step
+    readout_fidelity_per_step = []
+    prep_fidelity_per_step = []
 
-    laser_key = VirtualLaserKey.WIDEFIELD_CHARGE_READOUT
-    laser_dict = tb.get_virtual_laser_dict(laser_key)
-    readout_laser = laser_dict["physical_name"]
-    readout = laser_dict["duration"]
-    readout_ms = readout / 10**6
+    for step_ind, voltage in zip(range(num_steps), aom_voltages):
+        print(f"Step Index: {step_ind}, Voltage: {voltage}")
+        readout_fidelity_list = []
+        prep_fidelity_list = []
 
-    img_arrays = raw_data["img_arrays"]
-    mean_img_arrays = np.mean(img_arrays, axis=(1, 2, 3))
-    sig_img_array = mean_img_arrays[0]
-    ref_img_array = mean_img_arrays[1]
-    diff_img_array = sig_img_array - ref_img_array
-    img_arrays_to_save = [sig_img_array, ref_img_array, diff_img_array]
+        for ind in range(num_nvs):
+            sig_counts_list = counts[0, ind, :, step_ind].flatten()
+            ref_counts_list = counts[1, ind, :, step_ind].flatten()
 
-    return img_arrays_to_save, readout_fidelity_list, prep_fidelity_list
+            # Only use ref counts for threshold determination
+            popt = fit_bimodal_histogram(ref_counts_list, prob_dist, no_print=True)
+            threshold, readout_fidelity = determine_threshold(
+                popt, prob_dist, dark_mode_weight=0.5, no_print=True, ret_fidelity=True
+            )
+            if popt is not None:
+                prep_fidelity = 1 - popt[0]
+            else:
+                prep_fidelity = np.nan
+
+            readout_fidelity_list.append(readout_fidelity)
+            prep_fidelity_list.append(prep_fidelity)
+
+        readout_fidelity_per_step.append(np.nanmean(readout_fidelity_list))
+        prep_fidelity_per_step.append(np.nanmean(prep_fidelity_list))
+
+        # Plot fidelity vs prep fidelity for each step
+        fig, ax = plt.subplots()
+        ax.scatter(
+            readout_fidelity_list, prep_fidelity_list, label=f"Voltage {voltage:.3f} V"
+        )
+        ax.set_xlabel("Readout Fidelity")
+        ax.set_ylabel("Preparation Fidelity")
+        ax.set_title(
+            f"Fidelity vs Preparation Fidelity - Step {step_ind} (Voltage: {voltage:.3f} V)"
+        )
+        ax.legend()
+        plt.show()
+
+    # Convert lists to arrays for easier plotting
+    readout_fidelity_per_step = np.array(readout_fidelity_per_step)
+    prep_fidelity_per_step = np.array(prep_fidelity_per_step)
+
+    # Plot average fidelity vs AOM voltage
+    fig, ax = plt.subplots()
+    ax.plot(
+        aom_voltages,
+        readout_fidelity_per_step,
+        marker="o",
+        label="Average Readout Fidelity",
+    )
+    ax.plot(
+        aom_voltages,
+        prep_fidelity_per_step,
+        marker="s",
+        label="Average Preparation Fidelity",
+    )
+    ax.set_xlabel("AOM Voltage (V)")
+    ax.set_ylabel("Average Fidelity")
+    ax.set_title("Average Fidelity vs AOM Voltage")
+    ax.legend()
+    plt.show()
+
+    return readout_fidelity_per_step, prep_fidelity_per_step
 
 
 def main(
@@ -160,15 +159,15 @@ def main(
             pol_laser_power = None
             readout_laser_power = aom_voltages[step_ind]
 
-        print(
-            f"Inside configure_laser_powers - pol_laser_power: {pol_laser_power}, readout_laser_power: {readout_laser_power}"
-        )
+        # print(
+        #     f"Inside configure_laser_powers - pol_laser_power: {pol_laser_power}, readout_laser_power: {readout_laser_power}"
+        # )
 
         return pol_laser_power, readout_laser_power
 
     def step_fn(step_ind):
         """Runs the experiment for a given step index."""
-        print(f"Step Index: {step_ind}")
+        # print(f"Step Index: {step_ind}")
         pol_coords_list = widefield.get_coords_list(nv_list, VirtualLaserKey.CHARGE_POL)
         ion_coords_list = widefield.get_coords_list(
             nv_list, VirtualLaserKey.ION, include_inds=ion_include_inds
@@ -184,9 +183,9 @@ def main(
             readout_laser_power,
         ]
         seq_args_string = tb.encode_seq_args(seq_args)
-        print(f"Step Index: {step_ind}, Sequence Arguments: {seq_args}")
+        # print(f"Step Index: {step_ind}, Sequence Arguments: {seq_args}")
         pulse_gen.stream_load(seq_file, seq_args_string, num_reps)
-        print(f"Successfully loaded and executed step {step_ind}")
+        # print(f"Successfully loaded and executed step {step_ind}")
 
     raw_data = base_routine.main(
         nv_list,
@@ -207,7 +206,6 @@ def main(
 
     try:
         imgs, img_figs = process_and_extract(raw_data)
-
         # Save the images
         title_suffixes = ["sig", "ref", "diff"]
         num_figs = len(img_figs)
@@ -252,6 +250,7 @@ def main(
 
 if __name__ == "__main__":
     kpl.init_kplotlib()
-    data = dm.get_raw_data(file_id=1688554695897, load_npz=False)
+    # data = dm.get_raw_data(file_id=1688554695897, load_npz=False)
+    data = dm.get_raw_data(file_id=1704871497302, load_npz=False)
     process_and_extract(data)
     kpl.show(block=True)
