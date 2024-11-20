@@ -17,24 +17,13 @@ from pathlib import Path
 from git import Repo
 
 
-def _parse_string_array(string_array):
-    """Raw git commands return string arrays, such as:
-    [' ', ' ', 'd', 'e', 'b', 'u', 'g', '-', 'f', 'u', 'n', 'c',
-    't', 'i', 'o', 'n', '\n', ' ', 'm', 'a', 's', 't', 'e', 'r']
-    How terrible is that. We need to parse them. White spaces mean nothing
-    to us. New lines are delimiters.
+def _parse_branch_response(response):
+    """Raw git commands return strings that we need to parse.
+    The form is [* <current_branch>, <branch>, <branch>, ...]
     """
-    vals = []
-    val = ""
-    for char in string_array:
-        if char == " ":
-            continue
-        elif char == "\n":
-            vals.append(val)
-            val = ""
-        else:
-            val += char
-    return vals
+    branches = response.split("\n")
+    branches = [el.strip() for el in branches]
+    return branches
 
 
 def main(repo_path, branches_to_archive, skip_merged_check=False):
@@ -44,7 +33,7 @@ def main(repo_path, branches_to_archive, skip_merged_check=False):
     origin = repo.remotes.origin
 
     # Get fully merged branches
-    merged_branches = _parse_string_array(repo_git.branch("--merged", "master"))
+    merged_branches = _parse_branch_response(repo_git.branch("--merged", "master"))
     merged_branches = [
         branch
         for branch in merged_branches
@@ -54,7 +43,7 @@ def main(repo_path, branches_to_archive, skip_merged_check=False):
     print(merged_branches)
 
     # Get all local branches
-    local_branches = _parse_string_array(repo_git.branch("-l"))
+    local_branches = _parse_branch_response(repo_git.branch("-l"))
     local_branches = [
         branch
         for branch in local_branches
