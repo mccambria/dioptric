@@ -96,6 +96,8 @@ def process_and_plot(
     readout_fidelity_list = []
     prep_fidelity_list = []
     hist_figs = []
+    modes = []
+    shapes = []
 
     for ind in range(num_nvs):
         sig_counts_list = sig_counts_lists[ind]
