@@ -123,8 +123,8 @@ def macro_pause():
 def macro_polarize(
     coords_list: list[list[float]],
     duration_list: list[int] = None,
-    duration_override: int = None,
     amp_list: list[float] = None,
+    duration_override: int = None,
     amp_override: float = None,
     targeted_polarization: bool = False,
     verify_charge_states: bool = False,
@@ -141,11 +141,11 @@ def macro_polarize(
         List of coordinate pairs to target
     duration_list : list[int], optional
         List of pulse durations, by default whatever value is in config
+    amp_list : list[float], optional
+        List of pulse amplitudes, by default whatever value is in config
     duration_override : int, optional
         Pulse duration for all pulses - overrides duration_list.
         Useful for parameters sweeps. By default do not override
-    amp_list : list[float], optional
-        List of pulse amplitudes, by default whatever value is in config
     amp_override : float, optional
         Pulse amplitude for all pulses - overrides amp_list.
         Useful for parameters sweeps. By default do not override
@@ -176,8 +176,8 @@ def macro_polarize(
             pulse_name,
             coords_list,
             duration_list,
-            duration_override,
             amp_list,
+            duration_override,
             amp_override,
             do_target_list,
         )
@@ -208,25 +208,30 @@ def macro_polarize(
         qua.wait(buffer, spin_pol_laser_el)
 
 
-def macro_ionize(ion_coords_list: list[list[float]]):
+def macro_ionize(ion_coords_list: list[list[float]], do_target_list: list[bool] = None):
     """Apply an ionization pulse to each coordinate pair in the passed coords_list.
 
     Parameters
     ----------
     ion_coords_list : list[list[float]]
         List of coordinate pairs to target
+    do_target_list : list[bool], optional
+        List of whether to target an NV or not. Used to skip certain NVs.
+        Default value None targets all NVs
     """
     ion_laser_name = tb.get_physical_laser_name(VirtualLaserKey.ION)
     ion_pulse_name = "ion"
     macro_run_aods([ion_laser_name], aod_suffices=[ion_pulse_name])
-    _macro_pulse_series(ion_laser_name, ion_pulse_name, ion_coords_list)
+    _macro_pulse_series(
+        ion_laser_name, ion_pulse_name, ion_coords_list, do_target_list=do_target_list
+    )
 
 
 def macro_scc(
     scc_coords_list: list[list[float]],
     scc_duration_list: list[int] = None,
-    scc_duration_override: int = None,
     scc_amp_list: list[float] = None,
+    scc_duration_override: int = None,
     scc_amp_override: float = None,
     do_target_list: list[bool] = None,
 ):
@@ -240,11 +245,11 @@ def macro_scc(
         List of coordinate pairs to target for the SCC pulse itself
     scc_duration_list : list[int], optional
         List of pulse durations for the SCC pulse itself, by default whatever value is in config
+    scc_amp_list : list[float], optional
+        List of pulse amplitudes for the SCC pulse itself, by default whatever value is in config
     scc_duration_override : int, optional
         Pulse duration for all pulses for the SCC pulse itself - overrides duration_list.
         Useful for parameters sweeps. By default do not override
-    scc_amp_list : list[float], optional
-        List of pulse amplitudes for the SCC pulse itself, by default whatever value is in config
     scc_amp_override : float, optional
         Pulse amplitude for all pulses for the SCC pulse itself - overrides amp_list.
         Useful for parameters sweeps. By default do not override
@@ -585,8 +590,8 @@ def _macro_pulse_series(
     pulse_name: str,
     coords_list: list[list[float]],
     duration_list: list[int] = None,
-    duration_override: int = None,
     amp_list: list[float] = None,
+    duration_override: int = None,
     amp_override: float = None,
     do_target_list: list[bool] = None,
 ):
@@ -603,11 +608,11 @@ def _macro_pulse_series(
         List of coordinate pairs to target
     duration_list : list[int], optional
         List of pulse durations, by default whatever value is in config
+    amp_list : list[float], optional
+        List of pulse amplitudes, by default whatever value is in config
     duration_override : int, optional
         Pulse duration for all pulses - overrides duration_list.
         Useful for parameters sweeps. By default do not override
-    amp_list : list[float], optional
-        List of pulse amplitudes, by default whatever value is in config
     amp_override : float, optional
         Pulse amplitude for all pulses - overrides amp_list.
         Useful for parameters sweeps. By default do not override
@@ -733,8 +738,8 @@ def _macro_scc_shelving(
 def _macro_scc_no_shelving(
     coords_list: list[list[float]],
     duration_list: list[int] = None,
-    duration_override: int = None,
     amp_list: list[float] = None,
+    duration_override: int = None,
     amp_override: float = None,
     do_target_list: list[bool] = None,
 ):
@@ -746,11 +751,11 @@ def _macro_scc_no_shelving(
         List of coordinate pairs to target
     duration_list : list[int], optional
         List of pulse durations, by default whatever value is in config
+    amp_list : list[float], optional
+        List of pulse amplitudes, by default whatever value is in config
     duration_override : int, optional
         Pulse duration for all pulses - overrides duration_list.
         Useful for parameters sweeps. By default do not override
-    amp_list : list[float], optional
-        List of pulse amplitudes, by default whatever value is in config
     amp_override : float, optional
         Pulse amplitude for all pulses - overrides amp_list.
         Useful for parameters sweeps. By default do not override
@@ -775,8 +780,8 @@ def _macro_scc_no_shelving(
         scc_pulse_name,
         coords_list,
         duration_list,
-        duration_override,
         amp_list,
+        duration_override,
         amp_override,
         do_target_list,
     )

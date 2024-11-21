@@ -21,7 +21,12 @@ def get_seq(
     pol_duration_list,
     pol_amp_list,
     ion_coords_list,
+    ion_do_target_list,
     verify_charge_states,
+    pol_duration_override,
+    pol_amp_override,
+    readout_duration_override,
+    readout_amp_override,
     num_reps,
 ):
     if num_reps is None:
@@ -37,15 +42,21 @@ def get_seq(
                 pol_coords_list,
                 pol_duration_list,
                 pol_amp_list,
+                pol_duration_override,
+                pol_amp_override,
                 targeted_polarization=verify_charge_states,
                 verify_charge_states=verify_charge_states,
                 spin_pol=False,
             )
 
             if do_ionize:
-                seq_utils.macro_ionize(ion_coords_list)
+                seq_utils.macro_ionize(
+                    ion_coords_list, do_target_list=ion_do_target_list
+                )
 
-            seq_utils.macro_charge_state_readout()
+            seq_utils.macro_charge_state_readout(
+                readout_duration_override, readout_amp_override
+            )
             seq_utils.macro_wait_for_trigger()
 
         def one_rep(rep_ind=None):

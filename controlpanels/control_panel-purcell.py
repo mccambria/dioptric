@@ -93,10 +93,6 @@ def do_charge_state_histograms(nv_list):
     num_runs = 15
     # num_runs = 10
     # num_runs = 2
-    # for ion_include_inds in [None, [0, 1, 2, 3, 4, 5]]:
-    #     charge_state_histograms.main(
-    #         nv_list, num_reps, num_runs, ion_include_inds=ion_include_inds
-    #     )
     return charge_state_histograms.main(
         nv_list, num_reps, num_runs, do_plot_histograms=True
     )
@@ -112,10 +108,6 @@ def do_charge_state_histograms_images(nv_list, vary_pol_laser=False):
     # num_runs = 100
     num_reps = 20
     num_runs = 60
-    # for ion_include_inds in [None, [0, 1, 2, 3, 4, 5]]:
-    #     charge_state_histograms.main(
-    #         nv_list, num_reps, num_runs, ion_include_inds=ion_include_inds
-    #     )
     return charge_state_histograms_images.main(
         nv_list,
         num_steps,

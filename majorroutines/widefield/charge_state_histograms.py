@@ -234,12 +234,24 @@ def main(
     num_reps,
     num_runs,
     verify_charge_states=False,
-    ion_include_inds=None,
+    ion_do_target_inds=None,
     do_plot_histograms=False,
+    pol_duration_override,
+    pol_amp_override,
+    readout_duration_override,
+    readout_amp_override,
 ):
     ### Initial setup
     seq_file = "charge_state_histograms.py"
     num_steps = 1
+
+    # Turn the list of NV indices to ionize into a list of True/False for
+    # each NV according to whether it should be targeted
+    if ion_do_target_inds is None:
+        ion_do_target_list = None
+    else:
+        num_nvs = len(nv_list)
+        ion_do_target_list = [ind in ion_do_target_inds for ind in range(num_nvs)]
 
     if verify_charge_states:
         charge_prep_fn = base_routine.charge_prep_loop
@@ -260,6 +272,7 @@ def main(
             pol_duration_list,
             pol_amp_list,
             ion_coords_list,
+            ion_do_target_list,
             verify_charge_states,
         ]
         seq_args_string = tb.encode_seq_args(seq_args)
@@ -323,8 +336,6 @@ def main(
     file_path = dm.get_file_path(__file__, timestamp, repr_nv_name)
     raw_data |= {
         "timestamp": timestamp,
-        "diff_polarize": diff_polarize,
-        "diff_ionize": diff_ionize,
         "sig_img_array": sig_img_array,
         "ref_img_array": ref_img_array,
         "diff_img_array": diff_img_array,
