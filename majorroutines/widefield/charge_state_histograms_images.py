@@ -37,7 +37,102 @@ from utils.positioning import get_scan_1d as calculate_aom_voltage_range
 # region Process and plotting functions
 
 
-def process_and_extract(raw_data, prob_dist: ProbDist = ProbDist.COMPOUND_POISSON):
+# def process_and_extract(
+#     raw_data, prob_dist: ProbDist = ProbDist.COMPOUND_POISSON, plot_histograms=False
+# ):
+#     ### Setup
+#     nv_list = raw_data["nv_list"]
+#     num_nvs = len(nv_list)
+#     counts = np.array(raw_data["counts"])
+#     num_steps = raw_data["num_steps"]
+#     num_reps = raw_data["num_reps"]
+#     num_runs = raw_data["num_runs"]
+
+#     # Correct the calculation of aom_voltages to ensure it's a list or array
+#     aom_voltage_center = 1.0
+#     aom_voltage_range = 0.1
+#     aom_voltages = calculate_aom_voltage_range(
+#         aom_voltage_center, aom_voltage_range, num_steps
+#     )
+#     aom_voltages = aom_voltages * 0.39
+#     counts = counts.reshape(2, num_nvs, num_runs, num_steps, -1)
+
+#     ### Histograms and thresholding per NV and per step
+#     thresholds = np.zeros((num_nvs, num_steps))
+#     readout_fidelities = np.zeros((num_nvs, num_steps))
+#     prep_fidelities = np.zeros((num_nvs, num_steps))
+#     hist_figs = []
+
+#     for step_ind, voltage in enumerate(aom_voltages):
+#         print(f"Step Index: {step_ind}, Voltage: {voltage}")
+#         for nv_ind in range(num_nvs):
+#             sig_counts_list = counts[0, nv_ind, :, step_ind].flatten()
+#             ref_counts_list = counts[1, nv_ind, :, step_ind].flatten()
+
+#             # Determine threshold using ref counts
+#             popt = fit_bimodal_histogram(ref_counts_list, prob_dist, no_print=True)
+#             threshold, readout_fidelity = determine_threshold(
+#                 popt, prob_dist, dark_mode_weight=0.5, no_print=True, ret_fidelity=True
+#             )
+
+#             thresholds[nv_ind, step_ind] = threshold
+#             readout_fidelities[nv_ind, step_ind] = readout_fidelity
+#             if popt is not None:
+#                 prep_fidelity = 1 - popt[0]
+#             else:
+#                 prep_fidelity = np.nan
+#             prep_fidelities[nv_ind, step_ind] = prep_fidelity
+
+#             # Optional: Plot histograms for each NV and step
+#             if plot_histograms:
+#                 fig, ax = plt.subplots()
+#                 ax.hist(ref_counts_list, bins=50, alpha=0.6, label="Reference Counts")
+#                 ax.hist(sig_counts_list, bins=50, alpha=0.6, label="Signal Counts")
+#                 ax.axvline(x=threshold, color="red", linestyle="--", label="Threshold")
+#                 ax.set_title(
+#                     f"Histogram - NV {nv_ind}, Step {step_ind} (Voltage: {voltage:.3f} V)"
+#                 )
+#                 ax.set_xlabel("Counts")
+#                 ax.set_ylabel("Frequency")
+#                 ax.legend()
+#                 hist_figs.append((fig, f"histogram_nv_{nv_ind}_step_{step_ind}.png"))
+#                 plt.close(fig)
+
+#     ### Plot average fidelity vs AOM voltage
+#     avg_readout_fidelity = np.nanmean(readout_fidelities, axis=0)
+#     avg_prep_fidelity = np.nanmean(prep_fidelities, axis=0)
+
+#     fig, ax = plt.subplots()
+#     ax.plot(
+#         aom_voltages,
+#         avg_readout_fidelity,
+#         marker="o",
+#         label="Average Readout Fidelity",
+#     )
+#     ax.plot(
+#         aom_voltages,
+#         avg_prep_fidelity,
+#         marker="s",
+#         label="Average Preparation Fidelity",
+#     )
+#     ax.set_xlabel("AOM Voltage (V)")
+#     ax.set_ylabel("Average Fidelity")
+#     ax.set_title("Average Fidelity vs AOM Voltage")
+#     ax.legend()
+#     plt.savefig("average_fidelity_vs_aom_voltage.png")
+#     plt.close(fig)
+
+#     ### Save histogram figures
+#     if plot_histograms:
+#         for fig, filename in hist_figs:
+#             fig.savefig(filename)
+
+#     return thresholds, readout_fidelities, prep_fidelities
+
+
+def process_and_extract(
+    raw_data, prob_dist: ProbDist = ProbDist.COMPOUND_POISSON, plot_histograms=False
+):
     ### Setup
     print(raw_data.keys())
     nv_list = raw_data["nv_list"]
@@ -46,76 +141,104 @@ def process_and_extract(raw_data, prob_dist: ProbDist = ProbDist.COMPOUND_POISSO
     num_steps = raw_data["num_steps"]
     num_reps = raw_data["num_reps"]
     num_runs = raw_data["num_runs"]
-    num_shots = num_reps * num_runs
 
     # Correct the calculation of aom_voltages to ensure it's a list or array
     aom_voltage_center = 1.0
     aom_voltage_range = 0.1
-
     aom_voltages = calculate_aom_voltage_range(
         aom_voltage_center, aom_voltage_range, num_steps
     )
     aom_voltages = aom_voltages * 0.39
-    # Assuming counts shape is (2, num_nvs, num_runs, num_steps, num_reps)
     counts = counts.reshape(2, num_nvs, num_runs, num_steps, -1)
 
-    ### Histograms and thresholding per step
-    readout_fidelity_per_step = []
-    prep_fidelity_per_step = []
+    ### Histograms and thresholding per NV and per step
+    thresholds = np.zeros((num_nvs, num_steps))
+    readout_fidelities = np.zeros((num_nvs, num_steps))
+    prep_fidelities = np.zeros((num_nvs, num_steps))
+    hist_figs = []
 
-    for step_ind, voltage in zip(range(num_steps), aom_voltages):
+    for step_ind, voltage in enumerate(aom_voltages):
         print(f"Step Index: {step_ind}, Voltage: {voltage}")
-        readout_fidelity_list = []
-        prep_fidelity_list = []
+        for nv_ind in range(num_nvs):
+            sig_counts_list = counts[0, nv_ind, :, step_ind].flatten()
+            ref_counts_list = counts[1, nv_ind, :, step_ind].flatten()
 
-        for ind in range(num_nvs):
-            sig_counts_list = counts[0, ind, :, step_ind].flatten()
-            ref_counts_list = counts[1, ind, :, step_ind].flatten()
-
-            # Only use ref counts for threshold determination
+            # Determine threshold using ref counts
             popt = fit_bimodal_histogram(ref_counts_list, prob_dist, no_print=True)
             threshold, readout_fidelity = determine_threshold(
                 popt, prob_dist, dark_mode_weight=0.5, no_print=True, ret_fidelity=True
             )
+
+            thresholds[nv_ind, step_ind] = threshold
+            readout_fidelities[nv_ind, step_ind] = readout_fidelity
             if popt is not None:
                 prep_fidelity = 1 - popt[0]
             else:
                 prep_fidelity = np.nan
+            prep_fidelities[nv_ind, step_ind] = prep_fidelity
 
-            readout_fidelity_list.append(readout_fidelity)
-            prep_fidelity_list.append(prep_fidelity)
+            # Optional: Plot histograms for each NV and step
+            if plot_histograms:
+                fig, ax = plt.subplots()
+                ax.hist(ref_counts_list, bins=50, alpha=0.6, label="Reference Counts")
+                ax.hist(sig_counts_list, bins=50, alpha=0.6, label="Signal Counts")
+                ax.axvline(x=threshold, color="red", linestyle="--", label="Threshold")
+                ax.set_title(
+                    f"Histogram - NV {nv_ind}, Step {step_ind} (Voltage: {voltage:.3f} V)"
+                )
+                ax.set_xlabel("Counts")
+                ax.set_ylabel("Frequency")
+                ax.legend()
+                hist_figs.append((fig, f"histogram_nv_{nv_ind}_step_{step_ind}.png"))
+                plt.close(fig)
 
-        readout_fidelity_per_step.append(np.nanmean(readout_fidelity_list))
-        prep_fidelity_per_step.append(np.nanmean(prep_fidelity_list))
+    ### Plot heatmaps of fidelities
+    fig, ax = plt.subplots()
+    im = ax.imshow(
+        readout_fidelities,
+        aspect="auto",
+        origin="lower",
+        cmap="viridis",
+        extent=[0, num_steps - 1, 0, num_nvs - 1],
+    )
+    ax.set_xlabel("Step Index (or AOM Voltage)")
+    ax.set_ylabel("NV Index")
+    ax.set_title("Readout Fidelity Heatmap")
+    cbar = fig.colorbar(im, ax=ax)
+    cbar.set_label("Readout Fidelity")
+    plt.savefig("readout_fidelity_heatmap.png")
+    plt.close()
 
-        # Plot fidelity vs prep fidelity for each step
-        fig, ax = plt.subplots()
-        ax.scatter(
-            readout_fidelity_list, prep_fidelity_list, label=f"Voltage {voltage:.3f} V"
-        )
-        ax.set_xlabel("Readout Fidelity")
-        ax.set_ylabel("Preparation Fidelity")
-        ax.set_title(
-            f"Fidelity vs Preparation Fidelity - Step {step_ind} (Voltage: {voltage:.3f} V)"
-        )
-        ax.legend()
-        plt.show()
+    fig, ax = plt.subplots()
+    im = ax.imshow(
+        prep_fidelities,
+        aspect="auto",
+        origin="lower",
+        cmap="plasma",
+        extent=[0, num_steps - 1, 0, num_nvs - 1],
+    )
+    ax.set_xlabel("Step Index (or AOM Voltage)")
+    ax.set_ylabel("NV Index")
+    ax.set_title("Preparation Fidelity Heatmap")
+    cbar = fig.colorbar(im, ax=ax)
+    cbar.set_label("Preparation Fidelity")
+    plt.savefig("prep_fidelity_heatmap.png")
+    plt.close(fig)
 
-    # Convert lists to arrays for easier plotting
-    readout_fidelity_per_step = np.array(readout_fidelity_per_step)
-    prep_fidelity_per_step = np.array(prep_fidelity_per_step)
+    ### Plot average fidelity vs AOM voltage
+    avg_readout_fidelity = np.nanmean(readout_fidelities, axis=0)
+    avg_prep_fidelity = np.nanmean(prep_fidelities, axis=0)
 
-    # Plot average fidelity vs AOM voltage
     fig, ax = plt.subplots()
     ax.plot(
         aom_voltages,
-        readout_fidelity_per_step,
+        avg_readout_fidelity,
         marker="o",
         label="Average Readout Fidelity",
     )
     ax.plot(
         aom_voltages,
-        prep_fidelity_per_step,
+        avg_prep_fidelity,
         marker="s",
         label="Average Preparation Fidelity",
     )
@@ -123,9 +246,15 @@ def process_and_extract(raw_data, prob_dist: ProbDist = ProbDist.COMPOUND_POISSO
     ax.set_ylabel("Average Fidelity")
     ax.set_title("Average Fidelity vs AOM Voltage")
     ax.legend()
-    plt.show()
+    plt.savefig("average_fidelity_vs_aom_voltage.png")
+    plt.close(fig)
 
-    return readout_fidelity_per_step, prep_fidelity_per_step
+    ### Save histogram figures
+    if plot_histograms:
+        for fig, filename in hist_figs:
+            fig.savefig(filename)
+
+    return thresholds, readout_fidelities, prep_fidelities
 
 
 def main(
@@ -205,7 +334,7 @@ def main(
     repr_nv_name = repr_nv_sig.name
 
     try:
-        imgs, img_figs = process_and_extract(raw_data)
+        imgs, img_figs = process_and_extract(raw_data, plot_histograms=False)
         # Save the images
         title_suffixes = ["sig", "ref", "diff"]
         num_figs = len(img_figs)
@@ -251,6 +380,6 @@ def main(
 if __name__ == "__main__":
     kpl.init_kplotlib()
     # data = dm.get_raw_data(file_id=1688554695897, load_npz=False)
-    data = dm.get_raw_data(file_id=1704871497302, load_npz=False)
+    data = dm.get_raw_data(file_id=1705172140093, load_npz=False)
     process_and_extract(data)
     kpl.show(block=True)
