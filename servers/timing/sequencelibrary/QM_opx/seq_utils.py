@@ -160,7 +160,7 @@ def macro_polarize(
             pulse_name,
             coords_list,
             duration_list=duration_list,
-            target_list=target_list,
+            do_target_list=target_list,
         )
 
     if verify_charge_states:
@@ -205,16 +205,12 @@ def macro_ionize(ion_coords_list):
 
 
 def macro_scc(
-    scc_coords_list,
-    scc_duration_list=None,
-    scc_amp_list=None,
-    spin_flip_ind_list=None,
-    uwave_ind_list=None,
-    shelving_coords_list=None,
-    scc_duration_override=None,
-    scc_amp_override=None,
-    exp_spin_flip=True,
-    ref_spin_flip=False,
+    scc_coords_list: list[list[float]],
+    scc_duration_list: None | list[int] = None,
+    scc_duration_override: None | int = None,
+    scc_amp_list: None | list[float] = None,
+    scc_amp_override: None | float = None,
+    do_target_list: None | list[bool] = None,
 ):
     """Apply an ionitization pulse to each coordinate pair in the passed coords_list.
     Pulses are applied in series
@@ -231,17 +227,15 @@ def macro_scc(
     do_shelving_pulse = config["Optics"]["PulseSettings"]["scc_shelving_pulse"]
 
     if do_shelving_pulse:
+        raise NotImplementedError()
         # if spin_flip_ind_list is not None:
         #     msg = "Shelving SCC with spin_flips not yet implemented."
         #     raise NotImplementedError(msg)
-        _macro_scc_shelving(
-            scc_coords_list,
-            scc_duration_list,
-            spin_flip_ind_list,
-            uwave_ind_list,
-            shelving_coords_list,
-            exp_spin_flip=exp_spin_flip,
-        )
+        # _macro_scc_shelving(
+        #     scc_coords_list,
+        #     scc_duration_list,
+        #     shelving_coords_list,
+        # )
     else:
         _macro_scc_no_shelving(
             scc_coords_list,
@@ -249,10 +243,7 @@ def macro_scc(
             scc_duration_override,
             scc_amp_list,
             scc_amp_override,
-            spin_flip_ind_list,
-            uwave_ind_list,
-            exp_spin_flip=exp_spin_flip,
-            ref_spin_flip=ref_spin_flip,
+            do_target_list,
         )
 
 
@@ -324,7 +315,8 @@ def macro_run_aods(
     aod_suffices : list[str], optional
         Pulse format is "aod_cw-<suffix>", by default no suffix
     amps : list[float], optional
-        Multiplicative amplitudes for the pulses, by default None
+        Amplitudes for the RF tone pulses. Amplitudes are multiplicative wrt the
+        pulse default voltage, so an amp of 1.0 does nothing, by default None
     """
     # By default search the config for the lasers with AOD
     if laser_names is None:
@@ -404,8 +396,8 @@ def macro_run_aods(
             qua.play(pulse_name, y_el)
 
 
-def macro_pulse(
-    laser_name, coords, pulse_name="on", duration=None, amp=None, convert_to_Hz=True
+def macro_single_pulse(
+    laser_name, coords, pulse_name, duration=None, amp=None, convert_to_Hz=True
 ):
     qua.align()
     _macro_single_pulse(
@@ -413,14 +405,34 @@ def macro_pulse(
     )
 
 
-def macro_multi_pulse(
+def macro_pulse_combo(
     laser_name_list,
     coords_list,
     pulse_name_list,
     duration_list=None,
+    amp_list=None,
     delays=None,
     convert_to_Hz=True,
 ):
+    """Apply a combination of laser pulse at one point in space described
+    by the passed coordinate pairs
+
+    Parameters
+    ----------
+    laser_name_list : list[str]
+        Names of lasers to pulse
+    coords_list : list[float]
+        Coordinate pairs describing the target
+    pulse_name_list : list[str]
+        Names of the pulses to play
+    duration_list : None | list[int], optional
+        Pulse durations in ns, by default whatever is in config
+    amp : None | list[float], optional
+        Pulse amplitude, by default whatever is in config
+    delays :
+    convert_to_Hz : bool, optional
+        Whether to convert coords from MHz to Hz, by default True
+    """
     num_pulses = len(laser_name_list)
     if delays is None:
         delays = [0 for ind in range(num_pulses)]
@@ -428,15 +440,19 @@ def macro_multi_pulse(
         duration_list = [None for ind in range(num_pulses)]
 
     qua.align()
-    # for ind in range(num_pulses):
-    for ind in [1]:
+    for ind in range(num_pulses):
         laser_name = laser_name_list[ind]
-        coords = coords_list[ind]
-        pulse_name = pulse_name_list[ind]
-        duration = duration_list[ind]
         delay = delays[ind]
+        laser_el = get_laser_mod_element(laser_name)
+        qua.wait(delay, laser_el)
+
         _macro_single_pulse(
-            laser_name, coords, pulse_name, duration, delay, convert_to_Hz
+            laser_name,
+            coords_list[ind],
+            pulse_name_list[ind],
+            duration_list[ind],
+            amp_list[ind],
+            convert_to_Hz,
         )
 
 
@@ -452,7 +468,7 @@ def _macro_pulse_series(
     duration_override: None | int = None,
     amp_list: list[float] = None,
     amp_override: None | float = None,
-    target_list: None | list[bool] = None,
+    do_target_list: None | list[bool] = None,
 ):
     """Apply a laser pulse to each coordinate pair in the passed coords_list.
     Pulses are applied in series from one location to the next.
@@ -475,7 +491,7 @@ def _macro_pulse_series(
     amp_override : None | float, optional
         Pulse amplitude for all pulses - overrides amp_list.
         Useful for parameters sweeps. By default do not override
-    target_list : None | list[bool], optional
+    do_target_list : None | list[bool], optional
         List of whether to target an NV or not. Used to skip certain NVs.
         By default target all NVs
     """
@@ -507,7 +523,7 @@ def _macro_pulse_series(
         else:
             amp = None
         with qua.if_(_cache_target):
-            macro_pulse(
+            macro_single_pulse(
                 laser_name,
                 (_cache_x_freq, _cache_y_freq),
                 pulse_name=pulse_name,
@@ -529,9 +545,9 @@ def _macro_pulse_series(
         list_1.append(_cache_amp)
         amp_list = [float(el) for el in amp_list]
         list_2.append(amp_list)
-    if target_list is not None:
+    if do_target_list is not None:
         list_1.append(_cache_target)
-        list_2.append(target_list)
+        list_2.append(do_target_list)
     else:  # Just set _cache_target to true if we want to hit every NV
         qua.assign(_cache_target, True)
 
@@ -547,24 +563,22 @@ def _macro_single_pulse(
     amp: None | float = None,
     convert_to_Hz: bool = True,
 ):
-    """_summary_
+    """Apply a single laser pulse at the passed coordinate pair
 
     Parameters
     ----------
-    laser_name : _type_
-        _description_
-    coords : _type_
-        _description_
-    pulse_name : str, optional
-        _description_, by default "on"
-    duration : _type_, optional
-        _description_, by default None
-    amp : _type_, optional
-        _description_, by default None
-    delay : int, optional
-        _description_, by default 0
+    laser_name : str
+        Name of laser to pulse
+    coords : list[float]
+        Coordinate pair to target
+    pulse_name : str
+        Name of the pulse to play
+    duration : None | int, optional
+        Pulse duration in ns, by default whatever is in config
+    amp : None | float, optional
+        Pulse amplitude, by default whatever is in config
     convert_to_Hz : bool, optional
-        _description_, by default True
+        Whether to convert coords from MHz to Hz, by default True
     """
     # Setup
     laser_el = get_laser_mod_element(laser_name)
@@ -587,26 +601,15 @@ def _macro_single_pulse(
     qua.update_frequency(x_el, coords[0])
     qua.update_frequency(y_el, coords[1])
 
-    if True:
-        # if laser_name != "laser_INTE_520":
-        # Pulse the laser
-        qua.wait(access_time + buffer + delay, laser_el)
-        if duration is None:
-            qua.play(pulse_name, laser_el)
-        elif isinstance(duration, int) and duration == 0:
-            pass
-        else:
-            qua.play(pulse_name, laser_el, duration=duration)
-        qua.wait(buffer, laser_el)
-    else:  # Green pulsed initialization with microwaves test MCC
-        qua.wait(access_time, laser_el)
-        with qua.for_(
-            _cache_pol_reps_ind, 0, _cache_pol_reps_ind < 10, _cache_pol_reps_ind + 1
-        ):
-            macro_pi_pulse([0, 1])
-            qua.align()
-            qua.play(pulse_name, laser_el, duration=50)
-            qua.wait(buffer, laser_el)
+    # Pulse the laser
+    qua.wait(access_time + buffer, laser_el)
+    if duration is None:
+        qua.play(pulse_name, laser_el)
+    elif isinstance(duration, int) and duration == 0:
+        pass
+    else:
+        qua.play(pulse_name, laser_el, duration=duration)
+    qua.wait(buffer, laser_el)
 
 
 def _macro_scc_shelving(
@@ -617,6 +620,7 @@ def _macro_scc_shelving(
     shelving_coords_list,
     exp_spin_flip=True,
 ):
+    """Needs work"""
     shelving_laser_name = tb.get_physical_laser_name(VirtualLaserKey.SHELVING)
     ion_laser_name = tb.get_physical_laser_name(VirtualLaserKey.SCC)
     laser_name_list = [shelving_laser_name, ion_laser_name]
@@ -653,7 +657,7 @@ def _macro_scc_shelving(
 
     qua.align()
     with qua.for_each_(freq_vars, freq_lists):
-        macro_multi_pulse(
+        macro_pulse_combo(
             laser_name_list,
             ((_cache_x_freq, _cache_y_freq), (_cache_x_freq_2, _cache_y_freq_2)),
             pulse_name_list,
@@ -664,82 +668,58 @@ def _macro_scc_shelving(
 
 
 def _macro_scc_no_shelving(
-    coords_list,
-    duration_list=None,
-    duration_override=None,
-    amp_list=None,
-    amp_override=None,
-    exp_spin_flip_ind_list=None,
-    uwave_ind_list=None,
-    exp_spin_flip=True,
-    ref_spin_flip=False,
+    coords_list: list[list[float]],
+    duration_list: None | list[int] = None,
+    duration_override: None | int = None,
+    amp_list: None | list[float] = None,
+    amp_override: None | float = None,
+    do_target_list: None | list[bool] = None,
 ):
+    """Perform spin-to-charge conversion (SCC) on NVs in series without a shelving pulse
+
+    Parameters
+    ----------
+    coords_list : list[list[float]]
+        List of coordinate pairs to target
+    duration_list : list[int], optional
+        List of pulse durations, by default whatever value is in config
+    duration_override : None | int, optional
+        Pulse duration for all pulses - overrides duration_list.
+        Useful for parameters sweeps. By default do not override
+    amp_list : list[float], optional
+        List of pulse amplitudes, by default whatever value is in config
+    amp_override : None | float, optional
+        Pulse amplitude for all pulses - overrides amp_list.
+        Useful for parameters sweeps. By default do not override
+    uwave_ind_list : None | list[int], optional
+        Indices of microwave channels to apply pi pulses on for generating anti-
+        correlations, "dual-rail" referencing where we measure both, By default None
+    exp_spin_flip : bool, optional
+        _description_, by default True
+    exp_spin_flip_ind_list : None | list[int], optional
+        _description_, by default None
+    """
     # Basic setup
 
-    ion_laser_name = tb.get_physical_laser_name(VirtualLaserKey.SCC)
-    ion_pulse_name = "scc"
-    macro_run_aods([ion_laser_name], aod_suffices=[ion_pulse_name])
-
-    if exp_spin_flip_ind_list is None:
-        exp_spin_flip_ind_list = []
-
-    num_nvs = len(coords_list)
-    first_coords_list = [
-        coords_list[ind] for ind in range(num_nvs) if ind not in exp_spin_flip_ind_list
-    ]
-    first_duration_list = [
-        duration_list[ind]
-        for ind in range(num_nvs)
-        if ind not in exp_spin_flip_ind_list
-    ]
-    first_amp_list = [
-        amp_list[ind] for ind in range(num_nvs) if ind not in exp_spin_flip_ind_list
-    ]
+    scc_laser_name = tb.get_physical_laser_name(VirtualLaserKey.SCC)
+    scc_pulse_name = "scc"
+    macro_run_aods([scc_laser_name], aod_suffices=[scc_pulse_name])
 
     # Actual commands
-
-    if ref_spin_flip:
-        macro_pi_pulse(uwave_ind_list)
 
     # MCC antiphase by orientation
     # if exp_spin_flip:
     #     macro_pi_pulse(uwave_ind_list[:1])
 
     _macro_pulse_series(
-        ion_laser_name,
-        ion_pulse_name,
-        first_coords_list,
-        duration_list=first_duration_list,
-        duration_override=duration_override,
-        amp_list=first_amp_list,
-        amp_override=amp_override,
-    )
-
-    # Just exit here if all NVs are SCC'ed in the first batch
-    if len(exp_spin_flip_ind_list) == 0:
-        return
-
-    second_coords_list = [
-        coords_list[ind] for ind in range(num_nvs) if ind in exp_spin_flip_ind_list
-    ]
-    second_duration_list = [
-        duration_list[ind] for ind in range(num_nvs) if ind in exp_spin_flip_ind_list
-    ]
-    second_amp_list = [
-        amp_list[ind] for ind in range(num_nvs) if ind in exp_spin_flip_ind_list
-    ]
-
-    if exp_spin_flip:
-        macro_pi_pulse(uwave_ind_list)
-
-    _macro_pulse_series(
-        ion_laser_name,
-        ion_pulse_name,
-        second_coords_list,
-        duration_list=second_duration_list,
-        duration_override=duration_override,
-        amp_list=second_amp_list,
-        amp_override=amp_override,
+        scc_laser_name,
+        scc_pulse_name,
+        coords_list,
+        duration_list,
+        duration_override,
+        amp_list,
+        amp_override,
+        do_target_list,
     )
 
 

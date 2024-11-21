@@ -767,7 +767,7 @@ def get_base_scc_seq_args(
     # Other lists
     scc_duration_list = get_scc_duration_list(nv_list, include_inds=scc_include_inds)
     scc_amp_list = get_scc_amp_list(nv_list, include_inds=scc_include_inds)
-    spin_flip_ind_list = get_spin_flip_ind_list(nv_list)
+    spin_flip_ind_list = get_spin_flip_do_target_list(nv_list)
     # threshold_list = get_threshold_list(nv_list, include_inds=scc_include_inds)
 
     # Create list of arguments
@@ -797,9 +797,8 @@ def get_coords_list(
     return coords_list
 
 
-def get_spin_flip_ind_list(nv_list: list[NVSig]):
-    num_nvs = len(nv_list)
-    return [ind for ind in range(num_nvs) if nv_list[ind].spin_flip]
+def get_spin_flip_do_target_list(nv_list: list[NVSig]):
+    return [nv.spin_flip for nv in nv_list]
 
 
 def get_scc_duration_list(nv_list: list[NVSig], include_inds=None):

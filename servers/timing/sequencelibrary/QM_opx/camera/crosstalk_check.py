@@ -77,7 +77,7 @@ def get_seq(
             ref_exp = reference and exp_ind == num_exps_per_rep - 1
             if laser_name == tb.get_physical_laser_name(VirtualLaserKey.ION):
                 pulse_name = "scc"
-            seq_utils.macro_pulse(
+            seq_utils.macro_single_pulse(
                 laser_name,
                 (crosstalk_x_coord, crosstalk_y_coord),
                 pulse_name,

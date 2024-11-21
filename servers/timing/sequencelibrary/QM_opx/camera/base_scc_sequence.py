@@ -66,7 +66,7 @@ def macro(
         scc_coords_list,
         scc_duration_list,
         scc_amp_list,
-        spin_flip_ind_list,
+        spin_flip_do_target_list,
         uwave_ind_list,
     ) = base_scc_seq_args
 
@@ -88,18 +88,14 @@ def macro(
     num_exps_per_rep = len(uwave_macro)
     num_nvs = len(pol_coords_list)
 
-    def macro_scc_sub(exp_spin_flip, ref_spin_flip):
+    def macro_scc_sub(do_target_list=None):
         seq_utils.macro_scc(
             scc_coords_list,
             scc_duration_list,
-            scc_amp_list,
-            spin_flip_ind_list,
-            uwave_ind_list,
-            pol_coords_list,
             scc_duration_override,
+            scc_amp_list,
             scc_amp_override,
-            exp_spin_flip=exp_spin_flip,
-            ref_spin_flip=ref_spin_flip,
+            do_target_list,
         )
 
     ### QUA stuff
@@ -126,15 +122,22 @@ def macro(
         ref_exp = reference and exp_ind == num_exps_per_rep - 1
         # Signal experiment
         if not ref_exp:
-            macro_scc_sub(True, False)
+            if spin_flip_do_target_list is None or True not in spin_flip_do_target_list:
+                macro_scc_sub()
+            else:
+                spin_flip_do_not_target_list = [
+                    not (val) for val in spin_flip_do_target_list
+                ]
+                macro_scc_sub(spin_flip_do_not_target_list)
+                seq_utils.macro_pi_pulse(uwave_ind_list)
+                macro_scc_sub(spin_flip_do_target_list)
         # Reference experiment
         else:
-            # Measure ms=0 or ms=+/-1 based on rep_ind parity
-            # Even for ms=0, odd for ms=+/-1, indexed from 0
-            with qua.if_(~qua.Cast.unsafe_cast_bool(rep_ind)):
-                macro_scc_sub(False, False)
-            with qua.else_():
-                macro_scc_sub(False, True)
+            # "Dual-rail" referencing: measure ms=0 for even reps, and ms=+/-1
+            # for odd by applying an extra pi pulse just before SCC
+            with qua.if_(qua.Cast.unsafe_cast_bool(rep_ind)):
+                seq_utils.macro_pi_pulse(uwave_ind_list)
+            macro_scc_sub()
 
         seq_utils.macro_charge_state_readout()
         seq_utils.macro_wait_for_trigger()
