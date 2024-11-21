@@ -372,6 +372,60 @@ def filter_by_peak_intensity(fitted_data, threshold=0.5):
     return filtered_coords, filtered_intensities
 
 
+def adjust_aom_voltage(
+    spot_weights, updated_spot_weights, aom_voltage, power_law_params
+):
+    """
+    Adjust the AOM voltage to account for changes in NV spot weights while ensuring
+    the power at NVs with unchanged weights remains constant.
+
+    Parameters:
+    - spot_weights: Initial normalized weights for all NVs (list or np.array).
+    - updated_spot_weights: New weights for specific NVs (list or np.array).
+    - aom_voltage: Current AOM voltage corresponding to the total yellow power.
+    - power_law_params: Parameters [a, b, c] for the power-law equation y = a * x^b + c.
+
+    Returns:
+    - adjusted_aom_voltage: The updated single AOM voltage.
+    """
+    # Ensure inputs are NumPy arrays
+    spot_weights = np.array(spot_weights)
+    updated_spot_weights = np.array(updated_spot_weights)
+
+    a, b, c = power_law_params
+
+    # Step 1: Calculate total yellow power for the current AOM voltage
+    total_yellow_power = a * (aom_voltage**b) + c
+
+    # Step 2: Calculate the current power distribution
+    current_powers = spot_weights * total_yellow_power / np.sum(spot_weights)
+
+    # Step 3: Update weights and calculate new powers
+    adjusted_weights = updated_spot_weights.copy()
+    unchanged_indices = np.where(spot_weights == updated_spot_weights)[0]
+    changed_indices = np.where(spot_weights != updated_spot_weights)[0]
+
+    # Ensure unchanged NV powers remain constant
+    adjusted_weights[unchanged_indices] = spot_weights[unchanged_indices]
+    updated_total_weight = np.sum(adjusted_weights)
+
+    # Step 4: Calculate the new total yellow power
+    adjusted_powers = (
+        adjusted_weights * total_yellow_power / np.sum(updated_total_weight)
+    )
+
+    # Ensure unchanged NVs retain their original power
+    adjusted_powers[unchanged_indices] = current_powers[unchanged_indices]
+
+    # Recalculate total yellow power to maintain consistency
+    scaled_yellow_power = np.sum(adjusted_powers)
+    print(scaled_yellow_power)
+    # Step 5: Convert the scaled yellow power back to AOM voltage using the inverse of the power-law equation
+    adjusted_aom_voltage = ((scaled_yellow_power - c) / a) ** (1 / b)
+
+    return adjusted_aom_voltage
+
+
 # Main section of the code
 if __name__ == "__main__":
     kpl.init_kplotlib()
@@ -397,14 +451,14 @@ if __name__ == "__main__":
     data = dm.get_raw_data(file_id=1701553383934, load_npz=True)
 
     img_array = np.array(data["ref_img_array"])
-    nv_coordinates, integrated_intensities = load_nv_coords(
+    nv_coordinates, spot_weights = load_nv_coords(
         # file_path="slmsuite/nv_blob_detection/nv_blob_filtered_144nvs.npz"
         # file_path="slmsuite/nv_blob_detection/nv_blob_filtered_160nvs.npz"
         file_path="slmsuite/nv_blob_detection/nv_blob_filtered_160nvs_reordered.npz"
     )
     nv_coordinates = nv_coordinates.tolist()
     # integrated_intensities = integrated_intensities.tolist()
-    spot_weights = integrated_intensities.tolist()
+    spot_weights = spot_weights.tolist()
 
     # print(integrated_intensities)
     # integration_radius = 3
@@ -423,10 +477,13 @@ if __name__ == "__main__":
     #         filtered_intensities.append(intensity)
 
     # # Filter and reorder NV coordinates based on reference NV
+    integrated_intensities = []
     sigma = 2.0
     reference_nv = [106.923, 120.549]
-    filtered_reordered_coords, filtered_reordered_counts = filter_and_reorder_nv_coords(
-        nv_coordinates, integrated_intensities, reference_nv, min_distance=3
+    filtered_reordered_coords, filtered_reordered_spot_weights = (
+        filter_and_reorder_nv_coords(
+            nv_coordinates, spot_weights, reference_nv, min_distance=3
+        )
     )
 
     # Integration over disk region around each NV coordinate
@@ -469,21 +526,33 @@ if __name__ == "__main__":
 
     # Calculate weights based on the fitted intensities
     # indices = [4, 27, 41, 82, 86, 89, 109, 117, 138, 139, 148, 149]
+    spot_weights = filtered_reordered_spot_weights
     indices = [4, 27, 30, 41, 117, 130, 139, 155]
     # Apply linear weights to all counts
-    # calcualted_spot_weights = linear_weights(filtered_reordered_counts, alpha=0.2)
-    updated_spot_weights = linear_weights(filtered_reordered_counts, alpha=0.6)
+    calcualted_spot_weights = linear_weights(filtered_reordered_counts, alpha=0.3)
+    # updated_spot_weights = linear_weights(filtered_reordered_counts, alpha=0.6)
 
     # Create a copy or initialize spot weights for modification
-    # updated_spot_weights = (
-    #     spot_weights.copy()
-    # )  # Assuming 'spot_weights' is your original weight array
+    updated_spot_weights = (
+        spot_weights.copy()
+    )  # Assuming 'spot_weights' is your original weight array
 
     # Update weights for the specified indices using the calculated weights
-    # for idx in indices:
-    #     if 0 <= idx < len(updated_spot_weights):  # Ensure index is within valid range
-    #         # updated_spot_weights[idx] = calcualted_spot_weights[idx]
-    #         updated_spot_weights[idx] += 0.3
+    for idx in indices:
+        if 0 <= idx < len(updated_spot_weights):  # Ensure index is within valid range
+            updated_spot_weights[idx] = calcualted_spot_weights[idx]
+
+    aom_voltage = 0.39  # Current AOM voltage
+    power_law_params = [3.7e5, 6.97, 8e-14]  # Example power-law fit parameters
+
+    # Adjust voltages
+    adjusted_voltages = adjust_aom_voltage(
+        spot_weights, updated_spot_weights, aom_voltage, power_law_params
+    )
+
+    # Print adjusted voltages
+    print("Adjusted Voltages (V):", adjusted_voltages)
+
     # print(len(spot_weights))
     # updated_spot_weights = filtered_reordered_counts
     # spot_weights = updated_spot_weights
@@ -524,7 +593,7 @@ if __name__ == "__main__":
     #     integrated_intensities[i] for i in filtered_indices
     # ]
     print(f"Filtered NV coordinates: {len(filtered_reordered_coords)} NVs")
-    print("NV Index | Coords    |    Counts")
+    print("NV Index | Coords    |    Counts |   previous weights |   updated weights")
     print("-" * 60)
     for idx, (coords, counts, weight, updated_weight) in enumerate(
         zip(
@@ -551,13 +620,13 @@ if __name__ == "__main__":
     # print(f"Number of NVs detected: {len(filtered_nv_coords)}")
 
     # Save the filtered results
-    save_results(
-        filtered_reordered_coords,
-        filtered_reordered_counts,
-        spot_weights,
-        updated_spot_weights,
-        filename="slmsuite/nv_blob_detection/nv_blob_filtered_160nvs_reordered.npz",
-    )
+    # save_results(
+    #     filtered_reordered_coords,
+    #     filtered_reordered_counts,
+    #     spot_weights,
+    #     updated_spot_weights,
+    #     filename="slmsuite/nv_blob_detection/nv_blob_filtered_160nvs_reordered.npz",
+    # )
 
     # Plot the original image with circles around each NV
 

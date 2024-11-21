@@ -594,7 +594,7 @@ def do_opx_constant_ac():
     opx.constant_ac(
         [],  # Digital channels
         [7],  # Analog channels
-        [0.39],  # Analog voltages
+        [0.45],  # Analog voltages
         [0],  # Analog frequencies
     )
 
@@ -1012,7 +1012,7 @@ if __name__ == "__main__":
         # do_optimize_xyz(nv_sig)
         # pos.set_xyz_on_nv(nv_sig)
 
-        do_compensate_for_drift(nv_sig)
+        # do_compensate_for_drift(nv_sig)
 
         # for point in points:
         #     x, y = point
@@ -1066,7 +1066,7 @@ if __name__ == "__main__":
 
         # nv_list = nv_list[::-1]
         # do_charge_state_histograms(nv_list)
-        do_charge_state_histograms_images(nv_list, vary_pol_laser=True)
+        # do_charge_state_histograms_images(nv_list, vary_pol_laser=True)
         # do_charge_state_conditional_init(nv_list)
         # do_check_readout_fidelity(nv_list)x
 

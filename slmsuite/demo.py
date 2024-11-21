@@ -210,29 +210,21 @@ else:
     # print("Corresponding red coordinates:", new_red_coord)
 
 
-# # Updating plot with center frequencies in the legend
-# import matplotlib.pyplot as plt
-# import numpy as np
-
+# Updating plot with center frequencies in the legend
 # # Given data
 # green_aod_freq_MHz = np.array([90, 95, 100, 105, 110, 115, 120, 125])
 # green_laser_power_uW = np.array([260, 310, 330, 350, 360, 340, 240, 140])
-
 # red_aod_freq_MHz = np.array([55, 60, 65, 70, 75, 80, 85, 90])
 # red_laser_power_uW = np.array([112, 200, 255, 260, 270, 260, 205, 110])
-
 # # Define center frequencies and compute x-axis difference
 # green_center_freq = 110  # MHz
 # red_center_freq = 75  # MHz
-
 # green_x_diff = green_aod_freq_MHz - green_center_freq
 # red_x_diff = red_aod_freq_MHz - red_center_freq
-
 # # Normalize the laser powers using 0 uW as the minimum
 # green_laser_power_normalized = green_laser_power_uW / green_laser_power_uW.max()
 # red_laser_power_normalized = red_laser_power_uW / red_laser_power_uW.max()
 # # Plotting
-
 # plt.figure(figsize=(7, 5))
 # plt.plot(
 #     green_x_diff,
@@ -246,10 +238,211 @@ else:
 #     label="Red Laser Power (Center: 75 MHz)",
 #     marker="s",
 # )
-
 # plt.xlabel("Frequency Difference from Center (MHz)")
 # plt.ylabel("Normalized Laser Power (uW)")
 # plt.title("Normalized Laser Power vs Frequency Difference from Center")
 # plt.legend()
 # plt.grid(True)
 # plt.show()
+# Try a logarithmic function instead, which might better capture the relationship
+import matplotlib.pyplot as plt
+import numpy as np
+from scipy.optimize import curve_fit
+
+# Data points
+aom_voltages = np.array(
+    [0.25, 0.27, 0.29, 0.31, 0.33, 0.35, 0.37, 0.39, 0.41, 0.43, 0.45]
+)
+yellow_power = np.array([12, 25, 48, 86, 146, 236, 363, 540, 766, 1050, 1400])
+
+
+# Define the exponential model
+def exponential_model(x, a, b, c):
+    return a * np.exp(b * x) + c
+
+
+# # Fit the curve
+# params, covariance = curve_fit(power_law_model, aom_voltages, yellow_power)
+# # params, covariance = curve_fit(ower_law_model, aom_voltages, yellow_power)
+
+# # Extract parameters
+# a, b, c = params
+
+# # Generate fitted data for plotting
+# voltage_fit = np.linspace(aom_voltages.min(), aom_voltages.max(), 500)
+# # power_fit = exponential_model(voltage_fit, a, b, c)
+# power_fit = power_law_model(voltage_fit, a, b, c)
+
+# # Plot the data and the fit
+# plt.figure(figsize=(8, 6))
+# plt.scatter(aom_voltages, yellow_power, color="blue", label="Data Points")
+# plt.plot(
+#     voltage_fit,
+#     power_fit,
+#     color="red",
+#     label=f"Fit: $y = {a:.2f} \\cdot e^{{{b:.2f} \\cdot x}} + {c:.2f}$",
+# )
+# plt.title("AOM Voltage vs Yellow Laser Power")
+# plt.xlabel("AOM Voltage (V)")
+# plt.ylabel("Yellow Laser Power (µW)")
+# plt.legend()
+# plt.grid(True)
+# plt.show()
+
+# # Print the function
+# print(f"Fitted Function: y = {a:.3f} * exp({b:.3f} * x) + {c:.3f}")
+
+
+# Define models
+
+
+import matplotlib.pyplot as plt
+import numpy as np
+from scipy.optimize import curve_fit
+
+# Data
+aom_voltages = np.array(
+    [0.25, 0.27, 0.29, 0.31, 0.33, 0.35, 0.37, 0.39, 0.41, 0.43, 0.45]
+)
+yellow_power = np.array([12, 25, 48, 86, 146, 236, 363, 540, 766, 1050, 1400])
+
+
+# Define models
+def power_law_model(x, a, b, c):
+    return a * x**b + c
+
+
+# Goodness of fit (R^2 and RMSE)
+def goodness_of_fit(y, y_fit):
+    residuals = y - y_fit
+    ss_res = np.sum(residuals**2)
+    ss_tot = np.sum((y - np.mean(y)) ** 2)
+    r2 = 1 - (ss_res / ss_tot)
+    rmse = np.sqrt(np.mean(residuals**2))
+    return r2, rmse
+
+
+# Fit both models
+models = {"Power-Law": power_law_model, "Exponential": exponential_model}
+
+voltage_fit = np.linspace(aom_voltages.min(), aom_voltages.max(), 500)
+
+plt.figure(figsize=(10, 6))
+results = {}
+
+for name, model in models.items():
+    # Fit the model
+    params, _ = curve_fit(
+        model, aom_voltages, yellow_power, maxfev=10000, bounds=(0, np.inf)
+    )
+    power_fit = model(voltage_fit, *params)
+
+    # Calculate goodness of fit
+    y_fit = model(aom_voltages, *params)
+    r2, rmse = goodness_of_fit(yellow_power, y_fit)
+    results[name] = {"params": params, "R^2": r2, "RMSE": rmse}
+
+    # Plot
+    plt.plot(
+        voltage_fit, power_fit, label=f"{name} Fit (R^2: {r2:.3f}, RMSE: {rmse:.2f})"
+    )
+    print(f"{name} Parameters: {params}, R^2: {r2:.3f}, RMSE: {rmse:.2f}")
+
+# Plot data
+plt.scatter(aom_voltages, yellow_power, color="black", label="Data Points")
+plt.title("AOM Voltage vs Yellow Laser Power - Model Comparison")
+plt.xlabel("AOM Voltage (V)")
+plt.ylabel("Yellow Laser Power (µW)")
+plt.legend()
+plt.grid(True)
+plt.show()
+
+# Display results for better understanding
+print("\nFitting Results:")
+for model_name, res in results.items():
+    print(f"{model_name}:")
+    print(f"  Parameters: {res['params']}")
+    print(f"  R^2: {res['R^2']:.3f}")
+    print(f"  RMSE: {res['RMSE']:.2f}")
+
+
+# import matplotlib.pyplot as plt
+# import numpy as np
+# from scipy.optimize import minimize
+
+# # Data
+# aom_voltages = np.array(
+#     [0.25, 0.27, 0.29, 0.31, 0.33, 0.35, 0.37, 0.39, 0.41, 0.43, 0.45]
+# )
+# yellow_power = np.array([12, 25, 48, 86, 146, 236, 363, 540, 766, 1050, 1400])
+
+
+# # Define models
+# def power_law_model(x, a, b, c):
+#     return a * x**b + c
+
+
+# def exponential_model(x, a, b, c):
+#     return a * np.exp(b * x) + c
+
+
+# # Cost function for least squares
+# def cost_function(params, x, y, model):
+#     y_pred = model(x, *params)
+#     residuals = y - y_pred
+#     return np.sum(residuals**2)
+
+
+# # Perform least squares fitting
+# def fit_model_least_squares(x, y, model, initial_guess):
+#     result = minimize(
+#         cost_function,
+#         initial_guess,
+#         args=(x, y, model),
+#         method="L-BFGS-B",
+#         bounds=[(0, None)] * len(initial_guess),
+#     )
+#     return result.x, result.fun  # Optimized parameters and cost
+
+
+# # Fit both models
+# initial_guess = [1, 1, 1]  # Initial guesses for [a, b, c]
+# power_params, power_cost = fit_model_least_squares(
+#     aom_voltages, yellow_power, power_law_model, initial_guess
+# )
+# exp_params, exp_cost = fit_model_least_squares(
+#     aom_voltages, yellow_power, exponential_model, initial_guess
+# )
+
+# # Generate fitted curves
+# voltage_fit = np.linspace(aom_voltages.min(), aom_voltages.max(), 500)
+# power_fit = power_law_model(voltage_fit, *power_params)
+# exp_fit = exponential_model(voltage_fit, *exp_params)
+
+# # Plot
+# plt.figure(figsize=(10, 6))
+# plt.scatter(aom_voltages, yellow_power, color="black", label="Data Points")
+# plt.plot(
+#     voltage_fit,
+#     power_fit,
+#     label=f"Power-Law Fit (Cost: {power_cost:.2f})",
+#     color="blue",
+# )
+# plt.plot(
+#     voltage_fit, exp_fit, label=f"Exponential Fit (Cost: {exp_cost:.2f})", color="red"
+# )
+# plt.title("Least Squares Fit - AOM Voltage vs Yellow Laser Power")
+# plt.xlabel("AOM Voltage (V)")
+# plt.ylabel("Yellow Laser Power (µW)")
+# plt.legend()
+# plt.grid(True)
+# plt.show()
+
+# # Display results
+# print("Fitting Results:")
+# print(
+#     f"Power-Law Model: a={power_params[0]:.3f}, b={power_params[1]:.3f}, c={power_params[2]:.3f}, Cost={power_cost:.2f}"
+# )
+# print(
+#     f"Exponential Model: a={exp_params[0]:.3f}, b={exp_params[1]:.3f}, c={exp_params[2]:.3f}, Cost={exp_cost:.2f}"
+# )
