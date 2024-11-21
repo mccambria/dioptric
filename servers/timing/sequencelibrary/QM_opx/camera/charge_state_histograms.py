@@ -18,9 +18,9 @@ from servers.timing.sequencelibrary.QM_opx import seq_utils
 
 def get_seq(
     pol_coords_list,
+    pol_duration_list,
+    pol_amp_list,
     ion_coords_list,
-    diff_polarize,
-    diff_ionize,
     verify_charge_states,
     num_reps,
 ):
@@ -28,42 +28,29 @@ def get_seq(
         num_reps = 1
     num_nvs = len(pol_coords_list)
 
-    if diff_polarize and not diff_ionize:
-        do_polarize_sig = True
-        do_polarize_ref = False
-        do_ionize_sig = False
-        do_ionize_ref = False
-    elif not diff_polarize and diff_ionize:
-        do_polarize_sig = True
-        do_polarize_ref = True
-        do_ionize_sig = True
-        do_ionize_ref = False
-
     with qua.program() as seq:
         seq_utils.init(num_nvs)
         seq_utils.macro_run_aods()
 
-        def one_exp(do_polarize_sub, do_ionize_sub):
-            if do_polarize_sub:
-                seq_utils.macro_polarize(
-                    pol_coords_list,
-                    spin_pol=False,
-                    targeted_polarization=verify_charge_states,
-                    verify_charge_states=verify_charge_states,
-                )
+        def one_exp(do_ionize):
+            seq_utils.macro_polarize(
+                pol_coords_list,
+                pol_duration_list,
+                pol_amp_list,
+                targeted_polarization=verify_charge_states,
+                verify_charge_states=verify_charge_states,
+                spin_pol=False,
+            )
 
-            if do_ionize_sub:
+            if do_ionize:
                 seq_utils.macro_ionize(ion_coords_list)
 
             seq_utils.macro_charge_state_readout()
             seq_utils.macro_wait_for_trigger()
 
         def one_rep(rep_ind=None):
-            for half_rep_args in [
-                [do_polarize_sig, do_ionize_sig],
-                [do_polarize_ref, do_ionize_ref],
-            ]:
-                one_exp(*half_rep_args)
+            for do_ionize in [True, False]:
+                one_exp(do_ionize)
 
         seq_utils.handle_reps(one_rep, num_reps, wait_for_trigger=False)
         seq_utils.macro_pause()

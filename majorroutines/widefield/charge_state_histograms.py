@@ -234,8 +234,6 @@ def main(
     num_reps,
     num_runs,
     verify_charge_states=False,
-    diff_polarize=False,
-    diff_ionize=True,
     ion_include_inds=None,
     do_plot_histograms=False,
 ):
@@ -253,15 +251,15 @@ def main(
     ### Collect the data
 
     def run_fn(shuffled_step_inds):
-        pol_coords_list = widefield.get_coords_list(nv_list, VirtualLaserKey.CHARGE_POL)
-        ion_coords_list = widefield.get_coords_list(
-            nv_list, VirtualLaserKey.ION, include_inds=ion_include_inds
+        pol_coords_list, pol_duration_list, pol_amp_list = (
+            widefield.get_pulse_parameter_lists(nv_list, VirtualLaserKey.CHARGE_POL)
         )
+        ion_coords_list = widefield.get_coords_list(nv_list, VirtualLaserKey.ION)
         seq_args = [
             pol_coords_list,
+            pol_duration_list,
+            pol_amp_list,
             ion_coords_list,
-            diff_polarize,
-            diff_ionize,
             verify_charge_states,
         ]
         seq_args_string = tb.encode_seq_args(seq_args)

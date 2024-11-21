@@ -63,6 +63,8 @@ def macro(
 
     (
         pol_coords_list,
+        pol_duration_list,
+        pol_amp_list,
         scc_coords_list,
         scc_duration_list,
         scc_amp_list,
@@ -114,7 +116,9 @@ def macro(
 
     def one_exp(rep_ind, exp_ind):
         # exp_ind = num_exps_per_rep - 1  # MCC
-        seq_utils.macro_polarize(pol_coords_list)
+        seq_utils.macro_polarize(
+            pol_coords_list, duration_list=pol_duration_list, amp_list=pol_amp_list
+        )
         qua.align()
         uwave_macro[exp_ind](uwave_ind_list, step_val)
 

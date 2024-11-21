@@ -738,9 +738,7 @@ def get_nv_num(nv_sig):
     return nv_num
 
 
-def get_base_scc_seq_args(
-    nv_list: list[NVSig], uwave_ind_list: list[int], scc_include_inds=None
-):
+def get_base_scc_seq_args(nv_list: list[NVSig], uwave_ind_list: list[int]):
     """Return base seq_args for any SCC routine. The base sequence arguments
     are the minimum info required for state preparation and SCC.
 
@@ -750,29 +748,29 @@ def get_base_scc_seq_args(
         List of nv signatures to target
     uwave_ind_list : list[int]
         List of indices of the microwave chains to run for state prep
-    scc_include_inds : list[int], optional
-        Indices to include in the SCC
 
     Returns
     -------
     list
         Sequence arguments
     """
-    # Get coordinate lists
-    pol_coords_list = get_coords_list(nv_list, VirtualLaserKey.CHARGE_POL)
-    scc_coords_list = get_coords_list(
-        nv_list, VirtualLaserKey.SCC, include_inds=scc_include_inds
+
+    pol_coords_list, pol_duration_list, pol_amp_list = get_pulse_parameter_lists(
+        nv_list, VirtualLaserKey.CHARGE_POL
     )
 
-    # Other lists
-    scc_duration_list = get_scc_duration_list(nv_list, include_inds=scc_include_inds)
-    scc_amp_list = get_scc_amp_list(nv_list, include_inds=scc_include_inds)
+    scc_coords_list, scc_duration_list, scc_amp_list = get_pulse_parameter_lists(
+        nv_list, VirtualLaserKey.SCC
+    )
+
     spin_flip_ind_list = get_spin_flip_do_target_list(nv_list)
     # threshold_list = get_threshold_list(nv_list, include_inds=scc_include_inds)
 
     # Create list of arguments
     seq_args = [
         pol_coords_list,
+        pol_duration_list,
+        pol_amp_list,
         scc_coords_list,
         scc_duration_list,
         scc_amp_list,
@@ -784,49 +782,37 @@ def get_base_scc_seq_args(
     return seq_args
 
 
-def get_coords_list(
-    nv_list: list[NVSig], laser_key, drift_adjust=None, include_inds=None
-):
+def get_pulse_parameter_lists(nv_list, virtual_laser_key):
+    coords_list = get_coords_list(nv_list, virtual_laser_key)
+    duration_list = []
+    amp_list = []
+    for nv in nv_list:
+        # Add to duration_list
+        if nv.pulse_durations is not None:
+            duration = nv.pulse_durations[virtual_laser_key]
+        else:
+            duration = None
+        duration_list.append(duration)
+        # Add to amp_list
+        if nv.pulse_amps is not None:
+            amp = nv.pulse_amps[virtual_laser_key]
+        else:
+            amp = None
+        amp_list.append(amp)
+    return coords_list, duration_list, amp_list
+
+
+def get_coords_list(nv_list: list[NVSig], laser_key, drift_adjust=None):
     laser_positioner = pos.get_laser_positioner(laser_key)
     coords_list = [
         pos.get_nv_coords(nv, coords_key=laser_positioner, drift_adjust=drift_adjust)
         for nv in nv_list
     ]
-    if include_inds is not None:
-        coords_list = [coords_list[ind] for ind in include_inds]
     return coords_list
 
 
 def get_spin_flip_do_target_list(nv_list: list[NVSig]):
     return [nv.spin_flip for nv in nv_list]
-
-
-def get_scc_duration_list(nv_list: list[NVSig], include_inds=None):
-    scc_duration_list = []
-    for nv in nv_list:
-        scc_duration = nv.scc_duration
-        if scc_duration is None:
-            config = common.get_config_dict()
-            scc_duration = config["Optics"][VirtualLaserKey.SCC]["duration"]
-        if not (scc_duration % 4 == 0 and scc_duration >= 16):
-            raise RuntimeError("SCC pulse duration not valid for OPX.")
-        scc_duration_list.append(scc_duration)
-    if include_inds is not None:
-        scc_duration_list = [scc_duration_list[ind] for ind in include_inds]
-    return scc_duration_list
-
-
-def get_scc_amp_list(nv_list: list[NVSig], include_inds=None):
-    scc_amp_list = []
-    for nv in nv_list:
-        scc_amp = nv.scc_amp
-        # if scc_amp is None:
-        #     config = common.get_config_dict()
-        #     scc_amp = config["Optics"][LaserKey.SCC]["duration"]
-        scc_amp_list.append(scc_amp)
-    if include_inds is not None:
-        scc_amp_list = [scc_amp_list[ind] for ind in include_inds]
-    return scc_amp_list
 
 
 def get_threshold_list(nv_list: list[NVSig], include_inds=None):

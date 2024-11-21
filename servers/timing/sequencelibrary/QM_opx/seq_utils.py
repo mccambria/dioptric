@@ -208,8 +208,8 @@ def macro_polarize(
         qua.wait(buffer, spin_pol_laser_el)
 
 
-def macro_ionize(ion_coords_list):
-    """Ionize NVs in series
+def macro_ionize(ion_coords_list: list[list[float]]):
+    """Apply an ionization pulse to each coordinate pair in the passed coords_list.
 
     Parameters
     ----------
