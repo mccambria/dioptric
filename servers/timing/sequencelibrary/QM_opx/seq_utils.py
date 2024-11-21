@@ -150,12 +150,12 @@ def macro_polarize(
     macro_run_aods(
         laser_names=[pol_laser_name],
         aod_suffices=[pulse_name],
-        amps=[polarization_amp],  # Pass the amplitude here
+        amps=[pol_amp],  # Pass the amplitude here
     )
 
     def macro_sub():
         target_list = _cache_target_list if targeted_polarization else None
-        _macro_pulse_list(
+        _macro_pulse_series(
             pol_laser_name,
             pulse_name,
             coords_list,
@@ -201,7 +201,7 @@ def macro_ionize(ion_coords_list):
     ion_laser_name = tb.get_physical_laser_name(VirtualLaserKey.ION)
     ion_pulse_name = "ion"
     macro_run_aods([ion_laser_name], aod_suffices=[ion_pulse_name])
-    _macro_pulse_list(ion_laser_name, ion_pulse_name, ion_coords_list)
+    _macro_pulse_series(ion_laser_name, ion_pulse_name, ion_coords_list)
 
 
 def macro_scc(
@@ -444,32 +444,41 @@ def macro_multi_pulse(
 # region Private QUA macros
 
 
-def _macro_pulse_list(
-    laser_name,
-    pulse_name,
-    coords_list,
-    duration_list=None,
-    duration_override=None,
-    amp_list=None,
-    amp_override=None,
-    target_list=None,
+def _macro_pulse_series(
+    laser_name: str,
+    pulse_name: str,
+    coords_list: list[list[float]],
+    duration_list: list[int] = None,
+    duration_override: None | int = None,
+    amp_list: list[float] = None,
+    amp_override: None | float = None,
+    target_list: None | list[bool] = None,
 ):
     """Apply a laser pulse to each coordinate pair in the passed coords_list.
-    Pulses are applied in series
+    Pulses are applied in series from one location to the next.
 
     Parameters
     ----------
     laser_name : str
         Name of laser to pulse
-    coords_list : list(coordinate pairs)
-        List of coordinate pairs to target
     pulse_name : str
-        Name of the pulse to play - "on" by default
-    duration : numeric
-        Durations of the pulses in ns - if None, uses the default
-        duration for the passed pulse
+        Name of the pulse to play
+    coords_list : list[list[float]]
+        List of coordinate pairs to target
+    duration_list : list[int], optional
+        List of pulse durations, by default whatever value is in config
+    duration_override : None | int, optional
+        Pulse duration for all pulses - overrides duration_list.
+        Useful for parameters sweeps. By default do not override
+    amp_list : list[float], optional
+        List of pulse amplitudes, by default whatever value is in config
+    amp_override : None | float, optional
+        Pulse amplitude for all pulses - overrides amp_list.
+        Useful for parameters sweeps. By default do not override
+    target_list : None | list[bool], optional
+        List of whether to target an NV or not. Used to skip certain NVs.
+        By default target all NVs
     """
-
     if len(coords_list) == 0:
         return
 
@@ -531,14 +540,32 @@ def _macro_pulse_list(
 
 
 def _macro_single_pulse(
-    laser_name,
-    coords,
-    pulse_name="on",
-    duration=None,
-    amp=None,
-    delay=0,
-    convert_to_Hz=True,
+    laser_name: str,
+    coords: list[float],
+    pulse_name: str,
+    duration: None | int = None,
+    amp: None | float = None,
+    convert_to_Hz: bool = True,
 ):
+    """_summary_
+
+    Parameters
+    ----------
+    laser_name : _type_
+        _description_
+    coords : _type_
+        _description_
+    pulse_name : str, optional
+        _description_, by default "on"
+    duration : _type_, optional
+        _description_, by default None
+    amp : _type_, optional
+        _description_, by default None
+    delay : int, optional
+        _description_, by default 0
+    convert_to_Hz : bool, optional
+        _description_, by default True
+    """
     # Setup
     laser_el = get_laser_mod_element(laser_name)
     x_el = f"ao_{laser_name}_x"
@@ -678,7 +705,7 @@ def _macro_scc_no_shelving(
     # if exp_spin_flip:
     #     macro_pi_pulse(uwave_ind_list[:1])
 
-    _macro_pulse_list(
+    _macro_pulse_series(
         ion_laser_name,
         ion_pulse_name,
         first_coords_list,
@@ -705,7 +732,7 @@ def _macro_scc_no_shelving(
     if exp_spin_flip:
         macro_pi_pulse(uwave_ind_list)
 
-    _macro_pulse_list(
+    _macro_pulse_series(
         ion_laser_name,
         ion_pulse_name,
         second_coords_list,
