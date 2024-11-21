@@ -70,7 +70,7 @@ def get_seq(
                 seq_utils.macro_ionize(ion_coords_list)
 
             # Charge state readout with optional readout laser power
-            seq_utils.macro_charge_state_readout(readout_amp=readout_laser_power)
+            seq_utils.macro_charge_state_readout(amp=readout_laser_power)
             seq_utils.macro_wait_for_trigger()
 
         # Repetition loop

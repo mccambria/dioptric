@@ -121,25 +121,45 @@ def macro_pause():
 
 
 def macro_polarize(
-    coords_list,
-    duration_list=None,
-    pol_amp=None,
-    targeted_polarization=False,
-    verify_charge_states=False,
-    spin_pol=True,
+    coords_list: list[list[float]],
+    duration_list: list[int] = None,
+    duration_override: int = None,
+    amp_list: list[float] = None,
+    amp_override: float = None,
+    targeted_polarization: bool = False,
+    verify_charge_states: bool = False,
+    spin_pol: bool = True,
 ):
-    """Apply a polarization pulse to each coordinate pair in the passed coords_list.
-    Pulses are applied in series. Optionally apply a secondary spin polarization pulse
-    with yellow after charge polarization with green
+    """Apply a green polarization pulse to each coordinate pair in the passed coords_list.
+    Supports conditional charge-state initialization with targeted_polarization and
+    verify_charge_states parameters. (See base_routine for details.) Optionally apply
+    a yellow widefield spin polarization pulse after green serial charge polarization
 
     Parameters
     ----------
-    pol_laser_name : str
-        Name of polarization laser
-    pol_duration : numeric
-        Duration of the pulse in ns
-    pol_coords_list : list(coordinate pairs)
+    coords_list : list[list[float]]
         List of coordinate pairs to target
+    duration_list : list[int], optional
+        List of pulse durations, by default whatever value is in config
+    duration_override : int, optional
+        Pulse duration for all pulses - overrides duration_list.
+        Useful for parameters sweeps. By default do not override
+    amp_list : list[float], optional
+        List of pulse amplitudes, by default whatever value is in config
+    amp_override : float, optional
+        Pulse amplitude for all pulses - overrides amp_list.
+        Useful for parameters sweeps. By default do not override
+    targeted_polarization : bool, optional
+        Whether or not to apply charge polarization to only certain NVs. Requires setting
+        _cache_target_list on the client via insert_input_stream call. (See base_routine
+        for details.) By default False
+    verify_charge_states : bool, optional
+        Whether or not to verify charge states of NVs for high-fidelity conditional charge-
+        state initialization. Requires setting _cache_charge_pol_incomplete on the client
+        via insert_input_stream call. (See base_routine for details.) By default False
+    spin_pol : bool, optional
+        Whether or not to apply a yellow widefield spin polarization pulse
+        after green serial charge polarization. By default True
     """
 
     global _cache_charge_pol_incomplete
@@ -147,35 +167,34 @@ def macro_polarize(
 
     pol_laser_name = tb.get_physical_laser_name(VirtualLaserKey.CHARGE_POL)
     pulse_name = "charge_pol"
-    macro_run_aods(
-        laser_names=[pol_laser_name],
-        aod_suffices=[pulse_name],
-        amps=[pol_amp],  # Pass the amplitude here
-    )
+    macro_run_aods(laser_names=[pol_laser_name], aod_suffices=[pulse_name])
 
-    def macro_sub():
-        target_list = _cache_target_list if targeted_polarization else None
+    def charge_pol_sub():
+        do_target_list = _cache_target_list if targeted_polarization else None
         _macro_pulse_series(
             pol_laser_name,
             pulse_name,
             coords_list,
-            duration_list=duration_list,
-            do_target_list=target_list,
+            duration_list,
+            duration_override,
+            amp_list,
+            amp_override,
+            do_target_list,
         )
 
     if verify_charge_states:
         qua.advance_input_stream(_cache_charge_pol_incomplete)
         with qua.while_(_cache_charge_pol_incomplete):
             qua.advance_input_stream(_cache_target_list)
-            macro_sub()
+            charge_pol_sub()
             macro_charge_state_readout()
             macro_wait_for_trigger()
             qua.advance_input_stream(_cache_charge_pol_incomplete)
     elif targeted_polarization:
         qua.advance_input_stream(_cache_target_list)
-        macro_sub()
+        charge_pol_sub()
     else:
-        macro_sub()
+        charge_pol_sub()
 
     # Spin polarization with widefield yellow
     if spin_pol:
@@ -190,12 +209,11 @@ def macro_polarize(
 
 
 def macro_ionize(ion_coords_list):
-    """Apply an ionitization pulse to each coordinate pair in the passed coords_list.
-    Pulses are applied in series
+    """Ionize NVs in series
 
     Parameters
     ----------
-    ion_coords_list : list(coordinate pairs)
+    ion_coords_list : list[list[float]]
         List of coordinate pairs to target
     """
     ion_laser_name = tb.get_physical_laser_name(VirtualLaserKey.ION)
@@ -206,21 +224,33 @@ def macro_ionize(ion_coords_list):
 
 def macro_scc(
     scc_coords_list: list[list[float]],
-    scc_duration_list: None | list[int] = None,
-    scc_duration_override: None | int = None,
-    scc_amp_list: None | list[float] = None,
-    scc_amp_override: None | float = None,
-    do_target_list: None | list[bool] = None,
+    scc_duration_list: list[int] = None,
+    scc_duration_override: int = None,
+    scc_amp_list: list[float] = None,
+    scc_amp_override: float = None,
+    do_target_list: list[bool] = None,
 ):
-    """Apply an ionitization pulse to each coordinate pair in the passed coords_list.
-    Pulses are applied in series
+    """Apply an SCC pulse to each coordinate pair in the passed coords_list.
+    Checks config for whether or not to include a shelving pulse
+
 
     Parameters
     ----------
-    scc_coords_list : list(coordinate pairs)
-        List of coordinate pairs to target
-    ion_duration : numeric
-        Duration of the pulse in clock cycles (4 ns)
+    scc_coords_list : list[list[float]]
+        List of coordinate pairs to target for the SCC pulse itself
+    scc_duration_list : list[int], optional
+        List of pulse durations for the SCC pulse itself, by default whatever value is in config
+    scc_duration_override : int, optional
+        Pulse duration for all pulses for the SCC pulse itself - overrides duration_list.
+        Useful for parameters sweeps. By default do not override
+    scc_amp_list : list[float], optional
+        List of pulse amplitudes for the SCC pulse itself, by default whatever value is in config
+    scc_amp_override : float, optional
+        Pulse amplitude for all pulses for the SCC pulse itself - overrides amp_list.
+        Useful for parameters sweeps. By default do not override
+    do_target_list : list[bool], optional
+        List of whether to target an NV or not. Used to skip certain NVs.
+        Default value None targets all NVs
     """
 
     config = common.get_config_dict()
@@ -247,7 +277,16 @@ def macro_scc(
         )
 
 
-def macro_charge_state_readout(readout_duration_ns=None, readout_amp=None):
+def macro_charge_state_readout(duration: int = None, amp: float = None):
+    """Pulse yellow to read out NV charge states in parallel
+
+    Parameters
+    ----------
+    duration : int, optional
+        Readout and pulse duration in ns, by default whatever is in config
+    amp : float, optional
+        Pulse amplitude, by default whatever is in config
+    """
     readout_laser_name = tb.get_physical_laser_name(
         VirtualLaserKey.WIDEFIELD_CHARGE_READOUT
     )
@@ -256,15 +295,15 @@ def macro_charge_state_readout(readout_duration_ns=None, readout_amp=None):
     camera_el = "do_camera_trigger"
 
     default_duration = get_default_pulse_duration()
-    if readout_duration_ns is not None:
-        readout_duration = convert_ns_to_cc(readout_duration_ns)
+    if duration is not None:
+        readout_duration = convert_ns_to_cc(duration)
     else:
         readout_duration = get_default_charge_readout_duration()
     wait_duration = readout_duration - default_duration
 
     qua.align()
-    if readout_amp is not None:
-        qua.play("charge_readout" * qua.amp(readout_amp), readout_laser_el)
+    if amp is not None:
+        qua.play("charge_readout" * qua.amp(amp), readout_laser_el)
     else:
         qua.play("charge_readout", readout_laser_el)
     qua.play("on", camera_el)
@@ -305,8 +344,9 @@ def macro_run_aods(
     aod_suffices: list[str] = None,
     amps: list[float] = None,
 ):
-    """Turn on the AODs. They'll run indefinitely. Use pulse_suffix to run a pulse
-    with a different power, etc
+    """Turn on the AODs. They'll run indefinitely. Use a pulse_suffix to run a different
+    named pulse from config (one with a different power) or pass amps to modulate the
+    power manually
 
     Parameters
     ----------
@@ -397,25 +437,45 @@ def macro_run_aods(
 
 
 def macro_single_pulse(
-    laser_name, coords, pulse_name, duration=None, amp=None, convert_to_Hz=True
+    laser_name: str,
+    coords: list[float],
+    pulse_name: str,
+    duration: int = None,
+    amp: float = None,
+    convert_to_Hz: bool = True,
 ):
+    """Apply a single laser pulse at the passed coordinate pair
+
+    Parameters
+    ----------
+    laser_name : str
+        Name of laser to pulse
+    coords : list[float]
+        Coordinate pair to target
+    pulse_name : str
+        Name of the pulse to play
+    duration : int, optional
+        Pulse duration in ns, by default whatever is in config
+    amp : float, optional
+        Pulse amplitude, by default whatever is in config
+    convert_to_Hz : bool, optional
+        Whether to convert coords from MHz to Hz, by default True
+    """
     qua.align()
-    _macro_single_pulse(
-        laser_name, coords, pulse_name, duration, amp, convert_to_Hz=convert_to_Hz
-    )
+    _macro_single_pulse(laser_name, coords, pulse_name, duration, amp, convert_to_Hz)
 
 
 def macro_pulse_combo(
-    laser_name_list,
-    coords_list,
-    pulse_name_list,
-    duration_list=None,
-    amp_list=None,
-    delays=None,
-    convert_to_Hz=True,
+    laser_name_list: list[str],
+    coords_list: list[float],
+    pulse_name_list: list[str],
+    delays: list[int],
+    duration_list: list[int] = None,
+    amp_list: list[float] = None,
+    convert_to_Hz: bool = True,
 ):
-    """Apply a combination of laser pulse at one point in space described
-    by the passed coordinate pairs
+    """Apply a combination of laser pulse at one point in space described by the passed
+    coordinate pairs. Each position in a list here describes a different pulse
 
     Parameters
     ----------
@@ -425,11 +485,13 @@ def macro_pulse_combo(
         Coordinate pairs describing the target
     pulse_name_list : list[str]
         Names of the pulses to play
-    duration_list : None | list[int], optional
+    delays : list[int]
+        Delays for the pulses from the beginning of the combo. Allows pulses to be
+        offset from one another
+    duration_list : list[int], optional
         Pulse durations in ns, by default whatever is in config
-    amp : None | list[float], optional
+    amp_list : list[float], optional
         Pulse amplitude, by default whatever is in config
-    delays :
     convert_to_Hz : bool, optional
         Whether to convert coords from MHz to Hz, by default True
     """
@@ -460,15 +522,73 @@ def macro_pulse_combo(
 # region Private QUA macros
 
 
+def _macro_single_pulse(
+    laser_name: str,
+    coords: list[float],
+    pulse_name: str,
+    duration: int = None,
+    amp: float = None,
+    convert_to_Hz: bool = True,
+):
+    """Apply a single laser pulse at the passed coordinate pair. Does not align
+    before beginning the macro
+
+    Parameters
+    ----------
+    laser_name : str
+        Name of laser to pulse
+    coords : list[float]
+        Coordinate pair to target
+    pulse_name : str
+        Name of the pulse to play
+    duration : int, optional
+        Pulse duration in ns, by default whatever is in config
+    amp : float, optional
+        Pulse amplitude, by default whatever is in config
+    convert_to_Hz : bool, optional
+        Whether to convert coords from MHz to Hz, by default True
+    """
+    # Setup
+    laser_el = get_laser_mod_element(laser_name)
+    x_el = f"ao_{laser_name}_x"
+    y_el = f"ao_{laser_name}_y"
+
+    global _cache_pol_reps_ind
+
+    buffer = get_widefield_operation_buffer()
+    access_time = get_aod_access_time()
+
+    if convert_to_Hz:
+        coords = [int(el * 10**6) for el in coords]
+
+    if amp is None:
+        qua.play("continue", x_el)
+        qua.play("continue", y_el)
+    else:
+        macro_run_aods(laser_names=[laser_name], aod_suffices=[pulse_name], amps=[amp])
+    qua.update_frequency(x_el, coords[0])
+    qua.update_frequency(y_el, coords[1])
+
+    # Pulse the laser
+    qua.wait(access_time + buffer, laser_el)
+    if duration is None:
+        qua.play(pulse_name, laser_el)
+    elif isinstance(duration, int) and duration == 0:
+        pass
+    else:
+        qua.play(pulse_name, laser_el, duration=duration)
+    qua.wait(buffer, laser_el)
+
+
 def _macro_pulse_series(
     laser_name: str,
     pulse_name: str,
     coords_list: list[list[float]],
     duration_list: list[int] = None,
-    duration_override: None | int = None,
+    duration_override: int = None,
     amp_list: list[float] = None,
-    amp_override: None | float = None,
-    do_target_list: None | list[bool] = None,
+    amp_override: float = None,
+    do_target_list: list[bool] = None,
 ):
     """Apply a laser pulse to each coordinate pair in the passed coords_list.
     Pulses are applied in series from one location to the next.
@@ -483,17 +603,17 @@ def _macro_pulse_series(
         List of coordinate pairs to target
     duration_list : list[int], optional
         List of pulse durations, by default whatever value is in config
-    duration_override : None | int, optional
+    duration_override : int, optional
         Pulse duration for all pulses - overrides duration_list.
         Useful for parameters sweeps. By default do not override
     amp_list : list[float], optional
         List of pulse amplitudes, by default whatever value is in config
-    amp_override : None | float, optional
+    amp_override : float, optional
         Pulse amplitude for all pulses - overrides amp_list.
         Useful for parameters sweeps. By default do not override
-    do_target_list : None | list[bool], optional
+    do_target_list : list[bool], optional
         List of whether to target an NV or not. Used to skip certain NVs.
-        By default target all NVs
+        Default value None targets all NVs
     """
     if len(coords_list) == 0:
         return
@@ -555,63 +675,6 @@ def _macro_pulse_series(
         macro_sub()
 
 
-def _macro_single_pulse(
-    laser_name: str,
-    coords: list[float],
-    pulse_name: str,
-    duration: None | int = None,
-    amp: None | float = None,
-    convert_to_Hz: bool = True,
-):
-    """Apply a single laser pulse at the passed coordinate pair
-
-    Parameters
-    ----------
-    laser_name : str
-        Name of laser to pulse
-    coords : list[float]
-        Coordinate pair to target
-    pulse_name : str
-        Name of the pulse to play
-    duration : None | int, optional
-        Pulse duration in ns, by default whatever is in config
-    amp : None | float, optional
-        Pulse amplitude, by default whatever is in config
-    convert_to_Hz : bool, optional
-        Whether to convert coords from MHz to Hz, by default True
-    """
-    # Setup
-    laser_el = get_laser_mod_element(laser_name)
-    x_el = f"ao_{laser_name}_x"
-    y_el = f"ao_{laser_name}_y"
-
-    global _cache_pol_reps_ind
-
-    buffer = get_widefield_operation_buffer()
-    access_time = get_aod_access_time()
-
-    if convert_to_Hz:
-        coords = [int(el * 10**6) for el in coords]
-
-    if amp is None:
-        qua.play("continue", x_el)
-        qua.play("continue", y_el)
-    else:
-        macro_run_aods(laser_names=[laser_name], aod_suffices=[pulse_name], amps=[amp])
-    qua.update_frequency(x_el, coords[0])
-    qua.update_frequency(y_el, coords[1])
-
-    # Pulse the laser
-    qua.wait(access_time + buffer, laser_el)
-    if duration is None:
-        qua.play(pulse_name, laser_el)
-    elif isinstance(duration, int) and duration == 0:
-        pass
-    else:
-        qua.play(pulse_name, laser_el, duration=duration)
-    qua.wait(buffer, laser_el)
-
-
 def _macro_scc_shelving(
     scc_coords_list,
     scc_duration_list,
@@ -669,11 +732,11 @@ def _macro_scc_shelving(
 
 def _macro_scc_no_shelving(
     coords_list: list[list[float]],
-    duration_list: None | list[int] = None,
-    duration_override: None | int = None,
-    amp_list: None | list[float] = None,
-    amp_override: None | float = None,
-    do_target_list: None | list[bool] = None,
+    duration_list: list[int] = None,
+    duration_override: int = None,
+    amp_list: list[float] = None,
+    amp_override: float = None,
+    do_target_list: list[bool] = None,
 ):
     """Perform spin-to-charge conversion (SCC) on NVs in series without a shelving pulse
 
@@ -683,21 +746,17 @@ def _macro_scc_no_shelving(
         List of coordinate pairs to target
     duration_list : list[int], optional
         List of pulse durations, by default whatever value is in config
-    duration_override : None | int, optional
+    duration_override : int, optional
         Pulse duration for all pulses - overrides duration_list.
         Useful for parameters sweeps. By default do not override
     amp_list : list[float], optional
         List of pulse amplitudes, by default whatever value is in config
-    amp_override : None | float, optional
+    amp_override : float, optional
         Pulse amplitude for all pulses - overrides amp_list.
         Useful for parameters sweeps. By default do not override
-    uwave_ind_list : None | list[int], optional
-        Indices of microwave channels to apply pi pulses on for generating anti-
-        correlations, "dual-rail" referencing where we measure both, By default None
-    exp_spin_flip : bool, optional
-        _description_, by default True
-    exp_spin_flip_ind_list : None | list[int], optional
-        _description_, by default None
+    do_target_list : list[bool], optional
+        List of whether to target an NV or not. Used to skip certain NVs.
+        Default value None targets all NVs
     """
     # Basic setup
 
