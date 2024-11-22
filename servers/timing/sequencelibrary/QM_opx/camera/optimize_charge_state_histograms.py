@@ -13,6 +13,7 @@ from qm import QuantumMachinesManager, qua
 from qm.simulate import SimulationConfig
 
 import utils.common as common
+from servers.timing.sequencelibrary.QM_opx import seq_utils
 from servers.timing.sequencelibrary.QM_opx.camera import base_charge_state_histograms
 
 
@@ -21,20 +22,51 @@ def get_seq(
     pol_duration_list,
     pol_amp_list,
     ion_coords_list,
-    ion_do_target_list,
-    verify_charge_states,
+    step_vals,
+    optimize_pol_or_readout,
+    optimize_duration_or_amp,
     num_reps,
 ):
+    if optimize_duration_or_amp:
+        step_vals = [seq_utils.convert_ns_to_cc(el) for el in step_vals]
+
     with qua.program() as seq:
-        base_charge_state_histograms.macro(
-            pol_coords_list,
-            pol_duration_list,
-            pol_amp_list,
-            ion_coords_list,
-            num_reps,
-            ion_do_target_list=ion_do_target_list,
-            verify_charge_states=verify_charge_states,
-        )
+        if optimize_duration_or_amp:
+            override_var = qua.declare(qua.fixed)
+        else:
+            override_var = qua.declare(int)
+
+        # Determine which variable to override
+        pol_duration_override = None
+        pol_amp_override = None
+        readout_duration_override = None
+        readout_amp_override = None
+        if optimize_pol_or_readout:
+            if optimize_duration_or_amp:
+                pol_duration_override = override_var
+            else:
+                pol_amp_override = override_var
+        else:
+            if optimize_duration_or_amp:
+                readout_duration_override = override_var
+            else:
+                readout_amp_override = override_var
+
+        def one_step():
+            base_charge_state_histograms.macro(
+                pol_coords_list,
+                pol_duration_list,
+                pol_amp_list,
+                ion_coords_list,
+                num_reps,
+                pol_duration_override=pol_duration_override,
+                pol_amp_override=pol_amp_override,
+                readout_duration_override=readout_duration_override,
+                readout_amp_override=readout_amp_override,
+            )
+
+        with qua.for_each_(override_var, step_vals):
+            one_step()
 
     seq_ret_vals = []
     return seq, seq_ret_vals

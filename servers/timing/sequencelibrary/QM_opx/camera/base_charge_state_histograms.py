@@ -16,55 +16,52 @@ import utils.common as common
 from servers.timing.sequencelibrary.QM_opx import seq_utils
 
 
-def get_seq(
+def macro(
     pol_coords_list,
     pol_duration_list,
     pol_amp_list,
     ion_coords_list,
-    ion_do_target_list,
-    verify_charge_states,
-    pol_duration_override,
-    pol_amp_override,
-    readout_duration_override,
-    readout_amp_override,
     num_reps,
+    ion_do_target_list=None,
+    verify_charge_states=False,
+    pol_duration_override=None,
+    pol_amp_override=None,
+    readout_duration_override=None,
+    readout_amp_override=None,
 ):
     if num_reps is None:
         num_reps = 1
     num_nvs = len(pol_coords_list)
 
-    with qua.program() as seq:
-        seq_utils.init(num_nvs)
-        seq_utils.macro_run_aods()
+    seq_utils.init(num_nvs)
+    seq_utils.macro_run_aods()
 
-        def one_exp(do_ionize):
-            seq_utils.macro_polarize(
-                pol_coords_list,
-                pol_duration_list,
-                pol_amp_list,
-                pol_duration_override,
-                pol_amp_override,
-                targeted_polarization=verify_charge_states,
-                verify_charge_states=verify_charge_states,
-                spin_pol=False,
-            )
+    def one_exp(do_ionize):
+        seq_utils.macro_polarize(
+            pol_coords_list,
+            pol_duration_list,
+            pol_amp_list,
+            pol_duration_override,
+            pol_amp_override,
+            targeted_polarization=verify_charge_states,
+            verify_charge_states=verify_charge_states,
+            spin_pol=False,
+        )
 
-            if do_ionize:
-                seq_utils.macro_ionize(
-                    ion_coords_list, do_target_list=ion_do_target_list
-                )
+        if do_ionize:
+            seq_utils.macro_ionize(ion_coords_list, do_target_list=ion_do_target_list)
 
-            seq_utils.macro_charge_state_readout(
-                readout_duration_override, readout_amp_override
-            )
-            seq_utils.macro_wait_for_trigger()
+        seq_utils.macro_charge_state_readout(
+            readout_duration_override, readout_amp_override
+        )
+        seq_utils.macro_wait_for_trigger()
 
-        def one_rep(rep_ind=None):
-            for do_ionize in [True, False]:
-                one_exp(do_ionize)
+    def one_rep(rep_ind=None):
+        for do_ionize in [True, False]:
+            one_exp(do_ionize)
 
-        seq_utils.handle_reps(one_rep, num_reps, wait_for_trigger=False)
-        seq_utils.macro_pause()
+    seq_utils.handle_reps(one_rep, num_reps, wait_for_trigger=False)
+    seq_utils.macro_pause()
 
     seq_ret_vals = []
     return seq, seq_ret_vals

@@ -233,8 +233,8 @@ def main(
     nv_list,
     num_reps,
     num_runs,
-    verify_charge_states=False,
     ion_do_target_inds=None,
+    verify_charge_states=False,
     do_plot_histograms=False,
 ):
     ### Initial setup
