@@ -36,6 +36,10 @@ from utils.constants import NVSig, VirtualLaserKey
 # region Process and plotting functions
 
 
+def process_and_plot(data):
+    pass
+
+
 # endregion
 
 
@@ -107,8 +111,14 @@ def _main(
     repr_nv_sig = widefield.get_repr_nv_sig(nv_list)
     repr_nv_name = repr_nv_sig.name
 
+    raw_data |= {
+        "timestamp": timestamp,
+        "optimize_pol_or_readout": optimize_pol_or_readout,
+        "optimize_duration_or_amp": optimize_duration_or_amp,
+    }
+
     try:
-        pass
+        process_and_plot(raw_data)
 
     except Exception:
         print(traceback.format_exc())
@@ -118,12 +128,9 @@ def _main(
     except Exception:
         pass
 
-    ### Save raw data
+    ### Save and clean up
 
     file_path = dm.get_file_path(__file__, timestamp, repr_nv_name)
-    raw_data |= {
-        "timestamp": timestamp,
-    }
     dm.save_raw_data(raw_data, file_path)
 
     tb.reset_cfm()
