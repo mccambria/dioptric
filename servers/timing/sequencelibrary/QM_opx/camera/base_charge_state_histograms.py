@@ -13,7 +13,7 @@ from qm import QuantumMachinesManager, qua
 from qm.simulate import SimulationConfig
 
 import utils.common as common
-from servers.timing.sequencelibrary.QM_opx import base_charge_state_histograms
+from servers.timing.sequencelibrary.QM_opx import seq_utils
 
 
 def get_seq(
@@ -23,6 +23,10 @@ def get_seq(
     ion_coords_list,
     ion_do_target_list,
     verify_charge_states,
+    pol_duration_override,
+    pol_amp_override,
+    readout_duration_override,
+    readout_amp_override,
     num_reps,
 ):
     if num_reps is None:
@@ -63,15 +67,7 @@ def get_seq(
         seq_utils.macro_pause()
 
     seq_ret_vals = []
-    return base_charge_state_histograms.get_seq(
-        pol_coords_list,
-        pol_duration_list,
-        pol_amp_list,
-        ion_coords_list,
-        ion_do_target_list,
-        verify_charge_states,
-        num_reps,
-    )
+    return seq, seq_ret_vals
 
 
 if __name__ == "__main__":
