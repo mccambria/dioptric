@@ -275,7 +275,6 @@ config |= {
                 "units": "MHz",
                 "opti_virtual_laser_key": VirtualLaserKey.IMAGING,
                 "aod": True,
-                "default_aod_suffix": "scc",
             },
             red_laser_aod: {
                 "control_mode": PosControlMode.SEQUENCE,
@@ -285,7 +284,6 @@ config |= {
                 "units": "MHz",
                 "opti_virtual_laser_key": VirtualLaserKey.ION,
                 "aod": True,
-                "default_aod_suffix": "charge_pol",
             },
         },
         "calibration_coords_nv1": calibration_coords_nv1,
@@ -579,6 +577,7 @@ opx_config = {
             "intermediate_frequency": 75e6,
             "sticky": {"analog": True, "duration": ramp_to_zero_duration},
             "operations": {
+                "aod_cw": "red_aod_cw-scc",
                 "aod_cw-opti": "red_aod_cw-opti",
                 "aod_cw-ion": "red_aod_cw-ion",
                 "aod_cw-scc": "red_aod_cw-scc",
@@ -590,6 +589,7 @@ opx_config = {
             "intermediate_frequency": 75e6,
             "sticky": {"analog": True, "duration": ramp_to_zero_duration},
             "operations": {
+                "aod_cw": "red_aod_cw-scc",
                 "aod_cw-opti": "red_aod_cw-opti",
                 "aod_cw-ion": "red_aod_cw-ion",
                 "aod_cw-scc": "red_aod_cw-scc",
@@ -601,6 +601,7 @@ opx_config = {
             "intermediate_frequency": 110e6,
             "sticky": {"analog": True, "duration": ramp_to_zero_duration},
             "operations": {
+                "aod_cw": "green_aod_cw-charge_pol",
                 "aod_cw-opti": "green_aod_cw-opti",
                 "aod_cw-charge_pol": "green_aod_cw-charge_pol",
                 "aod_cw-spin_pol": "green_aod_cw-spin_pol",
@@ -614,6 +615,7 @@ opx_config = {
             "intermediate_frequency": 110e6,
             "sticky": {"analog": True, "duration": ramp_to_zero_duration},
             "operations": {
+                "aod_cw": "green_aod_cw-charge_pol",
                 "aod_cw-opti": "green_aod_cw-opti",
                 "aod_cw-charge_pol": "green_aod_cw-charge_pol",
                 "aod_cw-spin_pol": "green_aod_cw-spin_pol",
@@ -759,40 +761,22 @@ opx_config = {
         },
         "do_pi_pulse_0": {
             "operation": "control",
-            "length": int(rabi_period_0 / 2) + 4,
+            "length": int(rabi_period_0 / 2),
             "digital_marker": "on",
         },
         "do_pi_on_2_pulse_0": {
             "operation": "control",
-            "length": int(rabi_period_0 / 4) + 4,
-            # "length": int(rabi_period_0 / 2) + 4,
-            # "length": 20,
-            "digital_marker": "on",
-        },
-        "do_pi_on_2_pulse_b_0": {
-            "operation": "control",
             "length": int(rabi_period_0 / 4),
-            # "length": int(rabi_period_0 / 2),
-            # "length": 20,
             "digital_marker": "on",
         },
         "do_pi_pulse_1": {
             "operation": "control",
-            "length": int(rabi_period_1 / 2) + 4,
+            "length": int(rabi_period_1 / 2),
             "digital_marker": "on",
         },
         "do_pi_on_2_pulse_1": {
             "operation": "control",
-            "length": int(rabi_period_1 / 4) + 4,
-            # "length": int(rabi_period_1 / 2) + 4,
-            # "length": 20,
-            "digital_marker": "on",
-        },
-        "do_pi_on_2_pulse_b_1": {
-            "operation": "control",
             "length": int(rabi_period_1 / 4),
-            # "length": int(rabi_period_1 / 2),
-            # "length": 20,
             "digital_marker": "on",
         },
         ### Mixed

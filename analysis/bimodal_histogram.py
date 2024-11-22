@@ -267,7 +267,7 @@ def fit_bimodal_histogram(counts_list, prob_dist: ProbDist, no_print=False):
 
 
 def determine_threshold(
-    popt, prob_dist: ProbDist, dark_mode_weight=None, no_print=False, ret_fidelity=False
+    popt, prob_dist: ProbDist, dark_mode_weight=None, do_print=False, ret_fidelity=False
 ):
     """Determine the optimal threshold for assigning a state based on a measured number of counts
 
@@ -334,7 +334,7 @@ def determine_threshold(
     fidelity = np.max(fidelities)
     threshold = thresh_options[np.argmax(fidelities)]
 
-    if not no_print:
+    if do_print:
         print(f"Optimum readout fidelity {fidelity} achieved at threshold {threshold}")
 
     if ret_fidelity:

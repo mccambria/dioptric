@@ -102,7 +102,7 @@ def process_and_plot(
         # Only use ref counts for threshold determination
         popt = fit_bimodal_histogram(ref_counts_list, prob_dist, no_print=True)
         threshold, readout_fidelity = determine_threshold(
-            popt, prob_dist, dark_mode_weight=0.5, no_print=True, ret_fidelity=True
+            popt, prob_dist, dark_mode_weight=0.5, do_print=True, ret_fidelity=True
         )
         threshold_list.append(threshold)
         readout_fidelity_list.append(readout_fidelity)
@@ -126,8 +126,6 @@ def process_and_plot(
                 bimodal_pdf = bimodal_histogram.get_bimodal_pdf(prob_dist)
 
                 x_vals = np.linspace(0, np.max(ref_counts_list), 1000)
-                line = bimodal_pdf(x_vals, *popt)
-                kpl.plot_line(ax, x_vals, line, color=kpl.KplColors.BLUE)
                 line = popt[0] * single_mode_pdf(
                     x_vals, *popt[1 : 1 + single_mode_num_params]
                 )
@@ -136,6 +134,8 @@ def process_and_plot(
                     x_vals, *popt[1 + single_mode_num_params :]
                 )
                 kpl.plot_line(ax, x_vals, line, color=kpl.KplColors.GREEN)
+                line = bimodal_pdf(x_vals, *popt)
+                kpl.plot_line(ax, x_vals, line, color=kpl.KplColors.BLUE)
 
             # Threshold line
             if threshold is not None:
@@ -233,15 +233,21 @@ def main(
     nv_list,
     num_reps,
     num_runs,
+    ion_do_target_inds=None,
     verify_charge_states=False,
-    diff_polarize=False,
-    diff_ionize=True,
-    ion_include_inds=None,
     do_plot_histograms=False,
 ):
     ### Initial setup
     seq_file = "charge_state_histograms.py"
     num_steps = 1
+
+    # Turn the list of NV indices to ionize into a list of True/False for
+    # each NV according to whether it should be targeted
+    if ion_do_target_inds is None:
+        ion_do_target_list = None
+    else:
+        num_nvs = len(nv_list)
+        ion_do_target_list = [ind in ion_do_target_inds for ind in range(num_nvs)]
 
     if verify_charge_states:
         charge_prep_fn = base_routine.charge_prep_loop
@@ -253,15 +259,16 @@ def main(
     ### Collect the data
 
     def run_fn(shuffled_step_inds):
-        pol_coords_list = widefield.get_coords_list(nv_list, VirtualLaserKey.CHARGE_POL)
-        ion_coords_list = widefield.get_coords_list(
-            nv_list, VirtualLaserKey.ION, include_inds=ion_include_inds
+        pol_coords_list, pol_duration_list, pol_amp_list = (
+            widefield.get_pulse_parameter_lists(nv_list, VirtualLaserKey.CHARGE_POL)
         )
+        ion_coords_list = widefield.get_coords_list(nv_list, VirtualLaserKey.ION)
         seq_args = [
             pol_coords_list,
+            pol_duration_list,
+            pol_amp_list,
             ion_coords_list,
-            diff_polarize,
-            diff_ionize,
+            ion_do_target_list,
             verify_charge_states,
         ]
         seq_args_string = tb.encode_seq_args(seq_args)
@@ -325,8 +332,6 @@ def main(
     file_path = dm.get_file_path(__file__, timestamp, repr_nv_name)
     raw_data |= {
         "timestamp": timestamp,
-        "diff_polarize": diff_polarize,
-        "diff_ionize": diff_ionize,
         "sig_img_array": sig_img_array,
         "ref_img_array": ref_img_array,
         "diff_img_array": diff_img_array,

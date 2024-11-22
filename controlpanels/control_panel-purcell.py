@@ -29,6 +29,7 @@ from majorroutines.widefield import (
     correlation_test,
     crosstalk_check,
     image_sample,
+    optimize_charge_state_histograms_mcc,
     optimize_scc,
     power_rabi,
     rabi,
@@ -93,16 +94,64 @@ def do_charge_state_histograms(nv_list):
     num_runs = 15
     # num_runs = 10
     # num_runs = 2
-    # for ion_include_inds in [None, [0, 1, 2, 3, 4, 5]]:
-    #     charge_state_histograms.main(
-    #         nv_list, num_reps, num_runs, ion_include_inds=ion_include_inds
-    #     )
     return charge_state_histograms.main(
         nv_list, num_reps, num_runs, do_plot_histograms=True
     )
 
 
-def do_charge_state_histograms_dynamical(nv_list, vary_pol_laser=False):
+def do_optimize_pol_duration(nv_list):
+    num_steps = 4
+    # num_reps = 150
+    # num_runs = 5
+    num_reps = 5
+    num_runs = 2
+    min_duration = 100
+    max_duration = 2000
+    return optimize_charge_state_histograms_mcc.optimize_pol_duration(
+        nv_list, num_steps, num_reps, num_runs, min_duration, max_duration
+    )
+
+
+def do_optimize_pol_amp(nv_list):
+    num_steps = 4
+    # num_reps = 150
+    # num_runs = 5
+    num_reps = 5
+    num_runs = 2
+    min_amp = 0.1
+    max_amp = 1.2
+    return optimize_charge_state_histograms_mcc.optimize_pol_amp(
+        nv_list, num_steps, num_reps, num_runs, min_amp, max_amp
+    )
+
+
+def do_optimize_readout_duration(nv_list):
+    num_steps = 4
+    # num_reps = 150
+    # num_runs = 5
+    num_reps = 5
+    num_runs = 2
+    min_duration = 100
+    max_duration = 2000
+    return optimize_charge_state_histograms_mcc.optimize_readout_duration(
+        nv_list, num_steps, num_reps, num_runs, min_duration, max_duration
+    )
+
+
+def do_optimize_readout_amp(nv_list):
+    num_steps = 4
+    # num_reps = 150
+    # num_runs = 5
+    num_reps = 5
+    num_runs = 2
+    min_amp = 0.1
+    max_amp = 1.2
+    return optimize_charge_state_histograms_mcc.optimize_readout_amp(
+        nv_list, num_steps, num_reps, num_runs, min_amp, max_amp
+    )
+
+
+def do_charge_state_histograms_images(nv_list, vary_pol_laser=False):
     aom_voltage_center = 1.0
     aom_voltage_range = 0.1
     num_steps = 6
@@ -110,12 +159,8 @@ def do_charge_state_histograms_dynamical(nv_list, vary_pol_laser=False):
     # num_reps = 100
     # num_runs = 50
     # num_runs = 100
-    num_reps = 10
-    num_runs = 600
-    # for ion_include_inds in [None, [0, 1, 2, 3, 4, 5]]:
-    #     charge_state_histograms.main(
-    #         nv_list, num_reps, num_runs, ion_include_inds=ion_include_inds
-    #     )
+    num_reps = 20
+    num_runs = 60
     return charge_state_histograms_images.main(
         nv_list,
         num_steps,
@@ -833,7 +878,7 @@ if __name__ == "__main__":
     # magnet_angle = 90
     date_str = "2024_03_12"
     sample_coords = [2.0, 0.0]
-    z_coord = 0.35
+    z_coord = 0.7
     # Load NV pixel coordinates
     pixel_coords_list = load_nv_coords(
         file_path="slmsuite/nv_blob_detection/nv_blob_filtered_160nvs_reordered.npz",
@@ -928,7 +973,7 @@ if __name__ == "__main__":
     # nv_sig.expected_counts = 1650
     # nv_sig.expected_counts = 3359.0
     # nv_sig.expected_counts = 2000.0
-    nv_sig.expected_counts = 1550
+    nv_sig.expected_counts = 1600
     # num_nvs = len(nv_list)
     # print(f"Final NV List: {nv_list}")
     # Ensure data is defined before accessing it
@@ -1012,7 +1057,7 @@ if __name__ == "__main__":
         # do_optimize_xyz(nv_sig)
         # pos.set_xyz_on_nv(nv_sig)
 
-        do_compensate_for_drift(nv_sig)
+        # do_compensate_for_drift(nv_sig)
 
         # for point in points:
         #     x, y = point
@@ -1066,7 +1111,7 @@ if __name__ == "__main__":
 
         # nv_list = nv_list[::-1]
         # do_charge_state_histograms(nv_list)
-        do_charge_state_histograms_dynamical(nv_list, vary_pol_laser=False)
+        do_charge_state_histograms_images(nv_list, vary_pol_laser=True)
         # do_charge_state_conditional_init(nv_list)
         # do_check_readout_fidelity(nv_list)x
 
