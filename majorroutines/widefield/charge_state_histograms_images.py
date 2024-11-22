@@ -380,6 +380,8 @@ def main(
 if __name__ == "__main__":
     kpl.init_kplotlib()
     # data = dm.get_raw_data(file_id=1688554695897, load_npz=False)
-    data = dm.get_raw_data(file_id=1705172140093, load_npz=False)
+    # data = dm.get_raw_data(file_id=1705172140093, load_npz=False)
+    data = dm.get_raw_data(file_id=1704907213486, load_npz=False)
+
     process_and_extract(data)
     kpl.show(block=True)
