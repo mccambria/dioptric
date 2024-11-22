@@ -282,7 +282,7 @@ run_rep_axes = (run_ax, rep_ax)
 
 def average_counts(sig_counts, ref_counts=None):
     """Gets average and standard error for counts data structure.
-    Counts arrays must have the structure [nv_ind, run_ind, freq_ind, rep_ind].
+    Counts arrays must have the structure [nv_ind, run_ind, steq_ind, rep_ind].
     Returns the structure [nv_ind, freq_ind] for avg_counts and avg_counts_ste.
     Returns the [nv_ind] for norms.
     """
@@ -322,7 +322,7 @@ def threshold_counts(nv_list, sig_counts, ref_counts=None, dynamic_thresh=False)
             )
             # threshold = determine_threshold(combined_counts)
             threshold = determine_threshold(
-                combined_counts, nvn_ratio=0.5, no_print=True
+                combined_counts, nvn_ratio=0.5, do_print=True
             )
             thresholds.append(threshold)
     else:

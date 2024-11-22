@@ -13,6 +13,7 @@ from qm import QuantumMachinesManager, qua
 from qm.simulate import SimulationConfig
 
 import utils.common as common
+from servers.timing.sequencelibrary.QM_opx import seq_utils
 from servers.timing.sequencelibrary.QM_opx.camera import base_charge_state_histograms
 
 
@@ -26,6 +27,9 @@ def get_seq(
     num_reps,
 ):
     with qua.program() as seq:
+        num_nvs = len(pol_coords_list)
+        seq_utils.init(num_nvs)
+        seq_utils.macro_run_aods()
         base_charge_state_histograms.macro(
             pol_coords_list,
             pol_duration_list,

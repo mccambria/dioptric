@@ -36,8 +36,66 @@ from utils.constants import NVSig, VirtualLaserKey
 # region Process and plotting functions
 
 
-def process_and_plot(data):
-    pass
+def process_and_plot(raw_data):
+    nv_list = raw_data["nv_list"]
+    num_nvs = len(nv_list)
+    min_step_val = raw_data["min_step_val"]
+    max_step_val = raw_data["max_step_val"]
+    num_steps = raw_data["num_steps"]
+    step_vals = np.linspace(min_step_val, max_step_val, num_steps)
+    optimize_pol_or_readout = raw_data["optimize_pol_or_readout"]
+    optimize_duration_or_amp = raw_data["optimize_duration_or_amp"]
+
+    counts = np.array(raw_data["counts"])
+    # [nv_ind, run_ind, steq_ind, rep_ind]
+    condensed_counts = [
+        [counts[nv_ind, :, step_ind, :].flatten() for step_ind in range(num_steps)]
+        for nv_ind in range(num_nvs)
+    ]
+    condensed_counts = np.array(condensed_counts)
+
+    prob_dist = ProbDist.COMPOUND_POISSON
+
+    readout_fidelity_arr = np.empty((num_nvs))
+    prep_fidelity_arr = np.empty((num_nvs))
+    for nv_ind in range(num_nvs):
+        for step_ind in range(num_steps):
+            popt = fit_bimodal_histogram(condensed_counts[nv_ind, step_ind], prob_dist)
+            threshold, readout_fidelity = determine_threshold(
+                popt, prob_dist, dark_mode_weight=0.5, ret_fidelity=True
+            )
+            readout_fidelity_arr[nv_ind, step_ind] = readout_fidelity
+            if popt is not None:
+                prep_fidelity = 1 - popt[0]
+            else:
+                prep_fidelity = np.nan
+            prep_fidelity_arr[nv_ind, step_ind] = prep_fidelity
+
+    ### Plotting
+
+    if optimize_pol_or_readout:
+        if optimize_duration_or_amp:
+            x_label = "Polarization duration"
+        else:
+            x_label = "Polarization amplitude"
+    else:
+        if optimize_duration_or_amp:
+            x_label = "Readout duration"
+        else:
+            x_label = "Readout amplitude"
+
+    print("Plotting results for first 10 NVs")
+    for nv_ind in range(10):
+        fig, ax = plt.subplots()
+        kpl.plot_points(ax, step_vals, readout_fidelity_arr[nv_ind, :])
+        ax.set_xlabel(x_label)
+        ax.set_ylabel("Readout fidelity")
+        ax.set_title(f"NV{nv_ind}")
+        fig, ax = plt.subplots()
+        kpl.plot_points(ax, step_vals, prep_fidelity_arr[nv_ind, :])
+        ax.set_xlabel(x_label)
+        ax.set_ylabel("Charge polarization fidelity")
+        ax.set_title(f"NV{nv_ind}")
 
 
 # endregion
@@ -72,14 +130,14 @@ def _main(
     num_steps,
     num_reps,
     num_runs,
-    min_val,
-    max_val,
+    min_step_val,
+    max_step_val,
     optimize_pol_or_readout,
     optimize_duration_or_amp,
 ):
     ### Initial setup
-    seq_file = "optimize_charge_state_histograms-mcc.py"
-    step_vals = np.linspace(min_val, max_val, num_steps)
+    seq_file = "optimize_charge_state_histograms.py"
+    step_vals = np.linspace(min_step_val, max_step_val, num_steps)
 
     pulse_gen = tb.get_server_pulse_gen()
 
@@ -113,6 +171,8 @@ def _main(
 
     raw_data |= {
         "timestamp": timestamp,
+        "min_step_val": min_step_val,
+        "max_step_val": max_step_val,
         "optimize_pol_or_readout": optimize_pol_or_readout,
         "optimize_duration_or_amp": optimize_duration_or_amp,
     }

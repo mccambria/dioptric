@@ -31,6 +31,10 @@ def get_seq(
         step_vals = [seq_utils.convert_ns_to_cc(el) for el in step_vals]
 
     with qua.program() as seq:
+        num_nvs = len(pol_coords_list)
+        seq_utils.init(num_nvs)
+        seq_utils.macro_run_aods()
+
         if optimize_duration_or_amp:
             override_var = qua.declare(qua.fixed)
         else:

@@ -166,7 +166,7 @@ def process_and_extract(
             # Determine threshold using ref counts
             popt = fit_bimodal_histogram(ref_counts_list, prob_dist, no_print=True)
             threshold, readout_fidelity = determine_threshold(
-                popt, prob_dist, dark_mode_weight=0.5, no_print=True, ret_fidelity=True
+                popt, prob_dist, dark_mode_weight=0.5, do_print=True, ret_fidelity=True
             )
 
             thresholds[nv_ind, step_ind] = threshold

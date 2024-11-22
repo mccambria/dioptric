@@ -31,10 +31,6 @@ def macro(
 ):
     if num_reps is None:
         num_reps = 1
-    num_nvs = len(pol_coords_list)
-
-    seq_utils.init(num_nvs)
-    seq_utils.macro_run_aods()
 
     def one_exp(do_ionize):
         seq_utils.macro_polarize(
@@ -62,9 +58,6 @@ def macro(
 
     seq_utils.handle_reps(one_rep, num_reps, wait_for_trigger=False)
     seq_utils.macro_pause()
-
-    seq_ret_vals = []
-    return seq, seq_ret_vals
 
 
 if __name__ == "__main__":
