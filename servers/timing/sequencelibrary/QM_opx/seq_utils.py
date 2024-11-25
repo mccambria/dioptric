@@ -62,7 +62,7 @@ def init(num_nvs=None):
         )
 
 
-def handle_reps(one_rep_macro: qua.macro, num_reps: int, wait_for_trigger: bool = True):
+def handle_reps(one_rep_macro, num_reps: int, wait_for_trigger: bool = True):
     """Handle repetitions of a given sequence - you just have to pass
     a function defining the behavior for a single loop. Optionally
     waits for trigger pulse between loops.
@@ -117,9 +117,9 @@ def macro_pause():
 
 
 # endregion
+
+
 # region Public QUA macros - laser and microwave pulses
-
-
 def macro_polarize(
     coords_list: list[list[float]],
     duration_list: list[int] = None,
@@ -524,9 +524,9 @@ def macro_pulse_combo(
 
 
 # endregion
+
+
 # region Private QUA macros
-
-
 def _macro_single_pulse(
     laser_name: str,
     coords: list[float],
@@ -660,7 +660,6 @@ def _macro_pulse_series(
     qua.align()
 
     # Adjust the for each based on what lists are populated
-
     list_1 = [_cache_x_freq, _cache_y_freq]
     list_2 = [x_coords_list, y_coords_list]
     if duration_list is not None:
@@ -668,7 +667,8 @@ def _macro_pulse_series(
         list_2.append(duration_list)
     if amp_list is not None:
         list_1.append(_cache_amp)
-        amp_list = [float(el) for el in amp_list]
+        # amp_list = [float(el) for el in amp_list]
+        amp_list = [float(el) if el is not None else 1.0 for el in amp_list]
         list_2.append(amp_list)
     if do_target_list is not None:
         list_1.append(_cache_target)
@@ -678,6 +678,73 @@ def _macro_pulse_series(
 
     with qua.for_each_(tuple(list_1), tuple(list_2)):
         macro_sub()
+
+
+# def _macro_pulse_series(
+#     laser_name: str,
+#     pulse_name: str,
+#     coords_list: list[list[float]],
+#     duration_list: list[int] = None,
+#     amp_list: list[float] = None,
+#     duration_override: int = None,
+#     amp_override: float = None,
+#     do_target_list: list[bool] = None,
+# ):
+#     """Apply a laser pulse to each coordinate pair in the passed coords_list."""
+#     # Validate inputs
+#     if not coords_list or any(c is None for c in coords_list):
+#         raise ValueError(f"Invalid coords_list: {coords_list}")
+#     if duration_list is not None and any(d is None for d in duration_list):
+#         raise ValueError(f"Invalid duration_list: {duration_list}")
+#     if amp_list is not None and any(a is None for a in amp_list):
+#         raise ValueError(f"Invalid amp_list: {amp_list}")
+#     if do_target_list is not None and any(t is None for t in do_target_list):
+#         raise ValueError(f"Invalid do_target_list: {do_target_list}")
+
+#     # Sanitize inputs
+#     x_coords_list = [int(el[0] * 10**6) for el in coords_list]
+#     y_coords_list = [int(el[1] * 10**6) for el in coords_list]
+#     if duration_list is not None:
+#         duration_list = [convert_ns_to_cc(el) for el in duration_list]
+#     if amp_list is not None:
+#         amp_list = [float(el) if el is not None else 1.0 for el in amp_list]
+#     if do_target_list is None:
+#         do_target_list = [True] * len(coords_list)
+
+#     # Declare cached QUA variables
+#     global _cache_x_freq, _cache_y_freq, _cache_duration, _cache_amp, _cache_target
+
+#     # Adjust variables for for_each_
+#     list_1 = [_cache_x_freq, _cache_y_freq]
+#     list_2 = [x_coords_list, y_coords_list]
+#     if duration_list is not None:
+#         list_1.append(_cache_duration)
+#         list_2.append(duration_list)
+#     if amp_list is not None:
+#         list_1.append(_cache_amp)
+#         list_2.append(amp_list)
+#     if do_target_list is not None:
+#         list_1.append(_cache_target)
+#         list_2.append(do_target_list)
+
+#     qua.align()
+
+#     def macro_sub():
+#         duration = duration_override or _cache_duration
+#         amp = amp_override or _cache_amp
+#         with qua.if_(_cache_target):
+#             macro_single_pulse(
+#                 laser_name,
+#                 (_cache_x_freq, _cache_y_freq),
+#                 pulse_name=pulse_name,
+#                 duration=duration,
+#                 amp=amp,
+#                 convert_to_Hz=False,
+#             )
+
+#     # Execute for_each_
+#     with qua.for_each_(tuple(list_1), tuple(list_2)):
+#         macro_sub()
 
 
 def _macro_scc_shelving(

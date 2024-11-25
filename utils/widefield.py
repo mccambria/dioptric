@@ -787,17 +787,13 @@ def get_pulse_parameter_lists(nv_list, virtual_laser_key):
     duration_list = []
     amp_list = []
     for nv in nv_list:
-        # Add to duration_list
-        if nv.pulse_durations is not None:
-            duration = nv.pulse_durations[virtual_laser_key]
-        else:
-            duration = None
+        # Retrieve duration and amplitude using .get to avoid KeyError
+        duration = (
+            nv.pulse_durations.get(virtual_laser_key) if nv.pulse_durations else None
+        )
+        amp = nv.pulse_amps.get(virtual_laser_key) if nv.pulse_amps else None
+
         duration_list.append(duration)
-        # Add to amp_list
-        if nv.pulse_amps is not None:
-            amp = nv.pulse_amps[virtual_laser_key]
-        else:
-            amp = None
         amp_list.append(amp)
     return coords_list, duration_list, amp_list
 

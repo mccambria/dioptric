@@ -878,7 +878,7 @@ if __name__ == "__main__":
     # magnet_angle = 90
     date_str = "2024_03_12"
     sample_coords = [2.0, 0.0]
-    z_coord = 0.7
+    z_coord = 0.5
     # Load NV pixel coordinates
     pixel_coords_list = load_nv_coords(
         file_path="slmsuite/nv_blob_detection/nv_blob_filtered_160nvs_reordered.npz",
@@ -958,9 +958,11 @@ if __name__ == "__main__":
         nv_sig = NVSig(
             name=f"{sample_name}-nv{ind}_{date_str}",
             coords=coords,
-            scc_duration=scc_duration_list[ind],
-            scc_amp=scc_amp_list[ind],
+            # scc_duration=scc_duration_list[ind],
+            # scc_amp=scc_amp_list[ind],
             threshold=threshold_list[ind],
+            pulse_durations={VirtualLaserKey.SCC: scc_duration_list[ind]},
+            pulse_amps={VirtualLaserKey.SCC: scc_amp_list[ind]},
         )
         nv_list.append(nv_sig)
 
@@ -1052,7 +1054,6 @@ if __name__ == "__main__":
         # widefield.reset_pixel_drift()
         # widefield.set_all_scanning_drift_from_pixel_drift()
 
-        #
         # do_optimize_z(nv_sig)
         # do_optimize_xyz(nv_sig)
         # pos.set_xyz_on_nv(nv_sig)
@@ -1110,8 +1111,8 @@ if __name__ == "__main__":
         # do_optimize_loop(nv_list, coords_key)
 
         # nv_list = nv_list[::-1]
-        # do_charge_state_histograms(nv_list)
-        do_charge_state_histograms_images(nv_list, vary_pol_laser=True)
+        do_charge_state_histograms(nv_list)
+        # do_charge_state_histograms_images(nv_list, vary_pol_laser=True)
         # do_charge_state_conditional_init(nv_list)
         # do_check_readout_fidelity(nv_list)x
 

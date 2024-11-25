@@ -153,9 +153,9 @@ config |= {
         "resolution": (512, 512),
         "spot_radius": 2.5,  # Radius for integrating NV counts in a camera image
         "bias_clamp": 300,  # (changing this won't actually change the value on the camera currently)
-        "em_gain": 5000,
+        # "em_gain": 5000,
         # "em_gain": 1000,
-        # "em_gain": 10,
+        "em_gain": 10,
         "temp": -60,
         "timeout": 30e3,  # ms
         # "timeout": -1,  # No timeout
@@ -528,7 +528,6 @@ opx_config = {
                 "off": "do_off",
                 "pi_pulse": "do_pi_pulse_0",
                 "pi_on_2_pulse": "do_pi_on_2_pulse_0",
-                "pi_on_2_pulse_b": "do_pi_on_2_pulse_b_0",
             },
         },
         "ao_sig_gen_STAN_sg394_i": {
@@ -560,7 +559,6 @@ opx_config = {
                 "off": "do_off",
                 "pi_pulse": "do_pi_pulse_1",
                 "pi_on_2_pulse": "do_pi_on_2_pulse_1",
-                "pi_on_2_pulse_b": "do_pi_on_2_pulse_b_1",
             },
         },
         "do_camera_trigger": {
