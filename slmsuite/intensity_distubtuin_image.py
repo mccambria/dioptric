@@ -392,7 +392,8 @@ if __name__ == "__main__":
     # data = dm.get_raw_data(file_id=1693166192526, load_npz=True)
     # data = dm.get_raw_data(file_id=1693412457124, load_npz=True)
     data = dm.get_raw_data(file_id=1698496302146, load_npz=True)
-    #
+    data = dm.get_raw_data(file_id=1699573772441, load_npz=True)
+
     img_array = np.array(data["ref_img_array"])
     nv_coordinates, integrated_intensities = load_nv_coords(
         # file_path="slmsuite/nv_blob_detection/nv_blob_filtered_144nvs.npz"
@@ -420,6 +421,7 @@ if __name__ == "__main__":
             filtered_intensities.append(intensity)
 
     # # Filter and reorder NV coordinates based on reference NV
+    
     sigma = 2.5
     reference_nv = [106.923, 120.549]
     filtered_reordered_coords, filtered_reordered_counts = filter_and_reorder_nv_coords(
@@ -541,9 +543,38 @@ if __name__ == "__main__":
             coord[1] - sigma - 1,
             str(idx + 1),
             color="white",
-            fontsize=8,
+            fontsize=6,
             ha="center",
         )
+
+    # Plot the original image with circles around each NV
+    fig, ax = plt.subplots()
+    title = "50ms, Ref"
+    kpl.imshow(ax, img_array, title=title, cbar_label="Photons")
+
+    # Plot the original image with circles around specified NVs
+    fig, ax = plt.subplots()
+    title = "50ms, Ref"
+    kpl.imshow(ax, img_array, title=title, cbar_label="Photons")
+
+    nv_indices = [30, 32, 39, 49, 51, 63, 67, 76, 81, 86, 93, 102, 119, 121, 131, 141, 143, 149]
+
+    # Draw circles and index numbers only for specified NV indices
+    for idx, coord in enumerate(filtered_reordered_coords):
+        if idx in nv_indices:  # Only draw circles for these indices
+            circ = Circle(coord, sigma, color="white", fill=False, linewidth=0.5)
+            ax.add_patch(circ)
+            
+            # Place text just above the circle
+            ax.text(
+                coord[0],
+                coord[1] - sigma - 1,
+                str(idx + 1),
+                color="white",
+                fontsize=6,
+                ha="center",
+            )
+
 
     # Plot histogram of the filtered integrated intensities using Seaborn
     # sns.set(style="whitegrid")
