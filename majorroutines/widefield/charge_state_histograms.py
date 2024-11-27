@@ -19,6 +19,12 @@ from scipy import ndimage
 from scipy.optimize import curve_fit
 from scipy.special import factorial
 
+from analysis import bimodal_histogram
+from analysis.bimodal_histogram import (
+    ProbDist,
+    determine_threshold,
+    fit_bimodal_histogram,
+)
 from majorroutines.widefield import base_routine
 from utils import common, widefield
 from utils import data_manager as dm
@@ -26,19 +32,11 @@ from utils import kplotlib as kpl
 from utils import positioning as pos
 from utils import tool_belt as tb
 from utils.constants import NVSig, VirtualLaserKey
-from utils.tool_belt import determine_charge_state_threshold, fit_charge_state_histogram
+
 
 # region Process and plotting functions
-
-
 def plot_histograms(
-    sig_counts_list,
-    ref_counts_list,
-    no_title=True,
-    no_text=None,
-    ax=None,
-    density=False,
-    nv_index=None,  # Add NV index as an optional parameter
+    sig_counts_list, ref_counts_list, no_title=True, ax=None, density=False
 ):
     laser_key = VirtualLaserKey.WIDEFIELD_CHARGE_READOUT
     laser_dict = tb.get_virtual_laser_dict(laser_key)
@@ -76,8 +74,11 @@ def plot_histograms(
         return fig
 
 
-def process_and_plot(raw_data, do_plot_histograms=False):
+def process_and_plot(
+    raw_data, do_plot_histograms=False, prob_dist: ProbDist = ProbDist.COMPOUND_POISSON
+):
     ### Setup
+
     nv_list = raw_data["nv_list"]
     num_nvs = len(nv_list)
     counts = np.array(raw_data["counts"])
@@ -88,6 +89,7 @@ def process_and_plot(raw_data, do_plot_histograms=False):
     num_shots = num_reps * num_runs
 
     ### Histograms and thresholding
+
     threshold_list = []
     readout_fidelity_list = []
     prep_fidelity_list = []
@@ -98,12 +100,12 @@ def process_and_plot(raw_data, do_plot_histograms=False):
         ref_counts_list = ref_counts_lists[ind]
 
         # Only use ref counts for threshold determination
-        threshold, readout_fidelity = determine_charge_state_threshold(
-            ref_counts_list, nvn_ratio=0.5, no_print=True, ret_fidelity=True
+        popt = fit_bimodal_histogram(ref_counts_list, prob_dist, no_print=True)
+        threshold, readout_fidelity = determine_threshold(
+            popt, prob_dist, dark_mode_weight=0.5, do_print=True, ret_fidelity=True
         )
         threshold_list.append(threshold)
         readout_fidelity_list.append(readout_fidelity)
-        popt = fit_charge_state_histogram(ref_counts_list, no_print=True)
         if popt is not None:
             prep_fidelity = 1 - popt[0]
         else:
@@ -115,28 +117,49 @@ def process_and_plot(raw_data, do_plot_histograms=False):
             fig = plot_histograms(sig_counts_list, ref_counts_list, density=True)
             ax = fig.gca()
 
-            # Add the ref counts fit line if popt is not None
+            # Ref counts fit line
             if popt is not None:
+                single_mode_num_params = bimodal_histogram.get_single_mode_num_params(
+                    prob_dist
+                )
+                single_mode_pdf = bimodal_histogram.get_single_mode_pdf(prob_dist)
+                bimodal_pdf = bimodal_histogram.get_bimodal_pdf(prob_dist)
+
                 x_vals = np.linspace(0, np.max(ref_counts_list), 1000)
-                kpl.plot_line(ax, x_vals, tb.bimodal_skew_gaussian(x_vals, *popt))
+                line = popt[0] * single_mode_pdf(
+                    x_vals, *popt[1 : 1 + single_mode_num_params]
+                )
+                kpl.plot_line(ax, x_vals, line, color=kpl.KplColors.RED)
+                line = (1 - popt[0]) * single_mode_pdf(
+                    x_vals, *popt[1 + single_mode_num_params :]
+                )
+                kpl.plot_line(ax, x_vals, line, color=kpl.KplColors.GREEN)
+                line = bimodal_pdf(x_vals, *popt)
+                kpl.plot_line(ax, x_vals, line, color=kpl.KplColors.BLUE)
 
-            # Try to add threshold line, handle potential issues gracefully
-            try:
-                if threshold is not None:
-                    ax.axvline(threshold, color=kpl.KplColors.GRAY, ls="dashed")
-            except TypeError as e:
-                print(f"Could not add threshold line due to: {e}")
+            # Threshold line
+            if threshold is not None:
+                ax.axvline(threshold, color=kpl.KplColors.GRAY, ls="dashed")
+
             # Add text of the fidelities
-            snr_str = f"NV{ind}\nReadout fidelity: {round(readout_fidelity, 3)}\nCharge prep. fidelity {round(prep_fidelity, 3)}"  # Display NV index as well
-            kpl.anchored_text(ax, snr_str, "center right", size=kpl.Size.SMALL)
+            snr_str = (
+                f"NV{ind}\n"
+                f"Readout fidelity: {round(readout_fidelity, 3)}\n"
+                f"Charge prep. fidelity {round(prep_fidelity, 3)}"
+            )
+            kpl.anchored_text(ax, snr_str, kpl.Loc.CENTER_RIGHT, size=kpl.Size.SMALL)
 
-            kpl.show()
+            # kpl.show(block=True)
+            # plt.close(fig)
+            # fig = None
 
             if fig is not None:
                 hist_figs.append(fig)
-    # prep fidality
+
+    # Prep fidelity
     print(f"readout_fidelity_list:{readout_fidelity_list}")
     print(f"prep_fidelity_list:{prep_fidelity_list}")
+
     # Report out the results
     threshold_list = np.array(threshold_list)
     readout_fidelity_list = np.array(readout_fidelity_list)
@@ -210,15 +233,21 @@ def main(
     nv_list,
     num_reps,
     num_runs,
+    ion_do_target_inds=None,
     verify_charge_states=False,
-    diff_polarize=False,
-    diff_ionize=True,
-    ion_include_inds=None,
     do_plot_histograms=False,
 ):
     ### Initial setup
     seq_file = "charge_state_histograms.py"
     num_steps = 1
+
+    # Turn the list of NV indices to ionize into a list of True/False for
+    # each NV according to whether it should be targeted
+    if ion_do_target_inds is None:
+        ion_do_target_list = None
+    else:
+        num_nvs = len(nv_list)
+        ion_do_target_list = [ind in ion_do_target_inds for ind in range(num_nvs)]
 
     if verify_charge_states:
         charge_prep_fn = base_routine.charge_prep_loop
@@ -230,15 +259,20 @@ def main(
     ### Collect the data
 
     def run_fn(shuffled_step_inds):
-        pol_coords_list = widefield.get_coords_list(nv_list, VirtualLaserKey.CHARGE_POL)
-        ion_coords_list = widefield.get_coords_list(
-            nv_list, VirtualLaserKey.ION, include_inds=ion_include_inds
+        pol_coords_list, pol_duration_list, pol_amp_list = (
+            widefield.get_pulse_parameter_lists(nv_list, VirtualLaserKey.CHARGE_POL)
         )
+        # print("pol_coords_list:", pol_coords_list)
+        # print("pol_duration_list:", pol_duration_list)
+        # print("pol_amp_list_list:", pol_amp_list)
+
+        ion_coords_list = widefield.get_coords_list(nv_list, VirtualLaserKey.ION)
         seq_args = [
             pol_coords_list,
+            pol_duration_list,
+            pol_amp_list,
             ion_coords_list,
-            diff_polarize,
-            diff_ionize,
+            ion_do_target_list,
             verify_charge_states,
         ]
         seq_args_string = tb.encode_seq_args(seq_args)
@@ -302,8 +336,6 @@ def main(
     file_path = dm.get_file_path(__file__, timestamp, repr_nv_name)
     raw_data |= {
         "timestamp": timestamp,
-        "diff_polarize": diff_polarize,
-        "diff_ionize": diff_ionize,
         "sig_img_array": sig_img_array,
         "ref_img_array": ref_img_array,
         "diff_img_array": diff_img_array,
@@ -318,7 +350,7 @@ def main(
 
 if __name__ == "__main__":
     kpl.init_kplotlib()
-    data = dm.get_raw_data(file_id=1688554695897, load_npz=False)
+    data = dm.get_raw_data(file_id=1701595753308, load_npz=False)
     # data = dm.get_raw_data(file_id=1691569540529, load_npz=False)
-    process_and_plot(data, do_plot_histograms=False)
+    process_and_plot(data, do_plot_histograms=True)
     kpl.show(block=True)

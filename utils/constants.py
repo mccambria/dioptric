@@ -7,49 +7,12 @@ Created on June 26th, 2023
 @author: mccambria
 """
 
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from enum import Enum, IntEnum, auto
 
 from strenum import StrEnum
 
 number = int | float
-
-
-@dataclass
-class NVSig:
-    name: str | None = None
-    coords: dict | list | None = None
-    representative: bool = False
-    disable_opt: bool = False
-    disable_z_opt: bool = False
-    threshold: number | None = None
-    expected_counts: number | None = None
-    magnet_angle: number | None = None
-    opti_offset: list[number] | None = None  # Only works for global coordinates
-    # spin_flip: If True, an additional pi pulse will be applied to the NV at
-    # the end of a spin experiment prior to readout. Useful for anticorrelations
-    # and rejecting common mode noise
-    spin_flip: bool = False
-    scc_duration: int | None = None
-    scc_amp: float | None = None
-    nvn_dist_params: tuple | None = None  # bg, amp, sigma
-
-
-class CollectionMode(Enum):
-    COUNTER = auto()  # Count all photons incident on a detector (e.g. APD)
-    CAMERA = auto()  # Collect photons onto a camera
-
-
-class ChargeStateEstimationMode(Enum):
-    THRESHOLDING = auto()
-    MLE = auto()  # Maximum likelihood estimator for images
-
-
-class CountFormat(Enum):
-    """Deprecated, everything should be raw"""
-
-    KCPS = auto()  # Count rate in kilo counts per second
-    RAW = auto()  # Just the raw number of counts
 
 
 # Virtual laser keys are the names of virtual lasers, which accomplish one and only
@@ -77,6 +40,44 @@ class CoordsKey(StrEnum):
     SAMPLE = "sample"
     PIXEL = "pixel"
     Z = "z"
+
+
+@dataclass
+class NVSig:
+    name: str = None
+    coords: dict[CoordsKey | str, list[float]] | list = None
+    representative: bool = False
+    disable_opt: bool = False
+    disable_z_opt: bool = False
+    threshold: number = None
+    expected_counts: number = None
+    magnet_angle: number = None
+    opti_offset: list[number] = None  # Only works for global coordinates
+    # spin_flip: If True, an additional pi pulse will be applied to the NV at
+    # the end of a spin experiment prior to readout. Useful for anticorrelations
+    # and rejecting common mode noise
+    spin_flip: bool = False
+    pulse_durations: dict[VirtualLaserKey, int] = field(default_factory=dict)
+    pulse_amps: dict[VirtualLaserKey, float] = field(default_factory=dict)
+    # nvn_dist_params: [bg, amp, sigma] for maximum likelihood state estimation
+    nvn_dist_params: tuple = None
+
+
+class CollectionMode(Enum):
+    COUNTER = auto()  # Count all photons incident on a detector (e.g. APD)
+    CAMERA = auto()  # Collect photons onto a camera
+
+
+class ChargeStateEstimationMode(Enum):
+    THRESHOLDING = auto()
+    MLE = auto()  # Maximum likelihood estimator for images
+
+
+class CountFormat(Enum):
+    """Deprecated, everything should be raw"""
+
+    KCPS = auto()  # Count rate in kilo counts per second
+    RAW = auto()  # Just the raw number of counts
 
 
 class Axes(Enum):
@@ -128,4 +129,5 @@ Boltzmann = 8.617e-2  # meV / K
 
 
 if __name__ == "__main__":
-    print(Axes.XYZ.value)
+    test = NVSig(name="test")
+    print(test["name"])

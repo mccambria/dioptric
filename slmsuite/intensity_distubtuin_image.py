@@ -187,19 +187,13 @@ def sigmoid_weights(intensities, threshold, beta=1):
     return weights / np.max(weights)  # Normalize the weights
 
 
-def non_linear_weights(intensities, alpha=1):
-    weights = 1 / np.power(intensities, alpha)
-    weights = weights / np.max(weights)  # Normalize to avoid extreme values
-    return weights
-
-
 def linear_weights(intensities, alpha=1):
     weights = 1 / np.power(intensities, alpha)
     weights = weights / np.max(weights)  # Normalize to avoid extreme values
     return weights
 
 
-def non_linear_weights_adjusted(intensities, alpha=1, beta=0.5, threshold=0.7):
+def non_linear_weights_adjusted(intensities, alpha=1, beta=0.5, threshold=0.5):
     """
     Adjust weights such that bright NVs keep the same weight and low-intensity NVs get scaled.
 
@@ -231,7 +225,9 @@ def non_linear_weights_adjusted(intensities, alpha=1, beta=0.5, threshold=0.7):
 
 
 # Save the results to a file
-def save_results(nv_coordinates, integrated_intensities, spot_weights, filename):
+def save_results(
+    nv_coordinates, integrated_intensities, spot_weights, updated_spot_weights, filename
+):
     """
     Save NV data results to an .npz file.
 
@@ -251,6 +247,7 @@ def save_results(nv_coordinates, integrated_intensities, spot_weights, filename)
         nv_coordinates=nv_coordinates,
         integrated_counts=integrated_intensities,
         spot_weights=spot_weights,
+        updated_spot_weights=updated_spot_weights,
     )
 
 
@@ -266,7 +263,8 @@ def load_nv_coords(
     data = np.load(file_path)
     print(data.keys())
     nv_coordinates = data["nv_coordinates"]
-    spot_weights = data["spot_weights"]
+    # spot_weights = data["spot_weights"]
+    spot_weights = data["updated_spot_weights"]
     # spot_weights = data["integrated_counts"]
     # spot_weights = data["integrated_counts"]
     return nv_coordinates, spot_weights
@@ -374,6 +372,60 @@ def filter_by_peak_intensity(fitted_data, threshold=0.5):
     return filtered_coords, filtered_intensities
 
 
+def adjust_aom_voltage(
+    spot_weights, updated_spot_weights, aom_voltage, power_law_params
+):
+    """
+    Adjust the AOM voltage to account for changes in NV spot weights while ensuring
+    the power at NVs with unchanged weights remains constant.
+
+    Parameters:
+    - spot_weights: Initial normalized weights for all NVs (list or np.array).
+    - updated_spot_weights: New weights for specific NVs (list or np.array).
+    - aom_voltage: Current AOM voltage corresponding to the total yellow power.
+    - power_law_params: Parameters [a, b, c] for the power-law equation y = a * x^b + c.
+
+    Returns:
+    - adjusted_aom_voltage: The updated single AOM voltage.
+    """
+    # Ensure inputs are NumPy arrays
+    spot_weights = np.array(spot_weights)
+    updated_spot_weights = np.array(updated_spot_weights)
+
+    a, b, c = power_law_params
+
+    # Step 1: Calculate total yellow power for the current AOM voltage
+    total_yellow_power = a * (aom_voltage**b) + c
+
+    # Step 2: Calculate the current power distribution
+    current_powers = spot_weights * total_yellow_power / np.sum(spot_weights)
+
+    # Step 3: Update weights and calculate new powers
+    adjusted_weights = updated_spot_weights.copy()
+    unchanged_indices = np.where(spot_weights == updated_spot_weights)[0]
+    changed_indices = np.where(spot_weights != updated_spot_weights)[0]
+
+    # Ensure unchanged NV powers remain constant
+    adjusted_weights[unchanged_indices] = spot_weights[unchanged_indices]
+    updated_total_weight = np.sum(adjusted_weights)
+
+    # Step 4: Calculate the new total yellow power
+    adjusted_powers = (
+        adjusted_weights * total_yellow_power / np.sum(updated_total_weight)
+    )
+
+    # Ensure unchanged NVs retain their original power
+    adjusted_powers[unchanged_indices] = current_powers[unchanged_indices]
+
+    # Recalculate total yellow power to maintain consistency
+    scaled_yellow_power = np.sum(adjusted_powers)
+    print(scaled_yellow_power)
+    # Step 5: Convert the scaled yellow power back to AOM voltage using the inverse of the power-law equation
+    adjusted_aom_voltage = ((scaled_yellow_power - c) / a) ** (1 / b)
+
+    return adjusted_aom_voltage
+
+
 # Main section of the code
 if __name__ == "__main__":
     kpl.init_kplotlib()
@@ -393,42 +445,60 @@ if __name__ == "__main__":
     # data = dm.get_raw_data(file_id=1693412457124, load_npz=True)
     data = dm.get_raw_data(file_id=1698496302146, load_npz=True)
     data = dm.get_raw_data(file_id=1699573772441, load_npz=True)
+    data = dm.get_raw_data(file_id=1700650667777, load_npz=True)
+    data = dm.get_raw_data(file_id=1700668458198, load_npz=True)
+    data = dm.get_raw_data(file_id=1700710358100, load_npz=True)
+    data = dm.get_raw_data(file_id=1701553383934, load_npz=True)
 
     img_array = np.array(data["ref_img_array"])
-    nv_coordinates, integrated_intensities = load_nv_coords(
+    nv_coordinates, spot_weights = load_nv_coords(
         # file_path="slmsuite/nv_blob_detection/nv_blob_filtered_144nvs.npz"
-        # file_path="slmsuite/nv_blob_detection/nv_blob_filtered_163nvs_reordered.npz"
+        # file_path="slmsuite/nv_blob_detection/nv_blob_filtered_160nvs.npz"
         file_path="slmsuite/nv_blob_detection/nv_blob_filtered_160nvs_reordered.npz"
     )
     nv_coordinates = nv_coordinates.tolist()
-    # nv_coordinates[62] = [142.513, 181.832]
-    # print(nv_coordinates[62])
     # integrated_intensities = integrated_intensities.tolist()
-    integrated_intensities = []
-    integration_radius = 3
-    for coord in nv_coordinates:
-        x, y = coord[:2]  # Assuming `coord` contains at least two elements (y, x)
-        rr, cc = disk((y, x), integration_radius, shape=img_array.shape)
-        sum_value = np.sum(img_array[rr, cc])
-        integrated_intensities.append(sum_value)  # Append to the list
+    spot_weights = spot_weights.tolist()
+
+    # print(integrated_intensities)
+    # integration_radius = 3
+    # for coord in nv_coordinates:
+    #     x, y = coord[:2]  # Assuming `coord` contains at least two elements (y, x)
+    #     rr, cc = disk((y, x), integration_radius, shape=img_array.shape)
+    #     sum_value = np.sum(img_array[rr, cc])
+    #     integrated_intensities.append(sum_value)  # Append to the list
     # Filter NV coordinates based on x and y ranges (0 to 240)
-    filtered_coords = []
-    filtered_intensities = []
-    for coord, intensity in zip(nv_coordinates, integrated_intensities):
-        x, y = coord
-        if 0 <= x <= 248 and 0 <= y <= 248:
-            filtered_coords.append(coord)
-            filtered_intensities.append(intensity)
+    # filtered_coords = []
+    # filtered_intensities = []
+    # for coord, intensity in zip(nv_coordinates, integrated_intensities):
+    #     x, y = coord
+    #     if 0 <= x <= 248 and 0 <= y <= 248:
+    #         filtered_coords.append(coord)
+    #         filtered_intensities.append(intensity)
 
     # # Filter and reorder NV coordinates based on reference NV
-    
-    sigma = 2.5
+    integrated_intensities = []
+    sigma = 2.0
     reference_nv = [106.923, 120.549]
-    filtered_reordered_coords, filtered_reordered_counts = filter_and_reorder_nv_coords(
-        filtered_coords, filtered_intensities, reference_nv, min_distance=3
+    filtered_reordered_coords, filtered_reordered_spot_weights = (
+        filter_and_reorder_nv_coords(
+            nv_coordinates, spot_weights, reference_nv, min_distance=3
+        )
     )
 
     # Integration over disk region around each NV coordinate
+    # for coord, count in zip(nv_coordinates, integrated_intensities):
+    #     x, y = coord
+    #     if 0 <= x <= 248 and 0 <= y <= 248:
+    #         filtered_reordered_coords.append(coord)
+    #         filtered_reordered_counts.append(count)
+    filtered_reordered_counts = []
+    integration_radius = 2.5
+    for coord in filtered_reordered_coords:
+        x, y = coord[:2]  # Assuming `coord` contains at least two elements (y, x)
+        rr, cc = disk((y, x), integration_radius, shape=img_array.shape)
+        sum_value = np.sum(img_array[rr, cc])
+        filtered_reordered_counts.append(sum_value)  # Append to the list
 
     # Manually remove NVs with specified indices
     # indices_to_remove = [1, 137, 161]  # Example indices to remove
@@ -455,7 +525,34 @@ if __name__ == "__main__":
     #     fitted_amplitudes.append(amplitude)
 
     # Calculate weights based on the fitted intensities
-    spot_weights = linear_weights(filtered_reordered_counts, alpha=0.6)
+    # indices = [4, 27, 41, 82, 86, 89, 109, 117, 138, 139, 148, 149]
+    spot_weights = filtered_reordered_spot_weights
+    indices = [4, 27, 30, 41, 117, 130, 139, 155]
+    # Apply linear weights to all counts
+    calcualted_spot_weights = linear_weights(filtered_reordered_counts, alpha=0.3)
+    # updated_spot_weights = linear_weights(filtered_reordered_counts, alpha=0.6)
+
+    # Create a copy or initialize spot weights for modification
+    updated_spot_weights = (
+        spot_weights.copy()
+    )  # Assuming 'spot_weights' is your original weight array
+
+    # Update weights for the specified indices using the calculated weights
+    for idx in indices:
+        if 0 <= idx < len(updated_spot_weights):  # Ensure index is within valid range
+            updated_spot_weights[idx] = calcualted_spot_weights[idx]
+
+    aom_voltage = 0.39  # Current AOM voltage
+    power_law_params = [3.7e5, 6.97, 8e-14]  # Example power-law fit parameters
+
+    # Adjust voltages
+    adjusted_voltages = adjust_aom_voltage(
+        spot_weights, updated_spot_weights, aom_voltage, power_law_params
+    )
+
+    # Print adjusted voltages
+    print("Adjusted Voltages (V):", adjusted_voltages)
+
     # print(len(spot_weights))
     # updated_spot_weights = filtered_reordered_counts
     # spot_weights = updated_spot_weights
@@ -496,12 +593,19 @@ if __name__ == "__main__":
     #     integrated_intensities[i] for i in filtered_indices
     # ]
     print(f"Filtered NV coordinates: {len(filtered_reordered_coords)} NVs")
-    print("NV Index | Coords    |    Counts")
+    print("NV Index | Coords    |    Counts |   previous weights |   updated weights")
     print("-" * 60)
-    for idx, (coords, counts, weight) in enumerate(
-        zip(filtered_reordered_coords, filtered_reordered_counts, spot_weights)
+    for idx, (coords, counts, weight, updated_weight) in enumerate(
+        zip(
+            filtered_reordered_coords,
+            filtered_reordered_counts,
+            spot_weights,
+            updated_spot_weights,
+        )
     ):
-        print(f"{idx+1:<8} | {coords} | {counts:.3f} | {weight:.3f}")
+        print(
+            f"{idx+1:<8} | {coords} | {counts:.3f} | {weight:.3f} | {updated_weight:.3f}"
+        )
 
     # print("NV Index | Spot Weight | Updated Spot Weight | Counts")
     # print("-" * 50)
@@ -517,19 +621,15 @@ if __name__ == "__main__":
 
     # Save the filtered results
     # save_results(
-    #     filtered_nv_coords,
-    #     filtered_counts,
-    #     spot_weights,
-    #     filename="slmsuite/nv_blob_detection/nv_blob_filtered_297.npz",
-    # )
-    # save_results(
     #     filtered_reordered_coords,
     #     filtered_reordered_counts,
     #     spot_weights,
+    #     updated_spot_weights,
     #     filename="slmsuite/nv_blob_detection/nv_blob_filtered_160nvs_reordered.npz",
     # )
 
     # Plot the original image with circles around each NV
+
     fig, ax = plt.subplots()
     title = "50ms, Ref"
     kpl.imshow(ax, img_array, title=title, cbar_label="Photons")
@@ -547,35 +647,29 @@ if __name__ == "__main__":
             ha="center",
         )
 
-    # Plot the original image with circles around each NV
-    fig, ax = plt.subplots()
-    title = "50ms, Ref"
-    kpl.imshow(ax, img_array, title=title, cbar_label="Photons")
+    # indices_to_circle = [4, 29, 41, 89, 102, 118, 139, 144, 148, 149]
+    # indices_to_circle = [4, 27, 41, 82, 86, 89, 102, 109, 117, 138, 139, 148, 149]
+    # indices_to_circle = [
+    #     i + 1 for i in [4, 27, 41, 82, 86, 89, 102, 109, 117, 138, 139, 148, 149]
+    # ]
+    # fig, ax = plt.subplots()
+    # title = "50ms, Ref"
+    # kpl.imshow(ax, img_array, title=title, cbar_label="Photons")
 
-    # Plot the original image with circles around specified NVs
-    fig, ax = plt.subplots()
-    title = "50ms, Ref"
-    kpl.imshow(ax, img_array, title=title, cbar_label="Photons")
-
-    nv_indices = [30, 32, 39, 49, 51, 63, 67, 76, 81, 86, 93, 102, 119, 121, 131, 141, 143, 149]
-
-    # Draw circles and index numbers only for specified NV indices
-    for idx, coord in enumerate(filtered_reordered_coords):
-        if idx in nv_indices:  # Only draw circles for these indices
-            circ = Circle(coord, sigma, color="white", fill=False, linewidth=0.5)
-            ax.add_patch(circ)
-            
-            # Place text just above the circle
-            ax.text(
-                coord[0],
-                coord[1] - sigma - 1,
-                str(idx + 1),
-                color="white",
-                fontsize=6,
-                ha="center",
-            )
-
-
+    # # Draw circles and index numbers for selected indices only
+    # for idx, coord in enumerate(filtered_reordered_coords):
+    #     if idx + 1 in indices_to_circle:  # +1 to match your indices (assuming 1-based)
+    #         circ = Circle(coord, sigma, color="lightblue", fill=False, linewidth=0.5)
+    #         ax.add_patch(circ)
+    #         # Place text just above the circle
+    #         ax.text(
+    #             coord[0],
+    #             coord[1] - sigma - 1,
+    #             str(idx + 1),
+    #             color="white",
+    #             fontsize=8,
+    #             ha="center",
+    #         )
     # Plot histogram of the filtered integrated intensities using Seaborn
     # sns.set(style="whitegrid")
 

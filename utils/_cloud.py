@@ -15,7 +15,9 @@ from boxsdk import Client, JWTAuth
 
 from utils import common
 
-nvdata_folder_id = "235146666549"  # ID for the nvdata folder in Box
+# ID for the root data folder in Box, nvdata
+root_folder_id = "235146666549"
+
 data_manager_folder = common.get_data_manager_folder()
 folder_path_cache = {}
 
@@ -44,6 +46,9 @@ def download(file_name=None, ext=None, file_id=None):
         Name of the file, without file extension
     ext : str
         File extension
+    file_id : id
+        Box file ID, can be read off from the URL:
+        https://berkeley.app.box.com/file/<file_id>
 
     Returns
     -------
@@ -70,23 +75,6 @@ def download(file_name=None, ext=None, file_id=None):
     return file_content, file_id, file_name
 
 
-# def upload(folder_path, temp_file_path):
-#     """Upload file to the cloud
-
-#     Parameters
-#     ----------
-#     folder_path : Path
-#         Folder path to upload to. Form should be folder1/folder2/... where folder1
-#         is under directly nvdata
-#     temp_file_path : Path
-#         Full file path to write the file to before it can be uploaded to the cloud.
-#         Get this by calling dm.get_file_path()
-#     """
-#     folder_id = get_folder_id(folder_path)
-#     new_file = box_client.folder(folder_id).upload(str(temp_file_path))
-#     return new_file.id
-
-
 def upload(file_path_w_ext, content):
     """Upload file to the cloud
 
@@ -94,7 +82,7 @@ def upload(file_path_w_ext, content):
     ----------
     file_path : Path
         File path to upload to. Form should be folder1/folder2/... where folder1
-        is under directly nvdata. Should include extension
+        is under directly the root data folder. Should include extension
     content : BytesIO
         Byte stream to write to the file
     """
@@ -113,7 +101,7 @@ def get_folder_id(folder_path):
     ----------
     folder_path : Path
         Folder path to ID. Form should be folder1/folder2/... where folder1
-        is under directly nvdata
+        is directly under the root data folder
 
     Returns
     -------
@@ -133,10 +121,10 @@ def get_folder_id(folder_path):
     return folder_id
 
 
-def _get_folder_id_recursion(folder_path_parts, start_id=nvdata_folder_id):
+def _get_folder_id_recursion(folder_path_parts, start_id=root_folder_id):
     """
-    Starting from nvdata, find each subsequent folder in folder_path_parts, finally
-    returning the ID of the last folder. Create the folders that don't exist yet
+    Starting from the root data folder, find each subsequent folder in folder_path_parts,
+    finally returning the ID of the last folder. Create the folders that don't exist yet
     """
     target_folder_name = folder_path_parts.pop(0)
 

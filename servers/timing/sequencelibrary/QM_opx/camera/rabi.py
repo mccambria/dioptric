@@ -32,7 +32,7 @@ def get_seq(base_scc_seq_args, step_vals, num_reps=1):
         def uwave_macro_sig(uwave_ind_list, step_val):
             if uwave_ind_list is None or step_val is None:
                 raise ValueError("uwave_ind_list or step_val is None")
-            seq_utils.macro_pi_pulse(uwave_ind_list[1:], duration=step_val)
+            seq_utils.macro_pi_pulse(uwave_ind_list[1:], duration_cc=step_val)
 
         # Add try-except to catch errors in macro execution
         try:

@@ -528,7 +528,7 @@ or whatever, variables are named axis-agnostically as <var>_<axis_ind>
 """
 
 
-def get_scan_1d(center, scan_range, num_steps, dtype=np.float64):
+def get_scan_1d(center, scan_range, num_steps, dtype=np.float64) -> np.ndarray:
     """Get a linear spacing of coords about the passed center
 
     Parameters
