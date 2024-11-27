@@ -262,9 +262,9 @@ def main(
         pol_coords_list, pol_duration_list, pol_amp_list = (
             widefield.get_pulse_parameter_lists(nv_list, VirtualLaserKey.CHARGE_POL)
         )
-        print("pol_coords_list:", pol_coords_list)
-        print("pol_duration_list:", pol_duration_list)
-        print("pol_amp_list_list:", pol_amp_list)
+        # print("pol_coords_list:", pol_coords_list)
+        # print("pol_duration_list:", pol_duration_list)
+        # print("pol_amp_list_list:", pol_amp_list)
 
         ion_coords_list = widefield.get_coords_list(nv_list, VirtualLaserKey.ION)
         seq_args = [

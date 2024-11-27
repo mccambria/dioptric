@@ -186,7 +186,7 @@ def exponential_integral(nu, z):
 # endregion
 
 
-def fit_bimodal_histogram(counts_list, prob_dist: ProbDist, no_print=False):
+def fit_bimodal_histogram(counts_list, prob_dist: ProbDist, no_print=True):
     """Fit the passed probability distribution to a histogram of the passed counts_list.
     counts_list should have some population in both modes
 
@@ -259,11 +259,17 @@ def fit_bimodal_histogram(counts_list, prob_dist: ProbDist, no_print=False):
     fit_fn = get_bimodal_pdf(prob_dist)
     try:
         popt, _ = curve_fit(fit_fn, x_vals, hist, p0=guess_params, bounds=bounds)
+        # Calculate goodness of fit (R^2)
+        fitted_values = fit_fn(x_vals, *popt)
+        ss_res = np.sum((hist - fitted_values) ** 2)
+        ss_tot = np.sum((hist - np.mean(hist)) ** 2)
+        r_squared = 1 - (ss_res / ss_tot)
         if not no_print:
-            print(popt)
-        return popt
+            print(f"Fit Parameters: {popt}")
+            print(f"R^2: {r_squared}")
+        return popt, r_squared
     except Exception as exc:
-        return None
+        return None, None
 
 
 def determine_threshold(

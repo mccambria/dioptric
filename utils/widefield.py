@@ -782,19 +782,26 @@ def get_base_scc_seq_args(nv_list: list[NVSig], uwave_ind_list: list[int]):
     return seq_args
 
 
-def get_pulse_parameter_lists(nv_list, virtual_laser_key):
+def get_pulse_parameter_lists(nv_list: list[NVSig], virtual_laser_key: VirtualLaserKey):
     coords_list = get_coords_list(nv_list, virtual_laser_key)
     duration_list = []
     amp_list = []
     for nv in nv_list:
         # Retrieve duration and amplitude using .get to avoid KeyError
-        duration = (
-            nv.pulse_durations.get(virtual_laser_key) if nv.pulse_durations else None
-        )
-        amp = nv.pulse_amps.get(virtual_laser_key) if nv.pulse_amps else None
-
+        duration = nv.pulse_durations.get(virtual_laser_key)
+        amp = nv.pulse_amps.get(virtual_laser_key)
         duration_list.append(duration)
         amp_list.append(amp)
+
+    # The lists will be passed to qua.for_each in the sequence, so each entry needs
+    # to be a proper number, not None
+    default_duration = tb.get_virtual_laser_dict(virtual_laser_key)["duration"]
+    default_amp = 1.0
+    duration_list = [
+        int(val) if val is not None else default_duration for val in duration_list
+    ]
+    amp_list = [val if val is not None else default_amp for val in amp_list]
+
     return coords_list, duration_list, amp_list
 
 

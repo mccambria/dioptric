@@ -336,7 +336,7 @@ def compute_nvs_phase():
         shape=(4096, 2048),
         spot_vectors=thorcam_coords,
         basis="ij",
-        spot_amp=spot_weights,
+        # spot_amp=spot_weights,
         cameraslm=fs,
     )
     # Precondition computationally
@@ -369,8 +369,9 @@ def write_nvs_phase():
     # phase = np.load("slmsuite\computed_phase\slm_phase_155nvs_20241106_095934.npy")
     # phase = np.load("slmsuite\computed_phase\slm_phase_161nvs_20241108_020407.npy")
     # phase = np.load("slmsuite\computed_phase\slm_phase_160nvs_20241111_205639.npy")
-    phase = np.load("slmsuite\computed_phase\slm_phase_160nvs_20241114_191804.npy")
     # phase = np.load("slmsuite\computed_phase\slm_phase_160nvs_20241115_152130.npy")
+    # phase = np.load("slmsuite\computed_phase\slm_phase_160nvs_20241114_191804.npy")
+    phase = np.load("slmsuite\computed_phase\slm_phase_160nvs_20241125_161635.npy")
     slm.write(phase, settle=True)
     cam_plot()
 

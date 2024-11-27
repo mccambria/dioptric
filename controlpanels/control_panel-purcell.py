@@ -113,13 +113,13 @@ def do_optimize_pol_duration(nv_list):
 
 
 def do_optimize_pol_amp(nv_list):
-    num_steps = 4
+    num_steps = 11
     # num_reps = 150
     # num_runs = 5
-    num_reps = 5
-    num_runs = 2
-    min_amp = 0.1
-    max_amp = 1.2
+    num_reps = 15
+    num_runs = 150
+    min_amp = 0.9
+    max_amp = 1.1
     return optimize_charge_state_histograms_mcc.optimize_pol_amp(
         nv_list, num_steps, num_reps, num_runs, min_amp, max_amp
     )
@@ -139,13 +139,13 @@ def do_optimize_readout_duration(nv_list):
 
 
 def do_optimize_readout_amp(nv_list):
-    num_steps = 4
+    num_steps = 21
     # num_reps = 150
     # num_runs = 5
-    num_reps = 5
-    num_runs = 2
-    min_amp = 0.1
-    max_amp = 1.2
+    num_reps = 10
+    num_runs = 225
+    min_amp = 0.9
+    max_amp = 1.3
     return optimize_charge_state_histograms_mcc.optimize_readout_amp(
         nv_list, num_steps, num_reps, num_runs, min_amp, max_amp
     )
@@ -878,7 +878,7 @@ if __name__ == "__main__":
     # magnet_angle = 90
     date_str = "2024_03_12"
     sample_coords = [2.0, 0.0]
-    z_coord = 0.5
+    z_coord = 0.60
     # Load NV pixel coordinates
     pixel_coords_list = load_nv_coords(
         file_path="slmsuite/nv_blob_detection/nv_blob_filtered_160nvs_reordered.npz",
@@ -1031,7 +1031,7 @@ if __name__ == "__main__":
 
     # nv_list = [nv_list[
     # nv_list = [nv_list[2]]
-    # nv_list = nv_list[: len(nv_list)]
+    # nv_list = nv_list[:5]
 
     # endregion
 
@@ -1058,7 +1058,7 @@ if __name__ == "__main__":
         # do_optimize_xyz(nv_sig)
         # pos.set_xyz_on_nv(nv_sig)
 
-        # do_compensate_for_drift(nv_sig)
+        do_compensate_for_drift(nv_sig)
 
         # for point in points:
         #     x, y = point
@@ -1111,7 +1111,9 @@ if __name__ == "__main__":
         # do_optimize_loop(nv_list, coords_key)
 
         # nv_list = nv_list[::-1]
-        do_charge_state_histograms(nv_list)
+        # do_charge_state_histograms(nv_list)
+        do_optimize_pol_amp(nv_list)
+        # do_optimize_readout_amp(nv_list)
         # do_charge_state_histograms_images(nv_list, vary_pol_laser=True)
         # do_charge_state_conditional_init(nv_list)
         # do_check_readout_fidelity(nv_list)x

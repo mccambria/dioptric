@@ -7,7 +7,7 @@ Created on June 26th, 2023
 @author: mccambria
 """
 
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from enum import Enum, IntEnum, auto
 
 from strenum import StrEnum
@@ -57,8 +57,8 @@ class NVSig:
     # the end of a spin experiment prior to readout. Useful for anticorrelations
     # and rejecting common mode noise
     spin_flip: bool = False
-    pulse_durations: dict[VirtualLaserKey, int] = None
-    pulse_amps: dict[VirtualLaserKey, float] = None
+    pulse_durations: dict[VirtualLaserKey, int] = field(default_factory=dict)
+    pulse_amps: dict[VirtualLaserKey, float] = field(default_factory=dict)
     # nvn_dist_params: [bg, amp, sigma] for maximum likelihood state estimation
     nvn_dist_params: tuple = None
 

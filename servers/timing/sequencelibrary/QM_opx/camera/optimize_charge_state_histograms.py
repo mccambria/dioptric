@@ -36,9 +36,9 @@ def get_seq(
         seq_utils.macro_run_aods()
 
         if optimize_duration_or_amp:
-            override_var = qua.declare(qua.fixed)
-        else:
             override_var = qua.declare(int)
+        else:
+            override_var = qua.declare(qua.fixed)
 
         # Determine which variable to override
         pol_duration_override = None
@@ -86,20 +86,28 @@ if __name__ == "__main__":
     opx = qmm.open_qm(opx_config)
 
     try:
-        seq, seq_ret_vals = get_seq(
+        seq_args = [
             [
-                [110, 109.51847988358579],
-                [112, 110.70156405156148],
+                [108.857, 106.965],
+                [110.022, 105.335],
+                [110.215, 108.586],
+                [107.77, 105.086],
+                [106.577, 106.396],
             ],
+            [1000, 1000, 1000, 1000, 1000],
+            [1.0, 1.0, 1.0, 1.0, 1.0],
             [
-                [75.42725784791932, 75.65982013416432],
-                [75.98725784791932, 74.74382013416432],
+                [73.495, 72.409],
+                [74.355, 71.074],
+                [74.614, 73.732],
+                [72.581, 70.875],
+                [71.689, 71.95],
             ],
+            [0.5, 0.9000000000000001, 1.1, 0.7000000000000001],
             False,
-            True,
             False,
-            5,
-        )
+        ]
+        seq, seq_ret_vals = get_seq(*seq_args, 4)
 
         sim_config = SimulationConfig(duration=int(150e3 / 4))
         sim = opx.simulate(seq, sim_config)
