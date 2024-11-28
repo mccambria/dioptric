@@ -105,7 +105,6 @@ def find_optimal_combined_value(
 
     return optimal_step_val, max_combined_score
 
-
 def process_and_plot(raw_data):
     nv_list = raw_data["nv_list"]
     num_nvs = len(nv_list)
@@ -268,7 +267,6 @@ def process_and_plot(raw_data):
 
 
 # endregion
-
 
 def optimize_pol_duration(
     nv_list, num_steps, num_reps, num_runs, min_duration, max_duration
