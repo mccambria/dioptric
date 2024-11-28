@@ -100,7 +100,8 @@ def process_and_plot(
         ref_counts_list = ref_counts_lists[ind]
 
         # Only use ref counts for threshold determination
-        popt = fit_bimodal_histogram(ref_counts_list, prob_dist, no_print=True)
+        popt, _ = fit_bimodal_histogram(ref_counts_list, prob_dist, no_print=True)
+        print(f"popt: {popt}, length: {len(popt)}")
         threshold, readout_fidelity = determine_threshold(
             popt, prob_dist, dark_mode_weight=0.5, do_print=True, ret_fidelity=True
         )
@@ -226,6 +227,168 @@ def process_and_plot(
     return img_arrays_to_save, img_figs, hist_figs
 
 
+# def process_and_plot(
+#     raw_data, do_plot_histograms=False, prob_dist: ProbDist = ProbDist.COMPOUND_POISSON
+# ):
+#     """
+#     Processes NV histogram data, calculates thresholds and fidelities, and optionally generates plots.
+
+#     Parameters
+#     ----------
+#     raw_data : dict
+#         Raw data containing NV counts and metadata.
+#     do_plot_histograms : bool, optional
+#         Whether to generate histogram plots, by default False.
+#     prob_dist : ProbDist, optional
+#         Probability distribution to use for fitting, by default ProbDist.COMPOUND_POISSON.
+
+#     Returns
+#     -------
+#     list, list, list, list
+#         Thresholds, readout fidelities, preparation fidelities, and histogram figures.
+#     """
+#     nv_list = raw_data["nv_list"]
+#     num_nvs = len(nv_list)
+#     counts = np.array(raw_data["counts"])
+#     sig_counts_lists = [counts[0, nv_ind].flatten() for nv_ind in range(num_nvs)]
+#     ref_counts_lists = [counts[1, nv_ind].flatten() for nv_ind in range(num_nvs)]
+
+#     def process_nv_histogram(ind, sig_counts_list, ref_counts_list, prob_dist):
+#         """
+#         Processes a single NV histogram and calculates thresholds and fidelities.
+
+#         Parameters
+#         ----------
+#         ind : int
+#             Index of the NV.
+#         sig_counts_list : np.ndarray
+#             Signal counts for the NV.
+#         ref_counts_list : np.ndarray
+#             Reference counts for the NV.
+#         prob_dist : ProbDist
+#             Probability distribution for histogram fitting.
+
+#         Returns
+#         -------
+#         tuple
+#             Index, threshold, readout fidelity, preparation fidelity, and plot data.
+#         """
+#         popt, _ = fit_bimodal_histogram(ref_counts_list, prob_dist, no_print=True)
+#         threshold, readout_fidelity, prep_fidelity = np.nan, np.nan, np.nan
+
+#         if popt is not None:
+#             threshold, readout_fidelity = determine_threshold(
+#                 popt, prob_dist, dark_mode_weight=0.5, ret_fidelity=True
+#             )
+#             prep_fidelity = 1 - popt[0]
+
+#         # Collect plot data instead of creating figures in worker threads
+#         plot_data = None
+#         if do_plot_histograms:
+#             x_vals = np.linspace(0, np.max(ref_counts_list), 1000)
+#             plot_data = {
+#                 "sig_counts": sig_counts_list,
+#                 "ref_counts": ref_counts_list,
+#                 "x_vals": x_vals,
+#                 "popt": popt,
+#                 "threshold": threshold,
+#                 "readout_fidelity": readout_fidelity,
+#                 "prep_fidelity": prep_fidelity,
+#             }
+
+#         return ind, threshold, readout_fidelity, prep_fidelity, plot_data
+
+#     # Parallel processing for computation
+#     results = Parallel(n_jobs=-1)(
+#         delayed(process_nv_histogram)(
+#             ind, sig_counts_lists[ind], ref_counts_lists[ind], prob_dist
+#         )
+#         for ind in range(num_nvs)
+#     )
+
+#     # Collect results
+#     threshold_list, readout_fidelity_list, prep_fidelity_list = [], [], []
+#     plot_data_list = []
+
+#     for ind, threshold, readout_fidelity, prep_fidelity, plot_data in results:
+#         threshold_list.append(threshold)
+#         readout_fidelity_list.append(readout_fidelity)
+#         prep_fidelity_list.append(prep_fidelity)
+#         if plot_data is not None:
+#             plot_data_list.append((ind, plot_data))
+
+#     # Create plots in the main thread
+#     hist_figs = []
+#     if do_plot_histograms:
+#         for ind, plot_data in plot_data_list:
+#             fig = plot_histogram_from_data(ind, plot_data)
+#             hist_figs.append(fig)
+
+#     return threshold_list, readout_fidelity_list, prep_fidelity_list, hist_figs
+
+
+# def plot_histogram_from_data(ind, plot_data):
+#     """
+#     Creates a histogram plot from preprocessed data.
+
+#     Parameters
+#     ----------
+#     ind : int
+#         Index of the NV.
+#     plot_data : dict
+#         Data for plotting the histogram.
+
+#     Returns
+#     -------
+#     matplotlib.figure.Figure
+#         The created histogram figure.
+#     """
+#     sig_counts = plot_data["sig_counts"]
+#     ref_counts = plot_data["ref_counts"]
+#     x_vals = plot_data["x_vals"]
+#     popt = plot_data["popt"]
+#     threshold = plot_data["threshold"]
+#     readout_fidelity = plot_data["readout_fidelity"]
+#     prep_fidelity = plot_data["prep_fidelity"]
+
+#     fig, ax = plt.subplots()
+#     kpl.histogram(ax, sig_counts, label="Signal", color=kpl.KplColors.RED, density=True)
+#     kpl.histogram(
+#         ax, ref_counts, label="Reference", color=kpl.KplColors.GREEN, density=True
+#     )
+
+#     if popt is not None:
+#         single_mode_num_params = bimodal_histogram.get_single_mode_num_params(
+#             ProbDist.COMPOUND_POISSON
+#         )
+#         single_mode_pdf = bimodal_histogram.get_single_mode_pdf(
+#             ProbDist.COMPOUND_POISSON
+#         )
+#         bimodal_pdf = bimodal_histogram.get_bimodal_pdf(ProbDist.COMPOUND_POISSON)
+
+#         line = popt[0] * single_mode_pdf(x_vals, *popt[1 : 1 + single_mode_num_params])
+#         kpl.plot_line(ax, x_vals, line, color=kpl.KplColors.RED)
+
+#         line = (1 - popt[0]) * single_mode_pdf(
+#             x_vals, *popt[1 + single_mode_num_params :]
+#         )
+#         kpl.plot_line(ax, x_vals, line, color=kpl.KplColors.GREEN)
+
+#         line = bimodal_pdf(x_vals, *popt)
+#         kpl.plot_line(ax, x_vals, line, color=kpl.KplColors.BLUE)
+
+#     if threshold is not None:
+#         ax.axvline(threshold, color=kpl.KplColors.GRAY, ls="dashed")
+
+#     snr_str = (
+#         f"NV{ind}\n"
+#         f"Readout fidelity: {round(readout_fidelity, 3)}\n"
+#         f"Charge prep. fidelity: {round(prep_fidelity, 3)}"
+#     )
+#     kpl.anchored_text(ax, snr_str, kpl.Loc.CENTER_RIGHT, size=kpl.Size.SMALL)
+
+#     return fig
+
 # endregion
 
 
@@ -350,7 +513,7 @@ def main(
 
 if __name__ == "__main__":
     kpl.init_kplotlib()
-    data = dm.get_raw_data(file_id=1701595753308, load_npz=False)
-    # data = dm.get_raw_data(file_id=1691569540529, load_npz=False)
+    data = dm.get_raw_data(file_id=1711018777416, load_npz=False)
+    # data = dm.get_raw_data(file_id=1709514100753, load_npz=False)
     process_and_plot(data, do_plot_histograms=True)
     kpl.show(block=True)

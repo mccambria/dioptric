@@ -221,7 +221,6 @@ def fit_bimodal_histogram(counts_list, prob_dist: ProbDist, no_print=True):
     )
 
     ### Fit the histogram
-
     # Get guess params
     mean_dark_guess = round(np.quantile(counts_list, 0.15))
     mean_bright_guess = round(np.quantile(counts_list, 0.65))

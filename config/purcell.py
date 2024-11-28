@@ -38,9 +38,9 @@ calibration_coords_pixel = [
     [207.435, 74.049],
 ]
 calibration_coords_green = [
-    [115.698, 101.385],
-    [108.913, 115.777],
-    [98.342, 101.054],
+    [115.502, 101.287],
+    [108.928, 115.723],
+    [98.349, 100.933],
 ]
 calibration_coords_red = [
     [78.674, 67.831],
@@ -804,7 +804,7 @@ opx_config = {
         # Yellow AOM
         "yellow_imaging": {"type": "constant", "sample": 0.45},  # 0.35
         # "yellow_imaging": {"type": "constant", "sample": 0.50},  # 0.35
-        "yellow_charge_readout": {"type": "constant", "sample": 0.39},  # 50e6
+        "yellow_charge_readout": {"type": "constant", "sample": 0.39},  # 0.439
         # "yellow_charge_readout": {"type": "constant", "sample": 0.25},  # 100e6
         "yellow_spin_pol": {"type": "constant", "sample": 0.39},
         "yellow_shelving": {"type": "constant", "sample": 0.33},
