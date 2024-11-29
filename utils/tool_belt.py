@@ -245,7 +245,6 @@ def encode_seq_args(seq_args):
             seq_args[ind] = str(el)
     return json.dumps(seq_args)
 
-
 def decode_seq_args(seq_args_string):
     if seq_args_string == "":
         return []
@@ -362,7 +361,6 @@ def lorentzian(x, x0, A, L, offset):
 
 def exp_decay(x, amp, decay, offset):
     return offset + amp * np.exp(-x / decay)
-
 
 def linear(x, slope, y_offset):
     return slope * x + y_offset

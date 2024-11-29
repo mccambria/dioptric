@@ -65,10 +65,8 @@ def fit_gaussian_2d_local(image, center, size=20):
     amplitude, xo, yo, sigma_x, sigma_y, theta, offset = popt
     return (round(xo, 3), round(yo, 3)), popt
 
-
 def plot_fitting(
-    image, centers, optimized_coords, size=20, colormap="hot", vmin=None, vmax=None
-):
+    image, centers, optimized_coords, size=20, colormap="hot", vmin=None, vmax=None):
     """Plot the original image with the initial and optimized peak coordinates."""
     fig, ax = plt.subplots()
 
@@ -97,7 +95,6 @@ def plot_fitting(
     dm.save_figure(fig, file_path)
 
     plt.show()
-
 
 # Example usage
 if __name__ == "__main__":

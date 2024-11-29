@@ -10,7 +10,6 @@ from skimage.filters import gaussian
 from utils import data_manager as dm
 from utils import kplotlib as kpl
 
-
 # Define the 2D Gaussian function
 def gaussian_2d(xy, amplitude, xo, yo, sigma_x, sigma_y, theta, offset):
     x, y = xy
@@ -27,7 +26,6 @@ def gaussian_2d(xy, amplitude, xo, yo, sigma_x, sigma_y, theta, offset):
         -(a * ((x - xo) ** 2) + 2 * b * (x - xo) * (y - yo) + c * ((y - yo) ** 2))
     )
     return g.ravel()
-
 
 # Fit a 2D Gaussian to a local region of the image data and return FWHM
 def fit_gaussian_2d_local(image, center, size=10):
