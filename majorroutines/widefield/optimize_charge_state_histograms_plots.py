@@ -9,6 +9,7 @@ import os
 import sys
 import time
 import traceback
+from datetime import datetime
 import matplotlib.pyplot as plt
 import numpy as np
 from joblib import Parallel, delayed
@@ -25,12 +26,8 @@ from utils import kplotlib as kpl
 from utils import positioning as pos
 from utils import tool_belt as tb
 from utils.constants import NVSig, VirtualLaserKey
-
 import matplotlib.pyplot as plt
-from matplotlib import rcParams
 
-rcParams['font.family'] = 'DejaVu Sans'
-rcParams['font.family'] = 'Roboto'
 
 def find_optimal_value_geom_mean(
     step_vals, prep_fidelity, readout_fidelity, goodness_of_fit, weights=(1, 1, 1)
@@ -55,9 +52,7 @@ def find_optimal_value_geom_mean(
 
     # Compute weighted geometric mean
     combined_score = (
-        (norm_readout_fidelity**w1)
-        * (norm_prep_fidelity**w2)
-        * (inverted_goodness**w3)
+        (norm_readout_fidelity**w1) * (norm_prep_fidelity**w2) * (inverted_goodness**w3)
     ) ** (1 / (w1 + w2 + w3))
 
     # Find the step value corresponding to the maximum combined score
@@ -66,6 +61,7 @@ def find_optimal_value_geom_mean(
     max_combined_score = combined_score[max_index]
 
     return optimal_step_val, max_combined_score
+
 
 def process_and_plot(raw_data):
     nv_list = raw_data["nv_list"]
@@ -156,6 +152,7 @@ def process_and_plot(raw_data):
                 readout_fidelity_arr[nv_ind],
                 prep_fidelity_arr[nv_ind],
                 goodness_of_fit_arr[nv_ind],
+                weights=(1, 1, 0.5),
             )
             optimal_values.append((nv_ind, optimal_step_val, max_combined_score))
         except Exception as e:
@@ -164,33 +161,37 @@ def process_and_plot(raw_data):
             continue
 
         # Plotting
-        fig, ax1 = plt.subplots(figsize=(6, 5))
+        fig, ax1 = plt.subplots(figsize=(7, 5))
 
         # Plot readout fidelity
         ax1.plot(
             step_vals,
-            # readout_fidelity_arr[nv_ind],
+            readout_fidelity_arr[nv_ind],
+            label="Readout Fidelity",
+            color="blue",
+        )
+        ax1.plot(
+            step_vals,
             prep_fidelity_arr[nv_ind],
-            # label="Readout Fidelity",
             label="Prep Fidelity",
+            linestyle="--",
             color="blue",
         )
         ax1.set_xlabel(x_label)
-        ax1.set_ylabel("Readout Fidelity")
-        ax1.set_ylabel("Prep Fidelity")
+        ax1.set_ylabel("Fidelity")
         ax1.tick_params(axis="y", labelcolor="blue")
-        ax1.legend(loc="upper left", fontsize=9)
+        ax1.grid(True, linestyle="--", alpha=0.6)
 
-        # Plot goodness of fit (R²)
+        # Plot Goodness of Fit (Residuals)
         ax2 = ax1.twinx()
         ax2.plot(
             step_vals,
             goodness_of_fit_arr[nv_ind],
             color="green",
-            label="Goodness of Fit (R²)",
+            label="Goodness of Fit (Residuals)",
             alpha=0.7,
         )
-        ax2.set_ylabel("Goodness of Fit (R²)", color="green")
+        ax2.set_ylabel("Goodness of Fit (Residuals)", color="green")
         ax2.tick_params(axis="y", labelcolor="green")
 
         # Highlight optimal step value
@@ -198,34 +199,21 @@ def process_and_plot(raw_data):
             optimal_step_val,
             color="red",
             linestyle="--",
-            label=f"Optimal Step Val: {optimal_step_val:.2f}",
+            label=f"Optimal Step Val: {optimal_step_val:.3f}",
         )
         ax2.axvline(
             optimal_step_val,
             color="red",
             linestyle="--",
-            label=f"Optimal Step Val: {optimal_step_val:.2f}",
         )
 
-        # Add legends for both y-axes
-        lines_1, labels_1 = ax1.get_legend_handles_labels()
-        lines_2, labels_2 = ax2.get_legend_handles_labels()
-        ax2.legend(
-            lines_1 + lines_2, labels_1 + labels_2, loc="upper right", fontsize=9
-        )
-
-        # Title and layout
-        ax1.set_title(f"NV{nv_ind} - Optimal Step Val: {optimal_step_val:.2f}")
-        fig.tight_layout()
+        # Combine legends
+        lines, labels = ax1.get_legend_handles_labels()
+        lines2, labels2 = ax2.get_legend_handles_labels()
+        ax1.legend(lines + lines2, labels + labels2, loc="upper left", fontsize=11)
+        ax1.set_title(f"NV{nv_ind} - Optimal Step Val: {optimal_step_val:.3f}")
+        plt.tight_layout()
         plt.show()
-
-    # Save results to a file
-    with open("optimal_combined_values.txt", "w") as f:
-        f.write("NV Index, Optimal Step Value, Max Combined Score\n")
-        for nv_index, opt_step, max_score in optimal_values:
-            f.write(f"{nv_index}, {opt_step:.6f}, {max_score:.6f}\n")
-    print("Optimal combined values saved to 'optimal_combined_values.txt'.")
-
 
     ### Calculate Averages
     avg_readout_fidelity = np.nanmean(readout_fidelity_arr, axis=0)
@@ -238,6 +226,7 @@ def process_and_plot(raw_data):
         avg_readout_fidelity,
         avg_prep_fidelity,
         avg_goodness_of_fit,
+        weights=(1, 1, 0.5),
     )
 
     # Plot average readout and prep fidelity
@@ -258,39 +247,70 @@ def process_and_plot(raw_data):
     ax1.set_ylabel("Fidelity")
     ax1.tick_params(axis="y")
 
-    # Plot average goodness of fit (R²)
+    # Plot average Goodness of Fit (Residuals))
     ax2 = ax1.twinx()
     ax2.plot(
         step_vals,
         avg_goodness_of_fit,
         color="green",
         linestyle="--",
-        label="Avg. Goodness of Fit (chi-squared)",
+        label="Avg. Goodness of Fit (Residuals)",
     )
-    ax2.set_ylabel("Goodness of Fit (chi-squared)", color="green")
+    ax2.set_ylabel("Goodness of Fit (Residuals)", color="green")
 
     ax2.tick_params(axis="y", labelcolor="green")
     ax2.axvline(
         optimal_step_val,
         color="red",
         linestyle="--",
-        label=f"Optimal Step Val: {optimal_step_val:.2f}",
+        label=f"Optimal Step Val: {optimal_step_val:.3f}",
     )
     # Combine legends
     lines_1, labels_1 = ax1.get_legend_handles_labels()
     lines_2, labels_2 = ax2.get_legend_handles_labels()
-    ax2.legend(lines_1 + lines_2, labels_1 + labels_2, loc="upper right", fontsize=9)
+    ax2.legend(lines_1 + lines_2, labels_1 + labels_2, loc="upper right", fontsize=11)
 
     # Title and layout
-    ax1.set_title("Average Metrics Across All NVs", fontsize=12)
+    ax1.set_title("Average Metrics Across All NVs")
     fig.tight_layout()
     plt.show()
+
+    # Generate a unique file name based on the current date and time
+    file_name = f"optimal_steps_{file_id}"
+    timestamp = dm.get_time_stamp()
+    file_path = dm.get_file_path(__file__, timestamp, file_name)
+    # Prepare the raw data as a list of dictionaries, including averages
+    raw_data = {
+        "timestamp": timestamp,
+        "averages": {
+            "avg_readout_fidelity": avg_readout_fidelity.tolist(),
+            "avg_prep_fidelity": avg_prep_fidelity.tolist(),
+            "avg_goodness_of_fit": avg_goodness_of_fit.tolist(),
+            "optimal_step_val": round(optimal_step_val, 6),
+            "max_combined_score": round(max_combined_score, 6),
+        },
+        "nv_data": [
+            {
+                "nv_index": nv_index,
+                "optimal_step_value": round(opt_step, 6),
+                "max_combined_score": round(max_score, 6),
+            }
+            for nv_index, opt_step, max_score in optimal_values
+        ],
+    }
+    dm.save_raw_data(raw_data, file_path)
+    print(f"Optimal combined values, including averages, saved to '{file_path}'.")
+
+
 # endregion
 
 if __name__ == "__main__":
     kpl.init_kplotlib()
+    # file_id = 1710843759806
+    file_id = 1712782503640
     # raw_data = dm.get_raw_data(file_id=1709868774004, load_npz=False) #yellow ampl var
-    raw_data = dm.get_raw_data(file_id=1710843759806, load_npz=False) #yellow amp var
-    # raw_data = dm.get_raw_data(file_id=1711618252292, load_npz=False) #green ampl var
+    raw_data = dm.get_raw_data(file_id=file_id, load_npz=False)  # yellow amp var
+    # raw_data = dm.get_raw_data(file_id=1711618252292, load_npz=False)  # green ampl var
+    # raw_data = dm.get_raw_data(file_id=1712421496166, load_npz=False)  # green ampl var
     process_and_plot(raw_data)
     kpl.show(block=True)

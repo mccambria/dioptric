@@ -17,6 +17,7 @@ import time
 from datetime import datetime
 from io import BytesIO
 from pathlib import Path
+from dataclasses import fields
 
 import labrad
 import numpy as np
@@ -173,7 +174,6 @@ def save_raw_data(raw_data, file_path, keys_to_compress=None):
     # print(stop - start)
 
 
-# endregion
 # region Load functions
 
 
@@ -298,12 +298,26 @@ def get_raw_data(file_name=None, file_id=None, use_cache=True, load_npz=False):
             with open(data_manager_folder / f"{file_name}.txt", "wb") as f:
                 f.write(file_content)
 
+    # Retrieve valid fields for NVSig
+    valid_fields = {field.name for field in fields(NVSig)}
+
     if "nv_list" in data:
         nv_list = data["nv_list"]
-        nv_list = [NVSig(**nv) for nv in nv_list]
+        # Filter out unexpected fields
+        nv_list = [
+            NVSig(**{key: nv[key] for key in nv if key in valid_fields})
+            for nv in nv_list
+        ]
         data["nv_list"] = nv_list
 
     return data
+
+    # if "nv_list" in data:
+    #     nv_list = data["nv_list"]
+    #     nv_list = [NVSig(**nv) for nv in nv_list]
+    #     data["nv_list"] = nv_list
+
+    # return data
 
 
 def get_img(file_name=None, ext=None, file_id=None):
