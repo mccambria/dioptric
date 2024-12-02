@@ -10,6 +10,7 @@ Created on November 11th, 2024
 
 import inspect
 import sys
+import time
 from enum import Enum, auto
 from functools import cache
 from inspect import signature
@@ -17,11 +18,11 @@ from inspect import signature
 import numpy as np
 from matplotlib import pyplot as plt
 from scipy.integrate import quad
-from scipy.optimize import curve_fit
-from scipy.special import factorial, gammainc, gammaln
+from scipy.special import factorial, gammainc, gammaln, xlogy
 from scipy.stats import norm, poisson, skewnorm
 
 from utils import kplotlib as kpl
+from utils.tool_belt import curve_fit
 
 inv_root_2_pi = 1 / np.sqrt(2 * np.pi)
 
@@ -31,7 +32,7 @@ inv_root_2_pi = 1 / np.sqrt(2 * np.pi)
 class ProbDist(Enum):
     POISSON = auto()
     BROADENED_POISSON = auto()
-    COMPOUND_POISSON = auto()
+    COMPOUND_POISSON = auto()  # See wiki 11/14
     GAUSSIAN = auto()
     SKEW_GAUSSIAN = auto()
 
@@ -102,39 +103,38 @@ def _calc_cdf(prob_dist, x, *params):
 
 
 def compound_poisson_pdf(x, rate):
-    if isinstance(x, (list, np.ndarray)):
-        ret_vals = [compound_poisson_pdf(el, rate) for el in x]
-        return np.array(ret_vals)
+    if isinstance(x, list):
+        x = np.array(x)
+    x_is_array = isinstance(x, np.ndarray)
 
-    if x == 0:
-
-        def integrand(y):
-            # Straightforward version below can overflow
-            # return (rate**y) * np.exp(-(rate + y)) / factorial(y)
-            # Calculate exp(log(integrand)) instead
-            return np.exp(y * np.log(rate) - (rate + y) - gammaln(y + 1))
-
-    else:
-
-        def integrand(y):
-            # Straightforward version below can overflow
-            # return (
-            #     (rate**y) * (y**x) * np.exp(-(rate + y)) / (factorial(x) * factorial(y))
-            # )
-            # Calculate exp(log(integrand)) instead
-            exp_arg = (
-                y * np.log(rate)
-                + x * np.log(y)
-                - (rate + y)
-                - gammaln(x + 1)
-                - gammaln(y + 1)
-            )
-            return np.exp(exp_arg)
-
-    lower_lim = round(max(0 if x == 0 else 1, rate - 5 * np.sqrt(rate)))
+    lower_lim = round(max(0, rate - 5 * np.sqrt(rate)))
     upper_lim = round(rate + 5 * np.sqrt(rate))
     integral_points = np.arange(lower_lim, upper_lim, 1, dtype=np.float64)
-    ret_val = np.sum(integrand(integral_points))
+    if x_is_array:
+        num_x_points = len(x)
+        num_integral_points = len(integral_points)
+        x = np.tile(x, (num_integral_points, 1))
+        integral_points = np.tile(integral_points, (num_x_points, 1))
+        integral_points = integral_points.T
+
+    # Calculate the integrand
+    # Straightforward version (next line) can overflow:
+    # (rate**y) * (y**x) * np.exp(-(rate + y)) / (factorial(x) * factorial(y))
+    # Calculate exp(log(integrand)) instead
+    exp_arg = (
+        xlogy(integral_points, rate)
+        + xlogy(x, integral_points)
+        - (rate + integral_points)
+        - gammaln(x + 1)
+        - gammaln(integral_points + 1)
+    )
+    integrand = np.exp(exp_arg)
+
+    if x_is_array:
+        axis = 0
+    else:
+        axis = None
+    ret_val = np.sum(integrand, axis=axis)
     return ret_val
 
 
@@ -187,7 +187,9 @@ def exponential_integral(nu, z):
 # endregion
 
 
-def fit_bimodal_histogram(counts_list, prob_dist: ProbDist, no_print=True):
+def fit_bimodal_histogram(
+    counts_list, prob_dist: ProbDist, no_print=True, no_plot=True
+):
     """Fit the passed probability distribution to a histogram of the passed counts_list.
     counts_list should have some population in both modes
 
@@ -198,7 +200,9 @@ def fit_bimodal_histogram(counts_list, prob_dist: ProbDist, no_print=True):
     prob_dist : ProbDist
         Probability distribution to use for the fit
     no_print : bool, optional
-        Whether to skip printing out the results of the fit, by default False
+        Whether to skip printing out the results of the fit, by default True
+    no_plot : bool, optional
+        Whether to skip plotting out the histogram and fit, by default True
 
     Returns
     -------
@@ -212,6 +216,7 @@ def fit_bimodal_histogram(counts_list, prob_dist: ProbDist, no_print=True):
     median = np.median(counts_list)
     std = np.std(counts_list)
     counts_list = counts_list[counts_list < median + 10 * std]
+    num_samples = len(counts_list)
 
     # Histogram the counts
     # counts_list = np.array([round(el) for el in counts_list])
@@ -220,6 +225,11 @@ def fit_bimodal_histogram(counts_list, prob_dist: ProbDist, no_print=True):
     hist, bin_edges = np.histogram(
         counts_list, bins=max_count + 1, range=(0, max_count), density=True
     )
+
+    # Histogram error bars - assume poisson statistics for each bin's distribution
+    hist_errs = np.sqrt(hist / num_samples)
+    min_err = 1 / num_samples  # Error we would calculate for bin with one occurrence
+    hist_errs = np.where(hist_errs > min_err, hist_errs, min_err)  # Enforce no zeros
 
     ### Fit the histogram
     # Get guess params
@@ -258,22 +268,31 @@ def fit_bimodal_histogram(counts_list, prob_dist: ProbDist, no_print=True):
     # Fit
     fit_fn = get_bimodal_pdf(prob_dist)
     try:
-        popt, _ = curve_fit(fit_fn, x_vals, hist, p0=guess_params, bounds=bounds)
-        # Calculate goodness of fit (R^2)
-        fitted_values = fit_fn(x_vals, *popt)
-        ss_res = np.sum(
-            ((hist - fitted_values) ** 2) / (fitted_values + 1e-9)
-        )  # Avoid division by zero
-        chi_squared = ss_res / len(hist)
-        # ss_res = np.sum((hist - fitted_values) ** 2)
-        # ss_tot = np.sum((hist - np.mean(hist)) ** 2)
-        # r_squared = 1 - (ss_res / ss_tot)
+        popt, pcov, red_chi_sq = curve_fit(
+            fit_fn,
+            x_vals,
+            hist,
+            guess_params,
+            hist_errs,
+            bounds=bounds,
+            # ftol=1e-6,
+            # xtol=1e-6,
+        )
         if not no_print:
             print(f"Fit Parameters: {popt}")
-            print(f"R^2: {chi_squared}")
-        return popt, chi_squared
+            print(f"Reduced chi squared: {red_chi_sq}")
+        if not no_plot:
+            fig, ax = plt.subplots()
+            ax.set_xlabel("Integrated counts")
+            ax.set_ylabel("Probability")
+            kpl.histogram(ax, counts_list, density=True)
+            x_vals = np.linspace(0, np.max(counts_list), 1000)
+            line = fit_fn(x_vals, *popt)
+            kpl.plot_line(ax, x_vals, line, color=kpl.KplColors.BLUE)
+            kpl.show(block=True)
+        return popt, pcov, red_chi_sq
     except Exception as exc:
-        return None, None
+        return None, None, None
 
 
 def determine_threshold(
@@ -553,6 +572,15 @@ def determine_dual_threshold(
 
 
 if __name__ == "__main__":
+    fn = get_bimodal_pdf(ProbDist.COMPOUND_POISSON)
+    start = time.time()
+    x_vals = np.array(range(100))
+    for x in range(1000):
+        fn(x_vals, 0.3, 25, 50)
+    stop = time.time()
+    print(stop - start)
+    sys.exit()
+
     kpl.init_kplotlib()
     # print(get_single_mode_num_params(ProbDist.BROADENED_POISSON))
     # sys.exit()

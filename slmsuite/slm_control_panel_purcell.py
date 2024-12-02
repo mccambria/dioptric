@@ -309,8 +309,8 @@ def load_nv_coords(
     # data = np.load(file_path)
     data = np.load(file_path, allow_pickle=True)
     nv_coordinates = data["nv_coordinates"]
-    spot_weights = data["spot_weights"]
-    # spot_weights = data["updated_spot_weights"]
+    # spot_weights = data["spot_weights"]
+    spot_weights = data["updated_spot_weights"]
     # spot_weights = data["integrated_counts"]
     print(len(spot_weights))
     print(spot_weights)
@@ -337,7 +337,7 @@ def compute_nvs_phase():
         shape=(4096, 2048),
         spot_vectors=thorcam_coords,
         basis="ij",
-        # spot_amp=spot_weights,
+        spot_amp=spot_weights,
         cameraslm=fs,
     )
     # Precondition computationally

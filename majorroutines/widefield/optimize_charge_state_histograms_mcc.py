@@ -12,9 +12,11 @@ import os
 import sys
 import time
 import traceback
+
 import matplotlib.pyplot as plt
 import numpy as np
 from joblib import Parallel, delayed
+from matplotlib import rcParams
 from scipy import ndimage
 from scipy.interpolate import interp1d
 
@@ -31,9 +33,14 @@ from utils import positioning as pos
 from utils import tool_belt as tb
 from utils.constants import NVSig, VirtualLaserKey
 
+rcParams["font.family"] = "DejaVu Sans"
+
 import matplotlib.pyplot as plt
 from matplotlib import rcParams
-rcParams['font.family'] = 'DejaVu Sans'
+
+rcParams["font.family"] = "DejaVu Sans"
+
+
 # rcParams['font.family'] = 'Roboto'
 # region Process and plotting functions
 def find_intersection(x, y1, y2):
@@ -63,6 +70,79 @@ def find_intersection(x, y1, y2):
     min_index = np.argmin(diff)
     return x[min_index]
 
+
+def process_and_plot_mcc(raw_data):
+    nv_list = raw_data["nv_list"]
+    num_nvs = len(nv_list)
+    min_step_val = raw_data["min_step_val"]
+    max_step_val = raw_data["max_step_val"]
+    num_steps = raw_data["num_steps"]
+    step_vals = np.linspace(min_step_val, max_step_val, num_steps)
+    optimize_pol_or_readout = raw_data["optimize_pol_or_readout"]
+    optimize_duration_or_amp = raw_data["optimize_duration_or_amp"]
+
+    counts = np.array(raw_data["counts"])
+    # [nv_ind, run_ind, steq_ind, rep_ind]
+    ref_exp_ind = 1
+    condensed_counts = [
+        [
+            counts[ref_exp_ind, nv_ind, :, step_ind, :].flatten()
+            for step_ind in range(num_steps)
+        ]
+        for nv_ind in range(num_nvs)
+    ]
+    condensed_counts = np.array(condensed_counts)
+
+    prob_dist = ProbDist.COMPOUND_POISSON
+
+    readout_fidelity_arr = np.empty((num_nvs, num_steps))
+    prep_fidelity_arr = np.empty((num_nvs, num_steps))
+    red_chi_sq_arr = np.empty((num_nvs, num_steps))
+    for nv_ind in range(num_nvs):
+        for step_ind in range(num_steps):
+            popt, _, red_chi_sq = fit_bimodal_histogram(
+                condensed_counts[nv_ind, step_ind], prob_dist, no_plot=False
+            )
+            if popt is None:
+                readout_fidelity = np.nan
+                prep_fidelity = np.nan
+            else:
+                threshold, readout_fidelity = determine_threshold(
+                    popt, prob_dist, dark_mode_weight=0.5, ret_fidelity=True
+                )
+                prep_fidelity = 1 - popt[0]
+            readout_fidelity_arr[nv_ind, step_ind] = readout_fidelity
+            prep_fidelity_arr[nv_ind, step_ind] = prep_fidelity
+            red_chi_sq_arr[nv_ind, step_ind] = red_chi_sq
+
+    ### Plotting
+
+    if optimize_pol_or_readout:
+        if optimize_duration_or_amp:
+            x_label = "Polarization duration"
+        else:
+            x_label = "Polarization amplitude"
+    else:
+        if optimize_duration_or_amp:
+            x_label = "Readout duration"
+        else:
+            x_label = "Readout amplitude"
+
+    print("Plotting results for first 10 NVs")
+    for nv_ind in range(10):
+        arrs = [readout_fidelity_arr, prep_fidelity_arr, red_chi_sq_arr]
+        ylabels = ["Readout fidelity", "Charge pol. fidelity", "Reduced chi squared"]
+        for ind in range(3):
+            arr = arrs[ind]
+            ylabel = ylabels[ind]
+            fig, ax = plt.subplots()
+            kpl.plot_points(ax, step_vals, arr[nv_ind, :])
+            ax.set_xlabel(x_label)
+            ax.set_ylabel(ylabel)
+            ax.set_title(f"NV{nv_ind}")
+        kpl.show(block=True)
+
+
 def find_optimal_combined_value(
     step_vals, readout_fidelity, goodness_of_fit, weight=0.5
 ):
@@ -83,6 +163,7 @@ def find_optimal_combined_value(
     max_combined_score = combined_score[max_index]
 
     return optimal_step_val, max_combined_score
+
 
 def find_optimal_value_geom_mean(
     step_vals, prep_fidelity, readout_fidelity, goodness_of_fit, weights=(1, 1, 1)
@@ -126,9 +207,7 @@ def find_optimal_value_geom_mean(
 
     # Compute weighted geometric mean
     combined_score = (
-        (norm_readout_fidelity**w1)
-        * (norm_prep_fidelity**w2)
-        * (inverted_goodness**w3)
+        (norm_readout_fidelity**w1) * (norm_prep_fidelity**w2) * (inverted_goodness**w3)
     ) ** (1 / (w1 + w2 + w3))
 
     # Find the step value corresponding to the maximum combined score
@@ -137,6 +216,7 @@ def find_optimal_value_geom_mean(
     max_combined_score = combined_score[max_index]
 
     return optimal_step_val, max_combined_score
+
 
 def process_and_plot(raw_data):
     nv_list = raw_data["nv_list"]
@@ -299,7 +379,6 @@ def process_and_plot(raw_data):
     #         f.write(f"{nv_index}, {opt_step:.6f}, {max_score:.6f}\n")
     # print("Optimal combined values saved to 'optimal_combined_values.txt'.")
 
-
     ### Calculate Averages
     avg_readout_fidelity = np.nanmean(readout_fidelity_arr, axis=0)
     avg_prep_fidelity = np.nanmean(prep_fidelity_arr, axis=0)
@@ -358,7 +437,10 @@ def process_and_plot(raw_data):
     ax1.set_title("Average Metrics Across All NVs", fontsize=12)
     fig.tight_layout()
     plt.show()
+
+
 # endregion
+
 
 def optimize_pol_duration(
     nv_list, num_steps, num_reps, num_runs, min_duration, max_duration
@@ -382,6 +464,7 @@ def optimize_readout_duration(
 
 def optimize_readout_amp(nv_list, num_steps, num_reps, num_runs, min_amp, max_amp):
     return _main(nv_list, num_steps, num_reps, num_runs, min_amp, max_amp, False, False)
+
 
 def _main(
     nv_list,
@@ -456,10 +539,15 @@ def _main(
 
     return raw_data
 
+
 if __name__ == "__main__":
     kpl.init_kplotlib()
+    raw_data = dm.get_raw_data(file_id=1710843759806, load_npz=False)
+    process_and_plot_mcc(raw_data)
+    sys.exit()
+
     # raw_data = dm.get_raw_data(file_id=1709868774004, load_npz=False) #yellow ampl var
-    raw_data = dm.get_raw_data(file_id=1710843759806, load_npz=False) #yellow amp var
+    raw_data = dm.get_raw_data(file_id=1710843759806, load_npz=False)  # yellow amp var
     # raw_data = dm.get_raw_data(file_id=1711618252292, load_npz=False) #green ampl var
     process_and_plot(raw_data)
     kpl.show(block=True)

@@ -100,8 +100,9 @@ def process_and_plot(
         ref_counts_list = ref_counts_lists[ind]
 
         # Only use ref counts for threshold determination
-        popt, _ = fit_bimodal_histogram(ref_counts_list, prob_dist, no_print=True)
-        print(f"popt: {popt}, length: {len(popt)}")
+        popt, _, red_chi_sq = fit_bimodal_histogram(
+            ref_counts_list, prob_dist, no_print=True
+        )
         threshold, readout_fidelity = determine_threshold(
             popt, prob_dist, dark_mode_weight=0.5, do_print=True, ret_fidelity=True
         )
