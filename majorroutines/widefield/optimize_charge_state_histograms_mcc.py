@@ -141,6 +141,8 @@ def process_and_plot_mcc(raw_data):
             ax.set_ylabel(ylabel)
             ax.set_title(f"NV{nv_ind}")
         kpl.show(block=True)
+
+
 def find_optimal_combined_value(
     step_vals, readout_fidelity, goodness_of_fit, weight=0.5
 ):
@@ -540,13 +542,12 @@ def _main(
 
 if __name__ == "__main__":
     kpl.init_kplotlib()
-<<<<<<< HEAD
     raw_data = dm.get_raw_data(file_id=1710843759806, load_npz=False)
     process_and_plot_mcc(raw_data)
-=======
+    sys.exit()
+
     # raw_data = dm.get_raw_data(file_id=1709868774004, load_npz=False) #yellow ampl var
     raw_data = dm.get_raw_data(file_id=1710843759806, load_npz=False)  # yellow amp var
     # raw_data = dm.get_raw_data(file_id=1711618252292, load_npz=False) #green ampl var
     process_and_plot(raw_data)
->>>>>>> b1980876123eb22a6f784d31e08cecd105f19f3b
     kpl.show(block=True)
