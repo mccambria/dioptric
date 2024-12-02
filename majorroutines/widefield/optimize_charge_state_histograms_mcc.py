@@ -30,6 +30,137 @@ from utils import positioning as pos
 from utils import tool_belt as tb
 from utils.constants import NVSig, VirtualLaserKey
 
+rcParams["font.family"] = "DejaVu Sans"
+
+import matplotlib.pyplot as plt
+from matplotlib import rcParams
+
+rcParams["font.family"] = "DejaVu Sans"
+
+
+# rcParams['font.family'] = 'Roboto'
+# region Process and plotting functions
+def find_intersection(x, y1, y2):
+    """
+    Finds the intersection point(s) of two curves y1 and y2 over x.
+    Parameters
+    ----------
+    x : np.ndarray
+        Array of x-values.
+    y1 : np.ndarray
+        First curve (e.g., fidelity).
+    y2 : np.ndarray
+        Second curve (e.g., goodness of fit).
+    Returns
+    -------
+    float
+        x-value of the intersection.
+    """
+    interp_fidelity = interp1d(
+        x, y1, kind="linear", bounds_error=False, fill_value="extrapolate"
+    )
+    interp_chi_squared = interp1d(
+        x, y2, kind="linear", bounds_error=False, fill_value="extrapolate"
+    )
+    # Calculate the difference between the two curves
+    diff = np.abs(interp_fidelity(x) - interp_chi_squared(x))
+    min_index = np.argmin(diff)
+    return x[min_index]
+
+
+def process_and_plot_mcc(raw_data):
+    nv_list = raw_data["nv_list"]
+    num_nvs = len(nv_list)
+    min_step_val = raw_data["min_step_val"]
+    max_step_val = raw_data["max_step_val"]
+    num_steps = raw_data["num_steps"]
+    step_vals = np.linspace(min_step_val, max_step_val, num_steps)
+    optimize_pol_or_readout = raw_data["optimize_pol_or_readout"]
+    optimize_duration_or_amp = raw_data["optimize_duration_or_amp"]
+
+    counts = np.array(raw_data["counts"])
+    # [nv_ind, run_ind, steq_ind, rep_ind]
+    ref_exp_ind = 1
+    condensed_counts = [
+        [
+            counts[ref_exp_ind, nv_ind, :, step_ind, :].flatten()
+            for step_ind in range(num_steps)
+        ]
+        for nv_ind in range(num_nvs)
+    ]
+    condensed_counts = np.array(condensed_counts)
+
+    prob_dist = ProbDist.COMPOUND_POISSON
+
+    readout_fidelity_arr = np.empty((num_nvs, num_steps))
+    prep_fidelity_arr = np.empty((num_nvs, num_steps))
+    red_chi_sq_arr = np.empty((num_nvs, num_steps))
+    for nv_ind in range(num_nvs):
+        for step_ind in range(num_steps):
+            popt, _, red_chi_sq = fit_bimodal_histogram(
+                condensed_counts[nv_ind, step_ind], prob_dist, no_plot=False
+            )
+            if popt is None:
+                readout_fidelity = np.nan
+                prep_fidelity = np.nan
+            else:
+                threshold, readout_fidelity = determine_threshold(
+                    popt, prob_dist, dark_mode_weight=0.5, ret_fidelity=True
+                )
+                prep_fidelity = 1 - popt[0]
+            readout_fidelity_arr[nv_ind, step_ind] = readout_fidelity
+            prep_fidelity_arr[nv_ind, step_ind] = prep_fidelity
+            red_chi_sq_arr[nv_ind, step_ind] = red_chi_sq
+
+    ### Plotting
+
+    if optimize_pol_or_readout:
+        if optimize_duration_or_amp:
+            x_label = "Polarization duration"
+        else:
+            x_label = "Polarization amplitude"
+    else:
+        if optimize_duration_or_amp:
+            x_label = "Readout duration"
+        else:
+            x_label = "Readout amplitude"
+
+    print("Plotting results for first 10 NVs")
+    for nv_ind in range(10):
+        arrs = [readout_fidelity_arr, prep_fidelity_arr, red_chi_sq_arr]
+        ylabels = ["Readout fidelity", "Charge pol. fidelity", "Reduced chi squared"]
+        for ind in range(3):
+            arr = arrs[ind]
+            ylabel = ylabels[ind]
+            fig, ax = plt.subplots()
+            kpl.plot_points(ax, step_vals, arr[nv_ind, :])
+            ax.set_xlabel(x_label)
+            ax.set_ylabel(ylabel)
+            ax.set_title(f"NV{nv_ind}")
+        kpl.show(block=True)
+
+
+def find_optimal_combined_value(
+    step_vals, readout_fidelity, goodness_of_fit, weight=0.5
+):
+    # Normalize both metrics to ensure equal weighting
+    norm_fidelity = (readout_fidelity - np.nanmin(readout_fidelity)) / (
+        np.nanmax(readout_fidelity) - np.nanmin(readout_fidelity)
+    )
+    norm_goodness = (goodness_of_fit - np.nanmin(goodness_of_fit)) / (
+        np.nanmax(goodness_of_fit) - np.nanmin(goodness_of_fit)
+    )
+
+    # Combined score: weighted sum of normalized metrics
+    combined_score = weight * norm_fidelity + (1 - weight) * norm_goodness
+
+    # Find the step value corresponding to the maximum combined score
+    max_index = np.nanargmax(combined_score)
+    optimal_step_val = step_vals[max_index]
+    max_combined_score = combined_score[max_index]
+
+    return optimal_step_val, max_combined_score
+
 
 def find_optimal_value_geom_mean(
     step_vals, prep_fidelity, readout_fidelity, goodness_of_fit, weights=(1, 1, 1)
@@ -313,6 +444,10 @@ def _main(
 
 if __name__ == "__main__":
     kpl.init_kplotlib()
+    raw_data = dm.get_raw_data(file_id=1710843759806, load_npz=False)
+    process_and_plot_mcc(raw_data)
+    sys.exit()
+
     # raw_data = dm.get_raw_data(file_id=1709868774004, load_npz=False) #yellow ampl var
     raw_data = dm.get_raw_data(file_id=1710843759806, load_npz=False)  # yellow amp var
     # raw_data = dm.get_raw_data(file_id=1711618252292, load_npz=False) #green ampl var
