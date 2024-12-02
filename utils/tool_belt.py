@@ -18,12 +18,15 @@ from decimal import Decimal
 from email.mime.text import MIMEText
 from enum import Enum
 from functools import cache
+from inspect import signature
+from typing import Callable
 
 import keyring
 import matplotlib.pyplot as plt
 import numpy as np
 import numpy.ma as ma
 from numpy import exp
+from scipy.optimize import curve_fit as scipy_curve_fit
 
 from utils import common
 from utils.constants import Boltzmann, Digital, ModMode, NormMode
@@ -267,6 +270,33 @@ def get_tagger_wiring():
 
 # endregion
 # region Math functions
+
+
+def curve_fit(
+    f: Callable,
+    xdata: np.ndarray,
+    ydata: np.ndarray,
+    p0: list,
+    sigma: np.ndarray,
+    bounds: tuple = (-np.inf, np.inf),
+    method: str = None,
+    **kwargs,
+):
+    popt, pcov = scipy_curve_fit(
+        f,
+        xdata,
+        ydata,
+        p0=p0,
+        sigma=sigma,
+        absolute_sigma=True,
+        bounds=bounds,
+        method=method,
+        **kwargs,
+    )
+    dof = len(signature(f).parameters) - len(xdata)
+    fit_vals = f(xdata, *popt)
+    red_chi_sq = np.sqrt(np.sum(((fit_vals - ydata) / sigma) ** 2)) / dof
+    return popt, pcov, red_chi_sq
 
 
 def threshold(val, thresh):
