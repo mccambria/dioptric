@@ -31,6 +31,7 @@ def get_seq(
         step_vals = [seq_utils.convert_ns_to_cc(el) for el in step_vals]
 
     with qua.program() as seq:
+        print("DEBUG: Starting QUA program")
         num_nvs = len(pol_coords_list)
         seq_utils.init(num_nvs)
         seq_utils.macro_run_aods()

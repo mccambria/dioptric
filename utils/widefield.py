@@ -790,17 +790,23 @@ def get_pulse_parameter_lists(nv_list: list[NVSig], virtual_laser_key: VirtualLa
         # Retrieve duration and amplitude using .get to avoid KeyError
         duration = nv.pulse_durations.get(virtual_laser_key)
         amp = nv.pulse_amps.get(virtual_laser_key)
+        # print(f"DEBUG: nv={nv}, duration={duration}, amp={amp}")
         duration_list.append(duration)
         amp_list.append(amp)
 
     # The lists will be passed to qua.for_each in the sequence, so each entry needs
     # to be a proper number, not None
-    default_duration = tb.get_virtual_laser_dict(virtual_laser_key)["duration"]
+    default_duration = int(tb.get_virtual_laser_dict(virtual_laser_key)["duration"])
     default_amp = 1.0
+
     duration_list = [
-        int(val) if val is not None else default_duration for val in duration_list
+        val if val is not None else default_duration for val in duration_list
     ]
-    amp_list = [val if val is not None else default_amp for val in amp_list]
+    amp_list = [float(val) if val is not None else default_amp for val in amp_list]
+
+    # Debugging: Ensure all values are correct
+    # print(f"DEBUG: Final duration list: {duration_list}")
+    # print(f"DEBUG: Final amplitude list: {amp_list}")
 
     return coords_list, duration_list, amp_list
 

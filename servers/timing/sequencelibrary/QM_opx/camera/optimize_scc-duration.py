@@ -18,6 +18,7 @@ from servers.timing.sequencelibrary.QM_opx.camera import base_scc_sequence
 
 def get_seq(base_scc_seq_args, scc_duration_steps, num_reps):
     scc_duration_steps = [seq_utils.convert_ns_to_cc(el) for el in scc_duration_steps]
+    print(f"DEBUG: base_scc_seq_args = {base_scc_seq_args}")
     with qua.program() as seq:
         scc_duration_override = qua.declare(int)
 
@@ -35,7 +36,6 @@ def get_seq(base_scc_seq_args, scc_duration_steps, num_reps):
             scc_duration_override=scc_duration_override,
             reference=False,
         )
-
     seq_ret_vals = []
     return seq, seq_ret_vals
 
@@ -53,26 +53,22 @@ if __name__ == "__main__":
         seq, seq_ret_vals = get_seq(
             [
                 [
-                    [108.48124282165938, 109.79869381786162],
-                    [108.92124282165938, 110.04969381786162],
-                    [109.17324282165939, 110.39769381786162],
+                    [108.748, 106.905],
+                    [115.626, 101.27],
+                    [108.961, 115.735],
+                    [98.369, 100.929],
                 ],
+                [1000, 1000, 1000, 1000],
+                [1.0, 1.0, 1.0, 1.0],
                 [
-                    [73.16298031205457, 75.08589052467828],
-                    [73.43898031205457, 75.23289052467827],
-                    [73.69798031205457, 75.49989052467826],
+                    [73.525, 72.483],
+                    [78.674, 67.831],
+                    [73.831, 79.615],
+                    [65.056, 67.6],
                 ],
-                [
-                    100,
-                    100,
-                    100,
-                ],
-                [
-                    1.0,
-                    1.0,
-                    1.0,
-                ],
-                [],
+                [140, 140, 140, 140],
+                [1.0, 1.0, 1.0, 1.0],
+                [False, False, False, False],  # Spin flip do target list
                 [0, 1],
             ],
             [1000, 1120, 1240],

@@ -297,14 +297,7 @@ def nuvu2thorcam_calibration(coords):
 
 
 def load_nv_coords(
-    # file_path="slmsuite/nv_blob_detection/nv_blob_filtered_128nvs_updated.npz",
-    # file_path="slmsuite/nv_blob_detection/nv_blob_filtered_177nvs_reordered.npz",
-    # file_path="slmsuite/nv_blob_detection/nv_blob_filtered_155nvs_reordered.npz",
-    # file_path="slmsuite/nv_blob_detection/nv_blob_filtered_144nvs_reordered.npz",
     file_path="slmsuite/nv_blob_detection/nv_blob_filtered_160nvs_reordered.npz",
-    # file_path="slmsuite/nv_blob_detection/nv_coords_integras_counts_162nvs.npz",
-    # file_path="slmsuite/nv_blob_detection/nv_coords_updated_spot_weights.npz",
-    # file_path="slmsuite/nv_blob_detection/nv_coords_updated_spot_weights_manual_update.npz",
 ):
     # data = np.load(file_path)
     data = np.load(file_path, allow_pickle=True)
@@ -363,16 +356,12 @@ def compute_nvs_phase():
 
 
 def write_nvs_phase():
-    # phase = np.load(
-    #     r"C:\Users\matth\GitHub\dioptric\slmsuite\Initial_phase\initial_phase.npy"
-    # )
-    # phase = np.load("slmsuite\computed_phase\slm_phase_77nvs_20240926_182348.npy")
-    # phase = np.load("slmsuite\computed_phase\slm_phase_155nvs_20241106_095934.npy")
     # phase = np.load("slmsuite\computed_phase\slm_phase_161nvs_20241108_020407.npy")
     # phase = np.load("slmsuite\computed_phase\slm_phase_160nvs_20241111_205639.npy")
     # phase = np.load("slmsuite\computed_phase\slm_phase_160nvs_20241115_152130.npy")
     # phase = np.load("slmsuite\computed_phase\slm_phase_160nvs_20241114_191804.npy")
-    phase = np.load("slmsuite\computed_phase\slm_phase_160nvs_20241125_161635.npy")
+    # phase = np.load("slmsuite\computed_phase\slm_phase_160nvs_20241125_161635.npy")
+    phase = np.load("slmsuite\computed_phase\slm_phase_160nvs_20241129_163802.npy")
     slm.write(phase, settle=True)
     cam_plot()
 
@@ -397,8 +386,8 @@ try:
     # test_wavefront_calibration()
     # wavefront_calibration()
     # load_wavefront_calibration()
-    compute_nvs_phase()
-    # write_nvs_phase()
+    # compute_nvs_phase()
+    write_nvs_phase()
     # calibration_triangle()
     # circles()
     # smiley()

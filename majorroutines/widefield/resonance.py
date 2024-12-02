@@ -249,10 +249,8 @@ def main(
 
     def run_fn(step_inds):
         seq_args = [widefield.get_base_scc_seq_args(nv_list, uwave_ind_list), step_inds]
+        print(f"DEBUG: seq_args before encoding: {seq_args}")
         seq_args_string = tb.encode_seq_args(seq_args)
-        # print(
-        #     f"Arguments passed to stream_load: {seq_file}, {seq_args_string}, {num_reps}"
-        # )
         pulse_gen.stream_load(seq_file, seq_args_string, num_reps)
 
     # def step_fn(step_ind):

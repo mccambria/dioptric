@@ -287,7 +287,7 @@ def macro_charge_state_readout(duration: int = None, amp: float = None):
 
     Parameters
     ----------
-    duration : int, optional
+    duration : int or QuaVariable, optional
         Readout and pulse duration in ns, by default whatever is in config
     amp : float, optional
         Pulse amplitude, by default whatever is in config
@@ -296,14 +296,19 @@ def macro_charge_state_readout(duration: int = None, amp: float = None):
         VirtualLaserKey.WIDEFIELD_CHARGE_READOUT
     )
     readout_laser_el = get_laser_mod_element(readout_laser_name, sticky=True)
-
     camera_el = "do_camera_trigger"
 
-    default_duration = get_default_pulse_duration()
-    if duration is not None:
-        readout_duration = convert_ns_to_cc(duration)
-    else:
+    # Handle static vs dynamic duration
+    if duration is None:
         readout_duration = get_default_charge_readout_duration()
+    elif isinstance(duration, qua._dsl.QuaVariable):
+        # Directly use QuaVariable for dynamic duration
+        readout_duration = duration
+    else:
+        # Convert integer duration to clock cycles
+        readout_duration = convert_ns_to_cc(duration)
+
+    default_duration = get_default_pulse_duration()
     wait_duration = readout_duration - default_duration
 
     qua.align()
@@ -316,6 +321,52 @@ def macro_charge_state_readout(duration: int = None, amp: float = None):
     qua.wait(wait_duration, camera_el)
     qua.ramp_to_zero(readout_laser_el)
     qua.ramp_to_zero(camera_el)
+
+
+# def macro_charge_state_readout(duration: int = None, amp: float = None):
+#     """Pulse yellow to read out NV charge states in parallel
+
+#     Parameters
+#     ----------
+#     duration : int, optional
+#         Readout and pulse duration in ns, by default whatever is in config
+#     amp : float, optional
+#         Pulse amplitude, by default whatever is in config
+#     """
+#     readout_laser_name = tb.get_physical_laser_name(
+#         VirtualLaserKey.WIDEFIELD_CHARGE_READOUT
+#     )
+#     readout_laser_el = get_laser_mod_element(readout_laser_name, sticky=True)
+
+#     camera_el = "do_camera_trigger"
+
+#     # default_duration = get_default_pulse_duration()
+#     # print(f"readout_duration: {duration}")
+#     # if duration is not None:
+#     #     readout_duration = convert_ns_to_cc(duration)
+#     # else:
+#     #     readout_duration = get_default_charge_readout_duration()
+#     # wait_duration = readout_duration - default_duration
+
+#     # Ensure duration is converted properly
+#     if duration is None:
+#         readout_duration = get_default_charge_readout_duration()
+#     else:
+#         readout_duration = convert_ns_to_cc(duration)
+
+#     default_duration = get_default_pulse_duration()
+#     wait_duration = readout_duration - default_duration
+
+#     qua.align()
+#     if amp is not None:
+#         qua.play("charge_readout" * qua.amp(amp), readout_laser_el)
+#     else:
+#         qua.play("charge_readout", readout_laser_el)
+#     qua.play("on", camera_el)
+#     qua.wait(wait_duration, readout_laser_el)
+#     qua.wait(wait_duration, camera_el)
+#     qua.ramp_to_zero(readout_laser_el)
+#     qua.ramp_to_zero(camera_el)
 
 
 def macro_pi_pulse(uwave_ind_list, duration_cc=None):
@@ -582,6 +633,7 @@ def _macro_single_pulse(
 
     # Pulse the laser
     qua.wait(access_time + buffer, laser_el)
+    print(f"duration: {duration}")
     if duration is None:
         qua.play(pulse_name, laser_el)
     elif isinstance(duration, int) and duration == 0:

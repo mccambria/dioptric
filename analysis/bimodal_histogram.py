@@ -260,15 +260,12 @@ def fit_bimodal_histogram(counts_list, prob_dist: ProbDist, no_print=True):
         popt, _ = curve_fit(fit_fn, x_vals, hist, p0=guess_params, bounds=bounds)
         # Calculate goodness of fit (R^2)
         fitted_values = fit_fn(x_vals, *popt)
-        ss_res = np.sum(((hist - fitted_values) ** 2) / (fitted_values + 1e-9))  # Avoid division by zero
-        chi_squared = ss_res / len(hist)
-        # ss_res = np.sum((hist - fitted_values) ** 2)
-        # ss_tot = np.sum((hist - np.mean(hist)) ** 2)
-        # r_squared = 1 - (ss_res / ss_tot)
+        ss_res = np.sum(((hist - fitted_values) ** 2) / (fitted_values + 1e-9))
+        norm_res = ss_res / len(hist)
         if not no_print:
             print(f"Fit Parameters: {popt}")
-            print(f"R^2: {chi_squared}")
-        return popt, chi_squared
+            print(f"residuals: {norm_res}")
+        return popt, norm_res
     except Exception as exc:
         return None, None
 
