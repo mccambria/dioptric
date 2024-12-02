@@ -69,10 +69,19 @@ def process_and_plot(raw_data):
     min_step_val = raw_data["min_step_val"]
     max_step_val = raw_data["max_step_val"]
     num_steps = raw_data["num_steps"]
-    step_vals = np.linspace(min_step_val, max_step_val, num_steps) * 0.39
+    step_vals = np.linspace(min_step_val, max_step_val, num_steps)
     optimize_pol_or_readout = raw_data["optimize_pol_or_readout"]
     optimize_duration_or_amp = raw_data["optimize_duration_or_amp"]
 
+    opx_config = raw_data["opx_config"]
+    yellow_charge_readout_amp = opx_config["waveforms"]["yellow_charge_readout"][
+        "sample"
+    ]
+    green_aod_cw_charge_pol_amp = opx_config["waveforms"]["green_aod_cw-charge_pol"][
+        "sample"
+    ]
+    print(f"yellow_charge_readout_amp:{yellow_charge_readout_amp}")
+    print(f"green_aod_cw_charge_pol_amp:{green_aod_cw_charge_pol_amp}")
     counts = np.array(raw_data["counts"])
     # [nv_ind, run_ind, steq_ind, rep_ind]
     ref_exp_ind = 1
@@ -132,15 +141,18 @@ def process_and_plot(raw_data):
     ### Plotting
     if optimize_pol_or_readout:
         if optimize_duration_or_amp:
-            x_label = "Polarization duration"
+            step_vals *= 1e-3
+            x_label = "Polarization duration (us)"
         else:
+            step_vals *= green_aod_cw_charge_pol_amp
             x_label = "Polarization amplitude"
     else:
         if optimize_duration_or_amp:
-            x_label = "Readout duration"
+            step_vals *= 1e-6
+            x_label = "Readout duration (ms)"
         else:
+            step_vals *= yellow_charge_readout_amp
             x_label = "Readout amplitude"
-            # x_label = "Pol. amplitude"
 
     # Optimal values
     optimal_values = []
@@ -226,7 +238,7 @@ def process_and_plot(raw_data):
         avg_readout_fidelity,
         avg_prep_fidelity,
         avg_goodness_of_fit,
-        weights=(1, 1, 0.5),
+        weights=(1, 1, 1.0),
     )
 
     # Plot average readout and prep fidelity
@@ -307,9 +319,11 @@ def process_and_plot(raw_data):
 if __name__ == "__main__":
     kpl.init_kplotlib()
     # file_id = 1710843759806
-    file_id = 1712782503640
+    # file_id = 1712782503640  # yellow ampl var
+    file_id = 1714802805037  # yellow duration
     # raw_data = dm.get_raw_data(file_id=1709868774004, load_npz=False) #yellow ampl var
     raw_data = dm.get_raw_data(file_id=file_id, load_npz=False)  # yellow amp var
+    # print(raw_data.keys())
     # raw_data = dm.get_raw_data(file_id=1711618252292, load_npz=False)  # green ampl var
     # raw_data = dm.get_raw_data(file_id=1712421496166, load_npz=False)  # green ampl var
     process_and_plot(raw_data)

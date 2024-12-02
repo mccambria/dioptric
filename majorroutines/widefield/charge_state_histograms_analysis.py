@@ -27,7 +27,11 @@ from utils import kplotlib as kpl
 from utils import positioning as pos
 from utils import tool_belt as tb
 from utils.constants import NVSig, VirtualLaserKey
-from utils.tool_belt import determine_charge_state_threshold, fit_charge_state_histogram
+from analysis.bimodal_histogram import (
+    ProbDist,
+    determine_threshold,
+    fit_bimodal_histogram,
+)
 
 # region Process and fitting functions
 
@@ -151,12 +155,12 @@ def process_and_plot(raw_data, do_plot_histograms=True):
                 f"Fitted parameters for NV{ind}: mu1={mu1}, mu2={mu2}, w_nv_minus={w_nv_minus}"
             )
 
-        threshold, readout_fidelity = determine_charge_state_threshold(
+        threshold, readout_fidelity = determine_threshold(
             ref_counts_list, nvn_ratio=0.5, no_print=True, ret_fidelity=True
         )
         threshold_list.append(threshold)
         readout_fidelity_list.append(readout_fidelity)
-        popt = fit_charge_state_histogram(ref_counts_list, no_print=True)
+        popt = fit_histogram(ref_counts_list, no_print=True)
         if popt is not None:
             prep_fidelity = 1 - popt[0]
         else:
@@ -267,7 +271,7 @@ def plot_bimodal_fit(x_data, y_data, params):
 
 if __name__ == "__main__":
     kpl.init_kplotlib()
-    data = dm.get_raw_data(file_id=1688554695897, load_npz=False)
+    data = dm.get_raw_data(file_id=1713224279642, load_npz=False)
     # data = dm.get_raw_data(file_id=1691569540529, load_npz=False)
     process_and_plot(data, do_plot_histograms=False)
     kpl.show(block=True)

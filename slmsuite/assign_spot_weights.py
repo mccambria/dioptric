@@ -139,7 +139,6 @@ if __name__ == "__main__":
     updated_spot_weights, adjusted_aom_voltage = adjust_aom_voltage_for_slm(
         optimal_aom_values, power_law_params
     )
-
     # Print adjusted voltages
     print("Adjusted Voltages (V):", adjusted_aom_voltage)
     print("NV Index | Coords    |   weights")
@@ -173,7 +172,7 @@ if __name__ == "__main__":
     #     filename="slmsuite/nv_blob_detection/nv_blob_filtered_160nvs_reordered.npz",
     # )
 
-    # # # Plot the original image with circles around each NV
+    # # Plot the original image with circles around each NV
     # fig, ax = plt.subplots()
     # title = "50ms, Ref"
     # kpl.imshow(ax, img_array, title=title, cbar_label="Photons")
