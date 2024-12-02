@@ -248,6 +248,7 @@ def encode_seq_args(seq_args):
             seq_args[ind] = str(el)
     return json.dumps(seq_args)
 
+
 def decode_seq_args(seq_args_string):
     if seq_args_string == "":
         return []
@@ -292,9 +293,9 @@ def curve_fit(
         method=method,
         **kwargs,
     )
-    dof = len(signature(f).parameters) - len(xdata)
+    dof = len(xdata) - len(p0)
     fit_vals = f(xdata, *popt)
-    red_chi_sq = np.sqrt(np.sum(((fit_vals - ydata) / sigma) ** 2)) / dof
+    red_chi_sq = np.sum(((fit_vals - ydata) / sigma) ** 2) / dof
     return popt, pcov, red_chi_sq
 
 
@@ -391,6 +392,7 @@ def lorentzian(x, x0, A, L, offset):
 
 def exp_decay(x, amp, decay, offset):
     return offset + amp * np.exp(-x / decay)
+
 
 def linear(x, slope, y_offset):
     return slope * x + y_offset
