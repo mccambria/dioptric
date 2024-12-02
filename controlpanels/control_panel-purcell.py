@@ -113,11 +113,11 @@ def do_optimize_pol_duration(nv_list):
 
 
 def do_optimize_pol_amp(nv_list):
-    num_steps = 11
+    num_steps = 15
     # num_reps = 150
     # num_runs = 5
-    num_reps = 15
-    num_runs = 150
+    num_reps = 10
+    num_runs = 300
     min_amp = 0.9
     max_amp = 1.1
     return optimize_charge_state_histograms_mcc.optimize_pol_amp(
@@ -139,13 +139,13 @@ def do_optimize_readout_duration(nv_list):
 
 
 def do_optimize_readout_amp(nv_list):
-    num_steps = 21
+    num_steps = 30
     # num_reps = 150
     # num_runs = 5
-    num_reps = 10
-    num_runs = 225
-    min_amp = 0.9
-    max_amp = 1.3
+    num_reps = 5
+    num_runs = 600
+    min_amp = 0.8
+    max_amp = 1.2
     return optimize_charge_state_histograms_mcc.optimize_readout_amp(
         nv_list, num_steps, num_reps, num_runs, min_amp, max_amp
     )
@@ -878,7 +878,7 @@ if __name__ == "__main__":
     # magnet_angle = 90
     date_str = "2024_03_12"
     sample_coords = [2.0, 0.0]
-    z_coord = 0.60
+    z_coord = 0.9
     # Load NV pixel coordinates
     pixel_coords_list = load_nv_coords(
         file_path="slmsuite/nv_blob_detection/nv_blob_filtered_160nvs_reordered.npz",
@@ -925,10 +925,10 @@ if __name__ == "__main__":
     #     [207.435, 74.049],
     # ]
     # green_coords_list = [
-    #     [108.698, 106.906],
-    #     [115.706, 101.357],
-    #     [108.952, 115.581],
-    #     [98.327, 100.87],
+    #     [108.748, 106.905],
+    #     [115.626, 101.27],
+    #     [108.961, 115.735],
+    #     [98.369, 100.929],
     # ]
     # red_coords_list = [
     #     [73.525, 72.483],
@@ -1059,7 +1059,6 @@ if __name__ == "__main__":
         # pos.set_xyz_on_nv(nv_sig)
 
         do_compensate_for_drift(nv_sig)
-
         # for point in points:
         #     x, y = point
         #     nv_sig.coords[CoordsKey.SAMPLE][0] += x
@@ -1082,7 +1081,7 @@ if __name__ == "__main__":
 
         # do_scanning_image_sample(nv_sig)
         # do_scanning_image_sample_zoom(nv_sig)
-        # do_widefield_image_sample(nv_sig, 50)
+        do_widefield_image_sample(nv_sig, 50)
         # do_widefield_image_sample(nv_sig, 100)
 
         # do_image_nv_list(nv_list)
@@ -1112,8 +1111,8 @@ if __name__ == "__main__":
 
         # nv_list = nv_list[::-1]
         # do_charge_state_histograms(nv_list)
-        do_optimize_pol_amp(nv_list)
-        # do_optimize_readout_amp(nv_list)
+        # do_optimize_pol_amp(nv_list)
+        do_optimize_readout_amp(nv_list)
         # do_charge_state_histograms_images(nv_list, vary_pol_laser=True)
         # do_charge_state_conditional_init(nv_list)
         # do_check_readout_fidelity(nv_list)x

@@ -71,15 +71,15 @@ def cam_plot():
     plt.imshow(img, cmap="gray")  # Adjust 'cmap' as needed for color maps
     plt.show()
 
-    # Save the image
-    save_path = "captured_image.png"  # You can change the filename and path as needed
-    plt.imsave(save_path, img, cmap="gray")
-    print(f"Image saved at {save_path}")
+    # # Save the image
+    # save_path = "captured_image.png"  # You can change the filename and path as needed
+    # plt.imsave(save_path, img, cmap="gray")
+    # print(f"Image saved at {save_path}")
 
-    # Save raw data
-    raw_data_path = "captured_image_raw.npy"  # Change filename as needed
-    np.save(raw_data_path, img)
-    print(f"Raw data saved at {raw_data_path}")
+    # # Save raw data
+    # raw_data_path = "captured_image_raw.npy"  # Change filename as needed
+    # np.save(raw_data_path, img)
+    # print(f"Raw data saved at {raw_data_path}")
 
 
 def blaze(vector_deg=(0.2, 0.2)):
@@ -226,7 +226,7 @@ def calibration_triangle():
 
     # Define parameters for the equilateral triangle
     center = (720, 550)  # Center of the triangle
-    side_length = 240  # Length of each side of the triangle
+    side_length = 300  # Length of each side of the triangle
 
     # Calculate the coordinates of the three vertices of the equilateral triangle
     theta = np.linspace(0, 2 * np.pi, 4)[:-1]  # Exclude the last point to avoid overlap
@@ -278,10 +278,10 @@ def nuvu2thorcam_calibration(coords):
     #     [[128.706, 72.789], [128.443, 140.826], [69.922, 104.404]], dtype="float32"
     # )
     cal_coords_thorcam = np.array(
-        [[927.846, 670.0], [512.153, 670.0], [720.0, 310.0]], dtype="float32"
+        [[979.807, 700.0], [460.192, 700.0], [720.0, 250.0]], dtype="float32"
     )
     cal_coords_nuvu = np.array(
-        [[178.181, 53.632], [179.371, 196.398], [52.372, 123.413]], dtype="float32"
+        [[190.395, 35.245], [191.578, 213.769], [31.993, 123.291]], dtype="float32"
     )
 
     # Compute the affine transformation matrix
@@ -313,6 +313,7 @@ def load_nv_coords(
     spot_weights = data["updated_spot_weights"]
     # spot_weights = data["integrated_counts"]
     print(len(spot_weights))
+    print(spot_weights)
     # spot_weights = data["integrated_counts"]
     return nv_coordinates, spot_weights
 
@@ -336,7 +337,7 @@ def compute_nvs_phase():
         shape=(4096, 2048),
         spot_vectors=thorcam_coords,
         basis="ij",
-        # spot_amp=spot_weights,
+        spot_amp=spot_weights,
         cameraslm=fs,
     )
     # Precondition computationally
@@ -358,7 +359,7 @@ def compute_nvs_phase():
     # Save the phase data
     save(initial_phase, file_path, filename)
     slm.write(initial_phase, settle=True)
-    cam_plot()
+    # cam_plot()
 
 
 def write_nvs_phase():
@@ -396,8 +397,8 @@ try:
     # test_wavefront_calibration()
     # wavefront_calibration()
     # load_wavefront_calibration()
-    # compute_nvs_phase()
-    write_nvs_phase()
+    compute_nvs_phase()
+    # write_nvs_phase()
     # calibration_triangle()
     # circles()
     # smiley()

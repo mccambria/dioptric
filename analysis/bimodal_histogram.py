@@ -232,7 +232,6 @@ def fit_bimodal_histogram(
     hist_errs = np.where(hist_errs > min_err, hist_errs, min_err)  # Enforce no zeros
 
     ### Fit the histogram
-
     # Get guess params
     mean_dark_guess = round(np.quantile(counts_list, 0.15))
     mean_bright_guess = round(np.quantile(counts_list, 0.65))
