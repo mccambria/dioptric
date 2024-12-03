@@ -283,14 +283,15 @@ def macro_scc(
 
 
 def macro_charge_state_readout(duration: int = None, amp: float = None):
-    """Pulse yellow to read out NV charge states in parallel
+    """
+    Pulse yellow to read out NV charge states in parallel.
 
     Parameters
     ----------
     duration : int or QuaVariable, optional
-        Readout and pulse duration in cc, by default whatever is in config
+        Readout and pulse duration in clock cycles (cc). Defaults to whatever is in config.
     amp : float, optional
-        Pulse amplitude, by default whatever is in config
+        Pulse amplitude. Defaults to whatever is in config.
     """
     readout_laser_name = tb.get_physical_laser_name(
         VirtualLaserKey.WIDEFIELD_CHARGE_READOUT
@@ -302,19 +303,22 @@ def macro_charge_state_readout(duration: int = None, amp: float = None):
     if duration is None:
         duration = get_default_charge_readout_duration()
 
-    # default_duration = get_default_pulse_duration()
-    # wait_duration = readout_duration - default_duration
-
     qua.align()
+
+    # Play the readout pulse
     if amp is not None:
         qua.play("charge_readout" * qua.amp(amp), readout_laser_el)
     else:
         qua.play("charge_readout", readout_laser_el)
+
+    # Trigger the camera during readout
     qua.play("on", camera_el)
-    # qua.wait(wait_duration, readout_laser_el)
-    # qua.wait(wait_duration, camera_el)
+
+    # Wait for the total readout duration
     qua.wait(duration, readout_laser_el)
     qua.wait(duration, camera_el)
+
+    # Ramp down to zero
     qua.ramp_to_zero(readout_laser_el)
     qua.ramp_to_zero(camera_el)
 

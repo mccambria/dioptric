@@ -1058,7 +1058,7 @@ if __name__ == "__main__":
         # do_optimize_xyz(nv_sig)
         # pos.set_xyz_on_nv(nv_sig)
 
-        # do_compensate_for_drift(nv_sig)
+        do_compensate_for_drift(nv_sig)
 
         # for point in points:
         #     x, y = point
@@ -1082,7 +1082,7 @@ if __name__ == "__main__":
 
         # do_scanning_image_sample(nv_sig)
         # do_scanning_image_sample_zoom(nv_sig)
-        # do_widefield_image_sample(nv_sig, 50)
+        do_widefield_image_sample(nv_sig, 50)
         # do_widefield_image_sample(nv_sig, 100)
 
         # do_image_nv_list(nv_list)
@@ -1113,8 +1113,8 @@ if __name__ == "__main__":
         # nv_list = nv_list[::-1]
         # do_charge_state_histograms(nv_list)
         # do_optimize_pol_amp(nv_list)
-        # do_optimize_readout_amp(nv_list)
-        do_optimize_readout_duration(nv_list)
+        do_optimize_readout_amp(nv_list)
+        # do_optimize_readout_duration(nv_list)
         # do_optimize_pol_duration(nv_list)
         # do_charge_state_histograms_images(nv_list, vary_pol_laser=True)
         # do_charge_state_conditional_init(nv_list)
