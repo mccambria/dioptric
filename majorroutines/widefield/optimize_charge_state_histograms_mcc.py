@@ -64,7 +64,7 @@ def find_intersection(x, y1, y2):
 def process_and_plot_mcc(raw_data):
     nv_list = raw_data["nv_list"]
     num_nvs = len(nv_list)
-    num_nvs = 10
+    # num_nvs = 10
     min_step_val = raw_data["min_step_val"]
     max_step_val = raw_data["max_step_val"]
     num_steps = raw_data["num_steps"]
@@ -91,8 +91,9 @@ def process_and_plot_mcc(raw_data):
     red_chi_sq_arr = np.empty((num_nvs, num_steps))
     for nv_ind in range(num_nvs):
         for step_ind in range(num_steps):
+            print(step_vals[step_ind])
             popt, _, red_chi_sq = fit_bimodal_histogram(
-                condensed_counts[nv_ind, step_ind], prob_dist, no_plot=True
+                condensed_counts[nv_ind, step_ind], prob_dist, no_plot=False
             )
             if popt is None:
                 readout_fidelity = np.nan
@@ -130,20 +131,20 @@ def process_and_plot_mcc(raw_data):
     kpl.plot_line(
         ax0,
         x_vals,
-        np.median(readout_fidelity_arr, axis=0),
+        np.nanmedian(readout_fidelity_arr, axis=0),
         label="Readout",
     )
     kpl.plot_line(
         ax0,
         x_vals,
-        np.median(prep_fidelity_arr, axis=0),
+        np.nanmedian(prep_fidelity_arr, axis=0),
         label="Charge prep.",
         color=kpl.KplColors.GREEN,
     )
     ax0.legend(loc=kpl.Loc.UPPER_LEFT)
     ax1 = ax0.twinx()
     color = kpl.KplColors.RED
-    kpl.plot_line(ax1, x_vals, np.median(red_chi_sq_arr, axis=0), color=color)
+    kpl.plot_line(ax1, x_vals, np.nanmedian(red_chi_sq_arr, axis=0), color=color)
     ax1.set_ylabel(r"$\chi^{2}_{\nu}$", color=color)
     ax1.tick_params(axis="y", color=color, labelcolor=color)
     ax1.xaxis.label.set_color(color)
