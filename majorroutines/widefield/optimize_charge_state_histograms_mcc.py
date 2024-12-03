@@ -30,13 +30,6 @@ from utils import positioning as pos
 from utils import tool_belt as tb
 from utils.constants import NVSig, VirtualLaserKey
 
-rcParams["font.family"] = "DejaVu Sans"
-
-import matplotlib.pyplot as plt
-from matplotlib import rcParams
-
-rcParams["font.family"] = "DejaVu Sans"
-
 
 # rcParams['font.family'] = 'Roboto'
 # region Process and plotting functions
@@ -97,6 +90,7 @@ def process_and_plot_mcc(raw_data):
     red_chi_sq_arr = np.empty((num_nvs, num_steps))
     for nv_ind in range(num_nvs):
         for step_ind in range(num_steps):
+            print(nv_ind, step_vals[step_ind] / 1e6)
             popt, _, red_chi_sq = fit_bimodal_histogram(
                 condensed_counts[nv_ind, step_ind], prob_dist, no_plot=False
             )
@@ -126,17 +120,24 @@ def process_and_plot_mcc(raw_data):
             x_label = "Readout amplitude"
 
     print("Plotting results for first 10 NVs")
-    for nv_ind in range(10):
+    for nv_ind in range(num_nvs):
         arrs = [readout_fidelity_arr, prep_fidelity_arr, red_chi_sq_arr]
         ylabels = ["Readout fidelity", "Charge pol. fidelity", "Reduced chi squared"]
-        for ind in range(3):
-            arr = arrs[ind]
-            ylabel = ylabels[ind]
-            fig, ax = plt.subplots()
-            kpl.plot_points(ax, step_vals, arr[nv_ind, :])
-            ax.set_xlabel(x_label)
-            ax.set_ylabel(ylabel)
-            ax.set_title(f"NV{nv_ind}")
+        arr = arrs[0]
+        ylabel = ylabels[0]
+        fig, ax0 = plt.subplots()
+        ax0.set_title(f"NV{nv_ind}")
+        ax0.set_xlabel(x_label)
+        ax0.set_ylabel(ylabel)
+        kpl.plot_points(ax0, step_vals, arr[nv_ind, :])
+        ax1 = ax0.twinx()
+        arr = arrs[1]
+        ylabel = ylabels[1]
+        ax1.set_ylabel(ylabel)
+        kpl.plot_points(ax1, step_vals, arr[nv_ind, :])
+        arr = arrs[2]
+        ylabel = ylabels[2]
+        kpl.plot_points(ax1, step_vals, arr[nv_ind, :])
         kpl.show(block=True)
 
 
@@ -381,6 +382,8 @@ def _main(
         step_vals = step_vals.astype(int)
     # print(f"Step Values: {step_vals}")
     pulse_gen = tb.get_server_pulse_gen()
+    # print(step_vals)
+    # return
 
     ### Collect the data
 
@@ -401,7 +404,8 @@ def _main(
             optimize_pol_or_readout,
             optimize_duration_or_amp,
         ]
-        # print(seq_args)
+        print(seq_args)
+        return
         seq_args_string = tb.encode_seq_args(seq_args)
         pulse_gen.stream_load(seq_file, seq_args_string, num_reps)
 
@@ -444,7 +448,7 @@ def _main(
 
 if __name__ == "__main__":
     kpl.init_kplotlib()
-    raw_data = dm.get_raw_data(file_id=1710843759806, load_npz=False)
+    raw_data = dm.get_raw_data(file_id=1714802805037, load_npz=False)
     process_and_plot_mcc(raw_data)
     sys.exit()
 

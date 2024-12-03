@@ -1031,7 +1031,7 @@ if __name__ == "__main__":
 
     # nv_list = [nv_list[
     # nv_list = [nv_list[2]]
-    # nv_list = nv_list[:5]
+    nv_list = nv_list[:5]
 
     # endregion
 
