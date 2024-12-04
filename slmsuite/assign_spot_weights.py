@@ -1,11 +1,13 @@
 import os
 from datetime import datetime
-import matplotlib.pyplot as plt
+
 import matplotlib.patches as Circle
+import matplotlib.pyplot as plt
 import numpy as np
 import seaborn as sns
 from scipy.optimize import curve_fit
 from skimage.draw import disk
+
 from utils import data_manager as dm
 from utils import kplotlib as kpl
 
@@ -89,14 +91,6 @@ def load_nv_coords(
     return nv_coordinates, spot_weights
 
 
-def load_nv_weights(file_path="optimal_separation_and_goodness.txt"):
-    # Load data, skipping the header row
-    data = np.loadtxt(file_path, delimiter=",", skiprows=1)
-    # Extract the step values for separation
-    nv_weights = data[:, 2]  # Step Val (Separation) is the 3rd column (index 2)
-    return nv_weights
-
-
 def adjust_aom_voltage_for_slm(aom_voltages, power_law_params):
     aom_voltages = np.array(aom_voltages)
     a, b, c = power_law_params
@@ -110,15 +104,21 @@ def adjust_aom_voltage_for_slm(aom_voltages, power_law_params):
     return nv_weights, adjusted_aom_voltage
 
 
+def sigmoid(x):
+    return 1 / (1 + np.exp(-x))
+
+
 # Main section of the code
 if __name__ == "__main__":
     kpl.init_kplotlib()
     data = dm.get_raw_data(file_id=1711487774016, load_npz=True)
     img_array = np.array(data["ref_img_array"])
-    file_id = 1713167190804
+    # file_id = 1713167190804
+    file_id = 1713212456618
     data = dm.get_raw_data(file_id=file_id, load_npz=True)
     nv_entries = data["nv_data"]
     optimal_aom_values = [entry["optimal_step_value"] for entry in nv_entries]
+    print(optimal_aom_values)
     nv_coordinates, spot_weights = load_nv_coords(
         # file_path="slmsuite/nv_blob_detection/nv_blob_filtered_160nvs.npz"
         file_path="slmsuite/nv_blob_detection/nv_blob_filtered_160nvs_reordered.npz"
@@ -139,6 +139,11 @@ if __name__ == "__main__":
     updated_spot_weights, adjusted_aom_voltage = adjust_aom_voltage_for_slm(
         optimal_aom_values, power_law_params
     )
+
+    # smoothing with sigmoid
+    smoothed_spot_weights = sigmoid(
+        updated_spot_weights - np.median(updated_spot_weights)
+    )
     # Print adjusted voltages
     print("Adjusted Voltages (V):", adjusted_aom_voltage)
     print("NV Index | Coords    |   weights")
@@ -147,7 +152,7 @@ if __name__ == "__main__":
         zip(
             nv_coordinates,
             spot_weights,
-            updated_spot_weights,
+            smoothed_spot_weights,
         )
     ):
         print(f"{idx+1:<8} | {coords} | {weight:.3f} | {updated_weight:.3f}")
@@ -168,7 +173,7 @@ if __name__ == "__main__":
     # save_results(
     #     nv_coordinates,
     #     spot_weights,
-    #     updated_spot_weights,
+    #     smoothed_spot_weights,
     #     filename="slmsuite/nv_blob_detection/nv_blob_filtered_160nvs_reordered.npz",
     # )
 

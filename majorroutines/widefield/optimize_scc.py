@@ -167,6 +167,7 @@ def _main(nv_list, num_steps, num_reps, num_runs, min_tau, max_tau, duration_or_
             widefield.get_base_scc_seq_args(nv_list, uwave_ind_list),
             shuffled_taus,
         ]
+        print(f"DEBUG: seq_args before encoding: {seq_args}")
         seq_args_string = tb.encode_seq_args(seq_args)
         pulse_gen.stream_load(seq_file, seq_args_string, num_reps)
 

@@ -16,9 +16,6 @@ import traceback
 import matplotlib.pyplot as plt
 import numpy as np
 from joblib import Parallel, delayed
-from matplotlib import rcParams
-from scipy import ndimage
-from scipy.interpolate import interp1d
 
 from analysis.bimodal_histogram import (
     ProbDist,
@@ -33,47 +30,11 @@ from utils import positioning as pos
 from utils import tool_belt as tb
 from utils.constants import NVSig, VirtualLaserKey
 
-rcParams["font.family"] = "DejaVu Sans"
-
-import matplotlib.pyplot as plt
-from matplotlib import rcParams
-
-rcParams["font.family"] = "DejaVu Sans"
-
-
-# rcParams['font.family'] = 'Roboto'
-# region Process and plotting functions
-def find_intersection(x, y1, y2):
-    """
-    Finds the intersection point(s) of two curves y1 and y2 over x.
-    Parameters
-    ----------
-    x : np.ndarray
-        Array of x-values.
-    y1 : np.ndarray
-        First curve (e.g., fidelity).
-    y2 : np.ndarray
-        Second curve (e.g., goodness of fit).
-    Returns
-    -------
-    float
-        x-value of the intersection.
-    """
-    interp_fidelity = interp1d(
-        x, y1, kind="linear", bounds_error=False, fill_value="extrapolate"
-    )
-    interp_chi_squared = interp1d(
-        x, y2, kind="linear", bounds_error=False, fill_value="extrapolate"
-    )
-    # Calculate the difference between the two curves
-    diff = np.abs(interp_fidelity(x) - interp_chi_squared(x))
-    min_index = np.argmin(diff)
-    return x[min_index]
-
 
 def process_and_plot_mcc(raw_data):
     nv_list = raw_data["nv_list"]
     num_nvs = len(nv_list)
+    # num_nvs = 10
     min_step_val = raw_data["min_step_val"]
     max_step_val = raw_data["max_step_val"]
     num_steps = raw_data["num_steps"]
@@ -100,6 +61,7 @@ def process_and_plot_mcc(raw_data):
     red_chi_sq_arr = np.empty((num_nvs, num_steps))
     for nv_ind in range(num_nvs):
         for step_ind in range(num_steps):
+            print(step_vals[step_ind])
             popt, _, red_chi_sq = fit_bimodal_histogram(
                 condensed_counts[nv_ind, step_ind], prob_dist, no_plot=False
             )
@@ -117,30 +79,67 @@ def process_and_plot_mcc(raw_data):
 
     ### Plotting
 
+    x_vals = step_vals
     if optimize_pol_or_readout:
         if optimize_duration_or_amp:
-            x_label = "Polarization duration"
+            x_vals /= 1e3
+            x_label = "Polarization duration (us)"
         else:
             x_label = "Polarization amplitude"
     else:
         if optimize_duration_or_amp:
-            x_label = "Readout duration"
+            x_vals /= 1e6
+            x_label = "Readout duration (ms)"
         else:
             x_label = "Readout amplitude"
 
-    print("Plotting results for first 10 NVs")
-    for nv_ind in range(10):
-        arrs = [readout_fidelity_arr, prep_fidelity_arr, red_chi_sq_arr]
-        ylabels = ["Readout fidelity", "Charge pol. fidelity", "Reduced chi squared"]
-        for ind in range(3):
-            arr = arrs[ind]
-            ylabel = ylabels[ind]
-            fig, ax = plt.subplots()
-            kpl.plot_points(ax, step_vals, arr[nv_ind, :])
-            ax.set_xlabel(x_label)
-            ax.set_ylabel(ylabel)
-            ax.set_title(f"NV{nv_ind}")
-        kpl.show(block=True)
+    # Copy of Saroj's three-line plot
+
+    fig, ax0 = plt.subplots()
+    ax0.set_xlabel(x_label)
+    ax0.set_ylabel("Fidelity")
+    kpl.plot_line(
+        ax0,
+        x_vals,
+        np.nanmedian(readout_fidelity_arr, axis=0),
+        label="Readout",
+    )
+    kpl.plot_line(
+        ax0,
+        x_vals,
+        np.nanmedian(prep_fidelity_arr, axis=0),
+        label="Charge prep.",
+        color=kpl.KplColors.GREEN,
+    )
+    ax0.legend(loc=kpl.Loc.UPPER_LEFT)
+    ax1 = ax0.twinx()
+    color = kpl.KplColors.RED
+    kpl.plot_line(ax1, x_vals, np.nanmedian(red_chi_sq_arr, axis=0), color=color)
+    ax1.set_ylabel(r"$\chi^{2}_{\nu}$", color=color)
+    ax1.tick_params(axis="y", color=color, labelcolor=color)
+    ax1.xaxis.label.set_color(color)
+    ax1.spines["right"].set_color(color)
+
+    # print("Plotting results for first 10 NVs")
+    # for nv_ind in range(num_nvs):
+    #     arrs = [readout_fidelity_arr, prep_fidelity_arr, red_chi_sq_arr]
+    #     ylabels = ["Readout fidelity", "Charge pol. fidelity", "Reduced chi squared"]
+    #     arr = arrs[0]
+    #     ylabel = ylabels[0]
+    #     fig, ax0 = plt.subplots()
+    #     ax0.set_title(f"NV{nv_ind}")
+    #     ax0.set_xlabel(x_label)
+    #     ax0.set_ylabel(ylabel)
+    #     kpl.plot_points(ax0, step_vals, arr[nv_ind, :])
+    #     ax1 = ax0.twinx()
+    #     arr = arrs[1]
+    #     ylabel = ylabels[1]
+    #     ax1.set_ylabel(ylabel)
+    #     kpl.plot_points(ax1, step_vals, arr[nv_ind, :])
+    #     arr = arrs[2]
+    #     ylabel = ylabels[2]
+    #     kpl.plot_points(ax1, step_vals, arr[nv_ind, :])
+    #     kpl.show(block=True)
 
 
 def find_optimal_combined_value(
@@ -188,8 +187,6 @@ def find_optimal_value_geom_mean(
     -------
     optimal_step_val : float
         The step value corresponding to the optimal combined score.
-    max_combined_score : float
-        The maximum combined score.
     """
     w1, w2, w3 = weights
 
@@ -213,9 +210,8 @@ def find_optimal_value_geom_mean(
     # Find the step value corresponding to the maximum combined score
     max_index = np.nanargmax(combined_score)
     optimal_step_val = step_vals[max_index]
-    max_combined_score = combined_score[max_index]
 
-    return optimal_step_val, max_combined_score
+    return optimal_step_val
 
 
 def process_and_plot(raw_data):
@@ -245,32 +241,19 @@ def process_and_plot(raw_data):
     # Function to process a single NV and step
     def process_nv_step(nv_ind, step_ind):
         counts_data = condensed_counts[nv_ind, step_ind]
-        popt, chi_squared = fit_bimodal_histogram(counts_data, prob_dist)
+        popt, norm_res = fit_bimodal_histogram(counts_data, prob_dist)
 
         if popt is None:
             return np.nan, np.nan, np.nan, np.nan
-
         # Threshold, prep and readout fidelity
         threshold, readout_fidelity = determine_threshold(
             popt, prob_dist, dark_mode_weight=0.5, ret_fidelity=True
         )
         prep_fidelity = 1 - popt[0]  # Population weight of dark state
 
-        # Calculate inter-class and intra-class variance for separation metric
-        w_dark, mu_dark, mu_bright = popt[0], popt[1], popt[2]
-        sigma_dark = np.sqrt(mu_dark)
-        sigma_bright = np.sqrt(mu_bright)
-        inter_class_variance = w_dark * (1 - w_dark) * (mu_bright - mu_dark) ** 2
-        intra_class_variance = w_dark * sigma_dark**2 + (1 - w_dark) * sigma_bright**2
-        separation_metric = (
-            inter_class_variance / intra_class_variance
-            if intra_class_variance > 0
-            else np.nan
-        )
+        return readout_fidelity, prep_fidelity, norm_res
 
-        return readout_fidelity, prep_fidelity, separation_metric, chi_squared
-
-    # Parallel processingv -->  n_jobs :  Defaults to using all available cores (-1).
+    # Parallel processing --> n_jobs=-1:using all available cores.
     results = Parallel(n_jobs=-1)(
         delayed(process_nv_step)(nv_ind, step_ind)
         for nv_ind in range(num_nvs)
@@ -278,11 +261,10 @@ def process_and_plot(raw_data):
     )
 
     # Reshape results into arrays
-    results = np.array(results).reshape(num_nvs, num_steps, 4)
+    results = np.array(results).reshape(num_nvs, num_steps, 3)
     readout_fidelity_arr = results[:, :, 0]
     prep_fidelity_arr = results[:, :, 1]
-    separation_metric_arr = results[:, :, 2]
-    goodness_of_fit_arr = results[:, :, 3]
+    goodness_of_fit_arr = results[:, :, 2]
 
     ### Plotting
     if optimize_pol_or_readout:
@@ -297,95 +279,13 @@ def process_and_plot(raw_data):
             x_label = "Readout amplitude"
             # x_label = "Pol. amplitude"
 
-    # # Optimal values
-    # optimal_values = []  # To store results
-
-    # for nv_ind in range(num_nvs):
-    #     try:
-    #         # Calculate the optimal step value
-    #         optimal_step_val, max_combined_score = find_optimal_combined_value(
-    #             step_vals,
-    #             # readout_fidelity_arr[nv_ind],
-    #             prep_fidelity_arr[nv_ind],
-    #             goodness_of_fit_arr[nv_ind],
-    #             weight=0.5,  # Adjust this to change weighting
-    #         )
-    #         optimal_values.append((nv_ind, optimal_step_val, max_combined_score))
-    #     except Exception as e:
-    #         print(f"Failed to process NV{nv_ind}: {e}")
-    #         optimal_values.append((nv_ind, np.nan, np.nan))
-    #         continue
-
-    #     # Plotting
-    #     fig, ax1 = plt.subplots(figsize=(6, 5))
-
-    #     # Plot readout fidelity
-    #     ax1.plot(
-    #         step_vals,
-    #         # readout_fidelity_arr[nv_ind],
-    #         prep_fidelity_arr[nv_ind],
-    #         # label="Readout Fidelity",
-    #         label="Prep Fidelity",
-    #         color="blue",
-    #     )
-    #     ax1.set_xlabel(x_label)
-    #     ax1.set_ylabel("Readout Fidelity")
-    #     ax1.set_ylabel("Prep Fidelity")
-    #     ax1.tick_params(axis="y", labelcolor="blue")
-    #     ax1.legend(loc="upper left", fontsize=9)
-
-    #     # Plot goodness of fit (R²)
-    #     ax2 = ax1.twinx()
-    #     ax2.plot(
-    #         step_vals,
-    #         goodness_of_fit_arr[nv_ind],
-    #         color="green",
-    #         label="Goodness of Fit (R²)",
-    #         alpha=0.7,
-    #     )
-    #     ax2.set_ylabel("Goodness of Fit (R²)", color="green")
-    #     ax2.tick_params(axis="y", labelcolor="green")
-
-    #     # Highlight optimal step value
-    #     ax1.axvline(
-    #         optimal_step_val,
-    #         color="red",
-    #         linestyle="--",
-    #         label=f"Optimal Step Val: {optimal_step_val:.2f}",
-    #     )
-    #     ax2.axvline(
-    #         optimal_step_val,
-    #         color="red",
-    #         linestyle="--",
-    #         label=f"Optimal Step Val: {optimal_step_val:.2f}",
-    #     )
-
-    #     # Add legends for both y-axes
-    #     lines_1, labels_1 = ax1.get_legend_handles_labels()
-    #     lines_2, labels_2 = ax2.get_legend_handles_labels()
-    #     ax2.legend(
-    #         lines_1 + lines_2, labels_1 + labels_2, loc="upper right", fontsize=9
-    #     )
-
-    #     # Title and layout
-    #     ax1.set_title(f"NV{nv_ind} - Optimal Step Val: {optimal_step_val:.2f}")
-    #     fig.tight_layout()
-    #     plt.show()
-
-    # # Save results to a file
-    # with open("optimal_combined_values.txt", "w") as f:
-    #     f.write("NV Index, Optimal Step Value, Max Combined Score\n")
-    #     for nv_index, opt_step, max_score in optimal_values:
-    #         f.write(f"{nv_index}, {opt_step:.6f}, {max_score:.6f}\n")
-    # print("Optimal combined values saved to 'optimal_combined_values.txt'.")
-
     ### Calculate Averages
     avg_readout_fidelity = np.nanmean(readout_fidelity_arr, axis=0)
     avg_prep_fidelity = np.nanmean(prep_fidelity_arr, axis=0)
     avg_goodness_of_fit = np.nanmean(goodness_of_fit_arr, axis=0)
 
     # Calculate the optimal step value
-    optimal_step_val, max_combined_score = find_optimal_value_geom_mean(
+    optimal_step_val = find_optimal_value_geom_mean(
         step_vals,
         avg_readout_fidelity,
         avg_prep_fidelity,
@@ -477,15 +377,22 @@ def _main(
     optimize_duration_or_amp,
 ):
     ### Initial setup
+    print("Main Function Started")
     seq_file = "optimize_charge_state_histograms.py"
     step_vals = np.linspace(min_step_val, max_step_val, num_steps)
-
+    if optimize_duration_or_amp:
+        step_vals = step_vals.astype(int)
+    # print(f"Step Values: {step_vals}")
     pulse_gen = tb.get_server_pulse_gen()
+    # print(step_vals)
+    # return
 
     ### Collect the data
 
     def run_fn(shuffled_step_inds):
+        # NumPy indexing allows list-based indexing
         shuffled_step_vals = step_vals[shuffled_step_inds].tolist()
+        # print(f"Shuffled Step Values: {shuffled_step_vals}")
         pol_coords_list, pol_duration_list, pol_amp_list = (
             widefield.get_pulse_parameter_lists(nv_list, VirtualLaserKey.CHARGE_POL)
         )
@@ -542,12 +449,13 @@ def _main(
 
 if __name__ == "__main__":
     kpl.init_kplotlib()
-    raw_data = dm.get_raw_data(file_id=1710843759806, load_npz=False)
+    # raw_data = dm.get_raw_data(file_id=1714802805037, load_npz=False)  # Messed up duration variation
+    raw_data = dm.get_raw_data(file_id=1712782503640, load_npz=False)
     process_and_plot_mcc(raw_data)
-    sys.exit()
+    # sys.exit()
 
-    # raw_data = dm.get_raw_data(file_id=1709868774004, load_npz=False) #yellow ampl var
-    raw_data = dm.get_raw_data(file_id=1710843759806, load_npz=False)  # yellow amp var
-    # raw_data = dm.get_raw_data(file_id=1711618252292, load_npz=False) #green ampl var
-    process_and_plot(raw_data)
+    # # raw_data = dm.get_raw_data(file_id=1709868774004, load_npz=False) #yellow ampl var
+    # raw_data = dm.get_raw_data(file_id=1710843759806, load_npz=False)  # yellow amp var
+    # # raw_data = dm.get_raw_data(file_id=1711618252292, load_npz=False) #green ampl var
+    # process_and_plot(raw_data)
     kpl.show(block=True)
