@@ -371,8 +371,18 @@ def macro_charge_state_readout(duration: int = None, amp: float = None):
     qua.play("on", camera_el)
 
     # Wait for the total readout duration
-    qua.wait(duration, readout_laser_el)
-    qua.wait(duration, camera_el)
+    # qua.wait(duration, readout_laser_el)
+    # qua.wait(duration, camera_el)
+    with qua.if_(duration < int(60e6 / 4)):
+        qua.wait(duration, readout_laser_el)
+        qua.wait(duration, camera_el)
+    with qua.else_():
+        half_duration = qua.declare(int)
+        qua.assign(half_duration, duration / 2)
+        wait_ind = qua.declare(int)
+        with qua.for_(wait_ind, 0, wait_ind < 2, wait_ind + 1):
+            qua.wait(half_duration, readout_laser_el)
+            qua.wait(half_duration, camera_el)
 
     # Ramp down to zero
     qua.ramp_to_zero(readout_laser_el)
