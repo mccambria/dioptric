@@ -14,6 +14,13 @@ import matplotlib.pyplot as plt
 import numpy as np
 from joblib import Parallel, delayed
 
+import matplotlib.pyplot as plt
+from matplotlib import font_manager as fm, rcParams
+
+# Specify the path to the Arial font file
+arial_font_path = r"C:\Windows\Fonts\arial.ttf"
+arial_font = fm.FontProperties(fname=arial_font_path)
+rcParams["font.family"] = arial_font.get_name()
 
 from analysis.bimodal_histogram import (
     ProbDist,
@@ -72,7 +79,6 @@ def process_and_plot(raw_data):
     step_vals = np.linspace(min_step_val, max_step_val, num_steps)
     optimize_pol_or_readout = raw_data["optimize_pol_or_readout"]
     optimize_duration_or_amp = raw_data["optimize_duration_or_amp"]
-
     opx_config = raw_data["opx_config"]
     yellow_charge_readout_amp = opx_config["waveforms"]["yellow_charge_readout"][
         "sample"
@@ -80,8 +86,7 @@ def process_and_plot(raw_data):
     green_aod_cw_charge_pol_amp = opx_config["waveforms"]["green_aod_cw-charge_pol"][
         "sample"
     ]
-    print(f"yellow_charge_readout_amp:{yellow_charge_readout_amp}")
-    print(f"green_aod_cw_charge_pol_amp:{green_aod_cw_charge_pol_amp}")
+    print(step_vals)
     counts = np.array(raw_data["counts"])
     # [nv_ind, run_ind, steq_ind, rep_ind]
     ref_exp_ind = 1
@@ -99,7 +104,7 @@ def process_and_plot(raw_data):
     # Function to process a single NV and step
     def process_nv_step(nv_ind, step_ind):
         counts_data = condensed_counts[nv_ind, step_ind]
-        popt, chi_squared = fit_bimodal_histogram(counts_data, prob_dist)
+        popt, pcov, chi_squared = fit_bimodal_histogram(counts_data, prob_dist)
 
         if popt is None:
             return np.nan, np.nan, np.nan, np.nan
@@ -153,7 +158,7 @@ def process_and_plot(raw_data):
         else:
             step_vals *= yellow_charge_readout_amp
             x_label = "Readout amplitude"
-
+    print(step_vals)
     # Optimal values
     optimal_values = []
     for nv_ind in range(num_nvs):
@@ -164,7 +169,7 @@ def process_and_plot(raw_data):
                 readout_fidelity_arr[nv_ind],
                 prep_fidelity_arr[nv_ind],
                 goodness_of_fit_arr[nv_ind],
-                weights=(1, 1, 0.5),
+                weights=(1, 1, 1),
             )
             optimal_values.append((nv_ind, optimal_step_val, max_combined_score))
         except Exception as e:
@@ -194,16 +199,16 @@ def process_and_plot(raw_data):
         ax1.tick_params(axis="y", labelcolor="blue")
         ax1.grid(True, linestyle="--", alpha=0.6)
 
-        # Plot Goodness of Fit (Residuals)
+        # Plot Goodness of Fit ()
         ax2 = ax1.twinx()
         ax2.plot(
             step_vals,
             goodness_of_fit_arr[nv_ind],
             color="green",
-            label="Goodness of Fit (Residuals)",
+            label=r"Goodness of Fit ($\chi^2_{\text{reduced}}$)",
             alpha=0.7,
         )
-        ax2.set_ylabel("Goodness of Fit (Residuals)", color="green")
+        ax2.set_ylabel(r"Goodness of Fit ($\chi^2_{\text{reduced}}$)", color="green")
         ax2.tick_params(axis="y", labelcolor="green")
 
         # Highlight optimal step value
@@ -238,7 +243,7 @@ def process_and_plot(raw_data):
         avg_readout_fidelity,
         avg_prep_fidelity,
         avg_goodness_of_fit,
-        weights=(1, 1, 1.0),
+        weights=(1, 1, 1),
     )
 
     # Plot average readout and prep fidelity
@@ -259,16 +264,16 @@ def process_and_plot(raw_data):
     ax1.set_ylabel("Fidelity")
     ax1.tick_params(axis="y")
 
-    # Plot average Goodness of Fit (Residuals))
+    # Plot average Goodness of Fit (reduced chi-squared))
     ax2 = ax1.twinx()
     ax2.plot(
         step_vals,
         avg_goodness_of_fit,
         color="green",
         linestyle="--",
-        label="Avg. Goodness of Fit (Residuals)",
+        label=r"Avg. Goodness of Fit ($\chi^2_{\text{reduced}}$)",
     )
-    ax2.set_ylabel("Goodness of Fit (Residuals)", color="green")
+    ax2.set_ylabel(r"Goodness of Fit ($\chi^2_{\text{reduced}}$)", color="green")
 
     ax2.tick_params(axis="y", labelcolor="green")
     ax2.axvline(
@@ -310,8 +315,8 @@ def process_and_plot(raw_data):
             for nv_index, opt_step, max_score in optimal_values
         ],
     }
-    dm.save_raw_data(raw_data, file_path)
-    print(f"Optimal combined values, including averages, saved to '{file_path}'.")
+    # dm.save_raw_data(raw_data, file_path)
+    # print(f"Optimal combined values, including averages, saved to '{file_path}'.")
 
 
 # endregion
@@ -320,7 +325,8 @@ if __name__ == "__main__":
     kpl.init_kplotlib()
     # file_id = 1710843759806
     # file_id = 1712782503640  # yellow ampl var
-    file_id = 1714802805037  # yellow duration
+    # file_id = 1714802805037  # yellow duration var
+    file_id = 1716903878223  # yellow duration var
     # raw_data = dm.get_raw_data(file_id=1709868774004, load_npz=False) #yellow ampl var
     raw_data = dm.get_raw_data(file_id=file_id, load_npz=False)  # yellow amp var
     # print(raw_data.keys())

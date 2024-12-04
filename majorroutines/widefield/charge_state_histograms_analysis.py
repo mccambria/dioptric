@@ -3,9 +3,9 @@
 Illuminate an area, collecting onto the camera. Interleave a signal and control sequence
 and plot the difference, while fitting a bimodal distribution to NV charge states.
 
-Created on Fall 2023
+Created on Fall 2024
 
-@author: mccambria
+@author: saroj chand
 """
 
 import os
@@ -16,9 +16,6 @@ import traceback
 import matplotlib.pyplot as plt
 import numpy as np
 from scipy import ndimage
-from scipy.ndimage import gaussian_filter1d
-from scipy.optimize import curve_fit
-from scipy.special import factorial
 
 from majorroutines.widefield import base_routine
 from utils import common, widefield
@@ -27,63 +24,18 @@ from utils import kplotlib as kpl
 from utils import positioning as pos
 from utils import tool_belt as tb
 from utils.constants import NVSig, VirtualLaserKey
+from analysis import bimodal_histogram
 from analysis.bimodal_histogram import (
     ProbDist,
     determine_threshold,
     fit_bimodal_histogram,
 )
 
-# region Process and fitting functions
+
+import seaborn as sns
 
 
-def bimodal_gaussian(x, mu1, sigma1, mu2, sigma2, w_nv_minus):
-    """Model for bimodal Gaussian distribution."""
-    w_nv_zero = 1 - w_nv_minus  # Ensure weights sum to 1
-    g1 = (
-        w_nv_zero
-        * np.exp(-0.5 * ((x - mu1) / sigma1) ** 2)
-        / (sigma1 * np.sqrt(2 * np.pi))
-    )
-    g2 = (
-        w_nv_minus
-        * np.exp(-0.5 * ((x - mu2) / sigma2) ** 2)
-        / (sigma2 * np.sqrt(2 * np.pi))
-    )
-    return g1 + g2
-
-
-def fit_bimodal_distribution(counts):
-    """Fit a bimodal Gaussian distribution to the provided counts."""
-    counts = np.array(counts)
-    smoothed_counts = gaussian_filter1d(counts, sigma=2)  # Smooth data to reduce noise
-
-    # Generate histogram data
-    y_data, bin_edges = np.histogram(smoothed_counts, bins=50, density=True)
-    x_data = 0.5 * (bin_edges[:-1] + bin_edges[1:])  # Bin centers
-
-    # Initial guesses: mu1, sigma1, mu2, sigma2, w_nv_minus
-    initial_guess = [
-        np.mean(counts) - 10,
-        np.std(counts) / 2,
-        np.mean(counts) + 10,
-        np.std(counts),
-        0.7,
-    ]
-    bounds = (
-        [0, 0, 0, 0, 0.5],
-        [np.inf, np.inf, np.inf, np.inf, 0.9],
-    )  # Constrain weights
-
-    try:
-        params, _ = curve_fit(
-            bimodal_gaussian, x_data, y_data, p0=initial_guess, bounds=bounds
-        )
-        return params
-    except RuntimeError as e:
-        print(f"Fitting failed: {e}")
-        return None
-
-
+# Update the plot_histograms function for better visualization
 def plot_histograms(
     sig_counts_list,
     ref_counts_list,
@@ -91,9 +43,11 @@ def plot_histograms(
     no_text=None,
     ax=None,
     density=False,
-    nv_index=None,  # Add NV index as an optional parameter
+    nv_index=None,
 ):
-    """Plot histograms for signal and reference counts."""
+    """Plot histograms for signal and reference counts with enhanced visualization."""
+    sns.set_theme(style="whitegrid")  # Use a Seaborn theme for improved aesthetics
+
     laser_key = VirtualLaserKey.WIDEFIELD_CHARGE_READOUT
     laser_dict = tb.get_virtual_laser_dict(laser_key)
     readout = laser_dict["duration"]
@@ -103,41 +57,103 @@ def plot_histograms(
     ### Histograms
     num_reps = len(ref_counts_list)
     labels = ["With ionization pulse", "Without ionization pulse"]
-    colors = [kpl.KplColors.RED, kpl.KplColors.GREEN]
+    colors = sns.color_palette("husl", 2)  # Use Seaborn color palette
     counts_lists = [sig_counts_list, ref_counts_list]
 
     if ax is None:
-        fig, ax = plt.subplots()
+        fig, ax = plt.subplots()  # Larger figure size for clarity
     else:
         fig = None
+
     if not no_title:
-        ax.set_title(f"Charge prep hist, {num_reps} reps")
-    ax.set_xlabel("Integrated counts")
-    if density:
-        ax.set_ylabel("Probability")
-    else:
-        ax.set_ylabel("Number of occurrences")
+        ax.set_title(
+            f"Charge Prep Histogram ({num_reps} reps)", fontsize=14, weight="bold"
+        )
 
-    for ind in range(2):
-        counts_list = counts_lists[ind]
-        label = labels[ind]
-        color = colors[ind]
-        kpl.histogram(ax, counts_list, label=label, color=color, density=density)
+    ax.set_xlabel("Integrated Counts", fontsize=12)
+    ax.set_ylabel("Probability" if density else "Occurrences", fontsize=12)
 
-    ax.legend()
+    for ind, counts_list in enumerate(counts_lists):
+        sns.histplot(
+            counts_list,
+            kde=False,
+            stat="density" if density else "count",
+            bins=50,
+            ax=ax,
+            label=labels[ind],
+            color=colors[ind],
+            alpha=0.7,
+        )
+
+    ax.legend(title="Pulse Type", fontsize=10, loc="upper right", title_fontsize=12)
 
     if fig is not None:
         return fig
 
 
-def process_and_plot(raw_data, do_plot_histograms=True):
-    """Process data, fit histograms, and plot results."""
+# Update scatter plot aesthetics
+def scatter_plot(x_data, y_data, xlabel, ylabel, title):
+    """Create a scatter plot with purple markers and transparent filling."""
+    plt.figure(figsize=(6, 5))
+    plt.scatter(
+        x_data,
+        y_data,
+        edgecolors="darkblue",  #  circle outlines
+        facecolors="skyblue",  #  fill color
+        alpha=0.8,  # Transparency for the filling
+        s=60,  # Marker size
+        linewidth=0.8,  # Outline thickness
+    )
+    plt.title(title, fontsize=18)
+    plt.xlabel(xlabel, fontsize=16)
+    plt.ylabel(ylabel, fontsize=16)
+    plt.grid(True, which="both", linestyle="--", alpha=0.5)
+    plt.tight_layout()
+    plt.show()
+
+
+# Update the image plotting function for improved visuals
+def plot_images(img_arrays, readout_laser, readout_ms, title_suffixes):
+    """Plot images with improved Seaborn style."""
+    sns.set_theme(style="darkgrid")  # Change to a darker grid style for images
+    img_figs = []
+
+    for ind, img_array in enumerate(img_arrays):
+        title_suffix = title_suffixes[ind]
+        fig, ax = plt.subplots()
+        sns.heatmap(
+            img_array,
+            ax=ax,
+            cmap="viridis",
+            cbar_kws={"label": "Photons"},
+            annot=False,
+        )
+        ax.set_title(
+            f"{readout_laser}, {readout_ms:.2f} ms, {title_suffix}", fontsize=14
+        )
+        img_figs.append(fig)
+
+    return img_figs
+
+
+# # Process and plot function and Set Seaborn theme globally for consistent styling
+sns.set_theme(style="whitegrid")
+
+
+def process_and_plot(
+    raw_data, do_plot_histograms=False, prob_dist: ProbDist = ProbDist.COMPOUND_POISSON
+):
+    ### Setup
     nv_list = raw_data["nv_list"]
     num_nvs = len(nv_list)
     counts = np.array(raw_data["counts"])
     sig_counts_lists = [counts[0, nv_ind].flatten() for nv_ind in range(num_nvs)]
     ref_counts_lists = [counts[1, nv_ind].flatten() for nv_ind in range(num_nvs)]
+    num_reps = raw_data["num_reps"]
+    num_runs = raw_data["num_runs"]
+    num_shots = num_reps * num_runs
 
+    ### Histograms and thresholding
     threshold_list = []
     readout_fidelity_list = []
     prep_fidelity_list = []
@@ -147,131 +163,86 @@ def process_and_plot(raw_data, do_plot_histograms=True):
         sig_counts_list = sig_counts_lists[ind]
         ref_counts_list = ref_counts_lists[ind]
 
-        # Fit bimodal distribution
-        params = fit_bimodal_distribution(ref_counts_list)
-        if params is not None:
-            mu1, sigma1, mu2, sigma2, w_nv_minus = params
-            print(
-                f"Fitted parameters for NV{ind}: mu1={mu1}, mu2={mu2}, w_nv_minus={w_nv_minus}"
-            )
-
+        # Only use ref counts for threshold determination
+        popt, _, red_chi_sq = fit_bimodal_histogram(
+            ref_counts_list, prob_dist, no_print=True
+        )
         threshold, readout_fidelity = determine_threshold(
-            ref_counts_list, nvn_ratio=0.5, no_print=True, ret_fidelity=True
+            popt, prob_dist, dark_mode_weight=0.5, do_print=False, ret_fidelity=True
         )
         threshold_list.append(threshold)
         readout_fidelity_list.append(readout_fidelity)
-        popt = fit_histogram(ref_counts_list, no_print=True)
         if popt is not None:
             prep_fidelity = 1 - popt[0]
         else:
             prep_fidelity = np.nan
         prep_fidelity_list.append(prep_fidelity)
 
+        # Plot histograms
         if do_plot_histograms:
             fig = plot_histograms(sig_counts_list, ref_counts_list, density=True)
-            ax = fig.gca()
-            if popt is not None:
-                x_vals = np.linspace(0, np.max(ref_counts_list), 1000)
-                kpl.plot_line(ax, x_vals, tb.bimodal_skew_gaussian(x_vals, *popt))
-
-            try:
-                if threshold is not None:
-                    ax.axvline(threshold, color=kpl.KplColors.GRAY, ls="dashed")
-            except TypeError as e:
-                print(f"Could not add threshold line due to: {e}")
-
-            snr_str = f"NV{ind}\nReadout fidelity: {round(readout_fidelity, 3)}\nCharge prep. fidelity {round(prep_fidelity, 3)}"
-            kpl.anchored_text(ax, snr_str, "center right", size=kpl.Size.SMALL)
-            kpl.show()
-
             if fig is not None:
                 hist_figs.append(fig)
 
+    # Report averages
     avg_readout_fidelity = np.nanmean(readout_fidelity_list)
     avg_prep_fidelity = np.nanmean(prep_fidelity_list)
-    print(f"Average readout fidelity: {avg_readout_fidelity:.3f}")
-    print(f"Average NV- preparation fidelity: {avg_prep_fidelity:.3f}")
+    print(f"Average Readout Fidelity: {avg_readout_fidelity:.3f}")
+    print(f"Average NV- Preparation Fidelity: {avg_prep_fidelity:.3f}")
 
-    return hist_figs
+    # Scatter plot: Readout fidelity vs Prep fidelity
+    scatter_plot(
+        readout_fidelity_list,
+        prep_fidelity_list,
+        xlabel="Readout Fidelity",
+        ylabel="NV- Preparation Fidelity",
+        title="Readout vs Prep Fidelity",
+    )
 
-
-def plot_bimodal_fit(x_data, y_data, params):
-    """
-    Visualize the histogram data with the fitted bimodal Gaussian distribution.
-
-    Parameters:
-    - x_data: Array of x-values (bin centers)
-    - y_data: Histogram y-values (density or count)
-    - params: Fitted parameters [mu1, sigma1, mu2, sigma2, w_nv_minus]
-    """
-    # Extract fitted parameters
-    mu1, sigma1, mu2, sigma2, w_nv_minus = params
-    w_nv_zero = 1 - w_nv_minus
-
-    # Define the individual Gaussian components
-    def gaussian(x, mu, sigma, weight):
-        return (
-            weight
-            * np.exp(-0.5 * ((x - mu) / sigma) ** 2)
-            / (sigma * np.sqrt(2 * np.pi))
+    # Scatter plot: Distance from center vs Prep fidelity
+    coords_key = "laser_INTE_520_aod"
+    distances = [
+        np.sqrt(
+            (110 - pos.get_nv_coords(nv, coords_key, drift_adjust=False)[0]) ** 2
+            + (110 - pos.get_nv_coords(nv, coords_key, drift_adjust=False)[1]) ** 2
         )
-
-    # Generate fit values
-    y_fit = bimodal_gaussian(x_data, mu1, sigma1, mu2, sigma2, w_nv_minus)
-    y_gauss1 = gaussian(x_data, mu1, sigma1, w_nv_zero)
-    y_gauss2 = gaussian(x_data, mu2, sigma2, w_nv_minus)
-
-    # Plotting
-    plt.figure(figsize=(8, 6))
-    plt.bar(
-        x_data,
-        y_data,
-        width=(x_data[1] - x_data[0]),
-        alpha=0.5,
-        label="Histogram Data",
-        color="lightgray",
-    )
-    plt.plot(x_data, y_fit, label="Bimodal Fit", color="red", linewidth=2)
-    plt.plot(
-        x_data,
-        y_gauss1,
-        "--",
-        label=f"Gaussian 1 (mu={mu1:.2f}, sigma={sigma1:.2f}, w={w_nv_zero:.2f})",
-        color="blue",
-    )
-    plt.plot(
-        x_data,
-        y_gauss2,
-        "--",
-        label=f"Gaussian 2 (mu={mu2:.2f}, sigma={sigma2:.2f}, w={w_nv_minus:.2f})",
-        color="green",
+        for nv in nv_list
+    ]
+    scatter_plot(
+        distances,
+        prep_fidelity_list,
+        xlabel="Distance from Center (MHz)",
+        ylabel="NV- Preparation Fidelity",
+        title="Prep Fidelity vs Distance",
     )
 
-    # Annotations
-    plt.title("Bimodal Gaussian Fit to NV Charge States")
-    plt.xlabel("Integrated Counts")
-    plt.ylabel("Density")
-    plt.legend()
-    plt.grid(alpha=0.3)
+    # Image plotting
+    if "img_arrays" not in raw_data:
+        return
 
-    # Annotate key fitted parameters
-    plt.text(
-        0.95,
-        0.7,
-        f"mu1 = {mu1:.2f}\nsigma1 = {sigma1:.2f}\nmu2 = {mu2:.2f}\nsigma2 = {sigma2:.2f}\nw(NV-) = {w_nv_minus:.2f}",
-        transform=plt.gca().transAxes,
-        fontsize=10,
-        verticalalignment="top",
-        horizontalalignment="right",
-        bbox=dict(facecolor="white", alpha=0.6, edgecolor="gray"),
+    laser_key = VirtualLaserKey.WIDEFIELD_CHARGE_READOUT
+    laser_dict = tb.get_virtual_laser_dict(laser_key)
+    readout_laser = laser_dict["physical_name"]
+    readout_ms = laser_dict["duration"] / 10**6
+
+    img_arrays = raw_data["img_arrays"]
+    mean_img_arrays = np.mean(img_arrays, axis=(1, 2, 3))
+    sig_img_array = mean_img_arrays[0]
+    ref_img_array = mean_img_arrays[1]
+    diff_img_array = sig_img_array - ref_img_array
+    img_arrays_to_save = [sig_img_array, ref_img_array, diff_img_array]
+    title_suffixes = ["Signal", "Reference", "Difference"]
+
+    img_figs = plot_images(
+        img_arrays_to_save, readout_laser, readout_ms, title_suffixes
     )
 
-    plt.show()
+    return img_arrays_to_save, img_figs, hist_figs
 
 
 if __name__ == "__main__":
     kpl.init_kplotlib()
     data = dm.get_raw_data(file_id=1713224279642, load_npz=False)
-    # data = dm.get_raw_data(file_id=1691569540529, load_npz=False)
     process_and_plot(data, do_plot_histograms=False)
     kpl.show(block=True)
+    plt.show(block=True)
