@@ -34,6 +34,7 @@ from utils.constants import NVSig, VirtualLaserKey
 def process_and_plot_mcc(raw_data):
     nv_list = raw_data["nv_list"]
     num_nvs = len(nv_list)
+    # num_nvs = 10
     min_step_val = raw_data["min_step_val"]
     max_step_val = raw_data["max_step_val"]
     num_steps = raw_data["num_steps"]
@@ -60,7 +61,7 @@ def process_and_plot_mcc(raw_data):
     red_chi_sq_arr = np.empty((num_nvs, num_steps))
     for nv_ind in range(num_nvs):
         for step_ind in range(num_steps):
-            print(nv_ind, step_vals[step_ind] / 1e6)
+            print(step_vals[step_ind])
             popt, _, red_chi_sq = fit_bimodal_histogram(
                 condensed_counts[nv_ind, step_ind], prob_dist, no_plot=False
             )
@@ -78,37 +79,67 @@ def process_and_plot_mcc(raw_data):
 
     ### Plotting
 
+    x_vals = step_vals
     if optimize_pol_or_readout:
         if optimize_duration_or_amp:
-            x_label = "Polarization duration"
+            x_vals /= 1e3
+            x_label = "Polarization duration (us)"
         else:
             x_label = "Polarization amplitude"
     else:
         if optimize_duration_or_amp:
-            x_label = "Readout duration"
+            x_vals /= 1e6
+            x_label = "Readout duration (ms)"
         else:
             x_label = "Readout amplitude"
 
-    print("Plotting results for first 10 NVs")
-    for nv_ind in range(num_nvs):
-        arrs = [readout_fidelity_arr, prep_fidelity_arr, red_chi_sq_arr]
-        ylabels = ["Readout fidelity", "Charge pol. fidelity", "Reduced chi squared"]
-        arr = arrs[0]
-        ylabel = ylabels[0]
-        fig, ax0 = plt.subplots()
-        ax0.set_title(f"NV{nv_ind}")
-        ax0.set_xlabel(x_label)
-        ax0.set_ylabel(ylabel)
-        kpl.plot_points(ax0, step_vals, arr[nv_ind, :])
-        ax1 = ax0.twinx()
-        arr = arrs[1]
-        ylabel = ylabels[1]
-        ax1.set_ylabel(ylabel)
-        kpl.plot_points(ax1, step_vals, arr[nv_ind, :])
-        arr = arrs[2]
-        ylabel = ylabels[2]
-        kpl.plot_points(ax1, step_vals, arr[nv_ind, :])
-        kpl.show(block=True)
+    # Copy of Saroj's three-line plot
+
+    fig, ax0 = plt.subplots()
+    ax0.set_xlabel(x_label)
+    ax0.set_ylabel("Fidelity")
+    kpl.plot_line(
+        ax0,
+        x_vals,
+        np.nanmedian(readout_fidelity_arr, axis=0),
+        label="Readout",
+    )
+    kpl.plot_line(
+        ax0,
+        x_vals,
+        np.nanmedian(prep_fidelity_arr, axis=0),
+        label="Charge prep.",
+        color=kpl.KplColors.GREEN,
+    )
+    ax0.legend(loc=kpl.Loc.UPPER_LEFT)
+    ax1 = ax0.twinx()
+    color = kpl.KplColors.RED
+    kpl.plot_line(ax1, x_vals, np.nanmedian(red_chi_sq_arr, axis=0), color=color)
+    ax1.set_ylabel(r"$\chi^{2}_{\nu}$", color=color)
+    ax1.tick_params(axis="y", color=color, labelcolor=color)
+    ax1.xaxis.label.set_color(color)
+    ax1.spines["right"].set_color(color)
+
+    # print("Plotting results for first 10 NVs")
+    # for nv_ind in range(num_nvs):
+    #     arrs = [readout_fidelity_arr, prep_fidelity_arr, red_chi_sq_arr]
+    #     ylabels = ["Readout fidelity", "Charge pol. fidelity", "Reduced chi squared"]
+    #     arr = arrs[0]
+    #     ylabel = ylabels[0]
+    #     fig, ax0 = plt.subplots()
+    #     ax0.set_title(f"NV{nv_ind}")
+    #     ax0.set_xlabel(x_label)
+    #     ax0.set_ylabel(ylabel)
+    #     kpl.plot_points(ax0, step_vals, arr[nv_ind, :])
+    #     ax1 = ax0.twinx()
+    #     arr = arrs[1]
+    #     ylabel = ylabels[1]
+    #     ax1.set_ylabel(ylabel)
+    #     kpl.plot_points(ax1, step_vals, arr[nv_ind, :])
+    #     arr = arrs[2]
+    #     ylabel = ylabels[2]
+    #     kpl.plot_points(ax1, step_vals, arr[nv_ind, :])
+    #     kpl.show(block=True)
 
 
 def find_optimal_combined_value(
@@ -418,12 +449,13 @@ def _main(
 
 if __name__ == "__main__":
     kpl.init_kplotlib()
-    raw_data = dm.get_raw_data(file_id=1714802805037, load_npz=False)
+    # raw_data = dm.get_raw_data(file_id=1714802805037, load_npz=False)  # Messed up duration variation
+    raw_data = dm.get_raw_data(file_id=1712782503640, load_npz=False)
     process_and_plot_mcc(raw_data)
-    sys.exit()
+    # sys.exit()
 
-    # raw_data = dm.get_raw_data(file_id=1709868774004, load_npz=False) #yellow ampl var
-    raw_data = dm.get_raw_data(file_id=1710843759806, load_npz=False)  # yellow amp var
-    # raw_data = dm.get_raw_data(file_id=1711618252292, load_npz=False) #green ampl var
-    process_and_plot(raw_data)
+    # # raw_data = dm.get_raw_data(file_id=1709868774004, load_npz=False) #yellow ampl var
+    # raw_data = dm.get_raw_data(file_id=1710843759806, load_npz=False)  # yellow amp var
+    # # raw_data = dm.get_raw_data(file_id=1711618252292, load_npz=False) #green ampl var
+    # process_and_plot(raw_data)
     kpl.show(block=True)
