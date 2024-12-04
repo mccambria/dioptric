@@ -31,36 +31,6 @@ from utils import tool_belt as tb
 from utils.constants import NVSig, VirtualLaserKey
 
 
-# rcParams['font.family'] = 'Roboto'
-# region Process and plotting functions
-def find_intersection(x, y1, y2):
-    """
-    Finds the intersection point(s) of two curves y1 and y2 over x.
-    Parameters
-    ----------
-    x : np.ndarray
-        Array of x-values.
-    y1 : np.ndarray
-        First curve (e.g., fidelity).
-    y2 : np.ndarray
-        Second curve (e.g., goodness of fit).
-    Returns
-    -------
-    float
-        x-value of the intersection.
-    """
-    interp_fidelity = interp1d(
-        x, y1, kind="linear", bounds_error=False, fill_value="extrapolate"
-    )
-    interp_chi_squared = interp1d(
-        x, y2, kind="linear", bounds_error=False, fill_value="extrapolate"
-    )
-    # Calculate the difference between the two curves
-    diff = np.abs(interp_fidelity(x) - interp_chi_squared(x))
-    min_index = np.argmin(diff)
-    return x[min_index]
-
-
 def process_and_plot_mcc(raw_data):
     nv_list = raw_data["nv_list"]
     num_nvs = len(nv_list)
@@ -376,6 +346,7 @@ def _main(
     optimize_duration_or_amp,
 ):
     ### Initial setup
+    print("Main Function Started")
     seq_file = "optimize_charge_state_histograms.py"
     step_vals = np.linspace(min_step_val, max_step_val, num_steps)
     if optimize_duration_or_amp:
@@ -405,7 +376,6 @@ def _main(
             optimize_duration_or_amp,
         ]
         # print(seq_args)
-        return
         seq_args_string = tb.encode_seq_args(seq_args)
         pulse_gen.stream_load(seq_file, seq_args_string, num_reps)
 
