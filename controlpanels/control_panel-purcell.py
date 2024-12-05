@@ -153,7 +153,8 @@ def do_optimize_readout_amp(nv_list):
 
 
 def optimize_readout_amp_and_duration(nv_list):
-    num_steps = 5
+    num_amp_steps = 5
+    num_dur_steps = 5
     num_reps = 1
     num_runs = 100
     min_amp = 0.8
@@ -164,7 +165,8 @@ def optimize_readout_amp_and_duration(nv_list):
     return (
         optimize_amp_duration_charge_state_histograms.optimize_readout_amp_and_duration(
             nv_list,
-            num_steps,
+            num_amp_steps,
+            num_dur_steps,
             num_reps,
             num_runs,
             min_amp,

@@ -2,9 +2,7 @@
 """
 Illuminate an area, collecting onto the camera. Interleave a signal and control sequence
 and plot the difference
-
 Created on Fall 2024
-
 @author: Saroj Chand
 """
 
@@ -87,12 +85,9 @@ def process_and_plot(raw_data):
     min_step_val = raw_data["min_step_val"]
     max_step_val = raw_data["max_step_val"]
     num_steps = raw_data["num_steps"]
+    num_amp_steps = raw_data["num_amp_steps"]
+    num_dur_steps = raw_data["num_dur_steps"]
     optimize_pol_or_readout = raw_data["optimize_pol_or_readout"]
-    duration_vals = np.linspace(min_step_val[0], max_step_val[0], num_steps)
-    amp_vals = np.linspace(min_step_val[1], max_step_val[1], num_steps)
-    duration_vals = duration_vals.astype(int)
-    step_vals = np.array(np.meshgrid(duration_vals, amp_vals)).T.reshape(-1, 2)
-
     counts = np.array(raw_data["counts"])
     ref_exp_ind = 1
     condensed_counts = [
@@ -135,41 +130,91 @@ def process_and_plot(raw_data):
     goodness_of_fit_arr = results[:, :, 2]
 
     ### Plotting
-    duration_vals = np.linspace(min_step_val[0], max_step_val[0], num_steps)
-    amp_vals = np.linspace(min_step_val[1], max_step_val[1], num_steps)
+    if optimize_pol_or_readout:
+        x_label = "Polarization amplitude"
+        y_label = "Polarization duration"
+    else:
+        x_label = "Readout amplitude"
+        y_label = "Readout duration"
+
+    duration_vals = np.linspace(min_step_val[0], max_step_val[0], num_amp_steps)
+    amp_vals = np.linspace(min_step_val[1], max_step_val[1], num_dur_steps)
+
     avg_readout_fidelity = np.nanmean(readout_fidelity_arr, axis=0).reshape(
         len(duration_vals), len(amp_vals)
     )
+    avg_prep_fidelity = np.nanmean(prep_fidelity_arr, axis=0).reshape(
+        len(duration_vals), len(amp_vals)
+    )
+    avg_goodness_of_fit = np.nanmean(goodness_of_fit_arr, axis=0).reshape(
+        len(duration_vals), len(amp_vals)
+    )
 
+    metrics = {
+        "Readout Fidelity": avg_readout_fidelity,
+        "Preparation Fidelity": avg_prep_fidelity,
+        "Goodness of Fit": avg_goodness_of_fit,
+    }
+
+    for title, data in metrics.items():
+        plt.figure(figsize=(6, 5))
+        plt.title(f"{title} Heatmap")
+        plt.xlabel(x_label)
+        plt.ylabel(y_label)
+        plt.imshow(
+            data.T,
+            extent=[amp_vals[0], amp_vals[-1], duration_vals[0], duration_vals[-1]],
+            aspect="auto",
+            origin="lower",
+            cmap="viridis",
+        )
+        plt.colorbar(label=title)
+        plt.grid(alpha=0.3)
+        plt.show()
+
+    # Combined heatmap using geometric mean of metrics
+    combined_score = (
+        readout_fidelity_arr * prep_fidelity_arr * (1 / (1 + goodness_of_fit_arr))
+    ) ** (1 / 3)
     plt.figure(figsize=(6, 5))
-    plt.title("Average Readout Fidelity Heatmap")
-    plt.xlabel("Amplitude")
-    plt.ylabel("Duration")
+    plt.title("Combined Metrics Heatmap")
+    plt.xlabel(x_label)
+    plt.ylabel(y_label)
     plt.imshow(
-        avg_readout_fidelity,
-        extent=[
-            amp_vals[0],
-            amp_vals[-1],
-            duration_vals[0],
-            duration_vals[-1],
-        ],
+        combined_score.T,  # Transpose to match x-y grid
+        extent=[amp_vals[0], amp_vals[-1], duration_vals[0], duration_vals[-1]],
         aspect="auto",
         origin="lower",
-        cmap="viridis",
+        cmap="plasma",
     )
-    plt.colorbar(label="Avg. Readout Fidelity")
+    plt.colorbar(label="Combined Metric")
+    plt.grid(alpha=0.3)
     plt.show()
+    # Find optimal parameters
+    max_idx = np.unravel_index(np.nanargmax(combined_score), combined_score.shape)
+    optimal_amp = amp_vals[max_idx[0]]
+    optimal_dur = duration_vals[max_idx[1]]
+    print(f"Optimal Parameters: Amplitude = {optimal_amp}, Duration = {optimal_dur}")
 
 
 # endregion
 
 
 def optimize_readout_amp_and_duration(
-    nv_list, num_steps, num_reps, num_runs, min_duration, max_duration, min_amp, max_amp
+    nv_list,
+    num_amp_steps,
+    num_dur_steps,
+    num_reps,
+    num_runs,
+    min_duration,
+    max_duration,
+    min_amp,
+    max_amp,
 ):
     return _main(
         nv_list,
-        num_steps,
+        num_amp_steps,
+        num_dur_steps,
         num_reps,
         num_runs,
         (min_duration, min_amp),
@@ -180,7 +225,8 @@ def optimize_readout_amp_and_duration(
 
 def _main(
     nv_list,
-    one_d_num_steps,
+    num_amp_steps,
+    num_dur_steps,
     num_reps,
     num_runs,
     min_step_val,
@@ -210,16 +256,16 @@ def _main(
 
     seq_file = "optimize_amp_duration_charge_state_histograms.py"
 
-    amp_vals = np.linspace(min_step_val[0], max_step_val[0], one_d_num_steps)
-    duration_vals = np.linspace(
-        min_step_val[1], max_step_val[1], one_d_num_steps
-    ).astype(int)
+    amp_vals = np.linspace(min_step_val[0], max_step_val[0], num_amp_steps)
+    duration_vals = np.linspace(min_step_val[1], max_step_val[1], num_dur_steps).astype(
+        int
+    )
     # print(f"Duration Values: {duration_vals}")
     # print(f"Amplitude Values: {amp_vals}")
     step_vals = np.array(np.meshgrid(duration_vals, amp_vals)).T.reshape(-1, 2)
     # print(f"Amplitude Values: {step_vals}")
     pulse_gen = tb.get_server_pulse_gen()
-    num_steps = one_d_num_steps**2
+    num_steps = num_amp_steps * num_dur_steps
 
     def run_fn(shuffled_step_inds):
         shuffled_step_vals = step_vals[shuffled_step_inds]
@@ -254,6 +300,9 @@ def _main(
         "timestamp": timestamp,
         "min_step_val": min_step_val,
         "max_step_val": max_step_val,
+        "num_amp_steps": num_amp_steps,
+        "num_dur_steps": num_dur_steps,
+        "step_vals": step_vals,
         "optimize_pol_or_readout": optimize_pol_or_readout,
     }
 

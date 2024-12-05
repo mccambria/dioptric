@@ -189,7 +189,6 @@ def find_optimal_value_geom_mean(
         The step value corresponding to the optimal combined score.
     """
     w1, w2, w3 = weights
-
     # Normalize metrics
     norm_prep_fidelity = (prep_fidelity - np.nanmin(prep_fidelity)) / (
         np.nanmax(prep_fidelity) - np.nanmin(prep_fidelity)
