@@ -15,6 +15,7 @@ import traceback
 
 import matplotlib.pyplot as plt
 import numpy as np
+import seaborn as sns
 from scipy import ndimage
 
 from majorroutines.widefield import base_routine
@@ -30,9 +31,6 @@ from analysis.bimodal_histogram import (
     determine_threshold,
     fit_bimodal_histogram,
 )
-
-
-import seaborn as sns
 
 
 # Update the plot_histograms function for better visualization
