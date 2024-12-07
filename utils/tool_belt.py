@@ -239,12 +239,14 @@ def seq_train_length_check(train):
 
 
 def encode_seq_args(seq_args):
-    # Recast np ints to Python ints so json knows what to do
+    # Recast np ints to Python ints and handle numpy arrays
     for ind in range(len(seq_args)):
         el = seq_args[ind]
-        if type(el) is np.int32:
+        if isinstance(el, np.ndarray):  # Convert ndarray to a list
+            seq_args[ind] = el.tolist()
+        elif type(el) is np.int32:  # Convert numpy integers to Python int
             seq_args[ind] = int(el)
-        if isinstance(el, Enum):
+        elif isinstance(el, Enum):  # Convert Enums to strings
             seq_args[ind] = str(el)
     return json.dumps(seq_args)
 

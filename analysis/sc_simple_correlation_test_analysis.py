@@ -1,8 +1,7 @@
-
-
 # -*- coding: utf-8 -*-
 """
-Created on Semptember 16th, 2024
+Created on Fall, 2024
+
 @author: Saroj Chand
 """
 import matplotlib.cm as cm
@@ -16,8 +15,10 @@ from matplotlib import patches
 from matplotlib.ticker import MaxNLocator
 from datetime import datetime
 from utils import data_manager as dm
+
 # from utils.tool_belt import nan_corr_coef
 from utils.widefield import threshold_counts
+
 
 # Optimized nan_corr_coef function
 def nan_corr_coef(arr):
@@ -73,7 +74,9 @@ def process_and_plot(data, rearrangement="spin_flip", file_path=None):
 
     # Thresholding counts with dynamic thresholds
     thresh_method = "otsu"
-    sig_counts, ref_counts = threshold_counts(nv_list, sig_counts, ref_counts, thresh_method)
+    sig_counts, ref_counts = threshold_counts(
+        nv_list, sig_counts, ref_counts, thresh_method
+    )
     sig_counts, ref_counts, nv_list = remove_nans_from_data(
         sig_counts, ref_counts, nv_list
     )
@@ -565,6 +568,7 @@ def draw_curved_edges(
         # Add the edge to the axis
         ax.add_patch(curve)
 
+
 def plot_nv_network(data):
     """
     Plot a network graph where NV centers are represented as nodes,
@@ -648,14 +652,20 @@ def plot_nv_network(data):
     for i in range(sig_corr_coeffs.shape[0]):
         for j in range(i + 1, sig_corr_coeffs.shape[1]):
             if abs(sig_corr_coeffs[i, j]) > threshold:
-            # if sig_corr_coeffs[i, j] < threshold:  # Only anticorrelations (negative values)
+                # if sig_corr_coeffs[i, j] < threshold:  # Only anticorrelations (negative values)
                 G.add_edge(i, j)
                 edges.append((i, j))
-                edge_colors.append(sig_corr_coeffs[i, j])  # Correlation value as the edge color
+                edge_colors.append(
+                    sig_corr_coeffs[i, j]
+                )  # Correlation value as the edge color
                 # edge_widths.append(0.5)  # Edge width proportional to correlation
-                edge_widths.append(5 * abs(sig_corr_coeffs[i, j]))  # Edge width proportional to correlation
-                edge_alphas.append(0.5 + 0.5 * abs(sig_corr_coeffs[i, j]))  # Transparency proportional to correlation
-                # edge_alphas.append(0.5)     
+                edge_widths.append(
+                    5 * abs(sig_corr_coeffs[i, j])
+                )  # Edge width proportional to correlation
+                edge_alphas.append(
+                    0.5 + 0.5 * abs(sig_corr_coeffs[i, j])
+                )  # Transparency proportional to correlation
+                # edge_alphas.append(0.5)
                 # Normalize edge colors between -1 and 1 for the colormap
                 # mean_corr = np.nanmean(sig_corr_coeffs<0)
                 # std_corr = np.nanstd(sig_corr_coeffs)
@@ -695,7 +705,7 @@ def plot_nv_network(data):
     # Set title and legend
     plt.title("NV Center Network Graph", fontsize=16)
     plt.legend(scatterpoints=1)
-    
+
     if fig is not None:
         dm.save_figure(fig, file_path)
 
