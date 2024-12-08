@@ -329,9 +329,8 @@ def _main(
 
 if __name__ == "__main__":
     kpl.init_kplotlib()
-    # raw_data = dm.get_raw_data(file_id=1714802805037, load_npz=False)
-    # raw_data = dm.get_raw_data(file_id=1709868774004, load_npz=False) #yellow ampl var
-    raw_data = dm.get_raw_data(file_id=1710843759806, load_npz=False)  # yellow amp var
-    # raw_data = dm.get_raw_data(file_id=1711618252292, load_npz=False) #green ampl var
+    file_id=
+    # raw_data = dm.get_raw_data(file_id=file_id, load_npz=False)
+
     process_and_plot(raw_data)
     kpl.show(block=True)

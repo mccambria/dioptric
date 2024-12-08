@@ -17,8 +17,6 @@ import matplotlib.pyplot as plt
 import numpy as np
 import seaborn as sns
 from scipy import ndimage
-
-from majorroutines.widefield import base_routine
 from utils import common, widefield
 from utils import data_manager as dm
 from utils import kplotlib as kpl

@@ -169,28 +169,6 @@ def visualize_large_nv_data(
     return fig_list
 
 
-def voigt_with_background(
-    freq, amp1, amp2, center1, center2, width, bg_offset, bg_slope
-):
-    """Voigt profile for two peaks with a linear background."""
-    freq = np.array(freq)  # Ensure freq is a NumPy array for element-wise operations
-    return (
-        amp1 * norm_voigt(freq, width, width, center1)
-        + amp2 * norm_voigt(freq, width, width, center2)
-        + bg_offset
-        + bg_slope * freq
-    )
-
-
-def residuals_fn(params, freq, nv_counts, nv_counts_ste):
-    """Compute residuals for least_squares optimization."""
-    amp1, amp2, center1, center2, width, bg_offset, bg_slope = params
-    fit_vals = voigt_with_background(
-        freq, amp1, amp2, center1, center2, width, bg_offset, bg_slope
-    )
-    return (nv_counts - fit_vals) / nv_counts_ste  # Weighted residuals
-
-
 def calculate_contrast(amp1, amp2, bg_offset, chi_squared):
     """
     Calculate contrast for an NV center signal.
@@ -249,6 +227,28 @@ def cluster_and_print_average_center_frequencies(center_freqs):
         print(
             f"Cluster {label}: Count = {count}, Average Lower Frequency = {avg_lower_freq:.3f}, Average Upper Frequency = {avg_upper_freq:.2f}"
         )
+
+
+def voigt_with_background(
+    freq, amp1, amp2, center1, center2, width, bg_offset, bg_slope
+):
+    """Voigt profile for two peaks with a linear background."""
+    freq = np.array(freq)  # Ensure freq is a NumPy array for element-wise operations
+    return (
+        amp1 * norm_voigt(freq, width, width, center1)
+        + amp2 * norm_voigt(freq, width, width, center2)
+        + bg_offset
+        + bg_slope * freq
+    )
+
+
+def residuals_fn(params, freq, nv_counts, nv_counts_ste):
+    """Compute residuals for least_squares optimization."""
+    amp1, amp2, center1, center2, width, bg_offset, bg_slope = params
+    fit_vals = voigt_with_background(
+        freq, amp1, amp2, center1, center2, width, bg_offset, bg_slope
+    )
+    return (nv_counts - fit_vals) / nv_counts_ste  # Weighted residuals
 
 
 def plot_nv_resonance_fits_and_residuals(
@@ -387,15 +387,20 @@ def plot_nv_resonance_fits_and_residuals(
 
     # Filter indices based on proximity to target peak differences with plus/minus bound
     filtered_indices = [
-        idx for idx, freq_diff in enumerate(center_freq_differences)
-        if any(target - tolerance <= freq_diff <= target + tolerance for target in target_peak_values)
+        idx
+        for idx, freq_diff in enumerate(center_freq_differences)
+        if any(
+            target - tolerance <= freq_diff <= target + tolerance
+            for target in target_peak_values
+        )
     ]
 
     # Find indices that do not match the criteria
     non_matching_indices = [
-        idx for idx in range(len(center_freq_differences))
+        idx
+        for idx in range(len(center_freq_differences))
         if idx not in filtered_indices
-        ]
+    ]
     for idx in non_matching_indices:
         print(f"NV: {idx}")
 
@@ -447,7 +452,7 @@ def plot_nv_resonance_fits_and_residuals(
                 markersize=5,
                 label=f"{filtered_indices[nv_idx]+1}",
             )
-            ax.legend(fontsize='small')
+            ax.legend(fontsize="small")
             ax.errorbar(
                 freqs,
                 filtered_avg_counts[nv_idx],
@@ -552,13 +557,13 @@ def plot_nv_resonance_fits_and_residuals(
             "green",
         ),
         (
-        "NV Index vs Frequency Difference",
-        list(range(len(filtered_freq_differences))),  # NV indices
-        filtered_freq_differences,
-        "NV Index",
-        "Frequency Difference (GHz)",
-        "blue",
-        )
+            "NV Index vs Frequency Difference",
+            list(range(len(filtered_freq_differences))),  # NV indices
+            filtered_freq_differences,
+            "NV Index",
+            "Frequency Difference (GHz)",
+            "blue",
+        ),
     ]
 
     for title, x_data, y_data, xlabel, ylabel, color in plots_data:
@@ -959,18 +964,29 @@ def plot_selected_nv_resonance_fits_comparison(
         # Initial guesses and fitting logic
         low_freq_guess = freqs[np.argmax(avg_counts[plot_idx][: len(freqs) // 2])]
         high_freq_guess = freqs[
-            np.argmax(avg_counts[plot_idx][len(freqs) // 2:]) + len(freqs) // 2
+            np.argmax(avg_counts[plot_idx][len(freqs) // 2 :]) + len(freqs) // 2
         ]
         max_amp = np.max(nv_counts)
-        guess_params = [max_amp, max_amp, low_freq_guess, high_freq_guess, 5, np.min(nv_counts), 0]
+        guess_params = [
+            max_amp,
+            max_amp,
+            low_freq_guess,
+            high_freq_guess,
+            5,
+            np.min(nv_counts),
+            0,
+        ]
         bounds = (
             [0, 0, min(freqs), min(freqs), 0, -np.inf, -np.inf],
             [np.inf, np.inf, max(freqs), max(freqs), np.inf, np.inf, np.inf],
         )
 
         result = least_squares(
-            residuals_fn, guess_params, args=(freqs, nv_counts, nv_counts_ste),
-            bounds=bounds, max_nfev=20000
+            residuals_fn,
+            guess_params,
+            args=(freqs, nv_counts, nv_counts_ste),
+            bounds=bounds,
+            max_nfev=20000,
         )
         popt = result.x
         center_freqs_all.append([popt[2], popt[3]])
@@ -978,17 +994,28 @@ def plot_selected_nv_resonance_fits_comparison(
         popts.append(popt)
 
         fit_data = voigt_with_background(freqs, *popt)
-        ax.plot(freqs, fit_data, "-", color=colors[plot_idx % len(colors)], label="Fit", lw=2)
+        ax.plot(
+            freqs,
+            fit_data,
+            "-",
+            color=colors[plot_idx % len(colors)],
+            label="Fit",
+            lw=2,
+        )
 
         ax.set_title(f"NV {nv_idx + 1}")
         ax.set_ylabel("NV$^{-}$ Population")
         ax.grid(True, which="both", linestyle="--", linewidth=0.5)
 
         peak_diff = abs(popt[3] - popt[2])
-        print(f"NV {nv_idx + 1} fitted peaks: {popt[2]:.2f} GHz, {popt[3]:.2f} GHz (Difference: {peak_diff:.3f} GHz)")
+        print(
+            f"NV {nv_idx + 1} fitted peaks: {popt[2]:.2f} GHz, {popt[3]:.2f} GHz (Difference: {peak_diff:.3f} GHz)"
+        )
 
     axes[-1].set_xlabel("Frequency (GHz)")
-    fig.suptitle(f"Selected NV Resonance Fits Comparison (data_id = {file_id})", fontsize=16)
+    fig.suptitle(
+        f"Selected NV Resonance Fits Comparison (data_id = {file_id})", fontsize=16
+    )
     plt.tight_layout()
     plt.show()
 
