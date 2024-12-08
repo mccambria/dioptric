@@ -104,8 +104,8 @@ def do_optimize_pol_duration(nv_list):
     num_steps = 4
     # num_reps = 150
     # num_runs = 5
-    num_reps = 5
-    num_runs = 2
+    num_reps = 50
+    num_runs = 50
     min_duration = 500
     max_duration = 2000
     return optimize_charge_state_histograms_mcc.optimize_pol_duration(
@@ -114,11 +114,11 @@ def do_optimize_pol_duration(nv_list):
 
 
 def do_optimize_pol_amp(nv_list):
-    num_steps = 15
+    num_steps = 11
     # num_reps = 150
     # num_runs = 5
-    num_reps = 10
-    num_runs = 300
+    num_reps = 15
+    num_runs = 150
     min_amp = 0.9
     max_amp = 1.1
     return optimize_charge_state_histograms_mcc.optimize_pol_amp(
@@ -153,11 +153,11 @@ def do_optimize_readout_amp(nv_list):
 
 
 def optimize_readout_amp_and_duration(nv_list):
-    num_amp_steps = 5
+    num_amp_steps = 11
     num_dur_steps = 5
-    num_reps = 1
-    num_runs = 100
-    min_amp = 0.8
+    num_reps = 5
+    num_runs = 450
+    min_amp = 0.9
     max_amp = 1.2
     min_duration = 12e6
     max_duration = 60e6
@@ -309,8 +309,8 @@ def do_optimize_scc_duration(nv_list):
     num_reps = 15
 
     # num_runs = 20 * 25
-    num_runs = 30
-    num_runs = 50
+    # num_runs = 30
+    # num_runs = 50
     num_runs = 2
 
     optimize_scc.optimize_scc_duration(
@@ -820,13 +820,10 @@ def pixel_to_voltage(initial_pixel_coords, final_pixel_coords):
     )
     final_pixel_coords_h = np.array([final_pixel_coords[0], final_pixel_coords[1], 1.0])
 
-    # Calculate pixel drift
     pixel_drift = final_pixel_coords_h - initial_pixel_coords_h
 
-    # Get the inverse affine transformation matrix
     M_inv = piezo_voltage_to_pixel_calibration()
 
-    # Calculate the corresponding voltage drift using the inverse affine matrix
     voltage_drift_h = np.dot(M_inv, pixel_drift)  # No transpose needed
 
     # Update only the x and y components of the global coordinates
@@ -838,31 +835,6 @@ def pixel_to_voltage(initial_pixel_coords, final_pixel_coords):
     print(f"Final voltage coordinates: {final_voltage.tolist()}")
 
     return final_voltage.tolist()
-
-
-def do_optimize_SLM_calibation(nv_list, coords_key):
-    repr_nv_sig = widefield.get_repr_nv_sig(nv_list)
-    # Pixel optimization in parallel with widefield yellow
-    if coords_key is None:
-        num_reps = 50
-        img_array = do_widefield_image_sample(nv_sig, num_reps=num_reps)
-
-    opti_coords_list = []
-    for nv in nv_list:
-        # Pixel coords
-        if coords_key is None:
-            # imaging_laser = tb.get_laser_name(LaserKey.IMAGING)
-            opti_coords = do_optimize_pixel(nv)
-            # opti_coords = optimize.optimize_pixel_with_img_array(img_array, nv_sig=nv)
-            # widefield.reset_all_drift()
-            targeting.optimize_xyz_using_piezo(repr_nv_sig)
-            widefield.reset_scanning_optics_drift()  # reset drift before optimizing next NV
-        opti_coords_list.append(opti_coords)
-
-    # Report back
-    for opti_coords in opti_coords_list:
-        r_opti_coords = [round(el, 3) for el in opti_coords]
-        print(f"{r_opti_coords},")
 
 
 # Load the saved NV coordinates and radii from the .npz file
@@ -904,7 +876,7 @@ if __name__ == "__main__":
     # magnet_angle = 90
     date_str = "2024_03_12"
     sample_coords = [2.0, 0.0]
-    z_coord = 1.15
+    z_coord = 1.3
     # Load NV pixel coordinates
     pixel_coords_list = load_nv_coords(
         file_path="slmsuite/nv_blob_detection/nv_blob_filtered_160nvs_reordered.npz",
@@ -969,7 +941,7 @@ if __name__ == "__main__":
     # ).tolist()
     scc_duration_list = [140] * num_nvs
     scc_duration_list = [4 * round(el / 4) for el in scc_duration_list]
-    scc_amp_list = [1.0] * num_nvs
+    scc_amp_list = [1] * num_nvs
 
     # nv_list[i] will have the ith coordinates from the above lists
     nv_list: list[NVSig] = []
@@ -1057,7 +1029,7 @@ if __name__ == "__main__":
 
     # nv_list = [nv_list[
     # nv_list = [nv_list[2]]
-    # nv_list = nv_list[:5]
+    nv_list = nv_list[:5]
 
     # endregion
 
@@ -1126,7 +1098,7 @@ if __name__ == "__main__":
         # do_optimize_green(nv_sig)
         # do_optimize_red(nv_sig, repr_nv_sig)
         # do_optimize_z(nv_sig)
-        ## do_optimize_sample(nv_sig)
+        # do_optimize_sample(nv_sig)
 
         # do_compensate_for_drift(nv_sig)
 
@@ -1140,7 +1112,7 @@ if __name__ == "__main__":
         # do_charge_state_histograms(nv_list)
         # do_optimize_pol_amp(nv_list)
         # do_optimize_readout_amp(nv_list)
-        do_optimize_readout_duration(nv_list)
+        # do_optimize_readout_duration(nv_list)
         # optimize_readout_amp_and_duration(nv_list)
         # do_optimize_pol_duration(nv_list)
         # do_charge_state_histograms_images(nv_list, vary_pol_laser=True)
