@@ -8,6 +8,7 @@ Created November 18th, 2023
 @author: mccambria
 """
 
+import re
 import time
 from pathlib import Path
 
@@ -93,9 +94,9 @@ def upload(file_path_w_ext, content):
     return new_file.id
 
 
-def get_folder_id(folder_path):
-    """Gets the Box ID of the specified folder. Creates the folder if it does
-    not exist yet
+def get_folder_id(folder_path, no_create=False):
+    """Gets the Box ID of the specified folder. Optionally creates the folder if
+    it does not exist yet
 
     Parameters
     ----------
@@ -116,15 +117,18 @@ def get_folder_id(folder_path):
 
     # If it's not in the cache, look it up from the cloud
     folder_path_parts = list(folder_path.parts)
-    folder_id = _get_folder_id_recursion(folder_path_parts)
+    folder_id = _get_folder_id_recursion(folder_path_parts, no_create)
     folder_path_cache[folder_path] = folder_id
     return folder_id
 
 
-def _get_folder_id_recursion(folder_path_parts, start_id=root_folder_id):
+def _get_folder_id_recursion(
+    folder_path_parts, start_id=root_folder_id, no_create=False
+):
     """
     Starting from the root data folder, find each subsequent folder in folder_path_parts,
-    finally returning the ID of the last folder. Create the folders that don't exist yet
+    finally returning the ID of the last folder. Optionally create the folders that don't
+    exist yet
     """
     target_folder_name = folder_path_parts.pop(0)
 
@@ -138,19 +142,38 @@ def _get_folder_id_recursion(folder_path_parts, start_id=root_folder_id):
 
     # Otherwise create it
     if target_folder_id is None:
-        target_folder = start_folder.create_subfolder(target_folder_name)
-        target_folder_id = target_folder.id
+        if no_create:
+            return None
+        else:
+            target_folder = start_folder.create_subfolder(target_folder_name)
+            target_folder_id = target_folder.id
 
     # Return or recurse
     if len(folder_path_parts) == 0:
         return target_folder_id
     else:
-        return _get_folder_id_recursion(folder_path_parts, start_id=target_folder_id)
+        return _get_folder_id_recursion(
+            folder_path_parts, start_id=target_folder_id, no_create=no_create
+        )
+
+
+def _delete_folders(reg_exp, start_id=root_folder_id):
+    start_folder = box_client.folder(start_id)
+    start_folder_info = start_folder.get()
+
+    path = [parent.name for parent in start_folder_info.path_collection["entries"][1:]]
+    path.append(start_folder_info.name)
+    path = "/".join(path)
+    if re.fullmatch(reg_exp, path):
+        # start_folder.delete()
+        print(path)
+
+    items = start_folder.get_items()
+    for item in items:
+        if item.type == "folder":
+            _delete_folders(reg_exp, start_id=item.id)
 
 
 if __name__ == "__main__":
-    for ind in range(3):
-        start = time.time()
-        folder_id = get_folder_id(Path("pc_rabi/branch_master/rabi/2023_12"))
-        stop = time.time()
-        print(stop - start)
+    reg_exp = r"nvdata\/pc_[a-zA-Z]*\/branch_[a-zA-Z]*\/.+\/2022_[0-9]{2}"
+    _delete_folders(reg_exp)
