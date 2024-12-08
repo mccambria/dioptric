@@ -253,7 +253,7 @@ def _main(
     optimize_pol_or_readout : bool
         True for polarization optimization, False for readout optimization.
     """
-
+    ### Initial setup
     seq_file = "optimize_amp_duration_charge_state_histograms.py"
 
     amp_vals = np.linspace(min_step_val[0], max_step_val[0], num_amp_steps)
@@ -318,7 +318,6 @@ def _main(
         pass
 
     ### Save and clean up
-
     file_path = dm.get_file_path(__file__, timestamp, repr_nv_name)
     dm.save_raw_data(raw_data, file_path)
 
