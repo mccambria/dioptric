@@ -253,7 +253,7 @@ def _main(
     optimize_pol_or_readout : bool
         True for polarization optimization, False for readout optimization.
     """
-    ### Initial setup
+
     seq_file = "optimize_amp_duration_charge_state_histograms.py"
 
     amp_vals = np.linspace(min_step_val[0], max_step_val[0], num_amp_steps)
@@ -318,6 +318,7 @@ def _main(
         pass
 
     ### Save and clean up
+
     file_path = dm.get_file_path(__file__, timestamp, repr_nv_name)
     dm.save_raw_data(raw_data, file_path)
 
@@ -328,8 +329,9 @@ def _main(
 
 if __name__ == "__main__":
     kpl.init_kplotlib()
-    file_id=
-    # raw_data = dm.get_raw_data(file_id=file_id, load_npz=False)
-
+    # raw_data = dm.get_raw_data(file_id=1714802805037, load_npz=False)
+    # raw_data = dm.get_raw_data(file_id=1709868774004, load_npz=False) #yellow ampl var
+    raw_data = dm.get_raw_data(file_id=1710843759806, load_npz=False)  # yellow amp var
+    # raw_data = dm.get_raw_data(file_id=1711618252292, load_npz=False) #green ampl var
     process_and_plot(raw_data)
     kpl.show(block=True)
