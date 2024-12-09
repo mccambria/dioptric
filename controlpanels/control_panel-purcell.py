@@ -215,8 +215,8 @@ def do_optimize_green(nv_sig):
 
 def do_optimize_red(nv_sig, ref_nv_sig):
     opti_coords = []
-    # axes_list = [Axes.X, Axes.Y]
-    axes_list = [Axes.Y, Axes.X]
+    axes_list = [Axes.X, Axes.Y]
+    # axes_list = [Axes.Y, Axes.X]
     for ind in range(1):
         axes = axes_list[ind]
         ret_vals = targeting.optimize(nv_sig, coords_key=red_laser_aod, axes=axes)
@@ -943,24 +943,24 @@ if __name__ == "__main__":
     print(f"Green Laser Coordinates: {green_coords_list[0]}")
     print(f"Red Laser Coordinates: {red_coords_list[0]}")
 
-    # pixel_coords_list = [
-    #     [106.923, 120.549],
-    #     [52.761, 64.24],
-    #     [95.923, 201.438],
-    #     [207.435, 74.049],
-    # ]
-    # green_coords_list = [
-    #     [108.748, 106.905],
-    #     [115.626, 101.27],
-    #     [108.961, 115.735],
-    #     [98.369, 100.929],
-    # ]
-    # red_coords_list = [
-    #     [73.525, 72.483],
-    #     [78.674, 67.831],
-    #     [73.831, 79.615],
-    #     [65.056, 67.6],
-    # ]
+    pixel_coords_list = [
+        [106.923, 120.549],
+        [52.761, 64.24],
+        [95.923, 201.438],
+        [207.435, 74.049],
+    ]
+    green_coords_list = [
+        [108.648, 106.84],
+        [115.684, 101.136],
+        [108.857, 115.613],
+        [98.295, 100.881],
+    ]
+    red_coords_list = [
+        [73.525, 72.375],
+        [78.674, 67.777],
+        [73.831, 79.457],
+        [65.056, 67.6],
+    ]
     num_nvs = len(pixel_coords_list)
     threshold_list = [45.5] * num_nvs
     # threshold_list = load_thresholds
@@ -1132,8 +1132,8 @@ if __name__ == "__main__":
         # widefield.reset_all_drift()
         # coords_key = None  # Pixel coords
         # coords_key = green_laser
-        # coords_key = red_laser
-        # do_optimize_loop(nv_list, coords_key)
+        coords_key = red_laser
+        do_optimize_loop(nv_list, coords_key)
 
         # nv_list = nv_list[::-1]
         # do_charge_state_histograms(nv_list)
@@ -1167,7 +1167,7 @@ if __name__ == "__main__":
 
         # nv_list = nv_list[::-1]
         # do_scc_snr_check(nv_list)
-        do_optimize_scc_duration(nv_list)
+        # do_optimize_scc_duration(nv_list)
         # do_optimize_scc_amp(nv_list)
         # do_crosstalk_check(nv_sig)
         # do_spin_pol_check(nv_sig)

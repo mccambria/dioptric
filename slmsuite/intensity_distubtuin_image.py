@@ -417,10 +417,10 @@ if __name__ == "__main__":
     # data = dm.get_raw_data(file_id=1699573772441, load_npz=True)
     # data = dm.get_raw_data(file_id=1700650667777, load_npz=True)
     # data = dm.get_raw_data(file_id=1700668458198, load_npz=True)
-    # data = dm.get_raw_data(file_id=1700710358100, load_npz=True)
-    # data = dm.get_raw_data(file_id=1701553383934, load_npz=True)
+    data = dm.get_raw_data(file_id=1700710358100, load_npz=True)
+    # data = dm.get_raw_data(file_id=1715452021340, load_npz=True)
 
-    # img_array = np.array(data["ref_img_array"])
+    img_array = np.array(data["ref_img_array"])
     nv_coordinates, spot_weights = load_nv_coords(
         # file_path="slmsuite/nv_blob_detection/nv_blob_filtered_144nvs.npz"
         # file_path="slmsuite/nv_blob_detection/nv_blob_filtered_160nvs.npz"
@@ -626,22 +626,22 @@ if __name__ == "__main__":
     # )
 
     # # Plot the original image with circles around each NV
-    # fig, ax = plt.subplots()
-    # title = "50ms, Ref"
-    # kpl.imshow(ax, img_array, title=title, cbar_label="Photons")
+    fig, ax = plt.subplots()
+    title = "50ms, Ref"
+    kpl.imshow(ax, img_array, title=title, cbar_label="Photons")
     # Draw circles and index numbers
-    # for idx, coord in enumerate(filtered_reordered_coords):
-    #     circ = Circle(coord, sigma, color="lightblue", fill=False, linewidth=0.5)
-    #     ax.add_patch(circ)
-    #     # Place text just above the circle
-    #     ax.text(
-    #         coord[0],
-    #         coord[1] - sigma - 1,
-    #         str(idx + 1),
-    #         color="white",
-    #         fontsize=6,
-    #         ha="center",
-    #     )
+    for idx, coord in enumerate(filtered_reordered_coords):
+        circ = plt.Circle(coord, sigma, color="lightblue", fill=False, linewidth=0.5)
+        ax.add_patch(circ)
+        # Place text just above the circle
+        ax.text(
+            coord[0],
+            coord[1] - sigma - 1,
+            str(idx + 1),
+            color="white",
+            fontsize=6,
+            ha="center",
+        )
 
     # indices_to_circle = [4, 29, 41, 89, 102, 118, 139, 144, 148, 149]
     # indices_to_circle = [4, 27, 41, 82, 86, 89, 102, 109, 117, 138, 139, 148, 149]
@@ -675,4 +675,4 @@ if __name__ == "__main__":
     # plt.xlabel("Integrated Intensity")
     # plt.ylabel("Frequency")
     # plt.title("Histogram of Filtered Integrated Counts")
-    # plt.show(block=True)
+    plt.show(block=True)
