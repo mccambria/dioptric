@@ -275,8 +275,8 @@ def macro_scc(
         _macro_scc_no_shelving(
             scc_coords_list,
             scc_duration_list,
-            scc_duration_override,
             scc_amp_list,
+            scc_duration_override,
             scc_amp_override,
             do_target_list,
         )

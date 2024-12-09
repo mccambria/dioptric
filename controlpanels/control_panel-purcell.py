@@ -309,8 +309,8 @@ def do_optimize_scc_duration(nv_list):
     num_reps = 15
 
     # num_runs = 20 * 25
-    num_runs = 30
-    num_runs = 50
+    # num_runs = 30
+    # num_runs = 50
     num_runs = 2
 
     optimize_scc.optimize_scc_duration(
@@ -323,7 +323,6 @@ def do_optimize_scc_amp(nv_list):
     max_tau = 1.3
     num_steps = 16
     num_reps = 20
-
     num_runs = 60
     # num_runs = 2
 
@@ -904,7 +903,7 @@ if __name__ == "__main__":
     # magnet_angle = 90
     date_str = "2024_03_12"
     sample_coords = [2.0, 0.0]
-    z_coord = 1.15
+    z_coord = 1.55
     # Load NV pixel coordinates
     pixel_coords_list = load_nv_coords(
         file_path="slmsuite/nv_blob_detection/nv_blob_filtered_160nvs_reordered.npz",
@@ -1084,7 +1083,7 @@ if __name__ == "__main__":
         # do_optimize_xyz(nv_sig)
         # pos.set_xyz_on_nv(nv_sig)
 
-        # do_compensate_for_drift(nv_sig)
+        do_compensate_for_drift(nv_sig)
 
         # for point in points:
         #     x, y = point
@@ -1099,7 +1098,7 @@ if __name__ == "__main__":
         # nv_sig.coords[CoordsKey.SAMPLE][1] = y
         # do_scanning_image_sample(nv_sig)
 
-        # for z in np.linspace(0.0, 1.0, 11):
+        # for z in np.linspace(1.0, 2.0, 11):
         #     nv_sig.coords[CoordsKey.Z] = z
         #     do_scanning_image_sample(nv_sig)
 
@@ -1108,7 +1107,7 @@ if __name__ == "__main__":
 
         # do_scanning_image_sample(nv_sig)
         # do_scanning_image_sample_zoom(nv_sig)
-        do_widefield_image_sample(nv_sig, 50)
+        # do_widefield_image_sample(nv_sig, 50)
         # do_widefield_image_sample(nv_sig, 100)
 
         # do_image_nv_list(nv_list)
@@ -1168,7 +1167,7 @@ if __name__ == "__main__":
 
         # nv_list = nv_list[::-1]
         # do_scc_snr_check(nv_list)
-        # do_optimize_scc_duration(nv_list)
+        do_optimize_scc_duration(nv_list)
         # do_optimize_scc_amp(nv_list)
         # do_crosstalk_check(nv_sig)
         # do_spin_pol_check(nv_sig)
