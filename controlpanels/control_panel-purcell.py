@@ -1107,7 +1107,7 @@ if __name__ == "__main__":
 
         # do_scanning_image_sample(nv_sig)
         # do_scanning_image_sample_zoom(nv_sig)
-        # do_widefield_image_sample(nv_sig, 50)
+        do_widefield_image_sample(nv_sig, 50)
         # do_widefield_image_sample(nv_sig, 100)
 
         # do_image_nv_list(nv_list)
@@ -1133,7 +1133,7 @@ if __name__ == "__main__":
         # coords_key = None  # Pixel coords
         # coords_key = green_laser
         coords_key = red_laser
-        do_optimize_loop(nv_list, coords_key)
+        # do_optimize_loop(nv_list, coords_key)
 
         # nv_list = nv_list[::-1]
         # do_charge_state_histograms(nv_list)
