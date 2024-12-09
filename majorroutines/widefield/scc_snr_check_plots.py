@@ -2,7 +2,7 @@
 """
 Lighweight check of the SCC SNR
 
-Created on Fall, 2024
+Created on October 5, 2024
 
 @author: Saroj Chand
 """
@@ -218,10 +218,10 @@ def process_and_plot(data):
     # Set up the plot
     plt.figure(figsize=(15, 8))  # Adjust size for large numbers of NVs
     sns.set(style="whitegrid")
-
+    
     # Create bar plot with error bars using seaborn
     ax = sns.barplot(x="NV", y="Contrast", data=plot_data, ci=None)
-
+    
     # Add error bars manually
     for i, row in plot_data.iterrows():
         ax.errorbar(row["NV"], row["Contrast"], yerr=row["Error"], fmt='none', c='black')

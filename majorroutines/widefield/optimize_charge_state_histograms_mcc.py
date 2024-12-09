@@ -31,10 +31,40 @@ from utils import tool_belt as tb
 from utils.constants import NVSig, VirtualLaserKey
 
 
+# rcParams['font.family'] = 'Roboto'
+# region Process and plotting functions
+def find_intersection(x, y1, y2):
+    """
+    Finds the intersection point(s) of two curves y1 and y2 over x.
+    Parameters
+    ----------
+    x : np.ndarray
+        Array of x-values.
+    y1 : np.ndarray
+        First curve (e.g., fidelity).
+    y2 : np.ndarray
+        Second curve (e.g., goodness of fit).
+    Returns
+    -------
+    float
+        x-value of the intersection.
+    """
+    interp_fidelity = interp1d(
+        x, y1, kind="linear", bounds_error=False, fill_value="extrapolate"
+    )
+    interp_chi_squared = interp1d(
+        x, y2, kind="linear", bounds_error=False, fill_value="extrapolate"
+    )
+    # Calculate the difference between the two curves
+    diff = np.abs(interp_fidelity(x) - interp_chi_squared(x))
+    min_index = np.argmin(diff)
+    return x[min_index]
+
+
 def process_and_plot_mcc(raw_data):
     nv_list = raw_data["nv_list"]
     num_nvs = len(nv_list)
-    # num_nvs = 10
+    num_nvs = 10
     min_step_val = raw_data["min_step_val"]
     max_step_val = raw_data["max_step_val"]
     num_steps = raw_data["num_steps"]
@@ -61,9 +91,8 @@ def process_and_plot_mcc(raw_data):
     red_chi_sq_arr = np.empty((num_nvs, num_steps))
     for nv_ind in range(num_nvs):
         for step_ind in range(num_steps):
-            print(step_vals[step_ind])
             popt, _, red_chi_sq = fit_bimodal_histogram(
-                condensed_counts[nv_ind, step_ind], prob_dist, no_plot=False
+                condensed_counts[nv_ind, step_ind], prob_dist, no_plot=True
             )
             if popt is None:
                 readout_fidelity = np.nan
@@ -101,20 +130,20 @@ def process_and_plot_mcc(raw_data):
     kpl.plot_line(
         ax0,
         x_vals,
-        np.nanmedian(readout_fidelity_arr, axis=0),
+        np.median(readout_fidelity_arr, axis=0),
         label="Readout",
     )
     kpl.plot_line(
         ax0,
         x_vals,
-        np.nanmedian(prep_fidelity_arr, axis=0),
+        np.median(prep_fidelity_arr, axis=0),
         label="Charge prep.",
         color=kpl.KplColors.GREEN,
     )
     ax0.legend(loc=kpl.Loc.UPPER_LEFT)
     ax1 = ax0.twinx()
     color = kpl.KplColors.RED
-    kpl.plot_line(ax1, x_vals, np.nanmedian(red_chi_sq_arr, axis=0), color=color)
+    kpl.plot_line(ax1, x_vals, np.median(red_chi_sq_arr, axis=0), color=color)
     ax1.set_ylabel(r"$\chi^{2}_{\nu}$", color=color)
     ax1.tick_params(axis="y", color=color, labelcolor=color)
     ax1.xaxis.label.set_color(color)
@@ -189,6 +218,7 @@ def find_optimal_value_geom_mean(
         The step value corresponding to the optimal combined score.
     """
     w1, w2, w3 = weights
+
     # Normalize metrics
     norm_prep_fidelity = (prep_fidelity - np.nanmin(prep_fidelity)) / (
         np.nanmax(prep_fidelity) - np.nanmin(prep_fidelity)
@@ -376,7 +406,6 @@ def _main(
     optimize_duration_or_amp,
 ):
     ### Initial setup
-    print("Main Function Started")
     seq_file = "optimize_charge_state_histograms.py"
     step_vals = np.linspace(min_step_val, max_step_val, num_steps)
     if optimize_duration_or_amp:
@@ -405,7 +434,8 @@ def _main(
             optimize_pol_or_readout,
             optimize_duration_or_amp,
         ]
-        print(f"seq_args: {seq_args}")
+        # print(seq_args)
+        return
         seq_args_string = tb.encode_seq_args(seq_args)
         pulse_gen.stream_load(seq_file, seq_args_string, num_reps)
 

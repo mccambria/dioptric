@@ -3,9 +3,9 @@
 Pulsed electron spin resonance on multiple NVs with spin-to-charge
 conversion readout imaged onto a camera
 
-Created on Fall, 2024
+Created on November 19th, 2023
 
-@author: saroj chand
+@author: mccambria
 """
 
 import os

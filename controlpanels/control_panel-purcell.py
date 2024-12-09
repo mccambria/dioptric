@@ -29,7 +29,6 @@ from majorroutines.widefield import (
     correlation_test,
     crosstalk_check,
     image_sample,
-    optimize_amp_duration_charge_state_histograms,
     optimize_charge_state_histograms_mcc,
     optimize_scc,
     power_rabi,
@@ -1030,6 +1029,7 @@ if __name__ == "__main__":
     # nv_list = [nv_list[
     # nv_list = [nv_list[2]]
     nv_list = nv_list[:5]
+    nv_list = nv_list[:5]
 
     # endregion
 
@@ -1080,6 +1080,7 @@ if __name__ == "__main__":
 
         # do_scanning_image_sample(nv_sig)
         # do_scanning_image_sample_zoom(nv_sig)
+        do_widefield_image_sample(nv_sig, 50)
         do_widefield_image_sample(nv_sig, 50)
         # do_widefield_image_sample(nv_sig, 100)
 

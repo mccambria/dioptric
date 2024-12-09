@@ -2,9 +2,9 @@
 """
 Widefield Rabi experiment - Enhanced
 
-Created on Fall, 2024
-@auhtor
+Created on November 29th, 2023
 """
+
 import traceback
 import warnings
 from datetime import datetime

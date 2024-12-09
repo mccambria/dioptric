@@ -3,7 +3,7 @@
 Illuminate an area, collecting onto the camera. Interleave a signal and control sequence
 and plot the difference
 Created on Fall 2024
-@author: saroj chand
+@author: sbchand
 """
 
 import os
@@ -11,16 +11,10 @@ import sys
 import time
 import traceback
 from datetime import datetime
+
 import matplotlib.pyplot as plt
 import numpy as np
 from joblib import Parallel, delayed
-import matplotlib.pyplot as plt
-from matplotlib import font_manager as fm, rcParams
-
-# Specify the path to the Arial font file
-arial_font_path = r"C:\Windows\Fonts\arial.ttf"
-arial_font = fm.FontProperties(fname=arial_font_path)
-rcParams["font.family"] = arial_font.get_name()
 
 from analysis.bimodal_histogram import (
     ProbDist,
@@ -63,16 +57,10 @@ def find_optimal_value_geom_mean(
 
     # Find the step value corresponding to the maximum combined score
     max_index = np.nanargmax(combined_score)
-    max_combined_score = combined_score[max_index]
     optimal_step_val = step_vals[max_index]
-    optimal_prep_fidality = prep_fidelity[max_index]
-    optimal_readout_fidality = readout_fidelity[max_index]
-    return (
-        optimal_step_val,
-        optimal_prep_fidality,
-        optimal_readout_fidality,
-        max_combined_score,
-    )
+    max_combined_score = combined_score[max_index]
+
+    return optimal_step_val, max_combined_score
 
 
 def process_and_plot(raw_data):
@@ -84,6 +72,7 @@ def process_and_plot(raw_data):
     step_vals = np.linspace(min_step_val, max_step_val, num_steps)
     optimize_pol_or_readout = raw_data["optimize_pol_or_readout"]
     optimize_duration_or_amp = raw_data["optimize_duration_or_amp"]
+
     opx_config = raw_data["opx_config"]
     yellow_charge_readout_amp = opx_config["waveforms"]["yellow_charge_readout"][
         "sample"
@@ -91,8 +80,8 @@ def process_and_plot(raw_data):
     green_aod_cw_charge_pol_amp = opx_config["waveforms"]["green_aod_cw-charge_pol"][
         "sample"
     ]
-    power_law_params = [3.7e5, 6.97, 8e-14]
-    a, b, c = power_law_params
+    print(f"yellow_charge_readout_amp:{yellow_charge_readout_amp}")
+    print(f"green_aod_cw_charge_pol_amp:{green_aod_cw_charge_pol_amp}")
     counts = np.array(raw_data["counts"])
     # [nv_ind, run_ind, steq_ind, rep_ind]
     ref_exp_ind = 1
@@ -110,7 +99,7 @@ def process_and_plot(raw_data):
     # Function to process a single NV and step
     def process_nv_step(nv_ind, step_ind):
         counts_data = condensed_counts[nv_ind, step_ind]
-        popt, pcov, chi_squared = fit_bimodal_histogram(counts_data, prob_dist)
+        popt, chi_squared = fit_bimodal_histogram(counts_data, prob_dist)
 
         if popt is None:
             return np.nan, np.nan, np.nan, np.nan
@@ -163,9 +152,8 @@ def process_and_plot(raw_data):
             x_label = "Readout duration (ms)"
         else:
             step_vals *= yellow_charge_readout_amp
-            step_vals = a * (step_vals**b) + c
-            x_label = "Readout amplitude (uW)"
-    print(step_vals)
+            x_label = "Readout amplitude"
+
     # Optimal values
     optimal_values = []
     for nv_ind in range(num_nvs):
@@ -176,7 +164,7 @@ def process_and_plot(raw_data):
                 readout_fidelity_arr[nv_ind],
                 prep_fidelity_arr[nv_ind],
                 goodness_of_fit_arr[nv_ind],
-                weights=(1, 1, 1),
+                weights=(1, 1, 0.5),
             )
             optimal_values.append((nv_ind, optimal_step_val, max_combined_score))
         except Exception as e:
@@ -184,60 +172,60 @@ def process_and_plot(raw_data):
             optimal_values.append((nv_ind, np.nan, np.nan))
             continue
 
-        # # Plotting
-        # fig, ax1 = plt.subplots(figsize=(7, 5))
+        # Plotting
+        fig, ax1 = plt.subplots(figsize=(7, 5))
 
-        # # Plot readout fidelity
-        # ax1.plot(
-        #     step_vals,
-        #     readout_fidelity_arr[nv_ind],
-        #     label="Readout Fidelity",
-        #     color="blue",
-        # )
-        # ax1.plot(
-        #     step_vals,
-        #     prep_fidelity_arr[nv_ind],
-        #     label="Prep Fidelity",
-        #     linestyle="--",
-        #     color="blue",
-        # )
-        # ax1.set_xlabel(x_label)
-        # ax1.set_ylabel("Fidelity")
-        # ax1.tick_params(axis="y", labelcolor="blue")
-        # ax1.grid(True, linestyle="--", alpha=0.6)
+        # Plot readout fidelity
+        ax1.plot(
+            step_vals,
+            readout_fidelity_arr[nv_ind],
+            label="Readout Fidelity",
+            color="blue",
+        )
+        ax1.plot(
+            step_vals,
+            prep_fidelity_arr[nv_ind],
+            label="Prep Fidelity",
+            linestyle="--",
+            color="blue",
+        )
+        ax1.set_xlabel(x_label)
+        ax1.set_ylabel("Fidelity")
+        ax1.tick_params(axis="y", labelcolor="blue")
+        ax1.grid(True, linestyle="--", alpha=0.6)
 
-        # # Plot Goodness of Fit ()
-        # ax2 = ax1.twinx()
-        # ax2.plot(
-        #     step_vals,
-        #     goodness_of_fit_arr[nv_ind],
-        #     color="green",
-        #     label=r"Goodness of Fit ($\chi^2_{\text{reduced}}$)",
-        #     alpha=0.7,
-        # )
-        # ax2.set_ylabel(r"Goodness of Fit ($\chi^2_{\text{reduced}}$)", color="green")
-        # ax2.tick_params(axis="y", labelcolor="green")
+        # Plot Goodness of Fit (Residuals)
+        ax2 = ax1.twinx()
+        ax2.plot(
+            step_vals,
+            goodness_of_fit_arr[nv_ind],
+            color="green",
+            label="Goodness of Fit (Residuals)",
+            alpha=0.7,
+        )
+        ax2.set_ylabel("Goodness of Fit (Residuals)", color="green")
+        ax2.tick_params(axis="y", labelcolor="green")
 
-        # # Highlight optimal step value
-        # ax1.axvline(
-        #     optimal_step_val,
-        #     color="red",
-        #     linestyle="--",
-        #     label=f"Optimal Step Val: {optimal_step_val:.3f}",
-        # )
-        # ax2.axvline(
-        #     optimal_step_val,
-        #     color="red",
-        #     linestyle="--",
-        # )
+        # Highlight optimal step value
+        ax1.axvline(
+            optimal_step_val,
+            color="red",
+            linestyle="--",
+            label=f"Optimal Step Val: {optimal_step_val:.3f}",
+        )
+        ax2.axvline(
+            optimal_step_val,
+            color="red",
+            linestyle="--",
+        )
 
-        # # Combine legends
-        # lines, labels = ax1.get_legend_handles_labels()
-        # lines2, labels2 = ax2.get_legend_handles_labels()
-        # ax1.legend(lines + lines2, labels + labels2, loc="upper left", fontsize=11)
-        # ax1.set_title(f"NV{nv_ind} - Optimal Step Val: {optimal_step_val:.3f}")
-        # plt.tight_layout()
-        # plt.show()
+        # Combine legends
+        lines, labels = ax1.get_legend_handles_labels()
+        lines2, labels2 = ax2.get_legend_handles_labels()
+        ax1.legend(lines + lines2, labels + labels2, loc="upper left", fontsize=11)
+        ax1.set_title(f"NV{nv_ind} - Optimal Step Val: {optimal_step_val:.3f}")
+        plt.tight_layout()
+        plt.show()
 
     ### Calculate Averages
     avg_readout_fidelity = np.nanmean(readout_fidelity_arr, axis=0)
@@ -245,155 +233,57 @@ def process_and_plot(raw_data):
     avg_goodness_of_fit = np.nanmean(goodness_of_fit_arr, axis=0)
 
     # Calculate the optimal step value
-    (
-        optimal_step_val,
-        optimal_prep_fidelity,
-        optimal_readout_fidelity,
-        max_combined_score,
-    ) = find_optimal_value_geom_mean(
+    optimal_step_val, max_combined_score = find_optimal_value_geom_mean(
         step_vals,
         avg_readout_fidelity,
         avg_prep_fidelity,
         avg_goodness_of_fit,
-        weights=(1, 1, 1),
+        weights=(2, 1, 1),
     )
+
     # Plot average readout and prep fidelity
     fig, ax1 = plt.subplots(figsize=(7, 5))
     ax1.plot(
         step_vals,
         avg_readout_fidelity,
         label="Avg. Readout Fidelity",
-        color="orange",
+        color="blue",
     )
     ax1.plot(
         step_vals,
         avg_prep_fidelity,
         label="Avg. Prep Fidelity",
-        color="green",
+        color="orange",
     )
     ax1.set_xlabel(x_label)
     ax1.set_ylabel("Fidelity")
     ax1.tick_params(axis="y")
 
-    # Plot average Goodness of Fit (reduced chi-squared))
+    # Plot average Goodness of Fit (Residuals))
     ax2 = ax1.twinx()
     ax2.plot(
         step_vals,
         avg_goodness_of_fit,
-        color="gray",
-        linestyle="--",
-        label=r"Goodness of Fit ($\chi^2_{\text{reduced}}$)",
-    )
-    ax2.set_ylabel(r"Goodness of Fit ($\chi^2_{\text{reduced}}$)", color="gray")
-
-    ax2.tick_params(axis="y", labelcolor="gray")
-    ax2.axvline(
-        optimal_step_val,
-        color="red",
-        linestyle="--",
-    )
-    optimal_text = (
-        f"Optimal {x_label}: {optimal_step_val:.3f}\n"
-        f"Optimal Prep Fidelity: {optimal_prep_fidelity:.3f}\n"
-        f"Optimal Readout Fidelity: {optimal_readout_fidelity:.3f}"
-    )
-    ax1.text(
-        0.01,
-        0.99,
-        optimal_text,
-        transform=ax1.transAxes,
-        fontsize=8,
-        verticalalignment="top",
-        bbox=dict(
-            boxstyle="round,pad=0.1", alpha=0.5, edgecolor="gray", facecolor="white"
-        ),
-    )
-    # Combine legends
-    lines_1, labels_1 = ax1.get_legend_handles_labels()
-    lines_2, labels_2 = ax2.get_legend_handles_labels()
-    ax2.legend(lines_1 + lines_2, labels_1 + labels_2, loc="upper right", fontsize=8)
-
-    # Title and layout
-    ax1.set_title(f"Average Metrics Across All NVs ({file_id})", fontsize=16)
-    fig.tight_layout()
-    plt.show()
-    ### Calculate Medians
-    median_readout_fidelity = np.nanmedian(readout_fidelity_arr, axis=0)
-    median_prep_fidelity = np.nanmedian(prep_fidelity_arr, axis=0)
-    median_goodness_of_fit = np.nanmedian(goodness_of_fit_arr, axis=0)
-
-    (
-        optimal_step_val,
-        optimal_prep_fidelity,
-        optimal_readout_fidelity,
-        max_combined_score,
-    ) = find_optimal_value_geom_mean(
-        step_vals,
-        median_readout_fidelity,
-        median_prep_fidelity,
-        median_goodness_of_fit,
-        weights=(1, 1, 1),
-    )
-
-    # Plot average and median readout and prep fidelity
-    fig, ax1 = plt.subplots(figsize=(7, 5))
-    ax1.plot(
-        step_vals,
-        median_readout_fidelity,
-        label="Median Readout Fidelity",
-        color="orange",
-    )
-    ax1.plot(
-        step_vals,
-        median_prep_fidelity,
-        label="Median Prep Fidelity",
         color="green",
-    )
-    ax1.set_xlabel(x_label)
-    ax1.set_ylabel("Fidelity")
-    ax1.tick_params(axis="y")
-
-    # Plot average and median Goodness of Fit (reduced chi-squared))
-    ax2 = ax1.twinx()
-    ax2.plot(
-        step_vals,
-        median_goodness_of_fit,
-        color="gray",
         linestyle="--",
-        label=r"Goodness of Fit ($\chi^2_{\text{reduced}}$)",
+        label="Avg. Goodness of Fit (Residuals)",
     )
-    ax2.set_ylabel(r"Goodness of Fit ($\chi^2_{\text{reduced}}$)", color="gray")
+    ax2.set_ylabel("Goodness of Fit (Residuals)", color="green")
 
-    ax2.tick_params(axis="y", labelcolor="gray")
+    ax2.tick_params(axis="y", labelcolor="green")
     ax2.axvline(
         optimal_step_val,
         color="red",
         linestyle="--",
-    )
-    # Add a box with optimal values on the left
-    optimal_text = (
-        f"Optimal {x_label}: {optimal_step_val:.3f}\n"
-        f"Optimal Prep Fidelity: {optimal_prep_fidelity:.3f}\n"
-        f"Optimal Readout Fidelity: {optimal_readout_fidelity:.3f}"
-    )
-    ax1.text(
-        0.01,
-        0.99,
-        optimal_text,
-        transform=ax1.transAxes,
-        fontsize=8,
-        verticalalignment="top",
-        bbox=dict(
-            boxstyle="round,pad=0.1", alpha=0.5, edgecolor="black", facecolor="white"
-        ),
+        label=f"Optimal Step Val: {optimal_step_val:.3f}",
     )
     # Combine legends
     lines_1, labels_1 = ax1.get_legend_handles_labels()
     lines_2, labels_2 = ax2.get_legend_handles_labels()
-    ax2.legend(lines_1 + lines_2, labels_1 + labels_2, loc="upper right", fontsize=8)
+    ax2.legend(lines_1 + lines_2, labels_1 + labels_2, loc="upper right", fontsize=11)
 
     # Title and layout
-    ax1.set_title(f"Median Metrics Across All NVs ({file_id})", fontsize=16)
+    ax1.set_title("Average Metrics Across All NVs")
     fig.tight_layout()
     plt.show()
 
@@ -420,8 +310,8 @@ def process_and_plot(raw_data):
             for nv_index, opt_step, max_score in optimal_values
         ],
     }
-    # dm.save_raw_data(raw_data, file_path)
-    # print(f"Optimal combined values, including averages, saved to '{file_path}'.")
+    dm.save_raw_data(raw_data, file_path)
+    print(f"Optimal combined values, including averages, saved to '{file_path}'.")
 
 
 # endregion
@@ -430,10 +320,11 @@ if __name__ == "__main__":
     kpl.init_kplotlib()
     # file_id = 1710843759806
     # file_id = 1712782503640  # yellow ampl var
-    file_id = 1717056176426  # yellow duration var
-    # file_id = 1711618252292  # green ampl var
-    # file_id = 1712421496166  # green ampl var
+    file_id = 1714802805037  # yellow duration
     # raw_data = dm.get_raw_data(file_id=1709868774004, load_npz=False) #yellow ampl var
     raw_data = dm.get_raw_data(file_id=file_id, load_npz=False)  # yellow amp var
+    # print(raw_data.keys())
+    # raw_data = dm.get_raw_data(file_id=1711618252292, load_npz=False)  # green ampl var
+    # raw_data = dm.get_raw_data(file_id=1712421496166, load_npz=False)  # green ampl var
     process_and_plot(raw_data)
     kpl.show(block=True)

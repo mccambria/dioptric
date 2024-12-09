@@ -281,35 +281,14 @@ def fit_bimodal_histogram(
         if not no_print:
             print(f"Fit Parameters: {popt}")
             print(f"Reduced chi squared: {red_chi_sq}")
-
         if not no_plot:
             fig, ax = plt.subplots()
             ax.set_xlabel("Integrated counts")
             ax.set_ylabel("Probability")
             kpl.histogram(ax, counts_list, density=True)
             x_vals = np.linspace(0, np.max(counts_list), 1000)
-
-            # Dark mode
-            dark_ratio = popt[0]
-            single_mode_fn = get_single_mode_pdf(prob_dist)
-            num_params = get_single_mode_num_params(prob_dist)
-            line = dark_ratio * single_mode_fn(x_vals, *popt[1 : 1 + num_params])
-            kpl.plot_line(
-                ax, x_vals, line, color=kpl.KplColors.RED, label=r"NV$^{0}$ mode"
-            )
-
-            # Bright mode
-            num_params = get_single_mode_num_params(prob_dist)
-            line = (1 - dark_ratio) * single_mode_fn(x_vals, *popt[1 + num_params :])
-            kpl.plot_line(
-                ax, x_vals, line, color=kpl.KplColors.GREEN, label=r"NV$^{-}$ mode"
-            )
-
-            # Both modes
             line = fit_fn(x_vals, *popt)
-            kpl.plot_line(ax, x_vals, line, color=kpl.KplColors.BLUE, label="Combined")
-
-            ax.legend(loc=kpl.Loc.UPPER_RIGHT)
+            kpl.plot_line(ax, x_vals, line, color=kpl.KplColors.BLUE)
             kpl.show(block=True)
         return popt, pcov, red_chi_sq
     except Exception as exc:

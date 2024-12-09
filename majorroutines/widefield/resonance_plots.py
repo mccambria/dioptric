@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 """
-Created on Fall, 2024
+Created on October 17th, 2024
 @author: Saroj Chand
 """
 
@@ -1316,7 +1316,7 @@ if __name__ == "__main__":
         threshold_method=thresh_method,
     )
     print(f"Plot saved to {file_path}")
-
+    
     # selected_nv_indices = [5, 11, 22, 60]
     # plot_selected_nv_resonance_fits_comparison(
     #     nv_list, freqs, sig_counts, ref_counts, file_id, selected_nv_indices
