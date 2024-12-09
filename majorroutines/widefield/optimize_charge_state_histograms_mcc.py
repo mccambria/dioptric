@@ -405,7 +405,7 @@ def _main(
             optimize_pol_or_readout,
             optimize_duration_or_amp,
         ]
-        # print(seq_args)
+        print(f"seq_args: {seq_args}")
         seq_args_string = tb.encode_seq_args(seq_args)
         pulse_gen.stream_load(seq_file, seq_args_string, num_reps)
 
