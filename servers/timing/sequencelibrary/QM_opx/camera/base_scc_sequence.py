@@ -157,7 +157,13 @@ def macro(
     if step_vals is None:
         one_step()
     else:
-        if scc_duration_override is not None:
+        if scc_duration_override is not None and scc_amp_override is not None:
+            duration_steps = [seq_utils.convert_ns_to_cc(el) for el in step_vals[:, 0]]
+            amp_steps = step_vals[:, 1]
+            with qua.for_each_(scc_duration_override, duration_steps):
+                with qua.for_each_(scc_amp_override, amp_steps):
+                    one_step()
+        elif scc_duration_override is not None:
             with qua.for_each_(scc_duration_override, step_vals):
                 one_step()
         elif scc_amp_override is not None:
