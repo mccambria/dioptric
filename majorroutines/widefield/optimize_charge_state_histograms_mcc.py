@@ -405,7 +405,7 @@ def _main(
             optimize_pol_or_readout,
             optimize_duration_or_amp,
         ]
-        print(f"seq_args: {seq_args}")
+        # print(seq_args)
         seq_args_string = tb.encode_seq_args(seq_args)
         pulse_gen.stream_load(seq_file, seq_args_string, num_reps)
 
@@ -451,8 +451,7 @@ if __name__ == "__main__":
     # raw_data = dm.get_raw_data(file_id=1714802805037, load_npz=False)  # Messed up duration variation
     raw_data = dm.get_raw_data(file_id=1712782503640, load_npz=False)
     process_and_plot_mcc(raw_data)
-    # sys.exit()
-
+    # sys.exit()s
     # # raw_data = dm.get_raw_data(file_id=1709868774004, load_npz=False) #yellow ampl var
     # raw_data = dm.get_raw_data(file_id=1710843759806, load_npz=False)  # yellow amp var
     # # raw_data = dm.get_raw_data(file_id=1711618252292, load_npz=False) #green ampl var

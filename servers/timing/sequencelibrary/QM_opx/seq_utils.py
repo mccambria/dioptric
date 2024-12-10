@@ -260,7 +260,7 @@ def macro_scc(
 
     config = common.get_config_dict()
     do_shelving_pulse = config["Optics"]["PulseSettings"]["scc_shelving_pulse"]
-    print(f"DEBUG: Passed scc_duration_override={scc_duration_override}")
+
     if do_shelving_pulse:
         raise NotImplementedError()
         # if spin_flip_ind_list is not None:
@@ -280,6 +280,65 @@ def macro_scc(
             scc_amp_override,
             do_target_list,
         )
+
+
+# def macro_charge_state_readout(duration: int = None, amp: float = None):
+#     """
+#     Pulse yellow to read out NV charge states in parallel.
+
+#     Parameters
+#     ----------
+#     duration : int or QuaVariable, optional
+#         Readout and pulse duration in clock cycles (cc). Defaults to whatever is in config.
+#     amp : float, optional
+#         Pulse amplitude. Defaults to whatever is in config.
+#     """
+#     # MAX_DURATION = (2**23 - 1) * 4
+#     MAX_DURATION = 60e6
+#     readout_laser_name = tb.get_physical_laser_name(
+#         VirtualLaserKey.WIDEFIELD_CHARGE_READOUT
+#     )
+#     readout_laser_el = get_laser_mod_element(readout_laser_name, sticky=True)
+#     camera_el = "do_camera_trigger"
+
+#     # Handle static vs dynamic duration
+#     qua.align()
+#     if duration is not None:
+#         # Declare variables for dynamic handling
+#         remaining_duration = qua.declare(int)
+#         current_duration = qua.declare(int)
+#         qua.assign(remaining_duration, duration)
+#         if amp is not None:
+#             qua.play("charge_readout" * qua.amp(amp), readout_laser_el)
+#         else:
+#             qua.play("charge_readout", readout_laser_el)
+#         qua.play("on", camera_el)
+
+#         with qua.while_(remaining_duration > 0):
+#             with qua.if_(remaining_duration > MAX_DURATION):
+#                 qua.assign(current_duration, MAX_DURATION)
+#             with qua.else_():
+#                 qua.assign(current_duration, remaining_duration)
+#             # Reduce remaining_duration
+#             qua.assign(remaining_duration, remaining_duration - current_duration)
+#             qua.wait(current_duration, readout_laser_el)
+#             qua.wait(current_duration, camera_el)
+
+#     else:
+#         # Static duration case
+#         duration = get_default_charge_readout_duration()
+#         if amp is not None:
+#             qua.play("charge_readout" * qua.amp(amp), readout_laser_el)
+#         else:
+#             qua.play("charge_readout", readout_laser_el)
+
+#         qua.play("on", camera_el)
+#         qua.wait(duration, readout_laser_el)
+#         qua.wait(duration, camera_el)
+
+#     # Ramp down to zero
+#     qua.ramp_to_zero(readout_laser_el)
+#     qua.ramp_to_zero(camera_el)
 
 
 def macro_charge_state_readout(duration: int = None, amp: float = None):
@@ -644,9 +703,6 @@ def _macro_pulse_series(
     # Unpack the coords and convert to Hz
     x_coords_list = [int(el[0] * 10**6) for el in coords_list]
     y_coords_list = [int(el[1] * 10**6) for el in coords_list]
-    print(
-        f"DEBUG: duration_override={duration_override}, duration_list={duration_list}"
-    )
 
     # Convert durations to clock cycles
     if duration_list is not None:
@@ -789,7 +845,7 @@ def _macro_scc_no_shelving(
     macro_run_aods([scc_laser_name], aod_suffices=[scc_pulse_name])
 
     # Actual commands
-    print(f"DEBUG: Passed duration_override={duration_override}")
+
     # MCC antiphase by orientation
     # if exp_spin_flip:
     #     macro_pi_pulse(uwave_ind_list[:1])

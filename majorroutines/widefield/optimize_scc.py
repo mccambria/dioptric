@@ -13,6 +13,11 @@ import matplotlib.pyplot as plt
 import numpy as np
 from scipy.optimize import curve_fit
 
+from analysis.bimodal_histogram import (
+    ProbDist,
+    determine_threshold,
+    fit_bimodal_histogram,
+)
 from majorroutines.widefield import base_routine
 from utils import data_manager as dm
 from utils import kplotlib as kpl
@@ -23,9 +28,7 @@ from utils import widefield as widefield
 def process_and_plot(nv_list, taus, sig_counts, ref_counts, duration_or_amp):
     num_nvs = len(nv_list)
 
-    sig_counts, ref_counts = widefield.threshold_counts(
-        nv_list, sig_counts, ref_counts, dynamic_thresh=True
-    )
+    # sig_counts, ref_counts = determine_threshold(nv_list, sig_counts, ref_counts)
 
     avg_sig_counts, avg_sig_counts_ste, _ = widefield.average_counts(sig_counts)
     avg_ref_counts, avg_ref_counts_ste, _ = widefield.average_counts(ref_counts)
@@ -167,7 +170,7 @@ def _main(nv_list, num_steps, num_reps, num_runs, min_tau, max_tau, duration_or_
             widefield.get_base_scc_seq_args(nv_list, uwave_ind_list),
             shuffled_taus,
         ]
-        print(f"DEBUG: seq_args before encoding: {seq_args}")
+        # print(f"DEBUG: seq_args before encoding: {seq_args}")
         seq_args_string = tb.encode_seq_args(seq_args)
         pulse_gen.stream_load(seq_file, seq_args_string, num_reps)
 
@@ -227,7 +230,8 @@ def _main(nv_list, num_steps, num_reps, num_runs, min_tau, max_tau, duration_or_
 if __name__ == "__main__":
     kpl.init_kplotlib()
 
-    data = dm.get_raw_data(file_id=1564881159891)
+    # data = dm.get_raw_data(file_id=1564881159891)
+    data = dm.get_raw_data(file_id=1720799193270)
 
     nv_list = data["nv_list"]
     taus = data["taus"]

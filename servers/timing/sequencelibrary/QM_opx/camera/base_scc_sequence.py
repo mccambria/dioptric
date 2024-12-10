@@ -82,14 +82,11 @@ def macro(
     if not isinstance(uwave_macro, list):
         uwave_macro = [uwave_macro]
     if reference:
-        uwave_macro.append(lambda uwave_ind_list, step_val: None)
-    # if reference:
 
-    #     def ref_exp(uwave_ind_list, step_val):
-    #         pass
+        def ref_exp(uwave_ind_list, step_val):
+            pass
 
-    #     uwave_macro.append(ref_exp)
-
+        uwave_macro.append(ref_exp)
     num_exps_per_rep = len(uwave_macro)
     num_nvs = len(pol_coords_list)
 
@@ -157,7 +154,6 @@ def macro(
         seq_utils.handle_reps(one_rep, num_reps, wait_for_trigger=False)
         seq_utils.macro_pause()
 
-    # Handle duration and/or amplitude overrides
     if step_vals is None:
         one_step()
     else:

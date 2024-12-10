@@ -790,7 +790,7 @@ opx_config = {
         # "green_aod_cw-opti": {"type": "constant", "sample": 0.03},
         # "green_aod_cw-charge_pol": {"type": "constant", "sample": 0.13},
         # "green_aod_cw-charge_pol": {"type": "constant", "sample": 0.06},  # Negative
-        "green_aod_cw-charge_pol": {"type": "constant", "sample": 0.123},
+        "green_aod_cw-charge_pol": {"type": "constant", "sample": 0.12},
         "green_aod_cw-spin_pol": {"type": "constant", "sample": 0.05},
         "green_aod_cw-shelving": {"type": "constant", "sample": 0.05},
         "green_aod_cw-scc": {"type": "constant", "sample": 0.15},

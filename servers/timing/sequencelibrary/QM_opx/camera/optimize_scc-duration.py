@@ -18,7 +18,7 @@ from servers.timing.sequencelibrary.QM_opx.camera import base_scc_sequence
 
 def get_seq(base_scc_seq_args, scc_duration_steps, num_reps):
     scc_duration_steps = [seq_utils.convert_ns_to_cc(el) for el in scc_duration_steps]
-
+    print(f"DEBUG: base_scc_seq_args = {base_scc_seq_args}")
     with qua.program() as seq:
         scc_duration_override = qua.declare(int)
 
@@ -71,7 +71,7 @@ if __name__ == "__main__":
                 [False, False, False, False],  # Spin flip do target list
                 [0, 1],
             ],
-            [100, 112, 124, 128],
+            [1000, 1120, 1240],
             5,
         )
 
