@@ -5,7 +5,6 @@ and plot the difference
 Created on Fall 2024
 @author: Saroj Chand
 """
-
 import os
 import sys
 import time
@@ -102,26 +101,53 @@ def process_and_plot(raw_data):
     prob_dist = ProbDist.COMPOUND_POISSON
 
     # Function to process a single NV and step
+    # def process_nv_step(nv_ind, step_ind):
+    #     counts_data = condensed_counts[nv_ind, step_ind]
+    #     popt, _, chi_squared = fit_bimodal_histogram(counts_data, prob_dist)
+
+    #     if popt is None:
+    #         return np.nan, np.nan, np.nan, np.nan
+    #     # Threshold, prep and readout fidelity
+    #     threshold, readout_fidelity = determine_threshold(
+    #         popt, prob_dist, dark_mode_weight=0.5, ret_fidelity=True
+    #     )
+    #     prep_fidelity = 1 - popt[0]  # Population weight of dark state
+
+    #     return readout_fidelity, prep_fidelity, chi_squared
+    # Check for empty or invalid data in `process_nv_step`
     def process_nv_step(nv_ind, step_ind):
         counts_data = condensed_counts[nv_ind, step_ind]
-        popt, _, chi_squared = fit_bimodal_histogram(counts_data, prob_dist)
+        if counts_data.size == 0:
+            print(f"Empty data for NV {nv_ind}, Step {step_ind}")
+            return np.nan, np.nan, np.nan
 
-        if popt is None:
-            return np.nan, np.nan, np.nan, np.nan
-        # Threshold, prep and readout fidelity
-        threshold, readout_fidelity = determine_threshold(
-            popt, prob_dist, dark_mode_weight=0.5, ret_fidelity=True
-        )
-        prep_fidelity = 1 - popt[0]  # Population weight of dark state
+        try:
+            popt, _, chi_squared = fit_bimodal_histogram(counts_data, prob_dist)
+            if popt is None:
+                return np.nan, np.nan, np.nan
+            threshold, readout_fidelity = determine_threshold(
+                popt, prob_dist, dark_mode_weight=0.5, ret_fidelity=True
+            )
+            prep_fidelity = 1 - popt[0]
+        except Exception as e:
+            print(f"Error processing NV {nv_ind}, Step {step_ind}: {e}")
+            return np.nan, np.nan, np.nan
 
         return readout_fidelity, prep_fidelity, chi_squared
 
-    # Parallel processing --> n_jobs=-1: using all available cores.
+    # # Parallel processing --> n_jobs=-1: using all available cores.
     results = Parallel(n_jobs=-1)(
         delayed(process_nv_step)(nv_ind, step_ind)
         for nv_ind in range(num_nvs)
         for step_ind in range(num_steps)
     )
+
+    # sequential processing for debugging or testing
+    # results = [
+    #     process_nv_step(nv_ind, step_ind)
+    #     for nv_ind in range(num_nvs)
+    #     for step_ind in range(num_steps)
+    # ]
 
     # Reshape results into arrays
     results = np.array(results).reshape(num_nvs, num_steps, 3)
@@ -290,7 +316,7 @@ def _main(
 
     raw_data = base_routine.main(nv_list, num_steps, num_reps, num_runs, run_fn=run_fn)
 
-    ### Processing
+    ### Raw Data Saving and Processing
 
     timestamp = dm.get_time_stamp()
     repr_nv_sig = widefield.get_repr_nv_sig(nv_list)
@@ -307,12 +333,6 @@ def _main(
     }
 
     try:
-        process_and_plot(raw_data)
-
-    except Exception:
-        print(traceback.format_exc())
-
-    try:
         del raw_data["img_arrays"]
     except Exception:
         pass
@@ -322,16 +342,19 @@ def _main(
     file_path = dm.get_file_path(__file__, timestamp, repr_nv_name)
     dm.save_raw_data(raw_data, file_path)
 
-    tb.reset_cfm()
+    try:
+        process_and_plot(raw_data)
+    except Exception:
+        print(traceback.format_exc())
 
+    tb.reset_cfm()
     return raw_data
 
 
 if __name__ == "__main__":
     kpl.init_kplotlib()
-    # raw_data = dm.get_raw_data(file_id=1714802805037, load_npz=False)
-    # raw_data = dm.get_raw_data(file_id=1709868774004, load_npz=False) #yellow ampl var
-    raw_data = dm.get_raw_data(file_id=1710843759806, load_npz=False)  # yellow amp var
-    # raw_data = dm.get_raw_data(file_id=1711618252292, load_npz=False) #green ampl var
+    file_id = 1718839858832
+    # file_id = 1716961021353
+    raw_data = dm.get_raw_data(file_id=file_id, load_npz=False)
     process_and_plot(raw_data)
     kpl.show(block=True)

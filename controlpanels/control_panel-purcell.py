@@ -32,6 +32,7 @@ from majorroutines.widefield import (
     optimize_amp_duration_charge_state_histograms,
     optimize_charge_state_histograms_mcc,
     optimize_scc,
+    optimize_scc_amp_duration,
     power_rabi,
     rabi,
     ramsey,
@@ -153,15 +154,14 @@ def do_optimize_readout_amp(nv_list):
 
 
 def optimize_readout_amp_and_duration(nv_list):
-    num_amp_steps = 5
+    num_amp_steps = 16
     num_dur_steps = 5
-    num_reps = 1
-    num_runs = 100
-    min_amp = 0.8
+    num_reps = 3
+    num_runs = 750
+    min_amp = 0.9
     max_amp = 1.2
     min_duration = 12e6
     max_duration = 60e6
-
     return (
         optimize_amp_duration_charge_state_histograms.optimize_readout_amp_and_duration(
             nv_list,
@@ -300,6 +300,29 @@ def do_calibrate_green_red_delay():
 
     input("Press enter to stop...")
     pulse_gen.halt()
+
+
+def optimize_scc_amp_and_duration(nv_list):
+    num_amp_steps = 11
+    num_dur_steps = 5
+    num_reps = 5
+    num_runs = 450
+    min_amp = 0.9
+    max_amp = 1.2
+    min_duration = 100
+    max_duration = 200
+
+    return optimize_scc_amp_duration.optimize_scc_amp_and_duration(
+        nv_list,
+        num_amp_steps,
+        num_dur_steps,
+        num_reps,
+        num_runs,
+        min_amp,
+        max_amp,
+        min_duration,
+        max_duration,
+    )
 
 
 def do_optimize_scc_duration(nv_list):
@@ -1140,7 +1163,7 @@ if __name__ == "__main__":
         # do_optimize_pol_amp(nv_list)
         # do_optimize_readout_amp(nv_list)
         # do_optimize_readout_duration(nv_list)
-        # optimize_readout_amp_and_duration(nv_list)
+        optimize_readout_amp_and_duration(nv_list)
         # do_optimize_pol_duration(nv_list)
         # do_charge_state_histograms_images(nv_list, vary_pol_laser=True)
         # do_charge_state_conditional_init(nv_list)
@@ -1169,6 +1192,7 @@ if __name__ == "__main__":
         # do_scc_snr_check(nv_list)
         # do_optimize_scc_duration(nv_list)
         # do_optimize_scc_amp(nv_list)
+        # optimize_scc_amp_and_duration(nv_list)
         # do_crosstalk_check(nv_sig)
         # do_spin_pol_check(nv_sig)
         # do_calibrate_green_red_delay()
