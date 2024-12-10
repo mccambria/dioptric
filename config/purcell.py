@@ -38,14 +38,14 @@ calibration_coords_pixel = [
     [207.435, 74.049],
 ]
 calibration_coords_green = [
-    [115.502, 101.287],
-    [108.928, 115.723],
-    [98.349, 100.933],
+    [115.717, 101.17],
+    [108.847, 115.601],
+    [98.291, 100.872],
 ]
 calibration_coords_red = [
-    [78.674, 67.831],
-    [73.831, 79.615],
-    [65.056, 67.6],
+    [78.453, 67.65],
+    [73.653, 79.387],
+    [65.066, 67.468],
 ]
 # Create the dictionaries using the provided lists
 calibration_coords_nv1 = {
@@ -237,7 +237,8 @@ config |= {
             # LaserKey.WIDEFIELD_SPIN_POL: {"physical_name": yellow_laser, "duration": 1e6},
             VirtualLaserKey.WIDEFIELD_CHARGE_READOUT: {
                 "physical_name": yellow_laser,
-                "duration": 50e6,
+                # "duration": 50e6,
+                "duration": 30e6,
             },
             # LaserKey.WIDEFIELD_CHARGE_READOUT: {"physical_name": yellow_laser, "duration": 100e6},
         },

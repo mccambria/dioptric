@@ -416,8 +416,8 @@ if __name__ == "__main__":
     # data = dm.get_raw_data(file_id=1698496302146, load_npz=True)
     # data = dm.get_raw_data(file_id=1699573772441, load_npz=True)
     # data = dm.get_raw_data(file_id=1700650667777, load_npz=True)
-    # data = dm.get_raw_data(file_id=1700668458198, load_npz=True)
-    data = dm.get_raw_data(file_id=1700710358100, load_npz=True)
+    data = dm.get_raw_data(file_id=1700668458198, load_npz=True)
+    # data = dm.get_raw_data(file_id=1700710358100, load_npz=True)
     # data = dm.get_raw_data(file_id=1715452021340, load_npz=True)
 
     img_array = np.array(data["ref_img_array"])
