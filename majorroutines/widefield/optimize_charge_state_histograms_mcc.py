@@ -172,6 +172,7 @@ def process_and_plot_mcc(raw_data):
         kpl.plot_line(ax, smooth_step_vals, quadratic(smooth_step_vals, *popt))
         ax.set_title(nv_ind)
         kpl.show(block=True)
+    print(opti_vals)
 
 
 def find_optimal_combined_value(
