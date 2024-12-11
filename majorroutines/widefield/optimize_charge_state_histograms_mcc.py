@@ -64,7 +64,7 @@ def process_and_plot_mcc(raw_data):
         for step_ind in range(num_steps):
             print(step_vals[step_ind])
             popt, _, red_chi_sq = fit_bimodal_histogram(
-                condensed_counts[nv_ind, step_ind], prob_dist, no_plot=False
+                condensed_counts[nv_ind, step_ind], prob_dist, no_plot=True
             )
             if popt is None:
                 readout_fidelity = np.nan
@@ -145,33 +145,56 @@ def process_and_plot_mcc(raw_data):
 
     ### Extract optimal point for each NV
 
-    if optimize_pol_or_readout:
-        fidelity_arr = prep_fidelity_arr
-    else:
-        fidelity_arr = readout_fidelity_arr
     opti_vals = []
 
-    def quadratic(x, x0, y0, a):
-        return y0 + a * (x - x0) ** 2
+    # Readout amp - fidelity increases with monotonically with amp, so find where
+    # fit breaks down and stop
+    if not optimize_pol_or_readout and not optimize_duration_or_amp:
+        fidelity_arr = readout_fidelity_arr
+        for nv_ind in range(num_nvs):
+            nv_red_chi_sq_arr = red_chi_sq_arr[nv_ind, :]
+            good_fits = nv_red_chi_sq_arr < 1.1
+            num_errors = []
+            for ind in range(num_steps):
+                good_fits_model = [jnd <= ind for jnd in range(num_steps)]
+                num_errors.append(np.sum(np.logical_xor(good_fits_model, good_fits)))
+            opti_val = step_vals[np.argmin(num_errors)]
+            opti_vals.append(opti_val)
 
-    for nv_ind in range(num_nvs):
-        nv_fidelity_arr = fidelity_arr[nv_ind, :]
-        nv_red_chi_sq_arr = red_chi_sq_arr[nv_ind, :]
-        nv_fidelity_arr[nv_red_chi_sq_arr > 1.2] = np.nan
-        x0_guess = nv_fidelity_arr[np.nanargmax(nv_fidelity_arr)]
-        y0_guess = np.nanmax(nv_fidelity_arr)
-        a_guess = -(max_step_val - min_step_val) / 10
-        guess_params = [x0_guess, y0_guess, a_guess]
-        popt, pcov = curve_fit(quadratic, step_vals, nv_fidelity_arr, guess_params)
-        opti_vals.append(popt[0])
+            # Plot
+            fig, ax = plt.subplots()
+            kpl.plot_points(ax, step_vals, nv_red_chi_sq_arr)
+            ax.axvline(opti_val)
+            ax.set_title(nv_ind)
+            kpl.show(block=True)
+    # Polarization amp - fit a quadratic, exclude bad fits (red. chi sq. > 1.1)
+    elif not optimize_pol_or_readout and not optimize_duration_or_amp:
+        fidelity_arr = prep_fidelity_arr
 
-        # Plot
-        fig, ax = plt.subplots()
-        kpl.plot_points(ax, step_vals, nv_fidelity_arr)
-        smooth_step_vals = np.linspace(min_step_val, max_step_val, 1000)
-        kpl.plot_line(ax, smooth_step_vals, quadratic(smooth_step_vals, *popt))
-        ax.set_title(nv_ind)
-        kpl.show(block=True)
+        def quadratic(x, x0, y0, a):
+            return y0 + a * (x - x0) ** 2
+
+        for nv_ind in range(num_nvs):
+            nv_fidelity_arr = fidelity_arr[nv_ind, :]
+            nv_red_chi_sq_arr = red_chi_sq_arr[nv_ind, :]
+            nv_fidelity_arr[nv_red_chi_sq_arr > 1.1] = np.nan
+            x0_guess = nv_fidelity_arr[np.nanargmax(nv_fidelity_arr)]
+            y0_guess = np.nanmax(nv_fidelity_arr)
+            a_guess = -(max_step_val - min_step_val) / 10
+            guess_params = [x0_guess, y0_guess, a_guess]
+            popt, pcov = curve_fit(
+                quadratic, step_vals, nv_fidelity_arr, guess_params, nan_policy="omit"
+            )
+            opti_vals.append(popt[0])
+
+            # Plot
+            fig, ax = plt.subplots()
+            kpl.plot_points(ax, step_vals, nv_fidelity_arr)
+            smooth_step_vals = np.linspace(min_step_val, max_step_val, 1000)
+            kpl.plot_line(ax, smooth_step_vals, quadratic(smooth_step_vals, *popt))
+            ax.set_title(nv_ind)
+            kpl.show(block=True)
+
     print(opti_vals)
 
 
@@ -482,7 +505,7 @@ def _main(
 if __name__ == "__main__":
     kpl.init_kplotlib()
     # raw_data = dm.get_raw_data(file_id=1714802805037, load_npz=False)  # Messed up duration variation
-    raw_data = dm.get_raw_data(file_id=1712782503640, load_npz=False)
+    raw_data = dm.get_raw_data(file_id=1720970373150, load_npz=False)
     process_and_plot_mcc(raw_data)
     # sys.exit()
     # # raw_data = dm.get_raw_data(file_id=1709868774004, load_npz=False) #yellow ampl var
