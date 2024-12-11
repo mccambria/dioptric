@@ -179,39 +179,52 @@ def process_and_plot(raw_data):
                 optimal_readout_fidality,
                 max_combined_score,
             ) = find_optimal_value_geom_mean(
+            (
+                optimal_step_val,
+                optimal_prep_fidality,
+                optimal_readout_fidality,
+                max_combined_score,
+            ) = find_optimal_value_geom_mean(
                 step_vals,
                 readout_fidelity_arr[nv_ind],
                 prep_fidelity_arr[nv_ind],
                 goodness_of_fit_arr[nv_ind],
                 weights=(1, 1, 1),
             )
-            optimal_values.append((nv_ind, optimal_step_val, max_combined_score))
+            optimal_values.append(
+                (
+                    nv_ind,
+                    optimal_step_val,
+                    optimal_prep_fidality,
+                    optimal_readout_fidality,
+                    max_combined_score,
+                )
+            )
         except Exception as e:
             print(f"Failed to process NV{nv_ind}: {e}")
             optimal_values.append((nv_ind, np.nan, np.nan))
             continue
 
         # # Plotting
-        fig, ax1 = plt.subplots(figsize=(7, 5))
-
-        # Plot readout fidelity
-        ax1.plot(
-            step_vals,
-            readout_fidelity_arr[nv_ind],
-            label="Readout Fidelity",
-            color="blue",
-        )
-        ax1.plot(
-            step_vals,
-            prep_fidelity_arr[nv_ind],
-            label="Prep Fidelity",
-            linestyle="--",
-            color="blue",
-        )
-        ax1.set_xlabel(x_label)
-        ax1.set_ylabel("Fidelity")
-        ax1.tick_params(axis="y", labelcolor="blue")
-        ax1.grid(True, linestyle="--", alpha=0.6)
+        # fig, ax1 = plt.subplots(figsize=(7, 5))
+        # # Plot readout fidelity
+        # ax1.plot(
+        #     step_vals,
+        #     readout_fidelity_arr[nv_ind],
+        #     label="Readout Fidelity",
+        #     color="blue",
+        # )
+        # ax1.plot(
+        #     step_vals,
+        #     prep_fidelity_arr[nv_ind],
+        #     label="Prep Fidelity",
+        #     linestyle="--",
+        #     color="blue",
+        # )
+        # ax1.set_xlabel(x_label)
+        # ax1.set_ylabel("Fidelity")
+        # ax1.tick_params(axis="y", labelcolor="blue")
+        # ax1.grid(True, linestyle="--", alpha=0.6)
 
         # Plot Goodness of Fit ()
         ax2 = ax1.twinx()
@@ -409,26 +422,30 @@ def process_and_plot(raw_data):
     timestamp = dm.get_time_stamp()
     file_path = dm.get_file_path(__file__, timestamp, file_name)
     # Prepare the raw data as a list of dictionaries, including averages
-    raw_data = {
-        "timestamp": timestamp,
-        "averages": {
-            "avg_readout_fidelity": avg_readout_fidelity.tolist(),
-            "avg_prep_fidelity": avg_prep_fidelity.tolist(),
-            "avg_goodness_of_fit": avg_goodness_of_fit.tolist(),
-            "optimal_step_val": round(optimal_step_val, 6),
-            "max_combined_score": round(max_combined_score, 6),
-        },
-        "nv_data": [
-            {
-                "nv_index": nv_index,
-                "optimal_step_value": round(opt_step, 6),
-                "max_combined_score": round(max_score, 6),
-            }
-            for nv_index, opt_step, max_score in optimal_values
-        ],
-    }
+    # raw_data = {
+    #     "timestamp": timestamp,
+    #     "averages": {
+    #         "avg_readout_fidelity": avg_readout_fidelity.tolist(),
+    #         "avg_prep_fidelity": avg_prep_fidelity.tolist(),
+    #         "avg_goodness_of_fit": avg_goodness_of_fit.tolist(),
+    #         "optimal_step_val": round(optimal_step_val, 6),
+    #         "max_combined_score": round(max_combined_score, 6),
+    #     },
+    #     "nv_data": [
+    #         {
+    #             "nv_index": nv_index,
+    #             "optimal_step_value": round(opt_step, 6),
+    #             "max_combined_score": round(max_score, 6),
+    #         }
+    #         for nv_index, opt_step, max_score in optimal_values
+    #     ],
+    # }
     # dm.save_raw_data(raw_data, file_path)
     # print(f"Optimal combined values, including averages, saved to '{file_path}'.")
+
+    print(f"Readout Fidelity = {avg_readout_fidelity}")
+    print(f"Prep Fidelity = {avg_prep_fidelity}")
+    print(f" Power(uW) = {step_vals}")
 
 
 # endregion
@@ -436,10 +453,11 @@ def process_and_plot(raw_data):
 if __name__ == "__main__":
     kpl.init_kplotlib()
     # file_id = 1710843759806
-    # file_id = 1712782503640  # yellow ampl var
-    file_id = 1717056176426  # yellow duration var
+    file_id = 1712782503640  # yellow ampl var
+    # file_id = 1717056176426  # yellow duration var
     # file_id = 1711618252292  # green ampl var
     # file_id = 1712421496166  # green ampl var
+    # file_id = 1720970373150  # yellow ampl var iter_1
     # raw_data = dm.get_raw_data(file_id=1709868774004, load_npz=False) #yellow ampl var
     raw_data = dm.get_raw_data(file_id=file_id, load_npz=False)  # yellow amp var
     process_and_plot(raw_data)
