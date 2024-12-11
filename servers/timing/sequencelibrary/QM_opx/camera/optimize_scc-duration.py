@@ -17,10 +17,13 @@ from servers.timing.sequencelibrary.QM_opx.camera import base_scc_sequence
 
 
 def get_seq(base_scc_seq_args, scc_duration_steps, num_reps):
-    scc_duration_steps = [seq_utils.convert_ns_to_cc(el) for el in scc_duration_steps]
-    print(f"DEBUG: base_scc_seq_args = {base_scc_seq_args}")
+    duration_step_vals = [seq_utils.convert_ns_to_cc(el) for el in scc_duration_steps]
     with qua.program() as seq:
-        scc_duration_override = qua.declare(int)
+        ### init
+        seq_utils.init()
+        seq_utils.macro_run_aods()
+
+        duration_override = qua.declare(int)
 
         def uwave_macro_sig(uwave_ind_list, step_val):
             seq_utils.macro_pi_pulse(uwave_ind_list)
@@ -28,14 +31,18 @@ def get_seq(base_scc_seq_args, scc_duration_steps, num_reps):
         def uwave_macro_ref(uwave_ind_list, step_val):
             pass
 
-        base_scc_sequence.macro(
-            base_scc_seq_args,
-            [uwave_macro_sig, uwave_macro_ref],
-            step_vals=scc_duration_steps,
-            num_reps=num_reps,
-            scc_duration_override=scc_duration_override,
-            reference=False,
-        )
+        def one_step():
+            base_scc_sequence.macro(
+                base_scc_seq_args,
+                [uwave_macro_sig, uwave_macro_ref],
+                num_reps=num_reps,
+                scc_duration_override=duration_override,
+                reference=False,
+            )
+
+        with qua.for_each_(duration_override, duration_step_vals):
+            one_step()
+
     seq_ret_vals = []
     return seq, seq_ret_vals
 

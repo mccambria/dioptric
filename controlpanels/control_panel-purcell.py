@@ -303,14 +303,14 @@ def do_calibrate_green_red_delay():
 
 
 def optimize_scc_amp_and_duration(nv_list):
-    num_amp_steps = 11
-    num_dur_steps = 5
-    num_reps = 5
-    num_runs = 450
-    min_amp = 0.9
-    max_amp = 1.2
-    min_duration = 100
-    max_duration = 200
+    num_amp_steps = 15
+    num_dur_steps = 17
+    num_reps = 1
+    num_runs = 1500
+    min_amp = 0.75
+    max_amp = 1.25
+    min_duration = 16
+    max_duration = 272
 
     return optimize_scc_amp_duration.optimize_scc_amp_and_duration(
         nv_list,
@@ -327,14 +327,14 @@ def optimize_scc_amp_and_duration(nv_list):
 
 def do_optimize_scc_duration(nv_list):
     min_tau = 16
-    max_tau = 224
-    num_steps = 14
-    num_reps = 15
+    max_tau = 272
+    num_steps = 17
+    num_reps = 10
 
-    # num_runs = 20 * 25
+    num_runs = 20 * 25
     # num_runs = 30
     # num_runs = 50
-    num_runs = 2
+    # num_runs = 2
 
     optimize_scc.optimize_scc_duration(
         nv_list, num_steps, num_reps, num_runs, min_tau, max_tau
@@ -355,17 +355,16 @@ def do_optimize_scc_amp(nv_list):
 
 
 def do_scc_snr_check(nv_list):
-    # num_reps = 100
-    # num_runs = 100
-    num_reps = 300
-    num_runs = 30
+    num_reps = 200
+    num_runs = 100
+    # num_runs = 200
     # num_runs = 160 * 4
     # num_runs = 2
     scc_snr_check.main(nv_list, num_reps, num_runs, uwave_ind_list=[0, 1])
 
 
 def do_simple_correlation_test(nv_list):
-    num_reps = 300
+    num_reps = 200
     # num_runs = 2000
     num_runs = 1000
     # num_runs = 2
@@ -431,7 +430,6 @@ def do_rabi(nv_list):
     num_reps = 10
     num_runs = 300
     # num_runs = 100
-    # num_runs = 50
     # num_runs = 20
 
     # uwave_ind_list = [1]
@@ -926,7 +924,7 @@ if __name__ == "__main__":
     # magnet_angle = 90
     date_str = "2024_03_12"
     sample_coords = [2.0, 0.0]
-    z_coord = 1.75
+    z_coord = 1.7
     # Load NV pixel coordinates
     pixel_coords_list = load_nv_coords(
         file_path="slmsuite/nv_blob_detection/nv_blob_filtered_160nvs_reordered.npz",
@@ -1079,7 +1077,7 @@ if __name__ == "__main__":
 
     # nv_list = [nv_list[
     # nv_list = [nv_list[2]]
-    # nv_list = nv_list[:5]
+    # nv_list = nv_list[:3]
 
     # endregion
 
@@ -1159,7 +1157,7 @@ if __name__ == "__main__":
         # do_optimize_loop(nv_list, coords_key)
 
         # nv_list = nv_list[::-1]
-        do_charge_state_histograms(nv_list)
+        # do_charge_state_histograms(nv_list)
         # do_optimize_pol_amp(nv_list)
         # do_optimize_readout_amp(nv_list)
         # do_optimize_readout_duration(nv_list)
@@ -1192,7 +1190,7 @@ if __name__ == "__main__":
         # do_scc_snr_check(nv_list)
         # do_optimize_scc_duration(nv_list)
         # do_optimize_scc_amp(nv_list)
-        # optimize_scc_amp_and_duration(nv_list)
+        optimize_scc_amp_and_duration(nv_list)
         # do_crosstalk_check(nv_sig)
         # do_spin_pol_check(nv_sig)
         # do_calibrate_green_red_delay()

@@ -96,33 +96,10 @@ def optimize_scc_amp_and_duration(
     num_dur_steps,
     num_reps,
     num_runs,
-    min_duration,
-    max_duration,
     min_amp,
     max_amp,
-):
-    """
-    Optimize both SCC amplitude and duration by sweeping over a grid of values.
-    """
-    return _main(
-        nv_list,
-        num_amp_steps,
-        num_dur_steps,
-        num_reps,
-        num_runs,
-        (min_duration, min_amp),
-        (max_duration, max_amp),
-    )
-
-
-def _main(
-    nv_list,
-    num_amp_steps,
-    num_dur_steps,
-    num_reps,
-    num_runs,
-    min_step_val,
-    max_step_val,
+    min_duration,
+    max_duration,
 ):
     """
     Main function to optimize SCC parameters over amplitude and duration.
@@ -152,36 +129,21 @@ def _main(
     seq_file = "optimize_scc_amp_duration_seq.py"
 
     # Generate grid of parameter values
-    duration_vals = np.linspace(min_step_val[0], max_step_val[0], num_dur_steps).astype(
-        int
-    )
-    amp_vals = np.linspace(min_step_val[1], max_step_val[1], num_amp_steps)
+    duration_vals = np.linspace(min_duration, max_duration, num_dur_steps).astype(int)
+    amp_vals = np.linspace(min_amp, max_amp, num_amp_steps)
     step_vals = np.array(np.meshgrid(duration_vals, amp_vals)).T.reshape(-1, 2)
     num_steps = num_amp_steps * num_dur_steps
 
+    uwave_ind_list = [0, 1]
     pulse_gen = tb.get_server_pulse_gen()
 
     ### Define run function
     def run_fn(shuffled_step_inds):
         shuffled_step_vals = step_vals[shuffled_step_inds]
-        pol_coords_list, pol_duration_list, pol_amp_list = (
-            widefield.get_pulse_parameter_lists(nv_list, VirtualLaserKey.CHARGE_POL)
-        )
-        scc_coords_list, scc_duration_list, scc_amp_list = (
-            widefield.get_pulse_parameter_lists(nv_list, VirtualLaserKey.SCC)
-        )
-
         seq_args = [
-            pol_coords_list,
-            pol_duration_list,
-            pol_amp_list,
-            scc_coords_list,
-            scc_duration_list,
-            scc_amp_list,
+            widefield.get_base_scc_seq_args(nv_list, uwave_ind_list),
             shuffled_step_vals,
         ]
-
-        print(f"DEBUG: seq_args = {seq_args}")
 
         seq_args_string = tb.encode_seq_args(seq_args)
         pulse_gen.stream_load(seq_file, seq_args_string, num_reps)
@@ -207,8 +169,10 @@ def _main(
         "timestamp": timestamp,
         "step_vals": step_vals,
         "step-units": ["ns", "relative"],
-        "min_vals": min_step_val,
-        "max_vals": max_step_val,
+        "min_amp": min_amp,
+        "max_amp": max_amp,
+        "min_duration": min_duration,
+        "max_duration": max_duration,
     }
 
     repr_nv_sig = widefield.get_repr_nv_sig(nv_list)

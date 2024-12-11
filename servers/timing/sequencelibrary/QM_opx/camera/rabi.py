@@ -19,29 +19,21 @@ from servers.timing.sequencelibrary.QM_opx.camera import base_scc_sequence
 
 
 def get_seq(base_scc_seq_args, step_vals, num_reps=1):
-    # Convert step_vals and ensure no None values
     step_vals = [seq_utils.convert_ns_to_cc(el) for el in step_vals]
-    if None in step_vals:
-        raise ValueError("step_vals contains None after conversion")
-
-    # Debugging base_scc_seq_args
-    print(f"base_scc_seq_args: {base_scc_seq_args}")
 
     with qua.program() as seq:
+        seq_utils.init()
+        seq_utils.macro_run_aods()
 
         def uwave_macro_sig(uwave_ind_list, step_val):
-            if uwave_ind_list is None or step_val is None:
-                raise ValueError("uwave_ind_list or step_val is None")
-            seq_utils.macro_pi_pulse(uwave_ind_list[1:], duration_cc=step_val)
+            seq_utils.macro_pi_pulse(uwave_ind_list, duration_cc=step_val)
 
-        # Add try-except to catch errors in macro execution
-        try:
-            base_scc_sequence.macro(
-                base_scc_seq_args, uwave_macro_sig, step_vals, num_reps
-            )
-        except Exception as e:
-            print(f"Error in macro execution: {e}")
-            raise
+        def uwave_macro_ref(uwave_ind_list, step_val):
+            pass
+
+        base_scc_sequence.macro(
+            base_scc_seq_args, [uwave_macro_sig, uwave_macro_ref], step_vals, num_reps
+        )
 
     seq_ret_vals = []
     return seq, seq_ret_vals
