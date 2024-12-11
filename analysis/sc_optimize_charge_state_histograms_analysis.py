@@ -15,9 +15,8 @@ from datetime import datetime
 import matplotlib.pyplot as plt
 import numpy as np
 from joblib import Parallel, delayed
-
-import matplotlib.pyplot as plt
-from matplotlib import font_manager as fm, rcParams
+from matplotlib import font_manager as fm
+from matplotlib import rcParams
 
 # Specify the path to the Arial font file
 arial_font_path = r"C:\Windows\Fonts\arial.ttf"
@@ -165,15 +164,21 @@ def process_and_plot(raw_data):
             x_label = "Readout duration (ms)"
         else:
             step_vals *= yellow_charge_readout_amp
-            step_vals = a * (step_vals**b) + c
-            x_label = "Readout amplitude (uW)"
-    print(step_vals)
+            x_label = "Readout amplitude"
+            # step_vals = a * (step_vals**b) + c
+            # x_label = "Readout amplitude (uW)"
+    # print(step_vals)
     # Optimal values
     optimal_values = []
     for nv_ind in range(num_nvs):
         try:
             # Calculate the optimal step value
-            optimal_step_val, max_combined_score = find_optimal_value_geom_mean(
+            (
+                optimal_step_val,
+                optimal_prep_fidality,
+                optimal_readout_fidality,
+                max_combined_score,
+            ) = find_optimal_value_geom_mean(
                 step_vals,
                 readout_fidelity_arr[nv_ind],
                 prep_fidelity_arr[nv_ind],
@@ -187,59 +192,59 @@ def process_and_plot(raw_data):
             continue
 
         # # Plotting
-        # fig, ax1 = plt.subplots(figsize=(7, 5))
+        fig, ax1 = plt.subplots(figsize=(7, 5))
 
-        # # Plot readout fidelity
-        # ax1.plot(
-        #     step_vals,
-        #     readout_fidelity_arr[nv_ind],
-        #     label="Readout Fidelity",
-        #     color="blue",
-        # )
-        # ax1.plot(
-        #     step_vals,
-        #     prep_fidelity_arr[nv_ind],
-        #     label="Prep Fidelity",
-        #     linestyle="--",
-        #     color="blue",
-        # )
-        # ax1.set_xlabel(x_label)
-        # ax1.set_ylabel("Fidelity")
-        # ax1.tick_params(axis="y", labelcolor="blue")
-        # ax1.grid(True, linestyle="--", alpha=0.6)
+        # Plot readout fidelity
+        ax1.plot(
+            step_vals,
+            readout_fidelity_arr[nv_ind],
+            label="Readout Fidelity",
+            color="blue",
+        )
+        ax1.plot(
+            step_vals,
+            prep_fidelity_arr[nv_ind],
+            label="Prep Fidelity",
+            linestyle="--",
+            color="blue",
+        )
+        ax1.set_xlabel(x_label)
+        ax1.set_ylabel("Fidelity")
+        ax1.tick_params(axis="y", labelcolor="blue")
+        ax1.grid(True, linestyle="--", alpha=0.6)
 
-        # # Plot Goodness of Fit ()
-        # ax2 = ax1.twinx()
-        # ax2.plot(
-        #     step_vals,
-        #     goodness_of_fit_arr[nv_ind],
-        #     color="green",
-        #     label=r"Goodness of Fit ($\chi^2_{\text{reduced}}$)",
-        #     alpha=0.7,
-        # )
-        # ax2.set_ylabel(r"Goodness of Fit ($\chi^2_{\text{reduced}}$)", color="green")
-        # ax2.tick_params(axis="y", labelcolor="green")
+        # Plot Goodness of Fit ()
+        ax2 = ax1.twinx()
+        ax2.plot(
+            step_vals,
+            goodness_of_fit_arr[nv_ind],
+            color="green",
+            label=r"Goodness of Fit ($\chi^2_{\text{reduced}}$)",
+            alpha=0.7,
+        )
+        ax2.set_ylabel(r"Goodness of Fit ($\chi^2_{\text{reduced}}$)", color="green")
+        ax2.tick_params(axis="y", labelcolor="green")
 
-        # # Highlight optimal step value
-        # ax1.axvline(
-        #     optimal_step_val,
-        #     color="red",
-        #     linestyle="--",
-        #     label=f"Optimal Step Val: {optimal_step_val:.3f}",
-        # )
-        # ax2.axvline(
-        #     optimal_step_val,
-        #     color="red",
-        #     linestyle="--",
-        # )
+        # Highlight optimal step value
+        ax1.axvline(
+            optimal_step_val,
+            color="red",
+            linestyle="--",
+            label=f"Optimal Step Val: {optimal_step_val:.3f}",
+        )
+        ax2.axvline(
+            optimal_step_val,
+            color="red",
+            linestyle="--",
+        )
 
-        # # Combine legends
-        # lines, labels = ax1.get_legend_handles_labels()
-        # lines2, labels2 = ax2.get_legend_handles_labels()
-        # ax1.legend(lines + lines2, labels + labels2, loc="upper left", fontsize=11)
-        # ax1.set_title(f"NV{nv_ind} - Optimal Step Val: {optimal_step_val:.3f}")
-        # plt.tight_layout()
-        # plt.show()
+        # Combine legends
+        lines, labels = ax1.get_legend_handles_labels()
+        lines2, labels2 = ax2.get_legend_handles_labels()
+        ax1.legend(lines + lines2, labels + labels2, loc="upper left", fontsize=11)
+        ax1.set_title(f"NV{nv_ind} - Optimal Step Val: {optimal_step_val:.3f}")
+        plt.tight_layout()
+        plt.show()
 
     ### Calculate Averages
     avg_readout_fidelity = np.nanmean(readout_fidelity_arr, axis=0)

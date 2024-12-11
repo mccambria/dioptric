@@ -298,6 +298,7 @@ def nuvu2thorcam_calibration(coords):
 
 def load_nv_coords(
     file_path="slmsuite/nv_blob_detection/nv_blob_filtered_160nvs_reordered.npz",
+    # file_path="slmsuite/nv_blob_detection/nv_blob_filtered_160nvs_reordered_manual_updated.npz",
 ):
     # data = np.load(file_path)
     data = np.load(file_path, allow_pickle=True)
@@ -330,7 +331,7 @@ def compute_nvs_phase():
         shape=(4096, 2048),
         spot_vectors=thorcam_coords,
         basis="ij",
-        # spot_amp=spot_weights,
+        spot_amp=spot_weights,
         cameraslm=fs,
     )
     # Precondition computationally
@@ -356,12 +357,15 @@ def compute_nvs_phase():
 
 
 def write_nvs_phase():
-    # phase = np.load("slmsuite\computed_phase\slm_phase_161nvs_20241108_020407.npy")
-    # phase = np.load("slmsuite\computed_phase\slm_phase_160nvs_20241111_205639.npy")
-    phase = np.load("slmsuite\computed_phase\slm_phase_160nvs_20241115_152130.npy")
-    # phase = np.load("slmsuite\computed_phase\slm_phase_160nvs_20241114_191804.npy")
-    # phase = np.load("slmsuite\computed_phase\slm_phase_160nvs_20241125_161635.npy")
-    # phase = np.load("slmsuite\computed_phase\slm_phase_160nvs_20241209_131928.npy")
+    # phase = np.load(
+    #     "slmsuite\computed_phase\slm_phase_160nvs_20241209_174312.npy"
+    # )  # unweighted spots
+    # phase = np.load(
+    #     "slmsuite\computed_phase\slm_phase_160nvs_20241209_131928.npy"
+    # )  # weighted spots for 50ms readout
+    phase = np.load("slmsuite\computed_phase\slm_phase_160nvs_20241210_143721.npy")
+    phase = np.load("slmsuite\computed_phase\slm_phase_160nvs_20241210_143721.npy")
+    # weighted spots for 30ms readout
     slm.write(phase, settle=True)
     # cam_plot()
 
