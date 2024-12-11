@@ -32,7 +32,7 @@ def process_and_plot(data):
 
     if threshold:
         sig_counts, ref_counts = widefield.threshold_counts(
-            nv_list, sig_counts, ref_counts, dynamic_thresh=True
+            nv_list, sig_counts, ref_counts, dynamic_thresh=False
         )
         # thresh_method= "otsu"
         # sig_counts, ref_counts = widefield.threshold_counts(nv_list, sig_counts, ref_counts, method=thresh_method)
@@ -128,21 +128,21 @@ def process_and_plot(data):
     ax.set_ylabel("SNR")
 
 
-def main(nv_list, num_reps, num_runs, scc_include_inds=None, uwave_ind_list=[0, 1]):
+def main(nv_list, num_reps, num_runs, uwave_ind_list=[0, 1]):
     ### Some initial setup
-
+    num_steps = 1
     # uwave_ind_list = [0]
     # uwave_ind_list = [1]
     # uwave_ind_list = [0, 1]
-    # uwave_ind_list = []
 
     seq_file = "scc_snr_check.py"
     pulse_gen = tb.get_server_pulse_gen()
 
     def run_fn(step_inds):
         seq_args = [
-            widefield.get_base_scc_seq_args(nv_list, uwave_ind_list, scc_include_inds)
+            widefield.get_base_scc_seq_args(nv_list, uwave_ind_list),
         ]
+
         # print(seq_args)
         seq_args_string = tb.encode_seq_args(seq_args)
         pulse_gen.stream_load(seq_file, seq_args_string, num_reps)
@@ -151,7 +151,7 @@ def main(nv_list, num_reps, num_runs, scc_include_inds=None, uwave_ind_list=[0, 
 
     data = base_routine.main(
         nv_list,
-        1,
+        num_steps,
         num_reps,
         num_runs,
         run_fn=run_fn,

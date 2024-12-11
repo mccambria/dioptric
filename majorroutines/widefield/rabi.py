@@ -259,7 +259,7 @@ if __name__ == "__main__":
     data = dm.get_raw_data(
         file_id=1698301105306, load_npz=True, use_cache=False
     )  # Crosstalk B
-    
+
     nv_list = data["nv_list"]
     num_nvs = len(nv_list)
     num_steps = data["num_steps"]

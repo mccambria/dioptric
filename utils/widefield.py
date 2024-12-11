@@ -28,7 +28,11 @@ from skimage.measure import ransac
 from sklearn.cluster import KMeans
 from sklearn.mixture import GaussianMixture
 
-from analysis.bimodal_histogram import determine_threshold
+from analysis.bimodal_histogram import (
+    ProbDist,
+    determine_threshold,
+    fit_bimodal_histogram,
+)
 from utils import common
 from utils import data_manager as dm
 from utils import kplotlib as kpl
@@ -320,9 +324,12 @@ def threshold_counts(nv_list, sig_counts, ref_counts=None, dynamic_thresh=False)
             combined_counts = np.append(
                 sig_counts[nv_ind].flatten(), ref_counts[nv_ind].flatten()
             )
-            # threshold = determine_threshold(combined_counts)
-            threshold = determine_threshold(
-                combined_counts, nvn_ratio=0.5, do_print=True
+            prob_dist = ProbDist.COMPOUND_POISSON
+            popt, _, _ = fit_bimodal_histogram(combined_counts, prob_dist)
+            if popt is None:
+                return np.nan, np.nan, np.nan
+            threshold, readout_fidelity = determine_threshold(
+                popt, prob_dist, dark_mode_weight=0.5, ret_fidelity=True
             )
             thresholds.append(threshold)
     else:
