@@ -6,17 +6,50 @@ Created on October 13th, 2023
 """
 
 import matplotlib.pyplot as plt
+import numpy as np
 from qm import QuantumMachinesManager, qua
 from qm.simulate import SimulationConfig
+
 import utils.common as common
 from servers.timing.sequencelibrary.QM_opx import seq_utils
 from servers.timing.sequencelibrary.QM_opx.camera import base_scc_sequence
 
+# def get_seq(base_scc_seq_args, scc_steps, num_reps):
+#     with qua.program() as seq:
+#         scc_duration_override = qua.declare(int)
+#         scc_amp_override = qua.declare(qua.fixed)
 
-def get_seq(base_scc_seq_args, scc_steps, num_reps):
+#         def uwave_macro_sig(uwave_ind_list, step_val):
+#             seq_utils.macro_pi_pulse(uwave_ind_list)
+
+#         def uwave_macro_ref(uwave_ind_list, step_val):
+#             pass
+
+#         base_scc_sequence.macro(
+#             base_scc_seq_args,
+#             [uwave_macro_sig, uwave_macro_ref],
+#             step_vals=scc_steps,
+#             num_reps=num_reps,
+#             scc_duration_override=scc_duration_override,
+#             scc_amp_override=scc_amp_override,
+#             reference=False,
+#         )
+
+#     seq_ret_vals = []
+#     return seq, seq_ret_vals
+
+
+def get_seq(base_scc_seq_args, step_vals, num_reps):
+    step_vals = np.array(step_vals)
+    duration_step_vals = [seq_utils.convert_ns_to_cc(el) for el in step_vals[:, 0]]
+    amp_step_vals = step_vals[:, 1]
+
     with qua.program() as seq:
-        scc_duration_override = qua.declare(int)
-        scc_amp_override = qua.declare(qua.fixed)
+        seq_utils.init()
+        seq_utils.macro_run_aods()
+
+        duration_override = qua.declare(int)
+        amp_override = qua.declare(qua.fixed)
 
         def uwave_macro_sig(uwave_ind_list, step_val):
             seq_utils.macro_pi_pulse(uwave_ind_list)
@@ -24,15 +57,19 @@ def get_seq(base_scc_seq_args, scc_steps, num_reps):
         def uwave_macro_ref(uwave_ind_list, step_val):
             pass
 
-        base_scc_sequence.macro(
-            base_scc_seq_args,
-            [uwave_macro_sig, uwave_macro_ref],
-            step_vals=scc_steps,
-            num_reps=num_reps,
-            scc_duration_override=scc_duration_override,
-            scc_amp_override=scc_amp_override,
-            reference=False,
-        )
+        def one_step():
+            base_scc_sequence.macro(
+                base_scc_seq_args,
+                [uwave_macro_sig, uwave_macro_ref],
+                num_reps=num_reps,
+                scc_duration_override=duration_override,
+                scc_amp_override=amp_override,
+                reference=False,
+            )
+
+        with qua.for_each_(duration_override, duration_step_vals):
+            with qua.for_each_(amp_override, amp_step_vals):
+                one_step()
 
     seq_ret_vals = []
     return seq, seq_ret_vals

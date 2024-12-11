@@ -108,23 +108,30 @@ def sigmoid(x):
     return 1 / (1 + np.exp(-x))
 
 
+def sigmoid_adjustment(x, median, increase=True):
+    adjustment = 1 / (1 + np.exp(-(x - median)))
+    return adjustment if increase else 1 - adjustment
+
+
 # Main section of the code
 if __name__ == "__main__":
     kpl.init_kplotlib()
-    data = dm.get_raw_data(file_id=1711487774016, load_npz=True)
-    img_array = np.array(data["ref_img_array"])
+    # data = dm.get_raw_data(file_id=1711487774016, load_npz=True)
+    # img_array = np.array(data["ref_img_array"])
     # file_id = 1713167190804
     file_id = 1713212456618
-    data = dm.get_raw_data(file_id=file_id, load_npz=True)
+    data = dm.get_raw_data(file_id=file_id, load_npz=True)  # optimal spotweights
     nv_entries = data["nv_data"]
     optimal_aom_values = [entry["optimal_step_value"] for entry in nv_entries]
     print(optimal_aom_values)
     nv_coordinates, spot_weights = load_nv_coords(
         # file_path="slmsuite/nv_blob_detection/nv_blob_filtered_160nvs.npz"
-        file_path="slmsuite/nv_blob_detection/nv_blob_filtered_160nvs_reordered.npz"
+        # file_path="slmsuite/nv_blob_detection/nv_blob_filtered_160nvs_reordered.npz"
+        file_path="slmsuite/nv_blob_detection/nv_blob_filtered_160nvs_reordered_manual_updated.npz"
     )
     nv_coordinates = nv_coordinates.tolist()
     spot_weights = spot_weights.tolist()
+    print(spot_weights)
     # # Filter and reorder NV coordinates based on reference NV
     sigma = 2.0
     reference_nv = [106.923, 120.549]
@@ -139,42 +146,121 @@ if __name__ == "__main__":
     updated_spot_weights, adjusted_aom_voltage = adjust_aom_voltage_for_slm(
         optimal_aom_values, power_law_params
     )
-
+    indices_to_update_reaout = [27, 41, 45, 55, 130]
+    indices_to_update_prep = [
+        2,
+        4,
+        6,
+        18,
+        45,
+        60,
+        61,
+        67,
+        69,
+        71,
+        84,
+        99,
+        102,
+        103,
+        108,
+        111,
+        129,
+        130,
+        133,
+        135,
+        136,
+        138,
+        148,
+        150,
+        155,
+        158,
+        159,
+    ]
     # smoothing with sigmoid
-    smoothed_spot_weights = sigmoid(
-        updated_spot_weights - np.median(updated_spot_weights)
-    )
-    # Print adjusted voltages
-    print("Adjusted Voltages (V):", adjusted_aom_voltage)
-    print("NV Index | Coords    |   weights")
-    print("-" * 60)
-    for idx, (coords, weight, updated_weight) in enumerate(
-        zip(
-            nv_coordinates,
-            spot_weights,
-            smoothed_spot_weights,
+    # smoothed_spot_weights = sigmoid(
+    #     updated_spot_weights - np.median(updated_spot_weights)
+    # )
+    indices_to_update_readout = [27, 41, 45, 55, 130]
+    indices_to_update_prep = [
+        2,
+        4,
+        6,
+        18,
+        45,
+        60,
+        61,
+        67,
+        69,
+        71,
+        84,
+        99,
+        102,
+        103,
+        108,
+        111,
+        129,
+        130,
+        133,
+        135,
+        136,
+        138,
+        148,
+        150,
+        155,
+        158,
+        159,
+    ]
+
+    # Copy of spot weights for updates
+    adjusted_spot_weights = spot_weights.copy()
+
+    # Apply sigmoid smoothing for power adjustment
+    smoothed_spot_weights = sigmoid(np.array(spot_weights) - np.median(spot_weights))
+    #  Calculate the median of the weights
+    # median_weight = np.mean(spot_weights)
+    median_weight = 0.15
+
+    # Adjust weights for readout and prep indices
+    for idx in indices_to_update_readout:
+        adjusted_spot_weights[idx] = sigmoid_adjustment(
+            spot_weights[idx], median=median_weight, increase=True
         )
-    ):
-        print(f"{idx+1:<8} | {coords} | {weight:.3f} | {updated_weight:.3f}")
 
-    # # Prepare the raw data as a list of dictionaries
-    # timestamp = dm.get_time_stamp()
-    # file_name = f"optimal_steps_{file_id}"
-    # file_path = dm.get_file_path(__file__, timestamp, file_name)
-    # raw_data = {
-    #     "timestamp": timestamp,
-    #     "nv_coords": nv_coordinates,
-    #     "spot_weights": spot_weights,
-    #     "updated_spot_weights": updated_spot_weights,
-    # }
-    # dm.save_raw_data(raw_data, file_path)
-    # print(f"Optimal combined values, including averages, saved to '{file_path}'.")
+    for idx in indices_to_update_prep:
+        adjusted_spot_weights[idx] = sigmoid_adjustment(
+            spot_weights[idx], median=median_weight, increase=False
+        )
+    # smoothed_spot_weights = spot_weights.copy()
+    # Update spot weights using the sigmoid function
+    # smoothed_spot_weights_1 = sigmoid(np.array(spot_weights) - np.median(spot_weights))
 
+    # Update only the specified indices
+    # for idx in indices_to_update:
+    #     smoothed_spot_weights[idx] = smoothed_spot_weights_1[idx]
+
+    # # Print adjusted weights for verification
+    # print("NV Index | Coords    | Original Weight | Updated Weight")
+    # print("-" * 60)
+    # for idx in indices_to_update:
+    #     print(
+    #         f"{idx:<8} | {nv_coordinates[idx]} | {spot_weights[idx]:.3f} | {smoothed_spot_weights[idx]:.3f}"
+    #     )
+
+    # Save the updated results
     # save_results(
     #     nv_coordinates,
     #     spot_weights,
     #     smoothed_spot_weights,
-    #     filename="slmsuite/nv_blob_detection/nv_blob_filtered_160nvs_reordered.npz",
+    #     filename="slmsuite/nv_blob_detection/updated_nv_blob_filtered_160nvs_reordered.npz",
+    # )
+    print(adjusted_spot_weights)
+    # # Prepare the raw data as a list of dictionarie
+
+    # save_results(
+    #     nv_coordinates,
+    #     spot_weights,
+    #     adjusted_spot_weights,
+    #     filename="slmsuite/nv_blob_detection/nv_blob_filtered_160nvs_reordered_manual_updated.npz",
     # )
 
     # # Plot the original image with circles around each NV

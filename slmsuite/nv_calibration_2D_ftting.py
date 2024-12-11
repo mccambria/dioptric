@@ -65,8 +65,10 @@ def fit_gaussian_2d_local(image, center, size=20):
     amplitude, xo, yo, sigma_x, sigma_y, theta, offset = popt
     return (round(xo, 3), round(yo, 3)), popt
 
+
 def plot_fitting(
-    image, centers, optimized_coords, size=20, colormap="hot", vmin=None, vmax=None):
+    image, centers, optimized_coords, size=20, colormap="hot", vmin=None, vmax=None
+):
     """Plot the original image with the initial and optimized peak coordinates."""
     fig, ax = plt.subplots()
 
@@ -96,10 +98,11 @@ def plot_fitting(
 
     plt.show()
 
+
 # Example usage
 if __name__ == "__main__":
     # Load the image array (replace this with your own method for loading image data)
-    data = dm.get_raw_data(file_id=1710703372406, load_npz=True)
+    data = dm.get_raw_data(file_id=1720838960683, load_npz=True)
     img_array = np.array(data["img_array"])
 
     # List of initial peak coordinates
