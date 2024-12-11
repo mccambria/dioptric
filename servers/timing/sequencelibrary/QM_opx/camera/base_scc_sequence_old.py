@@ -17,7 +17,7 @@ from servers.timing.sequencelibrary.QM_opx import seq_utils
 def macro(
     base_scc_seq_args,
     uwave_macro,
-    step_val=None,
+    step_vals=None,
     num_reps=1,
     scc_duration_override=None,
     scc_amp_override=None,
@@ -102,6 +102,18 @@ def macro(
 
     ### QUA stuff
 
+    seq_utils.init(num_nvs)
+
+    if step_vals is not None and len(step_vals) > 0:
+        step_vals = np.array(step_vals)
+        step_int_check = [el.is_integer() for el in step_vals]
+        if all(step_int_check):
+            step_val = qua.declare(int)
+        else:
+            step_val = qua.declare(qua.fixed)
+    else:
+        step_val = qua.declare(int)
+
     def one_exp(rep_ind, exp_ind):
         # exp_ind = num_exps_per_rep - 1  # MCC
         seq_utils.macro_polarize(
@@ -138,5 +150,25 @@ def macro(
         for exp_ind in range(num_exps_per_rep):
             one_exp(rep_ind, exp_ind)
 
-    seq_utils.handle_reps(one_rep, num_reps, wait_for_trigger=False)
-    seq_utils.macro_pause()
+    def one_step():
+        seq_utils.handle_reps(one_rep, num_reps, wait_for_trigger=False)
+        seq_utils.macro_pause()
+
+    if step_vals is None:
+        one_step()
+    else:
+        if scc_duration_override is not None and scc_amp_override is not None:
+            duration_steps = [seq_utils.convert_ns_to_cc(el) for el in step_vals[:, 0]]
+            amp_steps = step_vals[:, 1]
+            with qua.for_each_(scc_duration_override, duration_steps):
+                with qua.for_each_(scc_amp_override, amp_steps):
+                    one_step()
+        elif scc_duration_override is not None:
+            with qua.for_each_(scc_duration_override, step_vals):
+                one_step()
+        elif scc_amp_override is not None:
+            with qua.for_each_(scc_amp_override, step_vals):
+                one_step()
+        else:
+            with qua.for_each_(step_val, step_vals):
+                one_step()
