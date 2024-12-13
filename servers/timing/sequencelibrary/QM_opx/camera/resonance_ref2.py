@@ -24,20 +24,28 @@ def get_seq(
     step_vals=None,
     num_reps=1,
 ):
-    reference = False
+    reference = False  # References for this sequence are handled routine-side
 
     with qua.program() as seq:
+        seq_utils.init()
+        seq_utils.macro_run_aods()
+
+        step_val = qua.declare(int)
 
         def uwave_macro(uwave_ind_list, step_val):
             seq_utils.macro_pi_pulse(uwave_ind_list)
 
-        base_scc_sequence.macro(
-            base_scc_seq_args,
-            uwave_macro,
-            step_vals,
-            num_reps=num_reps,
-            reference=reference,
-        )
+        def one_step():
+            base_scc_sequence.macro(
+                base_scc_seq_args,
+                uwave_macro,
+                step_val,
+                num_reps=num_reps,
+                reference=reference,
+            )
+
+        with qua.for_each_(step_val, step_vals):
+            one_step()
 
     seq_ret_vals = []
     return seq, seq_ret_vals

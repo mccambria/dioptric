@@ -85,15 +85,14 @@ def process_and_plot(raw_data):
     step_vals = np.linspace(min_step_val, max_step_val, num_steps)
     optimize_pol_or_readout = raw_data["optimize_pol_or_readout"]
     optimize_duration_or_amp = raw_data["optimize_duration_or_amp"]
-    opx_config = raw_data["opx_config"]
-    yellow_charge_readout_amp = opx_config["waveforms"]["yellow_charge_readout"][
-        "sample"
-    ]
-    green_aod_cw_charge_pol_amp = opx_config["waveforms"]["green_aod_cw-charge_pol"][
-        "sample"
-    ]
-    power_law_params = [3.7e5, 6.97, 8e-14]
-    a, b, c = power_law_params
+    # get yellow amplitude
+    yellow_charge_readout_amp = raw_data["opx_config"]["waveforms"][
+        "yellow_charge_readout"
+    ]["sample"]
+    green_aod_cw_charge_pol_amp = raw_data["opx_config"]["waveforms"][
+        "green_aod_cw-charge_pol"
+    ]["sample"]
+
     counts = np.array(raw_data["counts"])
     # [nv_ind, run_ind, steq_ind, rep_ind]
     ref_exp_ind = 1
@@ -122,19 +121,7 @@ def process_and_plot(raw_data):
         )
         prep_fidelity = 1 - popt[0]  # Population weight of dark state
 
-        # Calculate inter-class and intra-class variance for separation metric
-        w_dark, mu_dark, mu_bright = popt[0], popt[1], popt[2]
-        sigma_dark = np.sqrt(mu_dark)
-        sigma_bright = np.sqrt(mu_bright)
-        inter_class_variance = w_dark * (1 - w_dark) * (mu_bright - mu_dark) ** 2
-        intra_class_variance = w_dark * sigma_dark**2 + (1 - w_dark) * sigma_bright**2
-        separation_metric = (
-            inter_class_variance / intra_class_variance
-            if intra_class_variance > 0
-            else np.nan
-        )
-
-        return readout_fidelity, prep_fidelity, separation_metric, chi_squared
+        return readout_fidelity, prep_fidelity, chi_squared
 
     # Parallel processingv -->  n_jobs :  Defaults to using all available cores (-1).
     results = Parallel(n_jobs=-1)(
@@ -147,9 +134,46 @@ def process_and_plot(raw_data):
     results = np.array(results).reshape(num_nvs, num_steps, 4)
     readout_fidelity_arr = results[:, :, 0]
     prep_fidelity_arr = results[:, :, 1]
-    # separation_metric_arr = results[:, :, 2]
     goodness_of_fit_arr = results[:, :, 3]
 
+    # Save results
+    timestamp = dm.get_time_stamp()
+    file_name = f"optimal_steps_{file_id}"
+    file_path = dm.get_file_path(__file__, timestamp, file_name)
+
+    # Prepare data to save
+    processed_data = {
+        "timestamp": timestamp,
+        "nv_data": [
+            {
+                "nv_index": nv_index,
+                "step_values": step_vals.tolist(),
+                "readout_fidelity": readout_fidelity_arr[nv_index].tolist(),
+                "prep_fidelity": prep_fidelity_arr[nv_index].tolist(),
+                "goodness_of_fit": goodness_of_fit_arr[nv_index].tolist(),
+            }
+            for nv_index in range(num_nvs)
+        ],
+        "metadata": {
+            "num_nvs": num_nvs,
+            "num_steps": num_steps,
+            "min_step_val": min_step_val,
+            "max_step_val": max_step_val,
+            "optimize_pol_or_readout": optimize_pol_or_readout,
+            "optimize_duration_or_amp": optimize_duration_or_amp,
+            "yellow_charge_readout_amp": yellow_charge_readout_amp,
+            "green_aod_cw_charge_pol_amp": green_aod_cw_charge_pol_amp,
+            "file_id": file_id,
+            "file_name": file_name,
+        },
+    }
+
+    dm.save_raw_data(processed_data, file_path)
+    print(f"Processed data saved to '{file_path}'.")
+
+def analyse_visualize
+    power_law_params = [3.7e5, 6.97, 8e-14]
+    a, b, c = power_law_params
     ### Plotting
     if optimize_pol_or_readout:
         if optimize_duration_or_amp:
@@ -179,12 +203,6 @@ def process_and_plot(raw_data):
                 optimal_readout_fidality,
                 max_combined_score,
             ) = find_optimal_value_geom_mean(
-            (
-                optimal_step_val,
-                optimal_prep_fidality,
-                optimal_readout_fidality,
-                max_combined_score,
-            ) = find_optimal_value_geom_mean(
                 step_vals,
                 readout_fidelity_arr[nv_ind],
                 prep_fidelity_arr[nv_ind],
@@ -206,25 +224,25 @@ def process_and_plot(raw_data):
             continue
 
         # # Plotting
-        # fig, ax1 = plt.subplots(figsize=(7, 5))
-        # # Plot readout fidelity
-        # ax1.plot(
-        #     step_vals,
-        #     readout_fidelity_arr[nv_ind],
-        #     label="Readout Fidelity",
-        #     color="blue",
-        # )
-        # ax1.plot(
-        #     step_vals,
-        #     prep_fidelity_arr[nv_ind],
-        #     label="Prep Fidelity",
-        #     linestyle="--",
-        #     color="blue",
-        # )
-        # ax1.set_xlabel(x_label)
-        # ax1.set_ylabel("Fidelity")
-        # ax1.tick_params(axis="y", labelcolor="blue")
-        # ax1.grid(True, linestyle="--", alpha=0.6)
+        fig, ax1 = plt.subplots(figsize=(7, 5))
+        # Plot readout fidelity
+        ax1.plot(
+            step_vals,
+            readout_fidelity_arr[nv_ind],
+            label="Readout Fidelity",
+            color="blue",
+        )
+        ax1.plot(
+            step_vals,
+            prep_fidelity_arr[nv_ind],
+            label="Prep Fidelity",
+            linestyle="--",
+            color="blue",
+        )
+        ax1.set_xlabel(x_label)
+        ax1.set_ylabel("Fidelity")
+        ax1.tick_params(axis="y", labelcolor="blue")
+        ax1.grid(True, linestyle="--", alpha=0.6)
 
         # Plot Goodness of Fit ()
         ax2 = ax1.twinx()
@@ -417,43 +435,14 @@ def process_and_plot(raw_data):
     fig.tight_layout()
     plt.show()
 
-    # Generate a unique file name based on the current date and time
-    file_name = f"optimal_steps_{file_id}"
-    timestamp = dm.get_time_stamp()
-    file_path = dm.get_file_path(__file__, timestamp, file_name)
-    # Prepare the raw data as a list of dictionaries, including averages
-    # raw_data = {
-    #     "timestamp": timestamp,
-    #     "averages": {
-    #         "avg_readout_fidelity": avg_readout_fidelity.tolist(),
-    #         "avg_prep_fidelity": avg_prep_fidelity.tolist(),
-    #         "avg_goodness_of_fit": avg_goodness_of_fit.tolist(),
-    #         "optimal_step_val": round(optimal_step_val, 6),
-    #         "max_combined_score": round(max_combined_score, 6),
-    #     },
-    #     "nv_data": [
-    #         {
-    #             "nv_index": nv_index,
-    #             "optimal_step_value": round(opt_step, 6),
-    #             "max_combined_score": round(max_score, 6),
-    #         }
-    #         for nv_index, opt_step, max_score in optimal_values
-    #     ],
-    # }
-    # dm.save_raw_data(raw_data, file_path)
-    # print(f"Optimal combined values, including averages, saved to '{file_path}'.")
-
-    print(f"Readout Fidelity = {avg_readout_fidelity}")
-    print(f"Prep Fidelity = {avg_prep_fidelity}")
-    print(f" Power(uW) = {step_vals}")
-
 
 # endregion
 
 if __name__ == "__main__":
     kpl.init_kplotlib()
     # file_id = 1710843759806
-    file_id = 1712782503640  # yellow ampl var
+    file_id = 1712782503640  # yellow ampl var 50ms
+    file_id = 1723230400688  # yellow ampl var 30ms
     # file_id = 1717056176426  # yellow duration var
     # file_id = 1711618252292  # green ampl var
     # file_id = 1712421496166  # green ampl var
