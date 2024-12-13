@@ -72,23 +72,10 @@ def find_optimal_value_geom_mean(
     ) ** (1 / (w1 + w2 + w3))
 
     # Find the step value corresponding to the maximum combined score
-    # Compute weighted geometric mean
-    combined_score = (
-        (norm_readout_fidelity**w1) * (norm_prep_fidelity**w2) * (inverted_goodness**w3)
-    ) ** (1 / (w1 + w2 + w3))
-
-    # Find the step value corresponding to the maximum combined score
     max_index = np.nanargmax(combined_score)
-    max_combined_score = combined_score[max_index]
     optimal_step_val = step_vals[max_index]
-    optimal_prep_fidality = prep_fidelity[max_index]
-    optimal_readout_fidality = readout_fidelity[max_index]
-    return (
-        optimal_step_val,
-        optimal_prep_fidality,
-        optimal_readout_fidality,
-        max_combined_score,
-    )
+
+    return optimal_step_val
 
 
 def process_and_plot(raw_data):
@@ -113,6 +100,20 @@ def process_and_plot(raw_data):
 
     prob_dist = ProbDist.COMPOUND_POISSON
 
+    # Function to process a single NV and step
+    # def process_nv_step(nv_ind, step_ind):
+    #     counts_data = condensed_counts[nv_ind, step_ind]
+    #     popt, _, chi_squared = fit_bimodal_histogram(counts_data, prob_dist)
+
+    #     if popt is None:
+    #         return np.nan, np.nan, np.nan, np.nan
+    #     # Threshold, prep and readout fidelity
+    #     threshold, readout_fidelity = determine_threshold(
+    #         popt, prob_dist, dark_mode_weight=0.5, ret_fidelity=True
+    #     )
+    #     prep_fidelity = 1 - popt[0]  # Population weight of dark state
+
+    #     return readout_fidelity, prep_fidelity, chi_squared
     # Check for empty or invalid data in `process_nv_step`
     def process_nv_step(nv_ind, step_ind):
         counts_data = condensed_counts[nv_ind, step_ind]
@@ -134,12 +135,19 @@ def process_and_plot(raw_data):
 
         return readout_fidelity, prep_fidelity, chi_squared
 
-    # Parallel processing --> n_jobs=-1: using all available cores.
+    # # Parallel processing --> n_jobs=-1: using all available cores.
     results = Parallel(n_jobs=-1)(
         delayed(process_nv_step)(nv_ind, step_ind)
         for nv_ind in range(num_nvs)
         for step_ind in range(num_steps)
     )
+
+    # sequential processing for debugging or testing
+    # results = [
+    #     process_nv_step(nv_ind, step_ind)
+    #     for nv_ind in range(num_nvs)
+    #     for step_ind in range(num_steps)
+    # ]
 
     # Reshape results into arrays
     results = np.array(results).reshape(num_nvs, num_steps, 3)
@@ -155,8 +163,8 @@ def process_and_plot(raw_data):
         x_label = "Readout amplitude"
         y_label = "Readout duration"
 
-    amp_vals = np.linspace(min_step_val[0], max_step_val[0], num_dur_steps)
-    duration_vals = np.linspace(min_step_val[1], max_step_val[1], num_amp_steps)
+    duration_vals = np.linspace(min_step_val[0], max_step_val[0], num_amp_steps)
+    amp_vals = np.linspace(min_step_val[1], max_step_val[1], num_dur_steps)
 
     avg_readout_fidelity = np.nanmean(readout_fidelity_arr, axis=0).reshape(
         len(duration_vals), len(amp_vals)
@@ -168,19 +176,6 @@ def process_and_plot(raw_data):
         len(duration_vals), len(amp_vals)
     )
 
-    # Calculate the optimal step value
-    (
-        optimal_step_val,
-        optimal_prep_fidelity,
-        optimal_readout_fidelity,
-        max_combined_score,
-    ) = find_optimal_value_geom_mean(
-        step_vals,
-        avg_readout_fidelity,
-        avg_prep_fidelity,
-        avg_goodness_of_fit,
-        weights=(1, 1, 1),
-    )
     metrics = {
         "Readout Fidelity": avg_readout_fidelity,
         "Preparation Fidelity": avg_prep_fidelity,
@@ -358,7 +353,8 @@ def _main(
 
 if __name__ == "__main__":
     kpl.init_kplotlib()
-    file_id = 1721471390254  # 2D scan
+    file_id = 1718839858832
+    # file_id = 1716961021353
     raw_data = dm.get_raw_data(file_id=file_id, load_npz=False)
     process_and_plot(raw_data)
     kpl.show(block=True)

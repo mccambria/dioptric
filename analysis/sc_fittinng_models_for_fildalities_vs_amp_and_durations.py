@@ -5,7 +5,7 @@ Created on Fall 2024
 """
 
 import numpy as np
-from scipy.optimize import curve_fit
+from scipy.optimize import curve_fit, differential_evolution
 import matplotlib.pyplot as plt
 
 # Data
@@ -113,11 +113,6 @@ prep_fidelity = np.array(
         0.50875939,
     ]
 )
-
-
-from scipy.optimize import curve_fit, differential_evolution
-import numpy as np
-import matplotlib.pyplot as plt
 
 
 # Logistic function for readout fidelity
