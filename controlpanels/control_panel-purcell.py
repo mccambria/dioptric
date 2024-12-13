@@ -141,11 +141,11 @@ def do_optimize_readout_duration(nv_list):
 
 
 def do_optimize_readout_amp(nv_list):
-    num_steps = 25
+    num_steps = 21
     # num_reps = 150
     # num_runs = 5
     num_reps = 10
-    num_runs = 225
+    num_runs = 500
     min_amp = 0.8
     max_amp = 1.2
     return optimize_charge_state_histograms_mcc.optimize_readout_amp(
@@ -342,13 +342,12 @@ def do_optimize_scc_duration(nv_list):
 
 
 def do_optimize_scc_amp(nv_list):
-    min_tau = 0.7
-    max_tau = 1.3
-    num_steps = 16
-    num_reps = 20
-    num_runs = 60
+    min_tau = 0.8
+    max_tau = 1.4
+    num_steps = 21
+    num_reps = 10
+    num_runs = 500
     # num_runs = 2
-
     optimize_scc.optimize_scc_amp(
         nv_list, num_steps, num_reps, num_runs, min_tau, max_tau
     )
@@ -924,7 +923,7 @@ if __name__ == "__main__":
     # magnet_angle = 90
     date_str = "2024_03_12"
     sample_coords = [2.0, 0.0]
-    z_coord = 1.7
+    z_coord = 1.9
     # Load NV pixel coordinates
     pixel_coords_list = load_nv_coords(
         file_path="slmsuite/nv_blob_detection/nv_blob_filtered_160nvs_reordered.npz",
@@ -987,7 +986,7 @@ if __name__ == "__main__":
     # threshold_list = load_thresholds
     #     file_path="slmsuite/nv_blob_detection/threshold_list_nvs_162.npz"
     # ).tolist()
-    scc_duration_list = [140] * num_nvs
+    scc_duration_list = [160] * num_nvs
     scc_duration_list = [4 * round(el / 4) for el in scc_duration_list]
     scc_amp_list = [1.0] * num_nvs
 
@@ -1189,8 +1188,8 @@ if __name__ == "__main__":
         # nv_list = nv_list[::-1]
         # do_scc_snr_check(nv_list)
         # do_optimize_scc_duration(nv_list)
-        # do_optimize_scc_amp(nv_list)
-        optimize_scc_amp_and_duration(nv_list)
+        do_optimize_scc_amp(nv_list)
+        # optimize_scc_amp_and_duration(nv_list)
         # do_crosstalk_check(nv_sig)
         # do_spin_pol_check(nv_sig)
         # do_calibrate_green_red_delay()

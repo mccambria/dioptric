@@ -183,26 +183,7 @@ def _main(nv_list, num_steps, num_reps, num_runs, min_tau, max_tau, duration_or_
         uwave_ind_list=uwave_ind_list,
     )
 
-    ### Process and plot
-
-    counts = raw_data["counts"]
-    sig_counts = counts[0]
-    ref_counts = counts[1]
-
-    ### Process and plot
-
-    try:
-        figs = process_and_plot(nv_list, taus, sig_counts, ref_counts, duration_or_amp)
-    except Exception:
-        print(traceback.format_exc())
-        figs = None
-
-    ### Clean up and return
-
-    tb.reset_cfm()
-
-    kpl.show()
-
+    # save data
     timestamp = dm.get_time_stamp()
     raw_data |= {
         "timestamp": timestamp,
@@ -220,6 +201,24 @@ def _main(nv_list, num_steps, num_reps, num_runs, min_tau, max_tau, duration_or_
     else:
         keys_to_compress = None
     dm.save_raw_data(raw_data, file_path, keys_to_compress)
+
+    ### Process and plot
+    counts = raw_data["counts"]
+    sig_counts = counts[0]
+    ref_counts = counts[1]
+
+    ### Process and plot
+    try:
+        figs = process_and_plot(nv_list, taus, sig_counts, ref_counts, duration_or_amp)
+    except Exception:
+        print(traceback.format_exc())
+        figs = None
+
+    ### Clean up and return
+    tb.reset_cfm()
+
+    kpl.show()
+
     if figs is not None:
         for ind in range(len(figs)):
             fig = figs[ind]
