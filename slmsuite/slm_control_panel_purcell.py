@@ -363,9 +363,9 @@ def write_nvs_phase():
     # phase = np.load(
     #     "slmsuite\computed_phase\slm_phase_160nvs_20241209_131928.npy"
     # )  # weighted spots for 50ms readout
-    phase = np.load("slmsuite\computed_phase\slm_phase_160nvs_20241210_143721.npy")
-    phase = np.load("slmsuite\computed_phase\slm_phase_160nvs_20241210_143721.npy")
-    # weighted spots for 30ms readout
+    phase = np.load(
+        "slmsuite\computed_phase\slm_phase_160nvs_20241210_143721.npy"
+    )  # weighted spots for 30ms readout
     slm.write(phase, settle=True)
     # cam_plot()
 

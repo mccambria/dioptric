@@ -17,8 +17,14 @@ from servers.timing.sequencelibrary.QM_opx.camera import base_scc_sequence
 
 
 def get_seq(base_scc_seq_args, scc_amp_steps, num_reps):
+    amp_step_vals = scc_amp_steps
+    print(amp_step_vals)
     with qua.program() as seq:
-        scc_amp_override = qua.declare(qua.fixed)
+        ### init
+        seq_utils.init()
+        seq_utils.macro_run_aods()
+
+        amp_override = qua.declare(qua.fixed)
 
         def uwave_macro_sig(uwave_ind_list, step_val):
             seq_utils.macro_pi_pulse(uwave_ind_list)
@@ -26,14 +32,17 @@ def get_seq(base_scc_seq_args, scc_amp_steps, num_reps):
         def uwave_macro_ref(uwave_ind_list, step_val):
             pass
 
-        base_scc_sequence.macro(
-            base_scc_seq_args,
-            [uwave_macro_sig, uwave_macro_ref],
-            step_vals=scc_amp_steps,
-            num_reps=num_reps,
-            scc_amp_override=scc_amp_override,
-            reference=False,
-        )
+        def one_step():
+            base_scc_sequence.macro(
+                base_scc_seq_args,
+                [uwave_macro_sig, uwave_macro_ref],
+                num_reps=num_reps,
+                scc_amp_override=amp_override,
+                reference=False,
+            )
+
+        with qua.for_each_(amp_override, amp_step_vals):
+            one_step()
 
     seq_ret_vals = []
     return seq, seq_ret_vals
@@ -51,45 +60,42 @@ if __name__ == "__main__":
     try:
         seq, seq_ret_vals = get_seq(
             [
-                [
-                    [108.73558077916097, 109.58849887552114],
-                    [109.41358077916098, 110.19749887552115],
-                    [108.86258077916098, 110.22749887552115],
-                    [108.21258077916097, 110.48949887552115],
-                ],
-                [
-                    [73.71607634356549, 75.00994679683262],
-                    [74.26107634356549, 75.48294679683262],
-                    [73.74607634356549, 75.46294679683263],
-                    [73.2590763435655, 75.72694679683262],
-                ],
-                [120, 120, 120, 120],
-                [1.0, 1.0, 1.0, 1.0],
-                [],
+                [[108.826, 106.773], [110.002, 105.138], [110.183, 108.395]],
+                [1000, 1000, 1000],
+                [1.0, 1.0, 1.0],
+                [[73.347, 72.222], [74.196, 70.89], [74.442, 73.533]],
+                [140, 140, 140],
+                [1.0, 1.0, 1.0],
+                [False, False, False],
                 [0, 1],
             ],
             [
-                0.7,
-                0.74,
-                1.1400000000000001,
-                0.86,
-                1.2200000000000002,
-                0.78,
-                1.1,
-                1.02,
-                0.9,
+                1.27,
+                0.97,
+                0.88,
+                1.03,
+                0.91,
+                1.09,
+                1.15,
+                1.12,
+                1.0,
                 1.3,
-                1.1800000000000002,
-                0.82,
-                1.26,
-                0.94,
-                0.98,
+                1.21,
+                0.79,
+                0.73,
                 1.06,
+                0.94,
+                0.7,
+                0.85,
+                1.2400000000000002,
+                0.82,
+                0.76,
+                1.1800000000000002,
             ],
             5,
         )
 
-        sim_config = SimulationConfig(duration=int(250e3 / 4))
+        sim_config = SimulationConfig(duration=int(160e3 / 4))
         sim = opx.simulate(seq, sim_config)
         samples = sim.get_simulated_samples()
         samples.con1.plot()

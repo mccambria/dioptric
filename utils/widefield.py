@@ -328,9 +328,7 @@ def threshold_counts(nv_list, sig_counts, ref_counts=None, dynamic_thresh=False)
             popt, _, _ = fit_bimodal_histogram(combined_counts, prob_dist)
             if popt is None:
                 return np.nan, np.nan, np.nan
-            threshold, readout_fidelity = determine_threshold(
-                popt, prob_dist, dark_mode_weight=0.5, ret_fidelity=True
-            )
+            threshold = determine_threshold(popt, prob_dist, dark_mode_weight=0.5)
             thresholds.append(threshold)
     else:
         thresholds = [nv.threshold for nv in nv_list]
