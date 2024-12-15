@@ -67,9 +67,16 @@ def get_seq(base_scc_seq_args, step_vals, num_reps):
                 reference=False,
             )
 
-        with qua.for_each_(duration_override, duration_step_vals):
-            with qua.for_each_(amp_override, amp_step_vals):
-                one_step()
+        # with qua.for_each_(duration_override, duration_step_vals):
+        #     with qua.for_each_(amp_override, amp_step_vals):
+        #         one_step()
+        # Outer loop for durations
+
+        # Cartesian product of durations and amplitudes
+        with qua.for_each_(
+            (duration_override, amp_override), (duration_step_vals, amp_step_vals)
+        ):
+            one_step()
 
     seq_ret_vals = []
     return seq, seq_ret_vals

@@ -279,7 +279,67 @@ def plot_nv_resonance_fits_and_residuals(
     avg_counts, avg_counts_ste, norms = widefield.process_counts(
         nv_list, sig_counts, ref_counts, threshold=False
     )
+    snr, snr_ste = widefield.calc_snr(ref_counts, sig_counts)
+    median_snr = np.median(snr, axis=0)
+    # median_snr -= min(median_snr)
+    avg_snr_ste = np.mean(snr_ste, axis=0)
+    avg_snr = np.mean(snr, axis=0)
+    # avg_snr -= min(avg_snr)
 
+    # Filter NVs with SNR beyond mean and median
+    snr_threshold_mean = np.min(snr)
+    snr_threshold_median = np.min(snr)
+
+    above_mean_indices = np.where(snr > snr_threshold_mean)[0]
+    above_median_indices = np.where(snr > snr_threshold_median)[0]
+    fig, ax = plt.subplots()
+    for i, nv_snr in enumerate(snr):
+        if i in above_mean_indices:
+            ax.plot(
+                freqs,
+                nv_snr,
+                color="blue",
+                linestyle="--",
+                alpha=0.3,
+                # label="Above Mean" if i == above_mean_indices[0] else "",
+            )
+        elif i in above_median_indices:
+            ax.plot(
+                freqs,
+                nv_snr,
+                color="green",
+                alpha=0.2,
+                # label="Above Median" if i == above_median_indices[0] else "",
+            )
+        else:
+            ax.plot(freqs, nv_snr, color="gray", alpha=0.2)
+
+    ax.set_title("SNR Across All NVs with Highlighted Thresholds")
+    ax.set_xlabel("Frequency (GHz)")
+    ax.set_ylabel("SNR")
+    ax.legend()
+    ax.grid(True)
+    plt.show()
+
+    fig_avg_snr, ax_avg_snr = plt.subplots()
+    sns.lineplot(x=freqs, y=avg_snr, ax=ax_avg_snr, label="Average SNR")
+    sns.lineplot(
+        x=freqs, y=median_snr, ax=ax_avg_snr, label="Median SNR", linestyle="--"
+    )
+    ax_avg_snr.fill_between(
+        freqs,
+        avg_snr - avg_snr_ste,
+        avg_snr + avg_snr_ste,
+        alpha=0.2,
+        label="Error Bounds",
+    )
+    ax_avg_snr.set_xlabel("freq (GHz)")
+    ax_avg_snr.set_ylabel("SNR")
+    ax_avg_snr.legend()
+    ax_avg_snr.grid(True)
+    plt.title("Avg and Median SNR across NVs")
+    plt.show()
+    return
     num_nvs = len(nv_list)
     chi_squared_list = []
     contrast_list = []
@@ -419,214 +479,214 @@ def plot_nv_resonance_fits_and_residuals(
                 orientation_indices[target].append(idx)
 
     # Find non-matching indices
-    filtered_indices = [
-        idx for indices in orientation_indices.values() for idx in indices
-    ]
-    non_matching_indices = [
-        idx
-        for idx in range(len(center_freq_differences))
-        if idx not in filtered_indices
-    ]
+    # filtered_indices = [
+    #     idx for indices in orientation_indices.values() for idx in indices
+    # ]
+    # non_matching_indices = [
+    #     idx
+    #     for idx in range(len(center_freq_differences))
+    #     if idx not in filtered_indices
+    # ]
 
-    # Combine all results into a single dictionary
-    results = {
-        "orientation_indices": {
-            target: {
-                "nv_indices": indices,
-                "count": len(indices),
-            }
-            for target, indices in orientation_indices.items()
-        },
-        "non_matching_indices": {
-            "nv_indices": non_matching_indices,
-            "count": len(non_matching_indices),
-        },
-    }
+    # # Combine all results into a single dictionary
+    # results = {
+    #     "orientation_indices": {
+    #         target: {
+    #             "nv_indices": indices,
+    #             "count": len(indices),
+    #         }
+    #         for target, indices in orientation_indices.items()
+    #     },
+    #     "non_matching_indices": {
+    #         "nv_indices": non_matching_indices,
+    #         "count": len(non_matching_indices),
+    #     },
+    # }
 
     # Save the combined results to a single file
     file_name = dm.get_file_name(file_id=file_id)
     file_path = dm.get_file_path(__file__, file_name, f"{file_id}_all_results")
-    dm.save_raw_data(results, file_path)
+    # dm.save_raw_data(results, file_path)
     # Print the NV indices for each orientation
     for orientation, indices in orientation_indices.items():
         print(f"Orientation centered around {orientation} GHz:")
         print(f"NV Indices: {indices}")
         print(f"Number of NVs: {len(indices)}\n")
 
-    # # Filter NVs for plotting
-    # filtered_nv_list = [nv_list[idx] for idx in filtered_indices]
-    # filtered_avg_counts = [avg_counts[idx] for idx in filtered_indices]
-    # filtered_avg_counts_ste = [avg_counts_ste[idx] for idx in filtered_indices]
-    # filtered_center_freqs = [center_freqs[idx] for idx in filtered_indices]
-    # filtered_freq_differences = [
-    #     center_freq_differences[idx] for idx in filtered_indices
-    # ]
-    # filtered_avg_peak_widths = [avg_peak_widths[idx] for idx in filtered_indices]
-    # filtered_avg_peak_amplitudes = [
-    #     avg_peak_amplitudes[idx] for idx in filtered_indices
-    # ]
-    # filtered_contrast_list = [contrast_list[idx] for idx in filtered_indices]
-    # filtered_chi_squared_list = [chi_squared_list[idx] for idx in filtered_indices]
-    # filtered_fitted_data = [fit_data[idx] for idx in filtered_indices]
+    # Filter NVs for plotting
+    filtered_nv_list = [nv_list[idx] for idx in filtered_indices]
+    filtered_avg_counts = [avg_counts[idx] for idx in filtered_indices]
+    filtered_avg_counts_ste = [avg_counts_ste[idx] for idx in filtered_indices]
+    filtered_center_freqs = [center_freqs[idx] for idx in filtered_indices]
+    filtered_freq_differences = [
+        center_freq_differences[idx] for idx in filtered_indices
+    ]
+    filtered_avg_peak_widths = [avg_peak_widths[idx] for idx in filtered_indices]
+    filtered_avg_peak_amplitudes = [
+        avg_peak_amplitudes[idx] for idx in filtered_indices
+    ]
+    filtered_contrast_list = [contrast_list[idx] for idx in filtered_indices]
+    filtered_chi_squared_list = [chi_squared_list[idx] for idx in filtered_indices]
+    filtered_fitted_data = [fit_data[idx] for idx in filtered_indices]
 
-    # # Print
-    # # cluster_and_print_average_center_frequencies(filtered_center_freqs)
-    # # Plot filtered resonance fits
-    # sns.set(style="whitegrid", palette="muted")
-    # num_filtered_nvs = len(filtered_nv_list)
-    # colors = sns.color_palette("deep", num_filtered_nvs)
-    # num_rows = int(np.ceil(num_filtered_nvs / num_cols))
-    # fig_fitting, axes_fitting = plt.subplots(
-    #     num_rows,
-    #     num_cols,
-    #     figsize=(num_cols * 3, num_rows * 1),
-    #     sharex=True,
-    #     sharey=False,
-    # )
-    # axes_fitting = axes_fitting.flatten()
+    # Print
+    # cluster_and_print_average_center_frequencies(filtered_center_freqs)
+    # Plot filtered resonance fits
+    sns.set(style="whitegrid", palette="muted")
+    num_filtered_nvs = len(filtered_nv_list)
+    colors = sns.color_palette("deep", num_filtered_nvs)
+    num_rows = int(np.ceil(num_filtered_nvs / num_cols))
+    fig_fitting, axes_fitting = plt.subplots(
+        num_rows,
+        num_cols,
+        figsize=(num_cols * 3, num_rows * 1),
+        sharex=True,
+        sharey=False,
+    )
+    axes_fitting = axes_fitting.flatten()
 
-    # for nv_idx, ax in enumerate(axes_fitting):
-    #     if nv_idx < num_filtered_nvs:
-    #         sns.lineplot(
-    #             x=freqs,
-    #             y=filtered_avg_counts[nv_idx],
-    #             ax=ax,
-    #             color=colors[nv_idx % len(colors)],
-    #             lw=2,
-    #             marker="o",
-    #             markersize=5,
-    #             label=f"{filtered_indices[nv_idx]+1}",
-    #         )
-    #         ax.legend(fontsize="small")
-    #         ax.errorbar(
-    #             freqs,
-    #             filtered_avg_counts[nv_idx],
-    #             yerr=filtered_avg_counts_ste[nv_idx],
-    #             fmt="none",
-    #             ecolor="gray",
-    #             alpha=0.6,
-    #         )
-    #         ax.grid(True, which="both", linestyle="--", linewidth=0.5)
+    for nv_idx, ax in enumerate(axes_fitting):
+        if nv_idx < num_filtered_nvs:
+            sns.lineplot(
+                x=freqs,
+                y=filtered_avg_counts[nv_idx],
+                ax=ax,
+                color=colors[nv_idx % len(colors)],
+                lw=2,
+                marker="o",
+                markersize=5,
+                label=f"{filtered_indices[nv_idx]+1}",
+            )
+            ax.legend(fontsize="small")
+            ax.errorbar(
+                freqs,
+                filtered_avg_counts[nv_idx],
+                yerr=filtered_avg_counts_ste[nv_idx],
+                fmt="none",
+                ecolor="gray",
+                alpha=0.6,
+            )
+            ax.grid(True, which="both", linestyle="--", linewidth=0.5)
 
-    #         # Plot fitted data on the same subplot
-    #         ax.plot(
-    #             freqs,
-    #             filtered_fitted_data[nv_idx],
-    #             "-",
-    #             color=colors[nv_idx % len(colors)],
-    #             label="Fit",
-    #             lw=2,
-    #         )
-    #         # Y-tick labels for the leftmost column
-    #         # if nv_idx % num_cols == 0:
-    #         #     ax.set_yticks(ax.get_yticks())
-    #         # else:
-    #         #     ax.set_yticklabels([])
-    #         ax.set_yticklabels([])
+            # Plot fitted data on the same subplot
+            ax.plot(
+                freqs,
+                filtered_fitted_data[nv_idx],
+                "-",
+                color=colors[nv_idx % len(colors)],
+                label="Fit",
+                lw=2,
+            )
+            # Y-tick labels for the leftmost column
+            # if nv_idx % num_cols == 0:
+            #     ax.set_yticks(ax.get_yticks())
+            # else:
+            #     ax.set_yticklabels([])
+            ax.set_yticklabels([])
 
-    #         fig_fitting.text(
-    #             0.04,
-    #             0.5,
-    #             "NV$^{-}$ Population",
-    #             va="center",
-    #             rotation="vertical",
-    #             fontsize=12,
-    #         )
-    #         # Set custom tick locations in x axis
-    #         if nv_idx >= (num_rows - 1) * num_cols:  # Bottom row
-    #             ax.set_xlabel("Frequency (GHz)")
-    #             ax.set_xticks(np.linspace(min(freqs), max(freqs), 5))
-    #         for col in range(num_cols):
-    #             bottom_row_idx = num_rows * num_cols - num_cols + col
-    #             if bottom_row_idx < len(axes_fitting):
-    #                 ax = axes_fitting[bottom_row_idx]
-    #                 tick_positions = np.linspace(min(freqs), max(freqs), 5)
-    #                 ax.set_xticks(tick_positions)
-    #                 ax.set_xticklabels(
-    #                     [f"{tick:.2f}" for tick in tick_positions],
-    #                     rotation=45,
-    #                     fontsize=9,
-    #                 )
-    #                 ax.set_xlabel("Frequency (GHz)")
-    #             else:
-    #                 ax.set_xticklabels([])
+            fig_fitting.text(
+                0.04,
+                0.5,
+                "NV$^{-}$ Population",
+                va="center",
+                rotation="vertical",
+                fontsize=12,
+            )
+            # Set custom tick locations in x axis
+            if nv_idx >= (num_rows - 1) * num_cols:  # Bottom row
+                ax.set_xlabel("Frequency (GHz)")
+                ax.set_xticks(np.linspace(min(freqs), max(freqs), 5))
+            for col in range(num_cols):
+                bottom_row_idx = num_rows * num_cols - num_cols + col
+                if bottom_row_idx < len(axes_fitting):
+                    ax = axes_fitting[bottom_row_idx]
+                    tick_positions = np.linspace(min(freqs), max(freqs), 5)
+                    ax.set_xticks(tick_positions)
+                    ax.set_xticklabels(
+                        [f"{tick:.2f}" for tick in tick_positions],
+                        rotation=45,
+                        fontsize=9,
+                    )
+                    ax.set_xlabel("Frequency (GHz)")
+                else:
+                    ax.set_xticklabels([])
 
-    #         ax.grid(True, which="both", linestyle="--", linewidth=0.5)
-    #     else:
-    #         ax.axis("off")
-    # fig_fitting.suptitle(f"Unfiltered NV Resonance Fits_{file_id}", fontsize=16)
-    # plt.subplots_adjust(
-    #     left=0.1, right=0.95, top=0.95, bottom=0.1, hspace=0.01, wspace=0.01
-    # )
-    # # plt.tight_layout()
-    # now = datetime.now()
-    # date_time_str = now.strftime("%Y%m%d_%H%M%S")
-    # file_name = dm.get_file_name(file_id=file_id)
-    # file_path = dm.get_file_path(__file__, file_name, f"{file_id}_{date_time_str}")
-    # kpl.show(block=True)
-    # dm.save_figure(fig_fitting, file_path)
-    # # plt.close(fig_fitting)
+            ax.grid(True, which="both", linestyle="--", linewidth=0.5)
+        else:
+            ax.axis("off")
+    fig_fitting.suptitle(f"Unfiltered NV Resonance Fits_{file_id}", fontsize=16)
+    plt.subplots_adjust(
+        left=0.1, right=0.95, top=0.95, bottom=0.1, hspace=0.01, wspace=0.01
+    )
+    # plt.tight_layout()
+    now = datetime.now()
+    date_time_str = now.strftime("%Y%m%d_%H%M%S")
+    file_name = dm.get_file_name(file_id=file_id)
+    file_path = dm.get_file_path(__file__, file_name, f"{file_id}_{date_time_str}")
+    kpl.show(block=True)
+    dm.save_figure(fig_fitting, file_path)
+    # plt.close(fig_fitting)
 
-    # # Plot histograms and scatter plots
-    # plots_data = [
-    #     (
-    #         "Histogram of Frequency Splitting",
-    #         filtered_freq_differences,
-    #         None,
-    #         "Frequency Splitting (GHz)",
-    #         "Count",
-    #         "teal",
-    #     ),
-    #     (
-    #         "Frequency Splitting vs Contrast",
-    #         filtered_freq_differences,
-    #         filtered_contrast_list,
-    #         "Frequency Splitting (GHz)",
-    #         "Contrast",
-    #         "purple",
-    #     ),
-    #     (
-    #         "Frequency Splitting vs Average Peak Width",
-    #         filtered_freq_differences,
-    #         filtered_avg_peak_widths,
-    #         "Frequency Splitting (GHz)",
-    #         "Average Peak Width",
-    #         "orange",
-    #     ),
-    #     (
-    #         "Frequency Splitting vs Average Peak Amplitude",
-    #         filtered_freq_differences,
-    #         filtered_avg_peak_amplitudes,
-    #         "Frequency Splitting (GHz)",
-    #         "Average Peak Amplitude",
-    #         "green",
-    #     ),
-    #     (
-    #         "NV Index vs Frequency Difference",
-    #         list(range(len(filtered_freq_differences))),  # NV indices
-    #         filtered_freq_differences,
-    #         "NV Index",
-    #         "Frequency Difference (GHz)",
-    #         "blue",
-    #     ),
-    # ]
+    # Plot histograms and scatter plots
+    plots_data = [
+        (
+            "Histogram of Frequency Splitting",
+            filtered_freq_differences,
+            None,
+            "Frequency Splitting (GHz)",
+            "Count",
+            "teal",
+        ),
+        (
+            "Frequency Splitting vs Contrast",
+            filtered_freq_differences,
+            filtered_contrast_list,
+            "Frequency Splitting (GHz)",
+            "Contrast",
+            "purple",
+        ),
+        (
+            "Frequency Splitting vs Average Peak Width",
+            filtered_freq_differences,
+            filtered_avg_peak_widths,
+            "Frequency Splitting (GHz)",
+            "Average Peak Width",
+            "orange",
+        ),
+        (
+            "Frequency Splitting vs Average Peak Amplitude",
+            filtered_freq_differences,
+            filtered_avg_peak_amplitudes,
+            "Frequency Splitting (GHz)",
+            "Average Peak Amplitude",
+            "green",
+        ),
+        (
+            "NV Index vs Frequency Difference",
+            list(range(len(filtered_freq_differences))),  # NV indices
+            filtered_freq_differences,
+            "NV Index",
+            "Frequency Difference (GHz)",
+            "blue",
+        ),
+    ]
 
-    # for title, x_data, y_data, xlabel, ylabel, color in plots_data:
-    #     fig = plt.figure(figsize=(6, 5))
-    #     if isinstance(y_data, list):
-    #         plt.scatter(x_data, y_data, color=color, alpha=0.7, edgecolors="k")
-    #     else:
-    #         plt.hist(x_data, bins=5, color=color, alpha=0.7, edgecolor="black")
-    #     plt.xlabel(xlabel)
-    #     plt.ylabel(ylabel)
-    #     plt.title(title)
-    #     plt.grid(True, linestyle="--", alpha=0.6)
-    #     file_path = dm.get_file_path(
-    #         __file__, file_name, f"{file_id}_{date_time_str}_{title}"
-    #     )
-    #     kpl.show(block=True)
-    #     dm.save_figure(fig, file_path)
-    # plt.close(fig)
+    for title, x_data, y_data, xlabel, ylabel, color in plots_data:
+        fig = plt.figure(figsize=(6, 5))
+        if isinstance(y_data, list):
+            plt.scatter(x_data, y_data, color=color, alpha=0.7, edgecolors="k")
+        else:
+            plt.hist(x_data, bins=5, color=color, alpha=0.7, edgecolor="black")
+        plt.xlabel(xlabel)
+        plt.ylabel(ylabel)
+        plt.title(title)
+        plt.grid(True, linestyle="--", alpha=0.6)
+        file_path = dm.get_file_path(
+            __file__, file_name, f"{file_id}_{date_time_str}_{title}"
+        )
+        kpl.show(block=True)
+        dm.save_figure(fig, file_path)
+        plt.close(fig)
 
     # plot_list = ["chi_squared_]
     # Plot histograms and scatter plots
@@ -1326,6 +1386,7 @@ if __name__ == "__main__":
     # file_id = 1698088573367
     # file_id =1699853891683
     file_id = 1701152211845
+    # file_id = 1725055024398
     data = dm.get_raw_data(file_id=file_id, load_npz=False, use_cache=True)
     nv_list = data["nv_list"]
     num_nvs = len(nv_list)
@@ -1360,7 +1421,7 @@ if __name__ == "__main__":
         num_cols=9,
         threshold_method=thresh_method,
     )
-    print(f"Plot saved to {file_path}")
+    # print(f"Plot saved to {file_path}")
 
     # selected_nv_indices = [5, 11, 22, 60]
     # plot_selected_nv_resonance_fits_comparison(

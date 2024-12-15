@@ -171,9 +171,6 @@ def process_and_plot(raw_data):
     dm.save_raw_data(processed_data, file_path)
     print(f"Processed data saved to '{file_path}'.")
 
-def analyse_visualize
-    power_law_params = [3.7e5, 6.97, 8e-14]
-    a, b, c = power_law_params
     ### Plotting
     if optimize_pol_or_readout:
         if optimize_duration_or_amp:
@@ -448,6 +445,7 @@ if __name__ == "__main__":
     # file_id = 1712421496166  # green ampl var
     # file_id = 1720970373150  # yellow ampl var iter_1
     # raw_data = dm.get_raw_data(file_id=1709868774004, load_npz=False) #yellow ampl var
-    raw_data = dm.get_raw_data(file_id=file_id, load_npz=False)  # yellow amp var
-    process_and_plot(raw_data)
-    kpl.show(block=True)
+    # raw_data = dm.get_raw_data(file_id=file_id, load_npz=False)  # yellow amp var
+    # process_and_plot(raw_data)
+    # kpl.show(block=True)
+    print(dm.get_file_name(1717056176426))
