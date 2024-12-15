@@ -343,7 +343,7 @@ def do_optimize_scc_duration(nv_list):
 
 def do_optimize_scc_amp(nv_list):
     min_tau = 0.8
-    max_tau = 1.4
+    max_tau = 1.2
     num_steps = 21
     num_reps = 10
     num_runs = 500
@@ -923,7 +923,7 @@ if __name__ == "__main__":
     # magnet_angle = 90
     date_str = "2024_03_12"
     sample_coords = [2.0, 0.0]
-    z_coord = 1.9
+    z_coord = 1.95
     # Load NV pixel coordinates
     pixel_coords_list = load_nv_coords(
         file_path="slmsuite/nv_blob_detection/nv_blob_filtered_160nvs_reordered.npz",
@@ -986,7 +986,10 @@ if __name__ == "__main__":
     # threshold_list = load_thresholds
     #     file_path="slmsuite/nv_blob_detection/threshold_list_nvs_162.npz"
     # ).tolist()
-    scc_duration_list = [160] * num_nvs
+    scc_duration_data = dm.get_raw_data(file_id=1724869770494)
+    scc_optimal_durations = scc_duration_data["optimal_durations"]
+    scc_duration_list = list(scc_optimal_durations.values())
+    # scc_duration_list = [144] * num_nvs
     scc_duration_list = [4 * round(el / 4) for el in scc_duration_list]
     scc_amp_list = [1.0] * num_nvs
 

@@ -23,9 +23,14 @@ def get_seq(
     step_vals,
     num_reps=1,
 ):
-    step_vals = [seq_utils.convert_ns_to_cc(el) for el in step_vals]
-
+    # step_vals = [seq_utils.convert_ns_to_cc(el) for el in step_vals]
+    print(step_vals)
     with qua.program() as seq:
+        ### init
+        seq_utils.init()
+        seq_utils.macro_run_aods()
+
+        step_val = qua.declare(int)
 
         def uwave_macro_0(uwave_ind_list, step_val):
             qua.align()
@@ -36,13 +41,25 @@ def get_seq(
             qua.wait(step_val)
             seq_utils.macro_pi_pulse(uwave_ind_list)
 
-        base_scc_sequence.macro(
-            base_scc_seq_args,
-            [uwave_macro_0, uwave_macro_1],
-            step_vals,
-            num_reps,
-            reference=False,
-        )
+        # base_scc_sequence.macro(
+        #     base_scc_seq_args,
+        #     [uwave_macro_0, uwave_macro_1],
+        #     step_vals,
+        #     num_reps,
+        #     reference=False,
+        # )
+
+        def one_step():
+            base_scc_sequence.macro(
+                base_scc_seq_args,
+                [uwave_macro_0, uwave_macro_1],
+                step_vals=step_vals,
+                num_reps=num_reps,
+                reference=False,
+            )
+
+        with qua.for_each_(step_val, step_vals):
+            one_step()
 
     seq_ret_vals = []
     return seq, seq_ret_vals
@@ -53,27 +70,37 @@ if __name__ == "__main__":
     config = config_module.config
     opx_config = config_module.opx_config
 
-    ip_address = config["DeviceIDs"]["QM_opx_ip"]
-    qmm = QuantumMachinesManager(host=ip_address)
+    qm_opx_args = config["DeviceIDs"]["QM_opx_args"]
+    qmm = QuantumMachinesManager(**qm_opx_args)
     opx = qmm.open_qm(opx_config)
 
     try:
         args = [
             [
-                [112.03744137001495, 109.50814699059372],
-                [112.22844137001495, 108.72114699059371],
-                [111.05444137001496, 108.90314699059371],
+                [[108.826, 106.773], [110.002, 105.138], [110.183, 108.395]],
+                [1000, 1000, 1000],
+                [1.0, 1.0, 1.0],
+                [[73.347, 72.222], [74.196, 70.89], [74.442, 73.533]],
+                [240, 240, 240],
+                [1.0, 1.0, 1.0],
+                [False, False, False],
+                [0, 1],
             ],
             [
-                [76.0990499534296, 75.08248628148773],
-                [76.2550499534296, 74.39048628148774],
-                [75.4050499534296, 74.55748628148774],
+                1493672.0,
+                3583572.0,
+                579820.0,
+                2380772.0,
+                12302064.0,
+                1141692.0,
+                356880.0,
+                20001000.0,
+                2936488.0,
+                6236064.0,
+                7425680.0,
+                14489072.0,
+                1000.0,
             ],
-            1000.0,
-            "NVSpinState.HIGH",
-            "NVSpinState.LOW",
-            "NVSpinState.ZERO",
-            "NVSpinState.LOW",
         ]
         seq, seq_ret_vals = get_seq(args, 5)
 
