@@ -923,7 +923,7 @@ if __name__ == "__main__":
     # magnet_angle = 90
     date_str = "2024_03_12"
     sample_coords = [2.0, 0.0]
-    z_coord = 1.95
+    z_coord = 2.05
     # Load NV pixel coordinates
     pixel_coords_list = load_nv_coords(
         file_path="slmsuite/nv_blob_detection/nv_blob_filtered_160nvs_reordered.npz",
@@ -986,13 +986,22 @@ if __name__ == "__main__":
     # threshold_list = load_thresholds
     #     file_path="slmsuite/nv_blob_detection/threshold_list_nvs_162.npz"
     # ).tolist()
-    scc_duration_data = dm.get_raw_data(file_id=1724869770494)
-    scc_optimal_durations = scc_duration_data["optimal_durations"]
-    scc_duration_list = list(scc_optimal_durations.values())
-    # scc_duration_list = [144] * num_nvs
-    scc_duration_list = [4 * round(el / 4) for el in scc_duration_list]
-    scc_amp_list = [1.0] * num_nvs
 
+    # polrizaton data
+    charge_pol_amps_data = dm.get_raw_data(file_id=1726176332479)
+    charge_pol_amps = charge_pol_amps_data["optimal step values"]
+    # print(charge_pol_amps)
+    # scc_data = dm.get_raw_data(file_id=1724869770494)
+    scc_data = dm.get_raw_data(file_id=1725870710271)
+    scc_optimal_durations = scc_data["optimal_durations"]
+    scc_optimal_amplitudes = scc_data["optimal_amplitudes"]
+    scc_duration_list = list(scc_optimal_durations.values())
+    scc_amp_list = list(scc_optimal_amplitudes.values())
+    # print(scc_amp_list)
+
+    scc_duration_list = [4 * round(el / 4) for el in scc_duration_list]
+    # scc_amp_list = [1.0] * num_nvs
+    # scc_duration_list = [144] * num_nvs
     # nv_list[i] will have the ith coordinates from the above lists
     nv_list: list[NVSig] = []
     for ind in range(num_nvs):
@@ -1010,7 +1019,10 @@ if __name__ == "__main__":
             # scc_amp=scc_amp_list[ind],
             # threshold=threshold_list[ind],
             pulse_durations={VirtualLaserKey.SCC: scc_duration_list[ind]},
-            # pulse_amps={VirtualLaserKey.SCC: scc_amp_list[ind]},
+            pulse_amps={
+                VirtualLaserKey.SCC: scc_amp_list[ind],
+                VirtualLaserKey.CHARGE_POL: charge_pol_amps[ind],
+            },
         )
         nv_list.append(nv_sig)
 
@@ -1171,7 +1183,7 @@ if __name__ == "__main__":
 
         # do_resonance_zoom(nv_list)
         # do_rabi(nv_list)
-        # do_resonance(nv_list)
+        do_resonance(nv_list)
         # do_spin_echo(nv_list)
 
         # do_power_rabi(nv_list)
@@ -1191,7 +1203,7 @@ if __name__ == "__main__":
         # nv_list = nv_list[::-1]
         # do_scc_snr_check(nv_list)
         # do_optimize_scc_duration(nv_list)
-        do_optimize_scc_amp(nv_list)
+        # do_optimize_scc_amp(nv_list)
         # optimize_scc_amp_and_duration(nv_list)
         # do_crosstalk_check(nv_sig)
         # do_spin_pol_check(nv_sig)

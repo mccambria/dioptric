@@ -305,7 +305,7 @@ def process_and_plot(nv_list, duration_file_id, amp_file_id):
     )
 
     # Optimize amplitudes
-    amp_valid_range = (0.8, 1.4)
+    amp_valid_range = (0.8, 1.2)
     # amp_valid_range = (np.min(taus), np.max(taus))
     optimal_amplitudes, avg_snr, avg_snr_ste, taus = optimize_step_vals(
         amp_file_id, fit_duration, amp_valid_range, duration_or_amp=False
@@ -322,21 +322,24 @@ def process_and_plot(nv_list, duration_file_id, amp_file_id):
         if optimal_durations.get(nv_index) is None:
             optimal_durations[nv_index] = median_duration
 
-    # valid_amplitudes = [
-    #     v
-    #     for k, v in optimal_amplitudes.items()
-    #     if k in selected_indices and v is not None
-    # ]
-    # median_amplitude = np.median(valid_amplitudes) if valid_amplitudes else 0
-    # for nv_index in range(total_nvs):
-    #     if optimal_amplitudes.get(nv_index) is None:
-    #         optimal_amplitudes[nv_index] = median_amplitude
+    valid_amplitudes = [
+        v
+        for k, v in optimal_amplitudes.items()
+        if k in selected_indices and v is not None
+    ]
+    median_amplitude = np.median(valid_amplitudes) if valid_amplitudes else 0
+    print(median_amplitude)
+    for nv_index in range(total_nvs):
+        if optimal_amplitudes.get(nv_index) is None:
+            optimal_amplitudes[nv_index] = median_amplitude
     # Sort optimal_durations by index (key)
     sorted_optimal_durations = dict(sorted(optimal_durations.items()))
+    sorted_optimal_amplitudes = dict(sorted(optimal_amplitudes.items()))
 
     # Update results
     results = {
         "optimal_durations": sorted_optimal_durations,
+        "optimal_amplitudes": sorted_optimal_amplitudes,
     }
 
     timestamp = dm.get_time_stamp()
@@ -344,27 +347,27 @@ def process_and_plot(nv_list, duration_file_id, amp_file_id):
     file_path = dm.get_file_path(__file__, timestamp, file_name)
     dm.save_raw_data(results, file_path)
 
-    # # Plot medians and means
-    # avg_snr_all = np.mean(avg_snr, axis=0)
-    # median_snr_all = np.median(avg_snr, axis=0)
-    # avg_snr_ste_all = np.mean(avg_snr_ste, axis=0)
+    # Plot medians and means
+    avg_snr_all = np.mean(avg_snr, axis=0)
+    median_snr_all = np.median(avg_snr, axis=0)
+    avg_snr_ste_all = np.mean(avg_snr_ste, axis=0)
 
-    # fig, ax = plt.subplots(figsize=(8, 6))
-    # sns.lineplot(x=taus, y=avg_snr_all, ax=ax, label="Average SNR")
-    # sns.lineplot(x=taus, y=median_snr_all, ax=ax, label="Median SNR", linestyle="--")
-    # ax.fill_between(
-    #     taus,
-    #     avg_snr_all - avg_snr_ste_all,
-    #     avg_snr_all + avg_snr_ste_all,
-    #     alpha=0.2,
-    #     label="Error Bounds",
-    # )
-    # ax.set_xlabel("step vals")
-    # ax.set_ylabel("SNR")
-    # ax.legend()
-    # ax.grid(True)
-    # plt.title("Median and Average SNR across NVs")
-    # plt.show()
+    fig, ax = plt.subplots(figsize=(8, 6))
+    sns.lineplot(x=taus, y=avg_snr_all, ax=ax, label="Average SNR")
+    sns.lineplot(x=taus, y=median_snr_all, ax=ax, label="Median SNR", linestyle="--")
+    ax.fill_between(
+        taus,
+        avg_snr_all - avg_snr_ste_all,
+        avg_snr_all + avg_snr_ste_all,
+        alpha=0.2,
+        label="Error Bounds",
+    )
+    ax.set_xlabel("step vals")
+    ax.set_ylabel("SNR")
+    ax.legend()
+    ax.grid(True)
+    plt.title("Median and Average SNR across NVs")
+    plt.show()
 
     return results
 
@@ -373,7 +376,8 @@ if __name__ == "__main__":
     # Initialize plot settings
     kpl.init_kplotlib()
     duration_file_id = 1722305531191
-    amp_file_id = 1724491290147
+    # amp_file_id = 1724491290147  # same scc duration 160
+    amp_file_id = 1725708405583  # optimized durations for each
 
     data = dm.get_raw_data(file_id=duration_file_id)  # Load NV list
     nv_list = data["nv_list"]
