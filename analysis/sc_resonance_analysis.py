@@ -326,24 +326,24 @@ def plot_nv_resonance_fits_and_residuals(
     # ax.grid(True)
     # plt.show()
 
-    # fig_avg_snr, ax_avg_snr = plt.subplots()
-    # sns.lineplot(x=freqs, y=avg_snr, ax=ax_avg_snr, label="Average SNR")
-    # sns.lineplot(
-    #     x=freqs, y=median_snr, ax=ax_avg_snr, label="Median SNR", linestyle="--"
-    # )
-    # ax_avg_snr.fill_between(
-    #     freqs,
-    #     avg_snr - avg_snr_ste,
-    #     avg_snr + avg_snr_ste,
-    #     alpha=0.2,
-    #     label="Error Bounds",
-    # )
-    # ax_avg_snr.set_xlabel("freq (GHz)")
-    # ax_avg_snr.set_ylabel("SNR")
-    # ax_avg_snr.legend()
-    # ax_avg_snr.grid(True)
-    # plt.title("Avg and Median SNR across NVs (Readout: 30ms)")
-    # plt.show()
+    fig_avg_snr, ax_avg_snr = plt.subplots()
+    sns.lineplot(x=freqs, y=avg_snr, ax=ax_avg_snr, label="Average SNR")
+    sns.lineplot(
+        x=freqs, y=median_snr, ax=ax_avg_snr, label="Median SNR", linestyle="--"
+    )
+    ax_avg_snr.fill_between(
+        freqs,
+        avg_snr - avg_snr_ste,
+        avg_snr + avg_snr_ste,
+        alpha=0.2,
+        label="Error Bounds",
+    )
+    ax_avg_snr.set_xlabel("freq (GHz)")
+    ax_avg_snr.set_ylabel("SNR")
+    ax_avg_snr.legend()
+    ax_avg_snr.grid(True)
+    plt.title("Avg and Median SNR across NVs")
+    plt.show()
     # return
     num_nvs = len(nv_list)
     chi_squared_list = []
@@ -468,11 +468,12 @@ def plot_nv_resonance_fits_and_residuals(
     # List of target peak values for filtering
     target_peak_values = [0.041, 0.069, 0.147, 0.175]
     # target_peak_values = [0.041, 0.147]
-    tolerance = 0.006  # Set a tolerance for matching
+    tolerance = 0.01  # Set a tolerance for matching
 
     do_filter = False
 
     if do_filter:
+        # Automatic filtering
         # Filter indices based on proximity to target peak differences with plus/minus bound
         filtered_indices = [
             idx
@@ -483,18 +484,32 @@ def plot_nv_resonance_fits_and_residuals(
             )
         ]
 
-        # Find indices that do not match the criteria
-        non_matching_indices = [
-            idx
-            for idx in range(len(center_freq_differences))
-            if idx not in filtered_indices
-        ]
+        # Manual filtering
+        # Exclude manual indices from filtered indices
+        # manual_indices = [4, 9, 61, 81, 86, 119, 130, 144, 148]
+        # filtered_indices = [idx for idx in filtered_indices if idx not in manual_indices]
+        # # Find indices that do not match the criteria
+        # non_matching_indices = [
+        #     idx
+        #     for idx in range(len(center_freq_differences))
+        #     if idx not in filtered_indices
+        # ]
+
         for idx in non_matching_indices:
             print(f"NV: {idx}")
 
-        print(f"filtered_indices:{len(filtered_indices)}")
-        print(f"filtered_indices:{len(filtered_indices)}")
-        print(f"filtered_indices:{len(non_matching_indices)}")
+            # Find indices that do not match the criteria
+            non_matching_indices = [
+                idx
+                for idx in range(len(center_freq_differences))
+                if idx not in filtered_indices
+            ]
+            for idx in non_matching_indices:
+                print(f"NV: {idx}")
+
+            print(f"filtered_indices:{len(filtered_indices)}")
+            print(f"filtered_indices:{len(filtered_indices)}")
+            print(f"filtered_indices:{len(non_matching_indices)}")
     else:
         filtered_indices = list(range(num_nvs))
 
@@ -658,7 +673,7 @@ def plot_nv_resonance_fits_and_residuals(
     file_name = dm.get_file_name(file_id=file_id)
     file_path = dm.get_file_path(__file__, file_name, f"{file_id}_{date_time_str}")
     kpl.show(block=True)
-    dm.save_figure(fig_fitting, file_path)
+    # dm.save_figure(fig_fitting, file_path)
     # plt.close(fig_fitting)
 
     return
@@ -721,7 +736,7 @@ def plot_nv_resonance_fits_and_residuals(
             __file__, file_name, f"{file_id}_{date_time_str}_{title}"
         )
         kpl.show(block=True)
-        dm.save_figure(fig, file_path)
+        # dm.save_figure(fig, file_path)
         plt.close(fig)
 
     # plot_list = ["chi_squared_]
@@ -1421,9 +1436,9 @@ if __name__ == "__main__":
     # file_id = 1695092317631
     # file_id = 1698088573367
     # file_id =1699853891683
-    file_id = 1701152211845
+    # file_id = 1701152211845  # 50ms readout
+    file_id = 1726476640278  # 3ms readout
     # file_id = 1725055024398
-    # file_id = 1726476640278
     data = dm.get_raw_data(file_id=file_id, load_npz=False, use_cache=True)
     nv_list = data["nv_list"]
     num_nvs = len(nv_list)
