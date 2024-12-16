@@ -21,7 +21,6 @@ from pykrige import OrdinaryKriging
 from scipy.interpolate import Rbf
 from scipy.optimize import curve_fit, least_squares
 from sklearn.cluster import KMeans
-from sklearn.cluster import KMeans
 
 from majorroutines.pulsed_resonance import fit_resonance, norm_voigt, voigt, voigt_split
 from majorroutines.widefield import base_routine
@@ -277,49 +276,46 @@ def plot_nv_resonance_fits_and_residuals(
         contrast_threshold: Threshold for filtering NVs based on contrast.
     """
     avg_counts, avg_counts_ste, norms = widefield.process_counts(
-        nv_list, sig_counts, ref_counts, threshold=False
+        nv_list, sig_counts, ref_counts, threshold=True
     )
-    snr, snr_ste = widefield.calc_snr(ref_counts, sig_counts)
-    median_snr = np.median(snr, axis=0)
-    # median_snr -= min(median_snr)
-    avg_snr_ste = np.mean(snr_ste, axis=0)
-    avg_snr = np.mean(snr, axis=0)
-    # avg_snr -= min(avg_snr)
+    # snr, snr_ste = widefield.calc_snr(sig_counts, ref_counts)
+    # median_snr = np.median(snr, axis=0)
+    # avg_snr_ste = np.mean(snr_ste, axis=0)
+    # avg_snr = np.mean(snr, axis=0)
 
-    # Filter NVs with SNR beyond mean and median
-    snr_threshold_mean = np.min(snr)
-    snr_threshold_median = np.min(snr)
+    # # Filter NVs with SNR beyond mean and median
+    # snr_threshold_mean = np.min(snr)
+    # snr_threshold_median = np.min(snr)
 
-    above_mean_indices = np.where(snr > snr_threshold_mean)[0]
-    above_median_indices = np.where(snr > snr_threshold_median)[0]
-    fig, ax = plt.subplots()
-    for i, nv_snr in enumerate(snr):
-        if i in above_mean_indices:
-            ax.plot(
-                freqs,
-                nv_snr,
-                color="blue",
-                linestyle="--",
-                alpha=0.3,
-                # label="Above Mean" if i == above_mean_indices[0] else "",
-            )
-        elif i in above_median_indices:
-            ax.plot(
-                freqs,
-                nv_snr,
-                color="green",
-                alpha=0.2,
-                # label="Above Median" if i == above_median_indices[0] else "",
-            )
-        else:
-            ax.plot(freqs, nv_snr, color="gray", alpha=0.2)
+    # above_mean_indices = np.where(snr > snr_threshold_mean)[0]
+    # above_median_indices = np.where(snr > snr_threshold_median)[0]
+    # fig, ax = plt.subplots()
+    # for i, nv_snr in enumerate(snr):
+    #     if i in above_mean_indices:
+    #         ax.plot(
+    #             freqs,
+    #             nv_snr,
+    #             color="blue",
+    #             alpha=0.2,
+    #             # label="Above Mean" if i == above_mean_indices[0] else "",
+    #         )
+    #     elif i in above_median_indices:
+    #         ax.plot(
+    #             freqs,
+    #             nv_snr,
+    #             color="green",
+    #             alpha=0.2,
+    #             # label="Above Median" if i == above_median_indices[0] else "",
+    #         )
+    #     else:
+    #         ax.plot(freqs, nv_snr, color="gray", alpha=0.2)
 
-    ax.set_title("SNR Across All NVs with Highlighted Thresholds")
-    ax.set_xlabel("Frequency (GHz)")
-    ax.set_ylabel("SNR")
-    ax.legend()
-    ax.grid(True)
-    plt.show()
+    # ax.set_title("SNR Across All NVs (Readout: 30ms) ")
+    # ax.set_xlabel("Frequency (GHz)")
+    # ax.set_ylabel("SNR")
+    # ax.legend()
+    # ax.grid(True)
+    # plt.show()
 
     fig_avg_snr, ax_avg_snr = plt.subplots()
     sns.lineplot(x=freqs, y=avg_snr, ax=ax_avg_snr, label="Average SNR")
@@ -616,7 +612,9 @@ def plot_nv_resonance_fits_and_residuals(
             ax.grid(True, which="both", linestyle="--", linewidth=0.5)
         else:
             ax.axis("off")
-    fig_fitting.suptitle(f"Unfiltered NV Resonance Fits_{file_id}", fontsize=16)
+    fig_fitting.suptitle(
+        f"NV Resonance Fits (Readout: 30ms) file id {file_id}", fontsize=16
+    )
     plt.subplots_adjust(
         left=0.1, right=0.95, top=0.95, bottom=0.1, hspace=0.01, wspace=0.01
     )

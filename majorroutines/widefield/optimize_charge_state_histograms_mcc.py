@@ -42,7 +42,6 @@ def process_and_plot_mcc(raw_data):
     step_vals = np.linspace(min_step_val, max_step_val, num_steps)
     optimize_pol_or_readout = raw_data["optimize_pol_or_readout"]
     optimize_duration_or_amp = raw_data["optimize_duration_or_amp"]
-
     counts = np.array(raw_data["counts"])
     # [nv_ind, run_ind, steq_ind, rep_ind]
     ref_exp_ind = 1
