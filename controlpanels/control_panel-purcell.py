@@ -999,6 +999,8 @@ if __name__ == "__main__":
     scc_amp_list = list(scc_optimal_amplitudes.values())
     # print(scc_amp_list)
 
+    # sys.exit()
+
     scc_duration_list = [4 * round(el / 4) for el in scc_duration_list]
     # scc_amp_list = [1.0] * num_nvs
     # scc_duration_list = [144] * num_nvs

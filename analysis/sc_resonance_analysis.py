@@ -169,7 +169,14 @@ def visualize_large_nv_data(
 
 
 def voigt_with_background(
-    freq, amp1, amp2, center1, center2, width, bg_offset, bg_slope
+    freq,
+    amp1,
+    amp2,
+    center1,
+    center2,
+    width,
+    bg_offset,
+    # bg_slope,
 ):
     """Voigt profile for two peaks with a linear background."""
     freq = np.array(freq)  # Ensure freq is a NumPy array for element-wise operations
@@ -177,16 +184,13 @@ def voigt_with_background(
         amp1 * norm_voigt(freq, width, width, center1)
         + amp2 * norm_voigt(freq, width, width, center2)
         + bg_offset
-        + bg_slope * freq
+        # + bg_slope * freq
     )
 
 
 def residuals_fn(params, freq, nv_counts, nv_counts_ste):
     """Compute residuals for least_squares optimization."""
-    amp1, amp2, center1, center2, width, bg_offset, bg_slope = params
-    fit_vals = voigt_with_background(
-        freq, amp1, amp2, center1, center2, width, bg_offset, bg_slope
-    )
+    fit_vals = voigt_with_background(freq, *params)
     return (nv_counts - fit_vals) / nv_counts_ste  # Weighted residuals
 
 
@@ -275,8 +279,13 @@ def plot_nv_resonance_fits_and_residuals(
         chi_sq_threshold: Threshold for filtering NVs based on chi-squared value.
         contrast_threshold: Threshold for filtering NVs based on contrast.
     """
+    do_threshold = False
+    if do_threshold:
+        sig_counts, ref_counts = widefield.threshold_counts(
+            nv_list, sig_counts, ref_counts, dynamic_thresh=True
+        )
     avg_counts, avg_counts_ste, norms = widefield.process_counts(
-        nv_list, sig_counts, ref_counts, threshold=True
+        nv_list, sig_counts, ref_counts, threshold=False
     )
     # snr, snr_ste = widefield.calc_snr(sig_counts, ref_counts)
     # median_snr = np.median(snr, axis=0)
@@ -345,6 +354,8 @@ def plot_nv_resonance_fits_and_residuals(
     avg_peak_amplitudes = []
     fit_data = []
     filtered_indices = []
+    bg_offsets = []
+    snrs = []
 
     for nv_idx in range(num_nvs):
         nv_counts = avg_counts[nv_idx]
@@ -363,10 +374,18 @@ def plot_nv_resonance_fits_and_residuals(
             high_freq_guess,
             5,
             np.min(nv_counts),
-            0,
+            # 0,
         ]
         bounds = (
-            [0, 0, min(freqs), min(freqs), 0, -np.inf, -np.inf],  # Lower bounds
+            [
+                0,
+                0,
+                min(freqs),
+                min(freqs),
+                0,
+                -np.inf,
+                # -np.inf,
+            ],  # Lower bounds
             [
                 np.inf,
                 np.inf,
@@ -374,7 +393,7 @@ def plot_nv_resonance_fits_and_residuals(
                 max(freqs),
                 np.inf,
                 np.inf,
-                np.inf,
+                # np.inf,
             ],  # Upper bounds
         )
 
@@ -400,13 +419,22 @@ def plot_nv_resonance_fits_and_residuals(
         contrast = calculate_contrast(amp1, amp2, bg_offset, chi_squared)
         contrast_list.append(contrast)
 
+        bg_offsets.append(bg_offset)
+
         # Store center frequencies and frequency difference
         center_freqs.append((popt[2], popt[3]))
         center_freq_differences.append(abs(popt[3] - popt[2]))
 
         # Average peak widths and amplitudes
         avg_peak_widths.append((popt[4] + popt[4]) / 2)
-        avg_peak_amplitudes.append((amp1 + amp2) / 2)
+        avg_peak_amplitude = (amp1 + amp2) / 2
+        avg_peak_amplitudes.append(avg_peak_amplitude)
+
+        combined_counts = np.append(
+            sig_counts[nv_idx].flatten(), ref_counts[nv_idx].flatten()
+        )
+        noise = np.std(combined_counts)
+        snrs.append(avg_peak_amplitude / noise)
 
         # Filter based on chi-squared and contrast thresholds
         # if chi_squared < chi_sq_threshold and contrast > contrast_threshold:
@@ -442,28 +470,33 @@ def plot_nv_resonance_fits_and_residuals(
     # target_peak_values = [0.041, 0.147]
     tolerance = 0.006  # Set a tolerance for matching
 
-    # Filter indices based on proximity to target peak differences with plus/minus bound
-    filtered_indices = [
-        idx
-        for idx, freq_diff in enumerate(center_freq_differences)
-        if any(
-            target - tolerance <= freq_diff <= target + tolerance
-            for target in target_peak_values
-        )
-    ]
+    do_filter = False
 
-    # Find indices that do not match the criteria
-    non_matching_indices = [
-        idx
-        for idx in range(len(center_freq_differences))
-        if idx not in filtered_indices
-    ]
-    for idx in non_matching_indices:
-        print(f"NV: {idx}")
+    if do_filter:
+        # Filter indices based on proximity to target peak differences with plus/minus bound
+        filtered_indices = [
+            idx
+            for idx, freq_diff in enumerate(center_freq_differences)
+            if any(
+                target - tolerance <= freq_diff <= target + tolerance
+                for target in target_peak_values
+            )
+        ]
 
-    print(f"filtered_indices:{len(filtered_indices)}")
-    print(f"filtered_indices:{len(filtered_indices)}")
-    print(f"filtered_indices:{len(non_matching_indices)}")
+        # Find indices that do not match the criteria
+        non_matching_indices = [
+            idx
+            for idx in range(len(center_freq_differences))
+            if idx not in filtered_indices
+        ]
+        for idx in non_matching_indices:
+            print(f"NV: {idx}")
+
+        print(f"filtered_indices:{len(filtered_indices)}")
+        print(f"filtered_indices:{len(filtered_indices)}")
+        print(f"filtered_indices:{len(non_matching_indices)}")
+    else:
+        filtered_indices = list(range(num_nvs))
 
     # Initialize a dictionary to store indices for each orientation
     orientation_indices = {value: [] for value in target_peak_values}
@@ -508,6 +541,9 @@ def plot_nv_resonance_fits_and_residuals(
         print(f"Orientation centered around {orientation} GHz:")
         print(f"NV Indices: {indices}")
         print(f"Number of NVs: {len(indices)}\n")
+
+    print(f"All SNRs: {snrs}")
+    print(f"Median SNR: {np.median(snrs)}")
 
     # Filter NVs for plotting
     filtered_nv_list = [nv_list[idx] for idx in filtered_indices]
@@ -624,6 +660,8 @@ def plot_nv_resonance_fits_and_residuals(
     kpl.show(block=True)
     dm.save_figure(fig_fitting, file_path)
     # plt.close(fig_fitting)
+
+    return
 
     # Plot histograms and scatter plots
     plots_data = [
@@ -1383,8 +1421,9 @@ if __name__ == "__main__":
     # file_id = 1695092317631
     # file_id = 1698088573367
     # file_id =1699853891683
-    # file_id = 1701152211845
-    file_id = 1725055024398
+    file_id = 1701152211845
+    # file_id = 1725055024398
+    # file_id = 1726476640278
     data = dm.get_raw_data(file_id=file_id, load_npz=False, use_cache=True)
     nv_list = data["nv_list"]
     num_nvs = len(nv_list)

@@ -7,6 +7,7 @@ Created on December 6th, 2023
 @author: mccambria
 """
 
+import itertools
 import traceback
 
 import matplotlib.pyplot as plt
@@ -126,12 +127,13 @@ def optimize_scc_amp_and_duration(
     None
     """
     ### Initial setup
-    seq_file = "optimize_scc_amp_duration_seq.py"
+    seq_file = "optimize_scc_amp_duration.py"
 
     # Generate grid of parameter values
     duration_vals = np.linspace(min_duration, max_duration, num_dur_steps).astype(int)
     amp_vals = np.linspace(min_amp, max_amp, num_amp_steps)
-    step_vals = np.array(np.meshgrid(duration_vals, amp_vals)).T.reshape(-1, 2)
+    step_vals = np.array(itertools.product(duration_vals, amp_vals))
+    # step_vals = np.array(np.meshgrid(duration_vals, amp_vals)).T.reshape(-1, 2)
     num_steps = num_amp_steps * num_dur_steps
 
     uwave_ind_list = [0, 1]
