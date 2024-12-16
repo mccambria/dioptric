@@ -5,7 +5,8 @@ import numpy as np
 import seaborn as sns
 from scipy.optimize import curve_fit
 from skimage.draw import disk
-from tabulate import tabulate
+
+# from tabulate import tabulate
 
 from utils import data_manager as dm
 from utils import kplotlib as kpl
@@ -427,7 +428,6 @@ if __name__ == "__main__":
         file_path="slmsuite/nv_blob_detection/nv_blob_filtered_160nvs_reordered.npz"
     )
     nv_amps = load_nv_weights().tolist()
-    # print(nv_weights)
 
     nv_coordinates = nv_coordinates.tolist()
     # integrated_intensities = integrated_intensities.tolist()
@@ -509,37 +509,86 @@ if __name__ == "__main__":
     # Calculate weights based on the fitted intensities
     # indices = [4, 27, 41, 82, 86, 89, 109, 117, 138, 139, 148, 149]
     spot_weights = filtered_reordered_spot_weights
-    indices = [4, 27, 30, 41, 117, 130, 139, 155]
+
+    norm_spot_weights = spot_weights / np.sum(spot_weights)
+    # print(spot_weights)
+    norm_spot_weights = np.array(norm_spot_weights)
+    aom_voltage = 0.417
+    a, b, c = [3.7e5, 6.97, 8e-14]  # Example power-law fit parameters
+    total_power = a * (aom_voltage**b) + c
+    nv_powers = spot_weights * total_power
+
+    print(nv_powers)
+    # indices = [4, 27, 30, 41, 117, 130, 139, 155]
+    # Indices to exclude (zero-based indexing)
+    exclude_indices = {
+        4,
+        9,
+        27,
+        30,
+        40,
+        41,
+        43,
+        59,
+        61,
+        63,
+        76,
+        78,
+        81,
+        82,
+        86,
+        93,
+        119,
+        121,
+        126,
+        130,
+        135,
+        139,
+        144,
+        148,
+    }
+    # Filter nv_coordinates and spot_weights to exclude the specified indices
+    nv_coordinates_filtered = np.array(
+        [coord for i, coord in enumerate(nv_coordinates) if i not in exclude_indices]
+    )
+    spot_weights_filtered = np.array(
+        [weight for i, weight in enumerate(spot_weights) if i not in exclude_indices]
+    )
+    nv_powers_filtered = np.array(
+        [power for i, power in enumerate(nv_powers) if i not in exclude_indices]
+    )
+
     # Apply linear weights to all counts
     # calcualted_spot_weights = linear_weights(filtered_reordered_counts, alpha=0.3)
     # updated_spot_weights = linear_weights(filtered_reordered_counts, alpha=0.6)
 
     # Create a copy or initialize spot weights for modification
-    updated_spot_weights = (
-        spot_weights.copy()
-    )  # Assuming 'spot_weights' is your original weight array
+    # updated_spot_weights = (
+    #     spot_weights.copy()
+    # )
 
     # Update weights for the specified indices using the calculated weights
     # for idx in indices:
     #     if 0 <= idx < len(updated_spot_weights):  # Ensure index is within valid range
     #         updated_spot_weights[idx] = calcualted_spot_weights[idx]
 
-    aom_voltage = 0.39  # Current AOM voltage
+    # aom_voltage = 0.39  # Current AOM voltage
+    aom_voltage = 0.417  # Current AOM voltage
     power_law_params = [3.7e5, 6.97, 8e-14]  # Example power-law fit parameters
-
-    nv_weights, adjusted_aom_voltage = adjust_aom_voltage_for_slm(
-        nv_amps, aom_voltage, power_law_params
-    )
-
+    # nv_weights, adjusted_aom_voltage = adjust_aom_voltage_for_slm(
+    #     nv_amps_filtered, aom_voltage, power_law_params
+    # )
+    filtered_total_power = np.sum(nv_powers_filtered)
+    adjusted_aom_voltage = ((filtered_total_power - c) / a) ** (1 / b)
     # Print adjusted voltages
     print("Adjusted Voltages (V):", adjusted_aom_voltage)
-    print("nv_weights:", nv_weights)
+    print("nv_weights:", spot_weights_filtered)
     print("NV Index | Coords    |   previous weights")
     print("-" * 60)
     for idx, (coords, weight) in enumerate(
         zip(
-            nv_coordinates,
-            nv_weights,
+            nv_coordinates_filtered,
+            spot_weights_filtered,
         )
     ):
         print(f"{idx+1:<8} | {coords} | {weight:.3f}")
@@ -585,17 +634,17 @@ if __name__ == "__main__":
     print(f"Filtered NV coordinates: {len(filtered_reordered_coords)} NVs")
     print("NV Index | Coords    |    Counts |   previous weights |   updated weights")
     print("-" * 60)
-    for idx, (coords, counts, weight, updated_weight) in enumerate(
-        zip(
-            nv_coordinates,
-            filtered_reordered_counts,
-            nv_weights,
-            updated_spot_weights,
-        )
-    ):
-        print(
-            f"{idx+1:<8} | {coords} | {counts:.3f} | {weight:.3f} | {updated_weight:.3f}"
-        )
+    # for idx, (coords, counts, weight, updated_weight) in enumerate(
+    #     zip(
+    #         nv_coordinates,
+    #         filtered_reordered_counts,
+    #         nv_weights,
+    #         updated_spot_weights,
+    #     )
+    # ):
+    #     print(
+    #         f"{idx+1:<8} | {coords} | {counts:.3f} | {weight:.3f} | {updated_weight:.3f}"
+    #     )
 
     # print("NV Index | Spot Weight | Updated Spot Weight | Counts")
     # print("-" * 50)
