@@ -22,7 +22,7 @@ from utils import widefield as widefield
 from utils.constants import NVSig, VirtualLaserKey
 
 
-def process_and_plot(nv_list, step_vals, sig_counts, ref_counts):
+def process_and_plot(nv_list, duration_vals, amp_vals, sig_counts, ref_counts):
     """
     Process and plot the results of the SCC optimization experiment.
 
@@ -54,9 +54,6 @@ def process_and_plot(nv_list, step_vals, sig_counts, ref_counts):
     avg_ref_counts, avg_ref_counts_ste, _ = widefield.average_counts(ref_counts)
     avg_snr, avg_snr_ste = widefield.calc_snr(sig_counts, ref_counts)
 
-    duration_vals = step_vals[:, 0].reshape(-1, len(np.unique(step_vals[:, 1])))
-    amp_vals = step_vals[:, 1].reshape(-1, len(np.unique(step_vals[:, 1])))
-
     # Create heatmaps for SNR
     snr_fig, snr_ax = plt.subplots()
     snr_map = avg_snr.mean(axis=0).reshape(duration_vals.shape)
@@ -74,7 +71,7 @@ def process_and_plot(nv_list, step_vals, sig_counts, ref_counts):
         fig, ax = plt.subplots()
         kpl.plot_points(
             ax,
-            step_vals[:, 0],
+            duration_vals,
             avg_snr[nv_ind],
             yerr=avg_snr_ste[nv_ind],
             label=f"NV {nv_ind + 1}",
@@ -132,10 +129,9 @@ def optimize_scc_amp_and_duration(
     # Generate grid of parameter values
     duration_vals = np.linspace(min_duration, max_duration, num_dur_steps).astype(int)
     amp_vals = np.linspace(min_amp, max_amp, num_amp_steps)
-    step_vals = np.array(itertools.product(duration_vals, amp_vals))
+    step_vals = np.array(list(itertools.product(duration_vals, amp_vals)))
     # step_vals = np.array(np.meshgrid(duration_vals, amp_vals)).T.reshape(-1, 2)
     num_steps = num_amp_steps * num_dur_steps
-
     uwave_ind_list = [0, 1]
     pulse_gen = tb.get_server_pulse_gen()
 
@@ -159,7 +155,9 @@ def optimize_scc_amp_and_duration(
     ref_counts = counts[1]
 
     try:
-        figs = process_and_plot(nv_list, step_vals, sig_counts, ref_counts)
+        figs = process_and_plot(
+            nv_list, duration_vals, amp_vals, sig_counts, ref_counts
+        )
     except Exception as e:
         print("Error in process_and_plot:", e)
         print(traceback.format_exc())
