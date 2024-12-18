@@ -174,7 +174,7 @@ def save_raw_data(raw_data, file_path, keys_to_compress=None):
     except Exception:
         print(traceback.format_exc())
         # Save to local file instead
-        with open(data_manager_folder / file_path_txt.name, "w") as f:
+        with open(data_manager_folder / file_path_txt.name, "wb") as f:
             f.write(content)
 
     # stop = time.time()
@@ -415,5 +415,10 @@ def _json_escape(raw_data):
 
 
 if __name__ == "__main__":
-    data = get_raw_data(file_id=1475961484392)
-    print(data["nv_list"])
+    file_path = data_manager_folder / "test"
+    file_path_txt = file_path.with_suffix(".txt")
+    raw_data = get_raw_data(file_id=1475961484392)
+    option = orjson.OPT_INDENT_2 | orjson.OPT_SERIALIZE_NUMPY | orjson.OPT_NON_STR_KEYS
+    content = orjson.dumps(raw_data, option=option)
+    with open(data_manager_folder / file_path_txt.name, "wb") as f:
+        f.write(content)
