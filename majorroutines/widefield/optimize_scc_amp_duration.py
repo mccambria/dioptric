@@ -20,72 +20,125 @@ from utils import kplotlib as kpl
 from utils import tool_belt as tb
 from utils import widefield as widefield
 from utils.constants import NVSig, VirtualLaserKey
+from utils.tool_belt import curve_fit
 
 
-def process_and_plot(nv_list, duration_vals, amp_vals, sig_counts, ref_counts):
+def process_and_plot(data):
     """
     Process and plot the results of the SCC optimization experiment.
 
     Parameters
     ----------
-    nv_list : list
-        List of NVs involved in the experiment.
-    step_vals : ndarray
-        Array of duration and amplitude step values.
-    sig_counts : ndarray
-        Signal counts collected during the experiment.
-    ref_counts : ndarray
-        Reference counts collected during the experiment.
+    data : dict
+        Raw data object from the experiment
 
     Returns
     -------
     figs : list
         List of matplotlib figures generated during plotting.
     """
+
+    # Unpack
+    nv_list = data["nv_list"]
+    counts = np.array(data["counts"])
+    sig_counts = counts[0]
+    ref_counts = counts[1]
+    step_vals = np.array(data["step_vals"])
+    # num_amp_steps = data["num_amp_steps"]
+    # num_dur_steps = data["num_dur_steps"]
+    num_amp_steps = 15
+    num_dur_steps = 17
+    min_amp = data["min_amp"]
+    max_amp = data["max_amp"]
+    min_dur = data["min_duration"]
+    max_dur = data["max_duration"]
+    amp_vals = np.linspace(min_amp, max_amp, num_amp_steps)
+    duration_vals = np.linspace(min_dur, max_dur, num_dur_steps).astype(int)
+    duration_linspace = np.linspace(min_dur, max_dur, 100)
     num_nvs = len(nv_list)
 
-    # Threshold and normalize the counts
+    # Process the counts
     sig_counts, ref_counts = widefield.threshold_counts(
         nv_list, sig_counts, ref_counts, dynamic_thresh=True
     )
-
-    # Calculate average signal, reference, and SNR
-    avg_sig_counts, avg_sig_counts_ste, _ = widefield.average_counts(sig_counts)
-    avg_ref_counts, avg_ref_counts_ste, _ = widefield.average_counts(ref_counts)
     avg_snr, avg_snr_ste = widefield.calc_snr(sig_counts, ref_counts)
+    opti_inds = [np.argmax(avg_snr[nv_ind]) for nv_ind in range(num_nvs)]
+    opti_dur_guesses = [step_vals[nv_ind, 0] for nv_ind in range(num_nvs)]
+    opti_amp_guesses = [step_vals[nv_ind, 1] for nv_ind in range(num_nvs)]
+    opti_snr_guesses = [avg_snr[nv_ind, opti_inds[nv_ind]] for nv_ind in range(num_nvs)]
 
-    # Create heatmaps for SNR
-    snr_fig, snr_ax = plt.subplots()
-    snr_map = avg_snr.mean(axis=0).reshape(duration_vals.shape)
-    c = snr_ax.pcolormesh(
-        duration_vals, amp_vals, snr_map, shading="auto", cmap="viridis"
-    )
-    snr_ax.set_xlabel("SCC Pulse Duration (ns)")
-    snr_ax.set_ylabel("SCC Amplitude (relative)")
-    snr_ax.set_title("Average SNR Heatmap")
-    snr_fig.colorbar(c, ax=snr_ax)
+    # print(f"SNR: {opti_snrs}")
+    # print(f"Median SNR: {np.median(opti_snrs)}")
+    # return
 
-    # Individual NV plots for SNR
-    nv_figs = []
+    # Fit to the linecut at each amplitude value to determine optimal parameters
+
+    def fit_fn(tau, delay, slope, dec):
+        tau = np.array(tau) - delay
+        return slope * tau * np.exp(-tau / dec)
+
+    opti_snrs = []
+    opti_amps = []
+    opti_durs = []
     for nv_ind in range(num_nvs):
-        fig, ax = plt.subplots()
-        kpl.plot_points(
-            ax,
-            duration_vals,
-            avg_snr[nv_ind],
-            yerr=avg_snr_ste[nv_ind],
-            label=f"NV {nv_ind + 1}",
-        )
-        ax.set_xlabel("SCC Pulse Duration (ns)")
-        ax.set_ylabel("SNR")
-        ax.legend()
-        fig.suptitle(f"NV {nv_ind + 1} SNR vs. SCC Duration")
-        nv_figs.append(fig)
+        opti_snr = 0
+        snrs_2d = np.reshape(avg_snr[nv_ind], (num_dur_steps, num_amp_steps)).T
+        snr_errs_2d = np.reshape(avg_snr_ste[nv_ind], (num_dur_steps, num_amp_steps)).T
+        for amp_ind in range(num_amp_steps):
+            slope_guess = opti_snr_guesses[nv_ind] / opti_dur_guesses[nv_ind]
+            guess_params = [20, slope_guess, 300]
+            try:
+                popt, pcov, red_chi_sq = curve_fit(
+                    fit_fn,
+                    duration_vals,
+                    snrs_2d[amp_ind],
+                    guess_params,
+                    snr_errs_2d[amp_ind],
+                )
+            except Exception:
+                continue
 
-    # Aggregate plots
-    figs = [snr_fig] + nv_figs
+            line = fit_fn(duration_linspace, *popt)
+            opti_snr_at_amp = np.max(line)
+            if opti_snr_at_amp > opti_snr:
+                opti_snr = opti_snr_at_amp
+                opti_dur = duration_linspace[np.argmax(line)]
+                opti_amp = amp_vals[amp_ind]
 
-    return figs
+            # Plot
+            # fig, ax = plt.subplots()
+            # kpl.plot_line(ax, duration_linspace, line, label=amp_vals[amp_ind])
+            # kpl.plot_points(ax, duration_vals, snrs_2d[:, amp_ind])
+            # kpl.show(block=True)
+
+        print(opti_snr)
+        print(opti_amp)
+        print(opti_dur)
+        opti_snrs.append(round(opti_snr, 3))
+        opti_amps.append(round(opti_amp, 3))
+        opti_durs.append(round(opti_dur / 4) * 4)
+
+        # Plot
+        # fig, ax = plt.subplots()
+        # kpl.imshow(
+        #     ax,
+        #     snrs_2d,
+        #     extent=(min_dur, max_dur, min_amp, max_amp),
+        #     aspect="auto",
+        #     origin="lower",
+        #     cbar_label="SNR",
+        #     x_label="Duration (ns)",
+        #     y_label="Amplitude (arb.)",
+        # )
+        # ax.set_title(f"NV index: {nv_ind}")
+        # kpl.show(block=True)
+
+    # Report results
+
+    print(opti_snrs)
+    print(opti_amps)
+    print(opti_durs)
+    print(f"Median SNR: {np.median(opti_snrs)}")
 
 
 def optimize_scc_amp_and_duration(
@@ -150,30 +203,28 @@ def optimize_scc_amp_and_duration(
     raw_data = base_routine.main(nv_list, num_steps, num_reps, num_runs, run_fn=run_fn)
 
     ### Process and plot results
-    counts = raw_data["counts"]
-    sig_counts = counts[0]
-    ref_counts = counts[1]
+
+    timestamp = dm.get_time_stamp()
+    raw_data |= {
+        "timestamp": timestamp,
+        "step_vals": step_vals,
+        "step-units": ["ns", "relative"],
+        "num_amp_steps": num_amp_steps,
+        "num_dur_steps": num_dur_steps,
+        "min_amp": min_amp,
+        "max_amp": max_amp,
+        "min_duration": min_duration,
+        "max_duration": max_duration,
+    }
 
     try:
-        figs = process_and_plot(
-            nv_list, duration_vals, amp_vals, sig_counts, ref_counts
-        )
+        figs = process_and_plot(raw_data)
     except Exception as e:
         print("Error in process_and_plot:", e)
         print(traceback.format_exc())
         figs = None
 
     ### Save results
-    timestamp = dm.get_time_stamp()
-    raw_data |= {
-        "timestamp": timestamp,
-        "step_vals": step_vals,
-        "step-units": ["ns", "relative"],
-        "min_amp": min_amp,
-        "max_amp": max_amp,
-        "min_duration": min_duration,
-        "max_duration": max_duration,
-    }
 
     repr_nv_sig = widefield.get_repr_nv_sig(nv_list)
     repr_nv_name = repr_nv_sig.name
@@ -193,16 +244,11 @@ def optimize_scc_amp_and_duration(
 if __name__ == "__main__":
     kpl.init_kplotlib()
 
-    data = dm.get_raw_data(file_id=1564881159891)
-
-    nv_list = data["nv_list"]
-    taus = data["taus"]
-    counts = np.array(data["counts"])
-    sig_counts = counts[0]
-    ref_counts = counts[1]
-
-    # sig_counts, ref_counts = widefield.threshold_counts(nv_list, sig_counts, ref_counts)
-
-    process_and_plot(nv_list, taus, sig_counts, ref_counts, False)
+    data = dm.get_raw_data(file_id=1728131481474)
+    try:
+        del data["states"]
+    except Exception:
+        pass
+    process_and_plot(data)
 
     plt.show(block=True)
