@@ -242,7 +242,7 @@ def main(
                 for ind in range(2)
             ]
         save_images_num_reps = 1 if save_images_avg_reps else num_reps
-        img_arrays_dtype = 
+        img_arrays_dtype = np.float16
         img_arrays = np.zeros(
             (num_exps, num_runs, num_steps, save_images_num_reps, *shape)
         )
