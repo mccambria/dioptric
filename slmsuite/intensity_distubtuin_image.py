@@ -516,8 +516,7 @@ if __name__ == "__main__":
     aom_voltage = 0.417
     a, b, c = [3.7e5, 6.97, 8e-14]  # Example power-law fit parameters
     total_power = a * (aom_voltage**b) + c
-    nv_powers = spot_weights * total_power
-
+    nv_powers = norm_spot_weights * total_power
     print(nv_powers)
     # indices = [4, 27, 30, 41, 117, 130, 139, 155]
     # Indices to exclude (zero-based indexing)
@@ -536,7 +535,7 @@ if __name__ == "__main__":
         78,
         81,
         82,
-        86,
+        87,
         93,
         119,
         121,
@@ -674,23 +673,23 @@ if __name__ == "__main__":
     #     filename="slmsuite/nv_blob_detection/nv_blob_filtered_160nvs_reordered.npz",
     # )
 
-    # # Plot the original image with circles around each NV
-    fig, ax = plt.subplots()
-    title = "50ms, Ref"
-    kpl.imshow(ax, img_array, title=title, cbar_label="Photons")
-    # Draw circles and index numbers
-    for idx, coord in enumerate(filtered_reordered_coords):
-        circ = plt.Circle(coord, sigma, color="lightblue", fill=False, linewidth=0.5)
-        ax.add_patch(circ)
-        # Place text just above the circle
-        ax.text(
-            coord[0],
-            coord[1] - sigma - 1,
-            str(idx + 1),
-            color="white",
-            fontsize=6,
-            ha="center",
-        )
+    # # # Plot the original image with circles around each NV
+    # fig, ax = plt.subplots()
+    # title = "50ms, Ref"
+    # kpl.imshow(ax, img_array, title=title, cbar_label="Photons")
+    # # Draw circles and index numbers
+    # for idx, coord in enumerate(filtered_reordered_coords):
+    #     circ = plt.Circle(coord, sigma, color="lightblue", fill=False, linewidth=0.5)
+    #     ax.add_patch(circ)
+    #     # Place text just above the circle
+    #     ax.text(
+    #         coord[0],
+    #         coord[1] - sigma - 1,
+    #         str(idx + 1),
+    #         color="white",
+    #         fontsize=6,
+    #         ha="center",
+    #     )
 
     # indices_to_circle = [4, 29, 41, 89, 102, 118, 139, 144, 148, 149]
     # indices_to_circle = [4, 27, 41, 82, 86, 89, 102, 109, 117, 138, 139, 148, 149]

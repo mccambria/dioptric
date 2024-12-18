@@ -34,140 +34,6 @@ from utils.constants import NVSig, NVSpinState
 from utils.positioning import get_scan_1d as calculate_freqs
 
 
-def process_data(data):
-    """
-    Process the raw data for NV centers, including averaging counts, normalization, and
-    setting up the parameters for fitting and visualization.
-
-    Args:
-        data: The raw data dictionary containing NVs, counts, frequencies, and other metadata.
-
-    Returns:
-        avg_counts: Averaged counts for NVs.
-        avg_counts_ste: Standard error of averaged counts.
-        norms: Normalization data for NVs.
-        freqs: Frequency data.
-        nv_list: List of NV signatures.
-    """
-    nv_list = data["nv_list"]
-    freqs = data["freqs"]
-    counts = np.array(data["counts"])
-
-    # Process the counts using the widefield utilities
-    avg_counts, avg_counts_ste, norms = widefield.process_counts(
-        nv_list, counts, threshold=False
-    )
-
-    return avg_counts, avg_counts_ste, norms, freqs, nv_list
-
-
-def plot_data(nv_list, freqs, avg_counts, avg_counts_ste):
-    """
-    Plot the raw data for NV centers.
-
-    Args:
-        nv_list: List of NV signatures.
-        freqs: Frequency data.
-        avg_counts: Averaged counts for NVs.
-        avg_counts_ste: Standard error of averaged counts.
-
-    Returns:
-        fig: The matplotlib figure object containing the raw data plot.
-    """
-    fig, ax = plt.subplots(figsize=(8, 6))
-
-    for nv_idx, nv_sig in enumerate(nv_list):
-        ax.errorbar(
-            freqs,
-            avg_counts[nv_idx],
-            yerr=avg_counts_ste[nv_idx],
-            label=f"NV {nv_idx+1}",
-        )
-
-    ax.set_xlabel("Frequency (GHz)")
-    ax.set_ylabel("Normalized NV$^{-}$ Population")
-    ax.legend(loc="best", ncol=2, fontsize=8)  # Add legend with NV labels
-
-    plt.title("Raw Data for NV Centers")
-
-    # Manually adjust the layout
-    plt.subplots_adjust(left=0.1, right=0.95, top=0.9, bottom=0.1)
-
-    return fig
-
-
-def plot_fit_data(nv_list, freqs, avg_counts, avg_counts_ste, norms):
-    """
-    Plot the fitted data for NV centers.
-
-    Args:
-        nv_list: List of NV signatures.
-        freqs: Frequency data.
-        avg_counts: Averaged counts for NVs.
-        avg_counts_ste: Standard error of averaged counts.
-        norms: Normalization data.
-
-    Returns:
-        fig: The matplotlib figure object containing the fitted data plot.
-    """
-    fig, axes_pack = plt.subplots(
-        len(nv_list), 1, figsize=(10, len(nv_list) * 2), sharex=True
-    )
-
-    for nv_idx, ax in enumerate(axes_pack):
-        ax.errorbar(
-            freqs,
-            avg_counts[nv_idx],
-            yerr=avg_counts_ste[nv_idx],
-            fmt="o",
-            label=f"NV {nv_idx+1}",
-        )
-        # Plot fitted function (placeholder, you can replace with actual fitting code)
-        ax.plot(freqs, avg_counts[nv_idx], label="Fit")
-        ax.set_ylabel("Norm. NV$^{-}$ Pop.")
-        ax.legend(loc="best", fontsize=8)
-
-    ax.set_xlabel("Frequency (GHz)")
-
-    # Adjust the layout manually
-    plt.subplots_adjust(left=0.1, right=0.95, top=0.95, bottom=0.05, hspace=0.4)
-
-    return fig
-
-
-def visualize_large_nv_data(
-    nv_list, freqs, avg_counts, avg_counts_ste, norms, batch_size=25
-):
-    """
-    Visualize large NV datasets by batching NVs and plotting them in separate figures or subplots.
-
-    Args:
-        nv_list: List of NV signatures.
-        freqs: Frequency data.
-        avg_counts: Averaged counts for NVs.
-        avg_counts_ste: Standard error of averaged counts.
-        norms: Normalization data.
-        batch_size: Number of NVs to plot in each batch.
-
-    Returns:
-        fig_list: List of figure objects for each batch.
-    """
-    num_nvs = len(nv_list)
-    fig_list = []
-
-    for i in range(0, num_nvs, batch_size):
-        batch_nv_list = nv_list[i : i + batch_size]
-        batch_avg_counts = avg_counts[i : i + batch_size]
-        batch_avg_counts_ste = avg_counts_ste[i : i + batch_size]
-
-        fig = plot_fit_data(
-            batch_nv_list, freqs, batch_avg_counts, batch_avg_counts_ste, norms
-        )
-        fig_list.append(fig)
-
-    return fig_list
-
-
 def voigt_with_background(
     freq, amp1, amp2, center1, center2, width, bg_offset, bg_slope
 ):
@@ -190,39 +56,16 @@ def residuals_fn(params, freq, nv_counts, nv_counts_ste):
     return (nv_counts - fit_vals) / nv_counts_ste  # Weighted residuals
 
 
-def calculate_contrast(amp1, amp2, bg_offset, chi_squared):
-    """
-    Calculate contrast for an NV center signal.
-
-    Args:
-        amp1: Amplitude of the first peak.
-        amp2: Amplitude of the second peak.
-        bg_offset: Fitted background level (offset).
-
-    Returns:
-        Contrast value between 0 and 1.
-    """
-    alpha0 = (amp1 + amp2) / 2  # Average peak amplitude (bright state)
-    alpha1 = bg_offset  # Background level (dark state)
-
-    # Ensure contrast lies between 0 and 1
-    # Set contrast to 0 if it exceeds 1
-    contrast = max(0, (alpha0 + alpha1) / (alpha1) - 1) if alpha0 > 0 else 0
-    # if contrast > 1.5:
-    #     contrast = 0
-    # if chi_squared < 0.0:
-    #     contrast = 0
-    # if snr < 1.0:
-    #     contrast = 0
+def calculate_contrast(signal, bg_offset):
+    """Calculate contrast based on fit parameters and chi-squared value."""
+    contrast = signal / bg_offset
     return contrast
 
 
-def calculate_snr(sig_counts, ref_counts):
-    """Calculate the signal-to-noise ratio (SNR)."""
-    avg_sig = np.mean(sig_counts)
-    avg_ref = np.mean(ref_counts)
-    noise = np.sqrt(np.std(sig_counts) ** 2 + np.std(ref_counts) ** 2)
-    return (avg_sig - avg_ref) / noise if noise != 0 else 0
+def calculate_snr(residuals, nv_counts_ste, signal):
+    """Calculate SNR based on the fitted Voigt profile and residuals."""
+    noise = np.std(residuals / nv_counts_ste)
+    return signal / noise if noise > 0 else 0
 
 
 def cluster_and_print_average_center_frequencies(center_freqs):
@@ -276,66 +119,8 @@ def plot_nv_resonance_fits_and_residuals(
         contrast_threshold: Threshold for filtering NVs based on contrast.
     """
     avg_counts, avg_counts_ste, norms = widefield.process_counts(
-        nv_list, sig_counts, ref_counts, threshold=True
+        nv_list, sig_counts, ref_counts, threshold=False
     )
-    # snr, snr_ste = widefield.calc_snr(sig_counts, ref_counts)
-    # median_snr = np.median(snr, axis=0)
-    # avg_snr_ste = np.mean(snr_ste, axis=0)
-    # avg_snr = np.mean(snr, axis=0)
-
-    # # Filter NVs with SNR beyond mean and median
-    # snr_threshold_mean = np.min(snr)
-    # snr_threshold_median = np.min(snr)
-
-    # above_mean_indices = np.where(snr > snr_threshold_mean)[0]
-    # above_median_indices = np.where(snr > snr_threshold_median)[0]
-    # fig, ax = plt.subplots()
-    # for i, nv_snr in enumerate(snr):
-    #     if i in above_mean_indices:
-    #         ax.plot(
-    #             freqs,
-    #             nv_snr,
-    #             color="blue",
-    #             alpha=0.2,
-    #             # label="Above Mean" if i == above_mean_indices[0] else "",
-    #         )
-    #     elif i in above_median_indices:
-    #         ax.plot(
-    #             freqs,
-    #             nv_snr,
-    #             color="green",
-    #             alpha=0.2,
-    #             # label="Above Median" if i == above_median_indices[0] else "",
-    #         )
-    #     else:
-    #         ax.plot(freqs, nv_snr, color="gray", alpha=0.2)
-
-    # ax.set_title("SNR Across All NVs (Readout: 30ms) ")
-    # ax.set_xlabel("Frequency (GHz)")
-    # ax.set_ylabel("SNR")
-    # ax.legend()
-    # ax.grid(True)
-    # plt.show()
-
-    fig_avg_snr, ax_avg_snr = plt.subplots()
-    sns.lineplot(x=freqs, y=avg_snr, ax=ax_avg_snr, label="Average SNR")
-    sns.lineplot(
-        x=freqs, y=median_snr, ax=ax_avg_snr, label="Median SNR", linestyle="--"
-    )
-    ax_avg_snr.fill_between(
-        freqs,
-        avg_snr - avg_snr_ste,
-        avg_snr + avg_snr_ste,
-        alpha=0.2,
-        label="Error Bounds",
-    )
-    ax_avg_snr.set_xlabel("freq (GHz)")
-    ax_avg_snr.set_ylabel("SNR")
-    ax_avg_snr.legend()
-    ax_avg_snr.grid(True)
-    plt.title("Avg and Median SNR across NVs")
-    plt.show()
-    # return
     num_nvs = len(nv_list)
     chi_squared_list = []
     contrast_list = []
@@ -345,7 +130,7 @@ def plot_nv_resonance_fits_and_residuals(
     avg_peak_amplitudes = []
     fit_data = []
     filtered_indices = []
-
+    snrs = []
     for nv_idx in range(num_nvs):
         nv_counts = avg_counts[nv_idx]
         nv_counts_ste = avg_counts_ste[nv_idx]
@@ -397,8 +182,6 @@ def plot_nv_resonance_fits_and_residuals(
         amp1 = popt[0]
         amp2 = popt[1]
         bg_offset = popt[5]
-        contrast = calculate_contrast(amp1, amp2, bg_offset, chi_squared)
-        contrast_list.append(contrast)
 
         # Store center frequencies and frequency difference
         center_freqs.append((popt[2], popt[3]))
@@ -406,12 +189,77 @@ def plot_nv_resonance_fits_and_residuals(
 
         # Average peak widths and amplitudes
         avg_peak_widths.append((popt[4] + popt[4]) / 2)
-        avg_peak_amplitudes.append((amp1 + amp2) / 2)
-
+        avg_peak_amplitude = (amp1 + amp2) / 2
+        avg_peak_amplitudes.append(avg_peak_amplitude)
+        # snr calculatin
+        combined_counts = np.append(
+            sig_counts[nv_idx].flatten(), ref_counts[nv_idx].flatten()
+        )
+        noise = np.std(combined_counts)
+        snr = avg_peak_amplitude / noise
+        # signal = avg_peak_amplitude
+        # snr = calculate_snr(residuals, nv_counts_ste, signal)
+        snrs.append(snr)
+        print(f"NV {nv_idx}: SNR = {snr:.2f}")
         # Filter based on chi-squared and contrast thresholds
         # if chi_squared < chi_sq_threshold and contrast > contrast_threshold:
-        if chi_squared > chi_sq_threshold:
-            filtered_indices.append(nv_idx)
+        # if chi_squared > chi_sq_threshold:
+        #     filtered_indices.append(nv_idx)
+    median_snr = np.median(snrs)
+    print(f"median snr:{median_snr:.2f}")
+    # Remove outliers from a data array using the IQR method.
+    Q1 = np.percentile(snrs, 25)
+    Q3 = np.percentile(snrs, 75)
+    IQR = Q3 - Q1
+    lower_bound = Q1
+    upper_bound = Q3 + 1.5 * IQR
+    print(f"lower bound:{lower_bound}")
+    print(f"upper_bound:{upper_bound}")
+    # Identify and filter out outliers
+    cleaned_snrs = [val for val in snrs if lower_bound <= val <= upper_bound]
+    outlier_indices = [
+        i for i, val in enumerate(snrs) if val < lower_bound or val > upper_bound
+    ]
+
+    median_snr_cleaned = np.median(cleaned_snrs)
+    cleaned_nv_indices = np.arange(len(cleaned_snrs))
+    print(f"snrs IQR: {IQR}")
+    print(f"median snr cleaned:{median_snr_cleaned}")
+    print(f"Number of nvs removed : {len(outlier_indices)}")
+    print(f"removed indices: {outlier_indices}")
+
+    # Scatter plot
+    plt.figure(figsize=(8, 5))
+    plt.scatter(cleaned_nv_indices, cleaned_snrs, color="blue", alpha=0.6, label="SNR")
+
+    # Add reference lines for median, Q1, and Q3
+    plt.axhline(
+        median_snr_cleaned,
+        color="green",
+        linestyle="--",
+        label=f"Median SNR = {median_snr_cleaned:.3f}",
+    )
+    plt.axhline(
+        Q1,
+        color="orange",
+        linestyle="--",
+        label=f"Q1 (25th Percentile) = {Q1:.3f}",
+    )
+    plt.axhline(
+        Q3,
+        color="blue",
+        linestyle="--",
+        label=f"Q3 (75th Percentile) = {Q3:.3f}",
+    )
+    # Add labels and legend
+    plt.title("SNR Across NV Centers (50ms Readout)")
+    plt.xlabel("NV Index")
+    plt.ylabel("SNR")
+    plt.legend(loc="upper right")
+    plt.grid(True, linestyle="--", alpha=0.5)
+    plt.tight_layout()
+    plt.show()
+    return
     # print(f"contrast_list:{contrast_list}")
     # print(f"hi_squared_list:{chi_squared_list}")
     # filtered_avg_peak_widths_1 = [avg_peak_widths[idx] for idx in filtered_indices]
@@ -452,7 +300,7 @@ def plot_nv_resonance_fits_and_residuals(
         )
     ]
     # Exclude manual indices from filtered indices
-    manual_indices = [4, 9, 61, 81, 86, 119, 130, 144, 148]
+    manual_indices = [4, 9, 61, 81, 87, 119, 130, 144, 148]
     filtered_indices = [idx for idx in filtered_indices if idx not in manual_indices]
     # Find indices that do not match the criteria
     non_matching_indices = [
@@ -565,7 +413,6 @@ def plot_nv_resonance_fits_and_residuals(
                 alpha=0.6,
             )
             ax.grid(True, which="both", linestyle="--", linewidth=0.5)
-
             # Plot fitted data on the same subplot
             ax.plot(
                 freqs,
@@ -583,7 +430,7 @@ def plot_nv_resonance_fits_and_residuals(
             ax.set_yticklabels([])
 
             fig_fitting.text(
-                0.04,
+                0.1,
                 0.5,
                 "NV$^{-}$ Population",
                 va="center",
@@ -686,7 +533,7 @@ def plot_nv_resonance_fits_and_residuals(
         )
         kpl.show(block=True)
         # dm.save_figure(fig, file_path)
-        plt.close(fig)
+        # plt.close(fig)
 
     # plot_list = ["chi_squared_]
     # Plot histograms and scatter plots
@@ -1386,8 +1233,8 @@ if __name__ == "__main__":
     # file_id = 1698088573367
     # file_id =1699853891683
     # file_id = 1701152211845  # 50ms readout
-    file_id = 1726476640278  # 3ms readout
-    # file_id = 1725055024398
+    file_id = 1726476640278  # 30ms readout
+    # file_id = 1725055024398 # 30ms readout
     data = dm.get_raw_data(file_id=file_id, load_npz=False, use_cache=True)
     nv_list = data["nv_list"]
     num_nvs = len(nv_list)

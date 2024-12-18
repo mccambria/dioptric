@@ -193,6 +193,7 @@ def main(
 
     repr_nv_sig = widefield.get_repr_nv_sig(nv_list)
     pos.set_xyz_on_nv(repr_nv_sig)
+    # shuffle(nv_list)  # to
     num_nvs = len(nv_list)
     camera = tb.get_server_camera()
     pulse_gen = tb.get_server_pulse_gen()
