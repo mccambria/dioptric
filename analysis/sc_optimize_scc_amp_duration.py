@@ -65,12 +65,15 @@ def process_and_plot(data):
     ref_counts = ref_counts[selected_indices, :, :, :]
 
     # Standard errors for signal and reference counts
+    # avg_sig_counts, avg_sig_counts_ste = widefield.average_counts(sig_counts)
+    # avg_ref_counts, avg_ref_counts_ste = widefield.average_counts(ref_counts)
     avg_counts, avg_counts_ste, _ = widefield.average_counts(sig_counts, ref_counts)
     avg_snr, avg_snr_ste = widefield.calc_snr(sig_counts, ref_counts)
-
+    avg_counts, avg_counts_ste, norms = widefield.average_counts(sig_counts, ref_counts)
     # Reshape data into 2D grids
     num_dur_steps = len(duration_vals)
     num_amp_steps = len(amp_vals)
+    avg_counts_grid = avg_counts.reshape(
     avg_counts_grid = avg_counts.reshape(
         len(selected_indices), num_dur_steps, num_amp_steps
     )
@@ -94,12 +97,12 @@ def process_and_plot(data):
         "duration_vals": duration_vals,
     }
 
-    # Save data to a file
-    timestamp = dm.get_time_stamp()
-    file_name = dm.get_file_name(file_id=1723161184641)
-    file_path = dm.get_file_path(__file__, timestamp, f"{file_name}_processed")
-    dm.save_raw_data(processed_data, file_path)
-    print(f"Processed data saved to: {file_path}")
+    # # Save data to a file
+    # timestamp = dm.get_time_stamp()
+    # file_name = dm.get_file_name(file_id=1723161184641)
+    # file_path = dm.get_file_path(__file__, timestamp, f"{file_name}_processed")
+    # dm.save_raw_data(processed_data, file_path)
+    # print(f"Processed data saved to: {file_path}")
 
     # Visualization (optional)
     # figs = []

@@ -14,30 +14,6 @@ import utils.common as common
 from servers.timing.sequencelibrary.QM_opx import seq_utils
 from servers.timing.sequencelibrary.QM_opx.camera import base_scc_sequence
 
-# def get_seq(base_scc_seq_args, scc_steps, num_reps):
-#     with qua.program() as seq:
-#         scc_duration_override = qua.declare(int)
-#         scc_amp_override = qua.declare(qua.fixed)
-
-#         def uwave_macro_sig(uwave_ind_list, step_val):
-#             seq_utils.macro_pi_pulse(uwave_ind_list)
-
-#         def uwave_macro_ref(uwave_ind_list, step_val):
-#             pass
-
-#         base_scc_sequence.macro(
-#             base_scc_seq_args,
-#             [uwave_macro_sig, uwave_macro_ref],
-#             step_vals=scc_steps,
-#             num_reps=num_reps,
-#             scc_duration_override=scc_duration_override,
-#             scc_amp_override=scc_amp_override,
-#             reference=False,
-#         )
-
-#     seq_ret_vals = []
-#     return seq, seq_ret_vals
-
 
 def get_seq(base_scc_seq_args, step_vals, num_reps):
     step_vals = np.array(step_vals)
@@ -104,7 +80,7 @@ if __name__ == "__main__":
                 [0, 1],
             ],
             [
-                [196.0, 0.93],
+                [100, 1.5],
                 [196.0, 1.17],
                 [228.0, 1.2],
                 [164.0, 1.17],
@@ -116,7 +92,7 @@ if __name__ == "__main__":
             5,
         )
 
-        sim_config = SimulationConfig(duration=int(150e3 / 4))
+        sim_config = SimulationConfig(duration=int(250e3 / 4))
         sim = opx.simulate(seq, sim_config)
         samples = sim.get_simulated_samples()
         samples.con1.plot()

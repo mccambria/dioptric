@@ -325,9 +325,9 @@ def threshold_counts(nv_list, sig_counts, ref_counts=None, dynamic_thresh=False)
                 sig_counts[nv_ind].flatten(), ref_counts[nv_ind].flatten()
             )
             prob_dist = ProbDist.COMPOUND_POISSON
-            popt, _, _ = fit_bimodal_histogram(combined_counts, prob_dist)
-            if popt is None:
-                return np.nan, np.nan, np.nan
+            popt, _, _ = fit_bimodal_histogram(combined_counts, prob_dist, no_plot=True)
+            if nv_ind == 41:
+                test = 0
             threshold = determine_threshold(popt, prob_dist, dark_mode_weight=0.5)
             thresholds.append(threshold)
     else:

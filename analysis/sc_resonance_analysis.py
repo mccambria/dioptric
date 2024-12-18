@@ -35,7 +35,14 @@ from utils.positioning import get_scan_1d as calculate_freqs
 
 
 def voigt_with_background(
-    freq, amp1, amp2, center1, center2, width, bg_offset, bg_slope
+    freq,
+    amp1,
+    amp2,
+    center1,
+    center2,
+    width,
+    bg_offset,
+    # bg_slope,
 ):
     """Voigt profile for two peaks with a linear background."""
     freq = np.array(freq)  # Ensure freq is a NumPy array for element-wise operations
@@ -43,16 +50,13 @@ def voigt_with_background(
         amp1 * norm_voigt(freq, width, width, center1)
         + amp2 * norm_voigt(freq, width, width, center2)
         + bg_offset
-        + bg_slope * freq
+        # + bg_slope * freq
     )
 
 
 def residuals_fn(params, freq, nv_counts, nv_counts_ste):
     """Compute residuals for least_squares optimization."""
-    amp1, amp2, center1, center2, width, bg_offset, bg_slope = params
-    fit_vals = voigt_with_background(
-        freq, amp1, amp2, center1, center2, width, bg_offset, bg_slope
-    )
+    fit_vals = voigt_with_background(freq, *params)
     return (nv_counts - fit_vals) / nv_counts_ste  # Weighted residuals
 
 
@@ -118,6 +122,11 @@ def plot_nv_resonance_fits_and_residuals(
         chi_sq_threshold: Threshold for filtering NVs based on chi-squared value.
         contrast_threshold: Threshold for filtering NVs based on contrast.
     """
+    do_threshold = False
+    if do_threshold:
+        sig_counts, ref_counts = widefield.threshold_counts(
+            nv_list, sig_counts, ref_counts, dynamic_thresh=True
+        )
     avg_counts, avg_counts_ste, norms = widefield.process_counts(
         nv_list, sig_counts, ref_counts, threshold=False
     )
@@ -148,10 +157,18 @@ def plot_nv_resonance_fits_and_residuals(
             high_freq_guess,
             5,
             np.min(nv_counts),
-            0,
+            # 0,
         ]
         bounds = (
-            [0, 0, min(freqs), min(freqs), 0, -np.inf, -np.inf],  # Lower bounds
+            [
+                0,
+                0,
+                min(freqs),
+                min(freqs),
+                0,
+                -np.inf,
+                # -np.inf,
+            ],  # Lower bounds
             [
                 np.inf,
                 np.inf,
@@ -159,7 +176,7 @@ def plot_nv_resonance_fits_and_residuals(
                 max(freqs),
                 np.inf,
                 np.inf,
-                np.inf,
+                # np.inf,
             ],  # Upper bounds
         )
 
@@ -311,9 +328,11 @@ def plot_nv_resonance_fits_and_residuals(
     for idx in non_matching_indices:
         print(f"NV: {idx}")
 
-    print(f"filtered_indices:{len(filtered_indices)}")
-    print(f"filtered_indices:{len(filtered_indices)}")
-    print(f"filtered_indices:{len(non_matching_indices)}")
+            print(f"filtered_indices:{len(filtered_indices)}")
+            print(f"filtered_indices:{len(filtered_indices)}")
+            print(f"filtered_indices:{len(non_matching_indices)}")
+    else:
+        filtered_indices = list(range(num_nvs))
 
     # Initialize a dictionary to store indices for each orientation
     orientation_indices = {value: [] for value in target_peak_values}
@@ -358,6 +377,9 @@ def plot_nv_resonance_fits_and_residuals(
         print(f"Orientation centered around {orientation} GHz:")
         print(f"NV Indices: {indices}")
         print(f"Number of NVs: {len(indices)}\n")
+
+    print(f"All SNRs: {snrs}")
+    print(f"Median SNR: {np.median(snrs)}")
 
     # Filter NVs for plotting
     filtered_nv_list = [nv_list[idx] for idx in filtered_indices]
@@ -473,6 +495,8 @@ def plot_nv_resonance_fits_and_residuals(
     kpl.show(block=True)
     # dm.save_figure(fig_fitting, file_path)
     # plt.close(fig_fitting)
+
+    return
 
     # Plot histograms and scatter plots
     plots_data = [

@@ -356,7 +356,7 @@ def determine_threshold(
     mean_counts_dark, mean_counts_bright = popt[1], popt[1 + num_single_mode_params]
     mean_counts_dark = round(mean_counts_dark)
     mean_counts_bright = round(mean_counts_bright)
-    thresh_options = np.arange(0.5, mean_counts_bright + 0.5, 1)
+    thresh_options = np.arange(mean_counts_dark - 0.5, mean_counts_bright + 0.5, 1)
     fidelities = []
     left_fidelities = []
     right_fidelities = []

@@ -14,10 +14,11 @@ import io
 import os
 import socket
 import time
+import traceback
+from dataclasses import fields
 from datetime import datetime
 from io import BytesIO
 from pathlib import Path
-from dataclasses import fields
 
 import labrad
 import numpy as np
@@ -129,7 +130,7 @@ def save_raw_data(raw_data, file_path, keys_to_compress=None):
     file_path_txt = file_path.with_suffix(".txt")
 
     # Work with a copy of the raw data to avoid mutation
-    raw_data = copy.deepcopy(raw_data)
+    # raw_data = copy.deepcopy(raw_data)
 
     # Compress numpy arrays to linked file
     try:
@@ -147,10 +148,8 @@ def save_raw_data(raw_data, file_path, keys_to_compress=None):
             # to find the compressed file
             for key in keys_to_compress:
                 raw_data[key] = f"{npz_file_id}.npz"
-    except Exception as exc:
-        print(exc)
-        for key in keys_to_compress:
-            raw_data[key] = None
+    except Exception:
+        print(traceback.format_exc())
 
     # Always include the config dict
     config = common.get_config_dict()
@@ -166,9 +165,17 @@ def save_raw_data(raw_data, file_path, keys_to_compress=None):
         raw_data["opx_config"] = opx_config_copy
 
     # Upload raw data to the cloud
-    option = orjson.OPT_INDENT_2 | orjson.OPT_SERIALIZE_NUMPY | orjson.OPT_NON_STR_KEYS
-    content = orjson.dumps(raw_data, option=option)
-    _cloud.upload(file_path_txt, BytesIO(content))
+    try:
+        option = (
+            orjson.OPT_INDENT_2 | orjson.OPT_SERIALIZE_NUMPY | orjson.OPT_NON_STR_KEYS
+        )
+        content = orjson.dumps(raw_data, option=option)
+        _cloud.upload(file_path_txt, BytesIO(content))
+    except Exception:
+        print(traceback.format_exc())
+        # Save to local file instead
+        with open(data_manager_folder / file_path_txt.name, "wb") as f:
+            f.write(content)
 
     # stop = time.time()
     # print(stop - start)
@@ -408,5 +415,10 @@ def _json_escape(raw_data):
 
 
 if __name__ == "__main__":
-    data = get_raw_data(file_id=1475961484392)
-    print(data["nv_list"])
+    file_path = data_manager_folder / "test"
+    file_path_txt = file_path.with_suffix(".txt")
+    raw_data = get_raw_data(file_id=1475961484392)
+    option = orjson.OPT_INDENT_2 | orjson.OPT_SERIALIZE_NUMPY | orjson.OPT_NON_STR_KEYS
+    content = orjson.dumps(raw_data, option=option)
+    with open(data_manager_folder / file_path_txt.name, "wb") as f:
+        f.write(content)
