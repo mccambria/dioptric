@@ -120,7 +120,18 @@ def read_and_process_image(nv_list):
         # stop = time.time()
         # print(stop - start)
 
+    counts_list = np.array(counts_list)
+    states_list = np.array(states_list)
+
     return img_array, counts_list, states_list
+
+
+def dtype_clip(arr, dtype):
+    min_val = np.iinfo(dtype).min
+    max_val = np.iinfo(dtype).max
+    arr = np.where(arr > min_val, arr, min_val)
+    arr = np.where(arr < max_val, arr, max_val)
+    return arr
 
 
 def main(
@@ -218,7 +229,10 @@ def main(
 
     ### Data tracking
 
-    counts = np.empty((num_exps, num_nvs, num_runs, num_steps, num_reps))
+    counts_dtype = np.uint16
+    counts = np.empty(
+        (num_exps, num_nvs, num_runs, num_steps, num_reps), dtype=counts_dtype
+    )
     pixel_drifts = np.empty((num_runs, 2))
     if save_images:
         shape = widefield.get_img_array_shape()
@@ -228,6 +242,7 @@ def main(
                 for ind in range(2)
             ]
         save_images_num_reps = 1 if save_images_avg_reps else num_reps
+        img_arrays_dtype = 
         img_arrays = np.zeros(
             (num_exps, num_runs, num_steps, save_images_num_reps, *shape)
         )
@@ -287,8 +302,11 @@ def main(
                                 ret_vals = read_and_process_image(nv_list)
                                 # print(f"rep_ind: {rep_ind}, step_ind: {step_ind}")
                                 img_array, counts_list, states_list = ret_vals
+                                clipped_counts_list = np.where(
+                                    counts_list < 65535, counts_list, 65535
+                                )  # Limit to 16 bits (probably never necessary)
                                 counts[exp_ind, :, run_ind, step_ind, rep_ind] = (
-                                    counts_list
+                                    clipped_counts_list
                                 )
 
                                 if save_images:
