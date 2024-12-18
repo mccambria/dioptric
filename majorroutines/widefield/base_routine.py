@@ -219,7 +219,6 @@ def main(
     ### Data tracking
 
     counts = np.empty((num_exps, num_nvs, num_runs, num_steps, num_reps))
-    states = np.empty((num_exps, num_nvs, num_runs, num_steps, num_reps))
     pixel_drifts = np.empty((num_runs, 2))
     if save_images:
         shape = widefield.get_img_array_shape()
@@ -290,9 +289,6 @@ def main(
                                 img_array, counts_list, states_list = ret_vals
                                 counts[exp_ind, :, run_ind, step_ind, rep_ind] = (
                                     counts_list
-                                )
-                                states[exp_ind, :, run_ind, step_ind, rep_ind] = (
-                                    states_list
                                 )
 
                                 if save_images:
@@ -378,7 +374,6 @@ def main(
         "step_ind_master_list": step_ind_master_list,
         "counts-units": "photons",
         "counts": counts,
-        "states": states,
         "pixel_drifts": pixel_drifts,
     }
     if save_images:
