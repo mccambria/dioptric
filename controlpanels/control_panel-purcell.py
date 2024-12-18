@@ -398,12 +398,15 @@ def do_resonance(nv_list):
     num_steps = 60
     # Single ref
     # num_reps = 8
-    num_runs = 500
+    num_runs = 300
+    # num_runs = 500
+    # num_runs = 750
     # num_runs = 50
     # num_runs = 10
+    # num_runs = 5
 
     # Both refs
-    num_reps = 2
+    num_reps = 4
     # num_runs = 300
 
     # num_runs = 2
@@ -1004,7 +1007,9 @@ if __name__ == "__main__":
     scc_amp_list = [1.107, 1.071, 1.214, 1.179, 1.036, 1.179, 0.75, 1.214, 0.857, 0.857, 1.036, 0.821, 0.857, 1.25, 1.036, 1.179, 1.25, 0.786, 1.179, 1.036, 1.25, 1.0, 1.071, 1.25, 1.25, 0.857, 1.036, 1.071, 1.036, 1.143, 1.036, 0.75, 1.214, 0.964, 1.036, 0.75, 0.786, 0.964, 1.107, 0.857, 1.179, 0.857, 1.214, 1.143, 1.071, 1.25, 1.143, 0.857, 1.214, 1.143, 0.786, 0.929, 0.75, 1.071, 0.857, 0.75, 1.036, 1.071, 0.786, 1.107, 1.071, 1.214, 0.964, 0.929, 1.107, 1.143, 1.214, 1.071, 1.036, 1.214, 0.893, 1.071, 0.75, 0.786, 1.25, 1.107, 0.929, 0.786, 0.929, 1.25, 1.107, 1.036, 1.0, 0.893, 1.0, 0.964, 1.107, 1.143, 1.25, 1.214, 0.821, 0.929, 1.107, 1.107, 1.25, 1.214, 0.75, 1.214, 1.0, 1.25, 0.964, 0.857, 0.929, 1.25, 0.893, 1.0, 0.75, 1.179, 1.25, 1.214, 1.036, 0.821, 1.214, 1.0, 1.179, 1.214, 1.107, 1.25, 0.929, 1.036, 1.143, 0.821, 0.893, 1.179, 1.143, 0.893, 1.25, 1.071, 0.786, 1.25, 1.107, 1.179, 0.929, 1.0, 1.25, 0.964, 1.036, 1.036, 1.25, 1.179, 1.143, 1.143, 1.143, 1.179, 1.179, 1.143, 1.214, 1.107, 0.893, 1.25, 1.143, 0.964, 1.25, 1.036, 0.857, 1.107, 1.179, 1.0, 1.214, 0.786]
     # fmt: on
     snr_list = np.array(snr_list)
-    exclude_list = np.argwhere(snr_list < 0.07)  # Gets 109 best NVs
+    exclude_list = np.argwhere(
+        snr_list < 0.07
+    )  # Gets 109 best NVs of two target orientations
 
     # sys.exit()
 
@@ -1129,7 +1134,7 @@ if __name__ == "__main__":
         # do_optimize_xyz(nv_sig)
         # pos.set_xyz_on_nv(nv_sig)
 
-        do_compensate_for_drift(nv_sig)
+        # do_compensate_for_drift(nv_sig)
 
         # for point in points:
         #     x, y = point
@@ -1154,7 +1159,7 @@ if __name__ == "__main__":
         # do_scanning_image_sample(nv_sig)
         # do_scanning_image_sample_zoom(nv_sig)
         # do_widefield_image_sample(nv_sig, 50)
-        # do_widefield_image_sample(nv_sig, 100)
+        do_widefield_image_sample(nv_sig, 100)
 
         # do_image_nv_list(nv_list)
         # do_image_single_nv(nv_sig)
@@ -1276,8 +1281,6 @@ if __name__ == "__main__":
         if do_email:
             recipient = email_recipient
             tb.send_exception_email(email_to=recipient)
-        else:
-            print(exc)
         raise exc
 
     finally:

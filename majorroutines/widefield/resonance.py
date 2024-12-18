@@ -291,14 +291,15 @@ def main(
         run_fn,
         step_fn,
         uwave_ind_list=uwave_ind_list,
-        save_images=False,
+        save_images=True,
         num_exps=1,
+        ref_by_rep_parity=False,
     )
 
     ### Process and plot
 
     try:
-        counts = data["counts"]
+        counts = raw_data["counts"]
         reformatted_counts = reformat_counts(counts)
         sig_counts = reformatted_counts[0]
         ref_counts = reformatted_counts[1]
@@ -330,7 +331,11 @@ def main(
     repr_nv_sig = widefield.get_repr_nv_sig(nv_list)
     repr_nv_name = repr_nv_sig.name
     file_path = dm.get_file_path(__file__, timestamp, repr_nv_name)
-    dm.save_raw_data(raw_data, file_path)
+    if "img_arrays" in raw_data:
+        keys_to_compress = ["img_arrays"]
+    else:
+        keys_to_compress = None
+    dm.save_raw_data(raw_data, file_path, keys_to_compress)
     if raw_fig is not None:
         dm.save_figure(raw_fig, file_path)
     if fit_fig is not None:
