@@ -65,25 +65,20 @@ def process_and_plot(data):
     ref_counts = ref_counts[selected_indices, :, :, :]
 
     # Standard errors for signal and reference counts
-    avg_sig_counts, avg_sig_counts_ste = widefield.average_counts(sig_counts)
-    avg_ref_counts, avg_ref_counts_ste = widefield.average_counts(ref_counts)
+    # avg_sig_counts, avg_sig_counts_ste = widefield.average_counts(sig_counts)
+    # avg_ref_counts, avg_ref_counts_ste = widefield.average_counts(ref_counts)
     avg_snr, avg_snr_ste = widefield.calc_snr(sig_counts, ref_counts)
-
+    avg_counts, avg_counts_ste, norms = widefield.average_counts(sig_counts, ref_counts)
     # Reshape data into 2D grids
     num_dur_steps = len(duration_vals)
     num_amp_steps = len(amp_vals)
-    avg_sig_grid = avg_sig_counts.reshape(
+    avg_counts_grid = avg_counts.reshape(
         len(selected_indices), num_dur_steps, num_amp_steps
     )
-    avg_sig_ste_grid = avg_sig_counts_ste.reshape(
+    avg_coutns_ste_grid = avg_counts_ste.reshape(
         len(selected_indices), num_dur_steps, num_amp_steps
     )
-    avg_ref_grid = avg_ref_counts.reshape(
-        len(selected_indices), num_dur_steps, num_amp_steps
-    )
-    avg_ref_ste_grid = avg_ref_counts_ste.reshape(
-        len(selected_indices), num_dur_steps, num_amp_steps
-    )
+
     avg_snr_grid = avg_snr.reshape(len(selected_indices), num_dur_steps, num_amp_steps)
     avg_snr_ste_grid = avg_snr_ste.reshape(
         len(selected_indices), num_dur_steps, num_amp_steps
@@ -93,46 +88,64 @@ def process_and_plot(data):
     processed_data = {
         "nv_list": nv_list,
         "step_vals": step_vals,
-        "avg_sig_grid": avg_sig_grid,
-        "avg_sig_ste_grid": avg_sig_ste_grid,
-        "avg_ref_grid": avg_ref_grid,
-        "avg_ref_ste_grid": avg_ref_ste_grid,
+        "avg_counts_grid": avg_counts_grid,
+        "avg_coutns_ste_grid": avg_coutns_ste_grid,
         "avg_snr_grid": avg_snr_grid,
         "avg_snr_ste_grid": avg_snr_ste_grid,
         "amp_vals": amp_vals,
         "duration_vals": duration_vals,
     }
 
-    # Save data to a file
-    timestamp = dm.get_time_stamp()
-    file_name = dm.get_file_name(file_id=1723161184641)
-    file_path = dm.get_file_path(__file__, timestamp, f"{file_name}_processed")
-    dm.save_raw_data(processed_data, file_path)
-    print(f"Processed data saved to: {file_path}")
+    # # Save data to a file
+    # timestamp = dm.get_time_stamp()
+    # file_name = dm.get_file_name(file_id=1723161184641)
+    # file_path = dm.get_file_path(__file__, timestamp, f"{file_name}_processed")
+    # dm.save_raw_data(processed_data, file_path)
+    # print(f"Processed data saved to: {file_path}")
 
+    median_snr_grid = np.median(avg_snr_grid, axis=0)
+    # Plot the heatmap for the median SNR
+    fig, ax = plt.subplots()
+    cax = ax.imshow(
+        median_snr_grid,
+        extent=(
+            amp_vals.min(),
+            amp_vals.max(),
+            duration_vals.min(),
+            duration_vals.max(),
+        ),
+        aspect="auto",
+        cmap="coolwarm",
+        origin="lower",
+    )
+    ax.set_title("Median SCC SNR Across NVs")
+    ax.set_xlabel("SCC Amplitude")
+    ax.set_ylabel("SCC Duration (ns)")
+    fig.colorbar(cax, label="Median SCC SNR")
+    plt.show()
     # Visualization (optional)
-    figs = []
-    for nv_idx, snr_2d in enumerate(avg_snr_grid):
-        fig, ax = plt.subplots()
-        cax = ax.imshow(
-            snr_2d,
-            extent=(
-                amp_vals.min(),
-                amp_vals.max(),
-                duration_vals.min(),
-                duration_vals.max(),
-            ),
-            aspect="auto",
-            cmap="viridis",
-        )
-        ax.set_title(f"NV {nv_idx} - SNR Heatmap")
-        ax.set_xlabel("Amplitude")
-        ax.set_ylabel("Duration")
-        fig.colorbar(cax, label="SNR")
-        plt.show()
-        figs.append(fig)
+    # figs = []
+    # for nv_idx, snr_2d in enumerate(avg_snr_grid):
+    #     fig, ax = plt.subplots()
+    #     cax = ax.imshow(
+    #         snr_2d,
+    #         extent=(
+    #             amp_vals.min(),
+    #             amp_vals.max(),
+    #             duration_vals.min(),
+    #             duration_vals.max(),
+    #         ),
+    #         aspect="auto",
+    #         cmap="viridis",
+    #     )
+    #     ax.set_title(f"NV {nv_idx} - SNR Heatmap")
+    #     ax.set_xlabel("Amplitude")
+    #     ax.set_ylabel("Duration")
+    #     fig.colorbar(cax, label="SNR")
+    #     plt.show()
+    #     figs.append(fig)
 
-    return processed_data, figs
+    return processed_data, fig
 
 
 def analyze_and_visualize(processed_data):
@@ -145,18 +158,12 @@ def analyze_and_visualize(processed_data):
         Dictionary containing processed data.
     """
     # Extract data from the dictionary
-    nv_list = processed_data["nv_list"]
-    step_vals = processed_data["step_vals"]
-    avg_sig_grid = processed_data["avg_sig_grid"]
-    avg_sig_ste_grid = processed_data["avg_sig_ste_grid"]
-    avg_ref_grid = processed_data["avg_ref_grid"]
-    avg_ref_ste_grid = processed_data["avg_ref_ste_grid"]
+    avg_coutns_grid = processed_data["avg_coutns_grid"]
+    avg_coutns_ste_grid = processed_data["avg_coutns_ste_grid"]
     avg_snr_grid = processed_data["avg_snr_grid"]
-    avg_snr_ste_grid = processed_data["avg_snr_ste_grid"]
     avg_snr_ste_grid = processed_data["avg_snr_ste_grid"]
     amp_vals = np.array(processed_data["amp_vals"])
     duration_vals = np.array(processed_data["duration_vals"])
-    # Helper function to plot heatmaps
 
     # Compute the median SNR across NVs
     median_snr_grid = np.median(avg_snr_grid, axis=0)
@@ -229,11 +236,12 @@ def analyze_and_visualize(processed_data):
 if __name__ == "__main__":
     kpl.init_kplotlib()
     file_id = 1722903695939
-    # data = dm.get_raw_data(file_id=file_id)
-    # process_and_plot(data)
+    # file_id = 1727140766217
+    data = dm.get_raw_data(file_id=file_id)
+    process_and_plot(data)
     # # processed data analysis
     # processed_data_id = 1723819842491
-    processed_data_id = 1723904775619
-    processed_data = dm.get_raw_data(file_id=processed_data_id)
-    analyze_and_visualize(processed_data)
+    # processed_data_id = 1723904775619
+    # processed_data = dm.get_raw_data(file_id=processed_data_id)
+    # analyze_and_visualize(processed_data)
     plt.show(block=True)
