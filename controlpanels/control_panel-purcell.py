@@ -400,10 +400,10 @@ def do_resonance(nv_list):
     # num_reps = 8
     # num_runs = 500
     # num_runs = 750
-    num_runs = 300
+    # num_runs = 300
     # num_runs = 50
     # num_runs = 10
-    # num_runs = 5
+    num_runs = 5
 
     # Both refs
     num_reps = 4
@@ -1158,8 +1158,8 @@ if __name__ == "__main__":
 
         # do_scanning_image_sample(nv_sig)
         # do_scanning_image_sample_zoom(nv_sig)
-        do_widefield_image_sample(nv_sig, 50)
-        # do_widefield_image_sample(nv_sig, 100)
+        # do_widefield_image_sample(nv_sig, 50)
+        do_widefield_image_sample(nv_sig, 100)
 
         # do_image_nv_list(nv_list)
         # do_image_single_nv(nv_sig)

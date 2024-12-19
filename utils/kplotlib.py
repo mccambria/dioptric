@@ -25,7 +25,8 @@ from mpl_toolkits.axes_grid1.anchored_artists import AnchoredSizeBar
 from strenum import StrEnum
 
 import utils.common as common
-from utils import data_manager
+
+# from utils import data_manager
 
 alphabet = tuple(string.ascii_lowercase)
 double_alphabet = tuple("".join(el) for el in itertools.product(alphabet, repeat=2))

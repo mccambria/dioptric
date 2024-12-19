@@ -302,7 +302,7 @@ def main(
     ### Process and plot
 
     try:
-        counts = data["counts"]
+        counts = raw_data["counts"]
         reformatted_counts = reformat_counts(counts)
         sig_counts = reformatted_counts[0]
         ref_counts = reformatted_counts[1]
