@@ -1280,9 +1280,9 @@ def animate(
     norm_counts = (counts - norms_ms0_newaxis) / contrast
     norm_counts_ste = counts_ste / contrast
 
-    all_axes = [im_ax]
     if just_movie:
         fig, im_ax = plt.subplots()
+        all_axes = [im_ax]
     else:
         just_plot_figsize = [6.5, 5.0]
         figsize = [just_plot_figsize[0] + just_plot_figsize[1], just_plot_figsize[1]]
@@ -1290,6 +1290,7 @@ def animate(
         fig = plt.figure(figsize=figsize)
         im_fig, data_fig = fig.subfigures(1, 2, width_ratios=just_plot_figsize[::-1])
         im_ax = im_fig.add_subplot()
+        all_axes = [im_ax]
         num_nvs = len(nv_list)
         layout = kpl.calc_mosaic_layout(num_nvs, num_rows=2)
         data_axes = data_fig.subplot_mosaic(layout, sharex=True, sharey=True)
