@@ -472,7 +472,7 @@ def macro_single_pulse(
     pulse_name : str
         Name of the pulse to play
     duration : int, optional
-        Pulse duration in ns, by default whatever is in config
+        Pulse duration in cc, by default whatever is in config
     amp : float, optional
         Pulse amplitude, by default whatever is in config
     convert_to_Hz : bool, optional
