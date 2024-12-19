@@ -85,7 +85,7 @@ def create_fit_figure(
     norms_ms0_newaxis = norms[0][:, np.newaxis]
     norms_ms1_newaxis = norms[1][:, np.newaxis]
     contrast = norms_ms1_newaxis - norms_ms0_newaxis
-    contrast = np.where(contrast > 0.05, contrast, 0.05)
+    contrast = np.where(contrast > 0.03, contrast, 0.03)
     norm_counts = (counts - norms_ms0_newaxis) / contrast
     norm_counts_ste = counts_ste / contrast
     #
@@ -350,10 +350,11 @@ def main(
 if __name__ == "__main__":
     kpl.init_kplotlib()
 
-    file_id = 1729211906249
+    file_id = 1729834552723
 
+    # data = dm.get_raw_data(file_id=file_id, load_npz=False, use_cache=True)
     data = dm.get_raw_data(file_id=file_id, load_npz=True, use_cache=False)
-    img_arrays = np.array(data.pop("img_arrays"), dtype=np.float16)
+    img_arrays = np.array(data.pop("img_arrays"))
 
     nv_list = data["nv_list"]
     num_nvs = len(nv_list)
@@ -374,6 +375,8 @@ if __name__ == "__main__":
 
     # raw_fig = create_raw_data_figure(nv_list, freqs, avg_counts, avg_counts_ste)
     fit_fig = create_fit_figure(nv_list, freqs, avg_counts, avg_counts_ste, norms)
+
+    # kpl.show(block=True)
 
     ###
 
