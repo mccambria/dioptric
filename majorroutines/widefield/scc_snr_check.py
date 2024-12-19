@@ -26,16 +26,14 @@ def process_and_plot(data):
     threshold = True
     nv_list = data["nv_list"]
     num_nvs = len(nv_list)
-    counts = np.array(data["counts"])
+    counts = data.pop("counts")
     sig_counts = counts[0]
     ref_counts = counts[1]
 
     if threshold:
         sig_counts, ref_counts = widefield.threshold_counts(
-            nv_list, sig_counts, ref_counts, dynamic_thresh=False
+            nv_list, sig_counts, ref_counts, dynamic_thresh=True
         )
-        # thresh_method= "otsu"
-        # sig_counts, ref_counts = widefield.threshold_counts(nv_list, sig_counts, ref_counts, method=thresh_method)
 
     ### Report the results
 
@@ -67,14 +65,9 @@ def process_and_plot(data):
     avg_contrast_ste = avg_contrast_ste[:, step_ind]
 
     # Print
-    # for ind in range(len(nv_list)):
-    #     nv_sig = nv_list[ind]
-    #     nv_num = widefield.get_nv_num(nv_sig)
-    #     nv_ref_counts = tb.round_for_print(avg_ref_counts[ind], avg_ref_counts_ste[ind])
-    #     nv_sig_counts = tb.round_for_print(avg_sig_counts[ind], avg_sig_counts_ste[ind])
-    #     nv_snr = tb.round_for_print(avg_snr[ind], avg_snr_ste[ind])
-    #     print(f"NV {nv_num}: a0={nv_ref_counts}, a1={nv_sig_counts}, SNR={nv_snr}")
-    # print(f"Mean SNR: {np.mean(avg_snr)}")
+    print(avg_snr)
+    print(f"Median SNR: {np.median(avg_snr)}")
+    return
 
     ### Plot
 

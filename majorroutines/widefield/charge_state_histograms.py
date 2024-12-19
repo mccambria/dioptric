@@ -93,6 +93,7 @@ def process_and_plot(
     threshold_list = []
     readout_fidelity_list = []
     prep_fidelity_list = []
+    red_chi_sq_list = []
     hist_figs = []
 
     for ind in range(num_nvs):
@@ -113,6 +114,7 @@ def process_and_plot(
         else:
             prep_fidelity = np.nan
         prep_fidelity_list.append(prep_fidelity)
+        red_chi_sq_list.append(red_chi_sq)
 
         # Plot histograms with NV index and SNR included
         if do_plot_histograms:
@@ -161,6 +163,7 @@ def process_and_plot(
     # Prep fidelity
     print(f"readout_fidelity_list:{readout_fidelity_list}")
     print(f"prep_fidelity_list:{prep_fidelity_list}")
+    print(f"red_chi_sq_list:{red_chi_sq_list}")
 
     # Report out the results
     threshold_list = np.array(threshold_list)
@@ -514,7 +517,7 @@ def main(
 
 if __name__ == "__main__":
     kpl.init_kplotlib()
-    data = dm.get_raw_data(file_id=1721924908522, load_npz=False)
+    data = dm.get_raw_data(file_id=1730071367176, load_npz=False)
     # data = dm.get_raw_data(file_id=1709514100753, load_npz=False)
-    process_and_plot(data, do_plot_histograms=True)
+    process_and_plot(data, do_plot_histograms=False)
     kpl.show(block=True)

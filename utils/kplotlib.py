@@ -470,7 +470,7 @@ def show(block=False):
 # region Plotting
 
 
-def plot_points(ax, x, y, size=None, **kwargs):
+def plot_points(ax, x, y, yerr=None, size=None, **kwargs):
     """Same as matplotlib's errorbar, but with our defaults. Use for plotting
     data points
 
@@ -504,6 +504,7 @@ def plot_points(ax, x, y, size=None, **kwargs):
 
     # Defaults
     params = {
+        "yerr": yerr,
         "linestyle": "none",
         "marker": marker_style,
         "markersize": MarkerSize[size.value],

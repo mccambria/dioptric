@@ -352,9 +352,9 @@ if __name__ == "__main__":
 
     file_id = 1729834552723
 
-    # data = dm.get_raw_data(file_id=file_id, load_npz=False, use_cache=True)
-    data = dm.get_raw_data(file_id=file_id, load_npz=True, use_cache=False)
-    img_arrays = np.array(data.pop("img_arrays"))
+    data = dm.get_raw_data(file_id=file_id, load_npz=False, use_cache=True)
+    # data = dm.get_raw_data(file_id=file_id, load_npz=True, use_cache=False)
+    # img_arrays = np.array(data.pop("img_arrays"))
 
     nv_list = data["nv_list"]
     num_nvs = len(nv_list)
@@ -369,6 +369,25 @@ if __name__ == "__main__":
     sig_counts = reformatted_counts[0]
     ref_counts = reformatted_counts[1]
 
+    ms0_counts = ref_counts[:, :, :, ::2]
+    ms1_counts = ref_counts[:, :, :, 1::2]
+    ms0_counts = np.reshape(
+        ms0_counts, (num_nvs, num_runs, 1, num_steps // 4 * num_reps)
+    )
+    ms1_counts = np.reshape(
+        ms1_counts, (num_nvs, num_runs, 1, num_steps // 4 * num_reps)
+    )
+    avg_snr, avg_snr_ste = widefield.calc_snr(ms1_counts, ms0_counts)
+    avg_snr = avg_snr[:, 0]
+    print(avg_snr.tolist())
+    avg_snr_ste = avg_snr_ste[:, 0]
+    fig, ax = plt.subplots()
+    kpl.plot_points(ax, range(num_nvs), avg_snr, yerr=avg_snr_ste)
+    ax.set_xlabel("NV order in sequence")
+    ax.set_ylabel("SNR")
+    kpl.show(block=True)
+    sys.exit()
+
     avg_counts, avg_counts_ste, norms = widefield.process_counts(
         nv_list, sig_counts, ref_counts, threshold=True
     )
@@ -376,7 +395,7 @@ if __name__ == "__main__":
     # raw_fig = create_raw_data_figure(nv_list, freqs, avg_counts, avg_counts_ste)
     fit_fig = create_fit_figure(nv_list, freqs, avg_counts, avg_counts_ste, norms)
 
-    # kpl.show(block=True)
+    kpl.show(block=True)
 
     ###
 
