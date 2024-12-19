@@ -25,7 +25,8 @@ from mpl_toolkits.axes_grid1.anchored_artists import AnchoredSizeBar
 from strenum import StrEnum
 
 import utils.common as common
-from utils import data_manager
+
+# from utils import data_manager
 
 alphabet = tuple(string.ascii_lowercase)
 double_alphabet = tuple("".join(el) for el in itertools.product(alphabet, repeat=2))
@@ -469,7 +470,7 @@ def show(block=False):
 # region Plotting
 
 
-def plot_points(ax, x, y, size=None, **kwargs):
+def plot_points(ax, x, y, yerr=None, size=None, **kwargs):
     """Same as matplotlib's errorbar, but with our defaults. Use for plotting
     data points
 
@@ -503,6 +504,7 @@ def plot_points(ax, x, y, size=None, **kwargs):
 
     # Defaults
     params = {
+        "yerr": yerr,
         "linestyle": "none",
         "marker": marker_style,
         "markersize": MarkerSize[size.value],
