@@ -1024,9 +1024,9 @@ if __name__ == "__main__":
         coords = {
             CoordsKey.SAMPLE: sample_coords,
             CoordsKey.Z: z_coord,
-            CoordsKey.PIXEL: pixel_coords_list.pop(0),
-            green_laser_aod: green_coords_list.pop(0),
-            red_laser_aod: red_coords_list.pop(0),
+            CoordsKey.PIXEL: pixel_coords_list[ind],
+            green_laser_aod: green_coords_list[ind],
+            red_laser_aod: red_coords_list[ind],
         }
         nv_sig = NVSig(
             name=f"{sample_name}-nv{ind}_{date_str}",

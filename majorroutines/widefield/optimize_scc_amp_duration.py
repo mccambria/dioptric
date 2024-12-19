@@ -106,10 +106,14 @@ def process_and_plot(data):
                 opti_amp = amp_vals[amp_ind]
 
             # Plot
-            # fig, ax = plt.subplots()
-            # kpl.plot_line(ax, duration_linspace, line, label=amp_vals[amp_ind])
-            # kpl.plot_points(ax, duration_vals, snrs_2d[:, amp_ind])
-            # kpl.show(block=True)
+            if amp_ind == 7:
+                fig, ax = plt.subplots()
+                kpl.plot_line(ax, duration_linspace, line, label=amp_vals[amp_ind])
+                kpl.plot_points(ax, duration_vals, snrs_2d[amp_ind])
+                ax.set_xlabel("Duration (ns)")
+                ax.set_ylabel("SNR")
+                ax.set_title(f"NV index: {nv_ind}")
+                kpl.show(block=True)
 
         print(opti_snr)
         print(opti_amp)
@@ -119,19 +123,19 @@ def process_and_plot(data):
         opti_durs.append(round(opti_dur / 4) * 4)
 
         # Plot
-        # fig, ax = plt.subplots()
-        # kpl.imshow(
-        #     ax,
-        #     snrs_2d,
-        #     extent=(min_dur, max_dur, min_amp, max_amp),
-        #     aspect="auto",
-        #     origin="lower",
-        #     cbar_label="SNR",
-        #     x_label="Duration (ns)",
-        #     y_label="Amplitude (arb.)",
-        # )
-        # ax.set_title(f"NV index: {nv_ind}")
-        # kpl.show(block=True)
+        fig, ax = plt.subplots()
+        kpl.imshow(
+            ax,
+            snrs_2d,
+            extent=(min_dur, max_dur, min_amp, max_amp),
+            aspect="auto",
+            origin="lower",
+            cbar_label="SNR",
+            x_label="Duration (ns)",
+            y_label="Amplitude (arb.)",
+        )
+        ax.set_title(f"NV index: {nv_ind}")
+        kpl.show(block=True)
 
     # Report results
 

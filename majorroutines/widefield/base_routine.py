@@ -120,7 +120,18 @@ def read_and_process_image(nv_list):
         # stop = time.time()
         # print(stop - start)
 
+    counts_list = np.array(counts_list)
+    states_list = np.array(states_list)
+
     return img_array, counts_list, states_list
+
+
+def dtype_clip(arr, dtype):
+    min_val = np.finfo(dtype).min
+    max_val = np.finfo(dtype).max
+    arr = np.where(arr >= min_val, arr, min_val)
+    arr = np.where(arr <= max_val, arr, max_val)
+    return arr
 
 
 def main(
@@ -193,6 +204,7 @@ def main(
 
     repr_nv_sig = widefield.get_repr_nv_sig(nv_list)
     pos.set_xyz_on_nv(repr_nv_sig)
+    # shuffle(nv_list)  # to
     num_nvs = len(nv_list)
     camera = tb.get_server_camera()
     pulse_gen = tb.get_server_pulse_gen()
@@ -218,7 +230,10 @@ def main(
 
     ### Data tracking
 
-    counts = np.empty((num_exps, num_nvs, num_runs, num_steps, num_reps))
+    counts_dtype = np.float16
+    counts = np.empty(
+        (num_exps, num_nvs, num_runs, num_steps, num_reps), dtype=counts_dtype
+    )
     pixel_drifts = np.empty((num_runs, 2))
     if save_images:
         shape = widefield.get_img_array_shape()
@@ -228,9 +243,13 @@ def main(
                 for ind in range(2)
             ]
         save_images_num_reps = 1 if save_images_avg_reps else num_reps
-        img_arrays = np.zeros(
-            (num_exps, num_runs, num_steps, save_images_num_reps, *shape)
+        img_arrays_dtype = np.float16
+        img_arrays = np.empty(
+            (num_exps, num_runs, num_steps, save_images_num_reps, *shape),
+            dtype=img_arrays_dtype,
         )
+        if save_images_avg_reps:
+            img_array_reps_cache = np.empty((num_exps, num_reps, *shape))
     step_ind_master_list = [None for ind in range(num_runs)]
     step_ind_list = list(range(0, num_steps))
 
@@ -277,7 +296,9 @@ def main(
 
                         # Reps loop
                         for rep_ind in range(num_reps):
+                            last_rep = rep_ind == num_reps - 1
                             for exp_ind in range(num_exps):
+                                last_exp = exp_ind == num_exps - 1
                                 if charge_prep_fn is not None:
                                     charge_prep_fn(
                                         rep_ind,
@@ -288,7 +309,7 @@ def main(
                                 # print(f"rep_ind: {rep_ind}, step_ind: {step_ind}")
                                 img_array, counts_list, states_list = ret_vals
                                 counts[exp_ind, :, run_ind, step_ind, rep_ind] = (
-                                    counts_list
+                                    dtype_clip(counts_list, counts_dtype)
                                 )
 
                                 if save_images:
@@ -298,29 +319,30 @@ def main(
                                         )
 
                                     if save_images_avg_reps:
-                                        working_img_array = img_arrays[
-                                            exp_ind, run_ind, step_ind, 0
-                                        ]
-                                        # Check if this is a parity-based ref exp
-                                        if (
-                                            ref_by_rep_parity
-                                            and exp_ind == num_exps - 1
-                                        ):
-                                            # Account for the number of ms=0 ref shots
-                                            if rep_ind % 2 == 0:
-                                                coeff = 1 / int(np.ceil(num_reps / 2))
-                                            # Just discard the ms=1 ref if averaging over reps
-                                            else:
-                                                coeff = 0
-                                        else:
-                                            coeff = 1 / num_reps
-
-                                        working_img_array += coeff * img_array
-
+                                        img_array_reps_cache[exp_ind, rep_ind] = (
+                                            img_array
+                                        )
                                     else:
                                         img_arrays[
                                             exp_ind, run_ind, step_ind, rep_ind
-                                        ] = img_array
+                                        ] = dtype_clip(img_array, img_arrays_dtype)
+
+                                    # Process img_arrays_reps_cache if this is the last rep
+                                    if save_images_avg_reps and last_rep:
+                                        if ref_by_rep_parity and last_exp:
+                                            img_arrays_to_avg = img_array_reps_cache[
+                                                exp_ind, ::2
+                                            ]
+                                        else:
+                                            img_arrays_to_avg = img_array_reps_cache[
+                                                exp_ind
+                                            ]
+                                        avg_img_array = np.average(
+                                            img_arrays_to_avg, axis=0
+                                        )
+                                        img_arrays[exp_ind, run_ind, step_ind, 0] = (
+                                            dtype_clip(avg_img_array, img_arrays_dtype)
+                                        )
 
                     ### Move on to the next run
 

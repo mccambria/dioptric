@@ -18,11 +18,6 @@ from joblib import Parallel, delayed
 from matplotlib import font_manager as fm
 from matplotlib import rcParams
 
-# Specify the path to the Arial font file
-arial_font_path = r"C:\Windows\Fonts\arial.ttf"
-arial_font = fm.FontProperties(fname=arial_font_path)
-rcParams["font.family"] = arial_font.get_name()
-
 import numpy as np
 
 from analysis.bimodal_histogram import (
