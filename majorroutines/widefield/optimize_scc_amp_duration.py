@@ -109,7 +109,7 @@ def process_and_plot(data):
             if amp_ind == 7:
                 fig, ax = plt.subplots()
                 kpl.plot_line(ax, duration_linspace, line, label=amp_vals[amp_ind])
-                kpl.plot_points(ax, duration_vals, snrs_2d[:, amp_ind])
+                kpl.plot_points(ax, duration_vals, snrs_2d[amp_ind])
                 ax.set_xlabel("Duration (ns)")
                 ax.set_ylabel("SNR")
                 ax.set_title(f"NV index: {nv_ind}")

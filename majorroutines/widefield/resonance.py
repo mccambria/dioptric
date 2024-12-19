@@ -83,13 +83,14 @@ def create_fit_figure(
             return norm
 
     norms_ms0_newaxis = norms[0][:, np.newaxis]
-    # norms_ms1_newaxis = norms[1][:, np.newaxis]
-    # contrast = norms_ms1_newaxis - norms_ms0_newaxis
-    # norm_counts = (counts - norms_ms0_newaxis) / contrast
-    # norm_counts_ste = counts_ste / contrast
+    norms_ms1_newaxis = norms[1][:, np.newaxis]
+    contrast = norms_ms1_newaxis - norms_ms0_newaxis
+    contrast = np.where(contrast > 0.05, contrast, 0.05)
+    norm_counts = (counts - norms_ms0_newaxis) / contrast
+    norm_counts_ste = counts_ste / contrast
     #
-    norm_counts = counts - norms_ms0_newaxis
-    norm_counts_ste = counts_ste
+    # norm_counts = counts - norms_ms0_newaxis
+    # norm_counts_ste = counts_ste
     #
     # norm_counts = (counts / norms_ms0_newaxis) - 1
     # norm_counts_ste = counts_ste / norms_ms0_newaxis
@@ -206,10 +207,12 @@ def create_fit_figure(
 
     ax = axes_pack[layout[-1, 0]]
     kpl.set_shared_ax_xlabel(ax, "Frequency (GHz)")
-    # kpl.set_shared_ax_ylabel(ax, "Norm. NV$^{-}$ population")
+    kpl.set_shared_ax_ylabel(ax, "Normalized NV$^{-}$ population")
     # kpl.set_shared_ax_ylabel(ax, "Norm. NV$^{-}$ pop.")
-    kpl.set_shared_ax_ylabel(ax, "Relative change in fluorescence")
-    # ax.set_yticks([0, 1])
+    # kpl.set_shared_ax_ylabel(ax, "Relative change in fluorescence")
+    ax.set_xticks([2.80, 2.95])
+    ax.set_yticks([0, 1])
+    ax.set_ylim([-0.3, 1.3])
 
     # ax = axes_pack[layout[-1, 0]]
     # ax.set_xlabel(" ")
@@ -299,7 +302,7 @@ def main(
     ### Process and plot
 
     try:
-        counts = raw_data["counts"]
+        counts = data["counts"]
         reformatted_counts = reformat_counts(counts)
         sig_counts = reformatted_counts[0]
         ref_counts = reformatted_counts[1]
@@ -307,7 +310,8 @@ def main(
         avg_counts, avg_counts_ste, norms = widefield.process_counts(
             nv_list, sig_counts, ref_counts, threshold=True
         )
-        raw_fig = create_raw_data_figure(nv_list, freqs, avg_counts, avg_counts_ste)
+
+        # raw_fig = create_raw_data_figure(nv_list, freqs, avg_counts, avg_counts_ste)
         fit_fig = create_fit_figure(nv_list, freqs, avg_counts, avg_counts_ste, norms)
     except Exception:
         print(traceback.format_exc())
@@ -346,8 +350,7 @@ def main(
 if __name__ == "__main__":
     kpl.init_kplotlib()
 
-    # file_id = 1688862951667  # > 100 but mostly bad
-    file_id = 1663484946120  # 77 good traces
+    file_id = 1729211906249
 
     data = dm.get_raw_data(file_id=file_id, load_npz=False, use_cache=True)
 
