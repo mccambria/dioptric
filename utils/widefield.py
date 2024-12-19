@@ -1280,6 +1280,7 @@ def animate(
     norm_counts = (counts - norms_ms0_newaxis) / contrast
     norm_counts_ste = counts_ste / contrast
 
+    all_axes = [im_ax]
     if just_movie:
         fig, im_ax = plt.subplots()
     else:
@@ -1294,9 +1295,7 @@ def animate(
         data_axes = data_fig.subplot_mosaic(layout, sharex=True, sharey=True)
         data_axes_flat = list(data_axes.values())
         rep_data_ax = data_axes[layout[-1, 0]]
-
-    all_axes = [im_ax]
-    all_axes.extend(data_axes_flat)
+        all_axes.extend(data_axes_flat)
 
     # Set up the actual image
     kpl.imshow(im_ax, np.zeros(img_arrays[0].shape), no_cbar=True)
@@ -1325,7 +1324,8 @@ def animate(
         ylabel = "Norm. NV$^{-}$ population"
         kpl.set_shared_ax_ylabel(rep_data_ax, ylabel)
 
-    data_ax_relim()
+    if not just_movie:
+        data_ax_relim()
 
     def animate_sub(step_ind):
         kpl.imshow_update(im_ax, img_arrays[step_ind], cmin, cmax)
