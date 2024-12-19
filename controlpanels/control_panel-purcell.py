@@ -1017,8 +1017,7 @@ if __name__ == "__main__":
         for ind in range(num_nvs)
         if snr_list[ind] > 0.07 and ind in orientation_ab_inds
     ]
-    print(include_inds)
-    print(len(include_inds))
+    print(np.median(np.array(snr_list)[include_inds]))
 
     # sys.exit()
 
@@ -1168,7 +1167,7 @@ if __name__ == "__main__":
         # do_scanning_image_sample(nv_sig)
         # do_scanning_image_sample_zoom(nv_sig)
         # do_widefield_image_sample(nv_sig, 50)
-        # do_widefield_image_sample(nv_sig, 100)
+        do_widefield_image_sample(nv_sig, 100)
 
         # do_image_nv_list(nv_list)
         # do_image_single_nv(nv_sig)
@@ -1208,7 +1207,7 @@ if __name__ == "__main__":
 
         # do_resonance_zoom(nv_list)
         # do_rabi(nv_list)
-        do_resonance(nv_list)
+        # do_resonance(nv_list)
         # do_spin_echo(nv_list)
 
         # do_power_rabi(nv_list)
