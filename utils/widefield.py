@@ -350,16 +350,24 @@ def threshold_counts(nv_list, sig_counts, ref_counts=None, dynamic_thresh=False)
 
 
 def process_counts(nv_list, sig_counts, ref_counts=None, threshold=True):
-    """Alias for threshold_counts with a more generic name"""
     _validate_counts_structure(sig_counts)
     _validate_counts_structure(ref_counts)
     if threshold:
-        sig_states_array, ref_states_array = threshold_counts(
+        sig_counts, ref_counts = threshold_counts(
             nv_list, sig_counts, ref_counts, dynamic_thresh=True
         )
-        return average_counts(sig_states_array, ref_states_array)
-    else:
-        return average_counts(sig_counts, ref_counts)
+    avg_counts, avg_counts_ste, norms = average_counts(sig_counts, ref_counts)
+
+    if ref_counts is None:
+        return avg_counts, avg_counts_ste
+
+    norms_ms0_newaxis = norms[0][:, np.newaxis]
+    norms_ms1_newaxis = norms[1][:, np.newaxis]
+    contrast = norms_ms1_newaxis - norms_ms0_newaxis
+    norm_counts = (avg_counts - norms_ms0_newaxis) / contrast
+    norm_counts_ste = avg_counts_ste / contrast
+
+    return norm_counts, norm_counts_ste
 
 
 # def threshold_counts(nv_list, sig_counts, ref_counts=None, method="otsu"):

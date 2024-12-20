@@ -7,6 +7,7 @@ Created on November 29th, 2023
 @author: mccambria
 """
 
+import sys
 import time
 import traceback
 
@@ -21,6 +22,56 @@ from utils import kplotlib as kpl
 from utils import tool_belt as tb
 from utils import widefield as widefield
 from utils.constants import NVSig
+
+
+def create_mean_figure(data):
+    nv_list = data["nv_list"]
+    num_nvs = len(nv_list)
+    num_steps = data["num_steps"]
+    num_runs = data["num_runs"]
+    taus = data["taus"]
+
+    counts = np.array(data["counts"])
+    sig_counts = counts[0]
+    ref_counts = counts[1]
+
+    norm_counts, norm_counts_ste = widefield.process_counts(
+        nv_list, sig_counts, ref_counts, threshold=True
+    )
+
+    nv_nums = [widefield.get_nv_num(nv) for nv in nv_list]
+    num_nvs = len(nv_list)
+    orientation_data = dm.get_raw_data(file_id=1723161184641)
+    orientation_a_nums = orientation_data["orientation_indices"]["0.041"]["nv_indices"]
+    orientation_b_nums = orientation_data["orientation_indices"]["0.147"]["nv_indices"]
+    orientation_ab_nums = orientation_a_nums + orientation_b_nums
+    orientation_a_inds = [nv_nums[ind] in orientation_a_nums for ind in range(num_nvs)]
+    orientation_b_inds = np.logical_not(orientation_a_inds)
+    norm_counts_a = norm_counts[orientation_a_inds]
+    norm_counts_ste_a = norm_counts_ste[orientation_a_inds]
+    norm_counts_b = norm_counts[orientation_b_inds]
+    norm_counts_ste_b = norm_counts_ste[orientation_b_inds]
+
+    fig, ax = plt.subplots()
+    kpl.plot_points(ax, taus, norm_counts, norm_counts_ste, label="All NVs")
+    kpl.plot_points(ax, taus, norm_counts_a, norm_counts_ste_a, label="Orientation A")
+    kpl.plot_points(ax, taus, norm_counts_b, norm_counts_ste_b, label="Orientation B")
+
+    def cos_decay(tau, amp, freq, decay, delay):
+        envelope = np.exp(-(tau - delay) / abs(decay)) * amp
+        cos_part = np.cos(2 * np.pi * freq * (tau - delay))
+        return amp - (envelope * cos_part)
+
+    p0 = [0.5, 1 / 100, 1000, 5]
+    popt, _, _ = tb.curve_fit(cos_decay, taus, norm_counts, p0, norm_counts_ste)
+    popt_a, _, _ = tb.curve_fit(cos_decay, taus, norm_counts_a, p0, norm_counts_ste_a)
+    popt_b, _, _ = tb.curve_fit(cos_decay, taus, norm_counts_b, p0, norm_counts_ste_b)
+    tau_linspace = np.linspace(0, max(taus), 1000)
+    kpl.plot_line(ax, tau_linspace, cos_decay(tau_linspace, *popt))
+    kpl.plot_line(ax, tau_linspace, cos_decay(tau_linspace, *popt_a))
+    kpl.plot_line(ax, tau_linspace, cos_decay(tau_linspace, *popt_b))
+
+    ax.legend()
 
 
 def create_raw_data_figure(nv_list, taus, counts, counts_ste):
@@ -252,15 +303,10 @@ def main(nv_list, num_steps, num_reps, num_runs, min_tau, max_tau, uwave_ind_lis
 if __name__ == "__main__":
     kpl.init_kplotlib()
 
-    # data = dm.get_raw_data(
-    #     file_id=1566067602178, load_npz=False, use_cache=False
-    # )  # Crosstalk A
-    # data = dm.get_raw_data(
-    #     file_id=1566322671967, load_npz=True, use_cache=False
-    # )  # Crosstalk B
-    data = dm.get_raw_data(
-        file_id=1698301105306, load_npz=True, use_cache=False
-    )  # Crosstalk B
+    data = dm.get_raw_data(file_id=1566067602178, load_npz=False, use_cache=True)
+    create_mean_figure(data)
+    kpl.show(block=True)
+    sys.exit()
 
     nv_list = data["nv_list"]
     num_nvs = len(nv_list)
@@ -268,13 +314,12 @@ if __name__ == "__main__":
     num_runs = data["num_runs"]
     taus = data["taus"]
 
-    # counts = np.array(data["counts"])
-    counts = np.array(data["states"])
+    counts = np.array(data["counts"])
     sig_counts = counts[0]
     ref_counts = counts[1]
 
     avg_counts, avg_counts_ste, norms = widefield.process_counts(
-        nv_list, sig_counts, ref_counts, threshold=False
+        nv_list, sig_counts, ref_counts, threshold=True
     )
 
     raw_fig = create_raw_data_figure(nv_list, taus, avg_counts, avg_counts_ste)

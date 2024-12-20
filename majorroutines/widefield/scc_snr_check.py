@@ -186,8 +186,6 @@ if __name__ == "__main__":
     # figs = process_and_plot(data)
     # kpl.show(block=True)
     nv_list: list[NVSig] = data["nv_list"]
-    nv_nums = [widefield.get_nv_num(nv) for nv in nv_list]
-    num_nvs = len(nv_list)
 
     # fmt: off
     snr_lists = [
@@ -197,6 +195,8 @@ if __name__ == "__main__":
     ]
     # fmt: on
     snr_lists = np.array(snr_lists)
+    nv_nums = [widefield.get_nv_num(nv) for nv in nv_list]
+    num_nvs = len(nv_list)
     orientation_data = dm.get_raw_data(file_id=1723161184641)
     orientation_a_nums = orientation_data["orientation_indices"]["0.041"]["nv_indices"]
     orientation_b_nums = orientation_data["orientation_indices"]["0.147"]["nv_indices"]
