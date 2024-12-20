@@ -364,6 +364,7 @@ def process_counts(nv_list, sig_counts, ref_counts=None, threshold=True):
     norms_ms0_newaxis = norms[0][:, np.newaxis]
     norms_ms1_newaxis = norms[1][:, np.newaxis]
     contrast = norms_ms1_newaxis - norms_ms0_newaxis
+    contrast = np.where(contrast > 0.03, contrast, 0.03)
     norm_counts = (avg_counts - norms_ms0_newaxis) / contrast
     norm_counts_ste = avg_counts_ste / contrast
 
