@@ -65,7 +65,7 @@ def process_and_plot(data):
     avg_contrast_ste = avg_contrast_ste[:, step_ind]
 
     # Print
-    print(avg_snr)
+    print(avg_snr.tolist())
     print(f"Median SNR: {np.median(avg_snr)}")
     return
 

@@ -761,7 +761,7 @@ opx_config = {
         },
         "do_pi_pulse_0": {
             "operation": "control",
-            "length": int(rabi_period_0 / 2),
+            "length": int(rabi_period_0 / 2) + 8,
             "digital_marker": "on",
         },
         "do_pi_on_2_pulse_0": {
@@ -771,7 +771,7 @@ opx_config = {
         },
         "do_pi_pulse_1": {
             "operation": "control",
-            "length": int(rabi_period_1 / 2),
+            "length": int(rabi_period_1 / 2) + 8,
             "digital_marker": "on",
         },
         "do_pi_on_2_pulse_1": {
