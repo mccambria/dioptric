@@ -434,6 +434,7 @@ def do_rabi(nv_list):
     num_runs = 300
     # num_runs = 100
     # num_runs = 20
+    # num_runs = 5
 
     # uwave_ind_list = [1]
     uwave_ind_list = [0, 1]

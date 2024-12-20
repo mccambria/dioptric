@@ -208,7 +208,8 @@ def main(nv_list, num_steps, num_reps, num_runs, min_tau, max_tau, uwave_ind_lis
     ### Process and plot
 
     try:
-        pass
+        raw_fig = None
+        fit_fig = None
         # counts = raw_data["counts"]
         # sig_counts = counts[0]
         # ref_counts = counts[1]
