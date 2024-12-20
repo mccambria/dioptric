@@ -24,16 +24,15 @@ def get_seq(base_scc_seq_args, step_vals, num_reps=1):
     with qua.program() as seq:
         seq_utils.init()
         seq_utils.macro_run_aods()
+        step_val = qua.declare(int)
 
         def uwave_macro_sig(uwave_ind_list, step_val):
             seq_utils.macro_pi_pulse(uwave_ind_list, duration_cc=step_val)
 
-        def uwave_macro_ref(uwave_ind_list, step_val):
-            pass
-
-        base_scc_sequence.macro(
-            base_scc_seq_args, [uwave_macro_sig, uwave_macro_ref], step_vals, num_reps
-        )
+        with qua.for_each_(step_val, step_vals):
+            base_scc_sequence.macro(
+                base_scc_seq_args, [uwave_macro_sig], step_val, num_reps
+            )
 
     seq_ret_vals = []
     return seq, seq_ret_vals
