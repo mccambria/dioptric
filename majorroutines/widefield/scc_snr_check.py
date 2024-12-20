@@ -26,7 +26,7 @@ def process_and_plot(data):
     threshold = True
     nv_list = data["nv_list"]
     num_nvs = len(nv_list)
-    counts = data.pop("counts")
+    counts = data["counts"]
     sig_counts = counts[0]
     ref_counts = counts[1]
 
@@ -179,9 +179,7 @@ def main(nv_list, num_reps, num_runs, uwave_ind_list=[0, 1]):
 if __name__ == "__main__":
     kpl.init_kplotlib()
 
-    # data = dm.get_raw_data(file_id=1664917535036)
-    data = dm.get_raw_data(file_id=1722112403814)
-    # data = dm.get_raw_data(file_id=1575309155682)
-    # data = dm.get_raw_data(file_id=1575323838562)
+    data = dm.get_raw_data(file_id=1730137091754)  # +0
+    # data = dm.get_raw_data(file_id=1730171317269)  # +4
     figs = process_and_plot(data)
     kpl.show(block=True)
