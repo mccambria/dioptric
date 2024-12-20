@@ -187,11 +187,12 @@ if __name__ == "__main__":
     avg_snr_b = process_and_plot(data)
     data = dm.get_raw_data(file_id=1731342940279)  # +8
     avg_snr_c = process_and_plot(data)
+    num_nvs = len(data["nv_list"])
 
     fig, ax = plt.subplots()
-    taus = [56, 64, 72]
-    kpl.plot_points(ax, taus, mean_snrs, label="All NVs")
-    kpl.plot_points(ax, taus, mean_snrs_a, label="Orientation A")
-    kpl.plot_points(ax, taus, mean_snrs_b, label="Orientation B")
+    nv_list = range(num_nvs)
+    kpl.plot_points(ax, nv_list, avg_snr_a, label="Cross")
+    kpl.plot_points(ax, nv_list, avg_snr_b, label="Full")
+    kpl.plot_points(ax, nv_list, avg_snr_c, label="High power")
     ax.legend()
     kpl.show(block=True)
