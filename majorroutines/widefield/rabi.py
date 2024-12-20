@@ -202,21 +202,22 @@ def main(nv_list, num_steps, num_reps, num_runs, min_tau, max_tau, uwave_ind_lis
         num_runs,
         run_fn=run_fn,
         uwave_ind_list=uwave_ind_list,
-        save_images=False,
+        save_images=True,
     )
 
     ### Process and plot
 
     try:
-        counts = raw_data["counts"]
-        sig_counts = counts[0]
-        ref_counts = counts[1]
-        avg_counts, avg_counts_ste, norms = widefield.process_counts(
-            nv_list, sig_counts, ref_counts, threshold=True
-        )
+        pass
+        # counts = raw_data["counts"]
+        # sig_counts = counts[0]
+        # ref_counts = counts[1]
+        # avg_counts, avg_counts_ste, norms = widefield.process_counts(
+        #     nv_list, sig_counts, ref_counts, threshold=True
+        # )
 
-        raw_fig = create_raw_data_figure(nv_list, taus, avg_counts, avg_counts_ste)
-        fit_fig = create_fit_figure(nv_list, taus, avg_counts, avg_counts_ste, norms)
+        # raw_fig = create_raw_data_figure(nv_list, taus, avg_counts, avg_counts_ste)
+        # fit_fig = create_fit_figure(nv_list, taus, avg_counts, avg_counts_ste, norms)
     except Exception:
         print(traceback.format_exc())
         raw_fig = None
