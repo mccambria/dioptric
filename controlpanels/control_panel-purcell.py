@@ -308,10 +308,18 @@ def optimize_scc_amp_and_duration(nv_list):
     num_reps = 1
     num_runs = 1500
     # num_runs = 400  # Short test version
+    # num_runs = 5
     min_amp = 0.75
     max_amp = 1.25
     min_duration = 48
     max_duration = 304
+
+    # Small amp range verion
+    num_reps = 8
+    num_runs = 100
+    min_amp = 1
+    max_amp = 1.4
+    num_amp_steps = 2
 
     return optimize_scc_amp_duration.optimize_scc_amp_and_duration(
         nv_list,
@@ -928,7 +936,7 @@ if __name__ == "__main__":
     # magnet_angle = 90
     date_str = "2024_03_12"
     sample_coords = [2.0, 0.0]
-    z_coord = 1.9
+    z_coord = 2.0
     # Load NV pixel coordinates
     pixel_coords_list = load_nv_coords(
         file_path="slmsuite/nv_blob_detection/nv_blob_filtered_160nvs_reordered.npz",
@@ -1224,7 +1232,7 @@ if __name__ == "__main__":
         # do_check_readout_fidelity(nv_list)
 
         # do_resonance_zoom(nv_list)
-        do_rabi(nv_list)
+        # do_rabi(nv_list)
         # do_resonance(nv_list)
         # do_spin_echo(nv_list)
 
@@ -1246,7 +1254,7 @@ if __name__ == "__main__":
         # do_scc_snr_check(nv_list)
         # do_optimize_scc_duration(nv_list)
         # do_optimize_scc_amp(nv_list)
-        # optimize_scc_amp_and_duration(nv_list)
+        optimize_scc_amp_and_duration(nv_list)
         # do_crosstalk_check(nv_sig)
         # do_spin_pol_check(nv_sig)
         # do_calibrate_green_red_delay()

@@ -133,6 +133,7 @@ config |= {
                 "uwave_power": 2.3,
                 "frequency": 2.856,
                 # "frequency": 2.9304468840166678,
+                # "rabi_period": 160,
                 "rabi_period": 128,
                 "iq_delay": 140,
             },
@@ -143,6 +144,7 @@ config |= {
                 # "frequency": 3.05,
                 "frequency": 2.799,
                 # "frequency": 2.8874701085827104,
+                # "rabi_period": 112,
                 "rabi_period": 128,
             },
         },
@@ -761,7 +763,7 @@ opx_config = {
         },
         "do_pi_pulse_0": {
             "operation": "control",
-            "length": int(rabi_period_0 / 2) + 8,
+            "length": int(rabi_period_0 / 2),
             "digital_marker": "on",
         },
         "do_pi_on_2_pulse_0": {
@@ -771,7 +773,7 @@ opx_config = {
         },
         "do_pi_pulse_1": {
             "operation": "control",
-            "length": int(rabi_period_1 / 2) + 8,
+            "length": int(rabi_period_1 / 2),
             "digital_marker": "on",
         },
         "do_pi_on_2_pulse_1": {
