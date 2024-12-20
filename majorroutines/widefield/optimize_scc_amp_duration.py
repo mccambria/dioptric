@@ -44,10 +44,10 @@ def process_and_plot(data):
     sig_counts = counts[0]
     ref_counts = counts[1]
     step_vals = np.array(data["step_vals"])
-    # num_amp_steps = data["num_amp_steps"]
-    # num_dur_steps = data["num_dur_steps"]
-    num_amp_steps = 15
-    num_dur_steps = 17
+    num_amp_steps = data["num_amp_steps"]
+    num_dur_steps = data["num_dur_steps"]
+    # num_amp_steps = 15
+    # num_dur_steps = 17
     min_amp = data["min_amp"]
     max_amp = data["max_amp"]
     min_dur = data["min_duration"]
@@ -63,8 +63,8 @@ def process_and_plot(data):
     )
     avg_snr, avg_snr_ste = widefield.calc_snr(sig_counts, ref_counts)
     opti_inds = [np.argmax(avg_snr[nv_ind]) for nv_ind in range(num_nvs)]
-    opti_dur_guesses = [step_vals[nv_ind, 0] for nv_ind in range(num_nvs)]
-    opti_amp_guesses = [step_vals[nv_ind, 1] for nv_ind in range(num_nvs)]
+    opti_dur_guesses = [step_vals[opti_inds[nv_ind], 0] for nv_ind in range(num_nvs)]
+    opti_amp_guesses = [step_vals[opti_inds[nv_ind], 1] for nv_ind in range(num_nvs)]
     opti_snr_guesses = [avg_snr[nv_ind, opti_inds[nv_ind]] for nv_ind in range(num_nvs)]
 
     # print(f"SNR: {opti_snrs}")
@@ -81,6 +81,7 @@ def process_and_plot(data):
     opti_amps = []
     opti_durs = []
     for nv_ind in range(num_nvs):
+        lines = []
         opti_snr = 0
         snrs_2d = np.reshape(avg_snr[nv_ind], (num_dur_steps, num_amp_steps)).T
         snr_errs_2d = np.reshape(avg_snr_ste[nv_ind], (num_dur_steps, num_amp_steps)).T
@@ -96,24 +97,30 @@ def process_and_plot(data):
                     snr_errs_2d[amp_ind],
                 )
             except Exception:
+                lines.append(None)
                 continue
 
             line = fit_fn(duration_linspace, *popt)
+            lines.append(line)
             opti_snr_at_amp = np.max(line)
             if opti_snr_at_amp > opti_snr:
                 opti_snr = opti_snr_at_amp
                 opti_dur = duration_linspace[np.argmax(line)]
                 opti_amp = amp_vals[amp_ind]
 
-            # Plot
-            # if amp_ind == 7:
-            #     fig, ax = plt.subplots()
-            #     kpl.plot_line(ax, duration_linspace, line, label=amp_vals[amp_ind])
-            #     kpl.plot_points(ax, duration_vals, snrs_2d[amp_ind])
-            #     ax.set_xlabel("Duration (ns)")
-            #     ax.set_ylabel("SNR")
-            #     ax.set_title(f"NV index: {nv_ind}")
-            #     kpl.show(block=True)
+        # Plot
+        # if amp_ind == 7:
+        # fig, ax = plt.subplots()
+        # for amp_ind in range(num_amp_steps):
+        #     kpl.plot_points(ax, duration_vals, snrs_2d[amp_ind])
+        #     line = lines[amp_ind]
+        #     if line is not None:
+        #         kpl.plot_line(ax, duration_linspace, line, label=amp_vals[amp_ind])
+        # ax.set_xlabel("Duration (ns)")
+        # ax.set_ylabel("SNR")
+        # ax.set_title(f"NV num: {widefield.get_nv_num(nv_list[nv_ind])}")
+        # ax.legend()
+        # kpl.show(block=True)
 
         print(opti_snr)
         print(opti_amp)
@@ -123,19 +130,19 @@ def process_and_plot(data):
         opti_durs.append(round(opti_dur / 4) * 4)
 
         # Plot
-        fig, ax = plt.subplots()
-        kpl.imshow(
-            ax,
-            snrs_2d,
-            extent=(min_dur, max_dur, min_amp, max_amp),
-            aspect="auto",
-            origin="lower",
-            cbar_label="SNR",
-            x_label="Duration (ns)",
-            y_label="Amplitude (arb.)",
-        )
-        ax.set_title(f"NV index: {nv_ind}")
-        kpl.show(block=True)
+        # fig, ax = plt.subplots()
+        # kpl.imshow(
+        #     ax,
+        #     snrs_2d,
+        #     extent=(min_dur, max_dur, min_amp, max_amp),
+        #     aspect="auto",
+        #     origin="lower",
+        #     cbar_label="SNR",
+        #     x_label="Duration (ns)",
+        #     y_label="Amplitude (arb.)",
+        # )
+        # ax.set_title(f"NV index: {nv_ind}")
+        # kpl.show(block=True)
 
     # Report results
 
@@ -248,7 +255,7 @@ def optimize_scc_amp_and_duration(
 if __name__ == "__main__":
     kpl.init_kplotlib()
 
-    data = dm.get_raw_data(file_id=1728131481474)
+    data = dm.get_raw_data(file_id=1731187815817)
     try:
         del data["states"]
     except Exception:
