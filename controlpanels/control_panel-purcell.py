@@ -805,7 +805,7 @@ def piezo_voltage_to_pixel_calibration():
     )  # Voltage system coordinates
     # cal_pixel_coords = np.array(
     #     [[81.109, 110.177], [64.986, 94.177], [96.577, 95.047]], dtype="float32"
-    # )  # Corresponding pixel coordinates
+    # )
     cal_pixel_coords = np.array(
         [
             [91.778, 122.027],
@@ -813,7 +813,7 @@ def piezo_voltage_to_pixel_calibration():
             [75.396, 138.755],
         ],
         dtype="float32",
-    )  # Corresponding pixel coordinates
+    )
     # Compute the affine transformation matrix
     M = cv2.getAffineTransform(cal_voltage_coords, cal_pixel_coords)
     # Convert the 2x3 matrix to a 3x3 matrix
