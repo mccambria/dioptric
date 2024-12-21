@@ -133,7 +133,8 @@ config |= {
                 "uwave_power": 2.3,
                 "frequency": 2.856,
                 # "frequency": 2.9304468840166678,
-                "rabi_period": 128,
+                "rabi_period": 160,
+                # "rabi_period": 128,
                 "iq_delay": 140,
             },
             1: {
@@ -143,7 +144,8 @@ config |= {
                 # "frequency": 3.05,
                 "frequency": 2.799,
                 # "frequency": 2.8874701085827104,
-                "rabi_period": 128,
+                "rabi_period": 112,
+                # "rabi_period": 128,
             },
         },
     },
@@ -199,7 +201,8 @@ config |= {
             # LaserKey.CHARGE_POL: {"physical_name": green_laser, "duration": 10e3},
             VirtualLaserKey.CHARGE_POL: {
                 "physical_name": green_laser,
-                "duration": 1e3,
+                # "duration": 1e3,
+                "duration": 10e3,
             },
             # LaserKey.CHARGE_POL: {"physical_name": green_laser, "duration": 60},
             VirtualLaserKey.SPIN_POL: {

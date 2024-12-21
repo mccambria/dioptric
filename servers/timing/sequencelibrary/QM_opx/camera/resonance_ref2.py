@@ -35,7 +35,7 @@ def get_seq(
         def uwave_macro(uwave_ind_list, step_val):
             seq_utils.macro_pi_pulse(uwave_ind_list)
 
-        def one_step():
+        with qua.for_each_(step_val, step_vals):
             base_scc_sequence.macro(
                 base_scc_seq_args,
                 uwave_macro,
@@ -43,9 +43,6 @@ def get_seq(
                 num_reps=num_reps,
                 reference=reference,
             )
-
-        with qua.for_each_(step_val, step_vals):
-            one_step()
 
     seq_ret_vals = []
     return seq, seq_ret_vals

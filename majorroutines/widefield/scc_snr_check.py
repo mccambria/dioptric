@@ -20,6 +20,7 @@ from utils import kplotlib as kpl
 from utils import positioning as pos
 from utils import tool_belt as tb
 from utils import widefield as widefield
+from utils.constants import NVSig
 
 
 def process_and_plot(data):
@@ -32,10 +33,8 @@ def process_and_plot(data):
 
     if threshold:
         sig_counts, ref_counts = widefield.threshold_counts(
-            nv_list, sig_counts, ref_counts, dynamic_thresh=False
+            nv_list, sig_counts, ref_counts, dynamic_thresh=True
         )
-        # thresh_method= "otsu"
-        # sig_counts, ref_counts = widefield.threshold_counts(nv_list, sig_counts, ref_counts, method=thresh_method)
 
     ### Report the results
 
@@ -67,14 +66,10 @@ def process_and_plot(data):
     avg_contrast_ste = avg_contrast_ste[:, step_ind]
 
     # Print
-    # for ind in range(len(nv_list)):
-    #     nv_sig = nv_list[ind]
-    #     nv_num = widefield.get_nv_num(nv_sig)
-    #     nv_ref_counts = tb.round_for_print(avg_ref_counts[ind], avg_ref_counts_ste[ind])
-    #     nv_sig_counts = tb.round_for_print(avg_sig_counts[ind], avg_sig_counts_ste[ind])
-    #     nv_snr = tb.round_for_print(avg_snr[ind], avg_snr_ste[ind])
-    #     print(f"NV {nv_num}: a0={nv_ref_counts}, a1={nv_sig_counts}, SNR={nv_snr}")
-    # print(f"Mean SNR: {np.mean(avg_snr)}")
+    avg_snr = avg_snr.tolist()
+    print(avg_snr)
+    print(f"Median SNR: {np.median(avg_snr)}")
+    return avg_snr
 
     ### Plot
 
@@ -186,9 +181,18 @@ def main(nv_list, num_reps, num_runs, uwave_ind_list=[0, 1]):
 if __name__ == "__main__":
     kpl.init_kplotlib()
 
-    # data = dm.get_raw_data(file_id=1664917535036)
-    data = dm.get_raw_data(file_id=1722112403814)
-    # data = dm.get_raw_data(file_id=1575309155682)
-    # data = dm.get_raw_data(file_id=1575323838562)
-    figs = process_and_plot(data)
+    data = dm.get_raw_data(file_id=1731300731766)  # -8
+    avg_snr_a = process_and_plot(data)
+    data = dm.get_raw_data(file_id=1731322739905)  # +0
+    avg_snr_b = process_and_plot(data)
+    data = dm.get_raw_data(file_id=1731342940279)  # +8
+    avg_snr_c = process_and_plot(data)
+    num_nvs = len(data["nv_list"])
+
+    fig, ax = plt.subplots()
+    nv_list = range(num_nvs)
+    kpl.plot_points(ax, nv_list, avg_snr_a, label="Cross")
+    kpl.plot_points(ax, nv_list, avg_snr_b, label="Full")
+    kpl.plot_points(ax, nv_list, avg_snr_c, label="High power")
+    ax.legend()
     kpl.show(block=True)

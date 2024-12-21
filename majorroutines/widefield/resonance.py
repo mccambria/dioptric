@@ -60,9 +60,8 @@ def reformat_counts(counts):
 def create_fit_figure(
     nv_list,
     freqs,
-    counts,
-    counts_ste,
-    norms,
+    norm_counts,
+    norm_counts_ste,
     axes_pack=None,
     layout=None,
     no_legend=True,
@@ -81,18 +80,6 @@ def create_fit_figure(
             return np.array([norm] * len(freq))
         else:
             return norm
-
-    norms_ms0_newaxis = norms[0][:, np.newaxis]
-    # norms_ms1_newaxis = norms[1][:, np.newaxis]
-    # contrast = norms_ms1_newaxis - norms_ms0_newaxis
-    # norm_counts = (counts - norms_ms0_newaxis) / contrast
-    # norm_counts_ste = counts_ste / contrast
-    #
-    norm_counts = counts - norms_ms0_newaxis
-    norm_counts_ste = counts_ste
-    #
-    # norm_counts = (counts / norms_ms0_newaxis) - 1
-    # norm_counts_ste = counts_ste / norms_ms0_newaxis
 
     fit_fns = []
     pcovs = []
@@ -206,10 +193,12 @@ def create_fit_figure(
 
     ax = axes_pack[layout[-1, 0]]
     kpl.set_shared_ax_xlabel(ax, "Frequency (GHz)")
-    # kpl.set_shared_ax_ylabel(ax, "Norm. NV$^{-}$ population")
+    kpl.set_shared_ax_ylabel(ax, "Normalized NV$^{-}$ population")
     # kpl.set_shared_ax_ylabel(ax, "Norm. NV$^{-}$ pop.")
-    kpl.set_shared_ax_ylabel(ax, "Relative change in fluorescence")
-    # ax.set_yticks([0, 1])
+    # kpl.set_shared_ax_ylabel(ax, "Relative change in fluorescence")
+    ax.set_xticks([2.80, 2.95])
+    ax.set_yticks([0, 1])
+    ax.set_ylim([-0.3, 1.3])
 
     # ax = axes_pack[layout[-1, 0]]
     # ax.set_xlabel(" ")
@@ -307,7 +296,8 @@ def main(
         avg_counts, avg_counts_ste, norms = widefield.process_counts(
             nv_list, sig_counts, ref_counts, threshold=True
         )
-        raw_fig = create_raw_data_figure(nv_list, freqs, avg_counts, avg_counts_ste)
+
+        # raw_fig = create_raw_data_figure(nv_list, freqs, avg_counts, avg_counts_ste)
         fit_fig = create_fit_figure(nv_list, freqs, avg_counts, avg_counts_ste, norms)
     except Exception:
         print(traceback.format_exc())
@@ -346,10 +336,13 @@ def main(
 if __name__ == "__main__":
     kpl.init_kplotlib()
 
-    # file_id = 1688862951667  # > 100 but mostly bad
-    file_id = 1663484946120  # 77 good traces
+    # file_id = 1729211906249
+    # file_id = 1729446666169
+    file_id = 1729834552723
 
     data = dm.get_raw_data(file_id=file_id, load_npz=False, use_cache=True)
+    # data = dm.get_raw_data(file_id=file_id, load_npz=True, use_cache=False)
+    # img_arrays = np.array(data.pop("img_arrays"))
 
     nv_list = data["nv_list"]
     num_nvs = len(nv_list)
@@ -359,22 +352,43 @@ if __name__ == "__main__":
     freqs = data["freqs"]
 
     # Manipulate the counts into the format expected for normalization
-    counts = data["counts"]
+    counts = np.array(data.pop("counts"))
     reformatted_counts = reformat_counts(counts)
     sig_counts = reformatted_counts[0]
     ref_counts = reformatted_counts[1]
 
-    avg_counts, avg_counts_ste, norms = widefield.process_counts(
+    # ms0_counts = ref_counts[:, :, :, ::2]
+    # ms1_counts = ref_counts[:, :, :, 1::2]
+    # ms0_counts = np.reshape(
+    #     ms0_counts, (num_nvs, num_runs, 1, num_steps // 4 * num_reps)
+    # )
+    # ms1_counts = np.reshape(
+    #     ms1_counts, (num_nvs, num_runs, 1, num_steps // 4 * num_reps)
+    # )
+    # avg_snr, avg_snr_ste = widefield.calc_snr(ms1_counts, ms0_counts)
+    # avg_snr = avg_snr[:, 0]
+    # print(avg_snr.tolist())
+    # avg_snr_ste = avg_snr_ste[:, 0]
+    # fig, ax = plt.subplots()
+    # kpl.plot_points(ax, range(num_nvs), avg_snr, yerr=avg_snr_ste)
+    # ax.set_xlabel("NV order in sequence")
+    # ax.set_ylabel("SNR")
+    # kpl.show(block=True)
+    # sys.exit()
+
+    norm_counts, norm_counts_ste = widefield.process_counts(
         nv_list, sig_counts, ref_counts, threshold=True
     )
 
     # raw_fig = create_raw_data_figure(nv_list, freqs, avg_counts, avg_counts_ste)
-    fit_fig = create_fit_figure(nv_list, freqs, avg_counts, avg_counts_ste, norms)
+    fit_fig = create_fit_figure(nv_list, freqs, norm_counts, norm_counts_ste)
+
+    kpl.show(block=True)
 
     ###
 
     # pixel_drifts = data["pixel_drifts"]
-    # img_arrays = np.array(data["img_arrays"])
+    # img_arrays = np.array(data.pop("img_arrays"), dtype=np.float16)
     # base_pixel_drift = [15, 45]
     # # base_pixel_drift = [24, 74]
     # num_reps = 1
@@ -396,9 +410,14 @@ if __name__ == "__main__":
     #         cropped_img_array = widefield.crop_img_array(img_array, offset, buffer)
     #         proc_img_arrays[0, run_ind, step_ind, 0, :, :] = cropped_img_array
 
-    # sig_img_arrays = np.mean(proc_img_arrays[:, :, 0:adj_num_steps, :], axis=(0, 1, 3))
-    # ref_img_array = np.mean(proc_img_arrays[:, :, adj_num_steps:, :], axis=(0, 1, 2, 3))
-    # proc_img_arrays = sig_img_arrays - ref_img_array
+    sig_img_arrays = np.mean(img_arrays[:, :, 0 : num_steps // 2, :], axis=(0, 1, 3))
+    ref_img_array = np.mean(
+        img_arrays[:, :, num_steps // 2 : 3 * num_steps // 4, :], axis=(0, 1, 2, 3)
+    )
+    proc_img_arrays = sig_img_arrays - ref_img_array
+    fig, ax = plt.subplots()
+    kpl.imshow(ax, proc_img_arrays[15])
+    kpl.show(block=True)
 
     # downsample_factor = 1
     # proc_img_arrays = [
@@ -406,24 +425,24 @@ if __name__ == "__main__":
     # ]
     # proc_img_arrays = np.array(proc_img_arrays)
 
-    # # Nice still
+    # Nice still
     # fig, ax = plt.subplots()
     # kpl.imshow(ax, proc_img_arrays[17])
     # ax.axis("off")
     # scale = widefield.get_camera_scale()
     # kpl.scale_bar(ax, scale, "1 µm", kpl.Loc.LOWER_RIGHT)
 
-    # widefield.animate(
-    #     freqs,
-    #     nv_list,
-    #     avg_counts,
-    #     avg_counts_ste,
-    #     norms,
-    #     proc_img_arrays,
-    #     cmin=np.percentile(proc_img_arrays, 60),
-    #     cmax=np.percentile(proc_img_arrays, 99.9),
-    #     scale_bar_length_factor=downsample_factor,
-    # )
+    widefield.animate(
+        freqs,
+        nv_list,
+        norm_counts,
+        norm_counts_ste,
+        proc_img_arrays,
+        cmin=np.percentile(proc_img_arrays, 60),
+        cmax=np.percentile(proc_img_arrays, 99.9),
+        # scale_bar_length_factor=downsample_factor,
+        just_movie=True,
+    )
 
     ###
 

@@ -127,10 +127,10 @@ def read_and_process_image(nv_list):
 
 
 def dtype_clip(arr, dtype):
-    min_val = np.iinfo(dtype).min
-    max_val = np.iinfo(dtype).max
-    arr = np.where(arr > min_val, arr, min_val)
-    arr = np.where(arr < max_val, arr, max_val)
+    min_val = np.finfo(dtype).min
+    max_val = np.finfo(dtype).max
+    arr = np.where(arr >= min_val, arr, min_val)
+    arr = np.where(arr <= max_val, arr, max_val)
     return arr
 
 
@@ -340,9 +340,9 @@ def main(
                                         avg_img_array = np.average(
                                             img_arrays_to_avg, axis=0
                                         )
-                                        img_arrays[
-                                            exp_ind, run_ind, step_ind, rep_ind
-                                        ] = dtype_clip(avg_img_array, img_arrays_dtype)
+                                        img_arrays[exp_ind, run_ind, step_ind, 0] = (
+                                            dtype_clip(avg_img_array, img_arrays_dtype)
+                                        )
 
                     ### Move on to the next run
 

@@ -349,16 +349,25 @@ def threshold_counts(nv_list, sig_counts, ref_counts=None, dynamic_thresh=False)
 
 
 def process_counts(nv_list, sig_counts, ref_counts=None, threshold=True):
-    """Alias for threshold_counts with a more generic name"""
     _validate_counts_structure(sig_counts)
     _validate_counts_structure(ref_counts)
     if threshold:
-        sig_states_array, ref_states_array = threshold_counts(
+        sig_counts, ref_counts = threshold_counts(
             nv_list, sig_counts, ref_counts, dynamic_thresh=True
         )
-        return average_counts(sig_states_array, ref_states_array)
-    else:
-        return average_counts(sig_counts, ref_counts)
+    avg_counts, avg_counts_ste, norms = average_counts(sig_counts, ref_counts)
+
+    if ref_counts is None:
+        return avg_counts, avg_counts_ste
+
+    norms_ms0_newaxis = norms[0][:, np.newaxis]
+    norms_ms1_newaxis = norms[1][:, np.newaxis]
+    contrast = norms_ms1_newaxis - norms_ms0_newaxis
+    contrast = np.where(contrast > 0.03, contrast, 0.03)
+    norm_counts = (avg_counts - norms_ms0_newaxis) / contrast
+    norm_counts_ste = avg_counts_ste / contrast
+
+    return norm_counts, norm_counts_ste
 
 
 def threshold_counts_selected_method(
@@ -1234,6 +1243,7 @@ def animate(
     cmin=None,
     cmax=None,
     scale_bar_length_factor=None,
+    just_movie=False,
 ):
     num_steps = img_arrays.shape[0]
 
@@ -1243,26 +1253,28 @@ def animate(
     norm_counts = (counts - norms_ms0_newaxis) / contrast
     norm_counts_ste = counts_ste / contrast
 
-    just_plot_figsize = [6.5, 5.0]
-    figsize = [just_plot_figsize[0] + just_plot_figsize[1], just_plot_figsize[1]]
-    # fig, axes_pack = plt.subplots(2, 1, height_ratios=(1, 1), figsize=figsize)
-    fig = plt.figure(figsize=figsize)
-    im_fig, data_fig = fig.subfigures(1, 2, width_ratios=just_plot_figsize[::-1])
-    im_ax = im_fig.add_subplot()
-    num_nvs = len(nv_list)
-
-    layout = kpl.calc_mosaic_layout(num_nvs, num_rows=2)
-    data_axes = data_fig.subplot_mosaic(layout, sharex=True, sharey=True)
-    data_axes_flat = list(data_axes.values())
-    rep_data_ax = data_axes[layout[-1, 0]]
-
-    all_axes = [im_ax]
-    all_axes.extend(data_axes_flat)
+    if just_movie:
+        fig, im_ax = plt.subplots()
+        all_axes = [im_ax]
+    else:
+        just_plot_figsize = [6.5, 5.0]
+        figsize = [just_plot_figsize[0] + just_plot_figsize[1], just_plot_figsize[1]]
+        # fig, axes_pack = plt.subplots(2, 1, height_ratios=(1, 1), figsize=figsize)
+        fig = plt.figure(figsize=figsize)
+        im_fig, data_fig = fig.subfigures(1, 2, width_ratios=just_plot_figsize[::-1])
+        im_ax = im_fig.add_subplot()
+        all_axes = [im_ax]
+        num_nvs = len(nv_list)
+        layout = kpl.calc_mosaic_layout(num_nvs, num_rows=2)
+        data_axes = data_fig.subplot_mosaic(layout, sharex=True, sharey=True)
+        data_axes_flat = list(data_axes.values())
+        rep_data_ax = data_axes[layout[-1, 0]]
+        all_axes.extend(data_axes_flat)
 
     # Set up the actual image
     kpl.imshow(im_ax, np.zeros(img_arrays[0].shape), no_cbar=True)
-    scale = get_camera_scale(scale_bar_length_factor)
-    kpl.scale_bar(im_ax, scale, "1 µm", kpl.Loc.LOWER_RIGHT)
+    # scale = get_camera_scale(scale_bar_length_factor)
+    # kpl.scale_bar(im_ax, scale, "1 µm", kpl.Loc.LOWER_RIGHT)
 
     def data_ax_relim():
         # Update this manually to match the final plot
@@ -1286,23 +1298,26 @@ def animate(
         ylabel = "Norm. NV$^{-}$ population"
         kpl.set_shared_ax_ylabel(rep_data_ax, ylabel)
 
-    data_ax_relim()
+    if not just_movie:
+        data_ax_relim()
 
     def animate_sub(step_ind):
         kpl.imshow_update(im_ax, img_arrays[step_ind], cmin, cmax)
         im_ax.axis("off")
 
-        for ax in data_axes_flat:
-            ax.clear()
-        plot_fit(
-            data_axes_flat,
-            nv_list,
-            x[: step_ind + 1],
-            norm_counts[:, : step_ind + 1],
-            norm_counts_ste[:, : step_ind + 1],
-            no_legend=True,
-        )
-        data_ax_relim()
+        if not just_movie:
+            for ax in data_axes_flat:
+                ax.clear()
+            plot_fit(
+                data_axes_flat,
+                nv_list,
+                x[: step_ind + 1],
+                norm_counts[:, : step_ind + 1],
+                norm_counts_ste[:, : step_ind + 1],
+                no_legend=True,
+            )
+            data_ax_relim()
+
         return all_axes
 
     anim = animation.FuncAnimation(
