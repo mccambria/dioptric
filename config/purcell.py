@@ -808,7 +808,7 @@ opx_config = {
         # Yellow AOM
         "yellow_imaging": {"type": "constant", "sample": 0.45},  # 0.35
         # "yellow_imaging": {"type": "constant", "sample": 0.50},  # 0.35
-        "yellow_charge_readout": {"type": "constant", "sample": 0.396},  # 50ms
+        "yellow_charge_readout": {"type": "constant", "sample": 0.378},  # 50ms
         # "yellow_charge_readout": {"type": "constant", "sample": 0.4175}, # 30ms
         "yellow_spin_pol": {"type": "constant", "sample": 0.396},
         "yellow_shelving": {"type": "constant", "sample": 0.33},
