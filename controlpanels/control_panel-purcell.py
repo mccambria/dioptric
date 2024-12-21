@@ -314,12 +314,15 @@ def optimize_scc_amp_and_duration(nv_list):
     min_duration = 48
     max_duration = 304
 
-    # Small amp range verion
+    # Single amp
     num_reps = 8
-    num_runs = 100
-    min_amp = 1
-    max_amp = 1.4
-    num_amp_steps = 2
+    num_runs = 200
+    min_amp = 1.0
+    max_amp = 1.0
+    num_amp_steps = 1
+    min_duration = 32
+    max_duration = 496
+    num_dur_steps = 30
 
     return optimize_scc_amp_duration.optimize_scc_amp_and_duration(
         nv_list,
@@ -1043,6 +1046,8 @@ if __name__ == "__main__":
     #     for ind in range(num_nvs)
     #     if snr_list[ind] > 0.07 and ind in orientation_ab_inds
     # ]
+    # print(np.array(snr_list)[include_inds].tolist())
+    # sys.exit()
 
     # test = []
     # for ind in range(num_nvs):
