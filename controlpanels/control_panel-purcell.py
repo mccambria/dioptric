@@ -316,7 +316,7 @@ def optimize_scc_amp_and_duration(nv_list):
 
     # Single amp
     num_reps = 8
-    num_runs = 200
+    num_runs = 100
     min_amp = 1.0
     max_amp = 1.0
     num_amp_steps = 1
