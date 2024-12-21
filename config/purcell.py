@@ -37,10 +37,15 @@ calibration_coords_pixel = [
     [95.923, 201.438],
     [207.435, 74.049],
 ]
+# calibration_coords_green = [
+#     [115.717, 101.17],
+#     [108.847, 115.601],
+#     [98.291, 100.872],
+# ]
 calibration_coords_green = [
-    [115.717, 101.17],
-    [108.847, 115.601],
-    [98.291, 100.872],
+    [116.028, 101.749],
+    [109.588, 116.191],
+    [98.924, 101.244],
 ]
 calibration_coords_red = [
     [78.617, 67.752],
@@ -276,7 +281,7 @@ config |= {
                 "control_mode": PosControlMode.SEQUENCE,
                 "delay": int(400e3),  # 400 us for galvo
                 "nm_per_unit": 1000,
-                "optimize_range": 0.8,
+                "optimize_range": 1.5,
                 "units": "MHz",
                 "opti_virtual_laser_key": VirtualLaserKey.IMAGING,
                 "aod": True,
