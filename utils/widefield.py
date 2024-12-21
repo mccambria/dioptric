@@ -3,7 +3,6 @@
 
 Created on August 15th, 2023
 @author: mccambria
-
 Updated on September 16th, 2024
 @author: sbchand
 """
@@ -371,93 +370,58 @@ def process_counts(nv_list, sig_counts, ref_counts=None, threshold=True):
     return norm_counts, norm_counts_ste
 
 
-# def threshold_counts(nv_list, sig_counts, ref_counts=None, method="otsu"):
-#     """Threshold counts for NVs based on the selected method."""
-#     _validate_counts_structure(sig_counts)
-#     _validate_counts_structure(ref_counts)
+def threshold_counts_selected_method(
+    nv_list, sig_counts, ref_counts=None, method="otsu"
+):
+    """Threshold counts for NVs based on the selected method."""
+    _validate_counts_structure(sig_counts)
+    _validate_counts_structure(ref_counts)
 
-#     num_nvs = len(nv_list)
-#     sig_thresholds, ref_thresholds = [], []
+    num_nvs = len(nv_list)
+    sig_thresholds, ref_thresholds = [], []
 
-#     # Process thresholds based on the selected method
-#     for nv_ind in range(num_nvs):
-#         combined_counts = (
-#             np.append(sig_counts[nv_ind].flatten(), ref_counts[nv_ind].flatten())
-#             if ref_counts is not None
-#             else sig_counts[nv_ind].flatten()
-#         )
+    # Process thresholds based on the selected method
+    for nv_ind in range(num_nvs):
+        combined_counts = (
+            np.append(sig_counts[nv_ind].flatten(), ref_counts[nv_ind].flatten())
+            if ref_counts is not None
+            else sig_counts[nv_ind].flatten()
+        )
 
-#         # Choose method for thresholding
-#         if method == "otsu":
-#             threshold = threshold_otsu(combined_counts)
-#         elif method == "triangle":
-#             threshold = threshold_triangle(combined_counts)
-#         elif method == "entropy":
-#             threshold = threshold_li(combined_counts)
-#         elif method == "mean":
-#             threshold = np.mean(combined_counts)
-#         elif method == "median":
-#             threshold = np.median(combined_counts)
-#         elif method == "kmeans":
-#             threshold = kmeans_threshold(combined_counts)
-#         elif method == "gmm":
-#             threshold = gmm_threshold(combined_counts, use_intersection=False)
-#         else:
-#             raise ValueError(f"Unknown thresholding method: {method}")
+        # Choose method for thresholding
+        if method == "otsu":
+            threshold = threshold_otsu(combined_counts)
+        elif method == "triangle":
+            threshold = threshold_triangle(combined_counts)
+        elif method == "entropy":
+            threshold = threshold_li(combined_counts)
+        elif method == "mean":
+            threshold = np.mean(combined_counts)
+        elif method == "median":
+            threshold = np.median(combined_counts)
+        elif method == "kmeans":
+            threshold = kmeans_threshold(combined_counts)
+        elif method == "gmm":
+            threshold = gmm_threshold(combined_counts, use_intersection=False)
+        else:
+            raise ValueError(f"Unknown thresholding method: {method}")
 
-#         sig_thresholds.append(threshold)
-#         if ref_counts is not None:
-#             ref_thresholds.append(
-#                 threshold
-#             )  # You can separate thresholds for ref if needed
+        sig_thresholds.append(threshold)
+        if ref_counts is not None:
+            ref_thresholds.append(threshold)
 
-#     # Apply thresholds to signal counts (assuming single threshold value per NV)
-#     sig_states = np.array(
-#         [sig_counts[nv_ind] > sig_thresholds[nv_ind] for nv_ind in range(num_nvs)]
-#     )
-#     print(sig_thresholds)
-#     if ref_counts is not None:
-#         ref_states = np.array(
-#             [ref_counts[nv_ind] > ref_thresholds[nv_ind] for nv_ind in range(num_nvs)]
-#         )
-#         return sig_states, ref_states
-#     else:
-#         return sig_states
-
-
-# Adaptive thresholding function based on mean or gaussian
-# def adaptive_thresholding(counts, method="gaussian"):
-#     """
-#     Applies adaptive thresholding to the input data (e.g., signal counts).
-
-#     Parameters:
-#     - counts: Input array (e.g., signal counts).
-#     - method: Type of adaptive thresholding ('mean' or 'gaussian').
-
-#     Returns:
-#     - Thresholded data.
-#     """
-#     # Ensure the data is a single-channel array by flattening or reshaping if necessary
-#     if len(counts.shape) > 2:
-#         counts = counts.reshape(-1)  # Flatten the array if it's multi-dimensional
-
-#     # Normalize counts to be between 0 and 255
-#     normalized_counts = cv2.normalize(counts, None, 0, 255, cv2.NORM_MINMAX)
-
-#     # Convert counts to 8-bit unsigned integers (np.uint8)
-#     counts_uint8 = normalized_counts.astype(np.uint8)
-
-#     # Apply adaptive thresholding
-#     if method == "mean":
-#         return cv2.adaptiveThreshold(
-#             counts_uint8, 255, cv2.ADAPTIVE_THRESH_MEAN_C, cv2.THRESH_BINARY, 11, 2
-#         )
-#     elif method == "gaussian":
-#         return cv2.adaptiveThreshold(
-#             counts_uint8, 255, cv2.ADAPTIVE_THRESH_GAUSSIAN_C, cv2.THRESH_BINARY, 11, 2
-#         )
-#     else:
-#         raise ValueError(f"Unknown adaptive thresholding method: {method}")
+    # Apply thresholds to signal counts (assuming single threshold value per NV)
+    sig_states = np.array(
+        [sig_counts[nv_ind] > sig_thresholds[nv_ind] for nv_ind in range(num_nvs)]
+    )
+    print(sig_thresholds)
+    if ref_counts is not None:
+        ref_states = np.array(
+            [ref_counts[nv_ind] > ref_thresholds[nv_ind] for nv_ind in range(num_nvs)]
+        )
+        return sig_states, ref_states
+    else:
+        return sig_states
 
 
 # Adaptive clustering-based thresholding (K-means or GMM)

@@ -72,7 +72,6 @@ def process_and_plot(data):
     # return
 
     # Fit to the linecut at each amplitude value to determine optimal parameters
-
     def fit_fn(tau, delay, slope, dec):
         tau = np.array(tau) - delay
         return slope * tau * np.exp(-tau / dec)
