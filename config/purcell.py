@@ -43,8 +43,8 @@ calibration_coords_green = [
     [98.291, 100.872],
 ]
 calibration_coords_red = [
-    [78.453, 67.65],
-    [73.653, 79.387],
+    [78.617, 67.752],
+    [73.831, 79.567],
     [65.066, 67.468],
 ]
 # Create the dictionaries using the provided lists
@@ -242,6 +242,7 @@ config |= {
                 "physical_name": yellow_laser,
                 "duration": 50e6,
                 # "duration": 30e6,
+                # "duration": 12e6,  # for red calibration
             },
             # LaserKey.WIDEFIELD_CHARGE_READOUT: {"physical_name": yellow_laser, "duration": 100e6},
         },
@@ -808,8 +809,9 @@ opx_config = {
         # Yellow AOM
         "yellow_imaging": {"type": "constant", "sample": 0.45},  # 0.35
         # "yellow_imaging": {"type": "constant", "sample": 0.50},  # 0.35
-        "yellow_charge_readout": {"type": "constant", "sample": 0.378},  # 50ms
-        # "yellow_charge_readout": {"type": "constant", "sample": 0.4175}, # 30ms
+        # "yellow_charge_readout": {"type": "constant", "sample": 0.396},  # 50ms 160NVs
+        "yellow_charge_readout": {"type": "constant", "sample": 0.3786},  # 50ms 117NVs
+        # "yellow_charge_readout": {"type": "constant", "sample": 0.4175}, # 30ms 160Nvs
         "yellow_spin_pol": {"type": "constant", "sample": 0.396},
         "yellow_shelving": {"type": "constant", "sample": 0.33},
         # Other
