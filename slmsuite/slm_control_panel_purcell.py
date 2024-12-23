@@ -298,8 +298,8 @@ def nuvu2thorcam_calibration(coords):
 
 def load_nv_coords(
     # file_path="slmsuite/nv_blob_detection/nv_blob_filtered_160nvs_reordered.npz",
-    # file_path="slmsuite/nv_blob_detection/nv_blob_filtered_160nvs_reordered_filtered_117nvs.npz",
-    file_path="slmsuite/nv_blob_detection/nv_blob_filtered_160nvs_reordered_selected_117nvs.npz",
+    # file_path="slmsuite/nv_blob_detection/nv_blob_filtered_160nvs_reordered_selected_117nvs.npz",
+    file_path="slmsuite/nv_blob_detection/nv_blob_filtered_160nvs_reordered_selected_106nvs.npz",
     # file_path="slmsuite/nv_blob_detection/nv_blob_filtered_160nvs_reordered_manual_updated.npz",
 ):
     # data = np.load(file_path)
@@ -400,8 +400,8 @@ try:
     # test_wavefront_calibration()
     # wavefront_calibration()
     # load_wavefront_calibration()
-    # compute_nvs_phase()
-    write_nvs_phase()
+    compute_nvs_phase()
+    # write_nvs_phase()
     # calibration_triangle()
     # circles()
     # smiley()

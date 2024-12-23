@@ -820,8 +820,8 @@ opx_config = {
         "yellow_imaging": {"type": "constant", "sample": 0.45},  # 0.35
         # "yellow_imaging": {"type": "constant", "sample": 0.50},  # 0.35
         # "yellow_charge_readout": {"type": "constant", "sample": 0.396},  # 50ms 160NVs
-        "yellow_charge_readout": {"type": "constant", "sample": 0.3472},  # 50ms 117NVs
-        # "yellow_charge_readout": {"type": "constant", "sample": 0.36},  # 50ms 117NVs
+        # "yellow_charge_readout": {"type": "constant", "sample": 0.3472},  # 50ms 117NVs
+        "yellow_charge_readout": {"type": "constant", "sample": 0.3423},  # 50ms 106NVs
         # "yellow_charge_readout": {"type": "constant", "sample": 0.4175}, # 30ms 160Nvs
         "yellow_spin_pol": {"type": "constant", "sample": 0.39},
         "yellow_shelving": {"type": "constant", "sample": 0.33},

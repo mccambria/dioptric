@@ -428,17 +428,9 @@ if __name__ == "__main__":
     # data = dm.get_raw_data(file_id=1700710358100, load_npz=True)
     # data = dm.get_raw_data(file_id=1715452021340, load_npz=True)
     data = dm.get_raw_data(file_id=1732420670067, load_npz=True)
-    print(data.keys())
     img_arrays = data["ref_img_array"]
-    print(img_arrays)
-    print("Raw Data Keys:", data.keys())
-    print("Raw Data Preview:", data)
-
-    print("Signal Image Array:", data.get("sig_img_array"))
-    print("Reference Image Array:", data.get("ref_img_array"))
-    print("Difference Image Array:", data.get("diff_img_array"))
-
-    sys.exit()
+    # print(img_arrays)
+    # sys.exit()
     nv_coordinates, spot_weights = load_nv_coords(
         # file_path="slmsuite/nv_blob_detection/nv_blob_filtered_144nvs.npz"
         # file_path="slmsuite/nv_blob_detection/nv_blob_filtered_160nvs.npz"
@@ -525,7 +517,7 @@ if __name__ == "__main__":
 
     # Calculate weights based on the fitted intensities
     # indices = [4, 27, 41, 82, 86, 89, 109, 117, 138, 139, 148, 149]
-    spot_weights = filtered_reordered_spot_weights
+    # spot_weights = filtered_reordered_spot_weights
     # fmt: off
     spot_weights = [
         0.7466728351068052,
@@ -647,25 +639,33 @@ if __name__ == "__main__":
         1.1708211389400445,
     ]
     # fmt: on
-    print(len(spot_weights))
+
     norm_spot_weights = spot_weights / np.sum(spot_weights)
-    # print(spot_weights)
     norm_spot_weights = np.array(norm_spot_weights)
     aom_voltage = 0.3472
-    a, b, c = [3.7e5, 6.97, 8e-14]  # Example power-law fit parameters
+    a, b, c = [3.7e5, 6.97, 8e-14]
     total_power = a * (aom_voltage**b) + c
     nv_powers = norm_spot_weights * total_power
+    drop_indices = [17, 55, 64, 72, 87, 89, 96, 99, 112, 114, 116]
+    spot_weights = [
+        val for ind, val in enumerate(spot_weights) if ind not in drop_indices
+    ]
+    nv_powers = [val for ind, val in enumerate(nv_powers) if ind not in drop_indices]
+    # nv_powers = [val for ind, val in enumerate(nv_powers) if ind not in drop_indices]
     # print(nv_powers)
     # indices = [4, 27, 30, 41, 117, 130, 139, 155]
     # Indices to exclude (zero-based indexing)
     # fmt: off
     include_indices =[0, 1, 2, 3, 5, 6, 7, 8, 13, 14, 15, 16, 17, 18, 20, 21, 22, 23, 24, 25, 26, 28, 29, 31, 32, 33, 34, 36, 37, 39, 42, 44, 45, 46, 47, 48, 49, 51, 52, 53, 55, 56, 57, 58, 60, 61, 62, 64, 65, 66, 68, 69, 70, 71, 72, 73, 74, 75, 77, 79, 83, 84, 85, 88, 89, 90, 91, 92, 94, 95, 96, 97, 99, 100, 101, 102, 103, 105, 106, 107, 108, 109, 110, 111, 113, 114, 116, 117, 118, 120, 122, 123, 124, 125, 128, 131, 132, 134, 136, 137, 138, 140, 141, 142, 145, 146, 147, 148, 149, 152, 153, 154, 155, 156, 157, 158, 159]
-
+    final_drop_inds = [23, 73, 89, 99, 117, 120, 132, 137, 155, 157, 159]
+    include_indices = [ind for ind in include_indices if ind not in final_drop_inds]
     # fmt: on
     # Filter nv_coordinates and spot_weights to exclude the specified indices
     nv_coordinates_filtered = np.array(
         [coord for i, coord in enumerate(nv_coordinates) if i in include_indices]
     )
+    print(f"len nv_powers: {len(nv_powers)}")
+    print(f"len nv_powers: {len(nv_coordinates_filtered)}")
     # spot_weights_filtered = np.array(
     #     [weight for i, weight in enumerate(spot_weights) if i in include_indices]
     # )
@@ -679,14 +679,18 @@ if __name__ == "__main__":
 
     # Create a copy or initialize spot weights for modification
     updated_spot_weights = curve_extreme_weights_simple(spot_weights)
-    print(updated_spot_weights)
+    # drop_indices = [17, 55, 64, 72, 87, 89, 96, 99, 112, 114, 116]
+    # updated_spot_weights = [
+    #     val for ind, val in enumerate(updated_spot_weights) if ind not in drop_indices
+    # ]
+
     # Update weights for the specified indices using the calculated weights
     # for idx in indices:
     #     if 0 <= idx < len(updated_spot_weights):  # Ensure index is within valid range
     #         updated_spot_weights[idx] = calcualted_spot_weights[idx]
 
     # aom_voltage = 0.39  # Current AOM voltage
-    aom_voltage = 0.347  # Current AOM voltage
+    aom_voltage = 0.3472  # Current AOM voltage
     power_law_params = [3.7e5, 6.97, 8e-14]  # Example power-law fit parameters
     # nv_weights, adjusted_aom_voltage = adjust_aom_voltage_for_slm(
     #     nv_amps_filtered, aom_voltage, power_law_params
@@ -702,6 +706,8 @@ if __name__ == "__main__":
         zip(nv_coordinates_filtered, updated_spot_weights, nv_powers)
     ):
         print(f"{idx+1:<8} | {coords} | {weight:.3f} | {power:.2f}")
+
+    # sys.exit()
     # print(len(spot_weights))
     # updated_spot_weights = filtered_reordered_counts
     # spot_weights = updated_spot_weights
@@ -769,14 +775,13 @@ if __name__ == "__main__":
     # print(f"Number of NVs detected: {len(filtered_nv_coords)}")
 
     # Save the filtered results
-    print(nv_coordinates_filtered)
 
-    # save_results(
-    #     nv_coordinates_filtered,
-    #     nv_powers,
-    #     updated_spot_weights,
-    #     filename="slmsuite/nv_blob_detection/nv_blob_filtered_160nvs_reordered_selected_117nvs.npz",
-    # )
+    save_results(
+        nv_coordinates_filtered,
+        nv_powers,
+        updated_spot_weights,
+        filename="slmsuite/nv_blob_detection/nv_blob_filtered_160nvs_reordered_selected_106nvs.npz",
+    )
     # save_results(
     #     nv_coordinates,
     #     filtered_reordered_counts,
@@ -787,22 +792,22 @@ if __name__ == "__main__":
 
     # # Plot the original image with circles around each NV
 
-    fig, ax = plt.subplots()
-    title = "50ms, Ref"
-    kpl.imshow(ax, img_array, title=title, cbar_label="Photons")
-    # Draw circles and index numbers
-    for idx, coord in enumerate(nv_coordinates_filtered):
-        circ = plt.Circle(coord, sigma, color="lightblue", fill=False, linewidth=0.5)
-        ax.add_patch(circ)
-        # Place text just above the circle
-        ax.text(
-            coord[0],
-            coord[1] - sigma - 1,
-            str(idx + 1),
-            color="white",
-            fontsize=6,
-            ha="center",
-        )
+    # fig, ax = plt.subplots()
+    # title = "50ms, Ref"
+    # kpl.imshow(ax, img_array, title=title, cbar_label="Photons")
+    # # Draw circles and index numbers
+    # for idx, coord in enumerate(nv_coordinates_filtered):
+    #     circ = plt.Circle(coord, sigma, color="lightblue", fill=False, linewidth=0.5)
+    #     ax.add_patch(circ)
+    #     # Place text just above the circle
+    #     ax.text(
+    #         coord[0],
+    #         coord[1] - sigma - 1,
+    #         str(idx + 1),
+    #         color="white",
+    #         fontsize=6,
+    #         ha="center",
+    #     )
 
     # indices_to_circle = [4, 29, 41, 89, 102, 118, 139, 144, 148, 149]
     # indices_to_circle = [4, 27, 41, 82, 86, 89, 102, 109, 117, 138, 139, 148, 149]
