@@ -28,6 +28,9 @@ def get_seq(base_scc_seq_args, step_vals, num_reps=1):
         raise RuntimeError("Negative wait duration")
 
     with qua.program() as seq:
+        seq_utils.init()
+        seq_utils.macro_run_aods()
+        step_val = qua.declare(int)
 
         def uwave_macro_sig(uwave_ind_list, step_val):
             # for uwave_ind in uwave_ind_list:
@@ -50,7 +53,10 @@ def get_seq(base_scc_seq_args, step_vals, num_reps=1):
         #         seq_utils.macro_pi_on_2_pulse([uwave_ind])
         #         qua.wait(buffer)
 
-        base_scc_sequence.macro(base_scc_seq_args, uwave_macro_sig, step_vals, num_reps)
+        with qua.for_each_(step_val, step_vals):
+            base_scc_sequence.macro(
+                base_scc_seq_args, [uwave_macro_sig], step_val, num_reps
+            )
 
     seq_ret_vals = []
     return seq, seq_ret_vals
@@ -68,28 +74,28 @@ if __name__ == "__main__":
     try:
         seq, seq_ret_vals = get_seq(
             [
-                [
-                    [109.22251952469692, 108.47143630712519],
-                    [109.90051952469693, 109.0804363071252],
-                    [109.34951952469693, 109.1104363071252],
-                    [108.69951952469692, 109.3724363071252],
-                ],
-                [
-                    [74.10743467866433, 74.03473932250022],
-                    [74.65243467866433, 74.50773932250021],
-                    [74.13743467866433, 74.48773932250022],
-                    [73.65043467866434, 74.75173932250021],
-                ],
-                [140, 140, 140, 140],
-                [0.942, 0.91, 0.87, 0.94],
-                [],
+                [[109.062, 107.003], [110.183, 105.383], [110.417, 108.653]],
+                [10000, 10000, 10000],
+                [1.0, 1.0, 1.0],
+                [[73.477, 72.33], [74.328, 70.992], [74.594, 73.662]],
+                [168, 184, 220],
+                [1.0, 1.0, 1.0],
+                [False, False, False],
                 [0, 1],
             ],
-            [36000, 35500, 41832, 37832],
+            [
+                27200,
+                41832,
+                41500,
+                78500,
+                74500,
+                78000,
+                39668,
+            ],
             10,
         )
 
-        sim_config = SimulationConfig(duration=int(500e3 / 4))
+        sim_config = SimulationConfig(duration=int(300e3 / 4))
         sim = opx.simulate(seq, sim_config)
         samples = sim.get_simulated_samples()
         samples.con1.plot()

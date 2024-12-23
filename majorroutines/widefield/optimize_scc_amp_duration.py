@@ -254,11 +254,7 @@ def optimize_scc_amp_and_duration(
 if __name__ == "__main__":
     kpl.init_kplotlib()
 
-    data = dm.get_raw_data(file_id=1731187815817)
-    try:
-        del data["states"]
-    except Exception:
-        pass
+    data = dm.get_raw_data(file_id=1731617898985)
     process_and_plot(data)
 
     plt.show(block=True)

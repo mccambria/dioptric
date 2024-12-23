@@ -249,15 +249,15 @@ def calibration_triangle():
     )
 
     phase = hologram.extract_phase()
-    file_path = r"slmsuite\calibration"
-    num_nvs = len(nuvu_pixel_coords)
-    now = datetime.now()
-    date_time_str = now.strftime("%Y%m%d_%H%M%S")  # Format: YYYYMMDD_HHMMSS
-    filename = f"slm_calibration_{num_nvs}nvs_{date_time_str}.npy"
-    # Save the phase data
-    save(phase, file_path, filename)
     slm.write(phase, settle=True)
-    cam_plot()
+    # file_path = r"slmsuite\calibration"
+    # num_nvs = len(nuvu_pixel_coords)
+    # now = datetime.now()
+    # date_time_str = now.strftime("%Y%m%d_%H%M%S")  # Format: YYYYMMDD_HHMMSS
+    # filename = f"slm_calibration_{num_nvs}nvs_{date_time_str}.npy"
+    # Save the phase data
+    # save(phase, file_path, filename)
+    # cam_plot()
 
 
 def nuvu2thorcam_calibration(coords):
@@ -281,7 +281,7 @@ def nuvu2thorcam_calibration(coords):
         [[979.807, 700.0], [460.192, 700.0], [720.0, 250.0]], dtype="float32"
     )
     cal_coords_nuvu = np.array(
-        [[189.957, 35.932], [191.21, 214.918], [31.465, 124.348]], dtype="float32"
+        [[189.694, 35.44], [191.327, 214.116], [31.408, 123.462]], dtype="float32"
     )
 
     # Compute the affine transformation matrix
@@ -297,7 +297,9 @@ def nuvu2thorcam_calibration(coords):
 
 
 def load_nv_coords(
-    file_path="slmsuite/nv_blob_detection/nv_blob_filtered_160nvs_reordered.npz",
+    # file_path="slmsuite/nv_blob_detection/nv_blob_filtered_160nvs_reordered.npz",
+    # file_path="slmsuite/nv_blob_detection/nv_blob_filtered_160nvs_reordered_filtered_117nvs.npz",
+    file_path="slmsuite/nv_blob_detection/nv_blob_filtered_160nvs_reordered_selected_117nvs.npz",
     # file_path="slmsuite/nv_blob_detection/nv_blob_filtered_160nvs_reordered_manual_updated.npz",
 ):
     # data = np.load(file_path)
@@ -324,6 +326,7 @@ nuvu_pixel_coords, spot_weights = load_nv_coords()
 # )
 print(f"Total NV coordinates: {len(nuvu_pixel_coords)}")
 thorcam_coords = nuvu2thorcam_calibration(nuvu_pixel_coords).T
+# sys.exit()
 
 
 def compute_nvs_phase():
@@ -360,12 +363,19 @@ def write_nvs_phase():
     # phase = np.load(
     #     "slmsuite\computed_phase\slm_phase_160nvs_20241209_174312.npy"
     # )  # unweighted spots
-    phase = np.load(
-        "slmsuite\computed_phase\slm_phase_160nvs_20241209_131928.npy"
-    )  # weighted spots for 50ms readout
+    # phase = np.load(
+    #     "slmsuite\computed_phase\slm_phase_160nvs_20241209_131928.npy"
+    # )  # weighted spots for 50ms readout
     # phase = np.load(
     #     "slmsuite\computed_phase\slm_phase_160nvs_20241210_143721.npy"
     # )  # weighted spots for 30ms readout
+    # phase = np.load(
+    #     "slmsuite\computed_phase\slm_phase_117nvs_20241221_123013.npy"
+    # )  # weighted spots for 50ms readout (117nvs selected out of 160nvs)
+    phase = np.load(
+        "slmsuite\computed_phase\slm_phase_117nvs_20241222_022202.npy"
+    )  # weighted spots for 50ms readout (117nvs selected out of 160nvs) recalcualted
+
     slm.write(phase, settle=True)
     # cam_plot()
 

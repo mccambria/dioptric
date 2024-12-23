@@ -7,6 +7,7 @@ Created on December 6th, 2023
 @author: mccambria
 """
 
+import sys
 import time
 import traceback
 
@@ -181,20 +182,35 @@ def main(nv_list, num_reps, num_runs, uwave_ind_list=[0, 1]):
 if __name__ == "__main__":
     kpl.init_kplotlib()
 
+    # data = dm.get_raw_data(file_id=1731408940779)
+    # avg_snr = process_and_plot(data)
+    # print(np.min(avg_snr))
+    # sys.exit()
+
     data = dm.get_raw_data(file_id=1731300731766)  # -8
     avg_snr_a = process_and_plot(data)
     data = dm.get_raw_data(file_id=1731322739905)  # +0
     avg_snr_b = process_and_plot(data)
+    # fmt: off
+    test = [0.207, 0.206, 0.211, 0.183, 0.08, 0.224, 0.095, 0.078, 0.136, 0.165, 0.13, 0.18, 0.153, 0.074, 0.08, 0.142, 0.188, 0.077, 0.121, 0.137, 0.085, 0.157, 0.135, 0.075, 0.168, 0.158, 0.12, 0.074, 0.167, 0.073, 0.149, 0.135, 0.119, 0.193, 0.104, 0.091, 0.127, 0.125, 0.105, 0.139, 0.151, 0.119, 0.134, 0.11, 0.105, 0.133, 0.149, 0.102, 0.083, 0.097, 0.175, 0.096, 0.161, 0.158, 0.1, 0.093, 0.132, 0.131, 0.083, 0.114, 0.144, 0.142, 0.116, 0.143, 0.121, 0.116, 0.102, 0.113, 0.087, 0.119, 0.119, 0.131, 0.144, 0.122, 0.087, 0.087, 0.089, 0.089, 0.131, 0.075, 0.09, 0.085, 0.099, 0.123, 0.133, 0.097, 0.083, 0.097, 0.148, 0.118, 0.078, 0.081, 0.112, 0.119, 0.137, 0.133, 0.074, 0.106, 0.165, 0.16, 0.132, 0.088, 0.081]
+    # fmt: on
+    test2 = np.array(test) - np.array(avg_snr_b)
+    fig, ax = plt.subplots()
+    kpl.plot_points(ax, range(len(test2)), test2)
+    ax.set_xlabel("NV order index")
+    ax.set_ylabel("SNR difference from predicted value")
+    kpl.show(block=True)
+
     data = dm.get_raw_data(file_id=1731342940279)  # +8
     data = dm.get_raw_data(file_id=1731408940779)
 
     avg_snr_c = process_and_plot(data)
-    num_nvs = len(data["nv_list"])
+    nv_list = data["nv_list"]
 
     fig, ax = plt.subplots()
-    nv_list = range(num_nvs)
-    kpl.plot_points(ax, nv_list, avg_snr_a, label="Cross")
-    kpl.plot_points(ax, nv_list, avg_snr_b, label="Full")
-    kpl.plot_points(ax, nv_list, avg_snr_c, label="High power")
+    nv_nums = [widefield.get_nv_num(nv) for nv in nv_list]
+    kpl.plot_points(ax, nv_nums, avg_snr_a, label="Cross")
+    kpl.plot_points(ax, nv_nums, avg_snr_b, label="Full")
+    kpl.plot_points(ax, nv_nums, avg_snr_c, label="High power")
     ax.legend()
     kpl.show(block=True)

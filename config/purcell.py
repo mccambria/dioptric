@@ -37,14 +37,19 @@ calibration_coords_pixel = [
     [95.923, 201.438],
     [207.435, 74.049],
 ]
+# calibration_coords_green = [
+#     [115.717, 101.17],
+#     [108.847, 115.601],
+#     [98.291, 100.872],
+# ]
 calibration_coords_green = [
-    [115.717, 101.17],
-    [108.847, 115.601],
-    [98.291, 100.872],
+    [115.699, 101.502],
+    [109.238, 115.859],
+    [98.66, 100.902],
 ]
 calibration_coords_red = [
-    [78.453, 67.65],
-    [73.653, 79.387],
+    [78.617, 67.752],
+    [73.831, 79.567],
     [65.066, 67.468],
 ]
 # Create the dictionaries using the provided lists
@@ -155,9 +160,9 @@ config |= {
         "resolution": (512, 512),
         "spot_radius": 2.5,  # Radius for integrating NV counts in a camera image
         "bias_clamp": 300,  # (changing this won't actually change the value on the camera currently)
-        "em_gain": 5000,
+        # "em_gain": 5000,
         # "em_gain": 1000,
-        # "em_gain": 10,
+        "em_gain": 10,
         "temp": -60,
         "timeout": 30e3,  # ms
         # "timeout": -1,  # No timeout
@@ -242,6 +247,7 @@ config |= {
                 "physical_name": yellow_laser,
                 "duration": 50e6,
                 # "duration": 30e6,
+                # "duration": 12e6,  # for red calibration
             },
             # LaserKey.WIDEFIELD_CHARGE_READOUT: {"physical_name": yellow_laser, "duration": 100e6},
         },
@@ -275,7 +281,7 @@ config |= {
                 "control_mode": PosControlMode.SEQUENCE,
                 "delay": int(400e3),  # 400 us for galvo
                 "nm_per_unit": 1000,
-                "optimize_range": 0.8,
+                "optimize_range": 2.0,
                 "units": "MHz",
                 "opti_virtual_laser_key": VirtualLaserKey.IMAGING,
                 "aod": True,
@@ -794,7 +800,7 @@ opx_config = {
         # "green_aod_cw-opti": {"type": "constant", "sample": 0.03},
         # "green_aod_cw-charge_pol": {"type": "constant", "sample": 0.13},
         # "green_aod_cw-charge_pol": {"type": "constant", "sample": 0.06},  # Negative
-        "green_aod_cw-charge_pol": {"type": "constant", "sample": 0.12},
+        "green_aod_cw-charge_pol": {"type": "constant", "sample": 0.123},
         "green_aod_cw-spin_pol": {"type": "constant", "sample": 0.05},
         "green_aod_cw-shelving": {"type": "constant", "sample": 0.05},
         "green_aod_cw-scc": {"type": "constant", "sample": 0.15},
@@ -808,9 +814,11 @@ opx_config = {
         # Yellow AOM
         "yellow_imaging": {"type": "constant", "sample": 0.45},  # 0.35
         # "yellow_imaging": {"type": "constant", "sample": 0.50},  # 0.35
-        "yellow_charge_readout": {"type": "constant", "sample": 0.396},  # 50ms
-        # "yellow_charge_readout": {"type": "constant", "sample": 0.4175}, # 30ms
-        "yellow_spin_pol": {"type": "constant", "sample": 0.396},
+        # "yellow_charge_readout": {"type": "constant", "sample": 0.396},  # 50ms 160NVs
+        "yellow_charge_readout": {"type": "constant", "sample": 0.3472},  # 50ms 117NVs
+        # "yellow_charge_readout": {"type": "constant", "sample": 0.36},  # 50ms 117NVs
+        # "yellow_charge_readout": {"type": "constant", "sample": 0.4175}, # 30ms 160Nvs
+        "yellow_spin_pol": {"type": "constant", "sample": 0.39},
         "yellow_shelving": {"type": "constant", "sample": 0.33},
         # Other
         "aod_cw": {"type": "constant", "sample": 0.35},

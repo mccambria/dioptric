@@ -94,7 +94,7 @@ def plot_fitting(
     # Automatically save the plot using the same approach for file paths
     timestamp = dm.get_time_stamp()
     file_path = dm.get_file_path(__file__, timestamp, "gaussian_fit")
-    dm.save_figure(fig, file_path)
+    # dm.save_figure(fig, file_path)
 
     plt.show()
 
@@ -102,7 +102,7 @@ def plot_fitting(
 # Example usage
 if __name__ == "__main__":
     # Load the image array (replace this with your own method for loading image data)
-    data = dm.get_raw_data(file_id=1720838960683, load_npz=True)
+    data = dm.get_raw_data(file_id=1731656341675, load_npz=True)
     img_array = np.array(data["img_array"])
 
     # List of initial peak coordinates
