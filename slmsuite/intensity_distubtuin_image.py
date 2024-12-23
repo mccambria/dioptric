@@ -1,5 +1,5 @@
 import os
-
+import sys
 import matplotlib.pyplot as plt
 import numpy as np
 import seaborn as sns
@@ -512,9 +512,11 @@ if __name__ == "__main__":
     norm_spot_weights = spot_weights / np.sum(spot_weights)
     # print(spot_weights)
     norm_spot_weights = np.array(norm_spot_weights)
-    aom_voltage = 0.396
+    aom_voltage = 0.360
     a, b, c = [3.7e5, 6.97, 8e-14]  # Example power-law fit parameters
     total_power = a * (aom_voltage**b) + c
+    print(total_power)
+    sys.exit()
     nv_powers = norm_spot_weights * total_power
     # print(nv_powers)
     # indices = [4, 27, 30, 41, 117, 130, 139, 155]
@@ -553,6 +555,7 @@ if __name__ == "__main__":
     # nv_weights, adjusted_aom_voltage = adjust_aom_voltage_for_slm(
     #     nv_amps_filtered, aom_voltage, power_law_params
     # )
+
     filtered_total_power = np.sum(nv_powers_filtered)
     adjusted_aom_voltage = ((filtered_total_power - c) / a) ** (1 / b)
     # Print adjusted voltages
@@ -631,12 +634,12 @@ if __name__ == "__main__":
     # print(f"Number of NVs detected: {len(filtered_nv_coords)}")
 
     # Save the filtered results
-    save_results(
-        nv_coordinates_filtered,
-        nv_powers_filtered,
-        spot_weights_filtered,
-        filename="slmsuite/nv_blob_detection/nv_blob_filtered_160nvs_reordered_filtered_117nvs.npz",
-    )
+    # save_results(
+    #     nv_coordinates_filtered,
+    #     nv_powers_filtered,
+    #     spot_weights_filtered,
+    #     filename="slmsuite/nv_blob_detection/nv_blob_filtered_160nvs_reordered_filtered_117nvs.npz",
+    # )
     # save_results(
     #     nv_coordinates,
     #     filtered_reordered_counts,

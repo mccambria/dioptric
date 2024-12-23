@@ -186,6 +186,8 @@ if __name__ == "__main__":
     data = dm.get_raw_data(file_id=1731322739905)  # +0
     avg_snr_b = process_and_plot(data)
     data = dm.get_raw_data(file_id=1731342940279)  # +8
+    data = dm.get_raw_data(file_id=1731408940779)
+
     avg_snr_c = process_and_plot(data)
     num_nvs = len(data["nv_list"])
 
