@@ -355,11 +355,11 @@ if __name__ == "__main__":
     sig_counts = reformatted_counts[0]
     ref_counts = reformatted_counts[1]
 
-    ms0_counts = ref_counts[:, :, :, ::2]
-    ms1_counts = ref_counts[:, :, :, 1::2]
-    ms0_counts = np.reshape(
-        ms0_counts, (num_nvs, num_runs, 1, num_steps // 4 * num_reps)
-    )
+    # ms0_counts = ref_counts[:, :, :, ::2]
+    # ms1_counts = ref_counts[:, :, :, 1::2]
+    # ms0_counts = np.reshape(
+    #     ms0_counts, (num_nvs, num_runs, 1, num_steps // 4 * num_reps)
+    # )
     # ms1_counts = np.reshape(
     #     ms1_counts, (num_nvs, num_runs, 1, num_steps // 4 * num_reps)
     # )
