@@ -1051,13 +1051,14 @@ if __name__ == "__main__":
     # include_inds = [0, 1, 2, 3, 4, 5, 6, 7, 8, 13, 14, 15, 16, 17, 18, 21, 22, 23, 24, 25, 26, 28, 29, 31, 33, 36, 37, 38, 39, 40, 42, 44, 46, 47, 48, 49, 51, 52, 53, 56, 57, 58, 60, 62, 64, 65, 66, 68, 69, 70, 71, 72, 74, 75, 77, 78, 79, 80, 83, 88, 90, 91, 92, 94, 95, 96, 97, 100, 101, 103, 105, 106, 107, 108, 109, 110, 112, 114, 116, 118, 120, 121, 122, 123, 124, 125, 126, 128, 131, 134, 136, 138, 140, 141, 145, 146, 147, 152, 153, 154, 156, 157, 158]
     #117nvs 
     include_inds =[0, 1, 2, 3, 5, 6, 7, 8, 13, 14, 15, 16, 17, 18, 20, 21, 22, 23, 24, 25, 26, 28, 29, 31, 32, 33, 34, 36, 37, 39, 42, 44, 45, 46, 47, 48, 49, 51, 52, 53, 55, 56, 57, 58, 60, 61, 62, 64, 65, 66, 68, 69, 70, 71, 72, 73, 74, 75, 77, 79, 83, 84, 85, 88, 89, 90, 91, 92, 94, 95, 96, 97, 99, 100, 101, 102, 103, 105, 106, 107, 108, 109, 110, 111, 113, 114, 116, 117, 118, 120, 122, 123, 124, 125, 128, 131, 132, 134, 136, 137, 138, 140, 141, 142, 145, 146, 147, 148, 149, 152, 153, 154, 155, 156, 157, 158, 159]
-    # final_drop_inds = [23, 73, 89, 99, 117, 120, 132, 137, 155, 157, 159]
-    # include_inds = [ind for ind in include_inds if ind not in final_drop_inds]
     # Initialize a list with None values
     arranged_scc_duration_list = [None] * num_nvs
     for i, idx in enumerate(include_inds):
         arranged_scc_duration_list[idx] = scc_duration_list[i]
     scc_duration_list = arranged_scc_duration_list
+
+    final_drop_inds = [23, 73, 89, 99, 117, 120, 132, 137, 155, 157, 159]
+    include_inds = [ind for ind in include_inds if ind not in final_drop_inds]
     # fmt: on
 
     # orientation_data = dm.get_raw_data(file_id=1723161184641)
@@ -1197,7 +1198,7 @@ if __name__ == "__main__":
     # nv_list = [nv_list[
     # nv_list = [nv_list[2]]
     # nv_list = nv_list[:3]
-    # print(f"lentht of NVs list:{len(nv_list)}")
+    print(f"length of NVs list:{len(nv_list)}")
     # endregion
 
     # region Functions to run
@@ -1247,7 +1248,7 @@ if __name__ == "__main__":
 
         # do_scanning_image_sample(nv_sig)
         # do_scanning_image_sample_zoom(nv_sig)
-        # do_widefield_image_sample(nv_sig, 50)
+        do_widefield_image_sample(nv_sig, 50)
         # do_widefield_image_sample(nv_sig, 100)
 
         # do_image_nv_list(nv_list)
@@ -1274,7 +1275,7 @@ if __name__ == "__main__":
         # do_optimize_loop(nv_list, coords_key)
 
         # nv_list = nv_list[::-1]
-        do_charge_state_histograms(nv_list)
+        # do_charge_state_histograms(nv_list)
         # do_optimize_pol_amp(nv_list)
         # do_optimize_readout_amp(nv_list)
         # do_optimize_readout_duration(nv_list)
@@ -1287,7 +1288,7 @@ if __name__ == "__main__":
         # do_resonance_zoom(nv_list)
         # do_rabi(nv_list)
         # do_resonance(nv_list)
-        do_spin_echo(nv_list)
+        # do_spin_echo(nv_list)
 
         # do_power_rabi(nv_list)
         # do_correlation_test(nv_list)
@@ -1304,7 +1305,7 @@ if __name__ == "__main__":
         # do_opx_square_wave()
 
         # nv_list = nv_list[::-1]
-        # do_scc_snr_check(nv_list)
+        do_scc_snr_check(nv_list)
         # do_optimize_scc_duration(nv_list)
         # do_optimize_scc_amp(nv_list)
         # optimize_scc_amp_and_duration(nv_list)
