@@ -1236,9 +1236,8 @@ def smooth_img_array(img_array, downsample_factor):
 def animate(
     x,
     nv_list,
-    counts,
-    counts_ste,
-    norms,
+    norm_counts,
+    norm_counts_ste,
     img_arrays,
     cmin=None,
     cmax=None,
@@ -1246,12 +1245,6 @@ def animate(
     just_movie=False,
 ):
     num_steps = img_arrays.shape[0]
-
-    norms_ms0_newaxis = norms[0][:, np.newaxis]
-    norms_ms1_newaxis = norms[1][:, np.newaxis]
-    contrast = norms_ms1_newaxis - norms_ms0_newaxis
-    norm_counts = (counts - norms_ms0_newaxis) / contrast
-    norm_counts_ste = counts_ste / contrast
 
     if just_movie:
         fig, im_ax = plt.subplots()

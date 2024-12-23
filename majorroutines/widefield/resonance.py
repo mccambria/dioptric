@@ -336,13 +336,11 @@ def main(
 if __name__ == "__main__":
     kpl.init_kplotlib()
 
-    # file_id = 1729211906249
-    # file_id = 1729446666169
-    file_id = 1729834552723
+    file_id = 1732403187814
 
     data = dm.get_raw_data(file_id=file_id, load_npz=False, use_cache=True)
-    # data = dm.get_raw_data(file_id=file_id, load_npz=True, use_cache=False)
-    # img_arrays = np.array(data.pop("img_arrays"))
+    # data = dm.get_raw_data(file_id=file_id, load_npz=True, use_cache=True)
+    img_arrays = np.array(data.pop("img_arrays"))
 
     nv_list = data["nv_list"]
     num_nvs = len(nv_list)
@@ -357,11 +355,11 @@ if __name__ == "__main__":
     sig_counts = reformatted_counts[0]
     ref_counts = reformatted_counts[1]
 
-    # ms0_counts = ref_counts[:, :, :, ::2]
-    # ms1_counts = ref_counts[:, :, :, 1::2]
-    # ms0_counts = np.reshape(
-    #     ms0_counts, (num_nvs, num_runs, 1, num_steps // 4 * num_reps)
-    # )
+    ms0_counts = ref_counts[:, :, :, ::2]
+    ms1_counts = ref_counts[:, :, :, 1::2]
+    ms0_counts = np.reshape(
+        ms0_counts, (num_nvs, num_runs, 1, num_steps // 4 * num_reps)
+    )
     # ms1_counts = np.reshape(
     #     ms1_counts, (num_nvs, num_runs, 1, num_steps // 4 * num_reps)
     # )
@@ -384,6 +382,7 @@ if __name__ == "__main__":
     fit_fig = create_fit_figure(nv_list, freqs, norm_counts, norm_counts_ste)
 
     kpl.show(block=True)
+    sys.exit()
 
     ###
 
