@@ -336,9 +336,16 @@ def main(
 if __name__ == "__main__":
     kpl.init_kplotlib()
 
-    # file_id = 1729211906249
-    # file_id = 1729446666169
-    file_id = 1729834552723
+    ### Test
+
+    # img_arrays = np.random.randint(0, 100, (50, 20, 20))
+    # widefield.animate_images(np.linspace(2.77, 2.97, 50), img_arrays)
+    # kpl.show(block=True)
+    # sys.exit()
+
+    ###
+
+    file_id = 1733307847194
 
     data = dm.get_raw_data(file_id=file_id, load_npz=False, use_cache=True)
     # data = dm.get_raw_data(file_id=file_id, load_npz=True, use_cache=False)
@@ -357,24 +364,24 @@ if __name__ == "__main__":
     sig_counts = reformatted_counts[0]
     ref_counts = reformatted_counts[1]
 
-    # ms0_counts = ref_counts[:, :, :, ::2]
-    # ms1_counts = ref_counts[:, :, :, 1::2]
-    # ms0_counts = np.reshape(
-    #     ms0_counts, (num_nvs, num_runs, 1, num_steps // 4 * num_reps)
-    # )
-    # ms1_counts = np.reshape(
-    #     ms1_counts, (num_nvs, num_runs, 1, num_steps // 4 * num_reps)
-    # )
-    # avg_snr, avg_snr_ste = widefield.calc_snr(ms1_counts, ms0_counts)
-    # avg_snr = avg_snr[:, 0]
-    # print(avg_snr.tolist())
+    ms0_counts = ref_counts[:, :, :, ::2]
+    ms1_counts = ref_counts[:, :, :, 1::2]
+    ms0_counts = np.reshape(
+        ms0_counts, (num_nvs, num_runs, 1, num_steps // 4 * num_reps)
+    )
+    ms1_counts = np.reshape(
+        ms1_counts, (num_nvs, num_runs, 1, num_steps // 4 * num_reps)
+    )
+    avg_snr, avg_snr_ste = widefield.calc_snr(ms1_counts, ms0_counts)
+    avg_snr = avg_snr[:, 0]
+    print(avg_snr.tolist())
     # avg_snr_ste = avg_snr_ste[:, 0]
     # fig, ax = plt.subplots()
     # kpl.plot_points(ax, range(num_nvs), avg_snr, yerr=avg_snr_ste)
     # ax.set_xlabel("NV order in sequence")
     # ax.set_ylabel("SNR")
     # kpl.show(block=True)
-    # sys.exit()
+    sys.exit()
 
     norm_counts, norm_counts_ste = widefield.process_counts(
         nv_list, sig_counts, ref_counts, threshold=True
@@ -383,7 +390,8 @@ if __name__ == "__main__":
     # raw_fig = create_raw_data_figure(nv_list, freqs, avg_counts, avg_counts_ste)
     fit_fig = create_fit_figure(nv_list, freqs, norm_counts, norm_counts_ste)
 
-    kpl.show(block=True)
+    # kpl.show(block=True)
+    # sys.exit()
 
     ###
 
@@ -410,39 +418,52 @@ if __name__ == "__main__":
     #         cropped_img_array = widefield.crop_img_array(img_array, offset, buffer)
     #         proc_img_arrays[0, run_ind, step_ind, 0, :, :] = cropped_img_array
 
-    sig_img_arrays = np.mean(img_arrays[:, :, 0 : num_steps // 2, :], axis=(0, 1, 3))
+    sig_img_arrays = np.mean(img_arrays[:, :, 0 : num_steps // 4, :], axis=(0, 1, 3))
+    sig_img_arrays += np.mean(
+        img_arrays[:, :, num_steps // 4 : num_steps // 2, :], axis=(0, 1, 3)
+    )
+    sig_img_arrays /= 2
     ref_img_array = np.mean(
         img_arrays[:, :, num_steps // 2 : 3 * num_steps // 4, :], axis=(0, 1, 2, 3)
     )
     proc_img_arrays = sig_img_arrays - ref_img_array
-    fig, ax = plt.subplots()
-    kpl.imshow(ax, proc_img_arrays[15])
-    kpl.show(block=True)
+    # fig, ax = plt.subplots()
+    # kpl.imshow(ax, proc_img_arrays[15])
+    # kpl.show(block=True)
 
-    # downsample_factor = 1
-    # proc_img_arrays = [
-    #     widefield.downsample_img_array(el, downsample_factor) for el in proc_img_arrays
-    # ]
-    # proc_img_arrays = np.array(proc_img_arrays)
+    downsample_factor = 2
+    proc_img_arrays = [
+        widefield.downsample_img_array(el, downsample_factor) for el in proc_img_arrays
+    ]
+    proc_img_arrays = np.array(proc_img_arrays)
 
     # Nice still
     # fig, ax = plt.subplots()
     # kpl.imshow(ax, proc_img_arrays[17])
     # ax.axis("off")
     # scale = widefield.get_camera_scale()
-    # kpl.scale_bar(ax, scale, "1 µm", kpl.Loc.LOWER_RIGHT)
+    # length = 5 * scale / downsample_factor
+    # kpl.scale_bar(ax, length, "5 µm", kpl.Loc.LOWER_RIGHT)
+    # kpl.show(block=True)
 
-    widefield.animate(
+    widefield.animate_images(
         freqs,
-        nv_list,
-        norm_counts,
-        norm_counts_ste,
         proc_img_arrays,
-        cmin=np.percentile(proc_img_arrays, 60),
+        cmin=np.percentile(proc_img_arrays, 70),
         cmax=np.percentile(proc_img_arrays, 99.9),
-        # scale_bar_length_factor=downsample_factor,
-        just_movie=True,
     )
+
+    # widefield.animate(
+    #     freqs,
+    #     nv_list,
+    #     norm_counts,
+    #     norm_counts_ste,
+    #     proc_img_arrays,
+    #     cmin=np.percentile(proc_img_arrays, 70),
+    #     cmax=np.percentile(proc_img_arrays, 99.9),
+    #     scale_bar_length_factor=downsample_factor,
+    #     just_movie=True,
+    # )
 
     ###
 

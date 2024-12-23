@@ -182,10 +182,11 @@ def main(nv_list, num_reps, num_runs, uwave_ind_list=[0, 1]):
 if __name__ == "__main__":
     kpl.init_kplotlib()
 
-    # data = dm.get_raw_data(file_id=1731408940779)
-    # avg_snr = process_and_plot(data)
-    # print(np.min(avg_snr))
-    # sys.exit()
+    # data = dm.get_raw_data(file_id=17316508311984)
+    data = dm.get_raw_data(file_id=1732776734195)  # -8
+    avg_snr = process_and_plot(data)
+    print(np.min(avg_snr))
+    sys.exit()
 
     data = dm.get_raw_data(file_id=1731300731766)  # -8
     avg_snr_a = process_and_plot(data)

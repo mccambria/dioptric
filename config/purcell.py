@@ -160,9 +160,9 @@ config |= {
         "resolution": (512, 512),
         "spot_radius": 2.5,  # Radius for integrating NV counts in a camera image
         "bias_clamp": 300,  # (changing this won't actually change the value on the camera currently)
-        # "em_gain": 5000,
+        "em_gain": 5000,
         # "em_gain": 1000,
-        "em_gain": 10,
+        # "em_gain": 10,
         "temp": -60,
         "timeout": 30e3,  # ms
         # "timeout": -1,  # No timeout
@@ -173,7 +173,7 @@ config |= {
         # "roi": (121, 110, 250, 250),  # offsetX, offsetY, width, height"roi": (121, 110, 250, 250),  # offsetX, offsetY, width, height
         "roi": (134, 105, 250, 250),  # offsetX, offsetY, width, height
         # "roi": None,  # offsetX, offsetY, width, height
-        "scale": 24,  # pixels / micron
+        "scale": 5 / 0.6,  # pixels / micron
     },
     ###
     "Optics": {
@@ -767,6 +767,11 @@ opx_config = {
             "length": 1000,
             "digital_marker": "on",
         },
+        "do_esr_pulse": {
+            "operation": "control",
+            "length": 64,
+            "digital_marker": "on",
+        },
         "do_pi_pulse_0": {
             "operation": "control",
             "length": int(rabi_period_0 / 2),
@@ -815,8 +820,8 @@ opx_config = {
         "yellow_imaging": {"type": "constant", "sample": 0.45},  # 0.35
         # "yellow_imaging": {"type": "constant", "sample": 0.50},  # 0.35
         # "yellow_charge_readout": {"type": "constant", "sample": 0.396},  # 50ms 160NVs
-        "yellow_charge_readout": {"type": "constant", "sample": 0.3472},  # 50ms 117NVs
-        # "yellow_charge_readout": {"type": "constant", "sample": 0.36},  # 50ms 117NVs
+        # "yellow_charge_readout": {"type": "constant", "sample": 0.3472},  # 50ms 117NVs
+        "yellow_charge_readout": {"type": "constant", "sample": 0.3423},  # 50ms 106NVs
         # "yellow_charge_readout": {"type": "constant", "sample": 0.4175}, # 30ms 160Nvs
         "yellow_spin_pol": {"type": "constant", "sample": 0.39},
         "yellow_shelving": {"type": "constant", "sample": 0.33},

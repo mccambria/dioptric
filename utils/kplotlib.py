@@ -46,6 +46,7 @@ class Loc(StrEnum):
 
 
 class Size(Enum):
+    BIG = "BIG"
     NORMAL = "NORMAL"
     SMALL = "SMALL"
     XSMALL = "XSMALL"
@@ -53,6 +54,7 @@ class Size(Enum):
 
 
 class MarkerSize(float, Enum):
+    BIG = 8
     NORMAL = 7
     SMALL = 6
     XSMALL = 5
@@ -69,6 +71,7 @@ class LineWidth(float, Enum):
 
 
 class MarkerEdgeWidth(float, Enum):
+    BIG = 1.75
     NORMAL = 1.5
     SMALL = 1.25
     XSMALL = 1.1
