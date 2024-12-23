@@ -360,12 +360,12 @@ if __name__ == "__main__":
     ms0_counts = np.reshape(
         ms0_counts, (num_nvs, num_runs, 1, num_steps // 4 * num_reps)
     )
-    ms1_counts = np.reshape(
-        ms1_counts, (num_nvs, num_runs, 1, num_steps // 4 * num_reps)
-    )
-    avg_snr, avg_snr_ste = widefield.calc_snr(ms1_counts, ms0_counts)
-    avg_snr = avg_snr[:, 0]
-    print(avg_snr.tolist())
+    # ms1_counts = np.reshape(
+    #     ms1_counts, (num_nvs, num_runs, 1, num_steps // 4 * num_reps)
+    # )
+    # avg_snr, avg_snr_ste = widefield.calc_snr(ms1_counts, ms0_counts)
+    # avg_snr = avg_snr[:, 0]
+    # print(avg_snr.tolist())
     # avg_snr_ste = avg_snr_ste[:, 0]
     # fig, ax = plt.subplots()
     # kpl.plot_points(ax, range(num_nvs), avg_snr, yerr=avg_snr_ste)
@@ -373,6 +373,9 @@ if __name__ == "__main__":
     # ax.set_ylabel("SNR")
     # kpl.show(block=True)
     # sys.exit()
+    to_drop = [17, 55, 64, 72, 87, 89, 96, 99, 112, 114, 116]
+    to_drop = [widefield.get_nv_num(nv_list[ind]) for ind in to_drop]
+    print(to_drop)
 
     norm_counts, norm_counts_ste = widefield.process_counts(
         nv_list, sig_counts, ref_counts, threshold=True
