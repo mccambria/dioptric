@@ -117,7 +117,7 @@ if __name__ == "__main__":
     # Fit Gaussian to each peak
     optimized_coords = []
     for peak in initial_peaks:
-        coords, _ = fit_gaussian_2d_local(img_array, peak, size=10)
+        coords, _ = fit_gaussian_2d_local(img_array, peak, size=15)
         optimized_coords.append(coords)
 
     optimized_coords = np.array(optimized_coords)

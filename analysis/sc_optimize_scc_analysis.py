@@ -250,18 +250,19 @@ def process_and_plot(nv_list, duration_file_id, amp_file_id):
     optimal_amplitudes = {nv: None for nv in range(total_nvs)}
 
     # Common: Filter NVs by selected orientations
-    orientation_data = dm.get_raw_data(file_id=1723161184641)
-    orientation_indices = orientation_data["orientation_indices"]
-    selected_orientations = ["0.041", "0.147"]
-    selected_indices = [
-        idx
-        for orientation in selected_orientations
-        if orientation in orientation_indices
-        for idx in orientation_indices[orientation]["nv_indices"]
-    ]
-    selected_indices = list(set(idx for idx in selected_indices if idx < total_nvs))
+    # orientation_data = dm.get_raw_data(file_id=1723161184641)
+    # orientation_indices = orientation_data["orientation_indices"]
+    # selected_orientations = ["0.041", "0.147"]
+    # selected_indices = [
+    #     idx
+    #     for orientation in selected_orientations
+    #     if orientation in orientation_indices
+    #     for idx in orientation_indices[orientation]["nv_indices"]
+    # ]
+    # selected_indices = list(set(idx for idx in selected_indices if idx < total_nvs))
+    selected_indices = range(total_nvs)
 
-    def optimize_step_vals(file_id, fit_function, valid_range, duration_or_amp=True):
+    def optimize_step_vals(file_id, fit_function, valid_range, duration_or_amp=False):
         data = dm.get_raw_data(file_id=file_id)
         taus, counts = data["taus"], np.array(data["counts"])
         sig_counts, ref_counts = (
@@ -345,7 +346,7 @@ def process_and_plot(nv_list, duration_file_id, amp_file_id):
     timestamp = dm.get_time_stamp()
     file_name = "optimal_durations"
     file_path = dm.get_file_path(__file__, timestamp, file_name)
-    dm.save_raw_data(results, file_path)
+    # dm.save_raw_data(results, file_path)
 
     # Plot medians and means
     avg_snr_all = np.mean(avg_snr, axis=0)
@@ -372,16 +373,231 @@ def process_and_plot(nv_list, duration_file_id, amp_file_id):
     return results
 
 
+def process_and_plot_amplitudes(nv_list, amp_file_id):
+    """Process NV data for amplitude optimization."""
+    total_nvs = len(nv_list)
+    optimal_amplitudes = {nv: None for nv in range(total_nvs)}
+    optimal_snrs = {nv: None for nv in range(total_nvs)}
+
+    selected_indices = range(total_nvs)
+
+    def optimize_amplitudes(file_id, fit_function, valid_range):
+        data = dm.get_raw_data(file_id=file_id)
+        taus, counts = data["taus"], np.array(data["counts"])
+        sig_counts, ref_counts = (
+            counts[0][selected_indices],
+            counts[1][selected_indices],
+        )
+        avg_snr, avg_snr_ste = widefield.calc_snr(sig_counts, ref_counts)
+
+        optimal_values = {}
+        snr_values = {}
+        for i, nv_ind in enumerate(selected_indices):
+            try:
+                popt, fit_fn = fit_function(taus, avg_snr[i], avg_snr_ste[i])
+                tau_linspace = np.linspace(min(taus), max(taus), 1000)
+                snr_values_curve = fit_fn(tau_linspace, *popt)
+                optimal_value = tau_linspace[np.argmax(snr_values_curve)]
+
+                # Keep the value within the valid range
+                optimal_value = max(valid_range[0], min(valid_range[1], optimal_value))
+
+                optimal_values[nv_ind] = optimal_value
+                snr_values[nv_ind] = max(snr_values_curve)  # Optimal SNR
+            except Exception as e:
+                print(f"Fitting failed for NV index {nv_ind}: {e}")
+                optimal_values[nv_ind] = None  # Mark as unprocessed
+                snr_values[nv_ind] = None
+
+        return optimal_values, snr_values, avg_snr, avg_snr_ste, taus
+
+    # Optimize amplitudes
+    amp_valid_range = (0, 400)
+    optimal_amplitudes, optimal_snrs, avg_snr, avg_snr_ste, taus = optimize_amplitudes(
+        amp_file_id, fit_duration, amp_valid_range
+    )
+
+    # Replace unprocessed NVs with medians
+    valid_amplitudes = [
+        v
+        for k, v in optimal_amplitudes.items()
+        if k in selected_indices and v is not None
+    ]
+    median_amplitude = np.median(valid_amplitudes) if valid_amplitudes else 0
+    for nv_index in range(total_nvs):
+        if optimal_amplitudes.get(nv_index) is None:
+            optimal_amplitudes[nv_index] = median_amplitude
+
+    # Plot individual NV fits
+    for nv_index in selected_indices:
+        plt.figure(figsize=(6, 4))
+        plt.errorbar(
+            taus,
+            avg_snr[nv_index],
+            yerr=avg_snr_ste[nv_index],
+            fmt="o",
+            label="SNR Data",
+        )
+        if optimal_amplitudes[nv_index] is not None:
+            tau_linspace = np.linspace(min(taus), max(taus), 1000)
+            popt, fit_fn = fit_duration(taus, avg_snr[nv_index], avg_snr_ste[nv_index])
+            plt.plot(
+                tau_linspace,
+                fit_fn(tau_linspace, *popt),
+                label="Fitted Curve",
+            )
+            plt.axvline(
+                optimal_amplitudes[nv_index],
+                color="r",
+                linestyle="--",
+                label=f"Optimal Amp: {optimal_amplitudes[nv_index]:.2f}",
+            )
+        plt.title(f"NV {nv_index} - Amplitude Optimization")
+        plt.xlabel("Amplitude")
+        plt.ylabel("SNR")
+        plt.legend()
+        plt.grid(alpha=0.3)
+        plt.show()
+
+    # Print lists of amplitudes and SNRs
+    print("Optimal Amplitudes:")
+    print([optimal_amplitudes[nv] for nv in selected_indices])
+
+    print("Optimal SNRs:")
+    print([optimal_snrs[nv] for nv in selected_indices])
+
+    # Sort optimal_amplitudes by index (key)
+    sorted_optimal_amplitudes = dict(sorted(optimal_amplitudes.items()))
+    sorted_optimal_snrs = dict(sorted(optimal_snrs.items()))
+
+    # Update results
+    results = {
+        "optimal_amplitudes": sorted_optimal_amplitudes,
+        "optimal_snrs": sorted_optimal_snrs,
+    }
+
+
+def process_and_plot_durations(nv_list, duration_file_id):
+    """Process NV data for duration optimization."""
+    total_nvs = len(nv_list)
+    optimal_durations = {nv: None for nv in range(total_nvs)}
+    optimal_snrs = {nv: None for nv in range(total_nvs)}
+
+    selected_indices = range(total_nvs)
+
+    def optimize_durations(file_id, fit_function, valid_range):
+        data = dm.get_raw_data(file_id=file_id)
+        taus, counts = data["taus"], np.array(data["counts"])
+        sig_counts, ref_counts = (
+            counts[0][selected_indices],
+            counts[1][selected_indices],
+        )
+        avg_snr, avg_snr_ste = widefield.calc_snr(sig_counts, ref_counts)
+
+        optimal_values = {}
+        snr_values = {}
+        for i, nv_ind in enumerate(selected_indices):
+            try:
+                popt, fit_fn = fit_function(taus, avg_snr[i], avg_snr_ste[i])
+                tau_linspace = np.linspace(min(taus), max(taus), 1000)
+                snr_values_curve = fit_fn(tau_linspace, *popt)
+                optimal_value = tau_linspace[np.argmax(snr_values_curve)]
+
+                # Keep the value within the valid range and round to nearest integer divisible by 4
+                optimal_value = max(valid_range[0], min(valid_range[1], optimal_value))
+                optimal_value = int(round(optimal_value / 4.0) * 4)
+
+                optimal_values[nv_ind] = optimal_value
+                snr_values[nv_ind] = max(snr_values_curve)  # Optimal SNR
+            except Exception as e:
+                print(f"Fitting failed for NV index {nv_ind}: {e}")
+                optimal_values[nv_ind] = None  # Mark as unprocessed
+                snr_values[nv_ind] = None
+
+        return optimal_values, snr_values, avg_snr, avg_snr_ste, taus
+
+    # Optimize durations
+    duration_valid_range = (0, 400)
+    optimal_durations, optimal_snrs, avg_snr, avg_snr_ste, taus = optimize_durations(
+        duration_file_id, fit_duration, duration_valid_range
+    )
+
+    # Replace unprocessed NVs with medians
+    valid_durations = [
+        v
+        for k, v in optimal_durations.items()
+        if k in selected_indices and v is not None
+    ]
+    median_duration = np.median(valid_durations) if valid_durations else 0
+    median_duration = int(round(median_duration / 4.0) * 4)  # Ensure divisibility by 4
+    for nv_index in range(total_nvs):
+        if optimal_durations.get(nv_index) is None:
+            optimal_durations[nv_index] = median_duration
+
+    # Plot individual NV fits
+    for nv_index in selected_indices:
+        plt.figure(figsize=(6, 4))
+        plt.errorbar(
+            taus,
+            avg_snr[nv_index],
+            yerr=avg_snr_ste[nv_index],
+            fmt="o",
+            label="SNR Data",
+        )
+        if optimal_durations[nv_index] is not None:
+            tau_linspace = np.linspace(min(taus), max(taus), 1000)
+            popt, fit_fn = fit_duration(taus, avg_snr[nv_index], avg_snr_ste[nv_index])
+            plt.plot(
+                tau_linspace,
+                fit_fn(tau_linspace, *popt),
+                label="Fitted Curve",
+            )
+            plt.axvline(
+                optimal_durations[nv_index],
+                color="r",
+                linestyle="--",
+                label=f"Optimal Duration: {optimal_durations[nv_index]}",
+            )
+        plt.title(f"NV {nv_index} - Duration Optimization")
+        plt.xlabel("Duration")
+        plt.ylabel("SNR")
+        plt.legend()
+        plt.grid(alpha=0.3)
+        plt.show()
+
+    # Print lists of durations and SNRs
+    print("Optimal Durations:")
+    print([optimal_durations[nv] for nv in selected_indices])
+
+    print("Optimal SNRs:")
+    print([optimal_snrs[nv] for nv in selected_indices])
+
+    # Sort optimal_durations by index (key)
+    sorted_optimal_durations = dict(sorted(optimal_durations.items()))
+    sorted_optimal_snrs = dict(sorted(optimal_snrs.items()))
+
+    # Update results
+    results = {
+        "optimal_durations": sorted_optimal_durations,
+        "optimal_snrs": sorted_optimal_snrs,
+    }
+
+    # return results
+
+
 if __name__ == "__main__":
     # Initialize plot settings
     kpl.init_kplotlib()
-    duration_file_id = 1722305531191
+    # duration_file_id = 1722305531191
     # amp_file_id = 1724491290147  # same scc duration 160
-    amp_file_id = 1725708405583  # optimized durations for each
-
+    # amp_file_id = 1725708405583  # optimized durations for each
+    # amp_file_id = 1731980653795  # amp
+    duration_file_id = 1732098676751  # duration
     data = dm.get_raw_data(file_id=duration_file_id)  # Load NV list
     nv_list = data["nv_list"]
 
-    results = process_and_plot(nv_list, duration_file_id, amp_file_id)
+    # results = process_and_plot(nv_list, duration_file_id, amp_file_id)
+    # results = process_and_plot_amplitudes(nv_list, amp_file_id)
+    results = process_and_plot_durations(nv_list, duration_file_id)
     print("Results:", results)
     kpl.show(block=True)

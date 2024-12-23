@@ -10,11 +10,11 @@ import time
 import traceback
 from datetime import datetime
 from random import shuffle
-from matplotlib.animation import FuncAnimation
-import numpy as np
+
 import matplotlib.pyplot as plt
 import numpy as np
 import seaborn as sns
+from matplotlib.animation import FuncAnimation
 from matplotlib.patches import Circle
 from pykrige import OrdinaryKriging
 
@@ -142,7 +142,7 @@ def plot_nv_resonance_fits_and_residuals(
         sig_counts, ref_counts = widefield.threshold_counts(
             nv_list, sig_counts, ref_counts, dynamic_thresh=True
         )
-    avg_counts, avg_counts_ste, norms = widefield.process_counts(
+    avg_counts, avg_counts_ste = widefield.process_counts(
         nv_list, sig_counts, ref_counts, threshold=False
     )
     num_nvs = len(nv_list)
@@ -228,11 +228,8 @@ def plot_nv_resonance_fits_and_residuals(
             sig_counts[nv_idx].flatten(), ref_counts[nv_idx].flatten()
         )
         noise = np.std(combined_counts)
-        snr = avg_peak_amplitude / noise
         signal = avg_peak_amplitude
-        contrast = calculate_contrast(signal, bg_offset)
-        contrast_list.append(contrast)
-        # snr = calculate_snr(residuals, nv_counts_ste, signal)
+        snr = signal / noise
         snrs.append(snr)
         print(f"NV {nv_idx}: SNR = {snr:.2f}")
         # Filter based on chi-squared and contrast thresholds
@@ -250,39 +247,49 @@ def plot_nv_resonance_fits_and_residuals(
     print(f"lower bound:{lower_bound}")
     print(f"upper_bound:{upper_bound}")
     # Identify and filter out outliers
-    cleaned_nv_indices_0 = [
+    cleaned_nv_indices = [
         i for i, val in enumerate(snrs) if lower_bound <= val <= upper_bound
     ]
-    # outlier_indices = [
-    #     i for i, val in enumerate(snrs) if val < lower_bound or val > upper_bound
-    # ]
+    outlier_indices = [
+        i for i, val in enumerate(snrs) if val < lower_bound or val > upper_bound
+    ]
 
     # orientation filterinng
     target_peak_values = [0.041, 0.147]
     tolerance = 0.006
     # Orientation Filtering
-    cleaned_nv_indices = [
-        idx
-        for idx in cleaned_nv_indices_0  # Only process NVs that passed SNR cleaning
-        if any(
-            target - tolerance <= center_freq_differences[idx] <= target + tolerance
-            for target in target_peak_values
-        )
-    ]
+    # cleaned_nv_indices = [
+    #     idx
+    #     for idx in cleaned_nv_indices_0  # Only process NVs that passed SNR cleaning
+    #     if any(
+    #         target - tolerance <= center_freq_differences[idx] <= target + tolerance
+    #         for target in target_peak_values
+    #     )
+    # ]
+    # outlier_indices = [
+    #     idx
+    #     for idx in cleaned_nv_indices_0  # Only process NVs that passed SNR cleaning
+    #     if any(
+    #         target - tolerance > center_freq_differences[idx] <= target + tolerance
+    #         for target in target_peak_values
+    #     )
+    # ]
     # cleaned_snrs = [val for val in snrs if val in cleaned_nv_indices]
     # Remove index 144 from cleaned_nv_indices first
-    indices_to_remove = [4, 144]
-    cleaned_nv_indices = [
-        idx for idx in cleaned_nv_indices if idx not in indices_to_remove
-    ]
+    # indices_to_remove = [4, 144]
+    # cleaned_nv_indices = [
+    #     idx for idx in cleaned_nv_indices if idx not in indices_to_remove
+    # ]
 
     cleaned_snrs = [snrs[idx] for idx in cleaned_nv_indices]
     median_snr_cleaned = np.median(cleaned_snrs)
     print(f"snrs IQR: {IQR}")
     print(f"median snr cleaned:{median_snr_cleaned}")
-    # print(f"Number of nvs removed : {len(outlier_indices)}")
+    print(f"Number of nvs removed : {len(outlier_indices)}")
+    print(f" removed nvs : {outlier_indices}")
+
     print(f"Number of nvs after filtering : {len(cleaned_nv_indices)}")
-    print(f"removed indices: {cleaned_nv_indices}")
+    print(f"cleaned indices: {cleaned_nv_indices}")
 
     # Scatter plot
     plt.figure(figsize=(8, 5))
@@ -323,8 +330,8 @@ def plot_nv_resonance_fits_and_residuals(
     plt.grid(True, linestyle="--", alpha=0.5)
     plt.tight_layout()
     plt.show()
+    return
 
-    # return
     filter_nvs = False
     if filter_nvs:
         target_peak_values = [0.041, 0.069, 0.147, 0.175]
@@ -384,7 +391,8 @@ def plot_nv_resonance_fits_and_residuals(
 
     else:
         filtered_indices = list(range(num_nvs))
-    filtered_indices = cleaned_nv_indices
+    # filtered_indices = cleaned_nv_indices
+    filtered_indices = range(num_nvs)
     # Filter NVs for plotting
     filtered_nv_list = [nv_list[idx] for idx in filtered_indices]
     filtered_avg_counts = [avg_counts[idx] for idx in filtered_indices]
@@ -517,9 +525,9 @@ def plot_nv_resonance_fits_and_residuals(
     now = datetime.now()
     date_time_str = now.strftime("%Y%m%d_%H%M%S")
     file_name = dm.get_file_name(file_id=file_id)
-    # file_path = dm.get_file_path(__file__, file_name, f"{file_id}_{date_time_str}")
+    file_path = dm.get_file_path(__file__, file_name, f"{file_id}_{date_time_str}")
     kpl.show(block=True)
-    # dm.save_figure(fig_fitting, file_path)
+    dm.save_figure(fig_fitting, file_path)
     # plt.close(fig_fitting)
 
     # return
@@ -848,8 +856,9 @@ if __name__ == "__main__":
     # file_id =1699853891683
     # file_id = 1701152211845  # 50ms readout
     # file_id = 1725055024398  # 30ms readout
-    file_id = 1726476640278  # 30ms readout all variabe
+    # file_id = 1726476640278  # 30ms readout all variabe
     # file_id = 1729834552723  # 50ms readout mcc
+    file_id = 1732403187814  # 50ms readout 117NVs movies
     data = dm.get_raw_data(file_id=file_id, load_npz=False, use_cache=True)
     # print(data.keys())
     # readout_duration = data["config"]["Optics"]["VirtualLasers"][
