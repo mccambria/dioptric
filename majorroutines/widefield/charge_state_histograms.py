@@ -201,10 +201,10 @@ def process_and_plot(
     print(f"Average readout fidelity: {str_readout_fidelity}")
     print(f"Average NV- preparation fidelity: {str_prep_fidelity}")
 
-    ### Image plotting
-    if "img_arrays" not in raw_data:
-        return
+    return hist_figs
 
+
+def plot_avg_images(raw_data):
     laser_key = VirtualLaserKey.WIDEFIELD_CHARGE_READOUT
     laser_dict = tb.get_virtual_laser_dict(laser_key)
     readout_laser = laser_dict["physical_name"]
@@ -229,7 +229,7 @@ def process_and_plot(
         kpl.imshow(ax, img_array, title=title, cbar_label="Photons")
         img_figs.append(fig)
 
-    return img_arrays_to_save, img_figs, hist_figs
+    return img_arrays_to_save, img_figs
 
 
 # def process_and_plot(
@@ -463,12 +463,12 @@ def main(
     repr_nv_sig = widefield.get_repr_nv_sig(nv_list)
     repr_nv_name = repr_nv_sig.name
 
+    # Images
     try:
-        imgs, img_figs, hist_figs = process_and_plot(
-            raw_data, do_plot_histograms=do_plot_histograms
-        )
-
-        # Save the images
+        imgs, img_figs = plot_avg_images(raw_data)
+        # Save
+        sig_img_array, ref_img_array, diff_img_array = imgs
+        keys_to_compress = ["sig_img_array", "ref_img_array", "diff_img_array"]
         title_suffixes = ["sig", "ref", "diff"]
         num_figs = len(img_figs)
         for ind in range(num_figs):
@@ -476,6 +476,17 @@ def main(
             title = title_suffixes[ind]
             file_path = dm.get_file_path(__file__, timestamp, f"{repr_nv_name}-{title}")
             dm.save_figure(fig, file_path)
+    except Exception:
+        print(traceback.format_exc())
+        sig_img_array = None
+        ref_img_array = None
+        diff_img_array = None
+        keys_to_compress = None
+
+    # Histograms
+    try:
+        hist_figs = process_and_plot(raw_data, do_plot_histograms=do_plot_histograms)
+        # Save
         if hist_figs is not None:
             num_nvs = len(nv_list)
             for nv_ind in range(num_nvs):
@@ -484,20 +495,13 @@ def main(
                 nv_name = nv_sig.name
                 file_path = dm.get_file_path(__file__, timestamp, nv_name)
                 dm.save_figure(fig, file_path)
-        sig_img_array, ref_img_array, diff_img_array = imgs
-        keys_to_compress = ["sig_img_array", "ref_img_array", "diff_img_array"]
-
     except Exception:
         print(traceback.format_exc())
-        sig_img_array = None
-        ref_img_array = None
-        diff_img_array = None
-        keys_to_compress = None
 
-    # try:
-    #     del raw_data["img_arrays"]
-    # except Exception:
-    #     pass
+    try:
+        del raw_data["img_arrays"]
+    except Exception:
+        pass
 
     ### Save raw data
 
@@ -518,9 +522,6 @@ def main(
 
 if __name__ == "__main__":
     kpl.init_kplotlib()
-    # data = dm.get_raw_data(file_id=1730071367176, load_npz=False)
-    # data = dm.get_raw_data(file_id=1731922143942, load_npz=False)
-    data = dm.get_raw_data(file_id=1732420670067, load_npz=False)
-    # data = dm.get_raw_data(file_id=1709514100753, load_npz=False)
+    data = dm.get_raw_data(file_id=1732420670067, load_npz=True)
     process_and_plot(data, do_plot_histograms=True)
     kpl.show(block=True)

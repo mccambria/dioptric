@@ -338,8 +338,8 @@ if __name__ == "__main__":
 
     file_id = 1732403187814
 
-    data = dm.get_raw_data(file_id=file_id, load_npz=False, use_cache=True)
-    # data = dm.get_raw_data(file_id=file_id, load_npz=True, use_cache=True)
+    # data = dm.get_raw_data(file_id=file_id, load_npz=False, use_cache=True)
+    data = dm.get_raw_data(file_id=file_id, load_npz=True, use_cache=False)
     img_arrays = np.array(data.pop("img_arrays"))
 
     nv_list = data["nv_list"]
@@ -381,8 +381,8 @@ if __name__ == "__main__":
     # raw_fig = create_raw_data_figure(nv_list, freqs, avg_counts, avg_counts_ste)
     fit_fig = create_fit_figure(nv_list, freqs, norm_counts, norm_counts_ste)
 
-    kpl.show(block=True)
-    sys.exit()
+    # kpl.show(block=True)
+    # sys.exit()
 
     ###
 
@@ -414,15 +414,15 @@ if __name__ == "__main__":
         img_arrays[:, :, num_steps // 2 : 3 * num_steps // 4, :], axis=(0, 1, 2, 3)
     )
     proc_img_arrays = sig_img_arrays - ref_img_array
-    fig, ax = plt.subplots()
-    kpl.imshow(ax, proc_img_arrays[15])
-    kpl.show(block=True)
+    # fig, ax = plt.subplots()
+    # kpl.imshow(ax, proc_img_arrays[15])
+    # kpl.show(block=True)
 
-    # downsample_factor = 1
-    # proc_img_arrays = [
-    #     widefield.downsample_img_array(el, downsample_factor) for el in proc_img_arrays
-    # ]
-    # proc_img_arrays = np.array(proc_img_arrays)
+    downsample_factor = 2
+    proc_img_arrays = [
+        widefield.downsample_img_array(el, downsample_factor) for el in proc_img_arrays
+    ]
+    proc_img_arrays = np.array(proc_img_arrays)
 
     # Nice still
     # fig, ax = plt.subplots()
