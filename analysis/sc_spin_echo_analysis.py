@@ -12,19 +12,13 @@ import traceback
 
 import matplotlib.pyplot as plt
 import numpy as np
+import seaborn as sns
 from scipy.optimize import curve_fit
 from scipy.signal import lombscargle
-
-from majorroutines.widefield import base_routine
 from utils import data_manager as dm
 from utils import kplotlib as kpl
 from utils import tool_belt as tb
 from utils import widefield as widefield
-
-
-import numpy as np
-import matplotlib.pyplot as plt
-import seaborn as sns
 from scipy.optimize import curve_fit
 from scipy.signal import find_peaks
 from scipy.stats import iqr
@@ -54,9 +48,52 @@ def filter_nv_centers(
     return filtered_indices
 
 
+# Function to provide smart guesses and bounds for curve fitting
+def generate_initial_guess_and_bounds(tau, counts):
+    baseline_guess = np.mean(counts[-10:])  # Use the end of the data for baseline
+    revival_time_guess = tau[np.argmax(counts)] * 2  # Estimate revival period
+    decay_time_guess = (tau[-1] - tau[0]) / 5  # Broad guess for decay time
+    amp1_guess = (max(counts) - min(counts)) / 2
+    amp2_guess = amp1_guess / 2
+
+    # Frequency guess based on simple FFT
+    fft_freqs = np.fft.rfftfreq(len(tau), d=(tau[1] - tau[0]))
+    fft_spectrum = np.abs(np.fft.rfft(counts - baseline_guess))
+    freq_guess = fft_freqs[np.argmax(fft_spectrum)]
+
+    initial_guess = [
+        baseline_guess,
+        revival_time_guess,
+        decay_time_guess,
+        amp1_guess,
+        amp2_guess,
+        freq_guess,
+    ]
+
+    bounds = (
+        [0, tau[1] - tau[0], 0, 0, 0, 0],  # Lower bounds
+        [1, tau[-1], np.inf, np.inf, np.inf, np.inf],  # Upper bounds
+    )
+
+    return initial_guess, bounds
+
+
 # Analyze and visualize spin echo data
-def analyze_spin_echo(tau, counts, nv_list, file_id):
+def analyze_spin_echo(data):
+    nv_list = data["nv_list"]
     num_nvs = len(nv_list)
+    num_nvs = len(nv_list)
+    taus = np.array(data["taus"])
+    num_steps = data["num_steps"]
+    total_evolution_times = 2 * np.array(taus) / 1e3
+    counts = np.array(data["counts"])
+
+    sig_counts = counts[0]
+    ref_counts = counts[1]
+    norm_counts, norm_counts_ste = widefield.process_counts(
+        nv_list, sig_counts, ref_counts, threshold=False
+    )
+
     fit_params = []
     snrs = []
     contrasts = []
@@ -80,19 +117,9 @@ def analyze_spin_echo(tau, counts, nv_list, file_id):
             ax.axis("off")
             continue
 
-        nv_tau = tau
-        nv_counts = counts[nv_idx]
-
-        # Initial guesses for fitting
-        initial_guess = [
-            0.5,  # baseline
-            75,  # revival time (arbitrary guess)
-            10,  # decay time
-            0.3,  # amplitude 1
-            0.1,  # amplitude 2
-        ]
-        bounds = ([0, 50, 0, 0, 0], [1, 100, np.inf, 1, 1])
-
+        nv_tau = taus[nv_idx]
+        nv_counts = norm_counts[nv_idx]
+        initial_guess, bounds = generate_initial_guess_and_bounds(nv_tau, nv_counts)
         try:
             # Curve fitting
             popt, pcov = curve_fit(
@@ -136,13 +163,7 @@ def analyze_spin_echo(tau, counts, nv_list, file_id):
             chi_squared_values.append(np.inf)
 
     plt.tight_layout()
-    plt.suptitle(f"Spin Echo Analysis - {file_id}", fontsize=16, y=1.02)
-
-    # Save the figure if a path is provided
-    # timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
-    # file_name = f"spin_echo_{file_id}_{timestamp}.png"
-    # plt.savefig(f"{save_path}/{file_name}")
-
+    plt.suptitle(f"Spin Echo - {file_id}", fontsize=16, y=1.02)
     plt.show()
 
     # Filter NV centers based on thresholds
@@ -157,12 +178,5 @@ if __name__ == "__main__":
     kpl.init_kplotlib()
     file_id = 1548381879624
     data = dm.get_raw_data(file_id=file_id)
-    nv_list = data["nv_list"]
-    tau = data["tau"]
-    counts = data["counts"]
-    analyze_spin_echo(
-        nv_list,
-        tau,
-        counts,
-    )
+    analyze_spin_echo(data)
     kpl.show(block=True)
