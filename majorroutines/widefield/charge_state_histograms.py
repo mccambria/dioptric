@@ -146,16 +146,17 @@ def process_and_plot(
                 ax.axvline(threshold, color=kpl.KplColors.GRAY, ls="dashed")
 
             # Add text of the fidelities
+            nv_num = widefield.get_nv_num(nv_list[ind])
             snr_str = (
-                f"NV{ind}\n"
+                f"NV{nv_num}\n"
                 f"Readout fidelity: {round(readout_fidelity, 3)}\n"
                 f"Charge prep. fidelity {round(prep_fidelity, 3)}"
             )
             kpl.anchored_text(ax, snr_str, kpl.Loc.CENTER_RIGHT, size=kpl.Size.SMALL)
 
-            # kpl.show(block=True)
-            # plt.close(fig)
-            # fig = None
+            kpl.show(block=True)
+            plt.close(fig)
+            fig = None
 
             if fig is not None:
                 hist_figs.append(fig)

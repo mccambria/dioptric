@@ -336,9 +336,7 @@ def main(
 if __name__ == "__main__":
     kpl.init_kplotlib()
 
-    # file_id = 1729211906249
-    # file_id = 1729446666169
-    file_id = 1729834552723
+    file_id = 1732403187814
 
     data = dm.get_raw_data(file_id=file_id, load_npz=False, use_cache=True)
     # data = dm.get_raw_data(file_id=file_id, load_npz=True, use_cache=False)
