@@ -426,9 +426,9 @@ if __name__ == "__main__":
     # data = dm.get_raw_data(file_id=1700650667777, load_npz=True)
     # data = dm.get_raw_data(file_id=1700668458198, load_npz=True)
     # data = dm.get_raw_data(file_id=1700710358100, load_npz=True)
-    # data = dm.get_raw_data(file_id=1715452021340, load_npz=True)
-    data = dm.get_raw_data(file_id=1732420670067, load_npz=True)
-    img_arrays = data["ref_img_array"]
+    data = dm.get_raw_data(file_id=1715452021340, load_npz=True)
+    # data = dm.get_raw_data(file_id=1732420670067, load_npz=True)
+    img_array = data["ref_img_array"]
     # print(img_arrays)
     # sys.exit()
     nv_coordinates, spot_weights = load_nv_coords(
@@ -519,127 +519,9 @@ if __name__ == "__main__":
     # indices = [4, 27, 41, 82, 86, 89, 109, 117, 138, 139, 148, 149]
     # spot_weights = filtered_reordered_spot_weights
     # fmt: off
-    spot_weights = [
-        0.7466728351068052,
-        0.7466728351068052,
-        0.6384167684513203,
-        1.1708211389400445,
-        1.5561808283609733,
-        1.1708211389400445,
-        0.6384167684513203,
-        0.7466728351068052,
-        1.1708211389400445,
-        0.7466728351068052,
-        0.7466728351068052,
-        0.6384167684513203,
-        1.1708211389400445,
-        0.7466728351068052,
-        0.7466728351068052,
-        0.7466728351068052,
-        0.8702844369863524,
-        0.7466728351068052,
-        0.8702844369863524,
-        0.6384167684513203,
-        0.8702844369863524,
-        0.6384167684513203,
-        1.0110233833356788,
-        0.6384167684513203,
-        0.6384167684513203,
-        0.8702844369863524,
-        1.5561808283609733,
-        0.8702844369863524,
-        0.8702844369863524,
-        1.3517793512995497,
-        0.7466728351068052,
-        0.8702844369863524,
-        1.5561808283609733,
-        0.7466728351068052,
-        0.8702844369863524,
-        0.7466728351068052,
-        1.0110233833356788,
-        0.7466728351068052,
-        0.5438939973931943,
-        0.7466728351068052,
-        3.023897571362437,
-        0.7466728351068052,
-        0.8702844369863524,
-        0.8702844369863524,
-        0.7466728351068052,
-        1.0110233833356788,
-        0.6384167684513203,
-        0.7466728351068052,
-        0.7466728351068052,
-        1.0110233833356788,
-        0.5438939973931943,
-        0.7466728351068052,
-        1.5561808283609733,
-        1.5561808283609733,
-        1.0110233833356788,
-        0.7466728351068052,
-        1.3517793512995497,
-        0.6384167684513203,
-        1.0110233833356788,
-        0.7466728351068052,
-        0.7466728351068052,
-        0.8702844369863524,
-        1.0110233833356788,
-        1.5561808283609733,
-        1.1708211389400445,
-        1.0110233833356788,
-        0.6384167684513203,
-        0.8702844369863524,
-        0.8702844369863524,
-        0.7466728351068052,
-        0.6384167684513203,
-        0.7466728351068052,
-        0.8702844369863524,
-        1.0110233833356788,
-        0.8702844369863524,
-        0.8702844369863524,
-        0.7466728351068052,
-        1.3517793512995497,
-        1.5561808283609733,
-        1.0110233833356788,
-        0.8702844369863524,
-        0.7466728351068052,
-        0.8702844369863524,
-        1.0110233833356788,
-        0.8702844369863524,
-        1.0110233833356788,
-        1.1708211389400445,
-        1.5561808283609733,
-        0.8702844369863524,
-        0.8702844369863524,
-        1.3517793512995497,
-        0.7466728351068052,
-        1.0110233833356788,
-        1.0110233833356788,
-        1.5561808283609733,
-        2.0454197052578524,
-        0.7466728351068052,
-        1.7865009761020008,
-        2.0454197052578524,
-        1.1708211389400445,
-        1.1708211389400445,
-        1.1708211389400445,
-        1.0110233833356788,
-        1.5561808283609733,
-        0.8702844369863524,
-        1.3517793512995497,
-        1.0110233833356788,
-        0.7466728351068052,
-        2.0454197052578524,
-        0.7466728351068052,
-        0.8702844369863524,
-        0.7466728351068052,
-        1.1708211389400445,
-        1.7865009761020008,
-        0.7466728351068052,
-        0.8702844369863524,
-        1.1708211389400445,
-    ]
-    # fmt: on
 
+    # fmt: on
+    spot_weights = curve_extreme_weights_simple(spot_weights)
     norm_spot_weights = spot_weights / np.sum(spot_weights)
     norm_spot_weights = np.array(norm_spot_weights)
     aom_voltage = 0.3472
@@ -651,9 +533,7 @@ if __name__ == "__main__":
         val for ind, val in enumerate(spot_weights) if ind not in drop_indices
     ]
     nv_powers = [val for ind, val in enumerate(nv_powers) if ind not in drop_indices]
-    # nv_powers = [val for ind, val in enumerate(nv_powers) if ind not in drop_indices]
-    # print(nv_powers)
-    # indices = [4, 27, 30, 41, 117, 130, 139, 155]
+    print(nv_powers)
     # Indices to exclude (zero-based indexing)
     # fmt: off
     include_indices =[0, 1, 2, 3, 5, 6, 7, 8, 13, 14, 15, 16, 17, 18, 20, 21, 22, 23, 24, 25, 26, 28, 29, 31, 32, 33, 34, 36, 37, 39, 42, 44, 45, 46, 47, 48, 49, 51, 52, 53, 55, 56, 57, 58, 60, 61, 62, 64, 65, 66, 68, 69, 70, 71, 72, 73, 74, 75, 77, 79, 83, 84, 85, 88, 89, 90, 91, 92, 94, 95, 96, 97, 99, 100, 101, 102, 103, 105, 106, 107, 108, 109, 110, 111, 113, 114, 116, 117, 118, 120, 122, 123, 124, 125, 128, 131, 132, 134, 136, 137, 138, 140, 141, 142, 145, 146, 147, 148, 149, 152, 153, 154, 155, 156, 157, 158, 159]
@@ -678,7 +558,7 @@ if __name__ == "__main__":
     # updated_spot_weights = linear_weights(filtered_reordered_counts, alpha=0.6)
 
     # Create a copy or initialize spot weights for modification
-    updated_spot_weights = curve_extreme_weights_simple(spot_weights)
+    # updated_spot_weights = curve_extreme_weights_simple(spot_weights)
     # drop_indices = [17, 55, 64, 72, 87, 89, 96, 99, 112, 114, 116]
     # updated_spot_weights = [
     #     val for ind, val in enumerate(updated_spot_weights) if ind not in drop_indices
@@ -703,7 +583,7 @@ if __name__ == "__main__":
     print("NV Index | Coords    |   previous weights")
     print("-" * 60)
     for idx, (coords, weight, power) in enumerate(
-        zip(nv_coordinates_filtered, updated_spot_weights, nv_powers)
+        zip(nv_coordinates_filtered, spot_weights, nv_powers)
     ):
         print(f"{idx+1:<8} | {coords} | {weight:.3f} | {power:.2f}")
 
@@ -747,9 +627,9 @@ if __name__ == "__main__":
     # filtered_integrated_intensities = [
     #     integrated_intensities[i] for i in filtered_indices
     # ]
-    print(f"Filtered NV coordinates: {len(filtered_reordered_coords)} NVs")
-    print("NV Index | Coords    |    Counts |   previous weights |   updated weights")
-    print("-" * 60)
+    # print(f"Filtered NV coordinates: {len(filtered_reordered_coords)} NVs")
+    # print("NV Index | Coords    |    Counts |   previous weights |   updated weights")
+    # print("-" * 60)
     # for idx, (coords, counts, weight, updated_weight) in enumerate(
     #     zip(
     #         nv_coordinates,
@@ -776,12 +656,12 @@ if __name__ == "__main__":
 
     # Save the filtered results
 
-    save_results(
-        nv_coordinates_filtered,
-        nv_powers,
-        updated_spot_weights,
-        filename="slmsuite/nv_blob_detection/nv_blob_filtered_160nvs_reordered_selected_106nvs.npz",
-    )
+    # save_results(
+    #     nv_coordinates_filtered,
+    #     nv_powers,
+    #     spot_weights,
+    #     filename="slmsuite/nv_blob_detection/nv_blob_filtered_160nvs_reordered_selected_106nvs.npz",
+    # )
     # save_results(
     #     nv_coordinates,
     #     filtered_reordered_counts,
@@ -792,22 +672,22 @@ if __name__ == "__main__":
 
     # # Plot the original image with circles around each NV
 
-    # fig, ax = plt.subplots()
-    # title = "50ms, Ref"
-    # kpl.imshow(ax, img_array, title=title, cbar_label="Photons")
-    # # Draw circles and index numbers
-    # for idx, coord in enumerate(nv_coordinates_filtered):
-    #     circ = plt.Circle(coord, sigma, color="lightblue", fill=False, linewidth=0.5)
-    #     ax.add_patch(circ)
-    #     # Place text just above the circle
-    #     ax.text(
-    #         coord[0],
-    #         coord[1] - sigma - 1,
-    #         str(idx + 1),
-    #         color="white",
-    #         fontsize=6,
-    #         ha="center",
-    #     )
+    fig, ax = plt.subplots()
+    title = "50ms, Ref"
+    kpl.imshow(ax, img_array, title=title, cbar_label="Photons")
+    # Draw circles and index numbers
+    for idx, coord in enumerate(nv_coordinates_filtered):
+        circ = plt.Circle(coord, sigma, color="lightblue", fill=False, linewidth=0.5)
+        ax.add_patch(circ)
+        # Place text just above the circle
+        ax.text(
+            coord[0],
+            coord[1] - sigma - 1,
+            str(idx + 1),
+            color="white",
+            fontsize=6,
+            ha="center",
+        )
 
     # indices_to_circle = [4, 29, 41, 89, 102, 118, 139, 144, 148, 149]
     # indices_to_circle = [4, 27, 41, 82, 86, 89, 102, 109, 117, 138, 139, 148, 149]

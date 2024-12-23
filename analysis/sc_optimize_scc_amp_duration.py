@@ -8,18 +8,20 @@ Created on December 6th, 2023
 """
 
 import traceback
+
 import matplotlib.pyplot as plt
 import numpy as np
 import seaborn as sns
-from scipy.optimize import curve_fit
 from mpl_toolkits.mplot3d import Axes3D
+from scipy.ndimage import gaussian_filter
+from scipy.optimize import curve_fit
+
 from majorroutines.widefield import base_routine
 from utils import data_manager as dm
 from utils import kplotlib as kpl
 from utils import tool_belt as tb
 from utils import widefield as widefield
 from utils.constants import NVSig, VirtualLaserKey
-from scipy.ndimage import gaussian_filter
 
 
 def process_and_plot(data):

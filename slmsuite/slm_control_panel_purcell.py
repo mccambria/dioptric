@@ -281,7 +281,7 @@ def nuvu2thorcam_calibration(coords):
         [[979.807, 700.0], [460.192, 700.0], [720.0, 250.0]], dtype="float32"
     )
     cal_coords_nuvu = np.array(
-        [[189.694, 35.44], [191.327, 214.116], [31.408, 123.462]], dtype="float32"
+        [[190.296, 34.846], [191.675, 213.392], [32.254, 122.883]], dtype="float32"
     )
 
     # Compute the affine transformation matrix
@@ -298,8 +298,8 @@ def nuvu2thorcam_calibration(coords):
 
 def load_nv_coords(
     # file_path="slmsuite/nv_blob_detection/nv_blob_filtered_160nvs_reordered.npz",
-    # file_path="slmsuite/nv_blob_detection/nv_blob_filtered_160nvs_reordered_selected_117nvs.npz",
-    file_path="slmsuite/nv_blob_detection/nv_blob_filtered_160nvs_reordered_selected_106nvs.npz",
+    file_path="slmsuite/nv_blob_detection/nv_blob_filtered_160nvs_reordered_selected_117nvs.npz",
+    # file_path="slmsuite/nv_blob_detection/nv_blob_filtered_160nvs_reordered_selected_106nvs.npz",
     # file_path="slmsuite/nv_blob_detection/nv_blob_filtered_160nvs_reordered_manual_updated.npz",
 ):
     # data = np.load(file_path)
@@ -372,10 +372,12 @@ def write_nvs_phase():
     # phase = np.load(
     #     "slmsuite\computed_phase\slm_phase_117nvs_20241221_123013.npy"
     # )  # weighted spots for 50ms readout (117nvs selected out of 160nvs)
+    # phase = np.load(
+    #     "slmsuite\computed_phase\slm_phase_117nvs_20241222_022202.npy"
+    # )  # weighted spots for 50ms readout (117nvs selected out of 160nvs) recalcualted
     phase = np.load(
-        "slmsuite\computed_phase\slm_phase_117nvs_20241222_022202.npy"
-    )  # weighted spots for 50ms readout (117nvs selected out of 160nvs) recalcualted
-
+        "slmsuite\computed_phase\slm_phase_106nvs_20241222_215710.npy"
+    )  # weighted spots for 50ms readout
     slm.write(phase, settle=True)
     # cam_plot()
 
