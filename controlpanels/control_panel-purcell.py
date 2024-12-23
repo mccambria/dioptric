@@ -499,13 +499,27 @@ def do_power_rabi(nv_list):
 
 
 def do_spin_echo(nv_list):
-    min_tau = 200
-    max_tau = 84e3 + min_tau
-    num_steps = 29
+    # Manual taus setup
+    revival_period = int(51.5e3)  # ns
+    taus = np.linspace(min_tau, max_tau, num_steps).tolist()
+    revival_width = 5e3
+    taus.extend(np.linspace(min_tau, min_tau + revival_width, 11).tolist())
+    taus.extend(np.linspace(38e3 - revival_width, 38e3 + revival_width, 61).tolist())
+    taus.extend(np.linspace(76e3 - revival_width, 76e3 + revival_width, 21).tolist())
+    taus = [round(el / 4) * 4 for el in taus]
+    num_steps = len(taus)
+
+    # Automatic taus setup, linear spacing
+    # min_tau = 200
+    # max_tau = 84e3 + min_tau
+    # num_steps = 29
+
     num_reps = 6
     num_runs = 600
     # num_runs = 2
+
     spin_echo.main(nv_list, num_steps, num_reps, num_runs, min_tau, max_tau)
+    spin_echo.main(nv_list, num_steps, num_reps, num_runs, taus=taus)
 
 
 def do_ramsey(nv_list):
@@ -1273,7 +1287,7 @@ if __name__ == "__main__":
         # do_resonance_zoom(nv_list)
         # do_rabi(nv_list)
         # do_resonance(nv_list)
-        # do_spin_echo(nv_list)
+        do_spin_echo(nv_list)
 
         # do_power_rabi(nv_list)
         # do_correlation_test(nv_list)

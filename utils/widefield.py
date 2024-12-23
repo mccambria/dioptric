@@ -324,7 +324,9 @@ def threshold_counts(nv_list, sig_counts, ref_counts=None, dynamic_thresh=False)
                 sig_counts[nv_ind].flatten(), ref_counts[nv_ind].flatten()
             )
             prob_dist = ProbDist.COMPOUND_POISSON
-            popt, _, _ = fit_bimodal_histogram(combined_counts, prob_dist, no_plot=True)
+            popt, _, _ = fit_bimodal_histogram(
+                combined_counts, prob_dist, no_plot=False
+            )
             if nv_ind == 41:
                 test = 0
             threshold = determine_threshold(popt, prob_dist, dark_mode_weight=0.5)
@@ -949,8 +951,8 @@ def get_img_array_shape():
 
 
 @cache
-def get_camera_scale(downsample_factor=1):
-    return _get_camera_config_val("scale") / downsample_factor
+def get_camera_scale():
+    return _get_camera_config_val("scale")
 
 
 # endregion
@@ -1233,7 +1235,55 @@ def smooth_img_array(img_array, downsample_factor):
     return downsampled_img_array
 
 
-def animate(
+def animate_images(x, img_arrays, cmin=None, cmax=None):
+    num_steps = img_arrays.shape[0]
+    step_size = x[1] - x[0]
+    left_xlim = x[0] - step_size
+    right_xlim = x[-1] + step_size
+    figsize = [5.0, 5.9]
+    fig, axes_pack = plt.subplots(2, 1, height_ratios=(5, 0.2), figsize=figsize)
+    im_ax = axes_pack[0]
+    prog_bar_ax = axes_pack[1]
+
+    # Set up the actual image
+    kpl.imshow(im_ax, np.zeros(img_arrays[0].shape), no_cbar=True)
+    # 5 um, downsampled by 2X
+    scale = 5 * get_camera_scale() // 2
+    # kpl.scale_bar(im_ax, scale, "5 µm", kpl.Loc.LOWER_RIGHT)
+
+    def prog_bar_ax_relim():
+        xlabel = "Frequency (GHz)"
+        prog_bar_ax.set_xlabel(xlabel)
+        prog_bar_ax.set_xlim([left_xlim, right_xlim])
+        prog_bar_ax.set_ylim([0, 2])
+
+    def animate_sub(step_ind):
+        kpl.imshow_update(im_ax, img_arrays[step_ind], cmin, cmax)
+        im_ax.axis("off")
+
+        prog_bar_ax.clear()
+        prog_bar_ax.spines["top"].set_visible(False)
+        prog_bar_ax.spines["right"].set_visible(False)
+        prog_bar_ax.spines["left"].set_visible(False)
+        prog_bar_ax.axes.get_yaxis().set_visible(False)
+        kpl.plot_points(
+            prog_bar_ax,
+            [x[step_ind]],
+            [1.3],
+            color=kpl.KplColors.BLUE,
+            size=kpl.Size.BIG,
+        )
+        prog_bar_ax_relim()
+        return axes_pack
+
+    anim = animation.FuncAnimation(
+        fig, animate_sub, frames=num_steps, interval=200, blit=False
+    )
+    timestamp = dm.get_time_stamp()
+    anim.save(Path.home() / f"lab/movies/{timestamp}.gif")
+
+
+def animate_images_and_data(
     x,
     nv_list,
     norm_counts,
@@ -1241,33 +1291,28 @@ def animate(
     img_arrays,
     cmin=None,
     cmax=None,
-    scale_bar_length_factor=None,
-    just_movie=False,
 ):
     num_steps = img_arrays.shape[0]
 
-    if just_movie:
-        fig, im_ax = plt.subplots()
-        all_axes = [im_ax]
-    else:
-        just_plot_figsize = [6.5, 5.0]
-        figsize = [just_plot_figsize[0] + just_plot_figsize[1], just_plot_figsize[1]]
-        # fig, axes_pack = plt.subplots(2, 1, height_ratios=(1, 1), figsize=figsize)
-        fig = plt.figure(figsize=figsize)
-        im_fig, data_fig = fig.subfigures(1, 2, width_ratios=just_plot_figsize[::-1])
-        im_ax = im_fig.add_subplot()
-        all_axes = [im_ax]
-        num_nvs = len(nv_list)
-        layout = kpl.calc_mosaic_layout(num_nvs, num_rows=2)
-        data_axes = data_fig.subplot_mosaic(layout, sharex=True, sharey=True)
-        data_axes_flat = list(data_axes.values())
-        rep_data_ax = data_axes[layout[-1, 0]]
-        all_axes.extend(data_axes_flat)
+    just_plot_figsize = [6.5, 5.0]
+    figsize = [just_plot_figsize[0] + just_plot_figsize[1], just_plot_figsize[1]]
+    # fig, axes_pack = plt.subplots(2, 1, height_ratios=(1, 1), figsize=figsize)
+    fig = plt.figure(figsize=figsize)
+    im_fig, data_fig = fig.subfigures(1, 2, width_ratios=just_plot_figsize[::-1])
+    im_ax = im_fig.add_subplot()
+    all_axes = [im_ax]
+    num_nvs = len(nv_list)
+    layout = kpl.calc_mosaic_layout(num_nvs, num_rows=2)
+    data_axes = data_fig.subplot_mosaic(layout, sharex=True, sharey=True)
+    data_axes_flat = list(data_axes.values())
+    rep_data_ax = data_axes[layout[-1, 0]]
+    all_axes.extend(data_axes_flat)
 
     # Set up the actual image
     kpl.imshow(im_ax, np.zeros(img_arrays[0].shape), no_cbar=True)
-    # scale = get_camera_scale(scale_bar_length_factor)
-    # kpl.scale_bar(im_ax, scale, "1 µm", kpl.Loc.LOWER_RIGHT)
+    # 5 um, downsampled by 2X
+    scale = 5 * get_camera_scale() // 2
+    kpl.scale_bar(im_ax, scale, "5 µm", kpl.Loc.LOWER_RIGHT)
 
     def data_ax_relim():
         # Update this manually to match the final plot
@@ -1291,25 +1336,23 @@ def animate(
         ylabel = "Norm. NV$^{-}$ population"
         kpl.set_shared_ax_ylabel(rep_data_ax, ylabel)
 
-    if not just_movie:
-        data_ax_relim()
+    data_ax_relim()
 
     def animate_sub(step_ind):
         kpl.imshow_update(im_ax, img_arrays[step_ind], cmin, cmax)
         im_ax.axis("off")
 
-        if not just_movie:
-            for ax in data_axes_flat:
-                ax.clear()
-            plot_fit(
-                data_axes_flat,
-                nv_list,
-                x[: step_ind + 1],
-                norm_counts[:, : step_ind + 1],
-                norm_counts_ste[:, : step_ind + 1],
-                no_legend=True,
-            )
-            data_ax_relim()
+        for ax in data_axes_flat:
+            ax.clear()
+        plot_fit(
+            data_axes_flat,
+            nv_list,
+            x[: step_ind + 1],
+            norm_counts[:, : step_ind + 1],
+            norm_counts_ste[:, : step_ind + 1],
+            no_legend=True,
+        )
+        data_ax_relim()
 
         return all_axes
 

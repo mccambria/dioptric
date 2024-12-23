@@ -173,7 +173,7 @@ config |= {
         # "roi": (121, 110, 250, 250),  # offsetX, offsetY, width, height"roi": (121, 110, 250, 250),  # offsetX, offsetY, width, height
         "roi": (134, 105, 250, 250),  # offsetX, offsetY, width, height
         # "roi": None,  # offsetX, offsetY, width, height
-        "scale": 24,  # pixels / micron
+        "scale": 5 / 0.6,  # pixels / micron
     },
     ###
     "Optics": {

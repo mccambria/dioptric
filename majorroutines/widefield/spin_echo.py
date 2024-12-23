@@ -374,21 +374,11 @@ def calc_T2_times(
         print(f"{round(popt[0])} +/- {round(pste[0])}")
 
 
-def main(nv_list, num_steps, num_reps, num_runs, min_tau, max_tau):
+def main(nv_list, num_steps, num_reps, num_runs, min_tau=None, max_tau=None, taus=None):
     ### Some initial setup
 
     pulse_gen = tb.get_server_pulse_gen()
     seq_file = "spin_echo.py"
-
-    # MCC x point manipulation
-    taus = np.linspace(min_tau, max_tau, num_steps).tolist()
-    revival_width = 5e3
-    taus.extend(np.linspace(min_tau, min_tau + revival_width, 11).tolist())
-    taus.extend(np.linspace(38e3 - revival_width, 38e3 + revival_width, 61).tolist())
-    taus.extend(np.linspace(76e3 - revival_width, 76e3 + revival_width, 21).tolist())
-    taus = [round(el / 4) * 4 for el in taus]
-    num_steps = len(taus)
-    # print(taus)
 
     uwave_ind_list = [0, 1]
 
