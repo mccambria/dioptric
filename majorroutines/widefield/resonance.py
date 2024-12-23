@@ -336,6 +336,15 @@ def main(
 if __name__ == "__main__":
     kpl.init_kplotlib()
 
+    ### Test
+
+    # img_arrays = np.random.randint(0, 100, (50, 20, 20))
+    # widefield.animate_images(np.linspace(2.77, 2.97, 50), img_arrays)
+    # kpl.show(block=True)
+    # sys.exit()
+
+    ###
+
     file_id = 1732403187814
 
     # data = dm.get_raw_data(file_id=file_id, load_npz=False, use_cache=True)
@@ -409,7 +418,11 @@ if __name__ == "__main__":
     #         cropped_img_array = widefield.crop_img_array(img_array, offset, buffer)
     #         proc_img_arrays[0, run_ind, step_ind, 0, :, :] = cropped_img_array
 
-    sig_img_arrays = np.mean(img_arrays[:, :, 0 : num_steps // 2, :], axis=(0, 1, 3))
+    sig_img_arrays = np.mean(img_arrays[:, :, 0 : num_steps // 4, :], axis=(0, 1, 3))
+    sig_img_arrays += np.mean(
+        img_arrays[:, :, num_steps // 4 : num_steps // 2, :], axis=(0, 1, 3)
+    )
+    sig_img_arrays /= 2
     ref_img_array = np.mean(
         img_arrays[:, :, num_steps // 2 : 3 * num_steps // 4, :], axis=(0, 1, 2, 3)
     )
@@ -429,19 +442,28 @@ if __name__ == "__main__":
     # kpl.imshow(ax, proc_img_arrays[17])
     # ax.axis("off")
     # scale = widefield.get_camera_scale()
-    # kpl.scale_bar(ax, scale, "1 µm", kpl.Loc.LOWER_RIGHT)
+    # length = 5 * scale / downsample_factor
+    # kpl.scale_bar(ax, length, "5 µm", kpl.Loc.LOWER_RIGHT)
+    # kpl.show(block=True)
 
-    widefield.animate(
+    widefield.animate_images(
         freqs,
-        nv_list,
-        norm_counts,
-        norm_counts_ste,
         proc_img_arrays,
-        cmin=np.percentile(proc_img_arrays, 60),
+        cmin=np.percentile(proc_img_arrays, 70),
         cmax=np.percentile(proc_img_arrays, 99.9),
-        # scale_bar_length_factor=downsample_factor,
-        just_movie=True,
     )
+
+    # widefield.animate(
+    #     freqs,
+    #     nv_list,
+    #     norm_counts,
+    #     norm_counts_ste,
+    #     proc_img_arrays,
+    #     cmin=np.percentile(proc_img_arrays, 70),
+    #     cmax=np.percentile(proc_img_arrays, 99.9),
+    #     scale_bar_length_factor=downsample_factor,
+    #     just_movie=True,
+    # )
 
     ###
 

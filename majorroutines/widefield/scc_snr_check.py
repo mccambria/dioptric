@@ -183,7 +183,7 @@ if __name__ == "__main__":
     kpl.init_kplotlib()
 
     # data = dm.get_raw_data(file_id=17316508311984)
-    data = dm.get_raw_data(file_id=1731300731766)  # -8
+    data = dm.get_raw_data(file_id=1732776734195)  # -8
     avg_snr = process_and_plot(data)
     print(np.min(avg_snr))
     sys.exit()
