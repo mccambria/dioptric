@@ -160,9 +160,9 @@ config |= {
         "resolution": (512, 512),
         "spot_radius": 2.5,  # Radius for integrating NV counts in a camera image
         "bias_clamp": 300,  # (changing this won't actually change the value on the camera currently)
-        # "em_gain": 5000,
+        "em_gain": 5000,
         # "em_gain": 1000,
-        "em_gain": 10,
+        # "em_gain": 10,
         "temp": -60,
         "timeout": 30e3,  # ms
         # "timeout": -1,  # No timeout

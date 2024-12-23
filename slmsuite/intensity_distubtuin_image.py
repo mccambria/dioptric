@@ -526,6 +526,7 @@ if __name__ == "__main__":
     # Calculate weights based on the fitted intensities
     # indices = [4, 27, 41, 82, 86, 89, 109, 117, 138, 139, 148, 149]
     spot_weights = filtered_reordered_spot_weights
+    # fmt: off
     spot_weights = [
         0.7466728351068052,
         0.7466728351068052,
@@ -645,6 +646,7 @@ if __name__ == "__main__":
         0.8702844369863524,
         1.1708211389400445,
     ]
+    # fmt: on
     print(len(spot_weights))
     norm_spot_weights = spot_weights / np.sum(spot_weights)
     # print(spot_weights)

@@ -939,7 +939,7 @@ if __name__ == "__main__":
     # magnet_angle = 90
     date_str = "2024_03_12"
     sample_coords = [2.0, 0.0]
-    z_coord = 2.45
+    z_coord = 2.4
     # Load NV pixel coordinates
     pixel_coords_list = load_nv_coords(
         file_path="slmsuite/nv_blob_detection/nv_blob_filtered_160nvs_reordered.npz",
