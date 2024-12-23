@@ -373,9 +373,6 @@ if __name__ == "__main__":
     # ax.set_ylabel("SNR")
     # kpl.show(block=True)
     # sys.exit()
-    to_drop = [17, 55, 64, 72, 87, 89, 96, 99, 112, 114, 116]
-    to_drop = [widefield.get_nv_num(nv_list[ind]) for ind in to_drop]
-    print(to_drop)
 
     norm_counts, norm_counts_ste = widefield.process_counts(
         nv_list, sig_counts, ref_counts, threshold=True

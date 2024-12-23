@@ -767,6 +767,11 @@ opx_config = {
             "length": 1000,
             "digital_marker": "on",
         },
+        "do_esr_pulse": {
+            "operation": "control",
+            "length": 64,
+            "digital_marker": "on",
+        },
         "do_pi_pulse_0": {
             "operation": "control",
             "length": int(rabi_period_0 / 2),
