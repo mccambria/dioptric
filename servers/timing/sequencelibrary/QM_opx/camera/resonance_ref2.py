@@ -29,7 +29,7 @@ def get_seq(
     # MCC
     total_num_steps = len(step_inds)
     half_num_steps = total_num_steps // 2
-    esr_pulse_duration = seq_utils.convert_ns_to_cc(64)
+    esr_pulse_duration = seq_utils.convert_ns_to_cc(68)
 
     with qua.program() as seq:
         seq_utils.init()
