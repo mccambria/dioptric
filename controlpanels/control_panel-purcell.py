@@ -530,28 +530,27 @@ def do_power_rabi(nv_list):
 
 
 def do_spin_echo(nv_list):
-    # Parameters for logarithmic spacing
-    min_tau = 300
-    max_tau = 80e3
-    num_steps_log = 24
-
-    taus_log = np.logspace(np.log10(min_tau), np.log10(max_tau), num_steps_log).tolist()
-
-    # Add revival periods
-    revival_period = int(51.5e3)  # Revival period in ns
-    revival_width = 2e3
-    taus_revivals = []
-    for factor in [1, 2]:
-        taus_revivals.extend(
-            np.linspace(
-                factor * revival_period - revival_width,
-                factor * revival_period + revival_width,
-                11,  # Points around each revival
-            ).tolist()
-        )
-
-    # Combine taus and round to nearest multiple of 4
-    taus = taus_log + taus_revivals
+    # Manual taus setup
+    revival_period = int(51.5e3 / 2)  # ns
+    min_tau = 200
+    taus = []
+    revival_width = 5e3
+    decay = np.linspace(min_tau, min_tau + revival_width, 6)
+    taus.extend(decay.tolist())
+    gap = np.linspace(min_tau + revival_width, revival_period - revival_width, 7)
+    taus.extend(gap[1:-1].tolist())
+    first_revival = np.linspace(
+        revival_period - revival_width, revival_period + revival_width, 61
+    )
+    taus.extend(first_revival.tolist())
+    gap = np.linspace(
+        revival_period + revival_width, 2 * revival_period - revival_width, 7
+    )
+    taus.extend(gap[1:-1].tolist())
+    second_revival = np.linspace(
+        2 * revival_period - revival_width, 2 * revival_period + revival_width, 11
+    )
+    taus.extend(second_revival.tolist())
     taus = [round(el / 4) * 4 for el in taus]
 
     # Remove duplicates and sort
@@ -559,10 +558,20 @@ def do_spin_echo(nv_list):
 
     # Experiment settings
     num_steps = len(taus)
-    num_reps = 8
-    num_runs = 500
 
+    # Automatic taus setup, linear spacing
+    # min_tau = 200
+    # max_tau = 84e3 + min_tau
+    # num_steps = 29
+
+    num_reps = 4
+    # num_runs = 200
+    num_runs = 3
+
+    # spin_echo.main(nv_list, num_steps, num_reps, num_runs, min_tau, max_tau)
     spin_echo.main(nv_list, num_steps, num_reps, num_runs, taus=taus)
+    # for ind in range(5):
+    #     spin_echo.main(nv_list, num_steps, num_reps, num_runs, taus=taus)
 
 
 def do_ramsey(nv_list):
@@ -1268,7 +1277,7 @@ if __name__ == "__main__":
         # do_optimize_xyz(nv_sig)
         # pos.set_xyz_on_nv(nv_sig)
 
-        do_compensate_for_drift(nv_sig)
+        # do_compensate_for_drift(nv_sig)
 
         # for point in points:
         #     x, y = point
