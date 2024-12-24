@@ -500,12 +500,26 @@ def do_power_rabi(nv_list):
 
 def do_spin_echo(nv_list):
     # Manual taus setup
-    revival_period = int(51.5e3)  # ns
-    taus = np.linspace(min_tau, max_tau, num_steps).tolist()
+    revival_period = int(51.5e3 / 2)  # ns
+    min_tau = 200
+    taus = []
     revival_width = 5e3
-    taus.extend(np.linspace(min_tau, min_tau + revival_width, 11).tolist())
-    taus.extend(np.linspace(38e3 - revival_width, 38e3 + revival_width, 61).tolist())
-    taus.extend(np.linspace(76e3 - revival_width, 76e3 + revival_width, 21).tolist())
+    decay = np.linspace(min_tau, min_tau + revival_width, 6)
+    taus.extend(decay.tolist())
+    gap = np.linspace(min_tau + revival_width, revival_period - revival_width, 7)
+    taus.extend(gap[1:-1].tolist())
+    first_revival = np.linspace(
+        revival_period - revival_width, revival_period + revival_width, 61
+    )
+    taus.extend(first_revival.tolist())
+    gap = np.linspace(
+        revival_period + revival_width, 2 * revival_period - revival_width, 7
+    )
+    taus.extend(gap[1:-1].tolist())
+    second_revival = np.linspace(
+        2 * revival_period - revival_width, 2 * revival_period + revival_width, 11
+    )
+    taus.extend(second_revival.tolist())
     taus = [round(el / 4) * 4 for el in taus]
     num_steps = len(taus)
 
@@ -514,12 +528,14 @@ def do_spin_echo(nv_list):
     # max_tau = 84e3 + min_tau
     # num_steps = 29
 
-    num_reps = 6
-    num_runs = 600
-    # num_runs = 2
+    num_reps = 4
+    # num_runs = 200
+    num_runs = 3
 
-    spin_echo.main(nv_list, num_steps, num_reps, num_runs, min_tau, max_tau)
+    # spin_echo.main(nv_list, num_steps, num_reps, num_runs, min_tau, max_tau)
     spin_echo.main(nv_list, num_steps, num_reps, num_runs, taus=taus)
+    # for ind in range(5):
+    #     spin_echo.main(nv_list, num_steps, num_reps, num_runs, taus=taus)
 
 
 def do_ramsey(nv_list):
@@ -1241,7 +1257,7 @@ if __name__ == "__main__":
         # do_optimize_xyz(nv_sig)
         # pos.set_xyz_on_nv(nv_sig)
 
-        do_compensate_for_drift(nv_sig)
+        # do_compensate_for_drift(nv_sig)
 
         # for point in points:
         #     x, y = point
@@ -1265,7 +1281,7 @@ if __name__ == "__main__":
 
         # do_scanning_image_sample(nv_sig)
         # do_scanning_image_sample_zoom(nv_sig)
-        do_widefield_image_sample(nv_sig, 50)
+        # do_widefield_image_sample(nv_sig, 50)
         # do_widefield_image_sample(nv_sig, 100)
 
         # do_image_nv_list(nv_list)

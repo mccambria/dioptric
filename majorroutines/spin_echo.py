@@ -14,7 +14,6 @@ Created on Wed Apr 24 15:01:04 2019
 
 # %% Imports
 
-
 import time
 from random import shuffle
 
@@ -27,7 +26,8 @@ from scipy.optimize import curve_fit, minimize_scalar
 
 import majorroutines.targeting as targeting
 import utils.tool_belt as tool_belt
-from utils.tool_belt import NormStyle, States
+
+# from utils.tool_belt import States
 
 # %% Constants
 
@@ -945,129 +945,4 @@ def main_with_cxn(
 
 
 if __name__ == "__main__":
-    # plt.ion()
-
-    # file_names = [
-    #     # "2021_09_03-20_36_12-hopper-search",
-    #     # "2021_09_03-22_04_25-hopper-search",
-    #     # "2021_09_03-23_31_54-hopper-search",
-    #     # "2021_09_04-01_07_44-hopper-search",
-    #     "2021_09_04-08_34_53-hopper-search",
-    #     "2021_09_04-10_03_27-hopper-search",
-    #     "2021_09_04-11_31_49-hopper-search",
-    #     "2021_09_04-13_00_14-hopper-search",
-    # ]
-
-    # for f in file_names:
-
-    #     # start = time.time()
-    #     data = tool_belt.get_raw_data(f)
-    #     # stop = time.time()
-    #     # print(stop - start)
-
-    #     #    print(data['norm_avg_sig'])
-
-    #     ret_vals = plot_resonances_vs_theta_B(data)
-    #     fit_func, popt, stes, fit_fig, theta_B_deg, angle_fig = ret_vals
-    #     # print(popt)
-
-    if True:
-        file_name = "2023_01_23-21_42_12-siena-nv4_2023_01_16"
-        folder = "pc_rabi/branch_master/spin_echo/2023_01"
-        data = tool_belt.get_raw_data(file_name, folder)
-        nv_name = data["nv_sig"]["name"]
-        timestamp = data["timestamp"]
-        # data['sig_counts'] = data['sig_counts'][:5]
-        # data['ref_counts'] = data['ref_counts'][:5]
-        # data['num_runs'] = 5
-
-        # ret_vals = plot_resonances_vs_theta_B(data)
-        # fit_func, popt, stes, fit_fig, theta_B_deg, angle_fig = ret_vals
-        # file_path_fit = tool_belt.get_file_path(__file__, timestamp, nv_name + "-fit_redo")
-        # plt.show()
-        # tool_belt.save_figure(fit_fig, file_path_fit)
-
-        #### T2 time
-
-        norm_avg_sig = data["norm_avg_sig"]
-        sig_counts = data["sig_counts"]
-        ref_counts = data["ref_counts"]
-        precession_time_range = data["precession_time_range"]
-        num_steps = data["num_steps"]
-        num_reps = data["num_reps"]
-        do_dq = data["do_dq"]
-        nv_sig = data["nv_sig"]
-        readout = nv_sig["spin_readout_dur"]
-        norm_style = NormStyle.SINGLE_VALUED
-
-        ret_vals = tool_belt.process_counts(
-            sig_counts, ref_counts, num_reps, readout, norm_style
-        )
-        (
-            sig_counts_avg_kcps,
-            ref_counts_avg_kcps,
-            norm_avg_sig,
-            norm_avg_sig_ste,
-        ) = ret_vals
-
-        min_precession_time = int(precession_time_range[0])
-        max_precession_time = int(precession_time_range[1])
-
-        taus = numpy.linspace(
-            min_precession_time,
-            max_precession_time,
-            num=num_steps,
-        )
-
-        taus_ms = numpy.array(taus) * 2 / 1e6
-
-        guess_params = [
-            0.05,
-            0.5,
-        ]  # 0.85]
-        fit_func = lambda x, a, b: tool_belt.exp_t2(x, a, b, 0.8545)
-
-        popt, pcov = curve_fit(
-            fit_func,
-            taus_ms,
-            norm_avg_sig,
-            sigma=norm_avg_sig_ste,
-            absolute_sigma=True,
-            p0=guess_params,
-        )
-        print(popt)
-        print(numpy.sqrt(numpy.diag(pcov)))
-
-        taus_ms_linspace = numpy.linspace(taus_ms[0], taus_ms[-1], num=1000)
-
-        fig_fit, ax = plt.subplots(1, 1, figsize=(10, 8))
-        ax.errorbar(
-            taus_ms, norm_avg_sig, fmt="bo", yerr=norm_avg_sig_ste, label="data"
-        )
-        ax.plot(taus_ms_linspace, fit_func(taus_ms_linspace, *popt), "r", label="fit")
-        ax.set_xlabel(r"Free precesion time (ms)")
-        ax.set_ylabel("Contrast (arb. units)")
-        ax.legend()
-
-        if do_dq:
-            ax.set_title("Spin echo DQ baiss")
-        else:
-            ax.set_title("Spin echo SQ baiss")
-
-        text = (
-            r"$T_2 =$ "
-            + "%.2f" % (popt[1])
-            + r" $\pm$ "
-            + "%.2f" % (numpy.sqrt(pcov[1][1]))
-            + r" ms"
-        )
-        props = dict(boxstyle="round", facecolor="wheat", alpha=0.5)
-        ax.text(
-            0.65,
-            0.65,
-            text,
-            fontsize=14,
-            transform=ax.transAxes,
-            verticalalignment="top",
-            bbox=props,
-        )
+    print(mag_B_from_revival_time(25000))
