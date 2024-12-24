@@ -311,8 +311,8 @@ def optimize_scc_amp_and_duration(nv_list):
     # num_runs = 5
     min_amp = 0.75
     max_amp = 1.25
-    min_duration = 48
-    max_duration = 304
+    min_duration = 16
+    max_duration = 272
 
     # Single amp
     num_reps = 16
@@ -498,37 +498,6 @@ def do_power_rabi(nv_list):
     )
 
 
-# def do_spin_echo(nv_list):
-#     # Manual taus setup
-#     min_tau = 300
-#     max_tau = 80e3
-#     num_steps = 30
-
-#     taus = np.linspace(min_tau, max_tau, num_steps).tolist()
-
-#     # Add specific revival periods
-#     revival_period = int(51.5e3)
-#     # revival_width = 5e3
-#     revival_width = 2e3
-#     taus.extend(
-#         np.linspace(
-#             revival_period - revival_width, revival_period + revival_width, 11
-#         ).tolist()
-#     )
-#     taus.extend(
-#         np.linspace(
-#             2 * revival_period - revival_width, 2 * revival_period + revival_width, 11
-#         ).tolist()
-#     )
-#     taus = [round(el / 4) * 4 for el in taus]
-
-#     num_steps = len(taus)
-#     num_reps = 5
-#     num_runs = 600
-
-#     spin_echo.main(nv_list, num_steps, num_reps, num_runs, taus=taus)
-
-
 def do_spin_echo(nv_list):
     # Manual taus setup
     revival_period = int(51.5e3 / 2)  # ns
@@ -565,13 +534,59 @@ def do_spin_echo(nv_list):
     # num_steps = 29
 
     num_reps = 4
-    # num_runs = 200
-    num_runs = 3
+    num_runs = 200
+    # num_runs = 3
 
     # spin_echo.main(nv_list, num_steps, num_reps, num_runs, min_tau, max_tau)
-    spin_echo.main(nv_list, num_steps, num_reps, num_runs, taus=taus)
-    # for ind in range(5):
-    #     spin_echo.main(nv_list, num_steps, num_reps, num_runs, taus=taus)
+    # spin_echo.main(nv_list, num_steps, num_reps, num_runs, taus=taus)
+    for ind in range(5):
+        spin_echo.main(nv_list, num_steps, num_reps, num_runs, taus=taus)
+
+
+# def do_spin_echo(nv_list):
+#     """
+#     Perform a spin echo experiment with refined parameters for NV centers.
+#     """
+#     # Manual taus setup
+#     revival_period = int(51.5e3 / 2)  # ns
+#     min_tau = 200
+#     taus = []
+#     revival_width = 2e3
+
+#     # Logarithmic spacing for decay
+#     decay = np.logspace(np.log10(min_tau), np.log10(revival_period - revival_width), 10)
+#     taus.extend(decay.tolist())
+
+#     # First revival
+#     first_revival = np.linspace(
+#         revival_period - revival_width, revival_period + revival_width, 21
+#     )
+#     taus.extend(first_revival.tolist())
+
+#     # Gap and second revival
+#     gap = np.linspace(
+#         revival_period + revival_width, 2 * revival_period - revival_width, 7
+#     )
+#     taus.extend(gap[1:-1].tolist())
+
+#     second_revival = np.linspace(
+#         2 * revival_period - revival_width, 2 * revival_period + revival_width, 11
+#     )
+#     taus.extend(second_revival.tolist())
+
+#     # Round taus to nearest multiple of 4 and remove duplicates
+#     taus = [round(el / 4) * 4 for el in taus]
+#     taus = sorted(set(taus))  # Ensure uniqueness
+
+#     # Experiment settings
+#     num_steps = len(taus)
+#     num_reps = 8  # More repetitions for noise averaging
+#     num_runs = 200  # Total runs for better statistics
+
+#     # Run the spin echo experiment
+#     # spin_echo.main(nv_list, num_steps, num_reps, num_runs, taus=taus)
+#     # for ind in range(5):
+#     #     spin_echo.main(nv_list, num_steps, num_reps, num_runs, taus=taus)
 
 
 def do_ramsey(nv_list):
@@ -1005,18 +1020,11 @@ if __name__ == "__main__":
     # magnet_angle = 90
     date_str = "2024_03_12"
     sample_coords = [2.0, 0.0]
-    z_coord = 2.45
+    z_coord = 2.55
     # Load NV pixel coordinates
     pixel_coords_list = load_nv_coords(
         file_path="slmsuite/nv_blob_detection/nv_blob_filtered_160nvs_reordered.npz",
     ).tolist()
-
-    # pixel_coords_list = [
-    #     [106.923, 120.549],
-    #     [52.761, 64.24],
-    #     [95.923, 201.438],
-    #     [207.435, 74.049],
-    # ]
 
     # Define transformations using `transform_coords`
     green_coords_list = [
@@ -1087,7 +1095,8 @@ if __name__ == "__main__":
     #after calibration
     # scc_duration_list = [168, 160, 164, 124, 188, 132, 116, 124, 160, 160, 164, 120, 140, 144, 124, 136, 136, 88, 152, 140, 140, 116, 104, 120, 112, 164, 136, 112, 96, 112, 140, 144, 196, 192, 120, 140, 228, 140, 32, 140, 148, 108, 164, 152, 132, 140, 176, 132, 136, 120, 112, 108, 144, 116, 132, 36, 192, 84, 148, 112, 132, 152, 176, 176, 176, 112, 120, 140, 168, 140, 92, 132, 92, 124, 68, 32, 92, 148, 164, 104, 32, 148, 188, 32, 112, 148, 168, 64, 140, 140, 96, 124, 176, 108, 108, 216, 216, 116, 112, 132, 148, 132, 132, 140, 160, 132, 148, 192, 160, 116, 140, 120, 152, 140, 144, 124, 160]
     # scc_duration_list = [168, 184, 220, 136, 140, 104, 104, 144, 240, 188, 160, 148, 116, 164, 124, 140, 132, 104, 304, 184, 144, 148, 116, 68, 132, 120, 112, 124, 116, 148, 212, 144, 132, 172, 116, 160, 304, 144, 60, 180, 100, 112, 172, 192, 144, 184, 292, 200, 96, 116, 156, 144, 144, 80, 160, 160, 168, 76, 176, 136, 172, 192, 264, 140, 104, 112, 140, 176, 208, 148, 116, 140, 80, 152, 140, 116, 96, 120, 112, 96, 48, 188, 48, 84, 96, 228, 172, 172, 124, 96, 128, 120, 196, 104, 88, 140, 80, 116, 112, 160, 120, 140, 112, 148, 108, 140, 152, 292, 124, 116, 140, 140, 160, 212, 140, 140, 196]
-    scc_duration_list = [264, 304, 304, 184, 148, 148, 48, 236, 304, 304, 304, 196, 132, 304, 136, 188, 176, 156, 304, 296, 172, 212, 148, 148, 196, 160, 140, 168, 84, 192, 304, 236, 196, 276, 136, 304, 304, 196, 48, 304, 128, 156, 304, 304, 212, 304, 304, 304, 116, 140, 196, 252, 124, 140, 304, 80, 304, 116, 304, 252, 172, 304, 304, 188, 120, 144, 236, 304, 304, 184, 168, 196, 156, 204, 144, 112, 132, 168, 124, 132, 112, 304, 108, 92, 116, 304, 304, 152, 152, 68, 160, 156, 304, 148, 124, 168, 108, 128, 132, 304, 172, 176, 160, 168, 124, 176, 228, 304, 128, 172, 204, 176, 188, 260, 256, 168, 304]
+    # scc_duration_list = [264, 304, 304, 184, 148, 148, 48, 236, 304, 304, 304, 196, 132, 304, 136, 188, 176, 156, 304, 296, 172, 212, 148, 148, 196, 160, 140, 168, 84, 192, 304, 236, 196, 276, 136, 304, 304, 196, 48, 304, 128, 156, 304, 304, 212, 304, 304, 304, 116, 140, 196, 252, 124, 140, 304, 80, 304, 116, 304, 252, 172, 304, 304, 188, 120, 144, 236, 304, 304, 184, 168, 196, 156, 204, 144, 112, 132, 168, 124, 132, 112, 304, 108, 92, 116, 304, 304, 152, 152, 68, 160, 156, 304, 148, 124, 168, 108, 128, 132, 304, 172, 176, 160, 168, 124, 176, 228, 304, 128, 172, 204, 176, 188, 260, 256, 168, 304]
+    scc_duration_list = [112, 100, 92, 84, 144, 100, 100, 80, 108, 116, 92, 96, 108, 100, 88, 112, 108, 76, 76, 100, 132, 84, 92, 68, 76, 116, 124, 80, 100, 84, 76, 108, 128, 192, 92, 84, 92, 84, 108, 96, 132, 104, 116, 92, 100, 84, 92, 72, 84, 100, 116, 72, 124, 96, 84, 72, 164, 100, 56, 76, 64, 116, 92, 144, 172, 96, 60, 84, 100, 116, 80, 112, 88, 80, 64, 116, 100, 120, 112, 112, 128, 96, 108, 100, 108, 84, 144, 84, 128, 92, 108, 116, 148, 120, 88, 168, 64, 124, 104, 116, 100, 124, 112, 124, 120, 100, 172, 116, 124, 84, 92, 116, 80, 96, 88, 80, 92]
     # SCC sweep: Full 2D 
     snr_list = [0.207, 0.206, 0.211, 0.183, 0.08, 0.224, 0.095, 0.078, 0.136, 0.038, 0.034, 0.026, 0.039, 0.165, 0.13, 0.18, 0.153, 0.074, 0.08, 0.028, 0.053, 0.142, 0.188, 0.077, 0.121, 0.137, 0.085, 0.067, 0.157, 0.135, 0.036, 0.075, 0.135, 0.168, 0.045, 0.067, 0.158, 0.12, 0.074, 0.167, 0.073, 0.046, 0.149, 0.054, 0.135, 0.064, 0.119, 0.193, 0.104, 0.091, 0.04, 0.127, 0.125, 0.105, 0.054, 0.069, 0.139, 0.151, 0.119, 0.068, 0.134, 0.054, 0.11, 0.096, 0.105, 0.133, 0.149, 0.057, 0.102, 0.083, 0.097, 0.175, 0.096, 0.058, 0.161, 0.158, 0.048, 0.1, 0.093, 0.132, 0.131, 0.055, 0.028, 0.083, 0.05, 0.061, 0.06, 0.082, 0.114, 0.065, 0.144, 0.142, 0.116, 0.095, 0.143, 0.121, 0.116, 0.102, 0.032, 0.061, 0.113, 0.087, 0.061, 0.119, 0.027, 0.119, 0.131, 0.144, 0.122, 0.087, 0.087, 0.067, 0.089, 0.068, 0.089, 0.043, 0.131, 0.05, 0.075, 0.039, 0.09, 0.085, 0.099, 0.123, 0.133, 0.097, 0.083, 0.04, 0.097, 0.032, 0.043, 0.148, 0.092, 0.037, 0.118, 0.051, 0.078, 0.053, 0.081, 0.056, 0.112, 0.119, 0.05, 0.044, 0.131, 0.137, 0.133, 0.074, 0.049, 0.06, 0.043, 0.063, 0.106, 0.165, 0.16, 0.05, 0.132, 0.088, 0.081, 0.062]
     # scc_duration_list = [304, 304, 304, 156, 304, 148, 244, 100, 304, 60, 304, 76, 88, 304, 112, 304, 144, 304, 304, 48, 76, 140, 144, 88, 304, 304, 304, 112, 304, 172, 304, 96, 72, 168, 128, 48, 304, 112, 124, 304, 48, 304, 304, 48, 304, 304, 168, 144, 304, 304, 60, 304, 108, 304, 48, 304, 164, 160, 304, 268, 240, 196, 304, 112, 304, 48, 264, 304, 152, 304, 184, 148, 304, 52, 160, 112, 104, 304, 88, 116, 56, 304, 68, 304, 304, 112, 52, 304, 304, 96, 304, 120, 304, 140, 304, 304, 156, 48, 304, 64, 304, 304, 132, 124, 304, 148, 304, 148, 80, 136, 124, 148, 108, 132, 132, 68, 124, 132, 304, 92, 80, 64, 304, 152, 136, 304, 48, 96, 304, 48, 64, 304, 64, 304, 216, 304, 304, 144, 176, 140, 304, 136, 104, 304, 56, 136, 76, 112, 304, 120, 164, 304, 88, 104, 128, 152, 132, 112, 100, 304]
@@ -1106,10 +1115,10 @@ if __name__ == "__main__":
     #117nvs 
     include_inds =[0, 1, 2, 3, 5, 6, 7, 8, 13, 14, 15, 16, 17, 18, 20, 21, 22, 23, 24, 25, 26, 28, 29, 31, 32, 33, 34, 36, 37, 39, 42, 44, 45, 46, 47, 48, 49, 51, 52, 53, 55, 56, 57, 58, 60, 61, 62, 64, 65, 66, 68, 69, 70, 71, 72, 73, 74, 75, 77, 79, 83, 84, 85, 88, 89, 90, 91, 92, 94, 95, 96, 97, 99, 100, 101, 102, 103, 105, 106, 107, 108, 109, 110, 111, 113, 114, 116, 117, 118, 120, 122, 123, 124, 125, 128, 131, 132, 134, 136, 137, 138, 140, 141, 142, 145, 146, 147, 148, 149, 152, 153, 154, 155, 156, 157, 158, 159]
     # Initialize a list with None values
-    # arranged_scc_duration_list = [None] * num_nvs
-    # for i, idx in enumerate(include_inds):
-    #     arranged_scc_duration_list[idx] = scc_duration_list[i]
-    # scc_duration_list = arranged_scc_duration_list
+    arranged_scc_duration_list = [None] * num_nvs
+    for i, idx in enumerate(include_inds):
+        arranged_scc_duration_list[idx] = scc_duration_list[i]
+    scc_duration_list = arranged_scc_duration_list
 
     # final_drop_inds = [23, 73, 89, 99, 117, 120, 132, 137, 155, 157, 159]
     # include_inds = [ind for ind in include_inds if ind not in final_drop_inds]
@@ -1177,7 +1186,7 @@ if __name__ == "__main__":
             # scc_duration=scc_duration_list[ind],
             # scc_amp=scc_amp_list[ind],
             # threshold=threshold_list[ind],
-            # pulse_durations={VirtualLaserKey.SCC: scc_duration_list[ind]},
+            pulse_durations={VirtualLaserKey.SCC: scc_duration_list[ind]},
             # pulse_amps={
             #     VirtualLaserKey.SCC: scc_amp_list[ind],
             #     VirtualLaserKey.CHARGE_POL: charge_pol_amps[ind],
@@ -1277,7 +1286,7 @@ if __name__ == "__main__":
         # do_optimize_xyz(nv_sig)
         # pos.set_xyz_on_nv(nv_sig)
 
-        # do_compensate_for_drift(nv_sig)
+        do_compensate_for_drift(nv_sig)
 
         # for point in points:
         #     x, y = point
@@ -1301,7 +1310,7 @@ if __name__ == "__main__":
 
         # do_scanning_image_sample(nv_sig)
         # do_scanning_image_sample_zoom(nv_sig)
-        # do_widefield_image_sample(nv_sig, 50)
+        do_widefield_image_sample(nv_sig, 50)
         # do_widefield_image_sample(nv_sig, 100)
 
         # do_image_nv_list(nv_list)
@@ -1341,7 +1350,7 @@ if __name__ == "__main__":
         # do_resonance_zoom(nv_list)
         # do_rabi(nv_list)
         # do_resonance(nv_list)
-        # do_spin_echo(nv_list)
+        do_spin_echo(nv_list)
 
         # do_power_rabi(nv_list)
         # do_correlation_test(nv_list)
@@ -1361,7 +1370,7 @@ if __name__ == "__main__":
         # do_scc_snr_check(nv_list)
         # do_optimize_scc_duration(nv_list)
         # do_optimize_scc_amp(nv_list)
-        optimize_scc_amp_and_duration(nv_list)
+        # optimize_scc_amp_and_duration(nv_list)
         # do_crosstalk_check(nv_sig)
         # do_spin_pol_check(nv_sig)
         # do_calibrate_green_red_delay()
