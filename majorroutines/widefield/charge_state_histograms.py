@@ -154,7 +154,8 @@ def process_and_plot(
             )
             kpl.anchored_text(ax, snr_str, kpl.Loc.CENTER_RIGHT, size=kpl.Size.SMALL)
 
-            kpl.show(block=True)
+            if readout_fidelity < 0.8:
+                kpl.show(block=True)
             plt.close(fig)
             fig = None
 
@@ -522,6 +523,6 @@ def main(
 
 if __name__ == "__main__":
     kpl.init_kplotlib()
-    data = dm.get_raw_data(file_id=1732420670067, load_npz=True)
+    data = dm.get_raw_data(file_id=1733485430264, load_npz=True)
     process_and_plot(data, do_plot_histograms=True)
     kpl.show(block=True)
