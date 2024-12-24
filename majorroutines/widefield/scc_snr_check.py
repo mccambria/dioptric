@@ -202,6 +202,8 @@ if __name__ == "__main__":
     kpl.show(block=True)
 
     data = dm.get_raw_data(file_id=1731342940279)  # +8
+    data = dm.get_raw_data(file_id=1731408940779)
+    data = dm.get_raw_data(file_id=1732884193552)
     avg_snr_c = process_and_plot(data)
     nv_list = data["nv_list"]
 

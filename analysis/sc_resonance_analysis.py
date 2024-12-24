@@ -330,7 +330,7 @@ def plot_nv_resonance_fits_and_residuals(
     plt.grid(True, linestyle="--", alpha=0.5)
     plt.tight_layout()
     plt.show()
-    return
+    # return
 
     filter_nvs = False
     if filter_nvs:
@@ -405,7 +405,7 @@ def plot_nv_resonance_fits_and_residuals(
     filtered_avg_peak_amplitudes = [
         avg_peak_amplitudes[idx] for idx in filtered_indices
     ]
-    filtered_contrast_list = [contrast_list[idx] for idx in filtered_indices]
+    # filtered_contrast_list = [contrast_list[idx] for idx in filtered_indices]
     filtered_chi_squared_list = [chi_squared_list[idx] for idx in filtered_indices]
     filtered_fitted_data = [fit_data[idx] for idx in filtered_indices]
 
@@ -530,7 +530,7 @@ def plot_nv_resonance_fits_and_residuals(
     dm.save_figure(fig_fitting, file_path)
     # plt.close(fig_fitting)
 
-    # return
+    return
 
     # Plot histograms and scatter plots
     plots_data = [
@@ -859,6 +859,7 @@ if __name__ == "__main__":
     # file_id = 1726476640278  # 30ms readout all variabe
     # file_id = 1729834552723  # 50ms readout mcc
     file_id = 1732403187814  # 50ms readout 117NVs movies
+    file_id = 1733307847194
     data = dm.get_raw_data(file_id=file_id, load_npz=False, use_cache=True)
     # print(data.keys())
     # readout_duration = data["config"]["Optics"]["VirtualLasers"][
