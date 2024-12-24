@@ -526,7 +526,6 @@ if __name__ == "__main__":
     # file_id = 1720970373150  # yellow ampl var iter_1
     # file_id = 1731890617395  # green ampl var after new calinration
     file_id = 1732177472880  # yellow ampl var 50ms 117NVs
-
     # raw_data = dm.get_raw_data(file_id=1709868774004, load_npz=False) #yellow ampl var
     raw_data = dm.get_raw_data(file_id=file_id, load_npz=False)  # yellow amp var
     process_and_plot(raw_data)

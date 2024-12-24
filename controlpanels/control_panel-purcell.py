@@ -215,15 +215,15 @@ def do_optimize_green(nv_sig):
 
 def do_optimize_red(nv_sig, ref_nv_sig):
     opti_coords = []
-    # axes_list = [Axes.X, Axes.Y]
-    axes_list = [Axes.Y, Axes.X]
+    axes_list = [Axes.X, Axes.Y]
+    # axes_list = [Axes.Y, Axes.X]
     for ind in range(1):
         axes = axes_list[ind]
         ret_vals = targeting.optimize(nv_sig, coords_key=red_laser_aod, axes=axes)
         opti_coords.append(ret_vals[0])
         # Compensate for drift after first optimization along X axis
-        if ind == 0:
-            do_compensate_for_drift(ref_nv_sig)
+        # if ind == 0:
+        #     do_compensate_for_drift(ref_nv_sig)
     return opti_coords
 
 
@@ -498,27 +498,70 @@ def do_power_rabi(nv_list):
     )
 
 
+# def do_spin_echo(nv_list):
+#     # Manual taus setup
+#     min_tau = 300
+#     max_tau = 80e3
+#     num_steps = 30
+
+#     taus = np.linspace(min_tau, max_tau, num_steps).tolist()
+
+#     # Add specific revival periods
+#     revival_period = int(51.5e3)
+#     # revival_width = 5e3
+#     revival_width = 2e3
+#     taus.extend(
+#         np.linspace(
+#             revival_period - revival_width, revival_period + revival_width, 11
+#         ).tolist()
+#     )
+#     taus.extend(
+#         np.linspace(
+#             2 * revival_period - revival_width, 2 * revival_period + revival_width, 11
+#         ).tolist()
+#     )
+#     taus = [round(el / 4) * 4 for el in taus]
+
+#     num_steps = len(taus)
+#     num_reps = 5
+#     num_runs = 600
+
+#     spin_echo.main(nv_list, num_steps, num_reps, num_runs, taus=taus)
+
+
 def do_spin_echo(nv_list):
-    # Manual taus setup
-    revival_period = int(51.5e3)  # ns
-    taus = np.linspace(min_tau, max_tau, num_steps).tolist()
-    revival_width = 5e3
-    taus.extend(np.linspace(min_tau, min_tau + revival_width, 11).tolist())
-    taus.extend(np.linspace(38e3 - revival_width, 38e3 + revival_width, 61).tolist())
-    taus.extend(np.linspace(76e3 - revival_width, 76e3 + revival_width, 21).tolist())
+    # Parameters for logarithmic spacing
+    min_tau = 300
+    max_tau = 80e3
+    num_steps_log = 24
+
+    taus_log = np.logspace(np.log10(min_tau), np.log10(max_tau), num_steps_log).tolist()
+
+    # Add revival periods
+    revival_period = int(51.5e3)  # Revival period in ns
+    revival_width = 2e3
+    taus_revivals = []
+    for factor in [1, 2]:
+        taus_revivals.extend(
+            np.linspace(
+                factor * revival_period - revival_width,
+                factor * revival_period + revival_width,
+                11,  # Points around each revival
+            ).tolist()
+        )
+
+    # Combine taus and round to nearest multiple of 4
+    taus = taus_log + taus_revivals
     taus = [round(el / 4) * 4 for el in taus]
+
+    # Remove duplicates and sort
+    taus = sorted(set(taus))
+
+    # Experiment settings
     num_steps = len(taus)
+    num_reps = 8
+    num_runs = 500
 
-    # Automatic taus setup, linear spacing
-    # min_tau = 200
-    # max_tau = 84e3 + min_tau
-    # num_steps = 29
-
-    num_reps = 6
-    num_runs = 600
-    # num_runs = 2
-
-    spin_echo.main(nv_list, num_steps, num_reps, num_runs, min_tau, max_tau)
     spin_echo.main(nv_list, num_steps, num_reps, num_runs, taus=taus)
 
 
@@ -1000,16 +1043,16 @@ if __name__ == "__main__":
     #     [207.435, 74.049],
     # ]
     # green_coords_list = [
-    #     [109.154, 107.063],
-    #     [115.699, 101.502],
-    #     [109.238, 115.859],
-    #     [98.66, 100.902],
+    #     [109.199, 107.16],
+    #     [115.778, 101.683],
+    #     [109.324, 115.996],
+    #     [98.817, 101.111],
     # ]
     # red_coords_list = [
-    #     [73.493, 72.342],
-    #     [78.617, 67.752],
-    #     [73.831, 79.567],
-    #     [65.156, 67.45],
+    #     [73.85, 72.659],
+    #     [79.006, 68.057],
+    #     [73.978, 79.887],
+    #     [65.348, 67.756],
     # ]
     num_nvs = len(pixel_coords_list)
     threshold_list = [45.5] * num_nvs
@@ -1032,8 +1075,10 @@ if __name__ == "__main__":
     # fmt: off
     # after calibration with amp 1.0
     snr_list = [0.222, 0.218, 0.204, 0.211, 0.256, 0.169, 0.04, 0.196, 0.176, 0.179, 0.191, 0.156, 0.083, 0.111, 0.071, 0.24, 0.231, 0.094, 0.15, 0.214, 0.14, 0.172, 0.165, 0.071, 0.206, 0.203, 0.132, 0.203, 0.096, 0.195, 0.211, 0.169, 0.057, 0.166, 0.225, 0.145, 0.121, 0.19, 0.126, 0.191, 0.108, 0.178, 0.165, 0.112, 0.19, 0.164, 0.143, 0.178, 0.08, 0.158, 0.093, 0.149, 0.105, 0.191, 0.201, 0.055, 0.174, 0.078, 0.152, 0.157, 0.124, 0.118, 0.133, 0.181, 0, 0.179, 0.168, 0.173, 0.188, 0.175, 0.165, 0.198, 0.067, 0.172, 0.123, 0.076, 0.168, 0.138, 0.199, 0.161, 0.069, 0.091, 0.059, 0.066, 0.136, 0.145, 0.116, 0.041, 0.218, 0, 0.143, 0.151, 0.141, 0.18, 0.14, 0.144, 0, 0.137, 0.163, 0.092, 0.132, 0.148, 0.138, 0.116, 0.133, 0.149, 0.147, 0.05, 0.076, 0.119, 0.178, 0.177, 0.081, 0.111, 0.087, 0.182, 0.085]
+    #after calibration
     # scc_duration_list = [168, 160, 164, 124, 188, 132, 116, 124, 160, 160, 164, 120, 140, 144, 124, 136, 136, 88, 152, 140, 140, 116, 104, 120, 112, 164, 136, 112, 96, 112, 140, 144, 196, 192, 120, 140, 228, 140, 32, 140, 148, 108, 164, 152, 132, 140, 176, 132, 136, 120, 112, 108, 144, 116, 132, 36, 192, 84, 148, 112, 132, 152, 176, 176, 176, 112, 120, 140, 168, 140, 92, 132, 92, 124, 68, 32, 92, 148, 164, 104, 32, 148, 188, 32, 112, 148, 168, 64, 140, 140, 96, 124, 176, 108, 108, 216, 216, 116, 112, 132, 148, 132, 132, 140, 160, 132, 148, 192, 160, 116, 140, 120, 152, 140, 144, 124, 160]
-    scc_duration_list = [168, 184, 220, 136, 140, 104, 104, 144, 240, 188, 160, 148, 116, 164, 124, 140, 132, 104, 304, 184, 144, 148, 116, 68, 132, 120, 112, 124, 116, 148, 212, 144, 132, 172, 116, 160, 304, 144, 60, 180, 100, 112, 172, 192, 144, 184, 292, 200, 96, 116, 156, 144, 144, 80, 160, 160, 168, 76, 176, 136, 172, 192, 264, 140, 104, 112, 140, 176, 208, 148, 116, 140, 80, 152, 140, 116, 96, 120, 112, 96, 48, 188, 48, 84, 96, 228, 172, 172, 124, 96, 128, 120, 196, 104, 88, 140, 80, 116, 112, 160, 120, 140, 112, 148, 108, 140, 152, 292, 124, 116, 140, 140, 160, 212, 140, 140, 196]
+    # scc_duration_list = [168, 184, 220, 136, 140, 104, 104, 144, 240, 188, 160, 148, 116, 164, 124, 140, 132, 104, 304, 184, 144, 148, 116, 68, 132, 120, 112, 124, 116, 148, 212, 144, 132, 172, 116, 160, 304, 144, 60, 180, 100, 112, 172, 192, 144, 184, 292, 200, 96, 116, 156, 144, 144, 80, 160, 160, 168, 76, 176, 136, 172, 192, 264, 140, 104, 112, 140, 176, 208, 148, 116, 140, 80, 152, 140, 116, 96, 120, 112, 96, 48, 188, 48, 84, 96, 228, 172, 172, 124, 96, 128, 120, 196, 104, 88, 140, 80, 116, 112, 160, 120, 140, 112, 148, 108, 140, 152, 292, 124, 116, 140, 140, 160, 212, 140, 140, 196]
+    scc_duration_list = [264, 304, 304, 184, 148, 148, 48, 236, 304, 304, 304, 196, 132, 304, 136, 188, 176, 156, 304, 296, 172, 212, 148, 148, 196, 160, 140, 168, 84, 192, 304, 236, 196, 276, 136, 304, 304, 196, 48, 304, 128, 156, 304, 304, 212, 304, 304, 304, 116, 140, 196, 252, 124, 140, 304, 80, 304, 116, 304, 252, 172, 304, 304, 188, 120, 144, 236, 304, 304, 184, 168, 196, 156, 204, 144, 112, 132, 168, 124, 132, 112, 304, 108, 92, 116, 304, 304, 152, 152, 68, 160, 156, 304, 148, 124, 168, 108, 128, 132, 304, 172, 176, 160, 168, 124, 176, 228, 304, 128, 172, 204, 176, 188, 260, 256, 168, 304]
     # SCC sweep: Full 2D 
     snr_list = [0.207, 0.206, 0.211, 0.183, 0.08, 0.224, 0.095, 0.078, 0.136, 0.038, 0.034, 0.026, 0.039, 0.165, 0.13, 0.18, 0.153, 0.074, 0.08, 0.028, 0.053, 0.142, 0.188, 0.077, 0.121, 0.137, 0.085, 0.067, 0.157, 0.135, 0.036, 0.075, 0.135, 0.168, 0.045, 0.067, 0.158, 0.12, 0.074, 0.167, 0.073, 0.046, 0.149, 0.054, 0.135, 0.064, 0.119, 0.193, 0.104, 0.091, 0.04, 0.127, 0.125, 0.105, 0.054, 0.069, 0.139, 0.151, 0.119, 0.068, 0.134, 0.054, 0.11, 0.096, 0.105, 0.133, 0.149, 0.057, 0.102, 0.083, 0.097, 0.175, 0.096, 0.058, 0.161, 0.158, 0.048, 0.1, 0.093, 0.132, 0.131, 0.055, 0.028, 0.083, 0.05, 0.061, 0.06, 0.082, 0.114, 0.065, 0.144, 0.142, 0.116, 0.095, 0.143, 0.121, 0.116, 0.102, 0.032, 0.061, 0.113, 0.087, 0.061, 0.119, 0.027, 0.119, 0.131, 0.144, 0.122, 0.087, 0.087, 0.067, 0.089, 0.068, 0.089, 0.043, 0.131, 0.05, 0.075, 0.039, 0.09, 0.085, 0.099, 0.123, 0.133, 0.097, 0.083, 0.04, 0.097, 0.032, 0.043, 0.148, 0.092, 0.037, 0.118, 0.051, 0.078, 0.053, 0.081, 0.056, 0.112, 0.119, 0.05, 0.044, 0.131, 0.137, 0.133, 0.074, 0.049, 0.06, 0.043, 0.063, 0.106, 0.165, 0.16, 0.05, 0.132, 0.088, 0.081, 0.062]
     # scc_duration_list = [304, 304, 304, 156, 304, 148, 244, 100, 304, 60, 304, 76, 88, 304, 112, 304, 144, 304, 304, 48, 76, 140, 144, 88, 304, 304, 304, 112, 304, 172, 304, 96, 72, 168, 128, 48, 304, 112, 124, 304, 48, 304, 304, 48, 304, 304, 168, 144, 304, 304, 60, 304, 108, 304, 48, 304, 164, 160, 304, 268, 240, 196, 304, 112, 304, 48, 264, 304, 152, 304, 184, 148, 304, 52, 160, 112, 104, 304, 88, 116, 56, 304, 68, 304, 304, 112, 52, 304, 304, 96, 304, 120, 304, 140, 304, 304, 156, 48, 304, 64, 304, 304, 132, 124, 304, 148, 304, 148, 80, 136, 124, 148, 108, 132, 132, 68, 124, 132, 304, 92, 80, 64, 304, 152, 136, 304, 48, 96, 304, 48, 64, 304, 64, 304, 216, 304, 304, 144, 176, 140, 304, 136, 104, 304, 56, 136, 76, 112, 304, 120, 164, 304, 88, 104, 128, 152, 132, 112, 100, 304]
@@ -1052,15 +1097,14 @@ if __name__ == "__main__":
     #117nvs 
     include_inds =[0, 1, 2, 3, 5, 6, 7, 8, 13, 14, 15, 16, 17, 18, 20, 21, 22, 23, 24, 25, 26, 28, 29, 31, 32, 33, 34, 36, 37, 39, 42, 44, 45, 46, 47, 48, 49, 51, 52, 53, 55, 56, 57, 58, 60, 61, 62, 64, 65, 66, 68, 69, 70, 71, 72, 73, 74, 75, 77, 79, 83, 84, 85, 88, 89, 90, 91, 92, 94, 95, 96, 97, 99, 100, 101, 102, 103, 105, 106, 107, 108, 109, 110, 111, 113, 114, 116, 117, 118, 120, 122, 123, 124, 125, 128, 131, 132, 134, 136, 137, 138, 140, 141, 142, 145, 146, 147, 148, 149, 152, 153, 154, 155, 156, 157, 158, 159]
     # Initialize a list with None values
-    arranged_scc_duration_list = [None] * num_nvs
-    for i, idx in enumerate(include_inds):
-        arranged_scc_duration_list[idx] = scc_duration_list[i]
-    scc_duration_list = arranged_scc_duration_list
+    # arranged_scc_duration_list = [None] * num_nvs
+    # for i, idx in enumerate(include_inds):
+    #     arranged_scc_duration_list[idx] = scc_duration_list[i]
+    # scc_duration_list = arranged_scc_duration_list
 
-    final_drop_inds = [23, 73, 89, 99, 117, 120, 132, 137, 155, 157, 159]
-    include_inds = [ind for ind in include_inds if ind not in final_drop_inds]
+    # final_drop_inds = [23, 73, 89, 99, 117, 120, 132, 137, 155, 157, 159]
+    # include_inds = [ind for ind in include_inds if ind not in final_drop_inds]
     # fmt: on
-
     # orientation_data = dm.get_raw_data(file_id=1723161184641)
     # orientation_a_inds = orientation_data["orientation_indices"]["0.041"]["nv_indices"]
     # orientation_b_inds = orientation_data["orientation_indices"]["0.147"]["nv_indices"]
@@ -1124,11 +1168,11 @@ if __name__ == "__main__":
             # scc_duration=scc_duration_list[ind],
             # scc_amp=scc_amp_list[ind],
             # threshold=threshold_list[ind],
-            pulse_durations={VirtualLaserKey.SCC: scc_duration_list[ind]},
-            pulse_amps={
-                # VirtualLaserKey.SCC: scc_amp_list[ind],
-                #     VirtualLaserKey.CHARGE_POL: charge_pol_amps[ind],
-            },
+            # pulse_durations={VirtualLaserKey.SCC: scc_duration_list[ind]},
+            # pulse_amps={
+            #     VirtualLaserKey.SCC: scc_amp_list[ind],
+            #     VirtualLaserKey.CHARGE_POL: charge_pol_amps[ind],
+            # },
         )
         nv_list.append(nv_sig)
 
@@ -1141,7 +1185,7 @@ if __name__ == "__main__":
     # nv_sig.expected_counts = 1650
     # nv_sig.expected_counts = 3359.0
     # nv_sig.expected_counts = 1181.0
-    nv_sig.expected_counts = 1500
+    nv_sig.expected_counts = 1460
     # num_nvs = len(nv_list)
     # print(f"Final NV List: {nv_list}")
     # Ensure data is defined before accessing it
@@ -1248,7 +1292,7 @@ if __name__ == "__main__":
 
         # do_scanning_image_sample(nv_sig)
         # do_scanning_image_sample_zoom(nv_sig)
-        do_widefield_image_sample(nv_sig, 50)
+        # do_widefield_image_sample(nv_sig, 50)
         # do_widefield_image_sample(nv_sig, 100)
 
         # do_image_nv_list(nv_list)
@@ -1305,10 +1349,10 @@ if __name__ == "__main__":
         # do_opx_square_wave()
 
         # nv_list = nv_list[::-1]
-        do_scc_snr_check(nv_list)
+        # do_scc_snr_check(nv_list)
         # do_optimize_scc_duration(nv_list)
         # do_optimize_scc_amp(nv_list)
-        # optimize_scc_amp_and_duration(nv_list)
+        optimize_scc_amp_and_duration(nv_list)
         # do_crosstalk_check(nv_sig)
         # do_spin_pol_check(nv_sig)
         # do_calibrate_green_red_delay()
