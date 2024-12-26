@@ -39,10 +39,10 @@ def plot_histograms(
     sig_counts_list, ref_counts_list, no_title=True, ax=None, density=False
 ):
     laser_key = VirtualLaserKey.WIDEFIELD_CHARGE_READOUT
-    laser_dict = tb.get_virtual_laser_dict(laser_key)
-    readout = laser_dict["duration"]
-    readout_ms = int(readout / 1e6)
-    readout_s = readout / 1e9
+    # laser_dict = tb.get_virtual_laser_dict(laser_key)
+    # readout = laser_dict["duration"]
+    # readout_ms = int(readout / 1e6)
+    # readout_s = readout / 1e9
 
     ### Histograms
     num_reps = len(ref_counts_list)
@@ -522,6 +522,8 @@ def main(
 
 if __name__ == "__main__":
     kpl.init_kplotlib()
-    data = dm.get_raw_data(file_id=1732420670067, load_npz=True)
+    # data = dm.get_raw_data(file_id=1732420670067, load_npz=True)  # 117 NVs
+    # data = dm.get_raw_data(file_id=1733432867671, load_npz=True)  # 117 NVs New phase
+    data = dm.get_raw_data(file_id=1733525139654, load_npz=True)  # 106 NVs New phase
     process_and_plot(data, do_plot_histograms=True)
     kpl.show(block=True)

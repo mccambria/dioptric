@@ -426,7 +426,7 @@ if __name__ == "__main__":
     # data = dm.get_raw_data(file_id=1700650667777, load_npz=True)
     # data = dm.get_raw_data(file_id=1700668458198, load_npz=True)
     # data = dm.get_raw_data(file_id=1700710358100, load_npz=True)
-    data = dm.get_raw_data(file_id=1715452021340, load_npz=True)
+    data = dm.get_raw_data(file_id=1733432867671, load_npz=True)
     # data = dm.get_raw_data(file_id=1732420670067, load_npz=True)
     img_array = data["ref_img_array"]
     # print(img_arrays)
@@ -646,7 +646,7 @@ if __name__ == "__main__":
     a, b, c = [3.7e5, 6.97, 8e-14]
     total_power = a * (aom_voltage**b) + c
     print(total_power)
-    sys.exit()
+    # sys.exit()
     nv_powers = norm_spot_weights * total_power
     drop_indices = [17, 55, 64, 72, 87, 89, 96, 99, 112, 114, 116]
     spot_weights = [
@@ -802,7 +802,7 @@ if __name__ == "__main__":
         ax.text(
             coord[0],
             coord[1] - sigma - 1,
-            str(idx + 1),
+            str(idx),
             color="white",
             fontsize=6,
             ha="center",

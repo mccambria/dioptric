@@ -254,7 +254,8 @@ def optimize_scc_amp_and_duration(
 if __name__ == "__main__":
     kpl.init_kplotlib()
 
-    data = dm.get_raw_data(file_id=1732039041370)
+    data = dm.get_raw_data(file_id=1734030734393)
+
     process_and_plot(data)
 
     plt.show(block=True)

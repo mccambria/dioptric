@@ -848,6 +848,117 @@ def plot_nv_resonance_fits_and_residuals(
 
 #     return X_grid, Y_grid, Z_grid
 
+import numpy as np
+import matplotlib.pyplot as plt
+from matplotlib.animation import FuncAnimation, PillowWriter
+
+
+def create_movie(data, output_filename="movie.gif", nv_index=0, fps=5):
+    """
+    Create a movie of the NV images along step indices.
+
+    Parameters:
+        data (dict): Dictionary containing the data with 'img_arrays' key.
+        output_filename (str): Path to save the output movie (GIF format).
+        nv_index (int): Index of the NV center to visualize.
+        fps (int): Frames per second for the movie.
+    """
+    # Extract img_arrays and validate
+    # img_arrays = np.array(
+    #     data["img_arrays"]
+    # )  # Shape: [nv_ind, step_ind, height, width]
+
+    img_arrays = data["img_arrays"]
+    print("Type of img_arrays:", type(img_arrays))
+    print("Contents of img_arrays:", img_arrays)
+
+    if img_arrays.ndim != 4:
+        raise ValueError(
+            "img_arrays must have the structure [nv_ind, step_ind, height, width]"
+        )
+
+    num_steps = img_arrays.shape[1]
+
+    # Set up the figure
+    fig, ax = plt.subplots()
+    img = ax.imshow(
+        img_arrays[nv_index, 0, :, :], cmap="viridis", interpolation="nearest"
+    )
+    ax.set_title(f"NV {nv_index} - Step 0")
+    plt.colorbar(img, ax=ax)
+
+    # Update function for animation
+    def update(frame):
+        img.set_data(img_arrays[nv_index, frame, :, :])
+        ax.set_title(f"NV {nv_index} - Step {frame}")
+        return (img,)
+
+    # Create animation
+    ani = FuncAnimation(fig, update, frames=num_steps, interval=1000 // fps, blit=True)
+
+    # Save as GIF
+    writer = PillowWriter(fps=fps)
+    ani.save(output_filename, writer=writer)
+    print(f"Movie saved to {output_filename}")
+
+
+import numpy as np
+import matplotlib.pyplot as plt
+from matplotlib.animation import FuncAnimation, PillowWriter
+
+
+import numpy as np
+import matplotlib.pyplot as plt
+from matplotlib.animation import FuncAnimation, PillowWriter
+
+
+def create_movie(data, output_filename="movie.gif", nv_index=0, fps=5):
+    """
+    Generate a movie of NV images along step indices and save it as a GIF.
+
+    Parameters:
+        data (dict): A dictionary containing the 'img_arrays' key with image data.
+        output_filename (str): The path to save the output movie (GIF format).
+        nv_index (int): The index of the NV center to visualize.
+        fps (int): Frames per second for the movie.
+    """
+    # Extract img_arrays from the data dictionary
+    img_arrays = data.get("img_arrays")
+    if img_arrays is None:
+        raise ValueError("The 'img_arrays' key is missing in the data dictionary.")
+
+    # Validate img_arrays structure
+    if not isinstance(img_arrays, np.ndarray):
+        raise ValueError("img_arrays must be a numpy array.")
+    if img_arrays.ndim != 4:
+        raise ValueError(
+            "img_arrays must have the shape [nv_ind, step_ind, height, width]."
+        )
+
+    num_steps = img_arrays.shape[1]
+
+    # Set up the figure for visualization
+    fig, ax = plt.subplots()
+    img_display = ax.imshow(
+        img_arrays[nv_index, 0, :, :], cmap="viridis", interpolation="nearest"
+    )
+    ax.set_title(f"NV {nv_index} - Step 0")
+    plt.colorbar(img_display, ax=ax)
+
+    # Define the update function for animation
+    def update(frame):
+        img_display.set_data(img_arrays[nv_index, frame, :, :])
+        ax.set_title(f"NV {nv_index} - Step {frame}")
+        return (img_display,)
+
+    # Create the animation
+    ani = FuncAnimation(fig, update, frames=num_steps, interval=1000 // fps, blit=True)
+
+    # Save the animation as a GIF
+    writer = PillowWriter(fps=fps)
+    ani.save(output_filename, writer=writer)
+    print(f"Movie successfully saved to {output_filename}")
+
 
 if __name__ == "__main__":
     # file_id = 1663484946120
@@ -859,16 +970,18 @@ if __name__ == "__main__":
     # file_id = 1726476640278  # 30ms readout all variabe
     # file_id = 1729834552723  # 50ms readout mcc
     file_id = 1732403187814  # 50ms readout 117NVs movies
-    file_id = 1733307847194
+    # file_id = 1733307847194
     data = dm.get_raw_data(file_id=file_id, load_npz=False, use_cache=True)
-    # print(data.keys())
+    print(data.keys())
+    create_movie(data, output_filename="nv_movie.gif", nv_index=0, fps=5)
+    sys.exit()
     # readout_duration = data["config"]["Optics"]["VirtualLasers"][
     #     "VirtualLaserKey.WIDEFIELD_CHARGE_READOUT"
     # ]["duration"]
     vls = data["config"]["Optics"]["VirtualLasers"]
     # print(vls.keys())
     # print(f"reaout_duaration:{readout_duration}")
-    # image_arrays = data["img_arrays"]
+    image_arrays = data["img_arrays"]
     nv_list = data["nv_list"]
     num_nvs = len(nv_list)
     counts = np.array(data["counts"])[0]
@@ -901,7 +1014,6 @@ if __name__ == "__main__":
         file_id,
         num_cols=9,
     )
-
     print(f"Plot saved to {file_path}")
 
     # selected_nv_indices = [5, 11, 22, 60]
