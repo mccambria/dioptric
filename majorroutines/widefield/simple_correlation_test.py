@@ -7,6 +7,8 @@ Created on December 6th, 2023
 @author: mccambria
 """
 
+import sys
+
 import matplotlib.pyplot as plt
 import numpy as np
 import numpy.ma as ma
@@ -120,7 +122,7 @@ def process_and_plot_experimental(data):
     #             max_corr_inds = [ind, jnd]
     #         kpl.plot_points(ax, dist, corr, color=kpl.KplColors.BLUE)
     # ax.set_xlabel("Distance between NVs (μm)")
-    # ax.set_ylabel("Count correlation | both NVs in NV$^{-}$")
+    # ax.set_ylabel("Count correlation | both NVs in NV$**{-}$")
     # print(max_corr_inds)
     # return
 
@@ -457,6 +459,100 @@ def main(nv_list, num_reps, num_runs):
 if __name__ == "__main__":
     kpl.init_kplotlib()
 
+    ### Simulation
+
+    # Setup
+    # fmt: off
+    # snr_list = [1 for ind in range(117)]
+    snr_list = [0.208, 0.202, 0.186, 0.198, 0.246, 0.211, 0.062, 0.178, 0.161, 0.192, 0.246, 0.139, 0.084, 0.105, 0.089, 0.198, 0.242, 0.068, 0.134, 0.214, 0.185, 0.149, 0.172, 0.122, 0.128, 0.205, 0.202, 0.174, 0.192, 0.172, 0.145, 0.169, 0.135, 0.184, 0.204, 0.174, 0.13, 0.174, 0.06, 0.178, 0.237, 0.167, 0.198, 0.147, 0.176, 0.154, 0.118, 0.157, 0.113, 0.202, 0.084, 0.117, 0.117, 0.182, 0.157, 0.121, 0.181, 0.124, 0.135, 0.121, 0.15, 0.099, 0.107, 0.198, 0.09, 0.153, 0.159, 0.153, 0.177, 0.182, 0.139, 0.202, 0.141, 0.173, 0.114, 0.057, 0.193, 0.172, 0.191, 0.165, 0.076, 0.116, 0.072, 0.105, 0.152, 0.139, 0.186, 0.049, 0.197, 0.072, 0.072, 0.158, 0.175, 0.142, 0.132, 0.173, 0.063, 0.172, 0.141, 0.147, 0.138, 0.151, 0.169, 0.147, 0.148, 0.117, 0.149, 0.07, 0.135, 0.152, 0.163, 0.189, 0.116, 0.124, 0.129, 0.158, 0.079]
+    # fmt: on
+    # pre_snr_cutoff = 0.1
+    # snr_list = [el for el in snr_list if el > pre_snr_cutoff]
+    num_shots = int(1e6)
+    num_nvs = len(snr_list)
+    print(f"Number of NVs: {num_nvs}")
+    run_time = 0.065 * 2 * num_shots / (60**2)
+    print(f"Expected run time: {run_time} hours")
+    # careful_removal_inds = [ind for ind in range(num_nvs) if snr_list[ind] < 0.15]
+    # print(careful_removal_inds)
+    # print([snr_list[ind] for ind in careful_removal_inds])
+    # sys.exit()
+
+    # Simulate experiments
+    # SNR = (P(nvn|ms1) - P(nvn|ms0)) / sqrt(P(nvn|ms1)(1-P(nvn|ms1)) + P(nvn|ms0)(1-P(nvn|ms0)))
+    # SNR does not uniquely define probabilities so fix one probability arbitrarily
+    nvn_ms0_probs = [0.2 for ind in range(num_nvs)]
+    nvn_ms1_probs = [
+        (
+            a**2
+            + 2 * b
+            + np.sqrt(
+                a**4 + 8 * a**2 * b + 4 * a**4 * b - 8 * a**2 * b**2 - 4 * a**4 * b**2
+            )
+        )
+        / (2 * (1 + a**2))
+        for a, b in zip(snr_list, nvn_ms0_probs)
+    ]
+    pi_pulses = np.random.choice([-1, +1], num_shots)
+    snr_sorted_nv_inds = np.argsort(snr_list)[::-1]
+    spin_flips = [None] * num_nvs
+    parity = 1
+    for ind in snr_sorted_nv_inds:
+        spin_flips[ind] = parity
+        parity *= -1
+    states = np.array(
+        [
+            [pi_pulses[shot_ind] * spin_flips[nv_ind] for shot_ind in range(num_shots)]
+            for nv_ind in range(num_nvs)
+        ]
+    )
+    counts = np.empty((num_nvs, num_shots))
+    for shot_ind in range(num_shots):
+        for nv_ind in range(num_nvs):
+            state = states[nv_ind, shot_ind]
+            if state == -1:  # ms=+/-1
+                prob = nvn_ms1_probs[nv_ind]
+            else:  # ms=0
+                prob = nvn_ms0_probs[nv_ind]
+            counts[nv_ind, shot_ind] = np.random.binomial(1, prob)
+
+    # Calculate correlation coefficients
+    # corr_coeffs = tb.nan_corr_coef(counts)
+    corr_coeffs = np.corrcoef(counts)
+    np.fill_diagonal(corr_coeffs, np.nan)
+    max_corr_coeff = np.nanmax(np.abs(corr_coeffs))
+
+    # Plot
+    # for post_snr_cutoff in [0]:
+    for post_snr_cutoff in [0.2, 0.15, 0.13, 0.12, 0.1, 0.05, 0]:
+        include_inds = [
+            ind for ind in range(num_nvs) if snr_list[ind] > post_snr_cutoff
+        ]
+        num_to_include = len(include_inds)
+        not_flipped_inds = [ind for ind in include_inds if spin_flips[ind] == 1]
+        flipped_inds = [ind for ind in include_inds if spin_flips[ind] == -1]
+        include_inds = [None] * num_to_include
+        include_inds[::2] = not_flipped_inds
+        include_inds[1::2] = flipped_inds
+
+        corr_coeffs_post = corr_coeffs[:, include_inds][include_inds]
+        fig, ax = plt.subplots()
+        kpl.imshow(
+            ax,
+            corr_coeffs_post,
+            # title=f"Correlation simulation, \ncheckerboard, SNR cutoff in pre {pre_snr_cutoff}",
+            title=f"Correlation simulation, \ncheckerboard, SNR cutoff in post {post_snr_cutoff}",
+            cbar_label="Correlation coefficient",
+            cmap="RdBu_r",
+            vmin=-max_corr_coeff,
+            vmax=max_corr_coeff,
+            nan_color=kpl.KplColors.GRAY,
+        )
+    plt.show(block=True)
+    sys.exit()
+
+    ### Data
+
     # data = dm.get_raw_data(file_id=1540048047866)  # Straight block
     # process_and_plot(data)
     # data = dm.get_raw_data(file_id=1541938921939)  # reverse block
@@ -465,7 +561,7 @@ if __name__ == "__main__":
     # process_and_plot(data)
     # data = dm.get_raw_data(file_id=1540558251818)  # orientation
     # data = dm.get_raw_data(file_id=1655494429496)  # orientation
-    data = dm.get_raw_data(file_id=1653570783798) 
+    data = dm.get_raw_data(file_id=1653570783798)
     process_and_plot(data)
 
     plt.show(block=True)
