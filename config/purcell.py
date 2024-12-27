@@ -39,20 +39,15 @@ calibration_coords_pixel = [
 ]
 
 calibration_coords_green = [
-    [115.778, 101.683],
-    [109.324, 115.996],
-    [98.817, 101.111],
+    [115.734, 101.582],
+    [109.296, 115.908],
+    [98.731, 101.035],
 ]
 calibration_coords_red = [
-    [79.006, 68.057],
-    [73.978, 79.887],
-    [65.348, 67.756],
+    [78.734, 67.936],
+    [73.946, 79.639],
+    [65.519, 67.787],
 ]
-# calibration_coords_red = [
-#     [78.617, 67.752],
-#     [73.831, 79.567],
-#     [65.066, 67.468],
-# ]
 # Create the dictionaries using the provided lists
 calibration_coords_nv1 = {
     CoordsKey.PIXEL: calibration_coords_pixel[0],
@@ -823,7 +818,7 @@ opx_config = {
         # "yellow_charge_readout": {"type": "constant", "sample": 0.396},  # 50ms 160NVs
         "yellow_charge_readout": {"type": "constant", "sample": 0.3472},  # 50ms 117NVs
         # "yellow_charge_readout": {"type": "constant", "sample": 0.3423},  # 50ms 106NVs
-        # "yellow_charge_readout": {"type": "constant", "sample": 0.4175},  # 30ms 160Nvs
+        # "yellow_charge_readout": {"type": "constant", "sample": 0.45},  # 30ms 160Nvs
         "yellow_spin_pol": {"type": "constant", "sample": 0.39},
         "yellow_shelving": {"type": "constant", "sample": 0.33},
         # Other

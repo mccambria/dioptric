@@ -13,6 +13,7 @@ import os
 import random
 import sys
 import time
+from random import shuffle
 
 import cv2
 import matplotlib.pyplot as plt
@@ -215,8 +216,9 @@ def do_optimize_green(nv_sig):
 
 def do_optimize_red(nv_sig, ref_nv_sig):
     opti_coords = []
-    axes_list = [Axes.X, Axes.Y]
-    # axes_list = [Axes.Y, Axes.X]
+    # axes_list = [Axes.X, Axes.Y]
+    axes_list = [Axes.Y, Axes.X]
+    shuffle(axes_list)
     for ind in range(1):
         axes = axes_list[ind]
         ret_vals = targeting.optimize(nv_sig, coords_key=red_laser_aod, axes=axes)
@@ -543,50 +545,70 @@ def do_spin_echo(nv_list):
         spin_echo.main(nv_list, num_steps, num_reps, num_runs, taus=taus)
 
 
-# def do_spin_echo(nv_list):
-#     """
-#     Perform a spin echo experiment with refined parameters for NV centers.
-#     """
-#     # Manual taus setup
-#     revival_period = int(51.5e3 / 2)  # ns
+# def do_spin_echo_optimized(nv_list):
+#     # Constants
+#     revival_period = 51.5e3 / 2  # Revival period (ns)
 #     min_tau = 200
-#     taus = []
+#     max_tau = 2 * revival_period + 2e3  # Maximum tau (slightly beyond second revival)
+#     coarse_steps = 11
+#     fine_steps = 20
+#     intermediate_steps = 6
 #     revival_width = 2e3
 
-#     # Logarithmic spacing for decay
-#     decay = np.logspace(np.log10(min_tau), np.log10(revival_period - revival_width), 10)
-#     taus.extend(decay.tolist())
+#     revival_period = int(revival_period)
 
-#     # First revival
-#     first_revival = np.linspace(
-#         revival_period - revival_width, revival_period + revival_width, 21
+#     taus = []
+
+#     # Logarithmic spacing from min_tau to slightly before first revival
+#     taus.extend(
+#         np.logspace(
+#             np.log10(min_tau), np.log10(revival_period - revival_width), coarse_steps
+#         ).tolist()
 #     )
-#     taus.extend(first_revival.tolist())
 
-#     # Gap and second revival
-#     gap = np.linspace(
-#         revival_period + revival_width, 2 * revival_period - revival_width, 7
+#     # Fine linear spacing around first revival
+#     taus.extend(
+#         np.linspace(
+#             revival_period - revival_width, revival_period + revival_width, fine_steps
+#         ).tolist()
 #     )
-#     taus.extend(gap[1:-1].tolist())
 
-#     second_revival = np.linspace(
-#         2 * revival_period - revival_width, 2 * revival_period + revival_width, 11
+#     # Logarithmic spacing between first and second revival
+#     taus.extend(
+#         np.logspace(
+#             np.log10(revival_period + revival_width),
+#             np.log10(2 * revival_period - revival_width),
+#             intermediate_steps,
+#         ).tolist()
 #     )
-#     taus.extend(second_revival.tolist())
 
-#     # Round taus to nearest multiple of 4 and remove duplicates
-#     taus = [round(el / 4) * 4 for el in taus]
-#     taus = sorted(set(taus))  # Ensure uniqueness
+#     # Fine linear spacing around second revival
+#     taus.extend(
+#         np.linspace(
+#             2 * revival_period - revival_width,
+#             2 * revival_period + revival_width,
+#             fine_steps,
+#         ).tolist()
+#     )
 
-#     # Experiment settings
+#     # Logarithmic spacing beyond the second revival up to max_tau
+#     taus.extend(
+#         np.logspace(
+#             np.log10(2 * revival_period + revival_width),
+#             np.log10(max_tau),
+#             5,  # Sparse sampling beyond second revival
+#         ).tolist()
+#     )
+
+#     # Round taus to the nearest multiple of 4 and remove duplicates
+#     taus = sorted(set(round(tau / 4) * 4 for tau in taus))
+
+#     # Experiment parameters
 #     num_steps = len(taus)
-#     num_reps = 8  # More repetitions for noise averaging
-#     num_runs = 200  # Total runs for better statistics
+#     num_reps = 5
+#     num_runs = 800
 
-#     # Run the spin echo experiment
-#     # spin_echo.main(nv_list, num_steps, num_reps, num_runs, taus=taus)
-#     # for ind in range(5):
-#     #     spin_echo.main(nv_list, num_steps, num_reps, num_runs, taus=taus)
+#     spin_echo.main(nv_list, num_steps, num_reps, num_runs, taus=taus)
 
 
 def do_ramsey(nv_list):
@@ -1020,7 +1042,7 @@ if __name__ == "__main__":
     # magnet_angle = 90
     date_str = "2024_03_12"
     sample_coords = [2.0, 0.0]
-    z_coord = 2.55
+    z_coord = 2.9
     # Load NV pixel coordinates
     pixel_coords_list = load_nv_coords(
         file_path="slmsuite/nv_blob_detection/nv_blob_filtered_160nvs_reordered.npz",
@@ -1060,16 +1082,16 @@ if __name__ == "__main__":
     #     [207.435, 74.049],
     # ]
     # green_coords_list = [
-    #     [109.199, 107.16],
-    #     [115.778, 101.683],
-    #     [109.324, 115.996],
-    #     [98.817, 101.111],
+    #     [109.162, 107.174],
+    #     [115.734, 101.582],
+    #     [109.296, 115.908],
+    #     [98.731, 101.035],
     # ]
     # red_coords_list = [
-    #     [73.85, 72.659],
-    #     [79.006, 68.057],
-    #     [73.978, 79.887],
-    #     [65.348, 67.756],
+    #     [73.543, 72.506],
+    #     [78.734, 67.936],
+    #     [73.946, 79.639],
+    #     [65.519, 67.787],
     # ]
     num_nvs = len(pixel_coords_list)
     threshold_list = [45.5] * num_nvs
@@ -1092,11 +1114,13 @@ if __name__ == "__main__":
     # fmt: off
     # after calibration with amp 1.0
     snr_list = [0.222, 0.218, 0.204, 0.211, 0.256, 0.169, 0.04, 0.196, 0.176, 0.179, 0.191, 0.156, 0.083, 0.111, 0.071, 0.24, 0.231, 0.094, 0.15, 0.214, 0.14, 0.172, 0.165, 0.071, 0.206, 0.203, 0.132, 0.203, 0.096, 0.195, 0.211, 0.169, 0.057, 0.166, 0.225, 0.145, 0.121, 0.19, 0.126, 0.191, 0.108, 0.178, 0.165, 0.112, 0.19, 0.164, 0.143, 0.178, 0.08, 0.158, 0.093, 0.149, 0.105, 0.191, 0.201, 0.055, 0.174, 0.078, 0.152, 0.157, 0.124, 0.118, 0.133, 0.181, 0, 0.179, 0.168, 0.173, 0.188, 0.175, 0.165, 0.198, 0.067, 0.172, 0.123, 0.076, 0.168, 0.138, 0.199, 0.161, 0.069, 0.091, 0.059, 0.066, 0.136, 0.145, 0.116, 0.041, 0.218, 0, 0.143, 0.151, 0.141, 0.18, 0.14, 0.144, 0, 0.137, 0.163, 0.092, 0.132, 0.148, 0.138, 0.116, 0.133, 0.149, 0.147, 0.05, 0.076, 0.119, 0.178, 0.177, 0.081, 0.111, 0.087, 0.182, 0.085]
-    #after calibration
+    # amps = 1.0, after red calibration
     # scc_duration_list = [168, 160, 164, 124, 188, 132, 116, 124, 160, 160, 164, 120, 140, 144, 124, 136, 136, 88, 152, 140, 140, 116, 104, 120, 112, 164, 136, 112, 96, 112, 140, 144, 196, 192, 120, 140, 228, 140, 32, 140, 148, 108, 164, 152, 132, 140, 176, 132, 136, 120, 112, 108, 144, 116, 132, 36, 192, 84, 148, 112, 132, 152, 176, 176, 176, 112, 120, 140, 168, 140, 92, 132, 92, 124, 68, 32, 92, 148, 164, 104, 32, 148, 188, 32, 112, 148, 168, 64, 140, 140, 96, 124, 176, 108, 108, 216, 216, 116, 112, 132, 148, 132, 132, 140, 160, 132, 148, 192, 160, 116, 140, 120, 152, 140, 144, 124, 160]
     # scc_duration_list = [168, 184, 220, 136, 140, 104, 104, 144, 240, 188, 160, 148, 116, 164, 124, 140, 132, 104, 304, 184, 144, 148, 116, 68, 132, 120, 112, 124, 116, 148, 212, 144, 132, 172, 116, 160, 304, 144, 60, 180, 100, 112, 172, 192, 144, 184, 292, 200, 96, 116, 156, 144, 144, 80, 160, 160, 168, 76, 176, 136, 172, 192, 264, 140, 104, 112, 140, 176, 208, 148, 116, 140, 80, 152, 140, 116, 96, 120, 112, 96, 48, 188, 48, 84, 96, 228, 172, 172, 124, 96, 128, 120, 196, 104, 88, 140, 80, 116, 112, 160, 120, 140, 112, 148, 108, 140, 152, 292, 124, 116, 140, 140, 160, 212, 140, 140, 196]
-    # scc_duration_list = [264, 304, 304, 184, 148, 148, 48, 236, 304, 304, 304, 196, 132, 304, 136, 188, 176, 156, 304, 296, 172, 212, 148, 148, 196, 160, 140, 168, 84, 192, 304, 236, 196, 276, 136, 304, 304, 196, 48, 304, 128, 156, 304, 304, 212, 304, 304, 304, 116, 140, 196, 252, 124, 140, 304, 80, 304, 116, 304, 252, 172, 304, 304, 188, 120, 144, 236, 304, 304, 184, 168, 196, 156, 204, 144, 112, 132, 168, 124, 132, 112, 304, 108, 92, 116, 304, 304, 152, 152, 68, 160, 156, 304, 148, 124, 168, 108, 128, 132, 304, 172, 176, 160, 168, 124, 176, 228, 304, 128, 172, 204, 176, 188, 260, 256, 168, 304]
-    scc_duration_list = [112, 100, 92, 84, 144, 100, 100, 80, 108, 116, 92, 96, 108, 100, 88, 112, 108, 76, 76, 100, 132, 84, 92, 68, 76, 116, 124, 80, 100, 84, 76, 108, 128, 192, 92, 84, 92, 84, 108, 96, 132, 104, 116, 92, 100, 84, 92, 72, 84, 100, 116, 72, 124, 96, 84, 72, 164, 100, 56, 76, 64, 116, 92, 144, 172, 96, 60, 84, 100, 116, 80, 112, 88, 80, 64, 116, 100, 120, 112, 112, 128, 96, 108, 100, 108, 84, 144, 84, 128, 92, 108, 116, 148, 120, 88, 168, 64, 124, 104, 116, 100, 124, 112, 124, 120, 100, 172, 116, 124, 84, 92, 116, 80, 96, 88, 80, 92]
+    # scc_duration_list = [112, 100, 92, 84, 144, 100, 100, 80, 108, 116, 92, 96, 108, 100, 88, 112, 108, 76, 76, 100, 132, 84, 92, 68, 76, 116, 124, 80, 100, 84, 76, 108, 128, 192, 92, 84, 92, 84, 108, 96, 132, 104, 116, 92, 100, 84, 92, 72, 84, 100, 116, 72, 124, 96, 84, 72, 164, 100, 56, 76, 64, 116, 92, 144, 172, 96, 60, 84, 100, 116, 80, 112, 88, 80, 64, 116, 100, 120, 112, 112, 128, 96, 108, 100, 108, 84, 144, 84, 128, 92, 108, 116, 148, 120, 88, 168, 64, 124, 104, 116, 100, 124, 112, 124, 120, 100, 172, 116, 124, 84, 92, 116, 80, 96, 88, 80, 92]
+    # scc_duration_list = [112, 100, 112, 76, 160, 108, 100, 92, 96, 100, 84, 92, 120, 108, 72, 100, 108, 72, 72, 124, 116, 84, 80, 80, 84, 156, 140, 92, 116, 72, 80, 124, 124, 128, 112, 84, 84, 92, 104, 104, 164, 92, 100, 92, 124, 72, 96, 100, 128, 104, 104, 68, 124, 92, 124, 100, 132, 100, 84, 132, 80, 104, 80, 172, 172, 116, 92, 92, 112, 124, 80, 136, 96, 104, 60, 88, 128, 144, 116, 116, 180, 96, 84, 108, 84, 100, 124, 272, 152, 76, 100, 108, 128, 116, 92, 152, 124, 140, 108, 120, 132, 156, 108, 160, 124, 96, 180, 100, 144, 92, 124, 116, 92, 112, 124, 108, 108]
+    # scc_duration_list = [136, 116, 116, 84, 180, 104, 108, 96, 84, 108, 128, 72, 144, 116, 84, 100, 116, 64, 84, 124, 116, 88, 92, 84, 80, 180, 132, 92, 120, 108, 92, 124, 108, 164, 132, 144, 100, 100, 144, 128, 216, 96, 124, 100, 84, 60, 92, 104, 108, 104, 96, 128, 116, 124, 88, 100, 168, 88, 72, 100, 76, 172, 44, 136, 272, 116, 100, 172, 128, 160, 80, 112, 104, 128, 104, 132, 80, 136, 112, 100, 128, 144, 136, 116, 96, 100, 200, 140, 128, 72, 108, 152, 212, 100, 88, 160, 124, 124, 124, 176, 272, 168, 184, 272, 164, 228, 208, 172, 272, 272, 264, 228, 216, 136, 176, 272, 164]
+    scc_duration_list = [136, 112, 124, 88, 164, 104, 216, 84, 92, 116, 136, 88, 92, 120, 108, 100, 124, 52, 92, 124, 124, 100, 104, 80, 68, 156, 160, 108, 124, 104, 100, 116, 136, 168, 116, 168, 116, 116, 84, 156, 156, 84, 116, 80, 92, 64, 84, 108, 124, 120, 108, 172, 124, 136, 84, 128, 136, 108, 76, 100, 80, 108, 68, 156, 272, 112, 84, 180, 156, 184, 84, 108, 72, 128, 120, 120, 80, 140, 132, 88, 116, 120, 144, 92, 88, 112, 164, 128, 128, 64, 112, 196, 164, 92, 104, 168, 108, 132, 128, 196, 184, 164, 148, 272, 116, 216, 212, 236, 272, 204, 248, 272, 116, 176, 128, 232, 272]
     # SCC sweep: Full 2D 
     snr_list = [0.207, 0.206, 0.211, 0.183, 0.08, 0.224, 0.095, 0.078, 0.136, 0.038, 0.034, 0.026, 0.039, 0.165, 0.13, 0.18, 0.153, 0.074, 0.08, 0.028, 0.053, 0.142, 0.188, 0.077, 0.121, 0.137, 0.085, 0.067, 0.157, 0.135, 0.036, 0.075, 0.135, 0.168, 0.045, 0.067, 0.158, 0.12, 0.074, 0.167, 0.073, 0.046, 0.149, 0.054, 0.135, 0.064, 0.119, 0.193, 0.104, 0.091, 0.04, 0.127, 0.125, 0.105, 0.054, 0.069, 0.139, 0.151, 0.119, 0.068, 0.134, 0.054, 0.11, 0.096, 0.105, 0.133, 0.149, 0.057, 0.102, 0.083, 0.097, 0.175, 0.096, 0.058, 0.161, 0.158, 0.048, 0.1, 0.093, 0.132, 0.131, 0.055, 0.028, 0.083, 0.05, 0.061, 0.06, 0.082, 0.114, 0.065, 0.144, 0.142, 0.116, 0.095, 0.143, 0.121, 0.116, 0.102, 0.032, 0.061, 0.113, 0.087, 0.061, 0.119, 0.027, 0.119, 0.131, 0.144, 0.122, 0.087, 0.087, 0.067, 0.089, 0.068, 0.089, 0.043, 0.131, 0.05, 0.075, 0.039, 0.09, 0.085, 0.099, 0.123, 0.133, 0.097, 0.083, 0.04, 0.097, 0.032, 0.043, 0.148, 0.092, 0.037, 0.118, 0.051, 0.078, 0.053, 0.081, 0.056, 0.112, 0.119, 0.05, 0.044, 0.131, 0.137, 0.133, 0.074, 0.049, 0.06, 0.043, 0.063, 0.106, 0.165, 0.16, 0.05, 0.132, 0.088, 0.081, 0.062]
     # scc_duration_list = [304, 304, 304, 156, 304, 148, 244, 100, 304, 60, 304, 76, 88, 304, 112, 304, 144, 304, 304, 48, 76, 140, 144, 88, 304, 304, 304, 112, 304, 172, 304, 96, 72, 168, 128, 48, 304, 112, 124, 304, 48, 304, 304, 48, 304, 304, 168, 144, 304, 304, 60, 304, 108, 304, 48, 304, 164, 160, 304, 268, 240, 196, 304, 112, 304, 48, 264, 304, 152, 304, 184, 148, 304, 52, 160, 112, 104, 304, 88, 116, 56, 304, 68, 304, 304, 112, 52, 304, 304, 96, 304, 120, 304, 140, 304, 304, 156, 48, 304, 64, 304, 304, 132, 124, 304, 148, 304, 148, 80, 136, 124, 148, 108, 132, 132, 68, 124, 132, 304, 92, 80, 64, 304, 152, 136, 304, 48, 96, 304, 48, 64, 304, 64, 304, 216, 304, 304, 144, 176, 140, 304, 136, 104, 304, 56, 136, 76, 112, 304, 120, 164, 304, 88, 104, 128, 152, 132, 112, 100, 304]
@@ -1203,7 +1227,7 @@ if __name__ == "__main__":
     # nv_sig.expected_counts = 1650
     # nv_sig.expected_counts = 3359.0
     # nv_sig.expected_counts = 1181.0
-    nv_sig.expected_counts = 1460
+    nv_sig.expected_counts = 1420
     # num_nvs = len(nv_list)
     # print(f"Final NV List: {nv_list}")
     # Ensure data is defined before accessing it
@@ -1310,7 +1334,7 @@ if __name__ == "__main__":
 
         # do_scanning_image_sample(nv_sig)
         # do_scanning_image_sample_zoom(nv_sig)
-        do_widefield_image_sample(nv_sig, 50)
+        # do_widefield_image_sample(nv_sig, 50)
         # do_widefield_image_sample(nv_sig, 100)
 
         # do_image_nv_list(nv_list)
@@ -1350,7 +1374,7 @@ if __name__ == "__main__":
         # do_resonance_zoom(nv_list)
         # do_rabi(nv_list)
         # do_resonance(nv_list)
-        do_spin_echo(nv_list)
+        # do_spin_echo(nv_list)
 
         # do_power_rabi(nv_list)
         # do_correlation_test(nv_list)
@@ -1370,7 +1394,7 @@ if __name__ == "__main__":
         # do_scc_snr_check(nv_list)
         # do_optimize_scc_duration(nv_list)
         # do_optimize_scc_amp(nv_list)
-        # optimize_scc_amp_and_duration(nv_list)
+        optimize_scc_amp_and_duration(nv_list)
         # do_crosstalk_check(nv_sig)
         # do_spin_pol_check(nv_sig)
         # do_calibrate_green_red_delay()
