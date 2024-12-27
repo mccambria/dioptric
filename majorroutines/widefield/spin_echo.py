@@ -182,26 +182,19 @@ def create_raw_data_figure(data):
     return fig
 
 
-def create_fit_figure(data, axes_pack=None, layout=None, no_legend=False):
+def create_fit_figure(data, axes_pack=None, layout=None, no_legend=True):
     nv_list = data["nv_list"]
     num_nvs = len(nv_list)
     num_steps = data["num_steps"]
     taus = np.array(data["taus"])
     total_evolution_times = 2 * np.array(taus) / 1e3
     counts = np.array(data["counts"])
-    # counts = np.array(data["states"])
 
     sig_counts = counts[0]
     ref_counts = counts[1]
-    avg_counts, avg_counts_ste, norms = widefield.process_counts(
+    norm_counts, norm_counts_ste = widefield.process_counts(
         nv_list, sig_counts, ref_counts, threshold=True
     )
-
-    norms_ms0_newaxis = norms[0][:, np.newaxis]
-    norms_ms1_newaxis = norms[1][:, np.newaxis]
-    contrast = norms_ms1_newaxis - norms_ms0_newaxis
-    norm_counts = (avg_counts - norms_ms0_newaxis) / contrast
-    norm_counts_ste = avg_counts_ste / contrast
 
     # Sort for plotting
     # total_evolution_times = 2 * np.array(taus) / 1e3
@@ -212,99 +205,104 @@ def create_fit_figure(data, axes_pack=None, layout=None, no_legend=False):
         [norm_counts_ste[nv_ind, inds] for nv_ind in range(num_nvs)]
     )
 
-    fit_fns = []
-    popts = []
-    freq_guesses = [
-        # 0
-        (0.05, 0.09),
-        # 1
-        (0.048, 0.005),
-        # 2
-        (0.048, 0.099),
-        # 3
-        (),
-        # 4
-        (0.2, 0.248),
-        # 5
-        (0.048, 0.248),
-        # 6
-        (),
-        # 7
-        (),
-        # 8
-        (0.2, 0.248),
-        # 9
-        (),
-    ]
+    do_fit = False
+    if do_fit:
+        fit_fns = []
+        popts = []
+        freq_guesses = [
+            # 0
+            (0.05, 0.09),
+            # 1
+            (0.048, 0.005),
+            # 2
+            (0.048, 0.099),
+            # 3
+            (),
+            # 4
+            (0.2, 0.248),
+            # 5
+            (0.048, 0.248),
+            # 6
+            (),
+            # 7
+            (),
+            # 8
+            (0.2, 0.248),
+            # 9
+            (),
+        ]
 
-    for nv_ind in range(num_nvs):
-        nv_counts = norm_counts[nv_ind]
-        nv_counts_ste = norm_counts_ste[nv_ind]
-        # Contrast, revival period, quartic decay tc, amp1, amp2
-        guess_params = [0.53, 75.5, 7, 0.4, 0.4]
-        bounds = [[0, 73, 0, 0, 0], [1, 77, np.inf, 1, 1]]
-        # guess_params = [75.5, 7, 0.4, 0.4]
-        # bounds = [[73, 0, 0, 0], [77, np.inf, 1, 1]]
+        for nv_ind in range(num_nvs):
+            nv_counts = norm_counts[nv_ind]
+            nv_counts_ste = norm_counts_ste[nv_ind]
+            # Contrast, revival period, quartic decay tc, amp1, amp2
+            guess_params = [0.53, 75.5, 7, 0.4, 0.4]
+            bounds = [[0, 73, 0, 0, 0], [1, 77, np.inf, 1, 1]]
+            # guess_params = [75.5, 7, 0.4, 0.4]
+            # bounds = [[73, 0, 0, 0], [77, np.inf, 1, 1]]
 
-        # FFT to determine dominant frequency
-        # even_counts = nv_counts[40:100] - 0.55
-        # transform = np.fft.rfft(even_counts)
-        # freqs = np.fft.rfftfreq(
-        #     60, d=total_evolution_times[41] - total_evolution_times[40]
-        # )
-        # transform_mag = np.absolute(transform)
-        # fig, ax = plt.subplots()
-        # kpl.plot_points(ax, freqs[1:], transform_mag[1:])
-        # ax.set_title(nv_ind)
-        # kpl.show(block=True)
+            # FFT to determine dominant frequency
+            # even_counts = nv_counts[40:100] - 0.55
+            # transform = np.fft.rfft(even_counts)
+            # freqs = np.fft.rfftfreq(
+            #     60, d=total_evolution_times[41] - total_evolution_times[40]
+            # )
+            # transform_mag = np.absolute(transform)
+            # fig, ax = plt.subplots()
+            # kpl.plot_points(ax, freqs[1:], transform_mag[1:])
+            # ax.set_title(nv_ind)
+            # kpl.show(block=True)
 
-        try:
-            freq_guess = freq_guesses[nv_ind]
-            num_freqs = len(freq_guess)
-            guess_params.extend(freq_guess)
-            if num_freqs == 2:
-                fit_fn = quartic_decay_two_osc
-                bounds[0].extend([0, 0])
-                bounds[1].extend([np.inf, np.inf])
-            elif num_freqs == 1:
-                fit_fn = quartic_decay_one_osc
-                bounds[0].extend([0])
-                bounds[1].extend([np.inf])
-            else:
-                fit_fn = quartic_decay
-            popt, pcov, info, msg, ier = curve_fit(
-                fit_fn,
-                total_evolution_times,
-                nv_counts,
-                p0=guess_params,
-                sigma=nv_counts_ste,
-                absolute_sigma=True,
-                full_output=True,
-                bounds=bounds,
-            )
-            # popt[4] = popt[3]
-        except Exception:
-            # pass
-            print(traceback.format_exc())
-            fit_fn = None
-            popt = None
-        if nv_ind == 0:
-            pass
-            # popt = [0.557, 75.5, 6.279, 0.4, 0.4, 0.051]
-            # popt = [0.557, 74.7, 6.279, 0.4, 0.4, 0.049]
-        fit_fns.append(fit_fn)
-        popts.append(popt)
+            try:
+                freq_guess = freq_guesses[nv_ind]
+                num_freqs = len(freq_guess)
+                guess_params.extend(freq_guess)
+                if num_freqs == 2:
+                    fit_fn = quartic_decay_two_osc
+                    bounds[0].extend([0, 0])
+                    bounds[1].extend([np.inf, np.inf])
+                elif num_freqs == 1:
+                    fit_fn = quartic_decay_one_osc
+                    bounds[0].extend([0])
+                    bounds[1].extend([np.inf])
+                else:
+                    fit_fn = quartic_decay
+                popt, pcov, info, msg, ier = curve_fit(
+                    fit_fn,
+                    total_evolution_times,
+                    nv_counts,
+                    p0=guess_params,
+                    sigma=nv_counts_ste,
+                    absolute_sigma=True,
+                    full_output=True,
+                    bounds=bounds,
+                )
+                # popt[4] = popt[3]
+            except Exception:
+                # pass
+                print(traceback.format_exc())
+                fit_fn = None
+                popt = None
+            if nv_ind == 0:
+                pass
+                # popt = [0.557, 75.5, 6.279, 0.4, 0.4, 0.051]
+                # popt = [0.557, 74.7, 6.279, 0.4, 0.4, 0.049]
+            fit_fns.append(fit_fn)
+            popts.append(popt)
 
-        if fit_fn is not None:
-            residuals = fit_fn(total_evolution_times, *popt) - nv_counts
-            chi_sq = np.sum((residuals / nv_counts_ste) ** 2)
-            red_chi_sq = chi_sq / (len(nv_counts) - len(popt))
-            print(f"Red chi sq: {round(red_chi_sq, 3)}")
+            if fit_fn is not None:
+                residuals = fit_fn(total_evolution_times, *popt) - nv_counts
+                chi_sq = np.sum((residuals / nv_counts_ste) ** 2)
+                red_chi_sq = chi_sq / (len(nv_counts) - len(popt))
+                print(f"Red chi sq: {round(red_chi_sq, 3)}")
 
     ### Make the figure
 
     if axes_pack is None:
-        fig, axes_pack, layout = kpl.subplot_mosaic(num_nvs, num_rows=2)
+        figsize = [6.5, 5.0]
+        figsize[0] *= 3
+        figsize[1] *= 3
+        fig, axes_pack, layout = kpl.subplot_mosaic(num_nvs, figsize=figsize)
     else:
         fig = None
 
@@ -313,10 +311,9 @@ def create_fit_figure(data, axes_pack=None, layout=None, no_legend=False):
         nv_list,
         total_evolution_times,
         norm_counts,
-        None,
-        # norm_counts_ste,
-        fit_fns,
-        popts,
+        norm_counts_ste,
+        # fit_fns,
+        # popts,
         no_legend=no_legend,
         # linestyle="solid",
     )
@@ -324,7 +321,7 @@ def create_fit_figure(data, axes_pack=None, layout=None, no_legend=False):
     kpl.set_shared_ax_xlabel(ax, "Total evolution time (µs)")
     # kpl.set_shared_ax_ylabel(ax, "Change in $P($NV$^{-})$")
     # kpl.set_shared_ax_ylabel(ax, "Norm. NV$^{-}$ population")
-    kpl.set_shared_ax_ylabel(ax, "Norm. NV$^{-}$ pop.")
+    kpl.set_shared_ax_ylabel(ax, "Normalized NV$^{-}$ population")
 
     # figManager = plt.get_current_fig_manager()
     # figManager.window.showMaximized()
@@ -445,17 +442,17 @@ def main(nv_list, num_steps, num_reps, num_runs, min_tau=None, max_tau=None, tau
 if __name__ == "__main__":
     kpl.init_kplotlib()
 
-    # taus = np.linspace(0, 180, 1000)
-    # for freq in np.linspace(0.08, 0.12, 21):
-    #     fig, ax = plt.subplots()
-    #     # ys = quartic_decay_one_osc(taus, *[0.557, 75.5, 6.279, 0.4, 0.4, freq])
-    #     ys = quartic_decay_two_osc(taus, *[0.545, 77.0, 6.548, 1.0, 1.0, 0.05, freq])
-    #     # ys = quartic_decay(taus, *[175, 15, 500])
-    #     kpl.plot_line(ax, taus, ys)
-    #     ax.set_title(freq)
+    # data = dm.get_raw_data(file_id=1548381879624)
 
-    data = dm.get_raw_data(file_id=1548381879624)
-    # data = dm.get_raw_data(file_id=1572552719404)
+    # fmt: off
+    file_ids = [1734158411844, 1734273666255, 1734371251079, 1734461462293, 1734569197701, 1736117258235, 1736254107747, 1736354618206, 1736439112682]
+    # fmt: on
+    file_ids = file_ids[:4]
+    data = dm.get_raw_data(file_id=file_ids[0])
+    for file_id in file_ids[1:]:
+        new_data = dm.get_raw_data(file_id=file_id)
+        data["num_runs"] += new_data["num_runs"]
+        data["counts"] = np.append(data["counts"], new_data["counts"], axis=1)
 
     # create_raw_data_figure(data)
     create_fit_figure(data)

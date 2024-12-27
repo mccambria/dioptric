@@ -39,10 +39,10 @@ def plot_histograms(
     sig_counts_list, ref_counts_list, no_title=True, ax=None, density=False
 ):
     laser_key = VirtualLaserKey.WIDEFIELD_CHARGE_READOUT
-    laser_dict = tb.get_virtual_laser_dict(laser_key)
-    readout = laser_dict["duration"]
-    readout_ms = int(readout / 1e6)
-    readout_s = readout / 1e9
+    # laser_dict = tb.get_virtual_laser_dict(laser_key)
+    # readout = laser_dict["duration"]
+    # readout_ms = int(readout / 1e6)
+    # readout_s = readout / 1e9
 
     ### Histograms
     num_reps = len(ref_counts_list)

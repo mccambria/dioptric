@@ -426,8 +426,8 @@ if __name__ == "__main__":
     # data = dm.get_raw_data(file_id=1700650667777, load_npz=True)
     # data = dm.get_raw_data(file_id=1700668458198, load_npz=True)
     # data = dm.get_raw_data(file_id=1700710358100, load_npz=True)
-    data = dm.get_raw_data(file_id=1715452021340, load_npz=True)
-    # data = dm.get_raw_data(file_id=1733583334808, load_npz=True)
+    data = dm.get_raw_data(file_id=1733432867671, load_npz=True)
+    # data = dm.get_raw_data(file_id=1732420670067, load_npz=True)
     img_array = data["ref_img_array"]
     # print(img_arrays)
     # sys.exit()
@@ -802,7 +802,7 @@ if __name__ == "__main__":
         ax.text(
             coord[0],
             coord[1] - sigma - 1,
-            str(idx + 1),
+            str(idx),
             color="white",
             fontsize=6,
             ha="center",
