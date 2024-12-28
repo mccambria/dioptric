@@ -426,7 +426,7 @@ if __name__ == "__main__":
     # data = dm.get_raw_data(file_id=1700650667777, load_npz=True)
     # data = dm.get_raw_data(file_id=1700668458198, load_npz=True)
     # data = dm.get_raw_data(file_id=1700710358100, load_npz=True)
-    data = dm.get_raw_data(file_id=1715452021340, load_npz=True)
+    data = dm.get_raw_data(file_id=1733432867671, load_npz=True)
     # data = dm.get_raw_data(file_id=1732420670067, load_npz=True)
     img_array = data["ref_img_array"]
     # print(img_arrays)
@@ -646,19 +646,19 @@ if __name__ == "__main__":
     a, b, c = [3.7e5, 6.97, 8e-14]
     total_power = a * (aom_voltage**b) + c
     print(total_power)
-    sys.exit()
+    # sys.exit()
     nv_powers = norm_spot_weights * total_power
-    drop_indices = [17, 55, 64, 72, 87, 89, 96, 99, 112, 114, 116]
-    spot_weights = [
-        val for ind, val in enumerate(spot_weights) if ind not in drop_indices
-    ]
-    nv_powers = [val for ind, val in enumerate(nv_powers) if ind not in drop_indices]
+    # drop_indices = [17, 55, 64, 72, 87, 89, 96, 99, 112, 114, 116]
+    # spot_weights = [
+    #     val for ind, val in enumerate(spot_weights) if ind not in drop_indices
+    # ]
+    # nv_powers = [val for ind, val in enumerate(nv_powers) if ind not in drop_indices]
     print(nv_powers)
     # Indices to exclude (zero-based indexing)
     # fmt: off
     include_indices =[0, 1, 2, 3, 5, 6, 7, 8, 13, 14, 15, 16, 17, 18, 20, 21, 22, 23, 24, 25, 26, 28, 29, 31, 32, 33, 34, 36, 37, 39, 42, 44, 45, 46, 47, 48, 49, 51, 52, 53, 55, 56, 57, 58, 60, 61, 62, 64, 65, 66, 68, 69, 70, 71, 72, 73, 74, 75, 77, 79, 83, 84, 85, 88, 89, 90, 91, 92, 94, 95, 96, 97, 99, 100, 101, 102, 103, 105, 106, 107, 108, 109, 110, 111, 113, 114, 116, 117, 118, 120, 122, 123, 124, 125, 128, 131, 132, 134, 136, 137, 138, 140, 141, 142, 145, 146, 147, 148, 149, 152, 153, 154, 155, 156, 157, 158, 159]
-    final_drop_inds = [23, 73, 89, 99, 117, 120, 132, 137, 155, 157, 159]
-    include_indices = [ind for ind in include_indices if ind not in final_drop_inds]
+    # final_drop_inds = [23, 73, 89, 99, 117, 120, 132, 137, 155, 157, 159]
+    # include_indices = [ind for ind in include_indices if ind not in final_drop_inds]
     # fmt: on
     # Filter nv_coordinates and spot_weights to exclude the specified indices
     nv_coordinates_filtered = np.array(
@@ -802,7 +802,7 @@ if __name__ == "__main__":
         ax.text(
             coord[0],
             coord[1] - sigma - 1,
-            str(idx + 1),
+            str(idx),
             color="white",
             fontsize=6,
             ha="center",
