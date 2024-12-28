@@ -376,13 +376,12 @@ def do_scc_snr_check(nv_list):
 
 
 def do_simple_correlation_test(nv_list):
+    # Run this for a quick test experiment to debug.
     num_reps = 200
-    # num_runs = 2000
-    # num_runs = 1000
     num_runs = 5
     simple_correlation_test.main(nv_list, num_reps, num_runs)
 
-    # MCC: Set up spin flips
+    # Uncomment this to set up spin flips
     # # fmt: off
     # snr_list = [0.208, 0.202, 0.186, 0.198, 0.246, 0.211, 0.062, 0.178, 0.161, 0.192, 0.246, 0.139, 0.084, 0.105, 0.089, 0.198, 0.242, 0.068, 0.134, 0.214, 0.185, 0.149, 0.172, 0.122, 0.128, 0.205, 0.202, 0.174, 0.192, 0.172, 0.145, 0.169, 0.135, 0.184, 0.204, 0.174, 0.13, 0.174, 0.06, 0.178, 0.237, 0.167, 0.198, 0.147, 0.176, 0.154, 0.118, 0.157, 0.113, 0.202, 0.084, 0.117, 0.117, 0.182, 0.157, 0.121, 0.181, 0.124, 0.135, 0.121, 0.15, 0.099, 0.107, 0.198, 0.09, 0.153, 0.159, 0.153, 0.177, 0.182, 0.139, 0.202, 0.141, 0.173, 0.114, 0.057, 0.193, 0.172, 0.191, 0.165, 0.076, 0.116, 0.072, 0.105, 0.152, 0.139, 0.186, 0.049, 0.197, 0.072, 0.072, 0.158, 0.175, 0.142, 0.132, 0.173, 0.063, 0.172, 0.141, 0.147, 0.138, 0.151, 0.169, 0.147, 0.148, 0.117, 0.149, 0.07, 0.135, 0.152, 0.163, 0.189, 0.116, 0.124, 0.129, 0.158, 0.079]
     # # fmt: on
@@ -392,6 +391,8 @@ def do_simple_correlation_test(nv_list):
     #     nv_list[ind].spin_flip = parity == -1
     #     parity *= -1
 
+    # Run this for the main experiment, ~15 hours
+    # num_reps = 200
     # num_runs = 400
     # for ind in range(5):
     #     simple_correlation_test.main(nv_list, num_reps, num_runs)
