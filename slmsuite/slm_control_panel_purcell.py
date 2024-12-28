@@ -281,7 +281,7 @@ def nuvu2thorcam_calibration(coords):
         [[979.807, 700.0], [460.192, 700.0], [720.0, 250.0]], dtype="float32"
     )
     cal_coords_nuvu = np.array(
-        [[190.045, 34.948], [191.504, 214.0], [31.835, 123.3]], dtype="float32"
+        [[190.078, 34.376], [191.433, 213.71], [31.806, 122.927]], dtype="float32"
     )
 
     # Compute the affine transformation matrix
@@ -297,8 +297,8 @@ def nuvu2thorcam_calibration(coords):
 
 
 def load_nv_coords(
-    file_path="slmsuite/nv_blob_detection/nv_blob_filtered_160nvs_reordered.npz",
-    # file_path="slmsuite/nv_blob_detection/nv_blob_filtered_160nvs_reordered_selected_117nvs.npz",
+    # file_path="slmsuite/nv_blob_detection/nv_blob_filtered_160nvs_reordered.npz",
+    file_path="slmsuite/nv_blob_detection/nv_blob_filtered_160nvs_reordered_selected_117nvs.npz",
     # file_path="slmsuite/nv_blob_detection/nv_blob_filtered_160nvs_reordered_selected_106nvs.npz",
 ):
     # data = np.load(file_path)
@@ -333,7 +333,7 @@ def compute_nvs_phase():
         shape=(4096, 2048),
         spot_vectors=thorcam_coords,
         basis="ij",
-        # spot_amp=spot_weights,
+        spot_amp=spot_weights,
         cameraslm=fs,
     )
     # Precondition computationally
@@ -360,10 +360,10 @@ def compute_nvs_phase():
 
 def write_nvs_phase():
     # phase = np.load(
-    #     "slmsuite\computed_phase\slm_phase_160nvs_20241225_164411.npy"
+    #     "slmsuite\computed_phase\slm_phase_160nvs_20241227_143040.npy"
     # )  # 160NVs weighted spots
     phase = np.load(
-        "slmsuite\computed_phase\slm_phase_117nvs_20241225_131113.npy"
+        "slmsuite\computed_phase\slm_phase_117nvs_20241227_190039.npy"
     )  # 117NVs weighted spots
     slm.write(phase, settle=True)
     # cam_plot()
@@ -383,7 +383,6 @@ try:
     fs = FourierSLM(cam, slm)
     # cam = tb.get_server_thorcam()
     # slm = tb.get_server_thorslm()
-    # blaze()
     # fourier_calibration()
     load_fourier_calibration()
     # test_wavefront_calibration()
