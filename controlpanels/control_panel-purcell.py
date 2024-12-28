@@ -377,9 +377,13 @@ def do_scc_snr_check(nv_list):
 def do_simple_correlation_test(nv_list):
     num_reps = 200
     # num_runs = 2000
-    num_runs = 1000
-    # num_runs = 2
+    # num_runs = 1000
+    num_runs = 5
     simple_correlation_test.main(nv_list, num_reps, num_runs)
+
+    # num_runs = 400
+    # for ind in range(5):
+    #     simple_correlation_test.main(nv_list, num_reps, num_runs)
 
     # for ind in range(4):
     #     for flipped in [True, False]:
