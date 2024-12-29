@@ -26,6 +26,7 @@ def get_seq(base_scc_seq_args, num_reps=1):
         qua_random = qua.Random()
 
         def uwave_macro_sig(uwave_ind_list, step_val):
+            step_val = qua.declare(int)
             qua.assign(step_val, qua_random.rand_int(2))
             with qua.if_(step_val == 1):
                 seq_utils.macro_pi_pulse(uwave_ind_list)
@@ -56,26 +57,19 @@ if __name__ == "__main__":
     try:
         seq, seq_ret_vals = get_seq(
             [
-                [
-                    [107.10254616156483, 109.48113965080046],
-                    [108.73154616156484, 111.06213965080046],
-                    [109.54654616156483, 109.73813965080046],
-                    [109.48954616156483, 111.64113965080047],
-                ],
-                [
-                    [72.15897428830978, 74.83507649222732],
-                    [73.53597428830977, 76.09007649222731],
-                    [74.23797428830977, 75.06807649222732],
-                    [74.17097428830978, 76.61007649222732],
-                ],
-                [156, 192, 176, 144],
-                [0, 1],
+                [[109.114, 107.084], [110.232, 105.466], [110.468, 108.724]],
+                [10000, 10000, 10000],
+                [1.0, 1.0, 1.0],
+                [[73.686, 72.605], [74.542, 71.289], [74.759, 73.921]],
+                [116, 108, 108],
+                [1.0, 1.0, 1.0],
+                [False, True, False],
                 [0, 1],
             ],
-            10,
+            5,
         )
 
-        sim_config = SimulationConfig(duration=int(500e3 / 4))
+        sim_config = SimulationConfig(duration=int(300e3 / 4))
         sim = opx.simulate(seq, sim_config)
         samples = sim.get_simulated_samples()
         samples.con1.plot()
