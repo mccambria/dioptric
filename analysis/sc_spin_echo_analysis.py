@@ -118,7 +118,7 @@ def analyze_spin_echo(nv_list, taus, norm_counts, norm_counts_ste):
             zoom_ax.axis("off")
             continue
 
-        nv_tau = taus
+        nv_tau = taus  # Convert to µs
         nv_counts = norm_counts[nv_idx]
         try:
             initial_guess, bounds = generate_initial_guess_and_bounds(nv_tau, nv_counts)
@@ -199,11 +199,6 @@ def analyze_spin_echo(nv_list, taus, norm_counts, norm_counts_ste):
                 label="Fit",
                 lw=2,
             )
-            zoom_ax.set_xlim(min(nv_tau) + 5e3, min(nv_tau) + 1e4)  # Example zoom range
-            # Dynamically adjust the zoom range for the first echo (e.g., around the first revival period)
-            zoom_range_start = min(nv_tau) + 5e3  # Start range for zoom
-            zoom_range_end = min(nv_tau) + 51.5e3  # Use revival time to estimate range
-            zoom_ax.set_xlim(zoom_range_start, zoom_range_end)
             zoom_ax.errorbar(
                 nv_tau,
                 norm_counts[nv_idx],
@@ -215,6 +210,8 @@ def analyze_spin_echo(nv_list, taus, norm_counts, norm_counts_ste):
             zoom_ax.legend(fontsize="small")
             zoom_ax.grid(True, which="both", linestyle="--", linewidth=0.5)
             zoom_ax.set_yticklabels([])
+            zoom_ax.set_xlim(40, 60)
+            zoom_ax.figure.canvas.draw()
 
         except Exception as e:
             print(f"Fit failed for NV {nv_idx}: {e}")
@@ -270,11 +267,145 @@ def analyze_spin_echo(nv_list, taus, norm_counts, norm_counts_ste):
     fig.suptitle("Spin Echo Fits", fontsize=16)
     zoom_fig.suptitle("Zoomed Spin Echo Fits", fontsize=16)
 
-    plt.subplots_adjust(
-        left=0.1, right=0.95, top=0.95, bottom=0.1, hspace=0.01, wspace=0.01
-    )
+    # plt.subplots_adjust(
+    #     left=0.1, right=0.95, top=0.95, bottom=0.1, hspace=0.01, wspace=0.01
+    # )
     plt.show()
     return parameters
+
+
+# def analyze_spin_echo(nv_list, taus, norm_counts, norm_counts_ste):
+#     fit_params = []
+#     chi_squared_values = []
+#     parameters = []
+#     sns.set(style="whitegrid", palette="muted")
+#     num_nvs = len(nv_list)
+#     colors = sns.color_palette("deep", num_nvs)
+#     num_cols = 9
+#     num_rows = int(np.ceil(len(nv_list) / num_cols))
+
+#     # Full plot
+#     fig, axes = plt.subplots(
+#         num_rows,
+#         num_cols,
+#         figsize=(num_cols * 3, num_rows * 1),
+#         sharex=True,
+#         sharey=True,
+#     )
+#     axes = axes.flatten()
+
+#     # Zoomed-in plot
+#     zoom_fig, zoom_axes = plt.subplots(
+#         num_rows,
+#         num_cols,
+#         figsize=(num_cols * 3, num_rows * 1),
+#         sharex=True,
+#         sharey=True,
+#     )
+#     zoom_axes = zoom_axes.flatten()
+
+#     for nv_idx, (ax, zoom_ax) in enumerate(zip(axes, zoom_axes)):
+#         if nv_idx >= len(nv_list):
+#             ax.axis("off")
+#             zoom_ax.axis("off")
+#             continue
+
+#         nv_tau = taus
+#         nv_counts = norm_counts[nv_idx]
+
+#         try:
+#             # Fit the data
+#             initial_guess, bounds = generate_initial_guess_and_bounds(nv_tau, nv_counts)
+#             popt, pcov = curve_fit(
+#                 quartic_decay, nv_tau, nv_counts, p0=initial_guess, bounds=bounds
+#             )
+#             fit_params.append(popt)
+
+#             # Calculate residuals and chi-squared
+#             residuals = nv_counts - quartic_decay(nv_tau, *popt)
+#             chi_sq = np.sum((residuals / np.std(residuals)) ** 2)
+#             degrees_of_freedom = len(nv_tau) - len(popt)
+#             red_chi_sq = chi_sq / degrees_of_freedom
+#             chi_squared_values.append(red_chi_sq)
+
+#             # Determine dynamic x and y ranges
+#             y_min, y_max = np.min(nv_counts), np.max(nv_counts)
+#             y_margin = 0.1 * (y_max - y_min)
+#             x_zoom_start, x_zoom_end = nv_tau[0], nv_tau[0] + 1.5 * popt[1]
+
+#             # Regular plot
+#             ax.errorbar(
+#                 nv_tau,
+#                 nv_counts,
+#                 yerr=norm_counts_ste[nv_idx],
+#                 fmt="o",
+#                 markersize=3,
+#                 label=f"NV {nv_idx}",
+#                 alpha=0.8,
+#                 ecolor="gray",
+#             )
+#             ax.plot(
+#                 nv_tau,
+#                 quartic_decay(nv_tau, *popt),
+#                 "-",
+#                 lw=2,
+#                 color=colors[nv_idx % len(colors)],
+#                 label="Fit",
+#             )
+#             ax.set_xlim(nv_tau[0], nv_tau[-1])
+#             ax.set_ylim(y_min - y_margin, y_max + y_margin)
+#             ax.legend(fontsize="small")
+
+#             # Zoomed plot
+#             zoom_ax.errorbar(
+#                 nv_tau,
+#                 nv_counts,
+#                 yerr=norm_counts_ste[nv_idx],
+#                 fmt="o",
+#                 markersize=3,
+#                 label=f"NV {nv_idx}",
+#                 alpha=0.8,
+#                 ecolor="gray",
+#             )
+#             zoom_ax.plot(
+#                 nv_tau,
+#                 quartic_decay(nv_tau, *popt),
+#                 "-",
+#                 lw=2,
+#                 color=colors[nv_idx % len(colors)],
+#                 label="Fit",
+#             )
+#             zoom_ax.set_xlim(x_zoom_start, x_zoom_end)
+#             zoom_ax.set_ylim(y_min - y_margin, y_max + y_margin)
+#             zoom_ax.legend(fontsize="small")
+
+#         except Exception as e:
+#             print(f"Fit failed for NV {nv_idx}: {e}")
+#             fit_params.append(None)
+#             chi_squared_values.append(np.inf)
+
+#     # Adjust figure titles and labels
+#     fig.suptitle("Spin Echo Fits", fontsize=16)
+#     fig.text(0.5, 0.02, "Time (µs)", ha="center")
+#     fig.text(
+#         0.02, 0.5, "Normalized NV$^{-}$ Population", va="center", rotation="vertical"
+#     )
+
+#     zoom_fig.suptitle("Zoomed Spin Echo Fits", fontsize=16)
+#     zoom_fig.text(0.5, 0.02, "Time (µs)", ha="center")
+#     zoom_fig.text(
+#         0.02,
+#         0.5,
+#         "Normalized NV$^{-}$ Population (Zoomed)",
+#         va="center",
+#         rotation="vertical",
+#     )
+
+#     plt.tight_layout()
+#     plt.subplots_adjust(top=0.9)
+#     plt.show()
+
+#     return parameters
 
 
 def plot_analysis_parameters(meaningful_parameters):
@@ -339,17 +470,25 @@ if __name__ == "__main__":
     kpl.init_kplotlib()
 
     # Define the file IDs to process
+    # file_ids = [
+    #     1734158411844,
+    #     1734273666255,
+    #     1734371251079,
+    #     1734461462293,
+    # ]
     file_ids = [
         1734158411844,
         1734273666255,
         1734371251079,
         1734461462293,
+        1734569197701,
     ]
     # Process and analyze data from multiple files
     try:
         data = process_multiple_files(file_ids)
         nv_list = data["nv_list"]
-        taus = np.array(data["taus"])
+        taus = data["taus"]
+        total_evolution_times = 2 * np.array(taus) / 1e3
         counts = np.array(data["counts"])
         sig_counts, ref_counts = counts[0], counts[1]
         norm_counts, norm_counts_ste = widefield.process_counts(
@@ -357,14 +496,10 @@ if __name__ == "__main__":
         )
         nv_num = len(nv_list)
         ids_num = len(file_ids)
-        norm_counts_adjusted = np.mean(norm_counts.reshape(nv_num, ids_num, -1), axis=1)
-        norm_counts_ste_adjusted = np.mean(
-            norm_counts_ste.reshape(nv_num, ids_num, -1), axis=1
-        )
         parameters = analyze_spin_echo(
-            nv_list, taus, norm_counts_adjusted, norm_counts_ste_adjusted
+            nv_list, total_evolution_times, norm_counts, norm_counts_ste
         )
-        plot_analysis_parameters(parameters)
+        # plot_analysis_parameters(parameters)
     except Exception as e:
         print(f"Error occurred: {e}")
         print(traceback.format_exc())
