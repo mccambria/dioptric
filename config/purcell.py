@@ -44,10 +44,11 @@ calibration_coords_green = [
     [98.731, 101.035],
 ]
 calibration_coords_red = [
-    [78.734, 67.936],
-    [73.946, 79.639],
+    [78.797, 68.111],
+    [73.917, 79.737],
     [65.519, 67.787],
 ]
+
 # Create the dictionaries using the provided lists
 calibration_coords_nv1 = {
     CoordsKey.PIXEL: calibration_coords_pixel[0],
@@ -74,7 +75,6 @@ pixel_to_sample_affine_transformation_matrix = [
 
 # endregion
 # region Base config
-
 # Add on to the default config
 config |= {
     ###
@@ -818,7 +818,7 @@ opx_config = {
         # "yellow_charge_readout": {"type": "constant", "sample": 0.396},  # 50ms 160NVs
         "yellow_charge_readout": {"type": "constant", "sample": 0.3472},  # 50ms 117NVs
         # "yellow_charge_readout": {"type": "constant", "sample": 0.3423},  # 50ms 106NVs
-        # "yellow_charge_readout": {"type": "constant", "sample": 0.45},  # 30ms 160Nvs
+        # "yellow_charge_readout": {"type": "constant", "sample": 0.42},  # 30ms 160Nvs
         "yellow_spin_pol": {"type": "constant", "sample": 0.39},
         "yellow_shelving": {"type": "constant", "sample": 0.33},
         # Other
