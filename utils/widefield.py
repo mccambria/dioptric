@@ -595,7 +595,7 @@ def calc_contrast(sig_counts, ref_counts):
 
 def _validate_counts_structure(counts):
     """Make sure the structure of the counts object for a single experiment is valid
-    for further processing. The structure is [nv_ind, run_ind, freq_ind, rep_ind]."""
+    for further processing. The structure is [nv_ind, run_ind, step_ind, rep_ind]."""
     if counts is None:
         return
     if not isinstance(counts, np.ndarray):

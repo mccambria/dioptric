@@ -283,27 +283,31 @@ def process_and_plot(
     # ref_counts = ref_counts[:, round(0.25 * num_runs) : round(0.75 * num_runs)]
 
     sig_counts, ref_counts = widefield.threshold_counts(
-        nv_list, sig_counts, ref_counts, dynamic_thresh=False
+        nv_list, sig_counts, ref_counts, dynamic_thresh=True
     )
 
     ### Calculate the correlations
-    flattened_sig_counts = [sig_counts[ind].flatten() for ind in range(num_nvs)]
-    flattened_ref_counts = [ref_counts[ind].flatten() for ind in range(num_nvs)]
-
-    sig_corr_coeffs = tb.nan_corr_coef(flattened_sig_counts)
-    ref_corr_coeffs = tb.nan_corr_coef(flattened_ref_counts)
-
-    spin_flips = np.array([-1 if nv.spin_flip else +1 for nv in nv_list])
-    if -1 not in spin_flips:
-        spin_flips[0] = -1
-        spin_flips[1] = -1
-        spin_flips[4] = -1
-        spin_flips[6] = -1
-    ideal_sig_corr_coeffs = np.outer(spin_flips, spin_flips)
-    ideal_sig_corr_coeffs = ideal_sig_corr_coeffs.astype(float)
 
     ideal_ref_corr_coeffs = np.outer([0] * num_nvs, [0] * num_nvs)
     ideal_ref_corr_coeffs = ideal_ref_corr_coeffs.astype(float)
+
+    spin_flips = np.array([-1 if nv.spin_flip else +1 for nv in nv_list])
+    pattern_inds = np.argsort(spin_flips)[::-1]  # Block
+    spin_flips = np.sort(spin_flips)[::-1]  # Block
+    # if -1 not in spin_flips:
+    #     spin_flips[0] = -1
+    #     spin_flips[1] = -1
+    #     spin_flips[4] = -1
+    #     spin_flips[6] = -1
+    ideal_sig_corr_coeffs = np.outer(spin_flips, spin_flips)
+    ideal_sig_corr_coeffs = ideal_sig_corr_coeffs.astype(float)
+
+    flattened_sig_counts = [sig_counts[ind].flatten() for ind in pattern_inds]
+    flattened_ref_counts = [ref_counts[ind].flatten() for ind in pattern_inds]
+
+    sig_corr_coeffs = tb.nan_corr_coef(flattened_sig_counts)
+    ref_corr_coeffs = tb.nan_corr_coef(flattened_ref_counts)
+    diff_corr_coeffs = sig_corr_coeffs - ref_corr_coeffs
 
     ### Plot
 
@@ -316,10 +320,10 @@ def process_and_plot(
     # titles = ["Ideal reference", "Reference"]
     # vals = [ideal_ref_corr_coeffs, ref_corr_coeffs]
 
-    figsize[0] *= 2
+    figsize[0] *= 2.5
     figsize[1] *= 0.85
-    titles = ["Ideal signal", "Signal", "Reference"]
-    vals = [ideal_sig_corr_coeffs, sig_corr_coeffs, ref_corr_coeffs]
+    titles = ["Ideal signal", "Signal", "Reference", "Difference"]
+    vals = [ideal_sig_corr_coeffs, sig_corr_coeffs, ref_corr_coeffs, diff_corr_coeffs]
 
     if passed_ax is None:
         num_plots = len(vals)
@@ -344,7 +348,7 @@ def process_and_plot(
     print()
 
     # cbar_maxes = [sig_max, sig_max, 1]
-    cbar_max = sig_max if passed_cbar_max is None else passed_cbar_max
+    cbar_max = sig_max / 2 if passed_cbar_max is None else passed_cbar_max
     for ind in range(len(vals)):
         if passed_ax is None:
             # fig, ax = plt.subplots()
@@ -372,46 +376,37 @@ def process_and_plot(
             nan_color=kpl.KplColors.GRAY,
             no_cbar=no_cbar or ind < num_plots - 1,
         )
-        ax.xaxis.set_major_locator(MaxNLocator(integer=True))
-        ax.yaxis.set_major_locator(MaxNLocator(integer=True))
-        ax.set_yticks([0, 2, 4, 6, 8])
-        ax.set_xticks([0, 2, 4, 6, 8])
+        # ax.xaxis.set_major_locator(MaxNLocator(integer=True))
+        # ax.yaxis.set_major_locator(MaxNLocator(integer=True))
+        # ax.set_yticks([0, 2, 4, 6, 8])
+        # ax.set_xticks([0, 2, 4, 6, 8])
         # ax.tick_params(labelsize=16)
         if not no_labels:
             ax.set_xlabel("NV index")
-            ax.set_ylabel("NV index")
-
-        # import os
-        # output_dir = f'data/correlation_matrix/orientation_1540558251818'
-        # if not os.path.exists(output_dir):
-        #     os.makedirs(output_dir)
-        # np.save(os.path.join(output_dir, 'sig_corr_coeffs.npy'), sig_corr_coeffs)
-        # np.save(os.path.join(output_dir, 'ref_corr_coeffs.npy'), ref_corr_coeffs)
-        # np.save(os.path.join(output_dir, 'ideal_sig_corr_coeffs.npy'), ideal_sig_corr_coeffs)
-        # np.save(os.path.join(output_dir, 'ideal_sig_corr_coeffs.npy'), ideal_ref_corr_coeffs)
-
-        # # for fig, title in zip(figs, titles):
-        # #     fig.savefig(os.path.join(output_dir, f"{title.replace(' ', '_')}.png"))
-
-        # print(f"Data and figures saved to {output_dir}")
+            if ind == 0:
+                ax.set_ylabel("NV index")
 
     if passed_ax is not None:
         return ret_val
     # return figs
 
 
-def main(nv_list, num_reps, num_runs):
+def main(nv_list, num_steps, num_runs):
     ### Some initial setup
     uwave_ind_list = [0, 1]
     seq_file = "simple_correlation_test.py"
-    num_steps = 1
+    num_reps = 1
 
     pulse_gen = tb.get_server_pulse_gen()
+    step_vals = np.empty((num_runs, num_steps))
 
     ### Collect the data
 
     def run_fn(shuffled_step_inds):
-        seq_args = [widefield.get_base_scc_seq_args(nv_list, uwave_ind_list)]
+        seq_args = [
+            widefield.get_base_scc_seq_args(nv_list, uwave_ind_list),
+            shuffled_step_inds,
+        ]
         # print(seq_args)
         seq_args_string = tb.encode_seq_args(seq_args)
         pulse_gen.stream_load(seq_file, seq_args_string, num_reps)
@@ -458,6 +453,18 @@ def main(nv_list, num_reps, num_runs):
 
 if __name__ == "__main__":
     kpl.init_kplotlib()
+
+    ### Data
+
+    # fmt: off
+    file_ids = [1737922643755, 1737998031775, 1738069552465, 1738136166264, 1738220449762, ]
+    # fmt: on
+    # file_ids = file_ids[3:]
+    data = dm.get_raw_data(file_id=file_ids)
+    process_and_plot(data)
+
+    plt.show(block=True)
+    sys.exit()
 
     ### Simulation
 
@@ -550,18 +557,3 @@ if __name__ == "__main__":
         )
     plt.show(block=True)
     sys.exit()
-
-    ### Data
-
-    # data = dm.get_raw_data(file_id=1540048047866)  # Straight block
-    # process_and_plot(data)
-    # data = dm.get_raw_data(file_id=1541938921939)  # reverse block
-    # process_and_plot(data)
-    # data = dm.get_raw_data(file_id=1538271354881)  # checkerboard
-    # process_and_plot(data)
-    # data = dm.get_raw_data(file_id=1540558251818)  # orientation
-    # data = dm.get_raw_data(file_id=1655494429496)  # orientation
-    data = dm.get_raw_data(file_id=1653570783798)
-    process_and_plot(data)
-
-    plt.show(block=True)
