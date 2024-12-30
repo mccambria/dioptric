@@ -860,6 +860,29 @@ def select_well_separated_nvs(nv_list, num_nvs_to_select):
     return selected_indices
 
 
+def select_half_left_side_nvs(nv_list):
+    """
+    Assign spin_flip states to NVs based on their x-coordinate.
+    - NVs on the left side (x < median_x) are assigned spin_flip = True.
+
+    Parameters:
+    - nv_list: List of NV objects, each with a 'coords' dictionary containing 'pixel'.
+
+    Returns:
+    - left_indices: Indices of NVs on the left side.
+    """
+    # Extract NV pixel coordinates
+    nv_coordinates = np.array([nv.coords["pixel"][:2] for nv in nv_list])
+
+    # Find the median x-coordinate
+    median_x = np.median(nv_coordinates[:, 0])
+
+    # Separate NVs into left and right based on the median x-coordinate
+    left_indices = [i for i, coord in enumerate(nv_coordinates) if coord[0] < median_x]
+
+    return left_indices
+
+
 # region Camera getters - probably only needed internally
 
 

@@ -404,6 +404,58 @@ def curve_extreme_weights_simple(weights, scaling_factor=1.0):
     return curved_weights
 
 
+def select_half_left_side_nvs_and_plot(nv_coordinates):
+    """
+    Select half of the NVs on the left side of the coordinate space
+    based on their 'pixel' x-coordinates, mark them with spin_flip = True,
+    and plot the distribution.
+
+    Parameters:
+    - nv_list: List of NV objects, each with a 'coords' dictionary containing 'pixel'.
+
+    Returns:
+    - selected_indices: List of indices of NVs selected from the left side.
+    """
+
+    # Filter NVs on the left side (x < median x)
+    median_x = np.median(nv_coordinates[:, 0])
+    left_side_indices = [
+        i for i, coord in enumerate(nv_coordinates) if coord[0] < median_x
+    ]
+
+    # Randomly select half of the NVs from the left side
+    print(f"Selected {len(left_side_indices)} NVs from the left side.")
+
+    # Plot distribution
+    plt.figure(figsize=(10, 7))
+
+    # Plot all NVs
+    plt.scatter(
+        nv_coordinates[:, 0], nv_coordinates[:, 1], color="gray", label="All NVs"
+    )
+
+    # Highlight left-side NVs
+    left_coords = nv_coordinates[left_side_indices]
+    plt.scatter(
+        left_coords[:, 0], left_coords[:, 1], color="blue", label="Left Side NVs"
+    )
+
+    # Add median line
+    plt.axvline(
+        median_x, color="green", linestyle="--", label=f"Median X = {median_x:.2f}"
+    )
+
+    # Labels and legend
+    plt.title("NV Distribution with Left Side Selection", fontsize=16)
+    plt.xlabel("X Coordinate", fontsize=14)
+    plt.ylabel("Y Coordinate", fontsize=14)
+    plt.legend(fontsize=12)
+    plt.grid(True)
+    plt.show()
+
+    return
+
+
 # Main section of the code
 if __name__ == "__main__":
     kpl.init_kplotlib()
@@ -426,8 +478,10 @@ if __name__ == "__main__":
     # data = dm.get_raw_data(file_id=1700650667777, load_npz=True)
     # data = dm.get_raw_data(file_id=1700668458198, load_npz=True)
     # data = dm.get_raw_data(file_id=1700710358100, load_npz=True)
-    data = dm.get_raw_data(file_id=1733432867671, load_npz=True)
+    # data = dm.get_raw_data(file_id=1733432867671, load_npz=True)
     # data = dm.get_raw_data(file_id=1732420670067, load_npz=True)
+    data = dm.get_raw_data(file_id=1733583334808, load_npz=True)
+
     img_array = data["ref_img_array"]
     # print(img_arrays)
     # sys.exit()
@@ -436,7 +490,7 @@ if __name__ == "__main__":
         # file_path="slmsuite/nv_blob_detection/nv_blob_filtered_160nvs.npz"
         file_path="slmsuite/nv_blob_detection/nv_blob_filtered_160nvs_reordered.npz"
     )
-    nv_amps = load_nv_weights().tolist()
+    # nv_amps = load_nv_weights().tolist()
 
     nv_coordinates = nv_coordinates.tolist()
     # integrated_intensities = integrated_intensities.tolist()
@@ -666,6 +720,7 @@ if __name__ == "__main__":
     )
     print(f"len nv_powers: {len(nv_powers)}")
     print(f"len nv_powers: {len(nv_coordinates_filtered)}")
+    select_half_left_side_nvs_and_plot(nv_coordinates_filtered)
     # spot_weights_filtered = np.array(
     #     [weight for i, weight in enumerate(spot_weights) if i in include_indices]
     # )

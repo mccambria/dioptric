@@ -281,7 +281,7 @@ def nuvu2thorcam_calibration(coords):
         [[979.807, 700.0], [460.192, 700.0], [720.0, 250.0]], dtype="float32"
     )
     cal_coords_nuvu = np.array(
-        [[190.078, 34.376], [191.433, 213.71], [31.806, 122.927]], dtype="float32"
+        [[190.44, 34.632], [191.624, 213.696], [32.286, 123.012]], dtype="float32"
     )
 
     # Compute the affine transformation matrix
@@ -289,9 +289,7 @@ def nuvu2thorcam_calibration(coords):
     # Append a column of ones to the input coordinates to facilitate affine transformation
     ones_column = np.ones((coords.shape[0], 1))
     coords_homogeneous = np.hstack((coords, ones_column))
-    thorcam_coords = np.dot(
-        coords_homogeneous, M.T
-    )  # Perform the affine transformation
+    thorcam_coords = np.dot(coords_homogeneous, M.T)
 
     return thorcam_coords
 
@@ -388,8 +386,8 @@ try:
     # test_wavefront_calibration()
     # wavefront_calibration()
     # load_wavefront_calibration()
-    # compute_nvs_phase()
-    write_nvs_phase()
+    compute_nvs_phase()
+    # write_nvs_phase()
     # calibration_triangle()
     # circles()
     # smiley()

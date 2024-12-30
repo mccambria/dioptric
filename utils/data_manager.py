@@ -105,6 +105,7 @@ def save_figure(fig, file_path):
     file_path_ext = file_path.with_suffix(f".{ext}")
     content = BytesIO()
     fig.savefig(content, format=ext)
+    # fig.savefig(content, format=ext, dpi=300, bbox_inches="tight")
     _cloud.upload(file_path_ext, content)
 
 
