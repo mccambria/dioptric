@@ -32,7 +32,7 @@ def get_seq(base_scc_seq_args, num_reps=1):
                 seq_utils.macro_pi_pulse(uwave_ind_list)
 
         def uwave_macro_ref(uwave_ind_list, step_val):
-            pass
+            return True
 
         base_scc_sequence.macro(
             base_scc_seq_args,

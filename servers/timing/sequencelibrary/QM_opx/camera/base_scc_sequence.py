@@ -108,7 +108,7 @@ def macro(
             pol_coords_list, duration_list=pol_duration_list, amp_list=pol_amp_list
         )
         qua.align()
-        uwave_macro[exp_ind](uwave_ind_list, step_val)
+        skip_spin_flip = uwave_macro[exp_ind](uwave_ind_list, step_val)
 
         # Check if this is the automatically included reference experiment
         ref_exp = reference and exp_ind == num_exps_per_rep - 1
@@ -121,7 +121,8 @@ def macro(
                     not val for val in spin_flip_do_target_list
                 ]
                 macro_scc_sub(spin_flip_do_not_target_list)
-                seq_utils.macro_pi_pulse(uwave_ind_list)
+                if not skip_spin_flip:
+                    seq_utils.macro_pi_pulse(uwave_ind_list)
                 macro_scc_sub(spin_flip_do_target_list)
         # Reference experiment
         else:
