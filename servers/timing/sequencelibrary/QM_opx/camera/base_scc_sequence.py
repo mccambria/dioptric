@@ -118,7 +118,7 @@ def macro(
                 macro_scc_sub()
             else:
                 spin_flip_do_not_target_list = [
-                    not (val) for val in spin_flip_do_target_list
+                    not val for val in spin_flip_do_target_list
                 ]
                 macro_scc_sub(spin_flip_do_not_target_list)
                 seq_utils.macro_pi_pulse(uwave_ind_list)

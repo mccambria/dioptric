@@ -189,6 +189,7 @@ def create_fit_figure(data, axes_pack=None, layout=None, no_legend=True):
     taus = np.array(data["taus"])
     total_evolution_times = 2 * np.array(taus) / 1e3
     counts = np.array(data["counts"])
+    num_runs = data["num_runs"]
 
     sig_counts = counts[0]
     ref_counts = counts[1]
@@ -322,6 +323,8 @@ def create_fit_figure(data, axes_pack=None, layout=None, no_legend=True):
     # kpl.set_shared_ax_ylabel(ax, "Change in $P($NV$^{-})$")
     # kpl.set_shared_ax_ylabel(ax, "Norm. NV$^{-}$ population")
     kpl.set_shared_ax_ylabel(ax, "Normalized NV$^{-}$ population")
+    ax.set_title(num_runs)
+    ax.set_ylim(-0.3, 1.3)
 
     # figManager = plt.get_current_fig_manager()
     # figManager.window.showMaximized()
@@ -446,13 +449,17 @@ if __name__ == "__main__":
 
     # fmt: off
     file_ids = [1734158411844, 1734273666255, 1734371251079, 1734461462293, 1734569197701, 1736117258235, 1736254107747, 1736354618206, 1736439112682]
+    file_ids2 = [1736589839249, 1736738087977, 1736932211269, 1737087466998, 1737219491182]
     # fmt: on
+    # file_ids = file_ids[:2]
     file_ids = file_ids[:4]
+    file_ids.extend(file_ids2)
+    # file_ids = file_ids2
     data = dm.get_raw_data(file_id=file_ids[0])
     for file_id in file_ids[1:]:
         new_data = dm.get_raw_data(file_id=file_id)
         data["num_runs"] += new_data["num_runs"]
-        data["counts"] = np.append(data["counts"], new_data["counts"], axis=1)
+        data["counts"] = np.append(data["counts"], new_data["counts"], axis=2)
 
     # create_raw_data_figure(data)
     create_fit_figure(data)
