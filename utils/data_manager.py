@@ -224,6 +224,16 @@ def get_raw_data(file_name=None, file_id=None, use_cache=True, load_npz=False):
         Dictionary containing the json object from the specified raw data file
     """
 
+    # Recurse if multiple file_ids passed
+    if isinstance(file_id, (list, tuple)):
+        file_ids = file_id
+        data = get_raw_data(file_id=file_ids[0])
+        for file_id in file_ids[1:]:
+            new_data = get_raw_data(file_id=file_id)
+            data["num_runs"] += new_data["num_runs"]
+            data["counts"] = np.append(data["counts"], new_data["counts"], axis=2)
+        return data
+
     if file_id is not None:
         file_id = str(file_id)
 
