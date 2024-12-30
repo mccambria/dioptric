@@ -391,18 +391,22 @@ def process_and_plot(
     # return figs
 
 
-def main(nv_list, num_reps, num_runs):
+def main(nv_list, num_steps, num_runs):
     ### Some initial setup
     uwave_ind_list = [0, 1]
     seq_file = "simple_correlation_test.py"
-    num_steps = 1
+    num_reps = 1
 
     pulse_gen = tb.get_server_pulse_gen()
+    step_vals = np.empty((num_runs, num_steps))
 
     ### Collect the data
 
     def run_fn(shuffled_step_inds):
-        seq_args = [widefield.get_base_scc_seq_args(nv_list, uwave_ind_list)]
+        seq_args = [
+            widefield.get_base_scc_seq_args(nv_list, uwave_ind_list),
+            shuffled_step_inds,
+        ]
         # print(seq_args)
         seq_args_string = tb.encode_seq_args(seq_args)
         pulse_gen.stream_load(seq_file, seq_args_string, num_reps)
