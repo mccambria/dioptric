@@ -242,12 +242,12 @@ def process_and_plot(data, rearrangement="spin_flip", file_path=None):
     ideal_vmax = 1
 
     # Plotting setup
-    figsize = [10, 5]
-    fig, axes_pack = plt.subplots(ncols=2, figsize=figsize)
-    # titles = ["Ideal Signal", "Signal", "Reference"]
-    titles = ["Ideal Signal", "Signal - Reference"]
-    vals = [ideal_sig_corr_coeffs, sig_corr_coeffs]
-    # vals = [sig_corr_coeffs, ref_corr_coeffs]
+    figsize = [15, 5]
+    fig, axes_pack = plt.subplots(ncols=3, figsize=figsize)
+    titles = ["Ideal Signal", "Signal", "Reference"]
+    # titles = ["Ideal Signal", "Signal - Reference"]
+    vals = [ideal_sig_corr_coeffs, sig_corr_coeffs, ref_corr_coeffs]
+    # vals = [sig_corr_coeffs, ref_corr_coeffs, ref_corr_coeffs]
     # titles = ["Signal", "Reference"]
 
     # Use Seaborn heatmap for visualization
@@ -258,7 +258,7 @@ def process_and_plot(data, rearrangement="spin_flip", file_path=None):
         # Set vmin and vmax depending on whether it's the ideal or actual data
         if title == "Ideal Signal":
             vmin, vmax = ideal_vmin, ideal_vmax
-        elif title == "Signal - Reference":
+        elif title == "Signal":
             vmin, vmax = sig_vmin, sig_vmax
         else:
             vmin, vmax = ref_vmin, ref_vmax
@@ -607,7 +607,7 @@ def plot_nv_network(data):
     spin_down_nodes = [i for i, nv in enumerate(nv_list) if nv.spin_flip]
 
     # Create the plot
-    fig, ax = plt.subplots(figsize=(8, 6.5), dpi=150)
+    fig, ax = plt.subplots(figsize=(8, 5))
     nx.draw_networkx_nodes(
         G,
         pos,
@@ -700,6 +700,259 @@ def plot_nv_network(data):
     plt.show()
 
 
+def draw_3d_curved_edges(
+    G, pos, ax, norm, edges, edge_colors, edge_widths, edge_alphas, curvature=0.2
+):
+    """
+    Draw curved edges for a graph in 3D space.
+
+    Parameters:
+    - G: The graph.
+    - pos: Dictionary of node positions (2D coordinates).
+    - ax: The 3D matplotlib axis to draw on.
+    - edges: List of edges.
+    - edge_colors: List of edge colors.
+    - edge_widths: List of edge widths.
+    - edge_alphas: List of edge alpha (transparency).
+    - curvature: The curvature of the edges in the Z-dimension.
+    """
+    for i, (u, v) in enumerate(edges):
+        # Get the positions of the nodes
+        x1, y1 = pos[u]
+        x2, y2 = pos[v]
+
+        # Calculate the mid-point
+        mid_x = (x1 + x2) / 2
+        mid_y = (y1 + y2) / 2
+
+        # Add curvature in the Z-dimension
+        mid_z = curvature * np.sqrt((x2 - x1) ** 2 + (y2 - y1) ** 2)
+
+        # Define the 3D curve using a cubic Bezier curve
+        t = np.linspace(0, 1, 100)
+        curve_x = (1 - t) ** 2 * x1 + 2 * (1 - t) * t * mid_x + t**2 * x2
+        curve_y = (1 - t) ** 2 * y1 + 2 * (1 - t) * t * mid_y + t**2 * y2
+        curve_z = t * (1 - t) * mid_z
+
+        # Draw the 3D edge
+        ax.plot(
+            curve_x,
+            curve_y,
+            curve_z,
+            color=plt.cm.coolwarm(norm(edge_colors[i])),
+            linewidth=edge_widths[i],
+            alpha=edge_alphas[i],
+        )
+
+
+import random
+
+
+def draw_3d_curved_edges_smart(
+    G, pos, ax, norm, edges, edge_colors, edge_widths, edge_alphas, curvature=0.2
+):
+    """
+    Draw curved edges for a graph in 3D space, with smart random assignment
+    of edges above or below the plane for better visualization.
+
+    Parameters:
+    - G: The graph.
+    - pos: Dictionary of node positions (2D coordinates).
+    - ax: The 3D matplotlib axis to draw on.
+    - edges: List of edges.
+    - edge_colors: List of edge colors.
+    - edge_widths: List of edge widths.
+    - edge_alphas: List of edge alpha (transparency).
+    - curvature: The curvature of the edges in the Z-dimension.
+    """
+    for i, (u, v) in enumerate(edges):
+        # Get the positions of the nodes
+        x1, y1 = pos[u]
+        x2, y2 = pos[v]
+
+        # Calculate the mid-point
+        mid_x = (x1 + x2) / 2
+        mid_y = (y1 + y2) / 2
+
+        # Add curvature in the Z-dimension
+        mid_z = curvature * np.sqrt((x2 - x1) ** 2 + (y2 - y1) ** 2)
+
+        # Randomly decide whether the edge is above or below the plane
+        z_sign = random.choice([-1, 1])
+
+        # Define the 3D curve using a cubic Bezier curve
+        t = np.linspace(0, 1, 100)
+        curve_x = (1 - t) ** 2 * x1 + 2 * (1 - t) * t * mid_x + t**2 * x2
+        curve_y = (1 - t) ** 2 * y1 + 2 * (1 - t) * t * mid_y + t**2 * y2
+        curve_z = z_sign * t * (1 - t) * mid_z
+
+        # Draw the 3D edge
+        ax.plot(
+            curve_x,
+            curve_y,
+            curve_z,
+            color=plt.cm.coolwarm(norm(edge_colors[i])),
+            linewidth=edge_widths[i],
+            alpha=edge_alphas[i],
+        )
+
+
+def plot_nv_network_3d(data):
+    """
+    Plot a 3D network graph where NV centers are represented as nodes,
+    with spin-up nodes in red and spin-down nodes in blue.
+    Edges are colored based on the correlation coefficients.
+
+    Parameters:
+    - data: Dictionary containing 'nv_list' and 'counts'.
+    """
+    # Unpack data
+    # Seaborn aesthetics
+    sns.set(style="whitegrid", context="talk", font_scale=1.2)
+
+    # Unpack data
+    nv_list = data.get("nv_list", [])
+    counts = np.array(data.get("counts", []))
+
+    if len(nv_list) == 0 or counts.size == 0:
+        print("Error: Data does not contain NV list or counts.")
+        return None
+
+    # Separate signal and reference counts
+    sig_counts = np.array(counts[0])
+    ref_counts = np.array(counts[1])
+
+    num_nvs = len(nv_list)
+
+    # Thresholding counts with dynamic thresholds
+    sig_counts, ref_counts = threshold_counts(
+        nv_list, sig_counts, ref_counts, dynamic_thresh=True
+    )
+
+    # Flatten counts for each NV
+    flattened_sig_counts = [sig_counts[ind].flatten() for ind in range(num_nvs)]
+    flattened_ref_counts = [ref_counts[ind].flatten() for ind in range(num_nvs)]
+
+    # Calculate correlations
+    sig_corr_coeffs = nan_corr_coef(flattened_sig_counts)
+    ref_corr_coeffs = nan_corr_coef(flattened_ref_counts)
+    # difference
+    sig_corr_coeffs = sig_corr_coeffs - ref_corr_coeffs
+    # print("sig_corr_coeffs shape:", sig_corr_coeffs.shape)
+    # print("sig_corr_coeffs example values:", sig_corr_coeffs[:5, :5])
+
+    if not np.isfinite(sig_corr_coeffs).all():
+        print("Invalid values found in sig_corr_coeffs.")
+        return
+
+    # Initialize a graph
+    G = nx.Graph()
+    for i, nv in enumerate(nv_list):
+        pixel = nv.coords.get("pixel", [])
+        # nv.coords["pixel"] = [float(coord) for coord in pixel[:2]]
+        nv.coords["pixel"] = [float(pixel[0]), -float(pixel[1])]
+        # Add nodes
+        G.add_node(i, pos=nv.coords["pixel"], spin_flip=nv.spin_flip)
+
+    pos = nx.get_node_attributes(G, "pos")
+    spin_up_nodes = [i for i, nv in enumerate(nv_list) if not nv.spin_flip]
+    spin_down_nodes = [i for i, nv in enumerate(nv_list) if nv.spin_flip]
+
+    # Create the plot
+    fig, ax = plt.subplots(figsize=(8, 6.5), dpi=200)
+    ax = fig.add_subplot(111, projection="3d")
+    nx.draw_networkx_nodes(
+        G,
+        pos,
+        nodelist=spin_up_nodes,
+        node_color="red",
+        node_size=20,
+        label="Spin-up",
+    )
+    nx.draw_networkx_nodes(
+        G,
+        pos,
+        nodelist=spin_down_nodes,
+        node_color="blue",
+        node_size=20,
+        label="Spin-down",
+    )
+    # Add edges based on correlation coefficientss
+    edges = []
+    edge_colors = []
+    edge_widths = []
+    edge_alphas = []
+
+    for i in range(sig_corr_coeffs.shape[0]):
+        for j in range(i + 1, sig_corr_coeffs.shape[1]):
+            try:
+                edges.append((i, j))
+                edge_colors.append(float(sig_corr_coeffs[i, j]))
+                # edge_widths.append(5 * abs(sig_corr_coeffs[i, j]))
+                edge_widths.append(0.2)
+                edge_alphas.append(0.5 + 0.5 * abs(sig_corr_coeffs[i, j]))
+                # edge_alphas.append(0.5)
+            except Exception as e:
+                print(f"Error at edge ({i}, {j}): {e}")
+                print(f"sig_corr_coeffs[{i}, {j}] = {sig_corr_coeffs[i, j]}")
+
+    mean_corr = np.nanmean(sig_corr_coeffs)
+    std_corr = np.nanstd(sig_corr_coeffs)
+    vmax = mean_corr + std_corr
+    norm = mcolors.Normalize(vmin=-vmax, vmax=vmax)
+
+    # Draw curved edges with color based on the correlation coefficients
+    draw_3d_curved_edges_smart(
+        G, pos, ax, norm, edges, edge_colors, edge_widths, edge_alphas, curvature=0.6
+    )
+
+    # Add a color bar to indicate the correlation values, associated with the correct axis
+    sm = plt.cm.ScalarMappable(cmap=cm.coolwarm, norm=norm)
+    sm.set_array(edge_colors)
+    cbar = plt.colorbar(sm, ax=ax)
+    cbar.set_label("Correlation Coefficient", fontsize=16)
+    cbar.ax.tick_params(labelsize=16)
+    # Add scale bar
+    scalebar_length_pixels = 20
+    scalebar_length_um = scalebar_length_pixels * 0.072
+    scalebar_x_start = 2
+    scalebar_y_start = 2
+
+    # Draw scale bar
+    ax.plot(
+        [scalebar_x_start, scalebar_x_start + scalebar_length_pixels],
+        [scalebar_y_start, scalebar_y_start],
+        color="black",
+        linewidth=2,
+    )
+
+    # Add label to scale bar
+    ax.text(
+        scalebar_x_start + scalebar_length_pixels / 2,
+        scalebar_y_start + 2,
+        f"{scalebar_length_um:.2f} µm",
+        ha="center",
+        va="bottom",
+        fontsize=12,
+        color="black",
+    )
+
+    # Add labels (optional)
+    labels = {i: f"{i}" for i in range(len(nv_list))}
+    nx.draw_networkx_labels(G, pos, labels, font_size=5, font_color="white", ax=ax)
+
+    # Set title and legend
+    plt.title("NV Center Network Graph", fontsize=16)
+    plt.legend(scatterpoints=1, loc="upper right", fontsize=12)
+    plt.tight_layout()
+    # plt.show()
+    # Adjust subplots for proper spacing
+    # fig.subplots_adjust(left=0.05, right=0.88, bottom=0.05, top=0.95, wspace=0.3)
+    # if fig is not None:
+    #     dm.save_figure(fig, file_path)
+    plt.show()
+
+
 # end region
 
 if __name__ == "__main__":
@@ -717,20 +970,30 @@ if __name__ == "__main__":
     # process_and_plot(data, rearrangement="alternate_quadrants")
 
     # region Process and analyze data from multiple files
+    # First data set taken on 2021-08-26 with Matt's spin arrangement
+    # file_ids = [
+    #     1737922643755,
+    #     1737998031775,
+    #     1738069552465,
+    #     1738136166264,
+    #     1738220449762,
+    # ]
+
+    # FData set taken with left-right spin arrangement
     file_ids = [
-        1737922643755,
-        1737998031775,
-        1738069552465,
-        1738136166264,
-        1738220449762,
+        1738729976529,
+        1738799968739,
+        1738879737311,
+        1738963857371,
     ]
     try:
         data = process_multiple_files(file_ids)
         # Process and plot the heatmaops with a rearrangement pattern
-        # process_and_plot(data, rearrangement="alternate_quadrants")
+        process_and_plot(data, rearrangement="alternate_quadrants")
         # rearrangement (str): ('alternate_quadrants', 'checkerboard', 'block', 'spiral', etc.).
         # Process and plot netwrok graph
         plot_nv_network(data)
+        # plot_nv_network_3d(data)
     except Exception as e:
         print(f"Error occurred: {e}")
 

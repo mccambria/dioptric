@@ -76,7 +76,7 @@ def process_multiple_files(file_ids):
         new_data = dm.get_raw_data(file_id=file_id)
         combined_data["num_runs"] += new_data["num_runs"]
         combined_data["counts"] = np.append(
-            combined_data["counts"], new_data["counts"], axis=1
+            combined_data["counts"], new_data["counts"], axis=2
         )
     return combined_data
 
@@ -492,7 +492,7 @@ if __name__ == "__main__":
         counts = np.array(data["counts"])
         sig_counts, ref_counts = counts[0], counts[1]
         norm_counts, norm_counts_ste = widefield.process_counts(
-            nv_list, sig_counts, ref_counts, threshold=False
+            nv_list, sig_counts, ref_counts, threshold=True
         )
         nv_num = len(nv_list)
         ids_num = len(file_ids)
