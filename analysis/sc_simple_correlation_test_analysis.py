@@ -5,6 +5,7 @@ Created on Fall, 2024
 @author: Saroj Chand
 """
 
+import random
 from datetime import datetime
 
 import matplotlib.cm as cm
@@ -242,12 +243,12 @@ def process_and_plot(data, rearrangement="spin_flip", file_path=None):
     ideal_vmax = 1
 
     # Plotting setup
-    figsize = [15, 5]
-    fig, axes_pack = plt.subplots(ncols=3, figsize=figsize)
-    titles = ["Ideal Signal", "Signal", "Reference"]
-    # titles = ["Ideal Signal", "Signal - Reference"]
-    vals = [ideal_sig_corr_coeffs, sig_corr_coeffs, ref_corr_coeffs]
-    # vals = [sig_corr_coeffs, ref_corr_coeffs, ref_corr_coeffs]
+    figsize = [10, 5]
+    fig, axes_pack = plt.subplots(ncols=2, figsize=figsize)
+    # titles = ["Ideal Signal", "Signal", "Reference"]
+    titles = ["Ideal Signal", "Signal - Reference"]
+    # vals = [ideal_sig_corr_coeffs, sig_corr_coeffs, ref_corr_coeffs]
+    vals = [ideal_sig_corr_coeffs, sig_corr_coeffs]
     # titles = ["Signal", "Reference"]
 
     # Use Seaborn heatmap for visualization
@@ -363,7 +364,7 @@ def rearrange_random(nv_list, sig_corr, ref_corr):
     return apply_rearrangement(nv_list, sig_corr, ref_corr, reshuffled_indices)
 
 
-def rearrange_alternate_quadrants(nv_list, sig_corr, ref_corr, num_quadrants=6):
+def rearrange_alternate_quadrants(nv_list, sig_corr, ref_corr, num_quadrants=8):
     """
     Divide NV centers into multiple quadrants and alternate spin-up and spin-down in each quadrant.
 
@@ -607,7 +608,7 @@ def plot_nv_network(data):
     spin_down_nodes = [i for i, nv in enumerate(nv_list) if nv.spin_flip]
 
     # Create the plot
-    fig, ax = plt.subplots(figsize=(8, 5))
+    fig, ax = plt.subplots(figsize=(8, 8))
     nx.draw_networkx_nodes(
         G,
         pos,
@@ -743,9 +744,6 @@ def draw_3d_curved_edges(
             linewidth=edge_widths[i],
             alpha=edge_alphas[i],
         )
-
-
-import random
 
 
 def draw_3d_curved_edges_smart(
@@ -985,6 +983,7 @@ if __name__ == "__main__":
         1738799968739,
         1738879737311,
         1738963857371,
+        1739049613447,
     ]
     try:
         data = process_multiple_files(file_ids)
@@ -992,7 +991,7 @@ if __name__ == "__main__":
         process_and_plot(data, rearrangement="alternate_quadrants")
         # rearrangement (str): ('alternate_quadrants', 'checkerboard', 'block', 'spiral', etc.).
         # Process and plot netwrok graph
-        plot_nv_network(data)
+        # plot_nv_network(data)
         # plot_nv_network_3d(data)
     except Exception as e:
         print(f"Error occurred: {e}")
