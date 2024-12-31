@@ -25,21 +25,25 @@ def get_seq(base_scc_seq_args, step_vals, num_reps=1):
         seq_utils.macro_run_aods()
         step_val = qua.declare(int)
 
-        def uwave_macro_sig(uwave_ind_list, step_val):
+        def uwave_macro_sig1(uwave_ind_list, step_val):
             # Parity check for pi pulse
             with qua.if_(qua.Cast.unsafe_cast_bool(step_val)):
                 seq_utils.macro_pi_pulse(uwave_ind_list)
 
-        # def uwave_macro_ref(uwave_ind_list, step_val):
-        #     pass
+        def uwave_macro_sig2(uwave_ind_list, step_val):
+            # Parity check for pi pulse
+            with qua.if_(qua.Cast.unsafe_cast_bool(step_val)):
+                seq_utils.macro_pi_pulse(uwave_ind_list)
+            seq_utils.macro_pi_pulse(uwave_ind_list)
 
         with qua.for_each_(step_val, step_vals):
             base_scc_sequence.macro(
                 base_scc_seq_args,
-                uwave_macro_sig,
+                # uwave_macro_sig,
+                [uwave_macro_sig1, uwave_macro_sig2],
                 step_val,
                 num_reps=num_reps,
-                reference=True,
+                reference=False,
             )
 
     seq_ret_vals = []
