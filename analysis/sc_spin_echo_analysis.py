@@ -7,13 +7,15 @@ Created on December 22nd, 2024
 @author: Saroj Chand
 """
 
+import sys
 import time
 import traceback
-import sys
+
 import matplotlib.pyplot as plt
 import numpy as np
 import seaborn as sns
 from scipy.optimize import curve_fit
+
 from utils import data_manager as dm
 from utils import kplotlib as kpl
 from utils import widefield as widefield
@@ -409,7 +411,6 @@ def analyze_spin_echo(nv_list, taus, norm_counts, norm_counts_ste):
 
 
 def plot_analysis_parameters(meaningful_parameters):
-
     import pandas as pd
 
     params_df = pd.DataFrame(meaningful_parameters)
