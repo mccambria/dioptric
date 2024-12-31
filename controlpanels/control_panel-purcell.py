@@ -399,11 +399,11 @@ def do_simple_correlation_test(nv_list):
     # print(f"Assigned spin_flip to {selected_indices}")
 
     # Run this for the main experiment, ~15 hours
-    num_steps = 200
-    # num_reps = 200
+    # num_steps = 200
+    num_reps = 200
     num_runs = 400
     for _ in range(5):
-        simple_correlation_test.main(nv_list, num_steps, num_runs)
+        simple_correlation_test.main(nv_list, num_reps, num_runs)
 
 
 def do_calibrate_iq_delay(nv_list):

@@ -252,6 +252,7 @@ def main(
             img_array_reps_cache = np.empty((num_exps, num_reps, *shape))
     step_ind_master_list = [None for ind in range(num_runs)]
     step_ind_list = list(range(0, num_steps))
+    crash_counter = [None] * num_runs
 
     ### Collect the data
 
@@ -359,6 +360,8 @@ def main(
                     # Update global coordinates (new)
                     targeting.compensate_for_drift(repr_nv_sig)
 
+                    crash_counter[run_ind] = attempt_ind
+
                     break
 
                 except Exception as exc:
@@ -397,6 +400,7 @@ def main(
         "counts-units": "photons",
         "counts": counts,
         "pixel_drifts": pixel_drifts,
+        "crash_counter": crash_counter,
     }
     if save_images:
         raw_data |= {

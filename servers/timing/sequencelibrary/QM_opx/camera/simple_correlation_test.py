@@ -19,32 +19,34 @@ from servers.timing.sequencelibrary.QM_opx import seq_utils
 from servers.timing.sequencelibrary.QM_opx.camera import base_scc_sequence
 
 
-def get_seq(base_scc_seq_args, step_vals, num_reps=1):
+def get_seq(base_scc_seq_args, random_seed, num_reps=1):
     with qua.program() as seq:
         seq_utils.init()
         seq_utils.macro_run_aods()
-        step_val = qua.declare(int)
+        rand_val = qua.declare(int)
+        qua_random = qua.Random()
+        qua_random.set_seed(random_seed)
 
         def uwave_macro_sig1(uwave_ind_list, step_val):
             # Parity check for pi pulse
-            with qua.if_(qua.Cast.unsafe_cast_bool(step_val)):
+            qua.assign(rand_val, qua_random.rand_int(2))
+            with qua.if_(qua.Cast.unsafe_cast_bool(rand_val)):
                 seq_utils.macro_pi_pulse(uwave_ind_list)
 
         def uwave_macro_sig2(uwave_ind_list, step_val):
             # Parity check for pi pulse
-            with qua.if_(qua.Cast.unsafe_cast_bool(step_val)):
+            qua.assign(rand_val, qua_random.rand_int(2))
+            with qua.if_(qua.Cast.unsafe_cast_bool(rand_val)):
                 seq_utils.macro_pi_pulse(uwave_ind_list)
             seq_utils.macro_pi_pulse(uwave_ind_list)
 
-        with qua.for_each_(step_val, step_vals):
-            base_scc_sequence.macro(
-                base_scc_seq_args,
-                # uwave_macro_sig,
-                [uwave_macro_sig1, uwave_macro_sig2],
-                step_val,
-                num_reps=num_reps,
-                reference=False,
-            )
+        base_scc_sequence.macro(
+            base_scc_seq_args,
+            # uwave_macro_sig,
+            [uwave_macro_sig1, uwave_macro_sig2],
+            num_reps=num_reps,
+            reference=False,
+        )
 
     seq_ret_vals = []
     return seq, seq_ret_vals
