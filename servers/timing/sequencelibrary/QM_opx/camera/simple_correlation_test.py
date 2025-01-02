@@ -51,26 +51,52 @@ from servers.timing.sequencelibrary.QM_opx.camera import base_scc_sequence
 #     return seq, seq_ret_vals
 
 
-def get_seq(base_scc_seq_args, random_seed, num_reps=1):
+# def get_seq(base_scc_seq_args, random_seed, num_reps=1):
+#     with qua.program() as seq:
+#         seq_utils.init()
+#         seq_utils.macro_run_aods()
+#         rand_val = qua.declare(int)
+#         qua_random = qua.Random()
+#         qua_random.set_seed(random_seed)
+
+#         def uwave_macro_sig(uwave_ind_list, step_val):
+#             # Parity check for pi pulse
+#             qua.assign(rand_val, qua_random.rand_int(2))
+#             with qua.if_(qua.Cast.unsafe_cast_bool(rand_val)):
+#                 seq_utils.macro_pi_pulse(uwave_ind_list)
+
+#         base_scc_sequence.macro(
+#             base_scc_seq_args,
+#             uwave_macro_sig,
+#             # [uwave_macro_sig1, uwave_macro_sig2],
+#             num_reps=num_reps,
+#             reference=True,
+#         )
+
+#     seq_ret_vals = []
+#     return seq, seq_ret_vals
+
+
+def get_seq(base_scc_seq_args, num_reps=1):
     with qua.program() as seq:
         seq_utils.init()
         seq_utils.macro_run_aods()
-        rand_val = qua.declare(int)
         qua_random = qua.Random()
-        qua_random.set_seed(random_seed)
 
         def uwave_macro_sig(uwave_ind_list, step_val):
-            # Parity check for pi pulse
-            qua.assign(rand_val, qua_random.rand_int(2))
-            with qua.if_(qua.Cast.unsafe_cast_bool(rand_val)):
+            step_val = qua.declare(int)
+            qua.assign(step_val, qua_random.rand_int(2))
+            with qua.if_(step_val == 1):
                 seq_utils.macro_pi_pulse(uwave_ind_list)
+
+        def uwave_macro_ref(uwave_ind_list, step_val):
+            return True
 
         base_scc_sequence.macro(
             base_scc_seq_args,
-            uwave_macro_sig,
-            # [uwave_macro_sig1, uwave_macro_sig2],
+            [uwave_macro_sig, uwave_macro_ref],
             num_reps=num_reps,
-            reference=True,
+            reference=False,
         )
 
     seq_ret_vals = []

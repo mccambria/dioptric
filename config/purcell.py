@@ -44,9 +44,9 @@ calibration_coords_green = [
     [98.688, 101.016],
 ]
 calibration_coords_red = [
-    [78.797, 68.111],
-    [73.917, 79.737],
-    [65.519, 67.787],
+    [78.935, 67.899],
+    [73.948, 79.715],
+    [65.229, 67.713],
 ]
 
 # Create the dictionaries using the provided lists

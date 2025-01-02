@@ -90,10 +90,6 @@ def macro(
     num_exps_per_rep = len(uwave_macro)
     num_nvs = len(pol_coords_list)
 
-    if spin_flip_do_target_list is None:
-        spin_flip_do_target_list = [False for ind in range(num_nvs)]
-    spin_flip_do_not_target_list = [not val for val in spin_flip_do_target_list]
-
     def macro_scc_sub(do_target_list=None):
         seq_utils.macro_scc(
             scc_coords_list,
@@ -105,30 +101,47 @@ def macro(
         )
 
     ### QUA stuff
-
     def one_exp(rep_ind, exp_ind):
         # exp_ind = num_exps_per_rep - 1  # MCC
         seq_utils.macro_polarize(
             pol_coords_list, duration_list=pol_duration_list, amp_list=pol_amp_list
         )
         qua.align()
-        uwave_macro[exp_ind](uwave_ind_list, step_val)
+        skip_spin_flip = uwave_macro[exp_ind](uwave_ind_list, step_val)
 
+        # Randomize SCC order between the two groups
+        random_order = qua.declare(int)
+        qua.assign(random_order, qua.Random().rand_int(2))
+        # print(f"Random value generated: {random_order}")
         # Check if this is the automatically included reference experiment
         ref_exp = reference and exp_ind == num_exps_per_rep - 1
+
         # Signal experiment
         if not ref_exp:
-            macro_scc_sub(spin_flip_do_not_target_list)
-            seq_utils.macro_pi_pulse(uwave_ind_list)
-            macro_scc_sub(spin_flip_do_target_list)
+            if spin_flip_do_target_list is None or True not in spin_flip_do_target_list:
+                macro_scc_sub()
+            else:
+                spin_flip_do_not_target_list = [
+                    not val for val in spin_flip_do_target_list
+                ]
+                # Randomized SCC order
+                with qua.if_(random_order == 1):
+                    macro_scc_sub(spin_flip_do_not_target_list)
+                    if not skip_spin_flip:
+                        seq_utils.macro_pi_pulse(uwave_ind_list)
+                    macro_scc_sub(spin_flip_do_target_list)
+                with qua.else_():
+                    macro_scc_sub(spin_flip_do_target_list)
+                    if not skip_spin_flip:
+                        seq_utils.macro_pi_pulse(uwave_ind_list)
+                    macro_scc_sub(spin_flip_do_not_target_list)
         # Reference experiment
         else:
             # "Dual-rail" referencing: measure ms=0 for even reps, and ms=+/-1
             # for odd by applying an extra pi pulse just before SCC
             with qua.if_(qua.Cast.unsafe_cast_bool(rep_ind)):
                 seq_utils.macro_pi_pulse(uwave_ind_list)
-            macro_scc_sub(spin_flip_do_not_target_list)
-            macro_scc_sub(spin_flip_do_target_list)
+            macro_scc_sub()
 
         seq_utils.macro_charge_state_readout()
         seq_utils.macro_wait_for_trigger()
