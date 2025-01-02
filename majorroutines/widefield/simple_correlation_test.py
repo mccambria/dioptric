@@ -399,16 +399,15 @@ def main(nv_list, num_reps, num_runs):
     num_steps = 1
 
     pulse_gen = tb.get_server_pulse_gen()
-    random_seeds = []
+    # random_seeds = []
 
     ### Collect the data
 
     def run_fn(shuffled_step_inds):
-        random_seed = random.randint(0, 1000000)
-        random_seeds.append(random_seed)
+        # random_seed = random.randint(0, 1000000)
+        # random_seeds.append(random_seed)
         seq_args = [
             widefield.get_base_scc_seq_args(nv_list, uwave_ind_list),
-            random_seed,
         ]
         # print(seq_args)
         seq_args_string = tb.encode_seq_args(seq_args)
@@ -440,7 +439,7 @@ def main(nv_list, num_reps, num_runs):
     timestamp = dm.get_time_stamp()
     raw_data |= {
         "timestamp": timestamp,
-        "random_seeds": random_seeds,
+        # "random_seeds": random_seeds,
     }
 
     repr_nv_sig = widefield.get_repr_nv_sig(nv_list)

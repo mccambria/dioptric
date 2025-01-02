@@ -68,8 +68,8 @@ def process_and_plot(data):
 
     # Print
     avg_snr = avg_snr.tolist()
-    print(avg_snr)
-    print(f"Median SNR: {np.median(avg_snr)}")
+    print(f"avg_snr = {[f'{snr:.3f}' for snr in avg_snr]}")
+    print(f"Median SNR: {np.median(avg_snr):.3f}")
     return avg_snr
 
     ### Plot

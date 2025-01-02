@@ -358,7 +358,7 @@ def main(
                     step_ind_master_list[run_ind] = step_ind_list.copy()
 
                     # Update global coordinates (new)
-                    targeting.compensate_for_drift(repr_nv_sig)
+                    targeting.compensate_for_drift(repr_nv_sig, no_crash=True)
 
                     crash_counter[run_ind] = attempt_ind
 

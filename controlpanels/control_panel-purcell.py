@@ -215,8 +215,8 @@ def do_optimize_green(nv_sig):
 
 def do_optimize_red(nv_sig, ref_nv_sig):
     opti_coords = []
-    axes_list = [Axes.X, Axes.Y]
-    # axes_list = [Axes.Y, Axes.X]
+    # axes_list = [Axes.X, Axes.Y]
+    axes_list = [Axes.Y, Axes.X]
     # shuffle(axes_list)
     for ind in range(1):
         axes = axes_list[ind]
@@ -513,7 +513,7 @@ def do_power_rabi(nv_list):
 
 
 def do_spin_echo(nv_list):
-    revival_period = int(51.5e3 / 2)  # ns
+    revival_period = int(51.5e3 / 2)
     min_tau = 200
     taus = []
     revival_width = 5e3
@@ -549,77 +549,10 @@ def do_spin_echo(nv_list):
     num_reps = 4
     num_runs = 200
     # num_runs = 3
-
     # spin_echo.main(nv_list, num_steps, num_reps, num_runs, min_tau, max_tau)
     # spin_echo.main(nv_list, num_steps, num_reps, num_runs, taus=taus)
     for ind in range(5):
         spin_echo.main(nv_list, num_steps, num_reps, num_runs, taus=taus)
-
-
-# def do_spin_echo_optimized(nv_list):
-#     # Constants
-#     revival_period = 51.5e3 / 2  # Revival period (ns)
-#     min_tau = 200
-#     max_tau = 2 * revival_period + 2e3  # Maximum tau (slightly beyond second revival)
-#     coarse_steps = 11
-#     fine_steps = 20
-#     intermediate_steps = 6
-#     revival_width = 2e3
-
-#     revival_period = int(revival_period)
-
-#     taus = []
-
-#     # Logarithmic spacing from min_tau to slightly before first revival
-#     taus.extend(
-#         np.logspace(
-#             np.log10(min_tau), np.log10(revival_period - revival_width), coarse_steps
-#         ).tolist()
-#     )
-
-#     # Fine linear spacing around first revival
-#     taus.extend(
-#         np.linspace(
-#             revival_period - revival_width, revival_period + revival_width, fine_steps
-#         ).tolist()
-#     )
-
-#     # Logarithmic spacing between first and second revival
-#     taus.extend(
-#         np.logspace(
-#             np.log10(revival_period + revival_width),
-#             np.log10(2 * revival_period - revival_width),
-#             intermediate_steps,
-#         ).tolist()
-#     )
-
-#     # Fine linear spacing around second revival
-#     taus.extend(
-#         np.linspace(
-#             2 * revival_period - revival_width,
-#             2 * revival_period + revival_width,
-#             fine_steps,
-#         ).tolist()
-#     )
-
-#     # Logarithmic spacing beyond the second revival up to max_tau
-#     taus.extend(
-#         np.logspace(
-#             np.log10(2 * revival_period + revival_width),
-#             np.log10(max_tau),
-#             5,  # Sparse sampling beyond second revival
-#         ).tolist()
-#     )
-
-#     # Round taus to the nearest multiple of 4 and remove duplicates
-#     taus = sorted(set(round(tau / 4) * 4 for tau in taus))
-
-#     # Experiment parameters
-#     num_steps = len(taus)
-#     num_reps = 5
-#     num_runs = 800
-
-#     spin_echo.main(nv_list, num_steps, num_reps, num_runs, taus=taus)
 
 
 def do_ramsey(nv_list):
@@ -1099,10 +1032,10 @@ if __name__ == "__main__":
     #     [98.688, 101.016],
     # ]
     # red_coords_list = [
-    #     [73.676, 72.594],
-    #     [78.797, 68.111],
-    #     [73.917, 79.737],
-    #     [65.647, 67.563],
+    #     [73.689, 72.526],
+    #     [78.935, 67.899],
+    #     [73.948, 79.715],
+    #     [65.229, 67.713],
     # ]
     num_nvs = len(pixel_coords_list)
     threshold_list = [45.5] * num_nvs
@@ -1133,8 +1066,10 @@ if __name__ == "__main__":
     # scc_duration_list = [128, 124, 136, 84, 144, 112, 124, 100, 108, 116, 140, 84, 120, 112, 112, 100, 116, 68, 100, 124, 136, 128, 100, 88, 80, 160, 144, 112, 112, 108, 108, 136, 124, 168, 124, 172, 136, 116, 84, 200, 144, 108, 124, 92, 100, 64, 96, 116, 92, 112, 100, 188, 188, 124, 92, 136, 140, 108, 80, 92, 84, 92, 76, 164, 272, 144, 92, 272, 160, 172, 92, 108, 80, 140, 140, 108, 88, 160, 120, 108, 140, 140, 148, 100, 100, 108, 164, 272, 116, 64, 164, 136, 152, 100, 104, 180, 96, 140, 164, 144, 272, 172, 136, 272, 136, 244, 272, 272, 272, 172, 272, 228, 120, 196, 144, 272, 180]
     # scc_duration_list = [116, 108, 108, 72, 152, 104, 236, 96, 76, 108, 116, 84, 100, 108, 84, 92, 116, 68, 80, 104, 124, 108, 92, 76, 64, 152, 124, 88, 108, 92, 80, 112, 120, 164, 108, 116, 84, 116, 80, 124, 164, 92, 116, 80, 96, 64, 84, 116, 88, 100, 84, 128, 128, 108, 84, 144, 136, 92, 64, 104, 80, 104, 80, 124, 272, 100, 76, 108, 128, 128, 76, 120, 56, 104, 108, 96, 92, 136, 124, 100, 100, 108, 100, 84, 88, 92, 200, 116, 120, 72, 116, 116, 180, 112, 96, 136, 92, 108, 96, 196, 216, 136, 124, 260, 112, 164, 272, 140, 272, 128, 272, 272, 132, 192, 172, 188, 272]
     # scc_duration_list = [128, 108, 100, 80, 160, 100, 92, 88, 84, 116, 112, 92, 104, 100, 96, 104, 100, 80, 84, 100, 128, 92, 84, 72, 64, 164, 136, 92, 124, 92, 96, 124, 116, 148, 112, 112, 92, 116, 80, 116, 172, 80, 124, 72, 84, 64, 116, 100, 72, 100, 92, 128, 100, 96, 84, 124, 136, 100, 92, 100, 84, 16, 92, 124, 272, 96, 84, 124, 156, 128, 72, 124, 64, 116, 120, 136, 92, 160, 108, 80, 84, 108, 92, 92, 100, 136, 160, 124, 112, 56, 128, 128, 204, 108, 104, 152, 84, 108, 100, 144, 208, 144, 132, 272, 132, 272, 252, 124, 272, 128, 208, 208, 92, 144, 136, 160, 272]  
-    scc_duration_list = [108, 100, 92, 72, 176, 108, 108, 80, 64, 120, 116, 88, 120, 108, 92, 96, 108, 60, 72, 88, 124, 80, 84, 72, 56, 140, 120, 92, 108, 76, 80, 104, 124, 136, 100, 108, 84, 116, 64, 112, 164, 80, 108, 80, 72, 48, 80, 112, 100, 108, 84, 112, 92, 108, 100, 132, 160, 76, 88, 116, 80, 92, 92, 124, 272, 92, 120, 116, 144, 116, 64, 136, 72, 112, 100, 88, 80, 112, 108, 84, 92, 144, 120, 92, 72, 104, 188, 100, 116, 60, 108, 104, 196, 84, 108, 120, 100, 112, 92, 172, 188, 124, 128, 272, 112, 272, 272, 160, 272, 144, 240, 272, 132, 172, 272, 272, 204]
-    # scc_duration_list = [124, 108, 88, 76, 164, 116, 84, 92, 72, 124, 116, 72, 116, 116, 100, 144, 128, 68, 96, 92, 136, 76, 84, 100, 64, 152, 140, 96, 116, 80, 108, 112, 124, 136, 108, 116, 92, 132, 56, 128, 196, 84, 136, 72, 72, 64, 100, 124, 108, 112, 92, 124, 108, 116, 108, 136, 184, 80, 100, 112, 108, 128, 92, 124, 272, 100, 104, 108, 168, 124, 84, 148, 76, 116, 132, 108, 80, 152, 116, 88, 80, 144, 128, 100, 100, 136, 272, 212, 120, 56, 92, 124, 188, 96, 80, 132, 100, 100, 104, 272, 176, 120, 148, 272, 112, 188, 272, 272, 272, 144, 236, 180, 172, 196, 240, 240, 224]
+    # scc_duration_list = [108, 100, 92, 72, 176, 108, 108, 80, 64, 120, 116, 88, 120, 108, 92, 96, 108, 60, 72, 88, 124, 80, 84, 72, 56, 140, 120, 92, 108, 76, 80, 104, 124, 136, 100, 108, 84, 116, 64, 112, 164, 80, 108, 80, 72, 48, 80, 112, 100, 108, 84, 112, 92, 108, 100, 132, 160, 76, 88, 116, 80, 92, 92, 124, 272, 92, 120, 116, 144, 116, 64, 136, 72, 112, 100, 88, 80, 112, 108, 84, 92, 144, 120, 92, 72, 104, 188, 100, 116, 60, 108, 104, 196, 84, 108, 120, 100, 112, 92, 172, 188, 124, 128, 272, 112, 272, 272, 160, 272, 144, 240, 272, 132, 172, 272, 272, 204]
+    # scc_duration_list = [128, 104, 92, 84, 152, 124, 128, 80, 100, 116, 108, 88, 120, 100, 92, 100, 112, 60, 76, 92, 164, 68, 84, 84, 64, 136, 136, 76, 92, 72, 76, 116, 144, 180, 96, 92, 96, 124, 80, 100, 164, 80, 108, 80, 92, 80, 84, 96, 80, 100, 92, 64, 116, 100, 84, 76, 188, 92, 72, 72, 72, 72, 72, 184, 140, 80, 68, 116, 160, 112, 72, 132, 84, 108, 48, 108, 96, 124, 112, 84, 96, 84, 84, 84, 84, 80, 124, 272, 124, 72, 100, 100, 160, 96, 72, 204, 72, 128, 84, 120, 116, 108, 128, 136, 108, 104, 148, 128, 144, 96, 100, 108, 72, 100, 80, 88, 80]
+    scc_duration_list = [136, 108, 96, 92, 208, 124, 100, 92, 88, 112, 108, 92, 108, 92, 100, 100, 116, 116, 64, 100, 136, 68, 92, 72, 60, 124, 116, 72, 92, 64, 72, 120, 124, 232, 92, 96, 96, 116, 84, 96, 144, 80, 116, 84, 100, 80, 84, 72, 80, 108, 84, 72, 136, 108, 100, 100, 188, 92, 64, 84, 60, 100, 76, 184, 152, 92, 68, 108, 160, 108, 72, 132, 80, 112, 60, 76, 104, 116, 108, 96, 96, 92, 84, 92, 84, 64, 124, 100, 124, 80, 108, 96, 136, 80, 80, 188, 188, 128, 84, 116, 124, 100, 100, 124, 112, 84, 196, 108, 124, 100, 100, 104, 76, 104, 84, 84, 84]
+
     #103nvs
     # include_inds = [0, 1, 2, 3, 4, 5, 6, 7, 8, 13, 14, 15, 16, 17, 18, 21, 22, 23, 24, 25, 26, 28, 29, 31, 33, 36, 37, 38, 39, 40, 42, 44, 46, 47, 48, 49, 51, 52, 53, 56, 57, 58, 60, 62, 64, 65, 66, 68, 69, 70, 71, 72, 74, 75, 77, 78, 79, 80, 83, 88, 90, 91, 92, 94, 95, 96, 97, 100, 101, 103, 105, 106, 107, 108, 109, 110, 112, 114, 116, 118, 120, 121, 122, 123, 124, 125, 126, 128, 131, 134, 136, 138, 140, 141, 145, 146, 147, 152, 153, 154, 156, 157, 158]
     #117nvs
@@ -1391,7 +1326,7 @@ if __name__ == "__main__":
         # do_opx_square_wave()
 
         # nv_list = nv_list[::-1]
-        do_scc_snr_check(nv_list)
+        # do_scc_snr_check(nv_list)
         # do_optimize_scc_duration(nv_list)
         # do_optimize_scc_amp(nv_list)
         # optimize_scc_amp_and_duration(nv_list)
@@ -1400,7 +1335,7 @@ if __name__ == "__main__":
         # do_calibrate_green_red_delay()
         # do_simple_correlation_test(nv_list)
 
-        # do_simple_correlation_test(nv_list)
+        do_simple_correlation_test(nv_list)
 
         # for nv in nv_list:
         #     nv.spin_flip = False
