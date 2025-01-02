@@ -264,19 +264,7 @@ def nuvu2thorcam_calibration(coords):
     """
     Calibrates and transforms coordinates from the Nuvu camera's coordinate system
     to the Thorlabs camera's coordinate system using an affine transformation.
-
-    Parameters:
-    coords (np.ndarray): An array of shape (N, 2) containing coordinates in the Nuvu camera's system.
-
-    Returns:
-    np.ndarray: An array of shape (N, 2) containing transformed coordinates in the Thorlabs camera's system.
     """
-    # cal_coords_thorcam = np.array(
-    #     [[853.92, 590.0], [646.07, 590.0], [750.0, 410.0]], dtype="float32"
-    # )
-    # cal_coords_nuvu = np.array(
-    #     [[128.706, 72.789], [128.443, 140.826], [69.922, 104.404]], dtype="float32"
-    # )
     cal_coords_thorcam = np.array(
         [[979.807, 700.0], [460.192, 700.0], [720.0, 250.0]], dtype="float32"
     )
@@ -299,7 +287,6 @@ def load_nv_coords(
     file_path="slmsuite/nv_blob_detection/nv_blob_filtered_160nvs_reordered_selected_117nvs.npz",
     # file_path="slmsuite/nv_blob_detection/nv_blob_filtered_160nvs_reordered_selected_106nvs.npz",
 ):
-    # data = np.load(file_path)
     data = np.load(file_path, allow_pickle=True)
     nv_coordinates = data["nv_coordinates"]
     # spot_weights = data["spot_weights"]
@@ -313,14 +300,6 @@ def load_nv_coords(
 
 # Set the threshold for x and y coordinates, assuming the SLM has a 2048x2048 pixel grid
 nuvu_pixel_coords, spot_weights = load_nv_coords()
-# nuvu_pixel_coords = np.array(
-#     [
-#         [120.137, 121.811],
-#         [134.422, 90.781],
-#         [76.93, 140.496],
-#         [161.085, 169.104],
-#     ]
-# )
 print(f"Total NV coordinates: {len(nuvu_pixel_coords)}")
 thorcam_coords = nuvu2thorcam_calibration(nuvu_pixel_coords).T
 # sys.exit()
@@ -381,7 +360,7 @@ try:
     fs = FourierSLM(cam, slm)
     # cam = tb.get_server_thorcam()
     # slm = tb.get_server_thorslm()
-    # fourier_calibration()
+    fourier_calibration()
     load_fourier_calibration()
     # test_wavefront_calibration()
     # wavefront_calibration()
