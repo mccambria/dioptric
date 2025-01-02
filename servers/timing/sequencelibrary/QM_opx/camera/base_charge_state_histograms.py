@@ -60,38 +60,4 @@ def macro(
     seq_utils.macro_pause()
 
 
-if __name__ == "__main__":
-    config_module = common.get_config_module()
-    config = config_module.config
-    opx_config = config_module.opx_config
 
-    qm_opx_args = config["DeviceIDs"]["QM_opx_args"]
-    qmm = QuantumMachinesManager(**qm_opx_args)
-    opx = qmm.open_qm(opx_config)
-
-    try:
-        seq, seq_ret_vals = get_seq(
-            [
-                [110, 109.51847988358579],
-                [112, 110.70156405156148],
-            ],
-            [
-                [75.42725784791932, 75.65982013416432],
-                [75.98725784791932, 74.74382013416432],
-            ],
-            False,
-            True,
-            False,
-            5,
-        )
-
-        sim_config = SimulationConfig(duration=int(300e3 / 4))
-        sim = opx.simulate(seq, sim_config)
-        samples = sim.get_simulated_samples()
-        samples.con1.plot()
-
-    except Exception as exc:
-        raise exc
-    finally:
-        qmm.close_all_quantum_machines()
-        plt.show(block=True)
