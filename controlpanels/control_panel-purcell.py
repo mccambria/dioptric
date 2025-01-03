@@ -90,13 +90,21 @@ def do_image_single_nv(nv_sig):
 
 
 def do_charge_state_histograms(nv_list):
-    num_reps = 100
-    # num_reps = 100
-    # num_runs = 50
-    # num_runs = 15
-    num_runs = 20
+    # 50 ms
+    # num_reps = 200
     # num_runs = 10
+
+    # 100 ms
+    # num_reps = 100
+    # num_runs = 20
+
+    # 200 ms
+    num_reps = 50
+    num_runs = 20
+
+    # Test
     # num_runs = 2
+
     return charge_state_histograms.main(
         nv_list, num_reps, num_runs, do_plot_histograms=False
     )
@@ -987,7 +995,7 @@ if __name__ == "__main__":
     # magnet_angle = 90
     date_str = "2024_03_12"
     sample_coords = [2.0, 0.0]
-    z_coord = 3.0
+    z_coord = 3.1
     # Load NV pixel coordinates
     pixel_coords_list = load_nv_coords(
         file_path="slmsuite/nv_blob_detection/nv_blob_filtered_160nvs_reordered.npz",
@@ -1027,10 +1035,10 @@ if __name__ == "__main__":
     #     [207.435, 74.049],
     # ]
     # green_coords_list = [
-    #     [109.023, 107.006],
-    #     [115.637, 101.513],
-    #     [109.262, 115.888],
-    #     [98.688, 101.016],
+    #     [109.155, 107.062],
+    #     [115.74, 101.491],
+    #     [109.294, 115.882],
+    #     [98.799, 100.988],
     # ]
     # red_coords_list = [
     #     [73.689, 72.526],
@@ -1056,126 +1064,6 @@ if __name__ == "__main__":
     # scc_duration_list = list(scc_optimal_durations.values())
     # scc_amp_list = list(scc_optimal_amplitudes.values())
 
-    include_inds = [
-        0,
-        1,
-        2,
-        3,
-        5,
-        6,
-        7,
-        8,
-        13,
-        14,
-        15,
-        16,
-        17,
-        18,
-        20,
-        21,
-        22,
-        23,
-        24,
-        25,
-        26,
-        28,
-        29,
-        31,
-        32,
-        33,
-        34,
-        36,
-        37,
-        39,
-        42,
-        44,
-        45,
-        46,
-        47,
-        48,
-        49,
-        51,
-        52,
-        53,
-        55,
-        56,
-        57,
-        58,
-        60,
-        61,
-        62,
-        64,
-        65,
-        66,
-        68,
-        69,
-        70,
-        71,
-        72,
-        73,
-        74,
-        75,
-        77,
-        79,
-        83,
-        84,
-        85,
-        88,
-        89,
-        90,
-        91,
-        92,
-        94,
-        95,
-        96,
-        97,
-        99,
-        100,
-        101,
-        102,
-        103,
-        105,
-        106,
-        107,
-        108,
-        109,
-        110,
-        111,
-        113,
-        114,
-        116,
-        117,
-        118,
-        120,
-        122,
-        123,
-        124,
-        125,
-        128,
-        131,
-        132,
-        134,
-        136,
-        137,
-        138,
-        140,
-        141,
-        142,
-        145,
-        146,
-        147,
-        148,
-        149,
-        152,
-        153,
-        154,
-        155,
-        156,
-        157,
-        158,
-        159,
-    ]
-
     # fmt: off
     # amps = 1.0, red calibration
     # scc_duration_list = [168, 160, 164, 124, 188, 132, 116, 124, 160, 160, 164, 120, 140, 144, 124, 136, 136, 88, 152, 140, 140, 116, 104, 120, 112, 164, 136, 112, 96, 112, 140, 144, 196, 192, 120, 140, 228, 140, 32, 140, 148, 108, 164, 152, 132, 140, 176, 132, 136, 120, 112, 108, 144, 116, 132, 36, 192, 84, 148, 112, 132, 152, 176, 176, 176, 112, 120, 140, 168, 140, 92, 132, 92, 124, 68, 32, 92, 148, 164, 104, 32, 148, 188, 32, 112, 148, 168, 64, 140, 140, 96, 124, 176, 108, 108, 216, 216, 116, 112, 132, 148, 132, 132, 140, 160, 132, 148, 192, 160, 116, 140, 120, 152, 140, 144, 124, 160]
@@ -1194,13 +1082,14 @@ if __name__ == "__main__":
     #103nvs
     # include_inds = [0, 1, 2, 3, 4, 5, 6, 7, 8, 13, 14, 15, 16, 17, 18, 21, 22, 23, 24, 25, 26, 28, 29, 31, 33, 36, 37, 38, 39, 40, 42, 44, 46, 47, 48, 49, 51, 52, 53, 56, 57, 58, 60, 62, 64, 65, 66, 68, 69, 70, 71, 72, 74, 75, 77, 78, 79, 80, 83, 88, 90, 91, 92, 94, 95, 96, 97, 100, 101, 103, 105, 106, 107, 108, 109, 110, 112, 114, 116, 118, 120, 121, 122, 123, 124, 125, 126, 128, 131, 134, 136, 138, 140, 141, 145, 146, 147, 152, 153, 154, 156, 157, 158]
     #117nvs
+    include_inds = [0,1,2,3,5,6,7,8,13,14,15,16,17,18,20,21,22,23,24,25,26,28,29,31,32,33,34,36,37,39,42,44,45,46,47,48,49,51,52,53,55,56,57,58,60,61,62,64,65,66,68,69,70,71,72,73,74,75,77,79,83,84,85,88,89,90,91,92,94,95,96,97,99,100,101,102,103,105,106,107,108,109,110,111,113,114,116,117,118,120,122,123,124,125,128,131,132,134,136,137,138,140,141,142,145,146,147,148,149,152,153,154,155,156,157,158,159,]
     # Initialize a list with None values
-    arranged_scc_duration_list = [None] * num_nvs
-    for i, idx in enumerate(include_inds):
-        arranged_scc_duration_list[idx] = scc_duration_list[i]
-    scc_duration_list = arranged_scc_duration_list
+    # arranged_scc_duration_list = [None] * num_nvs
+    # for i, idx in enumerate(include_inds):
+    #     arranged_scc_duration_list[idx] = scc_duration_list[i]
+    # scc_duration_list = arranged_scc_duration_list
 
-    threshold_list = [18.5, 19.5, 16.5, 30.5, 23.5, 21.5, 18.5, 17.5, 20.5, 21.5, 28.5, 23.5, 20.5, 22.5, 18.5, 20.5, 24.5, 24.5, 17.5, 17.5, 17.5, 17.5, 20.5, 18.5, 19.5, 25.5, 24.5, 17.5, 21.5, 22.5, 17.5, 20.5, 29.5, 18.5, 23.5, 19.5, 18.5, 21.5, 20.5, 18.5, 31.5, 28.5, 26.5, 24.5, 22.5, 16.5, 16.5, 19.5, 19.5, 23.5, 19.5, 14.5, 19.5, 30.5, 21.5, 21.5, 26.5, 18.5, 17.5, 24.5, 16.5, 18.5, 18.5, 19.5, 19.5, 16.5, 21.5, 18.5, 17.5, 18.5, 21.5, 23.5, 19.5, 15.5, 15.5, 26.5, 22.5, 23.5, 18.5, 19.5, 21.5, 18.5, 24.5, 18.5, 17.5, 20.5, 21.5, 26.5, 29.5, 22.5, 18.5, 19.5, 20.5, 16.5, 20.5, 22.5, 19.5, 14.5, 19.5, 20.5, 21.5, 16.5, 18.5, 23.5, 16.5, 29.5, 18.5, 16.5, 22.5, 18.5, 19.5, 18.5, 18.5, 18.5, 15.5, 15.5, 17.5]
+    threshold_list = [17.5, 16.5, 12.5, 24.5, 21.5, 22.5, 19.5, 18.5, 17.5, 18.5, 27.5, 20.5, 23.5, 17.5, 18.5, 17.5, 23.5, 19.5, 10.5, 16.5, 17.5, 15.5, 21.5, 17.5, 18.5, 19.5, 23.5, 17.5, 23.5, 18.5, 15.5, 16.5, 23.5, 16.5, 19.5, 18.5, 15.5, 20.5, 14.5, 17.5, 23.5, 26.5, 17.5, 17.5, 16.5, 12.5, 13.5, 15.5, 16.5, 18.5, 20.5, 12.5, 18.5, 23.5, 16.5, 17.5, 22.5, 13.5, 14.5, 22.5, 14.5, 15.5, 13.5, 21.5, 18.5, 18.5, 14.5, 17.5, 17.5, 18.5, 15.5, 17.5, 13.5, 15.5, 14.5, 21.5, 17.5, 17.5, 18.5, 16.5, 16.5, 13.5, 17.5, 17.5, 14.5, 14.5, 18.5, 29.5, 19.5, 16.5, 21.5, 16.5, 17.5, 14.5, 19.5, 18.5, 15.5, 15.5, 20.5, 16.5, 14.5, 16.5, 14.5, 17.5, 16.5, 21.5, 13.5, 14.5, 15.5, 12.5, 17.5, 16.5, 12.5, 12.5, 12.5, 12.5, 12.5]
     arranged_threshold_list = [None] * num_nvs
     for i, idx in enumerate(include_inds):
         arranged_threshold_list[idx] = threshold_list[i]
@@ -1272,7 +1161,7 @@ if __name__ == "__main__":
             # scc_duration=scc_duration_list[ind],
             # scc_amp=scc_amp_list[ind],
             threshold=threshold_list[ind],
-            pulse_durations={VirtualLaserKey.SCC: scc_duration_list[ind]},
+            # pulse_durations={VirtualLaserKey.SCC: scc_duration_list[ind]},
             # pulse_amps={
             #     VirtualLaserKey.SCC: scc_amp_list[ind],
             #     VirtualLaserKey.CHARGE_POL: charge_pol_amps[ind],
@@ -1372,6 +1261,9 @@ if __name__ == "__main__":
         # pos.set_xyz_on_nv(nv_sig)
 
         do_compensate_for_drift(nv_sig)
+        do_widefield_image_sample(nv_sig, 50)
+        do_charge_state_histograms(nv_list)
+        # do_charge_state_conditional_init(nv_list)
 
         # for point in points:
         #     x, y = point
@@ -1395,7 +1287,7 @@ if __name__ == "__main__":
 
         # do_scanning_image_sample(nv_sig)
         # do_scanning_image_sample_zoom(nv_sig)
-        do_widefield_image_sample(nv_sig, 50)
+        # do_widefield_image_sample(nv_sig, 50)
         # do_widefield_image_sample(nv_sig, 100)
 
         # do_image_nv_list(nv_list)
@@ -1421,15 +1313,12 @@ if __name__ == "__main__":
         # coords_key = red_laser
         # do_optimize_loop(nv_list, coords_key)
 
-        # nv_list = nv_list[::-1]
-        do_charge_state_histograms(nv_list)
         # do_optimize_pol_amp(nv_list)
         # do_optimize_readout_amp(nv_list)
         # do_optimize_readout_duration(nv_list)
         # optimize_readout_amp_and_duration(nv_list)
         # do_optimize_pol_duration(nv_list)
         # do_charge_state_histograms_images(nv_list, vary_pol_laser=True)
-        # do_charge_state_conditional_init(nv_list)
         # do_check_readout_fidelity(nv_list)
 
         # do_resonance_zoom(nv_list)

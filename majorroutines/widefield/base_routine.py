@@ -20,9 +20,14 @@ from utils import tool_belt as tb
 from utils.constants import ChargeStateEstimationMode, CoordsKey
 
 
+def charge_prep_no_verification_skip_first_rep(
+    rep_ind, nv_list, initial_states_list=None
+):
+    if rep_ind > 0:
+        charge_prep_base(nv_list, initial_states_list)
+
+
 def charge_prep_no_verification(rep_ind, nv_list, initial_states_list=None):
-    # if rep_ind > 0:  # MCC
-    #     charge_prep_base(nv_list, initial_states_list)
     charge_prep_base(nv_list, initial_states_list)
 
 
@@ -57,6 +62,8 @@ def charge_prep_base(
             charge_pol_target_list = [el is None or el == 0 for el in states_list]
         else:
             charge_pol_target_list = [True for ind in range(num_nvs)]
+        # charge_pol_target_list = [not (el) for el in charge_pol_target_list]
+        # charge_pol_target_list = [False for ind in range(num_nvs)]
         return charge_pol_target_list
 
     if verify_charge_states:
@@ -87,7 +94,7 @@ def charge_prep_base(
             attempt_ind += 1
     elif targeted_polarization:
         charge_pol_target_list = assemble_charge_pol_target_list(states_list)
-        print(charge_pol_target_list)
+        # print(charge_pol_target_list)
         pulse_gen.insert_input_stream("_cache_target_list", charge_pol_target_list)
     else:
         pass

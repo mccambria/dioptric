@@ -329,6 +329,7 @@ def threshold_counts(nv_list, sig_counts, ref_counts=None, dynamic_thresh=False)
             thresholds.append(threshold)
     else:
         thresholds = [nv.threshold for nv in nv_list]
+        # thresholds = [2.5 for nv in nv_list]
         # thresholds = adaptive_threshold_counts()
     # print(thresholds)
 

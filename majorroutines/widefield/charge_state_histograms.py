@@ -113,6 +113,9 @@ def process_and_plot(
             prep_fidelity = 1 - popt[0]
         else:
             prep_fidelity = np.nan
+        # prep_fidelity = (
+        #     np.count_nonzero(np.array(ref_counts_list) > threshold) / num_shots
+        # )  # MCC
         prep_fidelity_list.append(prep_fidelity)
         red_chi_sq_list.append(red_chi_sq)
 
@@ -524,6 +527,6 @@ def main(
 
 if __name__ == "__main__":
     kpl.init_kplotlib()
-    data = dm.get_raw_data(file_id=1740605375737, load_npz=False)
+    data = dm.get_raw_data(file_id=1740694024306, load_npz=False)
     process_and_plot(data, do_plot_histograms=True)
     kpl.show(block=True)

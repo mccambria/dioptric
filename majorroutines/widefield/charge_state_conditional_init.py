@@ -46,6 +46,12 @@ def process_and_plot(raw_data, mean_val=None):
     num_reps = raw_data["num_reps"]
     num_runs = raw_data["num_runs"]
 
+    # for nv_ind in range(num_nvs):
+    #     fig, ax = plt.subplots()
+    #     kpl.histogram(ax, counts[nv_ind].flatten(), density=True)
+    #     ax.axvline(nv_list[nv_ind].threshold)
+    #     kpl.show(block=True)
+
     num_nvn = np.sum(states, axis=0)
     num_nvn = num_nvn[:, 0, :]  # Just one step
     avg_num_nvn = np.mean(num_nvn, axis=0)  # Average over runs
@@ -68,6 +74,8 @@ def process_and_plot(raw_data, mean_val=None):
     figsize[1] *= 1.0
     fig, ax = plt.subplots(figsize=figsize)
     kpl.plot_points(ax, reps_vals, avg_num_nvn, yerr=avg_num_nvn_ste)
+    kpl.show(block=True)
+    sys.exit()
 
     def fit_fn(x, y0, c1, c2):
         term1 = (c1**x) * y0
@@ -161,7 +169,7 @@ def main(
     seq_file = "charge_state_conditional_init.py"
     num_steps = 1
 
-    charge_prep_fn = base_routine.charge_prep_no_verification
+    charge_prep_fn = base_routine.charge_prep_no_verification_skip_first_rep
     # charge_prep_fn = None
 
     pulse_gen = tb.get_server_pulse_gen()
@@ -170,8 +178,10 @@ def main(
 
     def run_fn(shuffled_step_inds):
         ion_coords_list = widefield.get_coords_list(nv_list, VirtualLaserKey.ION)
-        pol_coords_list = widefield.get_coords_list(nv_list, VirtualLaserKey.CHARGE_POL)
-        seq_args = [ion_coords_list, pol_coords_list]
+        pol_coords_list, pol_duration_list, pol_amp_list = (
+            widefield.get_pulse_parameter_lists(nv_list, VirtualLaserKey.CHARGE_POL)
+        )
+        seq_args = [ion_coords_list, pol_coords_list, pol_duration_list, pol_amp_list]
         seq_args_string = tb.encode_seq_args(seq_args)
         pulse_gen.stream_load(seq_file, seq_args_string, num_reps)
 
@@ -217,6 +227,11 @@ def main(
 
 if __name__ == "__main__":
     kpl.init_kplotlib()
+
+    data = dm.get_raw_data(file_id=1740679854243)
+    process_and_plot(data)
+    kpl.show(block=True)
+    sys.exit()
 
     ### Just get a mean val
     data = dm.get_raw_data(file_id=1573560918521)
