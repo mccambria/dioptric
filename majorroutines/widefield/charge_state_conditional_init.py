@@ -41,8 +41,8 @@ def process_and_plot(raw_data, mean_val=None):
     nv_list = raw_data["nv_list"]
     num_nvs = len(nv_list)
     counts = np.array(raw_data["counts"])[0]
-    # states = widefield.threshold_counts(nv_list, counts, dynamic_thresh=False)
-    states = np.array(raw_data["states"])[0]
+    states = widefield.threshold_counts(nv_list, counts, dynamic_thresh=False)
+    # states = np.array(raw_data["states"])[0]
     num_reps = raw_data["num_reps"]
     num_runs = raw_data["num_runs"]
 
@@ -51,10 +51,10 @@ def process_and_plot(raw_data, mean_val=None):
     avg_num_nvn = np.mean(num_nvn, axis=0)  # Average over runs
     avg_num_nvn_ste = np.std(num_nvn, axis=0, ddof=1) / np.sqrt(num_runs)
 
-    print("Perfect 10s")
-    print(np.count_nonzero(num_nvn[:, 1] == 10) / num_runs)
-    print(np.count_nonzero(num_nvn[:, 5] == 10) / num_runs)
-    print(np.count_nonzero(num_nvn[:, 3:10] == 10) / (7 * num_runs))
+    # print("Perfect 10s")
+    # print(np.count_nonzero(num_nvn[:, 1] == 10) / num_runs)
+    # print(np.count_nonzero(num_nvn[:, 5] == 10) / num_runs)
+    # print(np.count_nonzero(num_nvn[:, 3:10] == 10) / (7 * num_runs))
 
     reps_vals = np.array(range(num_reps))
 
@@ -98,10 +98,9 @@ def process_and_plot(raw_data, mean_val=None):
 
     ax.set_xlabel("Number of attempts")
     ax.set_ylabel("Mean number NV$^{-}$")
-    ax.set_xlim((-0.5, 10.5))
-    ax.set_xticks(np.array(range(11)))
-    ax.set_yticks([0, 2, 4, 6, 8, 10])
-    # ax.set_yticks(range(10))
+    # ax.set_xlim((-0.5, 10.5))
+    # ax.set_xticks(np.array(range(11)))
+    # ax.set_yticks([0, 2, 4, 6, 8, 10])
     ax.yaxis.set_minor_locator(MaxNLocator(integer=True))
 
     ### Inset histograms
@@ -182,7 +181,7 @@ def main(
         num_reps,
         num_runs,
         run_fn=run_fn,
-        save_images=True,
+        save_images=False,
         save_images_avg_reps=False,
         charge_prep_fn=charge_prep_fn,
         num_exps=1,
