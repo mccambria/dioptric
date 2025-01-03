@@ -53,6 +53,7 @@ def process_and_plot(raw_data, mean_val=None):
     #     kpl.show(block=True)
 
     num_nvn = np.sum(states, axis=0)
+    # num_nvn = num_nvn[3:4, 0, :]  # Just one step
     num_nvn = num_nvn[:, 0, :]  # Just one step
     avg_num_nvn = np.mean(num_nvn, axis=0)  # Average over runs
     avg_num_nvn_ste = np.std(num_nvn, axis=0, ddof=1) / np.sqrt(num_runs)
@@ -73,9 +74,14 @@ def process_and_plot(raw_data, mean_val=None):
     figsize = kpl.figsize
     figsize[1] *= 1.0
     fig, ax = plt.subplots(figsize=figsize)
-    kpl.plot_points(ax, reps_vals, avg_num_nvn, yerr=avg_num_nvn_ste)
-    kpl.show(block=True)
-    sys.exit()
+    kpl.plot_points(
+        ax, reps_vals, avg_num_nvn / num_nvs, yerr=avg_num_nvn_ste / num_nvs
+    )
+    ax.set_xlabel("Number of attempts")
+    ax.set_ylabel("Fraction in NV$^{-}$")
+    ax.set_ylim(0, 1)
+    # kpl.show(block=True)
+    # sys.exit()
 
     def fit_fn(x, y0, c1, c2):
         term1 = (c1**x) * y0
@@ -99,13 +105,11 @@ def process_and_plot(raw_data, mean_val=None):
     print(f"Red chi sq: {round(red_chi_sq, 3)}")
 
     reps_vals_linspace = np.linspace(0, xlim, 1000)
-    kpl.plot_line(ax, reps_vals_linspace, fit_fn(reps_vals_linspace, *popt))
+    kpl.plot_line(ax, reps_vals_linspace, fit_fn(reps_vals_linspace, *popt) / num_nvs)
 
     if mean_val is not None:
         ax.axhline(mean_val, color=kpl.KplColors.GREEN, linestyle="dashed", linewidth=2)
 
-    ax.set_xlabel("Number of attempts")
-    ax.set_ylabel("Mean number NV$^{-}$")
     # ax.set_xlim((-0.5, 10.5))
     # ax.set_xticks(np.array(range(11)))
     # ax.set_yticks([0, 2, 4, 6, 8, 10])
