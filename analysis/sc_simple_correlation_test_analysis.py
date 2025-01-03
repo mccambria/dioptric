@@ -108,7 +108,7 @@ def rescale_extreme_values(sig_corr, sigma_threshold=2.0, method="tanh"):
     return rescaled_corr
 
 
-def plot_correlation_histogram(corr_matrix, bins=50):
+def 4(corr_matrix, bins=50):
     """
     Plot a histogram of the correlation coefficients from the correlation matrix,
     with separated bars.
@@ -179,7 +179,6 @@ def process_and_plot(data, rearrangement="spin_flip", file_path=None):
     sig_corr_coeffs = nan_corr_coef(flattened_sig_counts)
     ref_corr_coeffs = nan_corr_coef(flattened_ref_counts)
     sig_corr_coeffs = sig_corr_coeffs - ref_corr_coeffs
-    # ref_corr_coeffs = ref_corr_coeffs - ref_corr_coeffs
 
     # bins = int(np.ceil(np.log2(len(sig_corr_coeffs)) + 1))
     # bin_width = 3.5 * np.nanstd(sig_corr_coeffs) / len(sig_corr_coeffs) ** (1 / 3)
@@ -193,10 +192,11 @@ def process_and_plot(data, rearrangement="spin_flip", file_path=None):
     bins = int(
         np.ceil((np.nanmax(sig_corr_coeffs) - np.nanmin(sig_corr_coeffs)) / bin_width)
     )
+    print(bins)
     # square root rule
     # bins = int(np.ceil(np.sqrt(len(sig_corr_coeffs))))
-    plot_correlation_histogram(sig_corr_coeffs, bins=bins)
-    plot_correlation_histogram(ref_corr_coeffs, bins=bins)
+    plot_correlation_histogram(sig_corr_coeffs, bins=150)
+    plot_correlation_histogram(ref_corr_coeffs, bins=150)
     # Apply the same rearrangement to signal, reference, and ideal matrices
     if rearrangement == "spin_flip":
         nv_list, sig_corr_coeffs, ref_corr_coeffs = rearrange_spin_flip(
@@ -744,6 +744,278 @@ def plot_nv_network(data):
     plt.show()
 
 
+import numpy as np
+import matplotlib.pyplot as plt
+import seaborn as sns
+from scipy.stats import norm
+from sklearn.mixture import GaussianMixture
+
+
+import numpy as np
+import matplotlib.pyplot as plt
+import seaborn as sns
+from scipy.stats import norm
+from sklearn.mixture import GaussianMixture
+
+
+# Combine and process data iteratively
+def process_files_incrementally(file_ids):
+    """
+    Load and process data incrementally from multiple file IDs.
+    Perform analysis after each addition.
+    """
+    combined_data = dm.get_raw_data(file_id=file_ids[0])
+    analyses = []  # Store analysis results
+
+    # Perform analysis on the first file
+    analysis = analyze_data(combined_data)
+    analyses.append(analysis)
+
+    # Append and analyze subsequent files
+    for i, file_id in enumerate(file_ids[1:], start=1):
+        new_data = dm.get_raw_data(file_id=file_id)
+        combined_data["num_runs"] += new_data["num_runs"]
+        combined_data["counts"] = np.append(
+            combined_data["counts"], new_data["counts"], axis=2
+        )
+
+        # Perform analysis
+        analysis = analyze_data(combined_data)
+        analyses.append(analysis)
+
+    return analyses
+
+
+def analyze_data(data):
+    """
+    Perform analysis on the given data.
+    """
+    # Extract data
+    nv_list = data.get("nv_list", [])
+    counts = np.array(data.get("counts", []))
+
+    if len(nv_list) == 0 or counts.size == 0:
+        raise ValueError("Data does not contain NV list or counts.")
+
+    # Separate signal and reference counts
+    sig_counts = np.array(counts[0])
+    ref_counts = np.array(counts[1])
+
+    # Thresholding counts with dynamic thresholds
+    sig_counts, ref_counts = threshold_counts(
+        nv_list, sig_counts, ref_counts, dynamic_thresh=True
+    )
+
+    # Flatten counts for each NV
+    flattened_sig_counts = [sig_counts[ind].flatten() for ind in range(len(nv_list))]
+    flattened_ref_counts = [ref_counts[ind].flatten() for ind in range(len(nv_list))]
+
+    # Calculate correlations
+    sig_corr_coeffs = nan_corr_coef(flattened_sig_counts)
+    ref_corr_coeffs = nan_corr_coef(flattened_ref_counts)
+    sig_corr_coeffs = sig_corr_coeffs - ref_corr_coeffs
+
+    # Fit bimodal distribution
+    means, stds, weights, gmm = fit_bimodal_distribution(sig_corr_coeffs)
+
+    # Plot histogram with bimodal fit
+    plot_histogram_and_fit(
+        sig_corr_coeffs, bins=50, means=means, stds=stds, weights=weights
+    )
+
+    # Return fitted parameters for analysis
+    return {
+        "means": means,
+        "stds": stds,
+        "weights": weights,
+        "corr_coeffs": sig_corr_coeffs,
+    }
+
+
+def fit_bimodal_distribution(corr_coeffs):
+    """
+    Fit a bimodal distribution to the correlation coefficients.
+    """
+    corr_coeffs = corr_coeffs[np.isfinite(corr_coeffs)]  # Remove NaNs
+    corr_coeffs = corr_coeffs.reshape(-1, 1)  # Reshape for GaussianMixture
+
+    # Fit a Gaussian Mixture Model
+    gmm = GaussianMixture(n_components=2, random_state=0)
+    gmm.fit(corr_coeffs)
+
+    # Extract parameters
+    means = gmm.means_.flatten()
+    stds = np.sqrt(gmm.covariances_).flatten()
+    weights = gmm.weights_.flatten()
+
+    return means, stds, weights, gmm
+
+
+def plot_histogram_and_fit(corr_coeffs, bins=150, means=None, stds=None, weights=None):
+    """
+    Plot a histogram of the correlation coefficients with the fitted bimodal distribution.
+    """
+    # Remove NaNs
+    corr_coeffs = corr_coeffs[np.isfinite(corr_coeffs)]
+
+    # Plot histogram
+    counts, bin_edges = np.histogram(corr_coeffs, bins=bins, density=True)
+    bin_centers = (bin_edges[:-1] + bin_edges[1:]) / 2
+    plt.bar(
+        bin_centers,
+        counts,
+        width=bin_edges[1] - bin_edges[0],
+        alpha=0.6,
+        color="c",
+        label="Histogram",
+    )
+
+    # Plot fitted distributions
+    if means is not None and stds is not None and weights is not None:
+        x = np.linspace(bin_edges[0], bin_edges[-1], 1000)
+        for mean, std, weight in zip(means, stds, weights):
+            plt.plot(
+                x,
+                weight * norm.pdf(x, mean, std),
+                label=f"Component: mean={mean:.2f}, std={std:.2f}",
+            )
+
+    plt.xlabel("Correlation Coefficient")
+    plt.ylabel("Density")
+    plt.title("Bimodal Fit of Correlation Coefficients")
+    plt.legend()
+    plt.grid(True)
+    plt.show(block=False)
+
+
+def plot_fitted_parameters_incrementally(analyses, averaging_times):
+    """
+    Plot the evolution of the fitted parameters (means, stds, weights) incrementally,
+    including in-between variance.
+    """
+    fig, ax = plt.subplots(figsize=(6, 5))
+
+    # Plot means
+    # for i in range(len(analyses[0]["means"])):
+    #     ax[0].plot(
+    #         averaging_times,
+    #         [analysis["means"][i] for analysis in analyses],
+    #         marker="o",
+    #         label=f"Mean {i+1}",
+    #     )
+    # ax[0].set_ylabel("Mean")
+    # ax[0].legend()
+    # ax[0].grid(True)
+
+    # Plot standard deviations
+    for i in range(len(analyses[0]["stds"])):
+        ax[1].plot(
+            averaging_times,
+            [analysis["stds"][i] for analysis in analyses],
+            marker="o",
+            label=f"Std {i+1}",
+        )
+    ax[1].set_ylabel("Standard Deviation")
+    ax[1].legend()
+    ax[1].grid(True)
+
+    # Plot weights
+    # for i in range(len(analyses[0]["weights"])):
+    #     ax[2].plot(
+    #         averaging_times,
+    #         [analysis["weights"][i] for analysis in analyses],
+    #         marker="o",
+    #         label=f"Weight {i+1}",
+    #     )
+    # ax[2].set_ylabel("Weight")
+    # ax[2].legend()
+    # ax[2].grid(True)
+
+    # # Plot in-between variance
+    # in_between_variance = [np.var([analysis["means"] for analysis in analyses], axis=0)]
+    # for i in range(len(in_between_variance[0])):
+    #     ax[3].plot(
+    #         averaging_times,
+    #         [var[i] for var in in_between_variance],
+    #         marker="o",
+    #         label=f"In-Between Variance {i+1}",
+    #     )
+    # ax[3].set_ylabel("In-Between Variance")
+    # ax[3].set_xlabel("Averaging Time (h)")
+    # ax[3].legend()
+    # ax[3].grid(True)
+
+    # plt.tight_layout()
+    # plt.show()
+
+
+def plot_histogram_over_time(corr_matrices, averaging_times):
+    """
+    Plot histogram evolution of correlation coefficients over averaging time.
+    """
+    num_plots = len(corr_matrices)
+    fig, axes = plt.subplots(1, num_plots, figsize=(16, 4), sharey=True)
+
+    for i, (corr_matrix, avg_time) in enumerate(zip(corr_matrices, averaging_times)):
+        flattened_corr = corr_matrix[np.triu_indices_from(corr_matrix, k=1)]
+        axes[i].hist(flattened_corr, bins=50, color="c", alpha=0.7, edgecolor="k")
+        axes[i].set_title(f"Time: {avg_time:.1f} h")
+        axes[i].set_xlabel("Correlation Coefficient")
+
+    axes[0].set_ylabel("Frequency")
+    plt.tight_layout()
+    plt.show()
+
+
+def plot_fitted_parameters_over_time(
+    averaging_times, means_list, stds_list, weights_list
+):
+    """
+    Plot the evolution of the fitted parameters (means, stds, weights) over averaging time.
+    """
+    fig, ax = plt.subplots(3, 1, figsize=(8, 12), sharex=True)
+
+    # Plot means
+    for i in range(len(means_list[0])):
+        ax[0].plot(
+            averaging_times,
+            [means[i] for means in means_list],
+            marker="o",
+            label=f"Mean {i+1}",
+        )
+    ax[0].set_ylabel("Mean")
+    ax[0].legend()
+    ax[0].grid(True)
+
+    # Plot standard deviations
+    for i in range(len(stds_list[0])):
+        ax[1].plot(
+            averaging_times,
+            [stds[i] for stds in stds_list],5
+            marker="o",
+            label=f"Std {i+1}",
+        )
+    ax[1].set_ylabel("Standard Deviation")
+    ax[1].legend()
+    ax[1].grid(True)
+
+    # Plot weights
+    for i in range(len(weights_list[0])):
+        ax[2].plot(
+            averaging_times,
+            [weights[i] for weights in weights_list],
+            marker="o",
+            label=f"Weight {i+1}",
+        )
+    ax[2].set_ylabel("Weight")
+    ax[2].set_xlabel("Averaging Time (h)")
+    ax[2].legend()
+    ax[2].grid(True)
+
+    plt.tight_layout()
+    plt.show()
+
+
 # end region
 
 if __name__ == "__main__":
@@ -780,6 +1052,35 @@ if __name__ == "__main__":
     # ]
     # file_ids = [1739268623744, 1739343445705]  # measuremnts stopped due to d
     # file_ids = [1739598841877, 1739660864956, 1739725006836, 1739855966253] # 4 files Matt's new method for ref
+    # file_ids = [
+    #     1739979522556,
+    #     1740062954135,
+    #     1740252380664,
+    #     1740377262591,
+    #     1740494528636,
+    # ]
+    # file_ids = [
+    #     1739979522556,
+    #     1740062954135,
+    #     1740252380664,
+    #     1740377262591,
+    # ]
+    # try:
+    #     data = process_multiple_files(file_ids)
+    #     # print(data.shape)
+    #     # Process and plot the heatmaops with a rearrangement pattern
+    #     process_and_plot(data, rearrangement="alternate_quadrants")
+    #     # process_and_plot(data, rearrangement="block")
+    #     # rearrangement (str): ('alternate_quadrants', 'checkerboard', 'block', 'spiral', etc.).
+    #     # Process and plot netwrok graph
+    #     # plot_nv_network(data)
+    #     # plot_nv_network_3d(data)
+    # except Exception as e:
+    #     print(f"Error occurred: {e}")
+
+    # plt.show(block=True)
+
+    # Main function
     file_ids = [
         1739979522556,
         1740062954135,
@@ -788,17 +1089,22 @@ if __name__ == "__main__":
         1740494528636,
     ]
 
-    try:
-        data = process_multiple_files(file_ids)
-        # print(data.shape)
-        # Process and plot the heatmaops with a rearrangement pattern
-        process_and_plot(data, rearrangement="alternate_quadrants")
-        # process_and_plot(data, rearrangement="block")
-        # rearrangement (str): ('alternate_quadrants', 'checkerboard', 'block', 'spiral', etc.).
-        # Process and plot netwrok graph
-        # plot_nv_network(data)
-        # plot_nv_network_3d(data)
-    except Exception as e:
-        print(f"Error occurred: {e}")
+    analyses = process_files_incrementally(file_ids)
+    # Generate example averaging times for each step
+    averaging_times = np.linspace(4, 20, len(file_ids))
+
+    # Plot fitted parameters incrementally
+    plot_fitted_parameters_incrementally(analyses, averaging_times)
+
+    # try:
+    #     analyses = process_files_incrementally(file_ids)
+    #     # Generate example averaging times for each step
+    #     averaging_times = np.linspace(4, 20, len(file_ids))
+
+    #     # Plot fitted parameters incrementally
+    #     plot_fitted_parameters_incrementally(analyses, averaging_times)
+
+    # except Exception as e:
+    #     print(f"Error occurred: {e}")
 
     plt.show(block=True)
