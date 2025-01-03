@@ -10,7 +10,6 @@ Created on December 11th, 2023
 
 import numpy as np
 from qm import qua
-
 from servers.timing.sequencelibrary.QM_opx import seq_utils
 
 
@@ -112,10 +111,9 @@ def macro(
         # Randomize SCC order between the two groups
         random_order = qua.declare(int)
         qua.assign(random_order, qua.Random().rand_int(2))
-        # print(f"Random value generated: {random_order}")
         # Check if this is the automatically included reference experiment
         ref_exp = reference and exp_ind == num_exps_per_rep - 1
-
+        print(f"exp_ind: {exp_ind}, ref_exp: {ref_exp}")
         # Signal experiment
         if not ref_exp:
             if spin_flip_do_target_list is None or True not in spin_flip_do_target_list:
@@ -124,7 +122,7 @@ def macro(
                 spin_flip_do_not_target_list = [
                     not val for val in spin_flip_do_target_list
                 ]
-                # Randomized SCC order
+                # Randomized SCC order between the two groups
                 with qua.if_(random_order == 1):
                     macro_scc_sub(spin_flip_do_not_target_list)
                     if not skip_spin_flip:
