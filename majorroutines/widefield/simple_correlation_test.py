@@ -293,8 +293,10 @@ def process_and_plot(
     ideal_ref_corr_coeffs = ideal_ref_corr_coeffs.astype(float)
 
     spin_flips = np.array([-1 if nv.spin_flip else +1 for nv in nv_list])
-    pattern_inds = np.argsort(spin_flips)[::-1]  # Block
-    spin_flips = np.sort(spin_flips)[::-1]  # Block
+    # Block
+    pattern_inds = [ind for ind in range(num_nvs) if spin_flips[ind] == +1]
+    pattern_inds.extend([ind for ind in range(num_nvs) if spin_flips[ind] == -1])
+    spin_flips = np.sort(spin_flips)
     # if -1 not in spin_flips:
     #     spin_flips[0] = -1
     #     spin_flips[1] = -1
@@ -331,12 +333,7 @@ def process_and_plot(
         fig, axes_pack = plt.subplots(ncols=num_plots, figsize=figsize)
 
     # Replace diagonals (Cii=1) with nan so they don't show
-    for val in [
-        ideal_ref_corr_coeffs,
-        ideal_sig_corr_coeffs,
-        sig_corr_coeffs,
-        ref_corr_coeffs,
-    ]:
+    for val in vals:
         np.fill_diagonal(val, np.nan)
 
     # Make the colorbar symmetric about 0
