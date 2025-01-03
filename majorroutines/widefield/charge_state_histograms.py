@@ -154,18 +154,19 @@ def process_and_plot(
             )
             kpl.anchored_text(ax, snr_str, kpl.Loc.CENTER_RIGHT, size=kpl.Size.SMALL)
 
-            if readout_fidelity < 0.8:
-                kpl.show(block=True)
-            plt.close(fig)
+            # if readout_fidelity < 0.8:
+            #     kpl.show(block=True)
+            # plt.close(fig)
+            kpl.show(block=True)
             fig = None
 
             if fig is not None:
                 hist_figs.append(fig)
 
-    # Prep fidelity
-    print(f"readout_fidelity_list:{readout_fidelity_list}")
-    print(f"prep_fidelity_list:{prep_fidelity_list}")
-    print(f"red_chi_sq_list:{red_chi_sq_list}")
+    print(f"readout_fidelity_list: {readout_fidelity_list}")
+    print(f"prep_fidelity_list: {prep_fidelity_list}")
+    print(f"red_chi_sq_list: {red_chi_sq_list}")
+    print(f"thresholds: {threshold_list}")
 
     # Report out the results
     threshold_list = np.array(threshold_list)
@@ -523,6 +524,6 @@ def main(
 
 if __name__ == "__main__":
     kpl.init_kplotlib()
-    data = dm.get_raw_data(file_id=1733485430264, load_npz=True)
+    data = dm.get_raw_data(file_id=1740605375737, load_npz=False)
     process_and_plot(data, do_plot_histograms=True)
     kpl.show(block=True)

@@ -340,7 +340,7 @@ def write_nvs_phase():
     #     "slmsuite\computed_phase\slm_phase_160nvs_20241227_143040.npy"
     # )  # 160NVs weighted spots
     phase = np.load(
-        "slmsuite\computed_phase\slm_phase_117nvs_20241231_123355.npy"
+        "slmsuite\computed_phase\slm_phase_117nvs_20241231_161238.npy"
     )  # 117NVs weighted spots
     slm.write(phase, settle=True)
     # cam_plot()
@@ -360,13 +360,13 @@ try:
     fs = FourierSLM(cam, slm)
     # cam = tb.get_server_thorcam()
     # slm = tb.get_server_thorslm()
-    fourier_calibration()
+    # fourier_calibration()
     load_fourier_calibration()
     # test_wavefront_calibration()
     # wavefront_calibration()
     # load_wavefront_calibration()
-    compute_nvs_phase()
-    # write_nvs_phase()
+    # compute_nvs_phase()
+    write_nvs_phase()
     # calibration_triangle()
     # circles()
     # smiley()

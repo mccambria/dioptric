@@ -87,6 +87,7 @@ def charge_prep_base(
             attempt_ind += 1
     elif targeted_polarization:
         charge_pol_target_list = assemble_charge_pol_target_list(states_list)
+        print(charge_pol_target_list)
         pulse_gen.insert_input_stream("_cache_target_list", charge_pol_target_list)
     else:
         pass

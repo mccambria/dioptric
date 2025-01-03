@@ -242,7 +242,8 @@ config |= {
             # LaserKey.WIDEFIELD_SPIN_POL: {"physical_name": yellow_laser, "duration": 1e6},
             VirtualLaserKey.WIDEFIELD_CHARGE_READOUT: {
                 "physical_name": yellow_laser,
-                "duration": 50e6,
+                "duration": 100e6,
+                # "duration": 50e6,
                 # "duration": 30e6,
                 # "duration": 12e6,  # for red calibration
             },
@@ -817,7 +818,8 @@ opx_config = {
         "yellow_imaging": {"type": "constant", "sample": 0.45},  # 0.35
         # "yellow_imaging": {"type": "constant", "sample": 0.50},  # 0.35
         # "yellow_charge_readout": {"type": "constant", "sample": 0.396},  # 50ms 160NVs
-        "yellow_charge_readout": {"type": "constant", "sample": 0.3472},  # 50ms 117NVs
+        # "yellow_charge_readout": {"type": "constant", "sample": 0.3472},  # 50ms 117NVs
+        "yellow_charge_readout": {"type": "constant", "sample": 0.32},  # 100ms 117NVs
         # "yellow_charge_readout": {"type": "constant", "sample": 0.3423},  # 50ms 106NVs
         # "yellow_charge_readout": {"type": "constant", "sample": 0.42},  # 30ms 160Nvs
         "yellow_spin_pol": {"type": "constant", "sample": 0.39},
