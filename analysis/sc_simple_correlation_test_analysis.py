@@ -17,6 +17,7 @@ import numpy.ma as ma
 import seaborn as sns
 from matplotlib import patches
 from matplotlib.ticker import MaxNLocator
+from matplotlib.ticker import ScalarFormatter
 
 from utils import data_manager as dm
 
@@ -109,22 +110,28 @@ def rescale_extreme_values(sig_corr, sigma_threshold=2.0, method="tanh"):
 
 def plot_correlation_histogram(corr_matrix, bins=50):
     """
-    Plot a histogram of the correlation coefficients from the correlation matrix.
-
+    Plot a histogram of the correlation coefficients from the correlation matrix,
+    with separated bars.
     """
     # Remove the diagonal (which contains 1s for self-correlation) and flatten the matrix
     flattened_corr = corr_matrix[np.triu_indices_from(corr_matrix, k=1)]
 
-    # Plot histogram
+    # Calculate histogram data
+    counts, bin_edges = np.histogram(flattened_corr, bins=bins)
+    bin_centers = (bin_edges[:-1] + bin_edges[1:]) / 2  # Midpoints of bins
+    bar_width = (bin_edges[1] - bin_edges[0]) * 0.6  # Reduce width for separation
+
+    # Plot histogram with separated bars
     plt.figure(figsize=(8, 6))
-    plt.hist(flattened_corr, bins=bins, color="c", edgecolor="k", alpha=0.7)
+    plt.bar(bin_centers, counts, width=bar_width, color="c", edgecolor="k", alpha=0.7)
 
     # Add labels and title
-    plt.xlabel("Correlation Coefficient", fontsize=14)
-    plt.ylabel("Frequency", fontsize=14)
-    plt.title("Histogram of Correlation Coefficients", fontsize=16)
+    plt.xlabel("Correlation Coefficient", fontsize=18)
+    plt.ylabel("Frequency", fontsize=18)
+    plt.title("Histogram of Correlation Coefficients", fontsize=18)
 
     # Display the plot
+    plt.tight_layout()
     plt.grid(True)
     plt.show()
 
@@ -171,91 +178,25 @@ def process_and_plot(data, rearrangement="spin_flip", file_path=None):
     # Calculate correlations
     sig_corr_coeffs = nan_corr_coef(flattened_sig_counts)
     ref_corr_coeffs = nan_corr_coef(flattened_ref_counts)
-    # sig_corr_coeffs = sig_corr_coeffs - ref_corr_coeffs
-
-    # # Seaborn aesthetics
-    # sns.set(style="whitegrid", context="talk", font_scale=1.2)
-
-    # # Unpack data
-    # nv_list = data.get("nv_list", [])
-    # counts = np.array(data.get("counts", []))
-
-    # if len(nv_list) == 0 or counts.size == 0:
-    #     print("Error: Data does not contain NV list or counts.")
-    #     return None
-
-    # # # Separate signal and reference counts
-    # sig_counts = np.array(counts[0])
-    # ref_counts = np.array(counts[1])
-
-    # num_nvs = len(nv_list)
-
-    # # Separate signal counts (no changes needed here)
-    # sig_counts = np.array(counts[0])
-    # # Separate reference counts based on rep index parity
-    # ref_counts_even = ref_counts[:, :, :, ::2]  # m_s = 0 (even reps)
-    # ref_counts_odd = ref_counts[:, :, :, 1::2]  # m_s = -1 (odd reps)
-    # # Check shapes for consistency
-    # # Identify spin-up and spin-down groups based on spin_flip
-    # spin_up = [i for i, nv in enumerate(nv_list) if not nv.spin_flip]
-    # spin_down = [i for i, nv in enumerate(nv_list) if nv.spin_flip]
-
-    # # Separate reference counts for spin-up and spin-down NVs
-    # ref_counts_up = ref_counts_even[spin_up]  # m_s = 0 reference for spin-up NVs
-    # ref_counts_down = ref_counts_odd[spin_down]  # m_s = -1 reference for spin-down NVs
-
-    # # Signal counts
-    # sig_counts_up = sig_counts[spin_up]
-    # sig_counts_down = sig_counts[spin_down]
-
-    # # Flatten counts for correlation computation
-    # flattened_sig_counts_up = [
-    #     sig_counts_up[i].reshape(-1) for i in range(len(spin_up))
-    # ]
-    # flattened_ref_counts_up = [
-    #     ref_counts_up[i].reshape(-1) for i in range(len(spin_up))
-    # ]
-    # flattened_sig_counts_down = [
-    #     sig_counts_down[i].reshape(-1) for i in range(len(spin_down))
-    # ]
-    # flattened_ref_counts_down = [
-    #     ref_counts_down[i].reshape(-1) for i in range(len(spin_down))
-    # ]
-
-    # # Calculate correlations
-    # sig_corr_coeffs_up = nan_corr_coef(flattened_sig_counts_up)
-    # ref_corr_coeffs_up = nan_corr_coef(flattened_ref_counts_up)
-    # sig_corr_coeffs_down = nan_corr_coef(flattened_sig_counts_down)
-    # ref_corr_coeffs_down = nan_corr_coef(flattened_ref_counts_down)
-
-    # # Adjust correlations based on spin_flip
-    # adjusted_corr_coeffs_up = sig_corr_coeffs_up - ref_corr_coeffs_up
-    # adjusted_corr_coeffs_down = sig_corr_coeffs_down - ref_corr_coeffs_down
-
-    # # Combine results into a single matrix
-    # adjusted_corr_coeffs = np.zeros((len(nv_list), len(nv_list)))
-    # ref_corr_coeffs = np.zeros((len(nv_list), len(nv_list)))
-
-    # # Insert adjusted correlations for spin-up NVs
-    # for i, nv_i in enumerate(spin_up):
-    #     for j, nv_j in enumerate(spin_up):
-    #         adjusted_corr_coeffs[nv_i, nv_j] = adjusted_corr_coeffs_up[i, j]
-    #         ref_corr_coeffs[nv_i, nv_j] = ref_corr_coeffs_up[i, j]
-
-    # # Insert adjusted correlations for spin-down NVs
-    # for i, nv_i in enumerate(spin_down):
-    #     for j, nv_j in enumerate(spin_down):
-    #         adjusted_corr_coeffs[nv_i, nv_j] = adjusted_corr_coeffs_down[i, j]
-    #         ref_corr_coeffs[nv_i, nv_j] = ref_corr_coeffs_down[i, j]
-    # sig_corr_coeffs = adjusted_corr_coeffs
+    sig_corr_coeffs = sig_corr_coeffs - ref_corr_coeffs
     # ref_corr_coeffs = ref_corr_coeffs - ref_corr_coeffs
-    # sig_corr_coeffs = rescale_extreme_values(
-    #     sig_corr_coeffs, sigma_threshold=0.3, method="tanh"
+
+    # bins = int(np.ceil(np.log2(len(sig_corr_coeffs)) + 1))
+    # bin_width = 3.5 * np.nanstd(sig_corr_coeffs) / len(sig_corr_coeffs) ** (1 / 3)
+    # bins = int(
+    #     np.ceil((np.nanmax(sig_corr_coeffs) - np.nanmin(sig_corr_coeffs)) / bin_width)
     # )
-    # ref_corr_coeffs = rescale_extreme_values(
-    #     ref_corr_coeffs, sigma_threshold=0.3, method="tanh"
-    # )
-    # plot_correlation_histogram(sig_corr_coeffs, bins=50)
+
+    q75, q25 = np.percentile(sig_corr_coeffs, [75, 25])
+    iqr = q75 - q25
+    bin_width = 2 * iqr / len(sig_corr_coeffs) ** (1 / 3)
+    bins = int(
+        np.ceil((np.nanmax(sig_corr_coeffs) - np.nanmin(sig_corr_coeffs)) / bin_width)
+    )
+    # square root rule
+    # bins = int(np.ceil(np.sqrt(len(sig_corr_coeffs))))
+    plot_correlation_histogram(sig_corr_coeffs, bins=bins)
+    plot_correlation_histogram(ref_corr_coeffs, bins=bins)
     # Apply the same rearrangement to signal, reference, and ideal matrices
     if rearrangement == "spin_flip":
         nv_list, sig_corr_coeffs, ref_corr_coeffs = rearrange_spin_flip(
@@ -307,10 +248,15 @@ def process_and_plot(data, rearrangement="spin_flip", file_path=None):
     # print(len(negative_corrs))
     # Set vmin and vmax separately for signal/reference correlations
     mean_corr = np.nanmean(sig_corr_coeffs)
+    median_corr = np.nanmedian(sig_corr_coeffs)
     std_corr = np.nanstd(sig_corr_coeffs)
-    sig_vmax = mean_corr + std_corr
+    print(mean_corr, median_corr, std_corr)
+    sig_vmax = mean_corr + 1.0 * std_corr
+    # sig_vmax = 0.01
     # sig_vmax = np.nanmin(sig_corr_coeffs)
     sig_vmin = -sig_vmax
+    sig_vmax = np.percentile(sig_corr_coeffs, 98)
+    sig_vmin = np.percentile(sig_corr_coeffs, 1)
     # For reference correlations (assuming reference should be scaled the same way as signal)
     ref_vmin = sig_vmin
     ref_vmax = sig_vmax
@@ -322,13 +268,14 @@ def process_and_plot(data, rearrangement="spin_flip", file_path=None):
     # Plotting setup
 
     titles = ["Ideal Signal", "Signal", "Reference"]
-    # titles = ["Ideal Signal", "Signal - Reference"]
+    # titles = ["Signal", "Reference"]
+    # titles = ["Ideal Signal", "Signal After Reference Subtraction"]
     num_cols = len(titles)
     figsize = [num_cols * 5, 5]
     fig, axes_pack = plt.subplots(ncols=num_cols, figsize=figsize)
     vals = [ideal_sig_corr_coeffs, sig_corr_coeffs, ref_corr_coeffs]
+    # vals = [sig_corr_coeffs, ref_corr_coeffs]
     # vals = [ideal_sig_corr_coeffs, sig_corr_coeffs]
-    # titles = ["Signal", "Reference"]
 
     # Use Seaborn heatmap for visualization
     for ind, (val, title) in enumerate(zip(vals, titles)):
@@ -352,36 +299,49 @@ def process_and_plot(data, rearrangement="spin_flip", file_path=None):
             vmax=vmax,
             square=True,
             mask=np.isnan(val),
-            annot=False,  # Set True if you want the values to appear on the heatmap
-            cbar_kws={"pad": 0.03, "shrink": 0.6},  # Shrink colorbar for better fit
-            # xticklabels=False,
-            # yticklabels=False,
+            annot=False,
+            cbar_kws={"pad": 0.03, "shrink": 0.6},
         )
-
-        ax.set_title(title, fontsize=16)
 
         # Add a colorbar label
         cbar = heatmap.collections[0].colorbar
         cbar.set_label("Correlation coefficient", fontsize=16)
-        cbar.ax.tick_params(labelsize=16)
+        # cbar.ax.tick_params(labelsize=16)
+
+        # Set scientific notation for the colorbar ticks
+        cbar.ax.tick_params(labelsize=15)  # Set tick label size
+        cbar.formatter = ScalarFormatter(useMathText=True)
+        cbar.formatter.set_scientific(True)
+        cbar.formatter.set_powerlimits((-2, 2))
+        cbar.update_ticks()
+        # Adjust the position of the scientific notation
+        cbar.ax.yaxis.offsetText.set(size=15)
+        cbar.ax.yaxis.offsetText.set_position((4.0, 1.05))
 
         # Parameters
-        max_ticks = 6  # Maximum number of ticks to display
+        max_ticks = 5  # Maximum number of ticks to display
         tick_interval = max(1, num_nvs // max_ticks)  # Ensure interval is at least 1
 
-        # Set ticks dynamically based on the number of NVs
+        # Set ticks and labels for NV indices
         ax.set_xticks(np.arange(0, num_nvs, tick_interval))
         ax.set_yticks(np.arange(0, num_nvs, tick_interval))
+        ax.set_xticklabels(
+            np.arange(0, num_nvs, tick_interval), rotation=0, fontsize=15
+        )
+        ax.set_yticklabels(
+            np.arange(0, num_nvs, tick_interval), rotation=0, fontsize=15
+        )
 
-        # Set font size and tick parameters
-        ax.tick_params(axis="both", which="major", labelsize=16)
+        ax.tick_params(axis="x", which="both", pad=0)
+        ax.tick_params(axis="y", which="both", pad=0)
+        # ax.tick_params(axis="both", which="both", direction="out", length=5, width=1)
 
-        # Add x and y labels
-        ax.set_xlabel("NV index", fontsize=16)
-        ax.set_ylabel("NV index", fontsize=16)
+        ax.set_title(title, fontsize=16, pad=10)
+        ax.set_xlabel("NV index", fontsize=15)
+        ax.set_ylabel("NV index", fontsize=15, labelpad=-1)
 
     # Adjust subplots for proper spacing
-    fig.subplots_adjust(left=0.05, right=0.88, bottom=0.05, top=0.95, wspace=0.3)
+    fig.subplots_adjust(left=0.1, right=0.95, bottom=0.05, top=0.95, wspace=0.3)
     # if fig is not None:
     #     dm.save_figure(fig, file_path)
     plt.show()
@@ -691,7 +651,7 @@ def plot_nv_network(data):
     spin_down_nodes = [i for i, nv in enumerate(nv_list) if nv.spin_flip]
 
     # Create the plot
-    fig, ax = plt.subplots(figsize=(8, 8))
+    fig, ax = plt.subplots(figsize=(8, 6))
     nx.draw_networkx_nodes(
         G,
         pos,
@@ -729,14 +689,14 @@ def plot_nv_network(data):
 
     mean_corr = np.nanmean(sig_corr_coeffs)
     std_corr = np.nanstd(sig_corr_coeffs)
-    vmax = mean_corr + std_corr
+    vmax = mean_corr + 1.5 * std_corr
     norm = mcolors.Normalize(vmin=-vmax, vmax=vmax)
 
     # Draw curved edges with color based on the correlation coefficients
     draw_curved_edges(
         G, pos, ax, norm, edges, edge_colors, edge_widths, edge_alphas, curvature=0.0
     )
-
+    ax.set_aspect("equal", adjustable="datalim")
     # Create ScalarMappable for the color bar
     sm = plt.cm.ScalarMappable(cmap=cm.coolwarm, norm=norm)
     sm.set_array(edge_colors)
@@ -819,7 +779,15 @@ if __name__ == "__main__":
     #     1739049613447,
     # ]
     # file_ids = [1739268623744, 1739343445705]  # measuremnts stopped due to d
-    file_ids = [1739598841877, 1739660864956, 1739725006836, 1739855966253] # 
+    # file_ids = [1739598841877, 1739660864956, 1739725006836, 1739855966253] # 4 files Matt's new method for ref
+    file_ids = [
+        1739979522556,
+        1740062954135,
+        1740252380664,
+        1740377262591,
+        1740494528636,
+    ]
+
     try:
         data = process_multiple_files(file_ids)
         # print(data.shape)

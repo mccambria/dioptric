@@ -6,9 +6,8 @@ Created on October 13th, 2023
 
 @author: mccambria
 """
-
-import matplotlib.pyplot as plt
 import numpy as np
+import matplotlib.pyplot as plt
 from qm import QuantumMachinesManager, qua
 from qm.simulate import SimulationConfig
 
@@ -114,13 +113,6 @@ if __name__ == "__main__":
                 82400000,
                 24800000,
                 101600000,
-                37600000,
-                76000000,
-                56800000,
-                88800000,
-                50400000,
-                95200000,
-                63200000,
             ],
             False,
             True,

@@ -35,6 +35,7 @@ def get_seq(ion_coords_list, pol_coords_list, num_reps):
                     targeted_polarization=True,
                     verify_charge_states=False,
                 )
+
             seq_utils.macro_charge_state_readout()
             seq_utils.macro_wait_for_trigger()
 
@@ -43,6 +44,60 @@ def get_seq(ion_coords_list, pol_coords_list, num_reps):
 
     seq_ret_vals = []
     return seq, seq_ret_vals
+
+
+def get_conditional_sequence(
+    pol_coords_list,
+    ion_coords_list,
+    num_reps,
+    condition_fn=None,
+    verify_charge_states=False,
+    pol_duration_override=None,
+    pol_amp_override=None,
+    readout_duration_override=None,
+    readout_amp_override=None,
+):
+    """
+    Defines a conditional sequence for charge state readout after polarization/ionization.
+    """
+    if num_reps is None:
+        num_reps = 1
+
+    def one_exp(do_ionize):
+        # Check the condition before polarization
+        if condition_fn is not None and not condition_fn():
+            return
+
+        # Polarization step
+        seq_utils.macro_polarize(
+            pol_coords_list,
+            pol_duration_override,
+            pol_amp_override,
+            targeted_polarization=verify_charge_states,
+            verify_charge_states=verify_charge_states,
+            spin_pol=False,
+        )
+
+        # Optional ionization step
+        if do_ionize:
+            seq_utils.macro_ionize(ion_coords_list)
+
+        # Charge state readout
+        seq_utils.macro_charge_state_readout(
+            readout_duration_override, readout_amp_override
+        )
+
+        # Wait for the next trigger
+        seq_utils.macro_wait_for_trigger()
+
+    def one_rep(rep_ind=None):
+        # Perform two experiments: one with ionization and one without
+        for do_ionize in [True, False]:
+            one_exp(do_ionize)
+
+    # Handle repetitions and pause sequence at the end
+    seq_utils.handle_reps(one_rep, num_reps, wait_for_trigger=False)
+    seq_utils.macro_pause()
 
 
 if __name__ == "__main__":
