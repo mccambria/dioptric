@@ -39,9 +39,9 @@ calibration_coords_pixel = [
 ]
 
 calibration_coords_green = [
-    [115.637, 101.513],
-    [109.262, 115.888],
-    [98.688, 101.016],
+    [115.74, 101.491],
+    [109.294, 115.882],
+    [98.799, 100.988],
 ]
 calibration_coords_red = [
     [78.935, 67.899],
@@ -242,7 +242,9 @@ config |= {
             # LaserKey.WIDEFIELD_SPIN_POL: {"physical_name": yellow_laser, "duration": 1e6},
             VirtualLaserKey.WIDEFIELD_CHARGE_READOUT: {
                 "physical_name": yellow_laser,
-                "duration": 50e6,
+                "duration": 200e6,
+                # "duration": 100e6,
+                # "duration": 50e6,
                 # "duration": 30e6,
                 # "duration": 12e6,  # for red calibration
             },
@@ -817,7 +819,9 @@ opx_config = {
         "yellow_imaging": {"type": "constant", "sample": 0.45},  # 0.35
         # "yellow_imaging": {"type": "constant", "sample": 0.50},  # 0.35
         # "yellow_charge_readout": {"type": "constant", "sample": 0.396},  # 50ms 160NVs
-        "yellow_charge_readout": {"type": "constant", "sample": 0.3472},  # 50ms 117NVs
+        # "yellow_charge_readout": {"type": "constant", "sample": 0.3472},  # 50ms 117NVs
+        # "yellow_charge_readout": {"type": "constant", "sample": 0.325},  # 100ms 117NVs
+        "yellow_charge_readout": {"type": "constant", "sample": 0.29},  # 200ms 117NVs
         # "yellow_charge_readout": {"type": "constant", "sample": 0.3423},  # 50ms 106NVs
         # "yellow_charge_readout": {"type": "constant", "sample": 0.42},  # 30ms 160Nvs
         "yellow_spin_pol": {"type": "constant", "sample": 0.39},

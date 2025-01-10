@@ -318,12 +318,12 @@ def macro_charge_state_readout(duration: int = None, amp: float = None):
         qua.wait(duration, readout_laser_el)
         qua.wait(duration, camera_el)
     with qua.else_():
-        half_duration = qua.declare(int)
-        qua.assign(half_duration, duration / 2)
+        qtr_duration = qua.declare(int)
+        qua.assign(qtr_duration, duration // 4)
         wait_ind = qua.declare(int)
-        with qua.for_(wait_ind, 0, wait_ind < 2, wait_ind + 1):
-            qua.wait(half_duration, readout_laser_el)
-            qua.wait(half_duration, camera_el)
+        with qua.for_(wait_ind, 0, wait_ind < 4, wait_ind + 1):
+            qua.wait(qtr_duration, readout_laser_el)
+            qua.wait(qtr_duration, camera_el)
 
     # Ramp down to zero
     qua.ramp_to_zero(readout_laser_el)
@@ -920,14 +920,4 @@ def get_rabi_period(uwave_ind=0):
 # endregion
 
 if __name__ == "__main__":
-    config = common.get_config_dict("purcell")
-    positioners_dict = config["Positioning"]["Positioners"]
-    positioners_keys = positioners_dict.keys()
-    laser_names = []
-    for key in positioners_keys:
-        positioner = positioners_dict[key]
-        if "aod" in positioner and positioner["aod"]:
-            virtual_laser_key = positioner["opti_virtual_laser_key"]
-            physical_laser_name = tb.get_physical_laser_name(virtual_laser_key)
-            laser_names.append(physical_laser_name)
-    print(laser_names)
+    print(get_default_charge_readout_duration())

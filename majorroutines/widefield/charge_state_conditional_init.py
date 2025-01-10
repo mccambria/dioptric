@@ -41,20 +41,27 @@ def process_and_plot(raw_data, mean_val=None):
     nv_list = raw_data["nv_list"]
     num_nvs = len(nv_list)
     counts = np.array(raw_data["counts"])[0]
-    # states = widefield.threshold_counts(nv_list, counts, dynamic_thresh=False)
-    states = np.array(raw_data["states"])[0]
+    states = widefield.threshold_counts(nv_list, counts, dynamic_thresh=False)
+    # states = np.array(raw_data["states"])[0]
     num_reps = raw_data["num_reps"]
     num_runs = raw_data["num_runs"]
 
+    # for nv_ind in range(num_nvs):
+    #     fig, ax = plt.subplots()
+    #     kpl.histogram(ax, counts[nv_ind].flatten(), density=True)
+    #     ax.axvline(nv_list[nv_ind].threshold)
+    #     kpl.show(block=True)
+
     num_nvn = np.sum(states, axis=0)
+    # num_nvn = num_nvn[3:4, 0, :]  # Just one step
     num_nvn = num_nvn[:, 0, :]  # Just one step
     avg_num_nvn = np.mean(num_nvn, axis=0)  # Average over runs
     avg_num_nvn_ste = np.std(num_nvn, axis=0, ddof=1) / np.sqrt(num_runs)
 
-    print("Perfect 10s")
-    print(np.count_nonzero(num_nvn[:, 1] == 10) / num_runs)
-    print(np.count_nonzero(num_nvn[:, 5] == 10) / num_runs)
-    print(np.count_nonzero(num_nvn[:, 3:10] == 10) / (7 * num_runs))
+    # print("Perfect 10s")
+    # print(np.count_nonzero(num_nvn[:, 1] == 10) / num_runs)
+    # print(np.count_nonzero(num_nvn[:, 5] == 10) / num_runs)
+    # print(np.count_nonzero(num_nvn[:, 3:10] == 10) / (7 * num_runs))
 
     reps_vals = np.array(range(num_reps))
 
@@ -67,7 +74,14 @@ def process_and_plot(raw_data, mean_val=None):
     figsize = kpl.figsize
     figsize[1] *= 1.0
     fig, ax = plt.subplots(figsize=figsize)
-    kpl.plot_points(ax, reps_vals, avg_num_nvn, yerr=avg_num_nvn_ste)
+    kpl.plot_points(
+        ax, reps_vals, avg_num_nvn / num_nvs, yerr=avg_num_nvn_ste / num_nvs
+    )
+    ax.set_xlabel("Number of attempts")
+    ax.set_ylabel("Fraction in NV$^{-}$")
+    ax.set_ylim(0, 1)
+    # kpl.show(block=True)
+    # sys.exit()
 
     def fit_fn(x, y0, c1, c2):
         term1 = (c1**x) * y0
@@ -91,17 +105,14 @@ def process_and_plot(raw_data, mean_val=None):
     print(f"Red chi sq: {round(red_chi_sq, 3)}")
 
     reps_vals_linspace = np.linspace(0, xlim, 1000)
-    kpl.plot_line(ax, reps_vals_linspace, fit_fn(reps_vals_linspace, *popt))
+    kpl.plot_line(ax, reps_vals_linspace, fit_fn(reps_vals_linspace, *popt) / num_nvs)
 
     if mean_val is not None:
         ax.axhline(mean_val, color=kpl.KplColors.GREEN, linestyle="dashed", linewidth=2)
 
-    ax.set_xlabel("Number of attempts")
-    ax.set_ylabel("Mean number NV$^{-}$")
-    ax.set_xlim((-0.5, 10.5))
-    ax.set_xticks(np.array(range(11)))
-    ax.set_yticks([0, 2, 4, 6, 8, 10])
-    # ax.set_yticks(range(10))
+    # ax.set_xlim((-0.5, 10.5))
+    # ax.set_xticks(np.array(range(11)))
+    # ax.set_yticks([0, 2, 4, 6, 8, 10])
     ax.yaxis.set_minor_locator(MaxNLocator(integer=True))
 
     ### Inset histograms
@@ -162,7 +173,7 @@ def main(
     seq_file = "charge_state_conditional_init.py"
     num_steps = 1
 
-    charge_prep_fn = base_routine.charge_prep_no_verification
+    charge_prep_fn = base_routine.charge_prep_no_verification_skip_first_rep
     # charge_prep_fn = None
 
     pulse_gen = tb.get_server_pulse_gen()
@@ -171,8 +182,10 @@ def main(
 
     def run_fn(shuffled_step_inds):
         ion_coords_list = widefield.get_coords_list(nv_list, VirtualLaserKey.ION)
-        pol_coords_list = widefield.get_coords_list(nv_list, VirtualLaserKey.CHARGE_POL)
-        seq_args = [ion_coords_list, pol_coords_list]
+        pol_coords_list, pol_duration_list, pol_amp_list = (
+            widefield.get_pulse_parameter_lists(nv_list, VirtualLaserKey.CHARGE_POL)
+        )
+        seq_args = [ion_coords_list, pol_coords_list, pol_duration_list, pol_amp_list]
         seq_args_string = tb.encode_seq_args(seq_args)
         pulse_gen.stream_load(seq_file, seq_args_string, num_reps)
 
@@ -182,7 +195,7 @@ def main(
         num_reps,
         num_runs,
         run_fn=run_fn,
-        save_images=True,
+        save_images=False,
         save_images_avg_reps=False,
         charge_prep_fn=charge_prep_fn,
         num_exps=1,
@@ -218,6 +231,11 @@ def main(
 
 if __name__ == "__main__":
     kpl.init_kplotlib()
+
+    data = dm.get_raw_data(file_id=1740679854243)
+    process_and_plot(data)
+    kpl.show(block=True)
+    sys.exit()
 
     ### Just get a mean val
     data = dm.get_raw_data(file_id=1573560918521)
