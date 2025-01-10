@@ -306,47 +306,63 @@ def process_and_plot(
     ideal_sig_corr_coeffs = ideal_sig_corr_coeffs.astype(float)
 
     flattened_sig_counts = [sig_counts[ind].flatten() for ind in pattern_inds]
-    flattened_ref_counts = [ref_counts[ind].flatten() for ind in pattern_inds]
+    # flattened_ref_counts = [ref_counts[ind].flatten() for ind in pattern_inds]
+    flattened_ref_counts_even = [
+        ref_counts[ind, :, :, ::2].flatten() for ind in pattern_inds
+    ]
+    flattened_ref_counts_odd = [
+        ref_counts[ind, :, :, 1::2].flatten() for ind in pattern_inds
+    ]
 
     sig_corr_coeffs = tb.nan_corr_coef(flattened_sig_counts)
-    ref_corr_coeffs = tb.nan_corr_coef(flattened_ref_counts)
-    diff_corr_coeffs = sig_corr_coeffs - ref_corr_coeffs
+    # ref_corr_coeffs = tb.nan_corr_coef(flattened_ref_counts)
+    # diff_corr_coeffs = sig_corr_coeffs - ref_corr_coeffs
+    ref_corr_coeffs_even = tb.nan_corr_coef(flattened_ref_counts_even)
+    ref_corr_coeffs_odd = tb.nan_corr_coef(flattened_ref_counts_odd)
+    diff_corr_coeffs = sig_corr_coeffs - (ref_corr_coeffs_even + ref_corr_coeffs_odd)
 
     ### Plot
 
     figsize = kpl.figsize.copy()
 
-    # figsize[0] *= 1.4
-    # figsize[1] *= 0.85
-    # titles = ["Ideal signal", "Signal"]
-    # vals = [ideal_sig_corr_coeffs, sig_corr_coeffs]
-    # titles = ["Ideal reference", "Reference"]
-    # vals = [ideal_ref_corr_coeffs, ref_corr_coeffs]
-
-    figsize[0] *= 2.5
+    titles = [
+        "Ideal signal",
+        "Signal",
+        "Reference (ms=0)",
+        "Reference (ms=-1)",
+        "Difference",
+    ]
+    # vals = [ideal_sig_corr_coeffs, sig_corr_coeffs, ref_corr_coeffs, diff_corr_coeffs]
+    vals = [
+        ideal_sig_corr_coeffs,
+        sig_corr_coeffs,
+        ref_corr_coeffs_even,
+        ref_corr_coeffs_odd,
+        diff_corr_coeffs,
+    ]
+    num_plots = len(vals)
+    figsize[0] *= 2.5 * num_plots / 4
     figsize[1] *= 0.85
-    titles = ["Ideal signal", "Signal", "Reference", "Difference"]
-    vals = [ideal_sig_corr_coeffs, sig_corr_coeffs, ref_corr_coeffs, diff_corr_coeffs]
 
     if passed_ax is None:
-        num_plots = len(vals)
         fig, axes_pack = plt.subplots(ncols=num_plots, figsize=figsize)
 
     # Replace diagonals (Cii=1) with nan so they don't show
     for val in vals:
         np.fill_diagonal(val, np.nan)
 
-    # Make the colorbar symmetric about 0
-    sig_max = np.nanmax(np.abs(sig_corr_coeffs))
-    ref_max = np.nanmax(np.abs(ref_corr_coeffs))
+    # # Make the colorbar symmetric about 0
+    # sig_max = np.nanmax(np.abs(sig_corr_coeffs))
+    # ref_max = np.nanmax(np.abs(ref_corr_coeffs))
 
-    print(f"Sig mean mag: {np.nanmean(np.abs(sig_corr_coeffs))}")
-    print(f"Ref mean: {np.nanmean(ref_corr_coeffs)}")
-    print(f"Ref std: {np.nanstd(ref_corr_coeffs)}")
-    print()
+    # print(f"Sig mean mag: {np.nanmean(np.abs(sig_corr_coeffs))}")
+    # print(f"Ref mean: {np.nanmean(ref_corr_coeffs)}")
+    # print(f"Ref std: {np.nanstd(ref_corr_coeffs)}")
+    # print()
 
     # cbar_maxes = [sig_max, sig_max, 1]
-    cbar_max = sig_max / 2 if passed_cbar_max is None else passed_cbar_max
+    cbar_max = np.nanmax(vals[1:]) / 2 if passed_cbar_max is None else passed_cbar_max
+    # cbar_max = sig_max / 2 if passed_cbar_max is None else passed_cbar_max
     for ind in range(len(vals)):
         if passed_ax is None:
             # fig, ax = plt.subplots()
@@ -457,7 +473,8 @@ if __name__ == "__main__":
     ### Data
 
     # fmt: off
-    file_ids = [1737922643755, 1737998031775, 1738069552465, 1738136166264, 1738220449762, ]
+    # file_ids = [1737922643755, 1737998031775, 1738069552465, 1738136166264, 1738220449762, ]
+    file_ids = [1739598841877, 1739660864956, 1739725006836, 1739855966253 ]
     # fmt: on
     # file_ids = file_ids[3:]
     data = dm.get_raw_data(file_id=file_ids)
