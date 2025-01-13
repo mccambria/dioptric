@@ -198,7 +198,7 @@ def create_fit_figure(
     # kpl.set_shared_ax_ylabel(ax, "Relative change in fluorescence")
     ax.set_xticks([2.80, 2.95])
     ax.set_yticks([0, 1])
-    ax.set_ylim([-0.3, 1.3])
+    ax.set_ylim([-0.3, 2])
 
     # ax = axes_pack[layout[-1, 0]]
     # ax.set_xlabel(" ")
@@ -345,6 +345,8 @@ if __name__ == "__main__":
 
     ###
 
+    exclude_inds = [72, 64, 55, 96, 112, 87, 89, 114, 17, 12, 99, 116, 32, 107, 58, 36]
+
     file_id = 1732403187814
 
     data = dm.get_raw_data(file_id=file_id, load_npz=False, use_cache=True)
@@ -386,6 +388,10 @@ if __name__ == "__main__":
     norm_counts, norm_counts_ste = widefield.process_counts(
         nv_list, sig_counts, ref_counts, threshold=True
     )
+    mean_stes = np.mean(norm_counts_ste, axis=1)
+    print(np.argsort(mean_stes)[::-1])
+    print(np.sort(mean_stes)[::-1])
+    # sys.exit()
 
     # raw_fig = create_raw_data_figure(nv_list, freqs, avg_counts, avg_counts_ste)
     fit_fig = create_fit_figure(nv_list, freqs, norm_counts, norm_counts_ste)

@@ -23,7 +23,7 @@ from utils.constants import NVSig
 
 
 def main(block_data, checkerboard_data, orientation_data):
-    figsize = kpl.double_figsize
+    figsize = kpl.figsize
     # figsize[1] = 0.9 * figsize[0]
     figsize[1] = 1.25 * figsize[0]
     main_fig = plt.figure(figsize=figsize)
@@ -249,15 +249,11 @@ def main(block_data, checkerboard_data, orientation_data):
 if __name__ == "__main__":
     kpl.init_kplotlib()
 
-    file_ids = [
-        1739979522556,
-        1740062954135,
-        1740252380664,
-        1740377262591,
-        1740494528636,
-    ]
-    data = dm.get_raw_data(file_ids=file_ids)
+    # block_data = dm.get_raw_data(file_id=1540048047866)  # Straight order
+    block_data = dm.get_raw_data(file_id=1541938921939)  # Reversed
+    checkerboard_data = dm.get_raw_data(file_id=1538271354881)
+    orientation_data = dm.get_raw_data(file_id=1540558251818)
 
-    main(data)
+    main(block_data, checkerboard_data, orientation_data)
 
     plt.show(block=True)

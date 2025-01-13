@@ -258,6 +258,15 @@ def process_and_plot_experimental(data):
     return figs
 
 
+def combine_symmetric_matrices(upper, lower):
+    combined = np.zeros_like(upper)
+    upper_indices = np.triu_indices_from(upper)
+    lower_indices = np.tril_indices_from(lower)
+    combined[upper_indices] = upper[upper_indices]
+    combined[lower_indices] = lower[lower_indices]
+    return combined
+
+
 def process_and_plot(
     data, ax=None, sig_or_ref=True, no_cbar=False, cbar_max=None, no_labels=False
 ):
@@ -294,8 +303,12 @@ def process_and_plot(
 
     spin_flips = np.array([-1 if nv.spin_flip else +1 for nv in nv_list])
     # Block
-    pattern_inds = [ind for ind in range(num_nvs) if spin_flips[ind] == +1]
-    pattern_inds.extend([ind for ind in range(num_nvs) if spin_flips[ind] == -1])
+    a_group_inds = [ind for ind in range(num_nvs) if spin_flips[ind] == +1]
+    random.seed(1060)  # Set the seed so we get the same result repeatably
+    random.shuffle(a_group_inds)
+    b_group_inds = [ind for ind in range(num_nvs) if spin_flips[ind] == -1]
+    random.shuffle(b_group_inds)
+    pattern_inds = a_group_inds + b_group_inds
     spin_flips = np.sort(spin_flips)
     # if -1 not in spin_flips:
     #     spin_flips[0] = -1
@@ -306,46 +319,52 @@ def process_and_plot(
     ideal_sig_corr_coeffs = ideal_sig_corr_coeffs.astype(float)
 
     flattened_sig_counts = [sig_counts[ind].flatten() for ind in pattern_inds]
-    # flattened_ref_counts = [ref_counts[ind].flatten() for ind in pattern_inds]
-    flattened_ref_counts_even = [
-        ref_counts[ind, :, :, ::2].flatten() for ind in pattern_inds
-    ]
-    flattened_ref_counts_odd = [
-        ref_counts[ind, :, :, 1::2].flatten() for ind in pattern_inds
-    ]
+    flattened_ref_counts = [ref_counts[ind].flatten() for ind in pattern_inds]
+    # flattened_ref_counts_even = [
+    #     ref_counts[ind, :, :, ::2].flatten() for ind in pattern_inds
+    # ]
+    # flattened_ref_counts_odd = [
+    #     ref_counts[ind, :, :, 1::2].flatten() for ind in pattern_inds
+    # ]
 
     sig_corr_coeffs = tb.nan_corr_coef(flattened_sig_counts)
-    # ref_corr_coeffs = tb.nan_corr_coef(flattened_ref_counts)
+    ref_corr_coeffs = tb.nan_corr_coef(flattened_ref_counts)
     # diff_corr_coeffs = sig_corr_coeffs - ref_corr_coeffs
-    ref_corr_coeffs_even = tb.nan_corr_coef(flattened_ref_counts_even)
-    ref_corr_coeffs_odd = tb.nan_corr_coef(flattened_ref_counts_odd)
-    diff_corr_coeffs = sig_corr_coeffs - (ref_corr_coeffs_even + ref_corr_coeffs_odd)
+    # ref_corr_coeffs_even = tb.nan_corr_coef(flattened_ref_counts_even)
+    # ref_corr_coeffs_odd = tb.nan_corr_coef(flattened_ref_counts_odd)
+    # diff_corr_coeffs = sig_corr_coeffs - (ref_corr_coeffs_even + ref_corr_coeffs_odd)
 
     ### Plot
+
+    plot_sig = combine_symmetric_matrices(ideal_sig_corr_coeffs, sig_corr_coeffs)
+    plot_ref = combine_symmetric_matrices(ideal_ref_corr_coeffs, ref_corr_coeffs)
 
     figsize = kpl.figsize.copy()
 
     titles = [
-        "Ideal signal",
-        "Signal",
+        # "Ideal signal",
         "Reference (ms=0)",
-        "Reference (ms=-1)",
-        "Difference",
+        "Signal",
+        # "Reference (ms=-1)",
+        # "Difference",
     ]
+    vals = [plot_ref, plot_sig]
     # vals = [ideal_sig_corr_coeffs, sig_corr_coeffs, ref_corr_coeffs, diff_corr_coeffs]
-    vals = [
-        ideal_sig_corr_coeffs,
-        sig_corr_coeffs,
-        ref_corr_coeffs_even,
-        ref_corr_coeffs_odd,
-        diff_corr_coeffs,
-    ]
-    num_plots = len(vals)
-    figsize[0] *= 2.5 * num_plots / 4
-    figsize[1] *= 0.85
+    # vals = [
+    #     # ideal_sig_corr_coeffs,
+    #     sig_corr_coeffs,
+    #     ref_corr_coeffs,
+    #     # ref_corr_coeffs_even,
+    #     # ref_corr_coeffs_odd,
+    #     # diff_corr_coeffs,
+    # ]
+    len_vals = len(vals)
+    # figsize[0] *= 2.5 * num_plots / 4
+    figsize[1] = 2 * figsize[0]
+    # figsize[1] *= 0.85
 
     if passed_ax is None:
-        fig, axes_pack = plt.subplots(ncols=num_plots, figsize=figsize)
+        fig, axes_pack = plt.subplots(nrows=len_vals, figsize=figsize)
 
     # Replace diagonals (Cii=1) with nan so they don't show
     for val in vals:
@@ -362,8 +381,9 @@ def process_and_plot(
 
     # cbar_maxes = [sig_max, sig_max, 1]
     cbar_max = np.nanmax(vals[1:]) / 2 if passed_cbar_max is None else passed_cbar_max
+    cbar_max = 0.03
     # cbar_max = sig_max / 2 if passed_cbar_max is None else passed_cbar_max
-    for ind in range(len(vals)):
+    for ind in range(len_vals):
         if passed_ax is None:
             # fig, ax = plt.subplots()
             # figs.append(fig)
@@ -388,17 +408,29 @@ def process_and_plot(
             vmin=-cbar_max,
             vmax=cbar_max,
             nan_color=kpl.KplColors.GRAY,
-            no_cbar=no_cbar or ind < num_plots - 1,
+            no_cbar=True,
         )
+        if ind == len_vals - 1:
+            img = ax.get_images()[0]
+            cbar = fig.colorbar(
+                img,
+                ax=ax,
+                shrink=0.95,
+                # aspect=12,
+                extend="both",  # location="bottom"
+            )
+            cbar.ax.set_title("Corr.\ncoeff.")
+            cbar.ax.set_yticks([-cbar_max, 0, cbar_max])
+            cbar.ax.tick_params(labelrotation=90)
         # ax.xaxis.set_major_locator(MaxNLocator(integer=True))
         # ax.yaxis.set_major_locator(MaxNLocator(integer=True))
         # ax.set_yticks([0, 2, 4, 6, 8])
         # ax.set_xticks([0, 2, 4, 6, 8])
         # ax.tick_params(labelsize=16)
         if not no_labels:
-            ax.set_xlabel("NV index")
-            if ind == 0:
-                ax.set_ylabel("NV index")
+            ax.set_ylabel("NV index")
+            if ind == len_vals - 1:
+                ax.set_xlabel("NV index")
 
     if passed_ax is not None:
         return ret_val
@@ -474,7 +506,8 @@ if __name__ == "__main__":
 
     # fmt: off
     # file_ids = [1737922643755, 1737998031775, 1738069552465, 1738136166264, 1738220449762, ]
-    file_ids = [1739598841877, 1739660864956, 1739725006836, 1739855966253 ]
+    # file_ids = [1739598841877, 1739660864956, 1739725006836, 1739855966253 ]
+    file_ids = [1739979522556, 1740062954135, 1740252380664, 1740377262591, 1740494528636]
     # fmt: on
     # file_ids = file_ids[3:]
     data = dm.get_raw_data(file_id=file_ids)

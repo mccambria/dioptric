@@ -326,13 +326,14 @@ def nan_corr_coef(arr):
     Version of numpy's correlation coefficient that respects nan by just throwing
     out any pairs of measurements where either value is nan
     """
+    return np.corrcoef(arr)
     arr = np.array(arr)
     num_rows = arr.shape[0]
     corr_coef_arr = np.empty((num_rows, num_rows))
     for ind in range(num_rows):
         for jnd in range(num_rows):
-            if ind == 5 and jnd == 6:
-                pass
+            # if ind == 5 and jnd == 6:
+            #     pass
             if jnd < ind:
                 corr_coef_arr[ind, jnd] = corr_coef_arr[jnd, ind]
                 continue

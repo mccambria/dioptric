@@ -1184,6 +1184,7 @@ def plot_fit(
             color=color,
             linestyle=linestyle,
         )
+        kpl.anchored_text(ax, nv_ind)
 
         # Plot the fit
         if fn is not None:
