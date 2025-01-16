@@ -370,8 +370,10 @@ if __name__ == "__main__":
     split_esr = [12, 13, 14, 52, 61, 116] 
     broad_esr = [11] 
     bad_pi = split_esr + broad_esr
-    weak_esr = [72, 64, 55, 96, 112, 87, 89, 114, 17, 12, 99, 116, 32, 107, 58, 36] 
-    for ind in weak_esr[:6]:
+    # weak_esr = [72, 64, 55, 96, 112, 87, 89, 114, 17, 12, 99, 116, 32, 107, 58, 36] 
+    # weak_esr = weak_esr[:6]
+    weak_esr = [72, 64, 55, 96, 112, 87, 12, 58, 36]
+    for ind in weak_esr:
         for nv_list in [nva_inds, nvb_inds]:
             if ind in nv_list:
                 nv_list.remove(ind)

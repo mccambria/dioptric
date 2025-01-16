@@ -273,7 +273,14 @@ def process_and_plot(
     ### Unpack
 
     nv_list = data["nv_list"]
+    weak_esr = [72, 64, 55, 96, 112, 87, 89, 114, 17, 12, 99, 116, 32, 107, 58, 36]
+    weak_esr = [72, 64, 55, 96, 112, 87, 17, 12, 116]  # , 36, 114]
+    weak_esr = [72, 64, 55, 96, 112, 87, 12, 58, 36]
+    # weak_esr = []
+    nice_esr = [ind for ind in range(117) if ind not in weak_esr]
+    nv_list = [nv_list[ind] for ind in nice_esr]
     counts = np.array(data["counts"])
+    counts = counts[:, nice_esr]
     num_nvs = len(nv_list)
 
     passed_cbar_max = cbar_max
@@ -329,6 +336,7 @@ def process_and_plot(
 
     sig_corr_coeffs = tb.nan_corr_coef(flattened_sig_counts)
     ref_corr_coeffs = tb.nan_corr_coef(flattened_ref_counts)
+    print(np.mean(ref_corr_coeffs[np.triu_indices_from(ref_corr_coeffs, 1)]))
     # diff_corr_coeffs = sig_corr_coeffs - ref_corr_coeffs
     # ref_corr_coeffs_even = tb.nan_corr_coef(flattened_ref_counts_even)
     # ref_corr_coeffs_odd = tb.nan_corr_coef(flattened_ref_counts_odd)
@@ -414,9 +422,9 @@ def process_and_plot(
             img = ax.get_images()[0]
             cbar = fig.colorbar(
                 img,
-                ax=ax,
-                shrink=0.95,
-                # aspect=12,
+                ax=axes_pack,
+                shrink=0.5,
+                aspect=20,
                 extend="both",  # location="bottom"
             )
             cbar.ax.set_title("Corr.\ncoeff.")
@@ -432,7 +440,7 @@ def process_and_plot(
             if ind == len_vals - 1:
                 ax.set_xlabel("NV index")
 
-        kwargs = {"color": kpl.KplColors.DARK_GRAY, "linewidths": 0.1}
+        kwargs = {"color": kpl.KplColors.BLACK, "linewidths": 0.1}
         ax.hlines(
             y=np.arange(0, num_nvs - 1) + 0.5, xmin=-0.5, xmax=num_nvs - 0.5, **kwargs
         )
@@ -517,7 +525,7 @@ if __name__ == "__main__":
     # file_ids = [1739598841877, 1739660864956, 1739725006836, 1739855966253 ]
     file_ids = [1739979522556, 1740062954135, 1740252380664, 1740377262591, 1740494528636]
     # fmt: on
-    # file_ids = file_ids[3:]
+    file_ids = file_ids[1:]
     data = dm.get_raw_data(file_id=file_ids)
     process_and_plot(data)
 
