@@ -157,10 +157,10 @@ data_color_cycler = [
     KplColors.CYAN,
     mpl.colors.cnames["darkgoldenrod"],
     # mpl.colors.cnames["greenyellow"],
-    mpl.colors.cnames["darkseagreen"],
+    # mpl.colors.cnames["darkseagreen"],
     mpl.colors.cnames["indianred"],
     mpl.colors.cnames["darkslateblue"],
-    mpl.colors.cnames["sienna"],
+    # mpl.colors.cnames["sienna"],
 ]
 line_color_cycler = data_color_cycler.copy()
 hist_color_cycler = data_color_cycler.copy()

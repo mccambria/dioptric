@@ -17,7 +17,7 @@ from random import shuffle
 import matplotlib.pyplot as plt
 import numpy as np
 
-from majorroutines.pulsed_resonance import fit_resonance, norm_voigt, voigt, voigt_split
+from majorroutines.pulsed_resonance import fit_resonance, gaussian, norm_voigt, voigt
 from majorroutines.widefield import base_routine
 from utils import common
 from utils import data_manager as dm
@@ -66,6 +66,8 @@ def create_fit_figure(
     layout=None,
     no_legend=True,
     nv_inds=None,
+    split_esr=None,
+    bad_pi=None,
 ):
     ### Do the fitting
 
@@ -91,53 +93,56 @@ def create_fit_figure(
     center_freqs = []
     center_freq_errs = []
 
-    do_fit = False
+    do_fit = True
     if do_fit:
         for nv_ind in nv_inds:
             nv_counts = norm_counts[nv_ind]
             nv_counts_ste = norm_counts_ste[nv_ind]
-            amp_guess = 1 - np.max(nv_counts)
 
-            # if nv_ind in [3, 5, 7, 10, 12]:
-            #     num_resonances = 1
-            # if nv_ind in [0, 1, 2, 4, 6, 11, 14]:
-            #     num_resonances = 2
-            # else:
-            #     num_resonances = 0
-            # num_resonances = 1
-            num_resonances = 2
+            if nv_ind in split_esr:
+                num_resonances = 4
+            else:
+                num_resonances = 2
 
+            freq_guesses = None
             if num_resonances == 1:
-                guess_params = [amp_guess, 5, 5, np.median(freqs)]
-                bounds = [[0] * 4, [np.inf] * 4]
-                # Limit linewidths
-                for ind in [1, 2]:
-                    bounds[1][ind] = 10
-
-                def fit_fn(freq, g_width, l_width, center):
-                    return norm_voigt(freq, g_width, l_width, center)
+                freq_guesses = [np.median(freqs)]
             elif num_resonances == 2:
                 # Find peaks in left and right halves
                 low_freq_guess = freqs[np.argmax(nv_counts[:half_num_freqs])]
-                high_freq_guess = freqs[
-                    np.argmax(nv_counts[half_num_freqs:]) + half_num_freqs
+                high_freq_guess = 2 * 2.87 - low_freq_guess
+                freq_guesses = [low_freq_guess, high_freq_guess]
+            elif num_resonances == 4:
+                low_freq_guess = freqs[np.argmax(nv_counts[:half_num_freqs])]
+                high_freq_guess = 2 * 2.87 - low_freq_guess
+                freq_guesses = [
+                    low_freq_guess - 0.001,
+                    low_freq_guess + 0.001,
+                    high_freq_guess - 0.001,
+                    high_freq_guess + 0.001,
                 ]
-                # low_freq_guess = freqs[num_steps * 1 // 3]
-                # high_freq_guess = freqs[num_steps * 2 // 3]
-                # low_freq_guess = 2.85
-                # high_freq_guess = 2.89
 
-                guess_params = [5, 5, low_freq_guess]
-                guess_params.extend([5, 5, high_freq_guess])
-                num_params = len(guess_params)
-                bounds = [[0] * num_params, [np.inf] * num_params]
-                # Limit linewidths
-                for ind in [0, 1, 3, 4]:
-                    bounds[1][ind] = 10
+            guess_params = [1, 5, None]  # Just for one line in the spectrum
+            num_params_single_line = len(guess_params)
+            guess_params *= num_resonances
+            num_params = len(guess_params)
+            bounds = [[0] * num_params, [np.inf] * num_params]
+            for ind in range(num_resonances):
+                guess_params[2 + num_params_single_line * ind] = freq_guesses[ind]
+                bounds[0][1 + num_params_single_line * ind] = 3
+                bounds[1][1 + num_params_single_line * ind] = 6
 
-                def fit_fn(freq, *args):
-                    return norm_voigt(freq, *args[:3]) + norm_voigt(freq, *args[3:])
-                    # return 1 + voigt(freq, *args[:4]) + voigt(freq, *args[4:])
+            def fit_fn(freq, *args):
+                num_resonances = len(args) // num_params_single_line
+                for ind in range(num_resonances):
+                    start = ind * num_params_single_line
+                    end = start + num_params_single_line
+                    line = gaussian(freq, *args[start:end])
+                    if ind == 0:
+                        ret_val = line
+                    else:
+                        ret_val += line
+                return ret_val
 
             if num_resonances == 0:
                 fit_fns.append(constant)
@@ -200,7 +205,8 @@ def create_fit_figure(
     # kpl.set_shared_ax_ylabel(ax, "Relative change in fluorescence")
     ax.set_xticks([2.80, 2.95])
     ax.set_yticks([0, 1])
-    ax.set_ylim([-0.3, 1.3])
+    # ax.set_ylim([-0.3, 1.3])
+    ax.set_ylim([-0.2, 1.2])
     # ax.set_ylim([-0.3, 2])
 
     for ax in axes_pack_flat:
@@ -365,13 +371,15 @@ if __name__ == "__main__":
     broad_esr = [11] 
     bad_pi = split_esr + broad_esr
     weak_esr = [72, 64, 55, 96, 112, 87, 89, 114, 17, 12, 99, 116, 32, 107, 58, 36] 
+    for ind in weak_esr[:6]:
+        for nv_list in [nva_inds, nvb_inds]:
+            if ind in nv_list:
+                nv_list.remove(ind)
     for ind in split_esr:
         for nv_list in [nva_inds, nvb_inds]:
             if ind in nv_list:
                 nv_list.remove(ind)
                 nv_list.append(ind)
-            if ind in weak_esr[:5]:
-                nv_list.remove(ind)
     # nv_inds = nva_inds + nvb_inds
     chunk_size = 3
     nv_inds = []
@@ -422,14 +430,23 @@ if __name__ == "__main__":
     norm_counts, norm_counts_ste = widefield.process_counts(
         nv_list, sig_counts, ref_counts, threshold=True
     )
-    mean_stes = np.mean(norm_counts_ste, axis=1)
-    print(np.argsort(mean_stes)[::-1])
-    print(np.sort(mean_stes)[::-1])
+    # mean_stes = np.mean(norm_counts_ste, axis=1)
+    # print(np.argsort(mean_stes)[::-1])
+    # print(np.sort(mean_stes)[::-1])
     # sys.exit()
+    for nv_ind in bad_pi:
+        contrast = np.max(norm_counts[nv_ind])
+        norm_counts[nv_ind] /= contrast
+        norm_counts_ste[nv_ind] /= contrast
 
     # raw_fig = create_raw_data_figure(nv_list, freqs, avg_counts, avg_counts_ste)
     fit_fig = create_fit_figure(
-        nv_list, freqs, norm_counts, norm_counts_ste, nv_inds=None
+        nv_list,
+        freqs,
+        norm_counts,
+        norm_counts_ste,
+        nv_inds=nv_inds,
+        split_esr=split_esr,
     )
 
     kpl.show(block=True)
