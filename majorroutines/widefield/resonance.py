@@ -65,12 +65,16 @@ def create_fit_figure(
     axes_pack=None,
     layout=None,
     no_legend=True,
+    nv_inds=None,
 ):
     ### Do the fitting
 
     num_nvs = len(nv_list)
     num_freqs = len(freqs)
     half_num_freqs = num_freqs // 2
+    if nv_inds is None:
+        nv_inds = list(range(num_nvs))
+    num_nvs = len(nv_inds)
 
     def constant(freq):
         norm = 1
@@ -89,7 +93,7 @@ def create_fit_figure(
 
     do_fit = False
     if do_fit:
-        for nv_ind in range(num_nvs):
+        for nv_ind in nv_inds:
             nv_counts = norm_counts[nv_ind]
             nv_counts_ste = norm_counts_ste[nv_ind]
             amp_guess = 1 - np.max(nv_counts)
@@ -168,12 +172,10 @@ def create_fit_figure(
     ### Make the figure
 
     if axes_pack is None:
-        # figsize = [6.5, 6.0]
-        figsize = [6.5, 5.0]
-        figsize[0] *= 3
-        figsize[1] *= 3
+        figsize = kpl.double_figsize
+        figsize[1] = 10
         # figsize = [6.5, 4.0]
-        layout = kpl.calc_mosaic_layout(num_nvs, num_rows=None)
+        layout = kpl.calc_mosaic_layout(num_nvs, num_rows=15)
         fig, axes_pack = plt.subplot_mosaic(
             layout, figsize=figsize, sharex=True, sharey=True
         )
@@ -181,10 +183,10 @@ def create_fit_figure(
 
     widefield.plot_fit(
         axes_pack_flat,
-        nv_list,
+        [nv_list[ind] for ind in nv_inds],
         freqs,
-        norm_counts,
-        norm_counts_ste,
+        norm_counts[nv_inds],
+        norm_counts_ste[nv_inds],
         fit_fns,
         popts,
         no_legend=no_legend,
@@ -198,7 +200,11 @@ def create_fit_figure(
     # kpl.set_shared_ax_ylabel(ax, "Relative change in fluorescence")
     ax.set_xticks([2.80, 2.95])
     ax.set_yticks([0, 1])
-    ax.set_ylim([-0.3, 2])
+    ax.set_ylim([-0.3, 1.3])
+    # ax.set_ylim([-0.3, 2])
+
+    for ax in axes_pack_flat:
+        ax.tick_params(labelsize=kpl.FontSize.SMALL.value)
 
     # ax = axes_pack[layout[-1, 0]]
     # ax.set_xlabel(" ")
@@ -345,7 +351,19 @@ if __name__ == "__main__":
 
     ###
 
-    exclude_inds = [72, 64, 55, 96, 112, 87, 89, 114, 17, 12, 99, 116, 32, 107, 58, 36]
+    # fmt: off
+    exclude_inds1= [72, 64, 55, 96, 112, 87, 89, 114, 17, 12, 99, 116, 32, 107, 58, 36]
+    exclude_inds2 = [12, 14, 11, 13, 52, 61, 116, 31, 32, 26, 87, 101, 105]
+    # exclude_inds = exclude_inds1[:5] + exclude_inds2[:7]
+    exclude_inds = exclude_inds1[:5]
+    exclude_inds = list(set(exclude_inds))
+    nv_inds = [ind for ind in range(117) if ind not in exclude_inds]
+    nv_inds = None
+    nva_inds = []  # Larger splitting
+    nvb_inds = []  # Smaller splitting
+    nvc_inds = []  # Strongly coupled
+    nvd_inds = []  # No signal
+    # fmt: on
 
     file_id = 1732403187814
 
@@ -394,7 +412,9 @@ if __name__ == "__main__":
     # sys.exit()
 
     # raw_fig = create_raw_data_figure(nv_list, freqs, avg_counts, avg_counts_ste)
-    fit_fig = create_fit_figure(nv_list, freqs, norm_counts, norm_counts_ste)
+    fit_fig = create_fit_figure(
+        nv_list, freqs, norm_counts, norm_counts_ste, nv_inds=None
+    )
 
     kpl.show(block=True)
     sys.exit()

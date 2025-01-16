@@ -503,6 +503,10 @@ def plot_points(ax, x, y, yerr=None, size=None, **kwargs):
     if "markerfacecolor" in kwargs:
         face_color = kwargs["markerfacecolor"]
     else:
+        # if size is Size.TINY:
+        #     face_color = color
+        # else:
+        #     face_color = lighten_color_hex(color)
         face_color = lighten_color_hex(color)
 
     # Defaults

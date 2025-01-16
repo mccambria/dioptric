@@ -432,6 +432,14 @@ def process_and_plot(
             if ind == len_vals - 1:
                 ax.set_xlabel("NV index")
 
+        kwargs = {"color": kpl.KplColors.DARK_GRAY, "linewidths": 0.1}
+        ax.hlines(
+            y=np.arange(0, num_nvs - 1) + 0.5, xmin=-0.5, xmax=num_nvs - 0.5, **kwargs
+        )
+        ax.vlines(
+            x=np.arange(0, num_nvs - 1) + 0.5, ymin=-0.5, ymax=num_nvs - 0.5, **kwargs
+        )
+
     if passed_ax is not None:
         return ret_val
     # return figs

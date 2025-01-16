@@ -1171,8 +1171,8 @@ def plot_fit(
         # Plot the points
         # ls = "none" if fn is not None else "solid"
         # size = kpl.Size.SMALL
-        size = kpl.Size.XSMALL
-        # size = kpl.Size.TINY
+        # size = kpl.Size.XSMALL
+        size = kpl.Size.TINY
         label = str(nv_num)
         kpl.plot_points(
             ax,
