@@ -175,7 +175,7 @@ def create_fit_figure(
         figsize = kpl.double_figsize
         figsize[1] = 10
         # figsize = [6.5, 4.0]
-        layout = kpl.calc_mosaic_layout(num_nvs, num_rows=15)
+        layout = kpl.calc_mosaic_layout(num_nvs, num_cols=6)
         fig, axes_pack = plt.subplot_mosaic(
             layout, figsize=figsize, sharex=True, sharey=True
         )
@@ -359,10 +359,26 @@ if __name__ == "__main__":
     exclude_inds = list(set(exclude_inds))
     nv_inds = [ind for ind in range(117) if ind not in exclude_inds]
     nv_inds = None
-    nva_inds = []  # Larger splitting
-    nvb_inds = []  # Smaller splitting
-    nvc_inds = []  # Strongly coupled
-    nvd_inds = []  # No signal
+    nva_inds = [0,1,2,6,8,9,10,19,20,23,25,28,31,32,33,35,36,38,39,42,43,44,46,48,50,56,57,61,62,63,64,68,69,75,77,80,81,82,86,87,88,90,91,92,95,100,101,102,103,106,107,108,112,114,116]  # Larger splitting
+    nvb_inds = [3, 4, 5, 7, 11, 12, 13, 14, 15, 16, 17, 18, 21, 22, 24, 26, 27, 29, 30, 34, 37, 40, 41, 45, 47, 49, 51, 52, 53, 54, 55, 58, 59, 60, 65, 66, 67, 70, 71, 72, 73, 74, 76, 78, 79, 83, 84, 85, 89, 93, 94, 96, 97, 98, 99, 104, 105, 109, 110, 111, 113, 115]  # Smaller splitting
+    split_esr = [12, 13, 14, 52, 61, 116] 
+    broad_esr = [11] 
+    bad_pi = split_esr + broad_esr
+    weak_esr = [72, 64, 55, 96, 112, 87, 89, 114, 17, 12, 99, 116, 32, 107, 58, 36] 
+    for ind in split_esr:
+        for nv_list in [nva_inds, nvb_inds]:
+            if ind in nv_list:
+                nv_list.remove(ind)
+                nv_list.append(ind)
+            if ind in weak_esr[:5]:
+                nv_list.remove(ind)
+    # nv_inds = nva_inds + nvb_inds
+    chunk_size = 3
+    nv_inds = []
+    max_length = max(len(nva_inds), len(nvb_inds))
+    for i in range(0, max_length, chunk_size):
+        nv_inds.extend(nva_inds[i:i + chunk_size])  
+        nv_inds.extend(nvb_inds[i:i + chunk_size])
     # fmt: on
 
     file_id = 1732403187814
