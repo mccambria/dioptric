@@ -1184,7 +1184,7 @@ def plot_fit(
             color=color,
             linestyle=linestyle,
         )
-        # kpl.anchored_text(ax, nv_ind)
+        # kpl.anchored_text(ax, nv_ind, size=kpl.Size.TINY)
 
         # Plot the fit
         if fn is not None:
@@ -1193,6 +1193,7 @@ def plot_fit(
             if norms is not None:
                 fit_vals /= norm
             kpl.plot_line(ax, x_linspace, fit_vals, color=color)
+            # kpl.plot_line(ax, x_linspace, fit_vals, color=kpl.lighten_color_hex(color, 0.5))
 
         if not no_legend:
             loc = kpl.Loc.UPPER_LEFT

@@ -58,7 +58,7 @@ class MarkerSize(float, Enum):
     NORMAL = 7
     SMALL = 6
     XSMALL = 5
-    TINY = 4
+    TINY = 3
 
 
 class LineWidth(float, Enum):
@@ -67,7 +67,7 @@ class LineWidth(float, Enum):
     NORMAL = 1.5
     SMALL = 1.25
     XSMALL = 1.1
-    TINY = 1.0
+    TINY = 0.8
 
 
 class MarkerEdgeWidth(float, Enum):
@@ -75,7 +75,7 @@ class MarkerEdgeWidth(float, Enum):
     NORMAL = 1.5
     SMALL = 1.25
     XSMALL = 1.1
-    TINY = 1.0
+    TINY = 0.8
 
 
 class FontSize(float, Enum):

@@ -67,7 +67,6 @@ def create_fit_figure(
     no_legend=True,
     nv_inds=None,
     split_esr=None,
-    bad_pi=None,
 ):
     ### Do the fitting
 
@@ -99,74 +98,66 @@ def create_fit_figure(
             nv_counts = norm_counts[nv_ind]
             nv_counts_ste = norm_counts_ste[nv_ind]
 
+            # Pre-processing
+
+            guess_params = [1, 6, None, 1, 6, None]
+
             if nv_ind in split_esr:
-                num_resonances = 4
+                guess_params.append(0.002)
+
+                def fit_fn(freq, *args):
+                    half_splitting = args[-1] / 2
+                    split_line_1 = gaussian(
+                        freq, args[0], args[1], args[2] - half_splitting
+                    ) + gaussian(freq, args[0], args[1], args[2] + half_splitting)
+                    split_line_2 = gaussian(
+                        freq, args[3], args[4], args[5] - half_splitting
+                    ) + gaussian(freq, args[3], args[4], args[5] + half_splitting)
+                    return split_line_1 + split_line_2
             else:
-                num_resonances = 2
 
-            freq_guesses = None
-            if num_resonances == 1:
-                freq_guesses = [np.median(freqs)]
-            elif num_resonances == 2:
-                # Find peaks in left and right halves
-                low_freq_guess = freqs[np.argmax(nv_counts[:half_num_freqs])]
-                high_freq_guess = 2 * 2.87 - low_freq_guess
-                freq_guesses = [low_freq_guess, high_freq_guess]
-            elif num_resonances == 4:
-                low_freq_guess = freqs[np.argmax(nv_counts[:half_num_freqs])]
-                high_freq_guess = 2 * 2.87 - low_freq_guess
-                freq_guesses = [
-                    low_freq_guess - 0.001,
-                    low_freq_guess + 0.001,
-                    high_freq_guess - 0.001,
-                    high_freq_guess + 0.001,
-                ]
+                def fit_fn(freq, *args):
+                    return gaussian(freq, *args[0:3]) + gaussian(freq, *args[3:6])
 
-            guess_params = [1, 5, None]  # Just for one line in the spectrum
-            num_params_single_line = len(guess_params)
-            guess_params *= num_resonances
+            low_freq_guess = freqs[np.argmax(nv_counts[:half_num_freqs])]
+            high_freq_guess = 2 * 2.87 - low_freq_guess
+            guess_params[2] = low_freq_guess
+            guess_params[5] = high_freq_guess
             num_params = len(guess_params)
             bounds = [[0] * num_params, [np.inf] * num_params]
-            for ind in range(num_resonances):
-                guess_params[2 + num_params_single_line * ind] = freq_guesses[ind]
-                bounds[0][1 + num_params_single_line * ind] = 3
-                bounds[1][1 + num_params_single_line * ind] = 6
+            # Linewidth limits
+            for ind in [1, 4]:
+                bounds[0][ind] = 3
+                bounds[1][ind] = 30
+            if nv_ind in split_esr:
+                bounds[1][-1] = 0.03
 
-            def fit_fn(freq, *args):
-                num_resonances = len(args) // num_params_single_line
-                for ind in range(num_resonances):
-                    start = ind * num_params_single_line
-                    end = start + num_params_single_line
-                    line = gaussian(freq, *args[start:end])
-                    if ind == 0:
-                        ret_val = line
-                    else:
-                        ret_val += line
-                return ret_val
+            # Do the fit
 
-            if num_resonances == 0:
-                fit_fns.append(constant)
-                popts.append([])
-            else:
-                _, popt, pcov = fit_resonance(
-                    freqs,
-                    nv_counts,
-                    nv_counts_ste,
-                    fit_func=fit_fn,
-                    guess_params=guess_params,
-                    bounds=bounds,
-                )
+            # if num_resonances == 0:
+            #     fit_fns.append(constant)
+            #     popts.append([])
+            # else:
+            _, popt, pcov = fit_resonance(
+                freqs,
+                nv_counts,
+                nv_counts_ste,
+                fit_func=fit_fn,
+                guess_params=guess_params,
+                bounds=bounds,
+            )
 
-                # Tracking for plotting
-                fit_fns.append(fit_fn)
-                popts.append(popt)
-                pcovs.append(pcov)
+            # Tracking for plotting
+            fit_fns.append(fit_fn)
+            popts.append(popt)
+            pcovs.append(pcov)
 
-            if num_resonances == 1:
-                center_freqs.append(popt[2])
-                center_freq_errs.append(np.sqrt(pcov[2, 2]))
-            elif num_resonances == 2:
-                center_freqs.append((popt[2], popt[5]))
+            # if num_resonances == 1:
+            #     center_freqs.append(popt[2])
+            #     center_freq_errs.append(np.sqrt(pcov[2, 2]))
+            # elif num_resonances == 2:
+            #     center_freqs.append((popt[2], popt[5]))
+            center_freqs.append((popt[2], popt[5]))
     else:
         fit_fns = None
         popts = None
@@ -365,30 +356,35 @@ if __name__ == "__main__":
     exclude_inds = list(set(exclude_inds))
     nv_inds = [ind for ind in range(117) if ind not in exclude_inds]
     nv_inds = None
-    nva_inds = [0,1,2,6,8,9,10,19,20,23,25,28,31,32,33,35,36,38,39,42,43,44,46,48,50,56,57,61,62,63,64,68,69,75,77,80,81,82,86,87,88,90,91,92,95,100,101,102,103,106,107,108,112,114,116]  # Larger splitting
-    nvb_inds = [3, 4, 5, 7, 11, 12, 13, 14, 15, 16, 17, 18, 21, 22, 24, 26, 27, 29, 30, 34, 37, 40, 41, 45, 47, 49, 51, 52, 53, 54, 55, 58, 59, 60, 65, 66, 67, 70, 71, 72, 73, 74, 76, 78, 79, 83, 84, 85, 89, 93, 94, 96, 97, 98, 99, 104, 105, 109, 110, 111, 113, 115]  # Smaller splitting
-    split_esr = [12, 13, 14, 52, 61, 116] 
-    broad_esr = [11] 
-    bad_pi = split_esr + broad_esr
+    nva_inds = [0,1,2,6,8,9,10, 13, 19,20,23,25,28,31,32,33,35,36,38,39,42,43,44,46,48,50,56,57,61,62,63,64, 67,68,69,75,77,80,81,82, 85,86,87,88,90,91,92,95, 99,100,101,102,103,106,107,108,112, 113,114,116]  # Larger splitting
+    nvb_inds = [3, 4, 5, 7, 11, 12, 14, 15, 16, 17, 18, 21, 22, 24, 26, 27, 29, 30, 34, 37, 40, 41, 45, 47, 49, 51, 52, 53, 54, 55, 58, 59, 60, 65, 66, 70, 71, 72, 73, 74, 76, 78, 79, 83, 84, 89, 93, 94, 96, 97, 98, 104, 105, 109, 110, 111, 115]  # Smaller splitting
+    split_esr = [12, 13, 14, 61, 116] 
+    broad_esr = [52, 11] 
     # weak_esr = [72, 64, 55, 96, 112, 87, 89, 114, 17, 12, 99, 116, 32, 107, 58, 36] 
     # weak_esr = weak_esr[:6]
     weak_esr = [72, 64, 55, 96, 112, 87, 12, 58, 36]
+    # weak_esr = []
+    # split_esr = []
+    # nv_inds = nva_inds
     for ind in weak_esr:
         for nv_list in [nva_inds, nvb_inds]:
             if ind in nv_list:
                 nv_list.remove(ind)
-    for ind in split_esr:
-        for nv_list in [nva_inds, nvb_inds]:
-            if ind in nv_list:
-                nv_list.remove(ind)
-                nv_list.append(ind)
+    for issue_list in [broad_esr, split_esr]:
+        for ind in issue_list:
+            for nv_list in [nva_inds, nvb_inds]:
+                if ind in nv_list:
+                    nv_list.remove(ind)
+                    nv_list.append(ind)
     # nv_inds = nva_inds + nvb_inds
     chunk_size = 3
     nv_inds = []
     max_length = max(len(nva_inds), len(nvb_inds))
+    nva_inds[-5:] = [*nva_inds[-3:], *nva_inds[-5:-3]]
     for i in range(0, max_length, chunk_size):
-        nv_inds.extend(nva_inds[i:i + chunk_size])  
         nv_inds.extend(nvb_inds[i:i + chunk_size])
+        nv_inds.extend(nva_inds[i:i + chunk_size])  
+    # nv_inds[-3:] = 
     # fmt: on
 
     file_id = 1732403187814
@@ -436,7 +432,7 @@ if __name__ == "__main__":
     # print(np.argsort(mean_stes)[::-1])
     # print(np.sort(mean_stes)[::-1])
     # sys.exit()
-    for nv_ind in bad_pi:
+    for nv_ind in split_esr:
         contrast = np.max(norm_counts[nv_ind])
         norm_counts[nv_ind] /= contrast
         norm_counts_ste[nv_ind] /= contrast
