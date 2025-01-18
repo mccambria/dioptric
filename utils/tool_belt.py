@@ -326,13 +326,14 @@ def nan_corr_coef(arr):
     Version of numpy's correlation coefficient that respects nan by just throwing
     out any pairs of measurements where either value is nan
     """
+    return np.corrcoef(arr)
     arr = np.array(arr)
     num_rows = arr.shape[0]
     corr_coef_arr = np.empty((num_rows, num_rows))
     for ind in range(num_rows):
         for jnd in range(num_rows):
-            if ind == 5 and jnd == 6:
-                pass
+            # if ind == 5 and jnd == 6:
+            #     pass
             if jnd < ind:
                 corr_coef_arr[ind, jnd] = corr_coef_arr[jnd, ind]
                 continue
@@ -479,7 +480,8 @@ def cosine_double_sum(t, offset, decay, amp_1, freq_1, amp_2, freq_2):
     two_pi = 2 * np.pi
 
     return offset + np.exp(-t / abs(decay)) * (
-        amp_1 * np.cos(two_pi * freq_1 * t) + amp_2 * np.cos(two_pi * freq_2 * t)
+        amp_1 * np.cos(two_pi * freq_1 * t)
+        + amp_2 * np.cos(two_pi * freq_2 * t)
         # + amp_3 * np.cos(two_pi * freq_3 * t)
     )
 

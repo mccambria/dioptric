@@ -1171,8 +1171,8 @@ def plot_fit(
         # Plot the points
         # ls = "none" if fn is not None else "solid"
         # size = kpl.Size.SMALL
-        size = kpl.Size.XSMALL
-        # size = kpl.Size.TINY
+        # size = kpl.Size.XSMALL
+        size = kpl.Size.TINY
         label = str(nv_num)
         kpl.plot_points(
             ax,
@@ -1184,6 +1184,7 @@ def plot_fit(
             color=color,
             linestyle=linestyle,
         )
+        # kpl.anchored_text(ax, nv_ind, size=kpl.Size.TINY)
 
         # Plot the fit
         if fn is not None:
@@ -1192,6 +1193,7 @@ def plot_fit(
             if norms is not None:
                 fit_vals /= norm
             kpl.plot_line(ax, x_linspace, fit_vals, color=color)
+            # kpl.plot_line(ax, x_linspace, fit_vals, color=kpl.lighten_color_hex(color, 0.5))
 
         if not no_legend:
             loc = kpl.Loc.UPPER_LEFT

@@ -583,6 +583,9 @@ if __name__ == "__main__":
     # print(spot_weights)
     # sys.exit()
     spot_weights = curve_extreme_weights_simple(spot_weights)
+    print(f"median: {np.median(spot_weights)}")
+    print(f"mx: {np.max(spot_weights)}")
+    print(f"mn: {np.min(spot_weights)}")
     norm_spot_weights = spot_weights / np.sum(spot_weights)
     norm_spot_weights = np.array(norm_spot_weights)
     aom_voltage = 0.3708
