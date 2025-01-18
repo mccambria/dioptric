@@ -91,16 +91,16 @@ def do_image_single_nv(nv_sig):
 
 def do_charge_state_histograms(nv_list):
     # 50 ms
-    # num_reps = 200
-    # num_runs = 10
+    num_reps = 200
+    num_runs = 10
 
     # 100 ms
     # num_reps = 100
     # num_runs = 20
 
-    # 200 ms
-    num_reps = 50
-    num_runs = 20
+    # 200 ms``
+    # num_reps = 50
+    # num_runs = 20
 
     # Test
     # num_runs = 2
@@ -224,8 +224,8 @@ def do_optimize_green(nv_sig):
 
 def do_optimize_red(nv_sig, ref_nv_sig):
     opti_coords = []
-    # axes_list = [Axes.X, Axes.Y]
-    axes_list = [Axes.Y, Axes.X]
+    axes_list = [Axes.X, Axes.Y]
+    # axes_list = [Axes.Y, Axes.X]
     # shuffle(axes_list)
     for ind in range(1):
         axes = axes_list[ind]
@@ -756,7 +756,7 @@ def do_opx_constant_ac():
     opx.constant_ac(
         [],  # Digital channels
         [7],  # Analog channels
-        [0.45],  # Analog voltages
+        [0.25],  # Analog voltages
         [0],  # Analog frequencies
     )
 
@@ -869,16 +869,16 @@ def compile_speed_test(nv_list):
 
 def piezo_voltage_to_pixel_calibration():
     cal_voltage_coords = np.array(
-        [[0.0, 0.0], [-0.25, -0.25], [0.25, -0.25]], dtype="float32"
+        [[3.0, 0.0], [2.0, 1.0], [1.5, -0.5]], dtype="float32"
     )  # Voltage system coordinates
     # cal_pixel_coords = np.array(
     #     [[81.109, 110.177], [64.986, 94.177], [96.577, 95.047]], dtype="float32"
     # )
     cal_pixel_coords = np.array(
         [
-            [91.778, 122.027],
-            [109.388, 139.694],
-            [75.396, 138.755],
+            [50.133, 115.925],
+            [91.972, 64.584],
+            [130.875, 153.92],
         ],
         dtype="float32",
     )
@@ -902,33 +902,6 @@ def piezo_voltage_to_pixel_calibration():
         print(f"    [{row[0]:.8f}, {row[1]:.8f}, {row[2]:.8f}],")
     print("]")
     return M_inv
-
-
-def pixel_to_voltage(initial_pixel_coords, final_pixel_coords):
-    # Convert initial and final pixel coordinates to homogeneous coordinates (x, y, 1)
-    initial_pixel_coords_h = np.array(
-        [initial_pixel_coords[0], initial_pixel_coords[1], 1.0]
-    )
-    final_pixel_coords_h = np.array([final_pixel_coords[0], final_pixel_coords[1], 1.0])
-
-    # Calculate pixel drift
-    pixel_drift = final_pixel_coords_h - initial_pixel_coords_h
-
-    # Get the inverse affine transformation matrix
-    M_inv = piezo_voltage_to_pixel_calibration()
-
-    # Calculate the corresponding voltage drift using the inverse affine matrix
-    voltage_drift_h = np.dot(M_inv, pixel_drift)  # No transpose needed
-
-    # Update only the x and y components of the global coordinates
-    final_voltage = np.array()  # Start with all original global coordinates
-    final_voltage[:2] += voltage_drift_h[:2]  # Update x and y components with drift
-
-    print(f"Pixel drift: {pixel_drift[:2]}")
-    print(f"Voltage drift: {voltage_drift_h[:2]}")
-    print(f"Final voltage coordinates: {final_voltage.tolist()}")
-
-    return final_voltage.tolist()
 
 
 def do_optimize_SLM_calibation(nv_list, coords_key):
@@ -995,8 +968,8 @@ if __name__ == "__main__":
     # magnet_angle = 90
     date_str = "2024_03_12"
     sample_coords = [2.0, 0.0]
-    z_coord = 3.1
-    # Load NV pixel coordinates
+    z_coord = 1.65
+    # Load NV pixel coordinates1
     pixel_coords_list = load_nv_coords(
         file_path="slmsuite/nv_blob_detection/nv_blob_filtered_160nvs_reordered.npz",
     ).tolist()
@@ -1035,16 +1008,16 @@ if __name__ == "__main__":
     #     [207.435, 74.049],
     # ]
     # green_coords_list = [
-    #     [109.155, 107.062],
-    #     [115.74, 101.491],
-    #     [109.294, 115.882],
-    #     [98.799, 100.988],
+    #     [109.113, 106.794],
+    #     [115.725, 101.224],
+    #     [109.303, 115.696],
+    #     [98.796, 100.757],
     # ]
     # red_coords_list = [
-    #     [73.689, 72.526],
-    #     [78.935, 67.899],
-    #     [73.948, 79.715],
-    #     [65.229, 67.713],
+    #     [73.524, 72.417],
+    #     [78.906, 67.807],
+    #     [73.943, 79.609],
+    #     [65.14, 67.578],
     # ]
     num_nvs = len(pixel_coords_list)
     threshold_list = [45.5] * num_nvs
@@ -1079,21 +1052,21 @@ if __name__ == "__main__":
     # scc_duration_list = [128, 104, 92, 84, 152, 124, 128, 80, 100, 116, 108, 88, 120, 100, 92, 100, 112, 60, 76, 92, 164, 68, 84, 84, 64, 136, 136, 76, 92, 72, 76, 116, 144, 180, 96, 92, 96, 124, 80, 100, 164, 80, 108, 80, 92, 80, 84, 96, 80, 100, 92, 64, 116, 100, 84, 76, 188, 92, 72, 72, 72, 72, 72, 184, 140, 80, 68, 116, 160, 112, 72, 132, 84, 108, 48, 108, 96, 124, 112, 84, 96, 84, 84, 84, 84, 80, 124, 272, 124, 72, 100, 100, 160, 96, 72, 204, 72, 128, 84, 120, 116, 108, 128, 136, 108, 104, 148, 128, 144, 96, 100, 108, 72, 100, 80, 88, 80]
     scc_duration_list = [136, 108, 96, 92, 208, 124, 100, 92, 88, 112, 108, 92, 108, 92, 100, 100, 116, 116, 64, 100, 136, 68, 92, 72, 60, 124, 116, 72, 92, 64, 72, 120, 124, 232, 92, 96, 96, 116, 84, 96, 144, 80, 116, 84, 100, 80, 84, 72, 80, 108, 84, 72, 136, 108, 100, 100, 188, 92, 64, 84, 60, 100, 76, 184, 152, 92, 68, 108, 160, 108, 72, 132, 80, 112, 60, 76, 104, 116, 108, 96, 96, 92, 84, 92, 84, 64, 124, 100, 124, 80, 108, 96, 136, 80, 80, 188, 188, 128, 84, 116, 124, 100, 100, 124, 112, 84, 196, 108, 124, 100, 100, 104, 76, 104, 84, 84, 84]
 
-    #103nvs
+    # 103nvs
     # include_inds = [0, 1, 2, 3, 4, 5, 6, 7, 8, 13, 14, 15, 16, 17, 18, 21, 22, 23, 24, 25, 26, 28, 29, 31, 33, 36, 37, 38, 39, 40, 42, 44, 46, 47, 48, 49, 51, 52, 53, 56, 57, 58, 60, 62, 64, 65, 66, 68, 69, 70, 71, 72, 74, 75, 77, 78, 79, 80, 83, 88, 90, 91, 92, 94, 95, 96, 97, 100, 101, 103, 105, 106, 107, 108, 109, 110, 112, 114, 116, 118, 120, 121, 122, 123, 124, 125, 126, 128, 131, 134, 136, 138, 140, 141, 145, 146, 147, 152, 153, 154, 156, 157, 158]
-    #117nvs
+    # 117nvs
     include_inds = [0,1,2,3,5,6,7,8,13,14,15,16,17,18,20,21,22,23,24,25,26,28,29,31,32,33,34,36,37,39,42,44,45,46,47,48,49,51,52,53,55,56,57,58,60,61,62,64,65,66,68,69,70,71,72,73,74,75,77,79,83,84,85,88,89,90,91,92,94,95,96,97,99,100,101,102,103,105,106,107,108,109,110,111,113,114,116,117,118,120,122,123,124,125,128,131,132,134,136,137,138,140,141,142,145,146,147,148,149,152,153,154,155,156,157,158,159,]
     # Initialize a list with None values
-    # arranged_scc_duration_list = [None] * num_nvs
-    # for i, idx in enumerate(include_inds):
-    #     arranged_scc_duration_list[idx] = scc_duration_list[i]
-    # scc_duration_list = arranged_scc_duration_list
-
-    threshold_list = [17.5, 16.5, 12.5, 24.5, 21.5, 22.5, 19.5, 18.5, 17.5, 18.5, 27.5, 20.5, 23.5, 17.5, 18.5, 17.5, 23.5, 19.5, 10.5, 16.5, 17.5, 15.5, 21.5, 17.5, 18.5, 19.5, 23.5, 17.5, 23.5, 18.5, 15.5, 16.5, 23.5, 16.5, 19.5, 18.5, 15.5, 20.5, 14.5, 17.5, 23.5, 26.5, 17.5, 17.5, 16.5, 12.5, 13.5, 15.5, 16.5, 18.5, 20.5, 12.5, 18.5, 23.5, 16.5, 17.5, 22.5, 13.5, 14.5, 22.5, 14.5, 15.5, 13.5, 21.5, 18.5, 18.5, 14.5, 17.5, 17.5, 18.5, 15.5, 17.5, 13.5, 15.5, 14.5, 21.5, 17.5, 17.5, 18.5, 16.5, 16.5, 13.5, 17.5, 17.5, 14.5, 14.5, 18.5, 29.5, 19.5, 16.5, 21.5, 16.5, 17.5, 14.5, 19.5, 18.5, 15.5, 15.5, 20.5, 16.5, 14.5, 16.5, 14.5, 17.5, 16.5, 21.5, 13.5, 14.5, 15.5, 12.5, 17.5, 16.5, 12.5, 12.5, 12.5, 12.5, 12.5]
-    arranged_threshold_list = [None] * num_nvs
+    arranged_scc_duration_list = [None] * num_nvs
     for i, idx in enumerate(include_inds):
-        arranged_threshold_list[idx] = threshold_list[i]
-    threshold_list = arranged_threshold_list
+        arranged_scc_duration_list[idx] = scc_duration_list[i]
+    scc_duration_list = arranged_scc_duration_list
+
+    # threshold_list = [17.5, 16.5, 12.5, 24.5, 21.5, 22.5, 19.5, 18.5, 17.5, 18.5, 27.5, 20.5, 23.5, 17.5, 18.5, 17.5, 23.5, 19.5, 10.5, 16.5, 17.5, 15.5, 21.5, 17.5, 18.5, 19.5, 23.5, 17.5, 23.5, 18.5, 15.5, 16.5, 23.5, 16.5, 19.5, 18.5, 15.5, 20.5, 14.5, 17.5, 23.5, 26.5, 17.5, 17.5, 16.5, 12.5, 13.5, 15.5, 16.5, 18.5, 20.5, 12.5, 18.5, 23.5, 16.5, 17.5, 22.5, 13.5, 14.5, 22.5, 14.5, 15.5, 13.5, 21.5, 18.5, 18.5, 14.5, 17.5, 17.5, 18.5, 15.5, 17.5, 13.5, 15.5, 14.5, 21.5, 17.5, 17.5, 18.5, 16.5, 16.5, 13.5, 17.5, 17.5, 14.5, 14.5, 18.5, 29.5, 19.5, 16.5, 21.5, 16.5, 17.5, 14.5, 19.5, 18.5, 15.5, 15.5, 20.5, 16.5, 14.5, 16.5, 14.5, 17.5, 16.5, 21.5, 13.5, 14.5, 15.5, 12.5, 17.5, 16.5, 12.5, 12.5, 12.5, 12.5, 12.5]
+    # arranged_threshold_list = [None] * num_nvs
+    # for i, idx in enumerate(include_inds):
+    #     arranged_threshold_list[idx] = threshold_list[i]
+    # threshold_list = arranged_threshold_list
 
     # final_drop_inds = [23, 73, 89, 99, 117, 120, 132, 137, 155, 157, 159]
     # include_inds = [ind for ind in include_inds if ind not in final_drop_inds]
@@ -1161,7 +1134,7 @@ if __name__ == "__main__":
             # scc_duration=scc_duration_list[ind],
             # scc_amp=scc_amp_list[ind],
             threshold=threshold_list[ind],
-            # pulse_durations={VirtualLaserKey.SCC: scc_duration_list[ind]},
+            pulse_durations={VirtualLaserKey.SCC: scc_duration_list[ind]},
             # pulse_amps={
             #     VirtualLaserKey.SCC: scc_amp_list[ind],
             #     VirtualLaserKey.CHARGE_POL: charge_pol_amps[ind],
@@ -1178,7 +1151,10 @@ if __name__ == "__main__":
     # nv_sig.expected_counts = 1650
     # nv_sig.expected_counts = 3359.0
     # nv_sig.expected_counts = 1181.0
-    nv_sig.expected_counts = 1450
+    # nv_sig.expected_counts = 1420
+    nv_sig.expected_counts = 780
+    # nv_sig.expected_counts = 1350
+
     # num_nvs = len(nv_list)
     # print(f"Final NV List: {nv_list}")
     # Ensure data is defined before accessing it
@@ -1259,10 +1235,11 @@ if __name__ == "__main__":
         # do_optimize_z(nv_sig)
         # do_optimize_xyz(nv_sig)
         # pos.set_xyz_on_nv(nv_sig)
+        # piezo_voltage_to_pixel_calibration()
 
         do_compensate_for_drift(nv_sig)
-        do_widefield_image_sample(nv_sig, 50)
-        do_charge_state_histograms(nv_list)
+        # do_widefield_image_sample(nv_sig, 50)
+        # do_charge_state_histograms(nv_list)
         # do_charge_state_conditional_init(nv_list)
 
         # for point in points:
@@ -1270,7 +1247,6 @@ if __name__ == "__main__":
         #     nv_sig.coords[CoordsKey.SAMPLE][0] += x
         #     nv_sig.coords[CoordsKey.SAMPLE][1] += y
         #     print(nv_sig.coords[CoordsKey.SAMPLE])
-        #     do_scanning_image_sample(nv_sig)
 
         # Move diagonally forward
         # for x, y in zip(x_values, y_values):
@@ -1280,15 +1256,15 @@ if __name__ == "__main__":
 
         # for z in np.linspace(1.0, 2.0, 11):
         #     nv_sig.coords[CoordsKey.Z] = z
-        # do_scanning_image_sample(nv_sig)
+        #     do_scanning_image_sample(nv_sig)
 
         # nv_sig.coords[CoordsKey.z] = 0.4
         # do_scanning_image_sample(nv_sig)
 
-        # do_scanning_image_sample(nv_sig)
+        # do_scanning_image_sample(nv_sig
         # do_scanning_image_sample_zoom(nv_sig)
         # do_widefield_image_sample(nv_sig, 50)
-        # do_widefield_image_sample(nv_sig, 100)
+        # do_widefield_image_sample(nv_sig, 200)
 
         # do_image_nv_list(nv_list)
         # do_image_single_nv(nv_sig)
@@ -1314,7 +1290,7 @@ if __name__ == "__main__":
         # do_optimize_loop(nv_list, coords_key)
 
         # do_optimize_pol_amp(nv_list)
-        # do_optimize_readout_amp(nv_list)
+        do_optimize_readout_amp(nv_list)
         # do_optimize_readout_duration(nv_list)
         # optimize_readout_amp_and_duration(nv_list)
         # do_optimize_pol_duration(nv_list)
