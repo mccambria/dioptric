@@ -225,7 +225,7 @@ def calibration_triangle():
     cam.set_exposure(0.1)
 
     # Define parameters for the equilateral triangle
-    center = (720, 550)  # Center of the triangle
+    center = (710, 550)  # Center of the triangle
     side_length = 300  # Length of each side of the triangle
 
     # Calculate the coordinates of the three vertices of the equilateral triangle
@@ -266,10 +266,10 @@ def nuvu2thorcam_calibration(coords):
     to the Thorlabs camera's coordinate system using an affine transformation.
     """
     cal_coords_thorcam = np.array(
-        [[979.807, 700.0], [460.192, 700.0], [720.0, 250.0]], dtype="float32"
+        [[969.807, 700.0], [450.192, 700.0], [710.0, 250.0]], dtype="float32"
     )
     cal_coords_nuvu = np.array(
-        [[189.7, 34.992], [190.896, 213.92], [31.871, 123.664]], dtype="float32"
+        [[196.637, 34.905], [197.532, 214.032], [37.77, 122.844]], dtype="float32"
     )
 
     # Compute the affine transformation matrix
@@ -285,6 +285,7 @@ def nuvu2thorcam_calibration(coords):
 def load_nv_coords(
     # file_path="slmsuite/nv_blob_detection/nv_blob_filtered_160nvs_reordered.npz",
     file_path="slmsuite/nv_blob_detection/nv_blob_filtered_160nvs_reordered_selected_117nvs.npz",
+    # file_path="slmsuite/nv_blob_detection/nv_blob_filtered_160nvs_reordered_selected_117nvs_updated.npz",
     # file_path="slmsuite/nv_blob_detection/nv_blob_filtered_160nvs_reordered_selected_106nvs.npz",
 ):
     data = np.load(file_path, allow_pickle=True)
@@ -310,7 +311,7 @@ def compute_nvs_phase():
         shape=(4096, 2048),
         spot_vectors=thorcam_coords,
         basis="ij",
-        spot_amp=spot_weights,
+        # spot_amp=spot_weights,
         cameraslm=fs,
     )
     # Precondition computationally
@@ -322,11 +323,11 @@ def compute_nvs_phase():
     )
 
     initial_phase = hologram.extract_phase()
-    # Define the path to save the phase data
+    # Define the path to save the phase data1
     file_path = r"slmsuite\computed_phase"
     num_nvs = len(nuvu_pixel_coords)
     now = datetime.now()
-    date_time_str = now.strftime("%Y%m%d_%H%M%S")  # Format: YYYYMMDD_HHMMSS
+    date_time_str = now.strftime("%Y%m%d_%H%M%S")
     filename = f"slm_phase_{num_nvs}nvs_{date_time_str}.npy"
     # file_path = dm.get_file_path(__file__, filename)
     # Save the phase data
@@ -340,7 +341,7 @@ def write_nvs_phase():
     #     "slmsuite\computed_phase\slm_phase_160nvs_20241227_143040.npy"
     # )  # 160NVs weighted spots
     phase = np.load(
-        "slmsuite\computed_phase\slm_phase_117nvs_20250102_172936.npy"
+        "slmsuite\computed_phase\slm_phase_117nvs_20250116_143218.npy"
     )  # 117NVs weighted spots
     slm.write(phase, settle=True)
     # cam_plot()
@@ -365,8 +366,8 @@ try:
     # test_wavefront_calibration()
     # wavefront_calibration()
     # load_wavefront_calibration()
-    # compute_nvs_phase()
-    write_nvs_phase()
+    compute_nvs_phase()
+    # write_nvs_phase()
     # calibration_triangle()
     # circles()
     # smiley()

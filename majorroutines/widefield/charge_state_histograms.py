@@ -527,6 +527,6 @@ def main(
 
 if __name__ == "__main__":
     kpl.init_kplotlib()
-    data = dm.get_raw_data(file_id=1740694024306, load_npz=False)
+    data = dm.get_raw_data(file_id=1751678726196, load_npz=False)
     process_and_plot(data, do_plot_histograms=True)
     kpl.show(block=True)
