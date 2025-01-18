@@ -481,7 +481,6 @@ if __name__ == "__main__":
     # data = dm.get_raw_data(file_id=1733432867671, load_npz=True)
     # data = dm.get_raw_data(file_id=1732420670067, load_npz=True)
     data = dm.get_raw_data(file_id=1733583334808, load_npz=True)
-
     img_array = data["ref_img_array"]
     # print(img_arrays)
     # sys.exit()
@@ -693,7 +692,13 @@ if __name__ == "__main__":
         1.1708211389400445,
     ]
     # fmt: on
+    print(f"median: {np.median(spot_weights)}")
+    print(f"mx: {np.max(spot_weights)}")
+    print(f"mn: {np.min(spot_weights)}")
     spot_weights = curve_extreme_weights_simple(spot_weights)
+    print(f"median: {np.median(spot_weights)}")
+    print(f"mx: {np.max(spot_weights)}")
+    print(f"mn: {np.min(spot_weights)}")
     norm_spot_weights = spot_weights / np.sum(spot_weights)
     norm_spot_weights = np.array(norm_spot_weights)
     aom_voltage = 0.3472

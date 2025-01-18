@@ -34,15 +34,19 @@ def quartic_decay(tau, baseline, revival_time, decay_time, amp1, amp2, freq):
 
 def generate_initial_guess_and_bounds(tau, counts):
     baseline_guess = np.mean(counts[-10:])  # Use the end of the data for baseline
-    revival_time_guess = np.mean(np.diff(tau)) * 2  # Estimated period
+    # revival_time_guess = np.mean(np.diff(tau)) * 2  # Estimated period
     decay_time_guess = (tau[-1] - tau[0]) / 3  # Approximate decay time
     amp1_guess = (max(counts) - min(counts)) / 2
     amp2_guess = amp1_guess / 2
-
     # Frequency guess based on FFT
     fft_freqs = np.fft.rfftfreq(len(tau), d=(tau[1] - tau[0]))
     fft_spectrum = np.abs(np.fft.rfft(counts - baseline_guess))
     freq_guess = fft_freqs[np.argmax(fft_spectrum)]
+    freq_guess = fft_freqs[np.argmax(fft_spectrum)]
+    if freq_guess == 0:
+        freq_guess = 1 / (tau[-1] - tau[0])
+
+    revival_time_guess = 1 / freq_guess
 
     initial_guess = [
         baseline_guess,
@@ -55,7 +59,8 @@ def generate_initial_guess_and_bounds(tau, counts):
 
     # Adjust bounds if needed
     bounds = (
-        [0, tau[1] - tau[0], 0, 0, 0, 0],  # Lower bounds
+        # [0, tau[1] - tau[0], 0, 0, 0, 0],
+        [0, 0.5 * (tau[1] - tau[0]), 0, 0, 0, 0],  # Lower bounds
         [1, tau[-1], np.inf, np.inf, np.inf, np.inf],  # Upper bounds
     )
 
@@ -67,11 +72,6 @@ def process_multiple_files(file_ids):
     """
     Load and combine data from multiple file IDs.
 
-    Args:
-        file_ids (list): List of file IDs to process.
-
-    Returns:
-        dict: Combined data.
     """
     combined_data = dm.get_raw_data(file_id=file_ids[0])
     for file_id in file_ids[1:]:
@@ -112,9 +112,9 @@ def analyze_spin_echo(nv_list, taus, norm_counts, norm_counts_ste):
         sharex=True,
         sharey=False,
     )
-    zoom_axes = zoom_axes.flatten()
+    zoom_ax = zoom_axes.flatten()
 
-    for nv_idx, (ax, zoom_ax) in enumerate(zip(axes, zoom_axes)):
+    for nv_idx, (ax, zoom_ax) in enumerate(zip(axes, zoom_ax)):
         if nv_idx >= len(nv_list):
             ax.axis("off")
             zoom_ax.axis("off")
@@ -212,7 +212,10 @@ def analyze_spin_echo(nv_list, taus, norm_counts, norm_counts_ste):
             zoom_ax.legend(fontsize="small")
             zoom_ax.grid(True, which="both", linestyle="--", linewidth=0.5)
             zoom_ax.set_yticklabels([])
-            zoom_ax.set_xlim(40, 60)
+            zoom_ax.set_xlim(40e-6, 60e-6)
+            zoom_ax.set_xlim(
+                min(nv_tau), min(nv_tau) + 0.2 * (max(nv_tau) - min(nv_tau))
+            )
             zoom_ax.figure.canvas.draw()
 
         except Exception as e:
@@ -276,140 +279,6 @@ def analyze_spin_echo(nv_list, taus, norm_counts, norm_counts_ste):
     return parameters
 
 
-# def analyze_spin_echo(nv_list, taus, norm_counts, norm_counts_ste):
-#     fit_params = []
-#     chi_squared_values = []
-#     parameters = []
-#     sns.set(style="whitegrid", palette="muted")
-#     num_nvs = len(nv_list)
-#     colors = sns.color_palette("deep", num_nvs)
-#     num_cols = 9
-#     num_rows = int(np.ceil(len(nv_list) / num_cols))
-
-#     # Full plot
-#     fig, axes = plt.subplots(
-#         num_rows,
-#         num_cols,
-#         figsize=(num_cols * 3, num_rows * 1),
-#         sharex=True,
-#         sharey=True,
-#     )
-#     axes = axes.flatten()
-
-#     # Zoomed-in plot
-#     zoom_fig, zoom_axes = plt.subplots(
-#         num_rows,
-#         num_cols,
-#         figsize=(num_cols * 3, num_rows * 1),
-#         sharex=True,
-#         sharey=True,
-#     )
-#     zoom_axes = zoom_axes.flatten()
-
-#     for nv_idx, (ax, zoom_ax) in enumerate(zip(axes, zoom_axes)):
-#         if nv_idx >= len(nv_list):
-#             ax.axis("off")
-#             zoom_ax.axis("off")
-#             continue
-
-#         nv_tau = taus
-#         nv_counts = norm_counts[nv_idx]
-
-#         try:
-#             # Fit the data
-#             initial_guess, bounds = generate_initial_guess_and_bounds(nv_tau, nv_counts)
-#             popt, pcov = curve_fit(
-#                 quartic_decay, nv_tau, nv_counts, p0=initial_guess, bounds=bounds
-#             )
-#             fit_params.append(popt)
-
-#             # Calculate residuals and chi-squared
-#             residuals = nv_counts - quartic_decay(nv_tau, *popt)
-#             chi_sq = np.sum((residuals / np.std(residuals)) ** 2)
-#             degrees_of_freedom = len(nv_tau) - len(popt)
-#             red_chi_sq = chi_sq / degrees_of_freedom
-#             chi_squared_values.append(red_chi_sq)
-
-#             # Determine dynamic x and y ranges
-#             y_min, y_max = np.min(nv_counts), np.max(nv_counts)
-#             y_margin = 0.1 * (y_max - y_min)
-#             x_zoom_start, x_zoom_end = nv_tau[0], nv_tau[0] + 1.5 * popt[1]
-
-#             # Regular plot
-#             ax.errorbar(
-#                 nv_tau,
-#                 nv_counts,
-#                 yerr=norm_counts_ste[nv_idx],
-#                 fmt="o",
-#                 markersize=3,
-#                 label=f"NV {nv_idx}",
-#                 alpha=0.8,
-#                 ecolor="gray",
-#             )
-#             ax.plot(
-#                 nv_tau,
-#                 quartic_decay(nv_tau, *popt),
-#                 "-",
-#                 lw=2,
-#                 color=colors[nv_idx % len(colors)],
-#                 label="Fit",
-#             )
-#             ax.set_xlim(nv_tau[0], nv_tau[-1])
-#             ax.set_ylim(y_min - y_margin, y_max + y_margin)
-#             ax.legend(fontsize="small")
-
-#             # Zoomed plot
-#             zoom_ax.errorbar(
-#                 nv_tau,
-#                 nv_counts,
-#                 yerr=norm_counts_ste[nv_idx],
-#                 fmt="o",
-#                 markersize=3,
-#                 label=f"NV {nv_idx}",
-#                 alpha=0.8,
-#                 ecolor="gray",
-#             )
-#             zoom_ax.plot(
-#                 nv_tau,
-#                 quartic_decay(nv_tau, *popt),
-#                 "-",
-#                 lw=2,
-#                 color=colors[nv_idx % len(colors)],
-#                 label="Fit",
-#             )
-#             zoom_ax.set_xlim(x_zoom_start, x_zoom_end)
-#             zoom_ax.set_ylim(y_min - y_margin, y_max + y_margin)
-#             zoom_ax.legend(fontsize="small")
-
-#         except Exception as e:
-#             print(f"Fit failed for NV {nv_idx}: {e}")
-#             fit_params.append(None)
-#             chi_squared_values.append(np.inf)
-
-#     # Adjust figure titles and labels
-#     fig.suptitle("Spin Echo Fits", fontsize=16)
-#     fig.text(0.5, 0.02, "Time (µs)", ha="center")
-#     fig.text(
-#         0.02, 0.5, "Normalized NV$^{-}$ Population", va="center", rotation="vertical"
-#     )
-
-#     zoom_fig.suptitle("Zoomed Spin Echo Fits", fontsize=16)
-#     zoom_fig.text(0.5, 0.02, "Time (µs)", ha="center")
-#     zoom_fig.text(
-#         0.02,
-#         0.5,
-#         "Normalized NV$^{-}$ Population (Zoomed)",
-#         va="center",
-#         rotation="vertical",
-#     )
-
-#     plt.tight_layout()
-#     plt.subplots_adjust(top=0.9)
-#     plt.show()
-
-#     return parameters
-
-
 def plot_analysis_parameters(meaningful_parameters):
     import pandas as pd
 
@@ -471,12 +340,6 @@ if __name__ == "__main__":
     kpl.init_kplotlib()
 
     # Define the file IDs to process
-    # file_ids = [
-    #     1734158411844,
-    #     1734273666255,
-    #     1734371251079,
-    #     1734461462293,
-    # ]
     file_ids = [
         1734158411844,
         1734273666255,
@@ -500,7 +363,7 @@ if __name__ == "__main__":
         parameters = analyze_spin_echo(
             nv_list, total_evolution_times, norm_counts, norm_counts_ste
         )
-        # plot_analysis_parameters(parameters)
+        plot_analysis_parameters(parameters)
     except Exception as e:
         print(f"Error occurred: {e}")
         print(traceback.format_exc())

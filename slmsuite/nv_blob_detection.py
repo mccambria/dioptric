@@ -340,43 +340,43 @@ if __name__ == "__main__":
     #     filename="nv_blob_filtered_160nvs.npz",
     # )
 
-    # image_ids = [
-    #     1693359304252,
-    #     1693375930943,
-    #     1693374155876,
-    #     1693372069315,
-    #     1693363033340,
-    #     1693376854962,
-    #     1693361128042,
-    #     1693376833728,
-    #     1693379996949,
-    # ]  # Add more image IDs as needed
-    # # Process multiple images and remove duplicates
-    # unique_nv_coordinates, spot_sizes = process_multiple_images(
-    #     image_ids,
-    #     sigma=sigma,
-    #     lower_threshold=lower_threshold,
-    #     upper_threshold=upper_threshold,
-    #     smoothing_sigma=smoothing_sigma,
-    # )
-    # # Filter out-of-bounds coordinates and their corresponding spot sizes
-    # filtered_nv_coordinates = []
-    # filtered_spot_sizes = []
+    image_ids = [
+        1693359304252,
+        1693375930943,
+        1693374155876,
+        1693372069315,
+        1693363033340,
+        1693376854962,
+        1693361128042,
+        1693376833728,
+        1693379996949,
+    ]  # Add more image IDs as needed
+    # Process multiple images and remove duplicates
+    unique_nv_coordinates, spot_sizes = process_multiple_images(
+        image_ids,
+        sigma=sigma,
+        lower_threshold=lower_threshold,
+        upper_threshold=upper_threshold,
+        smoothing_sigma=smoothing_sigma,
+    )
+    # Filter out-of-bounds coordinates and their corresponding spot sizes
+    filtered_nv_coordinates = []
+    filtered_spot_sizes = []
 
-    # for coord, size in zip(unique_nv_coordinates, spot_sizes):
-    #     x, y = int(coord[0]), int(coord[1])
-    #     if not (0 <= x < 250 and 0 <= y < 250):
-    #         print(f"Skipping NV at ({coord[0]:.2f}, {coord[1]:.2f}) - Out of bounds")
-    #         continue  # Skip this coordinate and its spot size if out of bounds
+    for coord, size in zip(unique_nv_coordinates, spot_sizes):
+        x, y = int(coord[0]), int(coord[1])
+        if not (0 <= x < 250 and 0 <= y < 250):
+            print(f"Skipping NV at ({coord[0]:.2f}, {coord[1]:.2f}) - Out of bounds")
+            continue  # Skip this coordinate and its spot size if out of bounds
 
-    #     filtered_nv_coordinates.append(coord)
-    #     filtered_spot_sizes.append(size)
+        filtered_nv_coordinates.append(coord)
+        filtered_spot_sizes.append(size)
 
-    # # Print the results
-    # print(f"Number of NVs detected: {len(filtered_nv_coordinates)}")
-    # # Optionally print NV coordinates and spot sizes for debugging
-    # # print(f"Detected NV coordinates (optimized): {filtered_nv_coordinates}")
-    # # print(f"Corresponding spot sizes: {filtered_spot_sizes}")
+    # Print the results
+    print(f"Number of NVs detected: {len(filtered_nv_coordinates)}")
+    # Optionally print NV coordinates and spot sizes for debugging
+    # print(f"Detected NV coordinates (optimized): {filtered_nv_coordinates}")
+    # print(f"Corresponding spot sizes: {filtered_spot_sizes}")
 
     # # Save the results
     # save_results(
