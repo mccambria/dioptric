@@ -58,7 +58,7 @@ class MarkerSize(float, Enum):
     NORMAL = 7
     SMALL = 6
     XSMALL = 5
-    TINY = 4
+    TINY = 3
 
 
 class LineWidth(float, Enum):
@@ -67,7 +67,7 @@ class LineWidth(float, Enum):
     NORMAL = 1.5
     SMALL = 1.25
     XSMALL = 1.1
-    TINY = 1.0
+    TINY = 0.8
 
 
 class MarkerEdgeWidth(float, Enum):
@@ -75,7 +75,7 @@ class MarkerEdgeWidth(float, Enum):
     NORMAL = 1.5
     SMALL = 1.25
     XSMALL = 1.1
-    TINY = 1.0
+    TINY = 0.8
 
 
 class FontSize(float, Enum):
@@ -157,10 +157,10 @@ data_color_cycler = [
     KplColors.CYAN,
     mpl.colors.cnames["darkgoldenrod"],
     # mpl.colors.cnames["greenyellow"],
-    mpl.colors.cnames["darkseagreen"],
+    # mpl.colors.cnames["darkseagreen"],
     mpl.colors.cnames["indianred"],
     mpl.colors.cnames["darkslateblue"],
-    mpl.colors.cnames["sienna"],
+    # mpl.colors.cnames["sienna"],
 ]
 line_color_cycler = data_color_cycler.copy()
 hist_color_cycler = data_color_cycler.copy()
@@ -223,10 +223,14 @@ def zero_to_one_threshold(val):
 kplotlib_initialized = False
 
 
-def calc_mosaic_layout(num_panels, num_rows=None):
-    if num_rows is None:
+def calc_mosaic_layout(num_panels, num_rows=None, num_cols=None):
+    if num_rows is None and num_cols is None:
         num_rows = round(np.sqrt(num_panels))
-    num_cols = int(np.ceil(num_panels / num_rows))
+        num_cols = int(np.ceil(num_panels / num_rows))
+    elif num_rows is not None:
+        num_cols = int(np.ceil(num_panels / num_rows))
+    elif num_cols is not None:
+        num_rows = int(np.ceil(num_panels / num_cols))
     num_axes = num_cols * num_rows
 
     shape = (num_rows, num_cols)
@@ -503,6 +507,10 @@ def plot_points(ax, x, y, yerr=None, size=None, **kwargs):
     if "markerfacecolor" in kwargs:
         face_color = kwargs["markerfacecolor"]
     else:
+        # if size is Size.TINY:
+        #     face_color = color
+        # else:
+        #     face_color = lighten_color_hex(color)
         face_color = lighten_color_hex(color)
 
     # Defaults

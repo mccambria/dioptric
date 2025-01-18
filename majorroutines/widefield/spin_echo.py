@@ -454,12 +454,7 @@ if __name__ == "__main__":
     # file_ids = file_ids[:2]
     file_ids = file_ids[:4]
     file_ids.extend(file_ids2)
-    # file_ids = file_ids2
-    data = dm.get_raw_data(file_id=file_ids[0])
-    for file_id in file_ids[1:]:
-        new_data = dm.get_raw_data(file_id=file_id)
-        data["num_runs"] += new_data["num_runs"]
-        data["counts"] = np.append(data["counts"], new_data["counts"], axis=2)
+    data = dm.get_raw_data(file_id=file_ids)
 
     # create_raw_data_figure(data)
     create_fit_figure(data)
