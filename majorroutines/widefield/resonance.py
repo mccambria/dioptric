@@ -169,9 +169,12 @@ def create_fit_figure(
 
     if axes_pack is None:
         figsize = kpl.double_figsize
-        figsize[1] = 10
+        figsize[1] = 7
         # figsize = [6.5, 4.0]
-        layout = kpl.calc_mosaic_layout(num_nvs, num_cols=6)
+        # layout = kpl.calc_mosaic_layout(num_nvs, num_cols=6)
+        layout = kpl.calc_mosaic_layout(6 * 19, num_cols=6, num_rows=19)
+        layout[-1] = [".", ".", ".", layout[-1][3], layout[-1][4], "."]
+        layout[-2] = [layout[-2][0], ".", ".", *layout[-2][3:]]
         fig, axes_pack = plt.subplot_mosaic(
             layout, figsize=figsize, sharex=True, sharey=True
         )
@@ -189,7 +192,7 @@ def create_fit_figure(
         # linestyle="solid",
     )
 
-    ax = axes_pack[layout[-1, 0]]
+    ax = axes_pack[layout[0, 0]]
     kpl.set_shared_ax_xlabel(ax, "Frequency (GHz)")
     kpl.set_shared_ax_ylabel(ax, "Normalized NV$^{-}$ population")
     # kpl.set_shared_ax_ylabel(ax, "Norm. NV$^{-}$ pop.")
@@ -380,7 +383,7 @@ if __name__ == "__main__":
     chunk_size = 3
     nv_inds = []
     max_length = max(len(nva_inds), len(nvb_inds))
-    nva_inds[-5:] = [*nva_inds[-3:], *nva_inds[-5:-3]]
+    # nva_inds[-5:] = [*nva_inds[-3:], *nva_inds[-5:-3]]
     for i in range(0, max_length, chunk_size):
         nv_inds.extend(nvb_inds[i:i + chunk_size])
         nv_inds.extend(nva_inds[i:i + chunk_size])  
