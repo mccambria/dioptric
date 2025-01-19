@@ -16,6 +16,7 @@ from random import shuffle
 
 import matplotlib.pyplot as plt
 import numpy as np
+from matplotlib.ticker import MultipleLocator
 
 from majorroutines.pulsed_resonance import fit_resonance, gaussian, norm_voigt, voigt
 from majorroutines.widefield import base_routine
@@ -173,10 +174,14 @@ def create_fit_figure(
         # figsize = [6.5, 4.0]
         # layout = kpl.calc_mosaic_layout(num_nvs, num_cols=6)
         layout = kpl.calc_mosaic_layout(6 * 19, num_cols=6, num_rows=19)
-        layout[-1] = [".", ".", ".", layout[-1][3], layout[-1][4], "."]
-        layout[-2] = [layout[-2][0], ".", ".", *layout[-2][3:]]
+        layout[0] = [".", ".", ".", layout[0][3], layout[0][4], "."]
+        layout[1] = [layout[1][0], ".", ".", *layout[1][3:]]
         fig, axes_pack = plt.subplot_mosaic(
-            layout, figsize=figsize, sharex=True, sharey=True
+            layout,
+            figsize=figsize,
+            sharex=True,
+            sharey=True,
+            gridspec_kw={"hspace": 0.015},
         )
     axes_pack_flat = list(axes_pack.values())
 
@@ -192,19 +197,23 @@ def create_fit_figure(
         # linestyle="solid",
     )
 
-    ax = axes_pack[layout[0, 0]]
+    ax = axes_pack[layout[-1, 0]]
+    # ax = axes_pack[layout[-1, 3]]
     kpl.set_shared_ax_xlabel(ax, "Frequency (GHz)")
-    kpl.set_shared_ax_ylabel(ax, "Normalized NV$^{-}$ population")
-    # kpl.set_shared_ax_ylabel(ax, "Norm. NV$^{-}$ pop.")
-    # kpl.set_shared_ax_ylabel(ax, "Relative change in fluorescence")
-    ax.set_xticks([2.80, 2.95])
-    ax.set_yticks([0, 1])
-    # ax.set_ylim([-0.3, 1.3])
+    # ax = axes_pack[layout[10, 0]]
+    kpl.set_shared_ax_ylabel(ax, "NV$^{-}$ population (arb. units)")
+    # ax = axes_pack[layout[-1, 0]]
+    ax.set_xticks([2.80, 2.94])
+    ax.set_xticks([2.87], minor=True)
+    ax.set_yticks([0, 1], [None, None])
+    gap = 0.008
+    ax.set_xlim([np.min(freqs) - gap, np.max(freqs) + gap])
     ax.set_ylim([-0.2, 1.2])
     # ax.set_ylim([-0.3, 2])
 
     for ax in axes_pack_flat:
-        ax.tick_params(labelsize=kpl.FontSize.SMALL.value)
+        # ax.tick_params(labelsize=kpl.FontSize.SMALL.value)
+        ax.tick_params(which="both", direction="in", labelsize=kpl.FontSize.SMALL.value)
 
     # ax = axes_pack[layout[-1, 0]]
     # ax.set_xlabel(" ")
@@ -366,6 +375,7 @@ if __name__ == "__main__":
     # weak_esr = [72, 64, 55, 96, 112, 87, 89, 114, 17, 12, 99, 116, 32, 107, 58, 36] 
     # weak_esr = weak_esr[:6]
     weak_esr = [72, 64, 55, 96, 112, 87, 12, 58, 36]
+    # weak_esr = [72, 64, 55, 96, 112, 87]
     # weak_esr = []
     # split_esr = []
     # nv_inds = nva_inds
@@ -384,9 +394,10 @@ if __name__ == "__main__":
     nv_inds = []
     max_length = max(len(nva_inds), len(nvb_inds))
     # nva_inds[-5:] = [*nva_inds[-3:], *nva_inds[-5:-3]]
-    for i in range(0, max_length, chunk_size):
-        nv_inds.extend(nvb_inds[i:i + chunk_size])
-        nv_inds.extend(nva_inds[i:i + chunk_size])  
+    nv_inds
+    for ind in range(0, max_length, chunk_size):
+        nv_inds.extend(nvb_inds[ind:ind + chunk_size])
+        nv_inds.extend(nva_inds[ind:ind + chunk_size])  
     # nv_inds[-3:] = 
     # fmt: on
 

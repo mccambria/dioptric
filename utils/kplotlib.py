@@ -227,9 +227,9 @@ def calc_mosaic_layout(num_panels, num_rows=None, num_cols=None):
     if num_rows is None and num_cols is None:
         num_rows = round(np.sqrt(num_panels))
         num_cols = int(np.ceil(num_panels / num_rows))
-    elif num_rows is not None:
+    elif num_cols is None:
         num_cols = int(np.ceil(num_panels / num_rows))
-    elif num_cols is not None:
+    elif num_rows is None:
         num_rows = int(np.ceil(num_panels / num_cols))
     num_axes = num_cols * num_rows
 
@@ -363,6 +363,7 @@ def init_kplotlib(
     plt.rcParams["legend.borderaxespad"] = 0.2
     plt.rcParams["legend.borderpad"] = 0.3
     plt.rcParams["axes.ymargin"] = 0.02
+    plt.rcParams["axes.axisbelow"] = False
 
 
 def get_default_color(ax, plot_type):
