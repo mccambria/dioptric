@@ -980,8 +980,7 @@ def get_camera_scale():
 
 
 def replace_dead_pixel(img_array):
-    # dead_pixel = [142, 109]
-    dead_pixel = [127, 113]
+    dead_pixel = [132, 100]
     dead_pixel_x = dead_pixel[1]
     dead_pixel_y = dead_pixel[0]
     img_array[dead_pixel_y, dead_pixel_x] = np.mean(

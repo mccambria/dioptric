@@ -165,6 +165,18 @@ def create_fit_figure(
 
     # print(center_freqs)
     # print(center_freq_errs)
+    nvb_freqs = []
+    nva_freqs = []
+    for ind in range(num_nvs):
+        center_freq_pair = center_freqs[ind]
+        if center_freq_pair[0] > 2.82:
+            nvb_freqs.append(center_freqs[ind])
+        else:
+            nva_freqs.append(center_freqs[ind])
+    nvb_mean_freqs = np.mean(nvb_freqs, axis=0)
+    nva_mean_freqs = np.mean(nva_freqs, axis=0)
+    # print(nvb_mean_freqs)
+    # print(nva_mean_freqs)
 
     ### Make the figure
 
@@ -213,7 +225,17 @@ def create_fit_figure(
 
     for ax in axes_pack_flat:
         # ax.tick_params(labelsize=kpl.FontSize.SMALL.value)
-        ax.tick_params(which="both", direction="in", labelsize=kpl.FontSize.SMALL.value)
+        # ax.tick_params(which="both", direction="in", labelsize=kpl.FontSize.SMALL.value)
+        ax.tick_params(which="both", direction="in")
+
+    for key in axes_pack.keys():
+        ax = axes_pack[key]
+        if key[1] in ["a", "b", "c"]:
+            ax.axvline(nvb_mean_freqs[0], color=kpl.KplColors.LIGHT_GRAY, zorder=-50)
+            ax.axvline(nvb_mean_freqs[1], color=kpl.KplColors.LIGHT_GRAY, zorder=-50)
+        else:
+            ax.axvline(nva_mean_freqs[0], color=kpl.KplColors.LIGHT_GRAY, zorder=-50)
+            ax.axvline(nva_mean_freqs[1], color=kpl.KplColors.LIGHT_GRAY, zorder=-50)
 
     # ax = axes_pack[layout[-1, 0]]
     # ax.set_xlabel(" ")
@@ -393,7 +415,12 @@ if __name__ == "__main__":
     chunk_size = 3
     nv_inds = []
     max_length = max(len(nva_inds), len(nvb_inds))
-    # nva_inds[-5:] = [*nva_inds[-3:], *nva_inds[-5:-3]]
+    # Handle jagged
+    for ind in range(2):
+        nv_inds.append(nva_inds.pop(0))
+    nv_inds.append(nvb_inds.pop(0))
+    for ind in range(3):
+        nv_inds.append(nva_inds.pop(0))
     nv_inds
     for ind in range(0, max_length, chunk_size):
         nv_inds.extend(nvb_inds[ind:ind + chunk_size])
