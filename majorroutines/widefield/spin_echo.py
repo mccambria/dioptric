@@ -226,8 +226,8 @@ def create_fit_figure(data, axes_pack=None, layout=None, no_legend=True, nv_inds
             # bounds = [[73, 0, 0, 0], [77, np.inf, 1, 1]]
 
             # FFT to determine dominant frequency
-            start = 40
-            stop = 100
+            start = 11
+            stop = 55
             osc_counts = nv_counts[start:stop] - np.mean(nv_counts[start:stop])
             transform = np.fft.rfft(osc_counts)
             time_step = total_evolution_times[start + 1] - total_evolution_times[start]
@@ -260,6 +260,14 @@ def create_fit_figure(data, axes_pack=None, layout=None, no_legend=True, nv_inds
                     bounds=bounds,
                 )
                 print(f"Red chi sq: {round(red_chi_sq, 3)}")
+
+                fig, ax = plt.subplots()
+                kpl.plot_points(ax, total_evolution_times, nv_counts, nv_counts_ste)
+                linspace_taus = np.linspace(0, np.max(total_evolution_times), 1000)
+                kpl.plot_line(ax, linspace_taus, fit_fn(linspace_taus, *popt))
+                figManager = plt.get_current_fig_manager()
+                figManager.window.showMaximized()
+                kpl.show(block=True)
             except Exception:
                 print(traceback.format_exc())
                 fit_fn = None
@@ -429,16 +437,17 @@ if __name__ == "__main__":
     # Combined file
     # data = dm.get_raw_data(file_id=)
 
-    try:
-        timestamp = dm.get_time_stamp()
-        nv_list = data["nv_list"]
-        repr_nv_sig = widefield.get_repr_nv_sig(nv_list)
-        repr_nv_name = repr_nv_sig.name
-        file_path = dm.get_file_path(__file__, timestamp, repr_nv_name)
-        file_id = dm.save_raw_data(data, file_path)
-        print(file_id)
-    finally:
-        sys.exit()
+    # Create combined file
+    # try:
+    #     timestamp = dm.get_time_stamp()
+    #     nv_list = data["nv_list"]
+    #     repr_nv_sig = widefield.get_repr_nv_sig(nv_list)
+    #     repr_nv_name = repr_nv_sig.name
+    #     file_path = dm.get_file_path(__file__, timestamp, repr_nv_name)
+    #     file_id = dm.save_raw_data(data, file_path)
+    #     print(file_id)
+    # finally:
+    #     sys.exit()
 
     split_esr = [12, 13, 14, 61, 116]
     broad_esr = [52, 11]
