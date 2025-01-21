@@ -13,7 +13,7 @@ import traceback
 
 import matplotlib.pyplot as plt
 import numpy as np
-from scipy.optimize import basinhopping
+from scipy.optimize import basinhopping, brute
 from scipy.signal import lombscargle
 
 from majorroutines.widefield import base_routine
@@ -37,7 +37,6 @@ def quartic_decay(
     osc_freq2=None,
 ):
     # baseline = 0.5
-    amplitude = baseline
     # print(len(amplitudes))
     T2_us = 1000 * T2_ms
     envelope = np.exp(-((tau / T2_us) ** T2_exp))
@@ -58,6 +57,31 @@ def quartic_decay(
         )
     val = baseline - envelope * mod * comb
     return val
+
+
+def quartic_decay_fixed_revival(
+    tau,
+    baseline,
+    quartic_contrast,
+    quartic_decay_time,
+    T2_ms,
+    T2_exp,
+    osc_contrast=None,
+    osc_freq1=None,
+    osc_freq2=None,
+):
+    return quartic_decay(
+        tau,
+        baseline,
+        quartic_contrast,
+        50,
+        quartic_decay_time,
+        T2_ms,
+        T2_exp,
+        osc_contrast,
+        osc_freq1,
+        osc_freq2,
+    )
 
 
 def constant(tau):
@@ -91,8 +115,87 @@ def create_raw_data_figure(data):
     return fig
 
 
-def fit(nv_counts, nv_counts_ste, guess_params, bounds):
-    pass
+def fit(total_evolution_times, nv_counts, nv_counts_ste):
+    # fit_fn = quartic_decay
+    fit_fn = quartic_decay_fixed_revival
+
+    ### Get good guesses
+
+    # baseline, quartic_contrast, revival_time, quartic_decay_time, T2_ms, T2_exp, osc_contrast, osc_freq1, osc_freq2,
+    baseline_guess = nv_counts[9]
+    quartic_contrast_guess = baseline_guess - nv_counts[0]
+    # exp(-(0.1/t)**3) == (norm_counts[-6] - baseline_guess) / quartic_contrast_guess
+    log_decay = -np.log((baseline_guess - nv_counts[-6]) / quartic_contrast_guess)
+    T2_guess = 0.1 * (log_decay ** (-1 / 3))
+    # guess_params = [baseline_guess, quartic_contrast_guess, 50, 7, T2_guess, 3]
+    guess_params = [baseline_guess, quartic_contrast_guess, 7, T2_guess, 3]
+    bounds = [
+        # [0, 0, 40, 0, 0, 0],
+        # [1, 1, 60, 20, 1000, 10],
+        [0, 0, 0, 0, 0],
+        [1, 1, 20, 1000, 10],
+    ]
+
+    # FFT to determine dominant frequency
+    # start = 11
+    # stop = 55
+    # osc_counts = nv_counts[start:stop] - np.mean(nv_counts[start:stop])
+    # transform = np.fft.rfft(osc_counts)
+    # time_step = total_evolution_times[start + 1] - total_evolution_times[start]
+    # freqs = np.fft.rfftfreq(stop - start, d=time_step)
+    # transform_mag = np.absolute(transform)
+    # freq_guess = freqs[np.argmax(transform_mag[4:]) + 4]
+    # guess_params[-2] = freq_guess
+
+    ### Fit assuming no strongly coupled C13
+
+    no_c13_popt, no_c13_pcov, no_c13_red_chi_sq = curve_fit(
+        fit_fn,
+        total_evolution_times,
+        nv_counts,
+        guess_params,
+        nv_counts_ste,
+        bounds=bounds,
+    )
+
+    # return popt, pcov, red_chi_sq
+
+    ### Brute to find correct frequencies
+
+    osc_contrast_guess = no_c13_popt[1]
+
+    def cost(x):
+        # line = fit_fn(total_evolution_times, *no_c13_popt, *x)
+        line = fit_fn(total_evolution_times, *no_c13_popt, osc_contrast_guess, *x)
+        return np.sum(((nv_counts - line) ** 2) / (nv_counts_ste**2))
+
+    # ranges = [(bounds[0][ind], bounds[1][ind]) for ind in range(len(bounds[0]))]
+    # ranges.extend([(-0.5, 0.5), (0, 1.5), (0, 1.5)])
+    # ranges = [(-0.5, 0.5), (0, 1.5), (0, 1.5)]
+    ranges = [(0, 1.5), (0, 0.5)]
+    workers = 1
+    popt = brute(cost, ranges, Ns=1000, finish=None, workers=workers)
+
+    ### Fine tune with a final fit
+
+    guess_params.append(osc_contrast_guess)
+    guess_params.extend(popt)
+    bounds[0].extend([-0.5, 0, 0])
+    bounds[1].extend([0.5, 1.5, 0.5])
+
+    popt, pcov, red_chi_sq = curve_fit(
+        fit_fn,
+        total_evolution_times,
+        nv_counts,
+        guess_params,
+        nv_counts_ste,
+        bounds=bounds,
+    )
+
+    if no_c13_red_chi_sq < red_chi_sq:
+        return no_c13_popt, no_c13_pcov, no_c13_red_chi_sq
+    else:
+        return popt, pcov, red_chi_sq
 
 
 def create_fit_figure(data, axes_pack=None, layout=None, no_legend=True, nv_inds=None):
@@ -126,63 +229,28 @@ def create_fit_figure(data, axes_pack=None, layout=None, no_legend=True, nv_inds
         for nv_ind in nv_inds:
             nv_counts = norm_counts[nv_ind]
             nv_counts_ste = norm_counts_ste[nv_ind]
-            # baseline, quartic_contrast, revival_time, quartic_decay_time, T2_ms, T2_exp, osc_contrast, osc_freq1, osc_freq2,
-            baseline_guess = nv_counts[9]
-            quartic_contrast_guess = baseline_guess - nv_counts[0]
-            # exp(-(0.1/t)**3) == (norm_counts[-6] - baseline_guess) / quartic_contrast_guess
-            log_decay = -np.log(
-                (baseline_guess - nv_counts[-6]) / quartic_contrast_guess
-            )
-            T2_guess = 0.1 * (log_decay ** (-1 / 3))
-            guess_params = [
-                baseline_guess,
-                quartic_contrast_guess,
-                50,
-                7,
-                T2_guess,
-                3,
-                0.5,
-                None,
-                0.01,
-            ]
-            bounds = [
-                [0, 0, 40, 0, 0, 0, -1, 0, 0],
-                [1, 1, 60, 20, 1000, 10, 1, 100, 10],
-            ]
-            # guess_params = [75.5, 7, 0.4, 0.4]
-            # bounds = [[73, 0, 0, 0], [77, np.inf, 1, 1]]
-
-            # FFT to determine dominant frequency
-            start = 11
-            stop = 55
-            osc_counts = nv_counts[start:stop] - np.mean(nv_counts[start:stop])
-            transform = np.fft.rfft(osc_counts)
-            time_step = total_evolution_times[start + 1] - total_evolution_times[start]
-            freqs = np.fft.rfftfreq(stop - start, d=time_step)
-            transform_mag = np.absolute(transform)
-            freq_guess = freqs[np.argmax(transform_mag[4:]) + 4]
-            guess_params[-2] = freq_guess
 
             # fig, ax = plt.subplots()
             # kpl.plot_points(ax, freqs, transform_mag)
             # kpl.show(block=True)
 
             try:
-                fit_fn = quartic_decay
-                popt, pcov, red_chi_sq = curve_fit(
-                    fit_fn,
-                    total_evolution_times,
-                    nv_counts,
-                    guess_params,
-                    nv_counts_ste,
-                    bounds=bounds,
+                # fit_fn = quartic_decay
+                fit_fn = quartic_decay_fixed_revival
+                popt, pcov, red_chi_sq = fit(
+                    total_evolution_times, nv_counts, nv_counts_ste
                 )
                 print(f"Red chi sq: {round(red_chi_sq, 3)}")
 
                 fig, ax = plt.subplots()
                 kpl.plot_points(ax, total_evolution_times, nv_counts, nv_counts_ste)
                 linspace_taus = np.linspace(0, np.max(total_evolution_times), 1000)
-                kpl.plot_line(ax, linspace_taus, fit_fn(linspace_taus, *popt))
+                kpl.plot_line(
+                    ax,
+                    linspace_taus,
+                    fit_fn(linspace_taus, *popt),
+                    color=kpl.KplColors.GRAY,
+                )
                 figManager = plt.get_current_fig_manager()
                 figManager.window.showMaximized()
                 ax.set_title(nv_ind)
