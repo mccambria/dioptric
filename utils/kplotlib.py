@@ -684,6 +684,7 @@ def imshow(
     cbar_label=None,
     no_cbar=False,
     nan_color=None,
+    interpolation="none",
     **kwargs,
 ):
     """Same as matplotlib's imshow, but with our defaults
@@ -712,7 +713,7 @@ def imshow(
 
     fig = ax.get_figure()
 
-    img = ax.imshow(img_array, **kwargs)
+    img = ax.imshow(img_array, interpolation=interpolation, **kwargs)
 
     # Colorbar
     if not no_cbar:
