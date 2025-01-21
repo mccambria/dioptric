@@ -103,11 +103,30 @@ def create_fit_figure(data, axes_pack=None, layout=None, no_legend=True, nv_inds
     counts = np.array(data["counts"])
     num_runs = data["num_runs"]
 
-    sig_counts = counts[0]
-    ref_counts = counts[1]
-    norm_counts, norm_counts_ste = widefield.process_counts(
-        nv_list, sig_counts, ref_counts, threshold=True
-    )
+    if "norm_counts" in data:
+        norm_counts = data["norm_counts"]
+        norm_counts_ste = data["norm_counts_ste"]
+    else:
+        sig_counts = counts[0]
+        ref_counts = counts[1]
+        norm_counts, norm_counts_ste = widefield.process_counts(
+            nv_list, sig_counts, ref_counts, threshold=True
+        )
+
+    # Create combined file
+    try:
+        del data["counts"]
+        data["norm_counts"] = norm_counts
+        data["norm_counts_ste"] = norm_counts_ste
+        timestamp = dm.get_time_stamp()
+        nv_list = data["nv_list"]
+        repr_nv_sig = widefield.get_repr_nv_sig(nv_list)
+        repr_nv_name = repr_nv_sig.name
+        file_path = dm.get_file_path(__file__, timestamp, repr_nv_name)
+        file_id = dm.save_raw_data(data, file_path)
+        print(file_id)
+    finally:
+        sys.exit()
 
     # Sort for plotting
     # total_evolution_times = 2 * np.array(taus) / 1e3
@@ -127,7 +146,7 @@ def create_fit_figure(data, axes_pack=None, layout=None, no_legend=True, nv_inds
             nv_counts = norm_counts[nv_ind]
             nv_counts_ste = norm_counts_ste[nv_ind]
             # baseline, quartic_contrast, revival_time, quartic_decay_time, T2_ms, T2_exp, osc_contrast, osc_freq1, osc_freq2,
-            guess_params = [np.median(nv_counts), 0.5, 50, 7, 80, 3, 0.5, None, 0.5]
+            guess_params = [np.median(nv_counts), 0.5, 50, 7, 80, 3, 0.5, None, None]
             bounds = [
                 [0, 0, 40, 0, 0, 0, -1, 0, 0],
                 [1, 1, 60, 20, 1000, 10, 1, 100, 10],
@@ -145,6 +164,10 @@ def create_fit_figure(data, axes_pack=None, layout=None, no_legend=True, nv_inds
             transform_mag = np.absolute(transform)
             freq_guess = freqs[np.argmax(transform_mag)]
             guess_params[-2] = freq_guess
+
+            fig, ax = plt.subplots()
+            kpl.plot_points(ax, freqs, transform_mag)
+            kpl.show(block=True)
 
             try:
                 fit_fn = quartic_decay
@@ -322,40 +345,28 @@ if __name__ == "__main__":
 
     ### Fit fn testing
 
-    fig, ax = plt.subplots()
-    tau_linspace = np.linspace(0, 100, 1000)
-    line = quartic_decay(tau_linspace, 0.5, 0.5, 45, 5, 1000, 1, -0.5, 100, 0.5)
-    kpl.plot_line(ax, tau_linspace, line)
-    kpl.show(block=True)
-    sys.exit()
+    # fig, ax = plt.subplots()
+    # tau_linspace = np.linspace(0, 100, 1000)
+    # line = quartic_decay(tau_linspace, 0.5, 0.5, 45, 5, 1000, 1, -0.5, 100, 0.5)
+    # kpl.plot_line(ax, tau_linspace, line)
+    # kpl.show(block=True)
+    # sys.exit()
 
     ###
 
     # data = dm.get_raw_data(file_id=1548381879624)
 
     # Separate files
-    # # fmt: off
-    # file_ids = [1734158411844, 1734273666255, 1734371251079, 1734461462293, 1734569197701, 1736117258235, 1736254107747, 1736354618206, 1736439112682]
-    # file_ids2 = [1736589839249, 1736738087977, 1736932211269, 1737087466998, 1737219491182]
-    # # fmt: on
-    # file_ids = file_ids[:4]
-    # file_ids.extend(file_ids2)
-    # data = dm.get_raw_data(file_id=file_ids)
+    # fmt: off
+    file_ids = [1734158411844, 1734273666255, 1734371251079, 1734461462293, 1734569197701, 1736117258235, 1736254107747, 1736354618206, 1736439112682]
+    file_ids2 = [1736589839249, 1736738087977, 1736932211269, 1737087466998, 1737219491182]
+    # fmt: on
+    file_ids = file_ids[:4]
+    file_ids.extend(file_ids2)
+    data = dm.get_raw_data(file_id=file_ids)
 
     # Combined file
-    data = dm.get_raw_data(file_id=1754957516818)
-
-    # Create combined file
-    # try:
-    #     timestamp = dm.get_time_stamp()
-    #     nv_list = data["nv_list"]
-    #     repr_nv_sig = widefield.get_repr_nv_sig(nv_list)
-    #     repr_nv_name = repr_nv_sig.name
-    #     file_path = dm.get_file_path(__file__, timestamp, repr_nv_name)
-    #     file_id = dm.save_raw_data(data, file_path)
-    #     print(file_id)
-    # finally:
-    #     sys.exit()
+    # data = dm.get_raw_data(file_id=1754957516818, use_cache=False)
 
     split_esr = [12, 13, 14, 61, 116]
     broad_esr = [52, 11]
