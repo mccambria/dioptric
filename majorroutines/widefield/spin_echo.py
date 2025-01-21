@@ -115,6 +115,20 @@ def create_raw_data_figure(data):
     return fig
 
 
+def brute_fit_fn_cost(
+    x,
+    total_evolution_times,
+    nv_counts,
+    nv_counts_ste,
+    fit_fn,
+    no_c13_popt,
+    osc_contrast_guess,
+):
+    # line = fit_fn(total_evolution_times, *no_c13_popt, *x)
+    line = fit_fn(total_evolution_times, *no_c13_popt, osc_contrast_guess, *x)
+    return np.sum(((nv_counts - line) ** 2) / (nv_counts_ste**2))
+
+
 def fit(total_evolution_times, nv_counts, nv_counts_ste):
     # fit_fn = quartic_decay
     fit_fn = quartic_decay_fixed_revival
@@ -163,18 +177,23 @@ def fit(total_evolution_times, nv_counts, nv_counts_ste):
     ### Brute to find correct frequencies
 
     osc_contrast_guess = no_c13_popt[1]
-
-    def cost(x):
-        # line = fit_fn(total_evolution_times, *no_c13_popt, *x)
-        line = fit_fn(total_evolution_times, *no_c13_popt, osc_contrast_guess, *x)
-        return np.sum(((nv_counts - line) ** 2) / (nv_counts_ste**2))
+    args = (
+        total_evolution_times,
+        nv_counts,
+        nv_counts_ste,
+        fit_fn,
+        no_c13_popt,
+        osc_contrast_guess,
+    )
 
     # ranges = [(bounds[0][ind], bounds[1][ind]) for ind in range(len(bounds[0]))]
     # ranges.extend([(-0.5, 0.5), (0, 1.5), (0, 1.5)])
     # ranges = [(-0.5, 0.5), (0, 1.5), (0, 1.5)]
     ranges = [(0, 1.5), (0, 0.5)]
-    workers = 1
-    popt = brute(cost, ranges, Ns=1000, finish=None, workers=workers)
+    workers = 6
+    popt = brute(
+        brute_fit_fn_cost, ranges, Ns=1000, finish=None, workers=workers, args=args
+    )
 
     ### Fine tune with a final fit
 
