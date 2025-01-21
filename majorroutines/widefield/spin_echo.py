@@ -23,12 +23,14 @@ from utils import widefield as widefield
 from utils.tool_belt import curve_fit
 
 
-def quartic_decay_base(
+def quartic_decay(
     tau,
     baseline,
+    quartic_contrast,
     revival_time,
     quartic_decay_time,
-    quartic_contrast,
+    T2_ms,
+    T2_exp,
     osc_contrast=None,
     osc_freq1=None,
     osc_freq2=None,
@@ -36,110 +38,25 @@ def quartic_decay_base(
     # baseline = 0.5
     amplitude = baseline
     # print(len(amplitudes))
-    # T2_us = 1000 * T2_ms
-    # envelope = np.exp(-((tau / T2_us) ** env_exp))
-    envelope = 1
+    T2_us = 1000 * T2_ms
+    envelope = np.exp(-((tau / T2_us) ** T2_exp))
+    # envelope = 1
     num_revivals = 3
     comb = 0
     for ind in range(num_revivals):
         exp_part = np.exp(-(((tau - ind * revival_time) / quartic_decay_time) ** 4))
         comb += exp_part
-        if osc_contrast is None:
-            mod = quartic_contrast
-        else:
-            mod = (
-                quartic_contrast
-                - osc_contrast
-                * np.sin(2 * np.pi * osc_freq1 * tau / 2) ** 2
-                * np.sin(2 * np.pi * osc_freq2 * tau / 2) ** 2
-            )
-        val += mod * exp_part
-    val = baseline - amplitude * envelope * val
+    if osc_contrast is None:
+        mod = quartic_contrast
+    else:
+        mod = (
+            quartic_contrast
+            - osc_contrast
+            * np.sin(2 * np.pi * osc_freq1 * tau / 2) ** 2
+            * np.sin(2 * np.pi * osc_freq2 * tau / 2) ** 2
+        )
+    val = baseline - amplitude * envelope * mod * comb
     return val
-
-
-def quartic_decay(
-    tau,
-    baseline,
-    revival_time,
-    quartic_decay_time,
-    T2_ms,
-    env_exp,
-):
-    return quartic_decay_base(
-        tau,
-        baseline,
-        revival_time,
-        quartic_decay_time,
-        T2_ms,
-        env_exp,
-    )
-
-
-def quartic_decay_one_osc(
-    tau,
-    baseline,
-    revival_time,
-    quartic_decay_time,
-    T2_ms,
-    env_exp,
-    osc_freq0,
-):
-    osc_freqs = [osc_freq0]
-    return quartic_decay_base(
-        tau,
-        baseline,
-        revival_time,
-        quartic_decay_time,
-        T2_ms,
-        env_exp,
-        osc_freqs,
-    )
-
-
-def quartic_decay_two_osc(
-    tau,
-    baseline,
-    revival_time,
-    quartic_decay_time,
-    T2_ms,
-    env_exp,
-    osc_freq0,
-    osc_freq1,
-):
-    osc_freqs = [osc_freq0, osc_freq1]
-    return quartic_decay_base(
-        tau,
-        baseline,
-        revival_time,
-        quartic_decay_time,
-        T2_ms,
-        env_exp,
-        osc_freqs,
-    )
-
-
-def quartic_decay_three_osc(
-    tau,
-    baseline,
-    revival_time,
-    quartic_decay_time,
-    T2_ms,
-    env_exp,
-    osc_freq0,
-    osc_freq1,
-    osc_freq2,
-):
-    osc_freqs = [osc_freq0, osc_freq1, osc_freq2]
-    return quartic_decay_base(
-        tau,
-        baseline,
-        revival_time,
-        quartic_decay_time,
-        T2_ms,
-        env_exp,
-        osc_freqs,
-    )
 
 
 def constant(tau):
@@ -209,9 +126,12 @@ def create_fit_figure(data, axes_pack=None, layout=None, no_legend=True, nv_inds
         for nv_ind in nv_inds:
             nv_counts = norm_counts[nv_ind]
             nv_counts_ste = norm_counts_ste[nv_ind]
-            # Contrast, revival period, quartic decay tc, amp1, amp2
-            guess_params = [np.median(nv_counts), 50, 7, 0.4, 0.4]
-            bounds = [[0, 40, 0, 0, 0], [1, 60, np.inf, 1, 1]]
+            # baseline, quartic_contrast, revival_time, quartic_decay_time, T2_ms, T2_exp, osc_contrast, osc_freq1, osc_freq2,
+            guess_params = [np.median(nv_counts), 0.5, 50, 7, 80, 3, 0.5, None, 0.5]
+            bounds = [
+                [0, 0, 40, 0, 0, 0, -1, 0, 0],
+                [1, 1, 60, 20, 1000, 10, 1, 100, 10],
+            ]
             # guess_params = [75.5, 7, 0.4, 0.4]
             # bounds = [[73, 0, 0, 0], [77, np.inf, 1, 1]]
 
@@ -223,24 +143,11 @@ def create_fit_figure(data, axes_pack=None, layout=None, no_legend=True, nv_inds
             time_step = total_evolution_times[start + 1] - total_evolution_times[start]
             freqs = np.fft.rfftfreq(stop - start, d=time_step)
             transform_mag = np.absolute(transform)
-            sorted_inds = np.argsort(transform_mag)
-            first_peak_freq = freqs[sorted_inds[-1]]
-            second_peak_freq = freqs[sorted_inds[-2]]
-            freq_guess = [first_peak_freq, second_peak_freq]
+            freq_guess = freqs[np.argmax(transform_mag)]
+            guess_params[-2] = freq_guess
 
             try:
-                num_freqs = len(freq_guess)
-                guess_params.extend(freq_guess)
-                if num_freqs == 2:
-                    fit_fn = quartic_decay_two_osc
-                    bounds[0].extend([0, 0])
-                    bounds[1].extend([np.inf, np.inf])
-                elif num_freqs == 1:
-                    fit_fn = quartic_decay_one_osc
-                    bounds[0].extend([0])
-                    bounds[1].extend([np.inf])
-                else:
-                    fit_fn = quartic_decay
+                fit_fn = quartic_decay
                 popt, pcov, red_chi_sq = curve_fit(
                     fit_fn,
                     total_evolution_times,
@@ -254,7 +161,7 @@ def create_fit_figure(data, axes_pack=None, layout=None, no_legend=True, nv_inds
                 fig, ax = plt.subplots()
                 kpl.plot_points(ax, total_evolution_times, nv_counts, nv_counts_ste)
                 linspace_taus = np.linspace(0, np.max(total_evolution_times), 1000)
-                kpl.plot_line(ax, linspace_taus, fit_fn(linspace_taus, *popt))
+                # kpl.plot_line(ax, linspace_taus, fit_fn(linspace_taus, *popt))
                 figManager = plt.get_current_fig_manager()
                 figManager.window.showMaximized()
                 kpl.show(block=True)
@@ -412,16 +319,16 @@ def main(nv_list, num_steps, num_reps, num_runs, min_tau=None, max_tau=None, tau
 
 if __name__ == "__main__":
     kpl.init_kplotlib()
-    
-    
+
     ### Fit fn testing
-    
-    def fit_fn():
-        
-        
+
+    fig, ax = plt.subplots()
+    tau_linspace = np.linspace(0, 100, 1000)
+    line = quartic_decay(tau_linspace, 0.5, 0.5, 45, 5, 1000, 1, -0.5, 100, 0.5)
+    kpl.plot_line(ax, tau_linspace, line)
     kpl.show(block=True)
     sys.exit()
-    
+
     ###
 
     # data = dm.get_raw_data(file_id=1548381879624)
