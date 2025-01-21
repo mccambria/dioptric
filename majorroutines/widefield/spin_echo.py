@@ -13,6 +13,7 @@ import traceback
 
 import matplotlib.pyplot as plt
 import numpy as np
+from scipy.optimize import basinhopping
 from scipy.signal import lombscargle
 
 from majorroutines.widefield import base_routine
@@ -55,7 +56,7 @@ def quartic_decay(
             * np.sin(2 * np.pi * osc_freq1 * tau / 2) ** 2
             * np.sin(2 * np.pi * osc_freq2 * tau / 2) ** 2
         )
-    val = baseline - amplitude * envelope * mod * comb
+    val = baseline - envelope * mod * comb
     return val
 
 
@@ -90,6 +91,10 @@ def create_raw_data_figure(data):
     return fig
 
 
+def fit(nv_counts, nv_counts_ste, guess_params, bounds):
+    pass
+
+
 def create_fit_figure(data, axes_pack=None, layout=None, no_legend=True, nv_inds=None):
     nv_list = data["nv_list"]
     if nv_inds is None:
@@ -100,27 +105,18 @@ def create_fit_figure(data, axes_pack=None, layout=None, no_legend=True, nv_inds
     num_steps = data["num_steps"]
     taus = np.array(data["taus"])
     total_evolution_times = 2 * np.array(taus) / 1e3
-    counts = np.array(data["counts"])
     num_runs = data["num_runs"]
 
     if "norm_counts" in data:
-        norm_counts = data["norm_counts"]
-        norm_counts_ste = data["norm_counts_ste"]
+        norm_counts = np.array(data["norm_counts"])
+        norm_counts_ste = np.array(data["norm_counts_ste"])
     else:
+        counts = np.array(data["counts"])
         sig_counts = counts[0]
         ref_counts = counts[1]
         norm_counts, norm_counts_ste = widefield.process_counts(
             nv_list, sig_counts, ref_counts, threshold=True
         )
-
-    # Sort for plotting
-    # total_evolution_times = 2 * np.array(taus) / 1e3
-    inds = taus.argsort()
-    total_evolution_times = 2 * np.array(taus)[inds] / 1e3
-    norm_counts = np.array([norm_counts[nv_ind, inds] for nv_ind in range(num_nvs)])
-    norm_counts_ste = np.array(
-        [norm_counts_ste[nv_ind, inds] for nv_ind in range(num_nvs)]
-    )
 
     do_fit = True
     if do_fit:
@@ -131,7 +127,24 @@ def create_fit_figure(data, axes_pack=None, layout=None, no_legend=True, nv_inds
             nv_counts = norm_counts[nv_ind]
             nv_counts_ste = norm_counts_ste[nv_ind]
             # baseline, quartic_contrast, revival_time, quartic_decay_time, T2_ms, T2_exp, osc_contrast, osc_freq1, osc_freq2,
-            guess_params = [np.median(nv_counts), 0.5, 50, 7, 80, 3, 0.5, None, None]
+            baseline_guess = nv_counts[9]
+            quartic_contrast_guess = baseline_guess - nv_counts[0]
+            # exp(-(0.1/t)**3) == (norm_counts[-6] - baseline_guess) / quartic_contrast_guess
+            log_decay = -np.log(
+                (baseline_guess - nv_counts[-6]) / quartic_contrast_guess
+            )
+            T2_guess = 0.1 * (log_decay ** (-1 / 3))
+            guess_params = [
+                baseline_guess,
+                quartic_contrast_guess,
+                50,
+                7,
+                T2_guess,
+                3,
+                0.5,
+                None,
+                0.01,
+            ]
             bounds = [
                 [0, 0, 40, 0, 0, 0, -1, 0, 0],
                 [1, 1, 60, 20, 1000, 10, 1, 100, 10],
@@ -147,12 +160,12 @@ def create_fit_figure(data, axes_pack=None, layout=None, no_legend=True, nv_inds
             time_step = total_evolution_times[start + 1] - total_evolution_times[start]
             freqs = np.fft.rfftfreq(stop - start, d=time_step)
             transform_mag = np.absolute(transform)
-            freq_guess = freqs[np.argmax(transform_mag)]
+            freq_guess = freqs[np.argmax(transform_mag[4:]) + 4]
             guess_params[-2] = freq_guess
 
-            fig, ax = plt.subplots()
-            kpl.plot_points(ax, freqs, transform_mag)
-            kpl.show(block=True)
+            # fig, ax = plt.subplots()
+            # kpl.plot_points(ax, freqs, transform_mag)
+            # kpl.show(block=True)
 
             try:
                 fit_fn = quartic_decay
@@ -169,9 +182,10 @@ def create_fit_figure(data, axes_pack=None, layout=None, no_legend=True, nv_inds
                 fig, ax = plt.subplots()
                 kpl.plot_points(ax, total_evolution_times, nv_counts, nv_counts_ste)
                 linspace_taus = np.linspace(0, np.max(total_evolution_times), 1000)
-                # kpl.plot_line(ax, linspace_taus, fit_fn(linspace_taus, *popt))
+                kpl.plot_line(ax, linspace_taus, fit_fn(linspace_taus, *popt))
                 figManager = plt.get_current_fig_manager()
                 figManager.window.showMaximized()
+                ax.set_title(nv_ind)
                 kpl.show(block=True)
             except Exception:
                 print(traceback.format_exc())
@@ -360,6 +374,6 @@ if __name__ == "__main__":
     nv_inds = [ind for ind in range(117) if ind not in skip_inds]
 
     # create_raw_data_figure(data)
-    create_fit_figure(data, nv_inds)
+    create_fit_figure(data, nv_inds=nv_inds)
 
     plt.show(block=True)
