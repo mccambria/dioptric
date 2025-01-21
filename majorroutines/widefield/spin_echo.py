@@ -28,42 +28,32 @@ def quartic_decay_base(
     baseline,
     revival_time,
     quartic_decay_time,
-    amp1,
-    amp2,
-    osc_freqs=None,
+    quartic_contrast,
+    osc_contrast=None,
+    osc_freq1=None,
+    osc_freq2=None,
 ):
     # baseline = 0.5
     amplitude = baseline
-    val = 0
     # print(len(amplitudes))
     # T2_us = 1000 * T2_ms
     # envelope = np.exp(-((tau / T2_us) ** env_exp))
     envelope = 1
     num_revivals = 3
-    amps = [1, amp1, amp2]
+    comb = 0
     for ind in range(num_revivals):
-        exp_part = np.exp(-(((tau - ind * revival_time) / quartic_decay_time) ** 2))
-        if ind == 0 or osc_freqs is None:
-            mod = 1
+        exp_part = np.exp(-(((tau - ind * revival_time) / quartic_decay_time) ** 4))
+        comb += exp_part
+        if osc_contrast is None:
+            mod = quartic_contrast
         else:
-            # freq_sum = osc_freqs[0] + osc_freqs[1]
-            # freq_diff = np.abs(osc_freqs[0] - osc_freqs[1])
-            # mod = (
-            #     1
-            #     - 2
-            #     * np.sin(2 * np.pi * freq_sum * tau / 2) ** 2
-            #     * np.sin(2 * np.pi * freq_diff * tau / 2) ** 2
-            #     # * np.sin(2 * np.pi * osc_freqs[0] * tau / 2) ** 2
-            #     # * np.sin(2 * np.pi * osc_freqs[1] * tau / 2) ** 2
-            # )
-            #
-            mod = [np.cos(2 * np.pi * osc_freq * tau) for osc_freq in osc_freqs]
-            mod = np.sum(mod, axis=0) / len(osc_freqs)
-            #
-            # mod = [np.cos(2 * np.pi * osc_freq * tau) for osc_freq in osc_freqs]
-            # mod = np.prod(mod, axis=0)
-        amp = amps[ind]
-        val += amp * mod * exp_part
+            mod = (
+                quartic_contrast
+                - osc_contrast
+                * np.sin(2 * np.pi * osc_freq1 * tau / 2) ** 2
+                * np.sin(2 * np.pi * osc_freq2 * tau / 2) ** 2
+            )
+        val += mod * exp_part
     val = baseline - amplitude * envelope * val
     return val
 
@@ -422,6 +412,17 @@ def main(nv_list, num_steps, num_reps, num_runs, min_tau=None, max_tau=None, tau
 
 if __name__ == "__main__":
     kpl.init_kplotlib()
+    
+    
+    ### Fit fn testing
+    
+    def fit_fn():
+        
+        
+    kpl.show(block=True)
+    sys.exit()
+    
+    ###
 
     # data = dm.get_raw_data(file_id=1548381879624)
 
