@@ -227,6 +227,7 @@ def main(
     raw_data |= {
         "timestamp": timestamp,
         "caller_fn_name": caller_fn_name,
+        "dark_time": dark_time,
     }
 
     try:

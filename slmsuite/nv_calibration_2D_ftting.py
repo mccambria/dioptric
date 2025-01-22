@@ -1,3 +1,5 @@
+import sys
+
 import matplotlib.pyplot as plt
 import numpy as np
 from scipy.optimize import curve_fit
@@ -102,11 +104,17 @@ def plot_fitting(
 # Example usage
 if __name__ == "__main__":
     # Load the image array (replace this with your own method for loading image data)
-    data = dm.get_raw_data(file_id=1751731396763, load_npz=True)
-    img_array = np.array(data["img_array"])
+    data = dm.get_raw_data(file_id=1755954834774, load_npz=True)
+    # data = dm.get_raw_data(file_id=1735644489521, load_npz=True)
 
+    img_array = np.array(data["img_array"])
+    # fig, ax = plt.subplots()
+    # title = "50ms, Ref"
+    # kpl.imshow(ax, img_array, title=title, cbar_label="Photons")
+    # plt.show(block=True)
+    # sys.exit()
     # List of initial peak coordinates
-    initial_peaks = np.array([[196.437, 34.997], [197.379, 214.13], [38.346, 123.125]])
+    initial_peaks = np.array([[199.257, 37.906], [189.75, 207.741], [45.953, 112.377]])
 
     # Fit Gaussian to each peak
     optimized_coords = []

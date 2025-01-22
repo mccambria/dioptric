@@ -92,13 +92,13 @@ def do_image_single_nv(nv_sig):
 def do_charge_state_histograms(nv_list):
     # 50 ms
     num_reps = 200
-    num_runs = 10
+    num_runs = 2
 
     # 100 ms
     # num_reps = 100
     # num_runs = 20
 
-    # 200 ms``
+    # 200 ms
     # num_reps = 50
     # num_runs = 20
 
@@ -224,8 +224,8 @@ def do_optimize_green(nv_sig):
 
 def do_optimize_red(nv_sig, ref_nv_sig):
     opti_coords = []
-    axes_list = [Axes.X, Axes.Y]
-    # axes_list = [Axes.Y, Axes.X]
+    # axes_list = [Axes.X, Axes.Y]
+    axes_list = [Axes.Y, Axes.X]
     # shuffle(axes_list)
     for ind in range(1):
         axes = axes_list[ind]
@@ -701,12 +701,15 @@ def do_spin_pol_check(nv_sig):
 
 
 def do_detect_cosmic_rays(nv_list):
-    num_reps = 60
-    num_runs = 10 * 60
-    # num_runs = 2
-    dark_time = 1e9
-
-    charge_monitor.detect_cosmic_rays(nv_list, num_reps, num_runs, dark_time)
+    num_reps = 200
+    num_runs = 300
+    # num_runs = 6
+    # dark_time = 1e9 # 1s
+    # dark_time = 10e6  # 10ms
+    # charge_monitor.detect_cosmic_rays(nv_list, num_reps, num_runs, dark_time)
+    dark_times = [100e6, 500e6, 5e6, 506, 250e6]
+    for dark_time in dark_times:
+        charge_monitor.detect_cosmic_rays(nv_list, num_reps, num_runs, dark_time)
 
 
 def do_check_readout_fidelity(nv_list):
@@ -756,7 +759,7 @@ def do_opx_constant_ac():
     opx.constant_ac(
         [],  # Digital channels
         [7],  # Analog channels
-        [0.25],  # Analog voltages
+        [0.47],  # Analog voltages
         [0],  # Analog frequencies
     )
 
@@ -826,12 +829,12 @@ def do_opx_constant_ac():
     # opx.constant_ac(
     #     [4],  # Digital channels
     #     [3, 4, 7],  # Analog channels
-    #     [0.19, 0.19, 0.35],  # Analog voltages
-    #     [110, 110, 0],  # Analog frequencies
+    #     [0.19, 0.19, 0.45],  # Analog voltages
+    #     [107, 107, 0],  # Analog frequencies
     # )
     # Red + green + Yellow
     # opx.constant_ac(
-    #     [4, 1],  # Digital channels
+    #     [4, 1],  # Digital channels1
     #     [3, 4, 2, 6, 7],  # Analog channels
     #     [0.19, 0.19, 0.17, 0.17, 0.40],  # Analog voltages
     #     [107, 107, 72, 72, 0],  # Analog frequencies
@@ -968,7 +971,7 @@ if __name__ == "__main__":
     # magnet_angle = 90
     date_str = "2024_03_12"
     sample_coords = [2.0, 0.0]
-    z_coord = 1.65
+    z_coord = 1.8
     # Load NV pixel coordinates1
     pixel_coords_list = load_nv_coords(
         file_path="slmsuite/nv_blob_detection/nv_blob_filtered_160nvs_reordered.npz",
@@ -1008,19 +1011,19 @@ if __name__ == "__main__":
     #     [207.435, 74.049],
     # ]
     # green_coords_list = [
-    #     [109.113, 106.794],
-    #     [115.725, 101.224],
-    #     [109.303, 115.696],
-    #     [98.796, 100.757],
+    #     [109.04, 106.683],
+    #     [115.573, 101.133],
+    #     [109.214, 115.493],
+    #     [98.62, 100.584],
     # ]
     # red_coords_list = [
-    #     [73.524, 72.417],
-    #     [78.906, 67.807],
-    #     [73.943, 79.609],
-    #     [65.14, 67.578],
+    #     [73.602, 72.526],
+    #     [78.816, 67.86],
+    #     [73.859, 79.697],
+    #     [65.063, 67.591],
     # ]
     num_nvs = len(pixel_coords_list)
-    threshold_list = [45.5] * num_nvs
+    threshold_list = [25.5] * num_nvs
     # threshold_list = load_thresholds
     #     file_path="slmsuite/nv_blob_detection/threshold_list_nvs_162.npz"
     # ).tolist()
@@ -1119,8 +1122,8 @@ if __name__ == "__main__":
     # nv_list[i] will have the ith coordinates from the above lists
     nv_list: list[NVSig] = []
     for ind in range(num_nvs):
-        if ind not in include_inds:
-            continue
+        # if ind not in include_inds:
+        #     continue
         coords = {
             CoordsKey.SAMPLE: sample_coords,
             CoordsKey.Z: z_coord,
@@ -1148,12 +1151,8 @@ if __name__ == "__main__":
     repr_nv_sig = widefield.get_repr_nv_sig(nv_list)
     nv_sig = widefield.get_repr_nv_sig(nv_list)
     # print(f"Created NV: {nv_sig.name}, Coords: {nv_sig.coords}")
-    # nv_sig.expected_counts = 1650
-    # nv_sig.expected_counts = 3359.0
-    # nv_sig.expected_counts = 1181.0
-    # nv_sig.expected_counts = 1420
-    nv_sig.expected_counts = 780
-    # nv_sig.expected_counts = 1350
+    nv_sig.expected_counts = 1420
+    # nv_sig.expected_counts = 800
 
     # num_nvs = len(nv_list)
     # print(f"Final NV List: {nv_list}")
@@ -1210,7 +1209,7 @@ if __name__ == "__main__":
 
     # nv_list = [nv_list[
     # nv_list = [nv_list[2]]
-    # nv_list = nv_list[:3]
+    # nv_list = nv_list[:2]
     print(f"length of NVs list:{len(nv_list)}")
     # endregion
 
@@ -1238,7 +1237,7 @@ if __name__ == "__main__":
         # piezo_voltage_to_pixel_calibration()
 
         do_compensate_for_drift(nv_sig)
-        # do_widefield_image_sample(nv_sig, 50)
+        do_widefield_image_sample(nv_sig, 50)
         # do_charge_state_histograms(nv_list)
         # do_charge_state_conditional_init(nv_list)
 
@@ -1261,10 +1260,10 @@ if __name__ == "__main__":
         # nv_sig.coords[CoordsKey.z] = 0.4
         # do_scanning_image_sample(nv_sig)
 
-        # do_scanning_image_sample(nv_sig
+        # do_scanning_image_sample(nv_sig)
         # do_scanning_image_sample_zoom(nv_sig)
         # do_widefield_image_sample(nv_sig, 50)
-        # do_widefield_image_sample(nv_sig, 200)
+        # do_widefield_image_sample(nv_sig, 100)
 
         # do_image_nv_list(nv_list)
         # do_image_single_nv(nv_sig)
@@ -1290,7 +1289,7 @@ if __name__ == "__main__":
         # do_optimize_loop(nv_list, coords_key)
 
         # do_optimize_pol_amp(nv_list)
-        do_optimize_readout_amp(nv_list)
+        # do_optimize_readout_amp(nv_list)
         # do_optimize_readout_duration(nv_list)
         # optimize_readout_amp_and_duration(nv_list)
         # do_optimize_pol_duration(nv_list)
@@ -1300,7 +1299,7 @@ if __name__ == "__main__":
         # do_resonance_zoom(nv_list)
         # do_rabi(nv_list)
         # do_resonance(nv_list)
-        do_spin_echo(nv_list)
+        # do_spin_echo(nv_list)
 
         # do_power_rabi(nv_list)
         # do_correlation_test(nv_list)
@@ -1308,7 +1307,7 @@ if __name__ == "__main__":
         # do_sq_relaxation(nv_list)
         # do_dq_relaxation(nv_list)
         # do_xy8(nv_list)
-        # do_detect_cosmic_rays(nv_list)
+        do_detect_cosmic_rays(nv_list)
         # do_check_readout_fidelity(nv_list)
         # do_charge_quantum_jump(nv_list)
         # do_ac_stark(nv_list)
