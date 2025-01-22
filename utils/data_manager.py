@@ -171,12 +171,15 @@ def save_raw_data(raw_data, file_path, keys_to_compress=None):
             orjson.OPT_INDENT_2 | orjson.OPT_SERIALIZE_NUMPY | orjson.OPT_NON_STR_KEYS
         )
         content = orjson.dumps(raw_data, option=option)
-        _cloud.upload(file_path_txt, BytesIO(content))
+        file_id = _cloud.upload(file_path_txt, BytesIO(content))
     except Exception:
         print(traceback.format_exc())
         # Save to local file instead
         with open(data_manager_folder / file_path_txt.name, "wb") as f:
             f.write(content)
+        file_id = None
+
+    return file_id
 
     # stop = time.time()
     # print(stop - start)
