@@ -120,7 +120,9 @@ def process_and_plot(
         red_chi_sq_list.append(red_chi_sq)
 
         # Plot histograms with NV index and SNR included
-        if do_plot_histograms:
+        nv_num = widefield.get_nv_num(nv_list[ind])
+        # if do_plot_histograms and nv_num == 154:
+        if do_plot_histograms and readout_fidelity > 0.97:
             fig = plot_histograms(sig_counts_list, ref_counts_list, density=True)
             ax = fig.gca()
 
@@ -149,7 +151,6 @@ def process_and_plot(
                 ax.axvline(threshold, color=kpl.KplColors.GRAY, ls="dashed")
 
             # Add text of the fidelities
-            nv_num = widefield.get_nv_num(nv_list[ind])
             snr_str = (
                 f"NV{nv_num}\n"
                 f"Readout fidelity: {round(readout_fidelity, 3)}\n"
@@ -524,6 +525,6 @@ def main(
 
 if __name__ == "__main__":
     kpl.init_kplotlib()
-    data = dm.get_raw_data(file_id=1751678726196, load_npz=False)
+    data = dm.get_raw_data(file_id=1733583334808, load_npz=False)
     process_and_plot(data, do_plot_histograms=True)
     kpl.show(block=True)

@@ -440,7 +440,7 @@ def process_and_plot(
             if ind == len_vals - 1:
                 ax.set_xlabel("NV index")
 
-        kwargs = {"color": kpl.KplColors.BLACK, "linewidths": 0.1}
+        kwargs = {"color": kpl.KplColors.BLACK, "linewidths": 0.15}
         ax.hlines(
             y=np.arange(0, num_nvs - 1) + 0.5, xmin=-0.5, xmax=num_nvs - 0.5, **kwargs
         )

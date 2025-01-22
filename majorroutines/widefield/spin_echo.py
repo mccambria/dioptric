@@ -7,12 +7,13 @@ Created on November 29th, 2023
 @author: mccambria
 """
 
+import sys
 import time
 import traceback
 
 import matplotlib.pyplot as plt
 import numpy as np
-from scipy.optimize import curve_fit
+from scipy.optimize import basinhopping, brute
 from scipy.signal import lombscargle
 
 from majorroutines.widefield import base_routine
@@ -20,134 +21,66 @@ from utils import data_manager as dm
 from utils import kplotlib as kpl
 from utils import tool_belt as tb
 from utils import widefield as widefield
-
-
-def quartic_decay_base(
-    tau,
-    baseline,
-    revival_time,
-    quartic_decay_time,
-    amp1,
-    amp2,
-    osc_freqs=None,
-):
-    # baseline = 0.5
-    amplitude = baseline
-    val = 0
-    # print(len(amplitudes))
-    # T2_us = 1000 * T2_ms
-    # envelope = np.exp(-((tau / T2_us) ** env_exp))
-    envelope = 1
-    num_revivals = 3
-    amps = [1, amp1, amp2]
-    for ind in range(num_revivals):
-        exp_part = np.exp(-(((tau - ind * revival_time) / quartic_decay_time) ** 2))
-        if ind == 0 or osc_freqs is None:
-            mod = 1
-        else:
-            # freq_sum = osc_freqs[0] + osc_freqs[1]
-            # freq_diff = np.abs(osc_freqs[0] - osc_freqs[1])
-            # mod = (
-            #     1
-            #     - 2
-            #     * np.sin(2 * np.pi * freq_sum * tau / 2) ** 2
-            #     * np.sin(2 * np.pi * freq_diff * tau / 2) ** 2
-            #     # * np.sin(2 * np.pi * osc_freqs[0] * tau / 2) ** 2
-            #     # * np.sin(2 * np.pi * osc_freqs[1] * tau / 2) ** 2
-            # )
-            #
-            mod = [np.cos(2 * np.pi * osc_freq * tau) for osc_freq in osc_freqs]
-            mod = np.sum(mod, axis=0) / len(osc_freqs)
-            #
-            # mod = [np.cos(2 * np.pi * osc_freq * tau) for osc_freq in osc_freqs]
-            # mod = np.prod(mod, axis=0)
-        amp = amps[ind]
-        val += amp * mod * exp_part
-    val = baseline - amplitude * envelope * val
-    return val
+from utils.tool_belt import curve_fit
 
 
 def quartic_decay(
     tau,
     baseline,
+    quartic_contrast,
     revival_time,
     quartic_decay_time,
     T2_ms,
-    env_exp,
+    T2_exp,
+    osc_contrast=None,
+    osc_freq1=None,
+    osc_freq2=None,
 ):
-    return quartic_decay_base(
-        tau,
-        baseline,
-        revival_time,
-        quartic_decay_time,
-        T2_ms,
-        env_exp,
-    )
+    # baseline = 0.5
+    # print(len(amplitudes))
+    T2_us = 1000 * T2_ms
+    envelope = np.exp(-((tau / T2_us) ** T2_exp))
+    # envelope = 1
+    num_revivals = 3
+    comb = 0
+    for ind in range(num_revivals):
+        exp_part = np.exp(-(((tau - ind * revival_time) / quartic_decay_time) ** 4))
+        comb += exp_part
+    if osc_contrast is None:
+        mod = quartic_contrast
+    else:
+        mod = (
+            quartic_contrast
+            - osc_contrast
+            * np.sin(2 * np.pi * osc_freq1 * tau / 2) ** 2
+            * np.sin(2 * np.pi * osc_freq2 * tau / 2) ** 2
+        )
+    val = baseline - envelope * mod * comb
+    return val
 
 
-def quartic_decay_one_osc(
+def quartic_decay_fixed_revival(
     tau,
     baseline,
-    revival_time,
+    quartic_contrast,
     quartic_decay_time,
     T2_ms,
-    env_exp,
-    osc_freq0,
+    T2_exp,
+    osc_contrast=None,
+    osc_freq1=None,
+    osc_freq2=None,
 ):
-    osc_freqs = [osc_freq0]
-    return quartic_decay_base(
+    return quartic_decay(
         tau,
         baseline,
-        revival_time,
+        quartic_contrast,
+        50,
         quartic_decay_time,
         T2_ms,
-        env_exp,
-        osc_freqs,
-    )
-
-
-def quartic_decay_two_osc(
-    tau,
-    baseline,
-    revival_time,
-    quartic_decay_time,
-    T2_ms,
-    env_exp,
-    osc_freq0,
-    osc_freq1,
-):
-    osc_freqs = [osc_freq0, osc_freq1]
-    return quartic_decay_base(
-        tau,
-        baseline,
-        revival_time,
-        quartic_decay_time,
-        T2_ms,
-        env_exp,
-        osc_freqs,
-    )
-
-
-def quartic_decay_three_osc(
-    tau,
-    baseline,
-    revival_time,
-    quartic_decay_time,
-    T2_ms,
-    env_exp,
-    osc_freq0,
-    osc_freq1,
-    osc_freq2,
-):
-    osc_freqs = [osc_freq0, osc_freq1, osc_freq2]
-    return quartic_decay_base(
-        tau,
-        baseline,
-        revival_time,
-        quartic_decay_time,
-        T2_ms,
-        env_exp,
-        osc_freqs,
+        T2_exp,
+        osc_contrast,
+        osc_freq1,
+        osc_freq2,
     )
 
 
@@ -182,149 +115,200 @@ def create_raw_data_figure(data):
     return fig
 
 
-def create_fit_figure(data, axes_pack=None, layout=None, no_legend=True):
+def brute_fit_fn_cost(
+    x,
+    total_evolution_times,
+    nv_counts,
+    nv_counts_ste,
+    fit_fn,
+    no_c13_popt,
+    osc_contrast_guess,
+):
+    # line = fit_fn(total_evolution_times, *no_c13_popt, *x)
+    line = fit_fn(total_evolution_times, *no_c13_popt, osc_contrast_guess, *x)
+    return np.sum(((nv_counts - line) ** 2) / (nv_counts_ste**2))
+
+
+def fit(total_evolution_times, nv_counts, nv_counts_ste):
+    # fit_fn = quartic_decay
+    fit_fn = quartic_decay_fixed_revival
+
+    ### Get good guesses
+
+    # baseline, quartic_contrast, revival_time, quartic_decay_time, T2_ms, T2_exp, osc_contrast, osc_freq1, osc_freq2,
+    baseline_guess = nv_counts[9]
+    quartic_contrast_guess = baseline_guess - nv_counts[0]
+    # exp(-(0.1/t)**3) == (norm_counts[-6] - baseline_guess) / quartic_contrast_guess
+    log_decay = -np.log((baseline_guess - nv_counts[-6]) / quartic_contrast_guess)
+    T2_guess = 0.1 * (log_decay ** (-1 / 3))
+    # guess_params = [baseline_guess, quartic_contrast_guess, 50, 7, T2_guess, 3]
+    guess_params = [baseline_guess, quartic_contrast_guess, 7, T2_guess, 3]
+    bounds = [
+        # [0, 0, 40, 0, 0, 0],
+        # [1, 1, 60, 20, 1000, 10],
+        [0, 0, 0, 0, 0],
+        [1, 1, 20, 1000, 10],
+    ]
+
+    # FFT to determine dominant frequency
+    # start = 11
+    # stop = 55
+    # osc_counts = nv_counts[start:stop] - np.mean(nv_counts[start:stop])
+    # transform = np.fft.rfft(osc_counts)
+    # time_step = total_evolution_times[start + 1] - total_evolution_times[start]
+    # freqs = np.fft.rfftfreq(stop - start, d=time_step)
+    # transform_mag = np.absolute(transform)
+    # freq_guess = freqs[np.argmax(transform_mag[4:]) + 4]
+    # guess_params[-2] = freq_guess
+
+    ### Fit assuming no strongly coupled C13
+
+    no_c13_popt, no_c13_pcov, no_c13_red_chi_sq = curve_fit(
+        fit_fn,
+        total_evolution_times,
+        nv_counts,
+        guess_params,
+        nv_counts_ste,
+        bounds=bounds,
+    )
+
+    # return popt, pcov, red_chi_sq
+
+    ### Brute to find correct frequencies
+
+    osc_contrast_guess = no_c13_popt[1]
+    args = (
+        total_evolution_times,
+        nv_counts,
+        nv_counts_ste,
+        fit_fn,
+        no_c13_popt,
+        osc_contrast_guess,
+    )
+
+    # ranges = [(bounds[0][ind], bounds[1][ind]) for ind in range(len(bounds[0]))]
+    # ranges.extend([(-0.5, 0.5), (0, 1.5), (0, 1.5)])
+    # ranges = [(-0.5, 0.5), (0, 1.5), (0, 1.5)]
+    ranges = [(0, 1.5), (0, 0.5)]
+    workers = 6
+    popt = brute(
+        brute_fit_fn_cost, ranges, Ns=1000, finish=None, workers=workers, args=args
+    )
+
+    ### Fine tune with a final fit
+
+    guess_params.append(osc_contrast_guess)
+    guess_params.extend(popt)
+    bounds[0].extend([-0.5, 0, 0])
+    bounds[1].extend([0.5, 1.5, 0.5])
+
+    popt, pcov, red_chi_sq = curve_fit(
+        fit_fn,
+        total_evolution_times,
+        nv_counts,
+        guess_params,
+        nv_counts_ste,
+        bounds=bounds,
+    )
+
+    if no_c13_red_chi_sq < red_chi_sq:
+        return no_c13_popt, no_c13_pcov, no_c13_red_chi_sq
+    else:
+        return popt, pcov, red_chi_sq
+
+
+def create_fit_figure(data, axes_pack=None, layout=None, no_legend=True, nv_inds=None):
     nv_list = data["nv_list"]
-    num_nvs = len(nv_list)
+    if nv_inds is None:
+        num_nvs = len(nv_list)
+        nv_inds = list(range(num_nvs))
+    else:
+        num_nvs = len(nv_inds)
     num_steps = data["num_steps"]
     taus = np.array(data["taus"])
     total_evolution_times = 2 * np.array(taus) / 1e3
-    counts = np.array(data["counts"])
     num_runs = data["num_runs"]
 
-    sig_counts = counts[0]
-    ref_counts = counts[1]
-    norm_counts, norm_counts_ste = widefield.process_counts(
-        nv_list, sig_counts, ref_counts, threshold=True
-    )
+    if "norm_counts" in data:
+        norm_counts = np.array(data["norm_counts"])
+        norm_counts_ste = np.array(data["norm_counts_ste"])
+    else:
+        counts = np.array(data["counts"])
+        sig_counts = counts[0]
+        ref_counts = counts[1]
+        norm_counts, norm_counts_ste = widefield.process_counts(
+            nv_list, sig_counts, ref_counts, threshold=True
+        )
 
-    # Sort for plotting
-    # total_evolution_times = 2 * np.array(taus) / 1e3
-    inds = taus.argsort()
-    total_evolution_times = 2 * np.array(taus)[inds] / 1e3
-    norm_counts = np.array([norm_counts[nv_ind, inds] for nv_ind in range(num_nvs)])
-    norm_counts_ste = np.array(
-        [norm_counts_ste[nv_ind, inds] for nv_ind in range(num_nvs)]
-    )
-
-    do_fit = False
+    do_fit = True
     if do_fit:
         fit_fns = []
         popts = []
-        freq_guesses = [
-            # 0
-            (0.05, 0.09),
-            # 1
-            (0.048, 0.005),
-            # 2
-            (0.048, 0.099),
-            # 3
-            (),
-            # 4
-            (0.2, 0.248),
-            # 5
-            (0.048, 0.248),
-            # 6
-            (),
-            # 7
-            (),
-            # 8
-            (0.2, 0.248),
-            # 9
-            (),
-        ]
 
-        for nv_ind in range(num_nvs):
+        for nv_ind in nv_inds:
             nv_counts = norm_counts[nv_ind]
             nv_counts_ste = norm_counts_ste[nv_ind]
-            # Contrast, revival period, quartic decay tc, amp1, amp2
-            guess_params = [0.53, 75.5, 7, 0.4, 0.4]
-            bounds = [[0, 73, 0, 0, 0], [1, 77, np.inf, 1, 1]]
-            # guess_params = [75.5, 7, 0.4, 0.4]
-            # bounds = [[73, 0, 0, 0], [77, np.inf, 1, 1]]
 
-            # FFT to determine dominant frequency
-            # even_counts = nv_counts[40:100] - 0.55
-            # transform = np.fft.rfft(even_counts)
-            # freqs = np.fft.rfftfreq(
-            #     60, d=total_evolution_times[41] - total_evolution_times[40]
-            # )
-            # transform_mag = np.absolute(transform)
             # fig, ax = plt.subplots()
-            # kpl.plot_points(ax, freqs[1:], transform_mag[1:])
-            # ax.set_title(nv_ind)
+            # kpl.plot_points(ax, freqs, transform_mag)
             # kpl.show(block=True)
 
             try:
-                freq_guess = freq_guesses[nv_ind]
-                num_freqs = len(freq_guess)
-                guess_params.extend(freq_guess)
-                if num_freqs == 2:
-                    fit_fn = quartic_decay_two_osc
-                    bounds[0].extend([0, 0])
-                    bounds[1].extend([np.inf, np.inf])
-                elif num_freqs == 1:
-                    fit_fn = quartic_decay_one_osc
-                    bounds[0].extend([0])
-                    bounds[1].extend([np.inf])
-                else:
-                    fit_fn = quartic_decay
-                popt, pcov, info, msg, ier = curve_fit(
-                    fit_fn,
-                    total_evolution_times,
-                    nv_counts,
-                    p0=guess_params,
-                    sigma=nv_counts_ste,
-                    absolute_sigma=True,
-                    full_output=True,
-                    bounds=bounds,
+                # fit_fn = quartic_decay
+                fit_fn = quartic_decay_fixed_revival
+                popt, pcov, red_chi_sq = fit(
+                    total_evolution_times, nv_counts, nv_counts_ste
                 )
-                # popt[4] = popt[3]
+                print(f"Red chi sq: {round(red_chi_sq, 3)}")
+
+                fig, ax = plt.subplots()
+                kpl.plot_points(ax, total_evolution_times, nv_counts, nv_counts_ste)
+                linspace_taus = np.linspace(0, np.max(total_evolution_times), 1000)
+                kpl.plot_line(
+                    ax,
+                    linspace_taus,
+                    fit_fn(linspace_taus, *popt),
+                    color=kpl.KplColors.GRAY,
+                )
+                figManager = plt.get_current_fig_manager()
+                figManager.window.showMaximized()
+                ax.set_title(nv_ind)
+                kpl.show(block=True)
             except Exception:
-                # pass
                 print(traceback.format_exc())
                 fit_fn = None
                 popt = None
-            if nv_ind == 0:
-                pass
-                # popt = [0.557, 75.5, 6.279, 0.4, 0.4, 0.051]
-                # popt = [0.557, 74.7, 6.279, 0.4, 0.4, 0.049]
             fit_fns.append(fit_fn)
             popts.append(popt)
 
-            if fit_fn is not None:
-                residuals = fit_fn(total_evolution_times, *popt) - nv_counts
-                chi_sq = np.sum((residuals / nv_counts_ste) ** 2)
-                red_chi_sq = chi_sq / (len(nv_counts) - len(popt))
-                print(f"Red chi sq: {round(red_chi_sq, 3)}")
-
     ### Make the figure
 
-    if axes_pack is None:
-        figsize = [6.5, 5.0]
-        figsize[0] *= 3
-        figsize[1] *= 3
+    figsize = [6.5, 5.0]
+    figsize[0] *= 3
+    figsize[1] *= 3
+    for ind in range(2):
         fig, axes_pack, layout = kpl.subplot_mosaic(num_nvs, figsize=figsize)
-    else:
-        fig = None
 
-    widefield.plot_fit(
-        axes_pack,
-        nv_list,
-        total_evolution_times,
-        norm_counts,
-        norm_counts_ste,
-        # fit_fns,
-        # popts,
-        no_legend=no_legend,
-        # linestyle="solid",
-    )
-    ax = axes_pack[layout[-1, 0]]
-    kpl.set_shared_ax_xlabel(ax, "Total evolution time (µs)")
-    # kpl.set_shared_ax_ylabel(ax, "Change in $P($NV$^{-})$")
-    # kpl.set_shared_ax_ylabel(ax, "Norm. NV$^{-}$ population")
-    kpl.set_shared_ax_ylabel(ax, "Normalized NV$^{-}$ population")
-    ax.set_title(num_runs)
-    ax.set_ylim(-0.3, 1.3)
+        widefield.plot_fit(
+            axes_pack,
+            [nv_list[ind] for ind in nv_inds],
+            total_evolution_times,
+            norm_counts[nv_inds],
+            norm_counts_ste[nv_inds],
+            fit_fns,
+            popts,
+            no_legend=no_legend,
+            # linestyle="solid",
+        )
+        ax = axes_pack[layout[-1, 0]]
+        kpl.set_shared_ax_xlabel(ax, "Total evolution time (µs)")
+        # kpl.set_shared_ax_ylabel(ax, "Change in $P($NV$^{-})$")
+        # kpl.set_shared_ax_ylabel(ax, "Norm. NV$^{-}$ population")
+        kpl.set_shared_ax_ylabel(ax, "Normalized NV$^{-}$ population")
+        ax.set_title(num_runs)
+        ax.set_ylim(-0.2, 1.2)
+        if ind == 1:
+            ax.set_xlim(40, 60)
 
     # figManager = plt.get_current_fig_manager()
     # figManager.window.showMaximized()
@@ -445,18 +429,38 @@ def main(nv_list, num_steps, num_reps, num_runs, min_tau=None, max_tau=None, tau
 if __name__ == "__main__":
     kpl.init_kplotlib()
 
+    ### Fit fn testing
+
+    # fig, ax = plt.subplots()
+    # tau_linspace = np.linspace(0, 100, 1000)
+    # line = quartic_decay(tau_linspace, 0.5, 0.5, 45, 5, 1000, 1, -0.5, 100, 0.5)
+    # kpl.plot_line(ax, tau_linspace, line)
+    # kpl.show(block=True)
+    # sys.exit()
+
+    ###
+
     # data = dm.get_raw_data(file_id=1548381879624)
 
-    # fmt: off
-    file_ids = [1734158411844, 1734273666255, 1734371251079, 1734461462293, 1734569197701, 1736117258235, 1736254107747, 1736354618206, 1736439112682]
-    file_ids2 = [1736589839249, 1736738087977, 1736932211269, 1737087466998, 1737219491182]
-    # fmt: on
-    # file_ids = file_ids[:2]
-    file_ids = file_ids[:4]
-    file_ids.extend(file_ids2)
-    data = dm.get_raw_data(file_id=file_ids)
+    # Separate files
+    # # fmt: off
+    # file_ids = [1734158411844, 1734273666255, 1734371251079, 1734461462293, 1734569197701, 1736117258235, 1736254107747, 1736354618206, 1736439112682]
+    # file_ids2 = [1736589839249, 1736738087977, 1736932211269, 1737087466998, 1737219491182]
+    # # fmt: on
+    # file_ids = file_ids[:4]
+    # file_ids.extend(file_ids2)
+    # data = dm.get_raw_data(file_id=file_ids)
+
+    # Combined file
+    data = dm.get_raw_data(file_id=1755199883770)
+
+    split_esr = [12, 13, 14, 61, 116]
+    broad_esr = [52, 11]
+    weak_esr = [72, 64, 55, 96, 112, 87, 12, 58, 36]
+    skip_inds = list(set(split_esr + broad_esr + weak_esr))
+    nv_inds = [ind for ind in range(117) if ind not in skip_inds]
 
     # create_raw_data_figure(data)
-    create_fit_figure(data)
+    create_fit_figure(data, nv_inds=nv_inds)
 
     plt.show(block=True)

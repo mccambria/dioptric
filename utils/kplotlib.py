@@ -29,7 +29,6 @@ import utils.common as common
 # from utils import data_manager
 
 alphabet = tuple(string.ascii_lowercase)
-double_alphabet = tuple("".join(el) for el in itertools.product(alphabet, repeat=2))
 
 
 # matplotlib semantic locations for legends and text boxes
@@ -227,19 +226,20 @@ def calc_mosaic_layout(num_panels, num_rows=None, num_cols=None):
     if num_rows is None and num_cols is None:
         num_rows = round(np.sqrt(num_panels))
         num_cols = int(np.ceil(num_panels / num_rows))
-    elif num_rows is not None:
+    elif num_cols is None:
         num_cols = int(np.ceil(num_panels / num_rows))
-    elif num_cols is not None:
+    elif num_rows is None:
         num_rows = int(np.ceil(num_panels / num_cols))
     num_axes = num_cols * num_rows
 
-    shape = (num_rows, num_cols)
-    vals = np.reshape(double_alphabet[:num_axes], shape)
+    vals = np.array(
+        [[f"{row}{col}" for col in alphabet[:num_cols]] for row in alphabet[:num_rows]]
+    )
     if num_panels != num_axes:
         vals[0, num_panels - num_axes :] = "."
 
     return vals
-    return vals.tolist()
+    # return vals.tolist()
 
 
 def subplot_mosaic(num_panels, num_rows=None, figsize=[10, 6.0]):
@@ -363,6 +363,7 @@ def init_kplotlib(
     plt.rcParams["legend.borderaxespad"] = 0.2
     plt.rcParams["legend.borderpad"] = 0.3
     plt.rcParams["axes.ymargin"] = 0.02
+    plt.rcParams["axes.axisbelow"] = False
 
 
 def get_default_color(ax, plot_type):
@@ -683,6 +684,7 @@ def imshow(
     cbar_label=None,
     no_cbar=False,
     nan_color=None,
+    interpolation="none",
     **kwargs,
 ):
     """Same as matplotlib's imshow, but with our defaults
@@ -711,7 +713,7 @@ def imshow(
 
     fig = ax.get_figure()
 
-    img = ax.imshow(img_array, **kwargs)
+    img = ax.imshow(img_array, interpolation=interpolation, **kwargs)
 
     # Colorbar
     if not no_cbar:

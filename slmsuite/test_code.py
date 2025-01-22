@@ -167,6 +167,7 @@
 # len_linear, len_logarithmic
 
 import numpy as np
+import matplotlib.pyplot as plt
 
 # fmt: off
 # scc_duration_list = [168, 160, 164, 124, 188, 132, 116, 124, 160, 160, 164, 120, 140, 144, 124, 136, 136, 88, 152, 140, 140, 116, 104, 120, 112, 164, 136, 112, 96, 112, 140, 144, 196, 192, 120, 140, 228, 140, 32, 140, 148, 108, 164, 152, 132, 140, 176, 132, 136, 120, 112, 108, 144, 116, 132, 36, 192, 84, 148, 112, 132, 152, 176, 176, 176, 112, 120, 140, 168, 140, 92, 132, 92, 124, 68, 32, 92, 148, 164, 104, 32, 148, 188, 32, 112, 148, 168, 64, 140, 140, 96, 124, 176, 108, 108, 216, 216, 116, 112, 132, 148, 132, 132, 140, 160, 132, 148, 192, 160, 116, 140, 120, 152, 140, 144, 124, 160]
@@ -215,8 +216,6 @@ extended_compensated_counts = [
 combined_counts_all = extended_initial_counts + extended_compensated_counts
 print(len(combined_counts_all))
 print(np.sqrt(len(combined_counts_all)))
-import matplotlib.pyplot as plt
-
 # Calculate updated statistical measures
 plt.figure(figsize=(8, 6))
 plt.hist(combined_counts_all, bins=15, color="blue", alpha=0.7)

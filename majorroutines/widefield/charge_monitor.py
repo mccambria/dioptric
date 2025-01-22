@@ -262,7 +262,7 @@ if __name__ == "__main__":
 
     ###
 
-    # data = dm.get_raw_data(file_id=1567772101718)
+    data = dm.get_raw_data(file_id=1567772101718)
     # process_detect_cosmic_rays(data)
 
     kpl.show(block=True)
