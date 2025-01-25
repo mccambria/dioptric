@@ -5,6 +5,7 @@ Tools for managing our experimental database
 Created November 15th, 2023
 
 @author: mccambria
+@author: mccam
 """
 
 # region Imports and constants

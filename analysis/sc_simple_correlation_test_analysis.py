@@ -925,6 +925,71 @@ def plot_histogram_over_time(corr_matrices, averaging_times):
     plt.show()
 
 
+def plot_thresholded_counts(data):
+    """
+    Plot thresholded signal and reference counts along the measurement index.
+
+    Parameters:
+        data (dict): Dictionary containing 'nv_list' and 'counts'.
+    """
+    nv_list = data["nv_list"]
+    counts = np.array(data["counts"])
+    num_nvs = len(nv_list)
+
+    # Separate signal and reference counts
+    sig_counts = np.array(counts[0])  # Signal counts
+    ref_counts = np.array(counts[1])  # Reference counts
+
+    # Apply dynamic thresholding
+    thresholded_sig_counts, thresholded_ref_counts = threshold_counts(
+        nv_list, sig_counts, ref_counts, dynamic_thresh=True
+    )
+
+    # Aggregate counts (sum over all NVs for each timestamp)
+    thresholded_sig_counts = np.array(thresholded_sig_counts).reshape((num_nvs, -1))
+    thresholded_ref_counts = np.array(thresholded_ref_counts).reshape((num_nvs, -1))
+    sig_sum = thresholded_sig_counts.sum(axis=0)
+    ref_sum = thresholded_ref_counts.sum(axis=0)
+
+    # Plot signal counts over time
+    time_dependent_fig, ax = plt.subplots(figsize=(10, 6))
+    ax.plot(
+        sig_sum,
+        marker="o",
+        markersize=2,
+        linestyle="-",
+        alpha=0.7,
+        label="Thresholded Signal Count",
+    )
+    ax.set_xlabel("Time (s)", fontsize=14)
+    ax.set_ylabel("Aggregate Signal Count", fontsize=14)
+    ax.set_title("Time-Dependent Thresholded Signal Count", fontsize=16)
+    ax.set_xlim(0, 60000)
+    ax.grid(True, linestyle="--", alpha=0.6)
+    ax.legend(fontsize=12)
+    plt.tight_layout()
+    plt.show()
+
+    # Plot reference counts over time
+    time_dependent_fig, ax = plt.subplots(figsize=(10, 6))
+    ax.plot(
+        ref_sum,
+        marker="x",
+        markersize=2,
+        linestyle="--",
+        alpha=0.7,
+        label="Thresholded Reference Count",
+    )
+    ax.set_xlabel("Time (s)", fontsize=14)
+    ax.set_ylabel("Aggregate Reference Count", fontsize=14)
+    ax.set_title("Time-Dependent Thresholded Reference Count", fontsize=16)
+    ax.set_xlim(0, 60000)
+    ax.grid(True, linestyle="--", alpha=0.6)
+    ax.legend(fontsize=12)
+    plt.tight_layout()
+    plt.show()
+
+
 # end region
 
 if __name__ == "__main__":
@@ -961,15 +1026,15 @@ if __name__ == "__main__":
     # ]
     # file_ids = [1739268623744, 1739343445705]
     # files Matt's new method for ref measurement
-    file_ids = [1739598841877, 1739660864956, 1739725006836, 1739855966253]
+    # file_ids = [1739598841877, 1739660864956, 1739725006836, 1739855966253]
     # final data set after randomizing the scc order between two groups
-    # file_ids = [
-    #     1739979522556,
-    #     1740062954135,
-    #     1740252380664,
-    #     1740377262591,
-    #     1740494528636,
-    # ]
+    file_ids = [
+        1739979522556,
+        1740062954135,
+        1740252380664,
+        1740377262591,
+        1740494528636,
+    ]
     # data = dm.get_raw_data(file_id=file_ids[0])
     # Create a string of all file IDs, separated by underscores
     all_file_ids_str = "_".join(map(str, file_ids))
@@ -985,7 +1050,8 @@ if __name__ == "__main__":
     print(f"File path: {file_path}")
 
     data = process_multiple_files(file_ids)
-    process_and_plot(data, rearrangement="block")
+    # process_and_plot(data, rearrangement="block")
+    plot_thresholded_counts(data)
     # try:
     #     # print(data.shape)
     #     # Process and plot the heatmaops with a rearrangement pattern
