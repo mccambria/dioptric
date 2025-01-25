@@ -91,13 +91,13 @@ def blaze(vector_deg=(0.2, 0.2)):
 
 # region "calibration"
 def fourier_calibration():
-    cam.set_exposure(0.1)  # Increase exposure because power will be split many ways
+    cam.set_exposure(0.002)  # Increase exposure because power will be split many ways
     fs.fourier_calibrate(
         array_shape=[20, 12],  # Size of the calibration grid (Nx, Ny) [knm]
         array_pitch=[30, 40],  # Pitch of the calibration grid (x, y) [knm]
         plot=True,
     )
-    cam.set_exposure(0.01)
+    # cam.set_exposure(0.01)
     # save calibation
     calibration_file = fs.save_fourier_calibration(path="slmsuite/fourier_calibration")
     print("Fourier calibration saved to:", calibration_file)
@@ -136,7 +136,7 @@ def wavefront_calibration():
 
 def load_fourier_calibration():
     calibration_file_path = (
-        "slmsuite/fourier_calibration/26438-SLM-fourier-calibration_00003.h5"
+        "slmsuite/fourier_calibration/26438-SLM-fourier-calibration_00006.h5"
     )
     fs.load_fourier_calibration(calibration_file_path)
     print("Fourier calibration loaded from:", calibration_file_path)
@@ -202,21 +202,30 @@ def circles():
         stat_groups=["computational_spot"],
     )
     phase = hologram.extract_phase()
+    # Define the path to save the phase data1
+    file_path = r"slmsuite\circles"
+    now = datetime.now()
+    date_time_str = now.strftime("%Y%m%d_%H%M%S")
+    filename = f"slm_phase_circles_{date_time_str}.npy"
+    # file_path = dm.get_file_path(__file__, filename)
+    # Save the phase data
+    save(phase, file_path, filename)
     slm.write(phase, settle=True)
-    cam_plot()
+
+    # cam_plot()
     # evaluate_uniformity(vectors=circle)
 
     # Hone the result with experimental feedback.
-    hologram.optimize(
-        "WGS-Kim",
-        maxiter=20,
-        feedback="experimental_spot",
-        stat_groups=["computational_spot", "experimental_spot"],
-        fixed_phase=False,
-    )
-    phase = hologram.extract_phase()
-    slm.write(phase, settle=True)
-    cam_plot()
+    # hologram.optimize(
+    #     "WGS-Kim",
+    #     maxiter=20,
+    #     feedback="experimental_spot",
+    #     stat_groups=["computational_spot", "experimental_spot"],
+    #     fixed_phase=False,
+    # )
+    # phase = hologram.extract_phase()
+    # slm.write(phase, settle=True)
+    # cam_plot()
     # evaluate_uniformity(vectors=circle)
 
 
@@ -225,8 +234,9 @@ def calibration_triangle():
     cam.set_exposure(0.1)
 
     # Define parameters for the equilateral triangle
-    center = (710, 550)  # Center of the triangle
-    side_length = 300  # Length of each side of the triangle
+    # center = (730, 570)  # Center of the triangle
+    center = (670, 600)  # Center of the triangle
+    side_length = 300  # Length of each side of the triangle\
 
     # Calculate the coordinates of the three vertices of the equilateral triangle
     theta = np.linspace(0, 2 * np.pi, 4)[:-1]  # Exclude the last point to avoid overlap
@@ -266,10 +276,10 @@ def nuvu2thorcam_calibration(coords):
     to the Thorlabs camera's coordinate system using an affine transformation.
     """
     cal_coords_thorcam = np.array(
-        [[969.807, 700.0], [450.192, 700.0], [710.0, 250.0]], dtype="float32"
+        [[929.807, 750.0], [410.192, 750.0], [670.0, 300.0]], dtype="float32"
     )
     cal_coords_nuvu = np.array(
-        [[196.637, 34.905], [197.532, 214.032], [37.77, 122.844]], dtype="float32"
+        [[200.001, 37.957], [189.846, 208.307], [46.48, 112.474]], dtype="float32"
     )
 
     # Compute the affine transformation matrix
@@ -284,7 +294,8 @@ def nuvu2thorcam_calibration(coords):
 
 def load_nv_coords(
     # file_path="slmsuite/nv_blob_detection/nv_blob_filtered_160nvs_reordered.npz",
-    file_path="slmsuite/nv_blob_detection/nv_blob_filtered_160nvs_reordered_selected_117nvs.npz",
+    file_path="slmsuite/nv_blob_detection/nv_blob_filtered_160nvs_reordered_updated.npz",  # after shutdownb
+    # file_path="slmsuite/nv_blob_detection/nv_blob_filtered_160nvs_reordered_selected_117nvs.npz",
     # file_path="slmsuite/nv_blob_detection/nv_blob_filtered_160nvs_reordered_selected_117nvs_updated.npz",
     # file_path="slmsuite/nv_blob_detection/nv_blob_filtered_160nvs_reordered_selected_106nvs.npz",
 ):
@@ -311,7 +322,7 @@ def compute_nvs_phase():
         shape=(4096, 2048),
         spot_vectors=thorcam_coords,
         basis="ij",
-        # spot_amp=spot_weights,
+        spot_amp=spot_weights,
         cameraslm=fs,
     )
     # Precondition computationally
@@ -337,12 +348,13 @@ def compute_nvs_phase():
 
 
 def write_nvs_phase():
-    # phase = np.load(
-    #     "slmsuite\computed_phase\slm_phase_160nvs_20241227_143040.npy"
-    # )  # 160NVs weighted spots
     phase = np.load(
-        "slmsuite\computed_phase\slm_phase_117nvs_20250116_143218.npy"
-    )  # 117NVs weighted spots
+        "slmsuite\computed_phase\slm_phase_160nvs_20250120_010003.npy"
+    )  # 160NVs weighted spots
+    # phase = np.load(
+    #     "slmsuite\computed_phase\slm_phase_117nvs_20250119_143417.npy"
+    # )  # 117NVs weighted spots
+    # phase = np.load("slmsuite\circles\slm_phase_circles_20250118_210419.npy")  # circles
     slm.write(phase, settle=True)
     # cam_plot()
 
@@ -366,8 +378,8 @@ try:
     # test_wavefront_calibration()
     # wavefront_calibration()
     # load_wavefront_calibration()
-    compute_nvs_phase()
-    # write_nvs_phase()
+    # compute_nvs_phase()
+    write_nvs_phase()
     # calibration_triangle()
     # circles()
     # smiley()

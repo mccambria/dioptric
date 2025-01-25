@@ -389,7 +389,6 @@ def macro_run_aods(
                 laser_names.append(physical_laser_name)
 
     num_lasers = len(laser_names)
-
     # Adjust the pulse names for the passed suffices
     base_pulse_name = "aod_cw"
     pulse_names = []

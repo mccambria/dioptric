@@ -39,14 +39,14 @@ calibration_coords_pixel = [
 ]
 
 calibration_coords_green = [
-    [115.658, 101.174],
-    [109.267, 115.624],
-    [98.627, 100.579],
+    [115.573, 101.133],
+    [109.214, 115.493],
+    [98.62, 100.584],
 ]
 calibration_coords_red = [
-    [78.678, 67.834],
-    [73.807, 79.609],
-    [65.055, 67.585],
+    [78.816, 67.86],
+    [73.859, 79.697],
+    [65.063, 67.591],
 ]
 
 # Create the dictionaries using the provided lists
@@ -198,7 +198,7 @@ config |= {
             # LaserKey.IMAGING: {"physical_name": green_laser, "duration": 50e6},
             VirtualLaserKey.IMAGING: {
                 "physical_name": green_laser,
-                "duration": 6e6,
+                "duration": 12e6,
             },
             VirtualLaserKey.SPIN_READOUT: {
                 "physical_name": green_laser,
@@ -250,7 +250,7 @@ config |= {
                 # "duration": 100e6,
                 "duration": 50e6,
                 # "duration": 30e6,
-                # "duration": 12e6,  # for red calibration
+                # "duration": 24e6,  # for red calibration
             },
             # LaserKey.WIDEFIELD_CHARGE_READOUT: {"physical_name": yellow_laser, "duration": 100e6},
         },
@@ -808,7 +808,7 @@ opx_config = {
         # "green_aod_cw-opti": {"type": "constant", "sample": 0.03},
         # "green_aod_cw-charge_pol": {"type": "constant", "sample": 0.13},
         # "green_aod_cw-charge_pol": {"type": "constant", "sample": 0.06},  # Negative
-        "green_aod_cw-charge_pol": {"type": "constant", "sample": 0.123},
+        "green_aod_cw-charge_pol": {"type": "constant", "sample": 0.15},
         "green_aod_cw-spin_pol": {"type": "constant", "sample": 0.05},
         "green_aod_cw-shelving": {"type": "constant", "sample": 0.05},
         "green_aod_cw-scc": {"type": "constant", "sample": 0.15},
@@ -822,9 +822,10 @@ opx_config = {
         # Yellow AOM
         "yellow_imaging": {"type": "constant", "sample": 0.45},  # 0.35
         # "yellow_imaging": {"type": "constant", "sample": 0.50},  # 0.35
-        # "yellow_charge_readout": {"type": "constant", "sample": 0.396},  # 50ms 160NVs
+        # "yellow_charge_readout": {"type": "constant", "sample": 0396},  # 50ms 160NVs
+        "yellow_charge_readout": {"type": "constant", "sample": 0.4129},  # 50ms 160NVs
         # "yellow_charge_readout": {"type": "constant", "sample": 0.3472},  # 50ms 117NVs
-        "yellow_charge_readout": {"type": "constant", "sample": 0.3741},  # 50ms 117NVs
+        # "yellow_charge_readout": {"type": "constant", "sample": 0.3741},  # 50ms 117NVs
         # "yellow_charge_readout": {"type": "constant", "sample": 0.325},  # 100ms 117NVs
         # "yellow_charge_readout": {"type": "constant", "sample": 0.29},  # 200ms 117NVs
         # "yellow_charge_readout": {"type": "constant", "sample": 0.42},  # 12ms red cal

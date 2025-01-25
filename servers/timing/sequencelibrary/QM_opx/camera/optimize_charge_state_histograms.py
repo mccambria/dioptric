@@ -6,8 +6,9 @@ Created on October 13th, 2023
 
 @author: mccambria
 """
-import numpy as np
+
 import matplotlib.pyplot as plt
+import numpy as np
 from qm import QuantumMachinesManager, qua
 from qm.simulate import SimulationConfig
 
