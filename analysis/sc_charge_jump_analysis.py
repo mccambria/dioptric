@@ -323,7 +323,7 @@ def process_detect_cosmic_rays(data, prob_dist: ProbDist = ProbDist.COMPOUND_POI
     states_0 = widefield.threshold_counts(nv_list, sig_counts, dynamic_thresh=True)
     states_1 = widefield.threshold_counts(nv_list, ref_counts, dynamic_thresh=True)
     ref_states = np.array(states_0).reshape((num_nvs, -1))
-    # sig_states = np.array(states_1).reshape((num_nvs, -1))
+    sig_states = np.array(states_1).reshape((num_nvs, -1))
     states = ref_states
     # states = sig_states
     # states = np.array(states).reshape((num_nvs, -1))
@@ -369,13 +369,6 @@ def process_detect_cosmic_rays(data, prob_dist: ProbDist = ProbDist.COMPOUND_POI
     # Weight the states by fidelity
     # weighted_states = states * fidelity_weights[:, np.newaxis]
     # Generate timestamps
-    timestamps = generate_timestamps(
-        num_reps,
-        num_runs,
-        dark_time_ns=10e6,
-        deadtime_ns=100e6,
-        readout_time_ns=50e6,
-    )
 
     # Coincidences
     coincidences = num_nvs - states.sum(axis=0)
@@ -399,22 +392,32 @@ def process_detect_cosmic_rays(data, prob_dist: ProbDist = ProbDist.COMPOUND_POI
         color="blue",
     )
 
+    # ax.vlines(
+    #     78,
+    #     0,
+    #     max(hist_values),
+    #     color="red",
+    #     linestyle="--",
+    #     label="Mean",
+    # )
+
     # Add Poisson PMF for comparison
-    x_vals = np.arange(num_nvs + 1)
-    expected_dist = len(coincidences) * poisson.pmf(x_vals, np.mean(coincidences))
-    ax.plot(
-        x_vals,
-        expected_dist,
-        marker="o",
-        linestyle="--",
-        label="Poisson PMF (Expected Dist.)",
-        color="red",
-        alpha=0.6,
-        markersize=2,
-    )
+    # x_vals = np.arange(num_nvs + 1)
+    # expected_dist = len(coincidences) * poisson.pmf(x_vals, np.mean(coincidences))
+    # ax.plot(
+    #     x_vals,
+    #     expected_dist,
+    #     marker="o",
+    #     linestyle="--",
+    #     label="Poisson PMF (Expected Dist.)",
+    #     color="red",
+    #     alpha=0.6,
+    #     markersize=2,
+    # )
 
     # Set y-axis limits dynamically based on data range
-    # ax.set_ylim(1, max(max(hist_values), max(expected_dist)) * 1.0)
+    # ax.set_yscale("log")
+    ax.set_ylim(0, 4)
 
     # Add labels, title, and legend
     ax.set_xlabel("Number of NVs in NV⁰ State", fontsize=15)
@@ -446,6 +449,7 @@ def process_detect_cosmic_rays(data, prob_dist: ProbDist = ProbDist.COMPOUND_POI
     # ax.set_title("Time-Resolved Coincidence Histogram", fontsize=15)
     # ax.legend(fontsize=10)
     # ax.grid(True, linestyle="--", alpha=0.6)
+    # Filter points where coincidences > 80
 
     # 3. Spatial Heatmap of NV Activity
     activity_counts = states.sum(axis=1)
@@ -458,7 +462,7 @@ def process_detect_cosmic_rays(data, prob_dist: ProbDist = ProbDist.COMPOUND_POI
         x_coords,
         y_coords,
         c=activity_counts,
-        cmap="coolwarm",
+        cmap="viridis",
         edgecolors="black",
         s=60,
         label="NV Positions",
@@ -487,16 +491,62 @@ def process_detect_cosmic_rays(data, prob_dist: ProbDist = ProbDist.COMPOUND_POI
     # Add labels, title, grid, and legend
     ax.set_xlabel("Number of Shots", fontsize=14)  # Corrected: Use ax.set_xlabel
     ax.set_ylabel("Number of NVs in NV⁰ State", fontsize=14)
-    ax.set_title("Time-Series NV⁰ Count (dark time: 1s)", fontsize=16)
+    ax.set_title("Time-Series NV⁰ Count (dark time: 1ms)", fontsize=16)
     ax.grid(True, linestyle="--", alpha=0.6)
     ax.legend(fontsize=12)
 
     # Adjust layout and show the plot
     plt.tight_layout()
     plt.show()
+    # Reshape coincidences to match the NV count (assuming 15,000 = num_shots x num_nvs)
+    # Unpack relevant variables
+
+    # Number of NVs
+    num_nvs = len(nv_list)
+
+    # Compute the sum across all NVs for each shot
+    states = np.array(states_1).reshape((num_nvs, -1))
+    shot_sums = num_nvs - states.sum(axis=0)
+
+    # Find indices of shots where the sum is greater than 80
+    high_activity_indices = np.where(shot_sums > 78)[0]  # Get 1D array of indices
+    print(f"Selected shots: {len(high_activity_indices)}")
+
+    # Extract only the selected shots
+    selected_states = states[:, high_activity_indices]
+
+    # Extract spatial coordinates
+    x_coords = [nv.coords["pixel"][0] for nv in nv_list]
+    y_coords = [nv.coords["pixel"][1] for nv in nv_list]
+
+    # Compute activity counts for each NV
+    high_activity_counts = selected_states.sum(
+        axis=1
+    )  # Sum over selected shots for each NV
+
+    # Plot the spatial heatmap for high-activity NVs
+    high_activity_map_fig, ax = plt.subplots()
+    scatter = ax.scatter(
+        x_coords,
+        y_coords,
+        c=high_activity_counts,
+        cmap="viridis",
+        edgecolors="black",
+        s=60,
+    )
+    plt.colorbar(scatter, ax=ax, label="Activity Count (Sum)")
+    ax.set_xlabel("X Coordinate (Pixels)", fontsize=15)
+    ax.set_ylabel("Y Coordinate (Pixels)", fontsize=15)
+    ax.set_title("NVs with High-Activity Shots in NV⁰ State (>78)", fontsize=15)
+    ax.legend(fontsize=10)
+    ax.grid(True, linestyle="--", alpha=0.6)
+    plt.show()
+
+    print(f"High-activity shot indices: {high_activity_indices}")
+
     return (
         hist_fig,
-        time_resolved_fig,
+        high_activity_map_fig,
         spatial_heatmap_fig,
         time_series_fig,
     )

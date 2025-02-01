@@ -16,7 +16,8 @@ import numpy as np
 import seaborn as sns
 from matplotlib.animation import FuncAnimation
 from matplotlib.patches import Circle
-from pykrige import OrdinaryKriging
+
+# from pykrige import OrdinaryKriging
 
 # from pykrige.ok import OrdinaryKriging
 from scipy.interpolate import Rbf
