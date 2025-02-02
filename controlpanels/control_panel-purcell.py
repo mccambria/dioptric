@@ -67,9 +67,16 @@ def do_widefield_image_sample(nv_sig, num_reps=1):
 
 
 def do_scanning_image_sample(nv_sig):
-    scan_range = 12
-    num_steps = 12
+    scan_range = 15
+    num_steps = 15
     image_sample.scanning(nv_sig, scan_range, scan_range, num_steps)
+
+
+def do_scanning_image_full_roi(nv_sig):
+    total_range = 24
+    scan_range = 8
+    num_steps = 8
+    image_sample.scanning_full_roi(nv_sig, total_range, scan_range, num_steps)
 
 
 def do_scanning_image_sample_zoom(nv_sig):
@@ -92,7 +99,7 @@ def do_image_single_nv(nv_sig):
 def do_charge_state_histograms(nv_list):
     # 50 ms
     num_reps = 200
-    num_runs = 2
+    num_runs = 6
 
     # 100 ms
     # num_reps = 100
@@ -153,8 +160,8 @@ def do_optimize_readout_amp(nv_list):
     num_steps = 21
     # num_reps = 150
     # num_runs = 5
-    num_reps = 10
-    num_runs = 225
+    num_reps = 15
+    num_runs = 200
     min_amp = 0.8
     max_amp = 1.2
     return optimize_charge_state_histograms_mcc.optimize_readout_amp(
@@ -224,10 +231,10 @@ def do_optimize_green(nv_sig):
 
 def do_optimize_red(nv_sig, ref_nv_sig):
     opti_coords = []
-    # axes_list = [Axes.X, Axes.Y]
-    axes_list = [Axes.Y, Axes.X]
+    axes_list = [Axes.X, Axes.Y]
+    # axes_list = [Axes.Y, Axes.X]
     # shuffle(axes_list)
-    for ind in range(1):
+    for ind in range(2):
         axes = axes_list[ind]
         ret_vals = targeting.optimize(nv_sig, coords_key=red_laser_aod, axes=axes)
         opti_coords.append(ret_vals[0])
@@ -701,15 +708,21 @@ def do_spin_pol_check(nv_sig):
 
 
 def do_detect_cosmic_rays(nv_list):
-    num_reps = 200
-    num_runs = 300
-    # num_runs = 6
+    num_reps = 50
+    num_runs = 150
+    # num_runs = 4
     # dark_time = 1e9 # 1s
     # dark_time = 10e6  # 10ms
+    dark_time_1 = 1e6  # 1 ms in nanoseconds
+    dark_time_2 = 1e9  # 1 s in nanoseconds
     # charge_monitor.detect_cosmic_rays(nv_list, num_reps, num_runs, dark_time)
-    dark_times = [100e6, 500e6, 5e6, 506, 250e6]
-    for dark_time in dark_times:
-        charge_monitor.detect_cosmic_rays(nv_list, num_reps, num_runs, dark_time)
+    for _ in range(4):
+        charge_monitor.detect_cosmic_rays(
+            nv_list, num_reps, num_runs, dark_time_1, dark_time_2
+        )
+    # dark_times = [100e6, 500e6, 5e6, 506, 250e6]
+    # for dark_time in dark_times:
+    #     charge_monitor.detect_cosmic_rays(nv_list, num_reps, num_runs, dark_time)
 
 
 def do_check_readout_fidelity(nv_list):
@@ -756,12 +769,12 @@ def do_opx_constant_ac():
     # opx.stream_start()
 
     # Yellow
-    opx.constant_ac(
-        [],  # Digital channels
-        [7],  # Analog channels
-        [0.47],  # Analog voltages
-        [0],  # Analog frequencies
-    )
+    # opx.constant_ac(
+    #     [],  # Digital channels
+    #     [7],  # Analog channels
+    #     [0.45],  # Analog voltages
+    #     [0],  # Analog frequencies
+    # )
 
     # opx.constant_ac([4])  # Just laser
     # Red
@@ -826,12 +839,12 @@ def do_opx_constant_ac():
     #     [73.166, 72.941],  # Analog frequencies
     # )
     # Green + yellow
-    # opx.constant_ac(
-    #     [4],  # Digital channels
-    #     [3, 4, 7],  # Analog channels
-    #     [0.19, 0.19, 0.45],  # Analog voltages
-    #     [107, 107, 0],  # Analog frequencies
-    # )
+    opx.constant_ac(
+        [4],  # Digital channels
+        [3, 4, 7],  # Analog channels
+        [0.19, 0.19, 0.45],  # Analog voltages
+        [107, 107, 0],  # Analog frequencies
+    )
     # Red + green + Yellow
     # opx.constant_ac(
     #     [4, 1],  # Digital channels1
@@ -967,16 +980,18 @@ if __name__ == "__main__":
     green_coords_key = f"coords-{green_laser}"
     red_coords_key = f"coords-{red_laser}"
     pixel_coords_key = "pixel_coords"
-    sample_name = "johnson"
+    sample_name = "cannon"
     # magnet_angle = 90
-    date_str = "2024_03_12"
-    sample_coords = [2.0, 0.0]
-    z_coord = 1.8
+    date_str = "2025_01_29"
+    sample_coords = [0.0, 0.4]
+    z_coord = 1.4
     # Load NV pixel coordinates1
     pixel_coords_list = load_nv_coords(
-        file_path="slmsuite/nv_blob_detection/nv_blob_filtered_160nvs_reordered.npz",
+        # file_path="slmsuite/nv_blob_detection/nv_blob_filtered_160nvs_reordered.npz",
+        # file_path="slmsuite/nv_blob_detection/nv_blob_shallow_52nvs_reordered.npz",
+        # file_path="slmsuite/nv_blob_detection/nv_blob_shallow_161nvs_reordered.npz",
+        file_path="slmsuite/nv_blob_detection/nv_blob_shallow_148nvs_reordered.npz",
     ).tolist()
-
     # Define transformations using `transform_coords`
     green_coords_list = [
         [
@@ -999,28 +1014,29 @@ if __name__ == "__main__":
     ]
 
     # Print first coordinate set for verification
+    # print(f"Number of NVs: {red_coords_list}")
     print(f"Number of NVs: {len(pixel_coords_list)}")
     print(f"Reference NV:{pixel_coords_list[0]}")
     print(f"Green Laser Coordinates: {green_coords_list[0]}")
     print(f"Red Laser Coordinates: {red_coords_list[0]}")
-
+    # sys.exit()
     # pixel_coords_list = [
-    #     [106.923, 120.549],
-    #     [52.761, 64.24],
-    #     [95.923, 201.438],
-    #     [207.435, 74.049],
+    #     [117.516, 129.595],
+    #     [239.243, 23.266],
+    #     [15.473, 52.03],
+    #     [107.857, 223.635],
     # ]
     # green_coords_list = [
-    #     [109.04, 106.683],
-    #     [115.573, 101.133],
-    #     [109.214, 115.493],
-    #     [98.62, 100.584],
+    #     [107.171, 107.534],
+    #     [95.595, 94.819],
+    #     [119.069, 100.321],
+    #     [107.092, 117.632],
     # ]
     # red_coords_list = [
-    #     [73.602, 72.526],
-    #     [78.816, 67.86],
-    #     [73.859, 79.697],
-    #     [65.063, 67.591],
+    #     [72.617, 73.149],
+    #     [62.674, 62.858],
+    #     [82.213, 67.053],
+    #     [72.619, 81.576],
     # ]
     num_nvs = len(pixel_coords_list)
     threshold_list = [25.5] * num_nvs
@@ -1035,7 +1051,6 @@ if __name__ == "__main__":
     # scc_data = dm.get_raw_data(file_id=1724869770494)
     scc_data = dm.get_raw_data(file_id=1725870710271)
     scc_optimal_durations = scc_data["optimal_durations"]
-    scc_optimal_amplitudes = scc_data["optimal_amplitudes"]
     # Cross pattern
     # scc_duration_list = list(scc_optimal_durations.values())
     # scc_amp_list = list(scc_optimal_amplitudes.values())
@@ -1059,11 +1074,12 @@ if __name__ == "__main__":
     # include_inds = [0, 1, 2, 3, 4, 5, 6, 7, 8, 13, 14, 15, 16, 17, 18, 21, 22, 23, 24, 25, 26, 28, 29, 31, 33, 36, 37, 38, 39, 40, 42, 44, 46, 47, 48, 49, 51, 52, 53, 56, 57, 58, 60, 62, 64, 65, 66, 68, 69, 70, 71, 72, 74, 75, 77, 78, 79, 80, 83, 88, 90, 91, 92, 94, 95, 96, 97, 100, 101, 103, 105, 106, 107, 108, 109, 110, 112, 114, 116, 118, 120, 121, 122, 123, 124, 125, 126, 128, 131, 134, 136, 138, 140, 141, 145, 146, 147, 152, 153, 154, 156, 157, 158]
     # 117nvs
     include_inds = [0,1,2,3,5,6,7,8,13,14,15,16,17,18,20,21,22,23,24,25,26,28,29,31,32,33,34,36,37,39,42,44,45,46,47,48,49,51,52,53,55,56,57,58,60,61,62,64,65,66,68,69,70,71,72,73,74,75,77,79,83,84,85,88,89,90,91,92,94,95,96,97,99,100,101,102,103,105,106,107,108,109,110,111,113,114,116,117,118,120,122,123,124,125,128,131,132,134,136,137,138,140,141,142,145,146,147,148,149,152,153,154,155,156,157,158,159,]
+    scc_duration_list = [100] * num_nvs
     # Initialize a list with None values
-    arranged_scc_duration_list = [None] * num_nvs
-    for i, idx in enumerate(include_inds):
-        arranged_scc_duration_list[idx] = scc_duration_list[i]
-    scc_duration_list = arranged_scc_duration_list
+    # arranged_scc_duration_list = [None] * num_nvs
+    # for i, idx in enumerate(include_inds):
+    #     arranged_scc_duration_list[idx] = scc_duration_list[i]
+    # scc_duration_list = arranged_scc_duration_list
 
     # threshold_list = [17.5, 16.5, 12.5, 24.5, 21.5, 22.5, 19.5, 18.5, 17.5, 18.5, 27.5, 20.5, 23.5, 17.5, 18.5, 17.5, 23.5, 19.5, 10.5, 16.5, 17.5, 15.5, 21.5, 17.5, 18.5, 19.5, 23.5, 17.5, 23.5, 18.5, 15.5, 16.5, 23.5, 16.5, 19.5, 18.5, 15.5, 20.5, 14.5, 17.5, 23.5, 26.5, 17.5, 17.5, 16.5, 12.5, 13.5, 15.5, 16.5, 18.5, 20.5, 12.5, 18.5, 23.5, 16.5, 17.5, 22.5, 13.5, 14.5, 22.5, 14.5, 15.5, 13.5, 21.5, 18.5, 18.5, 14.5, 17.5, 17.5, 18.5, 15.5, 17.5, 13.5, 15.5, 14.5, 21.5, 17.5, 17.5, 18.5, 16.5, 16.5, 13.5, 17.5, 17.5, 14.5, 14.5, 18.5, 29.5, 19.5, 16.5, 21.5, 16.5, 17.5, 14.5, 19.5, 18.5, 15.5, 15.5, 20.5, 16.5, 14.5, 16.5, 14.5, 17.5, 16.5, 21.5, 13.5, 14.5, 15.5, 12.5, 17.5, 16.5, 12.5, 12.5, 12.5, 12.5, 12.5]
     # arranged_threshold_list = [None] * num_nvs
@@ -1113,7 +1129,6 @@ if __name__ == "__main__":
     # ax.set_ylabel("SNR difference")
     # kpl.show(block=True)
     # sys.exit()
-
     scc_duration_list = [
         4 * round(el / 4) if el is not None else None for el in scc_duration_list
     ]
@@ -1144,15 +1159,16 @@ if __name__ == "__main__":
             # },
         )
         nv_list.append(nv_sig)
-
+    # print(nv_sig)
     # Additional properties for the representative NV
     nv_list[0].representative = True
     # nv_list[1].representative = True
     repr_nv_sig = widefield.get_repr_nv_sig(nv_list)
     nv_sig = widefield.get_repr_nv_sig(nv_list)
     # print(f"Created NV: {nv_sig.name}, Coords: {nv_sig.coords}")
-    nv_sig.expected_counts = 1420
-    # nv_sig.expected_counts = 800
+    # nv_sig.expected_counts = 4500
+    # nv_sig.expected_counts = 1320
+    nv_sig.expected_counts = 2100
 
     # num_nvs = len(nv_list)
     # print(f"Final NV List: {nv_list}")
@@ -1237,7 +1253,7 @@ if __name__ == "__main__":
         # piezo_voltage_to_pixel_calibration()
 
         do_compensate_for_drift(nv_sig)
-        do_widefield_image_sample(nv_sig, 50)
+        # do_widefield_image_sample(nv_sig, 50)
         # do_charge_state_histograms(nv_list)
         # do_charge_state_conditional_init(nv_list)
 
@@ -1253,14 +1269,20 @@ if __name__ == "__main__":
         # nv_sig.coords[CoordsKey.SAMPLE][1] = y
         # do_scanning_image_sample(nv_sig)
 
-        # for z in np.linspace(1.0, 2.0, 11):
+        # for z in np.linspace(0.0, 2.0, 15):
         #     nv_sig.coords[CoordsKey.Z] = z
         #     do_scanning_image_sample(nv_sig)
 
         # nv_sig.coords[CoordsKey.z] = 0.4
         # do_scanning_image_sample(nv_sig)
 
+        # for y in np.linspace(0, 16, 5):
+        #     for y in np.linspace(0, 16, 5):
+        #         nv_sig.coords[green_laser_aod : green_coords_list[ind]] + x
+        #         do_scanning_image_sample(nv_sig)
+
         # do_scanning_image_sample(nv_sig)
+        # do_scanning_image_full_roi(nv_sig)
         # do_scanning_image_sample_zoom(nv_sig)
         # do_widefield_image_sample(nv_sig, 50)
         # do_widefield_image_sample(nv_sig, 100)
@@ -1283,13 +1305,13 @@ if __name__ == "__main__":
         ## do_optimize_sample(nv_sig)
 
         # widefield.reset_all_drift()
-        # coords_key = None  # Pixel coords
+        # coords_key = None
         # coords_key = green_laser
         # coords_key = red_laser
         # do_optimize_loop(nv_list, coords_key)
 
         # do_optimize_pol_amp(nv_list)
-        # do_optimize_readout_amp(nv_list)
+        do_optimize_readout_amp(nv_list)
         # do_optimize_readout_duration(nv_list)
         # optimize_readout_amp_and_duration(nv_list)
         # do_optimize_pol_duration(nv_list)
@@ -1307,7 +1329,7 @@ if __name__ == "__main__":
         # do_sq_relaxation(nv_list)
         # do_dq_relaxation(nv_list)
         # do_xy8(nv_list)
-        do_detect_cosmic_rays(nv_list)
+        # do_detect_cosmic_rays(nv_list)
         # do_check_readout_fidelity(nv_list)
         # do_charge_quantum_jump(nv_list)
         # do_ac_stark(nv_list)
