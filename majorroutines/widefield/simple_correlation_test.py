@@ -432,7 +432,7 @@ def process_and_plot(
             cbar.ax.tick_params(labelrotation=90)
         # ax.xaxis.set_major_locator(MaxNLocator(integer=True))
         # ax.yaxis.set_major_locator(MaxNLocator(integer=True))
-        # ax.set_yticks([0, 2, 4, 6, 8])
+        # ax.set_yticks([0, 2, 4, 6, 8])1
         # ax.set_xticks([0, 2, 4, 6, 8])
         # ax.tick_params(labelsize=16)
         if not no_labels:

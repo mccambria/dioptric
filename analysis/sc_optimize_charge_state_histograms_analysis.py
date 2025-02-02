@@ -531,6 +531,8 @@ if __name__ == "__main__":
     # file_id = 1752870018575  # yellow ampl var 50ms 117NVs afdter birge
     # file_id = 1752968732835  # green ampl var
     file_id = 1754323175446
+    file_id = 1757422756726
+    file_id = 1766460747869  # yellow ampl var 50ms shallow 169Nvs
     # raw_data = dm.get_raw_data(file_id=1709868774004, load_npz=False) #yellow ampl var
     raw_data = dm.get_raw_data(file_id=file_id, load_npz=False)  # yellow amp var
     process_and_plot(raw_data)

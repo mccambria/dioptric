@@ -235,8 +235,8 @@ def calibration_triangle():
 
     # Define parameters for the equilateral triangle
     # center = (730, 570)  # Center of the triangle
-    center = (670, 600)  # Center of the triangle
-    side_length = 300  # Length of each side of the triangle\
+    center = (680, 630)  # Center of the triangle
+    side_length = 400  # Length of each side of the triangle\
 
     # Calculate the coordinates of the three vertices of the equilateral triangle
     theta = np.linspace(0, 2 * np.pi, 4)[:-1]  # Exclude the last point to avoid overlap
@@ -276,10 +276,11 @@ def nuvu2thorcam_calibration(coords):
     to the Thorlabs camera's coordinate system using an affine transformation.
     """
     cal_coords_thorcam = np.array(
-        [[929.807, 750.0], [410.192, 750.0], [670.0, 300.0]], dtype="float32"
+        [[1026.410, 830.0], [333.589, 830.0], [680.0, 230.0]], dtype="float32"
     )
+
     cal_coords_nuvu = np.array(
-        [[200.001, 37.957], [189.846, 208.307], [46.48, 112.474]], dtype="float32"
+        [[223.768, 7.313], [209.042, 238.041], [16.005, 108.219]], dtype="float32"
     )
 
     # Compute the affine transformation matrix
@@ -293,8 +294,13 @@ def nuvu2thorcam_calibration(coords):
 
 
 def load_nv_coords(
+    # file_path="slmsuite/nv_blob_detection/nv_blob_filtered_437nvs_reordered.npz",
+    # file_path="slmsuite/nv_blob_detection/nv_blob_shallow_161nvs_reordered.npz",
+    file_path="slmsuite/nv_blob_detection/nv_blob_shallow_148nvs_reordered.npz",
+    # file_path="slmsuite/nv_blob_detection/nv_blob_shallow_89nvs_reordered.npz",
+    # file_path="slmsuite/nv_blob_detection/nv_blob_shallow_52nvs_reordered.npz",
     # file_path="slmsuite/nv_blob_detection/nv_blob_filtered_160nvs_reordered.npz",
-    file_path="slmsuite/nv_blob_detection/nv_blob_filtered_160nvs_reordered_updated.npz",  # after shutdownb
+    # file_path="slmsuite/nv_blob_detection/nv_blob_filtered_160nvs_reordered_updated.npz",  # after shutdownb
     # file_path="slmsuite/nv_blob_detection/nv_blob_filtered_160nvs_reordered_selected_117nvs.npz",
     # file_path="slmsuite/nv_blob_detection/nv_blob_filtered_160nvs_reordered_selected_117nvs_updated.npz",
     # file_path="slmsuite/nv_blob_detection/nv_blob_filtered_160nvs_reordered_selected_106nvs.npz",
@@ -304,7 +310,7 @@ def load_nv_coords(
     # spot_weights = data["spot_weights"]
     spot_weights = data["updated_spot_weights"]
     # spot_weights = data["integrated_counts"]
-    print(len(spot_weights))
+    # print(len(spot_weights))
     print(spot_weights)
     # spot_weights = data["integrated_counts"]
     return nv_coordinates, spot_weights
@@ -312,6 +318,14 @@ def load_nv_coords(
 
 # Set the threshold for x and y coordinates, assuming the SLM has a 2048x2048 pixel grid
 nuvu_pixel_coords, spot_weights = load_nv_coords()
+# nuvu_pixel_coords = np.array(
+#     [
+#         [107.51, 120.42],
+#         [242.728, 64.946],
+#         [7.856, 74.462],
+#         [86.077, 231.364],
+#     ]
+# )
 print(f"Total NV coordinates: {len(nuvu_pixel_coords)}")
 thorcam_coords = nuvu2thorcam_calibration(nuvu_pixel_coords).T
 # sys.exit()
@@ -322,7 +336,7 @@ def compute_nvs_phase():
         shape=(4096, 2048),
         spot_vectors=thorcam_coords,
         basis="ij",
-        spot_amp=spot_weights,
+        # spot_amp=spot_weights,
         cameraslm=fs,
     )
     # Precondition computationally
@@ -348,9 +362,7 @@ def compute_nvs_phase():
 
 
 def write_nvs_phase():
-    phase = np.load(
-        "slmsuite\computed_phase\slm_phase_160nvs_20250120_010003.npy"
-    )  # 160NVs weighted spots
+    phase = np.load("slmsuite\computed_phase\slm_phase_160nvs_20250123_154409.npy")
     # phase = np.load(
     #     "slmsuite\computed_phase\slm_phase_117nvs_20250119_143417.npy"
     # )  # 117NVs weighted spots
@@ -378,8 +390,8 @@ try:
     # test_wavefront_calibration()
     # wavefront_calibration()
     # load_wavefront_calibration()
-    # compute_nvs_phase()
-    write_nvs_phase()
+    compute_nvs_phase()
+    # write_nvs_phase()
     # calibration_triangle()
     # circles()
     # smiley()

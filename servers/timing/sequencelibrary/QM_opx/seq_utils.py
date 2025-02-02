@@ -5,6 +5,7 @@ QM OPX sequence utils. Should only be used by sequence files
 Created June 25th, 2023
 
 @author: mccambria
+@author: Saroj Chand
 """
 
 import logging

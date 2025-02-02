@@ -32,23 +32,39 @@ red_laser = "laser_COBO_638"
 green_laser_aod = "laser_INTE_520_aod"
 red_laser_aod = "laser_COBO_638_aod"
 
-calibration_coords_pixel = [
-    [52.761, 64.24],
-    [95.923, 201.438],
-    [207.435, 74.049],
-]
+# calibration_coords_pixel = [
+#     [52.761, 64.24],
+#     [95.923, 201.438],
+#     [207.435, 74.049],
+# ]
 
+# calibration_coords_green = [
+#     [115.66, 101.157],
+#     [109.249, 115.543],
+#     [98.684, 100.663],
+# ]
+# calibration_coords_red = [
+#     [78.816, 67.86],
+#     [73.859, 79.697],
+#     [65.063, 67.591],
+# ]
+
+
+calibration_coords_pixel = [
+    [239.243, 23.266],
+    [15.473, 52.03],
+    [107.857, 223.635],
+]
 calibration_coords_green = [
-    [115.573, 101.133],
-    [109.214, 115.493],
-    [98.62, 100.584],
+    [95.595, 94.819],
+    [119.069, 100.321],
+    [107.092, 117.632],
 ]
 calibration_coords_red = [
-    [78.816, 67.86],
-    [73.859, 79.697],
-    [65.063, 67.591],
+    [62.674, 62.858],
+    [82.213, 67.053],
+    [72.619, 81.576],
 ]
-
 # Create the dictionaries using the provided lists
 calibration_coords_nv1 = {
     CoordsKey.PIXEL: calibration_coords_pixel[0],
@@ -68,15 +84,11 @@ calibration_coords_nv3 = {
     red_laser_aod: calibration_coords_red[2],
 }
 
-# pixel_to_sample_affine_transformation_matrix = [
-#     [-0.01472387, 0.00052569, 1.28717911],
-#     [0.00040197, -0.01455135, 1.73876545],
-# ]
-
 pixel_to_sample_affine_transformation_matrix = [
-    [-0.02005328, 0.00313572, 3.64182263],
-    [0.00214898, -0.01772636, 1.94719313],
+    [-0.01472387, 0.00052569, 1.28717911],
+    [0.00040197, -0.01455135, 1.73876545],
 ]
+
 # endregion
 # region Base config
 # Add on to the default config
@@ -822,13 +834,13 @@ opx_config = {
         # Yellow AOM
         "yellow_imaging": {"type": "constant", "sample": 0.45},  # 0.35
         # "yellow_imaging": {"type": "constant", "sample": 0.50},  # 0.35
-        # "yellow_charge_readout": {"type": "constant", "sample": 0396},  # 50ms 160NVs
-        "yellow_charge_readout": {"type": "constant", "sample": 0.4129},  # 50ms 160NVs
+        # "yellow_charge_readout": {"type": "constant", "sample": 0.396},  # 50ms 160NVs
+        # "yellow_charge_readout": {"type": "constant", "sample": 0.4129},  # 50ms 160NVs
         # "yellow_charge_readout": {"type": "constant", "sample": 0.3472},  # 50ms 117NVs
         # "yellow_charge_readout": {"type": "constant", "sample": 0.3741},  # 50ms 117NVs
         # "yellow_charge_readout": {"type": "constant", "sample": 0.325},  # 100ms 117NVs
         # "yellow_charge_readout": {"type": "constant", "sample": 0.29},  # 200ms 117NVs
-        # "yellow_charge_readout": {"type": "constant", "sample": 0.42},  # 12ms red cal
+        "yellow_charge_readout": {"type": "constant", "sample": 0.41},  # 12ms red cal
         "yellow_spin_pol": {"type": "constant", "sample": 0.39},
         "yellow_shelving": {"type": "constant", "sample": 0.33},
         # Other

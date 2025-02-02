@@ -10,6 +10,7 @@ from skimage.filters import gaussian
 from utils import data_manager as dm
 from utils import kplotlib as kpl
 
+
 # Define the 2D Gaussian function
 def gaussian_2d(xy, amplitude, xo, yo, sigma_x, sigma_y, theta, offset):
     x, y = xy
@@ -26,6 +27,7 @@ def gaussian_2d(xy, amplitude, xo, yo, sigma_x, sigma_y, theta, offset):
         -(a * ((x - xo) ** 2) + 2 * b * (x - xo) * (y - yo) + c * ((y - yo) ** 2))
     )
     return g.ravel()
+
 
 # Fit a 2D Gaussian to a local region of the image data and return FWHM
 def fit_gaussian_2d_local(image, center, size=10):
@@ -70,11 +72,11 @@ def fit_gaussian_2d_local(image, center, size=10):
 # Apply the blob detection algorithm and estimate spot size in pixels
 def detect_nv_coordinates_blob(
     img_array,
-    sigma=3.0,
-    lower_threshold=30.0,
+    sigma=2.0,
+    lower_threshold=20.0,
     upper_threshold=None,
     smoothing_sigma=1,
-    integration_radius=3,
+    integration_radius=2,
 ):
     smoothed_img = gaussian(img_array, sigma=smoothing_sigma)
 
@@ -103,7 +105,7 @@ def detect_nv_coordinates_blob(
             valid_blobs.append(blob)
 
             # Perform Gaussian fitting and get the FWHM
-            optimized_coord, fwhm, _ = fit_gaussian_2d_local(img_array, (x, y), size=2)
+            optimized_coord, fwhm, _ = fit_gaussian_2d_local(img_array, (x, y), size=3)
             optimized_coords.append(optimized_coord)
             spot_sizes.append(fwhm)  # Append the FWHM for the spot
             integrated_counts.append(integrated_intensity)
@@ -115,7 +117,7 @@ def detect_nv_coordinates_blob(
     title = "24ms, Ref"
     cax = kpl.imshow(ax, img_array, title=title, cbar_label="Photons")
     # cax = ax.imshow(img_array, cmap="hot")
-    ax.set_title("NV Detection with Blob and Gaussian Fitting")
+    ax.set_title("NV Detection with Blob")
     ax.axis("off")
 
     # fig.colorbar(cax, ax=ax, orientation="vertical", label="Intensity")
@@ -129,7 +131,7 @@ def detect_nv_coordinates_blob(
             x, y - r - 2, f"{idx}", color="black", fontsize=8, ha="center", va="center"
         )
 
-    kpl.show(block=True)
+    # kpl.show(block=True)
 
     return optimized_coords, integrated_counts, spot_sizes
 
@@ -228,6 +230,202 @@ def reorder_coords(nv_coords):
     return reordered_coords
 
 
+# # Remove duplicate NV coordinates
+# def remove_duplicates(coords, threshold=3):
+#     unique_coords = []
+#     for coord in coords:
+#         if not any(
+#             np.linalg.norm(np.array(coord) - np.array(unique)) < threshold
+#             for unique in unique_coords
+#         ):
+#             unique_coords.append(coord)
+
+
+# # Apply blob detection & estimate NV spot sizes
+# def detect_nv_coordinates(
+#     img_array, sigma=3.0, lower_threshold=30.0, integration_radius=3
+# ):
+#     smoothed_img = gaussian(img_array, sigma=1)
+#     blobs = blob_log(
+#         smoothed_img,
+#         min_sigma=sigma,
+#         max_sigma=sigma,
+#         num_sigma=1,
+#         threshold=lower_threshold,
+#     )
+#     blobs[:, 2] *= np.sqrt(2)
+
+#     valid_blobs, optimized_coords, spot_sizes = [], [], []
+#     for y, x, r in blobs:
+#         rr, cc = disk((y, x), integration_radius, shape=img_array.shape)
+#         integrated_intensity = np.sum(smoothed_img[rr, cc])
+
+#         if integrated_intensity >= lower_threshold:
+#             valid_blobs.append((x, y))
+#             optimized_coord, fwhm = fit_gaussian_2d_local(img_array, (x, y), size=2)
+#             optimized_coords.append(optimized_coord)
+#             spot_sizes.append(fwhm)
+
+#     return np.array(optimized_coords), np.array(spot_sizes)
+
+
+import matplotlib.pyplot as plt
+import numpy as np
+
+
+def process_scan_file():
+    """Processes a saved scan file, extracts NV coordinates from each scan entry,
+    and creates a combined image using max projection.
+    """
+    # raw_data = dm.get_raw_data(file_id=1763690008369, load_npz=True)
+    raw_data = dm.get_raw_data(file_id=1766305651080, load_npz=True)
+    # raw_data = dm.get_raw_data(file_id=1764604364429, load_npz=True)
+
+    # Extract scanned data
+    scanned_data = raw_data["scanned_data"]["scanned_data"]
+    print(f"Type of scanned_data: {type(scanned_data)}")  # Expected: <class 'list'>
+
+    # Preallocate a list for image processing
+    blob_coords, spot_weights, img_arrays = [], [], []
+
+    for index, scan in enumerate(scanned_data):
+        img_array = np.array(scan["scan_data"], dtype=np.float64)
+
+        # Detect NVs
+        optimized_coords, integrated_counts, _ = detect_nv_coordinates_blob(img_array)
+
+        # Only store detected NVs if not empty
+        if optimized_coords.size > 0:
+            blob_coords.extend(optimized_coords)  # Ensure list format
+            spot_weights.extend(integrated_counts)
+
+        # Normalize image
+        img_array = (img_array - 300) / max(
+            1, np.median(img_array)
+        )  # Avoid div by zero
+
+        # Store processed image
+        img_arrays.append(img_array)
+
+    # Convert to NumPy array if images exist
+    if img_arrays:
+        img_arrays = np.array(img_arrays)
+        combined_img = np.max(img_arrays, axis=0)  # Maximum intensity projection
+
+        # Plot final image
+        fig, ax = plt.subplots()
+        kpl.imshow(
+            ax, combined_img, title="Combined_img_laser_INTI_520", cbar_label="Photons"
+        )
+        ax.axis("off")
+        print(f"Final detected NV count: {len(blob_coords)}")
+    else:
+        print("No valid images found.")
+
+    # **Save the results (uncomment if needed)**
+    save_results(
+        blob_coords,
+        spot_weights,
+        path="slmsuite/nv_blob_detection",
+        filename=f"nv_blob_shallow_{len(blob_coords)}nvs.npz",
+    )
+
+    timestamp = dm.get_time_stamp()
+    data = {
+        "timestamp": timestamp,
+        "img_array": combined_img,
+    }
+
+    file_path = dm.get_file_path(__file__, timestamp, "combined_image_array")
+    dm.save_raw_data(data, file_path, keys_to_compress=["img_array"])
+    kpl.show(block=True)
+
+
+# def process_scan_file():
+#     """Processes a saved scan file, extracts NV coordinates from each scan entry,
+#     and creates a combined image using max projection.
+#     """
+#     # raw_data = dm.get_raw_data(file_id=1763690008369, load_npz=True)
+#     raw_data = dm.get_raw_data(file_id=1764469400815, load_npz=True)
+#     print(raw_data.keys())
+
+#     # Extract scanned data
+#     img_arrays = raw_data["img_array"]
+#     print(img_arrays)
+
+#     blob_coords = []
+#     spot_weights = []
+#     processed_img_arrays = []  # To store processed images
+
+#     for index, img_array in enumerate(img_arrays):
+#         img_array = np.array(img_array, dtype=np.float64)
+
+#         # Detect NVs
+#         optimized_coords, integrated_counts, spot_sizes = detect_nv_coordinates_blob(
+#             img_array
+#         )
+
+#         if len(optimized_coords) > 0:
+#             blob_coords.extend(optimized_coords)
+#             spot_weights.extend(integrated_counts)
+
+#         print(f"image[{index}]: {blob_coords}")  # Should be a dictionary
+
+#         # Normalize the image if it's non-empty
+#         if img_array.size > 0:
+#             img_array -= 300  # Background subtraction
+#             img_array /= (
+#                 np.median(img_array) if np.median(img_array) != 0 else 1
+#             )  # Avoid division by zero
+#             processed_img_arrays.append(img_array)
+
+#     # **Ensure img_arrays is not empty before max projection**
+#     if len(processed_img_arrays) == 0:
+#         print("No valid images detected. Exiting function.")
+#         return  # Exit function early to prevent errors
+
+#     print(f"Number of detected NVs: {len(blob_coords)}")
+
+#     # **Combine all images using max projection**
+#     processed_img_arrays = np.array(processed_img_arrays)
+#     combined_img = np.max(processed_img_arrays, axis=0)  # Maximum intensity projection
+
+#     # **Plot combined image**
+#     fig, ax = plt.subplots()
+#     kpl.imshow(ax, combined_img)
+#     ax.axis("off")
+
+#     # **Scale bar**
+#     scale = 4 * (2.3 / 0.29714285714)
+#     # kpl.scale_bar(ax, scale, "4 µm", kpl.Loc.LOWER_RIGHT)
+#     kpl.show(block=True)
+
+
+# Save NV results
+def save_results(nv_coordinates, spot_weights, path, filename):
+    if not os.path.exists(path):
+        os.makedirs(path)
+
+    np.savez(
+        os.path.join(path, filename),
+        nv_coordinates=nv_coordinates,
+        spot_weights=spot_weights,
+    )
+
+
+# Plot NV detection results
+def plot_nv_detection(img_array, nv_coords):
+    fig, ax = plt.subplots()
+    kpl.imshow(ax, img_array, title="NV Detection", cbar_label="Photons")
+
+    for x, y in nv_coords:
+        circ = plt.Circle((x, y), 2.4, color="red", linewidth=1, fill=False)
+        ax.add_patch(circ)
+        ax.text(x, y - 3, f"{x:.1f}, {y:.1f}", color="white", fontsize=8, ha="center")
+
+    kpl.show(block=True)
+
+
 # Main section of the code
 if __name__ == "__main__":
     kpl.init_kplotlib()
@@ -238,10 +436,15 @@ if __name__ == "__main__":
     # data = dm.get_raw_data(file_id=1693686359757, load_npz=True)
     # data = dm.get_raw_data(file_id=1694279622270, load_npz=True)
     # data = dm.get_raw_data(file_id=1697710844436, load_npz=True)
-    data = dm.get_raw_data(file_id=1698496302146, load_npz=True)
-    data = dm.get_raw_data(file_id=1699573772441, load_npz=True)
+    # data = dm.get_raw_data(file_id=1698496302146, load_npz=True)
+    # data = dm.get_raw_data(file_id=1699573772441, load_npz=True)
+    # data = dm.get_raw_data(file_id=1764727515943, load_npz=True)  # comind datas
+    # data = dm.get_raw_data(file_id=1766351495521, load_npz=True)
+    data = dm.get_raw_data(file_id=1766620461342, load_npz=True)
 
-    img_array = np.array(data["ref_img_array"])
+    img_array = np.array(data["ref_img_array"]["ref_img_array"])
+    # img_array = np.array(data["img_array"]["img_array"])
+    print(img_array)
     # img_array = np.array(data["diff_img_array"])
     # img_array = -img_array
     # print(type(img_array), img_array.dtype, img_array.shape)
@@ -255,8 +458,8 @@ if __name__ == "__main__":
     # print(f"Resolution: {round(resolution,3)} µm")
 
     # Apply the blob detection and Gaussian fitting
-    sigma = 2.0
-    lower_threshold = 0.12
+    sigma = 3.0
+    lower_threshold = 0.09
     upper_threshold = None
     smoothing_sigma = 0.0
 
@@ -280,7 +483,7 @@ if __name__ == "__main__":
         for existing_coord in filtered_nv_coords:
             distance = np.linalg.norm(np.array(existing_coord) - np.array(coord))
 
-            if distance < 5.6:
+            if distance < 2:
                 keep_coord = False  # Mark it for exclusion if too close
                 break  # No need to check further distances
 
@@ -293,18 +496,20 @@ if __name__ == "__main__":
     for idx, (coord, count) in enumerate(
         zip(filtered_nv_coords, filtered_counts), start=1
     ):
-        print(f"NV {idx}: Coordinate = {coord}, Count = {count}")
+        print(f"NV {idx}: {coord}, {count}:.2f")
     # Plotting the results
     # Verify if reversing coordinates resolves the offset
     default_radius = 2.4
     fig, ax = plt.subplots()
     title = "24ms, Ref"
     cax = kpl.imshow(ax, img_array, title=title, cbar_label="Photons")
-    ax.set_title("NV Detection with Blob and Gaussian Fitting")
+    ax.set_title("NV Detection with Blob")
     ax.axis("off")
 
     for idx, (x, y) in enumerate(filtered_nv_coords, start=1):  # Swapped y, x to x, y
-        circ = plt.Circle((x, y), default_radius, color="red", linewidth=1, fill=False)
+        circ = plt.Circle(
+            (x, y), default_radius, color="white", linewidth=1, fill=False
+        )
         ax.add_patch(circ)
         ax.text(
             x,
@@ -337,43 +542,51 @@ if __name__ == "__main__":
     # save_results(
     #     filtered_nv_coords,
     #     filtered_counts,
-    #     filename="nv_blob_filtered_160nvs.npz",
+    #     path="slmsuite/nv_blob_detection",
+    #     filename="nv_blob_shallow_149nvs.npz",
     # )
+    # process_scan_file()
+    # fig, ax = plt.subplots()
+    # title = "24ms, Ref"
+    # cax = kpl.imshow(ax, img_array, title=title, cbar_label="Photons")
+    # ax.set_title("Combined_img_INTE_laser_520")
+    # ax.axis("off")
+    # kpl.show(block=True)
+    # image_ids = [
+    #     1693359304252,
+    #     1693375930943,
+    #     1693374155876,
+    #     1693372069315,
+    #     1693363033340,
+    #     1693376854962,
+    #     1693361128042,
+    #     1693376833728,
+    #     1693379996949,
+    # ]  # Add more image IDs as needed
 
-    image_ids = [
-        1693359304252,
-        1693375930943,
-        1693374155876,
-        1693372069315,
-        1693363033340,
-        1693376854962,
-        1693361128042,
-        1693376833728,
-        1693379996949,
-    ]  # Add more image IDs as needed
-    # Process multiple images and remove duplicates
-    unique_nv_coordinates, spot_sizes = process_multiple_images(
-        image_ids,
-        sigma=sigma,
-        lower_threshold=lower_threshold,
-        upper_threshold=upper_threshold,
-        smoothing_sigma=smoothing_sigma,
-    )
-    # Filter out-of-bounds coordinates and their corresponding spot sizes
-    filtered_nv_coordinates = []
-    filtered_spot_sizes = []
+    # # Process multiple images and remove duplicates
+    # unique_nv_coordinates, spot_sizes = process_multiple_images(
+    #     image_ids,
+    #     sigma=sigma,
+    #     lower_threshold=lower_threshold,
+    #     upper_threshold=upper_threshold,
+    #     smoothing_sigma=smoothing_sigma,
+    # )
+    # # Filter out-of-bounds coordinates and their corresponding spot sizes
+    # filtered_nv_coordinates = []
+    # filtered_spot_sizes = []
 
-    for coord, size in zip(unique_nv_coordinates, spot_sizes):
-        x, y = int(coord[0]), int(coord[1])
-        if not (0 <= x < 250 and 0 <= y < 250):
-            print(f"Skipping NV at ({coord[0]:.2f}, {coord[1]:.2f}) - Out of bounds")
-            continue  # Skip this coordinate and its spot size if out of bounds
+    # for coord, size in zip(unique_nv_coordinates, spot_sizes):
+    #     x, y = int(coord[0]), int(coord[1])
+    #     if not (0 <= x < 250 and 0 <= y < 250):
+    #         print(f"Skipping NV at ({coord[0]:.2f}, {coord[1]:.2f}) - Out of bounds")
+    #         continue  # Skip this coordinate and its spot size if out of bounds
 
-        filtered_nv_coordinates.append(coord)
-        filtered_spot_sizes.append(size)
+    #     filtered_nv_coordinates.append(coord)
+    #     filtered_spot_sizes.append(size)
 
-    # Print the results
-    print(f"Number of NVs detected: {len(filtered_nv_coordinates)}")
+    # # Print the results
+    # print(f"Number of NVs detected: {len(filtered_nv_coordinates)}")
     # Optionally print NV coordinates and spot sizes for debugging
     # print(f"Detected NV coordinates (optimized): {filtered_nv_coordinates}")
     # print(f"Corresponding spot sizes: {filtered_spot_sizes}")
