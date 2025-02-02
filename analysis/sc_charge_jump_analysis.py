@@ -310,63 +310,65 @@ def process_detect_cosmic_rays(data, prob_dist: ProbDist = ProbDist.COMPOUND_POI
     print(f"counts.shape={counts_initial.shape}")
     # fmt: off
     selected_indices = [0, 1, 3, 5, 6, 7, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 29, 31, 32, 33, 34, 35, 36, 37, 38, 39, 40, 41, 42, 43, 44, 45, 46, 47, 48, 50, 51, 52, 53, 54, 55, 56, 57, 58, 59, 60, 61, 62, 64, 67, 68, 69, 70, 71, 73, 74, 75, 76, 77, 78, 79, 80, 82, 84, 86, 87, 88, 89, 90, 91, 92, 93, 94, 95, 96, 98, 101, 103, 104, 106, 107, 108, 109, 110, 111, 112, 113, 114, 115, 116, 118, 119, 121, 122, 123, 124, 125, 126, 127, 128, 129, 130, 131, 132, 133, 134, 135, 136, 138, 139, 140, 141, 142, 143, 144, 145, 146, 147, 149, 150, 151, 152, 153, 154, 157, 158, 159]
+    selected_indices = list(range(len(nv_list)))
     # fmt: on
     nv_list = [nv_list[ind] for ind in selected_indices]
     num_nvs = len(nv_list)
     counts = counts_initial[:, selected_indices, :, :, :]
-    sig_counts = counts[0]
+    ref_counts = counts[0]
+    sig_counts = counts[1]
+    print(f"sig_coutns_shape = {sig_counts.shape}")
     # ref_counts = counts[1]
     # Extract counts and states
-    states = widefield.threshold_counts(nv_list, sig_counts, dynamic_thresh=True)
-    states = np.array(states).reshape((num_nvs, -1))
+    states_0 = widefield.threshold_counts(nv_list, sig_counts, dynamic_thresh=True)
+    states_1 = widefield.threshold_counts(nv_list, ref_counts, dynamic_thresh=True)
+    ref_states = np.array(states_0).reshape((num_nvs, -1))
+    sig_states = np.array(states_1).reshape((num_nvs, -1))
+    states = ref_states
+    # states = sig_states
+    # states = np.array(states).reshape((num_nvs, -1))
+    print(f"states.shape = {states.shape}")
     # states = np.array(data["counts"]).reshape((num_nvs, -1))
 
-    ### Histograms and thresholding
+    # ### Histograms and thresholding
 
-    threshold_list = []
-    readout_fidelity_list = []
-    prep_fidelity_list = []
-    red_chi_sq_list = []
+    # threshold_list = []
+    # readout_fidelity_list = []
+    # prep_fidelity_list = []
+    # red_chi_sq_list = []
 
-    for ind in range(num_nvs):
-        ref_counts_list = sig_counts[ind]
+    # for ind in range(num_nvs):
+    #     ref_counts_list = sig_counts[ind]
 
-        # Only use ref counts for threshold determination
-        popt, _, red_chi_sq = fit_bimodal_histogram(
-            ref_counts_list, prob_dist, no_print=True
-        )
-        threshold, readout_fidelity = determine_threshold(
-            popt, prob_dist, dark_mode_weight=0.5, do_print=True, ret_fidelity=True
-        )
-        threshold_list.append(threshold)
-        readout_fidelity_list.append(readout_fidelity)
-        if popt is not None:
-            prep_fidelity = 1 - popt[0]
-        else:
-            prep_fidelity = np.nan
-        # prep_fidelity = (
-        #     np.count_nonzero(np.array(ref_counts_list) > threshold) / num_shots
-        # )  # MCC
-        prep_fidelity_list.append(prep_fidelity)
-        red_chi_sq_list.append(red_chi_sq)
+    #     # Only use ref counts for threshold determination
+    #     popt, _, red_chi_sq = fit_bimodal_histogram(
+    #         ref_counts_list, prob_dist, no_print=True
+    #     )
+    #     threshold, readout_fidelity = determine_threshold(
+    #         popt, prob_dist, dark_mode_weight=0.5, do_print=True, ret_fidelity=True
+    #     )
+    #     threshold_list.append(threshold)
+    #     readout_fidelity_list.append(readout_fidelity)
+    #     if popt is not None:
+    #         prep_fidelity = 1 - popt[0]
+    #     else:
+    #         prep_fidelity = np.nan
+    #     # prep_fidelity = (
+    #     #     np.count_nonzero(np.array(ref_counts_list) > threshold) / num_shots
+    #     # )  # MCC
+    #     prep_fidelity_list.append(prep_fidelity)
+    #     red_chi_sq_list.append(red_chi_sq)
 
-    # Convert lists to arrays for easier manipulation
-    prep_fidelity_array = np.array(prep_fidelity_list)
-    readout_fidelity_array = np.array(readout_fidelity_list)
+    # # Convert lists to arrays for easier manipulation
+    # prep_fidelity_array = np.array(prep_fidelity_list)
+    # readout_fidelity_array = np.array(readout_fidelity_list)
 
-    # Calculate fidelity weights
-    fidelity_weights = prep_fidelity_array * readout_fidelity_array
+    # # Calculate fidelity weights
+    # fidelity_weights = prep_fidelity_array * readout_fidelity_array
     # fidelity_weights = np.nan_to_num(fidelity_weights, nan=0.0)  # Handle NaNs
     # Weight the states by fidelity
-    weighted_states = states * fidelity_weights[:, np.newaxis]
+    # weighted_states = states * fidelity_weights[:, np.newaxis]
     # Generate timestamps
-    timestamps = generate_timestamps(
-        num_reps,
-        num_runs,
-        dark_time_ns=1e9,
-        deadtime_ns=100e6,
-        readout_time_ns=50e6,
-    )
 
     # Coincidences
     coincidences = num_nvs - states.sum(axis=0)
@@ -390,27 +392,37 @@ def process_detect_cosmic_rays(data, prob_dist: ProbDist = ProbDist.COMPOUND_POI
         color="blue",
     )
 
+    # ax.vlines(
+    #     78,
+    #     0,
+    #     max(hist_values),
+    #     color="red",
+    #     linestyle="--",
+    #     label="Mean",
+    # )
+
     # Add Poisson PMF for comparison
-    x_vals = np.arange(num_nvs + 1)
-    expected_dist = len(coincidences) * poisson.pmf(x_vals, np.mean(coincidences))
-    ax.plot(
-        x_vals,
-        expected_dist,
-        marker="o",
-        linestyle="--",
-        label="Poisson PMF (Expected Dist.)",
-        color="red",
-        alpha=0.6,
-        markersize=2,
-    )
+    # x_vals = np.arange(num_nvs + 1)
+    # expected_dist = len(coincidences) * poisson.pmf(x_vals, np.mean(coincidences))
+    # ax.plot(
+    #     x_vals,
+    #     expected_dist,
+    #     marker="o",
+    #     linestyle="--",
+    #     label="Poisson PMF (Expected Dist.)",
+    #     color="red",
+    #     alpha=0.6,
+    #     markersize=2,
+    # )
 
     # Set y-axis limits dynamically based on data range
-    # ax.set_ylim(1, max(max(hist_values), max(expected_dist)) * 1.0)
+    # ax.set_yscale("log")
+    ax.set_ylim(0, 4)
 
     # Add labels, title, and legend
-    ax.set_xlabel("Number of NVs affected (Coincidences)", fontsize=15)
+    ax.set_xlabel("Number of NVs in NV⁰ State", fontsize=15)
     ax.set_ylabel("Number of occurrences", fontsize=15)
-    ax.set_title("Charge Jump - Coincidence Histogram", fontsize=15)
+    ax.set_title("Charge Jump - Coincidence Histogram (Dark Time: 1ms)", fontsize=15)
     ax.legend(fontsize=12, loc="upper right")
 
     # Use logarithmic scale for y-axis
@@ -420,23 +432,24 @@ def process_detect_cosmic_rays(data, prob_dist: ProbDist = ProbDist.COMPOUND_POI
 
     # 2. Time-Resolved Histogram
     time_resolved_fig, ax = plt.subplots()
-    time_bins = np.linspace(timestamps.min(), timestamps.max(), 6)  # 10 time intervals
-    for start, end in zip(time_bins[:-1], time_bins[1:]):
-        mask = (timestamps >= start) & (timestamps < end)
-        time_coincidences = coincidences[mask]
-        hist_values, _ = np.histogram(time_coincidences, bins=bin_edges)
-        ax.plot(
-            bin_edges[:-1] + 0.5,
-            hist_values,
-            label=f"{start:.2f}s - {end:.2f}s",
-            marker="o",
-            markersize=2,
-        )
-    ax.set_xlabel("Number of NVs affected (Coincidences)", fontsize=15)
-    ax.set_ylabel("Frequency", fontsize=15)
-    ax.set_title("Time-Resolved Coincidence Histogram", fontsize=15)
-    ax.legend(fontsize=10)
-    ax.grid(True, linestyle="--", alpha=0.6)
+    # time_bins = np.linspace(timestamps.min(), timestamps.max(), 6)  # 10 time intervals
+    # for start, end in zip(time_bins[:-1], time_bins[1:]):
+    #     mask = (timestamps >= start) & (timestamps < end)
+    #     time_coincidences = coincidences[mask]
+    #     hist_values, _ = np.histogram(time_coincidences, bins=bin_edges)
+    #     ax.plot(
+    #         bin_edges[:-1] + 0.5,
+    #         hist_values,
+    #         label=f"{start:.2f}s - {end:.2f}s",
+    #         marker="o",
+    #         markersize=2,
+    #     )
+    # ax.set_xlabel("Number of NVs affected (Coincidences)", fontsize=15)
+    # ax.set_ylabel("Frequency", fontsize=15)
+    # ax.set_title("Time-Resolved Coincidence Histogram", fontsize=15)
+    # ax.legend(fontsize=10)
+    # ax.grid(True, linestyle="--", alpha=0.6)
+    # Filter points where coincidences > 80
 
     # 3. Spatial Heatmap of NV Activity
     activity_counts = states.sum(axis=1)
@@ -449,7 +462,7 @@ def process_detect_cosmic_rays(data, prob_dist: ProbDist = ProbDist.COMPOUND_POI
         x_coords,
         y_coords,
         c=activity_counts,
-        cmap="coolwarm",
+        cmap="viridis",
         edgecolors="black",
         s=60,
         label="NV Positions",
@@ -461,31 +474,82 @@ def process_detect_cosmic_rays(data, prob_dist: ProbDist = ProbDist.COMPOUND_POI
     ax.legend(fontsize=10)
     plt.show()
 
-    ### Plot 4: Single Shot Spatial Heatmaps
-    import random
+    # Plot the time-dependent NV⁰ counts
+    nv0_counts = states.shape[0] - states.sum(axis=0)
+    time_series_fig, ax = plt.subplots(figsize=(10, 6))
 
-    num_shots_to_plot = 6
-    shot_indices = np.linspace(0, states.shape[1] - 1, num_shots_to_plot, dtype=int)
-    num_shots_to_plot = 6
-    shot_indices = random.sample(range(states.shape[1]), num_shots_to_plot)
-    single_shot_figs = []
-    for idx in shot_indices:
-        single_shot_fig, ax = plt.subplots()
-        scatter = ax.scatter(
-            x_coords,
-            y_coords,
-            c=states[:, idx],
-            cmap="coolwarm",
-            edgecolors="black",
-            s=60,
-        )
-        plt.colorbar(scatter, ax=ax, label="Activity Count (Single Shot)")
-        ax.set_xlabel("X Coordinate")
-        ax.set_ylabel("Y Coordinate")
-        ax.set_title(f"Spatial map - Shot {idx + 1}")
-        single_shot_figs.append(single_shot_fig)
+    # Plot the data
+    ax.plot(
+        nv0_counts,
+        marker="o",
+        markersize=2,
+        linestyle="-",
+        alpha=0.7,
+        label="NV⁰ Count",
+    )
 
-    return hist_fig, time_resolved_fig, spatial_heatmap_fig, single_shot_figs
+    # Add labels, title, grid, and legend
+    ax.set_xlabel("Number of Shots", fontsize=14)  # Corrected: Use ax.set_xlabel
+    ax.set_ylabel("Number of NVs in NV⁰ State", fontsize=14)
+    ax.set_title("Time-Series NV⁰ Count (dark time: 1ms)", fontsize=16)
+    ax.grid(True, linestyle="--", alpha=0.6)
+    ax.legend(fontsize=12)
+
+    # Adjust layout and show the plot
+    plt.tight_layout()
+    plt.show()
+    # Reshape coincidences to match the NV count (assuming 15,000 = num_shots x num_nvs)
+    # Unpack relevant variables
+
+    # Number of NVs
+    num_nvs = len(nv_list)
+
+    # Compute the sum across all NVs for each shot
+    states = np.array(states_1).reshape((num_nvs, -1))
+    shot_sums = num_nvs - states.sum(axis=0)
+
+    # Find indices of shots where the sum is greater than 80
+    high_activity_indices = np.where(shot_sums > 78)[0]  # Get 1D array of indices
+    print(f"Selected shots: {len(high_activity_indices)}")
+
+    # Extract only the selected shots
+    selected_states = states[:, high_activity_indices]
+
+    # Extract spatial coordinates
+    x_coords = [nv.coords["pixel"][0] for nv in nv_list]
+    y_coords = [nv.coords["pixel"][1] for nv in nv_list]
+
+    # Compute activity counts for each NV
+    high_activity_counts = selected_states.sum(
+        axis=1
+    )  # Sum over selected shots for each NV
+
+    # Plot the spatial heatmap for high-activity NVs
+    high_activity_map_fig, ax = plt.subplots()
+    scatter = ax.scatter(
+        x_coords,
+        y_coords,
+        c=high_activity_counts,
+        cmap="viridis",
+        edgecolors="black",
+        s=60,
+    )
+    plt.colorbar(scatter, ax=ax, label="Activity Count (Sum)")
+    ax.set_xlabel("X Coordinate (Pixels)", fontsize=15)
+    ax.set_ylabel("Y Coordinate (Pixels)", fontsize=15)
+    ax.set_title("NVs with High-Activity Shots in NV⁰ State (>78)", fontsize=15)
+    ax.legend(fontsize=10)
+    ax.grid(True, linestyle="--", alpha=0.6)
+    plt.show()
+
+    print(f"High-activity shot indices: {high_activity_indices}")
+
+    return (
+        hist_fig,
+        high_activity_map_fig,
+        spatial_heatmap_fig,
+        time_series_fig,
+    )
 
 
 def analyze_transition_times(states, timestamps):
@@ -540,6 +604,71 @@ import matplotlib.pyplot as plt
 from scipy.stats import poisson, skew
 
 
+def determine_and_threshold_fidelity_multi(
+    data_files,
+    prob_dist: ProbDist = ProbDist.COMPOUND_POISSON,
+    prep_thresh=0.6,
+    readout_thresh=0.8,
+):
+    """
+    Plot comparison histograms with expected Poisson distribution for multiple datasets.
+    Additionally, compute and plot skewness vs. dark time, filtering NVs based on fidelity.
+
+    Parameters:
+        data_files (list): List of data files containing coincidence data.
+        dark_times (list): List of corresponding dark times for labeling.
+        prep_thresh (float): Threshold for preparation fidelity.
+        readout_thresh (float): Threshold for readout fidelity.
+        prob_dist: Probability distribution for threshold determination (optional).
+    """
+    # Load the first dataset to initialize variables
+    first_data = dm.get_raw_data(file_id=data_files[0])
+    nv_list = first_data["nv_list"]
+    num_nvs = len(nv_list)
+    counts = np.array(first_data["counts"])[0]
+
+    # Calculate fidelity for filtering
+    prep_fidelity_list = []
+    readout_fidelity_list = []
+    threshold_list = []
+
+    for nv_idx in range(num_nvs):
+        for file_id in data_files[1:]:
+            new_data = dm.get_raw_data(file_id=file_id)
+            new_counts = np.array(new_data["counts"])[0]
+            combined_counts = np.append(
+                counts[nv_idx].flatten(), new_counts[nv_idx].flatten()
+            )
+
+        counts = np.array(first_data["counts"])[0]
+        ref_counts = combined_counts[nv_idx]
+        popt, _, _ = fit_bimodal_histogram(ref_counts, prob_dist, no_print=True)
+        threshold, readout_fidelity = determine_threshold(
+            popt, prob_dist, dark_mode_weight=0.5, do_print=False, ret_fidelity=True
+        )
+        prep_fidelity = 1 - popt[0] if popt else np.nan
+        prep_fidelity_list.append(prep_fidelity)
+        readout_fidelity_list.append(readout_fidelity)
+        threshold_list.append(threshold)
+
+    # Convert to arrays for filtering
+    prep_fidelity_array = np.array(prep_fidelity_list)
+    readout_fidelity_array = np.array(readout_fidelity_list)
+
+    valid_indices = [
+        idx
+        for idx, (prep_fid, readout_fid) in enumerate(
+            zip(prep_fidelity_array, readout_fidelity_array)
+        )
+        if prep_fid >= prep_thresh and readout_fid >= readout_thresh
+    ]
+    return (
+        valid_indices,
+        prep_fidelity_array[valid_indices],
+        readout_fidelity_array[valid_indices],
+    )
+
+
 def plot_histogram_multi(data_files, dark_times):
     """
     Plot comparison histograms with expected Poisson distribution for multiple datasets.
@@ -549,15 +678,29 @@ def plot_histogram_multi(data_files, dark_times):
         data_files (list): List of data files containing coincidence data.
         dark_times (list): List of corresponding dark times for labeling.
     """
-    skewness_values = []  # To store skewness for each dataset
-    plt.figure(figsize=(10, 7))
+    # Filter NVs based on fidelity thresholds
+    (filtered_indices, filtered_prep_fidelity, filtered_readout_fidelity) = (
+        determine_and_threshold_fidelity_multi(
+            data_files, prep_thresh=0.6, readout_thresh=0.8
+        )
+    )
+    num_nvs_filtered = len(filtered_indices)
+    print(f"Filtered NV count: {num_nvs_filtered}")
 
+    skewness_values = []
+    plt.figure(figsize=(10, 7))
     for data_file, dark_time in zip(data_files, dark_times):
         # Load the data
         data = dm.get_raw_data(file_id=data_file)
         nv_list = data["nv_list"]
+
+        counts = np.array(data["counts"])[0]
+        print(f"counts.shape= {counts.shape}")
+        counts = counts[filtered_indices, :, :, :]
+
+        nv_list = [nv_list[idx] for idx in filtered_indices]
+
         num_nvs = len(nv_list)
-        counts = np.array(data["counts"])[0]  # Extract signal counts
         states = widefield.threshold_counts(nv_list, counts, dynamic_thresh=True)
         states = np.array(states).reshape((num_nvs, -1))
         coincidences = num_nvs - states.sum(axis=0)
@@ -598,8 +741,6 @@ def plot_histogram_multi(data_files, dark_times):
     plt.title("Charge Jump - Coincidence Histograms", fontsize=16)
     plt.legend(fontsize=10, loc="upper right")
     plt.grid(True, linestyle="--", alpha=0.6)
-    plt.tight_layout()
-    plt.show()
 
     # Plot skewness vs. dark time
     plt.figure(figsize=(8, 6))
@@ -613,75 +754,67 @@ def plot_histogram_multi(data_files, dark_times):
     plt.show()
 
 
-def calculate_correlation_over_time(data, window_size):
+def inspect_raw_data(data, num_samples=10):
     """
-    Calculate correlation of NV states over time.
+    Inspect raw counts data before thresholding.
 
     Parameters:
-        states (ndarray): Binary matrix of shape (num_nvs, num_timesteps).
-        window_size (int): Size of the time window for correlation calculation.
-
-    Returns:
-        correlations (list): List of correlation matrices for each time window.
-        time_windows (list): List of start times for each time window.
+        data (dict): Raw data dictionary containing NV counts and metadata.
+        num_samples (int): Number of NVs to randomly sample for inspection.
     """
-    num_nvs, num_timesteps = states.shape
-    correlations = []
-    time_windows = []
+    nv_list = data["nv_list"]
+    num_reps = data["num_reps"]
+    num_runs = data["num_runs"]
+    num_nvs = len(nv_list)
+    counts = np.array(data["counts"])[0]  # Extract signal counts
+    counts = np.array(counts).reshape((num_nvs, -1))
+    print(f"Counts shape: {counts.shape}")
 
-    for start in range(0, num_timesteps - window_size + 1, window_size):
-        window_data = states[:, start : start + window_size]
-        correlation_matrix = np.corrcoef(window_data)
-        correlations.append(correlation_matrix)
-        time_windows.append(start)
+    # Generate timestamps for the dataset
+    timestamps = generate_timestamps(
+        num_reps=num_reps,
+        num_runs=num_runs,
+        dark_time_ns=10e6,
+        deadtime_ns=100e6,
+        readout_time_ns=50e6,
+    )
 
-    return correlations, time_windows
+    # Validate `num_samples` to avoid errors
+    num_samples = min(num_samples, num_nvs)
 
+    # Sample a subset of NVs for visualization
+    sampled_indices = np.random.choice(num_nvs, num_samples, replace=False)
+    sampled_counts = counts[sampled_indices]
+    sampled_nv_names = [nv_list[i].name for i in sampled_indices]
 
-def plot_correlation_over_time(correlations, time_windows):
-    """
-    Plot the correlation matrices for multiple time windows.
-
-    Parameters:
-        correlations (np.ndarray): 3D array of correlations (time_windows x NVs x NVs).
-        time_windows (list): List of time window labels.
-    """
-    correlations = np.array(correlations)
-    num_windows = correlations.shape[0]
-
-    for i in range(num_windows):
-        fig, ax = plt.subplots(figsize=(8, 6))
-
-        # Extract the correlation matrix for the current time window
-        correlation_matrix = correlations[i]
-
-        # Set diagonal to NaN for better visualization (if square matrix)
-        if correlation_matrix.shape[0] == correlation_matrix.shape[1]:
-            np.fill_diagonal(correlation_matrix, np.nan)
-
-        # Calculate vmin and vmax dynamically
-        mean = np.nanmean(correlation_matrix)
-        sdt = np.nanstd(correlation_matrix)
-        vmin = mean - 2 * sdt
-        vmax = mean + 2 * sdt
-        # vmin = max(vmin, -1)  # Ensure the range is within valid correlation values
-        # vmax = min(vmax, 1)
-
-        # Plot the heatmap
-        im = ax.imshow(
-            correlation_matrix,
-            cmap="coolwarm",
-            vmin=vmin,
-            vmax=vmax,
-            interpolation="nearest",
+    # Plot raw counts over time for sampled NVs
+    plt.figure(figsize=(12, 8))
+    for i, (nv_name, nv_counts) in enumerate(zip(sampled_nv_names, sampled_counts)):
+        plt.plot(
+            timestamps,
+            nv_counts,
+            label=f"NV {sampled_indices[i]}",
+            alpha=0.7,
         )
+    plt.xlabel("Time (s)", fontsize=14)
+    plt.ylabel("Raw Counts", fontsize=14)
+    plt.title("Raw Counts Over Time for Sampled NVs", fontsize=16)
+    plt.legend(fontsize=10)
+    plt.grid(True, linestyle="--", alpha=0.6)
+    plt.tight_layout()
+    plt.show()
 
-        # Add colorbar and labels
-        plt.colorbar(im, ax=ax, label="Correlation")
-        ax.set_title(f"Correlation Matrix for Time Window {time_windows[i]}")
-        ax.set_xlabel("NV Index")
-        ax.set_ylabel("NV Index")
-        plt.show()
+    # Plot histograms of raw counts for sampled NVs
+    fig, axes = plt.subplots(num_samples, 1, figsize=(10, 3 * num_samples), sharex=True)
+    for i, (nv_name, nv_counts) in enumerate(zip(sampled_nv_names, sampled_counts)):
+        axes[i].hist(nv_counts, bins=50, alpha=0.7, label=f"NV {sampled_indices[i]})")
+        axes[i].set_ylabel("Frequency", fontsize=12)
+        axes[i].legend(fontsize=10)
+        axes[i].grid(True, linestyle="--", alpha=0.6)
+    axes[-1].set_xlabel("Raw Counts", fontsize=14)
+    fig.suptitle("Raw Counts Distribution for Sampled NVs", fontsize=16)
+    fig.tight_layout(rect=[0, 0, 1, 0.96])
+    plt.show()
 
 
 if __name__ == "__main__":
@@ -692,27 +825,51 @@ if __name__ == "__main__":
     # DATA IN jAN 2025
     # data = dm.get_raw_data(file_id=1756083081553)  # dark time 1e6
     # data = dm.get_raw_data(file_id=1756161618282)  # dark time 10e6
+    # data = dm.get_raw_data(file_id=1757223169229)  # dark time 10e6
+    # data = dm.get_raw_data(file_id=1757474735789)  # dark time 10e6
     # data = dm.get_raw_data(file_id=1756305080720)  # dark time 100e6
     # data = dm.get_raw_data(file_id=1756699202091)  # dark time 100e6
     # data = dm.get_raw_data(file_id=1755068762133)  # dark time 1000e9
+    # inspect_raw_data(data)
+
+    # data = dm.get_raw_data(file_id=1757562210411)  # dark time 10e6
+    # data = dm.get_raw_data(file_id=1757223169229)  # dark time 10e6
+    # data = dm.get_raw_data(file_id=1757883746286)  # dark time 10e6
+    # data = dm.get_raw_data(file_id=1757904453004)  # dark time 10e6
+    # data = dm.get_raw_data(file_id=1758180182062)  # dark time 1ms and 1s
+    data = dm.get_raw_data(file_id=1758336169797)  # dark time 1ms and 1s
+
+    counts = np.array(data["counts"])  # Extract signal counts
+    # counts = np.array(counts).reshape((num_nvs, -1))
+    print(f"Counts shape: {counts.shape}")
 
     # Process data
-    # (
-    #     hist_fig,
-    #     transition_fig,
-    #     spatial_heatmap_fig,
-    #     single_shot_figs,
-    # ) = process_detect_cosmic_rays(data)
+    # (hist_fig, transition_fig, spatial_heatmap_fig, time_series_fig) = (
+    #     process_detect_cosmic_rays(data)
+    # )
 
     # data_files = [1756083081553, 1756161618282, 1756305080720, 1755068762133]
     # dark_times = [1e6, 10e6, 100e6, 1000e6]
     data_files = [1756161618282, 1756305080720, 1756699202091, 1755068762133]
     dark_times = [10e6, 100e6, 500e6, 1000e6]
 
+    # DATA FILES
+    file_ids = [1758180182062, 1758336169797]
+    combined_data = dm.get_raw_data(file_id=file_ids[0])
+    for file_id in file_ids[1:]:
+        new_data = dm.get_raw_data(file_id=file_id)
+        combined_data["num_runs"] += new_data["num_runs"]
+        combined_data["counts"] = np.append(
+            combined_data["counts"], new_data["counts"], axis=2
+        )
+    # Process data
+    (hist_fig, transition_fig, spatial_heatmap_fig, time_series_fig) = (
+        process_detect_cosmic_rays(combined_data)
+    )
     # data_files = [1756161618282, 1755068762133]
     # dark_times = [10e6, 1000e6]
 
-    plot_histogram_multi(data_files, dark_times)
+    # plot_histogram_multi(data_files, dark_times)
 
     # nv_list = data["nv_list"]
     # num_nvs = len(nv_list)
