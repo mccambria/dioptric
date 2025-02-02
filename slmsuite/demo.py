@@ -113,20 +113,23 @@
 # # save_path = f"G:/My Drive/Experiments/SLM_seup_data/image_{current_datetime}.png"
 # # plt.savefig(save_path)
 # plt.show()
+import sys
 import cv2
 import numpy as np
 
 # Given pixel coordinates and corresponding red coordinates
 pixel_coords_list = np.array(
     [
-        [133.937, 91.407],
-        [160.878, 169.528],
+        [115.66, 101.157],
+        [109.249, 115.543],
+        [98.684, 100.663],
     ]
 )
 red_coords_list = np.array(
     [
-        [71.331, 69.193],
-        [68.566, 76.391],
+        [78.816, 67.86],
+        [73.859, 79.697],
+        [65.063, 67.591],
     ]
 )
 
@@ -140,10 +143,9 @@ if len(pixel_coords_list) >= 3:
     # New pixel coordinate for which we want to find the corresponding red coordinate
     new_pixel_coord = np.array(
         [
-            [107.297, 107.085],
-            [106.358, 103.823],
-            [111.522, 109.523],
-            [102.178, 111.893],
+            [95.595, 94.819],
+            [119.069, 100.321],
+            [107.092, 117.632],
         ],
         dtype=np.float32,
     )
@@ -209,7 +211,7 @@ else:
     # )
     # print("Corresponding red coordinates:", new_red_coord)
 
-
+sys.exit()
 # Updating plot with center frequencies in the legend
 # # Given data
 # green_aod_freq_MHz = np.array([90, 95, 100, 105, 110, 115, 120, 125])

@@ -187,43 +187,6 @@ print(
     np.median(scc_duration_list), np.mean(scc_duration_list), np.std(scc_duration_list)
 )
 
-# fmt: off
-# Extended data for "Counts at initial coordinates" and "Counts after drift compensation"
-# extended_initial_counts = [
-#     1200.0, 1267.0, 1189.0, 1179.0, 1203.0, 1287.0, 1170.0, 1155.0, 1259.0, 1168.0,
-#     1320.0, 1361.0, 1335.0, 1337.0, 1345.0, 1435.0, 1324.0, 1369.0, 1358.0, 1385.0,
-#     1322.0, 1325.0, 1307.0, 1286.0, 1340.0, 1334.0, 1344.0, 1317.0, 1327.0, 1272.0,
-#     1323.0, 1336.0, 1373.0, 1406.0, 1349.0, 1364.0, 1425.0, 1359.0, 1376.0, 1362.0,
-#     1392.0, 1359.0, 1369.0, 1402.0, 1354.0, 1435.0, 1457.0, 1416.0, 1398.0, 1362.0,
-#     1385.0, 1365.0, 1382.0, 1410.0, 1371.0, 1347.0, 1385.0, 1405.0, 1443.0, 1462.0,
-#     1355.0, 1382.0, 1406.0, 1431.0, 1352.0, 1396.0, 1452.0, 1379.0, 1420.0, 1344.0,
-#     1387.0, 1405.0, 1400.0, 1468.0, 1359.0, 1438.0, 1425.0, 1444.0, 1417.0, 1430.0,
-#     1350.0, 1439.0, 1419.0, 1431.0, 1421.0, 1402.0, 1324.0, 1354.0
-# ]
-# extended_compensated_counts = [
-#     1303.0, 1287.0, 1301.0, 1254.0, 1220.0, 1254.0, 1226.0, 1309.0, 1250.0, 1269.0,
-#     1272.0, 1347.0, 1303.0, 1362.0, 1360.0, 1290.0, 1382.0, 1328.0, 1322.0, 1274.0,
-#     1340.0, 1301.0, 1357.0, 1376.0, 1391.0, 1388.0, 1360.0, 1370.0, 1323.0, 1370.0,
-#     1366.0, 1378.0, 1344.0, 1371.0, 1320.0, 1309.0, 1362.0, 1319.0, 1326.0, 1361.0,
-#     1365.0, 1378.0, 1361.0, 1291.0, 1366.0, 1354.0, 1374.0, 1372.0, 1276.0, 1336.0,
-#     1389.0, 1386.0, 1360.0, 1366.0, 1295.0, 1278.0, 1344.0, 1316.0, 1376.0, 1365.0,
-#     1336.0, 1380.0, 1307.0, 1305.0, 1316.0, 1333.0, 1423.0, 1351.0, 1353.0, 1341.0,
-#     1405.0, 1347.0, 1282.0, 1352.0, 1371.0, 1336.0, 1370.0, 1406.0, 1399.0, 1295.0,
-#     1343.0, 1428.0, 1406.0, 1308.0, 1364.0, 1332.0, 1340.0, 1383.0
-# ]
-# # fmt: on
-# # Combine all counts into one list
-# combined_counts_all = extended_initial_counts + extended_compensated_counts
-# print(len(combined_counts_all))
-# print(np.sqrt(len(combined_counts_all)))
-# # Calculate updated statistical measures
-# plt.figure(figsize=(8, 6))
-# plt.hist(combined_counts_all, bins=15, color="blue", alpha=0.7)
-# plt.title("Combined Counts Distribution", fontsize=14)
-# plt.xlabel("Counts", fontsize=12)
-# plt.ylabel("Frequency", fontsize=12)
-# plt.grid(alpha=0.3)
-# plt.show()
 
 
 # import numpy as np
@@ -348,7 +311,7 @@ plt.hist(
     label="Shallow 161 NVs (Readout Power:1917uW)",
     color="purple",
 )
- 
+
 plt.xlabel("Photons", fontsize=15)
 plt.ylabel("Frequency", fontsize=15)
 plt.title("Background Levels", fontsize=15)
@@ -380,7 +343,7 @@ for i in range(4):
         label=labels[i],
         color=colors[i],
     )
-    
+
     plt.xlabel("Photons", fontsize=15)
     plt.ylabel("Frequency", fontsize=15)
     plt.title(f"Background Level - {labels[i]}", fontsize=15)
