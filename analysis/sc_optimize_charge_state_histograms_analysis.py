@@ -362,8 +362,8 @@ def process_and_plot(raw_data):
     # Calculate the optimal step value
     (
         optimal_step_val,
-        optimal_prep_fidelity,
         optimal_readout_fidelity,
+        optimal_prep_fidelity,
         max_combined_score,
     ) = find_optimal_value_geom_mean(
         step_vals,

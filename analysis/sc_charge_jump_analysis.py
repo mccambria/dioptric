@@ -304,12 +304,10 @@ def process_detect_cosmic_rays(data, prob_dist: ProbDist = ProbDist.COMPOUND_POI
         tuple: Figures for the histogram, image plots, transition times, spatial heatmaps, and counts.
     """
     nv_list = data["nv_list"]
-    num_reps = data["num_reps"]
-    num_runs = data["num_runs"]
     counts_initial = np.array(data["counts"])
     print(f"counts.shape={counts_initial.shape}")
     # fmt: off
-    selected_indices = [0, 1, 3, 5, 6, 7, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 29, 31, 32, 33, 34, 35, 36, 37, 38, 39, 40, 41, 42, 43, 44, 45, 46, 47, 48, 50, 51, 52, 53, 54, 55, 56, 57, 58, 59, 60, 61, 62, 64, 67, 68, 69, 70, 71, 73, 74, 75, 76, 77, 78, 79, 80, 82, 84, 86, 87, 88, 89, 90, 91, 92, 93, 94, 95, 96, 98, 101, 103, 104, 106, 107, 108, 109, 110, 111, 112, 113, 114, 115, 116, 118, 119, 121, 122, 123, 124, 125, 126, 127, 128, 129, 130, 131, 132, 133, 134, 135, 136, 138, 139, 140, 141, 142, 143, 144, 145, 146, 147, 149, 150, 151, 152, 153, 154, 157, 158, 159]
+    # selected_indices = [0, 1, 3, 5, 6, 7, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 29, 31, 32, 33, 34, 35, 36, 37, 38, 39, 40, 41, 42, 43, 44, 45, 46, 47, 48, 50, 51, 52, 53, 54, 55, 56, 57, 58, 59, 60, 61, 62, 64, 67, 68, 69, 70, 71, 73, 74, 75, 76, 77, 78, 79, 80, 82, 84, 86, 87, 88, 89, 90, 91, 92, 93, 94, 95, 96, 98, 101, 103, 104, 106, 107, 108, 109, 110, 111, 112, 113, 114, 115, 116, 118, 119, 121, 122, 123, 124, 125, 126, 127, 128, 129, 130, 131, 132, 133, 134, 135, 136, 138, 139, 140, 141, 142, 143, 144, 145, 146, 147, 149, 150, 151, 152, 153, 154, 157, 158, 159]
     selected_indices = list(range(len(nv_list)))
     # fmt: on
     nv_list = [nv_list[ind] for ind in selected_indices]
@@ -416,8 +414,8 @@ def process_detect_cosmic_rays(data, prob_dist: ProbDist = ProbDist.COMPOUND_POI
     # )
 
     # Set y-axis limits dynamically based on data range
-    # ax.set_yscale("log")
-    ax.set_ylim(0, 4)
+    ax.set_yscale("log")
+    # ax.set_ylim(0, 4)
 
     # Add labels, title, and legend
     ax.set_xlabel("Number of NVs in NV⁰ State", fontsize=15)
@@ -854,7 +852,11 @@ if __name__ == "__main__":
     dark_times = [10e6, 100e6, 500e6, 1000e6]
 
     # DATA FILES
-    file_ids = [1758180182062, 1758336169797]
+    # file_ids = [1758180182062, 1758336169797]
+    # file_ids = [1766974557310] # 1ms and 1s dark time data (50ms readout)
+    file_ids = [1767157983900, 1767269375068, 1767395452581, 1767514737339]
+    file_names = [dm.get_file_name(file_id) for file_id in file_ids]
+    print(f"File names: {file_names}")
     combined_data = dm.get_raw_data(file_id=file_ids[0])
     for file_id in file_ids[1:]:
         new_data = dm.get_raw_data(file_id=file_id)

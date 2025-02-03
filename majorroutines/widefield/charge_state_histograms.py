@@ -122,7 +122,7 @@ def process_and_plot(
         # Plot histograms with NV index and SNR included
         nv_num = widefield.get_nv_num(nv_list[ind])
         # if do_plot_histograms and nv_num == 154:
-        if do_plot_histograms and readout_fidelity > 0.97:
+        if do_plot_histograms:
             fig = plot_histograms(sig_counts_list, ref_counts_list, density=True)
             ax = fig.gca()
 
@@ -184,16 +184,16 @@ def process_and_plot(
     ax.set_ylabel("NV- preparation fidelity")
 
     # Plot prep fidelity vs distance from center
-    coords_key = "laser_INTE_520_aod"
-    distances = []
-    for nv in nv_list:
-        coords = pos.get_nv_coords(nv, coords_key, drift_adjust=False)
-        dist = np.sqrt((110 - coords[0]) ** 2 + (110 - coords[1]) ** 2)
-        distances.append(dist)
-    fig, ax = plt.subplots()
-    kpl.plot_points(ax, distances, prep_fidelity_list)
-    ax.set_xlabel("Distance from center frequencies (MHz)")
-    ax.set_ylabel("NV- preparation fidelity")
+    # coords_key = "laser_INTE_520_aod"
+    # distances = []
+    # for nv in nv_list:
+    #     coords = pos.get_nv_coords(nv, coords_key, drift_adjust=False)
+    #     dist = np.sqrt((110 - coords[0]) ** 2 + (110 - coords[1]) ** 2)
+    #     distances.append(dist)
+    # fig, ax = plt.subplots()
+    # kpl.plot_points(ax, distances, prep_fidelity_list)
+    # ax.set_xlabel("Distance from center frequencies (MHz)")
+    # ax.set_ylabel("NV- preparation fidelity")
 
     # Report averages
     avg_readout_fidelity = np.nanmean(readout_fidelity_list)
@@ -361,6 +361,7 @@ def main(
 if __name__ == "__main__":
     kpl.init_kplotlib()
     # data = dm.get_raw_data(file_id=1733583334808, load_npz=False)
-    data = dm.get_raw_data(file_id=1764406045571, load_npz=False)
+    data = dm.get_raw_data(file_id=1766803842180, load_npz=False)  # 50ms readout
+    # data = dm.get_raw_data(file_id=1766834596476, load_npz=False)  # 100ms readout
     process_and_plot(data, do_plot_histograms=True)
     kpl.show(block=True)
