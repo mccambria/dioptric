@@ -5,6 +5,7 @@ Charge state readout after polarization/ionization, no spin manipulation
 Created on October 13th, 2023
 
 @author: mccambria
+@author: Saroj Chand
 """
 
 import matplotlib.pyplot as plt
@@ -15,30 +16,71 @@ from qm.simulate import SimulationConfig
 import utils.common as common
 from servers.timing.sequencelibrary.QM_opx import seq_utils
 
+# def get_seq(pol_coords_list, charge_prep, dark_time_ns, num_reps):
+#     if num_reps is None:
+#         num_reps = 1
+#     num_nvs = len(pol_coords_list)
 
-def get_seq(pol_coords_list, charge_prep, dark_time_ns, num_reps):
+#     dark_time = seq_utils.convert_ns_to_cc(dark_time_ns, allow_zero=True)
+
+#     with qua.program() as seq:
+#         seq_utils.init(num_nvs)
+#         seq_utils.macro_run_aods()
+
+#         def one_rep(rep_ind=None):
+#             if charge_prep:
+#                 seq_utils.macro_polarize(
+#                     pol_coords_list, spin_pol=False, targeted_polarization=True
+#                 )
+#             seq_utils.macro_charge_state_readout()
+#             seq_utils.macro_wait_for_trigger()
+#             if dark_time > 0:
+#                 qua.wait(dark_time)
+
+#         seq_utils.handle_reps(one_rep, num_reps, wait_for_trigger=False)
+#         seq_utils.macro_pause()
+
+#     seq_ret_vals = []
+
+#     return seq, seq_ret_vals
+
+
+def get_seq(pol_coords_list, charge_prep, dark_time_1_ns, dark_time_2_ns, num_reps):
     if num_reps is None:
         num_reps = 1
     num_nvs = len(pol_coords_list)
-
-    dark_time = seq_utils.convert_ns_to_cc(dark_time_ns, allow_zero=True)
+    # Convert dark times from nanoseconds to clock cycles
+    dark_time_1 = seq_utils.convert_ns_to_cc(dark_time_1_ns, allow_zero=True)
+    dark_time_2 = seq_utils.convert_ns_to_cc(dark_time_2_ns, allow_zero=True)
+    dark_times = [dark_time_1, dark_time_2]
 
     with qua.program() as seq:
         seq_utils.init(num_nvs)
         seq_utils.macro_run_aods()
 
-        def one_rep(rep_ind=None):
+        def one_exp(dark_time, exp_ind):
+            """Perform a single experiment with the specified dark time and experiment index."""
             if charge_prep:
                 seq_utils.macro_polarize(
                     pol_coords_list, spin_pol=False, targeted_polarization=True
                 )
+            qua.align()  # Align polarization and readout operations
+            # if dark_time > 0:
+            #     qua.wait(dark_time)
             seq_utils.macro_charge_state_readout()
             seq_utils.macro_wait_for_trigger()
+
             if dark_time > 0:
                 qua.wait(dark_time)
 
+        def one_rep(rep_ind):
+            """Execute all experiments within a single repetition."""
+            for exp_ind, dark_time in enumerate(dark_times):
+                one_exp(dark_time, exp_ind)
+
+        # Execute the sequence for the specified number of repetitions
         seq_utils.handle_reps(one_rep, num_reps, wait_for_trigger=False)
-        seq_utils.macro_pause()
+        seq_utils.macro_pause()  # Pause the sequence at the end
 
     seq_ret_vals = []
     return seq, seq_ret_vals
@@ -56,17 +98,14 @@ if __name__ == "__main__":
     try:
         args = [
             [
-                [110, 109.51847988358679],
-                [112, 110.70156405156148],
+                [109.037, 106.716],
+                [115.66, 101.157],
             ],
-            [
-                [75.42725784791932, 75.65982013416432],
-                [75.98725784791932, 74.74382013416432],
-            ],
-            False,
             True,
+            1000.0,
+            10000.0,
         ]
-        seq, seq_ret_vals = get_seq(*args, 5)
+        seq, seq_ret_vals = get_seq(*args, 1)
 
         sim_config = SimulationConfig(duration=int(400e3 / 4))
         sim = opx.simulate(seq, sim_config)

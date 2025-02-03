@@ -18,6 +18,12 @@ import numpy as np
 import seaborn as sns
 from scipy import ndimage
 
+from analysis import bimodal_histogram
+from analysis.bimodal_histogram import (
+    ProbDist,
+    determine_threshold,
+    fit_bimodal_histogram,
+)
 from majorroutines.widefield import base_routine
 from utils import common, widefield
 from utils import data_manager as dm
@@ -25,12 +31,6 @@ from utils import kplotlib as kpl
 from utils import positioning as pos
 from utils import tool_belt as tb
 from utils.constants import NVSig, VirtualLaserKey
-from analysis import bimodal_histogram
-from analysis.bimodal_histogram import (
-    ProbDist,
-    determine_threshold,
-    fit_bimodal_histogram,
-)
 
 
 # Update the plot_histograms function for better visualization
@@ -45,12 +45,6 @@ def plot_histograms(
 ):
     """Plot histograms for signal and reference counts with enhanced visualization."""
     sns.set_theme(style="whitegrid")  # Use a Seaborn theme for improved aesthetics
-
-    laser_key = VirtualLaserKey.WIDEFIELD_CHARGE_READOUT
-    laser_dict = tb.get_virtual_laser_dict(laser_key)
-    readout = laser_dict["duration"]
-    readout_ms = int(readout / 1e6)
-    readout_s = readout / 1e9
 
     ### Histograms
     num_reps = len(ref_counts_list)
@@ -92,19 +86,21 @@ def plot_histograms(
 # Update scatter plot aesthetics
 def scatter_plot(x_data, y_data, xlabel, ylabel, title):
     """Create a scatter plot with purple markers and transparent filling."""
-    plt.figure(figsize=(6, 5))
+    plt.figure()
     plt.scatter(
         x_data,
         y_data,
-        edgecolors="darkblue",  #  circle outlines
-        facecolors="skyblue",  #  fill color
-        alpha=0.8,  # Transparency for the filling
+        edgecolors="black",  #  circle outlines
+        facecolors="blue",  #  fill color
+        alpha=0.6,  # Transparency for the filling
         s=60,  # Marker size
-        linewidth=0.8,  # Outline thickness
+        linewidth=0.6,  # Outline thickness
     )
-    plt.title(title, fontsize=18)
-    plt.xlabel(xlabel, fontsize=16)
-    plt.ylabel(ylabel, fontsize=16)
+    plt.title(title, fontsize=15)
+    plt.xlabel(xlabel, fontsize=15)
+    plt.ylabel(ylabel, fontsize=15)
+    plt.xticks(fontsize=15)
+    plt.yticks(fontsize=15)
     plt.grid(True, which="both", linestyle="--", alpha=0.5)
     plt.tight_layout()
     plt.show()
@@ -132,10 +128,6 @@ def plot_images(img_arrays, readout_laser, readout_ms, title_suffixes):
         img_figs.append(fig)
 
     return img_figs
-
-
-# # Process and plot function and Set Seaborn theme globally for consistent styling
-sns.set_theme(style="whitegrid")
 
 
 def process_and_plot(
@@ -184,10 +176,20 @@ def process_and_plot(
 
     # Report averages
     avg_readout_fidelity = np.nanmean(readout_fidelity_list)
+    med_readout_fidelity = np.nanmedian(readout_fidelity_list)
     avg_prep_fidelity = np.nanmean(prep_fidelity_list)
+    med_prep_fidelity = np.nanmedian(prep_fidelity_list)
     print(f"Average Readout Fidelity: {avg_readout_fidelity:.3f}")
+    print(f"Median Readout Fidelity: {med_readout_fidelity:.3f}")
     print(f"Average NV- Preparation Fidelity: {avg_prep_fidelity:.3f}")
-
+    print(f"Median NV- Preparation Fidelity: {med_prep_fidelity:.3f}")
+    selected_nv_indices = [
+        ind
+        for ind in range(num_nvs)
+        if prep_fidelity_list[ind] > 0.55 and readout_fidelity_list[ind] > 0.8
+    ]
+    print(f"Selected NVs: {selected_nv_indices}")
+    print(f"len(selected_nv_indices): {len(selected_nv_indices)}")
     # Scatter plot: Readout fidelity vs Prep fidelity
     scatter_plot(
         readout_fidelity_list,
@@ -199,20 +201,20 @@ def process_and_plot(
 
     # Scatter plot: Distance from center vs Prep fidelity
     coords_key = "laser_INTE_520_aod"
-    distances = [
-        np.sqrt(
-            (110 - pos.get_nv_coords(nv, coords_key, drift_adjust=False)[0]) ** 2
-            + (110 - pos.get_nv_coords(nv, coords_key, drift_adjust=False)[1]) ** 2
-        )
-        for nv in nv_list
-    ]
-    scatter_plot(
-        distances,
-        prep_fidelity_list,
-        xlabel="Distance from Center (MHz)",
-        ylabel="NV- Preparation Fidelity",
-        title="Prep Fidelity vs Distance",
-    )
+    # distances = [
+    #     np.sqrt(
+    #         (110 - pos.get_nv_coords(nv, coords_key, drift_adjust=False)[0]) ** 2
+    #         + (110 - pos.get_nv_coords(nv, coords_key, drift_adjust=False)[1]) ** 2
+    #     )
+    #     for nv in nv_list
+    # ]
+    # scatter_plot(
+    #     distances,
+    #     prep_fidelity_list,
+    #     xlabel="Distance from Center (MHz)",
+    #     ylabel="NV- Preparation Fidelity",
+    #     title="Prep Fidelity vs Distance",
+    # )
 
     # Image plotting
     if "img_arrays" not in raw_data:
@@ -240,7 +242,11 @@ def process_and_plot(
 
 if __name__ == "__main__":
     kpl.init_kplotlib()
-    data = dm.get_raw_data(file_id=1713224279642, load_npz=False)
+    # Process and plot function and Set Seaborn theme globally for consistent styling
+    sns.set_theme(style="whitegrid")
+    # data = dm.get_raw_data(file_id=1754374316674, load_npz=False)
+    data = dm.get_raw_data(file_id=1764406045571, load_npz=False)
+    file_name = dm.get_file_name(file_id=1764406045571)
+    print(file_name)
     process_and_plot(data, do_plot_histograms=False)
     kpl.show(block=True)
-    plt.show(block=True)

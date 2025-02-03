@@ -32,23 +32,39 @@ red_laser = "laser_COBO_638"
 green_laser_aod = "laser_INTE_520_aod"
 red_laser_aod = "laser_COBO_638_aod"
 
-calibration_coords_pixel = [
-    [52.761, 64.24],
-    [95.923, 201.438],
-    [207.435, 74.049],
-]
+# calibration_coords_pixel = [
+#     [52.761, 64.24],
+#     [95.923, 201.438],
+#     [207.435, 74.049],
+# ]
 
+# calibration_coords_green = [
+#     [115.66, 101.157],
+#     [109.249, 115.543],
+#     [98.684, 100.663],
+# ]
+# calibration_coords_red = [
+#     [78.816, 67.86],
+#     [73.859, 79.697],
+#     [65.063, 67.591],
+# ]
+
+
+calibration_coords_pixel = [
+    [239.243, 23.266],
+    [15.473, 52.03],
+    [107.857, 223.635],
+]
 calibration_coords_green = [
-    [115.658, 101.174],
-    [109.267, 115.624],
-    [98.627, 100.579],
+    [95.595, 94.819],
+    [119.069, 100.321],
+    [107.092, 117.632],
 ]
 calibration_coords_red = [
-    [78.678, 67.834],
-    [73.807, 79.609],
-    [65.055, 67.585],
+    [62.467, 62.828],
+    [81.563, 67.148],
+    [72.146, 81.426],
 ]
-
 # Create the dictionaries using the provided lists
 calibration_coords_nv1 = {
     CoordsKey.PIXEL: calibration_coords_pixel[0],
@@ -68,15 +84,11 @@ calibration_coords_nv3 = {
     red_laser_aod: calibration_coords_red[2],
 }
 
-# pixel_to_sample_affine_transformation_matrix = [
-#     [-0.01472387, 0.00052569, 1.28717911],
-#     [0.00040197, -0.01455135, 1.73876545],
-# ]
-
 pixel_to_sample_affine_transformation_matrix = [
-    [-0.02005328, 0.00313572, 3.64182263],
-    [0.00214898, -0.01772636, 1.94719313],
+    [-0.01472387, 0.00052569, 1.28717911],
+    [0.00040197, -0.01455135, 1.73876545],
 ]
+
 # endregion
 # region Base config
 # Add on to the default config
@@ -198,7 +210,7 @@ config |= {
             # LaserKey.IMAGING: {"physical_name": green_laser, "duration": 50e6},
             VirtualLaserKey.IMAGING: {
                 "physical_name": green_laser,
-                "duration": 6e6,
+                "duration": 12e6,
             },
             VirtualLaserKey.SPIN_READOUT: {
                 "physical_name": green_laser,
@@ -250,7 +262,7 @@ config |= {
                 # "duration": 100e6,
                 "duration": 50e6,
                 # "duration": 30e6,
-                # "duration": 12e6,  # for red calibration
+                # "duration": 24e6,  # for red calibration
             },
             # LaserKey.WIDEFIELD_CHARGE_READOUT: {"physical_name": yellow_laser, "duration": 100e6},
         },
@@ -808,7 +820,7 @@ opx_config = {
         # "green_aod_cw-opti": {"type": "constant", "sample": 0.03},
         # "green_aod_cw-charge_pol": {"type": "constant", "sample": 0.13},
         # "green_aod_cw-charge_pol": {"type": "constant", "sample": 0.06},  # Negative
-        "green_aod_cw-charge_pol": {"type": "constant", "sample": 0.123},
+        "green_aod_cw-charge_pol": {"type": "constant", "sample": 0.15},
         "green_aod_cw-spin_pol": {"type": "constant", "sample": 0.05},
         "green_aod_cw-shelving": {"type": "constant", "sample": 0.05},
         "green_aod_cw-scc": {"type": "constant", "sample": 0.15},
@@ -823,11 +835,12 @@ opx_config = {
         "yellow_imaging": {"type": "constant", "sample": 0.45},  # 0.35
         # "yellow_imaging": {"type": "constant", "sample": 0.50},  # 0.35
         # "yellow_charge_readout": {"type": "constant", "sample": 0.396},  # 50ms 160NVs
+        # "yellow_charge_readout": {"type": "constant", "sample": 0.4129},  # 50ms 160NVs
         # "yellow_charge_readout": {"type": "constant", "sample": 0.3472},  # 50ms 117NVs
-        "yellow_charge_readout": {"type": "constant", "sample": 0.3741},  # 50ms 117NVs
+        # "yellow_charge_readout": {"type": "constant", "sample": 0.3741},  # 50ms 117NVs
         # "yellow_charge_readout": {"type": "constant", "sample": 0.325},  # 100ms 117NVs
         # "yellow_charge_readout": {"type": "constant", "sample": 0.29},  # 200ms 117NVs
-        # "yellow_charge_readout": {"type": "constant", "sample": 0.42},  # 12ms red cal
+        "yellow_charge_readout": {"type": "constant", "sample": 0.41},  # 12ms red cal
         "yellow_spin_pol": {"type": "constant", "sample": 0.39},
         "yellow_shelving": {"type": "constant", "sample": 0.33},
         # Other

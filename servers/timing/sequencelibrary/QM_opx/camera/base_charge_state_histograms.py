@@ -58,6 +58,3 @@ def macro(
 
     seq_utils.handle_reps(one_rep, num_reps, wait_for_trigger=False)
     seq_utils.macro_pause()
-
-
-

@@ -28,8 +28,20 @@ from utils import positioning as pos
 from utils import tool_belt as tb
 from utils.constants import ChargeStateEstimationMode, NVSig, VirtualLaserKey
 
+# def detect_cosmic_rays(nv_list, num_reps, num_runs, dark_time):
+#     charge_prep = True
+#     main(
+#         nv_list,
+#         num_reps,
+#         num_runs,
+#         "detect_cosmic_rays",
+#         charge_prep,
+#         process_detect_cosmic_rays,
+#         dark_time=dark_time,
+#     )
 
-def detect_cosmic_rays(nv_list, num_reps, num_runs, dark_time):
+
+def detect_cosmic_rays(nv_list, num_reps, num_runs, dark_time_1, dark_time_2):
     charge_prep = True
     main(
         nv_list,
@@ -38,7 +50,7 @@ def detect_cosmic_rays(nv_list, num_reps, num_runs, dark_time):
         "detect_cosmic_rays",
         charge_prep,
         process_detect_cosmic_rays,
-        dark_time=dark_time,
+        dark_time=(dark_time_1, dark_time_2),
     )
 
 
@@ -191,7 +203,7 @@ def main(
     caller_fn_name,
     charge_prep,
     data_processing_fn,
-    dark_time=0,
+    dark_time=(0, 0),
 ):
     ### Some initial setup
     seq_file = "charge_monitor.py"
@@ -200,13 +212,14 @@ def main(
     pulse_gen = tb.get_server_pulse_gen()
 
     num_steps = 1
-    num_exps_per_rep = 1
+    num_exps_per_rep = 2
 
     ### Collect the data
 
     def run_fn(shuffled_step_inds):
         pol_coords_list = widefield.get_coords_list(nv_list, VirtualLaserKey.CHARGE_POL)
-        seq_args = [pol_coords_list, charge_prep, dark_time]
+        seq_args = [pol_coords_list, charge_prep, *dark_time]  # Pass both dark times
+
         seq_args_string = tb.encode_seq_args(seq_args)
         pulse_gen.stream_load(seq_file, seq_args_string, num_reps)
 
@@ -227,6 +240,7 @@ def main(
     raw_data |= {
         "timestamp": timestamp,
         "caller_fn_name": caller_fn_name,
+        "dark_time": dark_time,
     }
 
     try:
@@ -261,7 +275,7 @@ if __name__ == "__main__":
 
     ###
 
-    # data = dm.get_raw_data(file_id=1567772101718)
+    data = dm.get_raw_data(file_id=1567772101718)
     # process_detect_cosmic_rays(data)
 
     kpl.show(block=True)

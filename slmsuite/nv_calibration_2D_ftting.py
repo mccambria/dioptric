@@ -1,3 +1,5 @@
+import sys
+
 import matplotlib.pyplot as plt
 import numpy as np
 from scipy.optimize import curve_fit
@@ -102,16 +104,23 @@ def plot_fitting(
 # Example usage
 if __name__ == "__main__":
     # Load the image array (replace this with your own method for loading image data)
-    data = dm.get_raw_data(file_id=1751731396763, load_npz=True)
-    img_array = np.array(data["img_array"])
+    data = dm.get_raw_data(file_id=1766356204532, load_npz=True)
+    # data = dm.get_raw_data(file_id=1766363198090, load_npz=True)
 
+    img_array = np.array(data["img_array"]["img_array"])
+    # fig, ax = plt.subplots()
+    # title = "50ms, Ref"
+    # kpl.imshow(ax, img_array, title=title, cbar_label="Photons")
+    # plt.show(block=True)
+    # sys.exit()
     # List of initial peak coordinates
-    initial_peaks = np.array([[196.437, 34.997], [197.379, 214.13], [38.346, 123.125]])
+    # initial_peaks = np.array([[199.257, 37.906], [189.75, 207.741], [45.953, 112.377]])
+    initial_peaks = np.array([[223.511, 9.013], [208.159, 239.374], [14.924, 109.705]])
 
     # Fit Gaussian to each peak
     optimized_coords = []
     for peak in initial_peaks:
-        coords, _ = fit_gaussian_2d_local(img_array, peak, size=15)
+        coords, _ = fit_gaussian_2d_local(img_array, peak, size=5)
         optimized_coords.append(coords)
 
     optimized_coords = np.array(optimized_coords)

@@ -166,8 +166,8 @@
 
 # len_linear, len_logarithmic
 
-import numpy as np
 import matplotlib.pyplot as plt
+import numpy as np
 
 # fmt: off
 # scc_duration_list = [168, 160, 164, 124, 188, 132, 116, 124, 160, 160, 164, 120, 140, 144, 124, 136, 136, 88, 152, 140, 140, 116, 104, 120, 112, 164, 136, 112, 96, 112, 140, 144, 196, 192, 120, 140, 228, 140, 32, 140, 148, 108, 164, 152, 132, 140, 176, 132, 136, 120, 112, 108, 144, 116, 132, 36, 192, 84, 148, 112, 132, 152, 176, 176, 176, 112, 120, 140, 168, 140, 92, 132, 92, 124, 68, 32, 92, 148, 164, 104, 32, 148, 188, 32, 112, 148, 168, 64, 140, 140, 96, 124, 176, 108, 108, 216, 216, 116, 112, 132, 148, 132, 132, 140, 160, 132, 148, 192, 160, 116, 140, 120, 152, 140, 144, 124, 160]
@@ -187,40 +187,201 @@ print(
     np.median(scc_duration_list), np.mean(scc_duration_list), np.std(scc_duration_list)
 )
 
-# fmt: off
-# Extended data for "Counts at initial coordinates" and "Counts after drift compensation"
-extended_initial_counts = [
-    1200.0, 1267.0, 1189.0, 1179.0, 1203.0, 1287.0, 1170.0, 1155.0, 1259.0, 1168.0,
-    1320.0, 1361.0, 1335.0, 1337.0, 1345.0, 1435.0, 1324.0, 1369.0, 1358.0, 1385.0,
-    1322.0, 1325.0, 1307.0, 1286.0, 1340.0, 1334.0, 1344.0, 1317.0, 1327.0, 1272.0,
-    1323.0, 1336.0, 1373.0, 1406.0, 1349.0, 1364.0, 1425.0, 1359.0, 1376.0, 1362.0,
-    1392.0, 1359.0, 1369.0, 1402.0, 1354.0, 1435.0, 1457.0, 1416.0, 1398.0, 1362.0,
-    1385.0, 1365.0, 1382.0, 1410.0, 1371.0, 1347.0, 1385.0, 1405.0, 1443.0, 1462.0,
-    1355.0, 1382.0, 1406.0, 1431.0, 1352.0, 1396.0, 1452.0, 1379.0, 1420.0, 1344.0,
-    1387.0, 1405.0, 1400.0, 1468.0, 1359.0, 1438.0, 1425.0, 1444.0, 1417.0, 1430.0,
-    1350.0, 1439.0, 1419.0, 1431.0, 1421.0, 1402.0, 1324.0, 1354.0
-]
-extended_compensated_counts = [
-    1303.0, 1287.0, 1301.0, 1254.0, 1220.0, 1254.0, 1226.0, 1309.0, 1250.0, 1269.0,
-    1272.0, 1347.0, 1303.0, 1362.0, 1360.0, 1290.0, 1382.0, 1328.0, 1322.0, 1274.0,
-    1340.0, 1301.0, 1357.0, 1376.0, 1391.0, 1388.0, 1360.0, 1370.0, 1323.0, 1370.0,
-    1366.0, 1378.0, 1344.0, 1371.0, 1320.0, 1309.0, 1362.0, 1319.0, 1326.0, 1361.0,
-    1365.0, 1378.0, 1361.0, 1291.0, 1366.0, 1354.0, 1374.0, 1372.0, 1276.0, 1336.0,
-    1389.0, 1386.0, 1360.0, 1366.0, 1295.0, 1278.0, 1344.0, 1316.0, 1376.0, 1365.0,
-    1336.0, 1380.0, 1307.0, 1305.0, 1316.0, 1333.0, 1423.0, 1351.0, 1353.0, 1341.0,
-    1405.0, 1347.0, 1282.0, 1352.0, 1371.0, 1336.0, 1370.0, 1406.0, 1399.0, 1295.0,
-    1343.0, 1428.0, 1406.0, 1308.0, 1364.0, 1332.0, 1340.0, 1383.0
-]
-# fmt: on
-# Combine all counts into one list
-combined_counts_all = extended_initial_counts + extended_compensated_counts
-print(len(combined_counts_all))
-print(np.sqrt(len(combined_counts_all)))
-# Calculate updated statistical measures
-plt.figure(figsize=(8, 6))
-plt.hist(combined_counts_all, bins=15, color="blue", alpha=0.7)
-plt.title("Combined Counts Distribution", fontsize=14)
-plt.xlabel("Counts", fontsize=12)
-plt.ylabel("Frequency", fontsize=12)
-plt.grid(alpha=0.3)
+
+
+# import numpy as np
+# from scipy.spatial.transform import Rotation
+
+# # Given Calibration Coordinates
+# calibration_coords_pixel = np.array(
+#     [[242.728, 64.946], [7.856, 74.462], [86.077, 231.364]]
+# )
+
+# calibration_coords_green = np.array(
+#     [[95.27, 99.052], [120.108, 102.667], [109.947, 118.554]]
+# )
+
+# # Original Mapping
+# old_pixel = np.array([107.51, 120.42])
+# old_green = np.array([108.979, 106.471])
+
+# # New Mapping
+# new_pixel = np.array([107.51, 120.42])
+# new_green = np.array([108.389, 106.086])
+
+# # Compute the translation shift
+# shift = new_green - old_green  # Compute the difference
+
+# # Apply the shift to the original calibration coordinates
+# updated_calibration_coords_green = calibration_coords_green + shift
+
+# # Print Updated Calibration Green Coordinates
+# print("Updated Calibration Green Coordinates:")
+# print(updated_calibration_coords_green)
+
+
+import sys
+
+import matplotlib.pyplot as plt
+import numpy as np
+
+from utils import data_manager as dm
+
+# Load the three image datasets
+# data1 = dm.get_raw_data(file_id=1765534203820, load_npz=True)  # Shallow NVs (No notch filter)
+# data2 = dm.get_raw_data(file_id=1765547015748, load_npz=True)  # Shallow NVs (With notch filter)
+# data3 = dm.get_raw_data(file_id=1738555345860, load_npz=True)  # Deep NVs
+
+# data1 = dm.get_raw_data(file_id=1765628065653, load_npz=True)  # Shallow NVs (No notch filter)
+# data2 = dm.get_raw_data(file_id=1765648437030, load_npz=True)  # Shallow NVs (With notch filter)
+# data3 = dm.get_raw_data(file_id=1758030513244, load_npz=True)  # Deep NVs ref image
+
+#same power but NV number is changed
+data0 = dm.get_raw_data(file_id=1758030513244, load_npz=True)  # Deep NVs ref image
+data1 = dm.get_raw_data(file_id=1764798303740, load_npz=True)  # Shallow 4 NVs
+data2 = dm.get_raw_data(file_id=1764826100492, load_npz=True)  # Shallow 52NVs
+data3 = dm.get_raw_data(file_id=1764415655836, load_npz=True)  # Shallow 89NVs
+data4 = dm.get_raw_data(file_id=1764406045571, load_npz=True)  # Shallow 161NVs
+
+print(data1.keys())
+# Extract image arrays
+# img1 = np.array(data1["img_array"]["img_array"], dtype=np.float64)
+# img2 = np.array(data2["img_array"]["img_array"], dtype=np.float64)
+# img3 = np.array(data3["img_array"]["img_array"], dtype=np.float64)
+
+img0 = np.array(data0["ref_img_array"]["ref_img_array"], dtype=np.float64)
+img1 = np.array(data1["ref_img_array"]["ref_img_array"], dtype=np.float64)
+img2 = np.array(data2["ref_img_array"]["ref_img_array"], dtype=np.float64)
+img3 = np.array(data3["ref_img_array"]["ref_img_array"], dtype=np.float64)
+img4 = np.array(data4["ref_img_array"]["ref_img_array"], dtype=np.float64)
+
+def remove_outliers(data):
+    """Remove outliers using the IQR method."""
+    q1 = np.percentile(data, 25)
+    q3 = np.percentile(data, 75)
+    iqr = q3 - q1
+    lower_bound = q1 - 2.0 * iqr
+    upper_bound = q3 + 2.0 * iqr
+    return data[(data >= lower_bound) & (data <= upper_bound)]
+
+filtered_datasets = [remove_outliers(img.flatten()) for img in [img1, img2, img3, img4]]
+img1, img2, img3, img4 = filtered_datasets
+# Compute background levels (mean, median, std)
+bg1_mean, bg1_median, bg1_std = np.mean(img1), np.median(img1), np.std(img1)
+bg2_mean, bg2_median, bg2_std = np.mean(img2), np.median(img2), np.std(img2)
+bg3_mean, bg3_median, bg3_std = np.mean(img3), np.median(img3), np.std(img3)
+bg4_mean, bg4_median, bg4_std = np.mean(img4), np.median(img4), np.std(img4)
+
+# Plot histograms to compare background distributions
+plt.figure()
+# plt.hist(
+#     img0.flatten(),
+#     bins=100,
+#     alpha=0.5,
+#     label="Ref.(Deep 161NVs)",
+#     color="gray",
+# )
+plt.hist(
+    img1.flatten(),
+    bins=100,
+    alpha=0.5,
+    label="Shallow 4 NVs (Readout Power:1416uW)",
+    color="blue",
+)
+
+plt.hist(
+    img2.flatten(),
+    bins=100,
+    alpha=0.5,
+    label="Shallow 52 NVs (Readout Power:1416uW)",
+    color="orange",
+)
+plt.hist(
+    img3.flatten(),
+    bins=100,
+    alpha=0.5,
+    label="Shallow 89 NVs (Readout Power:1917uW)",
+    color="red",
+)
+
+plt.hist(
+    img4.flatten(),
+    bins=100,
+    alpha=0.5,
+    label="Shallow 161 NVs (Readout Power:1917uW)",
+    color="purple",
+)
+
+plt.xlabel("Photons", fontsize=15)
+plt.ylabel("Frequency", fontsize=15)
+plt.title("Background Levels", fontsize=15)
+plt.xticks(fontsize=15)
+plt.yticks(fontsize=15)
+plt.legend()
+# plt.yscale("log")
+plt.tight_layout()
 plt.show()
+
+# sys.exit()
+
+# Print summary statistics
+print(f"Image 1 - Mean: {bg1_mean:.2f}, Median: {bg1_median:.2f}, Std: {bg1_std:.2f}")
+print(f"Image 2 - Mean: {bg2_mean:.2f}, Median: {bg2_median:.2f}, Std: {bg2_std:.2f}")
+print(f"Image 3 - Mean: {bg3_mean:.2f}, Median: {bg3_median:.2f}, Std: {bg3_std:.2f}")
+# # Apply outlier removal
+# filtered_datasets = [remove_outliers(img.flatten()) for img in [img1, img2, img3, img4]]
+# datasets = [img1, img2, img3, img4]
+labels = ["Shallow 4 NVs (readout power:1416uW)", "Shallow 52 NVs(readout power:1416uW)", "Shallow 89 NVs(readout power:1917uW)", "Shallow 161 NVs(readout power:1416uW)"]
+colors = ["blue", "orange", "red", "purple"]
+
+for i in range(4):
+    plt.figure()
+    plt.hist(
+        filtered_datasets[i].flatten(),
+        bins=100,
+        alpha=0.5,
+        label=labels[i],
+        color=colors[i],
+    )
+
+    plt.xlabel("Photons", fontsize=15)
+    plt.ylabel("Frequency", fontsize=15)
+    plt.title(f"Background Level - {labels[i]}", fontsize=15)
+    plt.xticks(fontsize=12)
+    plt.yticks(fontsize=12)
+    plt.legend()
+    plt.tight_layout()
+    plt.show()
+
+# Number of NVs in each dataset
+nv_counts = [4, 52, 89, 161]
+
+# Median background levels
+median_values = [bg1_median, bg2_median, bg3_median, bg4_median]
+
+# Plot median background levels vs number of NVs
+plt.figure(figsize=(6, 5))
+plt.plot(nv_counts, median_values, marker='o', linestyle='-', color='black')
+
+plt.xlabel("Number of NVs", fontsize=15)
+plt.ylabel("Median Background Level", fontsize=15)
+plt.title("Background Levels", fontsize=15)
+plt.xticks(fontsize=12)
+plt.yticks(fontsize=12)
+plt.grid(True)
+
+plt.show()
+
+
+
+# Retrieve and print file names
+file_names = [
+    dm.get_file_name(file_id=1764798303740),  # Shallow 4 NVs
+    dm.get_file_name(file_id=1764826100492),  # Shallow 52 NVs
+    dm.get_file_name(file_id=1764415655836),  # Shallow 89 NVs
+    dm.get_file_name(file_id=1764406045571),  # Shallow 161 NVs
+]
+
+# Print file names
+for i, file_name in enumerate(file_names, start=1):
+    print(f"File {i}: {file_name}")

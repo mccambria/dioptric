@@ -5,6 +5,7 @@ QM OPX sequence utils. Should only be used by sequence files
 Created June 25th, 2023
 
 @author: mccambria
+@author: Saroj Chand
 """
 
 import logging
@@ -389,7 +390,6 @@ def macro_run_aods(
                 laser_names.append(physical_laser_name)
 
     num_lasers = len(laser_names)
-
     # Adjust the pulse names for the passed suffices
     base_pulse_name = "aod_cw"
     pulse_names = []
