@@ -187,44 +187,6 @@ print(
     np.median(scc_duration_list), np.mean(scc_duration_list), np.std(scc_duration_list)
 )
 
-# fmt: off
-# Extended data for "Counts at initial coordinates" and "Counts after drift compensation"
-# extended_initial_counts = [
-#     1200.0, 1267.0, 1189.0, 1179.0, 1203.0, 1287.0, 1170.0, 1155.0, 1259.0, 1168.0,
-#     1320.0, 1361.0, 1335.0, 1337.0, 1345.0, 1435.0, 1324.0, 1369.0, 1358.0, 1385.0,
-#     1322.0, 1325.0, 1307.0, 1286.0, 1340.0, 1334.0, 1344.0, 1317.0, 1327.0, 1272.0,
-#     1323.0, 1336.0, 1373.0, 1406.0, 1349.0, 1364.0, 1425.0, 1359.0, 1376.0, 1362.0,
-#     1392.0, 1359.0, 1369.0, 1402.0, 1354.0, 1435.0, 1457.0, 1416.0, 1398.0, 1362.0,
-#     1385.0, 1365.0, 1382.0, 1410.0, 1371.0, 1347.0, 1385.0, 1405.0, 1443.0, 1462.0,
-#     1355.0, 1382.0, 1406.0, 1431.0, 1352.0, 1396.0, 1452.0, 1379.0, 1420.0, 1344.0,
-#     1387.0, 1405.0, 1400.0, 1468.0, 1359.0, 1438.0, 1425.0, 1444.0, 1417.0, 1430.0,
-#     1350.0, 1439.0, 1419.0, 1431.0, 1421.0, 1402.0, 1324.0, 1354.0
-# ]
-# extended_compensated_counts = [
-#     1303.0, 1287.0, 1301.0, 1254.0, 1220.0, 1254.0, 1226.0, 1309.0, 1250.0, 1269.0,
-#     1272.0, 1347.0, 1303.0, 1362.0, 1360.0, 1290.0, 1382.0, 1328.0, 1322.0, 1274.0,
-#     1340.0, 1301.0, 1357.0, 1376.0, 1391.0, 1388.0, 1360.0, 1370.0, 1323.0, 1370.0,
-#     1366.0, 1378.0, 1344.0, 1371.0, 1320.0, 1309.0, 1362.0, 1319.0, 1326.0, 1361.0,
-#     1365.0, 1378.0, 1361.0, 1291.0, 1366.0, 1354.0, 1374.0, 1372.0, 1276.0, 1336.0,
-#     1389.0, 1386.0, 1360.0, 1366.0, 1295.0, 1278.0, 1344.0, 1316.0, 1376.0, 1365.0,
-#     1336.0, 1380.0, 1307.0, 1305.0, 1316.0, 1333.0, 1423.0, 1351.0, 1353.0, 1341.0,
-#     1405.0, 1347.0, 1282.0, 1352.0, 1371.0, 1336.0, 1370.0, 1406.0, 1399.0, 1295.0,
-#     1343.0, 1428.0, 1406.0, 1308.0, 1364.0, 1332.0, 1340.0, 1383.0
-# ]
-# # fmt: on
-# # Combine all counts into one list
-# combined_counts_all = extended_initial_counts + extended_compensated_counts
-# print(len(combined_counts_all))
-# print(np.sqrt(len(combined_counts_all)))
-# # Calculate updated statistical measures
-# plt.figure(figsize=(8, 6))
-# plt.hist(combined_counts_all, bins=15, color="blue", alpha=0.7)
-# plt.title("Combined Counts Distribution", fontsize=14)
-# plt.xlabel("Counts", fontsize=12)
-# plt.ylabel("Frequency", fontsize=12)
-# plt.grid(alpha=0.3)
-# plt.show()
-
 
 # import numpy as np
 # from scipy.spatial.transform import Rotation
@@ -261,8 +223,9 @@ import sys
 
 import matplotlib.pyplot as plt
 import numpy as np
-
+from utils import common, widefield
 from utils import data_manager as dm
+from utils import kplotlib as kpl
 
 # Load the three image datasets
 # data1 = dm.get_raw_data(file_id=1765534203820, load_npz=True)  # Shallow NVs (No notch filter)
@@ -273,24 +236,71 @@ from utils import data_manager as dm
 # data2 = dm.get_raw_data(file_id=1765648437030, load_npz=True)  # Shallow NVs (With notch filter)
 # data3 = dm.get_raw_data(file_id=1758030513244, load_npz=True)  # Deep NVs ref image
 
-#same power but NV number is changed
-data0 = dm.get_raw_data(file_id=1758030513244, load_npz=True)  # Deep NVs ref image
-data1 = dm.get_raw_data(file_id=1764798303740, load_npz=True)  # Shallow 4 NVs
-data2 = dm.get_raw_data(file_id=1764826100492, load_npz=True)  # Shallow 52NVs
-data3 = dm.get_raw_data(file_id=1764415655836, load_npz=True)  # Shallow 89NVs
-data4 = dm.get_raw_data(file_id=1764406045571, load_npz=True)  # Shallow 161NVs
+# same power but NV number is changed
+# data0 = dm.get_raw_data(file_id=1758030513244, load_npz=True)  # Deep NVs ref image
+# data1 = dm.get_raw_data(file_id=1764798303740, load_npz=True)  # Shallow 4 NVs
+# data2 = dm.get_raw_data(file_id=1764826100492, load_npz=True)  # Shallow 52NVs
+# data3 = dm.get_raw_data(file_id=1764415655836, load_npz=True)  # Shallow 89NVs
+# data4 = dm.get_raw_data(file_id=1764406045571, load_npz=True)  # Shallow 161NVs
 
-print(data1.keys())
+data1 = dm.get_raw_data(file_id=1765590222808, load_npz=True)  # Shallow NVs Side A
+data2 = dm.get_raw_data(
+    file_id=1766226975894, load_npz=True
+)  # Shallow NVs Side B (Etched)
+data3 = dm.get_raw_data(
+    file_id=1766297631657, load_npz=True
+)  # Shallow NVs Side B (Non-Etched)
+file_names = [
+    dm.get_file_name(file_id)
+    for file_id in [1765590222808, 1766226975894, 1766297631657]
+]
+print(file_names)
 # Extract image arrays
-# img1 = np.array(data1["img_array"]["img_array"], dtype=np.float64)
-# img2 = np.array(data2["img_array"]["img_array"], dtype=np.float64)
-# img3 = np.array(data3["img_array"]["img_array"], dtype=np.float64)
+img1 = np.array(data1["img_array"]["img_array"], dtype=np.float64)
+img2 = np.array(data2["img_array"]["img_array"], dtype=np.float64)
+img3 = np.array(data3["img_array"]["img_array"], dtype=np.float64)
 
-img0 = np.array(data0["ref_img_array"]["ref_img_array"], dtype=np.float64)
-img1 = np.array(data1["ref_img_array"]["ref_img_array"], dtype=np.float64)
-img2 = np.array(data2["ref_img_array"]["ref_img_array"], dtype=np.float64)
-img3 = np.array(data3["ref_img_array"]["ref_img_array"], dtype=np.float64)
-img4 = np.array(data4["ref_img_array"]["ref_img_array"], dtype=np.float64)
+k_gain = 1.0  # Example value in e-/ADU
+em_gain = 10  # Example electron multiplying gain
+baseline = 300  # Example baseline ADU
+
+img1 = widefield.adus_to_photons(
+    img1, k_gain=k_gain, em_gain=em_gain, baseline=baseline
+)
+img2 = widefield.adus_to_photons(
+    img2, k_gain=k_gain, em_gain=em_gain, baseline=baseline
+)
+img3 = widefield.adus_to_photons(
+    img3, k_gain=k_gain, em_gain=em_gain, baseline=baseline
+)
+# Plot final image
+kpl.init_kplotlib()
+# Plot Image 1
+fig1, ax1 = plt.subplots()
+kpl.imshow(ax1, img1, title="SideA_Laser_INTI_520)", cbar_label="Photons")
+ax1.axis("off")
+plt.show()
+
+# Plot Image 2
+fig2, ax2 = plt.subplots()
+kpl.imshow(ax2, img2, title="SideB_Etched_Laser_INTI_520", cbar_label="Photons")
+ax2.axis("off")
+plt.show()
+
+# Plot Image 3
+fig3, ax3 = plt.subplots()
+kpl.imshow(ax3, img3, title="SideB_Non-Etched_Laser_INTI_520", cbar_label="Photons")
+ax3.axis("off")
+plt.show()
+kpl.show(block=True)
+# img0 = np.array(data0["ref_img_array"]["ref_img_array"], dtype=np.float64)
+# img1 = np.array(data1["ref_img_array"]["ref_img_array"], dtype=np.float64)
+# img2 = np.array(data2["ref_img_array"]["ref_img_array"], dtype=np.float64)
+# img3 = np.array(data3["ref_img_array"]["ref_img_array"], dtype=np.float64)
+# img4 = np.array(data4["ref_img_array"]["ref_img_array"], dtype=np.float64)
+
+# convert to photons
+
 
 def remove_outliers(data):
     """Remove outliers using the IQR method."""
@@ -301,16 +311,17 @@ def remove_outliers(data):
     upper_bound = q3 + 2.0 * iqr
     return data[(data >= lower_bound) & (data <= upper_bound)]
 
-filtered_datasets = [remove_outliers(img.flatten()) for img in [img1, img2, img3, img4]]
-img1, img2, img3, img4 = filtered_datasets
+
+# filtered_datasets = [remove_outliers(img.flatten()) for img in [img1, img2, img3, img4]]
+# img1, img2, img3, img4 = filtered_datasets
 # Compute background levels (mean, median, std)
 bg1_mean, bg1_median, bg1_std = np.mean(img1), np.median(img1), np.std(img1)
 bg2_mean, bg2_median, bg2_std = np.mean(img2), np.median(img2), np.std(img2)
 bg3_mean, bg3_median, bg3_std = np.mean(img3), np.median(img3), np.std(img3)
-bg4_mean, bg4_median, bg4_std = np.mean(img4), np.median(img4), np.std(img4)
+# bg4_mean, bg4_median, bg4_std = np.mean(img4), np.median(img4), np.std(img4)
 
 # Plot histograms to compare background distributions
-plt.figure()
+plt.figure(figsize=(8, 6))
 # plt.hist(
 #     img0.flatten(),
 #     bins=100,
@@ -322,7 +333,7 @@ plt.hist(
     img1.flatten(),
     bins=100,
     alpha=0.5,
-    label="Shallow 4 NVs (Readout Power:1416uW)",
+    label="SideA_Laser_INTI_520",
     color="blue",
 )
 
@@ -330,25 +341,25 @@ plt.hist(
     img2.flatten(),
     bins=100,
     alpha=0.5,
-    label="Shallow 52 NVs (Readout Power:1416uW)",
+    label="SideB_Etched_Laser_INTI_520",
     color="orange",
 )
 plt.hist(
     img3.flatten(),
     bins=100,
     alpha=0.5,
-    label="Shallow 89 NVs (Readout Power:1917uW)",
+    label="SideB_Non-Etched_Laser_INTI_520",
     color="red",
 )
 
-plt.hist(
-    img4.flatten(),
-    bins=100,
-    alpha=0.5,
-    label="Shallow 161 NVs (Readout Power:1917uW)",
-    color="purple",
-)
- 
+# plt.hist(
+#     img4.flatten(),
+#     bins=100,
+#     alpha=0.5,
+#     label="Shallow 161 NVs (Readout Power:1917uW)",
+#     color="purple",
+# )
+
 plt.xlabel("Photons", fontsize=15)
 plt.ylabel("Frequency", fontsize=15)
 plt.title("Background Levels", fontsize=15)
@@ -358,8 +369,8 @@ plt.legend()
 # plt.yscale("log")
 plt.tight_layout()
 plt.show()
-
-# sys.exit()
+kpl.show(block=True)
+sys.exit()
 
 # Print summary statistics
 print(f"Image 1 - Mean: {bg1_mean:.2f}, Median: {bg1_median:.2f}, Std: {bg1_std:.2f}")
@@ -368,7 +379,12 @@ print(f"Image 3 - Mean: {bg3_mean:.2f}, Median: {bg3_median:.2f}, Std: {bg3_std:
 # # Apply outlier removal
 # filtered_datasets = [remove_outliers(img.flatten()) for img in [img1, img2, img3, img4]]
 # datasets = [img1, img2, img3, img4]
-labels = ["Shallow 4 NVs (readout power:1416uW)", "Shallow 52 NVs(readout power:1416uW)", "Shallow 89 NVs(readout power:1917uW)", "Shallow 161 NVs(readout power:1416uW)"]
+labels = [
+    "Shallow 4 NVs (readout power:1416uW)",
+    "Shallow 52 NVs(readout power:1416uW)",
+    "Shallow 89 NVs(readout power:1917uW)",
+    "Shallow 161 NVs(readout power:1416uW)",
+]
 colors = ["blue", "orange", "red", "purple"]
 
 for i in range(4):
@@ -380,7 +396,7 @@ for i in range(4):
         label=labels[i],
         color=colors[i],
     )
-    
+
     plt.xlabel("Photons", fontsize=15)
     plt.ylabel("Frequency", fontsize=15)
     plt.title(f"Background Level - {labels[i]}", fontsize=15)
@@ -398,7 +414,7 @@ median_values = [bg1_median, bg2_median, bg3_median, bg4_median]
 
 # Plot median background levels vs number of NVs
 plt.figure(figsize=(6, 5))
-plt.plot(nv_counts, median_values, marker='o', linestyle='-', color='black')
+plt.plot(nv_counts, median_values, marker="o", linestyle="-", color="black")
 
 plt.xlabel("Number of NVs", fontsize=15)
 plt.ylabel("Median Background Level", fontsize=15)
@@ -408,7 +424,6 @@ plt.yticks(fontsize=12)
 plt.grid(True)
 
 plt.show()
-
 
 
 # Retrieve and print file names

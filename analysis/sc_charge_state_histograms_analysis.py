@@ -243,10 +243,11 @@ def process_and_plot(
 if __name__ == "__main__":
     kpl.init_kplotlib()
     # Process and plot function and Set Seaborn theme globally for consistent styling
-    sns.set_theme(style="whitegrid")
+    # sns.set_theme(style="whitegrid")
     # data = dm.get_raw_data(file_id=1754374316674, load_npz=False)
-    data = dm.get_raw_data(file_id=1764406045571, load_npz=False)
-    file_name = dm.get_file_name(file_id=1764406045571)
-    print(file_name)
+    # data = dm.get_raw_data(file_id=1766803842180, load_npz=False)  # 50ms readout
+    data = dm.get_raw_data(file_id=1766834596476, load_npz=False)  # 100ms readout
+    # file_name = dm.get_file_name(file_id=1766803842180)
+    # print(file_name)
     process_and_plot(data, do_plot_histograms=False)
     kpl.show(block=True)

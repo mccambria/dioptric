@@ -543,7 +543,7 @@ if __name__ == "__main__":
     #     path="slmsuite/nv_blob_detection",
     #     filename="nv_blob_shallow_149nvs.npz",
     # )
-    # process_scan_file()
+    process_scan_file()
     # fig, ax = plt.subplots()
     # title = "24ms, Ref"
     # cax = kpl.imshow(ax, img_array, title=title, cbar_label="Photons")
