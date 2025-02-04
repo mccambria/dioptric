@@ -362,7 +362,7 @@ def compute_nvs_phase():
 
 
 def write_nvs_phase():
-    phase = np.load("slmsuite\computed_phase\slm_phase_148nvs_20250202_183753.npy")
+    phase = np.load("slmsuite\computed_phase\slm_phase_148nvs_20250203_171815.npy")
     # phase = np.load(
     #     "slmsuite\computed_phase\slm_phase_117nvs_20250119_143417.npy"
     # )  # 117NVs weighted spots
@@ -390,8 +390,8 @@ try:
     # test_wavefront_calibration()
     # # wavefront_calibration()
     # # load_wavefront_calibration()
-    compute_nvs_phase()
-    # write_nvs_phase()
+    # compute_nvs_phase()
+    write_nvs_phase()
     # calibration_triangle()
     # circles()
     # smiley()
