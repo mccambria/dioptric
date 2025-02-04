@@ -104,7 +104,7 @@ def plot_fitting(
 # Example usage
 if __name__ == "__main__":
     # Load the image array (replace this with your own method for loading image data)
-    data = dm.get_raw_data(file_id=1766356204532, load_npz=True)
+    data = dm.get_raw_data(file_id=1767731994225, load_npz=True)
     # data = dm.get_raw_data(file_id=1766363198090, load_npz=True)
 
     img_array = np.array(data["img_array"]["img_array"])

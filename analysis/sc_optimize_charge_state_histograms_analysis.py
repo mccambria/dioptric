@@ -533,6 +533,8 @@ if __name__ == "__main__":
     file_id = 1754323175446
     file_id = 1757422756726
     file_id = 1766460747869  # yellow ampl var 50ms shallow 169Nvs
+    file_id = 1766717733084  # yellow ampl var 50ms shallow 148Nvs
+    file_id = 1767789140438  # pol duration var 50ms shallow 148Nvs
     # raw_data = dm.get_raw_data(file_id=1709868774004, load_npz=False) #yellow ampl var
     raw_data = dm.get_raw_data(file_id=file_id, load_npz=False)  # yellow amp var
     process_and_plot(raw_data)

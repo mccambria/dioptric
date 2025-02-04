@@ -280,7 +280,7 @@ def nuvu2thorcam_calibration(coords):
     )
 
     cal_coords_nuvu = np.array(
-        [[223.768, 7.313], [209.042, 238.041], [16.005, 108.219]], dtype="float32"
+        [[224.94, 7.117], [210.564, 237.813], [16.973, 108.402]], dtype="float32"
     )
 
     # Compute the affine transformation matrix
@@ -336,7 +336,7 @@ def compute_nvs_phase():
         shape=(4096, 2048),
         spot_vectors=thorcam_coords,
         basis="ij",
-        # spot_amp=spot_weights,
+        spot_amp=spot_weights,
         cameraslm=fs,
     )
     # Precondition computationally
@@ -362,7 +362,7 @@ def compute_nvs_phase():
 
 
 def write_nvs_phase():
-    phase = np.load("slmsuite\computed_phase\slm_phase_160nvs_20250123_154409.npy")
+    phase = np.load("slmsuite\computed_phase\slm_phase_148nvs_20250202_183753.npy")
     # phase = np.load(
     #     "slmsuite\computed_phase\slm_phase_117nvs_20250119_143417.npy"
     # )  # 117NVs weighted spots
@@ -388,8 +388,8 @@ try:
     # fourier_calibration()
     load_fourier_calibration()
     # test_wavefront_calibration()
-    # wavefront_calibration()
-    # load_wavefront_calibration()
+    # # wavefront_calibration()
+    # # load_wavefront_calibration()
     compute_nvs_phase()
     # write_nvs_phase()
     # calibration_triangle()

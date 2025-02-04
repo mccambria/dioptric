@@ -118,13 +118,13 @@ def do_charge_state_histograms(nv_list):
 
 
 def do_optimize_pol_duration(nv_list):
-    num_steps = 4
-    # num_reps = 150
-    # num_runs = 5
-    num_reps = 5
-    num_runs = 2
-    min_duration = 500
-    max_duration = 2000
+    num_steps = 10
+    num_reps = 20
+    num_runs = 100
+    # num_reps = 5
+    # num_runs = 2
+    min_duration = 100
+    max_duration = 1000
     return optimize_charge_state_histograms_mcc.optimize_pol_duration(
         nv_list, num_steps, num_reps, num_runs, min_duration, max_duration
     )
@@ -234,7 +234,7 @@ def do_optimize_red(nv_sig, ref_nv_sig):
     axes_list = [Axes.X, Axes.Y]
     # axes_list = [Axes.Y, Axes.X]
     # shuffle(axes_list)
-    for ind in range(2):
+    for ind in range(1):
         axes = axes_list[ind]
         ret_vals = targeting.optimize(nv_sig, coords_key=red_laser_aod, axes=axes)
         opti_coords.append(ret_vals[0])
@@ -708,15 +708,15 @@ def do_spin_pol_check(nv_sig):
 
 
 def do_detect_cosmic_rays(nv_list):
-    num_reps = 50
-    num_runs = 150
-    # num_runs = 4
+    num_reps = 40
+    num_runs = 200
+    # num_runs = 2
     # dark_time = 1e9 # 1s
     # dark_time = 10e6  # 10ms
     dark_time_1 = 1e6  # 1 ms in nanoseconds
     dark_time_2 = 1e9  # 1 s in nanoseconds
     # charge_monitor.detect_cosmic_rays(nv_list, num_reps, num_runs, dark_time)
-    for _ in range(4):
+    for _ in range(6):
         charge_monitor.detect_cosmic_rays(
             nv_list, num_reps, num_runs, dark_time_1, dark_time_2
         )
@@ -984,7 +984,7 @@ if __name__ == "__main__":
     # magnet_angle = 90
     date_str = "2025_01_29"
     sample_coords = [0.0, 0.4]
-    z_coord = 1.4
+    z_coord = 1.5
     # Load NV pixel coordinates1
     pixel_coords_list = load_nv_coords(
         # file_path="slmsuite/nv_blob_detection/nv_blob_filtered_160nvs_reordered.npz",
@@ -992,6 +992,12 @@ if __name__ == "__main__":
         # file_path="slmsuite/nv_blob_detection/nv_blob_shallow_161nvs_reordered.npz",
         file_path="slmsuite/nv_blob_detection/nv_blob_shallow_148nvs_reordered.npz",
     ).tolist()
+    # pixel_coords_list = [
+    #     [117.516, 129.595],
+    #     [239.243, 23.266],
+    #     [15.473, 52.03],
+    #     [86.248, 227.265],
+    # ]
     # Define transformations using `transform_coords`
     green_coords_list = [
         [
@@ -1024,19 +1030,19 @@ if __name__ == "__main__":
     #     [117.516, 129.595],
     #     [239.243, 23.266],
     #     [15.473, 52.03],
-    #     [107.857, 223.635],
+    #     [86.248, 227.265],
     # ]
     # green_coords_list = [
-    #     [107.171, 107.534],
-    #     [95.595, 94.819],
-    #     [119.069, 100.321],
-    #     [107.092, 117.632],
+    #     [107.301, 107.534],
+    #     [95.651, 94.819],
+    #     [119.139, 100.321],
+    #     [109.425, 118.207],
     # ]
     # red_coords_list = [
-    #     [72.617, 73.149],
-    #     [62.674, 62.858],
-    #     [82.213, 67.053],
-    #     [72.619, 81.576],
+    #     [71.873, 72.994],
+    #     [61.901, 62.969],
+    #     [81.37, 67.15],
+    #     [73.868, 81.747],
     # ]
     num_nvs = len(pixel_coords_list)
     threshold_list = [25.5] * num_nvs
@@ -1168,7 +1174,7 @@ if __name__ == "__main__":
     # print(f"Created NV: {nv_sig.name}, Coords: {nv_sig.coords}")
     # nv_sig.expected_counts = 4500
     # nv_sig.expected_counts = 1320
-    nv_sig.expected_counts = 2100
+    nv_sig.expected_counts = 2040
 
     # num_nvs = len(nv_list)
     # print(f"Final NV List: {nv_list}")
@@ -1278,7 +1284,7 @@ if __name__ == "__main__":
 
         # for y in np.linspace(0, 16, 5):
         #     for y in np.linspace(0, 16, 5):
-        #         nv_sig.coords[green_laser_aod : green_coords_list[ind]] + x
+        # nv_sig.coords[green_laser_aod : green_coords_list[ind]] + x
         #         do_scanning_image_sample(nv_sig)
 
         # do_scanning_image_sample(nv_sig)
@@ -1311,10 +1317,10 @@ if __name__ == "__main__":
         # do_optimize_loop(nv_list, coords_key)
 
         # do_optimize_pol_amp(nv_list)
-        do_optimize_readout_amp(nv_list)
+        # do_optimize_readout_amp(nv_list)
         # do_optimize_readout_duration(nv_list)
         # optimize_readout_amp_and_duration(nv_list)
-        # do_optimize_pol_duration(nv_list)
+        do_optimize_pol_duration(nv_list)
         # do_charge_state_histograms_images(nv_list, vary_pol_laser=True)
         # do_check_readout_fidelity(nv_list)
 
