@@ -1,3 +1,12 @@
+# -*- coding: utf-8 -*-
+"""
+Control panel for the slm
+
+Created on Spring, 2024
+
+@author: saroj chand
+"""
+
 import io
 import os
 import sys
@@ -235,7 +244,7 @@ def calibration_triangle():
 
     # Define parameters for the equilateral triangle
     # center = (730, 570)  # Center of the triangle
-    center = (680, 630)  # Center of the triangle
+    center = (670, 630)  # Center of the triangle
     side_length = 400  # Length of each side of the triangle\
 
     # Calculate the coordinates of the three vertices of the equilateral triangle
@@ -276,11 +285,11 @@ def nuvu2thorcam_calibration(coords):
     to the Thorlabs camera's coordinate system using an affine transformation.
     """
     cal_coords_thorcam = np.array(
-        [[1026.410, 830.0], [333.589, 830.0], [680.0, 230.0]], dtype="float32"
+        [[1016.410, 830.0], [323.589, 830.0], [670.0, 230.0]], dtype="float32"
     )
 
     cal_coords_nuvu = np.array(
-        [[224.94, 7.117], [210.564, 237.813], [16.973, 108.402]], dtype="float32"
+        [[224.073, 11.01], [209.763, 241.049], [16.523, 111.536]], dtype="float32"
     )
 
     # Compute the affine transformation matrix
@@ -390,8 +399,8 @@ try:
     # test_wavefront_calibration()
     # # wavefront_calibration()
     # # load_wavefront_calibration()
-    # compute_nvs_phase()
-    write_nvs_phase()
+    compute_nvs_phase()
+    # write_nvs_phase()
     # calibration_triangle()
     # circles()
     # smiley()

@@ -5,6 +5,7 @@ Control panel for the PC Rabi
 Created on June 16th, 2023
 
 @author: mccambria
+@author: saroj chand
 """
 
 ### Imports
@@ -98,8 +99,8 @@ def do_image_single_nv(nv_sig):
 
 def do_charge_state_histograms(nv_list):
     # 50 ms
-    num_reps = 200
-    num_runs = 6
+    num_reps = 100
+    num_runs = 20
 
     # 100 ms
     # num_reps = 100
@@ -231,8 +232,8 @@ def do_optimize_green(nv_sig):
 
 def do_optimize_red(nv_sig, ref_nv_sig):
     opti_coords = []
-    axes_list = [Axes.X, Axes.Y]
-    # axes_list = [Axes.Y, Axes.X]
+    # axes_list = [Axes.X, Axes.Y]
+    axes_list = [Axes.Y, Axes.X]
     # shuffle(axes_list)
     for ind in range(1):
         axes = axes_list[ind]
@@ -326,20 +327,20 @@ def optimize_scc_amp_and_duration(nv_list):
     num_runs = 1500
     # num_runs = 400  # Short test version
     # num_runs = 5
-    min_amp = 0.75
-    max_amp = 1.25
-    min_duration = 16
-    max_duration = 272
+    # min_amp = 0.75
+    # max_amp = 1.25
+    # min_duration = 16
+    # max_duration = 272
 
     # Single amp
-    num_reps = 16
-    num_runs = 100
+    num_reps = 8
+    num_runs = 200
     min_amp = 1.0
     max_amp = 1.0
     num_amp_steps = 1
-    # min_duration = 32
-    # max_duration = 496
-    # num_dur_steps = 30
+    min_duration = 32
+    max_duration = 496
+    num_dur_steps = 30
 
     return optimize_scc_amp_duration.optimize_scc_amp_and_duration(
         nv_list,
@@ -439,15 +440,15 @@ def do_resonance(nv_list):
     num_steps = 60
     # Single ref
     # num_reps = 8
-    # num_runs = 500
+    num_runs = 300
     # num_runs = 750
-    num_runs = 350
+    # num_runs = 350
     # num_runs = 50
     # num_runs = 10
     # num_runs = 5
 
     # Both refs
-    num_reps = 4
+    num_reps = 2
     # num_runs = 300
 
     # num_runs = 2
@@ -992,12 +993,6 @@ if __name__ == "__main__":
         # file_path="slmsuite/nv_blob_detection/nv_blob_shallow_161nvs_reordered.npz",
         file_path="slmsuite/nv_blob_detection/nv_blob_shallow_148nvs_reordered.npz",
     ).tolist()
-    # pixel_coords_list = [
-    #     [117.516, 129.595],
-    #     [239.243, 23.266],
-    #     [15.473, 52.03],
-    #     [86.248, 227.265],
-    # ]
     # Define transformations using `transform_coords`
     green_coords_list = [
         [
@@ -1034,15 +1029,15 @@ if __name__ == "__main__":
     # ]
     # green_coords_list = [
     #     [107.301, 107.534],
-    #     [95.651, 94.819],
-    #     [119.139, 100.321],
-    #     [109.425, 118.207],
+    #     [95.599, 94.804],
+    #     [119.117, 100.364],
+    #     [109.391, 118.249],
     # ]
     # red_coords_list = [
-    #     [71.873, 72.994],
-    #     [61.901, 62.969],
-    #     [81.37, 67.15],
-    #     [73.868, 81.747],
+    #     [72.1, 72.989],
+    #     [62.307, 62.879],
+    #     [81.571, 67.165],
+    #     [74.1, 81.757],
     # ]
     num_nvs = len(pixel_coords_list)
     threshold_list = [25.5] * num_nvs
@@ -1074,13 +1069,13 @@ if __name__ == "__main__":
     # scc_duration_list = [128, 108, 100, 80, 160, 100, 92, 88, 84, 116, 112, 92, 104, 100, 96, 104, 100, 80, 84, 100, 128, 92, 84, 72, 64, 164, 136, 92, 124, 92, 96, 124, 116, 148, 112, 112, 92, 116, 80, 116, 172, 80, 124, 72, 84, 64, 116, 100, 72, 100, 92, 128, 100, 96, 84, 124, 136, 100, 92, 100, 84, 16, 92, 124, 272, 96, 84, 124, 156, 128, 72, 124, 64, 116, 120, 136, 92, 160, 108, 80, 84, 108, 92, 92, 100, 136, 160, 124, 112, 56, 128, 128, 204, 108, 104, 152, 84, 108, 100, 144, 208, 144, 132, 272, 132, 272, 252, 124, 272, 128, 208, 208, 92, 144, 136, 160, 272]
     # scc_duration_list = [108, 100, 92, 72, 176, 108, 108, 80, 64, 120, 116, 88, 120, 108, 92, 96, 108, 60, 72, 88, 124, 80, 84, 72, 56, 140, 120, 92, 108, 76, 80, 104, 124, 136, 100, 108, 84, 116, 64, 112, 164, 80, 108, 80, 72, 48, 80, 112, 100, 108, 84, 112, 92, 108, 100, 132, 160, 76, 88, 116, 80, 92, 92, 124, 272, 92, 120, 116, 144, 116, 64, 136, 72, 112, 100, 88, 80, 112, 108, 84, 92, 144, 120, 92, 72, 104, 188, 100, 116, 60, 108, 104, 196, 84, 108, 120, 100, 112, 92, 172, 188, 124, 128, 272, 112, 272, 272, 160, 272, 144, 240, 272, 132, 172, 272, 272, 204]
     # scc_duration_list = [128, 104, 92, 84, 152, 124, 128, 80, 100, 116, 108, 88, 120, 100, 92, 100, 112, 60, 76, 92, 164, 68, 84, 84, 64, 136, 136, 76, 92, 72, 76, 116, 144, 180, 96, 92, 96, 124, 80, 100, 164, 80, 108, 80, 92, 80, 84, 96, 80, 100, 92, 64, 116, 100, 84, 76, 188, 92, 72, 72, 72, 72, 72, 184, 140, 80, 68, 116, 160, 112, 72, 132, 84, 108, 48, 108, 96, 124, 112, 84, 96, 84, 84, 84, 84, 80, 124, 272, 124, 72, 100, 100, 160, 96, 72, 204, 72, 128, 84, 120, 116, 108, 128, 136, 108, 104, 148, 128, 144, 96, 100, 108, 72, 100, 80, 88, 80]
-    scc_duration_list = [136, 108, 96, 92, 208, 124, 100, 92, 88, 112, 108, 92, 108, 92, 100, 100, 116, 116, 64, 100, 136, 68, 92, 72, 60, 124, 116, 72, 92, 64, 72, 120, 124, 232, 92, 96, 96, 116, 84, 96, 144, 80, 116, 84, 100, 80, 84, 72, 80, 108, 84, 72, 136, 108, 100, 100, 188, 92, 64, 84, 60, 100, 76, 184, 152, 92, 68, 108, 160, 108, 72, 132, 80, 112, 60, 76, 104, 116, 108, 96, 96, 92, 84, 92, 84, 64, 124, 100, 124, 80, 108, 96, 136, 80, 80, 188, 188, 128, 84, 116, 124, 100, 100, 124, 112, 84, 196, 108, 124, 100, 100, 104, 76, 104, 84, 84, 84]
+    # scc_duration_list = [136, 108, 96, 92, 208, 124, 100, 92, 88, 112, 108, 92, 108, 92, 100, 100, 116, 116, 64, 100, 136, 68, 92, 72, 60, 124, 116, 72, 92, 64, 72, 120, 124, 232, 92, 96, 96, 116, 84, 96, 144, 80, 116, 84, 100, 80, 84, 72, 80, 108, 84, 72, 136, 108, 100, 100, 188, 92, 64, 84, 60, 100, 76, 184, 152, 92, 68, 108, 160, 108, 72, 132, 80, 112, 60, 76, 104, 116, 108, 96, 96, 92, 84, 92, 84, 64, 124, 100, 124, 80, 108, 96, 136, 80, 80, 188, 188, 128, 84, 116, 124, 100, 100, 124, 112, 84, 196, 108, 124, 100, 100, 104, 76, 104, 84, 84, 84]
 
     # 103nvs
     # include_inds = [0, 1, 2, 3, 4, 5, 6, 7, 8, 13, 14, 15, 16, 17, 18, 21, 22, 23, 24, 25, 26, 28, 29, 31, 33, 36, 37, 38, 39, 40, 42, 44, 46, 47, 48, 49, 51, 52, 53, 56, 57, 58, 60, 62, 64, 65, 66, 68, 69, 70, 71, 72, 74, 75, 77, 78, 79, 80, 83, 88, 90, 91, 92, 94, 95, 96, 97, 100, 101, 103, 105, 106, 107, 108, 109, 110, 112, 114, 116, 118, 120, 121, 122, 123, 124, 125, 126, 128, 131, 134, 136, 138, 140, 141, 145, 146, 147, 152, 153, 154, 156, 157, 158]
     # 117nvs
     include_inds = [0,1,2,3,5,6,7,8,13,14,15,16,17,18,20,21,22,23,24,25,26,28,29,31,32,33,34,36,37,39,42,44,45,46,47,48,49,51,52,53,55,56,57,58,60,61,62,64,65,66,68,69,70,71,72,73,74,75,77,79,83,84,85,88,89,90,91,92,94,95,96,97,99,100,101,102,103,105,106,107,108,109,110,111,113,114,116,117,118,120,122,123,124,125,128,131,132,134,136,137,138,140,141,142,145,146,147,148,149,152,153,154,155,156,157,158,159,]
-    scc_duration_list = [100] * num_nvs
+    scc_duration_list = [150] * num_nvs
     # Initialize a list with None values
     # arranged_scc_duration_list = [None] * num_nvs
     # for i, idx in enumerate(include_inds):
@@ -1174,7 +1169,7 @@ if __name__ == "__main__":
     # print(f"Created NV: {nv_sig.name}, Coords: {nv_sig.coords}")
     # nv_sig.expected_counts = 4500
     # nv_sig.expected_counts = 1320
-    nv_sig.expected_counts = 2040
+    nv_sig.expected_counts = 2060
 
     # num_nvs = len(nv_list)
     # print(f"Final NV List: {nv_list}")
@@ -1320,7 +1315,7 @@ if __name__ == "__main__":
         # do_optimize_readout_amp(nv_list)
         # do_optimize_readout_duration(nv_list)
         # optimize_readout_amp_and_duration(nv_list)
-        do_optimize_pol_duration(nv_list)
+        # do_optimize_pol_duration(nv_list)
         # do_charge_state_histograms_images(nv_list, vary_pol_laser=True)
         # do_check_readout_fidelity(nv_list)
 
@@ -1347,7 +1342,7 @@ if __name__ == "__main__":
         # do_scc_snr_check(nv_list)
         # do_optimize_scc_duration(nv_list)
         # do_optimize_scc_amp(nv_list)
-        # optimize_scc_amp_and_duration(nv_list)
+        optimize_scc_amp_and_duration(nv_list)
         # do_crosstalk_check(nv_sig)
         # do_spin_pol_check(nv_sig)
         # do_calibrate_green_red_delay()
