@@ -334,7 +334,7 @@ def optimize_scc_amp_and_duration(nv_list):
 
     # Single amp
     num_reps = 8
-    num_runs = 200
+    num_runs = 100
     min_amp = 1.0
     max_amp = 1.0
     num_amp_steps = 1
@@ -440,7 +440,7 @@ def do_resonance(nv_list):
     num_steps = 60
     # Single ref
     # num_reps = 8
-    num_runs = 300
+    num_runs = 400
     # num_runs = 750
     # num_runs = 350
     # num_runs = 50
@@ -1342,7 +1342,7 @@ if __name__ == "__main__":
         # do_scc_snr_check(nv_list)
         # do_optimize_scc_duration(nv_list)
         # do_optimize_scc_amp(nv_list)
-        optimize_scc_amp_and_duration(nv_list)
+        # optimize_scc_amp_and_duration(nv_list)
         # do_crosstalk_check(nv_sig)
         # do_spin_pol_check(nv_sig)
         # do_calibrate_green_red_delay()

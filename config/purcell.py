@@ -149,8 +149,8 @@ config |= {
                 "uwave_power": 2.3,
                 "frequency": 2.856,
                 # "frequency": 2.9304468840166678,
-                "rabi_period": 160,
-                # "rabi_period": 128,
+                # "rabi_period": 160, #calibrated for deep nvs ()
+                "rabi_period": 128,
                 "iq_delay": 140,
             },
             1: {
@@ -160,8 +160,8 @@ config |= {
                 # "frequency": 3.05,
                 "frequency": 2.799,
                 # "frequency": 2.8874701085827104,
-                "rabi_period": 112,
-                # "rabi_period": 128,
+                # "rabi_period": 112,#calibrated for deep
+                "rabi_period": 128,
             },
         },
     },
@@ -841,7 +841,7 @@ opx_config = {
         # "yellow_charge_readout": {"type": "constant", "sample": 0.325},  # 100ms 117NVs
         # "yellow_charge_readout": {"type": "constant", "sample": 0.29},  # 200ms 117NVs
         # "yellow_charge_readout": {"type": "constant", "sample": 0.41},  #
-        "yellow_charge_readout": {"type": "constant", "sample": 0.41},  # s
+        "yellow_charge_readout": {"type": "constant", "sample": 0.39},  # s
         "yellow_spin_pol": {"type": "constant", "sample": 0.39},
         "yellow_shelving": {"type": "constant", "sample": 0.33},
         # Other
