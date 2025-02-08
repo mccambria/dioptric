@@ -113,7 +113,10 @@
 # # save_path = f"G:/My Drive/Experiments/SLM_seup_data/image_{current_datetime}.png"
 # # plt.savefig(save_path)
 # plt.show()
+
+
 import sys
+
 import cv2
 import numpy as np
 
@@ -210,6 +213,27 @@ else:
     #     [42.749, 125.763], pixel_coords_list, red_coords_list
     # )
     # print("Corresponding red coordinates:", new_red_coord)
+
+
+def generate_divisible_by_4(min_val, max_val, num_steps):
+    step_size = (max_val - min_val) / (num_steps - 1)
+    step_size = round(step_size / 4) * 4  # Ensure step size is divisible by 4
+
+    values = [min_val + i * step_size for i in range(num_steps)]
+
+    # Ensure values stay within bounds
+    values = [x for x in values if x <= max_val]
+
+    return values
+
+
+# Example Usage
+min_duration = 16
+max_duration = 1050
+num_steps = 24
+
+step_values = generate_divisible_by_4(min_duration, max_duration, num_steps)
+print(step_values)
 
 sys.exit()
 # Updating plot with center frequencies in the legend
