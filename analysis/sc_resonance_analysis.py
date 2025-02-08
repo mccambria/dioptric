@@ -10,6 +10,7 @@ import time
 import traceback
 from datetime import datetime
 from random import shuffle
+from joblib import Parallel, delayed
 
 import matplotlib.pyplot as plt
 import numpy as np
@@ -136,33 +137,42 @@ def plot_nv_resonance_fits_and_residuals(
 ):
     """
     Plot NV resonance data with fitted Voigt profiles (including background), with residuals and contrast values.
-
     """
     do_threshold = False
     if do_threshold:
         sig_counts, ref_counts = widefield.threshold_counts(
             nv_list, sig_counts, ref_counts, dynamic_thresh=True
         )
+
     avg_counts, avg_counts_ste = widefield.process_counts(
         nv_list, sig_counts, ref_counts, threshold=False
     )
+    # do_threshold = False
+    # # Apply thresholding if enabled
+    # if do_threshold:
+    #     sig_counts, ref_counts = widefield.threshold_counts(
+    #         nv_list, sig_counts, ref_counts, dynamic_thresh=True
+    #     )
+
+    # # Parallelized count processing
+    # avg_results = Parallel(n_jobs=-1)(
+    #     delayed(widefield.process_counts)([nv], sig_counts, ref_counts, threshold=False)
+    #     for nv in nv_list
+    # )
+
+    # # Extract results
+    # avg_counts, avg_counts_ste = zip(*avg_results)
+    # avg_counts = np.array(avg_counts)
+    # avg_counts_ste = np.array(avg_counts_ste)
     num_nvs = len(nv_list)
-    chi_squared_list = []
-    contrast_list = []
-    center_freqs = []
-    center_freq_differences = []
-    avg_peak_widths = []
-    avg_peak_amplitudes = []
-    fit_data = []
-    filtered_indices = []
-    snrs = []
-    for nv_idx in range(num_nvs):
+
+    def process_nv(nv_idx):
         nv_counts = avg_counts[nv_idx]
         nv_counts_ste = avg_counts_ste[nv_idx]
 
-        low_freq_guess = freqs[np.argmax(avg_counts[nv_idx][: len(freqs) // 2])]
+        low_freq_guess = freqs[np.argmax(nv_counts[: len(freqs) // 2])]
         high_freq_guess = freqs[
-            np.argmax(avg_counts[nv_idx][len(freqs) // 2 :]) + len(freqs) // 2
+            np.argmax(nv_counts[len(freqs) // 2 :]) + len(freqs) // 2
         ]
         max_amp = np.max(nv_counts)
 
@@ -171,29 +181,12 @@ def plot_nv_resonance_fits_and_residuals(
             max_amp,
             low_freq_guess,
             high_freq_guess,
-            5,
+            5,  # Width guess
             np.min(nv_counts),
-            # 0,
         ]
         bounds = (
-            [
-                0,
-                0,
-                min(freqs),
-                min(freqs),
-                0,
-                -np.inf,
-                # -np.inf,
-            ],  # Lower bounds
-            [
-                np.inf,
-                np.inf,
-                max(freqs),
-                max(freqs),
-                np.inf,
-                np.inf,
-                # np.inf,
-            ],  # Upper bounds
+            [0, 0, min(freqs), min(freqs), 0, -np.inf],  # Lower bounds
+            [np.inf, np.inf, max(freqs), max(freqs), np.inf, np.inf],  # Upper bounds
         )
 
         result = least_squares(
@@ -205,38 +198,52 @@ def plot_nv_resonance_fits_and_residuals(
         )
         popt = result.x
 
-        # Compute chi-squared value
-        fit_data.append(voigt_with_background(freqs, *popt))
-        residuals = nv_counts - fit_data[nv_idx]
+        # Compute fit
+        fit_curve = voigt_with_background(freqs, *popt)
+        residuals = nv_counts - fit_curve
         chi_squared = np.sum((residuals / nv_counts_ste) ** 2)
-        chi_squared_list.append(chi_squared)
 
-        # Calculate contrast
-        amp1 = popt[0]
-        amp2 = popt[1]
-        bg_offset = popt[5]
+        # Extract parameters
+        amp1, amp2, f1, f2, width, bg_offset = popt
+        contrast = (amp1 + amp2) / 2
+        center_freq_diff = abs(f2 - f1)
 
-        # Store center frequencies and frequency difference
-        center_freqs.append((popt[2], popt[3]))
-        center_freq_differences.append(abs(popt[3] - popt[2]))
-
-        # Average peak widths and amplitudes
-        avg_peak_widths.append((popt[4] + popt[4]) / 2)
-        avg_peak_amplitude = (amp1 + amp2) / 2
-        avg_peak_amplitudes.append(avg_peak_amplitude)
-        # snr calculatin
+        # SNR Calculation
         combined_counts = np.append(
             sig_counts[nv_idx].flatten(), ref_counts[nv_idx].flatten()
         )
         noise = np.std(combined_counts)
-        signal = avg_peak_amplitude
-        snr = signal / noise
-        snrs.append(snr)
+        snr = contrast / noise
+
         print(f"NV {nv_idx}: SNR = {snr:.2f}")
-        # Filter based on chi-squared and contrast thresholds
-        # if chi_squared < chi_sq_threshold and contrast > contrast_threshold:
-        # if chi_squared > chi_sq_threshold:
-        # filtered_indices.append(nv_idx)
+
+        return fit_curve, chi_squared, (f1, f2), center_freq_diff, width, contrast, snr
+
+    # Run in parallel
+    fit_results = Parallel(n_jobs=-1)(
+        delayed(process_nv)(nv_idx) for nv_idx in range(num_nvs)
+    )
+
+    # Unpacking results correctly
+    (
+        fit_data,
+        chi_squared_list,
+        center_freqs,
+        center_freq_differences,
+        avg_peak_widths,
+        avg_peak_amplitudes,
+        snrs,
+    ) = zip(*fit_results)
+
+    # Convert results to lists (since zip returns tuples)
+    fit_data = list(fit_data)
+    chi_squared_list = list(chi_squared_list)
+    center_freqs = list(center_freqs)
+    center_freq_differences = list(center_freq_differences)
+    avg_peak_widths = list(avg_peak_widths)
+    avg_peak_amplitudes = list(avg_peak_amplitudes)
+    snrs = list(snrs)
+
     median_snr = np.median(snrs)
     print(f"median snr:{median_snr:.2f}")
     # Remove outliers from a data array using the IQR method.
@@ -330,7 +337,6 @@ def plot_nv_resonance_fits_and_residuals(
     plt.legend(loc="upper right")
     plt.grid(True, linestyle="--", alpha=0.5)
     plt.tight_layout()
-    plt.show()
     # return
 
     filter_nvs = False
@@ -410,8 +416,17 @@ def plot_nv_resonance_fits_and_residuals(
     filtered_chi_squared_list = [chi_squared_list[idx] for idx in filtered_indices]
     filtered_fitted_data = [fit_data[idx] for idx in filtered_indices]
 
-    # Print
-    # cluster_and_print_average_center_frequencies(filtered_center_freqs)
+    # # Set plot style
+    for nv_ind in range(num_nvs):
+        fig, ax = plt.subplots(1, 1, figsize=(8, 5))
+        ax.plot(freqs, avg_counts[nv_ind], "o-", color="blue")
+        ax.plot(freqs, fit_data[nv_ind], "-", color="red")
+        ax.set_xlabel("Frequency (GHz)")
+        ax.set_ylabel("Norm. NV- Population")
+        ax.set_title(f"NV Index: {nv_ind}")
+        ax.grid(True, linestyle="--", alpha=0.6)
+        plt.tight_layout()
+        plt.show(block=True)
     # Plot filtered resonance fits
     sns.set(style="whitegrid", palette="muted")
     num_filtered_nvs = len(filtered_nv_list)
@@ -420,7 +435,7 @@ def plot_nv_resonance_fits_and_residuals(
     fig_fitting, axes_fitting = plt.subplots(
         num_rows,
         num_cols,
-        figsize=(num_cols * 3, num_rows * 1),
+        figsize=(num_cols * 2, num_rows * 1),
         sharex=True,
         sharey=False,
     )
@@ -433,16 +448,17 @@ def plot_nv_resonance_fits_and_residuals(
                 y=filtered_avg_counts[nv_idx],
                 ax=ax,
                 color=colors[nv_idx % len(colors)],
-                lw=2,
+                lw=1,
                 marker="o",
-                markersize=3,
+                markersize=2,
                 label=f"{filtered_indices[nv_idx]}",
             )
-            ax.legend(fontsize="small")
+            ax.legend(fontsize="xx-small")
             ax.errorbar(
                 freqs,
                 filtered_avg_counts[nv_idx],
-                yerr=filtered_avg_counts_ste[nv_idx],
+                # yerr=filtered_avg_counts_ste[nv_idx],
+                yerr=np.abs(filtered_avg_counts_ste[nv_idx]),
                 fmt="none",
                 ecolor="gray",
                 alpha=0.6,
@@ -455,7 +471,7 @@ def plot_nv_resonance_fits_and_residuals(
                 "-",
                 color=colors[nv_idx % len(colors)],
                 label="Fit",
-                lw=2,
+                lw=1,
             )
             # Y-tick labels for the leftmost column
             # if nv_idx % num_cols == 0:
@@ -465,7 +481,7 @@ def plot_nv_resonance_fits_and_residuals(
             ax.set_yticklabels([])
 
             fig_fitting.text(
-                0.08,
+                0.0,
                 0.5,
                 "NV$^{-}$ Population",
                 va="center",
@@ -518,19 +534,18 @@ def plot_nv_resonance_fits_and_residuals(
             ax.grid(True, which="both", linestyle="--", linewidth=0.5)
         else:
             ax.axis("off")
-    fig_fitting.suptitle(f"NV Resonance Fits Readout {file_id}", fontsize=16)
+    fig_fitting.suptitle(f"Shallow NV Resonance Fits ({file_id})", fontsize=16)
     plt.subplots_adjust(
         left=0.1, right=0.95, top=0.95, bottom=0.1, hspace=0.01, wspace=0.01
     )
     # plt.tight_layout()
-    now = datetime.now()
-    date_time_str = now.strftime("%Y%m%d_%H%M%S")
-    file_name = dm.get_file_name(file_id=file_id)
-    file_path = dm.get_file_path(__file__, file_name, f"{file_id}_{date_time_str}")
+    # now = datetime.now()
+    # date_time_str = now.strftime("%Y%m%d_%H%M%S")
+    # file_name = dm.get_file_name(file_id=file_id)
+    # file_path = dm.get_file_path(__file__, file_name, f"{file_id}_{date_time_str}")
     kpl.show(block=True)
-    dm.save_figure(fig_fitting, file_path)
+    # dm.save_figure(fig_fitting, file_path)
     # plt.close(fig_fitting)
-
     return
 
     # Plot histograms and scatter plots
@@ -542,14 +557,6 @@ def plot_nv_resonance_fits_and_residuals(
             "Frequency Splitting (GHz)",
             "Count",
             "teal",
-        ),
-        (
-            "Frequency Splitting vs Contrast",
-            filtered_freq_differences,
-            filtered_contrast_list,
-            "Frequency Splitting (GHz)",
-            "Contrast",
-            "purple",
         ),
         (
             "Frequency Splitting vs Average Peak Width",
@@ -903,16 +910,6 @@ def create_movie(data, output_filename="movie.gif", nv_index=0, fps=5):
     print(f"Movie saved to {output_filename}")
 
 
-import numpy as np
-import matplotlib.pyplot as plt
-from matplotlib.animation import FuncAnimation, PillowWriter
-
-
-import numpy as np
-import matplotlib.pyplot as plt
-from matplotlib.animation import FuncAnimation, PillowWriter
-
-
 def create_movie(data, output_filename="movie.gif", nv_index=0, fps=5):
     """
     Generate a movie of NV images along step indices and save it as a GIF.
@@ -962,6 +959,7 @@ def create_movie(data, output_filename="movie.gif", nv_index=0, fps=5):
 
 
 if __name__ == "__main__":
+    kpl.init_kplotlib()
     # file_id = 1663484946120
     # file_id = 1695092317631
     # file_id = 1698088573367
@@ -970,52 +968,56 @@ if __name__ == "__main__":
     # file_id = 1725055024398  # 30ms readout
     # file_id = 1726476640278  # 30ms readout all variabe
     # file_id = 1729834552723  # 50ms readout mcc
-    file_id = 1732403187814  # 50ms readout 117NVs movies
-    # file_id = 1733307847194
-    data = dm.get_raw_data(file_id=file_id, load_npz=False, use_cache=True)
-    print(data.keys())
-    create_movie(data, output_filename="nv_movie.gif", nv_index=0, fps=5)
-    sys.exit()
-    # readout_duration = data["config"]["Optics"]["VirtualLasers"][
-    #     "VirtualLaserKey.WIDEFIELD_CHARGE_READOUT"
-    # ]["duration"]
-    vls = data["config"]["Optics"]["VirtualLasers"]
-    # print(vls.keys())
-    # print(f"reaout_duaration:{readout_duration}")
-    image_arrays = data["img_arrays"]
-    nv_list = data["nv_list"]
-    num_nvs = len(nv_list)
-    counts = np.array(data["counts"])[0]
-    num_nvs = len(nv_list)
-    num_steps = data["num_steps"]
-    num_runs = data["num_runs"]
-    num_reps = data["num_reps"]
-    freqs = data["freqs"]
-    adj_num_steps = num_steps // 4
-    sig_counts_0 = counts[:, :, 0:adj_num_steps, :]
-    sig_counts_1 = counts[:, :, adj_num_steps : 2 * adj_num_steps, :]
-    sig_counts = np.append(sig_counts_0, sig_counts_1, axis=3)
-    ref_counts_0 = counts[:, :, 2 * adj_num_steps : 3 * adj_num_steps, :]
-    ref_counts_1 = counts[:, :, 3 * adj_num_steps :, :]
-    ref_counts = np.empty((num_nvs, num_runs, adj_num_steps, 2 * num_reps))
-    ref_counts[:, :, :, 0::2] = ref_counts_0
-    ref_counts[:, :, :, 1::2] = ref_counts_1
-    #
-    now = datetime.now()
-    date_time_str = now.strftime("%Y%m%d_%H%M%S")
-    file_name = dm.get_file_name(file_id=file_id)
-    file_path = dm.get_file_path(__file__, file_name, f"{file_id}_{date_time_str}")
+    # file_id = 1732403187814  # 50ms readout 117NVs movies
+    # file_id = 1768622780958  # 50ms readout 148 shallow NVs dataset 1
+    # file_id = 1768928898711  # 50ms readout 148 shallow NVs dataset 2
+    # file_id = 1769412747779  # 50ms readout 148 shallow NVs dataset 3
+    # # file_id = 1733307847194
+    # file_id = 1771614901873
+    # data = dm.get_raw_data(file_id=file_id, load_npz=False, use_cache=True)
+    # print(data.keys())
+    # # create_movie(data, output_filename="nv_movie.gif", nv_index=0, fps=5)
+    # # sys.exit()
+    # # readout_duration = data["config"]["Optics"]["VirtualLasers"][
+    # #     "VirtualLaserKey.WIDEFIELD_CHARGE_READOUT"
+    # # ]["duration"]
+    # vls = data["config"]["Optics"]["VirtualLasers"]
+    # # print(vls.keys())
+    # # print(f"reaout_duaration:{readout_duration}")
+    # image_arrays = data["img_arrays"]
+    # nv_list = data["nv_list"]
+    # num_nvs = len(nv_list)
+    # counts = np.array(data["counts"])[0]
+    # num_nvs = len(nv_list)
+    # num_steps = data["num_steps"]
+    # num_runs = data["num_runs"]
+    # num_reps = data["num_reps"]
+    # freqs = data["freqs"]
+    # adj_num_steps = num_steps // 4
+    # sig_counts_0 = counts[:, :, 0:adj_num_steps, :]
+    # sig_counts_1 = counts[:, :, adj_num_steps : 2 * adj_num_steps, :]
+    # sig_counts = np.append(sig_counts_0, sig_counts_1, axis=3)
+    # ref_counts_0 = counts[:, :, 2 * adj_num_steps : 3 * adj_num_steps, :]
+    # ref_counts_1 = counts[:, :, 3 * adj_num_steps :, :]
+    # ref_counts = np.empty((num_nvs, num_runs, adj_num_steps, 2 * num_reps))
+    # ref_counts[:, :, :, 0::2] = ref_counts_0
+    # ref_counts[:, :, :, 1::2] = ref_counts_1
+    # #
+    # now = datetime.now()
+    # date_time_str = now.strftime("%Y%m%d_%H%M%S")
+    # file_name = dm.get_file_name(file_id=file_id)
+    # file_path = dm.get_file_path(__file__, file_name, f"{file_id}_{date_time_str}")
 
-    thresh_method = "otsu"
-    plot_nv_resonance_fits_and_residuals(
-        nv_list,
-        freqs,
-        sig_counts,
-        ref_counts,
-        file_id,
-        num_cols=9,
-    )
-    print(f"Plot saved to {file_path}")
+    # thresh_method = "otsu"
+    # plot_nv_resonance_fits_and_residuals(
+    #     nv_list,
+    #     freqs,
+    #     sig_counts,
+    #     ref_counts,
+    #     file_id,
+    #     num_cols=9,
+    # )
+    # print(f"Plot saved to {file_path}")
 
     # selected_nv_indices = [5, 11, 22, 60]
     # plot_selected_nv_resonance_fits_comparison(
@@ -1040,34 +1042,95 @@ if __name__ == "__main__":
     # generate_2d_magnetic_field_map_kriging(nv_list, magnetic_fields, dist_conversion_factor, grid_size=100)
 
     # # List of file IDs to process
-    # file_ids = [1647377018086,
-    #             1651762931005,
-    #             1652859661831,
-    #             1654734385295]  # Add more file IDs as needed
+    # List of file IDs to process
+    file_ids = [1771614901873, 1771932659040]  # Add more file IDs as needed
 
-    # # Iterate over each file_id
-    # for file_id in file_ids:
-    #     # Load raw data
-    #     data = dm.get_raw_data(file_id=file_id, load_npz=False, use_cache=True)
+    # Load the first dataset as a base
+    combined_data = dm.get_raw_data(file_id=file_ids[0], load_npz=False, use_cache=True)
+    combined_sig_counts = None
+    combined_ref_counts = None
 
-    #     nv_list = data["nv_list"]
-    #     num_nvs = len(nv_list)
-    #     counts = np.array(data["counts"])[0]
-    #     num_steps = data["num_steps"]
-    #     num_runs = data["num_runs"]
-    #     num_reps = data["num_reps"]
-    #     freqs = data["freqs"]
+    if combined_data:
+        nv_list = combined_data["nv_list"]
+        freqs = combined_data["freqs"]
+        num_steps = combined_data["num_steps"]
+        num_reps = combined_data["num_reps"]
+        num_runs = combined_data["num_runs"]
 
-    #     adj_num_steps = num_steps // 4
-    #     sig_counts_0 = counts[:, :, 0:adj_num_steps, :]
-    #     sig_counts_1 = counts[:, :, adj_num_steps : 2 * adj_num_steps, :]
-    #     sig_counts = np.append(sig_counts_0, sig_counts_1, axis=3)
+        counts = np.array(combined_data["counts"])[0]
+        adj_num_steps = num_steps // 4
 
-    #     ref_counts_0 = counts[:, :, 2 * adj_num_steps : 3 * adj_num_steps, :]
-    #     ref_counts_1 = counts[:, :, 3 * adj_num_steps :, :]
-    #     ref_counts = np.empty((num_nvs, num_runs, adj_num_steps, 2 * num_reps))
-    #     ref_counts[:, :, :, 0::2] = ref_counts_0
-    #     ref_counts[:, :, :, 1::2] = ref_counts_1
+        sig_counts_0 = counts[:, :, 0:adj_num_steps, :]
+        sig_counts_1 = counts[:, :, adj_num_steps : 2 * adj_num_steps, :]
+        combined_sig_counts = np.append(sig_counts_0, sig_counts_1, axis=3)
 
-    #     avg_counts = np.mean(sig_counts, axis=1)
-    #     avg_counts_ste = np.std(sig_counts, axis=1) / np.sqrt(num_runs)
+        ref_counts_0 = counts[:, :, 2 * adj_num_steps : 3 * adj_num_steps, :]
+        ref_counts_1 = counts[:, :, 3 * adj_num_steps :, :]
+        combined_ref_counts = np.empty(
+            (len(nv_list), num_runs, adj_num_steps, 2 * num_reps)
+        )
+        combined_ref_counts[:, :, :, 0::2] = ref_counts_0
+        combined_ref_counts[:, :, :, 1::2] = ref_counts_1
+
+        # Process remaining files
+        for file_id in file_ids[1:]:
+            try:
+                print(f"Processing file: {file_id}")
+                new_data = dm.get_raw_data(
+                    file_id=file_id, load_npz=False, use_cache=True
+                )
+                if not new_data:
+                    print(f"Skipping file {file_id}: Data not found.")
+                    continue
+
+                new_counts = np.array(new_data["counts"])[0]
+
+                new_sig_counts_0 = new_counts[:, :, 0:adj_num_steps, :]
+                new_sig_counts_1 = new_counts[
+                    :, :, adj_num_steps : 2 * adj_num_steps, :
+                ]
+                new_sig_counts = np.append(new_sig_counts_0, new_sig_counts_1, axis=3)
+
+                new_ref_counts_0 = new_counts[
+                    :, :, 2 * adj_num_steps : 3 * adj_num_steps, :
+                ]
+                new_ref_counts_1 = new_counts[:, :, 3 * adj_num_steps :, :]
+                new_ref_counts = np.empty(
+                    (len(nv_list), num_runs, adj_num_steps, 2 * num_reps)
+                )
+                new_ref_counts[:, :, :, 0::2] = new_ref_counts_0
+                new_ref_counts[:, :, :, 1::2] = new_ref_counts_1
+
+                # Append new data
+                combined_sig_counts = np.append(
+                    combined_sig_counts, new_sig_counts, axis=1
+                )  # Extending over runs
+                combined_ref_counts = np.append(
+                    combined_ref_counts, new_ref_counts, axis=1
+                )  # Extending over runs
+                combined_data["num_runs"] += new_data["num_runs"]
+
+            except Exception as e:
+                print(f"Error processing file {file_id}: {e}")
+
+        # Generate unique filename
+        now = datetime.now()
+        date_time_str = now.strftime("%Y%m%d_%H%M%S")
+        combined_file_id = "_".join(map(str, file_ids))
+        file_name = f"combined_{combined_file_id}_{date_time_str}.png"
+        file_path = dm.get_file_path(__file__, "combined_plot", file_name)
+
+        # Plot combined data
+        plot_nv_resonance_fits_and_residuals(
+            nv_list,
+            freqs,
+            combined_sig_counts,
+            combined_ref_counts,
+            file_id=combined_file_id,
+            num_cols=9,
+        )
+
+        print(f"Combined plot saved to {file_path}")
+
+    else:
+        print("No valid data available for plotting.")

@@ -507,7 +507,7 @@ def process_detect_cosmic_rays(data, prob_dist: ProbDist = ProbDist.COMPOUND_POI
     shot_sums = num_nvs - states.sum(axis=0)
 
     # Find indices of shots where the sum is greater than 80
-    high_activity_indices = np.where(shot_sums > 78)[0]  # Get 1D array of indices
+    high_activity_indices = np.where(shot_sums > 100)[0]  # Get 1D array of indices
     print(f"Selected shots: {len(high_activity_indices)}")
 
     # Extract only the selected shots

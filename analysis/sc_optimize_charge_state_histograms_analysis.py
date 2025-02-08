@@ -5,12 +5,12 @@ and plot the difference
 Created on Fall 2024
 @author: saroj chand
 """
-
 import os
 import sys
 import time
 import traceback
 from datetime import datetime
+from utils.tool_belt import curve_fit
 
 import matplotlib.pyplot as plt
 import numpy as np
@@ -86,6 +86,14 @@ def find_optimal_value_geom_mean(
     )
 
 
+def fit_fn(tau, delay, slope, decay):
+    """
+    Fit function modeling the preparation fidelity as a function of polarization duration.
+    """
+    tau = np.array(tau) - delay
+    return slope * tau * np.exp(-tau / decay)
+
+
 def process_and_plot(raw_data):
     nv_list = raw_data["nv_list"]
     num_nvs = len(nv_list)
@@ -118,28 +126,6 @@ def process_and_plot(raw_data):
 
     prob_dist = ProbDist.COMPOUND_POISSON
 
-    # # Function to process a single NV and step
-    # def process_nv_step(nv_ind, step_ind):
-    #     counts_data = condensed_counts[nv_ind, step_ind]
-    #     popt, pcov, chi_squared = fit_bimodal_histogram(counts_data, prob_dist)
-
-    #     if popt is None:
-    #         return np.nan, np.nan, np.nan, np.nan
-
-    #     # Threshold, prep and readout fidelity
-    #     threshold, readout_fidelity = determine_threshold(
-    #         popt, prob_dist, dark_mode_weight=0.5, ret_fidelity=True
-    #     )
-    #     prep_fidelity = 1 - popt[0]  # Population weight of dark state
-
-    #     return readout_fidelity, prep_fidelity, chi_squared
-
-    # # Parallel processingv -->  n_jobs :  Defaults to using all available cores (-1).
-    # results = Parallel(n_jobs=-1)(
-    #     delayed(process_nv_step)(nv_ind, step_ind)
-    #     for nv_ind in range(num_nvs)
-    #     for step_ind in range(num_steps)
-    # )
     # Function to process a single NV and step
     def process_nv_step(nv_ind, step_ind):
         counts_data = condensed_counts[nv_ind, step_ind]
@@ -186,46 +172,12 @@ def process_and_plot(raw_data):
     prep_fidelity_arr = results[:, :, 1]
     goodness_of_fit_arr = results[:, :, 2]
 
-    # Save results
-    timestamp = dm.get_time_stamp()
-    file_name = f"optimal_steps_{file_id}"
-    file_path = dm.get_file_path(__file__, timestamp, file_name)
-
-    # Prepare data to save
-    processed_data = {
-        "timestamp": timestamp,
-        "nv_data": [
-            {
-                "nv_index": nv_index,
-                "step_values": step_vals.tolist(),
-                "readout_fidelity": readout_fidelity_arr[nv_index].tolist(),
-                "prep_fidelity": prep_fidelity_arr[nv_index].tolist(),
-                "goodness_of_fit": goodness_of_fit_arr[nv_index].tolist(),
-            }
-            for nv_index in range(num_nvs)
-        ],
-        "metadata": {
-            "num_nvs": num_nvs,
-            "num_steps": num_steps,
-            "min_step_val": min_step_val,
-            "max_step_val": max_step_val,
-            "optimize_pol_or_readout": optimize_pol_or_readout,
-            "optimize_duration_or_amp": optimize_duration_or_amp,
-            "yellow_charge_readout_amp": yellow_charge_readout_amp,
-            "green_aod_cw_charge_pol_amp": green_aod_cw_charge_pol_amp,
-            "file_id": file_id,
-            "file_name": file_name,
-        },
-    }
-
-    # dm.save_raw_data(processed_data, file_path)
-    # print(f"Processed data saved to '{file_path}'.")
-
     ### Plotting
     if optimize_pol_or_readout:
         if optimize_duration_or_amp:
-            step_vals *= 1e-3
-            x_label = "Polarization duration (us)"
+            # step_vals *= 1e-3
+            step_vals = step_vals
+            x_label = "Polarization duration (ns)"
         else:
             step_vals *= green_aod_cw_charge_pol_amp
             x_label = "Polarization amplitude"
@@ -238,8 +190,8 @@ def process_and_plot(raw_data):
             # x_label = "Readout amplitude"
             step_vals = a * (step_vals**b) + c
             x_label = "Readout amplitude (uW)"
-    # print(step_vals)
-    # Optimal values
+
+    # return
     optimal_values = []
     optimal_step_vals = []
     nv_indces = []
@@ -248,15 +200,15 @@ def process_and_plot(raw_data):
             # Calculate the optimal step value
             (
                 optimal_step_val,
-                optimal_prep_fidality,
                 optimal_readout_fidality,
+                optimal_prep_fidality,
                 max_combined_score,
             ) = find_optimal_value_geom_mean(
                 step_vals,
                 readout_fidelity_arr[nv_ind],
                 prep_fidelity_arr[nv_ind],
                 goodness_of_fit_arr[nv_ind],
-                weights=(1.0, 1.0, 1.0),
+                weights=(1.5, 2, 1.1),
             )
             optimal_step_vals.append(optimal_step_val)
             nv_indces.append(nv_ind)
@@ -276,58 +228,59 @@ def process_and_plot(raw_data):
             continue
 
         # # Plotting
-        fig, ax1 = plt.subplots(figsize=(7, 5))
-        # Plot readout fidelity
-        ax1.plot(
-            step_vals,
-            readout_fidelity_arr[nv_ind],
-            label="Readout Fidelity",
-            color="blue",
-        )
-        ax1.plot(
-            step_vals,
-            prep_fidelity_arr[nv_ind],
-            label="Prep Fidelity",
-            linestyle="--",
-            color="blue",
-        )
-        ax1.set_xlabel(x_label)
-        ax1.set_ylabel("Fidelity")
-        ax1.tick_params(axis="y", labelcolor="blue")
-        ax1.grid(True, linestyle="--", alpha=0.6)
+        # fig, ax1 = plt.subplots(figsize=(7, 5))
+        # # Plot readout fidelity
+        # ax1.plot(
+        #     step_vals,
+        #     readout_fidelity_arr[nv_ind],
+        #     label="Readout Fidelity",
+        #     color="orange",
+        # )
+        # ax1.plot(
+        #     step_vals,
+        #     prep_fidelity_arr[nv_ind],
+        #     label="Prep Fidelity",
+        #     linestyle="--",
+        #     color="green",
+        # )
+        # ax1.set_xlabel(x_label)
+        # ax1.set_ylabel("Fidelity")
+        # ax1.tick_params(axis="y", labelcolor="blue")
+        # ax1.grid(True, linestyle="--", alpha=0.6)
 
-        # Plot Goodness of Fit ()
-        ax2 = ax1.twinx()
-        ax2.plot(
-            step_vals,
-            goodness_of_fit_arr[nv_ind],
-            color="green",
-            label=r"Goodness of Fit ($\chi^2_{\text{reduced}}$)",
-            alpha=0.7,
-        )
-        ax2.set_ylabel(r"Goodness of Fit ($\chi^2_{\text{reduced}}$)", color="green")
-        ax2.tick_params(axis="y", labelcolor="green")
+        # # Plot Goodness of Fit ()
+        # ax2 = ax1.twinx()
+        # ax2.plot(
+        #     step_vals,
+        #     goodness_of_fit_arr[nv_ind],
+        #     color="gray",
+        #     linestyle="--",
+        #     label=r"Goodness of Fit ($\chi^2_{\text{reduced}}$)",
+        #     alpha=0.7,
+        # )
+        # ax2.set_ylabel(r"Goodness of Fit ($\chi^2_{\text{reduced}}$)", color="gray")
+        # ax2.tick_params(axis="y", labelcolor="gray")
 
-        # Highlight optimal step value
-        ax1.axvline(
-            optimal_step_val,
-            color="red",
-            linestyle="--",
-            label=f"Optimal Step Val: {optimal_step_val:.3f}",
-        )
-        ax2.axvline(
-            optimal_step_val,
-            color="red",
-            linestyle="--",
-        )
+        # # Highlight optimal step value
+        # ax1.axvline(
+        #     optimal_step_val,
+        #     color="red",
+        #     linestyle="--",
+        #     label=f"Optimal Step Val: {optimal_step_val:.3f}",
+        # )
+        # ax2.axvline(
+        #     optimal_step_val,
+        #     color="red",
+        #     linestyle="--",
+        # )
 
-        # Combine legends
-        lines, labels = ax1.get_legend_handles_labels()
-        lines2, labels2 = ax2.get_legend_handles_labels()
-        ax1.legend(lines + lines2, labels + labels2, loc="upper left", fontsize=11)
-        ax1.set_title(f"NV{nv_ind} - Optimal Step Val: {optimal_step_val:.3f}")
-        plt.tight_layout()
-        plt.show()
+        # # Combine legends
+        # lines, labels = ax1.get_legend_handles_labels()
+        # lines2, labels2 = ax2.get_legend_handles_labels()
+        # ax1.legend(lines + lines2, labels + labels2, loc="upper left", fontsize=11)
+        # ax1.set_title(f"NV{nv_ind} - Optimal Step Val: {optimal_step_val:.3f}")
+        # plt.tight_layout()
+        # plt.show(block=True)
 
     # save opimal step values
     # total_power = np.sum(optimal_step_vals) / len(optimal_step_vals)
@@ -342,7 +295,6 @@ def process_and_plot(raw_data):
     print(len(optimal_weigths))
     print(list(optimal_weigths))
     results = {
-        "timestamp": timestamp,
         "optimal_weigths": optimal_weigths,
         "total_power": total_power,
         "aom_voltage": aom_voltage,
@@ -354,7 +306,7 @@ def process_and_plot(raw_data):
     # dm.save_raw_data(results, file_path)
     print(results)
     print(f"Processed data saved to '{file_path}'.")
-    # return
+    return
     ### Calculate Averages
     avg_readout_fidelity = np.nanmean(readout_fidelity_arr, axis=0)
     avg_prep_fidelity = np.nanmean(prep_fidelity_arr, axis=0)
@@ -370,7 +322,7 @@ def process_and_plot(raw_data):
         avg_readout_fidelity,
         avg_prep_fidelity,
         avg_goodness_of_fit,
-        weights=(1, 1, 1),
+        weights=(1, 1, 0),
     )
     # Plot average readout and prep fidelity
     fig, ax1 = plt.subplots(figsize=(7, 5))
@@ -447,7 +399,7 @@ def process_and_plot(raw_data):
         median_readout_fidelity,
         median_prep_fidelity,
         median_goodness_of_fit,
-        weights=(1, 1, 1),
+        weights=(1, 1, 0),
     )
 
     # Plot average and median readout and prep fidelity
@@ -513,6 +465,191 @@ def process_and_plot(raw_data):
     plt.show()
 
 
+def fit_fn(tau, delay, slope, decay, transition):
+    """
+    Fit function modeling the preparation fidelity as a function of polarization duration.
+    Smoothly transitions from an initial linear increase to an exponential decay.
+    """
+    tau = np.array(tau) - delay
+
+    # Sigmoid-like transition function (soft transition)
+    smooth_transition = 1 / (1 + np.exp(-(tau - transition) / (0.1 * transition)))
+
+    # Linear rise component
+    linear_part = slope * tau
+
+    # Exponential decay component
+    exp_part = slope * transition * np.exp(-(tau - transition) / decay)
+
+    # Combine both with a smooth transition
+    return (1 - smooth_transition) * linear_part + smooth_transition * exp_part
+
+
+def fit_fn(tau, delay, slope, decay, transition):
+    """
+    Fit function modeling the preparation fidelity as a function of polarization duration.
+    Ensures an initial steep increase followed by an exponential decay.
+    """
+    tau = np.array(tau) - delay
+    tau = np.maximum(tau, 0)  # Ensure no negative time values
+
+    # Enforce a minimum transition duration (e.g., 50 ns)
+    transition = max(transition, 90)
+
+    # Smooth transition function using tanh
+    smooth_transition = 0.5 * (1 + np.tanh((tau - transition) / (0.05 * transition)))
+
+    # Enforce an initial steep rise
+    linear_part = slope * tau
+
+    # Exponential decay component
+    exp_part = slope * transition * np.exp(-(tau - transition) / decay)
+
+    # Combine both components smoothly
+    return (1 - smooth_transition) * linear_part + smooth_transition * exp_part
+
+
+# def process_and_plot(raw_data):
+#     nv_list = raw_data["nv_list"]
+#     num_nvs = len(nv_list)
+#     min_step_val = raw_data["min_step_val"]
+#     max_step_val = raw_data["max_step_val"]
+#     num_steps = raw_data["num_steps"]
+#     step_vals = np.linspace(min_step_val, max_step_val, num_steps)
+
+#     counts = np.array(raw_data["counts"])
+#     ref_exp_ind = 1
+#     condensed_counts = [
+#         [
+#             counts[ref_exp_ind, nv_ind, :, step_ind, :].flatten()
+#             for step_ind in range(num_steps)
+#         ]
+#         for nv_ind in range(num_nvs)
+#     ]
+#     condensed_counts = np.array(condensed_counts)
+
+#     def process_nv_step(nv_ind, step_ind):
+#         counts_data = condensed_counts[nv_ind, step_ind]
+#         try:
+#             popt, pcov, chi_squared = fit_bimodal_histogram(
+#                 counts_data, ProbDist.COMPOUND_POISSON
+#             )
+#             if popt is None:
+#                 return np.nan, np.nan, np.nan
+#             threshold, readout_fidelity = determine_threshold(
+#                 popt, ProbDist.COMPOUND_POISSON, dark_mode_weight=0.5, ret_fidelity=True
+#             )
+#             prep_fidelity = 1 - popt[0]  # Population weight of dark state
+#             return readout_fidelity, prep_fidelity, chi_squared
+#         except Exception as e:
+#             print(f"Error processing NV {nv_ind}, step {step_ind}: {e}")
+#             return np.nan, np.nan, np.nan
+
+#     results = Parallel(n_jobs=-1)(
+#         delayed(process_nv_step)(nv_ind, step_ind)
+#         for nv_ind in range(num_nvs)
+#         for step_ind in range(num_steps)
+#     )
+
+#     try:
+#         results = np.array(results, dtype=float).reshape(num_nvs, num_steps, 3)
+#     except ValueError as e:
+#         print(f"Error reshaping results: {e}")
+#         return
+
+#     readout_fidelity_arr = results[:, :, 0]
+#     prep_fidelity_arr = results[:, :, 1]
+
+#     ### **Perform Fitting**
+#     duration_linspace = np.linspace(min_step_val, max_step_val, 100)
+#     opti_durs, opti_fidelities = [], []
+
+#     for nv_ind in range(num_nvs):
+#         valid_indices = step_vals != 16  # Remove the 16 ns outlier
+#         filtered_step_vals = step_vals[valid_indices]
+#         filtered_prep_fidelity = prep_fidelity_arr[nv_ind][valid_indices]
+
+#         if len(filtered_step_vals) < 3:
+#             print(f"Skipping NV {nv_ind} due to insufficient data points.")
+#             continue
+
+#         try:
+#             slope_guess = (filtered_prep_fidelity[-1] - filtered_prep_fidelity[0]) / (
+#                 filtered_step_vals[-1] - filtered_step_vals[0]
+#             )
+#             # Indices corresponding to 64 ns and 104 ns in the filtered_step_vals
+#             time_64ns_index = np.argmin(
+#                 np.abs(filtered_step_vals - 64)
+#             )  # Find closest to 64 ns
+#             time_104ns_index = np.argmin(
+#                 np.abs(filtered_step_vals - 104)
+#             )  # Find closest to 104 ns
+
+#             # Calculate slope based on the two selected points (64 ns and 104 ns)
+#             slope_guess = (
+#                 filtered_prep_fidelity[time_104ns_index]
+#                 - filtered_prep_fidelity[time_64ns_index]
+#             ) / (
+#                 filtered_step_vals[time_104ns_index]
+#                 - filtered_step_vals[time_64ns_index]
+#             )
+
+#             peak_guess = filtered_step_vals[np.argmax(filtered_prep_fidelity)]
+#             guess_params = [16, slope_guess, peak_guess, 120]
+
+#             popt, _ = curve_fit(
+#                 fit_fn,
+#                 filtered_step_vals,
+#                 filtered_prep_fidelity,
+#                 p0=guess_params,
+#                 maxfev=50000,
+#             )
+
+#             fitted_curve = fit_fn(duration_linspace, *popt)
+#             opti_dur = duration_linspace[np.nanargmax(fitted_curve)]
+#             opti_fidelity = np.nanmax(fitted_curve)
+
+#             opti_durs.append(round(opti_dur / 4) * 4)
+#             opti_fidelities.append(round(opti_fidelity, 3))
+
+#             # plt.figure()
+#             # plt.scatter(
+#             #     filtered_step_vals,
+#             #     filtered_prep_fidelity,
+#             #     label="Measured Fidelity",
+#             #     color="blue",
+#             # )
+#             # plt.plot(duration_linspace, fitted_curve, label="Fitted Curve", color="red")
+#             # plt.axvline(
+#             #     opti_dur,
+#             #     color="green",
+#             #     linestyle="--",
+#             #     label=f"Opt. Duration: {opti_dur:.1f} ns",
+#             # )
+#             # plt.xlabel("Polarization Duration (ns)")
+#             # plt.ylabel("Preparation Fidelity")
+#             # plt.title(f"NV Num: {nv_ind}")
+#             # plt.legend()
+#             # plt.show(block=True)
+
+#             print(
+#                 f"NV {nv_ind} - Optimal Duration: {opti_dur:.1f} ns, Optimal Fidelity: {opti_fidelity}"
+#             )
+
+#         except RuntimeError:
+#             print(f"Skipping NV {nv_ind}: Curve fitting failed.")
+
+#     if opti_durs:
+#         print("Optimal Polarization Durations:", opti_durs)
+#         print("Optimal Preparation Fidelities:", opti_fidelities)
+#         print(f"Median Optimal Duration: {np.median(opti_durs)} ns")
+#         print(f"Median Optimal Fidelity: {np.median(opti_fidelities)}")
+#         print(f"Max Optimal Fidelity: {np.max(opti_durs)}")
+#         print(f"Min Optimal Fidelity: {np.min(opti_durs)}")
+
+#     return
+
+
 # endregion
 
 if __name__ == "__main__":
@@ -530,11 +667,16 @@ if __name__ == "__main__":
     # file_id = 1751404919855  # yellow ampl var 50ms 117NVs afdter birge
     # file_id = 1752870018575  # yellow ampl var 50ms 117NVs afdter birge
     # file_id = 1752968732835  # green ampl var
-    file_id = 1754323175446
-    file_id = 1757422756726
-    file_id = 1766460747869  # yellow ampl var 50ms shallow 169Nvs
+
+    file_id = 1766460747869  # yellow ampl var 50ms shallow nvs
+    file_id = 1767789140438  # pol dur var 200ns to 2us
+    file_id = 1768024979194  # pol dur var 100ns to 1us
+    file_id = 1769942144688  # pol dur var 100ns to 1us dataset
+
+    # file_id = 1770306530123  # pol dur var 16ns to 1028ns dataset 128NVs
+    file_id = 1770658719969  # readout amp
     # raw_data = dm.get_raw_data(file_id=1709868774004, load_npz=False) #yellow ampl var
     raw_data = dm.get_raw_data(file_id=file_id, load_npz=False)  # yellow amp var
     process_and_plot(raw_data)
-    kpl.show(block=True)
+    plt.show(block=True)
     # print(dm.get_file_name(1717056176426))
