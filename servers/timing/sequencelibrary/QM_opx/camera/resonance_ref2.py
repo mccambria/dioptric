@@ -27,9 +27,9 @@ def get_seq(
     reference = False  # References for this sequence are handled routine-side
 
     # MCC
-    total_num_steps = len(step_inds)
-    half_num_steps = total_num_steps // 2
-    esr_pulse_duration = seq_utils.convert_ns_to_cc(68)
+    # total_num_steps = len(step_inds)
+    # half_num_steps = total_num_steps // 2
+    # esr_pulse_duration = seq_utils.convert_ns_to_cc(68)
 
     with qua.program() as seq:
         seq_utils.init()
@@ -37,12 +37,15 @@ def get_seq(
 
         step_ind = qua.declare(int)
 
+        # def uwave_macro(uwave_ind_list, step_ind):
+        #     # MCC
+        #     with qua.if_(step_ind < half_num_steps):
+        #         seq_utils.macro_pi_pulse(uwave_ind_list, duration_cc=esr_pulse_duration)
+        #     with qua.else_():
+        #         seq_utils.macro_pi_pulse(uwave_ind_list)
+
         def uwave_macro(uwave_ind_list, step_ind):
-            # MCC
-            with qua.if_(step_ind < half_num_steps):
-                seq_utils.macro_pi_pulse(uwave_ind_list, duration_cc=esr_pulse_duration)
-            with qua.else_():
-                seq_utils.macro_pi_pulse(uwave_ind_list)
+            seq_utils.macro_pi_pulse(uwave_ind_list)
 
         with qua.for_each_(step_ind, step_inds):
             base_scc_sequence.macro(

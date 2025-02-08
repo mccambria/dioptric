@@ -1,3 +1,12 @@
+# -*- coding: utf-8 -*-
+"""
+Control panel for the slm
+
+Created on Spring, 2024
+
+@author: saroj chand
+"""
+
 import io
 import os
 import sys
@@ -235,7 +244,7 @@ def calibration_triangle():
 
     # Define parameters for the equilateral triangle
     # center = (730, 570)  # Center of the triangle
-    center = (680, 630)  # Center of the triangle
+    center = (670, 630)  # Center of the triangle
     side_length = 400  # Length of each side of the triangle\
 
     # Calculate the coordinates of the three vertices of the equilateral triangle
@@ -276,11 +285,11 @@ def nuvu2thorcam_calibration(coords):
     to the Thorlabs camera's coordinate system using an affine transformation.
     """
     cal_coords_thorcam = np.array(
-        [[1026.410, 830.0], [333.589, 830.0], [680.0, 230.0]], dtype="float32"
+        [[1016.410, 830.0], [323.589, 830.0], [670.0, 230.0]], dtype="float32"
     )
 
     cal_coords_nuvu = np.array(
-        [[223.768, 7.313], [209.042, 238.041], [16.005, 108.219]], dtype="float32"
+        [[223.815, 11.034], [209.188, 241.421], [16.164, 111.443]], dtype="float32"
     )
 
     # Compute the affine transformation matrix
@@ -296,7 +305,8 @@ def nuvu2thorcam_calibration(coords):
 def load_nv_coords(
     # file_path="slmsuite/nv_blob_detection/nv_blob_filtered_437nvs_reordered.npz",
     # file_path="slmsuite/nv_blob_detection/nv_blob_shallow_161nvs_reordered.npz",
-    file_path="slmsuite/nv_blob_detection/nv_blob_shallow_148nvs_reordered.npz",
+    # file_path="slmsuite/nv_blob_detection/nv_blob_shallow_148nvs_reordered.npz",
+    file_path="slmsuite/nv_blob_detection/nv_blob_shallow_148nvs_reordered_updated.npz",
     # file_path="slmsuite/nv_blob_detection/nv_blob_shallow_89nvs_reordered.npz",
     # file_path="slmsuite/nv_blob_detection/nv_blob_shallow_52nvs_reordered.npz",
     # file_path="slmsuite/nv_blob_detection/nv_blob_filtered_160nvs_reordered.npz",
@@ -331,12 +341,12 @@ thorcam_coords = nuvu2thorcam_calibration(nuvu_pixel_coords).T
 # sys.exit()
 
 
-def compute_nvs_phase():
+def compute_and_write_nvs_phase():
     hologram = SpotHologram(
         shape=(4096, 2048),
         spot_vectors=thorcam_coords,
         basis="ij",
-        # spot_amp=spot_weights,
+        spot_amp=spot_weights,
         cameraslm=fs,
     )
     # Precondition computationally
@@ -362,7 +372,8 @@ def compute_nvs_phase():
 
 
 def write_nvs_phase():
-    phase = np.load("slmsuite\computed_phase\slm_phase_160nvs_20250123_154409.npy")
+    phase = np.load("slmsuite\computed_phase\slm_phase_148nvs_20250203_171815.npy")
+    # phase = np.load("slmsuite\computed_phase\slm_phase_148nvs_20250203_171815.npy")
     # phase = np.load(
     #     "slmsuite\computed_phase\slm_phase_117nvs_20250119_143417.npy"
     # )  # 117NVs weighted spots
@@ -388,9 +399,9 @@ try:
     # fourier_calibration()
     load_fourier_calibration()
     # test_wavefront_calibration()
-    # wavefront_calibration()
-    # load_wavefront_calibration()
-    compute_nvs_phase()
+    # # wavefront_calibration()
+    # # load_wavefront_calibration()
+    compute_and_write_nvs_phase()
     # write_nvs_phase()
     # calibration_triangle()
     # circles()

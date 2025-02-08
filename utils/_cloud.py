@@ -21,7 +21,6 @@ root_folder_id = "235146666549"
 
 data_manager_folder = common.get_data_manager_folder()
 folder_path_cache = {}
-
 try:
     box_auth_file_name = "dioptric_box_authorization.json"
     box_auth = JWTAuth.from_settings_file(data_manager_folder / box_auth_file_name)

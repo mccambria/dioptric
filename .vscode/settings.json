@@ -1,4 +1,9 @@
 {
     "python.envFile": "${workspaceFolder}/.vscode/.env",
     "python.analysis.typeCheckingMode": "off",
+    // "python.languageServer": "Pylance",
+    // "editor.gotoLocation.multipleDefinitions": "peek",
+    // "editor.gotoLocation.multipleDeclarations": "peek",
+    // "editor.gotoLocation.multipleImplementations": "peek",
+    // "editor.gotoLocation.multipleReferences": "peek"
 }

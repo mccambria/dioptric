@@ -592,12 +592,13 @@ if __name__ == "__main__":
     # amp_file_id = 1724491290147  # same scc duration 160
     # amp_file_id = 1725708405583  # optimized durations for each
     # amp_file_id = 1731980653795  # amp
-    duration_file_id = 1732098676751  # duration
-    data = dm.get_raw_data(file_id=duration_file_id)  # Load NV list
+    amp_file_id = 1771055850280
+    # duration_file_id = 1732098676751  # duration
+    data = dm.get_raw_data(file_id=amp_file_id)  # Load NV list
     nv_list = data["nv_list"]
 
     # results = process_and_plot(nv_list, duration_file_id, amp_file_id)
-    # results = process_and_plot_amplitudes(nv_list, amp_file_id)
-    results = process_and_plot_durations(nv_list, duration_file_id)
+    results = process_and_plot_amplitudes(nv_list, amp_file_id)
+    # results = process_and_plot_durations(nv_list, duration_file_id)
     print("Results:", results)
     kpl.show(block=True)

@@ -300,10 +300,8 @@ def process_scan_file():
             spot_weights.extend(integrated_counts)
 
         # Normalize image
-        img_array = (img_array - 300) / max(
-            1, np.median(img_array)
-        )  # Avoid div by zero
-
+        img_array = (img_array - 300) / max(1, np.median(img_array))
+        # img_array = widefie
         # Store processed image
         img_arrays.append(img_array)
 

@@ -362,6 +362,7 @@ if __name__ == "__main__":
     kpl.init_kplotlib()
     # data = dm.get_raw_data(file_id=1733583334808, load_npz=False)
     # data = dm.get_raw_data(file_id=1766803842180, load_npz=False)  # 50ms readout
-    data = dm.get_raw_data(file_id=1766834596476, load_npz=False)  # 100ms readout
-    process_and_plot(data, do_plot_histograms=False)
+    # data = dm.get_raw_data(file_id=1766834596476, load_npz=False)  # 100ms readout
+    data = dm.get_raw_data(file_id=1769860748790, load_npz=False)  # 24ms readout
+    process_and_plot(data, do_plot_histograms=True)
     kpl.show(block=True)

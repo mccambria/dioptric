@@ -65,13 +65,10 @@ def get_seq(pol_coords_list, charge_prep, dark_time_1_ns, dark_time_2_ns, num_re
                     pol_coords_list, spin_pol=False, targeted_polarization=True
                 )
             qua.align()  # Align polarization and readout operations
-            # if dark_time > 0:
-            #     qua.wait(dark_time)
-            seq_utils.macro_charge_state_readout()
-            seq_utils.macro_wait_for_trigger()
-
             if dark_time > 0:
                 qua.wait(dark_time)
+            seq_utils.macro_charge_state_readout()
+            seq_utils.macro_wait_for_trigger()
 
         def one_rep(rep_ind):
             """Execute all experiments within a single repetition."""

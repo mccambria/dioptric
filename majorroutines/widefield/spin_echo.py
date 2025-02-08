@@ -273,6 +273,8 @@ def create_fit_figure(data, axes_pack=None, layout=None, no_legend=True, nv_inds
                 figManager = plt.get_current_fig_manager()
                 figManager.window.showMaximized()
                 ax.set_title(nv_ind)
+                ax.set_xlabel("Total evolution time (µs)")
+                ax.set_ylabel("Normalized NV$^{-}$ population")
                 kpl.show(block=True)
             except Exception:
                 print(traceback.format_exc())

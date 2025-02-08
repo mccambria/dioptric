@@ -405,7 +405,8 @@ def macro_run_aods(
         pulse_names.append(pulse_name)
 
     if amps is None:
-        amps = [None] * num_lasers
+        # amps = [None] * num_lasers
+        amps = [1.0] * num_lasers
 
     ### Check if the requested pulse is already running using the cache
 

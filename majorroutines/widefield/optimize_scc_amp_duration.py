@@ -109,17 +109,17 @@ def process_and_plot(data):
 
         # Plot
         # if opti_dur == 32:
-        # fig, ax = plt.subplots()
-        # for amp_ind in range(num_amp_steps):
-        #     kpl.plot_points(ax, duration_vals, snrs_2d[amp_ind])
-        #     line = lines[amp_ind]
-        #     if line is not None:
-        #         kpl.plot_line(ax, duration_linspace, line, label=amp_vals[amp_ind])
-        # ax.set_xlabel("Duration (ns)")
-        # ax.set_ylabel("SNR")
-        # ax.set_title(f"NV num: {widefield.get_nv_num(nv_list[nv_ind])}")
-        # ax.legend()
-        # kpl.show(block=True)
+        fig, ax = plt.subplots()
+        for amp_ind in range(num_amp_steps):
+            kpl.plot_points(ax, duration_vals, snrs_2d[amp_ind])
+            line = lines[amp_ind]
+            if line is not None:
+                kpl.plot_line(ax, duration_linspace, line, label=amp_vals[amp_ind])
+        ax.set_xlabel("Duration (ns)")
+        ax.set_ylabel("SNR")
+        ax.set_title(f"NV num: {widefield.get_nv_num(nv_list[nv_ind])}")
+        ax.legend()
+        kpl.show(block=True)
 
         print(opti_snr)
         print(opti_amp)
@@ -254,7 +254,8 @@ def optimize_scc_amp_and_duration(
 if __name__ == "__main__":
     kpl.init_kplotlib()
 
-    data = dm.get_raw_data(file_id=1737831146138)
+    # data = dm.get_raw_data(file_id=1737831146138)
+    data = dm.get_raw_data(file_id=1769094332793)
 
     process_and_plot(data)
 
