@@ -1,6 +1,5 @@
 import os
 import sys
-
 import matplotlib.pyplot as plt
 import numpy as np
 import seaborn as sns
@@ -177,13 +176,6 @@ def filter_and_reorder_nv_coords(
 
 
 def sigmoid_weights(intensities, threshold, beta=1):
-    """
-    Compute the weights using a sigmoid function.
-
-    intensities: array of intensities
-    threshold: intensity value at which the function starts transitioning
-    beta: steepness parameter (higher beta makes the transition steeper)
-    """
     weights = np.exp(beta * (intensities - threshold))
     return weights / np.max(weights)  # Normalize the weights
 
@@ -195,18 +187,6 @@ def linear_weights(intensities, alpha=1):
 
 
 def non_linear_weights_adjusted(intensities, alpha=1, beta=0.5, threshold=0.5):
-    """
-    Adjust weights such that bright NVs keep the same weight and low-intensity NVs get scaled.
-
-    Parameters:
-    - intensities: Array of intensities for NV centers.
-    - alpha: Controls the non-linearity for low intensities.
-    - beta: Controls the sharpness of the transition around the threshold.
-    - threshold: Intensity value above which weights are not changed.
-
-    Returns:
-    - weights: Adjusted weights where bright NVs have weight ~1, and low-intensity NVs are scaled.
-    """
     # Normalize the intensities between 0 and 1
     norm_intensities = intensities / np.max(intensities)
 
@@ -227,14 +207,6 @@ def non_linear_weights_adjusted(intensities, alpha=1, beta=0.5, threshold=0.5):
 
 # Save the results to a file
 def save_results(nv_coordinates, updated_spot_weights, filename):
-    """
-    Save NV data results to an .npz file.
-
-    nv_coordinates: list or array of NV coordinates
-    integrated_intensities: array of integrated intensities
-    spot_weights: array of weights (inverse of integrated intensities)
-    filename: string, the name of the file to save results
-    """
     # Ensure the directory exists
     path = os.path.dirname(filename)
     if not os.path.exists(path):
@@ -281,20 +253,6 @@ def load_nv_weights(file_path="optimal_separation_and_goodness.txt"):
 def sigmoid_weight_update(
     fidelities, spot_weights, intensities, alpha=1, beta=10, fidelity_threshold=0.90
 ):
-    """
-    Update the spot weights using a sigmoid function. Low-fidelity NVs are adjusted more,
-    while high-fidelity NVs remain largely unchanged.
-
-    Parameters:
-    - fidelities: Array of fidelity values for NV centers.
-    - intensities: Array of integrated intensities for NV centers.
-    - alpha: Controls the non-linearity of the weight update for low-fidelity NVs.
-    - beta: Controls the steepness of the sigmoid function transition.
-    - fidelity_threshold: Fidelity value below which weights should be updated.
-
-    Returns:
-    - updated_weights: Array of updated spot weights.
-    """
     # Normalize intensities between 0 and 1
     norm_intensities = intensities / np.max(intensities)
 
@@ -318,19 +276,6 @@ def sigmoid_weight_update(
 def manual_sigmoid_weight_update(
     spot_weights, intensities, alpha, beta, update_indices
 ):
-    """
-    Update spot weights only for NVs with specified indices using a sigmoid function.
-    Prints the weights before and after updates.
-
-    Parameters:
-    - spot_weights: Current spot weights for each NV.
-    - intensities: Integrated intensities for each NV.
-    - alpha, beta: Parameters for the sigmoid function.
-    - update_indices: List of NV indices to update the weights.
-
-    Returns:
-    - updated_spot_weights: List of updated spot weights for each NV.
-    """
     updated_spot_weights = (
         spot_weights.copy()
     )  # Make a copy to avoid mutating the original list
@@ -359,16 +304,6 @@ def adjust_weights_sigmoid(spot_weights, snr_values, alpha=1.0, beta=0.001):
 
 
 def filter_by_peak_intensity(fitted_data, threshold=0.5):
-    """
-    Filter NVs based on peak intensity.
-
-    Args:
-        fitted_data: List of tuples (x, y, peak_intensity) from Gaussian fitting.
-        threshold: Minimum peak intensity required to keep the NV.
-
-    Returns:
-        Filtered NV coordinates and their intensities.
-    """
     filtered_coords = []
     filtered_intensities = []
 
@@ -412,17 +347,6 @@ def curve_inverse_counts(counts, scaling_factor=0.5):
 
 
 def select_half_left_side_nvs_and_plot(nv_coordinates):
-    """
-    Select half of the NVs on the left side of the coordinate space
-    based on their 'pixel' x-coordinates, mark them with spin_flip = True,
-    and plot the distribution.
-
-    Parameters:
-    - nv_list: List of NV objects, each with a 'coords' dictionary containing 'pixel'.
-
-    Returns:
-    - selected_indices: List of indices of NVs selected from the left side.
-    """
 
     # Filter NVs on the left side (x < median x)
     median_x = np.median(nv_coordinates[:, 0])
@@ -466,24 +390,9 @@ def select_half_left_side_nvs_and_plot(nv_coordinates):
 # Main section of the code
 if __name__ == "__main__":
     kpl.init_kplotlib()
-
     # Parameters
     remove_outliers_flag = False  # Set this flag to enable/disable outlier removal
     reorder_coords_flag = True  # Set this flag to enable/disable reordering of NVs
-
-    # data = dm.get_raw_data(file_id=1648773947273, load_npz=True)
-    # data = dm.get_raw_data(file_id=1651663986412, load_npz=True)
-    # data = dm.get_raw_data(file_id=1680236956179, load_npz=True)
-    # data = dm.get_raw_data(file_id=1681853425454, load_npz=True)
-    # data = dm.get_raw_data(file_id=1688298946808, load_npz=True)
-    # data = dm.get_raw_data(file_id=1688328009205, load_npz=True)
-    # data = dm.get_raw_data(file_id=1688554695897, load_npz=True)
-    # data = dm.get_raw_data(file_id=1693166192526, load_npz=True)
-    # data = dm.get_raw_data(file_id=1693412457124, load_npz=True)
-    # data = dm.get_raw_data(file_id=1698496302146, load_npz=True)
-    # data = dm.get_raw_data(file_id=1699573772441, load_npz=True)
-    # data = dm.get_raw_data(file_id=1700650667777, load_npz=True)
-    # data = dm.get_raw_data(file_id=1700668458198, load_npz=True)
     # data = dm.get_raw_data(file_id=1700710358100, load_npz=True)
     # data = dm.get_raw_data(file_id=1733432867671, load_npz=True)
     # data = dm.get_raw_data(file_id=1732420670067, load_npz=True)
@@ -494,17 +403,12 @@ if __name__ == "__main__":
 
     img_array = data["ref_img_array"]
     # img_array = data["img_array"]
-    # print(img_arrays)
+
     # sys.exit()
     nv_coordinates, spot_weights = load_nv_coords(
-        # file_path="slmsuite/nv_blob_detection/nv_blob_filtered_144nvs.npz"
-        # file_path="slmsuite/nv_blob_detection/nv_blob_filtered_160nvs.npz"
-        # file_path="slmsuite/nv_blob_detection/nv_blob_shallow_326nvs.npz"
         file_path="slmsuite/nv_blob_detection/nv_blob_shallow_149nvs.npz"
         # file_path="slmsuite/nv_blob_detection/nv_blob_filtered_160nvs_reordered.npz"
     )
-    # nv_amps = load_nv_weights().tolist()
-
     # Convert coordinates to a standard format (lists of lists)
     nv_coordinates = [list(coord) for coord in nv_coordinates]
 
@@ -521,8 +425,6 @@ if __name__ == "__main__":
         and all(0 <= x <= 250 for x in coord)
     ]
 
-    # Debug: Print after filtering
-
     # Ensure spot weights are filtered accordingly
     spot_weights_filtered = [
         weight
@@ -536,10 +438,6 @@ if __name__ == "__main__":
     nv_coordinates = nv_coordinates_filtered
     spot_weights = spot_weights_filtered
     print(f"After filtering: {len(nv_coordinates_filtered)} NVs")
-    # Debug: Print the filtered NV coordinates
-    # print("Filtered NV coordinates:")
-    # for idx, coord in enumerate(nv_coordinates):
-    #     print(f"{idx}: {coord}")
 
     # # Display NV data in a table
     # print(f"Filtered NV coordinates: {len(nv_coordinates)} NVs")
@@ -569,7 +467,6 @@ if __name__ == "__main__":
     # # Filter and reorder NV coordinates based on reference NV
     integrated_intensities = []
     sigma = 2.0
-    # [107.51, 120.42]
     # reference_nv = [106.923, 120.549]
     reference_nv = [117.516, 129.595]
     # reference_nv = [116.765, 129.256]
@@ -667,7 +564,7 @@ if __name__ == "__main__":
     # spots weights for 117 NVs after Birge shutdown
     # spot_weights = [0.88616979, 0.76754119, 1.17115504, 1.02016682, 0.48948736, 1.02016682, 1.17115504, 0.66278449, 0.66278449, 0.88616979, 1.02016682, 0.88616979, 0.88616979, 0.88616979, 2.24760926, 0.88616979, 0.88616979, 0.88616979, 0.35655407, 1.74435458, 1.34089129, 2.54271689, 0.88616979, 0.66278449, 1.34089129, 1.17115504, 0.57052194, 0.25583134, 1.34089129, 0.88616979, 1.02016682, 0.76754119, 0.76754119, 1.17115504, 0.88616979, 1.02016682, 0.76754119, 0.88616979, 0.66278449, 1.17115504, 0.76754119, 1.17115504, 0.88616979, 0.57052194, 0.88616979, 1.02016682, 0.88616979, 0.66278449, 0.76754119, 1.02016682, 0.76754119, 1.9823403, 1.17115504, 1.17115504, 0.76754119, 1.17115504, 0.48948736, 0.88616979, 0.76754119, 0.41851923, 1.34089129, 0.88616979, 0.66278449, 0.76754119, 1.34089129, 1.34089129, 1.02016682, 1.02016682, 0.66278449, 1.02016682, 1.02016682, 0.66278449, 0.57052194, 1.34089129, 2.54271689, 0.88616979, 1.17115504, 1.17115504, 0.66278449, 1.34089129, 1.17115504, 0.76754119, 1.02016682, 1.17115504, 2.24760926, 0.66278449, 0.76754119, 0.41851923, 1.02016682, 1.34089129, 1.02016682, 1.17115504, 1.02016682, 1.74435458, 0.66278449, 0.66278449, 1.17115504, 0.48948736, 0.88616979, 0.76754119, 1.17115504, 0.76754119, 1.17115504, 1.02016682, 1.9823403, 0.41851923, 0.57052194, 1.9823403, 1.02016682, 0.76754119, 0.76754119, 1.02016682, 1.17115504, 0.57052194, 1.02016682, 1.02016682, 1.17115504]
     # spot_weights = [0.79982543, 0.59451918, 0.59451918, 0.79982543, 1.59568291, 1.22041605, 0.92344378, 0.69066246, 0.92344378, 0.69066246, 0.51007613, 0.79982543, 1.06307698, 1.06307698, 1.39729173, 0.69066246, 0.79982543, 0.37155141, 0.79982543, 0.79982543, 0.79982543, 0.92344378, 0.79982543, 0.79982543, 0.43612295, 1.06307698, 1.59568291, 0.69066246, 0.92344378, 0.92344378, 0.69066246, 0.92344378, 1.06307698, 0.79982543, 1.22041605, 0.69066246, 0.69066246, 0.92344378, 0.92344378, 0.79982543, 2.06572131, 0.69066246, 0.59451918, 0.26659209, 0.69066246, 0.59451918, 0.69066246, 0.92344378, 0.51007613, 1.22041605, 0.59451918, 1.81772545, 1.81772545, 1.81772545, 1.06307698, 0.69066246, 0.92344378, 0.79982543, 0.69066246, 0.59451918, 0.79982543, 0.69066246, 0.59451918, 0.92344378, 1.81772545, 1.39729173, 0.51007613, 0.79982543, 0.92344378, 0.92344378, 0.79982543, 0.69066246, 0.79982543, 1.59568291, 2.34214798, 0.69066246, 1.22041605, 0.92344378, 0.92344378, 1.22041605, 1.06307698, 0.92344378, 0.43612295, 1.22041605, 0.31534891, 0.69066246, 0.92344378, 2.06572131, 0.69066246, 0.79982543, 0.92344378, 1.06307698, 0.92344378, 1.59568291, 1.59568291, 1.39729173, 0.51007613, 1.81772545, 1.81772545, 0.79982543, 1.59568291, 1.22041605, 2.06572131, 2.6496684, 0.79982543, 0.69066246, 1.39729173, 0.92344378, 1.81772545, 0.79982543, 0.69066246, 0.69066246, 1.22041605, 1.59568291, 1.06307698, 0.69066246, 1.06307698]
-    #fidelity
+    # fidelity
     # spot_weights = [0.56184079, 1.45107477, 0.85728647, 0.64867703, 0.22151819, 0.64867703, 0.85728647, 0.74676297, 0.41762254, 0.85728647, 0.56184079, 0.74676297, 0.56184079, 2.10113985, 1.27686902, 0.56184079, 0.56184079, 0.56184079, 0.74676297, 0.85728647, 0.64867703, 0.41762254, 0.64867703, 0.98153355, 2.36701149, 0.98153355, 0.56184079, 0.41762254, 0.41762254, 0.74676297, 2.66119108, 0.4851588, 0.35830516, 0.85728647, 0.85728647, 0.64867703, 0.56184079, 0.4851588, 1.27686902, 0.64867703, 0.74676297, 2.10113985, 0.98153355, 0.41762254, 0.4851588, 0.85728647, 2.36701149, 0.41762254, 0.74676297, 1.64525187, 0.74676297, 0.98153355, 2.66119108, 0.74676297, 1.12089429, 0.64867703, 0.22151819, 0.85728647, 1.45107477, 0.98153355, 0.64867703, 1.86127091, 1.64525187, 0.64867703, 0.74676297, 0.56184079, 0.18726876, 1.45107477, 0.74676297, 0.74676297, 0.74676297, 0.56184079, 0.35830516, 0.98153355, 0.98153355, 0.74676297, 0.74676297, 2.66119108, 1.45107477, 1.86127091, 0.64867703, 2.66119108, 0.85728647, 1.27686902, 1.27686902, 1.12089429, 0.64867703, 1.27686902, 1.27686902, 1.86127091, 0.56184079, 1.27686902, 0.85728647, 0.56184079, 1.64525187, 0.64867703, 0.85728647, 0.74676297, 1.27686902, 2.66119108, 0.22151819, 0.56184079, 0.15765944, 0.4851588, 1.45107477, 0.56184079, 0.56184079, 0.4851588, 0.85728647, 2.10113985, 0.74676297, 0.74676297, 0.98153355, 0.41762254, 2.36701149, 2.36701149, 1.64525187, 1.45107477, 0.64867703, 0.64867703, 2.66119108, 0.56184079, 0.41762254, 0.74676297, 1.45107477, 0.56184079, 1.86127091, 0.41762254, 0.74676297, 0.98153355, 0.74676297, 1.86127091, 0.74676297, 0.74676297, 1.45107477, 2.36701149, 0.56184079, 0.74676297, 0.56184079, 0.74676297, 0.56184079, 0.98153355, 0.85728647, 0.30635643, 0.85728647, 0.4851588, 0.4851588, 2.10113985, 0.30635643, 1.45107477, 0.98153355, 1.64525187, 0.85728647, 0.64867703, 0.74676297, 0.35830516, 1.45107477, 2.66119108, 1.12089429, 2.36701149]
     # spot_weights = [0.9946230241426821, 0.8752156373168588, 0.7683044943185703, 0.5876174577844024, 1.6224416389703067, 0.7683044943185703, 0.5876174577844024, 1.4402028887333522, 0.6727812317954857, 1.1277195536713025, 0.8752156373168588, 0.5876174577844024, 0.9946230241426821, 0.9946230241426821, 1.4402028887333522, 0.7683044943185703, 0.5876174577844024, 0.511860354092575, 1.6224416389703067, 1.2757873939965607, 0.3325466922344282, 0.5876174577844024, 0.5876174577844024, 1.1277195536713025, 0.7683044943185703, 0.6727812317954857, 0.8752156373168588, 0.5876174577844024, 1.6224416389703067, 0.5876174577844024, 0.9946230241426821, 1.2757873939965607, 0.8752156373168588, 0.7683044943185703, 0.7683044943185703, 1.2757873939965607, 0.5876174577844024, 0.6727812317954857, 0.8752156373168588, 0.44462844214574804, 0.7683044943185703, 0.8752156373168588, 1.2757873939965607, 0.7683044943185703, 0.6727812317954857, 1.8240837639143594, 0.7683044943185703, 0.6727812317954857, 0.6727812317954857, 1.1277195536713025, 0.7683044943185703, 0.8752156373168588, 1.6224416389703067, 0.7683044943185703, 1.8240837639143594, 0.9946230241426821, 0.24559627956065677, 1.2757873939965607, 1.8240837639143594, 0.6727812317954857, 0.8752156373168588, 1.2757873939965607, 1.8240837639143594, 1.2757873939965607, 0.9946230241426821, 1.8240837639143594, 0.44462844214574804, 1.8240837639143594, 0.5876174577844024, 1.2757873939965607, 0.7683044943185703, 0.5876174577844024, 0.6727812317954857, 0.9946230241426821, 1.4402028887333522, 0.6727812317954857, 0.9946230241426821, 1.6224416389703067, 0.44462844214574804, 0.7683044943185703, 0.511860354092575, 1.1277195536713025, 0.8752156373168588, 1.6224416389703067, 1.8240837639143594, 1.4402028887333522, 1.8240837639143594, 1.8240837639143594, 1.1277195536713025, 1.2757873939965607, 0.7683044943185703, 1.2757873939965607, 0.6727812317954857, 0.5876174577844024, 0.7683044943185703, 0.3325466922344282, 0.6727812317954857, 0.5876174577844024, 1.6224416389703067, 1.2757873939965607, 0.7683044943185703, 0.6727812317954857, 0.38510750925271625, 0.511860354092575, 0.7683044943185703, 0.9946230241426821, 1.4402028887333522, 0.511860354092575, 0.6727812317954857, 1.1277195536713025, 1.2757873939965607, 0.44462844214574804, 0.38510750925271625, 0.511860354092575, 1.8240837639143594, 1.2757873939965607, 1.8240837639143594, 1.8240837639143594, 0.511860354092575, 0.511860354092575, 0.6727812317954857, 0.5876174577844024, 0.5876174577844024, 1.4402028887333522, 1.6224416389703067, 0.511860354092575, 1.8240837639143594, 0.9946230241426821, 0.6727812317954857, 0.8752156373168588, 0.8752156373168588, 0.9946230241426821, 1.1277195536713025, 1.4402028887333522, 1.2757873939965607, 1.8240837639143594, 0.9946230241426821, 0.8752156373168588, 1.6224416389703067, 0.7683044943185703, 0.9946230241426821, 0.6727812317954857, 0.9946230241426821, 0.6727812317954857, 1.1277195536713025, 0.6727812317954857, 0.5876174577844024, 1.1277195536713025, 0.8752156373168588, 1.1277195536713025, 1.1277195536713025, 1.1277195536713025, 0.7683044943185703, 0.7683044943185703, 1.1277195536713025, 1.8240837639143594, 1.4402028887333522, 1.8240837639143594, 0.9946230241426821, 1.4402028887333522]
     # shallow NVs
@@ -778,11 +675,11 @@ if __name__ == "__main__":
 
     # Save the filtered results
 
-    save_results(
-        filtered_reordered_coords,
-        filtered_reordered_spot_weights,
-        filename="slmsuite/nv_blob_detection/nv_blob_shallow_148nvs_reordered_updated.npz",
-    )
+    # save_results(
+    #     filtered_reordered_coords,
+    #     filtered_reordered_spot_weights,
+    #     filename="slmsuite/nv_blob_detection/nv_blob_shallow_148nvs_reordered_updated.npz",
+    # )
     # save_results(
     #     nv_coordinates,
     #     filtered_reordered_counts,
