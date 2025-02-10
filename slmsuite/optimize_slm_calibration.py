@@ -106,7 +106,7 @@ def opimize_slm_calibartion():
         while True:
             for angle in range(0, 360, 30):
                 # Update phase with live rotation
-                delta_phase = 
+                delta_phase =
                 phase = initial_phase + delta_phase
 
                 # Display the phase pattern on the SLM

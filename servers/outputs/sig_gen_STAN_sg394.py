@@ -114,15 +114,48 @@ class SigGenStanSg394(LabradServer, SigGenVector):
         if task is not None:
             task.close()
 
-    @setting(7)
-    def load_iq(self, c):
-        """
-        Set up external IQ modulation
-        """
+    # @setting(7)
+    # def load_iq(self, c):
+    #     """
+    #     Set up external IQ modulation
+    #     """
 
-        # The sg394 only supports up to 10 dBm of power output with IQ modulation
-        # Let's check what the amplitude is set as, and if it's over 10 dBm,
-        # we'll quit out and save a note in the labrad logging
+    #     # The sg394 only supports up to 10 dBm of power output with IQ modulation
+    #     # Let's check what the amplitude is set as, and if it's over 10 dBm,
+    #     # we'll quit out and save a note in the labrad logging
+    #     if float(self.sig_gen.query("AMPR?")) > 10:
+    #         msg = (
+    #             "IQ modulation on sg394 supports up to 10 dBm. The power was"
+    #             " set to {} dBm and the operation was stopped.".format(
+    #                 self.sig_gen.query("AMPR?")
+    #             )
+    #         )
+    #         raise Exception(msg)
+    #         return
+
+    #     # QAM is type 7
+    #     self.sig_gen.write("TYPE 7")
+    #     # STYP 1 is vector modulation
+    #     # self.sig_gen.write('STYP 1')
+    #     # External mode is modulation function 5
+    #     self.sig_gen.write("QFNC 5")
+    #     # Turn on modulation
+    #     cmd = "MODL 1"
+    #     self.sig_gen.write(cmd)
+    #     # logging.info(cmd)
+
+    @setting(7, freq_I="v[]", freq_Q="v[]")
+    def load_iq(self, c, freq_I, freq_Q):
+        """
+        Set up external IQ modulation with two frequency components.
+
+        Parameters:
+            freq_I: float
+                Frequency for the I channel modulation (MHz).
+            freq_Q: float
+                Frequency for the Q channel modulation (MHz).
+        """
+        # Ensure that the signal generator does not exceed 10 dBm with IQ modulation
         if float(self.sig_gen.query("AMPR?")) > 10:
             msg = (
                 "IQ modulation on sg394 supports up to 10 dBm. The power was"
@@ -131,18 +164,21 @@ class SigGenStanSg394(LabradServer, SigGenVector):
                 )
             )
             raise Exception(msg)
-            return
 
-        # QAM is type 7
+        # Enable Quadrature Amplitude Modulation (QAM) mode
         self.sig_gen.write("TYPE 7")
-        # STYP 1 is vector modulation
-        # self.sig_gen.write('STYP 1')
-        # External mode is modulation function 5
+
+        # External modulation mode
         self.sig_gen.write("QFNC 5")
-        # Turn on modulation
-        cmd = "MODL 1"
-        self.sig_gen.write(cmd)
-        # logging.info(cmd)
+
+        # Set I-channel modulation frequency (MHz)
+        self.sig_gen.write(f"IFRQ {freq_I} MHz")
+
+        # Set Q-channel modulation frequency (MHz)
+        self.sig_gen.write(f"QFRQ {freq_Q} MHz")
+
+        # Enable IQ modulation
+        self.sig_gen.write("MODL 1")
 
     @setting(8, deviation="v[]")
     def load_fm(self, c, deviation):

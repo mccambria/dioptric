@@ -246,7 +246,8 @@ if __name__ == "__main__":
     # sns.set_theme(style="whitegrid")
     # data = dm.get_raw_data(file_id=1754374316674, load_npz=False)
     # data = dm.get_raw_data(file_id=1766803842180, load_npz=False)  # 50ms readout
-    data = dm.get_raw_data(file_id=1766834596476, load_npz=False)  # 100ms readout
+    # data = dm.get_raw_data(file_id=1766834596476, load_npz=False)  # 100ms readout
+    data = dm.get_raw_data(file_id=1770828500425, load_npz=False)  # 60ms readout
     # file_name = dm.get_file_name(file_id=1766803842180)
     # print(file_name)
     process_and_plot(data, do_plot_histograms=False)

@@ -5,6 +5,7 @@ Config file for the PC rabi
 Created July 20th, 2023
 
 @author: mccambria
+@author: saroj chand
 """
 
 from pathlib import Path
@@ -159,6 +160,36 @@ config |= {
                 # "rabi_period": 120, # shallow NVs O2
                 "frequency": 2.8553,  # shallow NVs O4
                 "rabi_period": 80,
+            },
+        },
+    },
+    ###
+    # Iq modulation settings
+    "Microwaves_IQ_Mode": {
+        "PhysicalSigGens": {
+            "sig_gen_STAN_sg394": {"delay": 104, "fm_mod_bandwidth": 100000.0},
+            "sig_gen_STAN_sg394_2": {"delay": 151, "fm_mod_bandwidth": 100000.0},
+        },
+        "iq_comp_amp": 0.5,  # Compensation amplitude for IQ modulation
+        "iq_delay": 630,  # Unified IQ
+        "VirtualSigGens": {
+            "0": {
+                "physical_name": "sig_gen_STAN_sg394",
+                "uwave_power": 2.3,
+                "carrier_frequency": 2.79,  # Center frequency for IQ modulation
+                "iq_freq_I": -9.9,  # IQ modulation frequency for I-channel (MHz)
+                "iq_freq_Q": 8.6,  # IQ modulation frequency for Q-channel (MHz)
+                "rabi_period": 128,
+                "iq_delay": 140,  # Consistent with OPX config
+            },
+            "1": {
+                "physical_name": "sig_gen_STAN_sg394_2",
+                "uwave_power": 8.1,
+                "carrier_frequency": 2.8477,  # Center frequency for IQ modulation
+                "iq_freq_I": -7.6,  # IQ modulation frequency for I-channel (MHz)
+                "iq_freq_Q": 7.6,  # IQ modulation frequency for Q-channel (MHz)
+                "rabi_period": 128,
+                "iq_delay": 140,
             },
         },
     },
@@ -552,6 +583,15 @@ opx_config = {
                 "pi_on_2_pulse": "do_pi_on_2_pulse_0",
             },
         },
+        "do_sig_gen_STAN_sg394_2_dm": {
+            "digitalInputs": {"chan": {"port": ("con1", 9), "delay": 0, "buffer": 0}},
+            "operations": {
+                "on": "do_on",
+                "off": "do_off",
+                "pi_pulse": "do_pi_pulse_1",
+                "pi_on_2_pulse": "do_pi_on_2_pulse_1",
+            },
+        },
         "ao_sig_gen_STAN_sg394_i": {
             "singleInput": {"port": ("con1", 9)},
             "intermediate_frequency": 0,
@@ -572,15 +612,6 @@ opx_config = {
                 "off": "ao_off",
                 "pi_pulse": "iq_pi_pulse_0",
                 "pi_on_2_pulse": "iq_pi_on_2_pulse_0",
-            },
-        },
-        "do_sig_gen_STAN_sg394_2_dm": {
-            "digitalInputs": {"chan": {"port": ("con1", 9), "delay": 0, "buffer": 0}},
-            "operations": {
-                "on": "do_on",
-                "off": "do_off",
-                "pi_pulse": "do_pi_pulse_1",
-                "pi_on_2_pulse": "do_pi_on_2_pulse_1",
             },
         },
         "do_camera_trigger": {

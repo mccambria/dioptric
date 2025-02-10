@@ -15,125 +15,177 @@ import matplotlib.pyplot as plt
 import numpy as np
 import seaborn as sns
 from scipy.optimize import curve_fit
+from joblib import Parallel, delayed
 
 from utils import data_manager as dm
 from utils import kplotlib as kpl
 from utils import widefield as widefield
 
+import numpy as np
+import matplotlib.pyplot as plt
 
-# Define a decay model for spin echo fitting
-def revival_model(
-    tau,
-    baseline,
-    rev_time_1,
-    decay_time_1,
-    amp1,
-    freq1,
-    phase1,
-    rev_time_2,
-    decay_time_2,
-    amp2,
-    freq2,
-    phase2,
-):
-    # First revival
-    gauss_env_1 = amp1 * np.exp(-((tau - rev_time_1) ** 2) / (2 * decay_time_1**2))
-    mod_1 = np.cos(2 * np.pi * freq1 * tau + phase1)
 
-    # Second revival
-    gauss_env_2 = amp2 * np.exp(-((tau - rev_time_2) ** 2) / (2 * decay_time_2**2))
-    mod_2 = np.cos(2 * np.pi * freq2 * tau + phase2)
+# def revival_model(
+#     tau,
+#     baseline,
+#     rev_time_1,
+#     decay_time_1,
+#     amp1,
+#     freq1,
+#     phase1,
+#     rev_time_2,
+#     decay_time_2,
+#     amp2,
+#     freq2,
+#     phase2,
+# ):
+#     """
+#     Improved revival model for spin echo with Gaussian envelope and oscillations.
+#     """
+#     # Convert frequency from kHz to µs⁻¹ for correct oscillation
+#     freq1_scaled = freq1 / 1e6  # MHz → µs⁻¹
+#     freq2_scaled = freq2 / 1e6  # MHz → µs⁻¹
 
-    # Combined model
-    return baseline - gauss_env_1 * mod_1 - gauss_env_2 * mod_2
+#     # First revival: Gaussian envelope * modulation
+#     gauss_env_1 = amp1 * np.exp(-((tau - rev_time_1) ** 2) / (2 * decay_time_1**2))
+#     mod_1 = np.cos(2 * np.pi * freq1_scaled * tau + phase1)
+
+#     # Second revival: Gaussian envelope * modulation
+#     gauss_env_2 = amp2 * np.exp(-((tau - rev_time_2) ** 2) / (2 * decay_time_2**2))
+#     mod_2 = np.cos(2 * np.pi * freq2_scaled * tau + phase2)
+
+#     return baseline - gauss_env_1 * mod_1 - gauss_env_2 * mod_2
+
+
+# def generate_initial_guess_and_bounds(tau, counts):
+#     """
+#     Generate initial guesses and bounds for the revival model.
+#     """
+#     # Baseline (mean of the last few points, assuming flat decay at the end)
+#     baseline_guess = np.mean(counts)
+
+#     # First revival: Position of the first significant minimum
+#     rev_time_1_guess = 51.5
+#     rev_time_2_guess = 2 * rev_time_1_guess
+
+#     # Decay times: Estimate as a fraction of the total time
+#     decay_time_guess_1 = (tau[-1] - tau[0]) / 3
+#     decay_time_guess_2 = (tau[-1] - tau[0]) / 4
+
+#     # Amplitudes: Negative because revivals correspond to dips in the signal
+#     amp1_guess = -np.abs((np.min(counts[: len(tau) // 2]) - baseline_guess))
+#     amp2_guess = -np.abs((np.min(counts[len(tau) // 2 :]) - baseline_guess))
+
+#     # Compute FFT to estimate dominant frequency
+#     time_step = (tau[1] - tau[0]) * 1e-6  # Convert µs to seconds
+#     fft_freqs = np.fft.rfftfreq(len(tau), d=time_step)  # Now in Hz
+#     fft_spectrum = np.abs(np.fft.rfft(counts - baseline_guess))
+
+#     # Find peak frequency in kHz
+#     freq_guess_1 = fft_freqs[np.argmax(fft_spectrum)] / 1e3  # Convert Hz to kHz
+#     freq_guess_2 = freq_guess_1  # Assume second revival shares the same frequency
+
+#     # Print frequency result for debugging
+#     print(f"FFT Peak Frequency: {freq_guess_1:.3f} kHz")
+
+#     # Phases: Start with zero phase for both revivals
+#     phase_guess_1 = 0
+#     phase_guess_2 = 0
+
+#     # Combine all guesses into a single list
+#     initial_guess = [
+#         baseline_guess,
+#         rev_time_1_guess,
+#         decay_time_guess_1,
+#         amp1_guess,
+#         freq_guess_1,  # Stored in kHz
+#         phase_guess_1,
+#         rev_time_2_guess,
+#         decay_time_guess_2,
+#         amp2_guess,
+#         freq_guess_2,  # Stored in kHz
+#         phase_guess_2,
+#     ]
+
+#     # Set bounds: Ensure parameters are physically meaningful (FREQUENCIES IN kHz)
+#     bounds = (
+#         [
+#             0,  # baseline
+#             40,  # rev_time_1
+#             0,  # decay_time_1
+#             -np.inf,  # amp1
+#             1,  # Lower bound for freq1 (50 kHz)
+#             -np.pi,  # phase1
+#             0,  # rev_time_2
+#             80,  # decay_time_2
+#             -np.inf,  # amp2
+#             1,  # Lower bound for freq2 (50 kHz)
+#             -np.pi,  # phase2
+#         ],
+#         [
+#             1,  # baseline
+#             60,  # rev_time_1
+#             np.inf,  # decay_time_1
+#             np.inf,  # amp1
+#             200,  # Upper bound for freq1 (200 kHz)
+#             np.pi,  # phase1
+#             tau[-1],  # rev_time_2
+#             np.inf,  # decay_time_2
+#             np.inf,  # amp2
+#             200,  # Upper bound for freq2 (200 kHz)
+#             np.pi,  # phase2
+#         ],
+#     )
+
+#     return initial_guess, bounds
+
+
+def revival_model(tau, baseline, T2, A1, f1, phi1, A2, f2, phi2):
+    """
+    Physically motivated model for spin echo revivals using damped oscillations.
+    """
+    freq1_scaled = f1 / 1e3  # Convert kHz to µs⁻¹
+    freq2_scaled = f2 / 1e3  # Convert kHz to µs⁻¹
+
+    envelope = np.exp(-tau / T2)  # Exponential decay (T2 coherence time)
+    oscillations = A1 * np.cos(2 * np.pi * freq1_scaled * tau + phi1) + A2 * np.cos(
+        2 * np.pi * freq2_scaled * tau + phi2
+    )
+
+    return baseline - envelope * oscillations
 
 
 def generate_initial_guess_and_bounds(tau, counts):
     """
-    Generate initial guesses and bounds for the revival model.
-    Parameters:
-        tau (np.ndarray): Time values.
-        counts (np.ndarray): NV counts (normalized).
-    Returns:
-        initial_guess (list): Initial parameter guesses.
-        bounds (tuple): Lower and upper bounds for the parameters.
+    Generate initial guesses and bounds for the physically motivated model.
     """
-    # Baseline (mean of the last few points, assuming flat decay at the end)
-    baseline_guess = np.mean(counts[-10:])
+    baseline_guess = np.mean(counts[-10:])  # Average last few points for baseline
+    T2_guess = (tau[-1] - tau[0]) / 2  # Estimate of coherence time
+    A1_guess = 0.5 * (np.max(counts) - np.min(counts))  # First amplitude
+    A2_guess = A1_guess / 2  # Second amplitude is assumed smaller
 
-    # First revival: Position of the first significant minimum
-    rev_time_1_guess = tau[np.argmin(counts[: len(tau) // 2])]
-
-    # Second revival: Position of the second significant minimum
-    rev_time_2_guess = tau[len(tau) // 2 + np.argmin(counts[len(tau) // 2 :])]
-
-    # Decay times: Estimate as a fraction of the total time
-    decay_time_guess_1 = (tau[-1] - tau[0]) / 3
-    decay_time_guess_2 = (tau[-1] - tau[0]) / 4
-
-    # Amplitudes: Negative because revivals correspond to dips in the signal
-    amp1_guess = -np.abs((np.min(counts[: len(tau) // 2]) - baseline_guess))
-    amp2_guess = -np.abs((np.min(counts[len(tau) // 2 :]) - baseline_guess))
-
-    # Frequency: Use FFT to estimate the dominant frequency
-    fft_freqs = np.fft.rfftfreq(len(tau), d=(tau[1] - tau[0]))
+    time_step = (tau[1] - tau[0]) * 1e-6  # Convert µs to seconds
+    fft_freqs = np.fft.rfftfreq(len(tau), d=time_step)
     fft_spectrum = np.abs(np.fft.rfft(counts - baseline_guess))
-    freq_guess_1 = fft_freqs[np.argmax(fft_spectrum)]
-    freq_guess_2 = (
-        freq_guess_1  # Assume both revivals share the same modulation frequency
-    )
+    f1_guess = fft_freqs[np.argmax(fft_spectrum)] / 1e3  # Convert Hz to kHz
+    f2_guess = f1_guess / 2  # Assume a secondary revival at half frequency
 
-    # Fallback for frequency if FFT fails
-    if freq_guess_1 == 0:
-        freq_guess_1 = 1 / (tau[-1] - tau[0])
+    phi1_guess, phi2_guess = 0, 0  # Assume zero initial phase
 
-    # Phases: Start with zero phase for both revivals
-    phase_guess_1 = 0
-    phase_guess_2 = 0
-
-    # Combine all guesses into a single list
     initial_guess = [
         baseline_guess,
-        rev_time_1_guess,
-        decay_time_guess_1,
-        amp1_guess,
-        freq_guess_1,
-        phase_guess_1,
-        rev_time_2_guess,
-        decay_time_guess_2,
-        amp2_guess,
-        freq_guess_2,
-        phase_guess_2,
+        T2_guess,
+        A1_guess,
+        f1_guess,
+        phi1_guess,
+        A2_guess,
+        f2_guess,
+        phi2_guess,
     ]
 
-    # Set bounds: Ensure parameters are physically meaningful
     bounds = (
-        [
-            0,  # baseline
-            0,  # rev_time_1
-            0,  # decay_time_1
-            -np.inf,  # amp1
-            0,  # freq1
-            -np.pi,  # phase1
-            0,  # rev_time_2
-            0,  # decay_time_2
-            -np.inf,  # amp2
-            0,  # freq2
-            -np.pi,  # phase2
-        ],
-        [
-            1,  # baseline
-            tau[-1],  # rev_time_1
-            np.inf,  # decay_time_1
-            0,  # amp1 (negative values only)
-            np.inf,  # freq1
-            np.pi,  # phase1
-            tau[-1],  # rev_time_2
-            np.inf,  # decay_time_2
-            0,  # amp2 (negative values only)
-            np.inf,  # freq2
-            np.pi,  # phase2
-        ],
+        [0, 0, -np.inf, 1, -np.pi, -np.inf, 1, -np.pi],
+        [1, np.inf, np.inf, 200, np.pi, np.inf, 200, np.pi],
     )
 
     return initial_guess, bounds
@@ -156,219 +208,118 @@ def process_multiple_files(file_ids):
 
 
 # Analyze and visualize spin echo data
-def analyze_spin_echo(nv_list, taus, norm_counts, norm_counts_ste):
-    fit_params = []
-    chi_squared_values = []
-    parameters = []
-    sns.set(style="whitegrid", palette="muted")
+def fit_spin_echo(nv_list, taus, norm_counts, norm_counts_ste):
     num_nvs = len(nv_list)
-    colors = sns.color_palette("deep", num_nvs)
-    num_cols = 9
-    num_rows = int(np.ceil(len(nv_list) / num_cols))
 
-    # Full plot
-    fig, axes = plt.subplots(
-        num_rows,
-        num_cols,
-        figsize=(num_cols * 3, num_rows * 1),
-        sharex=True,
-        sharey=False,
-    )
-    axes = axes.flatten()
+    def fit_single_nv(nv_idx):
+        print(f"Fitting NV {nv_idx}...")
 
-    # Zoomed-in plot
-    zoom_fig, zoom_axes = plt.subplots(
-        num_rows,
-        num_cols,
-        figsize=(num_cols * 3, num_rows * 1),
-        sharex=True,
-        sharey=False,
-    )
-    zoom_ax = zoom_axes.flatten()
-
-    for nv_idx, (ax, zoom_ax) in enumerate(zip(axes, zoom_ax)):
-        if nv_idx >= len(nv_list):
-            ax.axis("off")
-            zoom_ax.axis("off")
-            continue
-
-        nv_tau = taus  # Convert to µs
+        nv_tau = taus
         nv_counts = norm_counts[nv_idx]
+
         try:
             initial_guess, bounds = generate_initial_guess_and_bounds(nv_tau, nv_counts)
+
+            # Ensure initial guess is within bounds
+            initial_guess = np.clip(initial_guess, bounds[0], bounds[1])
+
             popt, pcov = curve_fit(
-                revival_model, nv_tau, nv_counts, p0=initial_guess, bounds=bounds
-            )
-
-            fit_params.append(popt)
-
-            # Compute residuals and chi-squared
-            residuals = nv_counts - revival_model(nv_tau, *popt)
-            chi_sq = np.sum((residuals / np.std(residuals)) ** 2)
-            degrees_of_freedom = len(nv_tau) - len(popt)
-            # if degrees_of_freedom > 0:
-            red_chi_sq = chi_sq / degrees_of_freedom
-            chi_squared_values.append(red_chi_sq)
-            # Extract meaningful parameters
-            # baseline, revival_time, decay_time, amp1, amp2, freq = popt
-            (
-                baseline,
-                rev_time_1,
-                decay_time_1,
-                amp1,
-                freq1,
-                phase1,
-                rev_time_2,
-                decay_time_2,
-                amp2,
-                freq2,
-                phase2,
-            ) = popt
-
-            parameters.append(
-                {
-                    "NV Index": nv_idx,
-                    "Baseline": baseline,
-                    "First Revival Time (µs)": rev_time_1,
-                    "First Decay Time (µs)": decay_time_1,
-                    "First Amplitude": amp1,
-                    "First Frequency (Hz)": freq1,
-                    "First Phase": phase1,
-                    "Second Revival Time (µs)": rev_time_2,
-                    "Second Decay Time (µs)": decay_time_2,
-                    "Second Amplitude": amp2,
-                    "Second Frequency (Hz)": freq2,
-                    "Second Phase": phase2,
-                    "Chi-Squared": red_chi_sq,
-                }
-            )
-
-            # Plot data and fit on full plot
-            sns.lineplot(
-                x=nv_tau,
-                y=nv_counts,
-                ax=ax,
-                color=colors[nv_idx % len(colors)],
-                lw=2,
-                marker="o",
-                markersize=3,
-                label=f"NV {nv_idx}",
-            )
-            ax.plot(
+                revival_model,
                 nv_tau,
-                revival_model(nv_tau, *popt),
-                "-",
-                color=colors[nv_idx % len(colors)],
-                label="Fit",
-                lw=2,
+                nv_counts,
+                p0=initial_guess,
+                bounds=bounds,
+                maxfev=10000,
             )
-            ax.errorbar(
-                nv_tau,
-                norm_counts[nv_idx],
-                yerr=norm_counts_ste[nv_idx],
-                fmt="none",
-                ecolor="gray",
-                alpha=0.6,
-            )
-            ax.legend(fontsize="small")
-            ax.grid(True, which="both", linestyle="--", linewidth=0.5)
-            ax.set_yticklabels([])
 
-            # Plot zoomed-in data and fit
-            sns.lineplot(
-                x=nv_tau,
-                y=nv_counts,
-                ax=zoom_ax,
-                color=colors[nv_idx % len(colors)],
-                lw=2,
-                marker="o",
-                markersize=3,
-                label=f"NV {nv_idx}",
-            )
-            zoom_ax.plot(
-                nv_tau,
-                revival_model(nv_tau, *popt),
-                "-",
-                color=colors[nv_idx % len(colors)],
-                label="Fit",
-                lw=2,
-            )
-            zoom_ax.errorbar(
-                nv_tau,
-                norm_counts[nv_idx],
-                yerr=norm_counts_ste[nv_idx],
-                fmt="none",
-                ecolor="gray",
-                alpha=0.6,
-            )
-            zoom_ax.legend(fontsize="small")
-            zoom_ax.grid(True, which="both", linestyle="--", linewidth=0.5)
-            zoom_ax.set_yticklabels([])
-            zoom_ax.set_xlim(40e-6, 60e-6)
-            zoom_ax.set_xlim(
-                min(nv_tau), min(nv_tau) + 0.2 * (max(nv_tau) - min(nv_tau))
-            )
-            zoom_ax.figure.canvas.draw()
+            fit_fn = lambda tau: revival_model(tau, *popt)
 
-        except Exception as e:
-            print(f"Fit failed for NV {nv_idx}: {e}")
-            fit_params.append(None)
-            chi_squared_values.append(np.inf)
+        except ValueError as e:
+            print(f"ValueError for NV {nv_idx}: {e}")
+            print(f"Initial Guess: {initial_guess}")
+            print(f"Bounds: {bounds}")
+            fit_fn = None
+            popt = [None] * len(initial_guess)
 
-    print("Extracted meaningful parameters for each NV center:")
-    for params in parameters:
-        print(params)
+        except RuntimeError as e:
+            print(f"RuntimeError for NV {nv_idx}: {e}")
+            fit_fn = None
+            popt = [None] * len(initial_guess)
 
-    fig.text(
-        0.08,
-        0.5,
-        "NV$^{-}$ Population",
-        va="center",
-        rotation="vertical",
-        fontsize=12,
-    )
-    zoom_fig.text(
-        0.08,
-        0.5,
-        "NV$^{-}$ Population (Zoomed)",
-        va="center",
-        rotation="vertical",
-        fontsize=12,
+        return fit_fn, popt
+
+    # Parallel execution of fitting for each NV
+    results = Parallel(n_jobs=-1)(
+        delayed(fit_single_nv)(nv_idx) for nv_idx in range(num_nvs)
     )
 
-    for col in range(num_cols):
-        bottom_row_idx = num_rows * num_cols - num_cols + col
-        if bottom_row_idx < len(axes):
-            ax = axes[bottom_row_idx]
-            tick_positions = np.linspace(min(taus), max(taus), 5)
-            ax.set_xticks(tick_positions)
-            ax.set_xticklabels(
-                [f"{tick:.2f}" for tick in tick_positions],
-                rotation=45,
-                fontsize=9,
+    fit_fns, popts = zip(*results)
+
+    return fit_fns, popts
+
+
+def plot_spin_echo_fits(
+    nv_list,
+    taus,
+    norm_counts,
+    norm_counts_ste,
+    fit_fns,
+    popts,
+):
+    """
+    Plot the fitted spin echo data for each NV center separately and print fitting quality metrics.
+    """
+    num_nvs = len(nv_list)
+    taus = np.array(taus)
+
+    for nv_ind in range(num_nvs):
+        fig, ax = plt.subplots()
+
+        # Scatter plot with error bars
+        ax.errorbar(
+            taus,
+            norm_counts[nv_ind],
+            yerr=np.abs(norm_counts_ste[nv_ind]),
+            fmt="o",
+            label="Data",
+        )
+
+        # Compute fitting quality metrics
+        if fit_fns[nv_ind] is not None:
+            tau_dense = np.linspace(0, taus.max(), 300)
+            fit_values = fit_fns[nv_ind](taus)
+            residuals = norm_counts[nv_ind] - fit_values
+
+            # Residual Sum of Squares (RSS)
+            rss = np.sum(residuals**2)
+
+            # Reduced Chi-Square (assuming errors are std errors in counts)
+            degrees_of_freedom = len(taus) - len(popts[nv_ind])
+            chi_squared_red = (
+                np.sum((residuals / np.abs(norm_counts_ste[nv_ind])) ** 2)
+                / degrees_of_freedom
+                if degrees_of_freedom > 0
+                else np.nan
             )
-            ax.set_xlabel("Time (µs)")
 
-            zoom_ax = zoom_axes[bottom_row_idx]
-            zoom_ax.set_xticks(tick_positions)
-            zoom_ax.set_xticklabels(
-                [f"{tick:.2f}" for tick in tick_positions],
-                rotation=45,
-                fontsize=9,
+            # Coefficient of Determination (R^2)
+            ss_total = np.sum((norm_counts[nv_ind] - np.mean(norm_counts[nv_ind])) ** 2)
+            r_squared = 1 - (rss / ss_total) if ss_total > 0 else np.nan
+
+            print(
+                f"NV {nv_ind}: RSS = {rss:.4f}, Chi-Squared_red = {chi_squared_red:.4f}, R^2 = {r_squared:.4f}"
             )
-            zoom_ax.set_xlabel("Time (µs)")
-        else:
-            ax.set_xticklabels([])
-            zoom_ax.set_xticklabels([])
 
-    fig.suptitle("Spin Echo Fits", fontsize=16)
-    zoom_fig.suptitle("Zoomed Spin Echo Fits", fontsize=16)
+            # Plot the fitted curve
+            ax.plot(tau_dense, fit_fns[nv_ind](tau_dense), "-", label="Fit")
 
-    # plt.subplots_adjust(
-    #     left=0.1, right=0.95, top=0.95, bottom=0.1, hspace=0.01, wspace=0.01
-    # )
-    plt.show()
-    return parameters
+        ax.set_title(f"NV {nv_ind}")
+        ax.set_xlabel("Time (us)")
+        ax.set_ylabel("Norm. NV- Population")
+        ax.legend()
+        ax.grid(True)
+        fig.tight_layout()
+        kpl.show(block=True)
 
 
 def plot_analysis_parameters(meaningful_parameters):
@@ -429,7 +380,7 @@ def plot_analysis_parameters(meaningful_parameters):
 
 
 if __name__ == "__main__":
-    kpl.init_kplotlib()
+    # kpl.init_kplotlib()
 
     # Define the file IDs to process
     file_ids = [
@@ -452,10 +403,12 @@ if __name__ == "__main__":
         )
         nv_num = len(nv_list)
         ids_num = len(file_ids)
-        parameters = analyze_spin_echo(
+        fit_fns, popts = fit_spin_echo(
             nv_list, total_evolution_times, norm_counts, norm_counts_ste
         )
-        plot_analysis_parameters(parameters)
+        plot_spin_echo_fits(
+            nv_list, total_evolution_times, norm_counts, norm_counts_ste, fit_fns, popts
+        )
     except Exception as e:
         print(f"Error occurred: {e}")
         print(traceback.format_exc())
