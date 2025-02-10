@@ -4,6 +4,7 @@
 Created on November 23rd, 2018
 
 @author: mccambria
+@author: Saroj Chand
 """
 
 import json
@@ -699,6 +700,12 @@ def get_physical_sig_gen_dict(physical_sig_gen_name):
 def get_virtual_sig_gen_dict(sig_gen_ind):
     config = common.get_config_dict()
     return config["Microwaves"]["VirtualSigGens"][sig_gen_ind]
+
+
+@cache
+def get_virtual_sig_gen_iq_mode_dict(sig_gen_ind):
+    config = common.get_config_dict()
+    return config["Microwaves_IQ_Mode"]["VirtualSigGens"][sig_gen_ind]
 
 
 @cache

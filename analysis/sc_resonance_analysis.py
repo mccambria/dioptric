@@ -165,6 +165,7 @@ def plot_nv_resonance_fits_and_residuals(
     # avg_counts = np.array(avg_counts)
     # avg_counts_ste = np.array(avg_counts_ste)
     num_nvs = len(nv_list)
+    freqs_dense = np.linspace(min(freqs), max(freqs), 200)
 
     def process_nv(nv_idx):
         nv_counts = avg_counts[nv_idx]
@@ -197,7 +198,7 @@ def plot_nv_resonance_fits_and_residuals(
             max_nfev=20000,
         )
         popt = result.x
-
+        fit_fns = voigt_with_background(freqs_dense, *popt)
         # Compute fit
         fit_curve = voigt_with_background(freqs, *popt)
         residuals = nv_counts - fit_curve
@@ -217,7 +218,16 @@ def plot_nv_resonance_fits_and_residuals(
 
         print(f"NV {nv_idx}: SNR = {snr:.2f}")
 
-        return fit_curve, chi_squared, (f1, f2), center_freq_diff, width, contrast, snr
+        return (
+            fit_fns,
+            fit_curve,
+            chi_squared,
+            (f1, f2),
+            center_freq_diff,
+            width,
+            contrast,
+            snr,
+        )
 
     # Run in parallel
     fit_results = Parallel(n_jobs=-1)(
@@ -226,6 +236,7 @@ def plot_nv_resonance_fits_and_residuals(
 
     # Unpacking results correctly
     (
+        fit_fns,
         fit_data,
         chi_squared_list,
         center_freqs,
@@ -236,7 +247,7 @@ def plot_nv_resonance_fits_and_residuals(
     ) = zip(*fit_results)
 
     # Convert results to lists (since zip returns tuples)
-    fit_data = list(fit_data)
+    fit_fns = list(fit_fns)
     chi_squared_list = list(chi_squared_list)
     center_freqs = list(center_freqs)
     center_freq_differences = list(center_freq_differences)
@@ -336,7 +347,7 @@ def plot_nv_resonance_fits_and_residuals(
     plt.ylabel("SNR")
     plt.legend(loc="upper right")
     plt.grid(True, linestyle="--", alpha=0.5)
-    plt.tight_layout()
+    # plt.tight_layout()
     # return
 
     filter_nvs = False
@@ -414,19 +425,20 @@ def plot_nv_resonance_fits_and_residuals(
     ]
     # filtered_contrast_list = [contrast_list[idx] for idx in filtered_indices]
     filtered_chi_squared_list = [chi_squared_list[idx] for idx in filtered_indices]
-    filtered_fitted_data = [fit_data[idx] for idx in filtered_indices]
+    # filtered_fitted_data = [fit_data[idx] for idx in filtered_indices]
+    filtered_fitted_data = [fit_fns[idx] for idx in filtered_indices]
 
     # # Set plot style
-    for nv_ind in range(num_nvs):
-        fig, ax = plt.subplots(1, 1, figsize=(8, 5))
-        ax.plot(freqs, avg_counts[nv_ind], "o-", color="blue")
-        ax.plot(freqs, fit_data[nv_ind], "-", color="red")
-        ax.set_xlabel("Frequency (GHz)")
-        ax.set_ylabel("Norm. NV- Population")
-        ax.set_title(f"NV Index: {nv_ind}")
-        ax.grid(True, linestyle="--", alpha=0.6)
-        plt.tight_layout()
-        plt.show(block=True)
+    # for nv_ind in range(num_nvs):
+    #     fig, ax = plt.subplots(1, 1, figsize=(8, 5))
+    #     ax.plot(freqs, avg_counts[nv_ind], "o", color="steelblue")
+    #     ax.plot(freqs_dense, fit_fns[nv_ind], "-", color="red")
+    #     ax.set_xlabel("Frequency (GHz)")
+    #     ax.set_ylabel("Norm. NV- Population")
+    #     ax.set_title(f"NV Index: {nv_ind}")
+    #     ax.grid(True, linestyle="--", alpha=0.6)
+    #     plt.tight_layout()
+    #     plt.show(block=True)
     # Plot filtered resonance fits
     sns.set(style="whitegrid", palette="muted")
     num_filtered_nvs = len(filtered_nv_list)
@@ -448,7 +460,7 @@ def plot_nv_resonance_fits_and_residuals(
                 y=filtered_avg_counts[nv_idx],
                 ax=ax,
                 color=colors[nv_idx % len(colors)],
-                lw=1,
+                lw=0,
                 marker="o",
                 markersize=2,
                 label=f"{filtered_indices[nv_idx]}",
@@ -466,7 +478,7 @@ def plot_nv_resonance_fits_and_residuals(
             ax.grid(True, which="both", linestyle="--", linewidth=0.5)
             # Plot fitted data on the same subplot
             ax.plot(
-                freqs,
+                freqs_dense,
                 filtered_fitted_data[nv_idx],
                 "-",
                 color=colors[nv_idx % len(colors)],
@@ -536,7 +548,7 @@ def plot_nv_resonance_fits_and_residuals(
             ax.axis("off")
     fig_fitting.suptitle(f"Shallow NV Resonance Fits ({file_id})", fontsize=16)
     plt.subplots_adjust(
-        left=0.1, right=0.95, top=0.95, bottom=0.1, hspace=0.01, wspace=0.01
+        left=0.2, right=0.95, top=0.95, bottom=0.1, hspace=0.001, wspace=0.001
     )
     # plt.tight_layout()
     # now = datetime.now()
@@ -1043,8 +1055,8 @@ if __name__ == "__main__":
 
     # # List of file IDs to process
     # List of file IDs to process
-    file_ids = [1771614901873, 1771932659040]  # Add more file IDs as needed
-
+    # file_ids = [1771614901873, 1771932659040]  # before pi pulse optimization
+    file_ids = [1773214393869]  # after pi pulse optimization
     # Load the first dataset as a base
     combined_data = dm.get_raw_data(file_id=file_ids[0], load_npz=False, use_cache=True)
     combined_sig_counts = None

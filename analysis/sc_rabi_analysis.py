@@ -18,29 +18,17 @@ import matplotlib.pyplot as plt
 from utils import widefield as widefield
 
 
-def process_rabi_data(nv_list, taus, avg_counts, avg_counts_ste, epsilon=1e-10):
+def fit_rabi_data(nv_list, taus, avg_counts, avg_counts_ste, epsilon=1e-10):
     """
     Process the Rabi data to fit each NV's Rabi oscillation using a robust fitting method.
-
-    Args:
-        nv_list: List of NV signatures.
-        taus: Pulse durations (ns).
-        avg_counts: Averaged counts for NVs.
-        avg_counts_ste: Standard error of averaged counts.
-        epsilon: Small value to prevent division by zero.
-
-    Returns:
-        fit_fns: List of fitted functions for each NV.
-        popts: List of optimized parameters for each NV fit.
     """
     num_nvs = len(nv_list)
 
     # Define the cosine decay function for fitting
-    def cos_decay(tau, freq, decay, tau_phase):
-        amp = 0.5  # Consider making this a fit parameter if amplitude varies
+    def cos_decay(tau, amp, freq, decay, tau_phase, baseline):
         envelope = np.exp(-tau / abs(decay)) * amp
         cos_part = np.cos((2 * np.pi * freq * (tau - tau_phase)))
-        return amp - envelope * cos_part
+        return amp - envelope * cos_part + baseline
 
     # Fit a single NV
     def fit_single_nv(nv_idx):
@@ -66,9 +54,16 @@ def process_rabi_data(nv_list, taus, avg_counts, avg_counts_ste, epsilon=1e-10):
             if angular_freq_guess > epsilon
             else 0
         )
-        decay_guess = max(taus) / 5  # Arbitrary initial guess for decay time
-
-        guess_params = [freq_guess, decay_guess, tau_phase_guess]
+        decay_guess = max(taus) / 2  # Arbitrary initial guess for decay time
+        amp_guess = np.max(avg_counts[nv_idx] - np.mean(avg_counts[nv_idx]))
+        baseline_guess = np.min(avg_counts[nv_idx])
+        guess_params = [
+            amp_guess,
+            freq_guess,
+            decay_guess,
+            tau_phase_guess,
+            baseline_guess,
+        ]
 
         try:
             popt, _ = curve_fit(
@@ -83,7 +78,7 @@ def process_rabi_data(nv_list, taus, avg_counts, avg_counts_ste, epsilon=1e-10):
             fit_fn = lambda tau: cos_decay(tau, *popt)  # Return function handle
 
             # Compute and print Rabi period
-            rabi_freq = popt[0]
+            rabi_freq = popt[1]
             rabi_period = 1 / rabi_freq if rabi_freq > epsilon else None
             if rabi_period:
                 print(f"NV {nv_idx}: Rabi Period = {rabi_period:.3f} µs")
@@ -137,7 +132,7 @@ def plot_rabi_fits(
         tau_dense = np.linspace(0, taus.max(), 300)
         if fit_fns[nv_ind] is not None:
             ax.plot(tau_dense, fit_fns[nv_ind](tau_dense), "-")
-        rabi_freq = popts[nv_ind][0]
+        rabi_freq = popts[nv_ind][1]
         if rabi_freq is not None:
             rabi_period = round((1 / rabi_freq) / 4) * 4
             title = f"NV {nv_ind} (Rabi Period: {rabi_period}ns)"
@@ -242,8 +237,9 @@ def plot_rabi_fits(
 
 if __name__ == "__main__":
     kpl.init_kplotlib()
-    file_id = 1772297872545
-    # file_id = 1654509086036
+    # file_id = 1772297872545 # two orientations with freqs      # "frequency": 2.7801,  # shallow NVs O1
+    # "rabi_period": 104, # shallow NVs O1
+    file_id = 1772755741220
 
     data = dm.get_raw_data(file_id=file_id, load_npz=False, use_cache=False)
     nv_list = data["nv_list"]
@@ -255,7 +251,7 @@ if __name__ == "__main__":
     )
 
     # Call to process Rabi data without normalization (can still perform fitting)
-    fit_fns, popts = process_rabi_data(nv_list, taus, avg_counts, avg_counts_ste)
+    fit_fns, popts = fit_rabi_data(nv_list, taus, avg_counts, avg_counts_ste)
 
     # Plotting without normalization
     plot_rabi_fits(
