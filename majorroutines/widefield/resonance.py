@@ -317,7 +317,7 @@ def main(
         run_fn,
         step_fn,
         uwave_ind_list=uwave_ind_list,
-        save_images=True,
+        save_images=False,
         num_exps=1,
         ref_by_rep_parity=False,
     )

@@ -263,7 +263,7 @@ def main(nv_list, num_steps, num_reps, num_runs, min_tau, max_tau, uwave_ind_lis
         num_runs,
         run_fn=run_fn,
         uwave_ind_list=uwave_ind_list,
-        save_images=True,
+        save_images=False,
     )
 
     ### Process and plot
@@ -313,7 +313,7 @@ def main(nv_list, num_steps, num_reps, num_runs, min_tau, max_tau, uwave_ind_lis
 if __name__ == "__main__":
     kpl.init_kplotlib()
 
-    data = dm.get_raw_data(file_id=1730774435450, load_npz=False, use_cache=True)
+    data = dm.get_raw_data(file_id=1772297872545, load_npz=False, use_cache=True)
     create_mean_figure(data)
     kpl.show(block=True)
     sys.exit()

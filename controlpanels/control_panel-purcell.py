@@ -436,18 +436,18 @@ def do_calibrate_iq_delay(nv_list):
 
 def do_resonance(nv_list):
     freq_center = 2.87
-    # freq_range = 0.240
-    freq_range = 0.300
-    # num_steps = 60
-    num_steps = 80
+    freq_range = 0.240
+    # freq_range = 0.300
+    num_steps = 60
+    # num_steps = 80
     # Single ref
     # num_reps = 8
-    num_runs = 300
+    num_runs = 400
     # num_runs = 750
     # num_runs = 350
     # num_runs = 50
     # num_runs = 10
-    # num_runs = 5
+    # num_runs = 2
 
     # Both refs
     num_reps = 2
@@ -1335,8 +1335,8 @@ if __name__ == "__main__":
         # do_check_readout_fidelity(nv_list)
 
         # do_resonance_zoom(nv_list)
-        do_rabi(nv_list)
-        # do_resonance(nv_list)
+        # do_rabi(nv_list)
+        do_resonance(nv_list)
         # do_spin_echo(nv_list)
 
         # do_power_rabi(nv_list)

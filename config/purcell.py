@@ -146,24 +146,19 @@ config |= {
                 "physical_name": "sig_gen_STAN_sg394",
                 # "uwave_power": 6.05,
                 "uwave_power": 2.3,
-                # "frequency": 2.856,
-                "frequency": 2.7801,
-                # "frequency": 2.9304468840166678,
-                # "rabi_period": 160, #calibrated for deep nvs ()
-                "rabi_period": 128,
+                # "frequency": 2.7801,  # shallow NVs O1
+                # "rabi_period": 104, # shallow NVs O1
+                "frequency": 2.8401,  # shallow NVs O3
+                "rabi_period": 112,
                 "iq_delay": 140,
             },
             1: {
                 "physical_name": "sig_gen_STAN_sg394_2",
                 "uwave_power": 8.1,
-                # "frequency": 2.812,
-                # "frequency": 3.05,
-                # "frequency": 2.7779,
-                # "frequency": 2.7828,
-                "frequency": 2.7987,
-                # "frequency": 2.8874701085827104,
-                # "rabi_period": 112,#calibrated for deep
-                "rabi_period": 128,
+                # "frequency": 2.7987,  # shallow NVs O2
+                # "rabi_period": 120, # shallow NVs O2
+                "frequency": 2.8553,  # shallow NVs O4
+                "rabi_period": 80,
             },
         },
     },
