@@ -1,5 +1,6 @@
 import os
 import sys
+
 import matplotlib.pyplot as plt
 import numpy as np
 import seaborn as sns
@@ -347,7 +348,6 @@ def curve_inverse_counts(counts, scaling_factor=0.5):
 
 
 def select_half_left_side_nvs_and_plot(nv_coordinates):
-
     # Filter NVs on the left side (x < median x)
     median_x = np.median(nv_coordinates[:, 0])
     left_side_indices = [
@@ -523,13 +523,13 @@ if __name__ == "__main__":
     #     if 0 <= x <= 248 and 0 <= y <= 248:
     #         filtered_reordered_coords.append(coord)
     #         filtered_reordered_counts.append(count)
-    filtered_reordered_counts = []
-    integration_radius = 2.0
-    for coord in filtered_reordered_coords:
-        x, y = coord[:2]  # Assuming `coord` contains at least two elements (y, x)
-        rr, cc = disk((y, x), integration_radius, shape=img_array.shape)
-        sum_value = np.sum(img_array[rr, cc])
-        filtered_reordered_counts.append(sum_value)  # Append to the list
+    # filtered_reordered_counts = []
+    # integration_radius = 2.0
+    # for coord in filtered_reordered_coords:
+    #     x, y = coord[:2]  # Assuming `coord` contains at least two elements (y, x)
+    #     rr, cc = disk((y, x), integration_radius, shape=img_array.shape)
+    #     sum_value = np.sum(img_array[rr, cc])
+    #     filtered_reordered_counts.append(sum_value)  # Append to the list
 
     # Manually remove NVs with specified indices
     indices_to_remove = [2]  # Example indices to remove
@@ -540,7 +540,7 @@ if __name__ == "__main__":
     ]
     filtered_reordered_spot_weights = [
         count
-        for i, count in enumerate(filtered_reordered_counts)
+        for i, count in enumerate(filtered_reordered_spot_weights)
         if i not in indices_to_remove
     ]
     # print("Filter:", filtered_reordered_counts)
@@ -640,7 +640,7 @@ if __name__ == "__main__":
     a, b, c = [3.7e5, 6.97, 8e-14]
     total_power = a * (aom_voltage) ** b + c
     print(total_power)
-    sys.exit()
+    # sys.exit()
     # nv_weights, adjusted_aom_voltage = adjust_aom_voltage_for_slm(
     #     nv_amps_filtered, aom_voltage, power_law_params
     # )

@@ -35,6 +35,7 @@ from majorroutines.widefield import (
     optimize_scc,
     optimize_scc_amp_duration,
     power_rabi,
+    power_rabi_scc_snr,
     rabi,
     ramsey,
     relaxation_interleave,
@@ -162,7 +163,7 @@ def do_optimize_readout_amp(nv_list):
     # num_reps = 150
     # num_runs = 5
     num_reps = 10
-    num_runs = 600
+    num_runs = 400
     min_amp = 0.8
     max_amp = 1.2
     return optimize_charge_state_histograms_mcc.optimize_readout_amp(
@@ -232,8 +233,8 @@ def do_optimize_green(nv_sig):
 
 def do_optimize_red(nv_sig, ref_nv_sig):
     opti_coords = []
-    axes_list = [Axes.X, Axes.Y]
-    # axes_list = [Axes.Y, Axes.X]
+    # axes_list = [Axes.X, Axes.Y]
+    axes_list = [Axes.Y, Axes.X]
     # shuffle(axes_list)
     for ind in range(1):
         axes = axes_list[ind]
@@ -393,6 +394,19 @@ def do_scc_snr_check(nv_list):
     scc_snr_check.main(nv_list, num_reps, num_runs, uwave_ind_list=[0, 1])
 
 
+def do_power_rabi_scc_snr(nv_list):
+    num_reps = 10
+    num_runs = 200
+    power_range = 6
+    num_steps = 16
+    # num_runs = 200
+    # num_runs = 160 * 4
+    # num_runs = 3
+    power_rabi_scc_snr.main(
+        nv_list, num_steps, num_reps, num_runs, power_range, uwave_ind_list=[0, 1]
+    )
+
+
 def do_simple_correlation_test(nv_list):
     # Run this for a quick test experiment to debug.
     # num_reps = 200
@@ -475,14 +489,18 @@ def do_rabi(nv_list):
     # max_tau = 480 + min_tau
     num_steps = 31
     num_reps = 10
-    num_runs = 300
+    num_runs = 400
     # num_runs = 100
     # num_runs = 20
     # num_runs = 5
 
     # uwave_ind_list = [1]
     uwave_ind_list = [0, 1]
-    rabi.main(nv_list, num_steps, num_reps, num_runs, min_tau, max_tau, uwave_ind_list)
+    # rabi.main(nv_list, num_steps, num_reps, num_runs, min_tau, max_tau, uwave_ind_list)
+    for _ in range(2):
+        rabi.main(
+            nv_list, num_steps, num_reps, num_runs, min_tau, max_tau, uwave_ind_list
+        )
     # uwave_ind_list = [0]
     # rabi.main(nv_list, num_steps, num_reps, num_runs, min_tau, max_tau, uwave_ind_list)
     # uwave_ind_list = [1]
@@ -514,7 +532,7 @@ def do_power_rabi(nv_list):
     num_steps = 16
     num_reps = 24
     # num_reps = 20
-    num_runs = 150
+    num_runs = 300
     # num_runs = 50
     # num_runs = 2
 
@@ -1030,16 +1048,16 @@ if __name__ == "__main__":
     #     [86.248, 227.265],
     # ]
     # green_coords_list = [
-    #     [107.247, 107.388],
-    #     [95.571, 94.737],
-    #     [119.093, 100.258],
-    #     [109.417, 118.142],
+    #     [107.266, 107.457],
+    #     [95.535, 94.646],
+    #     [119.066, 100.186],
+    #     [109.348, 118.075],
     # ]
     # red_coords_list = [
-    #     [72.0, 72.997],
-    #     [62.207, 62.846],
-    #     [81.517, 67.212],
-    #     [74.063, 81.807],
+    #     [71.9, 72.901],
+    #     [62.113, 62.804],
+    #     [81.456, 67.094],
+    #     [73.91, 81.723],
     # ]
     num_nvs = len(pixel_coords_list)
     threshold_list = [25.5] * num_nvs
@@ -1078,7 +1096,8 @@ if __name__ == "__main__":
     # 117nvs
     include_inds = [0,1,2,3,5,6,7,8,13,14,15,16,17,18,20,21,22,23,24,25,26,28,29,31,32,33,34,36,37,39,42,44,45,46,47,48,49,51,52,53,55,56,57,58,60,61,62,64,65,66,68,69,70,71,72,73,74,75,77,79,83,84,85,88,89,90,91,92,94,95,96,97,99,100,101,102,103,105,106,107,108,109,110,111,113,114,116,117,118,120,122,123,124,125,128,131,132,134,136,137,138,140,141,142,145,146,147,148,149,152,153,154,155,156,157,158,159,]
     scc_duration_list = [150] * num_nvs
-    scc_duration_list = [104, 56, 88, 92, 80, 72, 80, 80, 48, 88, 64, 272, 20, 124, 96, 84, 216, 16, 124, 92, 60, 96, 272, 108, 16, 64, 100, 56, 100, 84, 16, 100, 92, 64, 128, 128, 60, 100, 44, 272, 16, 120, 20, 88, 88, 116, 112, 48, 16, 272, 92, 272, 80, 84, 92, 96, 112, 112, 24, 92, 80, 28, 84, 92, 72, 92, 156, 56, 272, 272, 272, 124, 84, 272, 80, 68, 200, 72, 272, 272, 272, 72, 248, 116, 180, 120, 92, 16, 16, 72, 68, 84, 272, 40, 272, 80, 140, 144, 248, 72, 92, 56, 100, 92, 108, 108, 88, 88, 88, 228, 100, 128, 100, 72, 128, 16, 16, 124, 140, 116, 272, 80, 272, 96, 144, 80, 80, 68, 76, 192, 272, 16, 48, 96, 272, 180, 120, 36, 272, 152, 16, 76, 136, 124, 164, 200, 124, 140]
+    # scc_duration_list = [104, 56, 88, 92, 80, 72, 80, 80, 48, 88, 64, 272, 20, 124, 96, 84, 216, 16, 124, 92, 60, 96, 272, 108, 16, 64, 100, 56, 100, 84, 16, 100, 92, 64, 128, 128, 60, 100, 44, 272, 16, 120, 20, 88, 88, 116, 112, 48, 16, 272, 92, 272, 80, 84, 92, 96, 112, 112, 24, 92, 80, 28, 84, 92, 72, 92, 156, 56, 272, 272, 272, 124, 84, 272, 80, 68, 200, 72, 272, 272, 272, 72, 248, 116, 180, 120, 92, 16, 16, 72, 68, 84, 272, 40, 272, 80, 140, 144, 248, 72, 92, 56, 100, 92, 108, 108, 88, 88, 88, 228, 100, 128, 100, 72, 128, 16, 16, 124, 140, 116, 272, 80, 272, 96, 144, 80, 80, 68, 76, 192, 272, 16, 48, 96, 272, 180, 120, 36, 272, 152, 16, 76, 136, 124, 164, 200, 124, 140]
+    scc_duration_list = [116, 92, 72, 116, 92, 80, 92, 92, 72, 108, 88, 56, 72, 128, 92, 108, 56, 104, 108, 92, 56, 84, 84, 120, 128, 80, 96, 64, 92, 72, 108, 80, 80, 56, 112, 40, 40, 84, 72, 56, 128, 128, 108, 80, 112, 80, 108, 108, 64, 100, 96, 84, 92, 140, 140, 120, 60, 88, 88, 80, 60, 60, 124, 108, 16, 96, 96, 92, 136, 272, 144, 172, 72, 84, 84, 60, 116, 144, 56, 80, 112, 244, 80, 120, 80, 272, 64, 52, 116, 124, 16, 116, 56, 80, 120, 88, 272, 272, 116, 64, 16, 272, 80, 116, 112, 64, 272, 92, 272, 116, 48, 116, 40, 68, 104, 272, 272, 144, 272, 108, 216, 116, 84, 104, 108, 52, 272, 96, 136, 92, 108, 272, 212, 96, 204, 204, 84, 272, 88, 212, 56, 96, 120, 60, 100, 76, 100, 144]
     median_value = np.median(scc_duration_list)
 
     # print(median_value)
@@ -1328,7 +1347,7 @@ if __name__ == "__main__":
 
         # do_optimize_pol_amp(nv_list)
         # do_optimize_pol_duration(nv_list)
-        # do_optimize_readout_amp(nv_list)
+        do_optimize_readout_amp(nv_list)
         # do_optimize_readout_duration(nv_list)
         # optimize_readout_amp_and_duration(nv_list)
         # do_charge_state_histograms_images(nv_list, vary_pol_laser=True)
@@ -1336,7 +1355,7 @@ if __name__ == "__main__":
 
         # do_resonance_zoom(nv_list)
         # do_rabi(nv_list)
-        do_resonance(nv_list)
+        # do_resonance(nv_list)
         # do_spin_echo(nv_list)
 
         # do_power_rabi(nv_list)
@@ -1355,6 +1374,7 @@ if __name__ == "__main__":
 
         # nv_list = nv_list[::-1]
         # do_scc_snr_check(nv_list)
+        # do_power_rabi_scc_snr(nv_list)
         # do_optimize_scc_duration(nv_list)
         # do_optimize_scc_amp(nv_list)
         # optimize_scc_amp_and_duration(nv_list)
