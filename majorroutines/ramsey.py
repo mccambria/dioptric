@@ -23,21 +23,23 @@ Created on Wed Apr 24 15:01:04 2019
 # %% Imports
 
 
-import utils.tool_belt as tool_belt
-import utils.positioning as positioning
-import utils.kplotlib as kpl
-from utils.kplotlib import KplColors
+import time
+from random import shuffle
 
-from scipy.signal import find_peaks
+import labrad
+import matplotlib.pyplot as plt
+
 # from numpy import pi
 import numpy
-import time
-import matplotlib.pyplot as plt
-from random import shuffle
-import labrad
-from utils.tool_belt import States
 from scipy.optimize import curve_fit
-import majorroutines.optimize as optimize
+from scipy.signal import find_peaks
+
+import majorroutines.targeting as targeting
+import utils.kplotlib as kpl
+import utils.positioning as positioning
+import utils.tool_belt as tool_belt
+from utils.kplotlib import KplColors
+from utils.tool_belt import States
 
 # %% fit
 
@@ -75,10 +77,9 @@ def create_raw_data_figure(
         norm_avg_sig = numpy.empty(num_steps)
         norm_avg_sig[:] = numpy.nan
     kpl.plot_line(ax_norm, taus, norm_avg_sig, color=KplColors.BLUE)
-    ax_norm.set_title('Ramsey experiment')
+    ax_norm.set_title("Ramsey experiment")
 
     return fig, ax_sig_ref, ax_norm
-
 
 
 def extract_oscillations(norm_avg_sig, precession_time_range, num_steps, detuning):
@@ -86,38 +87,39 @@ def extract_oscillations(norm_avg_sig, precession_time_range, num_steps, detunin
     FreqParams = numpy.empty([3])
 
     # Perform the fft
-    time_step = (precession_time_range[1]/1e3 - precession_time_range[0]/1e3) \
-                                                    / (num_steps - 1)
+    time_step = (precession_time_range[1] / 1e3 - precession_time_range[0] / 1e3) / (
+        num_steps - 1
+    )
 
     transform = numpy.fft.rfft(norm_avg_sig)
-#    window = max_precession_time - min_precession_time
+    #    window = max_precession_time - min_precession_time
     freqs = numpy.fft.rfftfreq(num_steps, d=time_step)
     transform_mag = numpy.absolute(transform)
 
     # Plot the fft
-    fig_fft, ax= plt.subplots(1, 1, figsize=(10, 8))
+    fig_fft, ax = plt.subplots(1, 1, figsize=(10, 8))
     ax.plot(freqs[1:], transform_mag[1:])  # [1:] excludes frequency 0 (DC component)
-    ax.set_xlabel('Frequency (MHz)')
-    ax.set_ylabel('FFT magnitude')
-    ax.set_title('Ramsey FFT')
+    ax.set_xlabel("Frequency (MHz)")
+    ax.set_ylabel("FFT magnitude")
+    ax.set_title("Ramsey FFT")
     fig_fft.canvas.draw()
     fig_fft.canvas.flush_events()
 
-
     # Guess the peaks in the fft. There are parameters that can be used to make
     # this more efficient
-    freq_guesses_ind = find_peaks(transform_mag[1:]
-                                  , prominence = 0.5
-#                                  , height = 0.8
-#                                  , distance = 2.2 / freq_step
-                                  )
+    freq_guesses_ind = find_peaks(
+        transform_mag[1:],
+        prominence=0.5,
+        #                                  , height = 0.8
+        #                                  , distance = 2.2 / freq_step
+    )
 
-#    print(freq_guesses_ind[0])
+    #    print(freq_guesses_ind[0])
 
     # Check to see if there are three peaks. If not, try the detuning passed in
     if len(freq_guesses_ind[0]) != 3:
-        print('Number of frequencies found: {}'.format(len(freq_guesses_ind[0])))
-#        detuning = 3 # MHz
+        print("Number of frequencies found: {}".format(len(freq_guesses_ind[0])))
+        #        detuning = 3 # MHz
 
         FreqParams[0] = detuning - 2.2
         FreqParams[1] = detuning
@@ -129,28 +131,51 @@ def extract_oscillations(norm_avg_sig, precession_time_range, num_steps, detunin
 
     return fig_fft, FreqParams
 
-def fit_ramsey(norm_avg_sig,taus,  precession_time_range, FreqParams):
 
-    taus_us = numpy.array(taus)/1e3
+def fit_ramsey(norm_avg_sig, taus, precession_time_range, FreqParams):
+    taus_us = numpy.array(taus) / 1e3
     # Guess the other params for fitting
-    amp_1 = -0.1/3
+    amp_1 = -0.1 / 3
     amp_2 = amp_1
     amp_3 = amp_1
     decay = 1.6
-    offset = .89
+    offset = 0.89
 
-    guess_params = (offset, decay, amp_1, FreqParams[0],
-                        amp_2, FreqParams[1],
-                        amp_3, FreqParams[2])
+    guess_params = (
+        offset,
+        decay,
+        amp_1,
+        FreqParams[0],
+        amp_2,
+        FreqParams[1],
+        amp_3,
+        FreqParams[2],
+    )
     # guess_params_double = (offset, decay,
     #                 # amp_1, FreqParams[0],
     #                     amp_2, FreqParams[1],
     #                     amp_3, FreqParams[2])
 
-    guess_params_fixed_freq = (offset, decay, amp_1,
-                        amp_2,
-                        amp_3, )
-    cosine_sum_fixed_freq = lambda t, offset, decay, amp_1,amp_2,  amp_3:tool_belt.cosine_sum(t, offset, decay, amp_1, FreqParams[0], amp_2, FreqParams[1], amp_3, FreqParams[2])
+    guess_params_fixed_freq = (
+        offset,
+        decay,
+        amp_1,
+        amp_2,
+        amp_3,
+    )
+    cosine_sum_fixed_freq = (
+        lambda t, offset, decay, amp_1, amp_2, amp_3: tool_belt.cosine_sum(
+            t,
+            offset,
+            decay,
+            amp_1,
+            FreqParams[0],
+            amp_2,
+            FreqParams[1],
+            amp_3,
+            FreqParams[2],
+        )
+    )
 
     # Try the fit to a sum of three cosines
 
@@ -164,30 +189,34 @@ def fit_ramsey(norm_avg_sig,taus,  precession_time_range, FreqParams):
     # init_params = guess_params_double
 
     try:
-        popt,pcov = curve_fit(fit_func, taus_us, norm_avg_sig,
-                      p0=init_params,
-                        # bounds=([0, 0, -numpy.infty, -15,
-                        #             # -numpy.infty, -15,
-                        #             -numpy.infty, -15, ]
-                        #         , [numpy.infty, numpy.infty,
-                        #            numpy.infty, 15,
-                        #             # numpy.infty, 15,
-                        #             numpy.infty, 15, ]
-                                # )
-                       )
+        popt, pcov = curve_fit(
+            fit_func,
+            taus_us,
+            norm_avg_sig,
+            p0=init_params,
+            # bounds=([0, 0, -numpy.infty, -15,
+            #             # -numpy.infty, -15,
+            #             -numpy.infty, -15, ]
+            #         , [numpy.infty, numpy.infty,
+            #            numpy.infty, 15,
+            #             # numpy.infty, 15,
+            #             numpy.infty, 15, ]
+            # )
+        )
     except Exception:
-        print('Something went wrong!')
+        print("Something went wrong!")
         popt = guess_params
     print(popt)
 
-    taus_us_linspace = numpy.linspace(precession_time_range[0]/1e3, precession_time_range[1]/1e3,
-                          num=1000)
+    taus_us_linspace = numpy.linspace(
+        precession_time_range[0] / 1e3, precession_time_range[1] / 1e3, num=1000
+    )
 
     fig_fit, ax = plt.subplots(1, 1, figsize=(10, 8))
-    ax.plot(taus_us, norm_avg_sig,'bo',label='data')
-    ax.plot(taus_us_linspace, fit_func(taus_us_linspace,*popt),'r',label='fit')
-    ax.set_xlabel(r'Free precesion time ($\mu$s)')
-    ax.set_ylabel('Contrast (arb. units)')
+    ax.plot(taus_us, norm_avg_sig, "bo", label="data")
+    ax.plot(taus_us_linspace, fit_func(taus_us_linspace, *popt), "r", label="fit")
+    ax.set_xlabel(r"Free precesion time ($\mu$s)")
+    ax.set_ylabel("Contrast (arb. units)")
     ax.legend()
     # text1 = "\n".join((r'$C + e^{-t/d} [a_1 \mathrm{cos}(2 \pi \nu_1 t) + a_2 \mathrm{cos}(2 \pi \nu_2 t) + a_3 \mathrm{cos}(2 \pi \nu_3 t)]$',
     #                     r'$d = $' + '%.2f'%(abs(popt[1]/1e6)) + ' us',
@@ -209,15 +238,14 @@ def fit_ramsey(norm_avg_sig,taus,  precession_time_range, FreqParams):
     # ax.text(0.70, 0.25, text1, transform=ax.transAxes, fontsize=12,
     #                         verticalalignment="top", bbox=props)
 
-
-
-#  Plot the data itself and the fitted curve
+    #  Plot the data itself and the fitted curve
 
     fig_fit.canvas.draw()
-#    fig.set_tight_layout(True)
+    #    fig.set_tight_layout(True)
     fig_fit.canvas.flush_events()
 
     return fig_fit
+
 
 # %% Main
 
@@ -230,12 +258,11 @@ def main(
     num_reps,
     num_runs,
     state=States.LOW,
-    opti_nv_sig = None,
-    one_precession_time = False,
-    do_fm = False,
-    do_dq = False
+    opti_nv_sig=None,
+    one_precession_time=False,
+    do_fm=False,
+    do_dq=False,
 ):
-
     with labrad.connect() as cxn:
         angle = main_with_cxn(
             cxn,
@@ -249,7 +276,7 @@ def main(
             opti_nv_sig,
             one_precession_time,
             do_fm,
-            do_dq
+            do_dq,
         )
         return angle
 
@@ -263,16 +290,14 @@ def main_with_cxn(
     num_reps,
     num_runs,
     state=States.LOW,
-    opti_nv_sig = None,
-    one_precession_time = False,
-    do_fm = False,
-    do_dq = False
+    opti_nv_sig=None,
+    one_precession_time=False,
+    do_fm=False,
+    do_dq=False,
 ):
-
     counter_server = tool_belt.get_server_counter(cxn)
     pulsegen_server = tool_belt.get_server_pulse_gen(cxn)
     # arbwavegen_server = tool_belt.get_server_arb_wave_gen(cxn)
-
 
     tool_belt.reset_cfm(cxn)
     kpl.init_kplotlib()
@@ -328,7 +353,6 @@ def main_with_cxn(
             state_init = States.HIGH
             state_seco = States.LOW
             uwave_freq_high = uwave_freq_high + detuning / 10**3
-
 
     # %% Create the array of relaxation times
 
@@ -387,28 +411,28 @@ def main_with_cxn(
     # set up to drive transition through zero
     if do_dq is not False:
         seq_args = [
-            min_precession_time/2,
+            min_precession_time / 2,
             polarization_time,
             gate_time,
             uwave_pi_pulse_low,
             uwave_pi_on_2_pulse_low,
             uwave_pi_pulse_high,
             uwave_pi_on_2_pulse_high,
-            max_precession_time/2,
+            max_precession_time / 2,
             state_init.value,
             state_seco.value,
             laser_name,
             laser_power,
-            do_ramsey
+            do_ramsey,
         ]
     else:
         seq_args = [
-            min_precession_time/2,
+            min_precession_time / 2,
             polarization_time,
             gate_time,
             uwave_pi_pulse,
             uwave_pi_on_2_pulse,
-            max_precession_time/2,
+            max_precession_time / 2,
             state.value,
             laser_name,
             laser_power,
@@ -423,20 +447,15 @@ def main_with_cxn(
 
     # %% Let the user know how long this will take
 
-    seq_time_s = seq_time / (10 ** 9)  # to seconds
-    expected_run_time_s = (
-        (num_steps / 2) * num_reps * num_runs * seq_time_s
-    )  # s
+    seq_time_s = seq_time / (10**9)  # to seconds
+    expected_run_time_s = (num_steps / 2) * num_reps * num_runs * seq_time_s  # s
     expected_run_time_m = expected_run_time_s / 60  # to minutes
 
     print(" \nExpected run time: {:.1f} minutes. ".format(expected_run_time_m))
     #    return
 
-
     # Create raw data figure for incremental plotting
-    raw_fig, ax_sig_ref, ax_norm = create_raw_data_figure(
-        taus/1000
-    )
+    raw_fig, ax_sig_ref, ax_norm = create_raw_data_figure(taus / 1000)
     # Set up a run indicator for incremental plotting
     run_indicator_text = "Run #{}/{}"
     text = run_indicator_text.format(0, num_runs)
@@ -453,7 +472,6 @@ def main_with_cxn(
     tool_belt.init_safe_stop()
 
     for run_ind in range(num_runs):
-
         print(" \nRun index: {}".format(run_ind))
 
         # Break out of the while if the user says stop
@@ -462,12 +480,12 @@ def main_with_cxn(
 
         # Optimize and save the coords we found
         if opti_nv_sig:
-            opti_coords = optimize.main_with_cxn(cxn, opti_nv_sig)
+            opti_coords = targeting.main_with_cxn(cxn, opti_nv_sig)
             drift = positioning.get_drift(cxn)
-            adj_coords = nv_sig['coords'] + numpy.array(drift)
+            adj_coords = nv_sig["coords"] + numpy.array(drift)
             positioning.set_xyz(cxn, adj_coords)
         else:
-            opti_coords = optimize.main_with_cxn(cxn, nv_sig)
+            opti_coords = targeting.main_with_cxn(cxn, nv_sig)
         opti_coords_list.append(opti_coords)
 
         # Set up the microwaves
@@ -499,7 +517,6 @@ def main_with_cxn(
         shuffle(tau_ind_list)
 
         for tau_ind in tau_ind_list:
-
             # 'Flip a coin' to determine which tau (long/shrt) is used first
             rand_boolean = numpy.random.randint(0, high=2)
 
@@ -527,28 +544,28 @@ def main_with_cxn(
 
             if do_dq is not False:
                 seq_args = [
-                    taus[tau_ind_first]/2,
+                    taus[tau_ind_first] / 2,
                     polarization_time,
                     gate_time,
                     uwave_pi_pulse_low,
                     uwave_pi_on_2_pulse_low,
                     uwave_pi_pulse_high,
                     uwave_pi_on_2_pulse_high,
-                    taus[tau_ind_second]/2,
+                    taus[tau_ind_second] / 2,
                     state_init.value,
                     state_seco.value,
                     laser_name,
                     laser_power,
-                    do_ramsey
+                    do_ramsey,
                 ]
             else:
                 seq_args = [
-                    taus[tau_ind_first]/2,
+                    taus[tau_ind_first] / 2,
                     polarization_time,
                     gate_time,
                     uwave_pi_pulse,
                     uwave_pi_on_2_pulse,
-                    taus[tau_ind_second]/2,
+                    taus[tau_ind_second] / 2,
                     state.value,
                     laser_name,
                     laser_power,
@@ -557,9 +574,7 @@ def main_with_cxn(
             # Clear the counter/tagger buffer of any excess counts
             counter_server.clear_buffer()
             # print(seq_args)
-            pulsegen_server.stream_immediate(
-                seq_file_name, num_reps, seq_args_string
-            )
+            pulsegen_server.stream_immediate(seq_file_name, num_reps, seq_args_string)
 
             # Each sample is of the form [*(<sig_shrt>, <ref_shrt>, <sig_long>, <ref_long>)]
             # So we can sum on the values for similar index modulus 4 to
@@ -614,8 +629,8 @@ def main_with_cxn(
             "start_timestamp": start_timestamp,
             "nv_sig": nv_sig,
             "nv_sig-units": tool_belt.get_nv_sig_units(cxn),
-            'detuning': detuning,
-            'detuning-units': 'MHz',
+            "detuning": detuning,
+            "detuning-units": "MHz",
             "do_fm": do_fm,
             "do_dq": do_dq,
             "gate_time": gate_time,
@@ -638,7 +653,7 @@ def main_with_cxn(
             "opti_coords_list": opti_coords_list,
             "opti_coords_list-units": "V",
             "taus": taus.tolist(),
-            "taus-units": 'ns',
+            "taus-units": "ns",
             "sig_counts": sig_counts.astype(int).tolist(),
             "sig_counts-units": "counts",
             "ref_counts": ref_counts.astype(int).tolist(),
@@ -657,10 +672,11 @@ def main_with_cxn(
 
     tool_belt.reset_cfm(cxn)
 
-
     ### Process and plot the data
 
-    ret_vals = tool_belt.process_counts(sig_counts, ref_counts, num_reps, gate_time, norm_style)
+    ret_vals = tool_belt.process_counts(
+        sig_counts, ref_counts, num_reps, gate_time, norm_style
+    )
     (
         sig_counts_avg_kcps,
         ref_counts_avg_kcps,
@@ -687,8 +703,8 @@ def main_with_cxn(
         "timeElapsed": timeElapsed,
         "nv_sig": nv_sig,
         "nv_sig-units": tool_belt.get_nv_sig_units(cxn),
-        'detuning': detuning,
-        'detuning-units': 'MHz',
+        "detuning": detuning,
+        "detuning-units": "MHz",
         "do_fm": do_fm,
         "do_dq": do_dq,
         "gate_time": gate_time,
@@ -711,7 +727,7 @@ def main_with_cxn(
         "opti_coords_list": opti_coords_list,
         "opti_coords_list-units": "V",
         "taus": taus.tolist(),
-        "taus-units": 'ns',
+        "taus-units": "ns",
         "sig_counts": sig_counts.astype(int).tolist(),
         "sig_counts-units": "counts",
         "ref_counts": ref_counts.astype(int).tolist(),
@@ -727,18 +743,23 @@ def main_with_cxn(
     # %% Fit and save figs
 
     # Fourier transform
-    fig_fft, FreqParams = extract_oscillations(norm_avg_sig,
-                               precession_time_range, num_steps, detuning)
+    fig_fft, FreqParams = extract_oscillations(
+        norm_avg_sig, precession_time_range, num_steps, detuning
+    )
 
     # Save the fft figure
-    file_path_fft = tool_belt.get_file_path(__file__, timestamp, nv_sig["name"] + '_fft')
+    file_path_fft = tool_belt.get_file_path(
+        __file__, timestamp, nv_sig["name"] + "_fft"
+    )
     tool_belt.save_figure(fig_fft, file_path_fft)
 
     # Fit actual data
-    fig_fit = fit_ramsey(norm_avg_sig,taus,  precession_time_range, FreqParams)
+    fig_fit = fit_ramsey(norm_avg_sig, taus, precession_time_range, FreqParams)
 
     # Save the file in the same file directory
-    file_path_fit = tool_belt.get_file_path(__file__, timestamp, nv_sig["name"] + '_fit')
+    file_path_fit = tool_belt.get_file_path(
+        __file__, timestamp, nv_sig["name"] + "_fit"
+    )
     tool_belt.save_figure(fig_fit, file_path_fit)
 
     return
@@ -748,79 +769,91 @@ def main_with_cxn(
 
 
 if __name__ == "__main__":
-
-    analysis= True
+    analysis = True
     analytics = False
     if analysis:
-
         folder = "pc_rabi/branch_master/ramsey/2021_10"
-        file = '2021_10_15-10_37_22-johnson-nv0_2021_10_08'
+        file = "2021_10_15-10_37_22-johnson-nv0_2021_10_08"
 
         # detuning = 0
         data = tool_belt.get_raw_data(file, folder)
-        detuning= data['detuning']
-        nv_sig = data['nv_sig']
-        sig_counts = data['sig_counts']
-        ref_counts = data['ref_counts']
-        norm_avg_sig= numpy.average(sig_counts,axis=0)/numpy.average(ref_counts)
+        detuning = data["detuning"]
+        nv_sig = data["nv_sig"]
+        sig_counts = data["sig_counts"]
+        ref_counts = data["ref_counts"]
+        norm_avg_sig = numpy.average(sig_counts, axis=0) / numpy.average(ref_counts)
         # norm_avg_sig = data['norm_avg_sig']
-        precession_time_range = data['precession_time_range']
-        num_steps = data['num_steps']
+        precession_time_range = data["precession_time_range"]
+        num_steps = data["num_steps"]
         try:
-            taus = data['taus']
+            taus = data["taus"]
             taus = numpy.array(taus)
         except Exception:
-
             taus = numpy.linspace(
                 precession_time_range[0],
                 precession_time_range[1],
                 num=num_steps,
             )
 
-
-        _, FreqParams = extract_oscillations(norm_avg_sig, precession_time_range, num_steps, detuning)
+        _, FreqParams = extract_oscillations(
+            norm_avg_sig, precession_time_range, num_steps, detuning
+        )
         print(FreqParams)
         FreqParams = [2.6, 4.8, 7]
-        fit_ramsey(norm_avg_sig,taus,  precession_time_range, FreqParams)
+        fit_ramsey(norm_avg_sig, taus, precession_time_range, FreqParams)
 
     if analytics:
-
         # t = numpy.linspace(.040,1.04,50)
-        func = tool_belt.cosine_sum#(t, offset, decay, amp_1, freq_1, amp_2, freq_2, amp_3, freq_3)
-        taus = taus/1000
-        offset=.88
+        func = (
+            tool_belt.cosine_sum
+        )  # (t, offset, decay, amp_1, freq_1, amp_2, freq_2, amp_3, freq_3)
+        taus = taus / 1000
+        offset = 0.88
         decay = 2.0
-        amp_1 = -.03
+        amp_1 = -0.03
         amp_2 = amp_1
         amp_3 = amp_1
-        detuning = .5
-        freq_1 = detuning-2.2
+        detuning = 0.5
+        freq_1 = detuning - 2.2
         freq_2 = detuning
-        freq_3 = detuning+2.2
+        freq_3 = detuning + 2.2
 
         fit_func = tool_belt.cosine_sum
         # fit_func = tool_belt.cosine_one
         # fit_func = cosine_sum_fixed_freq
         # init_params = guess_params_fixed_freq
 
-        guess_params = (offset, decay, amp_1, freq_1,
-                            amp_2, freq_2,
-                            amp_3, freq_3)
+        guess_params = (offset, decay, amp_1, freq_1, amp_2, freq_2, amp_3, freq_3)
         # guess_params = (offset, decay, amp_1*3, freq_1)
         init_params = guess_params
 
-        popt,pcov = curve_fit(fit_func, taus, norm_avg_sig,p0=init_params)
+        popt, pcov = curve_fit(fit_func, taus, norm_avg_sig, p0=init_params)
         print(popt)
         # theoryvals = func(taus,offset,decay,amp_1,freq_1, amp_2, freq_2, amp_3, freq_3)
         # print(vals)
         plt.figure()
         # plt.plot(taus,theoryvals)
-        plt.plot(taus,norm_avg_sig)
+        plt.plot(taus, norm_avg_sig)
         # plt.plot(taus,fit_func(taus,popt[0],popt[1],popt[2],popt[3]))
-        plt.plot(taus,fit_func(taus,popt[0],popt[1],popt[2],popt[3],popt[4],popt[5],popt[6],popt[7]))
+        plt.plot(
+            taus,
+            fit_func(
+                taus,
+                popt[0],
+                popt[1],
+                popt[2],
+                popt[3],
+                popt[4],
+                popt[5],
+                popt[6],
+                popt[7],
+            ),
+        )
         plt.show()
 
-        raw_fig = fit_ramsey(norm_avg_sig, taus*1000, precession_time_range, [freq_1,freq_2,freq_3])
+        raw_fig = fit_ramsey(
+            norm_avg_sig, taus * 1000, precession_time_range, [freq_1, freq_2, freq_3]
+        )
 
         # cur_time = tool_belt.get_time_stamp()
         # file_path = tool_belt.get_file_path( __file__, cur_time, nv_sig["name"]+'-refit')

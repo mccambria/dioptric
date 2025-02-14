@@ -21,17 +21,16 @@ timeout = 5
 ### END NODE INFO
 """
 
-
-from labrad.server import LabradServer
-from labrad.server import setting
-from utils import common
-from utils import tool_belt as tb
-import numpy as np
-import socket
 import logging
-from utils import widefield
+import socket
 import time
 from enum import Enum, IntEnum, auto
+
+import numpy as np
+from labrad.server import LabradServer, setting
+
+from utils import common, widefield
+from utils import tool_belt as tb
 
 """
 Readout modes. Readout mode specifies EM vs conventional, as well as vertical and horizontal 
@@ -97,8 +96,8 @@ class CameraNuvuHnu512gamma(LabradServer):
         # For readability keep the C stuff in the nuvu_camera folder. To allow this file
         # to be easily imported in post-processing contexts, only import the C stuff if
         # we're actually initializating the server
+        from servers.inputs.nuvu_camera.defines import ProcessingType, TriggerMode
         from servers.inputs.nuvu_camera.nc_camera import NcCamera
-        from servers.inputs.nuvu_camera.defines import TriggerMode, ProcessingType
 
         # Instantiate the software camera and connect to the hardware camera
         self.cam = NcCamera()
@@ -112,41 +111,33 @@ class CameraNuvuHnu512gamma(LabradServer):
         readout_mode = widefield._get_camera_readout_mode()
         self.cam.set_readout_mode(readout_mode)
 
+        resolution = widefield._get_camera_resolution()
+
         self.clear_roi()
         roi = widefield._get_camera_roi()
         if roi is not None:
-            self.set_roi(*roi)
+            adj_roi = (
+                0,
+                roi[1],
+                resolution[0],
+                roi[3],
+            )  # offsetX, offsetY, width, height
+            if roi is not None:
+                self.set_roi(*adj_roi)
 
-        em_gain = widefield._get_camera_em_gain()
-        self.cam.setCalibratedEmGain(em_gain)
+        # Check if we're in EM mode
+        if readout_mode in [1, 2, 3, 4, 16, 17, 18, 19]:
+            em_gain = widefield._get_camera_em_gain()
+            self.cam.setCalibratedEmGain(em_gain)
 
         self.cam.set_processing_type(ProcessingType.BIAS_SUBTRACTION)
         self.cam.update_bias()
         self.cam.set_trigger_mode(TriggerMode.EXT_LOW_HIGH_EXP)
         # self.cam.set_trigger_mode(TriggerMode.EXT_LOW_HIGH)
         timeout = widefield._get_camera_timeout()
-        self.cam.set_timeout(timeout)
+        if timeout is not None:
+            self.cam.set_timeout(timeout)
         self.cam.get_size()
-
-        # self.cam.set_buffer_count(1000)
-        # logging.info(self.cam.get_dynamic_buffer_count())
-        # waiting_time = self.cam.getWaitingTime()
-        # logging.info(f"Waiting time: {waiting_time}")
-        # exposure_time = self.cam.getExposureTime()
-        # logging.info(f"Exposure time: {exposure_time}")
-
-        # Defaults to be updated by client
-        # self.set_exposure_time(None, 35)
-        # self.set_waiting_time(None, 0)
-
-        # frame_latency = self.cam.get_frame_latency()
-        # frame_transfer_duration = self.cam.get_frame_transfer_duration()
-        # readout_time = self.cam.getReadoutTime()
-        # frame_rate_maximum = self.cam.get_frame_rate_maximum()
-        # logging.info(f"frame_latency: {frame_latency}")
-        # logging.info(f"frame_transfer_duration: {frame_transfer_duration}")
-        # logging.info(f"readout_time: {readout_time}")
-        # logging.info(f"frame_rate_maximum: {frame_rate_maximum}")
 
         logging.info("Init complete")
 
@@ -197,7 +188,11 @@ class CameraNuvuHnu512gamma(LabradServer):
         # logging.info(f"processing: {proc_time}")
         # return img_str
 
-        return self.cam.read()
+        # start = time.time()
+        result = self.cam.read()
+        # stop = time.time()
+        # logging.info(stop - start)
+        return result
 
     @setting(5)
     def reset(self, c):

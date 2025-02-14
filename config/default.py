@@ -7,10 +7,7 @@ Created August 8th, 2023
 @author: mccambria
 """
 
-from utils.constants import ModMode, ControlMode, CountFormat
-from utils.constants import CollectionMode, LaserKey, LaserPosMode
 from pathlib import Path
-import numpy as np
 
 home = Path.home()
 

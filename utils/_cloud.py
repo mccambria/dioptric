@@ -8,15 +8,19 @@ Created November 18th, 2023
 @author: mccambria
 """
 
-from pathlib import Path
+import re
 import time
-from utils import common
+from pathlib import Path
+
 from boxsdk import Client, JWTAuth
 
-nvdata_folder_id = "235146666549"  # ID for the nvdata folder in Box
+from utils import common
+
+# ID for the root data folder in Box, nvdata
+root_folder_id = "235146666549"
+
 data_manager_folder = common.get_data_manager_folder()
 folder_path_cache = {}
-
 try:
     box_auth_file_name = "dioptric_box_authorization.json"
     box_auth = JWTAuth.from_settings_file(data_manager_folder / box_auth_file_name)
@@ -33,7 +37,7 @@ except Exception as exc:
     raise exc
 
 
-def download(file_name, ext, file_id=None):
+def download(file_name=None, ext=None, file_id=None):
     """Download file from the cloud
 
     Parameters
@@ -42,6 +46,9 @@ def download(file_name, ext, file_id=None):
         Name of the file, without file extension
     ext : str
         File extension
+    file_id : id
+        Box file ID, can be read off from the URL:
+        https://berkeley.app.box.com/file/<file_id>
 
     Returns
     -------
@@ -59,30 +66,13 @@ def download(file_name, ext, file_id=None):
         try:
             match = next(search_results)
             file_id = match.id
-        except Exception as exc:
+        except Exception:
             raise RuntimeError("No file found with the passed file_name.")
     box_file = box_client.file(file_id)
     file_content = box_file.content()
     file_info = box_file.get()
     file_name = file_info.name.split(".")[0]
     return file_content, file_id, file_name
-
-
-# def upload(folder_path, temp_file_path):
-#     """Upload file to the cloud
-
-#     Parameters
-#     ----------
-#     folder_path : Path
-#         Folder path to upload to. Form should be folder1/folder2/... where folder1
-#         is under directly nvdata
-#     temp_file_path : Path
-#         Full file path to write the file to before it can be uploaded to the cloud.
-#         Get this by calling dm.get_file_path()
-#     """
-#     folder_id = get_folder_id(folder_path)
-#     new_file = box_client.folder(folder_id).upload(str(temp_file_path))
-#     return new_file.id
 
 
 def upload(file_path_w_ext, content):
@@ -92,7 +82,7 @@ def upload(file_path_w_ext, content):
     ----------
     file_path : Path
         File path to upload to. Form should be folder1/folder2/... where folder1
-        is under directly nvdata. Should include extension
+        is under directly the root data folder. Should include extension
     content : BytesIO
         Byte stream to write to the file
     """
@@ -103,15 +93,15 @@ def upload(file_path_w_ext, content):
     return new_file.id
 
 
-def get_folder_id(folder_path):
-    """Gets the Box ID of the specified folder. Creates the folder if it does
-    not exist yet
+def get_folder_id(folder_path, no_create=False):
+    """Gets the Box ID of the specified folder. Optionally creates the folder if
+    it does not exist yet
 
     Parameters
     ----------
     folder_path : Path
         Folder path to ID. Form should be folder1/folder2/... where folder1
-        is under directly nvdata
+        is directly under the root data folder
 
     Returns
     -------
@@ -126,15 +116,18 @@ def get_folder_id(folder_path):
 
     # If it's not in the cache, look it up from the cloud
     folder_path_parts = list(folder_path.parts)
-    folder_id = _get_folder_id_recursion(folder_path_parts)
+    folder_id = _get_folder_id_recursion(folder_path_parts, no_create=no_create)
     folder_path_cache[folder_path] = folder_id
     return folder_id
 
 
-def _get_folder_id_recursion(folder_path_parts, start_id=nvdata_folder_id):
+def _get_folder_id_recursion(
+    folder_path_parts, start_id=root_folder_id, no_create=False
+):
     """
-    Starting from nvdata, find each subsequent folder in folder_path_parts, finally
-    returning the ID of the last folder. Create the folders that don't exist yet
+    Starting from the root data folder, find each subsequent folder in folder_path_parts,
+    finally returning the ID of the last folder. Optionally create the folders that don't
+    exist yet
     """
     target_folder_name = folder_path_parts.pop(0)
 
@@ -148,19 +141,73 @@ def _get_folder_id_recursion(folder_path_parts, start_id=nvdata_folder_id):
 
     # Otherwise create it
     if target_folder_id is None:
-        target_folder = start_folder.create_subfolder(target_folder_name)
-        target_folder_id = target_folder.id
+        if no_create:
+            return None
+        else:
+            target_folder = start_folder.create_subfolder(target_folder_name)
+            target_folder_id = target_folder.id
 
     # Return or recurse
     if len(folder_path_parts) == 0:
         return target_folder_id
     else:
-        return _get_folder_id_recursion(folder_path_parts, start_id=target_folder_id)
+        return _get_folder_id_recursion(
+            folder_path_parts, start_id=target_folder_id, no_create=no_create
+        )
 
+
+# region Delete functions, for cleaning up old data
+
+
+def _delete_folders(reg_exp, start_id=root_folder_id):
+    def condition_fn(folder_info):
+        folder_path = _get_folder_path(folder_info)
+        return re.fullmatch(reg_exp, folder_path)
+
+    return _batch_delete(condition_fn, start_id)
+
+
+def _delete_empty_folders(start_id=root_folder_id):
+    def condition_fn(folder_info):
+        return folder_info.item_collection["total_count"] == 0
+
+    return _batch_delete(condition_fn, start_id)
+
+
+def _batch_delete(condition_fn, folder_id):
+    folder = box_client.folder(folder_id)
+    folder_info = folder.get()
+
+    # Delete this folder if it satisfies the passed condition
+    if condition_fn(folder_info):
+        folder.delete(recursive=True)
+        folder_path = _get_folder_path(folder_info)
+        print(f"{folder_id}: {folder_path}")
+        return True
+
+    # Otherwise recurse through the folder's contents and check for other folders to delete
+    items = folder.get_items()
+    for item in items:
+        if item.type == "folder":
+            res = _batch_delete(condition_fn, item.id)
+            # Uncomment the next two lines to just delete the first item we find and quit
+            # if res:
+            #     return res
+
+
+def _get_folder_path(folder_info):
+    folder_path = [parent.name for parent in folder_info.path_collection["entries"][1:]]
+    folder_path.append(folder_info.name)
+    folder_path = "/".join(folder_path)
+    return folder_path
+
+
+# endregion
 
 if __name__ == "__main__":
-    for ind in range(3):
-        start = time.time()
-        folder_id = get_folder_id(Path("pc_rabi/branch_master/rabi/2023_12"))
-        stop = time.time()
-        print(stop - start)
+    # print(box_client.folder("235259643840").get().item_status)
+
+    # reg_exp = r"nvdata\/pc_[a-zA-Z]*\/branch_[a-zA-Z]*\/.+\/2018_[0-9]{2}"
+    # _delete_folders(reg_exp)
+
+    _delete_empty_folders()

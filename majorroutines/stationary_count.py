@@ -8,13 +8,14 @@ Created on April 12th, 2019
 """
 
 
-import utils.tool_belt as tool_belt
-import utils.positioning as positioning
-import utils.kplotlib as kpl
-import numpy as np
-import matplotlib.pyplot as plt
 import labrad
-import majorroutines.optimize as optimize
+import matplotlib.pyplot as plt
+import numpy as np
+
+import majorroutines.targeting as targeting
+import utils.kplotlib as kpl
+import utils.positioning as positioning
+import utils.tool_belt as tool_belt
 
 
 def main(
@@ -58,7 +59,7 @@ def main_with_cxn(
     readout = nv_sig["imaging_readout_dur"]
     readout_sec = readout / 10**9
     charge_init = nv_minus_init or nv_zero_init
-    optimize.main_with_cxn(
+    targeting.main_with_cxn(
         cxn, nv_sig
     )  # Is there something wrong with this line? Let me (Matt) know and let's fix it
     pulsegen_server = tool_belt.get_server_pulse_gen(cxn)

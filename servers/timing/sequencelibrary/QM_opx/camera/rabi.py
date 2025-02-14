@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 """
 Widefield ESR
 
@@ -7,21 +6,36 @@ Created on October 13th, 2023
 @author: mccambria
 """
 
+import time
 
-from qm import QuantumMachinesManager
-from qm.simulate import SimulationConfig
-from servers.timing.sequencelibrary.QM_opx import seq_utils
-from servers.timing.sequencelibrary.QM_opx.camera import resonance_ref
-import utils.common as common
 import matplotlib.pyplot as plt
+import numpy as np
+from qm import QuantumMachinesManager, qua
+from qm.simulate import SimulationConfig
+
+import utils.common as common
+from servers.timing.sequencelibrary.QM_opx import seq_utils
+from servers.timing.sequencelibrary.QM_opx.camera import base_scc_sequence
 
 
-def get_seq(args, num_reps):
-    # (pol_coords_list, ion_coords_list, uwave_ind, uwave_duration_ns) = args
-    uwave_duration_ns = args.pop()
-    return resonance_ref.get_seq(
-        args, num_reps, uwave_duration_ns=uwave_duration_ns, reference=False
-    )
+def get_seq(base_scc_seq_args, step_vals, num_reps=1):
+    step_vals = [seq_utils.convert_ns_to_cc(el) for el in step_vals]
+
+    with qua.program() as seq:
+        seq_utils.init()
+        seq_utils.macro_run_aods()
+        step_val = qua.declare(int)
+
+        def uwave_macro_sig(uwave_ind_list, step_val):
+            seq_utils.macro_pi_pulse(uwave_ind_list, duration_cc=step_val)
+
+        with qua.for_each_(step_val, step_vals):
+            base_scc_sequence.macro(
+                base_scc_seq_args, [uwave_macro_sig], step_val, num_reps
+            )
+
+    seq_ret_vals = []
+    return seq, seq_ret_vals
 
 
 if __name__ == "__main__":
@@ -29,51 +43,42 @@ if __name__ == "__main__":
     config = config_module.config
     opx_config = config_module.opx_config
 
-    ip_address = config["DeviceIDs"]["QM_opx_ip"]
-    qmm = QuantumMachinesManager(host=ip_address)
+    qm_opx_args = config["DeviceIDs"]["QM_opx_args"]
+    qmm = QuantumMachinesManager(**qm_opx_args)
     opx = qmm.open_qm(opx_config)
 
     try:
-        args = [
-            None,
+        seq, seq_ret_vals = get_seq(
             [
-                [112.21219579120823, 110.40003798562638],
-                [112.10719579120823, 110.9080379856264],
-                [110.86519579120822, 111.88803798562638],
-                [111.30119579120823, 109.44303798562639],
-                [112.23619579120823, 109.55303798562639],
-                [112.95719579120824, 110.46003798562639],
-                [111.49919579120822, 107.7030379856264],
-                [111.58819579120824, 107.7120379856264],
-                [112.09719579120824, 107.0870379856264],
-                [111.02419579120823, 110.30503798562638],
+                [
+                    [107.247, 107.388],
+                    [95.571, 94.737],
+                ],
+                [188, 108],
+                [1.0, 1.0],
+                [
+                    [72.0, 72.997],
+                    [62.207, 62.846],
+                ],
+                [104, 56],
+                [1.0, 1.0],
+                [False, False],
+                [0, 1],
             ],
-            None,
             [
-                [75.99059786642306, 75.34468901215536],
-                [75.64159786642307, 76.07968901215536],
-                [75.05959786642306, 76.72668901215535],
-                [75.20659786642307, 74.84368901215535],
-                [75.95359786642307, 74.88468901215535],
-                [76.56159786642307, 75.51368901215535],
-                [75.44959786642306, 73.37168901215536],
-                [75.30159786642307, 73.28668901215535],
-                [75.82659786642307, 72.83568901215536],
-                [75.02559786642307, 75.35468901215535],
+                112.0,
+                184.0,
             ],
-            None,
-            0,
-            None,
-        ]
-        seq, seq_ret_vals = get_seq(args, 5)
+            10,
+        )
 
-        sim_config = SimulationConfig(duration=int(2000e3 / 4))
+        sim_config = SimulationConfig(duration=int(300e3 / 4))
         sim = opx.simulate(seq, sim_config)
         samples = sim.get_simulated_samples()
         samples.con1.plot()
         plt.show(block=True)
 
     except Exception as exc:
-        raise exc
+        print(f"An error occurred: {exc}")
     finally:
         qmm.close_all_quantum_machines()

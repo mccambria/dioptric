@@ -22,12 +22,14 @@ timeout = 5
 ### END NODE INFO
 """
 
-from labrad.server import LabradServer
-from labrad.server import setting
-from twisted.internet.defer import ensureDeferred
-import socket
 import logging
+import socket
+import time
+
 import pyvisa as visa  # Docs here: https://pyvisa.readthedocs.io/en/master/
+from labrad.server import LabradServer, setting
+from twisted.internet.defer import ensureDeferred
+
 from servers.outputs.interfaces.sig_gen_vector import SigGenVector
 from utils import common
 from utils import tool_belt as tb
@@ -86,6 +88,7 @@ class SigGenStanSg394(LabradServer, SigGenVector):
         # Determine how many decimal places we need
         precision = len(str(freq).split(".")[1])
         self.sig_gen.write("FREQ {0:.{1}f} GHZ".format(freq, precision))
+        time.sleep(0.01)
 
     @setting(3, amp="v[]")
     def set_amp(self, c, amp):
@@ -111,38 +114,71 @@ class SigGenStanSg394(LabradServer, SigGenVector):
         if task is not None:
             task.close()
 
-    @setting(7)
-    def load_iq(self, c):
-        """
-        Set up external IQ modulation
-        """
+    # @setting(7)
+    # def load_iq(self, c):
+    #     """
+    #     Set up external IQ modulation
+    #     """
 
-        # The sg394 only supports up to 10 dBm of power output with IQ modulation
-        # Let's check what the amplitude is set as, and if it's over 10 dBm,
-        # we'll quit out and save a note in the labrad logging
+    #     # The sg394 only supports up to 10 dBm of power output with IQ modulation
+    #     # Let's check what the amplitude is set as, and if it's over 10 dBm,
+    #     # we'll quit out and save a note in the labrad logging
+    #     if float(self.sig_gen.query("AMPR?")) > 10:
+    #         msg = (
+    #             "IQ modulation on sg394 supports up to 10 dBm. The power was"
+    #             " set to {} dBm and the operation was stopped.".format(
+    #                 self.sig_gen.query("AMPR?")
+    #             )
+    #         )
+    #         raise Exception(msg)
+    #         return
+
+    #     # QAM is type 7
+    #     self.sig_gen.write("TYPE 7")
+    #     # STYP 1 is vector modulation
+    #     # self.sig_gen.write('STYP 1')
+    #     # External mode is modulation function 5
+    #     self.sig_gen.write("QFNC 5")
+    #     # Turn on modulation
+    #     cmd = "MODL 1"
+    #     self.sig_gen.write(cmd)
+    #     # logging.info(cmd)
+
+    @setting(7, carrier_freq="v[]", offset_I="v[]", offset_Q="v[]")
+    def load_iq(self, c, carrier_freq, offset_I, offset_Q):
+        """
+        Set up internal IQ modulation.
+
+        Parameters:
+            carrier_freq: float
+                Carrier frequency in GHz.
+            freq_I: float
+                Frequency for the I-channel modulation (MHz).
+            freq_Q: float
+                Frequency for the Q-channel modulation (MHz).
+        """
+        # Ensure that the signal generator does not exceed 10 dBm with IQ modulation
         if float(self.sig_gen.query("AMPR?")) > 10:
             msg = (
-                "IQ modulation on sg394 supports up to 10 dBm. The power was"
+                "IQ modulation on SG394 supports up to 10 dBm. The power was"
                 " set to {} dBm and the operation was stopped.".format(
                     self.sig_gen.query("AMPR?")
                 )
             )
             raise Exception(msg)
-            return
+        # Enable IQ modulation
+        self.sig_gen.write("MODL 1")
+        # Set carrier frequency (GHz)
+        self.sig_gen.write(f"FREQ {carrier_freq} GHz")
+        # Use internal IQ modulation mode
+        self.sig_gen.write("QFNC 7")  # INTERNAL Cosine/Sine
+        # Apply optional I/Q offsets (-5% to +5%)
+        self.sig_gen.write(f"OFSI {offset_I}")  # in %
+        self.sig_gen.write(f"OFSQ {offset_Q}")  # in %
+        # Enable RF output for IQ modulation
 
-        # QAM is type 7
-        self.sig_gen.write("TYPE 7")
-        # STYP 1 is vector modulation
-        # self.sig_gen.write('STYP 1')
-        # External mode is modulation function 5
-        self.sig_gen.write("QFNC 5")
-        # Turn on modulation
-        cmd = "MODL 1"
-        self.sig_gen.write(cmd)
-        # logging.info(cmd)
-
-    @setting(8, deviation="v[]")
-    def load_fm(self, c, deviation):
+    @setting(8, carrier_freq="v[]", deviation="v[]")
+    def load_fm(self, c, carrier_freq, deviation):
         """
         Set up frequency modulation using a nexternal analog source
         Parameters
@@ -161,10 +197,15 @@ class SigGenStanSg394(LabradServer, SigGenVector):
         self.sig_gen.write("TYPE 1")
         # STYP 1 is analog modulation
         self.sig_gen.write("STYP 0")
-        # external is 5
-        self.sig_gen.write("MFNC 5")
+        # # external is 5
+        # self.sig_gen.write("MFNC 5")
+        # Interanl sine is 0
+        self.sig_gen.write("MFNC 0")
+        # # set the rate? For external this is 100 kHz
+        # self.sig_gen.write("RATE 100 kHz")
         # set the rate? For external this is 100 kHz
-        # self.sig_gen.write('RATE 100 kHz')
+        self.sig_gen.write("RATE 10 kHz")
+        self.sig_gen.write(f"FREQ {carrier_freq} GHz")
         # set the deviation
         cmd = "FDEV {} MHz".format(deviation)
         self.sig_gen.write(cmd)

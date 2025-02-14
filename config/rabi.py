@@ -12,11 +12,12 @@ from pathlib import Path
 from config.default import config
 from utils.constants import (
     CollectionMode,
-    ControlMode,
+    CoordsKey,
     CountFormat,
-    LaserKey,
     LaserPosMode,
     ModMode,
+    PosControlMode,
+    VirtualLaserKey,
 )
 
 home = Path.home()
@@ -134,15 +135,15 @@ config |= {
             "pos_mode": LaserPosMode.SCANNING,
             "aod": True,
         },
-        LaserKey.IMAGING: {"name": "laser_INTE_520", "duration": 50e6},
-        LaserKey.WIDEFIELD_IMAGING: {
+        VirtualLaserKey.IMAGING: {"name": "laser_INTE_520", "duration": 50e6},
+        VirtualLaserKey.WIDEFIELD_IMAGING: {
             "name": "laser_OPTO_589",
             "duration": 30e6,
         },  # 35e6
-        LaserKey.SPIN_READOUT: {"name": "laser_INTE_520", "duration": 300},
-        LaserKey.POLARIZATION: {"name": "laser_INTE_520", "duration": 10e3},
-        LaserKey.IONIZATION: {"name": "laser_COBO_638", "duration": 112},
-        LaserKey.CHARGE_READOUT: {
+        VirtualLaserKey.SPIN_READOUT: {"name": "laser_INTE_520", "duration": 300},
+        VirtualLaserKey.POLARIZATION: {"name": "laser_INTE_520", "duration": 10e3},
+        VirtualLaserKey.IONIZATION: {"name": "laser_COBO_638", "duration": 112},
+        VirtualLaserKey.CHARGE_READOUT: {
             "name": "laser_OPTO_589",
             "duration": 30e6,
             # "duration": 100e6,
@@ -150,27 +151,30 @@ config |= {
     },
     ###
     "Positioning": {
-        #
-        "xy_control_mode-laser_INTE_520": ControlMode.SEQUENCE,
-        "xy_delay-laser_INTE_520": int(400e3),  # 400 us for galvo
-        "xy_dtype-laser_INTE_520": float,
-        "xy_nm_per_unit-laser_INTE_520": 1000,
-        "xy_optimize_range-laser_INTE_520": 0.5,
-        "xy_units-laser_INTE_520": "MHz",
-        #
-        "xy_control_mode-laser_COBO_638": ControlMode.SEQUENCE,
-        "xy_delay-laser_COBO_638": int(400e3),  # 400 us for galvo
-        "xy_dtype-laser_COBO_638": float,
-        "xy_nm_per_unit-laser_COBO_638": 1000,
-        "xy_optimize_range-laser_COBO_638": 1.2,
-        "xy_units-laser_COBO_638": "MHz",
-        #
-        "z_control_mode": ControlMode.STREAM,
-        "z_delay": int(5e6),  # 5 ms for PIFOC
-        "z_dtype": float,
-        "z_nm_per_unit": 1000,
-        "z_optimize_range": 0.3,
-        "z_units": "Voltage (V)",
+        green_laser: {
+            "xy_control_mode": PosControlMode.SEQUENCE,
+            "xy_delay": int(400e3),  # 400 us for galvo
+            "xy_dtype": float,
+            "xy_nm_per_unit": 1000,
+            "xy_optimize_range": 0.5,
+            "xy_units": "MHz",
+        },
+        red_laser: {
+            "xy_control_mode": PosControlMode.SEQUENCE,
+            "xy_delay": int(400e3),  # 400 us for galvo
+            "xy_dtype": float,
+            "xy_nm_per_unit": 1000,
+            "xy_optimize_range": 1.2,
+            "xy_units": "MHz",
+        },
+        CoordsKey.GLOBAL: {
+            "z_control_mode": PosControlMode.STREAM,
+            "z_delay": int(5e6),  # 5 ms for PIFOC
+            "z_dtype": float,
+            "z_nm_per_unit": 1000,
+            "z_optimize_range": 0.3,
+            "z_units": "Voltage (V)",
+        },
         "widefield_calibration_nv1": widefield_calibration_nv1.copy(),
         "widefield_calibration_nv2": widefield_calibration_nv2.copy(),
     },
@@ -528,7 +532,7 @@ opx_config = {
         },
         "do_ionization": {
             "operation": "control",
-            "length": config["Optics"][LaserKey.IONIZATION]["duration"],
+            "length": config["Optics"][VirtualLaserKey.IONIZATION]["duration"],
             "digital_marker": "on",
         },
         "do_long_ionization": {
@@ -538,7 +542,7 @@ opx_config = {
         },
         "do_polarization": {
             "operation": "control",
-            "length": config["Optics"][LaserKey.POLARIZATION]["duration"],
+            "length": config["Optics"][VirtualLaserKey.POLARIZATION]["duration"],
             "digital_marker": "on",
         },
         "do_pi_pulse_0": {

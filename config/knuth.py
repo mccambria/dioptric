@@ -1,14 +1,10 @@
 # -*- coding: utf-8 -*-
 """
-Config file for the PC knuth - redirects to Rabi
+Config file for the PC rabi
 
 Created July 20th, 2023
 
 @author: mccambria
 """
 
-from config.rabi import config
-
-
-if __name__ == "__main__":
-    print(config["Camera"])
+from config.purcell import *

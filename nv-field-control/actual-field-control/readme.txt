@@ -1,0 +1,1 @@
+fieldcontrol.py: calculates current needed in each ring, pushes current changes to power supply (or at least that's what it's supposed to do)

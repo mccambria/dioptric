@@ -7,7 +7,6 @@ Created on November 29th, 2023
 @author: mccambria
 """
 
-
 import time
 
 import matplotlib.pyplot as plt
@@ -57,7 +56,7 @@ def create_correlation_figure(nv_list, taus, counts):
 
     # fig, ax = plt.subplots()
     fig, axes_pack = plt.subplots(
-        nrows=4, ncols=4, sharex=True, sharey=True, figsize=[10, 10]
+        nrows=5, ncols=5, sharex=True, sharey=True, figsize=[10, 10]
     )
 
     widefield.plot_correlations(axes_pack, nv_list, taus, counts)
@@ -66,8 +65,19 @@ def create_correlation_figure(nv_list, taus, counts):
     ax.set_xlabel(" ")
     fig.text(0.55, 0.01, "Random phase pulse duration (ns)", ha="center")
     ax.set_ylabel(" ")
-    fig.text(0.01, 0.55, "Normalized fluorescence", va="center", rotation="vertical")
+    fig.text(0.01, 0.55, "Correlation coefficient", va="center", rotation="vertical")
     return fig
+
+
+def charge_state_threshold(counts, norms):
+    nvn_counts = norms
+    nv0_counts = np.mean(counts[:, :, 0, :], axis=(1, 2))
+
+    thresholds = (nvn_counts + nv0_counts) / 2
+
+    states = np.greater(counts, thresholds[:, np.newaxis, np.newaxis, np.newaxis])
+
+    return states
 
 
 def main(
@@ -93,7 +103,13 @@ def main(
         pulse_gen.stream_load(seq_file, seq_args_string, num_reps)
 
     counts, ref_counts, raw_data = base_routine.main(
-        nv_list, num_steps, num_reps, num_runs, step_fn, save_images=False, load_iq=True
+        nv_list,
+        num_steps,
+        num_reps,
+        num_runs,
+        step_fn,
+        save_images=False,
+        load_iq=True,
     )
 
     ### Process and plot
@@ -126,11 +142,7 @@ def main(
     repr_nv_sig = widefield.get_repr_nv_sig(nv_list)
     repr_nv_name = repr_nv_sig["name"]
     file_path = dm.get_file_path(__file__, timestamp, repr_nv_name)
-    if "img_arrays" in raw_data:
-        keys_to_compress = ["img_arrays"]
-    else:
-        keys_to_compress = None
-    dm.save_raw_data(raw_data, file_path, keys_to_compress)
+    dm.save_raw_data(raw_data, file_path)
     dm.save_figure(raw_fig, file_path)
     if fit_fig is not None:
         file_path = dm.get_file_path(__file__, timestamp, repr_nv_name + "-fit")
@@ -142,7 +154,7 @@ if __name__ == "__main__":
 
     # file_name = ""
     # data = dm.get_raw_data(file_name)
-    data = dm.get_raw_data(file_id=1409886887927, no_npz=True)
+    data = dm.get_raw_data(file_id=1409886887927, load_npz=True)
 
     nv_list = data["nv_list"]
     num_nvs = len(nv_list)
@@ -156,5 +168,8 @@ if __name__ == "__main__":
     raw_fig = create_raw_data_figure(nv_list, taus, avg_counts, avg_counts_ste)
     fit_fig = create_fit_figure(nv_list, taus, avg_counts, avg_counts_ste, norms)
     correlation_fig = create_correlation_figure(nv_list, taus, counts)
+
+    states = charge_state_threshold(counts, norms)
+    correlation_fig = create_correlation_figure(nv_list, taus, states)
 
     plt.show(block=True)

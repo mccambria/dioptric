@@ -1,30 +1,36 @@
 # -*- coding: utf-8 -*-
-"""This file contains functions, classes, and other objects that are useful
-in a variety of contexts. Since they are expected to be used in manyNormMode
-files, I put them all in one place so that they don't have to be redefined
-in each file.
+"""This file contains functions that are useful in a variety of contexts
 
 Created on November 23rd, 2018
 
 @author: mccambria
+@author: Saroj Chand
 """
 
-from enum import Enum
-import numpy as np
-from numpy import exp
 import json
-import time
-import socket
-import smtplib
-from email.mime.text import MIMEText
-import traceback
-import keyring
-import math
-from utils import common
-from utils.constants import NormMode, ModMode, Digital, Boltzmann
-import signal
-from decimal import Decimal
 import logging
+import math
+import signal
+import smtplib
+import socket
+import time
+import traceback
+from decimal import Decimal
+from email.mime.text import MIMEText
+from enum import Enum
+from functools import cache
+from inspect import signature
+from typing import Callable
+
+import keyring
+import matplotlib.pyplot as plt
+import numpy as np
+import numpy.ma as ma
+from numpy import exp
+from scipy.optimize import curve_fit as scipy_curve_fit
+
+from utils import common
+from utils.constants import Boltzmann, Digital, ModMode, NormMode
 
 # region Server utils
 # Utility functions to be used by LabRAD servers
@@ -125,29 +131,7 @@ def set_laser_power(nv_sig=None, laser_key=None, laser_name=None, laser_power=No
         return None
 
 
-def set_filter(nv_sig=None, optics_key=None, optics_name=None, filter_name=None):
-    """optics_key should be either 'collection' or a laser key.
-    Specify either an optics_key/nv_sig or an optics_name/filter_name.
-    """
-
-    if (nv_sig is not None) and (optics_key is not None):
-        # Quit out if there's not enough info in the sig
-        if optics_key not in nv_sig:
-            return
-        optics_dict = nv_sig[optics_key]
-        if "filter" not in optics_dict:
-            return
-
-        if "name" in optics_dict:
-            optics_name = optics_dict["name"]
-        else:
-            optics_name = optics_key
-        filter_name = optics_dict["filter"]
-
-    # Quit out if we don't have what we need to go forward
-    if (optics_name is None) or (filter_name is None):
-        return
-
+def set_filter(optics_name, filter_name):
     filter_server = get_filter_server(optics_name)
     if filter_server is None:
         return
@@ -225,7 +209,7 @@ def set_delays_to_zero(config):
             return
         # Check if we're at a sublevel - if so, recursively set its delay to 0
         val = config[key]
-        if type(val) is dict:
+        if isinstance(val, dict):
             set_delays_to_zero(val)
 
 
@@ -241,7 +225,7 @@ def set_delays_to_sixteen(config):
             return
         # Check if we're at a sublevel - if so, recursively set its delay to 0
         val = config[key]
-        if type(val) is dict:
+        if isinstance(val, dict):
             set_delays_to_sixteen(val)
 
 
@@ -256,12 +240,14 @@ def seq_train_length_check(train):
 
 
 def encode_seq_args(seq_args):
-    # Recast np ints to Python ints so json knows what to do
+    # Recast np ints to Python ints and handle numpy arrays
     for ind in range(len(seq_args)):
         el = seq_args[ind]
-        if type(el) is np.int32:
+        if isinstance(el, np.ndarray):  # Convert ndarray to a list
+            seq_args[ind] = el.tolist()
+        elif type(el) is np.int32:  # Convert numpy integers to Python int
             seq_args[ind] = int(el)
-        if isinstance(el, Enum):
+        elif isinstance(el, Enum):  # Convert Enums to strings
             seq_args[ind] = str(el)
     return json.dumps(seq_args)
 
@@ -289,6 +275,85 @@ def get_tagger_wiring():
 # region Math functions
 
 
+def curve_fit(
+    f: Callable,
+    xdata: np.ndarray,
+    ydata: np.ndarray,
+    p0: list,
+    sigma: np.ndarray,
+    bounds: tuple = (-np.inf, np.inf),
+    method: str = None,
+    **kwargs,
+):
+    popt, pcov = scipy_curve_fit(
+        f,
+        xdata,
+        ydata,
+        p0=p0,
+        sigma=sigma,
+        absolute_sigma=True,
+        bounds=bounds,
+        method=method,
+        **kwargs,
+    )
+    dof = len(xdata) - len(p0)
+    fit_vals = f(xdata, *popt)
+    red_chi_sq = np.sum(((fit_vals - ydata) / sigma) ** 2) / dof
+    return popt, pcov, red_chi_sq
+
+
+def threshold(val, thresh):
+    try:
+        if len(thresh) == 2:
+            return _dual_threshold(val, *thresh)
+    except Exception:
+        pass
+    where_thresh = np.array(thresh, dtype=bool)
+    thresh_val = np.copy(val)
+    thresh_val = np.greater(val, thresh, out=thresh_val, where=where_thresh)
+    return thresh_val
+
+
+def _dual_threshold(val, low_thresh, high_thresh):
+    low_thresh_val = threshold(val, low_thresh)
+    high_thresh_val = threshold(val, high_thresh)
+    ambiguous = np.logical_xor(low_thresh_val, high_thresh_val)
+    dual_thresh_val = np.where(ambiguous, np.nan, high_thresh_val)
+    return dual_thresh_val
+
+
+def nan_corr_coef(arr):
+    """
+    Version of numpy's correlation coefficient that respects nan by just throwing
+    out any pairs of measurements where either value is nan
+    """
+    return np.corrcoef(arr)
+    arr = np.array(arr)
+    num_rows = arr.shape[0]
+    corr_coef_arr = np.empty((num_rows, num_rows))
+    for ind in range(num_rows):
+        for jnd in range(num_rows):
+            # if ind == 5 and jnd == 6:
+            #     pass
+            if jnd < ind:
+                corr_coef_arr[ind, jnd] = corr_coef_arr[jnd, ind]
+                continue
+            if jnd == ind:
+                corr_coef_arr[ind, jnd] = 1
+                continue
+            i_counts = arr[ind]
+            j_counts = arr[jnd]
+            i_counts_m = ma.masked_invalid(i_counts)
+            j_counts_m = ma.masked_invalid(j_counts)
+            mask = ~i_counts_m.mask & ~j_counts_m.mask
+            corr_coef_arr[ind, jnd] = np.corrcoef(i_counts[mask], j_counts[mask])[0, 1]
+    return corr_coef_arr
+
+
+def moving_average(x, w):
+    return np.convolve(x, np.ones(w), "valid") / w
+
+
 def get_pi_pulse_dur(rabi_period):
     return round(rabi_period / 2)
 
@@ -301,7 +366,7 @@ def iq_comps(phase, amp):
     """Given the phase and amplitude of the IQ vector, calculate the I (real) and
     Q (imaginary) components
     """
-    if type(phase) is list:
+    if isinstance(phase, list):
         ret_vals = []
         for val in phase:
             ret_vals.append(np.round(amp * np.exp((0 + 1j) * val), 5))
@@ -350,7 +415,8 @@ def exp_t2(x, amp, decay, offset):
     return exp_stretch_decay(x, amp, decay, offset, 3)
 
 
-def gaussian(x, *params):
+# def gaussian(x, *params):
+def gaussian(x, coeff, mean, stdev, offset):
     """Calculates the value of a gaussian for the given input and parameters
 
     Params:
@@ -364,7 +430,7 @@ def gaussian(x, *params):
             3: constant y value to account for background
     """
 
-    coeff, mean, stdev, offset = params
+    # coeff, mean, stdev, offset = params
     var = stdev**2  # variance
     centDist = x - mean  # distance from the center
     return offset + coeff * np.exp(-(centDist**2) / (2 * var))
@@ -373,9 +439,7 @@ def gaussian(x, *params):
 def sinexp(t, offset, amp, freq, decay):
     two_pi = 2 * np.pi
     half_pi = np.pi / 2
-    return offset + (amp * np.sin((two_pi * freq * t) + half_pi)) * exp(
-        -(decay**2) * t
-    )
+    return offset + (amp * np.sin((two_pi * freq * t) + half_pi)) * exp(-(decay**2) * t)
 
 
 def cosexp(t, offset, amp, freq, decay):
@@ -396,8 +460,6 @@ def cosexp_1_at_0(t, offset, freq, decay):
 
 
 def sin_1_at_0_phase(t, amp, offset, freq, phase):
-    two_pi = 2 * np.pi
-    # amp = 1 - offset
     return offset + (abs(amp) * np.sin((freq * t - np.pi / 2 + phase)))
 
 
@@ -419,8 +481,7 @@ def cosine_double_sum(t, offset, decay, amp_1, freq_1, amp_2, freq_2):
     two_pi = 2 * np.pi
 
     return offset + np.exp(-t / abs(decay)) * (
-        amp_1 * np.cos(two_pi * freq_1 * t)
-        + amp_2 * np.cos(two_pi * freq_2 * t)
+        amp_1 * np.cos(two_pi * freq_1 * t) + amp_2 * np.cos(two_pi * freq_2 * t)
         # + amp_3 * np.cos(two_pi * freq_3 * t)
     )
 
@@ -589,32 +650,63 @@ def process_counts(
 # region Config getters
 
 
+@cache
+def get_ref_img_array():
+    config = common.get_config_module()
+    ref_img_array = config.ref_img_array
+    return ref_img_array
+
+
+@cache
 def get_apd_indices():
     "Get a list of the APD indices in use from the config"
     config_dict = common.get_config_dict()
     return config_dict["apd_indices"]
 
 
+@cache
 def get_apd_gate_channel():
     config_dict = common.get_config_dict()
     return config_dict["Wiring"]["Tagger"]["di_apd_gate"]
 
 
+@cache
 def get_common_duration(key):
     config = common.get_config_dict()
     common_duration = config["CommonDurations"][key]
     return common_duration
 
 
-def get_laser_dict(laser_key):
+@cache
+def get_virtual_laser_dict(virtual_laser_key):
     config = common.get_config_dict()
-    return config["Optics"][laser_key]
+    return config["Optics"]["VirtualLasers"][virtual_laser_key]
 
 
-def get_laser_name(laser_key):
-    return get_laser_dict(laser_key)["name"]
+@cache
+def get_physical_laser_dict(physical_laser_name):
+    config = common.get_config_dict()
+    return config["Optics"]["PhysicalLasers"][physical_laser_name]
 
 
+@cache
+def get_physical_sig_gen_dict(physical_sig_gen_name):
+    config = common.get_config_dict()
+    return config["Microwaves"]["PhysicalSigGens"][physical_sig_gen_name]
+
+
+@cache
+def get_virtual_sig_gen_dict(sig_gen_ind):
+    config = common.get_config_dict()
+    return config["Microwaves"]["VirtualSigGens"][sig_gen_ind]
+
+
+@cache
+def get_physical_laser_name(laser_key):
+    return get_virtual_laser_dict(laser_key)["physical_name"]
+
+
+@cache
 def get_uwave_dict(uwave_ind):
     config = common.get_config_dict()
     return config["Microwaves"][f"sig_gen_{uwave_ind}"]
@@ -667,17 +759,29 @@ def get_server_power_supply():
     return common.get_server("power_supply")
 
 
-def get_server_sig_gen(state=None, ind=0):
-    """Get the signal generator that controls transitions to the specified NV state"""
-    if state is not None:
-        return common.get_server(f"sig_gen_{state.name}")
-    else:
-        return common.get_server(f"sig_gen_{ind}")
+def get_server_sig_gen(virtual_sig_gen_ind):
+    """Retrieve the signal generator server based on the physical signal generator name."""
+    # Fetch server connection based on the physical signal generator name
+    virtual_sig_gen_dict = get_virtual_sig_gen_dict(virtual_sig_gen_ind)
+    physical_sig_gen_name = virtual_sig_gen_dict["physical_name"]
+    return common.get_server_by_name(physical_sig_gen_name)
 
 
 def get_server_magnet_rotation():
     """Get the signal generator that controls magnet rotation angle"""
     return common.get_server("magnet_rotation")
+
+
+@cache
+def get_server_thorslm():
+    """Get the Thorslm server."""
+    return common.get_server("thorslm")
+
+
+@cache
+def get_server_thorcam():
+    """Get the Thorslm server."""
+    return common.get_server("thorcam")
 
 
 # endregion
@@ -729,10 +833,7 @@ def send_email(content, email_from=None, email_to=None):
 
 def single_conversion(single_func, freq, *args):
     if type(freq) in [list, np.ndarray]:
-        single_func_lambda = lambda freq: single_func(freq, *args)
-        # with ProcessingPool() as p:
-        #     line = p.map(single_func_lambda, freq)
-        line = np.array([single_func_lambda(f) for f in freq])
+        line = np.array([single_func(f, *args) for f in freq])
         return line
     else:
         return single_func(freq, *args)
@@ -763,18 +864,17 @@ def round_sig_figs(val, num_sig_figs):
     """
 
     # All the work is done here
-    func = lambda val, num_sig_figs: round(
-        val, -int(math.floor(math.log10(abs(val))) - num_sig_figs + 1)
-    )
+    def sub_fn(val, num_sig_figs):
+        return round(val, -int(math.floor(math.log10(abs(val))) - num_sig_figs + 1))
 
     # Check for list/array/single value
-    if type(val) is list:
-        return [func(el, num_sig_figs) for el in val]
+    if isinstance(val, list):
+        return [sub_fn(el, num_sig_figs) for el in val]
     elif type(val) is np.ndarray:
-        rounded_val_list = [func(el, num_sig_figs) for el in val.tolist()]
+        rounded_val_list = [sub_fn(el, num_sig_figs) for el in val.tolist()]
         return np.array(rounded_val_list)
     else:
-        return func(val, num_sig_figs)
+        return sub_fn(val, num_sig_figs)
 
 
 def round_for_print_sci(val, err):
@@ -803,7 +903,10 @@ def round_for_print_sci(val, err):
     val = Decimal(val)
     err = Decimal(err)
 
-    err_mag = math.floor(math.log10(err))
+    try:
+        err_mag = math.floor(math.log10(err))
+    except Exception:
+        return [0, 0, 0]
     sci_err = err / (Decimal(10) ** err_mag)
     first_err_digit = int(str(sci_err)[0])
     if first_err_digit == 1:
@@ -811,8 +914,11 @@ def round_for_print_sci(val, err):
     else:
         err_sig_figs = 1
 
-    power_of_10 = math.floor(math.log10(abs(val)))
-    if power_of_10 < err_mag:
+    try:
+        power_of_10 = math.floor(math.log10(abs(val)))
+    except Exception:
+        power_of_10 = None
+    if power_of_10 is None or power_of_10 < err_mag:
         power_of_10 = err_mag + err_sig_figs
     mag = Decimal(10) ** power_of_10
     rounded_err = round_sig_figs(err / mag, err_sig_figs)
@@ -884,7 +990,7 @@ def round_for_print(val, err):
     mag = Decimal(10) ** power_of_10
     str_rounded_err = str(rounded_err)
     val_str = np.format_float_positional(
-        rounded_val * mag, min_digits=len(str_rounded_err) - 2 - power_of_10
+        rounded_val * mag, min_digits=max(len(str_rounded_err) - 2 - power_of_10, 1)
     )
 
     # Trim possible trailing decimal point
@@ -955,8 +1061,8 @@ def init_safe_stop():
     try:
         if SAFESTOPFLAG:
             print("\nPress CTRL + C to stop...\n")
-    except Exception as exc:
-        print("\nPress CTRL + C to stop...\n")
+    except Exception:
+        print("\nPress CTRL + C to  stop...\n")
     SAFESTOPFLAG = False
     signal.signal(signal.SIGINT, _safe_stop_handler)
     return
@@ -971,8 +1077,11 @@ def _safe_stop_handler(sig, frame):
 def safe_stop():
     """Call this to check whether the user asked us to stop"""
     global SAFESTOPFLAG
-    time.sleep(0.1)  # Pause execution to allow safe_stop_handler to run
-    return SAFESTOPFLAG
+    try:
+        time.sleep(0.1)  # Pause execution to allow safe_stop_handler to run
+        return SAFESTOPFLAG
+    except Exception:
+        return False
 
 
 def reset_safe_stop():
@@ -1016,4 +1125,9 @@ def reset_cfm():
 
 # Testing
 if __name__ == "__main__":
-    print(round_for_print(0.07, 0.5))
+    test_a = _dual_threshold(
+        [1, 2, 3, 4.5, 5, 6], [3, 3, 3, 4, 4, 4], [5, 5, 5, 5, 5, 5]
+    )
+    test_b = _dual_threshold([1, 2, 3, 2, 5, 6], [3, 3, 3, 4, 4, 4], [5, 5, 5, 5, 5, 5])
+    test_c = _dual_threshold([1, 2, 3, 6, 5, 6], [3, 3, 3, 4, 4, 4], [5, 5, 5, 5, 5, 5])
+    print(nan_corr_coef([test_a, test_b, test_c]))

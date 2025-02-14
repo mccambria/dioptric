@@ -22,25 +22,24 @@ timeout = 5
 ### END NODE INFO
 """
 
-from qm import QuantumMachinesManager
+import importlib
+import logging
+import os
+import socket
+import sys
+import time
+
+import numpy
+import numpy as np
+from labrad.server import LabradServer, setting
+from qm import CompilerOptionArguments, QuantumMachinesManager
 from qualang_tools.results import fetching_tool, progress_counter
-from labrad.server import LabradServer
-from labrad.server import setting
+
+from servers.inputs.interfaces.tagger import Tagger
+from servers.timing.interfaces.pulse_gen import PulseGen
 from utils import common
 from utils import tool_belt as tb
 from utils.constants import CollectionMode
-import numpy as np
-import importlib
-import numpy
-import logging
-import sys
-import os
-import socket
-from servers.inputs.interfaces.tagger import Tagger
-from servers.timing.interfaces.pulse_gen import PulseGen
-from qm import CompilerOptionArguments
-import time
-import importlib
 
 
 def get_compiled_program_key(seq_file, seq_args_string, num_reps):
@@ -61,17 +60,23 @@ class QmOpx(Tagger, PulseGen, LabradServer):
     pc_name = socket.gethostname()
 
     def initServer(self):
-        tb.configure_logging(self)
+        tb.configure_logging(self, level=logging.ERROR)
 
         config = common.get_config_dict()
 
         # Get manager and OPX
-        ip_address = config["DeviceIDs"]["QM_opx_ip"]
-        self.qmm = QuantumMachinesManager(ip_address)
+        qm_opx_args = config["DeviceIDs"]["QM_opx_args"]
+        self.qmm = QuantumMachinesManager(**qm_opx_args)
+        self.qmm.clear_all_job_results()
 
         self.running_job = None
-        self.opx_config = None
-        self.update_config(None)
+
+        self.opx_config = common.get_opx_config_dict()
+        self.opx = self.qmm.open_qm(self.opx_config)
+
+        # Sequence tracking variables to prevent redundant compiles of sequences
+        self.program_id = None
+        self.compiled_programs = {}
 
         # Add sequence directory to path
         collection_mode = config["collection_mode"]
@@ -91,24 +96,25 @@ class QmOpx(Tagger, PulseGen, LabradServer):
         logging.info("Init complete")
 
     def stopServer(self):
+        self.qmm.clear_all_job_results()
         self.qmm.close_all_quantum_machines()
         self.qmm.close()
 
-    @setting(41)
-    def update_config(self, c):
-        self.reset(None)
+    # @setting(41)
+    # def update_config(self, c):
+    #     self.reset(None)
 
-        # Get the latest config
-        new_config = common.get_opx_config_dict(reload=True)
+    #     # Get the latest config
+    #     new_config = common.get_opx_config_dict(reload=True)
 
-        # Only go through with the update if it's necessary
-        if new_config != self.opx_config:
-            self.opx_config = new_config
-            self.opx = self.qmm.open_qm(self.opx_config)
+    #     # Only go through with the update if it's necessary
+    #     if new_config != self.opx_config:
+    #         self.opx_config = new_config
+    #         self.opx = self.qmm.open_qm(self.opx_config)
 
-            # Sequence tracking variables to prevent redundant compiles of sequences
-            self.program_id = None
-            self.compiled_programs = {}
+    #         # Sequence tracking variables to prevent redundant compiles of sequences
+    #         self.program_id = None
+    #         self.compiled_programs = {}
 
     # endregion
     # region Sequencing
@@ -136,7 +142,7 @@ class QmOpx(Tagger, PulseGen, LabradServer):
         if file_ext == ".py":  # py: import as a module
             seq_module = importlib.import_module(file_name)
             args = tb.decode_seq_args(seq_args_string)
-            seq, seq_ret_vals = seq_module.get_seq(args, num_reps)
+            seq, seq_ret_vals = seq_module.get_seq(*args, num_reps)
 
         return seq, seq_ret_vals
 
@@ -160,18 +166,12 @@ class QmOpx(Tagger, PulseGen, LabradServer):
         if key in self.compiled_programs:
             program_id, seq_ret_vals = self.compiled_programs[key]
         else:  # Compile and store for next time
-            # start = time.time()
             seq, seq_ret_vals = self.get_seq(seq_file, seq_args_string, num_reps)
-            # stop = time.time()
-            # logging.info(f"get_seq time: {round(stop-start, 3)}")
             # These options allow for faster compiles at the expense of some extra memory usage
             compiler_options = CompilerOptionArguments(
                 flags=["skip-loop-unrolling", "skip-loop-rolling"]
             )
-            # start = time.time()
             program_id = self.opx.compile(seq, compiler_options=compiler_options)
-            # stop = time.time()
-            # logging.info(f"compile time: {round(stop-start, 3)}")
             self.compiled_programs.clear()  # MCC just store one program for now, the most recent
             self.compiled_programs[key] = [program_id, seq_ret_vals]
 
@@ -225,6 +225,45 @@ class QmOpx(Tagger, PulseGen, LabradServer):
             c, seq_file="constant_ac.py", seq_args_string=seq_args_string, num_reps=-1
         )
 
+    # fmt: off
+    @setting(17, digital_channels="*i", analog_channels="*i", analog_voltages="*v[]", period="v[]")
+    def square_wave(self, c, digital_channels=[], analog_channels=[], analog_voltages=[], period=1000):
+    # fmt: on
+
+        digital_channels = [int(el) for el in digital_channels]
+        analog_channels = [int(el) for el in analog_channels]
+        analog_voltages = [float(el) for el in analog_voltages]
+        period = float(period)
+
+        args = [digital_channels, analog_channels, analog_voltages, period]
+        seq_args_string = tb.encode_seq_args(args)
+
+        self.stream_immediate(
+            c, seq_file="square_wave.py", seq_args_string=seq_args_string, num_reps=-1
+        )
+        
+    @setting(18)
+    def resume(self, c):
+        
+        # Make sure we've gotten to the pause
+        timeout = 1
+        time_step = 0.001
+        start = time.time()
+        while time.time() - start < timeout:
+            if self.running_job.is_paused():
+                break
+            time.sleep(time_step)
+            
+        self.running_job.resume()
+        
+        
+    @setting(31, input_stream_name="s", val="?")
+    def insert_input_stream(self, c, input_stream_name, val):
+        if isinstance(val, np.ndarray):
+            val = val.tolist()
+        self.running_job.insert_input_stream(input_stream_name, val)
+        
+
     # endregion
     # region Time tagging
 
@@ -256,15 +295,12 @@ class QmOpx(Tagger, PulseGen, LabradServer):
             )
 
         elif self.sample_size == "all_reps":
-            # logging.info('waiting for all')
             num_gates_per_sample = self.num_reps * self.num_gates_per_rep
             results = fetching_tool(
                 self.experiment_job,
                 data_list=["counts_apd0", "counts_apd1"],
                 mode="wait_for_all",
             )
-            # logging.info('got them')
-            # logging.info(time.time()-st)
 
         (
             counts_apd0,
@@ -272,10 +308,6 @@ class QmOpx(Tagger, PulseGen, LabradServer):
         ) = (
             results.fetch_all()
         )  # just not sure if its gonna put it into the list structure we want
-        # logging.info('fetched them')
-        # logging.info(time.time()-st)
-        # logging.info('checkpoint')
-        # logging.info(counts_apd0)
         # now we need to combine into our data structure. they have different lengths because the fpga may
         # save one faster than the other. So just go as far as we have samples on both
         num_new_samples_both = min(
@@ -287,7 +319,6 @@ class QmOpx(Tagger, PulseGen, LabradServer):
         # get only the number of samples that both have
         counts_apd0 = counts_apd0[self.counter_index : max_length]
         counts_apd1 = counts_apd1[self.counter_index : max_length]
-        # logging.info(counts_apd0)
         # now we need to sum over all the iterative readouts that occur if the readout time is longer than 1ms
         counts_apd0 = np.sum(counts_apd0, 1).tolist()
         counts_apd1 = np.sum(counts_apd1, 1).tolist()
@@ -314,11 +345,7 @@ class QmOpx(Tagger, PulseGen, LabradServer):
             for i in range(len(counts_apd0)):
                 return_counts.append([counts_apd0[i]])
 
-        # logging.info('checkpoint1')
-        # logging.info(return_counts)
         self.counter_index = max_length  # make the counter indix the new max length (-1) so the samples start there
-        # logging.info('done processing counts')
-        # logging.info(time.time()-st)
         return return_counts
 
     def read_raw_stream(self):
@@ -326,7 +353,6 @@ class QmOpx(Tagger, PulseGen, LabradServer):
         Read the raw stream. currently it waits for all data in the job to
         come in and reports it all. Ideally it would do it live
         """
-        # logging.info('at read raw stream')
         results = fetching_tool(
             self.experiment_job,
             data_list=["counts_apd0", "counts_apd1", "times_apd0", "times_apd1"],
@@ -334,7 +360,6 @@ class QmOpx(Tagger, PulseGen, LabradServer):
         )
 
         counts_apd0, counts_apd1, times_apd0, times_apd1 = results.fetch_all()
-        # logging.info(np.shape(counts_apd0))
         c1 = counts_apd0.tolist()
         c2 = counts_apd1.tolist()
 
@@ -350,7 +375,6 @@ class QmOpx(Tagger, PulseGen, LabradServer):
 
         all_time_tags = []
         all_channels = []
-        # logging.info('made it to loops')
         running_sum_c1 = 0
         running_sum_c2 = 0
 
@@ -436,7 +460,6 @@ class QmOpx(Tagger, PulseGen, LabradServer):
         """
 
         data_list = ["num_ops_{}".format(1 + i) for i in range(num_streams)]
-        logging.info("at cond logic")
         results = fetching_tool(self.experiment_job, data_list, mode="wait_for_all")
         return_streams = results.fetch_all()
         return return_streams

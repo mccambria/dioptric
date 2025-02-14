@@ -1,0 +1,31 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio 15
+VisualStudioVersion = 15.0.28307.902
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{888888A0-9F3D-457C-B088-3A5042F75D52}") = "Thorlabs.EXULUS.Command", "Thorlabs.EXULUS.Python.SDK\Thorlabs.EXULUS.Command.pyproj", "{DFE5A926-319D-4C5F-BB4C-858C4DDD66B9}"
+EndProject
+Project("{888888A0-9F3D-457C-B088-3A5042F75D52}") = "Thorlabs.EXULUS.CGHDisplay", "Thorlabs.EXULUS.CGHDisplay\Thorlabs.EXULUS.CGHDisplay.pyproj", "{F47804E6-B1ED-4FAC-A600-43ABDE1AD5EF}"
+EndProject
+Project("{888888A0-9F3D-457C-B088-3A5042F75D52}") = "Thorlabs.EXULUS.CGHCalculate", "Thorlabs.EXULUS.CGHCalculate\Thorlabs.EXULUS.CGHCalculate.pyproj", "{48BA7F3C-39B3-4800-9F2B-0A3C25DBD666}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{DFE5A926-319D-4C5F-BB4C-858C4DDD66B9}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{DFE5A926-319D-4C5F-BB4C-858C4DDD66B9}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{F47804E6-B1ED-4FAC-A600-43ABDE1AD5EF}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{F47804E6-B1ED-4FAC-A600-43ABDE1AD5EF}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{48BA7F3C-39B3-4800-9F2B-0A3C25DBD666}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{48BA7F3C-39B3-4800-9F2B-0A3C25DBD666}.Release|Any CPU.ActiveCfg = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(ExtensibilityGlobals) = postSolution
+		SolutionGuid = {67E92AAF-F413-4DD0-A025-14A1A6F0C1BA}
+	EndGlobalSection
+EndGlobal

@@ -7,34 +7,42 @@ Created on October 13th, 2023
 @author: mccambria
 """
 
-
-import numpy
-from qm import qua
-from qm import QuantumMachinesManager
-from qm.simulate import SimulationConfig
-from servers.timing.sequencelibrary.QM_opx import seq_utils
-import utils.common as common
 import matplotlib.pyplot as plt
-from qm import generate_qua_script
-from servers.timing.sequencelibrary.QM_opx.camera import base_sequence
+from qm import QuantumMachinesManager, qua
+from qm.simulate import SimulationConfig
+
+from servers.timing.sequencelibrary.QM_opx import seq_utils
+from utils import common
+from utils import tool_belt as tb
+from utils.constants import VirtualLaserKey
 
 
-def get_seq(args, num_reps):
-    (pol_coords_list, ion_coords_list) = args
+def get_seq(pol_coords, ion_coords, num_reps):
+    if num_reps is None:
+        num_reps = 1
 
-    def uwave_macro():
-        pass
+    green_laser = tb.get_physical_laser_name(VirtualLaserKey.CHARGE_POL)
+    red_laser = tb.get_physical_laser_name(VirtualLaserKey.ION)
 
-    # ion_duration_ns = 1000
-    ion_duration_ns = None
+    with qua.program() as seq:
+        seq_utils.init()
+        seq_utils.macro_run_aods(
+            [green_laser, red_laser], aod_suffices=["charge_pol", "opti"]
+        )
 
-    seq = base_sequence.get_seq(
-        pol_coords_list,
-        ion_coords_list,
-        num_reps,
-        uwave_macro,
-        ion_duration_ns=ion_duration_ns,
-    )
+        def one_rep(rep_ind=None):
+            # Charge polarization with green, spin polarization with yellow
+            seq_utils.macro_polarize([pol_coords], spin_pol=False)
+
+            # Ionization
+            seq_utils.macro_ionize([ion_coords])
+
+            # Readout
+            seq_utils.macro_charge_state_readout()
+
+            seq_utils.macro_wait_for_trigger()
+
+        seq_utils.handle_reps(one_rep, num_reps, wait_for_trigger=False)
 
     seq_ret_vals = []
     return seq, seq_ret_vals
@@ -45,24 +53,12 @@ if __name__ == "__main__":
     config = config_module.config
     opx_config = config_module.opx_config
 
-    ip_address = config["DeviceIDs"]["QM_opx_ip"]
-    qmm = QuantumMachinesManager(host=ip_address)
+    qm_opx_args = config["DeviceIDs"]["QM_opx_args"]
+    qmm = QuantumMachinesManager(**qm_opx_args)
     opx = qmm.open_qm(opx_config)
 
     try:
-        args = [
-            5000.0,
-            "laser_OPTO_589",
-            True,
-            "laser_INTE_520",
-            [111.202, 109.801],
-            1000,
-            False,
-            "laser_COBO_638",
-            [75, 75],
-            2000.0,
-        ]
-        seq, seq_ret_vals = get_seq(args, 5)
+        seq, seq_ret_vals = get_seq([111.202, 109.801], [75, 75], 5)
 
         sim_config = SimulationConfig(duration=int(200e3 / 4))
         sim = opx.simulate(seq, sim_config)

@@ -5,25 +5,31 @@ Tools for managing our experimental database
 Created November 15th, 2023
 
 @author: mccambria
+@author: mccam
 """
 
 # region Imports and constants
 
-from io import BytesIO
-from datetime import datetime
-import os
-import time
-from utils import common
-from utils import _cloud
-from pathlib import Path
-import ujson  # usjson is faster than standard json library
-import orjson  # orjson is faster and more lightweight than ujson, but can't write straight to file
-from git import Repo
-from enum import Enum
-import numpy as np
-import socket
-import labrad
 import copy
+import io
+import os
+import socket
+import time
+import traceback
+from dataclasses import fields
+from datetime import datetime
+from io import BytesIO
+from pathlib import Path
+
+import labrad
+import numpy as np
+import orjson  # orjson is faster and more lightweight than ujson, but can't write straight to file
+import ujson  # usjson is faster than standard json library
+from git import Repo
+from PIL import Image
+
+from utils import _cloud, common, widefield
+from utils.constants import NVSig
 
 data_manager_folder = common.get_data_manager_folder()
 
@@ -85,7 +91,7 @@ def get_file_path(source_file, time_stamp, name, subfolder=None):
 
 
 def save_figure(fig, file_path):
-    """Save a matplotlib figure as a svg.
+    """Save a matplotlib figure as a png.
 
     Params:
         fig: matplotlib.figure.Figure
@@ -96,10 +102,12 @@ def save_figure(fig, file_path):
     """
 
     # Write to bytes then upload that to the cloud
-    file_path_svg = file_path.with_suffix(".svg")
+    ext = "png"
+    file_path_ext = file_path.with_suffix(f".{ext}")
     content = BytesIO()
-    fig.savefig(content, format="svg")
-    _cloud.upload(file_path_svg, content)
+    # fig.savefig(content, format=ext)
+    fig.savefig(content, format=ext, dpi=300, bbox_inches="tight")
+    _cloud.upload(file_path_ext, content)
 
 
 def save_raw_data(raw_data, file_path, keys_to_compress=None):
@@ -117,27 +125,33 @@ def save_raw_data(raw_data, file_path, keys_to_compress=None):
             a separate compressed file. Currently supports numpy arrays
     """
 
-    start = time.time()
+    if keys_to_compress is None:
+        keys_to_compress = widefield.get_default_keys_to_compress(raw_data)
+
+    # start = time.time()
     file_path_txt = file_path.with_suffix(".txt")
 
     # Work with a copy of the raw data to avoid mutation
-    raw_data = copy.deepcopy(raw_data)
+    # raw_data = copy.deepcopy(raw_data)
 
     # Compress numpy arrays to linked file
-    if keys_to_compress is not None:
-        # Build the object to compress
-        kwargs = {}
-        for key in keys_to_compress:
-            kwargs[key] = raw_data[key]
-        # Upload to cloud
-        content = BytesIO()
-        np.savez_compressed(content, **kwargs)
-        file_path_npz = file_path.with_suffix(".npz")
-        npz_file_id = _cloud.upload(file_path_npz, content)
-        # Replace the value in the raw data with a string that tells us where
-        # to find the compressed file
-        for key in keys_to_compress:
-            raw_data[key] = f"{npz_file_id}.npz"
+    try:
+        if keys_to_compress is not None:
+            # Build the object to compress
+            kwargs = {}
+            for key in keys_to_compress:
+                kwargs[key] = raw_data[key]
+            # Upload to cloud
+            content = BytesIO()
+            np.savez_compressed(content, **kwargs)
+            file_path_npz = file_path.with_suffix(".npz")
+            npz_file_id = _cloud.upload(file_path_npz, content)
+            # Replace the value in the raw data with a string that tells us where
+            # to find the compressed file
+            for key in keys_to_compress:
+                raw_data[key] = f"{npz_file_id}.npz"
+    except Exception:
+        print(traceback.format_exc())
 
     # Always include the config dict
     config = common.get_config_dict()
@@ -153,19 +167,39 @@ def save_raw_data(raw_data, file_path, keys_to_compress=None):
         raw_data["opx_config"] = opx_config_copy
 
     # Upload raw data to the cloud
-    option = orjson.OPT_INDENT_2 | orjson.OPT_SERIALIZE_NUMPY | orjson.OPT_NON_STR_KEYS
-    content = orjson.dumps(raw_data, option=option)
-    _cloud.upload(file_path_txt, BytesIO(content))
+    try:
+        option = (
+            orjson.OPT_INDENT_2 | orjson.OPT_SERIALIZE_NUMPY | orjson.OPT_NON_STR_KEYS
+        )
+        content = orjson.dumps(raw_data, option=option)
+        file_id = _cloud.upload(file_path_txt, BytesIO(content))
+    except Exception:
+        print(traceback.format_exc())
+        # Save to local file instead
+        with open(data_manager_folder / file_path_txt.name, "wb") as f:
+            f.write(content)
+        file_id = None
+
+    return file_id
 
     # stop = time.time()
     # print(stop - start)
 
 
-# endregion
 # region Load functions
 
 
-def get_raw_data(file_name=None, file_id=None, use_cache=True, no_npz=False):
+def get_file_name(file_id):
+    try:
+        with open(data_manager_folder / "cache_manifest.txt") as f:
+            cache_manifest = ujson.load(f)
+        file_name = cache_manifest[file_id]
+    except Exception:
+        _, _, file_name = _cloud.download(file_id=file_id)
+    return file_name
+
+
+def get_raw_data(file_name=None, file_id=None, use_cache=True, load_npz=False):
     """Returns a dictionary containing the json object from the specified
     raw data file
 
@@ -183,10 +217,10 @@ def get_raw_data(file_name=None, file_id=None, use_cache=True, no_npz=False):
         the cache - if it's not there already we'll add it to the cache. Otherwise
         we'll get the file straight from the cloud and skip caching it. By default
         True
-    skip_npz: bool, optional
-        Whether or not to skip downloading and decompressing any linked compressed
-        numpy files (.npz files). Retrieving these can be slow if the file is very
-        large so it's better to skip it if you don't need it.
+    load_npz: bool, optional
+        Whether or not to retrieve any linked compressed numpy files (.npz files).
+        Retrieving these can be slow if the file is very large so it's better to
+        skip it if you don't need it.
 
     Returns
     -------
@@ -194,31 +228,47 @@ def get_raw_data(file_name=None, file_id=None, use_cache=True, no_npz=False):
         Dictionary containing the json object from the specified raw data file
     """
 
+    # Recurse if multiple file_ids passed
+    if isinstance(file_id, (list, tuple)):
+        file_ids = file_id
+        data = get_raw_data(file_id=file_ids[0])
+        for file_id in file_ids[1:]:
+            new_data = get_raw_data(file_id=file_id)
+            data["num_runs"] += new_data["num_runs"]
+            data["counts"] = np.append(data["counts"], new_data["counts"], axis=2)
+        return data
+
     if file_id is not None:
         file_id = str(file_id)
 
     ### Check the cache first
 
     # Try to open an existing cache manifest
+    retrieved_from_cache = False
     if use_cache:
         try:
             with open(data_manager_folder / "cache_manifest.txt") as f:
                 cache_manifest = ujson.load(f)
-        except Exception as exc:
+        except Exception:
             cache_manifest = None
 
         # Try to open the cached file
         try:
-            if file_id is not None:
-                file_name = cache_manifest[file_id]
-            with open(data_manager_folder / f"{file_name}.txt", "rb") as f:
-                file_content = f.read()
-            data = orjson.loads(file_content)
-            retrieved_from_cache = True
-        except Exception as exc:
-            retrieved_from_cache = False
-    else:
-        retrieved_from_cache = False
+            if file_id is None:
+                for key in cache_manifest.keys():
+                    if cache_manifest[key]["file_name"] == file_name:
+                        file_id = key
+            cache_entry = cache_manifest[file_id]
+            # Only load from cache if we either don't need the npz or we already have it
+            if not load_npz or cache_entry["load_npz"]:
+                if file_name is None:
+                    file_name = cache_entry["file_name"]
+                with open(data_manager_folder / f"{file_name}.txt", "rb") as f:
+                    file_content = f.read()
+                data = orjson.loads(file_content)
+                retrieved_from_cache = True
+        except Exception:
+            pass
 
     ### If not in cache, download from the cloud
 
@@ -228,7 +278,7 @@ def get_raw_data(file_name=None, file_id=None, use_cache=True, no_npz=False):
         data = orjson.loads(file_content)
 
         # Find and decompress the linked numpy arrays
-        if not no_npz:
+        if load_npz:
             for key in data:
                 val = data[key]
                 if not isinstance(val, str):
@@ -242,24 +292,21 @@ def get_raw_data(file_name=None, file_id=None, use_cache=True, no_npz=False):
                 npz_data = np.load(BytesIO(npz_file_content))
                 data |= npz_data
                 break
-
     ### Add to cache and return the data
 
     # Update the cache manifest
     if use_cache:
         cache_manifest_updated = False
-        if cache_manifest is None:
-            cache_manifest = {file_id: file_name}
-            cache_manifest_updated = True
-        elif not retrieved_from_cache:
+        if not retrieved_from_cache:
+            if cache_manifest is None:
+                cache_manifest = {}
             cached_file_ids = list(cache_manifest.keys())
             # Add the new file to the manifest
-            if not retrieved_from_cache:
-                cache_manifest[file_id] = file_name
-                cached_file_ids.append(file_id)
+            cache_manifest[file_id] = {"file_name": file_name, "load_npz": load_npz}
+            cached_file_ids.append(file_id)
             while len(cached_file_ids) > 10:
                 file_id_to_remove = cached_file_ids.pop(0)
-                file_name_to_remove = cache_manifest[file_id_to_remove]
+                file_name_to_remove = cache_manifest[file_id_to_remove]["file_name"]
                 del cache_manifest[file_id_to_remove]
                 os.remove(data_manager_folder / f"{file_name_to_remove}.txt")
             cache_manifest_updated = True
@@ -273,7 +320,137 @@ def get_raw_data(file_name=None, file_id=None, use_cache=True, no_npz=False):
             with open(data_manager_folder / f"{file_name}.txt", "wb") as f:
                 f.write(file_content)
 
+    # Retrieve valid fields for NVSig
+    valid_fields = {field.name for field in fields(NVSig)}
+
+    if "nv_list" in data:
+        nv_list = data["nv_list"]
+        # Filter out unexpected fields
+        nv_list = [
+            NVSig(**{key: nv[key] for key in nv if key in valid_fields})
+            for nv in nv_list
+        ]
+        data["nv_list"] = nv_list
+
     return data
+
+    # if "nv_list" in data:
+    #     nv_list = data["nv_list"]
+    #     nv_list = [NVSig(**nv) for nv in nv_list]
+    #     data["nv_list"] = nv_list
+
+    # return data
+
+
+# from io import BytesIO
+
+# import numpy as np
+# import orjson
+# import ujson
+
+
+# def get_raw_data(file_name=None, file_id=None, use_cache=True, load_npz=False):
+#     """Returns a dictionary containing the JSON object from the specified raw data file,
+#     correctly loading NumPy `.npz` files and converting arrays to lists.
+
+#     Parameters
+#     ----------
+#     file_name : str, optional
+#         Name of the raw data file to load, w/o extension.
+#     file_id : str, optional
+#         Cloud ID of the file to load.
+#     use_cache : bool, optional
+#         Whether or not to use the cache.
+#     load_npz: bool, optional
+#         Whether or not to retrieve any linked compressed numpy files.
+
+#     Returns
+#     -------
+#     dict
+#         Dictionary containing the JSON object with NumPy arrays properly converted.
+#     """
+
+#     if file_id is not None:
+#         file_id = str(file_id)
+
+#     # Attempt to load from cache
+#     retrieved_from_cache = False
+#     if use_cache:
+#         try:
+#             with open(data_manager_folder / "cache_manifest.txt") as f:
+#                 cache_manifest = ujson.load(f)
+#         except Exception:
+#             cache_manifest = None
+
+#         try:
+#             if file_id is None:
+#                 for key in cache_manifest.keys():
+#                     if cache_manifest[key]["file_name"] == file_name:
+#                         file_id = key
+#             cache_entry = cache_manifest[file_id]
+#             if not load_npz or cache_entry["load_npz"]:
+#                 if file_name is None:
+#                     file_name = cache_entry["file_name"]
+#                 with open(data_manager_folder / f"{file_name}.txt", "rb") as f:
+#                     file_content = f.read()
+#                 data = orjson.loads(file_content)
+#                 retrieved_from_cache = True
+#         except Exception:
+#             pass
+
+#     # If not in cache, download from the cloud
+#     if not retrieved_from_cache:
+#         file_content, file_id, file_name = _cloud.download(file_name, "txt", file_id)
+#         data = orjson.loads(file_content)
+
+#     # Load and process .npz files if required
+#     if load_npz:
+#         npz_keys_to_load = []
+#         for key, val in data.items():
+#             if isinstance(val, str) and val.endswith(".npz"):
+#                 npz_keys_to_load.append((key, val))
+
+#         for key, npz_file_name in npz_keys_to_load:
+#             print(f"Loading NPZ file: {npz_file_name} for key: {key}")
+
+#             npz_file_id = npz_file_name.split(".")[0] if npz_file_name else None
+#             try:
+#                 npz_file_content, _, _ = _cloud.download(file_name, "npz", npz_file_id)
+#                 npz_data = np.load(BytesIO(npz_file_content), allow_pickle=True)
+
+#                 # Convert NumPy arrays to lists for JSON serialization
+#                 data[key] = {
+#                     k: v.tolist() if isinstance(v, np.ndarray) else v
+#                     for k, v in npz_data.items()
+#                 }
+#                 print(f"Successfully loaded NPZ data for key: {key}")
+#             except Exception as e:
+#                 print(f"Error loading NPZ file {npz_file_name}: {e}")
+
+#     # Convert NumPy types to Python-native types for JSON serialization
+#     def convert_numpy(obj):
+#         if isinstance(obj, np.ndarray):
+#             return obj.tolist()
+#         elif isinstance(obj, (np.float64, np.float32, np.float16)):
+#             return float(obj)
+#         elif isinstance(obj, (np.int64, np.int32, np.int16)):
+#             return int(obj)
+#         elif isinstance(obj, dict):
+#             return {key: convert_numpy(value) for key, value in obj.items()}
+#         elif isinstance(obj, list):
+#             return [convert_numpy(item) for item in obj]
+#         return obj
+
+#     data = convert_numpy(data)
+
+#     return data
+
+
+def get_img(file_name=None, ext=None, file_id=None):
+    file_content, file_id, file_name = _cloud.download(file_name, ext, file_id)
+    img = Image.open(io.BytesIO(file_content))
+    img = np.asarray(img)
+    return np.asarray(img)
 
 
 # endregion
@@ -357,7 +534,10 @@ def _json_escape(raw_data):
 
 
 if __name__ == "__main__":
-    time_stamp = get_time_stamp()
-    file_path = get_file_path(__file__, time_stamp, "MCCTEST")
-    data = {"matt": "Cambria!"}
-    save_raw_data(data, file_path)
+    file_path = data_manager_folder / "test"
+    file_path_txt = file_path.with_suffix(".txt")
+    raw_data = get_raw_data(file_id=1475961484392)
+    option = orjson.OPT_INDENT_2 | orjson.OPT_SERIALIZE_NUMPY | orjson.OPT_NON_STR_KEYS
+    content = orjson.dumps(raw_data, option=option)
+    with open(data_manager_folder / file_path_txt.name, "wb") as f:
+        f.write(content)

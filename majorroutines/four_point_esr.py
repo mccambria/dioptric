@@ -10,26 +10,26 @@ Created on Thu Apr 11 15:39:23 2019
 # %% Imports
 
 
-from isort import file
-import utils.tool_belt as tool_belt
-import majorroutines.optimize as optimize
-import majorroutines.pulsed_resonance as pulsed_resonance
-import numpy as np
-import matplotlib.pyplot as plt
+import sys
 import time
+from random import shuffle
+
+import labrad
+import matplotlib.pyplot as plt
+import numpy as np
+from isort import file
 from scipy.optimize import curve_fit
 from scipy.signal import find_peaks
-import labrad
-from utils.tool_belt import States
-from random import shuffle
-import sys
 
+import majorroutines.pulsed_resonance as pulsed_resonance
+import majorroutines.targeting as targeting
+import utils.tool_belt as tool_belt
+from utils.tool_belt import States
 
 # region Functions
 
 
 def calc_resonance_from_file(f):
-
     data = tool_belt.get_raw_data(f)
 
     ref_counts = data["ref_counts"]
@@ -58,7 +58,6 @@ def calc_resonance_from_file(f):
 
 
 def calc_resonance(norm_avg_sig, norm_avg_sig_ste, detuning, d_omega, passed_res):
-
     f1, f2, f3, f4 = norm_avg_sig
     f1_err, f2_err, f3_err, f4_err = norm_avg_sig_ste
     delta_res = ((f1 + f2) - (f3 + f4)) * (d_omega / ((f1 - f2) - (f3 - f4)))
@@ -109,7 +108,6 @@ def main(
     opti_nv_sig=None,
     ret_file_name=False,
 ):
-
     with labrad.connect() as cxn:
         ret_vals = main_with_cxn(
             cxn,
@@ -138,7 +136,6 @@ def main_with_cxn(
     opti_nv_sig=None,
     ret_file_name=False,
 ):
-
     # %% Initial calculations and setup
 
     tool_belt.reset_cfm(cxn)
@@ -207,12 +204,12 @@ def main_with_cxn(
 
         # Optimize and save the coords we found
         if opti_nv_sig:
-            opti_coords = optimize.main_with_cxn(cxn, opti_nv_sig, apd_indices)
+            opti_coords = targeting.main_with_cxn(cxn, opti_nv_sig, apd_indices)
             drift = tool_belt.get_drift()
             adj_coords = nv_sig["coords"] + np.array(drift)
             tool_belt.set_xyz(cxn, adj_coords)
         else:
-            opti_coords = optimize.main_with_cxn(cxn, nv_sig, apd_indices)
+            opti_coords = targeting.main_with_cxn(cxn, nv_sig, apd_indices)
         opti_coords_list.append(opti_coords)
 
         # Set up the microwaves and laser. Then load the pulse streamer
@@ -228,7 +225,6 @@ def main_with_cxn(
         # Take a sample and step through the shuffled frequencies
         shuffle(freq_ind_list)
         for freq_ind in freq_ind_list:
-
             # Break out of the while if the user says stop
             if tool_belt.safe_stop():
                 break
@@ -329,7 +325,6 @@ def main_with_cxn(
 
 
 if __name__ == "__main__":
-
     # ZFS imaging routine
 
     # temp_file = "2022_07_25-14_44_53-hopper-search"

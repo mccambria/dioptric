@@ -7,64 +7,38 @@ Created on October 13th, 2023
 @author: mccambria
 """
 
-
-import numpy
-from qm import qua
-from qm import QuantumMachinesManager
-from qm.simulate import SimulationConfig
-from servers.timing.sequencelibrary.QM_opx import seq_utils
-import utils.common as common
 import matplotlib.pyplot as plt
-from qm import generate_qua_script
+import numpy as np
+from qm import QuantumMachinesManager, qua
+from qm.simulate import SimulationConfig
+
+import utils.common as common
+from servers.timing.sequencelibrary.QM_opx import seq_utils
+from servers.timing.sequencelibrary.QM_opx.camera import base_charge_state_histograms
 
 
-def get_seq(args, num_reps):
-    (
-        pol_coords_list,
-        ion_coords_list,
-        pol_duration_ns,
-        ion_duration_ns,
-        diff_polarize,
-        diff_ionize,
-    ) = args
-
-    if num_reps == None:
-        num_reps = 1
-
-    if diff_polarize and not diff_ionize:
-        do_polarize_sig = True
-        do_polarize_ref = False
-        do_ionize_sig = False
-        do_ionize_ref = False
-    elif not diff_polarize and diff_ionize:
-        do_polarize_sig = True
-        do_polarize_ref = True
-        do_ionize_sig = True
-        do_ionize_ref = False
-
+def get_seq(
+    pol_coords_list,
+    pol_duration_list,
+    pol_amp_list,
+    ion_coords_list,
+    ion_do_target_list,
+    verify_charge_states,
+    num_reps,
+):
     with qua.program() as seq:
-        seq_utils.turn_on_aods()
-
-        def half_rep(do_polarize_sub, do_ionize_sub):
-            if do_polarize_sub:
-                seq_utils.macro_polarize(pol_coords_list, pol_duration_ns)
-
-            if do_ionize_sub:
-                seq_utils.macro_ionize(ion_coords_list, ion_duration_ns)
-
-            seq_utils.macro_charge_state_readout()
-
-        def one_rep():
-            for half_rep_args in [
-                [do_polarize_sig, do_ionize_sig],
-                [do_polarize_ref, do_ionize_ref],
-            ]:
-                half_rep(*half_rep_args)
-
-                # qua.align()
-                seq_utils.macro_wait_for_trigger()
-
-        seq_utils.handle_reps(one_rep, num_reps, wait_for_trigger=False)
+        num_nvs = len(pol_coords_list)
+        seq_utils.init(num_nvs)
+        seq_utils.macro_run_aods()
+        base_charge_state_histograms.macro(
+            pol_coords_list,
+            pol_duration_list,
+            pol_amp_list,
+            ion_coords_list,
+            num_reps,
+            ion_do_target_list=ion_do_target_list,
+            verify_charge_states=verify_charge_states,
+        )
 
     seq_ret_vals = []
     return seq, seq_ret_vals
@@ -75,38 +49,28 @@ if __name__ == "__main__":
     config = config_module.config
     opx_config = config_module.opx_config
 
-    ip_address = config["DeviceIDs"]["QM_opx_ip"]
-    qmm = QuantumMachinesManager(host=ip_address)
+    qm_opx_args = config["DeviceIDs"]["QM_opx_args"]
+    qmm = QuantumMachinesManager(**qm_opx_args)
     opx = qmm.open_qm(opx_config)
 
     try:
-        args = [
-            "laser_INTE_520",
-            10000.0,
-            [
-                [110, 109.51847988358679],
-                [0.001, 110.70156405156148],
-            ],
-            "laser_COBO_638",
-            1000.0,
-            [
-                [75.42725784791932, 75.65982013416432],
-                [75.98725784791932, 74.74382013416432],
-            ],
-            "laser_OPTO_589",
-            50000000.0,
+        seq, seq_ret_vals = get_seq(
+            [[109.033, 106.685], [115.694, 101.182]],
+            [10000, 10000],
+            [1.0, 1.0],
+            [[73.524, 72.417], [78.906, 67.807]],
+            None,
             False,
-            True,
-        ]
-        seq, seq_ret_vals = get_seq(args, 5)
+            5,
+        )
 
-        sim_config = SimulationConfig(duration=int(200e3 / 4))
+        sim_config = SimulationConfig(duration=int(150e3 / 4))
         sim = opx.simulate(seq, sim_config)
         samples = sim.get_simulated_samples()
         samples.con1.plot()
-        plt.show(block=True)
 
     except Exception as exc:
         raise exc
     finally:
         qmm.close_all_quantum_machines()
+        plt.show(block=True)

@@ -8,18 +8,17 @@ Created on August 29th, 2022
 """
 
 from abc import ABC, abstractmethod
-from labrad.server import LabradServer
-from labrad.server import setting
+
+from labrad.server import LabradServer, setting
 
 
 class PulseGen(LabradServer, ABC):
-    
     @setting(101, seq_file="s", seq_args_string="s", num_reps="i", returns="*?")
-    def stream_immediate(self, c, seq_file, seq_args_string="", num_reps=1): 
+    def stream_immediate(self, c, seq_file, seq_args_string="", num_reps=1):
         """
         Load the sequence from seq_file and immediately run it for
         the specified number of repitions. End in the specified
-        final output state. return the desired ret vals. It's the same fn 
+        final output state. return the desired ret vals. It's the same fn
         for every pulse generator so it lives on the interface
 
         Params
@@ -36,14 +35,14 @@ class PulseGen(LabradServer, ABC):
             list(any)
                 Arbitrary list returned by the sequence file
         """
-        
-        ret_vals = self.stream_load(c, seq_file, seq_args_string)
+
+        ret_vals = self.stream_load(c, seq_file, seq_args_string, num_reps)
         self.stream_start(c, num_reps)
-        
+
         return ret_vals
 
     @abstractmethod
-    def stream_load(self, c, seq_file, seq_args_string=""):
+    def stream_load(self, c, seq_file, seq_args_string="", num_reps=1):
         """
         Load the sequence from seq_file. End in the specified final output state.
         The sequence will not run until you call stream_start.
@@ -72,7 +71,7 @@ class PulseGen(LabradServer, ABC):
                 Number of times to repeat the sequence. Default is 1
         """
         pass
-    
+
     @abstractmethod
     def constant(self, c, digital_channels=[], analog_channels=[], analog_voltages=[]):
         """
@@ -88,7 +87,7 @@ class PulseGen(LabradServer, ABC):
             Voltages to assign to analog_channels
         """
         pass
-    
+
     @abstractmethod
     def reset(self, c):
         """

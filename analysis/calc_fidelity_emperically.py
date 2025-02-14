@@ -8,14 +8,16 @@ file to help find fidelity emperically, outside of having to use determine_charg
 """
 
 import copy
-import numpy as np
+import json
+
 import matplotlib.pyplot as plt
+import numpy as np
+import scipy.stats as stats
+
+import majorroutines.charge_majorroutines.photonstatistics as model
+import majorroutines.targeting as targeting
 import utils.kplotlib as kpl
 import utils.tool_belt as tool_belt
-import scipy.stats as stats
-import majorroutines.optimize as optimize
-import json
-import majorroutines.charge_majorroutines.photonstatistics as model
 
 
 def calculate_threshold_no_model(
@@ -29,9 +31,12 @@ def calculate_threshold_no_model(
     power,
     nd_filter=None,
 ):
-    
-
-    thresh, fid, threshold_list, fidelity_list  = model.calculate_threshold_from_experiment(
+    (
+        thresh,
+        fid,
+        threshold_list,
+        fidelity_list,
+    ) = model.calculate_threshold_from_experiment(
         x_vals_0, x_vals_m, mu_0, mu_m, nv0_hist, nvm_hist
     )
     # print(fid)
@@ -41,8 +46,8 @@ def calculate_threshold_no_model(
     ax.plot(x_vals_m, nvm_hist, "g-o", label=r"$m_s$=-1")
     ax.set_xlabel("Counts")
     ax.set_ylabel("Occur.")
-    plt.axvline(x=thresh, color="blue",linestyle='--')
-    ax.legend(title='Prep State')
+    plt.axvline(x=thresh, color="blue", linestyle="--")
+    ax.legend(title="Prep State")
     textstr = "\n".join(
         (
             r"$\mu_0=%.2f$" % (mu_0),
@@ -66,14 +71,12 @@ def calculate_threshold_no_model(
             int(readout_time / 1e3), power, nd_filter
         )
     else:
-        title_text = "{} us readout, {} V".format(
-            int(readout_time / 1e3), power
-        )
+        title_text = "{} us readout, {} V".format(int(readout_time / 1e3), power)
     ax.set_title(title_text)
-    return thresh, fid, fig3, threshold_list, fidelity_list 
+    return thresh, fid, fig3, threshold_list, fidelity_list
+
 
 def calc_histogram(nv0, nvm, dur, bins=None):
-
     # Counts are in us, readout is in ns
     dur_us = dur / 1e3
     # print(nv0)
@@ -83,19 +86,22 @@ def calc_histogram(nv0, nvm, dur, bins=None):
     max_0 = int(max(nv0_counts))
     max_m = int(max(nvm_counts))
     if bins == None:
-
         occur_0, bin_edges_0 = np.histogram(
-            nv0_counts, np.linspace(0, max_0, max_0 + 1)  # 200)  #
+            nv0_counts,
+            np.linspace(0, max_0, max_0 + 1),  # 200)  #
         )
         occur_m, bin_edge_m = np.histogram(
-            nvm_counts, np.linspace(0, max_m, max_m + 1)  # 200)  #
+            nvm_counts,
+            np.linspace(0, max_m, max_m + 1),  # 200)  #
         )
     elif bins != None:
         occur_0, bin_edges_0 = np.histogram(
-            nv0_counts, bins  # np.linspace(0, max_0, max_0 + 1) #200)  #
+            nv0_counts,
+            bins,  # np.linspace(0, max_0, max_0 + 1) #200)  #
         )
         occur_m, bin_edge_m = np.histogram(
-            nvm_counts, bins  # np.linspace(0, max_m,  max_m + 1) #200)  #
+            nvm_counts,
+            bins,  # np.linspace(0, max_m,  max_m + 1) #200)  #
         )
     # norm_occur_m = occur_m/sum(occur_m)
     # norm_occur_0 = occur_0/sum(occur_0)
@@ -108,19 +114,27 @@ def calc_histogram(nv0, nvm, dur, bins=None):
 
     return occur_0, x_vals_0, occur_m, x_vals_m
 
-def calc_fidelity(nv0_counts, nvm_counts,readout_dur,readout_power):
-    
+
+def calc_fidelity(nv0_counts, nvm_counts, readout_dur, readout_power):
     # readout_dur = 10e9 # just make it super big because we just want to use what was measured
-    
-    occur_0, x_vals_0, occur_m, x_vals_m = calc_histogram(nv0_counts, nvm_counts, readout_dur, bins=None)
+
+    occur_0, x_vals_0, occur_m, x_vals_m = calc_histogram(
+        nv0_counts, nvm_counts, readout_dur, bins=None
+    )
     # print(occur_m)
     max_x_val = max(list(x_vals_0) + list(x_vals_m)) + 10
 
     num_reps = len(nv0_counts)
     mean_0 = sum(occur_0 * x_vals_0) / num_reps
     mean_m = sum(occur_m * x_vals_m) / num_reps
-    
-    threshold, fidelity, fig, threshold_list, fidelity_list  = calculate_threshold_no_model(
+
+    (
+        threshold,
+        fidelity,
+        fig,
+        threshold_list,
+        fidelity_list,
+    ) = calculate_threshold_no_model(
         readout_dur,
         occur_0,
         occur_m,
@@ -132,54 +146,46 @@ def calc_fidelity(nv0_counts, nvm_counts,readout_dur,readout_power):
         None,
     )
     print(fidelity)
-    
-    return threshold, fidelity, threshold_list, fidelity_list 
+
+    return threshold, fidelity, threshold_list, fidelity_list
 
 
 if __name__ == "__main__":
-    
-    filename = '2022_12_10-08_56_16-johnson-search-ion_pulse_dur'
-    
+    filename = "2022_12_10-08_56_16-johnson-search-ion_pulse_dur"
+
     data = tool_belt.get_raw_data(filename)
-    nv_sig = data['nv_sig']
-    readout_dur= nv_sig['charge_readout_dur']
-    readout_power = nv_sig['charge_readout_laser_power']
-    nvm_counts = np.array(data['sig_counts_eachshot_array'])[0]
-    nv0_counts = np.array(data['ref_counts_eachshot_array'])[0]
-    
+    nv_sig = data["nv_sig"]
+    readout_dur = nv_sig["charge_readout_dur"]
+    readout_power = nv_sig["charge_readout_laser_power"]
+    nvm_counts = np.array(data["sig_counts_eachshot_array"])[0]
+    nv0_counts = np.array(data["ref_counts_eachshot_array"])[0]
+
     # plt.figure()
     # plt.hist(nvm_counts,histtype='step',bins=range(int(min(nvm_counts)), int(max(nvm_counts)) + 1, 1))
     # plt.hist(nv0_counts,histtype='step',bins=range(int(min(nv0_counts)), int(max(nv0_counts)) + 1, 1))
     # plt.show()
-    
+
     mean_s = np.mean(nvm_counts)
     mean_r = np.mean(nv0_counts)
     std_s = np.std(nvm_counts)
     std_r = np.std(nv0_counts)
 
-
     # threshold, fidelity, threshold_list, fidelity_list  =calc_fidelity(nv0_counts, nvm_counts,readout_dur,readout_power)
     # print(threshold, fidelity)
     # print(threshold_list)
     # print(fidelity_list)
-    
-    occur_0, x_vals_0, occur_m, x_vals_m = calc_histogram(nv0_counts, nvm_counts, readout_dur, bins=None)
+
+    occur_0, x_vals_0, occur_m, x_vals_m = calc_histogram(
+        nv0_counts, nvm_counts, readout_dur, bins=None
+    )
     # print(occur_m)
     max_x_val = max(list(x_vals_0) + list(x_vals_m)) + 10
     num_reps = len(nv0_counts)
     mean_0 = sum(occur_0 * x_vals_0) / num_reps
     mean_m = sum(occur_m * x_vals_m) / num_reps
     thred = 3
-    area_below_0, area_above_0 = model.get_area(x_vals_0,occur_0.tolist(),thred)
+    area_below_0, area_above_0 = model.get_area(x_vals_0, occur_0.tolist(), thred)
     full_area_0 = area_below_0 + area_above_0
 
-    area_below_m, area_above_m = model.get_area(x_vals_m,occur_m.tolist(),thred)
+    area_below_m, area_above_m = model.get_area(x_vals_m, occur_m.tolist(), thred)
     full_area_m = area_below_m + area_above_m
-        
-   
-        
-        
-        
-        
-        
-

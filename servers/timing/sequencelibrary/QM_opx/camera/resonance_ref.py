@@ -7,7 +7,6 @@ Created on October 13th, 2023
 @author: mccambria
 """
 
-
 import time
 
 import matplotlib.pyplot as plt
@@ -17,21 +16,19 @@ from qm.simulate import SimulationConfig
 
 import utils.common as common
 from servers.timing.sequencelibrary.QM_opx import seq_utils
-from servers.timing.sequencelibrary.QM_opx.camera import base_sequence
+from servers.timing.sequencelibrary.QM_opx.camera import base_scc_sequence
 
 
 def get_seq(
-    args,
-    num_reps,
+    base_scc_seq_args,
+    step_inds=None,
+    num_reps=1,
     reference=True,
     pol_duration_ns=None,
-    uwave_duration_ns=None,
     ion_duration_ns=None,
     readout_duration_ns=None,
     phase=None,
 ):
-    (pol_coords_list, ion_coords_list, uwave_ind) = args
-
     # if phase is not None:
     #     i_el, q_el = seq_utils.get_iq_mod_elements(uwave_ind)
     # phase_rad = phase * (np.pi / 180)
@@ -39,38 +36,31 @@ def get_seq(
     # q_comp = 0.5 * np.sin(phase_rad)
     # iq_pulse_dict = {0: , 90:}
 
-    sig_gen_el = seq_utils.get_sig_gen_element(uwave_ind)
-    uwave_duration = seq_utils.convert_ns_to_cc(uwave_duration_ns, allow_zero=True)
-    buffer = seq_utils.get_widefield_operation_buffer()
+    with qua.program() as seq:
+        seq_utils.init()
+        seq_utils.macro_run_aods()
+        step_ind = qua.declare(int)
 
-    def uwave_macro_sig():
-        if uwave_duration is None:
-            qua.play("pi_pulse", sig_gen_el)
-            # if phase is not None:
-            #     qua.play("pi_pulse", i_el)
-            #     qua.play("pi_pulse", q_el)
-        else:
-            if uwave_duration != 0:
-                qua.play("on", sig_gen_el, duration=uwave_duration)
-        qua.wait(buffer, sig_gen_el)
+        def uwave_macro_sig(uwave_ind_list, step_val):
+            seq_utils.macro_pi_pulse(uwave_ind_list)
 
-    def uwave_macro_ref():
-        pass
-
-    if reference:
-        uwave_macro = [uwave_macro_sig, uwave_macro_ref]
-    else:
-        uwave_macro = uwave_macro_sig
-
-    seq = base_sequence.get_seq(
-        pol_coords_list,
-        ion_coords_list,
-        num_reps,
-        uwave_macro,
-        pol_duration_ns,
-        ion_duration_ns,
-        readout_duration_ns,
-    )
+        # MCC
+        # def uwave_macro_sig(uwave_ind_list, step_val):
+        #     qua.align()
+        #     seq_utils.macro_pi_on_2_pulse(uwave_ind_list)
+        #     qua.wait(4)
+        #     seq_utils.macro_pi_pulse(uwave_ind_list)
+        #     qua.wait(4)
+        #     # seq_utils.macro_pi_pulse([uwave_ind])
+        #     seq_utils.macro_pi_on_2_pulse(uwave_ind_list)
+        with qua.for_each_(step_ind, step_inds):
+            base_scc_sequence.macro(
+                base_scc_seq_args,
+                uwave_macro_sig,
+                step_ind,
+                num_reps=num_reps,
+                reference=reference,
+            )
 
     seq_ret_vals = []
     return seq, seq_ret_vals
@@ -81,25 +71,32 @@ if __name__ == "__main__":
     config = config_module.config
     opx_config = config_module.opx_config
 
-    ip_address = config["DeviceIDs"]["QM_opx_ip"]
-    qmm = QuantumMachinesManager(host=ip_address)
+    qm_opx_args = config["DeviceIDs"]["QM_opx_args"]
+    qmm = QuantumMachinesManager(**qm_opx_args)
     opx = qmm.open_qm(opx_config)
 
     try:
-        args = [
+        seq, seq_ret_vals = get_seq(
             [
-                [112.8143831410256, 110.75435400118901],
-                [112.79838314102561, 110.77035400118902],
+                [
+                    [108.61033817964635, 109.89718413914437],
+                    [109.19233817964634, 110.44518413914437],
+                    [108.63333817964634, 110.49318413914438],
+                ],
+                [
+                    [73.37605409727466, 75.19065445569203],
+                    [73.91305409727465, 75.64165445569202],
+                    [73.42805409727465, 75.66565445569202],
+                ],
+                [144, 160, 164],
+                [],
+                [0],
             ],
-            [
-                [76.56091979499166, 75.8487161634141],
-                [76.30891979499165, 75.96071616341409],
-            ],
-            0,
-        ]
-        seq, seq_ret_vals = get_seq(args, 5)
+            [136, 168, 112, 224],
+            10,
+        )
 
-        sim_config = SimulationConfig(duration=int(100e3 / 4))
+        sim_config = SimulationConfig(duration=int(300e3 / 4))
         sim = opx.simulate(seq, sim_config)
         samples = sim.get_simulated_samples()
         samples.con1.plot()

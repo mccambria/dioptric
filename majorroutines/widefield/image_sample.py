@@ -7,22 +7,22 @@ Created on April 9th, 2019
 @author: mccambria
 """
 
-
-from multiprocessing import Pool
+import copy
 import sys
+import time
+from multiprocessing import Pool
+
 import matplotlib.pyplot as plt
 import numpy as np
-import majorroutines.optimize as optimize
-from utils import tool_belt as tb
-from utils import common
-from utils import widefield
-from utils.constants import LaserKey
+
+import majorroutines.targeting as targeting
+from majorroutines.targeting import optimize_pixel
+from utils import common, widefield
+from utils import data_manager as dm
 from utils import kplotlib as kpl
 from utils import positioning as pos
-from utils import data_manager as dm
-import time
-from utils import data_manager as dm
-from majorroutines.widefield.optimize import optimize_pixel
+from utils import tool_belt as tb
+from utils.constants import NVSig, VirtualLaserKey
 
 
 def single_nv(nv_sig, num_reps=1):
@@ -86,16 +86,18 @@ def _charge_state_prep_diff(nv_sig, caller_fn_name, num_reps=1):
         img_array = img_arrays[ind]
         title = titles[ind]
 
-        nv_pixel_coords = optimize_pixel(
-            img_array,
-            nv_sig,
-            set_scanning_drift=False,
-            set_pixel_drift=False,
-            pixel_drift_adjust=False,
-        )
-        nv_counts = widefield.counts_from_img_array(
-            img_array, nv_pixel_coords, drift_adjust=False
-        )
+        # nv_pixel_coords = optimize_pixel(
+        #     img_array,
+        #     nv_sig,
+        #     set_scanning_drift=False,
+        #     set_pixel_drift=False,
+        #     pixel_drift_adjust=False,
+        # )
+        # nv_counts = widefield.counts_from_img_array(
+        #     img_array, nv_pixel_coords, drift_adjust=False
+        # )
+        nv_pixel_coords, nv_counts = optimize_pixel(nv_sig, img_array)
+
         bg_pixel_coords = [
             nv_pixel_coords[0] + bg_offset[0],
             nv_pixel_coords[1] + bg_offset[1],
@@ -136,8 +138,8 @@ def nv_list(nv_list, num_reps=1):
 
 def _nv_list_sub(nv_list, caller_fn_name, save_dict=None, num_reps=1):
     nv_sig = nv_list[0]
-    laser_key = LaserKey.IMAGING
-    laser_dict = nv_sig[laser_key]
+    laser_key = VirtualLaserKey.IMAGING
+    laser_dict = tb.get_virtual_laser_dict(laser_key)
     laser_name = laser_dict["name"]
     adj_coords_list = [pos.get_nv_coords(nv, laser_name) for nv in nv_list]
     x_coords = [coords[0] for coords in adj_coords_list]
@@ -149,11 +151,31 @@ def widefield_image(nv_sig, num_reps=1):
     return main(nv_sig, "widefield", num_reps)
 
 
-def scanning(nv_sig, x_range, y_range, num_steps):
-    laser_key = LaserKey.IMAGING
-    laser_dict = nv_sig[laser_key]
+def widefield_scanning(nv_sig, x_range, y_range, num_steps):
+    laser_key = VirtualLaserKey.WIDEFIELD_IMAGING
+    laser_dict = tb.get_virtual_laser_dict(laser_key)
     laser_name = laser_dict["name"]
-    center_coords = pos.get_nv_coords(nv_sig, laser_name)
+    x_center, y_center = [0, 0]
+    ret_vals = pos.get_scan_grid_2d(
+        x_center, y_center, x_range, y_range, num_steps, num_steps
+    )
+    x_coords, y_coords, x_coords_1d, y_coords_1d, _ = ret_vals
+    x_coords = list(x_coords)
+    y_coords = list(y_coords)
+    save_dict = {
+        "x_range": x_range,
+        "y_range": y_range,
+        "x_coords_1d": x_coords_1d,
+        "y_coords_1d": y_coords_1d,
+    }
+    num_reps = 1
+    return main(nv_sig, "scanning", num_reps, x_coords, y_coords, save_dict)
+
+
+def scanning(nv_sig, x_range, y_range, num_steps):
+    laser_key = VirtualLaserKey.IMAGING
+    positioner = pos.get_laser_positioner(laser_key)
+    center_coords = pos.get_nv_coords(nv_sig, positioner)
     x_center, y_center = center_coords[0:2]
     ret_vals = pos.get_scan_grid_2d(
         x_center, y_center, x_range, y_range, num_steps, num_steps
@@ -171,8 +193,72 @@ def scanning(nv_sig, x_range, y_range, num_steps):
     return main(nv_sig, "scanning", num_reps, x_coords, y_coords, save_dict)
 
 
+import copy
+
+import numpy as np
+
+
+def scanning_full_roi(nv_sig, total_range, scan_range, num_steps):
+    """
+    Perform a full ROI scan by scanning across a frequency grid while iterating over spatial positions.
+
+    Parameters:
+        nv_sig: The NV signature to scan.
+        total_range: The full frequency range to scan (e.g., ±15 MHz).
+        scan_range: The scan window per step.
+        num_steps: Number of spatial steps per scan.
+    """
+    # Get center coordinates
+    laser_key = VirtualLaserKey.IMAGING
+    positioner = pos.get_laser_positioner(laser_key)
+    center_coords = pos.get_nv_coords(nv_sig, positioner)
+    print(f"Center coordinates: {center_coords}")
+
+    half_total_range = total_range / 2
+    scan_frequencies = np.linspace(-half_total_range, half_total_range, num_steps)
+
+    all_scan_data = []
+    save_dict = {
+        "scan_frequencies": scan_frequencies.tolist(),
+        "total_range": total_range,
+        "scan_range": scan_range,
+        "num_steps": num_steps,
+    }
+
+    # Define scan grid
+    steps = int(np.ceil(total_range / scan_range))
+    x_offsets = np.linspace(-half_total_range, half_total_range, steps + 1)
+    y_offsets = np.linspace(-half_total_range, half_total_range, steps + 1)
+
+    for x_offset in x_offsets:
+        for y_offset in y_offsets:
+            # Create a deep copy of nv_sig to prevent overwriting original data
+            updated_nv_sig = copy.deepcopy(nv_sig)
+
+            # Update green laser coordinates (ensure correct key usage)
+            updated_nv_sig.coords["laser_INTE_520_aod"] = [
+                center_coords[0] + x_offset,
+                center_coords[1] + y_offset,
+            ]
+
+            # Perform scanning at this position
+            scan_data = scanning(updated_nv_sig, scan_range, scan_range, num_steps)
+            all_scan_data.append(
+                {"x_offset": x_offset, "y_offset": y_offset, "scan_data": scan_data}
+            )
+
+    # Save scan data
+    save_dict["scanned_data"] = all_scan_data
+    timestamp = dm.get_time_stamp()
+    nv_name = nv_sig.name
+    file_path = dm.get_file_path(__file__, timestamp, nv_name)
+    dm.save_raw_data(save_dict, file_path, keys_to_compress=["scanned_data"])
+
+    return file_path
+
+
 def main(
-    nv_sig,
+    nv_sig: NVSig,
     caller_fn_name,
     num_reps=1,
     x_coords=None,
@@ -185,17 +271,16 @@ def main(
 
     tb.reset_cfm()
     laser_key = (
-        LaserKey.WIDEFIELD_IMAGING
+        VirtualLaserKey.WIDEFIELD_IMAGING
         if caller_fn_name == "widefield"
-        else LaserKey.IMAGING
+        else VirtualLaserKey.IMAGING
     )
-    optimize.prepare_microscope(nv_sig)
+    # targeting.pos.set_xyz_on_nv(nv_sig)
     camera = tb.get_server_camera()
     pulse_gen = tb.get_server_pulse_gen()
 
-    laser_dict = tb.get_laser_dict(laser_key)
-    readout_laser = laser_dict["name"]
-    tb.set_filter(nv_sig, laser_key)
+    laser_dict = tb.get_virtual_laser_dict(laser_key)
+    readout_laser = tb.get_physical_laser_name(laser_key)
 
     pos.set_xyz_on_nv(nv_sig)
 
@@ -214,7 +299,9 @@ def main(
 
     elif caller_fn_name in ["single_nv_ionization", "single_nv_polarization"]:
         nv_list = [nv_sig]
-        seq_args = widefield.get_base_scc_seq_args(nv_list)
+        pol_coords_list = widefield.get_pol_coords_list(nv_list)
+        ion_coords_list = widefield.get_ion_coords_list(nv_list)
+        seq_args = [pol_coords_list, ion_coords_list]
         raise RuntimeError(
             "The sequence simple_readout-charge_state_prep needs to be updated "
             "to match the format of the seq_args returned by get_base_scc_seq_args"
@@ -236,8 +323,9 @@ def main(
 
     def rep_fn(rep_ind):
         img_str = camera.read()
-        sub_img_array = widefield.img_str_to_array(img_str)
+        sub_img_array, baseline = widefield.img_str_to_array(img_str)
         img_array_list.append(sub_img_array)
+        # print(baseline)
 
     seq_args_string = tb.encode_seq_args(seq_args)
     pulse_gen.stream_load(seq_file, seq_args_string, num_reps)
@@ -266,13 +354,14 @@ def main(
         "readout": readout_ms,
         "readout-units": "ms",
         "title": title,
-        "img_array": img_array.astype(int),
+        "img_array": img_array,
         "img_array-units": "counts",
     }
     if save_dict is not None:
         raw_data |= save_dict  # Add in the passed info to save
 
-    file_path = dm.get_file_path(__file__, timestamp, nv_sig["name"])
+    nv_name = nv_sig.name
+    file_path = dm.get_file_path(__file__, timestamp, nv_name)
     dm.save_figure(fig, file_path)
     dm.save_raw_data(raw_data, file_path, keys_to_compress=["img_array"])
 
@@ -282,33 +371,200 @@ def main(
 if __name__ == "__main__":
     kpl.init_kplotlib()
 
-    # data = dm.get_raw_data(file_id=1392298372656)
-    data = dm.get_raw_data(file_id=1395590073539)
-    img_array = np.array(data["img_array"])
-    # data = dm.get_raw_data(file_id=1392300819875)
-    # data = dm.get_raw_data("2023_12_19-17_52_31-johnson-nv0_2023_12_18")
-    # img_array -= np.array(data["img_array"])
+    # # Tweezered NVs
+    # data = dm.get_raw_data(file_id=1693166192526, load_npz=True)
+    # img_array = data["ref_img_array"]
+    # fig, ax = plt.subplots()
+    # kpl.imshow(ax, img_array, cbar_label="Photons")
+    # ax.axis("off")
+    # scale = 4 * (2.3 / 0.29714285714)
+    # kpl.scale_bar(ax, scale, "4 µm", kpl.Loc.LOWER_RIGHT)
+    # kpl.show(block=True)
+    # sys.exit()
+
+    # # Tweezer pattern
+    # data = np.load("/home/mccambria/Downloads/captured_image_raw.npy")
+    # data = np.rot90(
+    #     data,
+    # )
+    # fig, ax = plt.subplots()
+    # kpl.imshow(ax, data, no_cbar=True)
+    # ax.axis("off")
+    # kpl.show(block=True)
+    # sys.exit()
+
+    # Composite green
+    file_names = [
+        "2024_11_05-20_07_31-johnson-nv0_2024_03_12",
+        "2024_11_05-20_07_54-johnson-nv0_2024_03_12",
+        "2024_11_05-20_09_07-johnson-nv0_2024_03_12",
+        "2024_11_05-20_09_39-johnson-nv0_2024_03_12",
+        "2024_11_05-20_10_06-johnson-nv0_2024_03_12",
+        "2024_11_05-20_10_41-johnson-nv0_2024_03_12",
+        "2024_11_05-20_11_06-johnson-nv0_2024_03_12",
+        "2024_11_05-20_06_45-johnson-nv0_2024_03_12",
+    ]
+    img_arrays = []
+    for file_name in file_names:
+        data = dm.get_raw_data(file_name, load_npz=True)
+        img_array = np.array(data["img_array"])
+        img_array -= 300
+        img_array = img_array / np.median(img_array)
+        img_arrays.append(img_array)
+    img_arrays = np.array(img_arrays)
+    img_array = np.max(img_arrays, axis=0)
+    # img_array = widefield.adus_to_photons(img_array, em_gain=10)
     fig, ax = plt.subplots()
-    kpl.imshow(ax, img_array, no_cbar=True)
+    kpl.imshow(ax, img_array)
+    ax.axis("off")
+    # scale = 4 * (2.3 / 0.29714285714)
+    # kpl.scale_bar(ax, scale, "4 µm", kpl.Loc.LOWER_RIGHT)
+    kpl.show(block=True)
+    sys.exit()
+
+    ######
+
+    ### Basic widefield
+    # data = dm.get_raw_data(file_id=1556420881234, load_npz=True)
+    data = dm.get_raw_data(file_id=1556655608661, load_npz=True)
+    img_array = np.array(data["img_array"])
+    # img_array = widefield.adus_to_photons(img_array)
+    img_array_offset = [0, 0]
+
+    fig, ax = plt.subplots()
+    kpl.imshow(ax, img_array)
+    ax.axis("off")
+
+    scale = 2 * widefield.get_camera_scale()
+    kpl.scale_bar(ax, scale, "2 µm", kpl.Loc.UPPER_RIGHT)
+
+    kpl.show(block=True)
+
+    ### Smiley
+    smiley_inds = list(range(6))
+
+    # Histograms ref
+    # file_id = 1556690958663
+    # img_array_offset = [3, 5]
+    # ion_inds = []
+    # img_array_ind = 1
+
+    # Everything ionized
+    # file_id = 1556690958663
+    # img_array_offset = [3, 5]
+    # ion_inds = [0, 1, 2, 3, 4, 5]
+    # img_array_ind = 0
+
+    # Every other
+    file_id = 1556723203013
+    img_array_offset = [0, 0]
+    ion_inds = [0, 2, 5]
+    img_array_ind = 0
+
+    # # Inverted every other
+    # file_id = 1556745846534
+    # img_array_offset = [0,0]
+    # ion_inds = [1, 3, 4]
+    # img_array_ind = 0
+
+    # # Blinking
+    # file_id = 1556830424482
+    # img_array_offset = [0,0]
+    # ion_inds = [4,5]
+    # img_array_ind = 0
+
+    # # Winking
+    # file_id = None
+    # img_array_offset = [0,0]
+    # ion_inds = [5]
+    # img_array_ind = 0
+
+    data = dm.get_raw_data(file_id=file_id, load_npz=True, use_cache=False)
+    img_arrays = np.array(data["img_arrays"])
+    del data
+    img_arrays = img_arrays[img_array_ind]
+    img_array = np.mean(img_arrays, axis=(0, 1, 2))
+    del img_arrays
+    not_ion_inds = [ind for ind in smiley_inds if ind not in ion_inds]
+
+    ######
+
+    widefield.replace_dead_pixel(img_array)
+    img_array = img_array[
+        10 + img_array_offset[0] : 240 + img_array_offset[0],
+        10 + img_array_offset[1] : 240 + img_array_offset[1],
+    ]
 
     pixel_coords_list = [
-        [107.64, 76.7],
-        # [74.828, 109.09],
-        [110, 50],
-        [85.41, 60.905],
-        [72.062, 51.179],
-        [72.573, 16.985],
-        [52.824, 95.547],
+        [131.144, 129.272],  #  Smiley
+        [161.477, 105.335],  #  Smiley
+        [135.139, 104.013],
+        [110.023, 87.942],
+        [144.169, 163.787],
+        [173.93, 78.505],  #  Smiley
+        [171.074, 49.877],  #  Smiley
+        [170.501, 132.597],
+        [137.025, 74.662],
+        [58.628, 139.616],
+        # Smiley additions
+        # [150.34, 119.249],  # Too much crosstalk
+        [61.277, 76.387],
+        [85.384, 33.935],
     ]
-    for ind in range(len(pixel_coords_list)):
-        pixel_coords = pixel_coords_list[ind]
-        pixel_coords = [el + 1 for el in pixel_coords]
-        color = kpl.data_color_cycler[ind]
-        if ind == 1:
-            color = kpl.KplColors.GRAY
-        kpl.draw_circle(
-            ax, pixel_coords, color=color, radius=1.5, outline=True, label=ind
-        )
-    # ax.legend(loc=kpl.Loc.LOWER_LEFT)
+    pixel_coords_list = [
+        widefield.adjust_pixel_coords_for_drift(el, [10 - 10, 38 - 10])
+        for el in pixel_coords_list
+    ]
+
+    # coords_list = [
+    #     widefield.get_nv_pixel_coords(nv, drift_adjust=True, drift=(4, 10))
+    #     for nv in nv_list
+    # ]
+    # widefield.integrate_counts(img_array, coords_list[1])
+    # print(coords_list)
+    # scale = widefield.get_camera_scale()
+    # um_coords_list = [
+    #     (round(el[0] / scale, 3), round(el[1] / scale, 3)) for el in coords_list
+    # ]
+    # print(um_coords_list)
+
+    # img_array = widefield.adus_to_photons(img_array)
+
+    # Clean up dead pixel by taking average of nearby pixels
+    # dead_pixel = [142, 109]
+    # dead_pixel_x = dead_pixel[1]
+    # dead_pixel_y = dead_pixel[0]
+    # img_array[dead_pixel_y, dead_pixel_x] = np.mean(
+    #     img_array[
+    #         dead_pixel_y - 1 : dead_pixel_y + 1 : 2,
+    #         dead_pixel_x - 1 : dead_pixel_x + 1 : 2,
+    #     ]
+    # )
+
+    fig, ax = plt.subplots()
+    kpl.imshow(ax, img_array, cbar_label="Photons", vmin=0.05, vmax=0.45)
+    ax.axis("off")
+
+    scale = 2 * widefield.get_camera_scale()
+    kpl.scale_bar(ax, scale, "2 µm", kpl.Loc.UPPER_RIGHT)
+    # pixel_coords_list = [pixel_coords_list[ind] for ind in range(10)]
+    # widefield.draw_circles_on_nvs(ax, pixel_coords_list=pixel_coords_list)
+    pixel_coords_list = [pixel_coords_list[ind] for ind in [0, 1, 5, 6, 10, 11]]
+    draw_coords_list = [pixel_coords_list[ind] for ind in ion_inds]
+    widefield.draw_circles_on_nvs(
+        ax,
+        pixel_coords_list=draw_coords_list,
+        color=kpl.KplColors.DARK_GRAY,
+        no_legend=True,
+        linestyle="solid",
+    )
+    draw_coords_list = [pixel_coords_list[ind] for ind in not_ion_inds]
+    widefield.draw_circles_on_nvs(
+        ax,
+        pixel_coords_list=draw_coords_list,
+        color=kpl.KplColors.DARK_GRAY,
+        no_legend=True,
+        linestyle="dashed",
+    )
 
     plt.show(block=True)

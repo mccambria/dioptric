@@ -8,32 +8,31 @@ Created on October 13th, 2023
 """
 
 
-import numpy
-from qm import qua
-from qm import QuantumMachinesManager
-from qm.simulate import SimulationConfig
-from servers.timing.sequencelibrary.QM_opx import seq_utils
-import utils.common as common
 import matplotlib.pyplot as plt
-from qm import generate_qua_script
+import numpy
+from qm import QuantumMachinesManager, generate_qua_script, qua
+from qm.simulate import SimulationConfig
+
+import utils.common as common
+from servers.timing.sequencelibrary.QM_opx import seq_utils
 
 
-def get_seq(args, num_reps):
-    (
-        #
-        readout_duration_ns,
-        readout_laser,
-        #
-        do_polarize,
-        pol_laser,
-        pol_coords,
-        pol_duration_ns,
-        #
-        do_ionize,
-        ion_laser,
-        ion_coords,
-        ion_duration_ns,
-    ) = args
+def get_seq(
+    readout_duration_ns,
+    readout_laser,
+    #
+    do_polarize,
+    pol_laser,
+    pol_coords,
+    pol_duration_ns,
+    #
+    do_ionize,
+    ion_laser,
+    ion_coords,
+    ion_duration_ns,
+    #
+    num_reps,
+):
     if num_reps == None:
         num_reps = 1
 

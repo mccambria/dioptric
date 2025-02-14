@@ -7,17 +7,17 @@ Created on November 29th, 2023
 @author: mccambria
 """
 
-
 import time
+
 import matplotlib.pyplot as plt
 import numpy as np
-from utils import tool_belt as tb
-from utils import data_manager as dm
-from utils import widefield as widefield
-from utils import kplotlib as kpl
-from utils import data_manager as dm
 from scipy.optimize import curve_fit
+
 from majorroutines.widefield import base_routine
+from utils import data_manager as dm
+from utils import kplotlib as kpl
+from utils import tool_belt as tb
+from utils import widefield as widefield
 
 
 def create_raw_data_figure(nv_list, taus, counts, counts_ste):
@@ -52,7 +52,7 @@ def main(
         num_reps,
         num_runs,
         step_fn,
-        uwave_ind=uwave_ind,
+        uwave_ind_list=uwave_ind,
         load_iq=True,
         save_images=False,
     )

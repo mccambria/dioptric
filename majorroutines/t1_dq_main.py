@@ -24,29 +24,29 @@ Created on December 16, 2021
 # %% Imports
 
 
-import utils.tool_belt as tool_belt
-import utils.positioning as positioning
-import utils.common as common
-import majorroutines.optimize as optimize
-import numpy
 import os
-import time
-from random import shuffle
-import matplotlib.pyplot as plt
-import labrad
-from utils.tool_belt import States
 import shutil
+import time
+
 # import analysis.relaxation_rate_analysis as relaxation_rate_analysis
 from pathlib import Path
-from scipy.optimize import curve_fit
-from utils.tool_belt import NormStyle
+from random import shuffle
 
+import labrad
+import matplotlib.pyplot as plt
+import numpy
+from scipy.optimize import curve_fit
+
+import majorroutines.targeting as targeting
+import utils.common as common
+import utils.positioning as positioning
+import utils.tool_belt as tool_belt
+from utils.tool_belt import NormStyle, States
 
 # %% Functions
 
 
 def collate_incremental(path, folder):
-
     nvdata_dir = common.get_nvdata_dir()
     path_from_nvdata = "{}/{}/incremental".format(path, folder)
     full_path_to_folder = nvdata_dir / path_from_nvdata
@@ -187,19 +187,18 @@ def unpack_interleave(data, start_run=0, stop_run=None):
 
         avg_sig_counts_master_list.append(avg_sig_counts.tolist())
         avg_ref_counts_master_list.append(avg_ref_counts.tolist())
-        
+
         num_reps = params_master_list[exp_ind][3]
 
-
-        ret_vals = tool_belt.process_counts(sig_counts, ref_counts, num_reps, gate_time, norm_style)
+        ret_vals = tool_belt.process_counts(
+            sig_counts, ref_counts, num_reps, gate_time, norm_style
+        )
         (
             sig_counts_avg_kcps,
             ref_counts_avg_kcps,
             norm_avg_sig,
             norm_avg_sig_ste,
         ) = ret_vals
-        
-
 
         # # Replace x/0=inf with 0
         # try:
@@ -239,11 +238,9 @@ def unpack_interleave(data, start_run=0, stop_run=None):
         individual_fig, axes_pack = plt.subplots(1, 2, figsize=(17, 8.5))
 
         ax = axes_pack[0]
+        ax.plot(numpy.array(taus) / 10**6, avg_sig_counts, "r-", label="signal")
         ax.plot(
-            numpy.array(taus) / 10 ** 6, avg_sig_counts, "r-", label="signal"
-        )
-        ax.plot(
-            numpy.array(taus) / 10 ** 6,
+            numpy.array(taus) / 10**6,
             avg_ref_counts,
             "g-",
             label="reference",
@@ -253,7 +250,7 @@ def unpack_interleave(data, start_run=0, stop_run=None):
         ax.legend()
 
         ax = axes_pack[1]
-        ax.plot(numpy.array(taus) / 10 ** 6, norm_avg_sig, "b-")
+        ax.plot(numpy.array(taus) / 10**6, norm_avg_sig, "b-")
         ax.set_title(
             "T1 Measurement. Initial state: {}, readout state: {}".format(
                 init_state_name, read_state_name
@@ -303,15 +300,13 @@ def unpack_interleave(data, start_run=0, stop_run=None):
             "ref_counts-units": "counts",
             "norm_avg_sig": norm_avg_sig.astype(float).tolist(),
             "norm_avg_sig-units": "arb",
-            "norm_avg_sig_ste": norm_avg_sig_ste.tolist()
+            "norm_avg_sig_ste": norm_avg_sig_ste.tolist(),
         }
 
         # Save each figure
         dosave = True
         if dosave:
-            file_path = tool_belt.get_file_path(
-                __file__, timestamp, nv_sig["name"]
-            )
+            file_path = tool_belt.get_file_path(__file__, timestamp, nv_sig["name"])
             tool_belt.save_raw_data(individual_raw_data, file_path)
             tool_belt.save_figure(individual_fig, file_path)
 
@@ -333,7 +328,6 @@ def main(
     composite_pulses=False,
     scc_readout=False,
 ):
-
     with labrad.connect() as cxn:
         main_with_cxn(
             cxn,
@@ -353,14 +347,12 @@ def main_with_cxn(
     composite_pulses=False,
     scc_readout=False,
 ):
-
     counter_server = tool_belt.get_server_counter(cxn)
     pulsegen_server = tool_belt.get_server_pulse_gen(cxn)
     tool_belt.reset_cfm(cxn)
 
     # %% Optical setup
     if scc_readout:
-
         laser_tag = "nv-_reionization"
         laser_key = "{}_laser".format(laser_tag)
         pol_laser_name = nv_sig[laser_key]
@@ -470,9 +462,7 @@ def main_with_cxn(
         # Create empty arrays to fill with data, the indexing will be [exp_ind][num_run][num_steps]
 
         # append the list with each experiment's specific sized arrays
-        sig_count_single = numpy.empty(
-            [num_runs, num_steps], dtype=numpy.float32
-        )
+        sig_count_single = numpy.empty([num_runs, num_steps], dtype=numpy.float32)
         sig_count_single[:] = numpy.nan
         ref_count_single = numpy.copy(sig_count_single)
 
@@ -526,9 +516,7 @@ def main_with_cxn(
         # file_name = os.path.basename(__file__)
         if scc_readout and composite_pulses:
             raise (
-                RuntimeError(
-                    "Composite pulses with scc readout not yet implemented!"
-                )
+                RuntimeError("Composite pulses with scc readout not yet implemented!")
             )
         if scc_readout:
             seq_file = "t1_dq_scc.py"
@@ -590,10 +578,8 @@ def main_with_cxn(
         ret_vals = pulsegen_server.stream_load(seq_file, seq_args_string)
         seq_time = numpy.int64(ret_vals[0])
 
-        seq_time_s = seq_time / (10 ** 9)  # s
-        expected_run_time = (
-            num_steps * num_reps * num_runs * seq_time_s / 2
-        )  # s
+        seq_time_s = seq_time / (10**9)  # s
+        expected_run_time = num_steps * num_reps * num_runs * seq_time_s / 2  # s
         expected_run_time_m = expected_run_time / 60  # m
 
         exp_time_list.append(expected_run_time_m)
@@ -626,13 +612,11 @@ def main_with_cxn(
     # %% Start one of the runs
 
     for run_ind in range(num_runs):
-
         # Break out of the while if the user says stop
         if tool_belt.safe_stop():
             break
 
         for exp_ind in range(num_exp):
-
             # Define the values for this experiment
             init_state = t1_exp_array[exp_ind][0][0]
             read_state = t1_exp_array[exp_ind][0][1]
@@ -641,24 +625,20 @@ def main_with_cxn(
 
             print(" \nOptimizing...\n")
             # Optimize
-            opti_coords = optimize.main_with_cxn(cxn, nv_sig)
+            opti_coords = targeting.main_with_cxn(cxn, nv_sig)
             # if opti_coords is None:
             #     return
             opti_coords_master_list[exp_ind].append(opti_coords)
 
             # Set up the microwaves for the low and high states
-            low_sig_gen_cxn = tool_belt.get_server_sig_gen(
-                cxn, States.LOW
-            )
+            low_sig_gen_cxn = tool_belt.get_server_sig_gen(cxn, States.LOW)
             low_sig_gen_cxn.set_freq(uwave_freq_low)
             low_sig_gen_cxn.set_amp(uwave_power_low)
             if composite_pulses:
                 low_sig_gen_cxn.load_iq()
             low_sig_gen_cxn.uwave_on()
 
-            high_sig_gen_cxn = tool_belt.get_server_sig_gen(
-                cxn, States.HIGH
-            )
+            high_sig_gen_cxn = tool_belt.get_server_sig_gen(cxn, States.HIGH)
             high_sig_gen_cxn.set_freq(uwave_freq_high)
             high_sig_gen_cxn.set_amp(uwave_power_high)
             if composite_pulses:
@@ -678,14 +658,16 @@ def main_with_cxn(
                 ]
                 for tag in laser_tags:
                     laser_key = "{}_laser".format(tag)
-                    laser_power = tool_belt.set_laser_power(
-                        cxn, nv_sig, laser_key
-                    )
+                    laser_power = tool_belt.set_laser_power(cxn, nv_sig, laser_key)
                     tool_belt.set_filter(cxn, nv_sig, laser_key)
-                   
-                charge_readout_laser_server = tool_belt.get_server_charge_readout_laser(cxn)
-                charge_readout_laser_server.load_feedthrough(nv_sig["charge_readout_laser_power"])
-            
+
+                charge_readout_laser_server = tool_belt.get_server_charge_readout_laser(
+                    cxn
+                )
+                charge_readout_laser_server.load_feedthrough(
+                    nv_sig["charge_readout_laser_power"]
+                )
+
             else:
                 laser_key = "spin_laser"
                 laser_power = tool_belt.set_laser_power(cxn, nv_sig, laser_key)
@@ -704,7 +686,6 @@ def main_with_cxn(
             shuffle(tau_ind_master_list[exp_ind])
 
             for tau_ind in tau_ind_master_list[exp_ind]:
-
                 # 'Flip a coin' to determine which tau (long/shrt) is used first
                 rand_boolean = numpy.random.randint(0, high=2)
 
@@ -723,12 +704,8 @@ def main_with_cxn(
                 if tool_belt.safe_stop():
                     break
 
-                print(
-                    " \nFirst relaxation time: {}".format(taus[tau_ind_first])
-                )
-                print(
-                    "Second relaxation time: {}".format(taus[tau_ind_second])
-                )
+                print(" \nFirst relaxation time: {}".format(taus[tau_ind_first]))
+                print("Second relaxation time: {}".format(taus[tau_ind_second]))
 
                 # Stream the sequence
                 seq_args[0] = taus[tau_ind_first]
@@ -749,27 +726,19 @@ def main_with_cxn(
                 # print(len(sample_counts))
 
                 count = sum(sample_counts[0::4])
-                sig_counts_master_list[exp_ind][run_ind][tau_ind_first] = int(
-                    count
-                )
+                sig_counts_master_list[exp_ind][run_ind][tau_ind_first] = int(count)
                 print("First signal = " + str(count))
 
                 count = sum(sample_counts[1::4])
-                ref_counts_master_list[exp_ind][run_ind][tau_ind_first] = int(
-                    count
-                )
+                ref_counts_master_list[exp_ind][run_ind][tau_ind_first] = int(count)
                 print("First Reference = " + str(count))
 
                 count = sum(sample_counts[2::4])
-                sig_counts_master_list[exp_ind][run_ind][tau_ind_second] = int(
-                    count
-                )
+                sig_counts_master_list[exp_ind][run_ind][tau_ind_second] = int(count)
                 print("Second Signal = " + str(count))
 
                 count = sum(sample_counts[3::4])
-                ref_counts_master_list[exp_ind][run_ind][tau_ind_second] = int(
-                    count
-                )
+                ref_counts_master_list[exp_ind][run_ind][tau_ind_second] = int(count)
                 print("Second Reference = " + str(count))
 
             counter_server.stop_tag_stream()
@@ -789,8 +758,7 @@ def main_with_cxn(
                 " uwave_power_read]"
             ),
             "params_master_list-units": (
-                "[[null, null], [ns, ns], null, null, ns, GHz, dBm, ns, GHz,"
-                " dBm]"
+                "[[null, null], [ns, ns], null, null, ns, GHz, dBm, ns, GHz," " dBm]"
             ),
             "tau_master_list": tau_master_list,
             "tau_master_list-units": "ns",
@@ -865,7 +833,6 @@ def main_with_cxn(
 
 
 if __name__ == "__main__":
-
     # path = (
     #     "pc_rabi/branch_master/t1_dq_main/"
     # )
@@ -889,29 +856,25 @@ if __name__ == "__main__":
     #     )
 
     # plt.show(block=True)
-    
-    
+
     file_name = "2023_05_01-21_38_11-rubin-nv0_2023_05_01"
     inc = True
     data = tool_belt.get_raw_data(file_name)
-    params_list = data['params_master_list'][0]
+    params_list = data["params_master_list"][0]
     min_relaxation_time = params_list[1][0] / 1e6
     max_relaxation_time = params_list[1][1] / 1e6
     num_steps = params_list[2]
-    taus = numpy.linspace(
-            min_relaxation_time,
-            max_relaxation_time,
-            num=num_steps)
-    sig_counts_list = data['sig_counts_master_list'][0]
-    avg_sig_counts = numpy.average(sig_counts_list, axis =0)
-    ref_counts_list = data['ref_counts_master_list'][0]
-    avg_ref_counts = numpy.average(ref_counts_list, axis =0)
-    run_ind=  88
+    taus = numpy.linspace(min_relaxation_time, max_relaxation_time, num=num_steps)
+    sig_counts_list = data["sig_counts_master_list"][0]
+    avg_sig_counts = numpy.average(sig_counts_list, axis=0)
+    ref_counts_list = data["ref_counts_master_list"][0]
+    avg_ref_counts = numpy.average(ref_counts_list, axis=0)
+    run_ind = 88
     num_reps = params_list[3]
-    nv_sig = data['nv_sig']
-    readout = nv_sig['spin_readout_dur']
+    nv_sig = data["nv_sig"]
+    readout = nv_sig["spin_readout_dur"]
     norm_style = NormStyle.SINGLE_VALUED
-    
+
     if inc == True:
         inc_sig_counts = sig_counts_list[: run_ind + 1]
         inc_ref_counts = ref_counts_list[: run_ind + 1]
@@ -924,30 +887,28 @@ if __name__ == "__main__":
             norm_avg_sig,
             norm_avg_sig_ste,
         ) = ret_vals
-        
+
     # norm_counts = avg_sig_counts/avg_ref_counts
-    
+
     fig, ax = plt.subplots()
-    ax.plot(taus,norm_avg_sig, 'bo')
-    ax.set_xlabel('Relaxation time (ms)')
-    ax.set_ylabel('Norm opulation')
-    
+    ax.plot(taus, norm_avg_sig, "bo")
+    ax.set_xlabel("Relaxation time (ms)")
+    ax.set_ylabel("Norm opulation")
+
     fit_func = tool_belt.exp_decay
-    taus_fit = numpy.linspace(min_relaxation_time,max_relaxation_time, 100 )
-    popt, covarr = curve_fit(fit_func,taus,norm_avg_sig,p0 = [0.2, 5, 0.8])
-    
+    taus_fit = numpy.linspace(min_relaxation_time, max_relaxation_time, 100)
+    popt, covarr = curve_fit(fit_func, taus, norm_avg_sig, p0=[0.2, 5, 0.8])
+
     print(popt[1])
     print(numpy.sqrt(covarr[1][1]))
-    ax.plot(taus_fit,fit_func(taus_fit, *popt), 'r-')
+    ax.plot(taus_fit, fit_func(taus_fit, *popt), "r-")
     # ax.plot(taus_fit,fit_func(taus_fit, 0.2,5, 0.8), 'r-')
-    
+
     # Plot
     individual_fig, axes_pack = plt.subplots(1, 2, figsize=(17, 8.5))
 
     ax = axes_pack[0]
-    ax.plot(
-        numpy.array(taus), sig_counts_avg_kcps, "r-", label="signal"
-    )
+    ax.plot(numpy.array(taus), sig_counts_avg_kcps, "r-", label="signal")
     ax.plot(
         numpy.array(taus),
         ref_counts_avg_kcps,
@@ -959,11 +920,9 @@ if __name__ == "__main__":
     ax.legend()
 
     ax = axes_pack[1]
-    ax.plot(numpy.array(taus) , norm_avg_sig, "b-")
+    ax.plot(numpy.array(taus), norm_avg_sig, "b-")
     ax.set_title(
-        "T1 Measurement. Initial state: {}, readout state: {}".format(
-            "ZERO", "ZERO"
-        )
+        "T1 Measurement. Initial state: {}, readout state: {}".format("ZERO", "ZERO")
     )
     ax.set_xlabel("Relaxation time (ms)")
     ax.set_ylabel("Contrast (arb. units)")

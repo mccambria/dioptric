@@ -9,18 +9,20 @@ Created on Thu Apr 11 15:39:23 2019
 """
 
 
-from utils import positioning as positioning
-from utils import kplotlib as kpl
-from utils.kplotlib import KplColors
-from utils import tool_belt as tb
-from utils import common
-import numpy as np
-import matplotlib.pyplot as plt
-import labrad
-from utils.constants import States, NormStyle
-from majorroutines import pulsed_resonance
 from random import shuffle
-import majorroutines.optimize as optimize
+
+import labrad
+import matplotlib.pyplot as plt
+import numpy as np
+
+import majorroutines.targeting as targeting
+from majorroutines import pulsed_resonance
+from utils import common
+from utils import kplotlib as kpl
+from utils import positioning as positioning
+from utils import tool_belt as tb
+from utils.constants import NormStyle, States
+from utils.kplotlib import KplColors
 
 
 def main(
@@ -125,7 +127,7 @@ def main_with_cxn(
             break
 
         # Optimize and save the coords we found
-        opti_coords = optimize.main_with_cxn(cxn, nv_sig)
+        opti_coords = targeting.main_with_cxn(cxn, nv_sig)
         opti_coords_list.append(opti_coords)
 
         # Laser setup
