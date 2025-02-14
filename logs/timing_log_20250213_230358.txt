@@ -1,0 +1,1253 @@
+Detailed Timing Summary:
+
+Setup Phase:
+  data_access: 0.000 seconds
+  nv_indices: 0.000 seconds
+  time_calculations: 0.000 seconds
+  total: 0.000 seconds
+
+Data Processing Phase:
+  type: direct_access
+  total: 0.000 seconds
+
+Individual NV Processing:
+
+  NV 0:
+    Data preparation: 0.000 seconds
+    Fitting:
+      Function call: 0.000 seconds
+      Chi square calculation: 0.000 seconds
+    Plotting:
+      Points: 0.000 seconds
+      Line: 0.000 seconds
+      Formatting: 0.000 seconds
+      Drawing: 0.000 seconds
+    Total for this NV: 0.026 seconds
+
+  NV 1:
+    Data preparation: 0.000 seconds
+    Fitting:
+      Function call: 0.000 seconds
+      Chi square calculation: 0.000 seconds
+    Plotting:
+      Points: 0.000 seconds
+      Line: 0.000 seconds
+      Formatting: 0.000 seconds
+      Drawing: 0.000 seconds
+    Total for this NV: 0.008 seconds
+
+  NV 2:
+    Data preparation: 0.000 seconds
+    Fitting:
+      Function call: 0.000 seconds
+      Chi square calculation: 0.000 seconds
+    Plotting:
+      Points: 0.000 seconds
+      Line: 0.000 seconds
+      Formatting: 0.000 seconds
+      Drawing: 0.000 seconds
+    Total for this NV: 0.005 seconds
+
+  NV 3:
+    Data preparation: 0.000 seconds
+    Fitting:
+      Function call: 0.000 seconds
+      Chi square calculation: 0.000 seconds
+    Plotting:
+      Points: 0.000 seconds
+      Line: 0.000 seconds
+      Formatting: 0.000 seconds
+      Drawing: 0.000 seconds
+    Total for this NV: 0.007 seconds
+
+  NV 4:
+    Data preparation: 0.000 seconds
+    Fitting:
+      Function call: 0.000 seconds
+      Chi square calculation: 0.000 seconds
+    Plotting:
+      Points: 0.000 seconds
+      Line: 0.000 seconds
+      Formatting: 0.000 seconds
+      Drawing: 0.000 seconds
+    Total for this NV: 0.006 seconds
+
+  NV 5:
+    Data preparation: 0.000 seconds
+    Fitting:
+      Function call: 0.000 seconds
+      Chi square calculation: 0.000 seconds
+    Plotting:
+      Points: 0.000 seconds
+      Line: 0.000 seconds
+      Formatting: 0.000 seconds
+      Drawing: 0.000 seconds
+    Total for this NV: 0.007 seconds
+
+  NV 6:
+    Data preparation: 0.000 seconds
+    Fitting:
+      Function call: 0.000 seconds
+      Chi square calculation: 0.000 seconds
+    Plotting:
+      Points: 0.000 seconds
+      Line: 0.000 seconds
+      Formatting: 0.000 seconds
+      Drawing: 0.000 seconds
+    Total for this NV: 0.006 seconds
+
+  NV 7:
+    Data preparation: 0.000 seconds
+    Fitting:
+      Function call: 0.000 seconds
+      Chi square calculation: 0.000 seconds
+    Plotting:
+      Points: 0.000 seconds
+      Line: 0.000 seconds
+      Formatting: 0.000 seconds
+      Drawing: 0.000 seconds
+    Total for this NV: 0.007 seconds
+
+  NV 8:
+    Data preparation: 0.000 seconds
+    Fitting:
+      Function call: 0.000 seconds
+      Chi square calculation: 0.000 seconds
+    Plotting:
+      Points: 0.000 seconds
+      Line: 0.000 seconds
+      Formatting: 0.000 seconds
+      Drawing: 0.000 seconds
+    Total for this NV: 0.015 seconds
+
+  NV 9:
+    Data preparation: 0.000 seconds
+    Fitting:
+      Function call: 0.000 seconds
+      Chi square calculation: 0.000 seconds
+    Plotting:
+      Points: 0.000 seconds
+      Line: 0.000 seconds
+      Formatting: 0.000 seconds
+      Drawing: 0.000 seconds
+    Total for this NV: 0.004 seconds
+
+  NV 10:
+    Data preparation: 0.000 seconds
+    Fitting:
+      Function call: 0.000 seconds
+      Chi square calculation: 0.000 seconds
+    Plotting:
+      Points: 0.000 seconds
+      Line: 0.000 seconds
+      Formatting: 0.000 seconds
+      Drawing: 0.000 seconds
+    Total for this NV: 0.003 seconds
+
+  NV 15:
+    Data preparation: 0.000 seconds
+    Fitting:
+      Function call: 0.000 seconds
+      Chi square calculation: 0.000 seconds
+    Plotting:
+      Points: 0.000 seconds
+      Line: 0.000 seconds
+      Formatting: 0.000 seconds
+      Drawing: 0.000 seconds
+    Total for this NV: 0.011 seconds
+
+  NV 16:
+    Data preparation: 0.000 seconds
+    Fitting:
+      Function call: 0.000 seconds
+      Chi square calculation: 0.000 seconds
+    Plotting:
+      Points: 0.000 seconds
+      Line: 0.000 seconds
+      Formatting: 0.000 seconds
+      Drawing: 0.000 seconds
+    Total for this NV: 0.007 seconds
+
+  NV 17:
+    Data preparation: 0.000 seconds
+    Fitting:
+      Function call: 0.000 seconds
+      Chi square calculation: 0.000 seconds
+    Plotting:
+      Points: 0.000 seconds
+      Line: 0.000 seconds
+      Formatting: 0.000 seconds
+      Drawing: 0.000 seconds
+    Total for this NV: 0.003 seconds
+
+  NV 18:
+    Data preparation: 0.000 seconds
+    Fitting:
+      Function call: 0.000 seconds
+      Chi square calculation: 0.000 seconds
+    Plotting:
+      Points: 0.000 seconds
+      Line: 0.000 seconds
+      Formatting: 0.000 seconds
+      Drawing: 0.000 seconds
+    Total for this NV: 0.008 seconds
+
+  NV 19:
+    Data preparation: 0.000 seconds
+    Fitting:
+      Function call: 0.000 seconds
+      Chi square calculation: 0.000 seconds
+    Plotting:
+      Points: 0.000 seconds
+      Line: 0.000 seconds
+      Formatting: 0.000 seconds
+      Drawing: 0.000 seconds
+    Total for this NV: 0.006 seconds
+
+  NV 20:
+    Data preparation: 0.000 seconds
+    Fitting:
+      Function call: 0.000 seconds
+      Chi square calculation: 0.000 seconds
+    Plotting:
+      Points: 0.000 seconds
+      Line: 0.000 seconds
+      Formatting: 0.000 seconds
+      Drawing: 0.000 seconds
+    Total for this NV: 0.010 seconds
+
+  NV 21:
+    Data preparation: 0.000 seconds
+    Fitting:
+      Function call: 0.000 seconds
+      Chi square calculation: 0.000 seconds
+    Plotting:
+      Points: 0.000 seconds
+      Line: 0.000 seconds
+      Formatting: 0.000 seconds
+      Drawing: 0.000 seconds
+    Total for this NV: 0.007 seconds
+
+  NV 22:
+    Data preparation: 0.000 seconds
+    Fitting:
+      Function call: 0.000 seconds
+      Chi square calculation: 0.000 seconds
+    Plotting:
+      Points: 0.000 seconds
+      Line: 0.000 seconds
+      Formatting: 0.000 seconds
+      Drawing: 0.000 seconds
+    Total for this NV: 0.008 seconds
+
+  NV 23:
+    Data preparation: 0.000 seconds
+    Fitting:
+      Function call: 0.000 seconds
+      Chi square calculation: 0.000 seconds
+    Plotting:
+      Points: 0.000 seconds
+      Line: 0.000 seconds
+      Formatting: 0.000 seconds
+      Drawing: 0.000 seconds
+    Total for this NV: 0.022 seconds
+
+  NV 24:
+    Data preparation: 0.000 seconds
+    Fitting:
+      Function call: 0.000 seconds
+      Chi square calculation: 0.000 seconds
+    Plotting:
+      Points: 0.000 seconds
+      Line: 0.000 seconds
+      Formatting: 0.000 seconds
+      Drawing: 0.000 seconds
+    Total for this NV: 0.005 seconds
+
+  NV 25:
+    Data preparation: 0.000 seconds
+    Fitting:
+      Function call: 0.000 seconds
+      Chi square calculation: 0.000 seconds
+    Plotting:
+      Points: 0.000 seconds
+      Line: 0.000 seconds
+      Formatting: 0.000 seconds
+      Drawing: 0.000 seconds
+    Total for this NV: 0.010 seconds
+
+  NV 26:
+    Data preparation: 0.000 seconds
+    Fitting:
+      Function call: 0.000 seconds
+      Chi square calculation: 0.000 seconds
+    Plotting:
+      Points: 0.000 seconds
+      Line: 0.000 seconds
+      Formatting: 0.000 seconds
+      Drawing: 0.000 seconds
+    Total for this NV: 0.024 seconds
+
+  NV 27:
+    Data preparation: 0.000 seconds
+    Fitting:
+      Function call: 0.000 seconds
+      Chi square calculation: 0.000 seconds
+    Plotting:
+      Points: 0.000 seconds
+      Line: 0.000 seconds
+      Formatting: 0.000 seconds
+      Drawing: 0.000 seconds
+    Total for this NV: 0.005 seconds
+
+  NV 28:
+    Data preparation: 0.000 seconds
+    Fitting:
+      Function call: 0.000 seconds
+      Chi square calculation: 0.000 seconds
+    Plotting:
+      Points: 0.000 seconds
+      Line: 0.000 seconds
+      Formatting: 0.000 seconds
+      Drawing: 0.000 seconds
+    Total for this NV: 0.005 seconds
+
+  NV 29:
+    Data preparation: 0.000 seconds
+    Fitting:
+      Function call: 0.000 seconds
+      Chi square calculation: 0.000 seconds
+    Plotting:
+      Points: 0.000 seconds
+      Line: 0.000 seconds
+      Formatting: 0.000 seconds
+      Drawing: 0.000 seconds
+    Total for this NV: 0.003 seconds
+
+  NV 30:
+    Data preparation: 0.000 seconds
+    Fitting:
+      Function call: 0.000 seconds
+      Chi square calculation: 0.000 seconds
+    Plotting:
+      Points: 0.000 seconds
+      Line: 0.000 seconds
+      Formatting: 0.000 seconds
+      Drawing: 0.000 seconds
+    Total for this NV: 0.007 seconds
+
+  NV 31:
+    Data preparation: 0.000 seconds
+    Fitting:
+      Function call: 0.000 seconds
+      Chi square calculation: 0.000 seconds
+    Plotting:
+      Points: 0.000 seconds
+      Line: 0.000 seconds
+      Formatting: 0.000 seconds
+      Drawing: 0.000 seconds
+    Total for this NV: 0.003 seconds
+
+  NV 32:
+    Data preparation: 0.000 seconds
+    Fitting:
+      Function call: 0.000 seconds
+      Chi square calculation: 0.000 seconds
+    Plotting:
+      Points: 0.000 seconds
+      Line: 0.000 seconds
+      Formatting: 0.000 seconds
+      Drawing: 0.000 seconds
+    Total for this NV: 0.003 seconds
+
+  NV 33:
+    Data preparation: 0.000 seconds
+    Fitting:
+      Function call: 0.000 seconds
+      Chi square calculation: 0.000 seconds
+    Plotting:
+      Points: 0.000 seconds
+      Line: 0.000 seconds
+      Formatting: 0.000 seconds
+      Drawing: 0.000 seconds
+    Total for this NV: 0.013 seconds
+
+  NV 34:
+    Data preparation: 0.000 seconds
+    Fitting:
+      Function call: 0.000 seconds
+      Chi square calculation: 0.000 seconds
+    Plotting:
+      Points: 0.000 seconds
+      Line: 0.000 seconds
+      Formatting: 0.000 seconds
+      Drawing: 0.000 seconds
+    Total for this NV: 0.003 seconds
+
+  NV 35:
+    Data preparation: 0.000 seconds
+    Fitting:
+      Function call: 0.000 seconds
+      Chi square calculation: 0.000 seconds
+    Plotting:
+      Points: 0.000 seconds
+      Line: 0.000 seconds
+      Formatting: 0.000 seconds
+      Drawing: 0.000 seconds
+    Total for this NV: 0.003 seconds
+
+  NV 37:
+    Data preparation: 0.000 seconds
+    Fitting:
+      Function call: 0.000 seconds
+      Chi square calculation: 0.000 seconds
+    Plotting:
+      Points: 0.000 seconds
+      Line: 0.000 seconds
+      Formatting: 0.000 seconds
+      Drawing: 0.000 seconds
+    Total for this NV: 0.011 seconds
+
+  NV 38:
+    Data preparation: 0.000 seconds
+    Fitting:
+      Function call: 0.000 seconds
+      Chi square calculation: 0.000 seconds
+    Plotting:
+      Points: 0.000 seconds
+      Line: 0.000 seconds
+      Formatting: 0.000 seconds
+      Drawing: 0.000 seconds
+    Total for this NV: 0.011 seconds
+
+  NV 39:
+    Data preparation: 0.000 seconds
+    Fitting:
+      Function call: 0.000 seconds
+      Chi square calculation: 0.000 seconds
+    Plotting:
+      Points: 0.000 seconds
+      Line: 0.000 seconds
+      Formatting: 0.000 seconds
+      Drawing: 0.000 seconds
+    Total for this NV: 0.007 seconds
+
+  NV 40:
+    Data preparation: 0.000 seconds
+    Fitting:
+      Function call: 0.000 seconds
+      Chi square calculation: 0.000 seconds
+    Plotting:
+      Points: 0.000 seconds
+      Line: 0.000 seconds
+      Formatting: 0.000 seconds
+      Drawing: 0.000 seconds
+    Total for this NV: 0.006 seconds
+
+  NV 41:
+    Data preparation: 0.000 seconds
+    Fitting:
+      Function call: 0.000 seconds
+      Chi square calculation: 0.000 seconds
+    Plotting:
+      Points: 0.000 seconds
+      Line: 0.000 seconds
+      Formatting: 0.000 seconds
+      Drawing: 0.000 seconds
+    Total for this NV: 0.006 seconds
+
+  NV 42:
+    Data preparation: 0.000 seconds
+    Fitting:
+      Function call: 0.000 seconds
+      Chi square calculation: 0.000 seconds
+    Plotting:
+      Points: 0.000 seconds
+      Line: 0.000 seconds
+      Formatting: 0.000 seconds
+      Drawing: 0.000 seconds
+    Total for this NV: 0.010 seconds
+
+  NV 43:
+    Data preparation: 0.000 seconds
+    Fitting:
+      Function call: 0.000 seconds
+      Chi square calculation: 0.000 seconds
+    Plotting:
+      Points: 0.000 seconds
+      Line: 0.000 seconds
+      Formatting: 0.000 seconds
+      Drawing: 0.000 seconds
+    Total for this NV: 0.025 seconds
+
+  NV 44:
+    Data preparation: 0.000 seconds
+    Fitting:
+      Function call: 0.000 seconds
+      Chi square calculation: 0.000 seconds
+    Plotting:
+      Points: 0.000 seconds
+      Line: 0.000 seconds
+      Formatting: 0.000 seconds
+      Drawing: 0.000 seconds
+    Total for this NV: 0.005 seconds
+
+  NV 45:
+    Data preparation: 0.000 seconds
+    Fitting:
+      Function call: 0.000 seconds
+      Chi square calculation: 0.000 seconds
+    Plotting:
+      Points: 0.000 seconds
+      Line: 0.000 seconds
+      Formatting: 0.000 seconds
+      Drawing: 0.000 seconds
+    Total for this NV: 0.011 seconds
+
+  NV 46:
+    Data preparation: 0.000 seconds
+    Fitting:
+      Function call: 0.000 seconds
+      Chi square calculation: 0.000 seconds
+    Plotting:
+      Points: 0.000 seconds
+      Line: 0.000 seconds
+      Formatting: 0.000 seconds
+      Drawing: 0.000 seconds
+    Total for this NV: 0.006 seconds
+
+  NV 47:
+    Data preparation: 0.000 seconds
+    Fitting:
+      Function call: 0.000 seconds
+      Chi square calculation: 0.000 seconds
+    Plotting:
+      Points: 0.000 seconds
+      Line: 0.000 seconds
+      Formatting: 0.000 seconds
+      Drawing: 0.000 seconds
+    Total for this NV: 0.007 seconds
+
+  NV 48:
+    Data preparation: 0.000 seconds
+    Fitting:
+      Function call: 0.000 seconds
+      Chi square calculation: 0.000 seconds
+    Plotting:
+      Points: 0.000 seconds
+      Line: 0.000 seconds
+      Formatting: 0.000 seconds
+      Drawing: 0.000 seconds
+    Total for this NV: 0.003 seconds
+
+  NV 49:
+    Data preparation: 0.000 seconds
+    Fitting:
+      Function call: 0.000 seconds
+      Chi square calculation: 0.000 seconds
+    Plotting:
+      Points: 0.000 seconds
+      Line: 0.000 seconds
+      Formatting: 0.000 seconds
+      Drawing: 0.000 seconds
+    Total for this NV: 0.006 seconds
+
+  NV 50:
+    Data preparation: 0.000 seconds
+    Fitting:
+      Function call: 0.000 seconds
+      Chi square calculation: 0.000 seconds
+    Plotting:
+      Points: 0.000 seconds
+      Line: 0.000 seconds
+      Formatting: 0.000 seconds
+      Drawing: 0.000 seconds
+    Total for this NV: 0.008 seconds
+
+  NV 51:
+    Data preparation: 0.000 seconds
+    Fitting:
+      Function call: 0.000 seconds
+      Chi square calculation: 0.000 seconds
+    Plotting:
+      Points: 0.000 seconds
+      Line: 0.000 seconds
+      Formatting: 0.000 seconds
+      Drawing: 0.000 seconds
+    Total for this NV: 0.012 seconds
+
+  NV 53:
+    Data preparation: 0.000 seconds
+    Fitting:
+      Function call: 0.000 seconds
+      Chi square calculation: 0.000 seconds
+    Plotting:
+      Points: 0.000 seconds
+      Line: 0.000 seconds
+      Formatting: 0.000 seconds
+      Drawing: 0.000 seconds
+    Total for this NV: 0.008 seconds
+
+  NV 54:
+    Data preparation: 0.000 seconds
+    Fitting:
+      Function call: 0.000 seconds
+      Chi square calculation: 0.000 seconds
+    Plotting:
+      Points: 0.000 seconds
+      Line: 0.000 seconds
+      Formatting: 0.000 seconds
+      Drawing: 0.000 seconds
+    Total for this NV: 0.007 seconds
+
+  NV 56:
+    Data preparation: 0.000 seconds
+    Fitting:
+      Function call: 0.000 seconds
+      Chi square calculation: 0.000 seconds
+    Plotting:
+      Points: 0.000 seconds
+      Line: 0.000 seconds
+      Formatting: 0.000 seconds
+      Drawing: 0.000 seconds
+    Total for this NV: 0.007 seconds
+
+  NV 57:
+    Data preparation: 0.000 seconds
+    Fitting:
+      Function call: 0.000 seconds
+      Chi square calculation: 0.000 seconds
+    Plotting:
+      Points: 0.000 seconds
+      Line: 0.000 seconds
+      Formatting: 0.000 seconds
+      Drawing: 0.000 seconds
+    Total for this NV: 0.003 seconds
+
+  NV 59:
+    Data preparation: 0.000 seconds
+    Fitting:
+      Function call: 0.000 seconds
+      Chi square calculation: 0.000 seconds
+    Plotting:
+      Points: 0.000 seconds
+      Line: 0.000 seconds
+      Formatting: 0.000 seconds
+      Drawing: 0.000 seconds
+    Total for this NV: 0.011 seconds
+
+  NV 60:
+    Data preparation: 0.000 seconds
+    Fitting:
+      Function call: 0.000 seconds
+      Chi square calculation: 0.000 seconds
+    Plotting:
+      Points: 0.000 seconds
+      Line: 0.000 seconds
+      Formatting: 0.000 seconds
+      Drawing: 0.000 seconds
+    Total for this NV: 0.007 seconds
+
+  NV 62:
+    Data preparation: 0.000 seconds
+    Fitting:
+      Function call: 0.000 seconds
+      Chi square calculation: 0.000 seconds
+    Plotting:
+      Points: 0.000 seconds
+      Line: 0.000 seconds
+      Formatting: 0.000 seconds
+      Drawing: 0.000 seconds
+    Total for this NV: 0.003 seconds
+
+  NV 63:
+    Data preparation: 0.000 seconds
+    Fitting:
+      Function call: 0.000 seconds
+      Chi square calculation: 0.000 seconds
+    Plotting:
+      Points: 0.000 seconds
+      Line: 0.000 seconds
+      Formatting: 0.000 seconds
+      Drawing: 0.000 seconds
+    Total for this NV: 0.010 seconds
+
+  NV 65:
+    Data preparation: 0.000 seconds
+    Fitting:
+      Function call: 0.000 seconds
+      Chi square calculation: 0.000 seconds
+    Plotting:
+      Points: 0.000 seconds
+      Line: 0.000 seconds
+      Formatting: 0.000 seconds
+      Drawing: 0.000 seconds
+    Total for this NV: 0.003 seconds
+
+  NV 66:
+    Data preparation: 0.000 seconds
+    Fitting:
+      Function call: 0.000 seconds
+      Chi square calculation: 0.000 seconds
+    Plotting:
+      Points: 0.000 seconds
+      Line: 0.000 seconds
+      Formatting: 0.000 seconds
+      Drawing: 0.000 seconds
+    Total for this NV: 0.007 seconds
+
+  NV 67:
+    Data preparation: 0.000 seconds
+    Fitting:
+      Function call: 0.000 seconds
+      Chi square calculation: 0.000 seconds
+    Plotting:
+      Points: 0.000 seconds
+      Line: 0.000 seconds
+      Formatting: 0.000 seconds
+      Drawing: 0.000 seconds
+    Total for this NV: 0.003 seconds
+
+  NV 68:
+    Data preparation: 0.000 seconds
+    Fitting:
+      Function call: 0.000 seconds
+      Chi square calculation: 0.000 seconds
+    Plotting:
+      Points: 0.000 seconds
+      Line: 0.000 seconds
+      Formatting: 0.000 seconds
+      Drawing: 0.000 seconds
+    Total for this NV: 0.008 seconds
+
+  NV 69:
+    Data preparation: 0.000 seconds
+    Fitting:
+      Function call: 0.000 seconds
+      Chi square calculation: 0.000 seconds
+    Plotting:
+      Points: 0.000 seconds
+      Line: 0.000 seconds
+      Formatting: 0.000 seconds
+      Drawing: 0.000 seconds
+    Total for this NV: 0.007 seconds
+
+  NV 70:
+    Data preparation: 0.000 seconds
+    Fitting:
+      Function call: 0.000 seconds
+      Chi square calculation: 0.000 seconds
+    Plotting:
+      Points: 0.000 seconds
+      Line: 0.000 seconds
+      Formatting: 0.000 seconds
+      Drawing: 0.000 seconds
+    Total for this NV: 0.006 seconds
+
+  NV 71:
+    Data preparation: 0.000 seconds
+    Fitting:
+      Function call: 0.000 seconds
+      Chi square calculation: 0.000 seconds
+    Plotting:
+      Points: 0.000 seconds
+      Line: 0.000 seconds
+      Formatting: 0.000 seconds
+      Drawing: 0.000 seconds
+    Total for this NV: 0.022 seconds
+
+  NV 73:
+    Data preparation: 0.000 seconds
+    Fitting:
+      Function call: 0.000 seconds
+      Chi square calculation: 0.000 seconds
+    Plotting:
+      Points: 0.000 seconds
+      Line: 0.000 seconds
+      Formatting: 0.000 seconds
+      Drawing: 0.000 seconds
+    Total for this NV: 0.006 seconds
+
+  NV 74:
+    Data preparation: 0.000 seconds
+    Fitting:
+      Function call: 0.000 seconds
+      Chi square calculation: 0.000 seconds
+    Plotting:
+      Points: 0.000 seconds
+      Line: 0.000 seconds
+      Formatting: 0.000 seconds
+      Drawing: 0.000 seconds
+    Total for this NV: 0.015 seconds
+
+  NV 75:
+    Data preparation: 0.000 seconds
+    Fitting:
+      Function call: 0.000 seconds
+      Chi square calculation: 0.000 seconds
+    Plotting:
+      Points: 0.000 seconds
+      Line: 0.000 seconds
+      Formatting: 0.000 seconds
+      Drawing: 0.000 seconds
+    Total for this NV: 0.016 seconds
+
+  NV 76:
+    Data preparation: 0.000 seconds
+    Fitting:
+      Function call: 0.000 seconds
+      Chi square calculation: 0.000 seconds
+    Plotting:
+      Points: 0.000 seconds
+      Line: 0.000 seconds
+      Formatting: 0.000 seconds
+      Drawing: 0.000 seconds
+    Total for this NV: 0.003 seconds
+
+  NV 77:
+    Data preparation: 0.000 seconds
+    Fitting:
+      Function call: 0.000 seconds
+      Chi square calculation: 0.000 seconds
+    Plotting:
+      Points: 0.000 seconds
+      Line: 0.000 seconds
+      Formatting: 0.000 seconds
+      Drawing: 0.000 seconds
+    Total for this NV: 0.008 seconds
+
+  NV 78:
+    Data preparation: 0.000 seconds
+    Fitting:
+      Function call: 0.000 seconds
+      Chi square calculation: 0.000 seconds
+    Plotting:
+      Points: 0.000 seconds
+      Line: 0.000 seconds
+      Formatting: 0.000 seconds
+      Drawing: 0.000 seconds
+    Total for this NV: 0.005 seconds
+
+  NV 79:
+    Data preparation: 0.000 seconds
+    Fitting:
+      Function call: 0.000 seconds
+      Chi square calculation: 0.000 seconds
+    Plotting:
+      Points: 0.000 seconds
+      Line: 0.000 seconds
+      Formatting: 0.000 seconds
+      Drawing: 0.000 seconds
+    Total for this NV: 0.003 seconds
+
+  NV 80:
+    Data preparation: 0.000 seconds
+    Fitting:
+      Function call: 0.000 seconds
+      Chi square calculation: 0.000 seconds
+    Plotting:
+      Points: 0.000 seconds
+      Line: 0.000 seconds
+      Formatting: 0.000 seconds
+      Drawing: 0.000 seconds
+    Total for this NV: 0.006 seconds
+
+  NV 81:
+    Data preparation: 0.000 seconds
+    Fitting:
+      Function call: 0.000 seconds
+      Chi square calculation: 0.000 seconds
+    Plotting:
+      Points: 0.000 seconds
+      Line: 0.000 seconds
+      Formatting: 0.000 seconds
+      Drawing: 0.000 seconds
+    Total for this NV: 0.003 seconds
+
+  NV 82:
+    Data preparation: 0.000 seconds
+    Fitting:
+      Function call: 0.000 seconds
+      Chi square calculation: 0.000 seconds
+    Plotting:
+      Points: 0.000 seconds
+      Line: 0.000 seconds
+      Formatting: 0.000 seconds
+      Drawing: 0.000 seconds
+    Total for this NV: 0.005 seconds
+
+  NV 83:
+    Data preparation: 0.000 seconds
+    Fitting:
+      Function call: 0.000 seconds
+      Chi square calculation: 0.000 seconds
+    Plotting:
+      Points: 0.000 seconds
+      Line: 0.000 seconds
+      Formatting: 0.000 seconds
+      Drawing: 0.000 seconds
+    Total for this NV: 0.003 seconds
+
+  NV 84:
+    Data preparation: 0.000 seconds
+    Fitting:
+      Function call: 0.000 seconds
+      Chi square calculation: 0.000 seconds
+    Plotting:
+      Points: 0.000 seconds
+      Line: 0.000 seconds
+      Formatting: 0.000 seconds
+      Drawing: 0.000 seconds
+    Total for this NV: 0.009 seconds
+
+  NV 85:
+    Data preparation: 0.000 seconds
+    Fitting:
+      Function call: 0.000 seconds
+      Chi square calculation: 0.000 seconds
+    Plotting:
+      Points: 0.000 seconds
+      Line: 0.000 seconds
+      Formatting: 0.000 seconds
+      Drawing: 0.000 seconds
+    Total for this NV: 0.003 seconds
+
+  NV 86:
+    Data preparation: 0.000 seconds
+    Fitting:
+      Function call: 0.000 seconds
+      Chi square calculation: 0.000 seconds
+    Plotting:
+      Points: 0.000 seconds
+      Line: 0.000 seconds
+      Formatting: 0.000 seconds
+      Drawing: 0.000 seconds
+    Total for this NV: 0.007 seconds
+
+  NV 88:
+    Data preparation: 0.000 seconds
+    Fitting:
+      Function call: 0.000 seconds
+      Chi square calculation: 0.000 seconds
+    Plotting:
+      Points: 0.000 seconds
+      Line: 0.000 seconds
+      Formatting: 0.000 seconds
+      Drawing: 0.000 seconds
+    Total for this NV: 0.012 seconds
+
+  NV 89:
+    Data preparation: 0.000 seconds
+    Fitting:
+      Function call: 0.000 seconds
+      Chi square calculation: 0.000 seconds
+    Plotting:
+      Points: 0.000 seconds
+      Line: 0.000 seconds
+      Formatting: 0.000 seconds
+      Drawing: 0.000 seconds
+    Total for this NV: 0.003 seconds
+
+  NV 90:
+    Data preparation: 0.000 seconds
+    Fitting:
+      Function call: 0.000 seconds
+      Chi square calculation: 0.000 seconds
+    Plotting:
+      Points: 0.000 seconds
+      Line: 0.000 seconds
+      Formatting: 0.000 seconds
+      Drawing: 0.000 seconds
+    Total for this NV: 0.008 seconds
+
+  NV 91:
+    Data preparation: 0.000 seconds
+    Fitting:
+      Function call: 0.000 seconds
+      Chi square calculation: 0.000 seconds
+    Plotting:
+      Points: 0.000 seconds
+      Line: 0.000 seconds
+      Formatting: 0.000 seconds
+      Drawing: 0.000 seconds
+    Total for this NV: 0.007 seconds
+
+  NV 92:
+    Data preparation: 0.000 seconds
+    Fitting:
+      Function call: 0.000 seconds
+      Chi square calculation: 0.000 seconds
+    Plotting:
+      Points: 0.000 seconds
+      Line: 0.000 seconds
+      Formatting: 0.000 seconds
+      Drawing: 0.000 seconds
+    Total for this NV: 0.003 seconds
+
+  NV 93:
+    Data preparation: 0.000 seconds
+    Fitting:
+      Function call: 0.000 seconds
+      Chi square calculation: 0.000 seconds
+    Plotting:
+      Points: 0.000 seconds
+      Line: 0.000 seconds
+      Formatting: 0.000 seconds
+      Drawing: 0.000 seconds
+    Total for this NV: 0.003 seconds
+
+  NV 94:
+    Data preparation: 0.000 seconds
+    Fitting:
+      Function call: 0.000 seconds
+      Chi square calculation: 0.000 seconds
+    Plotting:
+      Points: 0.000 seconds
+      Line: 0.000 seconds
+      Formatting: 0.000 seconds
+      Drawing: 0.000 seconds
+    Total for this NV: 0.013 seconds
+
+  NV 95:
+    Data preparation: 0.000 seconds
+    Fitting:
+      Function call: 0.000 seconds
+      Chi square calculation: 0.000 seconds
+    Plotting:
+      Points: 0.000 seconds
+      Line: 0.000 seconds
+      Formatting: 0.000 seconds
+      Drawing: 0.000 seconds
+    Total for this NV: 0.007 seconds
+
+  NV 97:
+    Data preparation: 0.000 seconds
+    Fitting:
+      Function call: 0.000 seconds
+      Chi square calculation: 0.000 seconds
+    Plotting:
+      Points: 0.000 seconds
+      Line: 0.000 seconds
+      Formatting: 0.000 seconds
+      Drawing: 0.000 seconds
+    Total for this NV: 0.006 seconds
+
+  NV 98:
+    Data preparation: 0.000 seconds
+    Fitting:
+      Function call: 0.000 seconds
+      Chi square calculation: 0.000 seconds
+    Plotting:
+      Points: 0.000 seconds
+      Line: 0.000 seconds
+      Formatting: 0.000 seconds
+      Drawing: 0.000 seconds
+    Total for this NV: 0.004 seconds
+
+  NV 99:
+    Data preparation: 0.000 seconds
+    Fitting:
+      Function call: 0.000 seconds
+      Chi square calculation: 0.000 seconds
+    Plotting:
+      Points: 0.000 seconds
+      Line: 0.000 seconds
+      Formatting: 0.000 seconds
+      Drawing: 0.000 seconds
+    Total for this NV: 0.017 seconds
+
+  NV 100:
+    Data preparation: 0.000 seconds
+    Fitting:
+      Function call: 0.000 seconds
+      Chi square calculation: 0.000 seconds
+    Plotting:
+      Points: 0.000 seconds
+      Line: 0.000 seconds
+      Formatting: 0.000 seconds
+      Drawing: 0.000 seconds
+    Total for this NV: 0.008 seconds
+
+  NV 101:
+    Data preparation: 0.000 seconds
+    Fitting:
+      Function call: 0.000 seconds
+      Chi square calculation: 0.000 seconds
+    Plotting:
+      Points: 0.000 seconds
+      Line: 0.000 seconds
+      Formatting: 0.000 seconds
+      Drawing: 0.000 seconds
+    Total for this NV: 0.029 seconds
+
+  NV 102:
+    Data preparation: 0.000 seconds
+    Fitting:
+      Function call: 0.000 seconds
+      Chi square calculation: 0.000 seconds
+    Plotting:
+      Points: 0.000 seconds
+      Line: 0.000 seconds
+      Formatting: 0.000 seconds
+      Drawing: 0.000 seconds
+    Total for this NV: 0.005 seconds
+
+  NV 103:
+    Data preparation: 0.000 seconds
+    Fitting:
+      Function call: 0.000 seconds
+      Chi square calculation: 0.000 seconds
+    Plotting:
+      Points: 0.000 seconds
+      Line: 0.000 seconds
+      Formatting: 0.000 seconds
+      Drawing: 0.000 seconds
+    Total for this NV: 0.007 seconds
+
+  NV 104:
+    Data preparation: 0.000 seconds
+    Fitting:
+      Function call: 0.000 seconds
+      Chi square calculation: 0.000 seconds
+    Plotting:
+      Points: 0.000 seconds
+      Line: 0.000 seconds
+      Formatting: 0.000 seconds
+      Drawing: 0.000 seconds
+    Total for this NV: 0.003 seconds
+
+  NV 105:
+    Data preparation: 0.000 seconds
+    Fitting:
+      Function call: 0.000 seconds
+      Chi square calculation: 0.000 seconds
+    Plotting:
+      Points: 0.000 seconds
+      Line: 0.000 seconds
+      Formatting: 0.000 seconds
+      Drawing: 0.000 seconds
+    Total for this NV: 0.003 seconds
+
+  NV 106:
+    Data preparation: 0.000 seconds
+    Fitting:
+      Function call: 0.000 seconds
+      Chi square calculation: 0.000 seconds
+    Plotting:
+      Points: 0.000 seconds
+      Line: 0.000 seconds
+      Formatting: 0.000 seconds
+      Drawing: 0.000 seconds
+    Total for this NV: 0.069 seconds
+
+  NV 107:
+    Data preparation: 0.000 seconds
+    Fitting:
+      Function call: 0.000 seconds
+      Chi square calculation: 0.000 seconds
+    Plotting:
+      Points: 0.000 seconds
+      Line: 0.000 seconds
+      Formatting: 0.000 seconds
+      Drawing: 0.000 seconds
+    Total for this NV: 0.007 seconds
+
+  NV 108:
+    Data preparation: 0.000 seconds
+    Fitting:
+      Function call: 0.000 seconds
+      Chi square calculation: 0.000 seconds
+    Plotting:
+      Points: 0.000 seconds
+      Line: 0.000 seconds
+      Formatting: 0.000 seconds
+      Drawing: 0.000 seconds
+    Total for this NV: 0.005 seconds
+
+  NV 109:
+    Data preparation: 0.000 seconds
+    Fitting:
+      Function call: 0.000 seconds
+      Chi square calculation: 0.000 seconds
+    Plotting:
+      Points: 0.000 seconds
+      Line: 0.000 seconds
+      Formatting: 0.000 seconds
+      Drawing: 0.000 seconds
+    Total for this NV: 0.007 seconds
+
+  NV 110:
+    Data preparation: 0.000 seconds
+    Fitting:
+      Function call: 0.000 seconds
+      Chi square calculation: 0.000 seconds
+    Plotting:
+      Points: 0.000 seconds
+      Line: 0.000 seconds
+      Formatting: 0.000 seconds
+      Drawing: 0.000 seconds
+    Total for this NV: 0.003 seconds
+
+  NV 111:
+    Data preparation: 0.000 seconds
+    Fitting:
+      Function call: 0.000 seconds
+      Chi square calculation: 0.000 seconds
+    Plotting:
+      Points: 0.000 seconds
+      Line: 0.000 seconds
+      Formatting: 0.000 seconds
+      Drawing: 0.000 seconds
+    Total for this NV: 0.006 seconds
+
+  NV 113:
+    Data preparation: 0.000 seconds
+    Fitting:
+      Function call: 0.000 seconds
+      Chi square calculation: 0.000 seconds
+    Plotting:
+      Points: 0.000 seconds
+      Line: 0.000 seconds
+      Formatting: 0.000 seconds
+      Drawing: 0.000 seconds
+    Total for this NV: 0.003 seconds
+
+  NV 114:
+    Data preparation: 0.000 seconds
+    Fitting:
+      Function call: 0.000 seconds
+      Chi square calculation: 0.000 seconds
+    Plotting:
+      Points: 0.000 seconds
+      Line: 0.000 seconds
+      Formatting: 0.000 seconds
+      Drawing: 0.000 seconds
+    Total for this NV: 0.010 seconds
+
+  NV 115:
+    Data preparation: 0.000 seconds
+    Fitting:
+      Function call: 0.000 seconds
+      Chi square calculation: 0.000 seconds
+    Plotting:
+      Points: 0.000 seconds
+      Line: 0.000 seconds
+      Formatting: 0.000 seconds
+      Drawing: 0.000 seconds
+    Total for this NV: 0.011 seconds
+
+Summary Figure Timing:
+
+  Figure 1:
+    Setup: 0.404 seconds
+    Plot fit: 0.285 seconds
+    Axis formatting: 0.041 seconds
+    Total: 0.730 seconds
+
+  Figure 2:
+    Setup: 0.364 seconds
+    Plot fit: 0.342 seconds
+    Axis formatting: 0.052 seconds
+    Total: 0.758 seconds
+
+Total execution time: 17.403 seconds
