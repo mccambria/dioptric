@@ -1288,7 +1288,7 @@ if __name__ == "__main__":
         # piezo_voltage_to_pixel_calibration()
 
         do_compensate_for_drift(nv_sig)
-        # do_widefield_image_sample(nv_sig, 50)
+        do_widefield_image_sample(nv_sig, 50)
         # do_charge_state_histograms(nv_list)
         # do_charge_state_conditional_init(nv_list)
 
@@ -1347,7 +1347,7 @@ if __name__ == "__main__":
 
         # do_optimize_pol_amp(nv_list)
         # do_optimize_pol_duration(nv_list)
-        do_optimize_readout_amp(nv_list)
+        # do_optimize_readout_amp(nv_list)
         # do_optimize_readout_duration(nv_list)
         # optimize_readout_amp_and_duration(nv_list)
         # do_charge_state_histograms_images(nv_list, vary_pol_laser=True)

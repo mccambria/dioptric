@@ -5,12 +5,12 @@ and plot the difference
 Created on Fall 2024
 @author: saroj chand
 """
+
 import os
 import sys
 import time
 import traceback
 from datetime import datetime
-from utils.tool_belt import curve_fit
 
 import matplotlib.pyplot as plt
 import numpy as np
@@ -29,6 +29,7 @@ from utils import kplotlib as kpl
 from utils import positioning as pos
 from utils import tool_belt as tb
 from utils.constants import NVSig, VirtualLaserKey
+from utils.tool_belt import curve_fit
 
 
 def find_optimal_value_geom_mean(
@@ -208,7 +209,7 @@ def process_and_plot(raw_data):
                 readout_fidelity_arr[nv_ind],
                 prep_fidelity_arr[nv_ind],
                 goodness_of_fit_arr[nv_ind],
-                weights=(1.5, 2, 1.1),
+                weights=(1.5, 2, 1.0),
             )
             optimal_step_vals.append(optimal_step_val)
             nv_indces.append(nv_ind)
@@ -674,7 +675,8 @@ if __name__ == "__main__":
     file_id = 1769942144688  # pol dur var 100ns to 1us dataset
 
     # file_id = 1770306530123  # pol dur var 16ns to 1028ns dataset 128NVs
-    file_id = 1770658719969  # readout amp
+    file_id = 1770658719969  # readout yellow ampl var 50ms shallow nvs
+    file_id = 1776463838159  # yellow ampl var 50ms shallow nvs
     # raw_data = dm.get_raw_data(file_id=1709868774004, load_npz=False) #yellow ampl var
     raw_data = dm.get_raw_data(file_id=file_id, load_npz=False)  # yellow amp var
     process_and_plot(raw_data)
