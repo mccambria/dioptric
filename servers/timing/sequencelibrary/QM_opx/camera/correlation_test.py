@@ -86,17 +86,21 @@ if __name__ == "__main__":
             [
                 [111.4994186339929, 108.79019926783882],
                 [110.7254186339929, 109.27119926783882],
+                [111.4994186339929, 108.79019926783882],
+                [110.7254186339929, 109.27119926783882],
             ],
             [
                 [75.60717320911249, 74.33558456443815],
                 [74.88417320911249, 74.52458456443814],
+                [75.60717320911249, 74.33558456443815],
+                [74.88417320911249, 74.52458456443814],
             ],
             64.0,
-            None,
+            [1, 2],
         ]
         seq, seq_ret_vals = get_seq(args, 5)
 
-        sim_config = SimulationConfig(duration=int(200e3 / 4))
+        sim_config = SimulationConfig(duration=int(800e3 / 4))
         sim = opx.simulate(seq, sim_config)
         samples = sim.get_simulated_samples()
         samples.con1.plot()

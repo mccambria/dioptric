@@ -240,7 +240,7 @@ def create_fit_figure(data, axes_pack=None, layout=None, no_legend=True, nv_inds
             nv_list, sig_counts, ref_counts, threshold=True
         )
 
-    do_fit = True
+    do_fit = False
     if do_fit:
         fit_fns = []
         popts = []
@@ -282,14 +282,23 @@ def create_fit_figure(data, axes_pack=None, layout=None, no_legend=True, nv_inds
                 popt = None
             fit_fns.append(fit_fn)
             popts.append(popt)
+    else:
+        fit_fns = None
+        popts = None
 
     ### Make the figure
 
-    figsize = [6.5, 5.0]
-    figsize[0] *= 3
-    figsize[1] *= 3
+    figsize = kpl.double_figsize
+    figsize[1] = 7
     for ind in range(2):
-        fig, axes_pack, layout = kpl.subplot_mosaic(num_nvs, figsize=figsize)
+        layout = kpl.calc_mosaic_layout(num_nvs, num_cols=12)
+        fig, axes_pack = plt.subplot_mosaic(
+            layout,
+            figsize=figsize,
+            sharex=True,
+            sharey=True,
+            gridspec_kw={"hspace": 0.015},
+        )
 
         widefield.plot_fit(
             axes_pack,
@@ -306,11 +315,22 @@ def create_fit_figure(data, axes_pack=None, layout=None, no_legend=True, nv_inds
         kpl.set_shared_ax_xlabel(ax, "Total evolution time (µs)")
         # kpl.set_shared_ax_ylabel(ax, "Change in $P($NV$^{-})$")
         # kpl.set_shared_ax_ylabel(ax, "Norm. NV$^{-}$ population")
-        kpl.set_shared_ax_ylabel(ax, "Normalized NV$^{-}$ population")
-        ax.set_title(num_runs)
+        # kpl.set_shared_ax_ylabel(ax, "Normalized NV$^{-}$ population")
+        kpl.set_shared_ax_ylabel(ax, "NV$^{-}$ population (arb. units)")
+        # ax.set_title(num_runs)
         ax.set_ylim(-0.2, 1.2)
+        ax.set_yticks([0, 1], [None, None])
         if ind == 1:
-            ax.set_xlim(40, 60)
+            ax.set_xlim(40, 62)
+            ax.set_xticks([45, 60])
+        else:
+            ax.set_xticks([0, 80])
+
+        axes_pack_flat = list(axes_pack.values())
+        for ax in axes_pack_flat:
+            # ax.tick_params(labelsize=kpl.FontSize.SMALL.value)
+            # ax.tick_params(which="both", direction="in", labelsize=kpl.FontSize.SMALL.value)
+            ax.tick_params(which="both", direction="in")
 
     # figManager = plt.get_current_fig_manager()
     # figManager.window.showMaximized()

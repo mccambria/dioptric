@@ -49,25 +49,47 @@ def create_raw_data_figure(data):
     counts = np.array(data["states"])
     sig_counts, ref_counts = counts[0], counts[1]
 
-    avg_counts, avg_counts_ste, norms = widefield.process_counts(
+    avg_counts, avg_counts_ste = widefield.process_counts(
         nv_list, sig_counts, ref_counts, threshold=False
     )
-    norm_counts = avg_counts - norms[0][:, np.newaxis]
-    norm_counts_ste = avg_counts_ste
+    # norm_counts = avg_counts - norms[0][:, np.newaxis]
+    norm_counts = avg_counts
+    norm_counts_ste = abs(avg_counts_ste)
 
-    fig, axes_pack, layout = kpl.subplot_mosaic(num_nvs, num_rows=2)
+    # fig, axes_pack, layout = kpl.subplot_mosaic(num_nvs, num_rows=2)
 
     widefield.plot_fit(axes_pack, nv_list, powers, norm_counts, norm_counts_ste)
 
-    # kpl.set_shared_ax_xlabel(fig, axes_pack, layout, "Microwave power (dBm)")
-    # kpl.set_shared_ax_ylabel(fig, axes_pack, layout, "Normalized NV- population")
+    # # kpl.set_shared_ax_xlabel(fig, axes_pack, layout, "Microwave power (dBm)")
+    # # kpl.set_shared_ax_ylabel(fig, axes_pack, layout, "Normalized NV- population")
 
-    # Find the lower-left axis dynamically using the helper function
-    lower_left_ax = get_lower_left_ax(axes_pack)
-    kpl.set_shared_ax_xlabel(lower_left_ax, "Microwave power (dBm)")
-    kpl.set_shared_ax_ylabel(lower_left_ax, "Normalized NV- population")
+    # # Find the lower-left axis dynamically using the helper function
+    # lower_left_ax = get_lower_left_ax(axes_pack)
+    # kpl.set_shared_ax_xlabel(lower_left_ax, "Microwave power (dBm)")
+    # kpl.set_shared_ax_ylabel(lower_left_ax, "Normalized NV- population")
+    # 🔹 Additional Plotting to visualize raw data
+    fig_raw, ax_raw = plt.subplots(figsize=(6, 4))
 
-    return fig
+    for nv_idx, nv in enumerate(nv_list):
+        ax_raw.errorbar(
+            powers,
+            norm_counts[nv_idx],
+            yerr=norm_counts_ste[nv_idx],
+            fmt="o",
+            label=f"NV {nv_idx + 1}",
+        )
+
+    ax_raw.set_xlabel("Microwave power (dBm)")
+    ax_raw.set_ylabel("Normalized NV- population")
+    ax_raw.set_title("Raw ESR Data")
+    ax_raw.legend()
+    ax_raw.grid(True)
+
+    plt.show()
+
+    return fig_raw
+
+    # return fig
 
 
 def main(
@@ -90,6 +112,7 @@ def main(
 
     def run_fn(step_inds):
         seq_args = [widefield.get_base_scc_seq_args(nv_list, uwave_ind_list), step_inds]
+        print(seq_args)
         seq_args_string = tb.encode_seq_args(seq_args)
         pulse_gen.stream_load(seq_file, seq_args_string, num_reps)
 

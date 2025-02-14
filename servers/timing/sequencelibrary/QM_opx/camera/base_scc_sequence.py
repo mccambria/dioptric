@@ -6,10 +6,9 @@ Accompanies base routine
 Created on December 11th, 2023
 
 @author: mccambria
-@author: Saroj Chand
+@author: sbchand
 """
 
-import numpy as np
 from qm import qua
 
 from servers.timing.sequencelibrary.QM_opx import seq_utils

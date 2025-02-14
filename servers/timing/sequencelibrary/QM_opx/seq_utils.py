@@ -346,33 +346,6 @@ def macro_pi_pulse(uwave_ind_list, duration_cc=None):
         qua.wait(uwave_buffer, sig_gen_el)
 
 
-def macro_pi_pulse_iq(uwave_ind_list, duration_cc=None):
-    """
-    Apply a π pulse using IQ modulation.
-    This function replaces macro_pi_pulse() when using IQ modulation.
-
-    """
-    if uwave_ind_list is None:
-        return
-
-    uwave_buffer = get_uwave_buffer()
-
-    for uwave_ind in uwave_ind_list:
-        i_el, q_el = get_sig_gen_iq_mod_elements(uwave_ind)
-        qua.align()
-
-        if duration_cc is None:
-            qua.play("pi_pulse", i_el)
-            qua.play("pi_pulse", q_el)
-        else:
-            with qua.if_(duration_cc > 0):
-                qua.play("pi_pulse", i_el, duration=duration_cc)
-                qua.play("pi_pulse", q_el, duration=duration_cc)
-
-        qua.wait(uwave_buffer, i_el)
-        qua.wait(uwave_buffer, q_el)
-
-
 def macro_pi_on_2_pulse(uwave_ind_list):
     if uwave_ind_list is None:
         return
@@ -926,19 +899,6 @@ def get_sig_gen_element(uwave_ind=0):
     sig_gen_name = virtual_sig_gen_dict["physical_name"]
     sig_gen_element = f"do_{sig_gen_name}_dm"
     return sig_gen_element
-
-
-@cache
-def get_sig_gen_iq_mod_elements(uwave_ind=0):
-    """
-    Get the I and Q modulation elements for a given microwave signal generator.
-
-    """
-    virtual_sig_gen_dict = tb.get_virtual_sig_gen_iq_mode_dict(uwave_ind)
-    sig_gen_name = virtual_sig_gen_dict["physical_name"]
-    i_el = f"ao_{sig_gen_name}_i"
-    q_el = f"ao_{sig_gen_name}_q"
-    return i_el, q_el
 
 
 @cache

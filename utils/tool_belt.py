@@ -481,8 +481,7 @@ def cosine_double_sum(t, offset, decay, amp_1, freq_1, amp_2, freq_2):
     two_pi = 2 * np.pi
 
     return offset + np.exp(-t / abs(decay)) * (
-        amp_1 * np.cos(two_pi * freq_1 * t)
-        + amp_2 * np.cos(two_pi * freq_2 * t)
+        amp_1 * np.cos(two_pi * freq_1 * t) + amp_2 * np.cos(two_pi * freq_2 * t)
         # + amp_3 * np.cos(two_pi * freq_3 * t)
     )
 
@@ -700,12 +699,6 @@ def get_physical_sig_gen_dict(physical_sig_gen_name):
 def get_virtual_sig_gen_dict(sig_gen_ind):
     config = common.get_config_dict()
     return config["Microwaves"]["VirtualSigGens"][sig_gen_ind]
-
-
-@cache
-def get_virtual_sig_gen_iq_mode_dict(sig_gen_ind):
-    config = common.get_config_dict()
-    return config["Microwaves_IQ_Mode"]["VirtualSigGens"][sig_gen_ind]
 
 
 @cache

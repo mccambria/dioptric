@@ -144,44 +144,41 @@ class SigGenStanSg394(LabradServer, SigGenVector):
     #     self.sig_gen.write(cmd)
     #     # logging.info(cmd)
 
-    @setting(7, freq_I="v[]", freq_Q="v[]")
-    def load_iq(self, c, freq_I, freq_Q):
+    @setting(7, carrier_freq="v[]", offset_I="v[]", offset_Q="v[]")
+    def load_iq(self, c, carrier_freq, offset_I, offset_Q):
         """
-        Set up external IQ modulation with two frequency components.
+        Set up internal IQ modulation.
 
         Parameters:
+            carrier_freq: float
+                Carrier frequency in GHz.
             freq_I: float
-                Frequency for the I channel modulation (MHz).
+                Frequency for the I-channel modulation (MHz).
             freq_Q: float
-                Frequency for the Q channel modulation (MHz).
+                Frequency for the Q-channel modulation (MHz).
         """
         # Ensure that the signal generator does not exceed 10 dBm with IQ modulation
         if float(self.sig_gen.query("AMPR?")) > 10:
             msg = (
-                "IQ modulation on sg394 supports up to 10 dBm. The power was"
+                "IQ modulation on SG394 supports up to 10 dBm. The power was"
                 " set to {} dBm and the operation was stopped.".format(
                     self.sig_gen.query("AMPR?")
                 )
             )
             raise Exception(msg)
-
-        # Enable Quadrature Amplitude Modulation (QAM) mode
-        self.sig_gen.write("TYPE 7")
-
-        # External modulation mode
-        self.sig_gen.write("QFNC 5")
-
-        # Set I-channel modulation frequency (MHz)
-        self.sig_gen.write(f"IFRQ {freq_I} MHz")
-
-        # Set Q-channel modulation frequency (MHz)
-        self.sig_gen.write(f"QFRQ {freq_Q} MHz")
-
         # Enable IQ modulation
         self.sig_gen.write("MODL 1")
+        # Set carrier frequency (GHz)
+        self.sig_gen.write(f"FREQ {carrier_freq} GHz")
+        # Use internal IQ modulation mode
+        self.sig_gen.write("QFNC 7")  # INTERNAL Cosine/Sine
+        # Apply optional I/Q offsets (-5% to +5%)
+        self.sig_gen.write(f"OFSI {offset_I}")  # in %
+        self.sig_gen.write(f"OFSQ {offset_Q}")  # in %
+        # Enable RF output for IQ modulation
 
-    @setting(8, deviation="v[]")
-    def load_fm(self, c, deviation):
+    @setting(8, carrier_freq="v[]", deviation="v[]")
+    def load_fm(self, c, carrier_freq, deviation):
         """
         Set up frequency modulation using a nexternal analog source
         Parameters
@@ -200,10 +197,15 @@ class SigGenStanSg394(LabradServer, SigGenVector):
         self.sig_gen.write("TYPE 1")
         # STYP 1 is analog modulation
         self.sig_gen.write("STYP 0")
-        # external is 5
-        self.sig_gen.write("MFNC 5")
+        # # external is 5
+        # self.sig_gen.write("MFNC 5")
+        # Interanl sine is 0
+        self.sig_gen.write("MFNC 0")
+        # # set the rate? For external this is 100 kHz
+        # self.sig_gen.write("RATE 100 kHz")
         # set the rate? For external this is 100 kHz
-        # self.sig_gen.write('RATE 100 kHz')
+        self.sig_gen.write("RATE 10 kHz")
+        self.sig_gen.write(f"FREQ {carrier_freq} GHz")
         # set the deviation
         cmd = "FDEV {} MHz".format(deviation)
         self.sig_gen.write(cmd)

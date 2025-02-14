@@ -33,22 +33,6 @@ red_laser = "laser_COBO_638"
 green_laser_aod = "laser_INTE_520_aod"
 red_laser_aod = "laser_COBO_638_aod"
 
-# calibration_coords_pixel = [
-#     [52.761, 64.24],
-#     [95.923, 201.438],
-#     [207.435, 74.049],
-# ]
-
-# calibration_coords_green = [
-#     [115.66, 101.157],
-#     [109.249, 115.543],
-#     [98.684, 100.663],
-# ]
-# calibration_coords_red = [
-#     [78.816, 67.86],
-#     [73.859, 79.697],
-#     [65.063, 67.591],
-# ]
 
 calibration_coords_pixel = [
     [239.243, 23.266],
@@ -145,50 +129,33 @@ config |= {
         "VirtualSigGens": {
             0: {
                 "physical_name": "sig_gen_STAN_sg394",
-                # "uwave_power": 6.05,
-                "uwave_power": 2.3,
-                # "frequency": 2.7801,  # shallow NVs O1
+                "uwave_power": 6.0,
+                # "uwave_power": 2.3,
+                "frequency": 2.7823,  # shallow NVs O1
                 # "rabi_period": 104, # shallow NVs O1
-                "frequency": 2.8401,  # shallow NVs O3
-                "rabi_period": 112,
+                # "frequency": 2.8401,  # shallow NVs O3
+                # IQ modulation part
+                "rabi_period": 80,
+                "carrier_frequency": 2.78975,  # Center frequency for IQ modulation
+                "offset": 0.2670,  # % offset
+                "iq_freq_I": -7.45,  # IQ modulation frequency for I-channel (MHz)
+                "iq_freq_Q": 7.45,  # IQ modulation frequency for Q-channel (MHz)
                 "iq_delay": 140,
             },
             1: {
                 "physical_name": "sig_gen_STAN_sg394_2",
-                "uwave_power": 8.1,
-                # "frequency": 2.7987,  # shallow NVs O2
-                # "rabi_period": 120, # shallow NVs O2
-                "frequency": 2.8553,  # shallow NVs O4
+                # "uwave_power": 8.1,
+                "uwave_power": 6.0,
                 "rabi_period": 80,
-            },
-        },
-    },
-    ###
-    # Iq modulation settings
-    "Microwaves_IQ_Mode": {
-        "PhysicalSigGens": {
-            "sig_gen_STAN_sg394": {"delay": 104, "fm_mod_bandwidth": 100000.0},
-            "sig_gen_STAN_sg394_2": {"delay": 151, "fm_mod_bandwidth": 100000.0},
-        },
-        "iq_comp_amp": 0.5,  # Compensation amplitude for IQ modulation
-        "iq_delay": 630,  # Unified IQ
-        "VirtualSigGens": {
-            "0": {
-                "physical_name": "sig_gen_STAN_sg394",
-                "uwave_power": 2.3,
-                "carrier_frequency": 2.79,  # Center frequency for IQ modulation
-                "iq_freq_I": -9.9,  # IQ modulation frequency for I-channel (MHz)
-                "iq_freq_Q": 8.6,  # IQ modulation frequency for Q-channel (MHz)
-                "rabi_period": 128,
-                "iq_delay": 140,  # Consistent with OPX config
-            },
-            "1": {
-                "physical_name": "sig_gen_STAN_sg394_2",
-                "uwave_power": 8.1,
-                "carrier_frequency": 2.8477,  # Center frequency for IQ modulation
-                "iq_freq_I": -7.6,  # IQ modulation frequency for I-channel (MHz)
-                "iq_freq_Q": 7.6,  # IQ modulation frequency for Q-channel (MHz)
-                "rabi_period": 128,
+                # "frequency": 2.7972,  # shallow NVs O2
+                # "rabi_period": 120, # shallow NVs O2
+                "frequency": 2.8571,  # shallow NVs O4
+                # "rabi_period": 80,
+                # IQ modulation part
+                "carrier_frequency": 2.8486,  # Center frequency for IQ modulation
+                "offset": 0.29839,  # % offset
+                "iq_freq_I": -8.5,  # IQ modulation frequency for I-channel (MHz)
+                "iq_freq_Q": 8.5,  # IQ modulation frequency for Q-channel (MHz)
                 "iq_delay": 140,
             },
         },
@@ -868,9 +835,9 @@ opx_config = {
         # "yellow_charge_readout": {"type": "constant", "sample": 0.3741},  # 50ms 117NVs
         # "yellow_charge_readout": {"type": "constant", "sample": 0.325},  # 100ms 117NVs
         # "yellow_charge_readout": {"type": "constant", "sample": 0.29},  # 200ms 117NVs
-        "yellow_charge_readout": {"type": "constant", "sample": 0.4203},  #
-        # "yellow_charge_readout": {"type": "constant", "sample": 0.4088},
-        "yellow_spin_pol": {"type": "constant", "sample": 0.39},
+        "yellow_charge_readout": {"type": "constant", "sample": 0.4276},  #
+        # "yellow_charge_readout": {"type": "constant", "sample": 0.40},  #
+        "yellow_spin_pol": {"type": "constant", "sample": 0.42},
         "yellow_shelving": {"type": "constant", "sample": 0.33},
         # Other
         "aod_cw": {"type": "constant", "sample": 0.35},
