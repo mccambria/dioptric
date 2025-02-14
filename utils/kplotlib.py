@@ -242,10 +242,10 @@ def calc_mosaic_layout(num_panels, num_rows=None, num_cols=None):
     # return vals.tolist()
 
 
-def subplot_mosaic(num_panels, num_rows=None, figsize=[10, 6.0]):
+def subplot_mosaic(num_panels, num_rows=None, figsize=[10, 6.0], **kwargs):
     layout = calc_mosaic_layout(num_panels, num_rows)
     fig, axes_pack = plt.subplot_mosaic(
-        layout, figsize=figsize, sharex=True, sharey=True
+        layout, figsize=figsize, sharex=True, sharey=True, **kwargs
     )
     return fig, axes_pack, layout
 
