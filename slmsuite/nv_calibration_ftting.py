@@ -104,7 +104,7 @@ def plot_fitting(
 # Example usage
 if __name__ == "__main__":
     # Load the image array (replace this with your own method for loading image data)
-    data = dm.get_raw_data(file_id=1776225988521, load_npz=True)
+    data = dm.get_raw_data(file_id=1778910335521, load_npz=True)
     # data = dm.get_raw_data(file_id=1766363198090, load_npz=True)
 
     img_array = np.array(data["img_array"])
@@ -127,6 +127,5 @@ if __name__ == "__main__":
 
     # Print optimized peak coordinates rounded to three digits
     print("Optimized peak coordinates (3 digits):", optimized_coords.tolist())
-
     # Plot the fitting results and save the figure
     plot_fitting(img_array, initial_peaks, optimized_coords)

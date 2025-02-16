@@ -35,14 +35,14 @@ red_laser_aod = "laser_COBO_638_aod"
 
 
 calibration_coords_pixel = [
-    [239.243, 23.266],
-    [15.473, 52.03],
-    [86.248, 227.265],
+    [241.12, 24.247],
+    [15.121, 53.43],
+    [85.847, 227.993],
 ]
 calibration_coords_green = [
-    [95.571, 94.737],
-    [119.093, 100.258],
-    [109.417, 118.142],
+    [95.365, 94.768],
+    [119.081, 100.299],
+    [109.368, 118.184],
 ]
 calibration_coords_red = [
     [62.207, 62.846],
@@ -129,13 +129,12 @@ config |= {
         "VirtualSigGens": {
             0: {
                 "physical_name": "sig_gen_STAN_sg394",
-                "uwave_power": 6.0,
                 # "uwave_power": 2.3,
-                "frequency": 2.7823,  # shallow NVs O1
-                # "rabi_period": 104, # shallow NVs O1
-                # "frequency": 2.8401,  # shallow NVs O3
-                # IQ modulation part
+                "uwave_power": 6.0,
+                "frequency": 2.781909,  # shallow NVs O1 ms=-1
+                # "frequency": 2.797378,  # shallow NVs O2 ms=-1
                 "rabi_period": 80,
+                # IQ modulation part
                 "carrier_frequency": 2.78975,  # Center frequency for IQ modulation
                 "offset": 0.2670,  # % offset
                 "iq_freq_I": -7.45,  # IQ modulation frequency for I-channel (MHz)
@@ -146,11 +145,9 @@ config |= {
                 "physical_name": "sig_gen_STAN_sg394_2",
                 # "uwave_power": 8.1,
                 "uwave_power": 6.0,
+                "frequency": 2.840772,  # shallow NV O3 ms=-1
+                # "frequency": 2.856274,  # shallow NVs O4 ms=-1
                 "rabi_period": 80,
-                # "frequency": 2.7972,  # shallow NVs O2
-                # "rabi_period": 120, # shallow NVs O2
-                "frequency": 2.8571,  # shallow NVs O4
-                # "rabi_period": 80,
                 # IQ modulation part
                 "carrier_frequency": 2.8486,  # Center frequency for IQ modulation
                 "offset": 0.29839,  # % offset
@@ -228,7 +225,7 @@ config |= {
             },
             VirtualLaserKey.ION: {
                 "physical_name": red_laser,
-                "duration": 10e3,
+                "duration": 1e3,
             },
             # SCC: 180 mW, 0.13 V, no shelving
             # LaserKey.SCC: {"physical_name": red_laser, "duration": 248},
@@ -815,7 +812,7 @@ opx_config = {
         # "green_aod_cw-opti": {"type": "constant", "sample": 0.03},
         # "green_aod_cw-charge_pol": {"type": "constant", "sample": 0.13},
         # "green_aod_cw-charge_pol": {"type": "constant", "sample": 0.06},  # Negative
-        "green_aod_cw-charge_pol": {"type": "constant", "sample": 0.11},
+        "green_aod_cw-charge_pol": {"type": "constant", "sample": 0.131},  # median
         "green_aod_cw-spin_pol": {"type": "constant", "sample": 0.05},
         "green_aod_cw-shelving": {"type": "constant", "sample": 0.05},
         "green_aod_cw-scc": {"type": "constant", "sample": 0.15},
@@ -835,9 +832,10 @@ opx_config = {
         # "yellow_charge_readout": {"type": "constant", "sample": 0.3741},  # 50ms 117NVs
         # "yellow_charge_readout": {"type": "constant", "sample": 0.325},  # 100ms 117NVs
         # "yellow_charge_readout": {"type": "constant", "sample": 0.29},  # 200ms 117NVs
+        # "yellow_charge_readout": {"type": "constant", "sample": 0.4276},  #
         "yellow_charge_readout": {"type": "constant", "sample": 0.4276},  #
-        # "yellow_charge_readout": {"type": "constant", "sample": 0.40},  #
-        "yellow_spin_pol": {"type": "constant", "sample": 0.42},
+        # "yellow_charge_readout": {"type": "constant", "sample": 0.4206},  #
+        "yellow_spin_pol": {"type": "constant", "sample": 0.4205},
         "yellow_shelving": {"type": "constant", "sample": 0.33},
         # Other
         "aod_cw": {"type": "constant", "sample": 0.35},

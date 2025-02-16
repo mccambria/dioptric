@@ -399,7 +399,7 @@ if __name__ == "__main__":
     # data = dm.get_raw_data(file_id=1751170993877, load_npz=True)
     # data = dm.get_raw_data(file_id=1752794666146, load_npz=True)
     # data = dm.get_raw_data(file_id=1764727515943, load_npz=True)  # comniened
-    data = dm.get_raw_data(file_id=1766788934308, load_npz=True)
+    data = dm.get_raw_data(file_id=1778363598381, load_npz=True)
 
     img_array = data["ref_img_array"]
     # img_array = data["img_array"]
@@ -591,23 +591,25 @@ if __name__ == "__main__":
     # Indices to exclude (zero-based indexing)
     # 117 NVs
     # include_indices =[0, 1, 2, 3, 5, 6, 7, 8, 13, 14, 15, 16, 17, 18, 20, 21, 22, 23, 24, 25, 26, 28, 29, 31, 32, 33, 34, 36, 37, 39, 42, 44, 45, 46, 47, 48, 49, 51, 52, 53, 55, 56, 57, 58, 60, 61, 62, 64, 65, 66, 68, 69, 70, 71, 72, 73, 74, 75, 77, 79, 83, 84, 85, 88, 89, 90, 91, 92, 94, 95, 96, 97, 99, 100, 101, 102, 103, 105, 106, 107, 108, 109, 110, 111, 113, 114, 116, 117, 118, 120, 122, 123, 124, 125, 128, 131, 132, 134, 136, 137, 138, 140, 141, 142, 145, 146, 147, 148, 149, 152, 153, 154, 155, 156, 157, 158, 159]
-    # 117NVs
+    # SHALLOW nvS
+    include_indices = [0, 1, 5, 6, 10, 17, 19, 20, 24, 26, 29, 35, 36, 43, 44, 46, 48, 49, 52, 53, 55, 57, 58, 62, 64, 65, 66, 68, 70, 72, 73, 74, 75, 78, 80, 82, 83, 90, 91, 93, 94, 95, 98, 99, 102, 103, 110, 111, 112, 113, 116, 122, 124, 126, 129, 130, 131, 136, 138, 142, 146] 
     # include_indices = list(range(160))
     # final_drop_inds = [23, 73, 89, 99, 117, 120, 132, 137, 155, 157, 159]
     # include_indices = [ind for ind in include_indices if ind not in final_drop_inds]
     # fmt: on
     # Filter nv_coordinates and spot_weights to exclude the specified indices
-    # nv_coordinates_filtered = np.array(
-    #     [coord for i, coord in enumerate(nv_coordinates) if i in include_indices]
+    # filtered_reordered_coords = np.array(
+    #     [
+    #         coord
+    #         for i, coord in enumerate(filtered_reordered_coords)
+    #         if i in include_indices
+    #     ]
     # )
     # print(f"len nv_powers: {len(nv_powers)}")
-    # print(f"len nv_powers: {len(nv_coordinates_filtered)}")
+    print(f"len nv_powers: {len(nv_coordinates_filtered)}")
     # select_half_left_side_nvs_and_plot(nv_coordinates_filtered)
     # spot_weights_filtered = np.array(
     #     [weight for i, weight in enumerate(spot_weights) if i in include_indices]
-    # )
-    # nv_powers_filtered = np.array(
-    #     [power for i, power in enumerate(nv_powers) if i in include_indices]
     # )
 
     aom_voltage = 0.4252  #
@@ -615,13 +617,18 @@ if __name__ == "__main__":
     a, b, c = [3.7e5, 6.97, 8e-14]
     total_power = a * (aom_voltage) ** b + c
     print(total_power)
-    nv_powers = np.array(spot_weights) / sum(np.array(spot_weights))
+    nv_powers = np.array(spot_weights)
     nv_powers = nv_powers * total_power  # Apply linear weights to all counts
+    print(nv_powers)
     # calcualted_spot_weights = linear_weights(filtered_reordered_counts, alpha=0.3)
     # updated_spot_weights = linear_weights(filtered_reordered_counts, alpha=0.6)
+    nv_powers_filtered = np.array(
+        [power for i, power in enumerate(nv_powers) if i in include_indices]
+    )
+    # print(nv_powers_filtered)
     # Create a copy or initialize spot weights for modification
     updated_spot_weights = curve_extreme_weights_simple(
-        spot_weights, scaling_factor=2.0
+        spot_weights, scaling_factor=0.6
     )
     # updated_spot_weights = spot_weights
     # updated_spot_weights = curve_extreme_weights_simple(nv_powers)
@@ -636,7 +643,7 @@ if __name__ == "__main__":
     #     if 0 <= idx < len(updated_spot_weights):  # Ensure index is within valid range
     #         updated_spot_weights[idx] = calcualted_spot_weights[idx]
 
-    aom_voltage = 0.38  # Current AOM voltage
+    aom_voltage = 0.4257  # Current AOM voltage
     # aom_voltage = 0.4118  # Current AOM voltage
     power_law_params = [3.7e5, 6.97, 8e-14]  # Example power-law fit parameters
     a, b, c = [3.7e5, 6.97, 8e-14]
@@ -647,7 +654,7 @@ if __name__ == "__main__":
     #     nv_amps_filtered, aom_voltage, power_law_params
     # )
     # adjusted_nv_powers = adjusted_nv_powers * total_power
-    filtered_total_power = np.sum(updated_spot_weights)
+    filtered_total_power = np.sum(nv_powers_filtered) / len(nv_coordinates_filtered)
     adjusted_aom_voltage = ((filtered_total_power - c) / a) ** (1 / b)
     # print("Adjusted Voltages (V):", adjusted_aom_voltage)
     filtered_reordered_spot_weights = updated_spot_weights
@@ -706,7 +713,7 @@ if __name__ == "__main__":
             coord[1] - sigma - 1,
             str(idx),
             color="white",
-            fontsize=6,
+            fontsize=8,
             ha="center",
         )
     # Plot histogram of the filtered integrated intensities using Seaborn

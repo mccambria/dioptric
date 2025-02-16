@@ -216,7 +216,6 @@ def optimize_scc_amp_and_duration(
         num_reps,
         num_runs,
         run_fn=run_fn,
-        load_iq=True,
     )
 
     ### Process and plot results
