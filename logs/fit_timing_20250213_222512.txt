@@ -1,0 +1,10 @@
+Fit Function Timing Breakdown:
+
+Initial parameter guesses: 0.000 seconds
+First curve_fit call: 0.007 seconds
+Optimization setup: 0.000 seconds
+Coarse grid search: 4.258 seconds
+Refinement step: 0.693 seconds
+Final fit setup: 0.000 seconds
+Final curve_fit call: 0.007 seconds
+Total fit time: 4.965 seconds
