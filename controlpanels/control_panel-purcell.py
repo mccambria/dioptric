@@ -122,7 +122,7 @@ def do_charge_state_histograms(nv_list):
 def do_optimize_pol_duration(nv_list):
     num_steps = 22
     num_reps = 10
-    num_runs = 200
+    num_runs = 400
     # num_reps = 5
     # num_runs = 2
     min_duration = 32
@@ -456,7 +456,7 @@ def do_resonance(nv_list):
     # num_steps = 80
     # Single ref
     # num_reps = 8
-    num_runs = 400
+    num_runs = 500
     # num_runs = 750
     # num_runs = 350
     # num_runs = 50
@@ -468,8 +468,10 @@ def do_resonance(nv_list):
     # num_runs = 300
 
     # num_runs = 2
-    for _ in range(2):
-        resonance.main(nv_list, num_steps, num_reps, num_runs, freq_center, freq_range)
+    resonance.main(nv_list, num_steps, num_reps, num_runs, freq_center, freq_range)
+
+    # for _ in range(2):
+    #     resonance.main(nv_list, num_steps, num_reps, num_runs, freq_center, freq_range)
 
 
 def do_resonance_zoom(nv_list):
@@ -496,11 +498,11 @@ def do_rabi(nv_list):
 
     # uwave_ind_list = [1]
     uwave_ind_list = [0, 1]
-    # rabi.main(nv_list, num_steps, num_reps, num_runs, min_tau, max_tau, uwave_ind_list)
-    for _ in range(2):
-        rabi.main(
-            nv_list, num_steps, num_reps, num_runs, min_tau, max_tau, uwave_ind_list
-        )
+    rabi.main(nv_list, num_steps, num_reps, num_runs, min_tau, max_tau, uwave_ind_list)
+    # for _ in range(2):
+    #     rabi.main(
+    #         nv_list, num_steps, num_reps, num_runs, min_tau, max_tau, uwave_ind_list
+    #     )
     # uwave_ind_list = [0]
     # rabi.main(nv_list, num_steps, num_reps, num_runs, min_tau, max_tau, uwave_ind_list)
     # uwave_ind_list = [1]
@@ -1049,15 +1051,15 @@ if __name__ == "__main__":
     # ]
     # green_coords_list = [
     #     [107.266, 107.516],
-    #     [95.365, 94.768],
-    #     [119.081, 100.299],
-    #     [109.368, 118.184],
+    #     [95.422, 94.767],
+    #     [119.084, 100.3599],
+    #     [109.421, 118.212],
     # ]
     # red_coords_list = [
-    #     [71.991, 72.957],
-    #     [62.119, 62.836],
-    #     [81.567, 67.078],
-    #     [73.943, 81.82],
+    #     [72.017, 73.008],
+    #     [62.148, 62.848],
+    #     [81.574, 67.148],
+    #     [74.061, 81.78],
     # ]
     num_nvs = len(pixel_coords_list)
     threshold_list = [25.5] * num_nvs
@@ -1353,7 +1355,7 @@ if __name__ == "__main__":
         # do_optimize_loop(nv_list, coords_key)
 
         # do_optimize_pol_amp(nv_list)
-        # do_optimize_pol_duration(nv_list)
+        do_optimize_pol_duration(nv_list)
         # do_optimize_readout_amp(nv_list)
         # do_optimize_readout_duration(nv_list)
         # optimize_readout_amp_and_duration(nv_list)
@@ -1384,7 +1386,7 @@ if __name__ == "__main__":
         # do_power_rabi_scc_snr(nv_list)
         # do_optimize_scc_duration(nv_list)
         # do_optimize_scc_amp(nv_list)
-        optimize_scc_amp_and_duration(nv_list)
+        # optimize_scc_amp_and_duration(nv_list)
         # do_crosstalk_check(nv_sig)
         # do_spin_pol_check(nv_sig)
         # do_calibrate_green_red_delay()

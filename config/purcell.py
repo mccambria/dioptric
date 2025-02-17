@@ -40,14 +40,14 @@ calibration_coords_pixel = [
     [85.847, 227.993],
 ]
 calibration_coords_green = [
-    [95.365, 94.768],
-    [119.081, 100.299],
-    [109.368, 118.184],
+    [95.422, 94.767],
+    [119.084, 100.3599],
+    [109.421, 118.212],
 ]
 calibration_coords_red = [
-    [62.207, 62.846],
-    [81.472, 67.212],
-    [74.063, 81.807],
+    [62.148, 62.848],
+    [81.574, 67.148],
+    [74.061, 81.78],
 ]
 # Create the dictionaries using the provided lists
 calibration_coords_nv1 = {
@@ -130,12 +130,13 @@ config |= {
             0: {
                 "physical_name": "sig_gen_STAN_sg394",
                 # "uwave_power": 2.3,
-                "uwave_power": 6.0,
-                "frequency": 2.781909,  # shallow NVs O1 ms=-1
-                # "frequency": 2.797378,  # shallow NVs O2 ms=-1
-                "rabi_period": 80,
+                "uwave_power": 2.0,
+                "frequency": 2.782195,  # shallow NVs O1 ms=-1
+                # "frequency": 2.797487,  # shallow NVs O2 ms=-1
+                # "rabi_period": 80,
+                "rabi_period": 96,
                 # IQ modulation part
-                "carrier_frequency": 2.78975,  # Center frequency for IQ modulation
+                "carrier_frequency": 2.782195,  # Center frequency for IQ modulation
                 "offset": 0.2670,  # % offset
                 "iq_freq_I": -7.45,  # IQ modulation frequency for I-channel (MHz)
                 "iq_freq_Q": 7.45,  # IQ modulation frequency for Q-channel (MHz)
@@ -144,12 +145,12 @@ config |= {
             1: {
                 "physical_name": "sig_gen_STAN_sg394_2",
                 # "uwave_power": 8.1,
-                "uwave_power": 6.0,
-                "frequency": 2.840772,  # shallow NV O3 ms=-1
-                # "frequency": 2.856274,  # shallow NVs O4 ms=-1
-                "rabi_period": 80,
+                "uwave_power": 2.0,
+                "frequency": 2.841332,  # shallow NV O3 ms=-1
+                # "frequency": 2.857032,  # shallow NVs O4 ms=-1
+                "rabi_period": 96,
                 # IQ modulation part
-                "carrier_frequency": 2.8486,  # Center frequency for IQ modulation
+                "carrier_frequency": 2.841332,  # Center frequency for IQ modulation
                 "offset": 0.29839,  # % offset
                 "iq_freq_I": -8.5,  # IQ modulation frequency for I-channel (MHz)
                 "iq_freq_Q": 8.5,  # IQ modulation frequency for Q-channel (MHz)
@@ -832,7 +833,7 @@ opx_config = {
         # "yellow_charge_readout": {"type": "constant", "sample": 0.3741},  # 50ms 117NVs
         # "yellow_charge_readout": {"type": "constant", "sample": 0.325},  # 100ms 117NVs
         # "yellow_charge_readout": {"type": "constant", "sample": 0.29},  # 200ms 117NVs
-        # "yellow_charge_readout": {"type": "constant", "sample": 0.4276},  #
+        # "yellow_charge_readout": {"type": "constant", "sample": 0.45},  #
         "yellow_charge_readout": {"type": "constant", "sample": 0.4276},  #
         # "yellow_charge_readout": {"type": "constant", "sample": 0.4206},  #
         "yellow_spin_pol": {"type": "constant", "sample": 0.4205},
