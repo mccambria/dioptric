@@ -5,12 +5,12 @@ and plot the difference
 Created on Fall 2024
 @author: saroj chand
 """
+
 import os
 import sys
 import time
 import traceback
 from datetime import datetime
-from utils.tool_belt import curve_fit
 
 import matplotlib.pyplot as plt
 import numpy as np
@@ -29,6 +29,7 @@ from utils import kplotlib as kpl
 from utils import positioning as pos
 from utils import tool_belt as tb
 from utils.constants import NVSig, VirtualLaserKey
+from utils.tool_belt import curve_fit
 
 
 def find_optimal_value_geom_mean(
@@ -37,18 +38,6 @@ def find_optimal_value_geom_mean(
     """
     Finds the optimal step value using a weighted geometric mean of fidelities and goodness of fit.
 
-    Args:
-        step_vals: Array of step values.
-        prep_fidelity: Array of preparation fidelities.
-        readout_fidelity: Array of readout fidelities.
-        goodness_of_fit: Array of goodness-of-fit values (to minimize).
-        weights: Tuple of weights (w1, w2, w3) for the metrics.
-
-    Returns:
-        optimal_step_val: Step value corresponding to the maximum combined score.
-        optimal_prep_fidelity: Preparation fidelity at the optimal step.
-        optimal_readout_fidelity: Readout fidelity at the optimal step.
-        max_combined_score: Maximum combined score.
     """
     w1, w2, w3 = weights
 
@@ -208,7 +197,7 @@ def process_and_plot(raw_data):
                 readout_fidelity_arr[nv_ind],
                 prep_fidelity_arr[nv_ind],
                 goodness_of_fit_arr[nv_ind],
-                weights=(1.5, 2, 1.1),
+                weights=(1.5, 2, 1.0),
             )
             optimal_step_vals.append(optimal_step_val)
             nv_indces.append(nv_ind)
@@ -227,60 +216,60 @@ def process_and_plot(raw_data):
             optimal_values.append((nv_ind, np.nan, np.nan))
             continue
 
-        # # Plotting
-        # fig, ax1 = plt.subplots(figsize=(7, 5))
-        # # Plot readout fidelity
-        # ax1.plot(
-        #     step_vals,
-        #     readout_fidelity_arr[nv_ind],
-        #     label="Readout Fidelity",
-        #     color="orange",
-        # )
-        # ax1.plot(
-        #     step_vals,
-        #     prep_fidelity_arr[nv_ind],
-        #     label="Prep Fidelity",
-        #     linestyle="--",
-        #     color="green",
-        # )
-        # ax1.set_xlabel(x_label)
-        # ax1.set_ylabel("Fidelity")
-        # ax1.tick_params(axis="y", labelcolor="blue")
-        # ax1.grid(True, linestyle="--", alpha=0.6)
+        # Plotting
+        fig, ax1 = plt.subplots(figsize=(7, 5))
+        # Plot readout fidelity
+        ax1.plot(
+            step_vals,
+            readout_fidelity_arr[nv_ind],
+            label="Readout Fidelity",
+            color="orange",
+        )
+        ax1.plot(
+            step_vals,
+            prep_fidelity_arr[nv_ind],
+            label="Prep Fidelity",
+            linestyle="--",
+            color="green",
+        )
+        ax1.set_xlabel(x_label)
+        ax1.set_ylabel("Fidelity")
+        ax1.tick_params(axis="y", labelcolor="blue")
+        ax1.grid(True, linestyle="--", alpha=0.6)
 
-        # # Plot Goodness of Fit ()
-        # ax2 = ax1.twinx()
-        # ax2.plot(
-        #     step_vals,
-        #     goodness_of_fit_arr[nv_ind],
-        #     color="gray",
-        #     linestyle="--",
-        #     label=r"Goodness of Fit ($\chi^2_{\text{reduced}}$)",
-        #     alpha=0.7,
-        # )
-        # ax2.set_ylabel(r"Goodness of Fit ($\chi^2_{\text{reduced}}$)", color="gray")
-        # ax2.tick_params(axis="y", labelcolor="gray")
+        # Plot Goodness of Fit ()
+        ax2 = ax1.twinx()
+        ax2.plot(
+            step_vals,
+            goodness_of_fit_arr[nv_ind],
+            color="gray",
+            linestyle="--",
+            label=r"Goodness of Fit ($\chi^2_{\text{reduced}}$)",
+            alpha=0.7,
+        )
+        ax2.set_ylabel(r"Goodness of Fit ($\chi^2_{\text{reduced}}$)", color="gray")
+        ax2.tick_params(axis="y", labelcolor="gray")
 
-        # # Highlight optimal step value
-        # ax1.axvline(
-        #     optimal_step_val,
-        #     color="red",
-        #     linestyle="--",
-        #     label=f"Optimal Step Val: {optimal_step_val:.3f}",
-        # )
-        # ax2.axvline(
-        #     optimal_step_val,
-        #     color="red",
-        #     linestyle="--",
-        # )
+        # Highlight optimal step value
+        ax1.axvline(
+            optimal_step_val,
+            color="red",
+            linestyle="--",
+            label=f"Optimal Step Val: {optimal_step_val:.3f}",
+        )
+        ax2.axvline(
+            optimal_step_val,
+            color="red",
+            linestyle="--",
+        )
 
-        # # Combine legends
-        # lines, labels = ax1.get_legend_handles_labels()
-        # lines2, labels2 = ax2.get_legend_handles_labels()
-        # ax1.legend(lines + lines2, labels + labels2, loc="upper left", fontsize=11)
-        # ax1.set_title(f"NV{nv_ind} - Optimal Step Val: {optimal_step_val:.3f}")
-        # plt.tight_layout()
-        # plt.show(block=True)
+        # Combine legends
+        lines, labels = ax1.get_legend_handles_labels()
+        lines2, labels2 = ax2.get_legend_handles_labels()
+        ax1.legend(lines + lines2, labels + labels2, loc="upper left", fontsize=11)
+        ax1.set_title(f"NV{nv_ind} - Optimal Step Val: {optimal_step_val:.3f}")
+        plt.tight_layout()
+        plt.show(block=True)
 
     # save opimal step values
     # total_power = np.sum(optimal_step_vals) / len(optimal_step_vals)
@@ -306,7 +295,7 @@ def process_and_plot(raw_data):
     # dm.save_raw_data(results, file_path)
     print(results)
     print(f"Processed data saved to '{file_path}'.")
-    return
+    # return
     ### Calculate Averages
     avg_readout_fidelity = np.nanmean(readout_fidelity_arr, axis=0)
     avg_prep_fidelity = np.nanmean(prep_fidelity_arr, axis=0)
@@ -322,7 +311,7 @@ def process_and_plot(raw_data):
         avg_readout_fidelity,
         avg_prep_fidelity,
         avg_goodness_of_fit,
-        weights=(1, 1, 0),
+        weights=(1, 1, 1),
     )
     # Plot average readout and prep fidelity
     fig, ax1 = plt.subplots(figsize=(7, 5))
@@ -399,7 +388,7 @@ def process_and_plot(raw_data):
         median_readout_fidelity,
         median_prep_fidelity,
         median_goodness_of_fit,
-        weights=(1, 1, 0),
+        weights=(1, 1, 1),
     )
 
     # Plot average and median readout and prep fidelity
@@ -672,10 +661,14 @@ if __name__ == "__main__":
     file_id = 1767789140438  # pol dur var 200ns to 2us
     file_id = 1768024979194  # pol dur var 100ns to 1us
     file_id = 1769942144688  # pol dur var 100ns to 1us dataset
-    # file_id = 1770306530123  # pol dur var 16ns to 1028ns dataset 148NVs
-    # file_id = 1770658719969  # readout amp
-    file_id = 1776463838159  # yellow ampl var 50ms shallow nvs
-    
+
+    # file_id = 1770306530123  # pol dur var 16ns to 1028ns dataset 128NVs
+    file_id = 1778627435145
+    # file_id = 1770658719969  # readout yellow ampl var 50ms shallow nvs
+    # file_id = 1776463838159  # yellow ampl var 50ms shallow nvs
+    # file_id = 1778426682976  # green ampl var 60ms shallow nvs
+    # file_id = 1778524699003  # green ampl var 60ms shallow nvs (large range)
+
     # raw_data = dm.get_raw_data(file_id=1709868774004, load_npz=False) #yellow ampl var
     raw_data = dm.get_raw_data(file_id=file_id, load_npz=False)  # yellow amp var
     process_and_plot(raw_data)

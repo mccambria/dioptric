@@ -247,9 +247,9 @@ def do_spin_echo(nv_list):
 
 
 def do_spin_echo_short(nv_list):
-    min_tau = 100
+    # min_tau = 100
     # min_tau = 83.7e3
-    # min_tau = 167.4e3
+    min_tau = 167.4e3
     max_tau = 2e3 + min_tau
     num_steps = 51
     num_reps = 10
@@ -317,7 +317,7 @@ def do_correlation_test(nv_list):
     # num_runs = 30
 
     # anticorrelation_inds = None
-    anticorrelation_inds = [2, 3]
+    anticorrelation_inds = [0, 5]
 
     correlation_test.main(
         nv_list, num_steps, num_reps, num_runs, min_tau, max_tau, anticorrelation_inds
@@ -689,7 +689,7 @@ if __name__ == "__main__":
         # do_resonance(nv_list)
         # do_resonance_zoom(nv_list)
         # do_rabi(nv_list)
-        # do_correlation_test(nv_list)
+        do_correlation_test(nv_list)
         # do_spin_echo(nv_list)
         # do_spin_echo_long(nv_list)
         # do_spin_echo_medium(nv_list)

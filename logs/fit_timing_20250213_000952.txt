@@ -1,0 +1,9 @@
+Fit Function Timing Breakdown:
+
+Initial parameter guesses: 0.000 seconds
+First curve_fit call: 0.004 seconds
+Brute force setup: 0.000 seconds
+Brute force optimization: 9.171 seconds
+Final fit setup: 0.000 seconds
+Final curve_fit call: 0.009 seconds
+Total fit time: 9.184 seconds

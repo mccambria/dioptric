@@ -210,7 +210,13 @@ def optimize_scc_amp_and_duration(
         pulse_gen.stream_load(seq_file, seq_args_string, num_reps)
 
     ### Run the experiment
-    raw_data = base_routine.main(nv_list, num_steps, num_reps, num_runs, run_fn=run_fn)
+    raw_data = base_routine.main(
+        nv_list,
+        num_steps,
+        num_reps,
+        num_runs,
+        run_fn=run_fn,
+    )
 
     ### Process and plot results
 

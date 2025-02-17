@@ -21,7 +21,7 @@ from servers.timing.sequencelibrary.QM_opx.camera import base_scc_sequence
 
 def get_seq(
     base_scc_seq_args,
-    step_vals=None,
+    step_inds=None,
     num_reps=1,
     reference=True,
     pol_duration_ns=None,
@@ -37,6 +37,9 @@ def get_seq(
     # iq_pulse_dict = {0: , 90:}
 
     with qua.program() as seq:
+        seq_utils.init()
+        seq_utils.macro_run_aods()
+        step_ind = qua.declare(int)
 
         def uwave_macro_sig(uwave_ind_list, step_val):
             seq_utils.macro_pi_pulse(uwave_ind_list)
@@ -50,14 +53,14 @@ def get_seq(
         #     qua.wait(4)
         #     # seq_utils.macro_pi_pulse([uwave_ind])
         #     seq_utils.macro_pi_on_2_pulse(uwave_ind_list)
-
-        base_scc_sequence.macro(
-            base_scc_seq_args,
-            uwave_macro_sig,
-            step_vals,
-            num_reps=num_reps,
-            reference=reference,
-        )
+        with qua.for_each_(step_ind, step_inds):
+            base_scc_sequence.macro(
+                base_scc_seq_args,
+                uwave_macro_sig,
+                step_ind,
+                num_reps=num_reps,
+                reference=reference,
+            )
 
     seq_ret_vals = []
     return seq, seq_ret_vals

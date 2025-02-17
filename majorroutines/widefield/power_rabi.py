@@ -50,8 +50,9 @@ def create_raw_data_figure(data):
     sig_counts, ref_counts = counts[0], counts[1]
 
     avg_counts, avg_counts_ste = widefield.process_counts(
-        nv_list, ref_counts, threshold=False
+        nv_list, sig_counts, ref_counts, threshold=False
     )
+    # norm_counts = avg_counts - norms[0][:, np.newaxis]
     norm_counts = avg_counts
     norm_counts_ste = abs(avg_counts_ste)
 
@@ -59,15 +60,15 @@ def create_raw_data_figure(data):
 
     # widefield.plot_fit(axes_pack, nv_list, powers, norm_counts, norm_counts_ste)
 
-    # kpl.set_shared_ax_xlabel(fig, axes_pack, layout, "Microwave power (dBm)")
-    # kpl.set_shared_ax_ylabel(fig, axes_pack, layout, "Normalized NV- population")
+    # # kpl.set_shared_ax_xlabel(fig, axes_pack, layout, "Microwave power (dBm)")
+    # # kpl.set_shared_ax_ylabel(fig, axes_pack, layout, "Normalized NV- population")
 
-    # Find the lower-left axis dynamically using the helper function
+    # # Find the lower-left axis dynamically using the helper function
     # lower_left_ax = get_lower_left_ax(axes_pack)
     # kpl.set_shared_ax_xlabel(lower_left_ax, "Microwave power (dBm)")
     # kpl.set_shared_ax_ylabel(lower_left_ax, "Normalized NV- population")
-    # Additional Plotting to visualize raw data
-    fig_raw, ax_raw = plt.subplots()
+    # 🔹 Additional Plotting to visualize raw data
+    fig_raw, ax_raw = plt.subplots(figsize=(6, 4))
 
     for nv_idx, nv in enumerate(nv_list):
         ax_raw.errorbar(
@@ -75,7 +76,7 @@ def create_raw_data_figure(data):
             norm_counts[nv_idx],
             yerr=norm_counts_ste[nv_idx],
             fmt="o",
-            label=f"NV {nv_idx+1}",
+            label=f"NV {nv_idx + 1}",
         )
 
     ax_raw.set_xlabel("Microwave power (dBm)")
@@ -86,7 +87,9 @@ def create_raw_data_figure(data):
 
     plt.show()
 
-    return raw_fig
+    return fig_raw
+
+    # return fig
 
 
 def main(
@@ -109,6 +112,7 @@ def main(
 
     def run_fn(step_inds):
         seq_args = [widefield.get_base_scc_seq_args(nv_list, uwave_ind_list), step_inds]
+        print(seq_args)
         seq_args_string = tb.encode_seq_args(seq_args)
         pulse_gen.stream_load(seq_file, seq_args_string, num_reps)
 

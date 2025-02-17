@@ -7,6 +7,7 @@ Created on December 6th, 2023
 @author: mccambria
 """
 
+import logging
 import time
 import traceback
 from random import shuffle
@@ -212,7 +213,7 @@ def main(
 
     repr_nv_sig = widefield.get_repr_nv_sig(nv_list)
     pos.set_xyz_on_nv(repr_nv_sig)
-    # shuffle(nv_list)  # to
+    shuffle(nv_list)  # SBC ->
     num_nvs = len(nv_list)
     camera = tb.get_server_camera()
     pulse_gen = tb.get_server_pulse_gen()
@@ -224,17 +225,31 @@ def main(
         uwave_ind = uwave_ind_list[ind]
         uwave_dict = tb.get_virtual_sig_gen_dict(uwave_ind)
         uwave_power = uwave_dict["uwave_power"]
+        freq = uwave_dict["frequency"]
+        rabi_period = uwave_dict["rabi_period"]
+
         if uwave_freq_list is None:
             freq = uwave_dict["frequency"]
         else:
             freq = uwave_freq_list[uwave_ind]
-        uwave_dict = tb.get_virtual_sig_gen_dict(uwave_ind)
-        sig_gen = tb.get_server_sig_gen(uwave_ind)
 
-        # if load_iq:  # MCC
-        #     uwave_power += 0.4
-        sig_gen.set_amp(uwave_power)
-        sig_gen.set_freq(freq)
+        sig_gen = tb.get_server_sig_gen(uwave_ind)
+        if load_iq:
+            # uwave_power += 0.4
+            # freq_I = uwave_dict["iq_freq_I"]
+            # freq_Q = uwave_dict["iq_freq_Q"]
+            carrier_freq = uwave_dict["carrier_frequency"]
+            offset_I = uwave_dict["offset"]
+            offset_Q = -offset_I
+            sig_gen.set_amp(uwave_power)
+            sig_gen.load_iq(carrier_freq, offset_I, offset_Q)
+            print(
+                f"Using IQ Modulation: Carrier {carrier_freq} GHz, offset={offset_I} MHz, Power={uwave_power} dBm"
+            )
+        else:
+            sig_gen.set_amp(uwave_power)
+            sig_gen.set_freq(freq)
+            print(f"Rabi frequency {freq} GHz and period {rabi_period}ns ")
 
     ### Data tracking
 
