@@ -147,29 +147,23 @@ def plot_nv_resonance_fits_and_residuals(
     avg_counts, avg_counts_ste = widefield.process_counts(
         nv_list, sig_counts, ref_counts, threshold=False
     )
-    # do_threshold = False
-    # # Apply thresholding if enabled
-    # if do_threshold:
-    #     sig_counts, ref_counts = widefield.threshold_counts(
-    #         nv_list, sig_counts, ref_counts, dynamic_thresh=True
-    #     )
-
-    # # Parallelized count processing
-    # avg_results = Parallel(n_jobs=-1)(
-    #     delayed(widefield.process_counts)([nv], sig_counts, ref_counts, threshold=False)
-    #     for nv in nv_list
-    # )
-
-    # # Extract results
+    #
+    avg_snr, avg_snr_ste = widefield.calc_snr(sig_counts, ref_counts)
     # avg_counts, avg_counts_ste = zip(*avg_results)
+    # # Extract results
     # avg_counts = np.array(avg_counts)
     # avg_counts_ste = np.array(avg_counts_ste)
     num_nvs = len(nv_list)
-    freqs_dense = np.linspace(min(freqs), max(freqs), 200)
+    freqs_dense = np.linspace(min(freqs), max(freqs), 100)
 
     def process_nv(nv_idx):
         nv_counts = avg_counts[nv_idx]
         nv_counts_ste = avg_counts_ste[nv_idx]
+        # Normalize counts between 0 and 1
+        # min_count = np.min(nv_counts)
+        # max_count = np.max(nv_counts)
+        # nv_counts = (nv_counts - min_count) / (max_count - min_count)
+        # nv_counts_ste = nv_counts_ste / (max_count - min_count)
 
         low_freq_guess = freqs[np.argmax(nv_counts[: len(freqs) // 2])]
         high_freq_guess = freqs[
@@ -207,23 +201,28 @@ def plot_nv_resonance_fits_and_residuals(
         # Extract parameters
         amp1, amp2, f1, f2, width, bg_offset = popt
         contrast = (amp1 + amp2) / 2
-        center_freq_diff = abs(f2 - f1)
+        freq_diff = abs(f2 - f1)
 
         # SNR Calculation
         combined_counts = np.append(
             sig_counts[nv_idx].flatten(), ref_counts[nv_idx].flatten()
         )
-        noise = np.std(combined_counts)
-        snr = contrast / noise
-
-        print(f"NV {nv_idx}: SNR = {snr:.2f}")
+        noise = np.average(ref_counts[nv_idx].flatten())
+        # noise = np.std(ref_counts[nv_idx])
+        # snr = contrast / noise
+        snrs_1d = np.reshape(avg_snr[nv_idx], len(freqs)).T
+        snr_errs_1d = np.reshape(avg_snr_ste[nv_idx], len(freqs)).T
+        snr = max(snrs_1d)
+        print(
+            f"NV {nv_idx}: SNR = {snr:.2f}, (f1,f2) = ({f1:.4f}, {f2:.4f}), freq_diff = {freq_diff:.3f}"
+        )
 
         return (
             fit_fns,
             fit_curve,
             chi_squared,
             (f1, f2),
-            center_freq_diff,
+            freq_diff,
             width,
             contrast,
             snr,
@@ -233,8 +232,8 @@ def plot_nv_resonance_fits_and_residuals(
     fit_results = Parallel(n_jobs=-1)(
         delayed(process_nv)(nv_idx) for nv_idx in range(num_nvs)
     )
-
-    # Unpacking results correctly
+    # return
+    # # Unpacking results correctly
     (
         fit_fns,
         fit_data,
@@ -261,8 +260,10 @@ def plot_nv_resonance_fits_and_residuals(
     Q1 = np.percentile(snrs, 25)
     Q3 = np.percentile(snrs, 75)
     IQR = Q3 - Q1
-    lower_bound = Q1 - 0.5 * IQR
-    upper_bound = Q3 + 1.5 * IQR
+    # lower_bound = Q1 -  2* IQR
+    # upper_bound = Q3 + 2 * IQR
+    lower_bound = 0.0
+    upper_bound = 0.6
     print(f"lower bound:{lower_bound}")
     print(f"upper_bound:{upper_bound}")
     # Identify and filter out outliers
@@ -273,26 +274,6 @@ def plot_nv_resonance_fits_and_residuals(
         i for i, val in enumerate(snrs) if val < lower_bound or val > upper_bound
     ]
 
-    # orientation filterinng
-    target_peak_values = [0.041, 0.147]
-    tolerance = 0.006
-    # Orientation Filtering
-    # cleaned_nv_indices = [
-    #     idx
-    #     for idx in cleaned_nv_indices_0  # Only process NVs that passed SNR cleaning
-    #     if any(
-    #         target - tolerance <= center_freq_differences[idx] <= target + tolerance
-    #         for target in target_peak_values
-    #     )
-    # ]
-    # outlier_indices = [
-    #     idx
-    #     for idx in cleaned_nv_indices_0  # Only process NVs that passed SNR cleaning
-    #     if any(
-    #         target - tolerance > center_freq_differences[idx] <= target + tolerance
-    #         for target in target_peak_values
-    #     )
-    # ]
     # cleaned_snrs = [val for val in snrs if val in cleaned_nv_indices]
     # Remove index 144 from cleaned_nv_indices first
     # indices_to_remove = [4, 144]
@@ -309,10 +290,17 @@ def plot_nv_resonance_fits_and_residuals(
 
     print(f"Number of nvs after filtering : {len(cleaned_nv_indices)}")
     print(f"cleaned indices: {cleaned_nv_indices}")
-
+    # return
     # Scatter plot
-    plt.figure(figsize=(8, 5))
-    plt.scatter(cleaned_nv_indices, cleaned_snrs, color="blue", alpha=0.6, label="SNR")
+    plt.figure()
+    plt.scatter(
+        cleaned_nv_indices,
+        cleaned_snrs,
+        color="blue",
+        marker="o",
+        alpha=0.6,
+        label="SNRs",
+    )
     for i, (nv_index, snr) in enumerate(zip(cleaned_nv_indices, cleaned_snrs)):
         plt.annotate(
             f"{nv_index}",
@@ -337,22 +325,22 @@ def plot_nv_resonance_fits_and_residuals(
     )
     plt.axhline(
         Q3,
-        color="blue",
+        color="red",
         linestyle="--",
         label=f"Q3 = {Q3:.3f}",
     )
     # Add labels and legend
-    plt.title("SNR Across NV Centers(Readout: 50ms latest)")
+    plt.title(f"SNRs Across {num_nvs} Shallow NVs")
     plt.xlabel("NV Index")
     plt.ylabel("SNR")
-    plt.legend(loc="upper right")
+    plt.legend(loc="upper right", fontsize=9)
     plt.grid(True, linestyle="--", alpha=0.5)
-    # plt.tight_layout()
+    plt.tight_layout()
     # return
 
-    filter_nvs = False
+    filter_nvs = True
     if filter_nvs:
-        target_peak_values = [0.041, 0.069, 0.147, 0.175]
+        target_peak_values = [0.041, 0.069, 0.152, 0.178]
         tolerance = 0.006
         # Filter indices based on proximity to target peak differences
         filtered_indices = [
@@ -398,7 +386,17 @@ def plot_nv_resonance_fits_and_residuals(
         # file_name = dm.get_file_name(file_id=file_id)
         # file_path = dm.get_file_path(__file__, file_name, f"{file_id}_all_results")
         # dm.save_raw_data(results, file_path)
-
+        avg_center_freqs = {}
+        for orientation, indices in orientation_indices.items():
+            if indices:
+                freqs_selected_by_orienation = [center_freqs[idx] for idx in indices]
+                avg_peak1 = np.median(
+                    [freq[0] for freq in freqs_selected_by_orienation]
+                )
+                avg_peak2 = np.median(
+                    [freq[1] for freq in freqs_selected_by_orienation]
+                )
+                avg_center_freqs[orientation] = (avg_peak1, avg_peak2)
         # Print the results
         for orientation, indices in orientation_indices.items():
             print(f"Orientation centered around {orientation} GHz:")
@@ -407,11 +405,18 @@ def plot_nv_resonance_fits_and_residuals(
         print(f"All SNRs: {snrs}")
         print(f"Median SNR: {np.median(snrs)}")
 
+        for orientation, avg_freqs in avg_center_freqs.items():
+            print(f"Orientation {orientation} GHZ")
+            print(f"Avearge Peak 1: {avg_freqs[0]:.6f} GHz")
+            print(f"Avearge Peak 1: {avg_freqs[1]:.6f} GHz")
+
     else:
         filtered_indices = list(range(num_nvs))
     # filtered_indices = cleaned_nv_indices
-    filtered_indices = range(num_nvs)
+    # filtered_indices = range(num_nvs)
     # Filter NVs for plotting
+
+    # return
     filtered_nv_list = [nv_list[idx] for idx in filtered_indices]
     filtered_avg_counts = [avg_counts[idx] for idx in filtered_indices]
     filtered_avg_counts_ste = [avg_counts_ste[idx] for idx in filtered_indices]
@@ -428,6 +433,7 @@ def plot_nv_resonance_fits_and_residuals(
     # filtered_fitted_data = [fit_data[idx] for idx in filtered_indices]
     filtered_fitted_data = [fit_fns[idx] for idx in filtered_indices]
 
+    # return
     # # Set plot style
     # for nv_ind in range(num_nvs):
     #     fig, ax = plt.subplots(1, 1, figsize=(8, 5))
@@ -439,6 +445,7 @@ def plot_nv_resonance_fits_and_residuals(
     #     ax.grid(True, linestyle="--", alpha=0.6)
     #     plt.tight_layout()
     #     plt.show(block=True)
+    # return!
     # Plot filtered resonance fits
     sns.set(style="whitegrid", palette="muted")
     num_filtered_nvs = len(filtered_nv_list)
@@ -555,10 +562,10 @@ def plot_nv_resonance_fits_and_residuals(
     # date_time_str = now.strftime("%Y%m%d_%H%M%S")
     # file_name = dm.get_file_name(file_id=file_id)
     # file_path = dm.get_file_path(__file__, file_name, f"{file_id}_{date_time_str}")
-    kpl.show(block=True)
-    # dm.save_figure(fig_fitting, file_path)
-    # plt.close(fig_fitting)
-    return
+    kpl.show()
+    # # dm.save_figure(fig_fitting, file_path)
+    # # plt.close(fig_fitting)
+    # # return
 
     # Plot histograms and scatter plots
     plots_data = [
@@ -566,32 +573,32 @@ def plot_nv_resonance_fits_and_residuals(
             "Histogram of Frequency Splitting",
             filtered_freq_differences,
             None,
-            "Frequency Splitting (GHz)",
+            "Freq Splitting (GHz)",
             "Count",
             "teal",
         ),
         (
-            "Frequency Splitting vs Average Peak Width",
+            "ESR Freq Splitting vs Average Peak Width",
             filtered_freq_differences,
             filtered_avg_peak_widths,
-            "Frequency Splitting (GHz)",
+            "Freq Splitting (GHz)",
             "Average Peak Width",
             "orange",
         ),
         (
-            "Frequency Splitting vs Average Peak Amplitude",
+            "ESR Peak Freqs vs Avg Peak Amps",
             filtered_freq_differences,
             filtered_avg_peak_amplitudes,
-            "Frequency Splitting (GHz)",
-            "Average Peak Amplitude",
+            "Freq Splitting (GHz)",
+            "Avg Peak Amp",
             "green",
         ),
         (
-            "NV Index vs Frequency Difference",
+            "NV Index vs Freq. Splitting.",
             list(range(len(filtered_freq_differences))),  # NV indices
             filtered_freq_differences,
             "NV Index",
-            "Frequency Difference (GHz)",
+            "Freq. Splitting (GHz)",
             "blue",
         ),
     ]
@@ -601,7 +608,7 @@ def plot_nv_resonance_fits_and_residuals(
         if isinstance(y_data, list):
             plt.scatter(x_data, y_data, color=color, alpha=0.7, edgecolors="k")
         else:
-            plt.hist(x_data, bins=5, color=color, alpha=0.7, edgecolor="black")
+            plt.hist(x_data, bins=11, color=color, alpha=0.7, edgecolor="black")
         plt.xlabel(xlabel)
         plt.ylabel(ylabel)
         plt.title(title)
@@ -609,7 +616,7 @@ def plot_nv_resonance_fits_and_residuals(
         file_path = dm.get_file_path(
             __file__, file_name, f"{file_id}_{date_time_str}_{title}"
         )
-        kpl.show(block=True)
+        kpl.show()
         # dm.save_figure(fig, file_path)
         # plt.close(fig)
 
@@ -1056,7 +1063,13 @@ if __name__ == "__main__":
     # # List of file IDs to process
     # List of file IDs to process
     # file_ids = [1771614901873, 1771932659040]  # before pi pulse optimization
-    file_ids = [1773214393869]  # after pi pulse optimization
+    # file_ids = [1773214393869, 1773497843179]  # uwave power 6, period 80
+    file_ids = [1780148547772]  # uwave power 2dB, period 96ns
+
+    # file_ids = [
+    #     1779130115960,
+    #     1779242979662,
+    # ]  # after pi pulse optimization 80ns for all orientation
     # Load the first dataset as a base
     combined_data = dm.get_raw_data(file_id=file_ids[0], load_npz=False, use_cache=True)
     combined_sig_counts = None
@@ -1146,3 +1159,5 @@ if __name__ == "__main__":
 
     else:
         print("No valid data available for plotting.")
+
+    kpl.show(block=True)
