@@ -58,7 +58,7 @@ def create_raw_data_figure(data):
 
     # fig, axes_pack, layout = kpl.subplot_mosaic(num_nvs, num_rows=2)
 
-    widefield.plot_fit(axes_pack, nv_list, powers, norm_counts, norm_counts_ste)
+    # widefield.plot_fit(axes_pack, nv_list, powers, norm_counts, norm_counts_ste)
 
     # # kpl.set_shared_ax_xlabel(fig, axes_pack, layout, "Microwave power (dBm)")
     # # kpl.set_shared_ax_ylabel(fig, axes_pack, layout, "Normalized NV- population")

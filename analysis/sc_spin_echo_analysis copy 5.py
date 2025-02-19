@@ -147,12 +147,12 @@ def revival_model(tau, baseline, T2, A1, f1, phi1, A2, f2, phi2):
     freq1_scaled = f1 / 1e3  # Convert kHz to µs⁻¹
     freq2_scaled = f2 / 1e3  # Convert kHz to µs⁻¹
 
-    envelope = np.exp(-tau / T2)  # Exponential decay (T2 coherence time)
-    oscillations = A1 * np.cos(2 * np.pi * freq1_scaled * tau + phi1) + A2 * np.cos(
-        2 * np.pi * freq2_scaled * tau + phi2
-    )
+    envelope_1 = np.exp(-tau / T2)  # Exponential decay (T2 coherence time)
+    oscillations_1 = A1 * np.cos(2 * np.pi * freq1_scaled * tau + phi1)
+    envelope_2 = np.exp(-tau / T2)  # Exponential decay (T2 coherence time)
+    oscillations_2 = A2 * np.cos(2 * np.pi * freq2_scaled * tau + phi2)
 
-    return baseline - envelope * oscillations
+    return baseline - envelope_1 * oscillations_1 + envelope_2 * oscillations_2
 
 
 def generate_initial_guess_and_bounds(tau, counts):
@@ -186,6 +186,47 @@ def generate_initial_guess_and_bounds(tau, counts):
     bounds = (
         [0, 0, -np.inf, 1, -np.pi, -np.inf, 1, -np.pi],
         [1, np.inf, np.inf, 200, np.pi, np.inf, 200, np.pi],
+    )
+
+    return initial_guess, bounds
+
+
+def single_revival_model(tau, baseline, T2, A1, f1, phi1):
+    """
+    Physically motivated model for spin echo revivals using damped oscillations.
+    """
+    freq1_scaled = f1 / 1e3  # Convert kHz to µs⁻¹
+    envelope_1 = np.exp(-tau / T2)  # Exponential decay (T2 coherence time)
+    oscillations_1 = A1 * np.cos(2 * np.pi * freq1_scaled * tau + phi1)
+
+    return baseline - envelope_1 * oscillations_1
+
+
+def generate_initial_guess_and_bounds_single(tau, counts):
+    """
+    Generate initial guesses and bounds for the physically motivated model.
+    """
+    baseline_guess = np.mean(counts[-10:])  # Average last few points for baseline
+    T2_guess = (tau[-1] - tau[0]) / 2  # Estimate of coherence time
+    A1_guess = 0.5 * (np.max(counts) - np.min(counts))  # First amplitude
+    time_step = (tau[1] - tau[0]) * 1e-6  # Convert µs to seconds
+    fft_freqs = np.fft.rfftfreq(len(tau), d=time_step)
+    fft_spectrum = np.abs(np.fft.rfft(counts - baseline_guess))
+    f1_guess = fft_freqs[np.argmax(fft_spectrum)] / 1e3  # Convert Hz to kHz
+
+    phi1_guess = 0  # Assume zero initial phase
+
+    initial_guess = [
+        baseline_guess,
+        T2_guess,
+        A1_guess,
+        f1_guess,
+        phi1_guess,
+    ]
+
+    bounds = (
+        [0.2, 0, -np.inf, 1, -np.pi, -np.inf, 1, -np.pi],
+        [1.5, np.inf, np.inf, 200, np.pi, np.inf, 200, np.pi],
     )
 
     return initial_guess, bounds
@@ -319,7 +360,7 @@ def plot_spin_echo_fits(
         ax.legend()
         ax.grid(True)
         fig.tight_layout()
-        kpl.show(block=True)
+        kpl.show()
 
 
 def plot_analysis_parameters(meaningful_parameters):
@@ -395,7 +436,7 @@ if __name__ == "__main__":
         data = process_multiple_files(file_ids)
         nv_list = data["nv_list"]
         taus = data["taus"]
-        total_evolution_times = 2 * np.array(taus) / 1e3
+        total_evolution_times = 2 * np.array(taus) / 1e9
         counts = np.array(data["counts"])
         sig_counts, ref_counts = counts[0], counts[1]
         norm_counts, norm_counts_ste = widefield.process_counts(
