@@ -883,12 +883,6 @@ from matplotlib.animation import FuncAnimation, PillowWriter
 def create_movie(data, output_filename="movie.gif", nv_index=0, fps=5):
     """
     Create a movie of the NV images along step indices.
-
-    Parameters:
-        data (dict): Dictionary containing the data with 'img_arrays' key.
-        output_filename (str): Path to save the output movie (GIF format).
-        nv_index (int): Index of the NV center to visualize.
-        fps (int): Frames per second for the movie.
     """
     # Extract img_arrays and validate
     # img_arrays = np.array(
@@ -1064,12 +1058,15 @@ if __name__ == "__main__":
     # List of file IDs to process
     # file_ids = [1771614901873, 1771932659040]  # before pi pulse optimization
     # file_ids = [1773214393869, 1773497843179]  # uwave power 6, period 80
-    file_ids = [1780148547772]  # uwave power 2dB, period 96ns
+    file_ids = [1779130115960, 1779242979662]  # uwave power 6dB, rabi peridod 80ns
+    # file_ids = [1780148547772]  # uwave power 2dB, period 96ns
+    # file_ids = [1782289026588]  # uwave power 2dB, period 96ns pulse optimization
 
-    # file_ids = [
-    #     1779130115960,
-    #     1779242979662,
-    # ]  # after pi pulse optimization 80ns for all orientation
+    # fmt: off
+    reference_pixel_coords = [[117.516, 129.595], [122.7, 140.498], [131.168, 130.18], [97.15, 123.733], [116.903, 108.167], [118.986, 151.191], [91.667, 135.113], [95.281, 155.837], [84.822, 144.375], [80.282, 132.938], [91.896, 100.124], [81.451, 113.23], [87.575, 157.144], [154.008, 148.107], [132.674, 89.911], [74.11, 121.65], [146.233, 96.071], [144.969, 167.136], [98.718, 84.722], [112.672, 80.124], [74.46, 102.434], [122.901, 180.591], [69.034, 150.362], [99.21, 179.954], [133.129, 78.109], [63.583, 133.643], [133.751, 182.208], [90.931, 80.192], [83.372, 84.394], [70.205, 163.837], [169.442, 156.326], [62.863, 106.017], [177.692, 127.009], [71.817, 88.505], [152.752, 79.094], [60.432, 154.067], [64.099, 97.055], [93.445, 71.777], [177.871, 148.067], [101.032, 190.601], [53.508, 140.291], [51.553, 119.764], [133.722, 195.249], [174.017, 168.175], [59.006, 165.072], [176.119, 94.095], [78.059, 186.492], [55.139, 99.345], [169.093, 79.625], [142.608, 197.606], [127.111, 201.585], [76.976, 69.105], [116.757, 203.575], [108.433, 54.966], [120.38, 53.681], [155.972, 196.187], [165.431, 68.936], [164.683, 190.889], [47.877, 164.871], [195.879, 137.036], [188.49, 167.406], [38.223, 143.97], [179.264, 184.357], [87.429, 209.761], [33.277, 149.672], [47.402, 181.776], [204.839, 123.777], [139.344, 214.607], [53.646, 68.838], [163.922, 54.141], [38.886, 86.054], [208.038, 131.698], [32.199, 161.535], [190.784, 184.42], [170.186, 205.196], [208.702, 115.872], [28.275, 105.521], [89.089, 41.642], [147.897, 220.18], [206.413, 166.753], [53.244, 56.104], [23.815, 97.782], [195.483, 68.53], [96.168, 228.98], [178.205, 211.367], [66.96, 218.568], [215.221, 98.479], [85.847, 227.993], [185.278, 50.374], [21.768, 171.31], [29.666, 72.805], [12.073, 131.321], [50.935, 46.954], [208.092, 185.833], [118.664, 236.48], [200.381, 198.571], [97.757, 22.995], [11.146, 150.611], [147.959, 233.773], [201.304, 59.575], [221.084, 165.686], [129.026, 19.17], [160.469, 231.983], [58.541, 34.141], [109.446, 241.719], [170.173, 229.211], [20.16, 190.027], [173.061, 29.071], [6.375, 100.593], [161.415, 20.458], [235.735, 135.854], [64.691, 238.139], [181.714, 27.361], [56.905, 234.982], [237.863, 151.184], [238.314, 108.449], [204.37, 41.605], [27.835, 216.895], [5.699, 72.812], [119.571, 3.933], [9.29, 194.213], [190.06, 26.157], [174.894, 242.787], [244.083, 145.53], [15.121, 53.43], [182.734, 239.306], [217.73, 209.148], [190.641, 236.803], [153.697, 4.96], [222.7, 52.004], [67.837, 8.36], [9.427, 207.892], [205.206, 231.707], [236.409, 65.435], [22.9, 227.669], [195.552, 17.344], [245.166, 183.306], [7.813, 42.923], [223.807, 221.123], [188.126, 5.032], [211.43, 237.832], [245.999, 199.119], [221.423, 233.464], [16.131, 238.476], [241.508, 217.986], [241.736, 225.071], [241.12, 24.247], [231.261, 246.877]]
+    # fmt: on
+    # print(len(reference_pixel_coords))
+    # sys.exit()
     # Load the first dataset as a base
     combined_data = dm.get_raw_data(file_id=file_ids[0], load_npz=False, use_cache=True)
     combined_sig_counts = None
@@ -1081,10 +1078,24 @@ if __name__ == "__main__":
         num_steps = combined_data["num_steps"]
         num_reps = combined_data["num_reps"]
         num_runs = combined_data["num_runs"]
-
         counts = np.array(combined_data["counts"])[0]
-        adj_num_steps = num_steps // 4
 
+        # Extract pixel coordinates from nv_list
+        nv_pixel_coords = np.array([nv.coords["pixel"][:2] for nv in nv_list])
+        # Compute the index mapping by finding closest matches in pixel coordinates
+        ordered_indices = []
+        for ref_coord in reference_pixel_coords:
+            # Find the index of the closest match
+            distances = np.linalg.norm(nv_pixel_coords - ref_coord, axis=1)
+            closest_index = np.argmin(distances)
+            ordered_indices.append(closest_index)
+
+        # Reorder nv_list based on ordered indices
+        print(ordered_indices)
+        nv_list = [nv_list[i] for i in ordered_indices]
+        counts = counts[ordered_indices]
+
+        adj_num_steps = num_steps // 4
         sig_counts_0 = counts[:, :, 0:adj_num_steps, :]
         sig_counts_1 = counts[:, :, adj_num_steps : 2 * adj_num_steps, :]
         combined_sig_counts = np.append(sig_counts_0, sig_counts_1, axis=3)

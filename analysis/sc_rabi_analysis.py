@@ -95,7 +95,6 @@ def fit_rabi_data(nv_list, taus, avg_counts, avg_counts_ste, epsilon=1e-10):
                 # bounds=bounds,
             )
             fit_fn = lambda tau: cos_decay(tau, *popt)  # Return function handle
-
             # Compute and print Rabi period
             rabi_freq = popt[1]
             rabi_period = 1 / rabi_freq if rabi_freq > epsilon else None

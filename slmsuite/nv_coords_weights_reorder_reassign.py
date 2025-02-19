@@ -543,6 +543,7 @@ if __name__ == "__main__":
         for i, count in enumerate(filtered_reordered_spot_weights)
         if i not in indices_to_remove
     ]
+    # print(filtered_reordered_coords)
     # print("Filter:", filtered_reordered_counts)
     # print("Filtered and Reordered NV Coordinates:", filtered_reordered_coords)
     # print("Filtered and Reordered NV Coordinates:", integrated_intensities)
@@ -592,7 +593,7 @@ if __name__ == "__main__":
     # 117 NVs
     # include_indices =[0, 1, 2, 3, 5, 6, 7, 8, 13, 14, 15, 16, 17, 18, 20, 21, 22, 23, 24, 25, 26, 28, 29, 31, 32, 33, 34, 36, 37, 39, 42, 44, 45, 46, 47, 48, 49, 51, 52, 53, 55, 56, 57, 58, 60, 61, 62, 64, 65, 66, 68, 69, 70, 71, 72, 73, 74, 75, 77, 79, 83, 84, 85, 88, 89, 90, 91, 92, 94, 95, 96, 97, 99, 100, 101, 102, 103, 105, 106, 107, 108, 109, 110, 111, 113, 114, 116, 117, 118, 120, 122, 123, 124, 125, 128, 131, 132, 134, 136, 137, 138, 140, 141, 142, 145, 146, 147, 148, 149, 152, 153, 154, 155, 156, 157, 158, 159]
     # SHALLOW nvS
-    include_indices = [0, 1, 5, 6, 10, 17, 19, 20, 24, 26, 29, 35, 36, 43, 44, 46, 48, 49, 52, 53, 55, 57, 58, 62, 64, 65, 66, 68, 70, 72, 73, 74, 75, 78, 80, 82, 83, 90, 91, 93, 94, 95, 98, 99, 102, 103, 110, 111, 112, 113, 116, 122, 124, 126, 129, 130, 131, 136, 138, 142, 146] 
+    include_indices = [0, 1, 5, 6, 10, 17, 19, 20, 24, 26, 29, 35, 36, 43, 44, 46, 48, 49, 52, 53, 55, 57, 58, 62, 64, 65, 66, 68, 70, 72, 73, 74, 75, 78, 80, 82, 83, 90, 91, 93, 94, 95, 98, 99, 102, 103, 110, 111, 112, 113, 116, 122, 124, 126, 129, 130, 131, 136, 138, 142, 146]
     # include_indices = list(range(160))
     # final_drop_inds = [23, 73, 89, 99, 117, 120, 132, 137, 155, 157, 159]
     # include_indices = [ind for ind in include_indices if ind not in final_drop_inds]
@@ -612,7 +613,8 @@ if __name__ == "__main__":
     #     [weight for i, weight in enumerate(spot_weights) if i in include_indices]
     # )
 
-    aom_voltage = 0.4252  #
+    # aom_voltage = 0.4252  #
+    aom_voltage = 0.396  #
     power_law_params = [3.7e5, 6.97, 8e-14]  # Example power-law fit parameters
     a, b, c = [3.7e5, 6.97, 8e-14]
     total_power = a * (aom_voltage) ** b + c

@@ -661,6 +661,10 @@ if __name__ == "__main__":
     file_id = 1767789140438  # pol dur var 200ns to 2us
     file_id = 1768024979194  # pol dur var 100ns to 1us
     file_id = 1769942144688  # pol dur var 100ns to 1us dataset
+    # file_id = 1770306530123  # pol dur var 16ns to 1028ns dataset 148NVs
+    # file_id = 1770658719969  # readout amp
+    file_id = 1776463838159  # yellow ampl var 50ms shallow nvs
+
 
     # file_id = 1770306530123  # pol dur var 16ns to 1028ns dataset 128NVs
     file_id = 1778627435145
