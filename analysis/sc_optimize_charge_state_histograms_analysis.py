@@ -216,60 +216,60 @@ def process_and_plot(raw_data):
             optimal_values.append((nv_ind, np.nan, np.nan))
             continue
 
-        # Plotting
-        fig, ax1 = plt.subplots(figsize=(7, 5))
-        # Plot readout fidelity
-        ax1.plot(
-            step_vals,
-            readout_fidelity_arr[nv_ind],
-            label="Readout Fidelity",
-            color="orange",
-        )
-        ax1.plot(
-            step_vals,
-            prep_fidelity_arr[nv_ind],
-            label="Prep Fidelity",
-            linestyle="--",
-            color="green",
-        )
-        ax1.set_xlabel(x_label)
-        ax1.set_ylabel("Fidelity")
-        ax1.tick_params(axis="y", labelcolor="blue")
-        ax1.grid(True, linestyle="--", alpha=0.6)
+        # # Plotting
+        # fig, ax1 = plt.subplots(figsize=(7, 5))
+        # # Plot readout fidelity
+        # ax1.plot(
+        #     step_vals,
+        #     readout_fidelity_arr[nv_ind],
+        #     label="Readout Fidelity",
+        #     color="orange",
+        # )
+        # ax1.plot(
+        #     step_vals,
+        #     prep_fidelity_arr[nv_ind],
+        #     label="Prep Fidelity",
+        #     linestyle="--",
+        #     color="green",
+        # )
+        # ax1.set_xlabel(x_label)
+        # ax1.set_ylabel("Fidelity")
+        # ax1.tick_params(axis="y", labelcolor="blue")
+        # ax1.grid(True, linestyle="--", alpha=0.6)
 
-        # Plot Goodness of Fit ()
-        ax2 = ax1.twinx()
-        ax2.plot(
-            step_vals,
-            goodness_of_fit_arr[nv_ind],
-            color="gray",
-            linestyle="--",
-            label=r"Goodness of Fit ($\chi^2_{\text{reduced}}$)",
-            alpha=0.7,
-        )
-        ax2.set_ylabel(r"Goodness of Fit ($\chi^2_{\text{reduced}}$)", color="gray")
-        ax2.tick_params(axis="y", labelcolor="gray")
+        # # Plot Goodness of Fit ()
+        # ax2 = ax1.twinx()
+        # ax2.plot(
+        #     step_vals,
+        #     goodness_of_fit_arr[nv_ind],
+        #     color="gray",
+        #     linestyle="--",
+        #     label=r"Goodness of Fit ($\chi^2_{\text{reduced}}$)",
+        #     alpha=0.7,
+        # )
+        # ax2.set_ylabel(r"Goodness of Fit ($\chi^2_{\text{reduced}}$)", color="gray")
+        # ax2.tick_params(axis="y", labelcolor="gray")
 
-        # Highlight optimal step value
-        ax1.axvline(
-            optimal_step_val,
-            color="red",
-            linestyle="--",
-            label=f"Optimal Step Val: {optimal_step_val:.3f}",
-        )
-        ax2.axvline(
-            optimal_step_val,
-            color="red",
-            linestyle="--",
-        )
+        # # Highlight optimal step value
+        # ax1.axvline(
+        #     optimal_step_val,
+        #     color="red",
+        #     linestyle="--",
+        #     label=f"Optimal Step Val: {optimal_step_val:.3f}",
+        # )
+        # ax2.axvline(
+        #     optimal_step_val,
+        #     color="red",
+        #     linestyle="--",
+        # )
 
-        # Combine legends
-        lines, labels = ax1.get_legend_handles_labels()
-        lines2, labels2 = ax2.get_legend_handles_labels()
-        ax1.legend(lines + lines2, labels + labels2, loc="upper left", fontsize=11)
-        ax1.set_title(f"NV{nv_ind} - Optimal Step Val: {optimal_step_val:.3f}")
-        plt.tight_layout()
-        plt.show(block=True)
+        # # Combine legends
+        # lines, labels = ax1.get_legend_handles_labels()
+        # lines2, labels2 = ax2.get_legend_handles_labels()
+        # ax1.legend(lines + lines2, labels + labels2, loc="upper left", fontsize=11)
+        # ax1.set_title(f"NV{nv_ind} - Optimal Step Val: {optimal_step_val:.3f}")
+        # plt.tight_layout()
+        # plt.show(block=True)
 
     # save opimal step values
     # total_power = np.sum(optimal_step_vals) / len(optimal_step_vals)
@@ -380,15 +380,15 @@ def process_and_plot(raw_data):
 
     (
         optimal_step_val,
-        optimal_prep_fidelity,
         optimal_readout_fidelity,
+        optimal_prep_fidelity,
         max_combined_score,
     ) = find_optimal_value_geom_mean(
         step_vals,
         median_readout_fidelity,
         median_prep_fidelity,
         median_goodness_of_fit,
-        weights=(1, 1, 1),
+        weights=(1, 1, 0),
     )
 
     # Plot average and median readout and prep fidelity
@@ -726,30 +726,31 @@ if __name__ == "__main__":
     # file_id = 1751404919855  # yellow ampl var 50ms 117NVs afdter birge
     # file_id = 1752870018575  # yellow ampl var 50ms 117NVs afdter birge
     # file_id = 1752968732835  # green ampl var
-    file_id = 1766460747869  # yellow ampl var 50ms shallow nvs
-    file_id = 1780914190838  # yellow ampl var 60ms shallow nvs
+    # file_id = 1770658719969  # readout yellow ampl var 50ms shallow nvs
+    # file_id = 1776463838159  # yellow ampl var 50ms shallow nvs
+    # file_id = 1766460747869  # yellow ampl var 50ms shallow nvs
+    # file_id = 1780914190838  # yellow ampl var 60ms shallow nvs
+    file_id = (
+        1782586909215  # yellow ampl var 60ms shallow nvs (selected two orieantation)
+    )
 
     # file_id = 1767789140438  # pol dur var 200ns to 2us
     # file_id = 1768024979194  # pol dur var 100ns to 1us
     # file_id = 1769942144688  # pol dur var 100ns to 1us dataset
-    file_id = 1767789140438  # pol dur var 200ns to 2us
-    file_id = 1768024979194  # pol dur var 100ns to 1us
-    file_id = 1769942144688  # pol dur var 100ns to 1us dataset
+    # file_id = 1767789140438  # pol dur var 200ns to 2us
+    # file_id = 1768024979194  # pol dur var 100ns to 1us
+    # file_id = 1769942144688  # pol dur var 100ns to 1us dataset
     # file_id = 1770306530123  # pol dur var 16ns to 1028ns dataset 148NVs
-    # file_id = 1770658719969  # readout amp
-    file_id = 1776463838159  # yellow ampl var 50ms shallow nvs
-
-
-    # file_id = 1770306530123  # pol dur var 16ns to 1028ns dataset 128NVs
-    # file_id = 1778627435145
-    # file_id = 1770658719969  # readout yellow ampl var 50ms shallow nvs
-    # file_id = 1776463838159  # yellow ampl var 50ms shallow nvs
+    # file_id = 1770306530123  # pol dur var 16ns to 1028ns dataset 148NVs
+    # file_id = 1778627435145 # pol dur var 16ns to 1028ns dataset 148NVs
     # file_id = 1778426682976  # green ampl var 60ms shallow nvs
     # file_id = 1778524699003  # green ampl var 60ms shallow nvs (large range)
     # file_id = 1780495024088  # green ampl var 60ms shallow nvs (large range)
 
     # raw_data = dm.get_raw_data(file_id=1709868774004, load_npz=False) #yellow ampl var
     raw_data = dm.get_raw_data(file_id=file_id, load_npz=False)  # yellow amp var
+    file_name = dm.get_file_name(file_id=file_id)
+    print(f"{file_name}_{file_id}")
     process_and_plot(raw_data)
     plt.show(block=True)
     # print(dm.get_file_name(1717056176426))
