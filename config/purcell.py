@@ -40,9 +40,9 @@ calibration_coords_pixel = [
     [85.847, 227.993],
 ]
 calibration_coords_green = [
-    [95.422, 94.767],
-    [119.084, 100.3599],
-    [109.421, 118.212],
+    [95.458, 94.775],
+    [119.098, 100.353],
+    [109.422, 118.221],
 ]
 calibration_coords_red = [
     [62.148, 62.848],
@@ -131,12 +131,13 @@ config |= {
                 "physical_name": "sig_gen_STAN_sg394",
                 # "uwave_power": 2.3,
                 "uwave_power": 2.0,
-                "frequency": 2.782195,  # shallow NVs O1 ms=-1
-                # "frequency": 2.797487,  # shallow NVs O2 ms=-1
+                "frequency": 2.782099,  # shallow NVs O1 ms=-1
+                # "frequency": 2.798175,  # shallow NVs O2 ms=-1
+                # "frequency": 2.790137,  # mean of above two frequency
                 # "rabi_period": 80,
                 "rabi_period": 96,
                 # IQ modulation part
-                "carrier_frequency": 2.782195,  # Center frequency for IQ modulation
+                "carrier_frequency": 2.790137,  # Center frequency for IQ modulation
                 "offset": 0.2670,  # % offset
                 "iq_freq_I": -7.45,  # IQ modulation frequency for I-channel (MHz)
                 "iq_freq_Q": 7.45,  # IQ modulation frequency for Q-channel (MHz)
@@ -146,11 +147,12 @@ config |= {
                 "physical_name": "sig_gen_STAN_sg394_2",
                 # "uwave_power": 8.1,
                 "uwave_power": 2.0,
-                "frequency": 2.841332,  # shallow NV O3 ms=-1
-                # "frequency": 2.857032,  # shallow NVs O4 ms=-1
+                "frequency": 2.840727,  # shallow NV O3 ms=-1
+                # "frequency": 2.856761,  # shallow NVs O4 ms=-1
+                # "frequency": 2.848744,  # mean of above two frequency
                 "rabi_period": 96,
                 # IQ modulation part
-                "carrier_frequency": 2.841332,  # Center frequency for IQ modulation
+                "carrier_frequency": 2.848744,  # Center frequency for IQ modulation
                 "offset": 0.29839,  # % offset
                 "iq_freq_I": -8.5,  # IQ modulation frequency for I-channel (MHz)
                 "iq_freq_Q": 8.5,  # IQ modulation frequency for Q-channel (MHz)
@@ -813,7 +815,7 @@ opx_config = {
         # "green_aod_cw-opti": {"type": "constant", "sample": 0.03},
         # "green_aod_cw-charge_pol": {"type": "constant", "sample": 0.13},
         # "green_aod_cw-charge_pol": {"type": "constant", "sample": 0.06},  # Negative
-        "green_aod_cw-charge_pol": {"type": "constant", "sample": 0.131},  # median
+        "green_aod_cw-charge_pol": {"type": "constant", "sample": 0.132},  # median
         "green_aod_cw-spin_pol": {"type": "constant", "sample": 0.05},
         "green_aod_cw-shelving": {"type": "constant", "sample": 0.05},
         "green_aod_cw-scc": {"type": "constant", "sample": 0.15},
@@ -833,10 +835,10 @@ opx_config = {
         # "yellow_charge_readout": {"type": "constant", "sample": 0.3741},  # 50ms 117NVs
         # "yellow_charge_readout": {"type": "constant", "sample": 0.325},  # 100ms 117NVs
         # "yellow_charge_readout": {"type": "constant", "sample": 0.29},  # 200ms 117NVs
-        # "yellow_charge_readout": {"type": "constant", "sample": 0.45},  #
         "yellow_charge_readout": {"type": "constant", "sample": 0.4276},  #
+        # "yellow_charge_readout": {"type": "constant", "sample": 0.4311},  #
         # "yellow_charge_readout": {"type": "constant", "sample": 0.4206},  #
-        "yellow_spin_pol": {"type": "constant", "sample": 0.4205},
+        "yellow_spin_pol": {"type": "constant", "sample": 0.42},
         "yellow_shelving": {"type": "constant", "sample": 0.33},
         # Other
         "aod_cw": {"type": "constant", "sample": 0.35},

@@ -197,7 +197,7 @@ def process_and_plot(raw_data):
                 readout_fidelity_arr[nv_ind],
                 prep_fidelity_arr[nv_ind],
                 goodness_of_fit_arr[nv_ind],
-                weights=(1.5, 2, 1.0),
+                weights=(1.5, 1, 0),
             )
             optimal_step_vals.append(optimal_step_val)
             nv_indces.append(nv_ind)
@@ -498,6 +498,55 @@ def fit_fn(tau, delay, slope, decay, transition):
     return (1 - smooth_transition) * linear_part + smooth_transition * exp_part
 
 
+import matplotlib.pyplot as plt
+import numpy as np
+from joblib import Parallel, delayed
+from scipy.optimize import curve_fit
+
+
+def fit_fn(tau, delay, slope, decay, transition):
+    """
+    Fit function modeling the preparation fidelity as a function of polarization duration.
+    Ensures an initial steep increase followed by an exponential decay.
+    """
+    tau = np.array(tau) - delay
+    tau = np.maximum(tau, 0)  # Ensure no negative time values
+
+    # Enforce a minimum transition duration (e.g., 90 ns)
+    transition = max(transition, 100)
+
+    # Smooth transition function using tanh
+    smooth_transition = 0.45 * (1 + np.tanh((tau - transition) / (0.4 * transition)))
+
+    # Enforce an initial steep rise
+    linear_part = slope * tau
+
+    # Exponential decay component
+    # exp_part = slope * transition * np.exp(-(tau - transition) / decay)
+    exp_part = slope * transition * np.exp(-(tau - transition) / (2 * decay))
+
+    # Combine both components smoothly
+    return (1 - smooth_transition) * linear_part + smooth_transition * exp_part
+
+
+# def process_nv_step(nv_ind, step_ind, condensed_counts):
+#     counts_data = condensed_counts[nv_ind, step_ind]
+#     try:
+#         popt, pcov, chi_squared = fit_bimodal_histogram(
+#             counts_data, ProbDist.COMPOUND_POISSON
+#         )
+#         if popt is None:
+#             return np.nan, np.nan, np.nan
+#         threshold, readout_fidelity = determine_threshold(
+#             popt, ProbDist.COMPOUND_POISSON, dark_mode_weight=0.5, ret_fidelity=True
+#         )
+#         prep_fidelity = 1 - popt[0]  # Population weight of dark state
+#         return readout_fidelity, prep_fidelity, chi_squared
+#     except Exception as e:
+#         print(f"Error processing NV {nv_ind}, step {step_ind}: {e}")
+#         return np.nan, np.nan, np.nan
+
+
 # def process_and_plot(raw_data):
 #     nv_list = raw_data["nv_list"]
 #     num_nvs = len(nv_list)
@@ -508,34 +557,19 @@ def fit_fn(tau, delay, slope, decay, transition):
 
 #     counts = np.array(raw_data["counts"])
 #     ref_exp_ind = 1
-#     condensed_counts = [
+#     condensed_counts = np.array(
 #         [
-#             counts[ref_exp_ind, nv_ind, :, step_ind, :].flatten()
-#             for step_ind in range(num_steps)
+#             [
+#                 counts[ref_exp_ind, nv_ind, :, step_ind, :].flatten()
+#                 for step_ind in range(num_steps)
+#             ]
+#             for nv_ind in range(num_nvs)
 #         ]
-#         for nv_ind in range(num_nvs)
-#     ]
-#     condensed_counts = np.array(condensed_counts)
+#     )
 
-#     def process_nv_step(nv_ind, step_ind):
-#         counts_data = condensed_counts[nv_ind, step_ind]
-#         try:
-#             popt, pcov, chi_squared = fit_bimodal_histogram(
-#                 counts_data, ProbDist.COMPOUND_POISSON
-#             )
-#             if popt is None:
-#                 return np.nan, np.nan, np.nan
-#             threshold, readout_fidelity = determine_threshold(
-#                 popt, ProbDist.COMPOUND_POISSON, dark_mode_weight=0.5, ret_fidelity=True
-#             )
-#             prep_fidelity = 1 - popt[0]  # Population weight of dark state
-#             return readout_fidelity, prep_fidelity, chi_squared
-#         except Exception as e:
-#             print(f"Error processing NV {nv_ind}, step {step_ind}: {e}")
-#             return np.nan, np.nan, np.nan
-
+#     # Process each NV-step pair in parallel
 #     results = Parallel(n_jobs=-1)(
-#         delayed(process_nv_step)(nv_ind, step_ind)
+#         delayed(process_nv_step)(nv_ind, step_ind, condensed_counts)
 #         for nv_ind in range(num_nvs)
 #         for step_ind in range(num_steps)
 #     )
@@ -554,27 +588,41 @@ def fit_fn(tau, delay, slope, decay, transition):
 #     opti_durs, opti_fidelities = [], []
 
 #     for nv_ind in range(num_nvs):
-#         valid_indices = step_vals != 16  # Remove the 16 ns outlier
+#         valid_indices = step_vals != 32  # Remove the 16 ns outlier
 #         filtered_step_vals = step_vals[valid_indices]
 #         filtered_prep_fidelity = prep_fidelity_arr[nv_ind][valid_indices]
-
-#         if len(filtered_step_vals) < 3:
-#             print(f"Skipping NV {nv_ind} due to insufficient data points.")
-#             continue
+#         print(filtered_step_vals)
+#         # Ensure there are no NaNs or Infs in the filtered data
+#         valid_mask = np.isfinite(filtered_prep_fidelity) & np.isfinite(
+#             filtered_step_vals
+#         )
+#         filtered_step_vals = filtered_step_vals[valid_mask]
+#         filtered_prep_fidelity = filtered_prep_fidelity[valid_mask]
 
 #         try:
+#             # Use the full range for slope estimation
 #             slope_guess = (filtered_prep_fidelity[-1] - filtered_prep_fidelity[0]) / (
 #                 filtered_step_vals[-1] - filtered_step_vals[0]
 #             )
+
 #             # Indices corresponding to 64 ns and 104 ns in the filtered_step_vals
 #             time_64ns_index = np.argmin(
-#                 np.abs(filtered_step_vals - 64)
-#             )  # Find closest to 64 ns
+#                 np.abs(filtered_step_vals - 76)
+#             )  # Closest to 64 ns
 #             time_104ns_index = np.argmin(
-#                 np.abs(filtered_step_vals - 104)
-#             )  # Find closest to 104 ns
+#                 np.abs(filtered_step_vals - 120)
+#             )  # Closest to 104 ns
 
-#             # Calculate slope based on the two selected points (64 ns and 104 ns)
+#             # Ensure indices are valid before using them
+#             if time_64ns_index >= len(filtered_step_vals) or time_104ns_index >= len(
+#                 filtered_step_vals
+#             ):
+#                 print(
+#                     f"Skipping NV {nv_ind}: Invalid index selection for slope calculation."
+#                 )
+#                 continue
+
+#             # Calculate slope based on two selected points
 #             slope_guess = (
 #                 filtered_prep_fidelity[time_104ns_index]
 #                 - filtered_prep_fidelity[time_64ns_index]
@@ -584,23 +632,32 @@ def fit_fn(tau, delay, slope, decay, transition):
 #             )
 
 #             peak_guess = filtered_step_vals[np.argmax(filtered_prep_fidelity)]
-#             guess_params = [16, slope_guess, peak_guess, 120]
+#             guess_params = [32, slope_guess, peak_guess, 100]
 
+#             # Use Poisson-based sigma if data comes from counting
+#             sigma = np.sqrt(np.maximum(filtered_prep_fidelity, 1e-6))
+
+#             # Perform curve fitting
 #             popt, _ = curve_fit(
 #                 fit_fn,
 #                 filtered_step_vals,
 #                 filtered_prep_fidelity,
 #                 p0=guess_params,
+#                 sigma=sigma,
 #                 maxfev=50000,
 #             )
 
+#             # Generate fitted curve
 #             fitted_curve = fit_fn(duration_linspace, *popt)
+
+#             # Find optimal duration based on the fitted curve
 #             opti_dur = duration_linspace[np.nanargmax(fitted_curve)]
 #             opti_fidelity = np.nanmax(fitted_curve)
 
 #             opti_durs.append(round(opti_dur / 4) * 4)
 #             opti_fidelities.append(round(opti_fidelity, 3))
 
+#             # # Plot results
 #             # plt.figure()
 #             # plt.scatter(
 #             #     filtered_step_vals,
@@ -627,14 +684,27 @@ def fit_fn(tau, delay, slope, decay, transition):
 
 #         except RuntimeError:
 #             print(f"Skipping NV {nv_ind}: Curve fitting failed.")
+#             opti_durs.append(None)
+#             opti_fidelities.append(None)
 
 #     if opti_durs:
 #         print("Optimal Polarization Durations:", opti_durs)
+#         valid_durations = [d if d is not None else 192 for d in opti_durs]
+#         # Compute median or assign a reasonable default if all fits fail
+#         # median_duration = round(np.median(valid_durations) / 4) * 4
+#         median_duration = 192
+#         # opti_durs = [d if 80 <= d <= 330 else median_duration for d in valid_durations]
+#         opti_durs = [
+#             d if d is not None and 80 <= d <= 330 else median_duration
+#             for d in valid_durations
+#         ]
+
+#         print("Updated Optimal Durations:", opti_durs)
 #         print("Optimal Preparation Fidelities:", opti_fidelities)
 #         print(f"Median Optimal Duration: {np.median(opti_durs)} ns")
 #         print(f"Median Optimal Fidelity: {np.median(opti_fidelities)}")
-#         print(f"Max Optimal Fidelity: {np.max(opti_durs)}")
-#         print(f"Min Optimal Fidelity: {np.min(opti_durs)}")
+#         print(f"Max Optimal Duration: {np.max(opti_durs)} ns")
+#         print(f"Min Optimal Duration: {np.min(opti_durs)} ns")
 
 #     return
 
@@ -656,8 +726,12 @@ if __name__ == "__main__":
     # file_id = 1751404919855  # yellow ampl var 50ms 117NVs afdter birge
     # file_id = 1752870018575  # yellow ampl var 50ms 117NVs afdter birge
     # file_id = 1752968732835  # green ampl var
-
     file_id = 1766460747869  # yellow ampl var 50ms shallow nvs
+    file_id = 1780914190838  # yellow ampl var 60ms shallow nvs
+
+    # file_id = 1767789140438  # pol dur var 200ns to 2us
+    # file_id = 1768024979194  # pol dur var 100ns to 1us
+    # file_id = 1769942144688  # pol dur var 100ns to 1us dataset
     file_id = 1767789140438  # pol dur var 200ns to 2us
     file_id = 1768024979194  # pol dur var 100ns to 1us
     file_id = 1769942144688  # pol dur var 100ns to 1us dataset
@@ -667,11 +741,12 @@ if __name__ == "__main__":
 
 
     # file_id = 1770306530123  # pol dur var 16ns to 1028ns dataset 128NVs
-    file_id = 1778627435145
+    # file_id = 1778627435145
     # file_id = 1770658719969  # readout yellow ampl var 50ms shallow nvs
     # file_id = 1776463838159  # yellow ampl var 50ms shallow nvs
     # file_id = 1778426682976  # green ampl var 60ms shallow nvs
     # file_id = 1778524699003  # green ampl var 60ms shallow nvs (large range)
+    # file_id = 1780495024088  # green ampl var 60ms shallow nvs (large range)
 
     # raw_data = dm.get_raw_data(file_id=1709868774004, load_npz=False) #yellow ampl var
     raw_data = dm.get_raw_data(file_id=file_id, load_npz=False)  # yellow amp var

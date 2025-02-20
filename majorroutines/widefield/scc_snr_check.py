@@ -155,7 +155,6 @@ def main(nv_list, num_reps, num_runs, uwave_ind_list=[0, 1]):
         save_images=False,
         charge_prep_fn=None,
         num_exps=2,
-        load_iq=True,  # freq modulation
     )
 
     ### Report results and cleanup
