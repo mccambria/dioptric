@@ -69,6 +69,9 @@ def plot_histograms(
         kpl.histogram(ax, counts_list, label=label, color=color, density=density)
 
     ax.legend()
+    # ax.tick_params(axis="y", rotation=90)
+    ax.set_xlim(-0.5, 72.5)
+    ax.set_yticks([0, 0.04, 0.08])
 
     if fig is not None:
         return fig
@@ -121,8 +124,8 @@ def process_and_plot(
 
         # Plot histograms with NV index and SNR included
         nv_num = widefield.get_nv_num(nv_list[ind])
-        # if do_plot_histograms and nv_num == 154:
-        if do_plot_histograms:
+        if do_plot_histograms and nv_num == 153:
+            # if do_plot_histograms:
             fig = plot_histograms(sig_counts_list, ref_counts_list, density=True)
             ax = fig.gca()
 
@@ -360,9 +363,9 @@ def main(
 
 if __name__ == "__main__":
     kpl.init_kplotlib()
-    # data = dm.get_raw_data(file_id=1733583334808, load_npz=False)
+    data = dm.get_raw_data(file_id=1733583334808, load_npz=False)
     # data = dm.get_raw_data(file_id=1766803842180, load_npz=False)  # 50ms readout
     # data = dm.get_raw_data(file_id=1766834596476, load_npz=False)  # 100ms readout
-    data = dm.get_raw_data(file_id=1769860748790, load_npz=False)  # 24ms readout
+    # data = dm.get_raw_data(file_id=1769860748790, load_npz=False)  # 24ms readout
     process_and_plot(data, do_plot_histograms=True)
     kpl.show(block=True)
