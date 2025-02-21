@@ -40,9 +40,9 @@ calibration_coords_pixel = [
     [85.847, 227.993],
 ]
 calibration_coords_green = [
-    [95.458, 94.775],
-    [119.098, 100.353],
-    [109.422, 118.221],
+    [95.439, 94.799],
+    [119.117, 100.388],
+    [109.423, 118.248],
 ]
 calibration_coords_red = [
     [62.148, 62.848],
@@ -835,7 +835,8 @@ opx_config = {
         # "yellow_charge_readout": {"type": "constant", "sample": 0.3741},  # 50ms 117NVs
         # "yellow_charge_readout": {"type": "constant", "sample": 0.325},  # 100ms 117NVs
         # "yellow_charge_readout": {"type": "constant", "sample": 0.29},  # 200ms 117NVs
-        "yellow_charge_readout": {"type": "constant", "sample": 0.4276},  #
+        # "yellow_charge_readout": {"type": "constant", "sample": 0.4276},  #
+        "yellow_charge_readout": {"type": "constant", "sample": 0.3752},  #
         # "yellow_charge_readout": {"type": "constant", "sample": 0.4311},  #
         # "yellow_charge_readout": {"type": "constant", "sample": 0.4206},  #
         "yellow_spin_pol": {"type": "constant", "sample": 0.42},
