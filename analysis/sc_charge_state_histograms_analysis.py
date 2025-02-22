@@ -186,10 +186,24 @@ def process_and_plot(
     selected_nv_indices = [
         ind
         for ind in range(num_nvs)
-        if prep_fidelity_list[ind] > 0.55 and readout_fidelity_list[ind] > 0.8
+        if prep_fidelity_list[ind] > 0.4 and readout_fidelity_list[ind] > 0.7
     ]
     print(f"Selected NVs: {selected_nv_indices}")
     print(f"len(selected_nv_indices): {len(selected_nv_indices)}")
+    # manual removal of indices
+    print(num_nvs)
+    print(readout_fidelity_list[5])
+    indices_to_remove = [18, 35, 56]
+    readout_fidelity_list = [
+        readout_fidelity_list[idx]
+        for idx in range(num_nvs)
+        if idx not in indices_to_remove
+    ]
+    prep_fidelity_list = [
+        prep_fidelity_list[idx]
+        for idx in range(num_nvs)
+        if idx not in indices_to_remove
+    ]
     # Scatter plot: Readout fidelity vs Prep fidelity
     scatter_plot(
         readout_fidelity_list,
@@ -248,7 +262,8 @@ if __name__ == "__main__":
     # data = dm.get_raw_data(file_id=1766803842180, load_npz=False)  # 50ms readout
     # data = dm.get_raw_data(file_id=1766834596476, load_npz=False)  # 100ms readout
     # data = dm.get_raw_data(file_id=1770828500425, load_npz=False)  # 60ms readout
-    data = dm.get_raw_data(file_id=1778189406841, load_npz=False)  # 60ms readout 61 NVs
+    # data = dm.get_raw_data(file_id=1778189406841, load_npz=False)  # 60ms readout 61 NVs
+    data = dm.get_raw_data(file_id=1782616297820, load_npz=False)  # 60ms readout 66 NVs
 
     # file_name = dm.get_file_name(file_id=1766803842180)
     # print(file_name)

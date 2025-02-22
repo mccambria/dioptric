@@ -14,11 +14,13 @@ from scipy.stats import norm
 from sklearn.mixture import GaussianMixture
 import matplotlib.cm as cm
 import matplotlib.colors as mcolors
+from utils import kplotlib as kpl
 import networkx as nx
 import numpy.ma as ma
 from matplotlib import patches
 from matplotlib.ticker import MaxNLocator
 from matplotlib.ticker import ScalarFormatter
+import matplotlib.ticker as mticker
 
 from utils import data_manager as dm
 
@@ -155,7 +157,17 @@ def process_and_plot(data, rearrangement="spin_flip", file_path=None):
     # Unpack data
     nv_list = data.get("nv_list", [])
     counts = np.array(data.get("counts", []))
-
+    indices_to_remove = [18, 35, 56]
+    print(counts.shape)
+    nv_list = [
+        nv_list[ind] for ind in range(len(nv_list)) if ind not in indices_to_remove
+    ]
+    # Use NumPy boolean masking to filter counts
+    mask = np.ones(counts.shape[1], dtype=bool)  # Create a mask for NV indices
+    mask[list(indices_to_remove)] = False  # Set unwanted indices to False
+    counts = counts[:, mask, :, :, :]  # Apply mask along the NV axis (second dimension)
+    print(counts.shape)
+    # return
     if len(nv_list) == 0 or counts.size == 0:
         print("Error: Data does not contain NV list or counts.")
         return None
@@ -616,6 +628,16 @@ def plot_nv_network(data):
     nv_list = data.get("nv_list", [])
     counts = np.array(data.get("counts", []))
 
+    indices_to_remove = [18, 35, 56]
+    print(counts.shape)
+    nv_list = [
+        nv_list[ind] for ind in range(len(nv_list)) if ind not in indices_to_remove
+    ]
+    # Use NumPy boolean masking to filter counts
+    mask = np.ones(counts.shape[1], dtype=bool)  # Create a mask for NV indices
+    mask[list(indices_to_remove)] = False  # Set unwanted indices to False
+    counts = counts[:, mask, :, :, :]  # Apply mask along the NV axis (second dimension)
+    print(counts.shape)
     if len(nv_list) == 0 or counts.size == 0:
         print("Error: Data does not contain NV list or counts.")
         return None
@@ -661,14 +683,14 @@ def plot_nv_network(data):
     spin_down_nodes = [i for i, nv in enumerate(nv_list) if nv.spin_flip]
 
     # Create the plot
-    fig, ax = plt.subplots(figsize=(8, 6))
+    fig, ax = plt.subplots(figsize=(6, 5))
     nx.draw_networkx_nodes(
         G,
         pos,
         nodelist=spin_up_nodes,
         node_color="red",
         node_size=20,
-        label="Spin-up",
+        label="Group A",
     )
     nx.draw_networkx_nodes(
         G,
@@ -676,7 +698,7 @@ def plot_nv_network(data):
         nodelist=spin_down_nodes,
         node_color="blue",
         node_size=20,
-        label="Spin-down",
+        label="Group B",
     )
     # Add edges based on correlation coefficientss
     edges = []
@@ -710,9 +732,13 @@ def plot_nv_network(data):
     # Create ScalarMappable for the color bar
     sm = plt.cm.ScalarMappable(cmap=cm.coolwarm, norm=norm)
     sm.set_array(edge_colors)
-    cbar = plt.colorbar(sm, ax=ax)
-    cbar.set_label("Correlation Coefficient", fontsize=16)
-    cbar.ax.tick_params(labelsize=16)
+    cbar = plt.colorbar(sm, ax=ax, aspect=20, pad=0.02)
+    cbar.set_label("Correlation Coefficient", fontsize=15)
+    # cbar.ax.yaxis.set_major_formatter(mticker.ScalarFormatter(useMathText=True))
+    cbar.ax.yaxis.set_major_formatter(mticker.FormatStrFormatter("%.1e"))
+    cbar.ax.yaxis.get_offset_text().set_fontsize(15)
+    cbar.outline.set_visible(False)
+    cbar.ax.tick_params(labelsize=15)
     # Add scale bar
     scalebar_length_pixels = 20
     scalebar_length_um = scalebar_length_pixels * 0.072
@@ -745,13 +771,13 @@ def plot_nv_network(data):
     # Set title and legend
     plt.title("NV Center Network Graph", fontsize=16)
     plt.legend(scatterpoints=1, loc="upper right", fontsize=12)
-    plt.tight_layout()
+    # plt.tight_layout()
     # plt.show()
     # Adjust subplots for proper spacing
     # fig.subplots_adjust(left=0.05, right=0.88, bottom=0.05, top=0.95, wspace=0.3)
     # if fig is not None:
     #     dm.save_figure(fig, file_path)
-    plt.show()
+    kpl.show(block=True)
 
 
 # Combine and process data iteratively
@@ -993,40 +1019,12 @@ def plot_thresholded_counts(data):
 # end region
 
 if __name__ == "__main__":
+    kpl.init_kplotlib()
     # region Process and analyze data from single file
     # file_id = 1667457284652
     # file_id = 1737922643755
     # data = dm.get_raw_data(file_id=file_id)
 
-    # now = datetime.now()
-    # date_time_str = now.strftime("%Y%m%d_%H%M%S")
-    # file_name = dm.get_file_name(file_id=file_id)
-    # timestamp = dm.get_time_stamp()
-    # file_path = dm.get_file_path(__file__, file_name, f"{file_id}_{date_time_str}")
-    # plot_nv_network(data)
-    # process_and_plot(data, rearrangement="alternate_quadrants")
-
-    # region Process and analyze data from multiple files
-    # First data set taken on 2021-08-26 with Matt's spin arrangement
-    # file_ids = [
-    #     1737922643755,
-    #     1737998031775,
-    #     1738069552465,
-    #     1738136166264,
-    #     1738220449762,
-    # ]
-
-    # FData set taken with left-right spin arrangement
-    # file_ids = [
-    #     1738729976529,
-    #     1738799968739,
-    #     1738879737311,
-    #     1738963857371,
-    #     1739049613447,
-    # ]
-    # file_ids = [1739268623744, 1739343445705]
-    # files Matt's new method for ref measurement
-    # file_ids = [1739598841877, 1739660864956, 1739725006836, 1739855966253]
     # final data set after randomizing the scc order between two groups
     file_ids = [
         1739979522556,
@@ -1034,6 +1032,15 @@ if __name__ == "__main__":
         1740252380664,
         1740377262591,
         1740494528636,
+    ]
+
+    # shallow 66 nvs
+    file_ids = [
+        1783769660936,
+        1783988286193,
+        1784201493337,
+        1784384193378,
+        1784571011973,
     ]
     # data = dm.get_raw_data(file_id=file_ids[0])
     # Create a string of all file IDs, separated by underscores
@@ -1051,7 +1058,8 @@ if __name__ == "__main__":
 
     data = process_multiple_files(file_ids)
     # process_and_plot(data, rearrangement="block")
-    plot_thresholded_counts(data)
+    plot_nv_network(data)
+    # plot_thresholded_counts(data)
     # try:
     #     # print(data.shape)
     #     # Process and plot the heatmaops with a rearrangement pattern
@@ -1065,15 +1073,6 @@ if __name__ == "__main__":
     #     print(f"Error occurred: {e}")
 
     plt.show(block=True)
-
-    # # Main function
-    # file_ids = [
-    #     1739979522556,
-    #     1740062954135,
-    #     1740252380664,
-    #     1740377262591,
-    #     1740494528636,
-    # ]
 
     # analyses = process_files_incrementally(file_ids)
     # # Generate example averaging times for each step

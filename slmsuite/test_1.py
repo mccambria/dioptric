@@ -1,4 +1,6 @@
 import numpy as np
+from utils import kplotlib as kpl
+from matplotlib import pyplot as plt
 
 # fmt: off
 snr_list_1_string = ['0.321', '0.037', '0.030', '0.158', '0.081', '0.014', '0.129', '0.158', '0.092', '0.007', '0.053', '0.025', '0.022', '0.057', '0.102', '0.006', '0.048', '0.030', '0.078', '0.086', '0.053', '0.019', '0.070', '0.010', '0.019', '0.085', '0.105', '0.055', '0.028', '0.026', '0.071', '0.068', '0.023', '0.041', '0.014', '0.007', '0.083', '0.016', '0.118', '-0.005', '-0.001', '-0.002', '0.073', '0.104', '0.004', '-0.009', '0.027', '0.036', '0.020', '0.012', '0.045', '0.088', '0.084', '0.037', '0.018', '0.011', '0.064', '0.005', '0.019', '0.018', '0.004', '0.069', '0.096', '0.072', '0.069', '0.122', '0.012', '0.014', '0.015', '0.009', '0.013', '0.011', '0.004', '0.065', '0.086', '0.056', '0.054', '0.077', '0.021', '0.110', '0.015', '0.038', '0.013', '0.068', '0.114', '0.007', '0.065', '0.010', '0.068', '0.019', '0.026', '0.088', '0.023', '0.035', '0.028', '0.083', '0.092', '0.018', '0.022', '0.089', '-0.002', '0.089', '0.091', '0.010', '0.021', '0.082', '-0.006', '0.081', '0.004', '0.070', '0.096', '0.015', '0.070', '0.015', '0.017', '-0.007', '0.021', '0.068', '0.060', '0.067', '0.010', '0.060', '0.017', '0.014', '0.013', '0.008', '0.015', '0.083', '0.088', '0.012', '0.024', '0.007', '0.028', '0.021', '0.016', '0.010', '0.117', '-0.010', '0.019', '0.079', '0.071', '0.107', '0.016', '0.062', '0.009', '0.084', '0.106', '0.040']
@@ -20,28 +22,74 @@ selected_durations = [
     for i in range(len(snr_list_1))
 ]
 
-selected_snr = [max(snr_list_1[i], snr_list_2[i]) for i in range(len(snr_list_1))]
+selected_snrs = [max(snr_list_1[i], snr_list_2[i]) for i in range(len(snr_list_1))]
 
 
 # Compute the median of valid durations (between 50 and 200)
 valid_durations = [d for d in selected_durations if 50 <= d <= 200]
-median_duration = (
-    round(np.median(valid_durations)) if valid_durations else 128
-)  # Default value if empty
+median_duration = round(np.median(valid_durations)) if valid_durations else 128
 
 # Replace out-of-range durations with the median
 final_durations = [d if 50 <= d <= 200 else median_duration for d in selected_durations]
-
+print(len(final_durations))
+# final_snrs = [selected_snr[d] for d in final_durations if 50 <= d <= 200]
 # Compute median SNR and duration
-median_snr = np.median(selected_snr)
+median_snr = np.median(selected_snrs)
 median_final_duration = np.median(final_durations)
 
 # Print results
-print("Final Selected Durations:", selected_durations)
-print("Final Selected Durations:", final_durations)
+print("Selected Durations:", selected_durations)
+print("Final Durations:", final_durations)
+print("Final SNRs:", selected_snrs)
 print("Median SNR:", round(median_snr, 3))
 print("Median Duration:", round(median_final_duration, 1))
-import numpy as np
+
+
+# remove outlies
+def remove_outliers(snr_list):
+    Q1 = np.percentile(snr_list, 25)
+    Q3 = np.percentile(snr_list, 75)
+    median = np.median(snr_list)
+    IQR = Q3 - Q1
+    lower_bound = median - 2 * IQR
+    upper_bound = median + 5 * IQR
+    selected_inds = [
+        ind
+        for ind in range(len(snr_list))
+        if lower_bound <= snr_list[ind] <= upper_bound
+    ]
+    return selected_inds
+
+
+selected_inds = remove_outliers(selected_snrs)
+filtered_durations = [final_durations[ind] for ind in selected_inds]
+filtered_snrs = [selected_snrs[ind] for ind in selected_inds]
+filtered_median_duration = np.median(filtered_durations)
+filtered_median_snr = np.median(filtered_snrs)
+kpl.init_kplotlib()
+plt.figure(figsize=(6, 5))
+plt.scatter(
+    filtered_durations,
+    filtered_snrs,
+    marker="o",
+    color="blue",
+    edgecolors="black",
+    alpha=0.6,
+)
+plt.title("SCC Durations vs. SNRs")
+plt.xlabel("Optimized SCC duration (ns)")
+plt.ylabel("SNR")
+# Add text at the top-right of the figure
+plt.figtext(
+    0.97,
+    0.9,  # (x, y) position in figure coordinates (1 = right/top, 0 = left/bottom)
+    f"Med. SCC Duration: {filtered_median_duration:.2f} ns\nMed. SCC SNR: {filtered_median_snr:.2f}",
+    fontsize=11,
+    ha="right",
+    va="top",
+    bbox=dict(facecolor="white", edgecolor="black", boxstyle="round,pad=0.3"),
+)
+plt.show(block=True)
 
 nv_ind_include = []
 # fmt: off

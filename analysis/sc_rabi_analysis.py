@@ -324,7 +324,8 @@ if __name__ == "__main__":
     avg_counts, avg_counts_ste = widefield.process_counts(
         nv_list, sig_counts, ref_counts, threshold=True
     )
-
+    file_name = dm.get_file_name(file_id=file_id)
+    print(f"{file_name}_{file_id}")
     # Call to process Rabi data without normalization (can still perform fitting)
     fit_fns, popts = fit_rabi_data(nv_list, taus, avg_counts, avg_counts_ste)
 
