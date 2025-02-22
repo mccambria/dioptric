@@ -181,9 +181,15 @@ def process_and_plot(raw_data):
             x_label = "Readout amplitude (uW)"
 
     # return
+    # print(step_vals)
     optimal_values = []
     optimal_step_vals = []
     nv_indces = []
+
+    # Find index of manually set step value
+    manual_step_val = 226.98624137
+    manual_index = np.where(np.isclose(step_vals, manual_step_val))[0][0]
+
     for nv_ind in range(num_nvs):
         try:
             # Calculate the optimal step value
@@ -197,8 +203,18 @@ def process_and_plot(raw_data):
                 readout_fidelity_arr[nv_ind],
                 prep_fidelity_arr[nv_ind],
                 goodness_of_fit_arr[nv_ind],
-                weights=(1.5, 1, 0),
+                weights=(1.5, 1, 1),
             )
+            # Manually override for the first NV
+            if nv_ind == 0:
+                optimal_step_val = manual_step_val
+                optimal_prep_fidality = prep_fidelity_arr[nv_ind][manual_index]
+                optimal_readout_fidality = readout_fidelity_arr[nv_ind][manual_index]
+                max_combined_score = (
+                    1.5 * optimal_prep_fidality
+                    + 1 * optimal_readout_fidality
+                    + 1 * (1 - goodness_of_fit_arr[nv_ind][manual_index])
+                )
             optimal_step_vals.append(optimal_step_val)
             nv_indces.append(nv_ind)
             optimal_values.append(
@@ -733,6 +749,9 @@ if __name__ == "__main__":
     file_id = (
         1782586909215  # yellow ampl var 60ms shallow nvs (selected two orieantation)
     )
+    # file_id = 1766460747869  # yellow ampl var 50ms shallow 148nvs
+    # file_id = 1780914190838  # yellow ampl var 60ms shallow 148nvs
+    file_id = 1782586909215  # yellow ampl var 60ms shallow 69nvs
 
     # file_id = 1767789140438  # pol dur var 200ns to 2us
     # file_id = 1768024979194  # pol dur var 100ns to 1us

@@ -91,6 +91,9 @@ plt.figtext(
 )
 plt.show(block=True)
 
+
+import numpy as np
+
 nv_ind_include = []
 # fmt: off
 nv_ind_69MHz= [3, 7, 8, 13, 22, 25, 30, 38, 42, 50, 51, 58, 61, 76, 77, 79, 84, 88, 92, 96, 101, 105, 107, 109, 119, 128, 132, 133, 134, 139, 140, 141, 143, 145]
