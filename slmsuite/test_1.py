@@ -104,3 +104,43 @@ print(nv_ind_include)
 nv_ind_include = sorted(nv_ind_include)
 
 print(f"sorted nv indices = {nv_ind_include}")
+
+
+from utils import kplotlib as kpl
+
+kpl.init_kplotlib()
+# phase = np.load("slmsuite\computed_phase\slm_phase_148nvs_20250203_171815.npy")
+
+# Load phase data
+phase = np.load(r"slmsuite\computed_phase\slm_phase_148nvs_20250203_171815.npy")
+phase = np.load(r"slmsuite\computed_phase\slm_phase_117nvs_20241230_162649.npy")
+
+# # Plot phase data
+# plt.figure(figsize=(8, 4.2))
+# plt.imshow(phase)  # Use 'jet' or another colormap
+# plt.colorbar(label="Phase (radians)", pad=0.01)  # Optional: adds a colorbar
+# plt.title("SLM Phase")
+# plt.xticks([])
+# plt.yticks([])
+# plt.show(block=True)
+
+
+# Plot phase data
+fig = plt.figure(figsize=(7, 4))
+# im = plt.imshow(phase)  # Proper color scale
+im = plt.imshow(phase, cmap="twilight", vmin=0, vmax=2 * np.pi)  # Proper color scale
+
+# Add colorbar with correct label
+cbar = plt.colorbar(im, pad=0.01, shrink=0.74)
+cbar.set_label("Phase (radians)", fontsize=15)
+cbar.set_ticks([0, np.pi / 2, np.pi, 3 * np.pi / 2, 2 * np.pi])
+cbar.set_ticklabels(["0", "π/2", "π", "3π/2", "2π"], fontsize=15)
+
+# Set labels and title
+plt.xlabel("SLM X Pixels", fontsize=15)  # X-axis corresponds to SLM columns
+plt.ylabel("SLM Y Pixels", fontsize=15)  # Y-axis corresponds to SLM rows
+plt.title("SLM Phase Pattern", fontsize=15)
+plt.xticks(fontsize=15)
+plt.yticks(fontsize=15)
+fig.subplots_adjust(left=0.001, right=0.9, bottom=0.1, top=0.9)
+plt.show(block=True)
