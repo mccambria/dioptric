@@ -167,6 +167,18 @@ def process_and_plot(data, rearrangement="spin_flip", file_path=None):
     mask[list(indices_to_remove)] = False  # Set unwanted indices to False
     counts = counts[:, mask, :, :, :]  # Apply mask along the NV axis (second dimension)
     print(counts.shape)
+
+    # high spurious correlation
+    more_indices_to_remove = [16, 20, 28, 47, 50, 56]
+    nv_list = [
+        nv_list[ind] for ind in range(len(nv_list)) if ind not in more_indices_to_remove
+    ]
+    # Use NumPy boolean masking to filter counts
+    mask = np.ones(counts.shape[1], dtype=bool)  # Create a mask for NV indices
+    mask[list(more_indices_to_remove)] = False  # Set unwanted indices to False
+    counts = counts[:, mask, :, :, :]  # Apply mask along the NV axis (second dimension)
+    print(counts.shape)
+
     # return
     if len(nv_list) == 0 or counts.size == 0:
         print("Error: Data does not contain NV list or counts.")
@@ -191,7 +203,7 @@ def process_and_plot(data, rearrangement="spin_flip", file_path=None):
     # Calculate correlations
     sig_corr_coeffs = nan_corr_coef(flattened_sig_counts)
     ref_corr_coeffs = nan_corr_coef(flattened_ref_counts)
-    difference = sig_corr_coeffs - ref_corr_coeffs
+    diff_corr_coeffs = sig_corr_coeffs - ref_corr_coeffs
 
     # bins = int(np.ceil(np.log2(len(sig_corr_coeffs)) + 1))
     # bin_width = 3.5 * np.nanstd(sig_corr_coeffs) / len(sig_corr_coeffs) ** (1 / 3)
@@ -209,19 +221,25 @@ def process_and_plot(data, rearrangement="spin_flip", file_path=None):
     # bins = int(np.ceil(np.sqrt(len(sig_corr_coeffs))))
     plot_correlation_histogram(sig_corr_coeffs, bins=150, title="Signal Correlation")
     plot_correlation_histogram(ref_corr_coeffs, bins=150, title="Reference Correlation")
-    plot_correlation_histogram(difference, bins=150, title="Difference Correlation")
+    plot_correlation_histogram(
+        diff_corr_coeffs, bins=150, title="Difference Correlation"
+    )
     # Apply the same rearrangement to signal, reference, and ideal matrices
     if rearrangement == "spin_flip":
         nv_list, sig_corr_coeffs, ref_corr_coeffs = rearrange_spin_flip(
-            nv_list, sig_corr_coeffs, ref_corr_coeffs
+            nv_list,
+            sig_corr_coeffs,
+            ref_corr_coeffs,
         )
     elif rearrangement == "checkerboard":
-        nv_list, sig_corr_coeffs, ref_corr_coeffs = rearrange_checkerboard(
-            nv_list, sig_corr_coeffs, ref_corr_coeffs
+        nv_list, sig_corr_coeffs, ref_corr_coeffs, diff_corr_coeffs = (
+            rearrange_checkerboard(
+                nv_list, sig_corr_coeffs, ref_corr_coeffs, diff_corr_coeffs
+            )
         )
     elif rearrangement == "block":
-        nv_list, sig_corr_coeffs, ref_corr_coeffs, difference = rearrange_block(
-            nv_list, sig_corr_coeffs, ref_corr_coeffs, difference
+        nv_list, sig_corr_coeffs, ref_corr_coeffs, diff_corr_coeffs = rearrange_block(
+            nv_list, sig_corr_coeffs, ref_corr_coeffs, diff_corr_coeffs
         )
     elif rearrangement == "spiral":
         nv_list, sig_corr_coeffs, ref_corr_coeffs = rearrange_spiral(
@@ -232,16 +250,29 @@ def process_and_plot(data, rearrangement="spin_flip", file_path=None):
             nv_list, sig_corr_coeffs, ref_corr_coeffs
         )
     elif rearrangement == "alternate_quadrants":
-        nv_list, sig_corr_coeffs, ref_corr_coeffs = rearrange_alternate_quadrants(
-            nv_list, sig_corr_coeffs, ref_corr_coeffs, num_quadrants=5
+        nv_list, sig_corr_coeffs, ref_corr_coeffs, diff_corr_coeffs = (
+            rearrange_alternate_quadrants(
+                nv_list,
+                sig_corr_coeffs,
+                ref_corr_coeffs,
+                diff_corr_coeffs,
+                num_quadrants=20,
+            )
         )
     elif rearrangement == "concentric_circles":
         nv_list, sig_corr_coeffs, ref_corr_coeffs = rearrange_concentric_circles(
             nv_list, sig_corr_coeffs, ref_corr_coeffs
         )
     elif rearrangement == "letter":
-        nv_list, sig_corr_coeffs, ref_corr_coeffs = rearrange_to_letter(
-            nv_list, sig_corr_coeffs, ref_corr_coeffs, letter="B", grid_size=(60, 60)
+        nv_list, sig_corr_coeffs, ref_corr_coeffs, diff_corr_coeffs = (
+            rearrange_to_letter(
+                nv_list,
+                sig_corr_coeffs,
+                ref_corr_coeffs,
+                diff_corr_coeffs,
+                letter="X",
+                grid_size=(15, 15),
+            )
         )
     elif rearrangement == "radial":
         nv_list, sig_corr_coeffs, ref_corr_coeffs = rearrange_radial(
@@ -273,7 +304,7 @@ def process_and_plot(data, rearrangement="spin_flip", file_path=None):
     # For reference correlations
 
     # For reference correlations
-    diff_vmax = np.nanmean(difference) + 1.5 * np.nanstd(difference)
+    diff_vmax = np.nanmean(diff_corr_coeffs) + 1.5 * np.nanstd(diff_corr_coeffs)
     diff_vmin = -diff_vmax
     # For the ideal correlation matrix
     ideal_vmin = -1
@@ -286,7 +317,7 @@ def process_and_plot(data, rearrangement="spin_flip", file_path=None):
     num_cols = len(titles)
     figsize = [num_cols * 5, 5]
     fig, axes_pack = plt.subplots(ncols=num_cols, figsize=figsize)
-    vals = [ideal_sig_corr_coeffs, sig_corr_coeffs, ref_corr_coeffs, difference]
+    vals = [ideal_sig_corr_coeffs, sig_corr_coeffs, ref_corr_coeffs, diff_corr_coeffs]
     # vals = [sig_corr_coeffs, ref_corr_coeffs]
     # vals = [ideal_sig_corr_coeffs, sig_corr_coeffs]
 
@@ -374,7 +405,7 @@ def rearrange_spin_flip(nv_list, sig_corr, ref_corr):
     return apply_rearrangement(nv_list, sig_corr, ref_corr, reshuffled_indices)
 
 
-def rearrange_checkerboard(nv_list, sig_corr, ref_corr):
+def rearrange_checkerboard(nv_list, sig_corr, ref_corr, diff_diff):
     """Checkerboard pattern where alternating spins are up (+1) and down (-1)."""
     spin_plus_indices = [i for i, nv in enumerate(nv_list) if not nv.spin_flip]
     spin_minus_indices = [i for i, nv in enumerate(nv_list) if nv.spin_flip]
@@ -392,7 +423,9 @@ def rearrange_checkerboard(nv_list, sig_corr, ref_corr):
                 if spin_minus_indices
                 else spin_plus_indices.pop(0)
             )
-    return apply_rearrangement(nv_list, sig_corr, ref_corr, reshuffled_indices)
+    return apply_rearrangement(
+        nv_list, sig_corr, ref_corr, diff_diff, reshuffled_indices
+    )
 
 
 def rearrange_block(nv_list, sig_corr, ref_corr, diff_corr):
@@ -424,7 +457,9 @@ def rearrange_random(nv_list, sig_corr, ref_corr):
     return apply_rearrangement(nv_list, sig_corr, ref_corr, reshuffled_indices)
 
 
-def rearrange_alternate_quadrants(nv_list, sig_corr, ref_corr, num_quadrants=8):
+def rearrange_alternate_quadrants(
+    nv_list, sig_corr, ref_corr, diff_corr_coeffs, num_quadrants=8
+):
     """
     Divide NV centers into multiple quadrants and alternate spin-up and spin-down in each quadrant.
 
@@ -457,7 +492,9 @@ def rearrange_alternate_quadrants(nv_list, sig_corr, ref_corr, num_quadrants=8):
     reshuffled_indices.extend(spin_plus_indices)
     reshuffled_indices.extend(spin_minus_indices)
 
-    return apply_rearrangement(nv_list, sig_corr, ref_corr, reshuffled_indices)
+    return apply_rearrangement(
+        nv_list, sig_corr, ref_corr, diff_corr_coeffs, reshuffled_indices
+    )
 
 
 def rearrange_concentric_circles(nv_list, sig_corr, ref_corr):
@@ -509,46 +546,134 @@ def rearrange_radial(nv_list, sig_corr, ref_corr):
     return apply_rearrangement(nv_list, sig_corr, ref_corr, reshuffled_indices)
 
 
-def rearrange_to_letter(nv_list, sig_corr, ref_corr, letter="A", grid_size=(10, 10)):
+from PIL import Image, ImageDraw, ImageFont
+
+
+def rearrange_to_letter(
+    nv_list, sig_corr, ref_corr, diff_corr_coeffs, letter="A", grid_size=(10, 10)
+):
     """
     Arrange NV centers in the shape of a specified letter.
-
+    NVs are assigned to pixels forming the letter in the grid.
     """
-    from PIL import Image, ImageDraw, ImageFont
-
-    # Create a blank canvas for the letter
     grid_rows, grid_cols = grid_size
-    canvas = Image.new("1", (grid_cols, grid_rows), 0)
+    canvas = Image.new(
+        "1", (grid_cols * 10, grid_rows * 10), 0
+    )  # Larger resolution for clear letter drawing
     draw = ImageDraw.Draw(canvas)
 
     # Load a font and draw the letter onto the canvas
     try:
-        font = ImageFont.truetype("arial.ttf", size=min(grid_rows, grid_cols))
+        font = ImageFont.truetype("arial.ttf", size=grid_cols * 8)
     except IOError:
-        font = ImageFont.load_default()  # Fallback font if `arial.ttf` isn't available
+        font = ImageFont.load_default()
 
-    text_position = (grid_cols // 4, grid_rows // 4)  # Center the letter
+    text_position = (grid_cols * 2, grid_rows)  # Center the letter
     draw.text(text_position, letter, fill=1, font=font)
 
-    # Convert the canvas to a binary grid
-    letter_grid = np.array(canvas)
+    # Convert the canvas to a binary grid (1 for letter pixels, 0 for background)
+    letter_grid = np.array(
+        canvas.resize(grid_size, Image.Resampling.LANCZOS)
+    )  # Downscale to match grid
+    letter_indices = np.argwhere(letter_grid > 0)  # Identify pixels forming the letter
 
-    # Identify "on" pixels in the grid
-    letter_indices = np.argwhere(letter_grid > 0)
+    num_nvs = len(nv_list)
+    if len(letter_indices) > num_nvs:
+        letter_indices = letter_indices[:num_nvs]  # Truncate if too many pixels
+    elif len(letter_indices) < num_nvs:
+        print("Warning: Not enough letter pixels; some NVs may not be assigned.")
 
-    # Normalize letter indices to NV list size
-    letter_indices = letter_indices[: len(nv_list)]
+    # Normalize indices to fit NV positions
+    min_vals = letter_indices.min(axis=0)
+    max_vals = letter_indices.max(axis=0)
+    letter_positions = (letter_indices - min_vals) / (
+        max_vals - min_vals
+    )  # Normalize to [0,1]
+    letter_positions *= np.max([grid_rows, grid_cols])  # Scale back
 
-    # Assign NVs to the letter shape
-    reshuffled_indices = []
-    for index in letter_indices:
-        reshuffled_indices.append(index[0])  # Assign NVs in the order of the grid
+    # Get NV correlation strengths
+    corr_strengths = np.diag(sig_corr)
+    sorted_indices = np.argsort(
+        corr_strengths
+    )  # Sort NVs based on correlation strength
 
-    # Add any remaining NVs (not part of the letter) to the reshuffled list
-    remaining_indices = list(set(range(len(nv_list))) - set(reshuffled_indices))
-    reshuffled_indices.extend(remaining_indices)
+    # Assign NVs to letter positions
+    assigned_nvs = np.zeros((num_nvs, 2))
+    for i, idx in enumerate(letter_positions):
+        assigned_nvs[i] = idx  # Assign sorted NVs to letter pixels
 
-    return apply_rearrangement(nv_list, sig_corr, ref_corr, reshuffled_indices)
+    # Assign remaining NVs outside the letter
+    remaining_indices = sorted_indices[len(letter_positions) :]
+    for i, idx in enumerate(remaining_indices):
+        assigned_nvs[i + len(letter_positions)] = np.random.uniform(
+            0, grid_rows, size=2
+        )
+
+    # Plot NV positions
+    fig, ax = plt.subplots(figsize=(6, 6))
+    spin_up = assigned_nvs[: num_nvs // 2]
+    spin_down = assigned_nvs[num_nvs // 2 :]
+
+    ax.scatter(spin_up[:, 1], spin_up[:, 0], color="blue", label="Spin-Up", alpha=0.8)
+    ax.scatter(
+        spin_down[:, 1], spin_down[:, 0], color="red", label="Spin-Down", alpha=0.8
+    )
+
+    ax.set_xlim(0, grid_cols)
+    ax.set_ylim(grid_rows, 0)  # Flip y-axis for proper visualization
+    ax.set_title(f"NVs Arranged in Letter '{letter}'", fontsize=14)
+    ax.legend()
+    plt.show()
+
+    return apply_rearrangement(
+        nv_list, sig_corr, ref_corr, diff_corr_coeffs, sorted_indices
+    )
+
+
+# def rearrange_to_letter(
+#     nv_list, sig_corr, ref_corr, diff_corr_coeffs, letter="A", grid_size=(10, 10)
+# ):
+#     """
+#     Arrange NV centers in the shape of a specified letter.
+
+#     """
+#     from PIL import Image, ImageDraw, ImageFont
+
+#     # Create a blank canvas for the letter
+#     grid_rows, grid_cols = grid_size
+#     canvas = Image.new("1", (grid_cols, grid_rows), 0)
+#     draw = ImageDraw.Draw(canvas)
+
+#     # Load a font and draw the letter onto the canvas
+#     try:
+#         font = ImageFont.truetype("arial.ttf", size=min(grid_rows, grid_cols))
+#     except IOError:
+#         font = ImageFont.load_default()  # Fallback font if `arial.ttf` isn't available
+
+#     text_position = (grid_cols // 4, grid_rows // 4)  # Center the letter
+#     draw.text(text_position, letter, fill=1, font=font)
+
+#     # Convert the canvas to a binary grid
+#     letter_grid = np.array(canvas)
+
+#     # Identify "on" pixels in the grid
+#     letter_indices = np.argwhere(letter_grid > 0)
+
+#     # Normalize letter indices to NV list size
+#     letter_indices = letter_indices[: len(nv_list)]
+
+#     # Assign NVs to the letter shape
+#     reshuffled_indices = []
+#     for index in letter_indices:
+#         reshuffled_indices.append(index[0])  # Assign NVs in the order of the grid
+
+#     # Add any remaining NVs (not part of the letter) to the reshuffled list
+#     remaining_indices = list(set(range(len(nv_list))) - set(reshuffled_indices))
+#     reshuffled_indices.extend(remaining_indices)
+
+#     return apply_rearrangement(
+#         nv_list, sig_corr, ref_corr, diff_corr_coeffs, reshuffled_indices
+#     )
 
 
 def apply_rearrangement(nv_list, sig_corr, ref_corr, diff_corr, reshuffled_indices):
@@ -638,6 +763,17 @@ def plot_nv_network(data):
     mask[list(indices_to_remove)] = False  # Set unwanted indices to False
     counts = counts[:, mask, :, :, :]  # Apply mask along the NV axis (second dimension)
     print(counts.shape)
+    # high spurious correlation
+    more_indices_to_remove = [16, 20, 28, 47, 50, 56]
+    nv_list = [
+        nv_list[ind] for ind in range(len(nv_list)) if ind not in more_indices_to_remove
+    ]
+    # Use NumPy boolean masking to filter counts
+    mask = np.ones(counts.shape[1], dtype=bool)  # Create a mask for NV indices
+    mask[list(more_indices_to_remove)] = False  # Set unwanted indices to False
+    counts = counts[:, mask, :, :, :]  # Apply mask along the NV axis (second dimension)
+    print(counts.shape)
+
     if len(nv_list) == 0 or counts.size == 0:
         print("Error: Data does not contain NV list or counts.")
         return None
@@ -662,6 +798,7 @@ def plot_nv_network(data):
     ref_corr_coeffs = nan_corr_coef(flattened_ref_counts)
     # difference
     sig_corr_coeffs = sig_corr_coeffs - ref_corr_coeffs
+    # sig_corr_coeffs = ref_corr_coeffs
     # print("sig_corr_coeffs shape:", sig_corr_coeffs.shape)
     # print("sig_corr_coeffs example values:", sig_corr_coeffs[:5, :5])
 
@@ -669,6 +806,43 @@ def plot_nv_network(data):
         print("Invalid values found in sig_corr_coeffs.")
         return
 
+    # Extract NV positions
+    nv_positions = np.array([nv.coords["pixel"][:2] for nv in nv_list])
+    # Compute pairwise distances
+    from scipy.spatial.distance import pdist, squareform
+
+    distances = squareform(pdist(nv_positions))  # Creates a symmetric distance matrix
+
+    # Flatten correlation and distance matrices (excluding diagonal)
+    corr_values = sig_corr_coeffs[
+        np.triu_indices(len(nv_list), k=1)
+    ]  # Extract upper triangle (no duplicates)
+    distance_values = distances[
+        np.triu_indices(len(nv_list), k=1)
+    ]  # Same for distances
+    # distance_values *= 0.072
+    # Scatter plot: Correlation Coefficient vs. Distance
+    plt.figure(figsize=(6, 5))
+    plt.scatter(
+        distance_values,
+        corr_values,
+        marker="o",
+        s=20,
+        color="blue",
+        edgecolors=None,
+        alpha=0.6,
+        label="Reference Corr.",
+    )
+    plt.xlabel("Pair-Wise Distance between NV centers (pixels)", fontsize=15)
+    plt.ylabel("Correlation Coefficient", fontsize=15)
+    plt.title("Pair-Wise Coefficient vs Distance (66 shallow NVs)", fontsize=15)
+    plt.xticks(fontsize=15)
+    plt.yticks(fontsize=15)
+    # plt.xlim([0, 60])
+    plt.grid(True)
+    plt.legend(fontsize=12)
+    plt.show()
+    # return
     # Initialize a graph
     G = nx.Graph()
     for i, nv in enumerate(nv_list):
@@ -711,17 +885,19 @@ def plot_nv_network(data):
             try:
                 edges.append((i, j))
                 edge_colors.append(float(sig_corr_coeffs[i, j]))
-                # edge_widths.append(5 * abs(sig_corr_coeffs[i, j]))
-                edge_widths.append(0.2)
-                edge_alphas.append(0.5 + 0.5 * abs(sig_corr_coeffs[i, j]))
-                # edge_alphas.append(0.5)
+                # edge_widths.append(20 * abs(sig_corr_coeffs[i, j]))
+                edge_widths.append(0.6)
+                # edge_alphas.append(0.5 + 0.5 * abs(sig_corr_coeffs[i, j]))
+                edge_alphas.append(0.6)
             except Exception as e:
                 print(f"Error at edge ({i}, {j}): {e}")
                 print(f"sig_corr_coeffs[{i}, {j}] = {sig_corr_coeffs[i, j]}")
 
     mean_corr = np.nanmean(sig_corr_coeffs)
     std_corr = np.nanstd(sig_corr_coeffs)
-    vmax = mean_corr + 1.5 * std_corr
+    # vmax = mean_corr + 1.5 * std_corr
+    vmax = np.percentile(sig_corr_coeffs, 98)
+    # vmax = 0.021379929550422862
     norm = mcolors.Normalize(vmin=-vmax, vmax=vmax)
 
     # Draw curved edges with color based on the correlation coefficients
@@ -730,20 +906,42 @@ def plot_nv_network(data):
     )
     ax.set_aspect("equal", adjustable="datalim")
     # Create ScalarMappable for the color bar
+    # Create ScalarMappable with manual color bar limits
     sm = plt.cm.ScalarMappable(cmap=cm.coolwarm, norm=norm)
-    sm.set_array(edge_colors)
-    cbar = plt.colorbar(sm, ax=ax, aspect=20, pad=0.02)
+    sm.set_array([])
+    # sm.set_array(edge_colors)
+    cbar = plt.colorbar(sm, ax=ax, aspect=30, pad=0.02)
     cbar.set_label("Correlation Coefficient", fontsize=15)
+
     # cbar.ax.yaxis.set_major_formatter(mticker.ScalarFormatter(useMathText=True))
-    cbar.ax.yaxis.set_major_formatter(mticker.FormatStrFormatter("%.1e"))
-    cbar.ax.yaxis.get_offset_text().set_fontsize(15)
+    # cbar.ax.yaxis.set_major_formatter(mticker.FormatStrFormatter("%.1e"))
+    # Format the ticks normally but remove the default scientific notation
+    # cbar.ax.yaxis.set_major_formatter(
+    #     mticker.FuncFormatter(lambda x: f"{x / 1e-2:.0f}")
+    # )
+    def scale_ticks(x, pos):
+        scaled = x / 1e-2
+        return f"{int(scaled)}" if scaled.is_integer() else f"{scaled:.1f}"
+
+    cbar.ax.yaxis.set_major_formatter(mticker.FuncFormatter(scale_ticks))
+    # cbar.ax.set_yticklabels([f"{tick:.0f}" for tick in xticks])  # Show as -1 to 1
+    cbar.ax.text(
+        0.0,
+        1.01,
+        r"$\mathregular{10^{-2}}$",
+        transform=cbar.ax.transAxes,
+        fontsize=15,
+        ha="left",
+    )
+
+    # cbar.ax.yaxis.get_offset_text().set_fontsize(15)
     cbar.outline.set_visible(False)
     cbar.ax.tick_params(labelsize=15)
     # Add scale bar
     scalebar_length_pixels = 20
     scalebar_length_um = scalebar_length_pixels * 0.072
-    scalebar_x_start = 2
-    scalebar_y_start = 2
+    scalebar_x_start = 20
+    scalebar_y_start = 10
 
     # Draw scale bar
     ax.plot(
@@ -769,7 +967,7 @@ def plot_nv_network(data):
     nx.draw_networkx_labels(G, pos, labels, font_size=5, font_color="white", ax=ax)
 
     # Set title and legend
-    plt.title("NV Center Network Graph", fontsize=16)
+    plt.title("Diff. Corr. Network Graph", fontsize=16)
     plt.legend(scatterpoints=1, loc="upper right", fontsize=12)
     # plt.tight_layout()
     # plt.show()
@@ -1026,13 +1224,13 @@ if __name__ == "__main__":
     # data = dm.get_raw_data(file_id=file_id)
 
     # final data set after randomizing the scc order between two groups
-    file_ids = [
-        1739979522556,
-        1740062954135,
-        1740252380664,
-        1740377262591,
-        1740494528636,
-    ]
+    # file_ids = [
+    #     1739979522556,
+    #     1740062954135,
+    #     1740252380664,
+    #     1740377262591,
+    #     1740494528636,
+    # ]
 
     # shallow 66 nvs
     file_ids = [
@@ -1041,6 +1239,12 @@ if __name__ == "__main__":
         1784201493337,
         1784384193378,
         1784571011973,
+    ]
+
+    file_ids = [
+        1785959891378,
+        1786097958722,
+        1786236616251,
     ]
     # data = dm.get_raw_data(file_id=file_ids[0])
     # Create a string of all file IDs, separated by underscores
@@ -1057,8 +1261,8 @@ if __name__ == "__main__":
     print(f"File path: {file_path}")
 
     data = process_multiple_files(file_ids)
-    # process_and_plot(data, rearrangement="block")
-    plot_nv_network(data)
+    process_and_plot(data, rearrangement="block")
+    # plot_nv_network(data)
     # plot_thresholded_counts(data)
     # try:
     #     # print(data.shape)

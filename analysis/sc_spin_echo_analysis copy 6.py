@@ -463,7 +463,7 @@ def plot_spin_echo_all(nv_list, taus, norm_counts, norm_counts_ste):
             color=colors[nv_idx % len(colors)],
             lw=0,
             marker="o",
-            markersize=2,
+            markersize=4,
             label=f"NV {nv_idx}",
         )
         # ax.plot(
@@ -575,6 +575,15 @@ if __name__ == "__main__":
     kpl.init_kplotlib()
     # Define the file IDs to process (66 shallow NVs)
     file_ids = [1783227865584, 1783326666625, 1783448620086, 1783572765304]
+    file_ids = [
+        1785346398683,
+        1785254038960,
+        1785155665809,
+        1785057603893,
+        1784917916514,
+        1784779506353,
+    ]
+
     # 117 deep NVs
     # file_ids = [
     #     1734158411844,
