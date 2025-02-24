@@ -279,7 +279,7 @@ def process_and_plot(data):
     for nv in nv_list:
         coords = pos.get_nv_coords(nv, coords_key, drift_adjust=False)
         nv_coords.append(coords)
-        dist = round(np.sqrt((90 - coords[0]) ** 2 + (90 - coords[1]) ** 2), 3)
+        dist = round(np.sqrt((72.017 - coords[0]) ** 2 + (73.008 - coords[1]) ** 2), 3)
         distances.append(dist)
 
     # Prepare DataFrame for analysis
@@ -301,81 +301,90 @@ def process_and_plot(data):
         }
     )
 
-    # Plot: SNR and Contrast in NV Coordinate Space
-    fig, axes = plt.subplots(1, 2, figsize=(12, 5))
+    # # Plot: SNR and Contrast in NV Coordinate Space
+    # fig, axes = plt.subplots(1, 2, figsize=(12, 5))
 
-    # SNR plot
-    scatter = axes[0].scatter(
-        df["X Coord"],
-        df["Y Coord"],
-        c=df["SNR"],
-        cmap="coolwarm",
-        s=20,
-        edgecolor="black",
-    )
-    axes[0].set_title("SNR in RED AOD Coordinate Space")
-    axes[0].set_xlabel("X Coord")
-    axes[0].set_ylabel("Y Coord")
-    plt.colorbar(scatter, ax=axes[0], label="SNR")
+    # # SNR plot
+    # scatter = axes[0].scatter(
+    #     df["X Coord"],
+    #     df["Y Coord"],
+    #     c=df["SNR"],
+    #     cmap="coolwarm",
+    #     s=20,
+    #     edgecolor="black",
+    # )
+    # axes[0].set_title("SNR in RED AOD Coordinate Space")
+    # axes[0].set_xlabel("X Coord")
+    # axes[0].set_ylabel("Y Coord")
+    # plt.colorbar(scatter, ax=axes[0], label="SNR")
 
-    # Contrast plot
-    scatter = axes[1].scatter(
-        df["X Coord"],
-        df["Y Coord"],
-        c=df["Contrast"],
-        cmap="coolwarm",
-        s=20,
-        edgecolor="black",
-    )
-    axes[1].set_title("Contrast in RED AOD Coordinate Space")
-    axes[1].set_xlabel("X Coord")
-    axes[1].set_ylabel("Y Coord")
-    plt.colorbar(scatter, ax=axes[1], label="Contrast")
+    # # Contrast plot
+    # scatter = axes[1].scatter(
+    #     df["X Coord"],
+    #     df["Y Coord"],
+    #     c=df["Contrast"],
+    #     cmap="coolwarm",
+    #     s=20,
+    #     edgecolor="black",
+    # )
+    # axes[1].set_title("Contrast in RED AOD Coordinate Space")
+    # axes[1].set_xlabel("X Coord")
+    # axes[1].set_ylabel("Y Coord")
+    # plt.colorbar(scatter, ax=axes[1], label="Contrast")
 
-    # plt.tight_layout()
-    plt.show()
+    # # plt.tight_layout()
+    # plt.show()
 
-    # Plot: Signal vs. Reference Counts with error bars
-    plt.figure(figsize=(8, 6))
-    plt.errorbar(
-        df["Reference Counts"],
-        df["Signal Counts"],
-        xerr=df["Reference STE"],
-        yerr=df["Signal STE"],
-        fmt="o",
-        ecolor="gray",
-        capsize=3,
-        label="NV Data",
-    )
-    plt.title("Signal vs. Reference Counts with Error Bars")
-    plt.xlabel("Reference Counts")
-    plt.ylabel("Signal Counts")
-    plt.grid(True)
-    plt.legend()
-    plt.show()
+    # # Plot: Signal vs. Reference Counts with error bars
+    # plt.figure(figsize=(8, 6))
+    # plt.errorbar(
+    #     df["Reference Counts"],
+    #     df["Signal Counts"],
+    #     xerr=df["Reference STE"],
+    #     yerr=df["Signal STE"],
+    #     fmt="o",
+    #     ecolor="gray",
+    #     capsize=3,
+    #     label="NV Data",
+    # )
+    # plt.title("Signal vs. Reference Counts with Error Bars")
+    # plt.xlabel("Reference Counts")
+    # plt.ylabel("Signal Counts")
+    # plt.grid(True)
+    # plt.legend()
+    # plt.show()
 
-    # Plot: SNR Distribution
-    plt.figure(figsize=(8, 6))
-    sns.histplot(df["SNR"], kde=True, bins=15, color="blue", edgecolor="black")
-    plt.title("SNR Distribution")
-    plt.xlabel("SNR")
-    plt.ylabel("Frequency")
-    plt.grid(True)
-    plt.show()
+    # # Plot: SNR Distribution
+    # plt.figure(figsize=(6, 5))
+    # sns.histplot(df["SNR"], kde=True, bins=15, color="blue", edgecolor="black")
+    # plt.title("SNR Distribution")
+    # plt.xlabel("SNR")
+    # plt.ylabel("Frequency")
+    # plt.grid(True)
+    # plt.show()
 
     # Plot: SNR vs. Distance with error bars
-    plt.figure(figsize=(8, 6))
+    distance = df["Distance"]
+    snr = df["SNR"]
+    yerr = df["SNR STE"]
+    indices_to_remove = [18, 35, 56]
+    selected_indices = [ind for ind in range(num_nvs) if ind not in indices_to_remove]
+    distance = [distance[ind] for ind in selected_indices]
+    snr = [snr[ind] for ind in selected_indices]
+    yerr = [yerr[ind] for ind in selected_indices]
+    median = round(np.median(snr), 3)
+    plt.figure(figsize=(6, 5))
     plt.errorbar(
-        df["Distance"],
-        df["SNR"],
-        yerr=df["SNR STE"],
+        distance,
+        snr,
+        yerr,
         fmt="o",
         ecolor="gray",
         capsize=3,
-        label="SNR Data",
+        label=f"SNR (Median: {median})",
     )
     plt.title("SNR vs. Distance")
-    plt.xlabel("Distance from Center (MHz)")
+    plt.xlabel("Distance from Center Red AOD Freq (MHz)")
     plt.ylabel("SNR")
     plt.grid(True)
     plt.legend()
@@ -386,7 +395,11 @@ def process_and_plot(data):
 
 if __name__ == "__main__":
     kpl.init_kplotlib()
-    data = dm.get_raw_data(file_id=1722112403814)
+    # data = dm.get_raw_data(file_id=1722112403814)
+    file_id = 1782649429980
+    data = dm.get_raw_data(file_id=file_id)
+    file_name = dm.get_file_name(file_id=file_id)
+    print(f"{file_name}_{file_id}")
     # Process and visualize
     df = process_and_plot(data)
     # Save DataFrame if needed

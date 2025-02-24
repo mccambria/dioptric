@@ -81,14 +81,15 @@ def cam_plot():
     plt.show()
 
     # # Save the image
-    # save_path = "captured_image.png"  # You can change the filename and path as needed
-    # plt.imsave(save_path, img, cmap="gray")
-    # print(f"Image saved at {save_path}")
 
-    # # Save raw data
-    # raw_data_path = "captured_image_raw.npy"  # Change filename as needed
-    # np.save(raw_data_path, img)
-    # print(f"Raw data saved at {raw_data_path}")
+    file_path = r"slmsuite\cam_image"
+    num_nvs = len(nuvu_pixel_coords)
+    now = datetime.now()
+    date_time_str = now.strftime("%Y%m%d_%H%M%S")
+    filename = f"slm_generated_spots_{num_nvs}nvs_{date_time_str}.npy"
+    # Save the phase data
+    save(img, file_path, filename)
+    print(f"Image saved at {file_path}")
 
 
 def blaze(vector_deg=(0.2, 0.2)):

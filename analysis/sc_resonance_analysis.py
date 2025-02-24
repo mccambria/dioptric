@@ -414,7 +414,7 @@ def plot_nv_resonance_fits_and_residuals(
         filtered_indices = list(range(num_nvs))
     # filtered_indices = cleaned_nv_indices
     filtered_indices = range(num_nvs)
-    # Filter NVs for plotting
+    # # Filter NVs for plotting
     # mannual removal of indices
     indices_to_remove_manually = [18, 35, 56]
     filtered_indices = [
@@ -452,123 +452,123 @@ def plot_nv_resonance_fits_and_residuals(
     #     plt.tight_layout()
     #     plt.show(block=True)
     # return!
-    # Plot filtered resonance fits
-    sns.set(style="whitegrid", palette="muted")
-    num_filtered_nvs = len(filtered_nv_list)
-    colors = sns.color_palette("deep", num_filtered_nvs)
-    num_rows = int(np.ceil(num_filtered_nvs / num_cols))
-    fig_fitting, axes_fitting = plt.subplots(
-        num_rows,
-        num_cols,
-        figsize=(num_cols * 2, num_rows * 1),
-        sharex=True,
-        sharey=False,
-    )
-    axes_fitting = axes_fitting.flatten()
+    # # Plot filtered resonance fits
+    # sns.set(style="whitegrid", palette="muted")
+    # num_filtered_nvs = len(filtered_nv_list)
+    # colors = sns.color_palette("deep", num_filtered_nvs)
+    # num_rows = int(np.ceil(num_filtered_nvs / num_cols))
+    # fig_fitting, axes_fitting = plt.subplots(
+    #     num_rows,
+    #     num_cols,
+    #     figsize=(num_cols * 2, num_rows * 1),
+    #     sharex=True,
+    #     sharey=False,
+    # )
+    # axes_fitting = axes_fitting.flatten()
 
-    for nv_idx, ax in enumerate(axes_fitting):
-        if nv_idx < num_filtered_nvs:
-            sns.lineplot(
-                x=freqs,
-                y=filtered_avg_counts[nv_idx],
-                ax=ax,
-                color=colors[nv_idx % len(colors)],
-                lw=0,
-                marker="o",
-                markersize=2,
-                label=f"{filtered_indices[nv_idx]}",
-            )
-            ax.legend(fontsize="xx-small")
-            ax.errorbar(
-                freqs,
-                filtered_avg_counts[nv_idx],
-                # yerr=filtered_avg_counts_ste[nv_idx],
-                yerr=np.abs(filtered_avg_counts_ste[nv_idx]),
-                fmt="none",
-                ecolor="gray",
-                alpha=0.6,
-            )
-            ax.grid(True, which="both", linestyle="--", linewidth=0.5)
-            # Plot fitted data on the same subplot
-            ax.plot(
-                freqs_dense,
-                filtered_fitted_data[nv_idx],
-                "-",
-                color=colors[nv_idx % len(colors)],
-                label="Fit",
-                lw=1,
-            )
-            # Y-tick labels for the leftmost column
-            # if nv_idx % num_cols == 0:
-            #     ax.set_yticks(ax.get_yticks())
-            # else:
-            #     ax.set_yticklabels([])
-            ax.set_yticklabels([])
+    # for nv_idx, ax in enumerate(axes_fitting):
+    #     if nv_idx < num_filtered_nvs:
+    #         sns.lineplot(
+    #             x=freqs,
+    #             y=filtered_avg_counts[nv_idx],
+    #             ax=ax,
+    #             color=colors[nv_idx % len(colors)],
+    #             lw=0,
+    #             marker="o",
+    #             markersize=2,
+    #             label=f"{filtered_indices[nv_idx]}",
+    #         )
+    #         ax.legend(fontsize="xx-small")
+    #         ax.errorbar(
+    #             freqs,
+    #             filtered_avg_counts[nv_idx],
+    #             # yerr=filtered_avg_counts_ste[nv_idx],
+    #             yerr=np.abs(filtered_avg_counts_ste[nv_idx]),
+    #             fmt="none",
+    #             ecolor="gray",
+    #             alpha=0.6,
+    #         )
+    #         ax.grid(True, which="both", linestyle="--", linewidth=0.5)
+    #         # Plot fitted data on the same subplot
+    #         ax.plot(
+    #             freqs_dense,
+    #             filtered_fitted_data[nv_idx],
+    #             "-",
+    #             color=colors[nv_idx % len(colors)],
+    #             label="Fit",
+    #             lw=1,
+    #         )
+    #         # Y-tick labels for the leftmost column
+    #         # if nv_idx % num_cols == 0:
+    #         #     ax.set_yticks(ax.get_yticks())
+    #         # else:
+    #         #     ax.set_yticklabels([])
+    #         ax.set_yticklabels([])
 
-            fig_fitting.text(
-                0.0,
-                0.5,
-                "NV$^{-}$ Population",
-                va="center",
-                rotation="vertical",
-                fontsize=12,
-            )
-            # Set custom tick locations in x axis
-            if nv_idx >= (num_rows - 1) * num_cols:  # Bottom row
-                ax.set_xlabel("Frequency (GHz)")
-                ax.set_xticks(np.linspace(min(freqs), max(freqs), 5))
-            for col in range(num_cols):
-                bottom_row_idx = num_rows * num_cols - num_cols + col
-                if bottom_row_idx < len(axes_fitting):
-                    ax = axes_fitting[bottom_row_idx]
-                    tick_positions = np.linspace(min(freqs), max(freqs), 5)
-                    ax.set_xticks(tick_positions)
-                    ax.set_xticklabels(
-                        [f"{tick:.2f}" for tick in tick_positions],
-                        rotation=45,
-                        fontsize=9,
-                    )
-                    ax.set_xlabel("Frequency (GHz)")
-                else:
-                    ax.set_xticklabels([])
-            # # Check if the last row has any valid plots
-            # last_row_start_idx = (num_rows - 1) * num_cols
-            # last_row_indices = range(last_row_start_idx, last_row_start_idx + num_cols)
-            # last_row_has_plots = any(
-            #     idx < len(axes_fitting) for idx in last_row_indices
-            # )
+    #         fig_fitting.text(
+    #             0.0,
+    #             0.5,
+    #             "NV$^{-}$ Population",
+    #             va="center",
+    #             rotation="vertical",
+    #             fontsize=12,
+    #         )
+    #         # Set custom tick locations in x axis
+    #         if nv_idx >= (num_rows - 1) * num_cols:  # Bottom row
+    #             ax.set_xlabel("Frequency (GHz)")
+    #             ax.set_xticks(np.linspace(min(freqs), max(freqs), 5))
+    #         for col in range(num_cols):
+    #             bottom_row_idx = num_rows * num_cols - num_cols + col
+    #             if bottom_row_idx < len(axes_fitting):
+    #                 ax = axes_fitting[bottom_row_idx]
+    #                 tick_positions = np.linspace(min(freqs), max(freqs), 5)
+    #                 ax.set_xticks(tick_positions)
+    #                 ax.set_xticklabels(
+    #                     [f"{tick:.2f}" for tick in tick_positions],
+    #                     rotation=45,
+    #                     fontsize=9,
+    #                 )
+    #                 ax.set_xlabel("Frequency (GHz)")
+    #             else:
+    #                 ax.set_xticklabels([])
+    #         # # Check if the last row has any valid plots
+    #         # last_row_start_idx = (num_rows - 1) * num_cols
+    #         # last_row_indices = range(last_row_start_idx, last_row_start_idx + num_cols)
+    #         # last_row_has_plots = any(
+    #         #     idx < len(axes_fitting) for idx in last_row_indices
+    #         # )
 
-            # # Set custom tick locations and labels
-            # if (
-            #     not last_row_has_plots
-            # ):  # Only handle the second-to-last row if the last row is empty
-            #     second_last_row_start_idx = (num_rows - 2) * num_cols
-            #     for col in range(num_cols):
-            #         col_idx = second_last_row_start_idx + col
-            #         if col_idx < len(axes_fitting):  # Ensure index is within bounds
-            #             ax = axes_fitting[col_idx]
-            #             tick_positions = np.linspace(min(freqs), max(freqs), 5)
-            #             ax.set_xticks(tick_positions)
-            #             ax.set_xticklabels(
-            #                 [f"{tick:.2f}" for tick in tick_positions],
-            #                 rotation=45,
-            #                 fontsize=9,
-            #             )
-            #             ax.set_xlabel("Frequency (GHz)")
+    #         # # Set custom tick locations and labels
+    #         # if (
+    #         #     not last_row_has_plots
+    #         # ):  # Only handle the second-to-last row if the last row is empty
+    #         #     second_last_row_start_idx = (num_rows - 2) * num_cols
+    #         #     for col in range(num_cols):
+    #         #         col_idx = second_last_row_start_idx + col
+    #         #         if col_idx < len(axes_fitting):  # Ensure index is within bounds
+    #         #             ax = axes_fitting[col_idx]
+    #         #             tick_positions = np.linspace(min(freqs), max(freqs), 5)
+    #         #             ax.set_xticks(tick_positions)
+    #         #             ax.set_xticklabels(
+    #         #                 [f"{tick:.2f}" for tick in tick_positions],
+    #         #                 rotation=45,
+    #         #                 fontsize=9,
+    #         #             )
+    #         #             ax.set_xlabel("Frequency (GHz)")
 
-            ax.grid(True, which="both", linestyle="--", linewidth=0.5)
-        else:
-            ax.axis("off")
-    fig_fitting.suptitle(f"Shallow NV Resonance Fits ({file_id})", fontsize=16)
-    plt.subplots_adjust(
-        left=0.2, right=0.95, top=0.95, bottom=0.1, hspace=0.001, wspace=0.001
-    )
+    #         ax.grid(True, which="both", linestyle="--", linewidth=0.5)
+    #     else:
+    #         ax.axis("off")
+    # fig_fitting.suptitle(f"Shallow NV Resonance Fits ({file_id})", fontsize=16)
+    # plt.subplots_adjust(
+    #     left=0.2, right=0.95, top=0.95, bottom=0.1, hspace=0.001, wspace=0.001
+    # )
     # plt.tight_layout()
     # now = datetime.now()
     # date_time_str = now.strftime("%Y%m%d_%H%M%S")
     # file_name = dm.get_file_name(file_id=file_id)
     # file_path = dm.get_file_path(__file__, file_name, f"{file_id}_{date_time_str}")
-    kpl.show()
+    # kpl.show()
     # # dm.save_figure(fig_fitting, file_path)
     # # plt.close(fig_fitting)
     # # return
@@ -582,6 +582,7 @@ def plot_nv_resonance_fits_and_residuals(
             "Freq Splitting (GHz)",
             "Count",
             "teal",
+            "MHz",
         ),
         (
             "ESR Freq Splitting vs Average Peak Width",
@@ -590,6 +591,7 @@ def plot_nv_resonance_fits_and_residuals(
             "Freq Splitting (GHz)",
             "Average Peak Width",
             "orange",
+            "MHz",
         ),
         (
             "ESR Peak Freqs vs Avg Peak Amps",
@@ -598,6 +600,7 @@ def plot_nv_resonance_fits_and_residuals(
             "Freq Splitting (GHz)",
             "Avg Peak Amp",
             "green",
+            "arb. unit",
         ),
         (
             "NV Index vs Freq. Splitting.",
@@ -606,13 +609,26 @@ def plot_nv_resonance_fits_and_residuals(
             "NV Index",
             "Freq. Splitting (GHz)",
             "blue",
+            "GHz",
         ),
     ]
 
-    for title, x_data, y_data, xlabel, ylabel, color in plots_data:
+    for title, x_data, y_data, xlabel, ylabel, color, unit in plots_data:
+        kpl.init_kplotlib()
         fig = plt.figure(figsize=(6, 5))
         if isinstance(y_data, list):
             plt.scatter(x_data, y_data, color=color, alpha=0.7, edgecolors="k")
+            # plt.figtext(
+            #     0.97,
+            #     0.9,
+            #     f"Median Width {np.median(y_data):.2f} {unit}",
+            #     fontsize=11,
+            #     ha="right",
+            #     va="top",
+            #     bbox=dict(
+            #         facecolor="white", edgecolor="black", boxstyle="round,pad=0.3"
+            #     ),
+            # )
         else:
             plt.hist(x_data, bins=9, color=color, alpha=0.7, edgecolor="black")
         plt.xlabel(xlabel)

@@ -535,43 +535,58 @@ def process_and_plot_durations(nv_list, duration_file_id):
             optimal_durations[nv_index] = median_duration
 
     # Plot individual NV fits
-    for nv_index in selected_indices:
-        plt.figure(figsize=(6, 4))
-        plt.errorbar(
-            taus,
-            avg_snr[nv_index],
-            yerr=avg_snr_ste[nv_index],
-            fmt="o",
-            label="SNR Data",
-        )
-        if optimal_durations[nv_index] is not None:
-            tau_linspace = np.linspace(min(taus), max(taus), 1000)
-            popt, fit_fn = fit_duration(taus, avg_snr[nv_index], avg_snr_ste[nv_index])
-            plt.plot(
-                tau_linspace,
-                fit_fn(tau_linspace, *popt),
-                label="Fitted Curve",
-            )
-            plt.axvline(
-                optimal_durations[nv_index],
-                color="r",
-                linestyle="--",
-                label=f"Optimal Duration: {optimal_durations[nv_index]}",
-            )
-        plt.title(f"NV {nv_index} - Duration Optimization")
-        plt.xlabel("Duration")
-        plt.ylabel("SNR")
-        plt.legend()
-        plt.grid(alpha=0.3)
-        plt.show()
+    # for nv_index in selected_indices:
+    #     plt.figure(figsize=(6, 4))
+    #     plt.errorbar(
+    #         taus,
+    #         avg_snr[nv_index],
+    #         yerr=avg_snr_ste[nv_index],
+    #         fmt="o",
+    #         label="SNR Data",
+    #     )
+    #     if optimal_durations[nv_index] is not None:
+    #         tau_linspace = np.linspace(min(taus), max(taus), 1000)
+    #         popt, fit_fn = fit_duration(taus, avg_snr[nv_index], avg_snr_ste[nv_index])
+    #         plt.plot(
+    #             tau_linspace,
+    #             fit_fn(tau_linspace, *popt),
+    #             label="Fitted Curve",
+    #         )
+    #         plt.axvline(
+    #             optimal_durations[nv_index],
+    #             color="r",
+    #             linestyle="--",
+    #             label=f"Optimal Duration: {optimal_durations[nv_index]}",
+    #         )
+    #     plt.title(f"NV {nv_index} - Duration Optimization")
+    #     plt.xlabel("Duration")
+    #     plt.ylabel("SNR")
+    #     plt.legend()
+    #     plt.grid(alpha=0.3)
+    #     plt.show()
 
     # Print lists of durations and SNRs
     print("Optimal Durations:")
-    print([optimal_durations[nv] for nv in selected_indices])
 
+    optimal_durations = [optimal_durations[nv] for nv in selected_indices]
     print("Optimal SNRs:")
-    print([optimal_snrs[nv] for nv in selected_indices])
+    print(optimal_durations)
+    optimal_snrs = [optimal_snrs[nv] for nv in selected_indices]
+    print(optimal_snrs)
 
+    plt.figure(figsize=(6, 5))
+    plt.scatter(
+        optimal_durations,
+        optimal_snrs,
+        marker="o",
+        color="blue",
+        edgecolors="black",
+        alpha=0.6,
+    )
+    plt.xlabel("Durations")
+    plt.ylabel("SNR")
+    plt.show(block=True)
+    return
     # Sort optimal_durations by index (key)
     sorted_optimal_durations = dict(sorted(optimal_durations.items()))
     sorted_optimal_snrs = dict(sorted(optimal_snrs.items()))
@@ -581,7 +596,6 @@ def process_and_plot_durations(nv_list, duration_file_id):
         "optimal_durations": sorted_optimal_durations,
         "optimal_snrs": sorted_optimal_snrs,
     }
-
     # return results
 
 
@@ -592,13 +606,14 @@ if __name__ == "__main__":
     # amp_file_id = 1724491290147  # same scc duration 160
     # amp_file_id = 1725708405583  # optimized durations for each
     # amp_file_id = 1731980653795  # amp
-    amp_file_id = 1771055850280
-    # duration_file_id = 1732098676751  # duration
-    data = dm.get_raw_data(file_id=amp_file_id)  # Load NV list
+    # amp_file_id = 1771055850280
+    duration_file_id = 1732098676751  # duration
+    duration_file_id = 1732098676751  # duration
+    data = dm.get_raw_data(file_id=duration_file_id)  # Load NV list
     nv_list = data["nv_list"]
 
     # results = process_and_plot(nv_list, duration_file_id, amp_file_id)
-    results = process_and_plot_amplitudes(nv_list, amp_file_id)
-    # results = process_and_plot_durations(nv_list, duration_file_id)
+    # results = process_and_plot_amplitudes(nv_list, amp_file_id)
+    results = process_and_plot_durations(nv_list, duration_file_id)
     print("Results:", results)
     kpl.show(block=True)
