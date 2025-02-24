@@ -1,6 +1,7 @@
 import numpy as np
-from utils import kplotlib as kpl
 from matplotlib import pyplot as plt
+
+from utils import kplotlib as kpl
 
 # fmt: off
 snr_list_1_string = ['0.321', '0.037', '0.030', '0.158', '0.081', '0.014', '0.129', '0.158', '0.092', '0.007', '0.053', '0.025', '0.022', '0.057', '0.102', '0.006', '0.048', '0.030', '0.078', '0.086', '0.053', '0.019', '0.070', '0.010', '0.019', '0.085', '0.105', '0.055', '0.028', '0.026', '0.071', '0.068', '0.023', '0.041', '0.014', '0.007', '0.083', '0.016', '0.118', '-0.005', '-0.001', '-0.002', '0.073', '0.104', '0.004', '-0.009', '0.027', '0.036', '0.020', '0.012', '0.045', '0.088', '0.084', '0.037', '0.018', '0.011', '0.064', '0.005', '0.019', '0.018', '0.004', '0.069', '0.096', '0.072', '0.069', '0.122', '0.012', '0.014', '0.015', '0.009', '0.013', '0.011', '0.004', '0.065', '0.086', '0.056', '0.054', '0.077', '0.021', '0.110', '0.015', '0.038', '0.013', '0.068', '0.114', '0.007', '0.065', '0.010', '0.068', '0.019', '0.026', '0.088', '0.023', '0.035', '0.028', '0.083', '0.092', '0.018', '0.022', '0.089', '-0.002', '0.089', '0.091', '0.010', '0.021', '0.082', '-0.006', '0.081', '0.004', '0.070', '0.096', '0.015', '0.070', '0.015', '0.017', '-0.007', '0.021', '0.068', '0.060', '0.067', '0.010', '0.060', '0.017', '0.014', '0.013', '0.008', '0.015', '0.083', '0.088', '0.012', '0.024', '0.007', '0.028', '0.021', '0.016', '0.010', '0.117', '-0.010', '0.019', '0.079', '0.071', '0.107', '0.016', '0.062', '0.009', '0.084', '0.106', '0.040']
@@ -89,7 +90,7 @@ plt.figtext(
     va="top",
     bbox=dict(facecolor="white", edgecolor="black", boxstyle="round,pad=0.3"),
 )
-plt.show(block=True)
+# plt.show(block=True)
 
 
 import numpy as np
@@ -143,4 +144,50 @@ plt.title("SLM Phase Pattern", fontsize=15)
 plt.xticks(fontsize=15)
 plt.yticks(fontsize=15)
 fig.subplots_adjust(left=0.001, right=0.9, bottom=0.1, top=0.9)
+plt.show()
+
+
+# Load the image data
+image_path = r"slmsuite\cam_image\slm_generated_spots_117nvs_20250224_150218.npy"
+spots_image = np.load(image_path)
+
+# Flip and rotate the image
+# spots_image = np.flip(spots_image)  # Flip vertically and horizontally
+spots_image = np.rot90(spots_image, k=1)  # Rotate by 90 degrees counterclockwise
+spots_image = spots_image[330:1200, 100:1000]
+# Set intensity limits
+vmin = np.min(spots_image)
+vmax = 20  # Set the max intensity limit
+
+# Create figure
+fig, ax = plt.subplots(figsize=(8, 6))
+
+# Display the image with white-to-orange color mapping
+im = ax.imshow(
+    spots_image,
+    cmap="Oranges",
+    vmin=vmin,
+    vmax=vmax,
+    interpolation="nearest",
+)
+
+# Add a colorbar
+
+# Add colorbar with set limits
+cbar = fig.colorbar(im, pad=0.02)
+cbar.set_label("Intensity (a.u.)", color="black")
+cbar.ax.yaxis.set_tick_params(color="black")  # Colorbar ticks in black
+cbar.ax.yaxis.set_tick_params(labelcolor="black")  # Tick labels in black
+
+# Set axis labels and title with black text
+ax.set_xlabel("Camera X Pixels", color="black")
+ax.set_ylabel("Camera Y Pixels", color="black")
+ax.set_title("SLM Generated Spots", color="black")
+
+# Adjust ticks to be visible on white background
+ax.tick_params(axis="both", colors="black")
+
+# Show the plot
+kpl.show()
+
 plt.show(block=True)

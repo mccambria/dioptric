@@ -816,12 +816,12 @@ def do_opx_constant_ac():
     # opx.stream_start()
 
     # Yellow
-    # opx.constant_ac(
-    #     [],  # Digital channels
-    #     [7],  # Analog channels
-    #     [0.45],  # Analog voltages
-    #     [0],  # Analog frequencies
-    # )
+    opx.constant_ac(
+        [],  # Digital channels
+        [7],  # Analog channels
+        [0.45],  # Analog voltages
+        [0],  # Analog frequencies
+    )
 
     # opx.constant_ac([4])  # Just laser
     # Red
@@ -886,12 +886,12 @@ def do_opx_constant_ac():
     #     [73.166, 72.941],  # Analog frequencies
     # )
     # Green + yellow
-    opx.constant_ac(
-        [4],  # Digital channels
-        [3, 4, 7],  # Analog channels
-        [0.19, 0.19, 0.45],  # Analog voltages
-        [107, 107, 0],  # Analog frequencies
-    )
+    # opx.constant_ac(
+    #     [4],  # Digital channels
+    #     [3, 4, 7],  # Analog channels
+    #     [0.19, 0.19, 0.45],  # Analog voltages
+    #     [107, 107, 0],  # Analog frequencies
+    # )
     # Red + green + Yellow
     # opx.constant_ac(
     #     [4, 1],  # Digital channels1
@@ -1331,7 +1331,7 @@ if __name__ == "__main__":
         # pos.set_xyz_on_nv(nv_sig)
         # piezo_voltage_to_pixel_calibration()
 
-        do_compensate_for_drift(nv_sig)
+        # do_compensate_for_drift(nv_sig)
         # do_widefield_image_sample(nv_sig, 50)
         # do_charge_state_histograms(nv_list)
         # do_charge_state_conditional_init(nv_list)
@@ -1413,14 +1413,14 @@ if __name__ == "__main__":
         # do_charge_quantum_jump(nv_list)
         # do_ac_stark(nv_list)
 
-        # do_opx_constant_ac()
+        do_opx_constant_ac()
         # do_opx_square_wave()
 
         # nv_list = nv_list[::-1]
         # do_scc_snr_check(nv_list)
         # do_power_rabi_scc_snr(nv_list)
-        # do_optimize_scc_duration(nv_list)
-        do_optimize_scc_amp(nv_list)
+        # # do_optimize_scc_duration(nv_list)
+        # do_optimize_scc_amp(nv_list)
         # optimize_scc_amp_and_duration(nv_list)
         # do_crosstalk_check(nv_sig)
         # do_spin_pol_check(nv_sig)

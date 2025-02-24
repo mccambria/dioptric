@@ -146,7 +146,8 @@ def wavefront_calibration():
 
 def load_fourier_calibration():
     calibration_file_path = (
-        "slmsuite/fourier_calibration/26438-SLM-fourier-calibration_00006.h5"
+        "slmsuite/fourier_calibration/26438-SLM-fourier-calibration_00003.h5"
+        # "slmsuite/fourier_calibration/26438-SLM-fourier-calibration_00006.h5"
     )
     fs.load_fourier_calibration(calibration_file_path)
     print("Fourier calibration loaded from:", calibration_file_path)
@@ -374,14 +375,14 @@ def compute_and_write_nvs_phase():
 
 
 def write_nvs_phase():
-    phase = np.load("slmsuite\computed_phase\slm_phase_148nvs_20250203_171815.npy")
     # phase = np.load("slmsuite\computed_phase\slm_phase_148nvs_20250203_171815.npy")
-    # phase = np.load(
-    #     "slmsuite\computed_phase\slm_phase_117nvs_20250119_143417.npy"
-    # )  # 117NVs weighted spots
+    # phase = np.load("slmsuite\computed_phase\slm_phase_148nvs_20250203_171815.npy")
+    phase = np.load(
+        "slmsuite\computed_phase\slm_phase_117nvs_20250119_152458.npy"
+    )  # 117NVs weighted spots
     # phase = np.load("slmsuite\circles\slm_phase_circles_20250118_210419.npy")  # circles
     slm.write(phase, settle=True)
-    # cam_plot()
+    cam_plot()
 
 
 # Define the save function
@@ -403,8 +404,8 @@ try:
     # test_wavefront_calibration()
     # # wavefront_calibration()
     # load_wavefront_calibration()
-    compute_and_write_nvs_phase()
-    # write_nvs_phase()
+    # compute_and_write_nvs_phase()
+    write_nvs_phase()
     # calibration_triangle()
     # circles()
     # smiley()
