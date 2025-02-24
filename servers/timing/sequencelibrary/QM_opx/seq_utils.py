@@ -235,6 +235,7 @@ def macro_scc(
     scc_duration_override: int = None,
     scc_amp_override: float = None,
     do_target_list: list[bool] = None,
+    reverse_order=False,
 ):
     """Apply an SCC pulse to each coordinate pair in the passed coords_list.
     Checks config for whether or not to include a shelving pulse
@@ -280,6 +281,7 @@ def macro_scc(
             scc_duration_override,
             scc_amp_override,
             do_target_list,
+            reverse_order,
         )
 
 
@@ -613,6 +615,7 @@ def _macro_pulse_series(
     duration_override: int = None,
     amp_override: float = None,
     do_target_list: list[bool] = None,
+    reverse_order: bool = False,
 ):
     """Apply a laser pulse to each coordinate pair in the passed coords_list.
     Pulses are applied in series from one location to the next.
@@ -638,6 +641,8 @@ def _macro_pulse_series(
     do_target_list : list[bool], optional
         List of whether to target an NV or not. Used to skip certain NVs.
         Default value None targets all NVs
+    reverse_order : bool, optional
+        If True, reverses the execution order of SCC pulses. Default is False.
     """
     if len(coords_list) == 0:
         return
@@ -650,6 +655,16 @@ def _macro_pulse_series(
     if duration_list is not None:
         duration_list = [convert_ns_to_cc(el) for el in duration_list]
 
+    # Reverse order if requested for randomization
+    if reverse_order:
+        x_coords_list = x_coords_list[::-1]
+        y_coords_list = y_coords_list[::-1]
+        if duration_list is not None:
+            duration_list = duration_list[::-1]
+        if amp_list is not None:
+            amp_list = amp_list[::-1]
+        if do_target_list is not None:
+            do_target_list = do_target_list[::-1]
     # These are declared in init
     global _cache_x_freq, _cache_y_freq, _cache_duration, _cache_amp, _cache_target
 
@@ -759,6 +774,7 @@ def _macro_scc_no_shelving(
     duration_override: int = None,
     amp_override: float = None,
     do_target_list: list[bool] = None,
+    reverse_order=False,
 ):
     """Perform spin-to-charge conversion (SCC) on NVs in series without a shelving pulse
 
@@ -779,6 +795,8 @@ def _macro_scc_no_shelving(
     do_target_list : list[bool], optional
         List of whether to target an NV or not. Used to skip certain NVs.
         Default value None targets all NVs
+    reverse_order : bool, optional
+        If True, reverses the execution order of SCC pulses. Default is False.
     """
     # Basic setup
 
@@ -801,6 +819,7 @@ def _macro_scc_no_shelving(
         duration_override,
         amp_override,
         do_target_list,
+        reverse_order,
     )
 
 

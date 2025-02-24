@@ -90,7 +90,7 @@ def macro(
     num_exps_per_rep = len(uwave_macro)
     num_nvs = len(pol_coords_list)
 
-    def macro_scc_sub(do_target_list=None):
+    def macro_scc_sub(do_target_list=None, reverse_order=False):
         seq_utils.macro_scc(
             scc_coords_list,
             scc_duration_list,
@@ -98,6 +98,7 @@ def macro(
             scc_duration_override,
             scc_amp_override,
             do_target_list,
+            reverse_order,
         )
 
     ### QUA stuff
@@ -109,21 +110,25 @@ def macro(
         qua.align()
         skip_spin_flip = uwave_macro[exp_ind](uwave_ind_list, step_val)
 
-        # Randomize SCC order between the two groups
+        # Randomize SCC order between the two groups/reverse order in single group
         random_order = qua.declare(int)
         qua.assign(random_order, qua.Random().rand_int(2))
+        # Randomize SCC order within each spin group
+        random_order_within_group = qua.declare(int)
+        qua.assign(random_order_within_group, qua.Random().rand_int(2))
         # Check if this is the automatically included reference experiment
         ref_exp = reference and exp_ind == num_exps_per_rep - 1
         print(f"exp_ind: {exp_ind}, ref_exp: {ref_exp}")
         # Signal experiment
         if not ref_exp:
             if spin_flip_do_target_list is None or True not in spin_flip_do_target_list:
-                macro_scc_sub()
+                # Randomize SCC order across all NVs
+                macro_scc_sub()  # Normal order
             else:
                 spin_flip_do_not_target_list = [
                     not val for val in spin_flip_do_target_list
                 ]
-                # Randomized SCC order between the two groups
+                # # Randomized SCC order between the two groups
                 with qua.if_(random_order == 1):
                     macro_scc_sub(spin_flip_do_not_target_list)
                     if not skip_spin_flip:
@@ -134,6 +139,40 @@ def macro(
                     if not skip_spin_flip:
                         seq_utils.macro_pi_pulse(uwave_ind_list)
                     macro_scc_sub(spin_flip_do_not_target_list)
+
+                # # Randomized SCC order **between** the two groups
+                # with qua.if_(random_order == 1):
+                #     # Randomized SCC order **within** each group
+                #     with qua.if_(random_order_within_group == 1):
+                #         macro_scc_sub(spin_flip_do_not_target_list)
+                #     with qua.else_():
+                #         macro_scc_sub(
+                #             spin_flip_do_not_target_list[::-1]
+                #         )  # Reverse order
+
+                #     if not skip_spin_flip:
+                #         seq_utils.macro_pi_pulse(uwave_ind_list)
+
+                #     with qua.if_(random_order_within_group == 1):
+                #         macro_scc_sub(spin_flip_do_target_list)
+                #     with qua.else_():
+                #         macro_scc_sub(spin_flip_do_target_list[::-1])  # Reverse order
+
+                # with qua.else_():
+                #     with qua.if_(random_order_within_group == 1):
+                #         macro_scc_sub(spin_flip_do_target_list)
+                #     with qua.else_():
+                #         macro_scc_sub(spin_flip_do_target_list[::-1])  # Reverse order
+
+                #     if not skip_spin_flip:
+                #         seq_utils.macro_pi_pulse(uwave_ind_list)
+
+                #     with qua.if_(random_order_within_group == 1):
+                #         macro_scc_sub(spin_flip_do_not_target_list)
+                #     with qua.else_():
+                #         macro_scc_sub(
+                #             spin_flip_do_not_target_list[::-1]
+                #         )  # Reverse order
         # Reference experiment
         else:
             # "Dual-rail" referencing: measure ms=0 for even reps, and ms=+/-1

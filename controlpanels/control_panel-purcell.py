@@ -552,45 +552,68 @@ def do_power_rabi(nv_list):
     )
 
 
+# def do_spin_echo(nv_list):
+#     revival_period = int(51.5e3 / 2)
+#     min_tau = 200
+#     taus = []
+#     revival_width = 5e3
+#     decay = np.linspace(min_tau, min_tau + revival_width, 6)
+#     taus.extend(decay.tolist())
+#     gap = np.linspace(min_tau + revival_width, revival_period - revival_width, 7)
+#     taus.extend(gap[1:-1].tolist())
+#     first_revival = np.linspace(
+#         revival_period - revival_width, revival_period + revival_width, 61
+#     )
+#     taus.extend(first_revival.tolist())
+#     gap = np.linspace(
+#         revival_period + revival_width, 2 * revival_period - revival_width, 7
+#     )
+#     taus.extend(gap[1:-1].tolist())
+#     second_revival = np.linspace(
+#         2 * revival_period - revival_width, 2 * revival_period + revival_width, 11
+#     )
+#     taus.extend(second_revival.tolist())
+#     taus = [round(el / 4) * 4 for el in taus]
+
+#     # Remove duplicates and sort
+#     taus = sorted(set(taus))
+
+#     # Experiment settings
+#     num_steps = len(taus)
+
+#     # Automatic taus setup, linear spacing
+#     # min_tau = 200
+#     # max_tau = 84e3 + min_tau
+#     # num_steps = 29
+
+#     num_reps = 3
+#     num_runs = 200
+#     # num_runs = 2
+#     # spin_echo.main(nv_list, num_steps, num_reps, num_runs, min_tau, max_tau)
+#     # spin_echo.main(nv_list, num_steps, num_reps, num_runs, taus=taus)
+#     for ind in range(6):
+#         spin_echo.main(nv_list, num_steps, num_reps, num_runs, taus=taus)
+
+
 def do_spin_echo(nv_list):
     revival_period = int(51.5e3 / 2)
     min_tau = 200
-    taus = []
-    revival_width = 5e3
-    decay = np.linspace(min_tau, min_tau + revival_width, 6)
-    taus.extend(decay.tolist())
-    gap = np.linspace(min_tau + revival_width, revival_period - revival_width, 7)
-    taus.extend(gap[1:-1].tolist())
-    first_revival = np.linspace(
-        revival_period - revival_width, revival_period + revival_width, 61
-    )
-    taus.extend(first_revival.tolist())
-    gap = np.linspace(
-        revival_period + revival_width, 2 * revival_period - revival_width, 7
-    )
-    taus.extend(gap[1:-1].tolist())
-    second_revival = np.linspace(
-        2 * revival_period - revival_width, 2 * revival_period + revival_width, 11
-    )
-    taus.extend(second_revival.tolist())
+    max_tau = 2 * revival_period + 5e3  # Matching the previous range
+    num_steps = 100  # Adjust as needed for resolution
+
+    # Generate linearly spaced taus
+    taus = np.linspace(min_tau, max_tau, num_steps).tolist()
+
+    # Round to the nearest multiple of 4
     taus = [round(el / 4) * 4 for el in taus]
 
     # Remove duplicates and sort
     taus = sorted(set(taus))
 
-    # Experiment settings
     num_steps = len(taus)
+    num_reps = 2
+    num_runs = 400
 
-    # Automatic taus setup, linear spacing
-    # min_tau = 200
-    # max_tau = 84e3 + min_tau
-    # num_steps = 29
-
-    num_reps = 3
-    num_runs = 200
-    # num_runs = 2
-    # spin_echo.main(nv_list, num_steps, num_reps, num_runs, min_tau, max_tau)
-    # spin_echo.main(nv_list, num_steps, num_reps, num_runs, taus=taus)
     for ind in range(6):
         spin_echo.main(nv_list, num_steps, num_reps, num_runs, taus=taus)
 
@@ -1397,13 +1420,13 @@ if __name__ == "__main__":
         # do_scc_snr_check(nv_list)
         # do_power_rabi_scc_snr(nv_list)
         # do_optimize_scc_duration(nv_list)
-        # do_optimize_scc_amp(nv_list)
+        do_optimize_scc_amp(nv_list)
         # optimize_scc_amp_and_duration(nv_list)
         # do_crosstalk_check(nv_sig)
         # do_spin_pol_check(nv_sig)
         # do_calibrate_green_red_delay()
 
-        do_simple_correlation_test(nv_list)
+        # do_simple_correlation_test(nv_list)
 
         # for nv in nv_list:
         #     nv.spin_flip = False
