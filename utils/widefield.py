@@ -1117,6 +1117,7 @@ def plot_fit(
     norms=None,
     no_legend=False,
     linestyle="none",
+    nv_inds=None,
 ):
     """Plot multiple data sets (with a common set of x vals) with an offset between
     the sets such that they are separated and easier to interpret. Useful for
@@ -1155,7 +1156,6 @@ def plot_fit(
 
         nv_sig = nv_list[nv_ind]
         nv_num = nv_ind
-        # nv_num = get_nv_num(nv_sig)
         num_colors = len(kpl.data_color_cycler)
         color = kpl.data_color_cycler[nv_num % num_colors]
 
@@ -1186,7 +1186,8 @@ def plot_fit(
             color=color,
             linestyle=linestyle,
         )
-        # kpl.anchored_text(ax, nv_ind, size=kpl.Size.TINY)
+        # nv_num = get_nv_num(nv_sig)
+        kpl.anchored_text(ax, nv_inds[nv_ind], size=kpl.Size.TINY)
 
         # Plot the fit
         if fn is not None:
