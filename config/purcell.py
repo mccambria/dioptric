@@ -239,7 +239,7 @@ config |= {
             # LaserKey.SCC: {"physical_name": green_laser, "duration": 200},
             VirtualLaserKey.WIDEFIELD_SHELVING: {
                 "physical_name": yellow_laser,
-                "duration": 50,
+                "duration": 52,
             },
             VirtualLaserKey.WIDEFIELD_IMAGING: {
                 "physical_name": yellow_laser,

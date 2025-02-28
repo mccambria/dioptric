@@ -1149,6 +1149,9 @@ if __name__ == "__main__":
     scc_duration_list = arranged_scc_duration_list
     pol_duration_list = arranged_pol_duration_list
     scc_amp_list = arranged_scc_amp_list
+    # scc duatiin 
+    scc_duration_list = [100] * num_nvs
+    scc_amp_list = [1.0] * num_nvs
     # print(f"Length of pol_duration_list: {len(pol_duration_list)}")
     # print(f"First 10 SCC durations: {scc_duration_list[:10]}")
     # print(f"First 10 POL durations: {pol_duration_list[:10]}")
@@ -1337,9 +1340,9 @@ if __name__ == "__main__":
         # pos.set_xyz_on_nv(nv_sig)
         # piezo_voltage_to_pixel_calibration()
 
-        # do_compensate_for_drift(nv_sig)
+        do_compensate_for_drift(nv_sig)
         # do_widefield_image_sample(nv_sig, 50)
-        do_charge_state_histograms(nv_list)
+        # do_charge_state_histograms(nv_list)
         # do_charge_state_conditional_init(nv_list)
 
         # for point in points:
@@ -1366,7 +1369,7 @@ if __name__ == "__main__":
         # nv_sig.coords[green_laser_aod : green_coords_list[ind]] + x
         #         do_scanning_image_sample(nv_sig)
 
-        # do_scanning_image_sample(nv_sig)
+        do_scanning_image_sample(nv_sig)
         # do_scanning_image_full_roi(nv_sig)
         # do_scanning_image_sample_zoom(nv_sig)
         # do_widefield_image_sample(nv_sig, 50)

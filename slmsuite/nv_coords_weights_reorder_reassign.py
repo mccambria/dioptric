@@ -407,7 +407,7 @@ if __name__ == "__main__":
     # sys.exit()
     nv_coordinates, spot_weights = load_nv_coords(
         # file_path="slmsuite/nv_blob_detection/nv_blob_shallow_149nvs.npz"
-        file_path="slmsuite/nv_blob_detection/nv_blob_shallow_630nvs.npz"
+        file_path="slmsuite/nv_blob_detection/nv_blob_shallow_646nvs.npz"
         # file_path="slmsuite/nv_blob_detection/nv_blob_filtered_160nvs_reordered.npz"
     )
     # Convert coordinates to a standard format (lists of lists)
@@ -479,28 +479,20 @@ if __name__ == "__main__":
 
     # # Convert to numpy arrays
     # filtered_reordered_coords = np.array(filtered_reordered_coords)
-    # intensities = np.array(filtered_reordered_spot_weights)
+    intensities = np.array(filtered_reordered_spot_weights)
 
-    # # Remove extreme intensity values (e.g., outside 1 standard deviation)
+    # # # Remove extreme intensity values (e.g., outside 1 standard deviation)
     # mean_intensity = np.mean(intensities)
     # std_intensity = np.std(intensities)
-    # lower_bound = mean_intensity - 2 * std_intensity
-    # upper_bound = mean_intensity + 2 * std_intensity
+    lower_bound = 0.0
+    upper_bound = 15000.0
 
-    # intensity_mask = (intensities >= lower_bound) & (intensities <= upper_bound)
+    intensity_mask = (intensities >= lower_bound) & (intensities <= upper_bound)
+    # #  Combine both filters
+    final_mask = intensity_mask
 
-    # # Filter based on spatial coordinates
-    # x_coords, y_coords = (
-    #     filtered_reordered_coords[:, 0],
-    #     filtered_reordered_coords[:, 1],
-    # )
-    # spatial_mask = (x_coords > 0) & (x_coords < 250) & (y_coords > 0) & (y_coords < 250)
-
-    # # Combine both filters
-    # final_mask = intensity_mask & spatial_mask
-
-    # # Apply final filtering
-    # filtered_reordered_coords = filtered_reordered_coords[final_mask]
+    # Apply final filtering
+    # filtered_reordered_coords = filtered_reordered_coords[final_mask, :]
     # filtered_reordered_spot_weights = intensities[final_mask]
 
     # # Plot filtered NV positions
@@ -680,6 +672,9 @@ if __name__ == "__main__":
         print(f"{idx + 1:<8} | {coords} | {weight:.3f}")
 
     print(adjusted_aom_voltage)
+
+    # print(np.max(filtered_reordered_spot_weights))
+    # print(np.median(filter_and_reorder_nv_coords))
     # sys.exit()
     # print(len(spot_weights))
     # updated_spot_weights = filtered_reordered_counts
@@ -700,7 +695,7 @@ if __name__ == "__main__":
     save_results(
         filtered_reordered_coords,
         filtered_reordered_spot_weights,
-        filename="slmsuite/nv_blob_detection/nv_blob_rubin_shallow_484nvs_reordered.npz",
+        filename="slmsuite/nv_blob_detection/nv_blob_rubin_shallow_471nvs_reordered.npz",
     )
     # save_results(
     #     nv_coordinates,

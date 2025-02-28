@@ -8,7 +8,7 @@ Created on Wed Feb 26 09:19:48 2025
 
 ### BEGIN NODE INFO
 [info]
-name = sig_gen_STAN_sg394
+name = power_supply_RNS_ngc103
 version = 1.0
 description =
 
@@ -28,15 +28,15 @@ import time
 
 import pyvisa as visa  # Docs here: https://pyvisa.readthedocs.io/en/master/
 from labrad.server import LabradServer, setting
+from RsInstrument import RsInstrument
 from twisted.internet.defer import ensureDeferred
 
-from RsInstrument import RsInstrument
 from utils import common
 from utils import tool_belt as tb
 
 
-class PwrSuppNGC103(LabradServer, RsInstrument):
-    name = "pwr_spply_RNS_ngc103"
+class PowerSupplyRnsNgc103(LabradServer, RsInstrument):
+    name = "power_supply_RNS_ngc103"
     pc_name = socket.gethostname()
 
     def initServer(self):

@@ -281,7 +281,7 @@ def process_scan_file():
     # raw_data = dm.get_raw_data(file_id=1766305651080, load_npz=True)
     # raw_data = dm.get_raw_data(file_id=1764604364429, load_npz=True)
     # raw_data = dm.get_raw_data(file_id=1788823078836, load_npz=True)  # rubin
-    raw_data = dm.get_raw_data(file_id=1789851448217, load_npz=True)  # rubin
+    raw_data = dm.get_raw_data(file_id=1790524525451, load_npz=True)  # rubin
 
     # Extract scanned data
     scanned_data = raw_data["scanned_data"]["scanned_data"]
