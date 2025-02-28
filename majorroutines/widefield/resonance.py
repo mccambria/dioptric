@@ -207,6 +207,7 @@ def create_fit_figure(
         popts,
         no_legend=no_legend,
         # linestyle="solid",
+        nv_inds=nv_inds,
     )
 
     ax = axes_pack[layout[-1, 0]]
