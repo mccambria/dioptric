@@ -18,6 +18,7 @@ from pathlib import Path
 import matplotlib.patches as patches
 import matplotlib.pyplot as plt
 import numpy as np
+import scipy.optimize as opt
 from matplotlib import animation
 from numpy import inf
 from scipy.special import gamma
@@ -192,6 +193,54 @@ def integrate_counts(img_array, pixel_coords, radius=None):
     counts = np.sum(img_array_crop[mask])
 
     return counts
+
+
+def fit_max_counts(img_array, pixel_coords, radius=None):
+    """
+    Fit a 2D Gaussian to the image around the NV site to determine the peak count.
+    """
+    pixel_x, pixel_y = pixel_coords
+
+    if radius is None:
+        radius = _get_camera_spot_radius()
+
+    # Crop the region of interest based on the radius around the target pixel
+    left = max(0, round(pixel_x - radius))
+    right = min(img_array.shape[1] - 1, round(pixel_x + radius))
+    top = max(0, round(pixel_y - radius))
+    bottom = min(img_array.shape[0] - 1, round(pixel_y + radius))
+
+    img_array_crop = img_array[top : bottom + 1, left : right + 1]
+
+    # Define 2D Gaussian function
+    def gaussian_2d(coords, amp, x0, y0, sigma_x, sigma_y, offset):
+        x, y = coords
+        return (
+            amp
+            * np.exp(
+                -(
+                    ((x - x0) ** 2) / (2 * sigma_x**2)
+                    + ((y - y0) ** 2) / (2 * sigma_y**2)
+                )
+            )
+            + offset
+        )
+
+    # Generate coordinate grids
+    y_vals, x_vals = np.mgrid[top : bottom + 1, left : right + 1]
+    x_flat, y_flat = x_vals.ravel(), y_vals.ravel()
+    img_flat = img_array_crop.ravel()
+
+    # Initial guess (Amplitude, x0, y0, σx, σy, offset)
+    p0 = [np.max(img_flat), pixel_x, pixel_y, radius / 2, radius / 2, np.min(img_flat)]
+
+    try:
+        popt, _ = opt.curve_fit(gaussian_2d, (x_flat, y_flat), img_flat, p0=p0)
+        max_counts = popt[0]  # Extract fitted peak amplitude
+    except RuntimeError:
+        max_counts = np.max(img_array_crop)  # Fallback to raw max if fitting fails
+
+    return max_counts
 
 
 def adus_to_photons(adus, k_gain=None, em_gain=None, baseline=None):

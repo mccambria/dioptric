@@ -406,7 +406,8 @@ if __name__ == "__main__":
 
     # sys.exit()
     nv_coordinates, spot_weights = load_nv_coords(
-        file_path="slmsuite/nv_blob_detection/nv_blob_shallow_149nvs.npz"
+        # file_path="slmsuite/nv_blob_detection/nv_blob_shallow_149nvs.npz"
+        file_path="slmsuite/nv_blob_detection/nv_blob_shallow_630nvs.npz"
         # file_path="slmsuite/nv_blob_detection/nv_blob_filtered_160nvs_reordered.npz"
     )
     # Convert coordinates to a standard format (lists of lists)
@@ -532,17 +533,17 @@ if __name__ == "__main__":
     #     filtered_reordered_counts.append(sum_value)  # Append to the list
 
     # Manually remove NVs with specified indices
-    indices_to_remove = [2]  # Example indices to remove
-    filtered_reordered_coords = [
-        coord
-        for i, coord in enumerate(filtered_reordered_coords)
-        if i not in indices_to_remove
-    ]
-    filtered_reordered_spot_weights = [
-        count
-        for i, count in enumerate(filtered_reordered_spot_weights)
-        if i not in indices_to_remove
-    ]
+    # indices_to_remove = [2]  # Example indices to remove
+    # filtered_reordered_coords = [
+    #     coord
+    #     for i, coord in enumerate(filtered_reordered_coords)
+    #     if i not in indices_to_remove
+    # ]
+    # filtered_reordered_spot_weights = [
+    #     count
+    #     for i, count in enumerate(filtered_reordered_spot_weights)
+    #     if i not in indices_to_remove
+    # ]
     # print(filtered_reordered_coords)
     # print("Filter:", filtered_reordered_counts)
     # print("Filtered and Reordered NV Coordinates:", filtered_reordered_coords)
@@ -605,13 +606,13 @@ if __name__ == "__main__":
     # include_indices = [ind for ind in include_indices if ind not in final_drop_inds]
     # fmt: on
     # Filter nv_coordinates and spot_weights to exclude the specified indices
-    filtered_reordered_coords = np.array(
-        [
-            coord
-            for i, coord in enumerate(filtered_reordered_coords)
-            if i in include_indices
-        ]
-    )
+    # filtered_reordered_coords = np.array(
+    #     [
+    #         coord
+    #         for i, coord in enumerate(filtered_reordered_coords)
+    #         if i in include_indices
+    #     ]
+    # )
     # print(f"len nv_powers: {len(nv_powers)}")
     print(f"len nv_powers: {len(nv_coordinates_filtered)}")
     # select_half_left_side_nvs_and_plot(nv_coordinates_filtered)
@@ -636,9 +637,9 @@ if __name__ == "__main__":
     )
     # print(nv_powers_filtered)
     # Create a copy or initialize spot weights for modification
-    updated_spot_weights = curve_extreme_weights_simple(
-        spot_weights, scaling_factor=1.0
-    )
+    # updated_spot_weights = curve_extreme_weights_simple(
+    #     spot_weights, scaling_factor=1.0
+    # )
     # updated_spot_weights = np.array(
     #     [w for i, w in enumerate(updated_spot_weights_0) if i in include_indices]
     # )
@@ -669,7 +670,7 @@ if __name__ == "__main__":
     filtered_total_power = np.sum(nv_powers_filtered) / len(nv_coordinates_filtered)
     adjusted_aom_voltage = ((filtered_total_power - c) / a) ** (1 / b)
     # print("Adjusted Voltages (V):", adjusted_aom_voltage)
-    filtered_reordered_spot_weights = updated_spot_weights
+    # filtered_reordered_spot_weights = updated_spot_weights
     # print("nv_weights:", spot_weights)
     print("NV Index | Coords    |   previous weights")
     print("-" * 60)
@@ -699,7 +700,7 @@ if __name__ == "__main__":
     save_results(
         filtered_reordered_coords,
         filtered_reordered_spot_weights,
-        filename="slmsuite/nv_blob_detection/nv_blob_shallow_69nvs_reordered_updated.npz",
+        filename="slmsuite/nv_blob_detection/nv_blob_rubin_shallow_484nvs_reordered.npz",
     )
     # save_results(
     #     nv_coordinates,
