@@ -548,21 +548,27 @@ def process_and_plot_amplitudes(nv_list, amp_file_id):
         for nv in selected_indices
         if optimal_snrs[nv] is not None
     ]
+
+    # Ensure yerr_snr is correctly shaped
+    yerr = np.median(avg_snr_ste, axis=1).flatten()
+
     if valid_snrs:
         median_snr = np.median(valid_snrs)
     else:
         median_snr = 0  # Set a default value if there are no valid SNRs
     plt.figure(figsize=(6, 5))
-    plt.scatter(
+    plt.errorbar(
         valid_amplitudes,
         valid_snrs,
-        color="blue",
-        alpha=0.6,
-        label=f"Median SNR:{median_snr:.3f}",
+        yerr=yerr,
+        fmt="o",
+        ecolor="gray",
+        capsize=3,
+        label=f"Median SCC SNR:{median_snr:.3f}",
     )
-    plt.xlabel("Optimal Amplitude")
-    plt.ylabel("SNR")
-    plt.title("SNR vs Optimal Amplitude")
+    plt.xlabel("Optimal SCC Amplitude")
+    plt.ylabel("SCC SNR")
+    plt.title("SCC SNR vs Optimal SCC Amplitude")
     plt.legend()
     plt.grid(alpha=0.3)
     plt.show()
@@ -572,11 +578,12 @@ def process_and_plot_amplitudes(nv_list, amp_file_id):
     plt.errorbar(
         taus,
         np.median(avg_snr, axis=0),
-        yerr=np.median(avg_snr_ste, axis=0),
+        yerr=np.min(avg_snr_ste, axis=0),
         color="blue",
-        alpha=0.6,
         fmt="o",
-        label="Med. SNR Data",
+        ecolor="gray",
+        capsize=3,
+        label="Med. SCC SNR Data",
     )
     tau_linspace = np.linspace(min(taus), max(taus), 1000)
     popt, fit_fn = fit_duration(
@@ -586,19 +593,19 @@ def process_and_plot_amplitudes(nv_list, amp_file_id):
         tau_linspace,
         fit_fn(tau_linspace, *popt),
         color="orange",
-        label=f"Optimal SNR: {median_snr:.3f}",
+        label=f"Optimal SCC SNR: {median_snr:.3f}",
     )
     plt.axvline(
         median_amplitude,
         color="r",
         linestyle="--",
-        label=f"Optimal Amp: {median_amplitude:.3f}",
+        label=f"Optimal SCC Amp: {median_amplitude:.3f}",
     )
-    plt.xlabel("Amplitude")
-    plt.ylabel("SNR")
+    plt.xlabel("SCC Amplitude")
+    plt.ylabel("SCC SNR")
     plt.legend()
     plt.grid(alpha=0.3)
-    plt.title("Median NV Amplitude Optimization")
+    plt.title("Median NV SCC Amplitude Optimization")
     plt.show()
 
 
@@ -736,10 +743,12 @@ if __name__ == "__main__":
     # duration_file_id = 1732098676751  # duration
     amp_file_id = 1786527980407
     data = dm.get_raw_data(file_id=amp_file_id)  # Load NV list
+    file_name = dm.get_file_name(file_id=amp_file_id)
     nv_list = data["nv_list"]
 
     # results = process_and_plot(nv_list, duration_file_id, amp_file_id)
     results = process_and_plot_amplitudes(nv_list, amp_file_id)
     # results = process_and_plot_durations(nv_list, duration_file_id)
     print("Results:", results)
+    print(f"{file_name}_{amp_file_id}")
     kpl.show(block=True)
