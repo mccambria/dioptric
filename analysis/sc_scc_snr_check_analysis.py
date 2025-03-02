@@ -396,7 +396,9 @@ def process_and_plot(data):
 if __name__ == "__main__":
     kpl.init_kplotlib()
     # data = dm.get_raw_data(file_id=1722112403814)
-    file_id = 1782649429980
+    # file_id = 1782649429980
+    # file_id = 1785836711605
+    file_id = 1788617128620
     data = dm.get_raw_data(file_id=file_id)
     file_name = dm.get_file_name(file_id=file_id)
     print(f"{file_name}_{file_id}")
