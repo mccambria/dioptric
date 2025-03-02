@@ -35,19 +35,19 @@ red_laser_aod = "laser_COBO_638_aod"
 
 
 calibration_coords_pixel = [
-    [241.12, 24.247],
-    [15.121, 53.43],
-    [85.847, 227.993],
+    [16.945, 50.36],
+    [108.271, 225.447],
+    [228.808, 23.054],
 ]
 calibration_coords_green = [
-    [95.439, 94.799],
-    [119.117, 100.388],
-    [109.423, 118.248],
+    [118.922, 100.171],
+    [107.023, 117.93],
+    [96.786, 94.98],
 ]
 calibration_coords_red = [
-    [62.148, 62.848],
-    [81.574, 67.148],
-    [74.061, 81.78],
+    [81.439, 66.867],
+    [72.131, 81.384],
+    [63.228, 62.84],
 ]
 # Create the dictionaries using the provided lists
 calibration_coords_nv1 = {
@@ -166,9 +166,9 @@ config |= {
         "resolution": (512, 512),
         "spot_radius": 2.5,  # Radius for integrating NV counts in a camera image
         "bias_clamp": 300,  # (changing this won't actually change the value on the camera currently)
-        # "em_gain": 5000,
+        "em_gain": 5000,
         # "em_gain": 1000,
-        "em_gain": 10,
+        # "em_gain": 10,
         "temp": -60,
         "timeout": 30e3,  # ms
         # "timeout": -1,  # No timeout
@@ -243,7 +243,8 @@ config |= {
             },
             VirtualLaserKey.WIDEFIELD_IMAGING: {
                 "physical_name": yellow_laser,
-                "duration": 12e6,
+                # "duration": 12e6,
+                "duration": 24e6,
             },
             # LaserKey.WIDEFIELD_SPIN_POL: {"physical_name": yellow_laser, "duration": 10e3},
             VirtualLaserKey.WIDEFIELD_SPIN_POL: {
@@ -256,7 +257,6 @@ config |= {
                 # "duration": 200e6,
                 # "duration": 100e6,
                 "duration": 50e6,
-                # "duration": 60e6,
                 # "duration": 24e6,  # for red calibration
             },
             # LaserKey.WIDEFIELD_CHARGE_READOUT: {"physical_name": yellow_laser, "duration": 100e6},
@@ -838,8 +838,8 @@ opx_config = {
         # "yellow_charge_readout": {"type": "constant", "sample": 0.29},  # 200ms 117NVs
         # "yellow_charge_readout": {"type": "constant", "sample": 0.4276},  #
         # "yellow_charge_readout": {"type": "constant", "sample": 0.3752},  #
-        "yellow_charge_readout": {"type": "constant", "sample": 0.4511},  #
-        # "yellow_charge_readout": {"type": "constant", "sample": 0.4206},  #
+        # "yellow_charge_readout": {"type": "constant", "sample": 0.4511},  #
+        "yellow_charge_readout": {"type": "constant", "sample": 0.41},  #
         "yellow_spin_pol": {"type": "constant", "sample": 0.42},
         "yellow_shelving": {"type": "constant", "sample": 0.33},
         # Other

@@ -74,7 +74,7 @@ def plot_fitting(
     """Plot the original image with the initial and optimized peak coordinates."""
     fig, ax = plt.subplots()
 
-    # Use kpl.imshow to ensure consistent color mapping
+    # Use kpl.imshow
     img_plot = kpl.imshow(ax, image, cbar_label="Photons")
 
     # Plot initial peaks
@@ -94,17 +94,15 @@ def plot_fitting(
     plt.ylabel("Y (pixels)")
 
     # Automatically save the plot using the same approach for file paths
-    timestamp = dm.get_time_stamp()
-    file_path = dm.get_file_path(__file__, timestamp, "gaussian_fit")
-    # dm.save_figure(fig, file_path)
 
-    plt.show()
+    plt.show(block=True)
 
 
 # Example usage
 if __name__ == "__main__":
+    kpl.init_kplotlib()
     # Load the image array (replace this with your own method for loading image data)
-    data = dm.get_raw_data(file_id=1788886134632, load_npz=True)
+    data = dm.get_raw_data(file_id=1791329576682, load_npz=True)
     # data = dm.get_raw_data(file_id=1766363198090, load_npz=True)
 
     img_array = np.array(data["img_array"])
@@ -115,12 +113,12 @@ if __name__ == "__main__":
     # sys.exit()
     # List of initial peak coordinates
     # initial_peaks = np.array([[199.257, 37.906], [189.75, 207.741], [45.953, 112.377]])
-    initial_peaks = np.array([[223.909, 11.019], [208.723, 241.761], [15.886, 111.676]])
+    initial_peaks = np.array([[227.752, 12.548], [212.599, 241.451], [20.615, 112.523]])
 
     # Fit Gaussian to each peak
     optimized_coords = []
     for peak in initial_peaks:
-        coords, _ = fit_gaussian_2d_local(img_array, peak, size=6)
+        coords, _ = fit_gaussian_2d_local(img_array, peak, size=8)
         optimized_coords.append(coords)
 
     optimized_coords = np.array(optimized_coords)

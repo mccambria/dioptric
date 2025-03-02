@@ -76,8 +76,8 @@ def do_scanning_image_sample(nv_sig):
 
 def do_scanning_image_full_roi(nv_sig):
     total_range = 24
-    scan_range = 12
-    num_steps = 12
+    scan_range = 8
+    num_steps = 8
     image_sample.scanning_full_roi(nv_sig, total_range, scan_range, num_steps)
 
 
@@ -816,12 +816,12 @@ def do_opx_constant_ac():
     # opx.stream_start()
 
     # Yellow
-    # opx.constant_ac(
-    #     [],  # Digital channels
-    #     [7],  # Analog channels
-    #     [0.45],  # Analog voltages
-    #     [0],  # Analog frequencies
-    # )
+    opx.constant_ac(
+        [],  # Digital channels
+        [7],  # Analog channels
+        [0.45],  # Analog voltages
+        [0],  # Analog frequencies
+    )
 
     # opx.constant_ac([4])  # Just laser
     # Red
@@ -886,12 +886,12 @@ def do_opx_constant_ac():
     #     [73.166, 72.941],  # Analog frequencies
     # )
     # Green + yellow
-    opx.constant_ac(
-        [4],  # Digital channels
-        [3, 4, 7],  # Analog channels
-        [0.19, 0.19, 0.45],  # Analog voltages
-        [107, 107, 0],  # Analog frequencies
-    )
+    # opx.constant_ac(
+    #     [4],  # Digital channels
+    #     [3, 4, 7],  # Analog channels
+    #     [0.19, 0.19, 0.45],  # Analog voltages
+    #     [107, 107, 0],  # Analog frequencies
+    # )
     # Red + green + Yellow
     # opx.constant_ac(
     #     [4, 1],  # Digital channels1
@@ -1030,8 +1030,8 @@ if __name__ == "__main__":
     sample_name = "rubin"
     # magnet_angle = 90
     date_str = "2025_02_26"
-    sample_coords = [0.4, 0.3]
-    z_coord = -0.2
+    sample_coords = [-0.4, 2.0]
+    z_coord = 0.0
 
     # Load NV pixel coordinates1
     pixel_coords_list = load_nv_coords(
@@ -1039,9 +1039,15 @@ if __name__ == "__main__":
         # file_path="slmsuite/nv_blob_detection/nv_blob_shallow_52nvs_reordered.npz",
         # file_path="slmsuite/nv_blob_detection/nv_blob_shallow_161nvs_reordered.npz",
         # file_path="slmsuite/nv_blob_detection/nv_blob_shallow_148nvs_reordered.npz",
-        file_path="slmsuite/nv_blob_detection/nv_blob_rubin_shallow_484nvs_reordered.npz",
+        file_path="slmsuite/nv_blob_detection/nv_blob_rubin_shallow_309nvs_reordered_updated.npz",
     ).tolist()
     # Define transformations using `transform_coords`
+    # pixel_coords_list = [
+    #     [109.077, 120.824],
+    #     [16.945, 50.36],
+    #     [108.271, 225.447],
+    #     [228.808, 23.054],
+    # ]
     green_coords_list = [
         [
             round(coord, 3)
@@ -1063,30 +1069,32 @@ if __name__ == "__main__":
     ]
 
     # Print first coordinate set for verification
+    # print(f"Number of NVs: {green_coords_list}")
     # print(f"Number of NVs: {red_coords_list}")
+    # sys.exit()
     print(f"Number of NVs: {len(pixel_coords_list)}")
     print(f"Reference NV:{pixel_coords_list[0]}")
     print(f"Green Laser Coordinates: {green_coords_list[0]}")
     print(f"Red Laser Coordinates: {red_coords_list[0]}")
-    # sys.exit()
     # pixel_coords_list = [
-    #     [117.516, 129.595],
-    #     [241.12, 24.247],
-    #     [15.121, 53.43],
-    #     [85.847, 227.993],
+    #     [109.077, 120.824],
+    #     [16.945, 50.36],
+    #     [108.271, 225.447],
+    #     [228.808, 23.054],
     # ]
     # green_coords_list = [
-    #     [107.266, 107.516],
-    #     [95.439, 94.799],
-    #     [119.117, 100.388],
-    #     [109.423, 118.248],
+    #     [108.266, 106.685],
+    #     [118.922, 100.171],
+    #     [107.023, 117.93],
+    #     [96.786, 94.98],
     # ]
     # red_coords_list = [
-    #     [72.017, 73.008],
-    #     [62.148, 62.848],
-    #     [81.574, 67.148],
-    #     [74.061, 81.78],
+    #     [72.877, 72.277],
+    #     [81.439, 66.867],
+    #     [72.131, 81.384],
+    #     [63.228, 62.84],
     # ]
+
     num_nvs = len(pixel_coords_list)
     threshold_list = [25.5] * num_nvs
     # threshold_list = load_thresholds
@@ -1137,21 +1145,18 @@ if __name__ == "__main__":
     # pol_duration_list =  [188, 108, 120, 96, 148, 120, 140, 128, 120, 128, 120, 140, 148, 128, 120, 128, 108, 96, 108, 120, 120, 120, 140, 128, 120, 128, 128, 108, 120, 128, 140, 404, 148, 96, 160, 128, 128, 128, 140, 120, 128, 188, 120, 120, 168, 140, 140, 128, 128, 120, 140, 140, 108, 68, 120, 96, 140, 120, 140, 128, 140, 160, 108, 120, 120, 140, 120, 140, 140, 424, 168, 140, 140, 120, 120, 140, 180, 128, 56, 120, 128, 240, 128, 120, 160, 160, 96, 128, 120, 128, 128, 168, 168, 140, 120, 128, 108, 140, 140, 120, 140, 120, 128, 148, 168, 168, 140, 128, 220, 120, 108, 148, 120, 140, 140, 128, 120, 168, 160, 108, 148, 120, 128, 120, 212, 180, 128, 120, 120, 120, 140, 168, 120, 128, 140, 128, 128, 140, 140, 108, 140, 140, 140, 180, 120, 220, 128, 140]
     pol_duration_list = [144, 192, 172, 192, 172, 124, 144, 192, 192, 248, 192, 220, 180, 152, 180, 200, 236, 164, 192, 180, 192, 200, 172, 200, 192, 192, 172, 124, 192, 172, 152, 320, 124, 152, 192, 264, 136, 164, 192, 220, 208, 192, 108, 144, 180, 192, 180, 236, 152, 200, 152, 192, 172, 144, 192, 192, 200, 164, 220, 164, 180, 200, 192, 180, 220, 172, 180, 192, 172, 192, 220, 220, 180, 180, 172, 192, 292, 208, 192, 180, 208, 236, 192, 200, 264, 220, 164, 192, 152, 228, 180, 236, 208, 220, 180, 164, 248, 256, 192, 180, 208, 172, 192, 208, 236, 180, 256, 164, 304, 192, 192, 236, 172, 228, 208, 192, 172, 208, 264, 200, 248, 180, 192, 192, 236, 248, 172, 192, 152, 172, 180, 236, 192, 192, 256, 200, 180, 236, 172, 192, 264, 180, 180, 320, 144, 228, 164, 192]
     # Initialize a list with None values
-    arranged_scc_amp_list = [None] * num_nvs
-    arranged_scc_duration_list = [None] * num_nvs
-    arranged_pol_duration_list = [None] * num_nvs
-    for i, idx in enumerate(include_inds):
-        arranged_scc_duration_list[idx] = scc_duration_list[i]
-        arranged_pol_duration_list[idx] = pol_duration_list[i]
-        arranged_scc_amp_list[idx] = scc_amp_list[i]
+    # arranged_scc_amp_list = [None] * num_nvs
+    # arranged_scc_duration_list = [None] * num_nvs
+    # arranged_pol_duration_list = [None] * num_nvs
+    # for i, idx in enumerate(include_inds):
+    #     arranged_scc_duration_list[idx] = scc_duration_list[i]
+    #     arranged_pol_duration_list[idx] = pol_duration_list[i]
+    #     arranged_scc_amp_list[idx] = scc_amp_list[i]
 
-    # Assign back to original lists
-    scc_duration_list = arranged_scc_duration_list
-    pol_duration_list = arranged_pol_duration_list
-    scc_amp_list = arranged_scc_amp_list
-    # scc duatiin 
-    scc_duration_list = [100] * num_nvs
-    scc_amp_list = [1.0] * num_nvs
+    # # Assign back to original lists
+    # scc_duration_list = arranged_scc_duration_list
+    # pol_duration_list = arranged_pol_duration_list
+    # scc_amp_list = arranged_scc_amp_list
     # print(f"Length of pol_duration_list: {len(pol_duration_list)}")
     # print(f"First 10 SCC durations: {scc_duration_list[:10]}")
     # print(f"First 10 POL durations: {pol_duration_list[:10]}")
@@ -1214,9 +1219,9 @@ if __name__ == "__main__":
     print(f"First 10 SCC durations: {scc_duration_list[:10]}")
     print(f"First 10 POL durations: {pol_duration_list[:10]}")
 
-    # scc_amp_list = [1.0] * num_nvs
-    scc_duration_list = [80] * num_nvs
-    pol_duration_list = [196] * num_nvs
+    scc_amp_list = [1.0] * num_nvs
+    scc_duration_list = [100] * num_nvs
+    pol_duration_list = [200] * num_nvs
     # nv_list[i] will have the ith coordinates from the above lists
     nv_list: list[NVSig] = []
     for ind in range(num_nvs):
@@ -1254,7 +1259,7 @@ if __name__ == "__main__":
     # print(f"Created NV: {nv_sig.name}, Coords: {nv_sig.coords}")
     # nv_sig.expected_counts = 4500
     # nv_sig.expected_counts = 900
-    # nv_sig.expected_counts = 2020
+    nv_sig.expected_counts = 2100
 
     # num_nvs = len(nv_list)
     # print(f"Final NV List: {nv_list}")
@@ -1369,11 +1374,11 @@ if __name__ == "__main__":
         # nv_sig.coords[green_laser_aod : green_coords_list[ind]] + x
         #         do_scanning_image_sample(nv_sig)
 
-        do_scanning_image_sample(nv_sig)
+        # do_scanning_image_sample(nv_sig)
         # do_scanning_image_full_roi(nv_sig)
         # do_scanning_image_sample_zoom(nv_sig)
         # do_widefield_image_sample(nv_sig, 50)
-        # do_widefield_image_sample(nv_sig, 100)
+        # do_widefield_image_sample(nv_sig, 200)
 
         # do_image_nv_list(nv_list)
         # do_image_single_nv(nv_sig)
@@ -1390,7 +1395,7 @@ if __name__ == "__main__":
         # do_optimize_green(nv_sig)
         # do_optimize_red(nv_sig, repr_nv_sig)
         # do_optimize_z(nv_sig)
-        ## do_optimize_sample(nv_sig)
+        # do_optimize_sample(nv_sig)
 
         # widefield.reset_all_drift()
         # coords_key = None
@@ -1400,7 +1405,7 @@ if __name__ == "__main__":
 
         # do_optimize_pol_amp(nv_list)
         # do_optimize_pol_duration(nv_list)
-        # do_optimize_readout_amp(nv_list)
+        do_optimize_readout_amp(nv_list)
         # do_optimize_readout_duration(nv_list)
         # optimize_readout_amp_and_duration(nv_list)
         # do_charge_state_histograms_images(nv_list, vary_pol_laser=True)

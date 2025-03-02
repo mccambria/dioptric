@@ -47,6 +47,11 @@ class ThorSLM(SLM):
         """
         self.device_hdl = EXULUSOpen(serialNumber, 38400, 3)
 
+        # if self.device_hdl < 0:
+        #     raise RuntimeError(
+        #         f"Failed to connect to Thorlabs SLM with serial {serialNumber}"
+        #     )
+
         if self.device_hdl < 0:
             print("Connect ", serialNumber, "fail")
             return -1

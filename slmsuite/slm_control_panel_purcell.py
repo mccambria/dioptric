@@ -246,7 +246,7 @@ def calibration_triangle():
 
     # Define parameters for the equilateral triangle
     # center = (730, 570)  # Center of the triangle
-    center = (670, 630)  # Center of the triangle
+    center = (680, 630)  # Center of the triangle
     side_length = 400  # Length of each side of the triangle\
 
     # Calculate the coordinates of the three vertices of the equilateral triangle
@@ -287,11 +287,11 @@ def nuvu2thorcam_calibration(coords):
     to the Thorlabs camera's coordinate system using an affine transformation.
     """
     cal_coords_thorcam = np.array(
-        [[1016.410, 830.0], [323.589, 830.0], [670.0, 230.0]], dtype="float32"
+        [[1026.410, 830.0], [333.589, 830.0], [680.0, 230.0]], dtype="float32"
     )
 
     cal_coords_nuvu = np.array(
-        [[223.943, 10.932], [208.752, 241.137], [16.082, 111.567]], dtype="float32"
+        [[227.752, 12.548], [212.599, 241.451], [20.615, 112.523]], dtype="float32"
     )
 
     # Compute the affine transformation matrix
@@ -310,7 +310,7 @@ def load_nv_coords(
     # file_path="slmsuite/nv_blob_detection/nv_blob_shallow_148nvs_reordered.npz",
     # file_path="slmsuite/nv_blob_detection/nv_blob_shallow_148nvs_reordered_updated.npz",
     # file_path="slmsuite/nv_blob_detection/nv_blob_shallow_69nvs_reordered_updated.npz",
-    file_path="slmsuite/nv_blob_detection/nv_blob_rubin_shallow_471nvs_reordered.npz",
+    file_path="slmsuite/nv_blob_detection/nv_blob_rubin_shallow_309nvs_reordered_updated.npz",
     # file_path="slmsuite/nv_blob_detection/nv_blob_shallow_89nvs_reordered.npz",
     # file_path="slmsuite/nv_blob_detection/nv_blob_shallow_52nvs_reordered.npz",
     # file_path="slmsuite/nv_blob_detection/nv_blob_filtered_160nvs_reordered.npz",
@@ -396,6 +396,26 @@ def save(data, path, filename):
     np.save(os.path.join(path, filename), data)
 
 
+# Replace with your SLM's serial number
+serial_number = "00429430"
+
+# try:
+#     print("Attempting to initialize ThorSLM...")
+#     slm = ThorSLM(serial_number)
+#     print("SLM successfully initialized!")
+
+#     print("SLM details:")
+#     print(f"Serial Number: {slm.serialNumber}")
+#     print(f"Device Handle: {slm.device_hdl}")
+#     print(f"Window Handle: {slm.window_hdl}")
+
+#     print("Closing SLM connection...")
+#     slm.close()
+#     print("SLM successfully closed!")
+
+# except Exception as e:
+#     print(f"Initialization failed: {e}")
+# sys.exit()
 # region run funtions
 try:
     slm = ThorSLM(serialNumber="00429430")
