@@ -6,39 +6,28 @@ Created on Fall, 2024
 
 @author: Saroj Chand
 """
+
 import time
 import traceback
 
+import matplotlib.pyplot as plt
 import numpy as np
-from matplotlib import pyplot as plt
-
-from majorroutines.widefield import base_routine
-from utils import common
-from utils import data_manager as dm
-from utils import kplotlib as kpl
-from utils import positioning as pos
-from utils import tool_belt as tb
-from utils import widefield as widefield
-
+import pandas as pd
 
 # import seaborn as sns
 # import pandas as pd
-
-
 # def process_and_plot(data, error_threshold=0.2):
 #     threshold = True
 #     nv_list = data["nv_list"]
 #     counts = np.array(data["counts"])
 #     sig_counts = counts[0]
 #     ref_counts = counts[1]
-
 #     # Apply threshold if needed
 #     if threshold:
 #         thresh_method = "otsu"
 #         sig_counts, ref_counts = widefield.threshold_counts(
 #             nv_list, sig_counts, ref_counts, method=thresh_method
 #         )
-
 #     # Report the results and return
 #     avg_sig_counts, avg_sig_counts_ste, norms = widefield.average_counts(
 #         sig_counts, ref_counts
@@ -48,13 +37,10 @@ from utils import widefield as widefield
 #     contrast = norms_ms1_newaxis - norms_ms0_newaxis
 #     norm_counts = (avg_sig_counts - norms_ms0_newaxis) / contrast
 #     norm_counts_ste = avg_sig_counts_ste / contrast
-
 #     # Ensure no negative yerr values
 #     norm_counts_ste = np.abs(norm_counts_ste)
-
 #     # Constrain norm_counts to be within [0, 1]
 #     norm_counts_clipped = np.clip(norm_counts, 0, 1)
-
 #     ### Plot 1: All Data
 #     # Prepare data for seaborn plotting (with all data points)
 #     all_nv_nums = [widefield.get_nv_num(nv) for nv in nv_list]
@@ -65,36 +51,30 @@ from utils import widefield as widefield
 #             "Error": norm_counts_ste.flatten(),
 #         }
 #     )
-
 #     # Set up the first plot with all data points
 #     plt.figure(figsize=(15, 8))  # Adjust size for large numbers of NVs
 #     sns.set(style="whitegrid")
 #     ax_all = sns.barplot(x="NV", y="Contrast", data=all_plot_data, ci=None)
-
 #     # Add error bars manually
 #     for i, row in all_plot_data.iterrows():
 #         ax_all.errorbar(
 #             row["NV"], row["Contrast"], yerr=row["Error"], fmt="none", c="black"
 #         )
-
 #     # Customize plot
 #     ax_all.set_xlabel("NV Index")
 #     ax_all.set_ylabel("Normalized Contrast (0 to 1)")
 #     ax_all.set_title("All NV Data")
 #     plt.xticks(rotation=90)  # Rotate x-axis labels for better readability
 #     plt.tight_layout()
-
 #     ### Plot 2: Filtered Good Data (Contrast between 0-1 and small error bars)
 #     filtered_nv_list = []
 #     filtered_norm_counts = []
 #     filtered_norm_counts_ste = []
-
 #     for i in range(len(norm_counts)):
 #         if 0 <= norm_counts[i] <= 1 and norm_counts_ste[i] < error_threshold:
 #             filtered_nv_list.append(widefield.get_nv_num(nv_list[i]))
 #             filtered_norm_counts.append(norm_counts[i])
 #             filtered_norm_counts_ste.append(norm_counts_ste[i])
-
 #     # Prepare data for seaborn plotting (good data points only)
 #     good_plot_data = pd.DataFrame(
 #         {
@@ -103,38 +83,36 @@ from utils import widefield as widefield
 #             "Error": np.array(filtered_norm_counts_ste).flatten(),
 #         }
 #     )
-
 #     # Set up the second plot with good data points
 #     plt.figure(figsize=(15, 8))  # Adjust size for large numbers of NVs
 #     sns.set(style="whitegrid")
 #     ax_good = sns.barplot(x="NV", y="Contrast", data=good_plot_data, ci=None)
-
 #     # Add error bars manually for good data points
 #     for i, row in good_plot_data.iterrows():
 #         ax_good.errorbar(
 #             row["NV"], row["Contrast"], yerr=row["Error"], fmt="none", c="black"
 #         )
-
 #     # Customize plot
 #     ax_good.set_xlabel("NV Index")
 #     ax_good.set_ylabel("Normalized Contrast (0 to 1)")
 #     ax_good.set_title(f"Good NV Data (Error < {error_threshold})")
 #     plt.xticks(rotation=90)  # Rotate x-axis labels for better readability
 #     plt.tight_layout()
-
 #     # Show both plots
 #     plt.show()
-
 #     print(f"Mean normalized contrast (all data): {np.mean(norm_counts)}")
 #     print(f"Mean normalized contrast (good data): {np.mean(filtered_norm_counts)}")
-
 #     return
-
 import seaborn as sns
-import pandas as pd
-import numpy as np
-import matplotlib.pyplot as plt
+from matplotlib import pyplot as plt
 
+from majorroutines.widefield import base_routine
+from utils import common
+from utils import data_manager as dm
+from utils import kplotlib as kpl
+from utils import positioning as pos
+from utils import tool_belt as tb
+from utils import widefield as widefield
 
 # def process_and_plot(data):
 #     threshold = True
@@ -396,6 +374,7 @@ def process_and_plot(data):
 if __name__ == "__main__":
     kpl.init_kplotlib()
     # data = dm.get_raw_data(file_id=1722112403814)
+    file_id = 1788617128620
     # file_id = 1782649429980
     # file_id = 1785836711605
     file_id = 1788617128620

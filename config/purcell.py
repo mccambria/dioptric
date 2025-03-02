@@ -166,9 +166,9 @@ config |= {
         "resolution": (512, 512),
         "spot_radius": 2.5,  # Radius for integrating NV counts in a camera image
         "bias_clamp": 300,  # (changing this won't actually change the value on the camera currently)
-        "em_gain": 5000,
+        # "em_gain": 5000,
         # "em_gain": 1000,
-        # "em_gain": 10,
+        "em_gain": 10,
         "temp": -60,
         "timeout": 30e3,  # ms
         # "timeout": -1,  # No timeout
@@ -239,7 +239,7 @@ config |= {
             # LaserKey.SCC: {"physical_name": green_laser, "duration": 200},
             VirtualLaserKey.WIDEFIELD_SHELVING: {
                 "physical_name": yellow_laser,
-                "duration": 60,
+                "duration": 52,
             },
             VirtualLaserKey.WIDEFIELD_IMAGING: {
                 "physical_name": yellow_laser,
@@ -255,8 +255,8 @@ config |= {
                 "physical_name": yellow_laser,
                 # "duration": 200e6,
                 # "duration": 100e6,
-                # "duration": 50e6,
-                "duration": 60e6,
+                "duration": 50e6,
+                # "duration": 60e6,
                 # "duration": 24e6,  # for red calibration
             },
             # LaserKey.WIDEFIELD_CHARGE_READOUT: {"physical_name": yellow_laser, "duration": 100e6},
@@ -283,7 +283,8 @@ config |= {
                 "control_mode": PosControlMode.STREAM,
                 "delay": int(1e6),  # 5 ms for PIFOC xyz
                 "nm_per_unit": 1000,
-                "optimize_range": 0.09,
+                # "optimize_range": 0.09,
+                "optimize_range": 0.24,
                 "units": "Voltage (V)",
                 "opti_virtual_laser_key": VirtualLaserKey.IMAGING,
             },
@@ -836,8 +837,8 @@ opx_config = {
         # "yellow_charge_readout": {"type": "constant", "sample": 0.325},  # 100ms 117NVs
         # "yellow_charge_readout": {"type": "constant", "sample": 0.29},  # 200ms 117NVs
         # "yellow_charge_readout": {"type": "constant", "sample": 0.4276},  #
-        "yellow_charge_readout": {"type": "constant", "sample": 0.3752},  #
-        # "yellow_charge_readout": {"type": "constant", "sample": 0.4311},  #
+        # "yellow_charge_readout": {"type": "constant", "sample": 0.3752},  #
+        "yellow_charge_readout": {"type": "constant", "sample": 0.4511},  #
         # "yellow_charge_readout": {"type": "constant", "sample": 0.4206},  #
         "yellow_spin_pol": {"type": "constant", "sample": 0.42},
         "yellow_shelving": {"type": "constant", "sample": 0.33},
