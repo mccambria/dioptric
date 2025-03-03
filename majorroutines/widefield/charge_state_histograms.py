@@ -78,7 +78,9 @@ def plot_histograms(
 
 
 def process_and_plot(
-    raw_data, do_plot_histograms=False, prob_dist: ProbDist = ProbDist.COMPOUND_POISSON
+    raw_data,
+    do_plot_histograms=False,
+    prob_dist: ProbDist = ProbDist.COMPOUND_POISSON_WITH_IONIZATION,
 ):
     ### Setup
 
@@ -124,30 +126,42 @@ def process_and_plot(
 
         # Plot histograms with NV index and SNR included
         nv_num = widefield.get_nv_num(nv_list[ind])
-        if do_plot_histograms and nv_num == 153:
-            # if do_plot_histograms:
+        # if do_plot_histograms and nv_num == 153:
+        if do_plot_histograms:
             fig = plot_histograms(sig_counts_list, ref_counts_list, density=True)
             ax = fig.gca()
 
             # Ref counts fit line
             if popt is not None:
-                single_mode_num_params = bimodal_histogram.get_single_mode_num_params(
-                    prob_dist
-                )
-                single_mode_pdf = bimodal_histogram.get_single_mode_pdf(prob_dist)
-                bimodal_pdf = bimodal_histogram.get_bimodal_pdf(prob_dist)
-
                 x_vals = np.linspace(0, np.max(ref_counts_list), 1000)
-                line = popt[0] * single_mode_pdf(
-                    x_vals, *popt[1 : 1 + single_mode_num_params]
+
+                # single_mode_num_params = bimodal_histogram.get_single_mode_num_params(
+                #     prob_dist
+                # )
+                # single_mode_pdf = bimodal_histogram.get_single_mode_pdf(prob_dist)
+                # dark_mode_line = popt[0] * single_mode_pdf(
+                #     x_vals, *popt[1 : 1 + single_mode_num_params]
+                # )
+                # bright_mode_line = (1 - popt[0]) * single_mode_pdf(
+                #     x_vals, *popt[1 + single_mode_num_params :]
+                # )
+
+                # MCC hack for including ionization
+                dark_mode_pdf = bimodal_histogram.get_single_mode_pdf(
+                    ProbDist.COMPOUND_POISSON
                 )
-                kpl.plot_line(ax, x_vals, line, color=kpl.KplColors.RED)
-                line = (1 - popt[0]) * single_mode_pdf(
-                    x_vals, *popt[1 + single_mode_num_params :]
+                bright_mode_pdf = bimodal_histogram.get_single_mode_pdf(
+                    ProbDist.COMPOUND_POISSON_WITH_IONIZATION
                 )
-                kpl.plot_line(ax, x_vals, line, color=kpl.KplColors.GREEN)
-                line = bimodal_pdf(x_vals, *popt)
-                kpl.plot_line(ax, x_vals, line, color=kpl.KplColors.BLUE)
+                dark_mode_line = popt[0] * dark_mode_pdf(x_vals, popt[1])
+                bright_mode_line = (1 - popt[0]) * bright_mode_pdf(x_vals, *popt[1:])
+
+                bimodal_pdf = bimodal_histogram.get_bimodal_pdf(prob_dist)
+                bimodal_line = bimodal_pdf(x_vals, *popt)
+
+                kpl.plot_line(ax, x_vals, dark_mode_line, color=kpl.KplColors.RED)
+                kpl.plot_line(ax, x_vals, bright_mode_line, color=kpl.KplColors.GREEN)
+                kpl.plot_line(ax, x_vals, bimodal_line, color=kpl.KplColors.BLUE)
 
             # Threshold line
             if threshold is not None:
