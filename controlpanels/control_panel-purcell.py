@@ -69,8 +69,8 @@ def do_widefield_image_sample(nv_sig, num_reps=1):
 
 
 def do_scanning_image_sample(nv_sig):
-    scan_range = 15
-    num_steps = 15
+    scan_range = 30
+    num_steps = 30
     image_sample.scanning(nv_sig, scan_range, scan_range, num_steps)
 
 
@@ -122,7 +122,7 @@ def do_charge_state_histograms(nv_list):
 def do_optimize_pol_duration(nv_list):
     num_steps = 22
     num_reps = 10
-    num_runs = 400
+    num_runs = 200
     # num_reps = 5
     # num_runs = 2
     min_duration = 32
@@ -163,7 +163,7 @@ def do_optimize_readout_amp(nv_list):
     # num_reps = 150
     # num_runs = 5
     num_reps = 10
-    num_runs = 200
+    num_runs = 400
     min_amp = 0.8
     max_amp = 1.2
     return optimize_charge_state_histograms_mcc.optimize_readout_amp(
@@ -1039,7 +1039,7 @@ if __name__ == "__main__":
         # file_path="slmsuite/nv_blob_detection/nv_blob_shallow_52nvs_reordered.npz",
         # file_path="slmsuite/nv_blob_detection/nv_blob_shallow_161nvs_reordered.npz",
         # file_path="slmsuite/nv_blob_detection/nv_blob_shallow_148nvs_reordered.npz",
-        file_path="slmsuite/nv_blob_detection/nv_blob_rubin_shallow_309nvs_reordered_updated.npz",
+        file_path="slmsuite/nv_blob_detection/nv_blob_rubin_shallow_255nvs_reordered_updated.npz",
     ).tolist()
     # Define transformations using `transform_coords`
     # pixel_coords_list = [

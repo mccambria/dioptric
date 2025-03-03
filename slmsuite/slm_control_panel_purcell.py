@@ -310,7 +310,8 @@ def load_nv_coords(
     # file_path="slmsuite/nv_blob_detection/nv_blob_shallow_148nvs_reordered.npz",
     # file_path="slmsuite/nv_blob_detection/nv_blob_shallow_148nvs_reordered_updated.npz",
     # file_path="slmsuite/nv_blob_detection/nv_blob_shallow_69nvs_reordered_updated.npz",
-    file_path="slmsuite/nv_blob_detection/nv_blob_rubin_shallow_309nvs_reordered_updated.npz",
+    # file_path="slmsuite/nv_blob_detection/nv_blob_rubin_shallow_309nvs_reordered_updated.npz",
+    file_path="slmsuite/nv_blob_detection/nv_blob_rubin_shallow_255nvs_reordered_updated.npz",
     # file_path="slmsuite/nv_blob_detection/nv_blob_shallow_89nvs_reordered.npz",
     # file_path="slmsuite/nv_blob_detection/nv_blob_shallow_52nvs_reordered.npz",
     # file_path="slmsuite/nv_blob_detection/nv_blob_filtered_160nvs_reordered.npz",
@@ -382,7 +383,7 @@ def write_nvs_phase():
     #     "slmsuite\computed_phase\slm_phase_117nvs_20250119_152458.npy"
     # )  # 117NVs weighted spots
     # shallow NVs
-    phase = np.load("slmsuite\computed_phase\slm_phase_69nvs_20250219_172646.npy")
+    phase = np.load("slmsuite\computed_phase\slm_phase_255nvs_20250302_162917.npy")
 
     # phase = np.load("slmsuite\circles\slm_phase_circles_20250118_210419.npy")  # circles
     slm.write(phase, settle=True)
@@ -428,8 +429,8 @@ try:
     # test_wavefront_calibration()
     # # wavefront_calibration()
     # load_wavefront_calibration()
-    compute_and_write_nvs_phase()
-    # write_nvs_phase()
+    # compute_and_write_nvs_phase()
+    write_nvs_phase()
     # calibration_triangle()
     # circles()
     # smiley()

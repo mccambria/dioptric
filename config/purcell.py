@@ -812,11 +812,8 @@ opx_config = {
         # Green AOD
         "green_aod_cw-opti": {"type": "constant", "sample": 0.11},
         # "green_aod_cw-opti": {"type": "constant", "sample": 0.07},
-        # "green_aod_cw-opti": {"type": "constant", "sample": 0.05},
-        # "green_aod_cw-opti": {"type": "constant", "sample": 0.03},
-        # "green_aod_cw-charge_pol": {"type": "constant", "sample": 0.13},
         # "green_aod_cw-charge_pol": {"type": "constant", "sample": 0.06},  # Negative
-        "green_aod_cw-charge_pol": {"type": "constant", "sample": 0.132},  # median
+        "green_aod_cw-charge_pol": {"type": "constant", "sample": 0.130},  # median
         "green_aod_cw-spin_pol": {"type": "constant", "sample": 0.05},
         "green_aod_cw-shelving": {"type": "constant", "sample": 0.05},
         "green_aod_cw-scc": {"type": "constant", "sample": 0.15},
@@ -836,10 +833,7 @@ opx_config = {
         # "yellow_charge_readout": {"type": "constant", "sample": 0.3741},  # 50ms 117NVs
         # "yellow_charge_readout": {"type": "constant", "sample": 0.325},  # 100ms 117NVs
         # "yellow_charge_readout": {"type": "constant", "sample": 0.29},  # 200ms 117NVs
-        # "yellow_charge_readout": {"type": "constant", "sample": 0.4276},  #
-        # "yellow_charge_readout": {"type": "constant", "sample": 0.3752},  #
-        # "yellow_charge_readout": {"type": "constant", "sample": 0.4511},  #
-        "yellow_charge_readout": {"type": "constant", "sample": 0.41},  #
+        "yellow_charge_readout": {"type": "constant", "sample": 0.42},  #
         "yellow_spin_pol": {"type": "constant", "sample": 0.42},
         "yellow_shelving": {"type": "constant", "sample": 0.33},
         # Other

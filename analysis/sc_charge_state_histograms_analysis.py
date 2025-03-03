@@ -78,7 +78,7 @@ def plot_histograms(
         )
 
     ax.legend(title="Pulse Type", fontsize=10, loc="upper right", title_fontsize=12)
-
+    plt.show(block=True)
     if fig is not None:
         return fig
 
@@ -263,9 +263,10 @@ if __name__ == "__main__":
     # data = dm.get_raw_data(file_id=1766834596476, load_npz=False)  # 100ms readout
     # data = dm.get_raw_data(file_id=1770828500425, load_npz=False)  # 60ms readout
     # data = dm.get_raw_data(file_id=1778189406841, load_npz=False)  # 60ms readout 61 NVs
-    data = dm.get_raw_data(file_id=1782616297820, load_npz=False)  # 60ms readout 66 NVs
+    # data = dm.get_raw_data(file_id=1782616297820, load_npz=False)  # 60ms readout 66 NVs
+    data = dm.get_raw_data(file_id=1791781168217, load_npz=False)  # 60ms readout 66 NVs
 
     # file_name = dm.get_file_name(file_id=1766803842180)
     # print(file_name)
-    process_and_plot(data, do_plot_histograms=False)
+    process_and_plot(data, do_plot_histograms=True)
     kpl.show(block=True)

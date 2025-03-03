@@ -179,16 +179,16 @@ def process_and_plot(raw_data):
             # x_label = "Readout amplitude"
             step_vals = a * (step_vals**b) + c
             x_label = "Readout amplitude (uW)"
-
+    print(step_vals)
     # return
     # print(step_vals)
     optimal_values = []
     optimal_step_vals = []
     nv_indces = []
 
-    # Find index of manually set step value
-    manual_step_val = 226.98624137
-    manual_index = np.where(np.isclose(step_vals, manual_step_val))[0][0]
+    # # Find index of manually set step value
+    # manual_step_val = 226.98624137
+    # manual_index = np.where(np.isclose(step_vals, manual_step_val))[0][0]
 
     for nv_ind in range(num_nvs):
         try:
@@ -206,15 +206,15 @@ def process_and_plot(raw_data):
                 weights=(1.5, 1, 1),
             )
             # Manually override for the first NV
-            if nv_ind == 0:
-                optimal_step_val = manual_step_val
-                optimal_prep_fidality = prep_fidelity_arr[nv_ind][manual_index]
-                optimal_readout_fidality = readout_fidelity_arr[nv_ind][manual_index]
-                max_combined_score = (
-                    1.5 * optimal_prep_fidality
-                    + 1 * optimal_readout_fidality
-                    + 1 * (1 - goodness_of_fit_arr[nv_ind][manual_index])
-                )
+            # if nv_ind == 0:
+            #     optimal_step_val = manual_step_val
+            #     optimal_prep_fidality = prep_fidelity_arr[nv_ind][manual_index]
+            #     optimal_readout_fidality = readout_fidelity_arr[nv_ind][manual_index]
+            #     max_combined_score = (
+            #         1.5 * optimal_prep_fidality
+            #         + 1 * optimal_readout_fidality
+            #         + 1 * (1 - goodness_of_fit_arr[nv_ind][manual_index])
+            #     )
             optimal_step_vals.append(optimal_step_val)
             nv_indces.append(nv_ind)
             optimal_values.append(
@@ -545,22 +545,22 @@ def fit_fn(tau, delay, slope, decay, transition):
     return (1 - smooth_transition) * linear_part + smooth_transition * exp_part
 
 
-# def process_nv_step(nv_ind, step_ind, condensed_counts):
-#     counts_data = condensed_counts[nv_ind, step_ind]
-#     try:
-#         popt, pcov, chi_squared = fit_bimodal_histogram(
-#             counts_data, ProbDist.COMPOUND_POISSON
-#         )
-#         if popt is None:
-#             return np.nan, np.nan, np.nan
-#         threshold, readout_fidelity = determine_threshold(
-#             popt, ProbDist.COMPOUND_POISSON, dark_mode_weight=0.5, ret_fidelity=True
-#         )
-#         prep_fidelity = 1 - popt[0]  # Population weight of dark state
-#         return readout_fidelity, prep_fidelity, chi_squared
-#     except Exception as e:
-#         print(f"Error processing NV {nv_ind}, step {step_ind}: {e}")
-#         return np.nan, np.nan, np.nan
+def process_nv_step(nv_ind, step_ind, condensed_counts):
+    counts_data = condensed_counts[nv_ind, step_ind]
+    try:
+        popt, pcov, chi_squared = fit_bimodal_histogram(
+            counts_data, ProbDist.COMPOUND_POISSON
+        )
+        if popt is None:
+            return np.nan, np.nan, np.nan
+        threshold, readout_fidelity = determine_threshold(
+            popt, ProbDist.COMPOUND_POISSON, dark_mode_weight=0.5, ret_fidelity=True
+        )
+        prep_fidelity = 1 - popt[0]  # Population weight of dark state
+        return readout_fidelity, prep_fidelity, chi_squared
+    except Exception as e:
+        print(f"Error processing NV {nv_ind}, step {step_ind}: {e}")
+        return np.nan, np.nan, np.nan
 
 
 # def process_and_plot(raw_data):
@@ -623,7 +623,7 @@ def fit_fn(tau, delay, slope, decay, transition):
 
 #             # Indices corresponding to 64 ns and 104 ns in the filtered_step_vals
 #             time_64ns_index = np.argmin(
-#                 np.abs(filtered_step_vals - 76)
+#                 np.abs(filtered_step_vals - 24)
 #             )  # Closest to 64 ns
 #             time_104ns_index = np.argmin(
 #                 np.abs(filtered_step_vals - 120)
@@ -673,26 +673,26 @@ def fit_fn(tau, delay, slope, decay, transition):
 #             opti_durs.append(round(opti_dur / 4) * 4)
 #             opti_fidelities.append(round(opti_fidelity, 3))
 
-#             # # Plot results
-#             # plt.figure()
-#             # plt.scatter(
-#             #     filtered_step_vals,
-#             #     filtered_prep_fidelity,
-#             #     label="Measured Fidelity",
-#             #     color="blue",
-#             # )
-#             # plt.plot(duration_linspace, fitted_curve, label="Fitted Curve", color="red")
-#             # plt.axvline(
-#             #     opti_dur,
-#             #     color="green",
-#             #     linestyle="--",
-#             #     label=f"Opt. Duration: {opti_dur:.1f} ns",
-#             # )
-#             # plt.xlabel("Polarization Duration (ns)")
-#             # plt.ylabel("Preparation Fidelity")
-#             # plt.title(f"NV Num: {nv_ind}")
-#             # plt.legend()
-#             # plt.show(block=True)
+#             # Plot results
+#             plt.figure()
+#             plt.scatter(
+#                 filtered_step_vals,
+#                 filtered_prep_fidelity,
+#                 label="Measured Fidelity",
+#                 color="blue",
+#             )
+#             plt.plot(duration_linspace, fitted_curve, label="Fitted Curve", color="red")
+#             plt.axvline(
+#                 opti_dur,
+#                 color="green",
+#                 linestyle="--",
+#                 label=f"Opt. Duration: {opti_dur:.1f} ns",
+#             )
+#             plt.xlabel("Polarization Duration (ns)")
+#             plt.ylabel("Preparation Fidelity")
+#             plt.title(f"NV Num: {nv_ind}")
+#             plt.legend()
+#             plt.show(block=True)
 
 #             print(
 #                 f"NV {nv_ind} - Optimal Duration: {opti_dur:.1f} ns, Optimal Fidelity: {opti_fidelity}"
@@ -751,7 +751,7 @@ if __name__ == "__main__":
     )
     # file_id = 1766460747869  # yellow ampl var 50ms shallow 148nvs
     # file_id = 1780914190838  # yellow ampl var 60ms shallow 148nvs
-    file_id = 1782586909215  # yellow ampl var 60ms shallow 69nvs
+    # file_id = 1782586909215  # yellow ampl var 60ms shallow 69nvs
 
     # file_id = 1767789140438  # pol dur var 200ns to 2us
     # file_id = 1768024979194  # pol dur var 100ns to 1us
@@ -764,9 +764,13 @@ if __name__ == "__main__":
     # file_id = 1778627435145 # pol dur var 16ns to 1028ns dataset 148NVs
     # file_id = 1778426682976  # green ampl var 60ms shallow nvs
     # file_id = 1778524699003  # green ampl var 60ms shallow nvs (large range)
-    # file_id = 1780495024088  # green ampl var 60ms shallow nvs (large range)
-
+    # file_id = 1780495024088  # green ampl var 60ms shallow nvs (large range
     # raw_data = dm.get_raw_data(file_id=1709868774004, load_npz=False) #yellow ampl var
+
+    # rubin
+    # file_id = 1791404857391  # yellow ampl var 50ms shallow 255nvs
+    file_id = 1791914648483
+    # file_id = 1791756537192  # green durations
     raw_data = dm.get_raw_data(file_id=file_id, load_npz=False)  # yellow amp var
     file_name = dm.get_file_name(file_id=file_id)
     print(f"{file_name}_{file_id}")
