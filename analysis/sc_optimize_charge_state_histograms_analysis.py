@@ -114,6 +114,7 @@ def process_and_plot(raw_data):
     condensed_counts = np.array(condensed_counts)
 
     prob_dist = ProbDist.COMPOUND_POISSON
+    # prob_dist = ProbDist.COMPOUND_POISSON_WITH_IONIZATION
 
     # Function to process a single NV and step
     def process_nv_step(nv_ind, step_ind):
@@ -127,6 +128,7 @@ def process_and_plot(raw_data):
                 return np.nan, np.nan, np.nan
 
             # Calculate threshold and fidelities
+
             threshold, readout_fidelity = determine_threshold(
                 popt, prob_dist, dark_mode_weight=0.5, ret_fidelity=True
             )
@@ -203,7 +205,7 @@ def process_and_plot(raw_data):
                 readout_fidelity_arr[nv_ind],
                 prep_fidelity_arr[nv_ind],
                 goodness_of_fit_arr[nv_ind],
-                weights=(1.5, 1, 1),
+                weights=(1, 1, 1),
             )
             # Manually override for the first NV
             # if nv_ind == 0:
@@ -404,7 +406,7 @@ def process_and_plot(raw_data):
         median_readout_fidelity,
         median_prep_fidelity,
         median_goodness_of_fit,
-        weights=(1, 1, 0),
+        weights=(1, 1, 1),
     )
 
     # Plot average and median readout and prep fidelity
@@ -746,9 +748,7 @@ if __name__ == "__main__":
     # file_id = 1776463838159  # yellow ampl var 50ms shallow nvs
     # file_id = 1766460747869  # yellow ampl var 50ms shallow nvs
     # file_id = 1780914190838  # yellow ampl var 60ms shallow nvs
-    file_id = (
-        1782586909215  # yellow ampl var 60ms shallow nvs (selected two orieantation)
-    )
+    # file_id = 1782586909215  # yellow ampl 60ms shallow nvs (selected two orieantation)
     # file_id = 1766460747869  # yellow ampl var 50ms shallow 148nvs
     # file_id = 1780914190838  # yellow ampl var 60ms shallow 148nvs
     # file_id = 1782586909215  # yellow ampl var 60ms shallow 69nvs
@@ -768,9 +768,10 @@ if __name__ == "__main__":
     # raw_data = dm.get_raw_data(file_id=1709868774004, load_npz=False) #yellow ampl var
 
     # rubin
-    # file_id = 1791404857391  # yellow ampl var 50ms shallow 255nvs
-    file_id = 1791914648483
+    # file_id = 1791404857391  # yellow ampl
+    file_id = 1792169039756  # yellow ampl
     # file_id = 1791756537192  # green durations
+    # file_id = 1791914648483  # green amps
     raw_data = dm.get_raw_data(file_id=file_id, load_npz=False)  # yellow amp var
     file_name = dm.get_file_name(file_id=file_id)
     print(f"{file_name}_{file_id}")

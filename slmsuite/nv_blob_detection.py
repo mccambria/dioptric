@@ -381,11 +381,12 @@ if __name__ == "__main__":
     # data = dm.get_raw_data(file_id=1764727515943, load_npz=True)  # comind datas
     # data = dm.get_raw_data(file_id=1766351495521, load_npz=True)
     # data = dm.get_raw_data(file_id=1766620461342, load_npz=True)
-    data = dm.get_raw_data(file_id=1791296034768, load_npz=True)
+    # data = dm.get_raw_data(file_id=1791296034768, load_npz=True)
+    data = dm.get_raw_data(file_id=1791776254933, load_npz=True)  # rubin green scan
 
-    img_array = np.array(data["ref_img_array"])
+    # img_array = np.array(data["ref_img_array"])
     # img_array = np.array(data["ref_img_array"]["ref_img_array"])
-    # img_array = np.array(data["img_array"]["img_array"])
+    img_array = np.array(data["img_array"])
     # print(img_array)
     # img_array = np.array(data["diff_img_array"])
     # img_array = -img_array
@@ -401,7 +402,7 @@ if __name__ == "__main__":
 
     # Apply the blob detection and Gaussian fitting
     sigma = 2.0
-    lower_threshold = 0.08
+    lower_threshold = 20
     upper_threshold = None
     smoothing_sigma = 0.0
 
@@ -481,12 +482,12 @@ if __name__ == "__main__":
     #     print("No spots detected. Unable to calculate conversion factor.")
 
     # Save the results
-    save_results(
-        filtered_nv_coords,
-        filtered_counts,
-        path="slmsuite/nv_blob_detection",
-        filename="nv_blob_shallow_rubin_310nvs.npz",
-    )
+    # save_results(
+    #     filtered_nv_coords,
+    #     filtered_counts,
+    #     path="slmsuite/nv_blob_detection",
+    #     filename="nv_blob_shallow_rubin_310nvs.npz",
+    # )
     ### full ROI -- multiple images save in the same file
     # process_scan_file()
 
