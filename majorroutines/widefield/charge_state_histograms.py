@@ -47,7 +47,8 @@ def plot_histograms(
     ### Histograms
     num_reps = len(ref_counts_list)
     labels = ["With ionization pulse", "Without ionization pulse"]
-    colors = [kpl.KplColors.RED, kpl.KplColors.GREEN]
+    # colors = [kpl.KplColors.RED, kpl.KplColors.GREEN]
+    colors = [kpl.KplColors.RED, kpl.KplColors.BLUE]  # MCC
     counts_lists = [sig_counts_list, ref_counts_list]
 
     if ax is None:
@@ -63,15 +64,18 @@ def plot_histograms(
         ax.set_ylabel("Number of occurrences")
 
     for ind in range(2):
+        if ind == 0:
+            continue
         counts_list = counts_lists[ind]
         label = labels[ind]
         color = colors[ind]
-        kpl.histogram(ax, counts_list, label=label, color=color, density=density)
+        # kpl.histogram(ax, counts_list, label=label, color=color, density=density)  # MCC
+        kpl.histogram(ax, counts_list, color=color, density=density)
 
-    ax.legend()
+    # ax.legend() # MCC
     # ax.tick_params(axis="y", rotation=90)
-    ax.set_xlim(-0.5, 72.5)
-    ax.set_yticks([0, 0.04, 0.08])
+    ax.set_xlim(-0.5, None)
+    # ax.set_yticks([0, 0.04, 0.08])
 
     if fig is not None:
         return fig
@@ -86,6 +90,7 @@ def process_and_plot(
 
     nv_list = raw_data["nv_list"]
     num_nvs = len(nv_list)
+    weak_esr = [72, 64, 55, 96, 112, 87, 12, 58, 36]
     counts = np.array(raw_data["counts"])
     sig_counts_lists = [counts[0, nv_ind].flatten() for nv_ind in range(num_nvs)]
     ref_counts_lists = [counts[1, nv_ind].flatten() for nv_ind in range(num_nvs)]
@@ -98,16 +103,19 @@ def process_and_plot(
     threshold_list = []
     readout_fidelity_list = []
     prep_fidelity_list = []
+    ion_prob_list = []
     red_chi_sq_list = []
     hist_figs = []
 
     for ind in range(num_nvs):
+        if ind in weak_esr:
+            continue
         sig_counts_list = sig_counts_lists[ind]
         ref_counts_list = ref_counts_lists[ind]
 
         # Only use ref counts for threshold determination
         popt, _, red_chi_sq = fit_bimodal_histogram(
-            ref_counts_list, prob_dist, no_print=True
+            ref_counts_list, prob_dist, no_print=False
         )
         threshold, readout_fidelity = determine_threshold(
             popt, prob_dist, dark_mode_weight=0.5, do_print=True, ret_fidelity=True
@@ -116,18 +124,22 @@ def process_and_plot(
         readout_fidelity_list.append(readout_fidelity)
         if popt is not None:
             prep_fidelity = 1 - popt[0]
+            ion_prob = popt[-1]
         else:
             prep_fidelity = np.nan
+            ion_prob = np.nan
         # prep_fidelity = (
         #     np.count_nonzero(np.array(ref_counts_list) > threshold) / num_shots
         # )  # MCC
         prep_fidelity_list.append(prep_fidelity)
         red_chi_sq_list.append(red_chi_sq)
+        ion_prob_list.append(ion_prob)
 
         # Plot histograms with NV index and SNR included
         nv_num = widefield.get_nv_num(nv_list[ind])
-        # if do_plot_histograms and nv_num == 153:
-        if do_plot_histograms:
+        # if do_plot_histograms and nv_num in [37, 71, 74]:
+        # if do_plot_histograms:
+        if False:
             fig = plot_histograms(sig_counts_list, ref_counts_list, density=True)
             ax = fig.gca()
 
@@ -159,9 +171,24 @@ def process_and_plot(
                 bimodal_pdf = bimodal_histogram.get_bimodal_pdf(prob_dist)
                 bimodal_line = bimodal_pdf(x_vals, *popt)
 
-                kpl.plot_line(ax, x_vals, dark_mode_line, color=kpl.KplColors.RED)
-                kpl.plot_line(ax, x_vals, bright_mode_line, color=kpl.KplColors.GREEN)
-                kpl.plot_line(ax, x_vals, bimodal_line, color=kpl.KplColors.BLUE)
+                kpl.plot_line(
+                    ax,
+                    x_vals,
+                    dark_mode_line,
+                    color=kpl.KplColors.RED,
+                    label="NV$^{0}$ mode",  # MCC
+                )
+                kpl.plot_line(
+                    ax,
+                    x_vals,
+                    bright_mode_line,
+                    color=kpl.KplColors.GREEN,
+                    label="NV$^{-}$ mode",
+                )
+                kpl.plot_line(
+                    ax, x_vals, bimodal_line, color=kpl.KplColors.BLUE, label="Combined"
+                )
+                ax.legend(loc=kpl.Loc.UPPER_RIGHT)
 
             # Threshold line
             if threshold is not None:
@@ -220,9 +247,13 @@ def process_and_plot(
     str_readout_fidelity = tb.round_for_print(
         avg_readout_fidelity, std_readout_fidelity
     )
-    str_prep_fidelity = tb.round_for_print(avg_prep_fidelity, std_prep_fidelity)
     print(f"Average readout fidelity: {str_readout_fidelity}")
+    str_prep_fidelity = tb.round_for_print(avg_prep_fidelity, std_prep_fidelity)
     print(f"Average NV- preparation fidelity: {str_prep_fidelity}")
+    avg_ion_prob = round(np.mean(ion_prob_list), 6)
+    print(f"Average ionization during readout probability: {avg_ion_prob}")
+    var_ion_prob = round(np.var(ion_prob_list), 6)
+    print(f"Variance ionization during readout probability: {var_ion_prob}")
 
     return hist_figs
 

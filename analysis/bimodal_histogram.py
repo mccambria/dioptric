@@ -446,7 +446,6 @@ def determine_threshold(
         print(
             f"Optimum readout fidelity {round(fidelity, 3)} achieved at threshold {threshold}"
         )
-        print(popt)
 
     if ret_fidelity:
         return threshold, fidelity

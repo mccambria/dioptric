@@ -159,6 +159,7 @@ def create_fit_figure(
             # elif num_resonances == 2:
             #     center_freqs.append((popt[2], popt[5]))
             center_freqs.append((popt[2], popt[5]))
+            center_freq_errs.append((np.sqrt(pcov[2, 2]), np.sqrt(pcov[5, 5])))
     else:
         fit_fns = None
         popts = None
@@ -173,10 +174,12 @@ def create_fit_figure(
             nvb_freqs.append(center_freqs[ind])
         else:
             nva_freqs.append(center_freqs[ind])
+    nva_freqs = np.array(nva_freqs)
+    nvb_freqs = np.array(nvb_freqs)
     nvb_mean_freqs = np.mean(nvb_freqs, axis=0)
     nva_mean_freqs = np.mean(nva_freqs, axis=0)
-    # print(nvb_mean_freqs)
-    # print(nva_mean_freqs)
+    print(nvb_mean_freqs)
+    print(nva_mean_freqs)
 
     ### Make the figure
 
