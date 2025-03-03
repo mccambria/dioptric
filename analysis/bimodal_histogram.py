@@ -18,7 +18,7 @@ from inspect import signature
 import numpy as np
 from matplotlib import pyplot as plt
 from scipy.integrate import quad
-from scipy.special import factorial, gammainc, gammaln, xlogy
+from scipy.special import factorial, gammainc, gammaincc, gammaln, xlogy
 from scipy.stats import norm, poisson, skewnorm
 
 from utils import kplotlib as kpl
@@ -35,6 +35,7 @@ class ProbDist(Enum):
     COMPOUND_POISSON = auto()  # See wiki 11/14
     GAUSSIAN = auto()
     SKEW_GAUSSIAN = auto()
+    COMPOUND_POISSON_WITH_IONIZATION = auto()  # See Cambria PRX 2025
 
 
 def get_single_mode_num_params(prob_dist: ProbDist):
@@ -61,8 +62,22 @@ def get_single_mode_cdf(prob_dist: ProbDist):
 
 
 def get_bimodal_pdf(prob_dist: ProbDist):
-    single_mode_fn = get_single_mode_pdf(prob_dist)
-    return _get_bimodal_fn(single_mode_fn)
+    if prob_dist is ProbDist.COMPOUND_POISSON_WITH_IONIZATION:
+        dark_mode_fn = get_single_mode_pdf(ProbDist.COMPOUND_POISSON)
+        bright_mode_fn = get_single_mode_pdf(ProbDist.COMPOUND_POISSON_WITH_IONIZATION)
+
+        def bimodal_fn(x, dark_mode_weight, *params):
+            bright_mode_weight = 1 - dark_mode_weight
+            first_mode_val = dark_mode_fn(x, params[0])
+            second_mode_val = bright_mode_fn(x, *params)
+            return (
+                dark_mode_weight * first_mode_val + bright_mode_weight * second_mode_val
+            )
+    else:
+        single_mode_fn = get_single_mode_pdf(prob_dist)
+        bimodal_fn = _get_bimodal_fn(single_mode_fn)
+
+    return bimodal_fn
 
 
 def get_bimodal_cdf(prob_dist: ProbDist):
@@ -72,11 +87,11 @@ def get_bimodal_cdf(prob_dist: ProbDist):
 
 def _get_bimodal_fn(single_mode_fn):
     def bimodal_fn(x, dark_mode_weight, *params):
-        second_mode_weight = 1 - dark_mode_weight
+        bright_mode_weight = 1 - dark_mode_weight
         half_num_params = len(params) // 2
         first_mode_val = single_mode_fn(x, *params[:half_num_params])
         second_mode_val = single_mode_fn(x, *params[half_num_params:])
-        return dark_mode_weight * first_mode_val + second_mode_weight * second_mode_val
+        return dark_mode_weight * first_mode_val + bright_mode_weight * second_mode_val
 
     return bimodal_fn
 
@@ -84,7 +99,9 @@ def _get_bimodal_fn(single_mode_fn):
 # @cache
 def poisson_pdf(x, rate):
     # return poisson(mu=rate).pmf(x)
-    return (rate**x) * np.exp(-rate) / factorial(x)
+    # return (rate**x) * np.exp(-rate) / factorial(x)
+    # Computing the pdf directly tends to overflow. Compute exp(ln(pdf)) instead
+    return np.exp(xlogy(x, rate) - rate - gammaln(x + 1))
 
 
 def poisson_cdf(x, rate):
@@ -102,44 +119,71 @@ def _calc_cdf(prob_dist, x, *params):
     return val
 
 
-def compound_poisson_pdf(x, rate):
-    if isinstance(x, list):
-        x = np.array(x)
-    x_is_array = isinstance(x, np.ndarray)
+def compound_poisson_pdf(z, rate):
+    if isinstance(z, list):
+        z = np.array(z)
+    z_not_array = not isinstance(z, np.ndarray)
+    # If z is not an array, turn it into one so we can use the same code.
+    # Convert back at the end.
+    if z_not_array:
+        z = np.array([z])
+    z = z[np.newaxis, :]
 
-    lower_lim = round(max(0, rate - 5 * np.sqrt(rate)))
+    lower_lim = 0
     upper_lim = round(rate + 5 * np.sqrt(rate))
     integral_points = np.arange(lower_lim, upper_lim, 1, dtype=np.float64)
-    if x_is_array:
-        num_x_points = len(x)
-        num_integral_points = len(integral_points)
-        x = np.tile(x, (num_integral_points, 1))
-        integral_points = np.tile(integral_points, (num_x_points, 1))
-        integral_points = integral_points.T
+    integral_points = integral_points[:, np.newaxis]
 
-    # Calculate the integrand
-    # Straightforward version (next line) can overflow:
-    # (rate**y) * (y**x) * np.exp(-(rate + y)) / (factorial(x) * factorial(y))
-    # Calculate exp(log(integrand)) instead
-    exp_arg = (
-        xlogy(integral_points, rate)
-        + xlogy(x, integral_points)
-        - (rate + integral_points)
-        - gammaln(x + 1)
-        - gammaln(integral_points + 1)
-    )
-    integrand = np.exp(exp_arg)
-
-    if x_is_array:
-        axis = 0
+    integrand = poisson_pdf(z, integral_points) * poisson_pdf(integral_points, rate)
+    ret_val = np.sum(integrand, axis=0)
+    if z_not_array:
+        return ret_val[0]
     else:
-        axis = None
-    ret_val = np.sum(integrand, axis=axis)
-    return ret_val
+        return ret_val
+
+
+def compound_poisson_with_ionization_pdf(z, lambda_0, lambda_m, ion):
+    if isinstance(z, list):
+        z = np.array(z)
+    z_not_array = not isinstance(z, np.ndarray)
+    # If z is not an array, turn it into one so we can use the same code.
+    # Convert back at the end.
+    if z_not_array:
+        z = np.array([z])
+    z = z[np.newaxis, :]
+
+    lower_lim = 0
+    upper_lim = round(lambda_m + 5 * np.sqrt(lambda_m))
+    integral_points = np.arange(lower_lim, upper_lim, 1, dtype=np.float64)
+    integral_points = integral_points[:, np.newaxis]
+
+    lambda_diff = lambda_m - lambda_0
+    term_1 = poisson_pdf(integral_points, lambda_m) * (1 - ion + (1 / 2) * ion**2)
+    coeff_23 = ion * (lambda_diff + ion * lambda_0) / (lambda_diff**2)
+    term_2 = gammaincc(integral_points + 1, lambda_0)
+    term_3 = gammaincc(integral_points + 1, lambda_m)
+    coeff_45 = (ion**2) / (lambda_diff**2)
+    term_4 = (integral_points + 1) * gammaincc(integral_points + 2, lambda_m)
+    term_5 = (integral_points + 1) * gammaincc(integral_points + 2, lambda_0)
+    integrand = poisson_pdf(z, integral_points) * (
+        term_1 + coeff_23 * (term_2 - term_3) + coeff_45 * (term_4 - term_5)
+    )
+
+    ret_val = np.sum(integrand, axis=0)
+    if z_not_array:
+        return ret_val[0]
+    else:
+        return ret_val
 
 
 def compound_poisson_cdf(x, rate):
     return _calc_cdf(ProbDist.COMPOUND_POISSON, x, rate)
+
+
+def compound_poisson_with_ionization_cdf(x, lambda_0, lambda_m, ion):
+    return _calc_cdf(
+        ProbDist.COMPOUND_POISSON_WITH_IONIZATION, x, lambda_0, lambda_m, ion
+    )
 
 
 def broadened_poisson_pdf(x, rate, sigma, do_norm=True):
@@ -262,6 +306,12 @@ def fit_bimodal_histogram(
             (0, mean_dark_min, mean_dark_min),
             (1, mean_bright_max, mean_bright_max),
         )
+    elif prob_dist is ProbDist.COMPOUND_POISSON_WITH_IONIZATION:
+        guess_params = (ratio_guess, mean_dark_guess, mean_bright_guess, 0.0)
+        bounds = (
+            (0, mean_dark_min, mean_dark_min, 0.0),
+            (1, mean_bright_max, mean_bright_max, 0.5),
+        )
 
     # return guess_params
 
@@ -353,7 +403,9 @@ def determine_threshold(
     num_single_mode_params = get_single_mode_num_params(prob_dist)
 
     # Calculate fidelity (probability of calling state correctly) for given threshold
-    mean_counts_dark, mean_counts_bright = popt[1], popt[1 + num_single_mode_params]
+    # mean_counts_dark, mean_counts_bright = popt[1], popt[1 + num_single_mode_params]
+    # MCC hack for including ionization
+    mean_counts_dark, mean_counts_bright = popt[1], popt[2]
     mean_counts_dark = round(mean_counts_dark)
     mean_counts_bright = round(mean_counts_bright)
     thresh_options = np.arange(mean_counts_dark - 0.5, mean_counts_bright + 0.5, 1)
@@ -362,9 +414,15 @@ def determine_threshold(
     right_fidelities = []
     single_mode_cdf = get_single_mode_cdf(prob_dist)
     for val in thresh_options:
-        dark_left_prob = single_mode_cdf(val, *popt[1 : 1 + num_single_mode_params])
+        # dark_left_prob = single_mode_cdf(val, *popt[1 : 1 + num_single_mode_params])
+        # bright_left_prob = single_mode_cdf(val, *popt[1 + num_single_mode_params :])
+        # MCC hack for including ionization
+        dark_mode_cdf = get_single_mode_cdf(ProbDist.COMPOUND_POISSON)
+        dark_left_prob = dark_mode_cdf(val, popt[1])
+        bright_mode_cdf = get_single_mode_cdf(ProbDist.COMPOUND_POISSON_WITH_IONIZATION)
+        bright_left_prob = bright_mode_cdf(val, *popt[1:])
+
         dark_right_prob = 1 - dark_left_prob
-        bright_left_prob = single_mode_cdf(val, *popt[1 + num_single_mode_params :])
         bright_right_prob = 1 - bright_left_prob
 
         fidelity = (
@@ -385,7 +443,9 @@ def determine_threshold(
     threshold = thresh_options[np.argmax(fidelities)]
 
     if do_print:
-        print(f"Optimum readout fidelity {fidelity} achieved at threshold {threshold}")
+        print(
+            f"Optimum readout fidelity {round(fidelity, 3)} achieved at threshold {threshold}"
+        )
 
     if ret_fidelity:
         return threshold, fidelity
@@ -593,28 +653,12 @@ def determine_dual_threshold(
 
 
 if __name__ == "__main__":
-    fn = get_bimodal_pdf(ProbDist.COMPOUND_POISSON)
-    start = time.time()
-    x_vals = np.array(range(100))
-    for x in range(1000):
-        fn(x_vals, 0.3, 25, 50)
-    stop = time.time()
-    print(stop - start)
-    sys.exit()
-
     kpl.init_kplotlib()
-    # print(get_single_mode_num_params(ProbDist.BROADENED_POISSON))
-    # sys.exit()
-    # print(compound_poisson_pdf(80, 20))
-    # sys.exit()
-
+    # (z, lambda_0, lambda_m, ion)
+    line_fn = compound_poisson_with_ionization_pdf
     fig, ax = plt.subplots()
-    x_vals = np.linspace(0, 20, 1000)
-    for ind in range(10):
-        kpl.plot_line(ax, x_vals, poisson_pdf(x_vals, ind), label="Poisson")
-    # kpl.plot_line(ax, x_vals, poisson_pdf(x_vals, 40), label="Poisson")
-    # kpl.plot_line(
-    #     ax, x_vals, compound_poisson_pdf(x_vals, 40), label="Compound Poisson"
-    # )
-    # ax.legend()
+    x_vals = np.linspace(0, 80, 1000)
+    line_vals = line_fn(x_vals, 20, 40, 0.0)
+    print(np.sum(line_vals) * x_vals[1] - x_vals[0])
+    kpl.plot_line(ax, x_vals, line_vals)
     kpl.show(block=True)
