@@ -129,25 +129,48 @@ def brute_fit_fn_cost(
     return np.sum(((nv_counts - line) ** 2) / (nv_counts_ste**2))
 
 
+def rolling_minimum(taus, values, window_size):
+    min_values = np.empty_like(values)
+    half_window_size = window_size / 2
+
+    for ind in range(len(taus)):
+        # Find indices within the window
+        start_time = taus[ind] - half_window_size
+        end_time = taus[ind] + half_window_size
+        indices = np.where((taus >= start_time) & (taus <= end_time))[0]
+
+        # Compute minimum over the valid window
+        min_values[ind] = np.min(values[indices])
+
+    return min_values
+
+
 def fit(total_evolution_times, nv_counts, nv_counts_ste):
-    # fit_fn = quartic_decay
-    fit_fn = quartic_decay_fixed_revival
+    fit_fn = quartic_decay
+    # fit_fn = quartic_decay_fixed_revival
 
     ### Get good guesses
 
     # baseline, quartic_contrast, revival_time, quartic_decay_time, T2_ms, T2_exp, osc_contrast, osc_freq1, osc_freq2,
     baseline_guess = nv_counts[9]
+    revival_time_guess = 50
     quartic_contrast_guess = baseline_guess - nv_counts[0]
     # exp(-(0.1/t)**3) == (norm_counts[-6] - baseline_guess) / quartic_contrast_guess
     log_decay = -np.log((baseline_guess - nv_counts[-6]) / quartic_contrast_guess)
     T2_guess = 0.1 * (log_decay ** (-1 / 3))
-    # guess_params = [baseline_guess, quartic_contrast_guess, 50, 7, T2_guess, 3]
-    guess_params = [baseline_guess, quartic_contrast_guess, 7, T2_guess, 3]
+    guess_params = [
+        baseline_guess,
+        quartic_contrast_guess,
+        revival_time_guess,
+        7,
+        T2_guess,
+        3,
+    ]
     bounds = [
-        # [0, 0, 40, 0, 0, 0],
-        # [1, 1, 60, 20, 1000, 10],
-        [0, 0, 0, 0, 0],
-        [1, 1, 20, 1000, 10],
+        [0, 0, 40, 0, 0, 0],
+        [1, 1, 60, 20, 1000, 10],
+        # [0, 0, 0, 0, 0],
+        # [1, 1, 20, 1000, 10],
     ]
 
     # FFT to determine dominant frequency
@@ -161,39 +184,66 @@ def fit(total_evolution_times, nv_counts, nv_counts_ste):
     # freq_guess = freqs[np.argmax(transform_mag[4:]) + 4]
     # guess_params[-2] = freq_guess
 
-    ### Fit assuming no strongly coupled C13
+    ### Fit to envelope as if there were no strongly coupled C13
 
+    # Clip guess_params to bounds
+    num_params = len(guess_params)
+    for ind in range(num_params):
+        clipped_val = np.clip(guess_params[ind], bounds[0][ind], bounds[1][ind])
+        guess_params[ind] = clipped_val
+    rolling_minimum_window = 5
+    envelope = rolling_minimum(total_evolution_times, nv_counts, rolling_minimum_window)
     no_c13_popt, no_c13_pcov, no_c13_red_chi_sq = curve_fit(
         fit_fn,
         total_evolution_times,
-        nv_counts,
+        envelope,
         guess_params,
         nv_counts_ste,
         bounds=bounds,
     )
+    no_c13_popt[3] -= rolling_minimum_window / 2
+    # fig, ax = plt.subplots()
+    # kpl.plot_points(ax, total_evolution_times, envelope, nv_counts_ste)
+    # kpl.plot_points(ax, total_evolution_times, nv_counts, nv_counts_ste)
+    # linspace_taus = np.linspace(0, np.max(total_evolution_times), 1000)
+    # kpl.plot_line(
+    #     ax,
+    #     linspace_taus,
+    #     fit_fn(linspace_taus, *no_c13_popt),
+    #     color=kpl.KplColors.GRAY,
+    # )
+    # kpl.show(block=True)
 
     # return popt, pcov, red_chi_sq
 
     ### Brute to find correct frequencies
 
-    osc_contrast_guess = no_c13_popt[1]
-    args = (
-        total_evolution_times,
-        nv_counts,
-        nv_counts_ste,
-        fit_fn,
-        no_c13_popt,
-        osc_contrast_guess,
-    )
+    best_cost = None
+    for osc_contrast_guess in np.linspace(0, no_c13_popt[1], 4):
+        args = (
+            total_evolution_times,
+            nv_counts,
+            nv_counts_ste,
+            fit_fn,
+            no_c13_popt,
+            osc_contrast_guess,
+        )
 
-    # ranges = [(bounds[0][ind], bounds[1][ind]) for ind in range(len(bounds[0]))]
-    # ranges.extend([(-0.5, 0.5), (0, 1.5), (0, 1.5)])
-    # ranges = [(-0.5, 0.5), (0, 1.5), (0, 1.5)]
-    ranges = [(0, 1.5), (0, 0.5)]
-    workers = 6
-    popt = brute(
-        brute_fit_fn_cost, ranges, Ns=1000, finish=None, workers=workers, args=args
-    )
+        # ranges = [(bounds[0][ind], bounds[1][ind]) for ind in range(len(bounds[0]))]
+        # ranges.extend([(-0.5, 0.5), (0, 1.5), (0, 1.5)])
+        # ranges = [(-0.5, 0.5), (0, 1.5), (0, 1.5)]
+        ranges = [(0, 2.0), (0, 0.5)]
+        workers = -1
+        popt = brute(
+            brute_fit_fn_cost, ranges, Ns=2000, finish=None, workers=workers, args=args
+        )
+        cost = brute_fit_fn_cost(popt, *args)
+        if best_cost is None or cost < best_cost:
+            best_popt = popt
+            best_osc_contrast_guess = osc_contrast_guess
+            best_cost = cost
+    osc_contrast_guess = best_osc_contrast_guess
+    popt = best_popt
 
     ### Fine tune with a final fit
 
@@ -201,6 +251,13 @@ def fit(total_evolution_times, nv_counts, nv_counts_ste):
     guess_params.extend(popt)
     bounds[0].extend([-0.5, 0, 0])
     bounds[1].extend([0.5, 1.5, 0.5])
+    # add to first guess
+
+    # Clip guess_params to bounds
+    num_params = len(guess_params)
+    for ind in range(num_params):
+        clipped_val = np.clip(guess_params[ind], bounds[0][ind], bounds[1][ind])
+        guess_params[ind] = clipped_val
 
     popt, pcov, red_chi_sq = curve_fit(
         fit_fn,
@@ -211,6 +268,7 @@ def fit(total_evolution_times, nv_counts, nv_counts_ste):
         bounds=bounds,
     )
 
+    return popt, pcov, red_chi_sq
     if no_c13_red_chi_sq < red_chi_sq:
         return no_c13_popt, no_c13_pcov, no_c13_red_chi_sq
     else:
@@ -254,8 +312,8 @@ def create_fit_figure(data, axes_pack=None, layout=None, no_legend=True, nv_inds
             # kpl.show(block=True)
 
             try:
-                # fit_fn = quartic_decay
-                fit_fn = quartic_decay_fixed_revival
+                fit_fn = quartic_decay
+                # fit_fn = quartic_decay_fixed_revival
                 popt, pcov, red_chi_sq = fit(
                     total_evolution_times, nv_counts, nv_counts_ste
                 )
@@ -461,6 +519,8 @@ if __name__ == "__main__":
     weak_esr = [72, 64, 55, 96, 112, 87, 12, 58, 36]
     skip_inds = list(set(split_esr + broad_esr + weak_esr))
     nv_inds = [ind for ind in range(117) if ind not in skip_inds]
+
+    # nv_inds = nv_inds[2:]
 
     # create_raw_data_figure(data)
     create_fit_figure(data, nv_inds=nv_inds)
