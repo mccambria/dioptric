@@ -159,7 +159,7 @@ def fit(total_evolution_times, nv_counts, nv_counts_ste):
     # exp(-(0.1/t)**3) == (norm_counts[-6] - baseline_guess) / quartic_contrast_guess
     log_decay = -np.log((baseline_guess - nv_counts[-6]) / quartic_contrast_guess)
     T2_guess = 0.1 * (log_decay ** (-1 / 3))
-    if T2_guess is np.nan:
+    if np.isnan(T2_guess):
         T2_guess = 0.1
     guess_params = [
         baseline_guess,
@@ -196,17 +196,14 @@ def fit(total_evolution_times, nv_counts, nv_counts_ste):
         guess_params[ind] = clipped_val
     rolling_minimum_window = 5
     envelope = rolling_minimum(total_evolution_times, nv_counts, rolling_minimum_window)
-    try:
-        no_c13_popt, no_c13_pcov, no_c13_red_chi_sq = curve_fit(
-            fit_fn,
-            total_evolution_times,
-            envelope,
-            guess_params,
-            nv_counts_ste,
-            bounds=bounds,
-        )
-    except Exception:
-        test = 0
+    no_c13_popt, no_c13_pcov, no_c13_red_chi_sq = curve_fit(
+        fit_fn,
+        total_evolution_times,
+        envelope,
+        guess_params,
+        nv_counts_ste,
+        bounds=bounds,
+    )
     no_c13_popt[3] -= rolling_minimum_window / 2
     # fig, ax = plt.subplots()
     # kpl.plot_points(ax, total_evolution_times, envelope, nv_counts_ste)
@@ -272,6 +269,9 @@ def fit(total_evolution_times, nv_counts, nv_counts_ste):
         guess_params,
         nv_counts_ste,
         bounds=bounds,
+        ftol=1e-6,
+        xtol=1e-6,
+        gtol=1e-6,
     )
 
     return popt, pcov, red_chi_sq
@@ -531,7 +531,7 @@ if __name__ == "__main__":
     skip_inds = list(set(split_esr + broad_esr + weak_esr))
     nv_inds = [ind for ind in range(117) if ind not in skip_inds]
 
-    nv_inds = nv_inds[8:]
+    # nv_inds = nv_inds[8:]
 
     # create_raw_data_figure(data)
     create_fit_figure(data, nv_inds=nv_inds)
