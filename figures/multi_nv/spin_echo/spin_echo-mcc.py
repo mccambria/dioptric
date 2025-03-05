@@ -33,27 +33,28 @@ def quartic_decay(
     T2_ms,
     T2_exp,
     osc_contrast=None,
+    osc_freq0=None,
     osc_freq1=None,
-    osc_freq2=None,
 ):
     # baseline = 0.5
     # print(len(amplitudes))
     T2_us = 1000 * T2_ms
     envelope = np.exp(-((tau / T2_us) ** T2_exp))
     # envelope = 1
-    num_revivals = 3
-    comb = 0
-    for ind in range(num_revivals):
-        exp_part = np.exp(-(((tau - ind * revival_time) / quartic_decay_time) ** 4))
-        comb += exp_part
+    revivals_2d = np.arange(3)[:, np.newaxis]
+    tau_2d = tau[np.newaxis, :]
+    comb_terms = np.exp(
+        -(((tau_2d - revivals_2d * revival_time) / quartic_decay_time) ** 4)
+    )
+    comb = np.sum(comb_terms, axis=0)
     if osc_contrast is None:
         mod = quartic_contrast
     else:
         mod = (
             quartic_contrast
             - osc_contrast
-            * np.sin(2 * np.pi * osc_freq1 * tau / 2) ** 2
-            * np.sin(2 * np.pi * osc_freq2 * tau / 2) ** 2
+            * np.sin(np.pi * osc_freq0) ** 2
+            * np.sin(np.pi * osc_freq1) ** 2
         )
     val = baseline - envelope * mod * comb
     return val
@@ -302,6 +303,7 @@ def create_fit_figure(data, axes_pack=None, layout=None, no_legend=True, nv_inds
     if do_fit:
         fit_fns = []
         popts = []
+        red_chi_sq_list = []
 
         for nv_ind in nv_inds:
             nv_counts = norm_counts[nv_ind]
@@ -328,18 +330,22 @@ def create_fit_figure(data, axes_pack=None, layout=None, no_legend=True, nv_inds
                     fit_fn(linspace_taus, *popt),
                     color=kpl.KplColors.GRAY,
                 )
-                figManager = plt.get_current_fig_manager()
-                figManager.window.showMaximized()
-                ax.set_title(nv_ind)
-                ax.set_xlabel("Total evolution time (µs)")
-                ax.set_ylabel("Normalized NV$^{-}$ population")
-                kpl.show(block=True)
+                # figManager = plt.get_current_fig_manager()
+                # figManager.window.showMaximized()
+                # ax.set_title(nv_ind)
+                # ax.set_xlabel("Total evolution time (µs)")
+                # ax.set_ylabel("Normalized NV$^{-}$ population")
+                # kpl.show(block=True)
             except Exception:
                 print(traceback.format_exc())
                 fit_fn = None
                 popt = None
+                red_chi_sq = None
             fit_fns.append(fit_fn)
             popts.append(popt)
+            red_chi_sq_list.append(red_chi_sq)
+
+    print(red_chi_sq_list)
 
     ### Make the figure
 
