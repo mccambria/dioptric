@@ -196,11 +196,13 @@ def fit(total_evolution_times, nv_counts, nv_counts_ste):
     ### Get good guesses
 
     # baseline, quartic_contrast, revival_time, quartic_decay_time, T2_ms, T2_exp, osc_contrast, osc_freq1, osc_freq2,
-    baseline_guess = nv_counts[9]
+    rolling_minimum_window = 5
+    envelope = rolling_minimum(total_evolution_times, nv_counts, rolling_minimum_window)
+    baseline_guess = nv_counts[7]
     revival_time_guess = 50
     quartic_contrast_guess = baseline_guess - nv_counts[0]
     # exp(-(0.1/t)**3) == (norm_counts[-6] - baseline_guess) / quartic_contrast_guess
-    log_decay = -np.log((baseline_guess - nv_counts[-6]) / quartic_contrast_guess)
+    log_decay = -np.log((baseline_guess - envelope[-7]) / quartic_contrast_guess)
     T2_guess = 0.1 * (log_decay ** (-1 / 3))
     if np.isnan(T2_guess):
         T2_guess = 0.1
@@ -237,8 +239,6 @@ def fit(total_evolution_times, nv_counts, nv_counts_ste):
     for ind in range(num_params):
         clipped_val = np.clip(guess_params[ind], bounds[0][ind], bounds[1][ind])
         guess_params[ind] = clipped_val
-    rolling_minimum_window = 5
-    envelope = rolling_minimum(total_evolution_times, nv_counts, rolling_minimum_window)
     no_c13_popt, no_c13_pcov, no_c13_red_chi_sq = curve_fit(
         fit_fn,
         total_evolution_times,
