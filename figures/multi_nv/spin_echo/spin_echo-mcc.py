@@ -305,7 +305,7 @@ def fit(total_evolution_times, nv_counts, nv_counts_ste):
     # add to first guess
     guess_params.append(osc_contrast_guess)
     guess_params.extend(popt)
-    bounds[0].extend([-1.0, 0.0, 0, 0])
+    bounds[0].extend([-1.0, 0.0, 0.0])
     bounds[1].extend([1.0, 1.5, 0.5])
 
     # Clip guess_params to bounds
