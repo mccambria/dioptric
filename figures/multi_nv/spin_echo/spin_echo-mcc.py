@@ -53,8 +53,8 @@ def quartic_decay(
         mod = (
             quartic_contrast
             - osc_contrast
-            * np.sin(np.pi * osc_freq0) ** 2
-            * np.sin(np.pi * osc_freq1) ** 2
+            * np.sin(np.pi * osc_freq0 * tau) ** 2
+            * np.sin(np.pi * osc_freq1 * tau) ** 2
         )
     val = baseline - envelope * mod * comb
     return val
