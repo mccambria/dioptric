@@ -377,6 +377,7 @@ def create_fit_figure(data, axes_pack=None, layout=None, no_legend=True, nv_inds
     if do_fit:
         fit_fns = []
         popts = []
+        pcovs = []
         red_chi_sq_list = []
 
         for nv_ind in nv_inds:
@@ -405,12 +406,12 @@ def create_fit_figure(data, axes_pack=None, layout=None, no_legend=True, nv_inds
                     fit_fn(linspace_taus, *popt),
                     color=kpl.KplColors.GRAY,
                 )
-                figManager = plt.get_current_fig_manager()
-                figManager.window.showMaximized()
-                ax.set_title(nv_ind)
-                ax.set_xlabel("Total evolution time (µs)")
-                ax.set_ylabel("Normalized NV$^{-}$ population")
-                kpl.show(block=True)
+                # figManager = plt.get_current_fig_manager()
+                # figManager.window.showMaximized()
+                # ax.set_title(nv_ind)
+                # ax.set_xlabel("Total evolution time (µs)")
+                # ax.set_ylabel("Normalized NV$^{-}$ population")
+                # kpl.show(block=True)
             except Exception:
                 print(traceback.format_exc())
                 fit_fn = None
@@ -418,9 +419,20 @@ def create_fit_figure(data, axes_pack=None, layout=None, no_legend=True, nv_inds
                 red_chi_sq = None
             fit_fns.append(fit_fn)
             popts.append(popt)
+            pcovs.append(pcov)
             red_chi_sq_list.append(red_chi_sq)
 
     print(red_chi_sq_list)
+
+    data = {
+        "fit_fn": "quartic_decay",
+        "popts": popts,
+        "pcovs": pcovs,
+        "red_chi_sq_list": red_chi_sq_list,
+    }
+    time_stamp = dm.get_time_stamp()
+    file_path = dm.get_file_path(__file__, time_stamp, "multi_nv")
+    dm.save_raw_data(data, file_path)
 
     ### Make the figure
 
@@ -601,7 +613,7 @@ if __name__ == "__main__":
     skip_inds = list(set(split_esr + broad_esr + weak_esr))
     nv_inds = [ind for ind in range(117) if ind not in skip_inds]
 
-    # nv_inds = nv_inds[28:]
+    nv_inds = nv_inds[0:2]
 
     # create_raw_data_figure(data)
     create_fit_figure(data, nv_inds=nv_inds)
