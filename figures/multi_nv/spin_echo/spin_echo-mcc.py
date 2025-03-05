@@ -200,7 +200,7 @@ def fit(total_evolution_times, nv_counts, nv_counts_ste):
     envelope = rolling_minimum(total_evolution_times, nv_counts, rolling_minimum_window)
     baseline_guess = nv_counts[7]
     revival_time_guess = 50
-    quartic_contrast_guess = baseline_guess - nv_counts[0]
+    quartic_contrast_guess = baseline_guess - 0.05
     # exp(-(0.1/t)**3) == (norm_counts[-6] - baseline_guess) / quartic_contrast_guess
     log_decay = -np.log((baseline_guess - envelope[-7]) / quartic_contrast_guess)
     T2_guess = 0.1 * (log_decay ** (-1 / 3))
@@ -234,6 +234,16 @@ def fit(total_evolution_times, nv_counts, nv_counts_ste):
 
     ### Fit to envelope as if there were no strongly coupled C13
 
+    # Thin the envelope out to reduce bias towards heavily sampled first revival
+    # Force points to be at least 2 us apart
+    thinned_inds = [0]
+    prev_accepted_point = total_evolution_times[0]
+    for ind in range(len(total_evolution_times)):
+        tau = total_evolution_times[ind]
+        if tau - prev_accepted_point > 1.5:
+            thinned_inds.append(ind)
+            prev_accepted_point = tau
+
     # Clip guess_params to bounds
     num_params = len(guess_params)
     for ind in range(num_params):
@@ -241,21 +251,28 @@ def fit(total_evolution_times, nv_counts, nv_counts_ste):
         guess_params[ind] = clipped_val
     no_c13_popt, no_c13_pcov, no_c13_red_chi_sq = curve_fit(
         fit_fn,
-        total_evolution_times,
-        envelope,
+        total_evolution_times[thinned_inds],
+        envelope[thinned_inds],
         guess_params,
-        nv_counts_ste,
+        nv_counts_ste[thinned_inds],
         bounds=bounds,
     )
     no_c13_popt[3] -= rolling_minimum_window / 2
-    # fig, ax = plt.subplots()
-    # kpl.plot_points(ax, total_evolution_times, envelope, nv_counts_ste)
-    # kpl.plot_points(ax, total_evolution_times, nv_counts, nv_counts_ste)
+    fig, ax = plt.subplots()
+    kpl.plot_points(
+        ax,
+        total_evolution_times[thinned_inds],
+        envelope[thinned_inds],
+        nv_counts_ste[thinned_inds],
+    )
+    # # kpl.plot_points(ax, total_evolution_times, nv_counts, nv_counts_ste)
     # linspace_taus = np.linspace(0, np.max(total_evolution_times), 1000)
+    # linspace_taus = linspace_taus[1:]
     # kpl.plot_line(
     #     ax,
     #     linspace_taus,
     #     fit_fn(linspace_taus, *no_c13_popt),
+    #     # fit_fn(linspace_taus, *guess_params),
     #     color=kpl.KplColors.GRAY,
     # )
     # kpl.show(block=True)
@@ -388,12 +405,12 @@ def create_fit_figure(data, axes_pack=None, layout=None, no_legend=True, nv_inds
                     fit_fn(linspace_taus, *popt),
                     color=kpl.KplColors.GRAY,
                 )
-                # figManager = plt.get_current_fig_manager()
-                # figManager.window.showMaximized()
-                # ax.set_title(nv_ind)
-                # ax.set_xlabel("Total evolution time (µs)")
-                # ax.set_ylabel("Normalized NV$^{-}$ population")
-                # kpl.show(block=True)
+                figManager = plt.get_current_fig_manager()
+                figManager.window.showMaximized()
+                ax.set_title(nv_ind)
+                ax.set_xlabel("Total evolution time (µs)")
+                ax.set_ylabel("Normalized NV$^{-}$ population")
+                kpl.show(block=True)
             except Exception:
                 print(traceback.format_exc())
                 fit_fn = None
@@ -584,7 +601,7 @@ if __name__ == "__main__":
     skip_inds = list(set(split_esr + broad_esr + weak_esr))
     nv_inds = [ind for ind in range(117) if ind not in skip_inds]
 
-    # nv_inds = nv_inds[18:]
+    # nv_inds = nv_inds[28:]
 
     # create_raw_data_figure(data)
     create_fit_figure(data, nv_inds=nv_inds)
