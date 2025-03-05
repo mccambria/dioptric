@@ -13,8 +13,8 @@ import traceback
 
 import matplotlib.pyplot as plt
 import numpy as np
-from scipy.optimize import basinhopping, brute
-from scipy.signal import lombscargle
+from numba import njit
+from scipy.optimize import brute
 
 from majorroutines.widefield import base_routine
 from utils import data_manager as dm
@@ -36,6 +36,41 @@ def quartic_decay(
     osc_freq0=None,
     osc_freq1=None,
 ):
+    if osc_freq0 is None:
+        osc_contrast = 0
+        osc_freq0 = 0
+        osc_freq1 = 0
+    # Short circuit if osc_freq0 > osc_freq1 since the equation is symmetric
+    elif osc_freq0 > osc_freq1:
+        return [0] * len(tau)
+
+    return _quartic_decay(
+        tau,
+        baseline,
+        quartic_contrast,
+        revival_time,
+        quartic_decay_time,
+        T2_ms,
+        T2_exp,
+        osc_contrast,
+        osc_freq0,
+        osc_freq1,
+    )
+
+
+@njit
+def _quartic_decay(
+    tau,
+    baseline,
+    quartic_contrast,
+    revival_time,
+    quartic_decay_time,
+    T2_ms,
+    T2_exp,
+    osc_contrast,
+    osc_freq0,
+    osc_freq1,
+):
     # baseline = 0.5
     # print(len(amplitudes))
     T2_us = 1000 * T2_ms
@@ -47,15 +82,12 @@ def quartic_decay(
         -(((tau_2d - revivals_2d * revival_time) / quartic_decay_time) ** 4)
     )
     comb = np.sum(comb_terms, axis=0)
-    if osc_contrast is None:
-        mod = quartic_contrast
-    else:
-        mod = (
-            quartic_contrast
-            - osc_contrast
-            * np.sin(np.pi * osc_freq0 * tau) ** 2
-            * np.sin(np.pi * osc_freq1 * tau) ** 2
-        )
+    mod = (
+        quartic_contrast
+        - osc_contrast
+        * np.sin(np.pi * osc_freq0 * tau) ** 2
+        * np.sin(np.pi * osc_freq1 * tau) ** 2
+    )
     val = baseline - envelope * mod * comb
     return val
 
@@ -125,8 +157,19 @@ def brute_fit_fn_cost(
     no_c13_popt,
     osc_contrast_guess,
 ):
-    # line = fit_fn(total_evolution_times, *no_c13_popt, *x)
     line = fit_fn(total_evolution_times, *no_c13_popt, osc_contrast_guess, *x)
+    return np.sum(((nv_counts - line) ** 2) / (nv_counts_ste**2))
+
+
+def brute_fit_fn_cost2(
+    x,
+    total_evolution_times,
+    nv_counts,
+    nv_counts_ste,
+    fit_fn,
+    no_c13_popt,
+):
+    line = fit_fn(total_evolution_times, *no_c13_popt, *x)
     return np.sum(((nv_counts - line) ** 2) / (nv_counts_ste**2))
 
 
@@ -221,8 +264,9 @@ def fit(total_evolution_times, nv_counts, nv_counts_ste):
 
     ### Brute to find correct frequencies
 
+    # Coarse amplitude, fine frequencies
     best_cost = None
-    for osc_contrast_guess in np.linspace(0, no_c13_popt[1], 4):
+    for osc_contrast_guess in np.linspace(-1.0, 1.0, 10):
         args = (
             total_evolution_times,
             nv_counts,
@@ -235,10 +279,10 @@ def fit(total_evolution_times, nv_counts, nv_counts_ste):
         # ranges = [(bounds[0][ind], bounds[1][ind]) for ind in range(len(bounds[0]))]
         # ranges.extend([(-0.5, 0.5), (0, 1.5), (0, 1.5)])
         # ranges = [(-0.5, 0.5), (0, 1.5), (0, 1.5)]
-        ranges = [(0, 2.0), (0, 0.5)]
+        ranges = [(0, 5.0), (0, 1.0)]
         workers = -1
         popt = brute(
-            brute_fit_fn_cost, ranges, Ns=2000, finish=None, workers=workers, args=args
+            brute_fit_fn_cost, ranges, Ns=1000, finish=None, workers=workers, args=args
         )
         cost = brute_fit_fn_cost(popt, *args)
         if best_cost is None or cost < best_cost:
@@ -248,13 +292,21 @@ def fit(total_evolution_times, nv_counts, nv_counts_ste):
     osc_contrast_guess = best_osc_contrast_guess
     popt = best_popt
 
+    # Fine everything
+    # args = (total_evolution_times, nv_counts, nv_counts_ste, fit_fn, no_c13_popt)
+    # ranges = [(-0.5, 0.5), (0, 5.0), (0, 1.0)]
+    # workers = -1
+    # popt = brute(
+    #     brute_fit_fn_cost2, ranges, Ns=500, finish=None, workers=workers, args=args
+    # )
+
     ### Fine tune with a final fit
 
+    # add to first guess
     guess_params.append(osc_contrast_guess)
     guess_params.extend(popt)
-    bounds[0].extend([-0.5, 0, 0])
-    bounds[1].extend([0.5, 1.5, 0.5])
-    # add to first guess
+    bounds[0].extend([-1.0, 0.0, 0, 0])
+    bounds[1].extend([1.0, 1.5, 0.5])
 
     # Clip guess_params to bounds
     num_params = len(guess_params)
@@ -329,6 +381,7 @@ def create_fit_figure(data, axes_pack=None, layout=None, no_legend=True, nv_inds
                 fig, ax = plt.subplots()
                 kpl.plot_points(ax, total_evolution_times, nv_counts, nv_counts_ste)
                 linspace_taus = np.linspace(0, np.max(total_evolution_times), 1000)
+                linspace_taus = linspace_taus[1:]  # Exclude tau=0 which can diverge
                 kpl.plot_line(
                     ax,
                     linspace_taus,
@@ -531,7 +584,7 @@ if __name__ == "__main__":
     skip_inds = list(set(split_esr + broad_esr + weak_esr))
     nv_inds = [ind for ind in range(117) if ind not in skip_inds]
 
-    # nv_inds = nv_inds[8:]
+    # nv_inds = nv_inds[18:]
 
     # create_raw_data_figure(data)
     create_fit_figure(data, nv_inds=nv_inds)
