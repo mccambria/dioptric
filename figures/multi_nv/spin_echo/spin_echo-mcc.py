@@ -375,7 +375,25 @@ def create_fit_figure(data, axes_pack=None, layout=None, no_legend=True, nv_inds
             nv_list, sig_counts, ref_counts, threshold=True
         )
 
-    do_fit = True
+        print(np.mean(norm_counts_ste))
+        sys.exit()
+
+        # Create combined file
+        # try:
+        #     del data["counts"]
+        #     data["norm_counts"] = norm_counts
+        #     data["norm_counts_ste"] = norm_counts_ste
+        #     timestamp = dm.get_time_stamp()
+        #     nv_list = data["nv_list"]
+        #     repr_nv_sig = widefield.get_repr_nv_sig(nv_list)
+        #     repr_nv_name = repr_nv_sig.name
+        #     file_path = dm.get_file_path(__file__, timestamp, repr_nv_name)
+        #     file_id = dm.save_raw_data(data, file_path)
+        #     print(file_id)
+        # finally:
+        #     sys.exit()
+
+    do_fit = False
     if do_fit:
         fit_fns = []
         popts = []
@@ -598,16 +616,16 @@ if __name__ == "__main__":
     # data = dm.get_raw_data(file_id=1548381879624)
 
     # Separate files
-    # # fmt: off
-    # file_ids = [1734158411844, 1734273666255, 1734371251079, 1734461462293, 1734569197701, 1736117258235, 1736254107747, 1736354618206, 1736439112682]
-    # file_ids2 = [1736589839249, 1736738087977, 1736932211269, 1737087466998, 1737219491182]
-    # # fmt: on
-    # file_ids = file_ids[:4]
-    # file_ids.extend(file_ids2)
-    # data = dm.get_raw_data(file_id=file_ids)
+    # fmt: off
+    file_ids = [1734158411844, 1734273666255, 1734371251079, 1734461462293, 1734569197701, 1736117258235, 1736254107747, 1736354618206, 1736439112682]
+    file_ids2 = [1736589839249, 1736738087977, 1736932211269, 1737087466998, 1737219491182]
+    # fmt: on
+    file_ids = file_ids[:4]
+    file_ids.extend(file_ids2)
+    data = dm.get_raw_data(file_id=file_ids)
 
     # Combined file
-    data = dm.get_raw_data(file_id=1755199883770)
+    # data = dm.get_raw_data(file_id=1755199883770)
 
     split_esr = [12, 13, 14, 61, 116]
     broad_esr = [52, 11]
@@ -619,6 +637,7 @@ if __name__ == "__main__":
     # Where red_chi_sq > 3
     # nv_inds = [4, 7, 11, 16, 21, 45, 47, 55, 61, 62, 96, 97]
     nv_inds = [11, 16, 21, 45, 47, 55, 61, 62, 96, 97]
+    # nv_inds = nv_inds[0:2]
 
     # create_raw_data_figure(data)
     create_fit_figure(data, nv_inds=nv_inds)
