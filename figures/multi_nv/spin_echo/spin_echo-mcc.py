@@ -200,7 +200,7 @@ def fit(total_evolution_times, nv_counts, nv_counts_ste):
     envelope = rolling_minimum(total_evolution_times, nv_counts, rolling_minimum_window)
     baseline_guess = nv_counts[7]
     revival_time_guess = 50
-    quartic_contrast_guess = baseline_guess - 0.05
+    quartic_contrast_guess = baseline_guess - min(nv_counts)
     # exp(-(0.1/t)**3) == (norm_counts[-6] - baseline_guess) / quartic_contrast_guess
     log_decay = -np.log((baseline_guess - envelope[-7]) / quartic_contrast_guess)
     T2_guess = 0.1 * (log_decay ** (-1 / 3))
@@ -258,13 +258,13 @@ def fit(total_evolution_times, nv_counts, nv_counts_ste):
         bounds=bounds,
     )
     no_c13_popt[3] -= rolling_minimum_window / 2
-    fig, ax = plt.subplots()
-    kpl.plot_points(
-        ax,
-        total_evolution_times[thinned_inds],
-        envelope[thinned_inds],
-        nv_counts_ste[thinned_inds],
-    )
+    # fig, ax = plt.subplots()
+    # kpl.plot_points(
+    #     ax,
+    #     total_evolution_times[thinned_inds],
+    #     envelope[thinned_inds],
+    #     nv_counts_ste[thinned_inds],
+    # )
     # # kpl.plot_points(ax, total_evolution_times, nv_counts, nv_counts_ste)
     # linspace_taus = np.linspace(0, np.max(total_evolution_times), 1000)
     # linspace_taus = linspace_taus[1:]
@@ -281,9 +281,11 @@ def fit(total_evolution_times, nv_counts, nv_counts_ste):
 
     ### Brute to find correct frequencies
 
+    osc_bounds = [[-1.0, 0.0, 0.0], [1.0, 5.0, 1.0]]
+
     # Coarse amplitude, fine frequencies
     best_cost = None
-    for osc_contrast_guess in np.linspace(-1.0, 1.0, 10):
+    for osc_contrast_guess in np.linspace(osc_bounds[0][0], osc_bounds[1][0], 10):
         args = (
             total_evolution_times,
             nv_counts,
@@ -293,10 +295,10 @@ def fit(total_evolution_times, nv_counts, nv_counts_ste):
             osc_contrast_guess,
         )
 
-        # ranges = [(bounds[0][ind], bounds[1][ind]) for ind in range(len(bounds[0]))]
-        # ranges.extend([(-0.5, 0.5), (0, 1.5), (0, 1.5)])
-        # ranges = [(-0.5, 0.5), (0, 1.5), (0, 1.5)]
-        ranges = [(0, 5.0), (0, 1.0)]
+        ranges = [
+            (osc_bounds[0][1], osc_bounds[1][1]),
+            (osc_bounds[0][2], osc_bounds[1][2]),
+        ]
         workers = -1
         popt = brute(
             brute_fit_fn_cost, ranges, Ns=1000, finish=None, workers=workers, args=args
@@ -322,8 +324,8 @@ def fit(total_evolution_times, nv_counts, nv_counts_ste):
     # add to first guess
     guess_params.append(osc_contrast_guess)
     guess_params.extend(popt)
-    bounds[0].extend([-1.0, 0.0, 0.0])
-    bounds[1].extend([1.0, 1.5, 0.5])
+    bounds[0].extend(osc_bounds[0])
+    bounds[1].extend(osc_bounds[1])
 
     # Clip guess_params to bounds
     num_params = len(guess_params)
@@ -406,12 +408,12 @@ def create_fit_figure(data, axes_pack=None, layout=None, no_legend=True, nv_inds
                     fit_fn(linspace_taus, *popt),
                     color=kpl.KplColors.GRAY,
                 )
-                # figManager = plt.get_current_fig_manager()
-                # figManager.window.showMaximized()
-                # ax.set_title(nv_ind)
-                # ax.set_xlabel("Total evolution time (µs)")
-                # ax.set_ylabel("Normalized NV$^{-}$ population")
-                # kpl.show(block=True)
+                figManager = plt.get_current_fig_manager()
+                figManager.window.showMaximized()
+                ax.set_title(nv_ind)
+                ax.set_xlabel("Total evolution time (µs)")
+                ax.set_ylabel("Normalized NV$^{-}$ population")
+                kpl.show(block=True)
             except Exception:
                 print(traceback.format_exc())
                 fit_fn = None
@@ -613,7 +615,10 @@ if __name__ == "__main__":
     skip_inds = list(set(split_esr + broad_esr + weak_esr))
     nv_inds = [ind for ind in range(117) if ind not in skip_inds]
 
-    nv_inds = nv_inds[0:2]
+    # nv_inds = nv_inds[4:]
+    # Where red_chi_sq > 3
+    # nv_inds = [4, 7, 11, 16, 21, 45, 47, 55, 61, 62, 96, 97]
+    nv_inds = [11, 16, 21, 45, 47, 55, 61, 62, 96, 97]
 
     # create_raw_data_figure(data)
     create_fit_figure(data, nv_inds=nv_inds)
