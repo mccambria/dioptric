@@ -255,6 +255,8 @@ def fit_bimodal_histogram(
         popt, the optimized fit parameters
     """
 
+    no_plot = False
+
     counts_list = counts_list.flatten()
 
     # Remove outliers

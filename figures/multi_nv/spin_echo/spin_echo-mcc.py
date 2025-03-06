@@ -375,8 +375,12 @@ def create_fit_figure(data, axes_pack=None, layout=None, no_legend=True, nv_inds
             nv_list, sig_counts, ref_counts, threshold=True
         )
 
-        print(np.mean(norm_counts_ste))
-        sys.exit()
+        fig, ax = plt.subplots()
+        nv_counts = norm_counts[2]
+        nv_counts_ste = norm_counts_ste[2]
+        print(np.mean(nv_counts_ste))
+        kpl.plot_points(ax, total_evolution_times, nv_counts, nv_counts_ste)
+        return
 
         # Create combined file
         # try:
@@ -620,8 +624,9 @@ if __name__ == "__main__":
     file_ids = [1734158411844, 1734273666255, 1734371251079, 1734461462293, 1734569197701, 1736117258235, 1736254107747, 1736354618206, 1736439112682]
     file_ids2 = [1736589839249, 1736738087977, 1736932211269, 1737087466998, 1737219491182]
     # fmt: on
-    file_ids = file_ids[:4]
+    # file_ids = file_ids[:4]
     file_ids.extend(file_ids2)
+    del file_ids[3:5]
     data = dm.get_raw_data(file_id=file_ids)
 
     # Combined file
@@ -636,7 +641,7 @@ if __name__ == "__main__":
     # nv_inds = nv_inds[4:]
     # Where red_chi_sq > 3
     # nv_inds = [4, 7, 11, 16, 21, 45, 47, 55, 61, 62, 96, 97]
-    nv_inds = [11, 16, 21, 45, 47, 55, 61, 62, 96, 97]
+    # nv_inds = [11, 16, 21, 45, 47, 55, 61, 62, 96, 97]
     # nv_inds = nv_inds[0:2]
 
     # create_raw_data_figure(data)
