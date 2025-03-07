@@ -24,6 +24,35 @@ from utils import widefield as widefield
 from utils.tool_belt import curve_fit
 
 
+def replot_fits(data, fit_data, nv_inds):
+    norm_counts = np.array(data["norm_counts"])
+    norm_counts_ste = np.array(data["norm_counts_ste"])
+    popts = fit_data["popts"]
+    red_chi_sqs = fit_data["red_chi_sq_list"]
+    taus = np.array(data["taus"])
+    total_evolution_times = 2 * np.array(taus) / 1e3
+    fit_fn = quartic_decay
+
+    for loop_ind, nv_ind in enumerate(nv_inds):
+        nv_counts = norm_counts[nv_ind]
+        nv_counts_ste = norm_counts_ste[nv_ind]
+        fig, ax = plt.subplots()
+        kpl.plot_points(ax, total_evolution_times, nv_counts, nv_counts_ste)
+        linspace_taus = np.linspace(0, np.max(total_evolution_times), 10000)
+        linspace_taus = linspace_taus[1:]  # Exclude tau=0 which can diverge
+        popt = popts[loop_ind]
+        kpl.plot_line(
+            ax,
+            linspace_taus,
+            fit_fn(linspace_taus, *popt),
+            color=kpl.KplColors.GRAY,
+        )
+        red_chi_sq = red_chi_sqs[loop_ind]
+        ax.set_title(f"{nv_ind}, {round(red_chi_sq, 3)}")
+        ax.set_xlabel("Total evolution time (µs)")
+        ax.set_ylabel("Normalized NV$^{-}$ population")
+
+
 def quartic_decay(
     tau,
     baseline,
@@ -257,35 +286,36 @@ def fit(total_evolution_times, nv_counts, nv_counts_ste):
         nv_counts_ste[thinned_inds],
         bounds=bounds,
     )
-    no_c13_popt[3] -= rolling_minimum_window / 2
-    fig, ax = plt.subplots()
-    kpl.plot_points(
-        ax,
-        total_evolution_times[thinned_inds],
-        envelope[thinned_inds],
-        nv_counts_ste[thinned_inds],
-    )
-    kpl.plot_points(ax, total_evolution_times, nv_counts, nv_counts_ste)
-    linspace_taus = np.linspace(0, np.max(total_evolution_times), 1000)
-    linspace_taus = linspace_taus[1:]
-    kpl.plot_line(
-        ax,
-        linspace_taus,
-        fit_fn(linspace_taus, *no_c13_popt),
-        # fit_fn(linspace_taus, *guess_params),
-        color=kpl.KplColors.GRAY,
-    )
-    kpl.show(block=True)
+    # no_c13_popt[3] -= rolling_minimum_window / 2
+    # fig, ax = plt.subplots()
+    # kpl.plot_points(
+    #     ax,
+    #     total_evolution_times[thinned_inds],
+    #     envelope[thinned_inds],
+    #     nv_counts_ste[thinned_inds],
+    # )
+    # kpl.plot_points(ax, total_evolution_times, nv_counts, nv_counts_ste)
+    # linspace_taus = np.linspace(0, np.max(total_evolution_times), 1000)
+    # linspace_taus = linspace_taus[1:]
+    # kpl.plot_line(
+    #     ax,
+    #     linspace_taus,
+    #     fit_fn(linspace_taus, *no_c13_popt),
+    #     # fit_fn(linspace_taus, *guess_params),
+    #     color=kpl.KplColors.GRAY,
+    # )
+    # kpl.show(block=True)
 
     # return popt, pcov, red_chi_sq
 
     ### Brute to find correct frequencies
 
-    osc_bounds = [[-1.0, 0.0, 0.0], [1.0, 5.0, 1.0]]
+    osc_bounds = [[0.0, 0.0, 0.0], [1.0, 6.0, 1.0]]
 
     # Coarse amplitude, fine frequencies
     best_cost = None
     for osc_contrast_guess in np.linspace(osc_bounds[0][0], osc_bounds[1][0], 10):
+        # for osc_contrast_guess in np.linspace(0.5, 0.8, 10):
         args = (
             total_evolution_times,
             nv_counts,
@@ -301,9 +331,10 @@ def fit(total_evolution_times, nv_counts, nv_counts_ste):
         ]
         workers = -1
         popt = brute(
-            brute_fit_fn_cost, ranges, Ns=1000, finish=None, workers=workers, args=args
+            brute_fit_fn_cost, ranges, Ns=2000, finish=None, workers=workers, args=args
         )
         cost = brute_fit_fn_cost(popt, *args)
+        # print(cost)
         if best_cost is None or cost < best_cost:
             best_popt = popt
             best_osc_contrast_guess = osc_contrast_guess
@@ -345,6 +376,7 @@ def fit(total_evolution_times, nv_counts, nv_counts_ste):
         gtol=1e-6,
     )
 
+    # return guess_params, pcov, red_chi_sq
     return popt, pcov, red_chi_sq
     if no_c13_red_chi_sq < red_chi_sq:
         return no_c13_popt, no_c13_pcov, no_c13_red_chi_sq
@@ -430,12 +462,12 @@ def create_fit_figure(data, axes_pack=None, layout=None, no_legend=True, nv_inds
                     fit_fn(linspace_taus, *popt),
                     color=kpl.KplColors.GRAY,
                 )
-                figManager = plt.get_current_fig_manager()
-                figManager.window.showMaximized()
-                ax.set_title(nv_ind)
-                ax.set_xlabel("Total evolution time (µs)")
-                ax.set_ylabel("Normalized NV$^{-}$ population")
-                kpl.show(block=True)
+                # figManager = plt.get_current_fig_manager()
+                # figManager.window.showMaximized()
+                # ax.set_title(nv_ind)
+                # ax.set_xlabel("Total evolution time (µs)")
+                # ax.set_ylabel("Normalized NV$^{-}$ population")
+                # kpl.show(block=True)
             except Exception:
                 print(traceback.format_exc())
                 fit_fn = None
@@ -606,46 +638,46 @@ def main(nv_list, num_steps, num_reps, num_runs, min_tau=None, max_tau=None, tau
 if __name__ == "__main__":
     kpl.init_kplotlib()
 
-    ### Fit fn testing
-
-    # fig, ax = plt.subplots()
-    # tau_linspace = np.linspace(0, 100, 1000)
-    # line = quartic_decay(tau_linspace, 0.5, 0.5, 45, 5, 1000, 1, -0.5, 100, 0.5)
-    # kpl.plot_line(ax, tau_linspace, line)
-    # kpl.show(block=True)
-    # sys.exit()
-
-    ###
-
-    # data = dm.get_raw_data(file_id=1548381879624)
-
-    # Separate files
-    # fmt: off
-    file_ids = [1734158411844, 1734273666255, 1734371251079, 1734461462293, 1734569197701, 1736117258235, 1736254107747, 1736354618206, 1736439112682]
-    file_ids2 = [1736589839249, 1736738087977, 1736932211269, 1737087466998, 1737219491182]
-    # fmt: on
-    # file_ids = file_ids[:4]
-    file_ids.extend(file_ids2)
-    del file_ids[3:5]
-    data = dm.get_raw_data(file_id=file_ids)
-
     # Combined files
     # Original, file_ids = file_ids[:4], file_ids.extend(file_ids2)
     # data = dm.get_raw_data(file_id=1755199883770)
     # More data, del file_ids[3:5], file_ids.extend(file_ids2)
-    # data = dm.get_raw_data(file_id=1795168199914)  # w/o ionization, dmw None
+    data = dm.get_raw_data(file_id=1795168199914)  # w/o ionization, dmw None
     # data = dm.get_raw_data(file_id=1795182451164)  # w/o ionization, dmw 0.5
     # data = dm.get_raw_data(file_id=)  # w/ ionization, dmw None
     # data = dm.get_raw_data(file_id=1795131849572)  # w/ ionization, dmw 0.5
 
+    # Skip indices with bad pi pulses etc
     split_esr = [12, 13, 14, 61, 116]
     broad_esr = [52, 11]
     weak_esr = [72, 64, 55, 96, 112, 87, 12, 58, 36]
     skip_inds = list(set(split_esr + broad_esr + weak_esr))
     nv_inds = [ind for ind in range(117) if ind not in skip_inds]
 
-    bad_inds = [3, 8, 10, 11, 18, 27, 30, 32, 47, 55, 61, 62, 63, 68, 97]
-    nv_inds = [nv_inds[ind] for ind in bad_inds]
+    # bad_inds = [32, 47, 55, 61, 62, 63, 68, 97]
+    # # bad_inds = [3, 8, 10, 11, 18, 27, 30, 32, 47, 55, 61, 62, 63, 68, 97]
+    # nv_inds = [nv_inds[ind] for ind in bad_inds]
+
+    ### Replotting
+
+    fit_data = dm.get_raw_data(file_id=1795431625306)
+    replot_fits(data, fit_data, nv_inds)
+    kpl.show(block=True)
+    sys.exit()
+
+    ###
+
+    # data = dm.get_raw_data(file_id=1548381879624)
+
+    # Separate files
+    # # fmt: off
+    # file_ids = [1734158411844, 1734273666255, 1734371251079, 1734461462293, 1734569197701, 1736117258235, 1736254107747, 1736354618206, 1736439112682]
+    # file_ids2 = [1736589839249, 1736738087977, 1736932211269, 1737087466998, 1737219491182]
+    # # fmt: on
+    # # file_ids = file_ids[:4]
+    # file_ids.extend(file_ids2)
+    # del file_ids[3:5]
+    # data = dm.get_raw_data(file_id=file_ids)
 
     # create_raw_data_figure(data)
     create_fit_figure(data, nv_inds=nv_inds)
