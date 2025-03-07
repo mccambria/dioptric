@@ -92,10 +92,12 @@ def create_fit_figure(
     popts = []
     center_freqs = []
     center_freq_errs = []
+    splittings = []
+    splitting_errs = []
 
     do_fit = True
     if do_fit:
-        for nv_ind in nv_inds:
+        for loop_ind, nv_ind in enumerate(nv_inds):
             nv_counts = norm_counts[nv_ind]
             nv_counts_ste = norm_counts_ste[nv_ind]
 
@@ -121,7 +123,7 @@ def create_fit_figure(
                     return gaussian(freq, *args[0:3]) + gaussian(freq, *args[3:6])
 
             low_freq_guess = freqs[np.argmax(nv_counts[:half_num_freqs])]
-            high_freq_guess = 2 * 2.87 - low_freq_guess
+            high_freq_guess = 2 * 2.872 - low_freq_guess
             guess_params[2] = low_freq_guess
             guess_params[5] = high_freq_guess
             num_params = len(guess_params)
@@ -129,7 +131,7 @@ def create_fit_figure(
             # Linewidth limits
             for ind in [1, 4]:
                 bounds[0][ind] = 3
-                bounds[1][ind] = 30
+                bounds[1][ind] = 8
             if nv_ind in split_esr:
                 bounds[1][-1] = 0.03
 
@@ -161,6 +163,9 @@ def create_fit_figure(
             #     center_freqs.append((popt[2], popt[5]))
             center_freqs.append((popt[2], popt[5]))
             center_freq_errs.append((np.sqrt(pcov[2, 2]), np.sqrt(pcov[5, 5])))
+            if nv_ind in split_esr:
+                splittings.append(popt[-1])
+                splitting_errs.append(np.sqrt(pcov[-1, -1]))
     else:
         fit_fns = None
         popts = None
@@ -171,7 +176,7 @@ def create_fit_figure(
     nva_freqs = []
     for ind in range(num_nvs):
         center_freq_pair = center_freqs[ind]
-        if center_freq_pair[0] > 2.82:
+        if center_freq_pair[1] - center_freq_pair[0] < 0.120:
             nvb_freqs.append(center_freqs[ind])
         else:
             nva_freqs.append(center_freqs[ind])
@@ -194,16 +199,14 @@ def create_fit_figure(
         num_cols = 6
 
         # # bulk
-        num_rows = 19
-        layout = kpl.calc_mosaic_layout(num_cols * num_rows, num_rows, num_cols)
-        layout[0] = [".", ".", ".", layout[0][3], layout[0][4], "."]
-        layout[1] = [layout[1][0], ".", ".", *layout[1][3:]]
-        # shallow
-        # num_rows = 13
+        # num_rows = 19
         # layout = kpl.calc_mosaic_layout(num_cols * num_rows, num_rows, num_cols)
-        # layout[0] = [".", ".", ".", layout[0][3], ".", "."]
-        # layout[1] = [".", ".", ".", *layout[1][3:]]
-        # layout[2] = [layout[2][0], layout[2][1], ".", *layout[2][3:]]
+        # layout[0] = [".", ".", ".", layout[0][3], layout[0][4], "."]
+        # layout[1] = [layout[1][0], ".", ".", *layout[1][3:]]
+        # shallow
+        num_rows = 11
+        layout = kpl.calc_mosaic_layout(num_cols * num_rows, num_rows, num_cols)
+        layout[0] = [layout[0][0], layout[0][1], ".", layout[0][3], layout[0][4], "."]
 
         fig, axes_pack = plt.subplot_mosaic(
             layout,
@@ -224,6 +227,7 @@ def create_fit_figure(
         popts,
         no_legend=no_legend,
         # linestyle="solid",
+        nv_inds=nv_inds,
     )
 
     ax = axes_pack[layout[-1, 0]]
@@ -237,6 +241,7 @@ def create_fit_figure(
     ax.set_yticks([0, 1], [None, None])
     gap = 0.008
     ax.set_xlim([np.min(freqs) - gap, np.max(freqs) + gap])
+    ax.set_ylim([-0.25, 1.25])
     ax.set_ylim([-0.2, 1.2])
     # ax.set_ylim([-0.3, 2])
 
@@ -253,6 +258,8 @@ def create_fit_figure(
         else:
             ax.axvline(nva_mean_freqs[0], color=kpl.KplColors.LIGHT_GRAY, zorder=-50)
             ax.axvline(nva_mean_freqs[1], color=kpl.KplColors.LIGHT_GRAY, zorder=-50)
+
+    test = 0
 
     # ax = axes_pack[layout[-1, 0]]
     # ax.set_xlabel(" ")
@@ -390,7 +397,7 @@ def main(
 if __name__ == "__main__":
     kpl.init_kplotlib()
 
-    bulk_or_shallow = True
+    bulk_or_shallow = False
     make_movie = False
 
     ### Main, bulk diamond
@@ -423,7 +430,6 @@ if __name__ == "__main__":
         nv_inds.append(nvb_inds.pop(0))
         for ind in range(3):
             nv_inds.append(nva_inds.pop(0))
-        nv_inds
         for ind in range(0, max_length, chunk_size):
             nv_inds.extend(nvb_inds[ind : ind + chunk_size])
             nv_inds.extend(nva_inds[ind : ind + chunk_size])
@@ -486,7 +492,8 @@ if __name__ == "__main__":
             norm_counts,
             norm_counts_ste,
             nv_inds=nv_inds,
-            split_esr=split_esr,
+            split_esr=split_esr + broad_esr,
+            # split_esr=split_esr,
         )
 
         kpl.show(block=True)
@@ -575,30 +582,28 @@ if __name__ == "__main__":
         # fmt: off
         nva_inds = [0,2,3,7,8,9,12,14,15,16,20,23,25,27,28,29,30,31,32,37,39,41,42,44,46,51,52,53,55,57,62,68]  # Larger splitting
         nvb_inds = [ind for ind in range(69) if ind not in nva_inds]  # Smaller splitting
-        # split_esr = [12, 13, 14, 61, 116] 
-        # broad_esr = [52, 11] 
-        # weak_esr = [72, 64, 55, 96, 112, 87, 12, 58, 36]
-        # # fmt: on
-        # for ind in weak_esr:
-        #     for nv_list in [nva_inds, nvb_inds]:
-        #         if ind in nv_list:
-        #             nv_list.remove(ind)
-        # for issue_list in [broad_esr, split_esr]:
-        #     for ind in issue_list:
-        #         for nv_list in [nva_inds, nvb_inds]:
-        #             if ind in nv_list:
-        #                 nv_list.remove(ind)
-        #                 nv_list.append(ind)
+        # weak_esr = [18, 32, 33, 55, 56]
+        weak_esr = [18, 35, 54, 56, 61]
+        shifted_esr = [43]
+        # fmt: on
+        for ind in weak_esr:
+            for nv_list in [nva_inds, nvb_inds]:
+                if ind in nv_list:
+                    nv_list.remove(ind)
+        for issue_list in [shifted_esr]:
+            for ind in issue_list:
+                for nv_list in [nva_inds, nvb_inds]:
+                    if ind in nv_list:
+                        nv_list.remove(ind)
+                        nv_list.append(ind)
         chunk_size = 3
         nv_inds = []
         max_length = max(len(nva_inds), len(nvb_inds))
         # Handle jagged
         for ind in range(2):
+            nv_inds.append(nvb_inds.pop(0))
+        for ind in range(2):
             nv_inds.append(nva_inds.pop(0))
-        nv_inds.append(nvb_inds.pop(0))
-        for ind in range(3):
-            nv_inds.append(nva_inds.pop(0))
-        nv_inds
         for ind in range(0, max_length, chunk_size):
             nv_inds.extend(nvb_inds[ind : ind + chunk_size])
             nv_inds.extend(nva_inds[ind : ind + chunk_size])
@@ -624,6 +629,11 @@ if __name__ == "__main__":
         norm_counts, norm_counts_ste = widefield.process_counts(
             nv_list, sig_counts, ref_counts, threshold=True
         )
+
+        for nv_ind in shifted_esr:
+            contrast = np.max(norm_counts[nv_ind])
+            norm_counts[nv_ind] /= contrast
+            norm_counts_ste[nv_ind] /= contrast
 
         fit_fig = create_fit_figure(
             nv_list,
