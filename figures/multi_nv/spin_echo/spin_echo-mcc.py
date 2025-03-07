@@ -48,7 +48,9 @@ def replot_fits(data, fit_data, nv_inds):
             color=kpl.KplColors.GRAY,
         )
         red_chi_sq = red_chi_sqs[loop_ind]
+        osc_params = popt[-3:]
         ax.set_title(f"{nv_ind}, {round(red_chi_sq, 3)}")
+        kpl.anchored_text(ax, [round(el, 3) for el in osc_params])
         ax.set_xlabel("Total evolution time (µs)")
         ax.set_ylabel("Normalized NV$^{-}$ population")
 
