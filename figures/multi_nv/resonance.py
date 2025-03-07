@@ -67,7 +67,7 @@ def create_fit_figure(
     layout=None,
     no_legend=True,
     nv_inds=None,
-    split_esr=None,
+    split_esr=[],
 ):
     ### Do the fitting
 
@@ -185,12 +185,25 @@ def create_fit_figure(
 
     if axes_pack is None:
         figsize = kpl.double_figsize
-        figsize[1] = 7
+        # figsize[1] = 7
+        figsize[1] = 7 * 13 / 19
         # figsize = [6.5, 4.0]
         # layout = kpl.calc_mosaic_layout(num_nvs, num_cols=6)
-        layout = kpl.calc_mosaic_layout(6 * 19, num_cols=6, num_rows=19)
-        layout[0] = [".", ".", ".", layout[0][3], layout[0][4], "."]
-        layout[1] = [layout[1][0], ".", ".", *layout[1][3:]]
+
+        num_cols = 6
+
+        # # bulk
+        # num_rows = 19
+        # layout = kpl.calc_mosaic_layout(num_cols * num_rows, num_rows, num_cols)
+        # layout[0] = [".", ".", ".", layout[0][3], layout[0][4], "."]
+        # layout[1] = [layout[1][0], ".", ".", *layout[1][3:]]
+        # shallow
+        num_rows = 13
+        layout = kpl.calc_mosaic_layout(num_cols * num_rows, num_rows, num_cols)
+        layout[0] = [".", ".", ".", layout[0][3], ".", "."]
+        layout[1] = [".", ".", ".", *layout[1][3:]]
+        layout[2] = [layout[2][0], layout[2][1], ".", *layout[2][3:]]
+
         fig, axes_pack = plt.subplot_mosaic(
             layout,
             figsize=figsize,
@@ -376,196 +389,248 @@ def main(
 if __name__ == "__main__":
     kpl.init_kplotlib()
 
-    ### Test
+    bulk_or_shallow = False
+    make_movie = False
 
-    # img_arrays = np.random.randint(0, 100, (50, 20, 20))
-    # widefield.animate_images(np.linspace(2.77, 2.97, 50), img_arrays)
-    # kpl.show(block=True)
-    # sys.exit()
-
-    ###
-
-    # fmt: off
-    exclude_inds1= [72, 64, 55, 96, 112, 87, 89, 114, 17, 12, 99, 116, 32, 107, 58, 36]
-    exclude_inds2 = [12, 14, 11, 13, 52, 61, 116, 31, 32, 26, 87, 101, 105]
-    # exclude_inds = exclude_inds1[:5] + exclude_inds2[:7]
-    exclude_inds = exclude_inds1[:5]
-    exclude_inds = list(set(exclude_inds))
-    nv_inds = [ind for ind in range(117) if ind not in exclude_inds]
-    nv_inds = None
-    nva_inds = [0,1,2,6,8,9,10, 13, 19,20,23,25,28,31,32,33,35,36,38,39,42,43,44,46,48,50,56,57,61,62,63,64, 67,68,69,75,77,80,81,82, 85,86,87,88,90,91,92,95, 99,100,101,102,103,106,107,108,112, 113,114,116]  # Larger splitting
-    nvb_inds = [3, 4, 5, 7, 11, 12, 14, 15, 16, 17, 18, 21, 22, 24, 26, 27, 29, 30, 34, 37, 40, 41, 45, 47, 49, 51, 52, 53, 54, 55, 58, 59, 60, 65, 66, 70, 71, 72, 73, 74, 76, 78, 79, 83, 84, 89, 93, 94, 96, 97, 98, 104, 105, 109, 110, 111, 115]  # Smaller splitting
-    split_esr = [12, 13, 14, 61, 116] 
-    broad_esr = [52, 11] 
-    # weak_esr = [72, 64, 55, 96, 112, 87, 89, 114, 17, 12, 99, 116, 32, 107, 58, 36] 
-    # weak_esr = weak_esr[:6]
-    weak_esr = [72, 64, 55, 96, 112, 87, 12, 58, 36]
-    # weak_esr = [72, 64, 55, 96, 112, 87]
-    # weak_esr = []
-    # split_esr = []
-    # nv_inds = nva_inds
-    for ind in weak_esr:
-        for nv_list in [nva_inds, nvb_inds]:
-            if ind in nv_list:
-                nv_list.remove(ind)
-    for issue_list in [broad_esr, split_esr]:
-        for ind in issue_list:
+    ### Main, bulk diamond
+    if bulk_or_shallow:
+        # Split into orienatations and remove weak NVs
+        # fmt: off
+        nva_inds = [0,1,2,6,8,9,10, 13, 19,20,23,25,28,31,32,33,35,36,38,39,42,43,44,46,48,50,56,57,61,62,63,64, 67,68,69,75,77,80,81,82, 85,86,87,88,90,91,92,95, 99,100,101,102,103,106,107,108,112, 113,114,116]  # Larger splitting
+        nvb_inds = [3, 4, 5, 7, 11, 12, 14, 15, 16, 17, 18, 21, 22, 24, 26, 27, 29, 30, 34, 37, 40, 41, 45, 47, 49, 51, 52, 53, 54, 55, 58, 59, 60, 65, 66, 70, 71, 72, 73, 74, 76, 78, 79, 83, 84, 89, 93, 94, 96, 97, 98, 104, 105, 109, 110, 111, 115]  # Smaller splitting
+        split_esr = [12, 13, 14, 61, 116] 
+        broad_esr = [52, 11] 
+        weak_esr = [72, 64, 55, 96, 112, 87, 12, 58, 36]
+        # fmt: on
+        for ind in weak_esr:
             for nv_list in [nva_inds, nvb_inds]:
                 if ind in nv_list:
                     nv_list.remove(ind)
-                    nv_list.append(ind)
-    # nv_inds = nva_inds + nvb_inds
-    chunk_size = 3
-    nv_inds = []
-    max_length = max(len(nva_inds), len(nvb_inds))
-    # Handle jagged
-    for ind in range(2):
-        nv_inds.append(nva_inds.pop(0))
-    nv_inds.append(nvb_inds.pop(0))
-    for ind in range(3):
-        nv_inds.append(nva_inds.pop(0))
-    nv_inds
-    for ind in range(0, max_length, chunk_size):
-        nv_inds.extend(nvb_inds[ind:ind + chunk_size])
-        nv_inds.extend(nva_inds[ind:ind + chunk_size])  
-    # nv_inds[-3:] = 
-    # fmt: on
+        for issue_list in [broad_esr, split_esr]:
+            for ind in issue_list:
+                for nv_list in [nva_inds, nvb_inds]:
+                    if ind in nv_list:
+                        nv_list.remove(ind)
+                        nv_list.append(ind)
+        # nv_inds = nva_inds + nvb_inds
+        chunk_size = 3
+        nv_inds = []
+        max_length = max(len(nva_inds), len(nvb_inds))
+        # Handle jagged
+        for ind in range(2):
+            nv_inds.append(nva_inds.pop(0))
+        nv_inds.append(nvb_inds.pop(0))
+        for ind in range(3):
+            nv_inds.append(nva_inds.pop(0))
+        nv_inds
+        for ind in range(0, max_length, chunk_size):
+            nv_inds.extend(nvb_inds[ind : ind + chunk_size])
+            nv_inds.extend(nva_inds[ind : ind + chunk_size])
+        # nv_inds[-3:] =
 
-    file_id = 1732403187814
+        file_id = 1732403187814
+        data = dm.get_raw_data(
+            file_id=file_id, load_npz=make_movie, use_cache=not make_movie
+        )
+        # img_arrays = np.array(data.pop("img_arrays"))
 
-    data = dm.get_raw_data(file_id=file_id, load_npz=False, use_cache=True)
-    # data = dm.get_raw_data(file_id=file_id, load_npz=True, use_cache=False)
-    # img_arrays = np.array(data.pop("img_arrays"))
+        nv_list = data["nv_list"]
+        num_nvs = len(nv_list)
+        num_steps = data["num_steps"]
+        num_runs = data["num_runs"]
+        num_reps = data["num_reps"]
+        freqs = data["freqs"]
 
-    nv_list = data["nv_list"]
-    num_nvs = len(nv_list)
-    num_steps = data["num_steps"]
-    num_runs = data["num_runs"]
-    num_reps = data["num_reps"]
-    freqs = data["freqs"]
+        # Manipulate the counts into the format expected for normalization
+        counts = np.array(data.pop("counts"))
+        reformatted_counts = reformat_counts(counts)
+        sig_counts = reformatted_counts[0]
+        ref_counts = reformatted_counts[1]
 
-    # Manipulate the counts into the format expected for normalization
-    counts = np.array(data.pop("counts"))
-    reformatted_counts = reformat_counts(counts)
-    sig_counts = reformatted_counts[0]
-    ref_counts = reformatted_counts[1]
+        # ms0_counts = ref_counts[:, :, :, ::2]
+        # ms1_counts = ref_counts[:, :, :, 1::2]
+        # ms0_counts = np.reshape(
+        #     ms0_counts, (num_nvs, num_runs, 1, num_steps // 4 * num_reps)
+        # )
+        # ms1_counts = np.reshape(
+        #     ms1_counts, (num_nvs, num_runs, 1, num_steps // 4 * num_reps)
+        # )
+        # avg_snr, avg_snr_ste = widefield.calc_snr(ms1_counts, ms0_counts)
+        # avg_snr = avg_snr[:, 0]
+        # print(avg_snr.tolist())
+        # # avg_snr_ste = avg_snr_ste[:, 0]
+        # # fig, ax = plt.subplots()
+        # # kpl.plot_points(ax, range(num_nvs), avg_snr, yerr=avg_snr_ste)
+        # # ax.set_xlabel("NV order in sequence")
+        # # ax.set_ylabel("SNR")
+        # # kpl.show(block=True)
+        # sys.exit()
 
-    # ms0_counts = ref_counts[:, :, :, ::2]
-    # ms1_counts = ref_counts[:, :, :, 1::2]
-    # ms0_counts = np.reshape(
-    #     ms0_counts, (num_nvs, num_runs, 1, num_steps // 4 * num_reps)
-    # )
-    # ms1_counts = np.reshape(
-    #     ms1_counts, (num_nvs, num_runs, 1, num_steps // 4 * num_reps)
-    # )
-    # avg_snr, avg_snr_ste = widefield.calc_snr(ms1_counts, ms0_counts)
-    # avg_snr = avg_snr[:, 0]
-    # print(avg_snr.tolist())
-    # # avg_snr_ste = avg_snr_ste[:, 0]
-    # # fig, ax = plt.subplots()
-    # # kpl.plot_points(ax, range(num_nvs), avg_snr, yerr=avg_snr_ste)
-    # # ax.set_xlabel("NV order in sequence")
-    # # ax.set_ylabel("SNR")
-    # # kpl.show(block=True)
-    # sys.exit()
+        norm_counts, norm_counts_ste = widefield.process_counts(
+            nv_list, sig_counts, ref_counts, threshold=True
+        )
+        # mean_stes = np.mean(norm_counts_ste, axis=1)
+        # print(np.argsort(mean_stes)[::-1])
+        # print(np.sort(mean_stes)[::-1])
+        # sys.exit()
+        for nv_ind in split_esr:
+            contrast = np.max(norm_counts[nv_ind])
+            norm_counts[nv_ind] /= contrast
+            norm_counts_ste[nv_ind] /= contrast
 
-    norm_counts, norm_counts_ste = widefield.process_counts(
-        nv_list, sig_counts, ref_counts, threshold=True
-    )
-    # mean_stes = np.mean(norm_counts_ste, axis=1)
-    # print(np.argsort(mean_stes)[::-1])
-    # print(np.sort(mean_stes)[::-1])
-    # sys.exit()
-    for nv_ind in split_esr:
-        contrast = np.max(norm_counts[nv_ind])
-        norm_counts[nv_ind] /= contrast
-        norm_counts_ste[nv_ind] /= contrast
+        # raw_fig = create_raw_data_figure(nv_list, freqs, avg_counts, avg_counts_ste)
+        fit_fig = create_fit_figure(
+            nv_list,
+            freqs,
+            norm_counts,
+            norm_counts_ste,
+            nv_inds=nv_inds,
+            split_esr=split_esr,
+        )
 
-    # raw_fig = create_raw_data_figure(nv_list, freqs, avg_counts, avg_counts_ste)
-    fit_fig = create_fit_figure(
-        nv_list,
-        freqs,
-        norm_counts,
-        norm_counts_ste,
-        nv_inds=nv_inds,
-        split_esr=split_esr,
-    )
+        kpl.show(block=True)
+        sys.exit()
 
-    kpl.show(block=True)
-    sys.exit()
+    ### Main, bulk diamond movie
+    if bulk_or_shallow and make_movie:
+        # pixel_drifts = data["pixel_drifts"]
+        img_arrays = np.array(data.pop("img_arrays"), dtype=np.float16)
+        # base_pixel_drift = [15, 45]
+        # # base_pixel_drift = [24, 74]
+        # num_reps = 1
 
-    ###
+        # buffer = 30
+        # img_array_size = 250
+        # cropped_size = img_array_size - 2 * buffer
+        # proc_img_arrays = np.empty(
+        #     (2, num_runs, 2 * adj_num_steps, num_reps, cropped_size, cropped_size)
+        # )
+        # for run_ind in range(num_runs):
+        #     pixel_drift = pixel_drifts[run_ind]
+        #     offset = [
+        #         pixel_drift[1] - base_pixel_drift[1],
+        #         pixel_drift[0] - base_pixel_drift[0],
+        #     ]
+        #     for step_ind in range(2 * adj_num_steps):
+        #         img_array = img_arrays[0, run_ind, step_ind, 0]
+        #         cropped_img_array = widefield.crop_img_array(img_array, offset, buffer)
+        #         proc_img_arrays[0, run_ind, step_ind, 0, :, :] = cropped_img_array
 
-    # pixel_drifts = data["pixel_drifts"]
-    # img_arrays = np.array(data.pop("img_arrays"), dtype=np.float16)
-    # base_pixel_drift = [15, 45]
-    # # base_pixel_drift = [24, 74]
-    # num_reps = 1
+        sig_img_arrays = np.mean(
+            img_arrays[:, :, 0 : num_steps // 4, :], axis=(0, 1, 3)
+        )
+        sig_img_arrays += np.mean(
+            img_arrays[:, :, num_steps // 4 : num_steps // 2, :], axis=(0, 1, 3)
+        )
+        sig_img_arrays /= 2
+        ref_img_array = np.mean(
+            img_arrays[:, :, num_steps // 2 : 3 * num_steps // 4, :], axis=(0, 1, 2, 3)
+        )
+        proc_img_arrays = sig_img_arrays - ref_img_array
+        # fig, ax = plt.subplots()
+        # kpl.imshow(ax, proc_img_arrays[15])
+        # kpl.show(block=True)
 
-    # buffer = 30
-    # img_array_size = 250
-    # cropped_size = img_array_size - 2 * buffer
-    # proc_img_arrays = np.empty(
-    #     (2, num_runs, 2 * adj_num_steps, num_reps, cropped_size, cropped_size)
-    # )
-    # for run_ind in range(num_runs):
-    #     pixel_drift = pixel_drifts[run_ind]
-    #     offset = [
-    #         pixel_drift[1] - base_pixel_drift[1],
-    #         pixel_drift[0] - base_pixel_drift[0],
-    #     ]
-    #     for step_ind in range(2 * adj_num_steps):
-    #         img_array = img_arrays[0, run_ind, step_ind, 0]
-    #         cropped_img_array = widefield.crop_img_array(img_array, offset, buffer)
-    #         proc_img_arrays[0, run_ind, step_ind, 0, :, :] = cropped_img_array
+        downsample_factor = 2
+        proc_img_arrays = [
+            widefield.downsample_img_array(el, downsample_factor)
+            for el in proc_img_arrays
+        ]
+        proc_img_arrays = np.array(proc_img_arrays)
 
-    sig_img_arrays = np.mean(img_arrays[:, :, 0 : num_steps // 4, :], axis=(0, 1, 3))
-    sig_img_arrays += np.mean(
-        img_arrays[:, :, num_steps // 4 : num_steps // 2, :], axis=(0, 1, 3)
-    )
-    sig_img_arrays /= 2
-    ref_img_array = np.mean(
-        img_arrays[:, :, num_steps // 2 : 3 * num_steps // 4, :], axis=(0, 1, 2, 3)
-    )
-    proc_img_arrays = sig_img_arrays - ref_img_array
-    # fig, ax = plt.subplots()
-    # kpl.imshow(ax, proc_img_arrays[15])
-    # kpl.show(block=True)
+        # Nice still
+        # fig, ax = plt.subplots()
+        # kpl.imshow(ax, proc_img_arrays[17])
+        # ax.axis("off")
+        # scale = widefield.get_camera_scale()
+        # length = 5 * scale / downsample_factor
+        # kpl.scale_bar(ax, length, "5 µm", kpl.Loc.LOWER_RIGHT)
+        # kpl.show(block=True)
 
-    downsample_factor = 2
-    proc_img_arrays = [
-        widefield.downsample_img_array(el, downsample_factor) for el in proc_img_arrays
-    ]
-    proc_img_arrays = np.array(proc_img_arrays)
+        widefield.animate_images(
+            freqs,
+            proc_img_arrays,
+            cmin=np.percentile(proc_img_arrays, 70),
+            cmax=np.percentile(proc_img_arrays, 99.9),
+        )
 
-    # Nice still
-    # fig, ax = plt.subplots()
-    # kpl.imshow(ax, proc_img_arrays[17])
-    # ax.axis("off")
-    # scale = widefield.get_camera_scale()
-    # length = 5 * scale / downsample_factor
-    # kpl.scale_bar(ax, length, "5 µm", kpl.Loc.LOWER_RIGHT)
-    # kpl.show(block=True)
+        # widefield.animate(
+        #     freqs,
+        #     nv_list,
+        #     norm_counts,
+        #     norm_counts_ste,
+        #     proc_img_arrays,
+        #     cmin=np.percentile(proc_img_arrays, 70),
+        #     cmax=np.percentile(proc_img_arrays, 99.9),
+        #     scale_bar_length_factor=downsample_factor,
+        #     just_movie=True,
+        # )
 
-    widefield.animate_images(
-        freqs,
-        proc_img_arrays,
-        cmin=np.percentile(proc_img_arrays, 70),
-        cmax=np.percentile(proc_img_arrays, 99.9),
-    )
+        kpl.show(block=True)
 
-    # widefield.animate(
-    #     freqs,
-    #     nv_list,
-    #     norm_counts,
-    #     norm_counts_ste,
-    #     proc_img_arrays,
-    #     cmin=np.percentile(proc_img_arrays, 70),
-    #     cmax=np.percentile(proc_img_arrays, 99.9),
-    #     scale_bar_length_factor=downsample_factor,
-    #     just_movie=True,
-    # )
+    ### Supp, shallow movie
+    if not bulk_or_shallow:
+        # Split into orienatations and remove weak NVs
+        # fmt: off
+        nva_inds = [0,2,3,7,8,9,12,14,15,16,20,23,25,27,28,29,30,31,32,37,39,41,42,44,46,51,52,53,55,57,62,68]  # Larger splitting
+        nvb_inds = [ind for ind in range(69) if ind not in nva_inds]  # Smaller splitting
+        # split_esr = [12, 13, 14, 61, 116] 
+        # broad_esr = [52, 11] 
+        # weak_esr = [72, 64, 55, 96, 112, 87, 12, 58, 36]
+        # # fmt: on
+        # for ind in weak_esr:
+        #     for nv_list in [nva_inds, nvb_inds]:
+        #         if ind in nv_list:
+        #             nv_list.remove(ind)
+        # for issue_list in [broad_esr, split_esr]:
+        #     for ind in issue_list:
+        #         for nv_list in [nva_inds, nvb_inds]:
+        #             if ind in nv_list:
+        #                 nv_list.remove(ind)
+        #                 nv_list.append(ind)
+        chunk_size = 3
+        nv_inds = []
+        max_length = max(len(nva_inds), len(nvb_inds))
+        # Handle jagged
+        for ind in range(2):
+            nv_inds.append(nva_inds.pop(0))
+        nv_inds.append(nvb_inds.pop(0))
+        for ind in range(3):
+            nv_inds.append(nva_inds.pop(0))
+        nv_inds
+        for ind in range(0, max_length, chunk_size):
+            nv_inds.extend(nvb_inds[ind : ind + chunk_size])
+            nv_inds.extend(nva_inds[ind : ind + chunk_size])
+        # nv_inds[-3:] =
 
-    ###
+        file_id = 1783133120931
 
-    kpl.show(block=True)
+        data = dm.get_raw_data(file_id=file_id, load_npz=False, use_cache=True)
+
+        nv_list = data["nv_list"]
+        num_nvs = len(nv_list)
+        num_steps = data["num_steps"]
+        num_runs = data["num_runs"]
+        num_reps = data["num_reps"]
+        freqs = data["freqs"]
+
+        # Manipulate the counts into the format expected for normalization
+        counts = np.array(data.pop("counts"))
+        reformatted_counts = reformat_counts(counts)
+        sig_counts = reformatted_counts[0]
+        ref_counts = reformatted_counts[1]
+
+        norm_counts, norm_counts_ste = widefield.process_counts(
+            nv_list, sig_counts, ref_counts, threshold=True
+        )
+
+        fit_fig = create_fit_figure(
+            nv_list,
+            freqs,
+            norm_counts,
+            norm_counts_ste,
+            nv_inds=nv_inds,
+        )
+
+        kpl.show(block=True)
+        sys.exit()

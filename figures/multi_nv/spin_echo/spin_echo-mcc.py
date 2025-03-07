@@ -13,8 +13,8 @@ import traceback
 
 import matplotlib.pyplot as plt
 import numpy as np
-from scipy.optimize import basinhopping, brute
-from scipy.signal import lombscargle
+from numba import njit
+from scipy.optimize import brute
 
 from majorroutines.widefield import base_routine
 from utils import data_manager as dm
@@ -33,28 +33,61 @@ def quartic_decay(
     T2_ms,
     T2_exp,
     osc_contrast=None,
+    osc_freq0=None,
     osc_freq1=None,
-    osc_freq2=None,
+):
+    if osc_freq0 is None:
+        osc_contrast = 0
+        osc_freq0 = 0
+        osc_freq1 = 0
+    # Short circuit if osc_freq0 > osc_freq1 since the equation is symmetric
+    elif osc_freq0 > osc_freq1:
+        return [0] * len(tau)
+
+    return _quartic_decay(
+        tau,
+        baseline,
+        quartic_contrast,
+        revival_time,
+        quartic_decay_time,
+        T2_ms,
+        T2_exp,
+        osc_contrast,
+        osc_freq0,
+        osc_freq1,
+    )
+
+
+@njit
+def _quartic_decay(
+    tau,
+    baseline,
+    quartic_contrast,
+    revival_time,
+    quartic_decay_time,
+    T2_ms,
+    T2_exp,
+    osc_contrast,
+    osc_freq0,
+    osc_freq1,
 ):
     # baseline = 0.5
     # print(len(amplitudes))
     T2_us = 1000 * T2_ms
     envelope = np.exp(-((tau / T2_us) ** T2_exp))
     # envelope = 1
-    num_revivals = 3
-    comb = 0
-    for ind in range(num_revivals):
-        exp_part = np.exp(-(((tau - ind * revival_time) / quartic_decay_time) ** 4))
-        comb += exp_part
-    if osc_contrast is None:
-        mod = quartic_contrast
-    else:
-        mod = (
-            quartic_contrast
-            - osc_contrast
-            * np.sin(2 * np.pi * osc_freq1 * tau / 2) ** 2
-            * np.sin(2 * np.pi * osc_freq2 * tau / 2) ** 2
-        )
+    revivals_2d = np.arange(3)[:, np.newaxis]
+    tau_2d = tau[np.newaxis, :]
+    comb_terms = np.exp(
+        -(((tau_2d - revivals_2d * revival_time) / quartic_decay_time) ** 4)
+    )
+    comb = np.sum(comb_terms, axis=0)
+    mod = (
+        quartic_contrast
+        - osc_contrast
+        * np.sin(np.pi * osc_freq0 * tau) ** 2
+        * np.sin(np.pi * osc_freq1 * tau) ** 2
+    )
     val = baseline - envelope * mod * comb
     return val
 
@@ -124,30 +157,68 @@ def brute_fit_fn_cost(
     no_c13_popt,
     osc_contrast_guess,
 ):
-    # line = fit_fn(total_evolution_times, *no_c13_popt, *x)
     line = fit_fn(total_evolution_times, *no_c13_popt, osc_contrast_guess, *x)
     return np.sum(((nv_counts - line) ** 2) / (nv_counts_ste**2))
 
 
+def brute_fit_fn_cost2(
+    x,
+    total_evolution_times,
+    nv_counts,
+    nv_counts_ste,
+    fit_fn,
+    no_c13_popt,
+):
+    line = fit_fn(total_evolution_times, *no_c13_popt, *x)
+    return np.sum(((nv_counts - line) ** 2) / (nv_counts_ste**2))
+
+
+def rolling_minimum(taus, values, window_size):
+    min_values = np.empty_like(values)
+    half_window_size = window_size / 2
+
+    for ind in range(len(taus)):
+        # Find indices within the window
+        start_time = taus[ind] - half_window_size
+        end_time = taus[ind] + half_window_size
+        indices = np.where((taus >= start_time) & (taus <= end_time))[0]
+
+        # Compute minimum over the valid window
+        min_values[ind] = np.min(values[indices])
+
+    return min_values
+
+
 def fit(total_evolution_times, nv_counts, nv_counts_ste):
-    # fit_fn = quartic_decay
-    fit_fn = quartic_decay_fixed_revival
+    fit_fn = quartic_decay
+    # fit_fn = quartic_decay_fixed_revival
 
     ### Get good guesses
 
     # baseline, quartic_contrast, revival_time, quartic_decay_time, T2_ms, T2_exp, osc_contrast, osc_freq1, osc_freq2,
-    baseline_guess = nv_counts[9]
-    quartic_contrast_guess = baseline_guess - nv_counts[0]
+    rolling_minimum_window = 5
+    envelope = rolling_minimum(total_evolution_times, nv_counts, rolling_minimum_window)
+    baseline_guess = nv_counts[7]
+    revival_time_guess = 50
+    quartic_contrast_guess = baseline_guess - min(nv_counts)
     # exp(-(0.1/t)**3) == (norm_counts[-6] - baseline_guess) / quartic_contrast_guess
-    log_decay = -np.log((baseline_guess - nv_counts[-6]) / quartic_contrast_guess)
+    log_decay = -np.log((baseline_guess - envelope[-7]) / quartic_contrast_guess)
     T2_guess = 0.1 * (log_decay ** (-1 / 3))
-    # guess_params = [baseline_guess, quartic_contrast_guess, 50, 7, T2_guess, 3]
-    guess_params = [baseline_guess, quartic_contrast_guess, 7, T2_guess, 3]
+    if np.isnan(T2_guess):
+        T2_guess = 0.1
+    guess_params = [
+        baseline_guess,
+        quartic_contrast_guess,
+        revival_time_guess,
+        7,
+        T2_guess,
+        3,
+    ]
     bounds = [
-        # [0, 0, 40, 0, 0, 0],
-        # [1, 1, 60, 20, 1000, 10],
-        [0, 0, 0, 0, 0],
-        [1, 1, 20, 1000, 10],
+        [0, 0, 40, 0, 0, 0],
+        [1, 1, 60, 20, 1000, 10],
+        # [0, 0, 0, 0, 0],
+        # [1, 1, 20, 1000, 10],
     ]
 
     # FFT to determine dominant frequency
@@ -161,46 +232,106 @@ def fit(total_evolution_times, nv_counts, nv_counts_ste):
     # freq_guess = freqs[np.argmax(transform_mag[4:]) + 4]
     # guess_params[-2] = freq_guess
 
-    ### Fit assuming no strongly coupled C13
+    ### Fit to envelope as if there were no strongly coupled C13
 
+    # Thin the envelope out to reduce bias towards heavily sampled first revival
+    # Force points to be at least 2 us apart
+    thinned_inds = [0]
+    prev_accepted_point = total_evolution_times[0]
+    for ind in range(len(total_evolution_times)):
+        tau = total_evolution_times[ind]
+        if tau - prev_accepted_point > 1.5:
+            thinned_inds.append(ind)
+            prev_accepted_point = tau
+
+    # Clip guess_params to bounds
+    num_params = len(guess_params)
+    for ind in range(num_params):
+        clipped_val = np.clip(guess_params[ind], bounds[0][ind], bounds[1][ind])
+        guess_params[ind] = clipped_val
     no_c13_popt, no_c13_pcov, no_c13_red_chi_sq = curve_fit(
         fit_fn,
-        total_evolution_times,
-        nv_counts,
+        total_evolution_times[thinned_inds],
+        envelope[thinned_inds],
         guess_params,
-        nv_counts_ste,
+        nv_counts_ste[thinned_inds],
         bounds=bounds,
     )
+    no_c13_popt[3] -= rolling_minimum_window / 2
+    # fig, ax = plt.subplots()
+    # kpl.plot_points(
+    #     ax,
+    #     total_evolution_times[thinned_inds],
+    #     envelope[thinned_inds],
+    #     nv_counts_ste[thinned_inds],
+    # )
+    # # kpl.plot_points(ax, total_evolution_times, nv_counts, nv_counts_ste)
+    # linspace_taus = np.linspace(0, np.max(total_evolution_times), 1000)
+    # linspace_taus = linspace_taus[1:]
+    # kpl.plot_line(
+    #     ax,
+    #     linspace_taus,
+    #     fit_fn(linspace_taus, *no_c13_popt),
+    #     # fit_fn(linspace_taus, *guess_params),
+    #     color=kpl.KplColors.GRAY,
+    # )
+    # kpl.show(block=True)
 
     # return popt, pcov, red_chi_sq
 
     ### Brute to find correct frequencies
 
-    osc_contrast_guess = no_c13_popt[1]
-    args = (
-        total_evolution_times,
-        nv_counts,
-        nv_counts_ste,
-        fit_fn,
-        no_c13_popt,
-        osc_contrast_guess,
-    )
+    osc_bounds = [[-1.0, 0.0, 0.0], [1.0, 5.0, 1.0]]
 
-    # ranges = [(bounds[0][ind], bounds[1][ind]) for ind in range(len(bounds[0]))]
-    # ranges.extend([(-0.5, 0.5), (0, 1.5), (0, 1.5)])
-    # ranges = [(-0.5, 0.5), (0, 1.5), (0, 1.5)]
-    ranges = [(0, 1.5), (0, 0.5)]
-    workers = 6
-    popt = brute(
-        brute_fit_fn_cost, ranges, Ns=1000, finish=None, workers=workers, args=args
-    )
+    # Coarse amplitude, fine frequencies
+    best_cost = None
+    for osc_contrast_guess in np.linspace(osc_bounds[0][0], osc_bounds[1][0], 10):
+        args = (
+            total_evolution_times,
+            nv_counts,
+            nv_counts_ste,
+            fit_fn,
+            no_c13_popt,
+            osc_contrast_guess,
+        )
+
+        ranges = [
+            (osc_bounds[0][1], osc_bounds[1][1]),
+            (osc_bounds[0][2], osc_bounds[1][2]),
+        ]
+        workers = -1
+        popt = brute(
+            brute_fit_fn_cost, ranges, Ns=1000, finish=None, workers=workers, args=args
+        )
+        cost = brute_fit_fn_cost(popt, *args)
+        if best_cost is None or cost < best_cost:
+            best_popt = popt
+            best_osc_contrast_guess = osc_contrast_guess
+            best_cost = cost
+    osc_contrast_guess = best_osc_contrast_guess
+    popt = best_popt
+
+    # Fine everything
+    # args = (total_evolution_times, nv_counts, nv_counts_ste, fit_fn, no_c13_popt)
+    # ranges = [(-0.5, 0.5), (0, 5.0), (0, 1.0)]
+    # workers = -1
+    # popt = brute(
+    #     brute_fit_fn_cost2, ranges, Ns=500, finish=None, workers=workers, args=args
+    # )
 
     ### Fine tune with a final fit
 
+    # add to first guess
     guess_params.append(osc_contrast_guess)
     guess_params.extend(popt)
-    bounds[0].extend([-0.5, 0, 0])
-    bounds[1].extend([0.5, 1.5, 0.5])
+    bounds[0].extend(osc_bounds[0])
+    bounds[1].extend(osc_bounds[1])
+
+    # Clip guess_params to bounds
+    num_params = len(guess_params)
+    for ind in range(num_params):
+        clipped_val = np.clip(guess_params[ind], bounds[0][ind], bounds[1][ind])
+        guess_params[ind] = clipped_val
 
     popt, pcov, red_chi_sq = curve_fit(
         fit_fn,
@@ -209,8 +340,12 @@ def fit(total_evolution_times, nv_counts, nv_counts_ste):
         guess_params,
         nv_counts_ste,
         bounds=bounds,
+        ftol=1e-6,
+        xtol=1e-6,
+        gtol=1e-6,
     )
 
+    return popt, pcov, red_chi_sq
     if no_c13_red_chi_sq < red_chi_sq:
         return no_c13_popt, no_c13_pcov, no_c13_red_chi_sq
     else:
@@ -240,10 +375,34 @@ def create_fit_figure(data, axes_pack=None, layout=None, no_legend=True, nv_inds
             nv_list, sig_counts, ref_counts, threshold=True
         )
 
-    do_fit = True
+        fig, ax = plt.subplots()
+        nv_counts = norm_counts[2]
+        nv_counts_ste = norm_counts_ste[2]
+        print(np.mean(nv_counts_ste))
+        kpl.plot_points(ax, total_evolution_times, nv_counts, nv_counts_ste)
+        return
+
+        # Create combined file
+        # try:
+        #     del data["counts"]
+        #     data["norm_counts"] = norm_counts
+        #     data["norm_counts_ste"] = norm_counts_ste
+        #     timestamp = dm.get_time_stamp()
+        #     nv_list = data["nv_list"]
+        #     repr_nv_sig = widefield.get_repr_nv_sig(nv_list)
+        #     repr_nv_name = repr_nv_sig.name
+        #     file_path = dm.get_file_path(__file__, timestamp, repr_nv_name)
+        #     file_id = dm.save_raw_data(data, file_path)
+        #     print(file_id)
+        # finally:
+        #     sys.exit()
+
+    do_fit = False
     if do_fit:
         fit_fns = []
         popts = []
+        pcovs = []
+        red_chi_sq_list = []
 
         for nv_ind in nv_inds:
             nv_counts = norm_counts[nv_ind]
@@ -254,8 +413,8 @@ def create_fit_figure(data, axes_pack=None, layout=None, no_legend=True, nv_inds
             # kpl.show(block=True)
 
             try:
-                # fit_fn = quartic_decay
-                fit_fn = quartic_decay_fixed_revival
+                fit_fn = quartic_decay
+                # fit_fn = quartic_decay_fixed_revival
                 popt, pcov, red_chi_sq = fit(
                     total_evolution_times, nv_counts, nv_counts_ste
                 )
@@ -264,6 +423,7 @@ def create_fit_figure(data, axes_pack=None, layout=None, no_legend=True, nv_inds
                 fig, ax = plt.subplots()
                 kpl.plot_points(ax, total_evolution_times, nv_counts, nv_counts_ste)
                 linspace_taus = np.linspace(0, np.max(total_evolution_times), 1000)
+                linspace_taus = linspace_taus[1:]  # Exclude tau=0 which can diverge
                 kpl.plot_line(
                     ax,
                     linspace_taus,
@@ -280,8 +440,23 @@ def create_fit_figure(data, axes_pack=None, layout=None, no_legend=True, nv_inds
                 print(traceback.format_exc())
                 fit_fn = None
                 popt = None
+                red_chi_sq = None
             fit_fns.append(fit_fn)
             popts.append(popt)
+            pcovs.append(pcov)
+            red_chi_sq_list.append(red_chi_sq)
+
+    print(red_chi_sq_list)
+
+    data = {
+        "fit_fn": "quartic_decay",
+        "popts": popts,
+        "pcovs": pcovs,
+        "red_chi_sq_list": red_chi_sq_list,
+    }
+    time_stamp = dm.get_time_stamp()
+    file_path = dm.get_file_path(__file__, time_stamp, "multi_nv")
+    dm.save_raw_data(data, file_path)
 
     ### Make the figure
 
@@ -445,22 +620,29 @@ if __name__ == "__main__":
     # data = dm.get_raw_data(file_id=1548381879624)
 
     # Separate files
-    # # fmt: off
-    # file_ids = [1734158411844, 1734273666255, 1734371251079, 1734461462293, 1734569197701, 1736117258235, 1736254107747, 1736354618206, 1736439112682]
-    # file_ids2 = [1736589839249, 1736738087977, 1736932211269, 1737087466998, 1737219491182]
-    # # fmt: on
+    # fmt: off
+    file_ids = [1734158411844, 1734273666255, 1734371251079, 1734461462293, 1734569197701, 1736117258235, 1736254107747, 1736354618206, 1736439112682]
+    file_ids2 = [1736589839249, 1736738087977, 1736932211269, 1737087466998, 1737219491182]
+    # fmt: on
     # file_ids = file_ids[:4]
-    # file_ids.extend(file_ids2)
-    # data = dm.get_raw_data(file_id=file_ids)
+    file_ids.extend(file_ids2)
+    del file_ids[3:5]
+    data = dm.get_raw_data(file_id=file_ids)
 
     # Combined file
-    data = dm.get_raw_data(file_id=1755199883770)
+    # data = dm.get_raw_data(file_id=1755199883770)
 
     split_esr = [12, 13, 14, 61, 116]
     broad_esr = [52, 11]
     weak_esr = [72, 64, 55, 96, 112, 87, 12, 58, 36]
     skip_inds = list(set(split_esr + broad_esr + weak_esr))
     nv_inds = [ind for ind in range(117) if ind not in skip_inds]
+
+    # nv_inds = nv_inds[4:]
+    # Where red_chi_sq > 3
+    # nv_inds = [4, 7, 11, 16, 21, 45, 47, 55, 61, 62, 96, 97]
+    # nv_inds = [11, 16, 21, 45, 47, 55, 61, 62, 96, 97]
+    # nv_inds = nv_inds[0:2]
 
     # create_raw_data_figure(data)
     create_fit_figure(data, nv_inds=nv_inds)

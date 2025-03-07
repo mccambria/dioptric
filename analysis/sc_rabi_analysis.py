@@ -317,6 +317,7 @@ if __name__ == "__main__":
     # file_id = 1772755741220  # two orientations with freqs aroud 2.84
     # file_id = 1774582403511  # all four orientation measured with two frequency tone per sig gen
     file_id = 1775776922337  # all four orientation measured with two frequency tone per sig gen with offset pulses both microwaave ()
+    # rubin 140 NVs
     file_id = 1779670263899
     # rubin
     file_id = 1795718888560
