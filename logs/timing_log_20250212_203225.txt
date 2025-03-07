@@ -1,9 +1,0 @@
-Detailed Timing Summary:
-
-Setup Phase:
-  data_access: 0.000 seconds
-  nv_indices: 0.000 seconds
-  time_calculations: 0.000 seconds
-  total: 0.000 seconds
-
-Data Processing Phase:

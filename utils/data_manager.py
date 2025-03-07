@@ -136,7 +136,7 @@ def save_raw_data(raw_data, file_path, keys_to_compress=None):
 
     # Compress numpy arrays to linked file
     try:
-        if keys_to_compress is not None:
+        if len(keys_to_compress) > 0:
             # Build the object to compress
             kwargs = {}
             for key in keys_to_compress:
