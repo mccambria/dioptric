@@ -51,15 +51,15 @@ def main(hfs_res, hfs_err_res, hfs_echo, hfs_err_echo):
             label = None
 
     # From Smeltzer 2011
-    # for theory_val, theory_err in zip(
-    #     [14.8, 13.9, 7.5, 5.7, 4.6, 4.67, 2.63, 2.27],
-    #     [0.1, 0.1, 0.1, 0.2, 0.1, 0.04, 0.07, 0.04],
-    # ):
-    # Experiment values from same paper
     for theory_val, theory_err in zip(
-        [13.72, 12.78, 8.92, 6.52, 4.2, 2.4],
-        [0.03, 0.01, 0.03, 0.04, 0.1, 0.3],
+        [14.8, 13.9, 7.5, 5.7, 4.6, 4.67, 2.63, 2.27],
+        [0.1, 0.1, 0.1, 0.2, 0.1, 0.04, 0.07, 0.04],
     ):
+        # Experiment values from same paper
+        # for theory_val, theory_err in zip(
+        #     [13.72, 12.78, 8.92, 6.52, 4.2, 2.4],
+        #     [0.03, 0.01, 0.03, 0.04, 0.1, 0.3],
+        # ):
         # ax.axhline(theory_val, color=kpl.KplColors.LIGHT_GRAY, zorder=-50)
         ax.fill_between(
             [-1, num_nvs + 10],
@@ -89,9 +89,17 @@ if __name__ == "__main__":
     # From ./spin_echo/spin_echo-mcc.py, in MHz
     data = dm.get_raw_data(file_id=1796557235526)
     popts = np.array(data["popts"])
+    num_nvs_echo = len(popts)
     pcovs = np.array(data["pcovs"])
     red_chi_sqs = np.array(data["red_chi_sq_list"])
-    good_inds = np.where(red_chi_sqs < 10)[0]
+    osc_contrasts = popts[:, -3]
+    mod_freqs = popts[:, -2]
+    # criteria = [red_chi_sqs < 2.0, osc_contrasts > 0.5, mod_freqs > 0.05]
+    criteria = [red_chi_sqs < 2.0, osc_contrasts > 0.1, mod_freqs > 0.05]
+    # criteria = [red_chi_sqs < 2.0, osc_contrasts > 0.1, mod_freqs > 0.5]
+    good_inds = list(range(num_nvs_echo))
+    for el in criteria:
+        good_inds = np.intersect1d(good_inds, np.where(el)[0])
     pstes = np.array([np.sqrt(np.diag(pcovs[ind])) for ind in range(len(pcovs))])
     hfs_echo = popts[good_inds, -2]
     hfs_err_echo = pstes[good_inds, -2]
