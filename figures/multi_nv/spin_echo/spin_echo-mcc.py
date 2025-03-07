@@ -310,7 +310,7 @@ def fit(total_evolution_times, nv_counts, nv_counts_ste):
 
     ### Brute to find correct frequencies
 
-    osc_bounds = [[0.0, 0.0, 0.0], [1.0, 6.0, 1.0]]
+    osc_bounds = [[0.0, 0.0, 0.0], [1.0, 2.5, 1.0]]
 
     # Coarse amplitude, fine frequencies
     best_cost = None
@@ -660,10 +660,10 @@ if __name__ == "__main__":
 
     ### Replotting
 
-    fit_data = dm.get_raw_data(file_id=1795431625306)
-    replot_fits(data, fit_data, nv_inds)
-    kpl.show(block=True)
-    sys.exit()
+    # fit_data = dm.get_raw_data(file_id=1795431625306)
+    # replot_fits(data, fit_data, nv_inds)
+    # kpl.show(block=True)
+    # sys.exit()
 
     ###
 
