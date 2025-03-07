@@ -261,6 +261,7 @@ def fit_bimodal_histogram(
     median = np.median(counts_list)
     std = np.std(counts_list)
     counts_list = counts_list[counts_list < median + 10 * std]
+    counts_list = counts_list[counts_list > 0]
     num_samples = len(counts_list)
 
     # Histogram the counts
@@ -270,6 +271,7 @@ def fit_bimodal_histogram(
     hist, bin_edges = np.histogram(
         counts_list, bins=max_count + 1, range=(0, max_count), density=True
     )
+    mode = x_vals[np.argmax(hist)]
 
     # Histogram error bars - assume poisson statistics for each bin's distribution
     hist_errs = np.sqrt(hist / num_samples)
@@ -282,7 +284,7 @@ def fit_bimodal_histogram(
     mean_bright_guess = round(np.quantile(counts_list, 0.65))
     mean_dark_min = round(np.quantile(counts_list, 0.02))
     mean_bright_max = round(np.quantile(counts_list, 0.98))
-    ratio_guess = 0.7 if np.mean(counts_list) < np.median(counts_list) else 0.3
+    ratio_guess = 0.7 if mode < median else 0.3
     bounds = (-np.inf, np.inf)  # Default bounds
     if prob_dist is ProbDist.SKEW_GAUSSIAN:
         guess_params = [ratio_guess]
@@ -342,16 +344,21 @@ def fit_bimodal_histogram(
 
             # Dark mode
             dark_ratio = popt[0]
-            single_mode_fn = get_single_mode_pdf(prob_dist)
-            num_params = get_single_mode_num_params(prob_dist)
-            line = dark_ratio * single_mode_fn(x_vals, *popt[1 : 1 + num_params])
+            # single_mode_fn = get_single_mode_pdf(prob_dist)
+            # num_params = get_single_mode_num_params(prob_dist)
+            # line = dark_ratio * single_mode_fn(x_vals, *popt[1 : 1 + num_params])
+            line = dark_ratio * compound_poisson_pdf(x_vals, popt[1])
             kpl.plot_line(
                 ax, x_vals, line, color=kpl.KplColors.RED, label=r"NV$^{0}$ mode"
             )
 
             # Bright mode
-            num_params = get_single_mode_num_params(prob_dist)
-            line = (1 - dark_ratio) * single_mode_fn(x_vals, *popt[1 + num_params :])
+            bright_ratio = 1 - dark_ratio
+            # num_params = get_single_mode_num_params(prob_dist)
+            # line = (1 - dark_ratio) * single_mode_fn(x_vals, *popt[1 + num_params :])
+            line = bright_ratio * compound_poisson_with_ionization_pdf(
+                x_vals, *popt[1:]
+            )
             kpl.plot_line(
                 ax, x_vals, line, color=kpl.KplColors.GREEN, label=r"NV$^{-}$ mode"
             )
