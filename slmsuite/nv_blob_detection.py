@@ -382,11 +382,11 @@ if __name__ == "__main__":
     # data = dm.get_raw_data(file_id=1766351495521, load_npz=True)
     # data = dm.get_raw_data(file_id=1766620461342, load_npz=True)
     # data = dm.get_raw_data(file_id=1791296034768, load_npz=True)
-    data = dm.get_raw_data(file_id=1791776254933, load_npz=True)  # rubin green scan
-
-    # img_array = np.array(data["ref_img_array"])
+    # data = dm.get_raw_data(file_id=1791776254933, load_npz=True)  # rubin green scan
+    data = dm.get_raw_data(file_id=1792737486639, load_npz=True)
+    img_array = np.array(data["ref_img_array"])
     # img_array = np.array(data["ref_img_array"]["ref_img_array"])
-    img_array = np.array(data["img_array"])
+    # img_array = np.array(data["img_array"])
     # print(img_array)
     # img_array = np.array(data["diff_img_array"])
     # img_array = -img_array
@@ -402,7 +402,7 @@ if __name__ == "__main__":
 
     # Apply the blob detection and Gaussian fitting
     sigma = 2.0
-    lower_threshold = 20
+    lower_threshold = 0.11
     upper_threshold = None
     smoothing_sigma = 0.0
 
@@ -426,7 +426,7 @@ if __name__ == "__main__":
         for existing_coord in filtered_nv_coords:
             distance = np.linalg.norm(np.array(existing_coord) - np.array(coord))
 
-            if distance < 1:
+            if distance < 12:
                 keep_coord = False  # Mark it for exclusion if too close
                 break  # No need to check further distances
 
@@ -486,7 +486,7 @@ if __name__ == "__main__":
     #     filtered_nv_coords,
     #     filtered_counts,
     #     path="slmsuite/nv_blob_detection",
-    #     filename="nv_blob_shallow_rubin_310nvs.npz",
+    #     filename="nv_blob_shallow_rubin_140nvs.npz",
     # )
     ### full ROI -- multiple images save in the same file
     # process_scan_file()

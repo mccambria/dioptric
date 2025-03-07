@@ -123,16 +123,16 @@ import numpy as np
 # Given pixel coordinates and corresponding red coordinates
 pixel_coords_list = np.array(
     [
-        [115.66, 101.157],
-        [109.249, 115.543],
-        [98.684, 100.663],
+        [95.439, 94.799],
+        [119.117, 100.388],
+        [109.423, 118.248],
     ]
 )
 red_coords_list = np.array(
     [
-        [78.816, 67.86],
-        [73.859, 79.697],
-        [65.063, 67.591],
+        [62.148, 62.848],
+        [81.574, 67.148],
+        [74.061, 81.78],
     ]
 )
 
@@ -146,9 +146,10 @@ if len(pixel_coords_list) >= 3:
     # New pixel coordinate for which we want to find the corresponding red coordinate
     new_pixel_coord = np.array(
         [
-            [95.595, 94.819],
-            [119.069, 100.321],
-            [107.092, 117.632],
+            [108.3, 106.976],
+            [118.949, 100.486],
+            [107.014, 118.267],
+            [96.819, 95.275],
         ],
         dtype=np.float32,
     )
@@ -214,6 +215,8 @@ else:
     # )
     # print("Corresponding red coordinates:", new_red_coord)
 
+sys.exit()
+
 
 def generate_divisible_by_4(min_val, max_val, num_steps):
     step_size = (max_val - min_val) / (num_steps - 1)
@@ -228,8 +231,8 @@ def generate_divisible_by_4(min_val, max_val, num_steps):
 
 
 # Example Usage
-min_duration = 32
-max_duration = 993
+min_duration = 20
+max_duration = 620
 num_steps = 22
 
 step_values = generate_divisible_by_4(min_duration, max_duration, num_steps)
@@ -287,36 +290,41 @@ def exponential_model(x, a, b, c):
     return a * np.exp(b * x) + c
 
 
-# # Fit the curve
-# params, covariance = curve_fit(power_law_model, aom_voltages, yellow_power)
-# # params, covariance = curve_fit(ower_law_model, aom_voltages, yellow_power)
+# Define models
+def power_law_model(x, a, b, c):
+    return a * x**b + c
 
-# # Extract parameters
-# a, b, c = params
 
-# # Generate fitted data for plotting
-# voltage_fit = np.linspace(aom_voltages.min(), aom_voltages.max(), 500)
-# # power_fit = exponential_model(voltage_fit, a, b, c)
-# power_fit = power_law_model(voltage_fit, a, b, c)
+# Fit the curve
+params, covariance = curve_fit(power_law_model, aom_voltages, yellow_power)
+# params, covariance = curve_fit(ower_law_model, aom_voltages, yellow_power)
 
-# # Plot the data and the fit
-# plt.figure(figsize=(8, 6))
-# plt.scatter(aom_voltages, yellow_power, color="blue", label="Data Points")
-# plt.plot(
-#     voltage_fit,
-#     power_fit,
-#     color="red",
-#     label=f"Fit: $y = {a:.2f} \\cdot e^{{{b:.2f} \\cdot x}} + {c:.2f}$",
-# )
-# plt.title("AOM Voltage vs Yellow Laser Power")
-# plt.xlabel("AOM Voltage (V)")
-# plt.ylabel("Yellow Laser Power (µW)")
-# plt.legend()
-# plt.grid(True)
-# plt.show()
+# Extract parameters
+a, b, c = params
 
-# # Print the function
-# print(f"Fitted Function: y = {a:.3f} * exp({b:.3f} * x) + {c:.3f}")
+# Generate fitted data for plotting
+voltage_fit = np.linspace(aom_voltages.min(), aom_voltages.max(), 500)
+# power_fit = exponential_model(voltage_fit, a, b, c)
+power_fit = power_law_model(voltage_fit, a, b, c)
+
+# Plot the data and the fit
+plt.figure(figsize=(8, 6))
+plt.scatter(aom_voltages, yellow_power, color="blue", label="Data Points")
+plt.plot(
+    voltage_fit,
+    power_fit,
+    color="red",
+    label=f"Fit: $y = {a:.2f} \\cdot e^{{{b:.2f} \\cdot x}} + {c:.2f}$",
+)
+plt.title("AOM Voltage vs Yellow Laser Power")
+plt.xlabel("AOM Voltage (V)")
+plt.ylabel("Yellow Laser Power (µW)")
+plt.legend()
+plt.grid(True)
+plt.show()
+
+# Print the function
+print(f"Fitted Function: y = {a:.3f} * exp({b:.3f} * x) + {c:.3f}")
 
 
 # Define models
@@ -331,11 +339,6 @@ aom_voltages = np.array(
     [0.25, 0.27, 0.29, 0.31, 0.33, 0.35, 0.37, 0.39, 0.41, 0.43, 0.45]
 )
 yellow_power = np.array([12, 25, 48, 86, 146, 236, 363, 540, 766, 1050, 1400])
-
-
-# Define models
-def power_law_model(x, a, b, c):
-    return a * x**b + c
 
 
 # Goodness of fit (R^2 and RMSE)

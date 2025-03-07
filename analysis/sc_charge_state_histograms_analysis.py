@@ -264,8 +264,12 @@ if __name__ == "__main__":
     # data = dm.get_raw_data(file_id=1770828500425, load_npz=False)  # 60ms readout
     # data = dm.get_raw_data(file_id=1778189406841, load_npz=False)  # 60ms readout 61 NVs
     # data = dm.get_raw_data(file_id=1782616297820, load_npz=False)  # 60ms readout 66 NVs
-    data = dm.get_raw_data(file_id=1791781168217, load_npz=False)  # 60ms readout 66 NVs
+    # data = dm.get_raw_data(file_id=1791781168217, load_npz=False)  # 60ms readout 66 NVs
 
+    # rubin
+    data = dm.get_raw_data(
+        file_id=1794036299375, load_npz=False
+    )  # 60ms readout 140 NVs
     # file_name = dm.get_file_name(file_id=1766803842180)
     # print(file_name)
     process_and_plot(data, do_plot_histograms=True)

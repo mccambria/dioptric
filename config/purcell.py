@@ -40,14 +40,14 @@ calibration_coords_pixel = [
     [228.808, 23.054],
 ]
 calibration_coords_green = [
-    [118.922, 100.171],
-    [107.023, 117.93],
-    [96.786, 94.98],
+    [118.968, 100.503],
+    [107.022, 118.255],
+    [96.814, 95.251],
 ]
 calibration_coords_red = [
-    [81.439, 66.867],
-    [72.131, 81.384],
-    [63.228, 62.84],
+    [81.439, 67.229],
+    [72.097, 81.821],
+    [63.283, 63.221],
 ]
 # Create the dictionaries using the provided lists
 calibration_coords_nv1 = {
@@ -130,14 +130,14 @@ config |= {
             0: {
                 "physical_name": "sig_gen_STAN_sg394",
                 # "uwave_power": 2.3,
-                "uwave_power": 2.0,
+                "uwave_power": 6.0,
                 "frequency": 2.782099,  # shallow NVs O1 ms=-1
                 # "frequency": 2.798175,  # shallow NVs O2 ms=-1
                 # "frequency": 2.790137,  # mean of above two frequency
-                # "rabi_period": 80,
-                "rabi_period": 96,
+                "rabi_period": 176,
+                # "rabi_period": 96,
                 # IQ modulation part
-                "carrier_frequency": 2.790137,  # Center frequency for IQ modulation
+                "carrier_frequency": 2.790137,  # Center frequency
                 "offset": 0.2670,  # % offset
                 "iq_freq_I": -7.45,  # IQ modulation frequency for I-channel (MHz)
                 "iq_freq_Q": 7.45,  # IQ modulation frequency for Q-channel (MHz)
@@ -146,11 +146,12 @@ config |= {
             1: {
                 "physical_name": "sig_gen_STAN_sg394_2",
                 # "uwave_power": 8.1,
-                "uwave_power": 2.0,
+                "uwave_power": 6.0,
                 "frequency": 2.840727,  # shallow NV O3 ms=-1
                 # "frequency": 2.856761,  # shallow NVs O4 ms=-1
                 # "frequency": 2.848744,  # mean of above two frequency
-                "rabi_period": 96,
+                # "rabi_period": 96,
+                "rabi_period": 176,
                 # IQ modulation part
                 "carrier_frequency": 2.848744,  # Center frequency for IQ modulation
                 "offset": 0.29839,  # % offset
@@ -164,7 +165,7 @@ config |= {
     "Camera": {
         "server_name": "camera_NUVU_hnu512gamma",
         "resolution": (512, 512),
-        "spot_radius": 2.5,  # Radius for integrating NV counts in a camera image
+        "spot_radius": 3.0,  # Radius for integrating NV counts in a camera image
         "bias_clamp": 300,  # (changing this won't actually change the value on the camera currently)
         "em_gain": 5000,
         # "em_gain": 1000,
@@ -239,7 +240,7 @@ config |= {
             # LaserKey.SCC: {"physical_name": green_laser, "duration": 200},
             VirtualLaserKey.WIDEFIELD_SHELVING: {
                 "physical_name": yellow_laser,
-                "duration": 52,
+                "duration": 60,
             },
             VirtualLaserKey.WIDEFIELD_IMAGING: {
                 "physical_name": yellow_laser,
@@ -255,8 +256,8 @@ config |= {
             VirtualLaserKey.WIDEFIELD_CHARGE_READOUT: {
                 "physical_name": yellow_laser,
                 # "duration": 200e6,
-                # "duration": 100e6,
-                "duration": 50e6,
+                # "duration": 80e6,
+                "duration": 60e6,
                 # "duration": 24e6,  # for red calibration
             },
             # LaserKey.WIDEFIELD_CHARGE_READOUT: {"physical_name": yellow_laser, "duration": 100e6},
@@ -832,9 +833,9 @@ opx_config = {
         # "yellow_charge_readout": {"type": "constant", "sample": 0.3472},  # 50ms 117NVs
         # "yellow_charge_readout": {"type": "constant", "sample": 0.3741},  # 50ms 117NVs
         # "yellow_charge_readout": {"type": "constant", "sample": 0.325},  # 100ms 117NVs
-        # "yellow_charge_readout": {"type": "constant", "sample": 0.29},  # 200ms 117NVs
-        "yellow_charge_readout": {"type": "constant", "sample": 0.42},  #
-        "yellow_spin_pol": {"type": "constant", "sample": 0.42},
+        # "yellow_charge_readout": {"type": "constant", "sample": 0.35},
+        "yellow_charge_readout": {"type": "constant", "sample": 0.347774},
+        "yellow_spin_pol": {"type": "constant", "sample": 0.36},
         "yellow_shelving": {"type": "constant", "sample": 0.33},
         # Other
         "aod_cw": {"type": "constant", "sample": 0.35},

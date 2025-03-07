@@ -291,8 +291,9 @@ def nuvu2thorcam_calibration(coords):
     )
 
     cal_coords_nuvu = np.array(
-        [[227.752, 12.548], [212.599, 241.451], [20.615, 112.523]], dtype="float32"
+        [[228.35, 12.377], [213.36, 241.277], [21.894, 112.43]], dtype="float32"
     )
+    # [[227.752, 12.548], [212.599, 241.451], [20.615, 112.523]], dtype="float32"
 
     # Compute the affine transformation matrix
     M = cv2.getAffineTransform(cal_coords_nuvu, cal_coords_thorcam)
@@ -311,7 +312,7 @@ def load_nv_coords(
     # file_path="slmsuite/nv_blob_detection/nv_blob_shallow_148nvs_reordered_updated.npz",
     # file_path="slmsuite/nv_blob_detection/nv_blob_shallow_69nvs_reordered_updated.npz",
     # file_path="slmsuite/nv_blob_detection/nv_blob_rubin_shallow_309nvs_reordered_updated.npz",
-    file_path="slmsuite/nv_blob_detection/nv_blob_rubin_shallow_255nvs_reordered_updated.npz",
+    file_path="slmsuite/nv_blob_detection/nv_blob_rubin_shallow_140nvs_reordered_updated.npz",
     # file_path="slmsuite/nv_blob_detection/nv_blob_shallow_89nvs_reordered.npz",
     # file_path="slmsuite/nv_blob_detection/nv_blob_shallow_52nvs_reordered.npz",
     # file_path="slmsuite/nv_blob_detection/nv_blob_filtered_160nvs_reordered.npz",
@@ -351,7 +352,7 @@ def compute_and_write_nvs_phase():
         shape=(4096, 2048),
         spot_vectors=thorcam_coords,
         basis="ij",
-        # spot_amp=spot_weights,
+        spot_amp=spot_weights,
         cameraslm=fs,
     )
     # Precondition computationally
@@ -427,10 +428,10 @@ try:
     # fourier_calibration()
     load_fourier_calibration()
     # test_wavefront_calibration()
-    # # wavefront_calibration()
+    # wavefront_calibration()
     # load_wavefront_calibration()
-    # compute_and_write_nvs_phase()
-    write_nvs_phase()
+    compute_and_write_nvs_phase()
+    # write_nvs_phase()
     # calibration_triangle()
     # circles()
     # smiley()

@@ -8,14 +8,16 @@ Created on Fall, 2024
 
 import traceback
 import warnings
-import numpy as np
 from datetime import datetime
-from joblib import Parallel, delayed
+
+import matplotlib.pyplot as plt
+import numpy as np
 import seaborn as sns
+from joblib import Parallel, delayed
 from scipy.optimize import curve_fit, least_squares
+
 from utils import data_manager as dm
 from utils import kplotlib as kpl
-import matplotlib.pyplot as plt
 from utils import widefield as widefield
 
 
@@ -316,6 +318,8 @@ if __name__ == "__main__":
     # file_id = 1774582403511  # all four orientation measured with two frequency tone per sig gen
     file_id = 1775776922337  # all four orientation measured with two frequency tone per sig gen with offset pulses both microwaave ()
     file_id = 1779670263899
+    # rubin
+    file_id = 1795718888560
     data = dm.get_raw_data(file_id=file_id, load_npz=False, use_cache=False)
     nv_list = data["nv_list"]
     taus = data["taus"]

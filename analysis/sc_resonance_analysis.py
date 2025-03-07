@@ -10,16 +10,15 @@ import time
 import traceback
 from datetime import datetime
 from random import shuffle
-from joblib import Parallel, delayed
 
 import matplotlib.pyplot as plt
 import numpy as np
 import seaborn as sns
+from joblib import Parallel, delayed
 from matplotlib.animation import FuncAnimation
 from matplotlib.patches import Circle
 
 # from pykrige import OrdinaryKriging
-
 # from pykrige.ok import OrdinaryKriging
 from scipy.interpolate import Rbf
 from scipy.optimize import curve_fit, least_squares
@@ -440,7 +439,7 @@ def plot_nv_resonance_fits_and_residuals(
     filtered_fitted_data = [fit_fns[idx] for idx in filtered_indices]
 
     # return
-    # # Set plot style
+    # Set plot style
     # for nv_ind in range(num_nvs):
     #     fig, ax = plt.subplots(1, 1, figsize=(8, 5))
     #     ax.plot(freqs, avg_counts[nv_ind], "o", color="steelblue")
@@ -452,126 +451,126 @@ def plot_nv_resonance_fits_and_residuals(
     #     plt.tight_layout()
     #     plt.show(block=True)
     # return!
-    # # Plot filtered resonance fits
-    # sns.set(style="whitegrid", palette="muted")
-    # num_filtered_nvs = len(filtered_nv_list)
-    # colors = sns.color_palette("deep", num_filtered_nvs)
-    # num_rows = int(np.ceil(num_filtered_nvs / num_cols))
-    # fig_fitting, axes_fitting = plt.subplots(
-    #     num_rows,
-    #     num_cols,
-    #     figsize=(num_cols * 2, num_rows * 1),
-    #     sharex=True,
-    #     sharey=False,
-    # )
-    # axes_fitting = axes_fitting.flatten()
+    # Plot filtered resonance fits
+    sns.set(style="whitegrid", palette="muted")
+    num_filtered_nvs = len(filtered_nv_list)
+    colors = sns.color_palette("deep", num_filtered_nvs)
+    num_rows = int(np.ceil(num_filtered_nvs / num_cols))
+    fig_fitting, axes_fitting = plt.subplots(
+        num_rows,
+        num_cols,
+        figsize=(num_cols * 2, num_rows * 1),
+        sharex=True,
+        sharey=False,
+    )
+    axes_fitting = axes_fitting.flatten()
 
-    # for nv_idx, ax in enumerate(axes_fitting):
-    #     if nv_idx < num_filtered_nvs:
-    #         sns.lineplot(
-    #             x=freqs,
-    #             y=filtered_avg_counts[nv_idx],
-    #             ax=ax,
-    #             color=colors[nv_idx % len(colors)],
-    #             lw=0,
-    #             marker="o",
-    #             markersize=2,
-    #             label=f"{filtered_indices[nv_idx]}",
-    #         )
-    #         ax.legend(fontsize="xx-small")
-    #         ax.errorbar(
-    #             freqs,
-    #             filtered_avg_counts[nv_idx],
-    #             # yerr=filtered_avg_counts_ste[nv_idx],
-    #             yerr=np.abs(filtered_avg_counts_ste[nv_idx]),
-    #             fmt="none",
-    #             ecolor="gray",
-    #             alpha=0.6,
-    #         )
-    #         ax.grid(True, which="both", linestyle="--", linewidth=0.5)
-    #         # Plot fitted data on the same subplot
-    #         ax.plot(
-    #             freqs_dense,
-    #             filtered_fitted_data[nv_idx],
-    #             "-",
-    #             color=colors[nv_idx % len(colors)],
-    #             label="Fit",
-    #             lw=1,
-    #         )
-    #         # Y-tick labels for the leftmost column
-    #         # if nv_idx % num_cols == 0:
-    #         #     ax.set_yticks(ax.get_yticks())
-    #         # else:
-    #         #     ax.set_yticklabels([])
-    #         ax.set_yticklabels([])
+    for nv_idx, ax in enumerate(axes_fitting):
+        if nv_idx < num_filtered_nvs:
+            sns.lineplot(
+                x=freqs,
+                y=filtered_avg_counts[nv_idx],
+                ax=ax,
+                color=colors[nv_idx % len(colors)],
+                lw=0,
+                marker="o",
+                markersize=2,
+                label=f"{filtered_indices[nv_idx]}",
+            )
+            ax.legend(fontsize="xx-small")
+            ax.errorbar(
+                freqs,
+                filtered_avg_counts[nv_idx],
+                # yerr=filtered_avg_counts_ste[nv_idx],
+                yerr=np.abs(filtered_avg_counts_ste[nv_idx]),
+                fmt="none",
+                ecolor="gray",
+                alpha=0.6,
+            )
+            ax.grid(True, which="both", linestyle="--", linewidth=0.5)
+            # Plot fitted data on the same subplot
+            ax.plot(
+                freqs_dense,
+                filtered_fitted_data[nv_idx],
+                "-",
+                color=colors[nv_idx % len(colors)],
+                label="Fit",
+                lw=1,
+            )
+            # Y-tick labels for the leftmost column
+            # if nv_idx % num_cols == 0:
+            #     ax.set_yticks(ax.get_yticks())
+            # else:
+            #     ax.set_yticklabels([])
+            ax.set_yticklabels([])
 
-    #         fig_fitting.text(
-    #             0.0,
-    #             0.5,
-    #             "NV$^{-}$ Population",
-    #             va="center",
-    #             rotation="vertical",
-    #             fontsize=12,
-    #         )
-    #         # Set custom tick locations in x axis
-    #         if nv_idx >= (num_rows - 1) * num_cols:  # Bottom row
-    #             ax.set_xlabel("Frequency (GHz)")
-    #             ax.set_xticks(np.linspace(min(freqs), max(freqs), 5))
-    #         for col in range(num_cols):
-    #             bottom_row_idx = num_rows * num_cols - num_cols + col
-    #             if bottom_row_idx < len(axes_fitting):
-    #                 ax = axes_fitting[bottom_row_idx]
-    #                 tick_positions = np.linspace(min(freqs), max(freqs), 5)
-    #                 ax.set_xticks(tick_positions)
-    #                 ax.set_xticklabels(
-    #                     [f"{tick:.2f}" for tick in tick_positions],
-    #                     rotation=45,
-    #                     fontsize=9,
-    #                 )
-    #                 ax.set_xlabel("Frequency (GHz)")
-    #             else:
-    #                 ax.set_xticklabels([])
-    #         # # Check if the last row has any valid plots
-    #         # last_row_start_idx = (num_rows - 1) * num_cols
-    #         # last_row_indices = range(last_row_start_idx, last_row_start_idx + num_cols)
-    #         # last_row_has_plots = any(
-    #         #     idx < len(axes_fitting) for idx in last_row_indices
-    #         # )
+            fig_fitting.text(
+                0.0,
+                0.5,
+                "NV$^{-}$ Population",
+                va="center",
+                rotation="vertical",
+                fontsize=12,
+            )
+            # Set custom tick locations in x axis
+            if nv_idx >= (num_rows - 1) * num_cols:  # Bottom row
+                ax.set_xlabel("Frequency (GHz)")
+                ax.set_xticks(np.linspace(min(freqs), max(freqs), 5))
+            for col in range(num_cols):
+                bottom_row_idx = num_rows * num_cols - num_cols + col
+                if bottom_row_idx < len(axes_fitting):
+                    ax = axes_fitting[bottom_row_idx]
+                    tick_positions = np.linspace(min(freqs), max(freqs), 5)
+                    ax.set_xticks(tick_positions)
+                    ax.set_xticklabels(
+                        [f"{tick:.2f}" for tick in tick_positions],
+                        rotation=45,
+                        fontsize=9,
+                    )
+                    ax.set_xlabel("Frequency (GHz)")
+                else:
+                    ax.set_xticklabels([])
+            # # Check if the last row has any valid plots
+            # last_row_start_idx = (num_rows - 1) * num_cols
+            # last_row_indices = range(last_row_start_idx, last_row_start_idx + num_cols)
+            # last_row_has_plots = any(
+            #     idx < len(axes_fitting) for idx in last_row_indices
+            # )
 
-    #         # # Set custom tick locations and labels
-    #         # if (
-    #         #     not last_row_has_plots
-    #         # ):  # Only handle the second-to-last row if the last row is empty
-    #         #     second_last_row_start_idx = (num_rows - 2) * num_cols
-    #         #     for col in range(num_cols):
-    #         #         col_idx = second_last_row_start_idx + col
-    #         #         if col_idx < len(axes_fitting):  # Ensure index is within bounds
-    #         #             ax = axes_fitting[col_idx]
-    #         #             tick_positions = np.linspace(min(freqs), max(freqs), 5)
-    #         #             ax.set_xticks(tick_positions)
-    #         #             ax.set_xticklabels(
-    #         #                 [f"{tick:.2f}" for tick in tick_positions],
-    #         #                 rotation=45,
-    #         #                 fontsize=9,
-    #         #             )
-    #         #             ax.set_xlabel("Frequency (GHz)")
+            # # Set custom tick locations and labels
+            # if (
+            #     not last_row_has_plots
+            # ):  # Only handle the second-to-last row if the last row is empty
+            #     second_last_row_start_idx = (num_rows - 2) * num_cols
+            #     for col in range(num_cols):
+            #         col_idx = second_last_row_start_idx + col
+            #         if col_idx < len(axes_fitting):  # Ensure index is within bounds
+            #             ax = axes_fitting[col_idx]
+            #             tick_positions = np.linspace(min(freqs), max(freqs), 5)
+            #             ax.set_xticks(tick_positions)
+            #             ax.set_xticklabels(
+            #                 [f"{tick:.2f}" for tick in tick_positions],
+            #                 rotation=45,
+            #                 fontsize=9,
+            #             )
+            #             ax.set_xlabel("Frequency (GHz)")
 
-    #         ax.grid(True, which="both", linestyle="--", linewidth=0.5)
-    #     else:
-    #         ax.axis("off")
-    # fig_fitting.suptitle(f"Shallow NV Resonance Fits ({file_id})", fontsize=16)
-    # plt.subplots_adjust(
-    #     left=0.2, right=0.95, top=0.95, bottom=0.1, hspace=0.001, wspace=0.001
-    # )
+            ax.grid(True, which="both", linestyle="--", linewidth=0.5)
+        else:
+            ax.axis("off")
+    fig_fitting.suptitle(f"Shallow NV Resonance Fits ({file_id})", fontsize=16)
+    plt.subplots_adjust(
+        left=0.2, right=0.95, top=0.95, bottom=0.1, hspace=0.001, wspace=0.001
+    )
     # plt.tight_layout()
     # now = datetime.now()
     # date_time_str = now.strftime("%Y%m%d_%H%M%S")
     # file_name = dm.get_file_name(file_id=file_id)
-    # file_path = dm.get_file_path(__file__, file_name, f"{file_id}_{date_time_str}")
-    # kpl.show()
-    # # dm.save_figure(fig_fitting, file_path)
-    # # plt.close(fig_fitting)
-    # # return
+    # # file_path = dm.get_file_path(__file__, file_name, f"{file_id}_{date_time_str}")
+    kpl.show()
+    # dm.save_figure(fig_fitting, file_path)
+    # plt.close(fig_fitting)
+    # return
 
     # Plot histograms and scatter plots
     plots_data = [
@@ -897,8 +896,8 @@ def plot_nv_resonance_fits_and_residuals(
 
 #     return X_grid, Y_grid, Z_grid
 
-import numpy as np
 import matplotlib.pyplot as plt
+import numpy as np
 from matplotlib.animation import FuncAnimation, PillowWriter
 
 
@@ -1083,12 +1082,14 @@ if __name__ == "__main__":
     # file_ids = [1779130115960, 1779242979662]  # uwave power 6dB, rabi peridod 80ns
     # file_ids = [1780148547772]  # uwave power 2dB, period 96ns
     # file_ids = [1782289026588]  # uwave power 2dB, period 96ns pulse optimization
-    file_ids = [
-        1783133120931
-    ]  # uwave power 2dB, period 96ns pulse optimization 2 oreintation
+    # file_ids = [
+    #     1783133120931
+    # ]  # uwave power 2dB, period 96ns pulse optimization 2 oreintation
+
+    # rubin 140NVs
+    file_ids = [1795016507394]
 
     # fmt: off
-    reference_pixel_coords = [[117.516, 129.595], [122.7, 140.498], [131.168, 130.18], [97.15, 123.733], [116.903, 108.167], [118.986, 151.191], [91.667, 135.113], [95.281, 155.837], [84.822, 144.375], [80.282, 132.938], [91.896, 100.124], [81.451, 113.23], [87.575, 157.144], [154.008, 148.107], [132.674, 89.911], [74.11, 121.65], [146.233, 96.071], [144.969, 167.136], [98.718, 84.722], [112.672, 80.124], [74.46, 102.434], [122.901, 180.591], [69.034, 150.362], [99.21, 179.954], [133.129, 78.109], [63.583, 133.643], [133.751, 182.208], [90.931, 80.192], [83.372, 84.394], [70.205, 163.837], [169.442, 156.326], [62.863, 106.017], [177.692, 127.009], [71.817, 88.505], [152.752, 79.094], [60.432, 154.067], [64.099, 97.055], [93.445, 71.777], [177.871, 148.067], [101.032, 190.601], [53.508, 140.291], [51.553, 119.764], [133.722, 195.249], [174.017, 168.175], [59.006, 165.072], [176.119, 94.095], [78.059, 186.492], [55.139, 99.345], [169.093, 79.625], [142.608, 197.606], [127.111, 201.585], [76.976, 69.105], [116.757, 203.575], [108.433, 54.966], [120.38, 53.681], [155.972, 196.187], [165.431, 68.936], [164.683, 190.889], [47.877, 164.871], [195.879, 137.036], [188.49, 167.406], [38.223, 143.97], [179.264, 184.357], [87.429, 209.761], [33.277, 149.672], [47.402, 181.776], [204.839, 123.777], [139.344, 214.607], [53.646, 68.838], [163.922, 54.141], [38.886, 86.054], [208.038, 131.698], [32.199, 161.535], [190.784, 184.42], [170.186, 205.196], [208.702, 115.872], [28.275, 105.521], [89.089, 41.642], [147.897, 220.18], [206.413, 166.753], [53.244, 56.104], [23.815, 97.782], [195.483, 68.53], [96.168, 228.98], [178.205, 211.367], [66.96, 218.568], [215.221, 98.479], [85.847, 227.993], [185.278, 50.374], [21.768, 171.31], [29.666, 72.805], [12.073, 131.321], [50.935, 46.954], [208.092, 185.833], [118.664, 236.48], [200.381, 198.571], [97.757, 22.995], [11.146, 150.611], [147.959, 233.773], [201.304, 59.575], [221.084, 165.686], [129.026, 19.17], [160.469, 231.983], [58.541, 34.141], [109.446, 241.719], [170.173, 229.211], [20.16, 190.027], [173.061, 29.071], [6.375, 100.593], [161.415, 20.458], [235.735, 135.854], [64.691, 238.139], [181.714, 27.361], [56.905, 234.982], [237.863, 151.184], [238.314, 108.449], [204.37, 41.605], [27.835, 216.895], [5.699, 72.812], [119.571, 3.933], [9.29, 194.213], [190.06, 26.157], [174.894, 242.787], [244.083, 145.53], [15.121, 53.43], [182.734, 239.306], [217.73, 209.148], [190.641, 236.803], [153.697, 4.96], [222.7, 52.004], [67.837, 8.36], [9.427, 207.892], [205.206, 231.707], [236.409, 65.435], [22.9, 227.669], [195.552, 17.344], [245.166, 183.306], [7.813, 42.923], [223.807, 221.123], [188.126, 5.032], [211.43, 237.832], [245.999, 199.119], [221.423, 233.464], [16.131, 238.476], [241.508, 217.986], [241.736, 225.071], [241.12, 24.247], [231.261, 246.877]]
     # fmt: on
     # print(len(reference_pixel_coords))
     # sys.exit()
