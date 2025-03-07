@@ -417,16 +417,16 @@ def determine_threshold(
     right_fidelities = []
     single_mode_cdf = get_single_mode_cdf(prob_dist)
     for val in thresh_options:
-        # dark_left_prob = single_mode_cdf(val, *popt[1 : 1 + num_single_mode_params])
-        # bright_left_prob = single_mode_cdf(val, *popt[1 + num_single_mode_params :])
+        dark_left_prob = single_mode_cdf(val, *popt[1 : 1 + num_single_mode_params])
+        bright_left_prob = single_mode_cdf(val, *popt[1 + num_single_mode_params :])
         # MCC hack for including ionization
-        dark_mode_cdf = get_single_mode_cdf(ProbDist.COMPOUND_POISSON)
-        dark_left_prob = dark_mode_cdf(val, popt[1])
-        bright_mode_cdf = get_single_mode_cdf(ProbDist.COMPOUND_POISSON_WITH_IONIZATION)
-        bright_left_prob = bright_mode_cdf(val, *popt[1:])
-        bright_left_prob = bright_mode_cdf(
-            val, popt[1], popt[2], popt[3]
-        )  # Pass lambda_0, lambda_m, ion
+        # dark_mode_cdf = get_single_mode_cdf(ProbDist.COMPOUND_POISSON)
+        # dark_left_prob = dark_mode_cdf(val, popt[1])
+        # bright_mode_cdf = get_single_mode_cdf(ProbDist.COMPOUND_POISSON_WITH_IONIZATION)
+        # bright_left_prob = bright_mode_cdf(val, *popt[1:])
+        # bright_left_prob = bright_mode_cdf(
+        #     val, popt[1], popt[2], popt[3]
+        # )  # Pass lambda_0, lambda_m, ion
 
         dark_right_prob = 1 - dark_left_prob
         bright_right_prob = 1 - bright_left_prob
