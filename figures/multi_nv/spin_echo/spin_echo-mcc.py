@@ -40,8 +40,8 @@ def quartic_decay(
         osc_contrast = 0
         osc_freq0 = 0
         osc_freq1 = 0
-    # Short circuit if osc_freq0 > osc_freq1 since the equation is symmetric
-    elif osc_freq0 > osc_freq1:
+    # Short circuit if osc_freq0 < osc_freq1 since the equation is symmetric
+    elif osc_freq0 < osc_freq1:
         return [0] * len(tau)
 
     return _quartic_decay(
@@ -258,24 +258,24 @@ def fit(total_evolution_times, nv_counts, nv_counts_ste):
         bounds=bounds,
     )
     no_c13_popt[3] -= rolling_minimum_window / 2
-    # fig, ax = plt.subplots()
-    # kpl.plot_points(
-    #     ax,
-    #     total_evolution_times[thinned_inds],
-    #     envelope[thinned_inds],
-    #     nv_counts_ste[thinned_inds],
-    # )
-    # # kpl.plot_points(ax, total_evolution_times, nv_counts, nv_counts_ste)
-    # linspace_taus = np.linspace(0, np.max(total_evolution_times), 1000)
-    # linspace_taus = linspace_taus[1:]
-    # kpl.plot_line(
-    #     ax,
-    #     linspace_taus,
-    #     fit_fn(linspace_taus, *no_c13_popt),
-    #     # fit_fn(linspace_taus, *guess_params),
-    #     color=kpl.KplColors.GRAY,
-    # )
-    # kpl.show(block=True)
+    fig, ax = plt.subplots()
+    kpl.plot_points(
+        ax,
+        total_evolution_times[thinned_inds],
+        envelope[thinned_inds],
+        nv_counts_ste[thinned_inds],
+    )
+    kpl.plot_points(ax, total_evolution_times, nv_counts, nv_counts_ste)
+    linspace_taus = np.linspace(0, np.max(total_evolution_times), 1000)
+    linspace_taus = linspace_taus[1:]
+    kpl.plot_line(
+        ax,
+        linspace_taus,
+        fit_fn(linspace_taus, *no_c13_popt),
+        # fit_fn(linspace_taus, *guess_params),
+        color=kpl.KplColors.GRAY,
+    )
+    kpl.show(block=True)
 
     # return popt, pcov, red_chi_sq
 
@@ -375,29 +375,29 @@ def create_fit_figure(data, axes_pack=None, layout=None, no_legend=True, nv_inds
             nv_list, sig_counts, ref_counts, threshold=True
         )
 
-        fig, ax = plt.subplots()
-        nv_counts = norm_counts[2]
-        nv_counts_ste = norm_counts_ste[2]
-        print(np.mean(nv_counts_ste))
-        kpl.plot_points(ax, total_evolution_times, nv_counts, nv_counts_ste)
-        return
+        # fig, ax = plt.subplots()
+        # nv_counts = norm_counts[2]
+        # nv_counts_ste = norm_counts_ste[2]
+        # print(np.mean(nv_counts_ste))
+        # kpl.plot_points(ax, total_evolution_times, nv_counts, nv_counts_ste)
+        # return
 
         # Create combined file
-        # try:
-        #     del data["counts"]
-        #     data["norm_counts"] = norm_counts
-        #     data["norm_counts_ste"] = norm_counts_ste
-        #     timestamp = dm.get_time_stamp()
-        #     nv_list = data["nv_list"]
-        #     repr_nv_sig = widefield.get_repr_nv_sig(nv_list)
-        #     repr_nv_name = repr_nv_sig.name
-        #     file_path = dm.get_file_path(__file__, timestamp, repr_nv_name)
-        #     file_id = dm.save_raw_data(data, file_path)
-        #     print(file_id)
-        # finally:
-        #     sys.exit()
+        try:
+            del data["counts"]
+            data["norm_counts"] = norm_counts
+            data["norm_counts_ste"] = norm_counts_ste
+            timestamp = dm.get_time_stamp()
+            nv_list = data["nv_list"]
+            repr_nv_sig = widefield.get_repr_nv_sig(nv_list)
+            repr_nv_name = repr_nv_sig.name
+            file_path = dm.get_file_path(__file__, timestamp, repr_nv_name)
+            file_id = dm.save_raw_data(data, file_path)
+            print(file_id)
+        finally:
+            sys.exit()
 
-    do_fit = False
+    do_fit = True
     if do_fit:
         fit_fns = []
         popts = []
@@ -629,8 +629,14 @@ if __name__ == "__main__":
     del file_ids[3:5]
     data = dm.get_raw_data(file_id=file_ids)
 
-    # Combined file
+    # Combined files
+    # Original, file_ids = file_ids[:4], file_ids.extend(file_ids2)
     # data = dm.get_raw_data(file_id=1755199883770)
+    # More data, del file_ids[3:5], file_ids.extend(file_ids2)
+    # data = dm.get_raw_data(file_id=1795168199914)  # w/o ionization, dmw None
+    # data = dm.get_raw_data(file_id=1795182451164)  # w/o ionization, dmw 0.5
+    # data = dm.get_raw_data(file_id=)  # w/ ionization, dmw None
+    # data = dm.get_raw_data(file_id=1795131849572)  # w/ ionization, dmw 0.5
 
     split_esr = [12, 13, 14, 61, 116]
     broad_esr = [52, 11]
@@ -638,11 +644,8 @@ if __name__ == "__main__":
     skip_inds = list(set(split_esr + broad_esr + weak_esr))
     nv_inds = [ind for ind in range(117) if ind not in skip_inds]
 
-    # nv_inds = nv_inds[4:]
-    # Where red_chi_sq > 3
-    # nv_inds = [4, 7, 11, 16, 21, 45, 47, 55, 61, 62, 96, 97]
-    # nv_inds = [11, 16, 21, 45, 47, 55, 61, 62, 96, 97]
-    # nv_inds = nv_inds[0:2]
+    bad_inds = [3, 8, 10, 11, 18, 27, 30, 32, 47, 55, 61, 62, 63, 68, 97]
+    nv_inds = [nv_inds[ind] for ind in bad_inds]
 
     # create_raw_data_figure(data)
     create_fit_figure(data, nv_inds=nv_inds)

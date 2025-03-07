@@ -255,8 +255,6 @@ def fit_bimodal_histogram(
         popt, the optimized fit parameters
     """
 
-    no_plot = False
-
     counts_list = counts_list.flatten()
 
     # Remove outliers
@@ -284,7 +282,7 @@ def fit_bimodal_histogram(
     mean_bright_guess = round(np.quantile(counts_list, 0.65))
     mean_dark_min = round(np.quantile(counts_list, 0.02))
     mean_bright_max = round(np.quantile(counts_list, 0.98))
-    ratio_guess = 0.3
+    ratio_guess = 0.7 if np.mean(counts_list) < np.median(counts_list) else 0.3
     bounds = (-np.inf, np.inf)  # Default bounds
     if prob_dist is ProbDist.SKEW_GAUSSIAN:
         guess_params = [ratio_guess]
@@ -313,7 +311,7 @@ def fit_bimodal_histogram(
         guess_params = (ratio_guess, mean_dark_guess, mean_bright_guess, 0.0)
         bounds = (
             (0, mean_dark_min, mean_dark_min, 0.0),
-            (1, mean_bright_max, mean_bright_max, 0.5),
+            (1, mean_bright_max, mean_bright_max, 0.1),
         )
 
     # return guess_params
@@ -424,9 +422,8 @@ def determine_threshold(
         dark_left_prob = dark_mode_cdf(val, popt[1])
         bright_mode_cdf = get_single_mode_cdf(ProbDist.COMPOUND_POISSON_WITH_IONIZATION)
         bright_left_prob = bright_mode_cdf(val, *popt[1:])
-        bright_left_prob = bright_mode_cdf(
-            val, popt[1], popt[2], popt[3]
-        )  # Pass lambda_0, lambda_m, ion
+        # Pass lambda_0, lambda_m, ion
+        bright_left_prob = bright_mode_cdf(val, popt[1], popt[2], popt[3])
 
         dark_right_prob = 1 - dark_left_prob
         bright_right_prob = 1 - bright_left_prob
