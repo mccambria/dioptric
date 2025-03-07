@@ -175,10 +175,13 @@ def save_raw_data(raw_data, file_path, keys_to_compress=None):
         file_id = _cloud.upload(file_path_txt, BytesIO(content))
     except Exception:
         print(traceback.format_exc())
-        # Save to local file instead
+        cloud_fail = True
+        file_id = None
+
+    # Save the data locally if anything went wrong on the cloud
+    if cloud_fail:
         with open(data_manager_folder / file_path_txt.name, "wb") as f:
             f.write(content)
-        file_id = None
 
     return file_id
 

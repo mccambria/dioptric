@@ -659,6 +659,7 @@ if __name__ == "__main__":
     # bad_inds = [32, 47, 55, 61, 62, 63, 68, 97]
     # # bad_inds = [3, 8, 10, 11, 18, 27, 30, 32, 47, 55, 61, 62, 63, 68, 97]
     # nv_inds = [nv_inds[ind] for ind in bad_inds]
+    # nv_inds = nv_inds[:1]
 
     ### Replotting
 
