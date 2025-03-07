@@ -144,6 +144,7 @@ def compound_poisson_pdf(z, rate):
 
 
 def compound_poisson_with_ionization_pdf(z, lambda_0, lambda_m, ion):
+    ion = 0  # MCC
     if isinstance(z, list):
         z = np.array(z)
     z_not_array = not isinstance(z, np.ndarray)
