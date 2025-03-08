@@ -375,13 +375,16 @@ def threshold_counts(nv_list, sig_counts, ref_counts=None, dynamic_thresh=False)
                 )
             else:
                 combined_counts = sig_counts[nv_ind].flatten()
-            prob_dist = ProbDist.COMPOUND_POISSON_WITH_IONIZATION
-            # prob_dist = ProbDist.COMPOUND_POISSON
-            popt, _, _ = fit_bimodal_histogram(combined_counts, prob_dist, no_plot=True)
+            prob_dist = ProbDist.NEGATIVE_BINOMIAL_WITH_IONIZATION
+            # prob_dist = ProbDist.NEGATIVE_BINOMIAL
+            popt, _, _ = fit_bimodal_histogram(
+                combined_counts, prob_dist, no_print=True, no_plot=True
+            )
             # print(popt)
             # dark_mode_weight = 0.5
             dark_mode_weight = None
             threshold = determine_threshold(popt, prob_dist, dark_mode_weight)
+            # print(threshold)
             thresholds.append(threshold)
     else:
         thresholds = [nv.threshold for nv in nv_list]

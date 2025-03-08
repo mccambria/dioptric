@@ -191,22 +191,22 @@ def create_fit_figure(
 
     if axes_pack is None:
         figsize = kpl.double_figsize
-        # figsize[1] = 7
-        figsize[1] = 7 * 13 / 19
         # figsize = [6.5, 4.0]
         # layout = kpl.calc_mosaic_layout(num_nvs, num_cols=6)
 
         num_cols = 6
 
-        # # bulk
-        # num_rows = 19
-        # layout = kpl.calc_mosaic_layout(num_cols * num_rows, num_rows, num_cols)
-        # layout[0] = [".", ".", ".", layout[0][3], layout[0][4], "."]
-        # layout[1] = [layout[1][0], ".", ".", *layout[1][3:]]
-        # shallow
-        num_rows = 11
+        # bulk
+        figsize[1] = 7
+        num_rows = 19
         layout = kpl.calc_mosaic_layout(num_cols * num_rows, num_rows, num_cols)
-        layout[0] = [layout[0][0], layout[0][1], ".", layout[0][3], layout[0][4], "."]
+        layout[0] = [".", ".", ".", layout[0][3], layout[0][4], "."]
+        layout[1] = [layout[1][0], ".", ".", *layout[1][3:]]
+        # shallow
+        # figsize[1] = 7 * 13 / 19  #
+        # num_rows = 11
+        # layout = kpl.calc_mosaic_layout(num_cols * num_rows, num_rows, num_cols)
+        # layout[0] = [layout[0][0], layout[0][1], ".", layout[0][3], layout[0][4], "."]
 
         fig, axes_pack = plt.subplot_mosaic(
             layout,
@@ -397,7 +397,7 @@ def main(
 if __name__ == "__main__":
     kpl.init_kplotlib()
 
-    bulk_or_shallow = False
+    bulk_or_shallow = True
     make_movie = False
 
     ### Main, bulk diamond

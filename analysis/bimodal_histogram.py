@@ -18,7 +18,7 @@ from inspect import signature
 import numpy as np
 from matplotlib import pyplot as plt
 from scipy.integrate import quad
-from scipy.special import factorial, gammainc, gammaincc, gammaln, xlogy
+from scipy.special import comb, factorial, gammainc, gammaincc, gammaln, xlogy
 from scipy.stats import norm, poisson, skewnorm
 
 from utils import kplotlib as kpl
@@ -32,10 +32,14 @@ inv_root_2_pi = 1 / np.sqrt(2 * np.pi)
 class ProbDist(Enum):
     POISSON = auto()
     BROADENED_POISSON = auto()
-    COMPOUND_POISSON = auto()  # See wiki 11/14
     GAUSSIAN = auto()
     SKEW_GAUSSIAN = auto()
-    COMPOUND_POISSON_WITH_IONIZATION = auto()  # See Cambria PRX 2025
+    # For the following 4, see Cambria PRX 2025
+    COMPOUND_POISSON = auto()
+    COMPOUND_POISSON_WITH_IONIZATION = auto()
+    NEGATIVE_BINOMIAL = auto()
+    NEGATIVE_BINOMIAL_WITH_IONIZATION = auto()
+    #
 
 
 def get_single_mode_num_params(prob_dist: ProbDist):
@@ -67,6 +71,22 @@ def get_bimodal_pdf(prob_dist: ProbDist):
         bright_mode_fn = get_single_mode_pdf(ProbDist.COMPOUND_POISSON_WITH_IONIZATION)
 
         def bimodal_fn(x, dark_mode_weight, *params):
+            if params[1] < params[0]:
+                return [0] * len(x)
+            bright_mode_weight = 1 - dark_mode_weight
+            first_mode_val = dark_mode_fn(x, params[0])
+            second_mode_val = bright_mode_fn(x, *params)
+            return (
+                dark_mode_weight * first_mode_val + bright_mode_weight * second_mode_val
+            )
+
+    if prob_dist is ProbDist.NEGATIVE_BINOMIAL_WITH_IONIZATION:
+        dark_mode_fn = get_single_mode_pdf(ProbDist.NEGATIVE_BINOMIAL)
+        bright_mode_fn = get_single_mode_pdf(ProbDist.NEGATIVE_BINOMIAL_WITH_IONIZATION)
+
+        def bimodal_fn(x, dark_mode_weight, *params):
+            if params[1] < params[0]:
+                return [0] * len(x)
             bright_mode_weight = 1 - dark_mode_weight
             first_mode_val = dark_mode_fn(x, params[0])
             second_mode_val = bright_mode_fn(x, *params)
@@ -141,6 +161,63 @@ def compound_poisson_pdf(z, rate):
         return ret_val[0]
     else:
         return ret_val
+
+
+def negative_binomial_pdf(z, rate):
+    if isinstance(z, list):
+        z = np.array(z)
+    z_not_array = not isinstance(z, np.ndarray)
+    # If z is not an array, turn it into one so we can use the same code.
+    # Convert back at the end.
+    if z_not_array:
+        z = np.array([z])
+
+    p = 1 / 2
+    ret_val = comb(z + rate - 1, z) * (1 - p) ** z * p**rate
+
+    if z_not_array:
+        return ret_val[0]
+    else:
+        return ret_val
+
+
+def negative_binomial_with_ionization_pdf(z, lambda_0, lambda_m, ion):
+    if isinstance(z, list):
+        z = np.array(z)
+    z_not_array = not isinstance(z, np.ndarray)
+    # If z is not an array, turn it into one so we can use the same code.
+    # Convert back at the end.
+    if z_not_array:
+        z = np.array([z])
+
+    def integrand(tp, z_val):
+        return (
+            ion
+            * np.exp(-ion * tp)
+            * negative_binomial_pdf(z_val, lambda_m * tp + lambda_0 * (1 - tp))
+        )
+
+    def integrate(z_val):
+        return quad(integrand, 0, 1, args=(z_val,))[0]
+
+    part1 = np.exp(-ion) * negative_binomial_pdf(z, lambda_m)
+    part2 = np.vectorize(integrate)(z)
+    ret_val = part1 + part2
+
+    if z_not_array:
+        return ret_val[0]
+    else:
+        return ret_val
+
+
+def negative_binomial_cdf(x, rate):
+    return _calc_cdf(ProbDist.NEGATIVE_BINOMIAL, x, rate)
+
+
+def negative_binomial_with_ionization_cdf(x, lambda_0, lambda_m, ion):
+    return _calc_cdf(
+        ProbDist.NEGATIVE_BINOMIAL_WITH_IONIZATION, x, lambda_0, lambda_m, ion
+    )
 
 
 def compound_poisson_with_ionization_pdf(z, lambda_0, lambda_m, ion):
@@ -314,8 +391,33 @@ def fit_bimodal_histogram(
         guess_params = (ratio_guess, mean_dark_guess, mean_bright_guess, 0.0)
         bounds = (
             (0, mean_dark_min, mean_dark_min, 0.0),
-            (1, mean_bright_max, mean_bright_max, 0.5),
+            (1, mean_bright_max, mean_bright_max, 1.0),
         )
+    elif prob_dist is ProbDist.NEGATIVE_BINOMIAL:
+        guess_params = (ratio_guess, mean_dark_guess, mean_bright_guess)
+        bounds = (
+            (0, mean_dark_min, mean_dark_min),
+            (1, mean_bright_max, mean_bright_max),
+        )
+    elif prob_dist is ProbDist.NEGATIVE_BINOMIAL_WITH_IONIZATION:
+        guess_params = (ratio_guess, mean_dark_guess, mean_bright_guess, 0.0)
+        bounds = (
+            (0, mean_dark_min, mean_dark_min, 0.0),
+            (1, mean_bright_max, mean_bright_max, 1.0),
+        )
+    # With p as free paramter
+    # elif prob_dist is ProbDist.NEGATIVE_BINOMIAL:
+    #     guess_params = (ratio_guess, mean_dark_guess, mean_bright_guess, 0.5)
+    #     bounds = (
+    #         (0, mean_dark_min, mean_dark_min, 0.25),
+    #         (1, mean_bright_max, mean_bright_max, 0.75),
+    #     )
+    # elif prob_dist is ProbDist.NEGATIVE_BINOMIAL_WITH_IONIZATION:
+    #     guess_params = (ratio_guess, mean_dark_guess, mean_bright_guess, 0.0, 0.5)
+    #     bounds = (
+    #         (0, mean_dark_min, mean_dark_min, 0.0, 0.25),
+    #         (1, mean_bright_max, mean_bright_max, 10.0, 0.75),
+    #     )
 
     # return guess_params
 
@@ -348,7 +450,8 @@ def fit_bimodal_histogram(
             # single_mode_fn = get_single_mode_pdf(prob_dist)
             # num_params = get_single_mode_num_params(prob_dist)
             # line = dark_ratio * single_mode_fn(x_vals, *popt[1 : 1 + num_params])
-            line = dark_ratio * compound_poisson_pdf(x_vals, popt[1])
+            # line = dark_ratio * negative_binomial_pdf(x_vals, popt[1])
+            line = dark_ratio * negative_binomial_pdf(x_vals, popt[1])
             kpl.plot_line(
                 ax, x_vals, line, color=kpl.KplColors.RED, label=r"NV$^{0}$ mode"
             )
@@ -357,7 +460,7 @@ def fit_bimodal_histogram(
             bright_ratio = 1 - dark_ratio
             # num_params = get_single_mode_num_params(prob_dist)
             # line = (1 - dark_ratio) * single_mode_fn(x_vals, *popt[1 + num_params :])
-            line = bright_ratio * compound_poisson_with_ionization_pdf(
+            line = bright_ratio * negative_binomial_with_ionization_pdf(
                 x_vals, *popt[1:]
             )
             kpl.plot_line(
@@ -372,6 +475,7 @@ def fit_bimodal_histogram(
             kpl.show(block=True)
         return popt, pcov, red_chi_sq
     except Exception as exc:
+        raise exc
         return None, None, None
 
 
@@ -426,12 +530,14 @@ def determine_threshold(
         # dark_left_prob = single_mode_cdf(val, *popt[1 : 1 + num_single_mode_params])
         # bright_left_prob = single_mode_cdf(val, *popt[1 + num_single_mode_params :])
         # MCC hack for including ionization
-        dark_mode_cdf = get_single_mode_cdf(ProbDist.COMPOUND_POISSON)
+        dark_mode_cdf = get_single_mode_cdf(ProbDist.NEGATIVE_BINOMIAL)
         dark_left_prob = dark_mode_cdf(val, popt[1])
-        bright_mode_cdf = get_single_mode_cdf(ProbDist.COMPOUND_POISSON_WITH_IONIZATION)
+        bright_mode_cdf = get_single_mode_cdf(
+            ProbDist.NEGATIVE_BINOMIAL_WITH_IONIZATION
+        )
         bright_left_prob = bright_mode_cdf(val, *popt[1:])
         # Pass lambda_0, lambda_m, ion
-        bright_left_prob = bright_mode_cdf(val, popt[1], popt[2], popt[3])
+        # bright_left_prob = bright_mode_cdf(val, popt[1], popt[2], popt[3])
 
         dark_right_prob = 1 - dark_left_prob
         bright_right_prob = 1 - bright_left_prob
@@ -666,10 +772,14 @@ def determine_dual_threshold(
 if __name__ == "__main__":
     kpl.init_kplotlib()
     # (z, lambda_0, lambda_m, ion)
-    line_fn = compound_poisson_with_ionization_pdf
     fig, ax = plt.subplots()
-    x_vals = np.linspace(0, 80, 1000)
-    line_vals = line_fn(x_vals, 20, 40, 0.0)
-    print(np.sum(line_vals) * x_vals[1] - x_vals[0])
+    x_vals = np.linspace(0, 65, 1000)
+    # line_vals = compound_poisson_with_ionization_pdf(x_vals, 20, 40, 0.0)
+    line_vals = compound_poisson_pdf(x_vals, 10)
+    # print(np.sum(line_vals) * x_vals[1] - x_vals[0])
     kpl.plot_line(ax, x_vals, line_vals)
+    line_vals = negative_binomial_pdf(x_vals, 10)
+    kpl.plot_line(ax, x_vals, line_vals, color=kpl.KplColors.RED)
+    line_vals = negative_binomial_with_ionization_pdf(x_vals, 10, 30, 10)
+    kpl.plot_line(ax, x_vals, line_vals, color=kpl.KplColors.GREEN)
     kpl.show(block=True)

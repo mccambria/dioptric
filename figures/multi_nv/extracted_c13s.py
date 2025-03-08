@@ -207,7 +207,7 @@ if __name__ == "__main__":
     spin_echo_exp_data = dm.get_raw_data(
         file_id=1795168199914
     )  # w/o ionization, dmw None
-    spin_echo_fit_file_id = 1796557235526  # T2_exp variable
+    spin_echo_fit_file_id = 1797519285282  # T2_exp variable
     spin_echo_fit_data = dm.get_raw_data(file_id=spin_echo_fit_file_id)
 
     # fmt: off
