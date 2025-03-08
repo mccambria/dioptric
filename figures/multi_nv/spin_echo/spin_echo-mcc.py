@@ -53,6 +53,8 @@ def replot_fits(data, fit_data, nv_inds):
         kpl.anchored_text(ax, [round(el, 3) for el in osc_params])
         ax.set_xlabel("Total evolution time (µs)")
         ax.set_ylabel("Normalized NV$^{-}$ population")
+        figManager = plt.get_current_fig_manager()
+        figManager.window.showMaximized()
 
 
 def quartic_decay(
@@ -62,7 +64,7 @@ def quartic_decay(
     revival_time,
     quartic_decay_time,
     T2_ms,
-    # T2_exp,
+    T2_exp,
     osc_contrast=None,
     osc_freq0=None,
     osc_freq1=None,
@@ -75,7 +77,6 @@ def quartic_decay(
     elif osc_freq0 < osc_freq1:
         return [0] * len(tau)
 
-    T2_exp = 3
     return _quartic_decay(
         tau,
         baseline,
@@ -114,8 +115,8 @@ def _quartic_decay(
         -(((tau_2d - revivals_2d * revival_time) / quartic_decay_time) ** 4)
     )
     comb = np.sum(comb_terms, axis=0)
-    mod = (
-        quartic_contrast
+    mod = quartic_contrast * (
+        1
         - osc_contrast
         * np.sin(np.pi * osc_freq0 * tau) ** 2
         * np.sin(np.pi * osc_freq1 * tau) ** 2
@@ -237,20 +238,20 @@ def fit(total_evolution_times, nv_counts, nv_counts_ste):
     log_decay = -np.log((baseline_guess - envelope[-7]) / quartic_contrast_guess)
     T2_guess = 0.1 * (log_decay ** (-1 / 3))
     if np.isnan(T2_guess):
-        T2_guess = 0.1
+        T2_guess = 0.05
     guess_params = [
         baseline_guess,
         quartic_contrast_guess,
         revival_time_guess,
         7,
         T2_guess,
-        # 3,
+        3,
     ]
     bounds = [
-        [0, 0, 40, 0, 0],
-        [1, 1, 60, 20, 1000],
-        # [0, 0, 40, 0, 0, 0],
-        # [1, 1, 60, 20, 1000, 10],
+        # [0, 0, 40, 0, 0],
+        # [1, 1, 60, 20, 1000],
+        [0, 0, 40, 0, 0, 1],
+        [1, 0.7, 60, 20, 1000, 3],
         # [0, 0, 0, 0, 0],
         # [1, 1, 20, 1000, 10],
     ]
