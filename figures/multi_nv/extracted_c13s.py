@@ -77,6 +77,14 @@ def main(hfs_res, hfs_err_res, hfs_echo, hfs_err_echo):
     ax.xaxis.set_major_locator(MaxNLocator(integer=True))
     ax.set_yscale("log")
 
+    ###
+
+    figsize = kpl.figsize
+    adj_figsize = (figsize[0], 1.1 * figsize[1])
+    fig, (ax, axbot) = plt.subplots(
+        2, 1, sharex=True, figsize=adj_figsize, height_ratios=[3, 1]
+    )
+
 
 if __name__ == "__main__":
     kpl.init_kplotlib()
