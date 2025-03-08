@@ -130,11 +130,11 @@ config |= {
             0: {
                 "physical_name": "sig_gen_STAN_sg394",
                 # "uwave_power": 2.3,
-                "uwave_power": 6.0,
+                "uwave_power": 8.0,
                 "frequency": 2.782099,  # shallow NVs O1 ms=-1
                 # "frequency": 2.798175,  # shallow NVs O2 ms=-1
                 # "frequency": 2.790137,  # mean of above two frequency
-                "rabi_period": 176,
+                "rabi_period": 160,
                 # "rabi_period": 96,
                 # IQ modulation part
                 "carrier_frequency": 2.790137,  # Center frequency
@@ -146,12 +146,12 @@ config |= {
             1: {
                 "physical_name": "sig_gen_STAN_sg394_2",
                 # "uwave_power": 8.1,
-                "uwave_power": 6.0,
+                "uwave_power": 8.0,
                 "frequency": 2.840727,  # shallow NV O3 ms=-1
                 # "frequency": 2.856761,  # shallow NVs O4 ms=-1
                 # "frequency": 2.848744,  # mean of above two frequency
                 # "rabi_period": 96,
-                "rabi_period": 176,
+                "rabi_period": 160,
                 # IQ modulation part
                 "carrier_frequency": 2.848744,  # Center frequency for IQ modulation
                 "offset": 0.29839,  # % offset
@@ -823,8 +823,8 @@ opx_config = {
         "red_aod_cw-opti": {"type": "constant", "sample": 0.15},
         # "red_aod_cw-ion": {"type": "constant", "sample": 0.09},
         "red_aod_cw-ion": {"type": "constant", "sample": 0.15},
-        "red_aod_cw-scc": {"type": "constant", "sample": 0.15},
         # "red_aod_cw-scc": {"type": "constant", "sample": 0.15},
+        "red_aod_cw-scc": {"type": "constant", "sample": 0.12},  # rubin
         # Yellow AOM
         "yellow_imaging": {"type": "constant", "sample": 0.45},  # 0.35
         # "yellow_imaging": {"type": "constant", "sample": 0.50},  # 0.35
@@ -834,8 +834,9 @@ opx_config = {
         # "yellow_charge_readout": {"type": "constant", "sample": 0.3741},  # 50ms 117NVs
         # "yellow_charge_readout": {"type": "constant", "sample": 0.325},  # 100ms 117NVs
         # "yellow_charge_readout": {"type": "constant", "sample": 0.35},
-        "yellow_charge_readout": {"type": "constant", "sample": 0.347774},
-        "yellow_spin_pol": {"type": "constant", "sample": 0.36},
+        # "yellow_charge_readout": {"type": "constant", "sample": 0.347774},
+        "yellow_charge_readout": {"type": "constant", "sample": 0.34},
+        "yellow_spin_pol": {"type": "constant", "sample": 0.39},
         "yellow_shelving": {"type": "constant", "sample": 0.33},
         # Other
         "aod_cw": {"type": "constant", "sample": 0.35},

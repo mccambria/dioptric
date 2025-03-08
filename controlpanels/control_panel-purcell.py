@@ -322,28 +322,24 @@ def do_calibrate_green_red_delay():
 
 
 def optimize_scc_amp_and_duration(nv_list):
-    # num_amp_steps = 15
+    # # Single amp
+    # min_duration = 16
+    # max_duration = 272
     # num_dur_steps = 17
-    # num_reps = 1
-    # num_runs = 1500
-    # num_runs = 400  # Short test version
-    # num_runs = 5
-    # min_amp = 0.75
-    # max_amp = 1.25
-    min_duration = 16
-    max_duration = 272
-    num_dur_steps = 17
+    # min_amp = 1.0
+    # max_amp = 1.0
+    # num_amp_steps = 1
 
-    # Single amp
+    # Single dur
+    min_amp = 0.6
+    max_amp = 1.4
+    num_amp_steps = 15
+    min_duration = 84
+    max_duration = 84
+    num_dur_steps = 1
+    # reps and runs
     num_reps = 11
     num_runs = 200
-    min_amp = 1.0
-    max_amp = 1.0
-    num_amp_steps = 1
-    # min_duration = 32
-    # max_duration = 496
-    # num_dur_steps = 30
-
     return optimize_scc_amp_duration.optimize_scc_amp_and_duration(
         nv_list,
         num_amp_steps,
@@ -1390,9 +1386,9 @@ if __name__ == "__main__":
 
         # widefield.reset_all_drift()
         # coords_key = None
-        # coords_key = green_laser
+        coords_key = green_laser
         # coords_key = red_laser
-        # do_optimize_loop(nv_list, coords_key)
+        do_optimize_loop(nv_list, coords_key)
 
         # do_optimize_pol_amp(nv_list)
         # do_optimize_pol_duration(nv_list)
@@ -1404,7 +1400,7 @@ if __name__ == "__main__":
 
         # do_resonance_zoom(nv_list)
         # do_rabi(nv_list)
-        do_resonance(nv_list)
+        # do_resonance(nv_list)
         # do_spin_echo(nv_list)
 
         # do_power_rabi(nv_list)
