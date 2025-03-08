@@ -468,12 +468,12 @@ def create_fit_figure(data, axes_pack=None, layout=None, no_legend=True, nv_inds
                     fit_fn(linspace_taus, *popt),
                     color=kpl.KplColors.GRAY,
                 )
-                # figManager = plt.get_current_fig_manager()
-                # figManager.window.showMaximized()
-                # ax.set_title(nv_ind)
-                # ax.set_xlabel("Total evolution time (µs)")
-                # ax.set_ylabel("Normalized NV$^{-}$ population")
-                # kpl.show(block=True)
+                figManager = plt.get_current_fig_manager()
+                figManager.window.showMaximized()
+                ax.set_title(nv_ind)
+                ax.set_xlabel("Total evolution time (µs)")
+                ax.set_ylabel("Normalized NV$^{-}$ population")
+                kpl.show(block=True)
             except Exception:
                 print(traceback.format_exc())
                 fit_fn = None
@@ -667,11 +667,11 @@ if __name__ == "__main__":
 
     ### Replotting
 
-    # fit_data = dm.get_raw_data(file_id=1796557235526)  # T2_exp variable
-    fit_data = dm.get_raw_data(file_id=1797217909266)  # T2_exp = 3
-    replot_fits(data, fit_data, nv_inds)
-    kpl.show(block=True)
-    sys.exit()
+    # # fit_data = dm.get_raw_data(file_id=1796557235526)  # T2_exp variable
+    # fit_data = dm.get_raw_data(file_id=1797217909266)  # T2_exp = 3
+    # replot_fits(data, fit_data, nv_inds)
+    # kpl.show(block=True)
+    # sys.exit()
 
     ###
 
