@@ -666,10 +666,10 @@ if __name__ == "__main__":
 
     ### Replotting
 
-    # fit_data = dm.get_raw_data(file_id=1795431625306)
-    # replot_fits(data, fit_data, nv_inds)
-    # kpl.show(block=True)
-    # sys.exit()
+    fit_data = dm.get_raw_data(file_id=1796557235526)
+    replot_fits(data, fit_data, nv_inds)
+    kpl.show(block=True)
+    sys.exit()
 
     ###
 
