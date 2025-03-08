@@ -666,7 +666,8 @@ if __name__ == "__main__":
 
     ### Replotting
 
-    fit_data = dm.get_raw_data(file_id=1796557235526)
+    # fit_data = dm.get_raw_data(file_id=1796557235526)  # T2_exp variable
+    fit_data = dm.get_raw_data(file_id=1797217909266)  # T2_exp = 3
     replot_fits(data, fit_data, nv_inds)
     kpl.show(block=True)
     sys.exit()
