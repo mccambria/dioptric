@@ -549,7 +549,7 @@ def determine_threshold(
         fidelities.append(fidelity)
 
         signal = (
-            dark_mode_weight * dark_right_prob + bright_mode_weight * bright_right_prob
+            bright_mode_weight * bright_right_prob - dark_mode_weight * dark_right_prob
         )
         dark_var = dark_mode_weight**2 * dark_left_prob * dark_right_prob
         bright_var = bright_mode_weight**2 * bright_left_prob * bright_right_prob
