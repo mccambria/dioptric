@@ -495,6 +495,7 @@ def create_fit_figure(data, axes_pack=None, layout=None, no_legend=True, nv_inds
         "popts": popts,
         "pcovs": pcovs,
         "red_chi_sq_list": red_chi_sq_list,
+        "nv_inds": nv_inds,
     }
     time_stamp = dm.get_time_stamp()
     file_path = dm.get_file_path(__file__, time_stamp, "multi_nv")
@@ -671,11 +672,11 @@ if __name__ == "__main__":
 
     ### Replotting
 
-    # # fit_data = dm.get_raw_data(file_id=1796557235526)  # T2_exp variable
+    fit_data = dm.get_raw_data(file_id=1796557235526)  # T2_exp variable
     # fit_data = dm.get_raw_data(file_id=1797217909266)  # T2_exp = 3
-    # replot_fits(data, fit_data, nv_inds)
-    # kpl.show(block=True)
-    # sys.exit()
+    replot_fits(data, fit_data, nv_inds)
+    kpl.show(block=True)
+    sys.exit()
 
     ###
 
