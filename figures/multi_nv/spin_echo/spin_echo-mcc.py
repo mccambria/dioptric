@@ -62,7 +62,7 @@ def quartic_decay(
     revival_time,
     quartic_decay_time,
     T2_ms,
-    T2_exp,
+    # T2_exp,
     osc_contrast=None,
     osc_freq0=None,
     osc_freq1=None,
@@ -75,6 +75,7 @@ def quartic_decay(
     elif osc_freq0 < osc_freq1:
         return [0] * len(tau)
 
+    T2_exp = 3
     return _quartic_decay(
         tau,
         baseline,
@@ -243,11 +244,13 @@ def fit(total_evolution_times, nv_counts, nv_counts_ste):
         revival_time_guess,
         7,
         T2_guess,
-        3,
+        # 3,
     ]
     bounds = [
-        [0, 0, 40, 0, 0, 0],
-        [1, 1, 60, 20, 1000, 10],
+        [0, 0, 40, 0, 0],
+        [1, 1, 60, 20, 1000],
+        # [0, 0, 40, 0, 0, 0],
+        # [1, 1, 60, 20, 1000, 10],
         # [0, 0, 0, 0, 0],
         # [1, 1, 20, 1000, 10],
     ]
