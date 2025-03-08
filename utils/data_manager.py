@@ -5,7 +5,6 @@ Tools for managing our experimental database
 Created November 15th, 2023
 
 @author: mccambria
-@author: mccam
 """
 
 # region Imports and constants
@@ -28,6 +27,7 @@ import ujson  # usjson is faster than standard json library
 from git import Repo
 from PIL import Image
 
+# from utils import _cloud_nas as _cloud
 from utils import _cloud, common, widefield
 from utils.constants import NVSig
 
@@ -167,15 +167,16 @@ def save_raw_data(raw_data, file_path, keys_to_compress=None):
         raw_data["opx_config"] = opx_config_copy
 
     # Upload raw data to the cloud
+    cloud_fail = True  # Assume failure, flip if we succeed
     try:
         option = (
             orjson.OPT_INDENT_2 | orjson.OPT_SERIALIZE_NUMPY | orjson.OPT_NON_STR_KEYS
         )
         content = orjson.dumps(raw_data, option=option)
         file_id = _cloud.upload(file_path_txt, BytesIO(content))
+        cloud_fail = False
     except Exception:
         print(traceback.format_exc())
-        cloud_fail = True
         file_id = None
 
     # Save the data locally if anything went wrong on the cloud

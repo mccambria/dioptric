@@ -53,6 +53,8 @@ def replot_fits(data, fit_data, nv_inds):
         kpl.anchored_text(ax, [round(el, 3) for el in osc_params])
         ax.set_xlabel("Total evolution time (µs)")
         ax.set_ylabel("Normalized NV$^{-}$ population")
+        figManager = plt.get_current_fig_manager()
+        figManager.window.showMaximized()
 
 
 def quartic_decay(
@@ -113,9 +115,10 @@ def _quartic_decay(
         -(((tau_2d - revivals_2d * revival_time) / quartic_decay_time) ** 4)
     )
     comb = np.sum(comb_terms, axis=0)
-    mod = (
-        quartic_contrast
-        - osc_contrast
+    mod = quartic_contrast * (
+        1
+        - 2
+        * osc_contrast
         * np.sin(np.pi * osc_freq0 * tau) ** 2
         * np.sin(np.pi * osc_freq1 * tau) ** 2
     )
@@ -236,7 +239,7 @@ def fit(total_evolution_times, nv_counts, nv_counts_ste):
     log_decay = -np.log((baseline_guess - envelope[-7]) / quartic_contrast_guess)
     T2_guess = 0.1 * (log_decay ** (-1 / 3))
     if np.isnan(T2_guess):
-        T2_guess = 0.1
+        T2_guess = 0.05
     guess_params = [
         baseline_guess,
         quartic_contrast_guess,
@@ -246,8 +249,10 @@ def fit(total_evolution_times, nv_counts, nv_counts_ste):
         3,
     ]
     bounds = [
-        [0, 0, 40, 0, 0, 0],
-        [1, 1, 60, 20, 1000, 10],
+        # [0, 0, 40, 0, 0],
+        # [1, 1, 60, 20, 1000],
+        [0, 0, 40, 0, 0, 1],
+        [1, 0.7, 60, 20, 1000, 3],
         # [0, 0, 0, 0, 0],
         # [1, 1, 20, 1000, 10],
     ]
@@ -288,7 +293,8 @@ def fit(total_evolution_times, nv_counts, nv_counts_ste):
         nv_counts_ste[thinned_inds],
         bounds=bounds,
     )
-    # no_c13_popt[3] -= rolling_minimum_window / 2
+    no_c13_popt[3] -= rolling_minimum_window / 2
+
     # fig, ax = plt.subplots()
     # kpl.plot_points(
     #     ax,
@@ -313,6 +319,7 @@ def fit(total_evolution_times, nv_counts, nv_counts_ste):
     ### Brute to find correct frequencies
 
     osc_bounds = [[0.0, 0.0, 0.0], [1.0, 2.5, 1.0]]
+    # osc_bounds = [[0.0, 0.0, 0.0], [1.0, 5.0, 2.0]]
 
     # Coarse amplitude, fine frequencies
     best_cost = None
@@ -464,12 +471,13 @@ def create_fit_figure(data, axes_pack=None, layout=None, no_legend=True, nv_inds
                     fit_fn(linspace_taus, *popt),
                     color=kpl.KplColors.GRAY,
                 )
-                # figManager = plt.get_current_fig_manager()
-                # figManager.window.showMaximized()
-                # ax.set_title(nv_ind)
-                # ax.set_xlabel("Total evolution time (µs)")
-                # ax.set_ylabel("Normalized NV$^{-}$ population")
-                # kpl.show(block=True)
+                # print(popt)
+                figManager = plt.get_current_fig_manager()
+                figManager.window.showMaximized()
+                ax.set_title(nv_ind)
+                ax.set_xlabel("Total evolution time (µs)")
+                ax.set_ylabel("Normalized NV$^{-}$ population")
+                kpl.show(block=True)
             except Exception:
                 print(traceback.format_exc())
                 fit_fn = None
@@ -659,14 +667,15 @@ if __name__ == "__main__":
     # bad_inds = [32, 47, 55, 61, 62, 63, 68, 97]
     # # bad_inds = [3, 8, 10, 11, 18, 27, 30, 32, 47, 55, 61, 62, 63, 68, 97]
     # nv_inds = [nv_inds[ind] for ind in bad_inds]
-    # nv_inds = nv_inds[:1]
+    # nv_inds = [53]
 
     ### Replotting
 
-    fit_data = dm.get_raw_data(file_id=1796557235526)
-    replot_fits(data, fit_data, nv_inds)
-    kpl.show(block=True)
-    sys.exit()
+    # # fit_data = dm.get_raw_data(file_id=1796557235526)  # T2_exp variable
+    # fit_data = dm.get_raw_data(file_id=1797217909266)  # T2_exp = 3
+    # replot_fits(data, fit_data, nv_inds)
+    # kpl.show(block=True)
+    # sys.exit()
 
     ###
 
