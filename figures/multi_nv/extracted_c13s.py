@@ -197,6 +197,10 @@ def main(
     ax.set_xticks(xticks)
 
 
+def simple():
+    pass
+
+
 if __name__ == "__main__":
     kpl.init_kplotlib()
 
