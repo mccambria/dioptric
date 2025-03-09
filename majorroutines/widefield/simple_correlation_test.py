@@ -270,79 +270,103 @@ def combine_symmetric_matrices(upper, lower):
 def process_and_plot(
     data, ax=None, sig_or_ref=True, no_cbar=False, cbar_max=None, no_labels=False
 ):
-    ### Unpack
+    # Run this to process a big data set from scratch. Otherwise just use the saved processed version
+    if "sig_corr_coeffs" not in data:
+        # if False:
+        ### Unpack
 
-    nv_list = data["nv_list"]
-    weak_esr = [72, 64, 55, 96, 112, 87, 89, 114, 17, 12, 99, 116, 32, 107, 58, 36]
-    weak_esr = [72, 64, 55, 96, 112, 87, 17, 12, 116]  # , 36, 114]
-    weak_esr = [72, 64, 55, 96, 112, 87, 12, 58, 36]
-    # weak_esr = []
-    nice_esr = [ind for ind in range(117) if ind not in weak_esr]
-    nv_list = [nv_list[ind] for ind in nice_esr]
-    counts = np.array(data["counts"])
-    counts = counts[:, nice_esr]
-    num_nvs = len(nv_list)
+        nv_list = data["nv_list"]
+        weak_esr = [72, 64, 55, 96, 112, 87, 89, 114, 17, 12, 99, 116, 32, 107, 58, 36]
+        weak_esr = [72, 64, 55, 96, 112, 87, 17, 12, 116]  # , 36, 114]
+        weak_esr = [72, 64, 55, 96, 112, 87, 12, 58, 36]
+        # weak_esr = []
+        nice_esr = [ind for ind in range(117) if ind not in weak_esr]
+        nv_list = [nv_list[ind] for ind in nice_esr]
+        counts = np.array(data["counts"])
+        counts = counts[:, nice_esr]
+        num_nvs = len(nv_list)
 
-    passed_cbar_max = cbar_max
-    passed_ax = ax
+        # Break down the counts array
+        # experiment, nv, run, step, rep
+        sig_counts = np.array(counts[0])
+        ref_counts = np.array(counts[1])
 
-    # Break down the counts array
-    # experiment, nv, run, step, rep
-    sig_counts = np.array(counts[0])
-    ref_counts = np.array(counts[1])
+        num_runs = data["num_runs"]
+        # sig_counts = sig_counts[:, round(0.5 * num_runs) :]
+        # ref_counts = ref_counts[:, round(0.5 * num_runs) :]
+        # sig_counts = sig_counts[:, : round(0.5 * num_runs)]
+        # ref_counts = ref_counts[:, : round(0.5 * num_runs)]
+        # sig_counts = sig_counts[:, round(0.25 * num_runs) : round(0.75 * num_runs)]
+        # ref_counts = ref_counts[:, round(0.25 * num_runs) : round(0.75 * num_runs)]
 
-    num_runs = data["num_runs"]
-    # sig_counts = sig_counts[:, round(0.5 * num_runs) :]
-    # ref_counts = ref_counts[:, round(0.5 * num_runs) :]
-    # sig_counts = sig_counts[:, : round(0.5 * num_runs)]
-    # ref_counts = ref_counts[:, : round(0.5 * num_runs)]
-    # sig_counts = sig_counts[:, round(0.25 * num_runs) : round(0.75 * num_runs)]
-    # ref_counts = ref_counts[:, round(0.25 * num_runs) : round(0.75 * num_runs)]
+        sig_counts, ref_counts = widefield.threshold_counts(
+            nv_list, sig_counts, ref_counts, dynamic_thresh=True
+        )
 
-    sig_counts, ref_counts = widefield.threshold_counts(
-        nv_list, sig_counts, ref_counts, dynamic_thresh=True
-    )
+        ### Calculate the correlations
 
-    ### Calculate the correlations
+        ideal_ref_corr_coeffs = np.outer([0] * num_nvs, [0] * num_nvs)
+        ideal_ref_corr_coeffs = ideal_ref_corr_coeffs.astype(float)
 
-    ideal_ref_corr_coeffs = np.outer([0] * num_nvs, [0] * num_nvs)
-    ideal_ref_corr_coeffs = ideal_ref_corr_coeffs.astype(float)
+        spin_flips = np.array([-1 if nv.spin_flip else +1 for nv in nv_list])
+        # Block
+        a_group_inds = [ind for ind in range(num_nvs) if spin_flips[ind] == +1]
+        random.seed(1060)  # Set the seed so we get the same result repeatably
+        random.shuffle(a_group_inds)
+        b_group_inds = [ind for ind in range(num_nvs) if spin_flips[ind] == -1]
+        random.shuffle(b_group_inds)
+        pattern_inds = a_group_inds + b_group_inds
+        spin_flips = np.sort(spin_flips)
+        # if -1 not in spin_flips:
+        #     spin_flips[0] = -1
+        #     spin_flips[1] = -1
+        #     spin_flips[4] = -1
+        #     spin_flips[6] = -1
+        ideal_sig_corr_coeffs = np.outer(spin_flips, spin_flips)
+        ideal_sig_corr_coeffs = ideal_sig_corr_coeffs.astype(float)
 
-    spin_flips = np.array([-1 if nv.spin_flip else +1 for nv in nv_list])
-    # Block
-    a_group_inds = [ind for ind in range(num_nvs) if spin_flips[ind] == +1]
-    random.seed(1060)  # Set the seed so we get the same result repeatably
-    random.shuffle(a_group_inds)
-    b_group_inds = [ind for ind in range(num_nvs) if spin_flips[ind] == -1]
-    random.shuffle(b_group_inds)
-    pattern_inds = a_group_inds + b_group_inds
-    spin_flips = np.sort(spin_flips)
-    # if -1 not in spin_flips:
-    #     spin_flips[0] = -1
-    #     spin_flips[1] = -1
-    #     spin_flips[4] = -1
-    #     spin_flips[6] = -1
-    ideal_sig_corr_coeffs = np.outer(spin_flips, spin_flips)
-    ideal_sig_corr_coeffs = ideal_sig_corr_coeffs.astype(float)
+        flattened_sig_counts = [sig_counts[ind].flatten() for ind in pattern_inds]
+        flattened_ref_counts = [ref_counts[ind].flatten() for ind in pattern_inds]
+        # flattened_ref_counts_even = [
+        #     ref_counts[ind, :, :, ::2].flatten() for ind in pattern_inds
+        # ]
+        # flattened_ref_counts_odd = [
+        #     ref_counts[ind, :, :, 1::2].flatten() for ind in pattern_inds
+        # ]
 
-    flattened_sig_counts = [sig_counts[ind].flatten() for ind in pattern_inds]
-    flattened_ref_counts = [ref_counts[ind].flatten() for ind in pattern_inds]
-    # flattened_ref_counts_even = [
-    #     ref_counts[ind, :, :, ::2].flatten() for ind in pattern_inds
-    # ]
-    # flattened_ref_counts_odd = [
-    #     ref_counts[ind, :, :, 1::2].flatten() for ind in pattern_inds
-    # ]
+        sig_corr_coeffs = tb.nan_corr_coef(flattened_sig_counts)
+        ref_corr_coeffs = tb.nan_corr_coef(flattened_ref_counts)
+        # diff_corr_coeffs = sig_corr_coeffs - ref_corr_coeffs
+        # ref_corr_coeffs_even = tb.nan_corr_coef(flattened_ref_counts_even)
+        # ref_corr_coeffs_odd = tb.nan_corr_coef(flattened_ref_counts_odd)
+        # diff_corr_coeffs = sig_corr_coeffs - (ref_corr_coeffs_even + ref_corr_coeffs_odd)
 
-    sig_corr_coeffs = tb.nan_corr_coef(flattened_sig_counts)
-    ref_corr_coeffs = tb.nan_corr_coef(flattened_ref_counts)
+        data = {
+            "sig_corr_coeffs": sig_corr_coeffs,
+            "ref_corr_coeffs": ref_corr_coeffs,
+            "ideal_sig_corr_coeffs": ideal_sig_corr_coeffs,
+            "ideal_ref_corr_coeffs": ideal_ref_corr_coeffs,
+        }
+        time_stamp = dm.get_time_stamp()
+        file_path = dm.get_file_path(__file__, time_stamp, "multi_nv")
+        dm.save_raw_data(data, file_path)
+        sys.exit()
+
+    else:
+        sig_corr_coeffs = np.array(data["sig_corr_coeffs"])
+        ref_corr_coeffs = np.array(data["ref_corr_coeffs"])
+        ideal_sig_corr_coeffs = np.array(data["ideal_sig_corr_coeffs"])
+        ideal_ref_corr_coeffs = np.array(data["ideal_ref_corr_coeffs"])
+
+    ### Print analysis
     print(np.mean(ref_corr_coeffs[np.triu_indices_from(ref_corr_coeffs, 1)]))
-    # diff_corr_coeffs = sig_corr_coeffs - ref_corr_coeffs
-    # ref_corr_coeffs_even = tb.nan_corr_coef(flattened_ref_counts_even)
-    # ref_corr_coeffs_odd = tb.nan_corr_coef(flattened_ref_counts_odd)
-    # diff_corr_coeffs = sig_corr_coeffs - (ref_corr_coeffs_even + ref_corr_coeffs_odd)
+    print(np.mean(np.abs(sig_corr_coeffs[np.triu_indices_from(sig_corr_coeffs, 1)])))
 
     ### Plot
+
+    passed_ax = ax
+    passed_cbar_max = cbar_max
+    num_nvs = ref_corr_coeffs.shape[0]
 
     plot_sig = combine_symmetric_matrices(ideal_sig_corr_coeffs, sig_corr_coeffs)
     plot_ref = combine_symmetric_matrices(ideal_ref_corr_coeffs, ref_corr_coeffs)
@@ -407,6 +431,7 @@ def process_and_plot(
         #     cbar_max = passed_cbar_max
         # else:
         #     cbar_max = cbar_maxes[ind]
+
         kpl.imshow(
             ax,
             vals[ind],
@@ -430,6 +455,7 @@ def process_and_plot(
             cbar.ax.set_title("Corr.\ncoeff.")
             cbar.ax.set_yticks([-cbar_max, 0, cbar_max])
             cbar.ax.tick_params(labelrotation=90)
+
         # ax.xaxis.set_major_locator(MaxNLocator(integer=True))
         # ax.yaxis.set_major_locator(MaxNLocator(integer=True))
         # ax.set_yticks([0, 2, 4, 6, 8])1
@@ -441,12 +467,24 @@ def process_and_plot(
                 ax.set_xlabel("NV index")
 
         kwargs = {"color": kpl.KplColors.BLACK, "linewidths": 0.15}
-        ax.hlines(
-            y=np.arange(0, num_nvs - 1) + 0.5, xmin=-0.5, xmax=num_nvs - 0.5, **kwargs
-        )
-        ax.vlines(
-            x=np.arange(0, num_nvs - 1) + 0.5, ymin=-0.5, ymax=num_nvs - 0.5, **kwargs
-        )
+        # ax.hlines(
+        #     y=np.arange(0, num_nvs - 1) + 0.5, xmin=-0.5, xmax=num_nvs - 0.5, **kwargs
+        # )
+        # ax.vlines(
+        #     x=np.arange(0, num_nvs - 1) + 0.5, ymin=-0.5, ymax=num_nvs - 0.5, **kwargs
+        # )
+        x_vals = np.arange(0, num_nvs - 1) + 0.5
+        for x_val in x_vals:
+            ax.plot(
+                [x_val] * len(x_vals),
+                np.arange(0, num_nvs - 1) + 0.5,
+                color=kpl.KplColors.BLACK,
+                fillstyle="full",
+                marker="o",
+                markersize=0.5,
+                ls="none",
+                markeredgewidth=0,
+            )
 
     if passed_ax is not None:
         return ret_val
@@ -520,13 +558,16 @@ if __name__ == "__main__":
 
     ### Data
 
-    # fmt: off
-    # file_ids = [1737922643755, 1737998031775, 1738069552465, 1738136166264, 1738220449762, ]
-    # file_ids = [1739598841877, 1739660864956, 1739725006836, 1739855966253 ]
-    file_ids = [1739979522556, 1740062954135, 1740252380664, 1740377262591, 1740494528636]
-    # fmt: on
-    file_ids = file_ids[1:]
-    data = dm.get_raw_data(file_id=file_ids)
+    # # fmt: off
+    # # file_ids = [1737922643755, 1737998031775, 1738069552465, 1738136166264, 1738220449762, ]
+    # # file_ids = [1739598841877, 1739660864956, 1739725006836, 1739855966253 ]
+    # file_ids = [1739979522556, 1740062954135, 1740252380664, 1740377262591, 1740494528636]
+    # # fmt: on
+    # file_ids = file_ids[1:]
+    # data = dm.get_raw_data(file_id=file_ids)
+
+    data = dm.get_raw_data(file_id=1797924502964)
+
     process_and_plot(data)
 
     plt.show(block=True)

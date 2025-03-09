@@ -256,7 +256,7 @@ if __name__ == "__main__":
         1740377262591,
         1740494528636,
     ]
-    data = dm.get_raw_data(file_ids=file_ids)
+    data = dm.get_raw_data(file_id=file_ids)
 
     main(data)
 
