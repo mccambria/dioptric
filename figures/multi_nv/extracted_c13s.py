@@ -37,12 +37,13 @@ def main(
 ):
     # plot_loop_inds = [16, 45, 99]  # 0.9 MHz
     # plot_loop_inds = [0, 34, 83]  # 0.37 MHz
-    plot_loop_inds = [0, 34]  # 0.37 MHz
+    # plot_loop_inds = [0, 34]  # 0.37 MHz
+    plot_loop_inds = [34, 0]  # 0.37 MHz
     # plot_loop_inds = [65, 92]  # 0.102 MHz
     popts = np.array(spin_echo_fit_data["popts"])
     mod_freqs = popts[:, -2]
     plot_loop_freqs = [mod_freqs[ind] for ind in plot_loop_inds]
-    colors = [KplColors.BROWN, KplColors.RED, KplColors.GRAY]
+    colors = [KplColors.RED, KplColors.BROWN, KplColors.GRAY]
 
     ### Data work
 
@@ -59,6 +60,9 @@ def main(
     figsize = kpl.figsize
     adj_figsize = (figsize[0], 1.5 * figsize[1])
     main_fig = plt.figure(figsize=adj_figsize)
+    main_fig.get_layout_engine().set(rect=[0.002, 0.002, 0.995, 0.996])
+    main_fig.get_layout_engine().set(h_pad=0)
+    main_fig.get_layout_engine().set(w_pad=0)
     fig_a, fig_b = main_fig.subfigures(nrows=2, height_ratios=(1, 0.6))
     upper_ax, lower_ax = fig_a.subplots(
         2,
@@ -67,7 +71,6 @@ def main(
         height_ratios=[10, 1],
         gridspec_kw={"hspace": 0},
     )
-    main_fig.set_constrained_layout_pads(h_pad=0, hspace=0, w_pad=0, wspace=0)
 
     ### Main plot
 
@@ -81,6 +84,8 @@ def main(
         ("Spin echo", "ESR"),
     ):
         for ind in range(len(hfs_list)):
+            # if ind == len(hfs_list) - 5:
+            #     break
             hfs_val = hfs_list[ind]
             hfs_err = hfs_err_list[ind]
             plot_ax = lower_ax if hfs_val == 0 else upper_ax
@@ -130,6 +135,8 @@ def main(
     lower_ax.xaxis.set_major_locator(MaxNLocator(integer=True))
     lower_ax.set_yticks([0])
     upper_ax.set_ylabel("$^{13}$C hyperfine coupling (MHz)")
+    # upper_ax.set_ylabel("Envelope frequency (MHz)")
+    # upper_ax.set_ylabel("T2 (ms)")
     upper_ax.set_yscale("log")
     upper_ax.legend(loc=kpl.Loc.UPPER_LEFT)
     upper_ax.tick_params(axis="x", bottom=False)
@@ -190,6 +197,7 @@ def main(
     ax.set_ylabel("NV$^{-}$ population (arb. units)")
     # ax.tick_params(axis="y", right=True)
     ax.set_xticks(xticks)
+    ax.set_ylim(0.12, 0.71)
     ax = axes_pack[1]
     ax.tick_params(axis="y", left=False)
     # ax.set_xlabel("Total evolution time (µs)")
@@ -208,33 +216,63 @@ if __name__ == "__main__":
     spin_echo_exp_data = dm.get_raw_data(file_id=1797877478132)
     spin_echo_fit_file_id = 1798006231161
     spin_echo_fit_data = dm.get_raw_data(file_id=spin_echo_fit_file_id)
+    spin_echo_fit_no_osc_file_id = 1798052675001
+    spin_echo_fit_no_osc_data = dm.get_raw_data(file_id=spin_echo_fit_no_osc_file_id)
 
+    ### ESR
     # fmt: off
     # From ./resonance.py, in GHz
     hfs_res = [0.008270982638238914, 0.015881063467104776, 0.014010042750685282, 0.015391657472928187, 0.012955566280101407, 0.016983227280784243]
     hfs_err_res = [0.0016409452584717822, 0.0010983852602745553, 0.0004848082620682548, 0.0007214312144406817, 0.0006541485039380769, 0.0012675922107645444]
     # fmt: on
-    # From ./spin_echo/spin_echo-mcc.py, in MHz
-    data = dm.get_raw_data(file_id=spin_echo_fit_file_id)
-    popts = np.array(data["popts"])
-    num_nvs_echo = len(popts)
-    pcovs = np.array(data["pcovs"])
-    red_chi_sqs = np.array(data["red_chi_sq_list"])
-    osc_contrasts = popts[:, -3]
-    mod_freqs = popts[:, -2]
-    # criteria = [red_chi_sqs < 2.0, osc_contrasts > 0.5, mod_freqs > 0.05]
-    criteria = [red_chi_sqs < 2.0, osc_contrasts > 0.1, mod_freqs > 0.05]
-    # criteria = [red_chi_sqs < 2.0, osc_contrasts > 0.1, mod_freqs > 0.5]
-    good_inds = list(range(num_nvs_echo))
-    for el in criteria:
-        good_inds = np.intersect1d(good_inds, np.where(el)[0])
-    pstes = np.array([np.sqrt(np.diag(pcovs[ind])) for ind in range(len(pcovs))])
-    hfs_echo = popts[good_inds, -2]
-    hfs_err_echo = pstes[good_inds, -2]
 
-    # MCC test
-    hfs_echo = np.append(hfs_echo, [0] * 10)
-    hfs_err_echo = np.append(hfs_err_echo, [0] * 10)
+    ### ESR
+    # From ./spin_echo/spin_echo-mcc.py, in MHz
+
+    # Extract from data set with oscillations allowed
+    osc_data = dm.get_raw_data(file_id=spin_echo_fit_file_id)
+    osc_popts = np.array(osc_data["popts"])
+    num_nvs_echo = len(osc_popts)
+    osc_pcovs = np.array(osc_data["pcovs"])
+    osc_red_chi_sqs = np.array(osc_data["red_chi_sq_list"])
+
+    # Extract from data set with oscillations not allowed
+    no_osc_red_chi_sqs = np.array(spin_echo_fit_no_osc_data["red_chi_sq_list"])
+
+    bad_inds = []
+    hfs_echo = []
+    hfs_err_echo = []
+    no_osc_inds = []
+    for nv_ind in range(num_nvs_echo):
+        osc_red_chi_sq = osc_red_chi_sqs[nv_ind]
+        no_osc_red_chi_sq = no_osc_red_chi_sqs[nv_ind]
+        # Neither fit was good
+        if osc_red_chi_sq > 3 and no_osc_red_chi_sq > 3:
+            bad_inds.append(nv_ind)
+        # Osc fit is significantly better than no osc fit
+        # elif True:
+        elif (
+            osc_red_chi_sq < no_osc_red_chi_sq - 0.5
+            # and not osc_red_chi_sq < no_osc_red_chi_sq - 0.7
+        ):
+            # no_osc_inds.append(nv_ind)
+            osc_contrast = osc_popts[nv_ind, -3]
+            mod_freq_ind = -2
+            mod_freq = osc_popts[nv_ind, mod_freq_ind]
+            mod_freq_err = np.sqrt(np.diag(osc_pcovs[nv_ind]))[mod_freq_ind]
+            hfs_echo.append(mod_freq)
+            hfs_err_echo.append(mod_freq_err)
+        # Otherwise assume no legitimate oscillations
+        else:
+            hfs_echo.append(0)
+            hfs_err_echo.append(0)
+            no_osc_inds.append(nv_ind)
+
+    print(bad_inds)
+    print(no_osc_inds)
+
+    hfs_res = []
+    hfs_err_res = []
 
     main(
         hfs_res,
