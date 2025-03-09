@@ -139,8 +139,8 @@ def process_and_plot(
         # Plot histograms with NV index and SNR included
         nv_num = widefield.get_nv_num(nv_list[ind])
         # if do_plot_histograms and nv_num in [37, 71, 74]:
-        # if do_plot_histograms:
-        if False:
+        if do_plot_histograms:
+            # if False:
             fig = plot_histograms(sig_counts_list, ref_counts_list, density=True)
             ax = fig.gca()
 
@@ -148,26 +148,26 @@ def process_and_plot(
             if popt is not None:
                 x_vals = np.linspace(0, np.max(ref_counts_list), 1000)
 
-                # single_mode_num_params = bimodal_histogram.get_single_mode_num_params(
-                #     prob_dist
-                # )
-                # single_mode_pdf = bimodal_histogram.get_single_mode_pdf(prob_dist)
-                # dark_mode_line = popt[0] * single_mode_pdf(
-                #     x_vals, *popt[1 : 1 + single_mode_num_params]
-                # )
-                # bright_mode_line = (1 - popt[0]) * single_mode_pdf(
-                #     x_vals, *popt[1 + single_mode_num_params :]
-                # )
+                single_mode_num_params = bimodal_histogram.get_single_mode_num_params(
+                    prob_dist
+                )
+                single_mode_pdf = bimodal_histogram.get_single_mode_pdf(prob_dist)
+                dark_mode_line = popt[0] * single_mode_pdf(
+                    x_vals, *popt[1 : 1 + single_mode_num_params]
+                )
+                bright_mode_line = (1 - popt[0]) * single_mode_pdf(
+                    x_vals, *popt[1 + single_mode_num_params :]
+                )
 
-                # MCC hack for including ionization
-                dark_mode_pdf = bimodal_histogram.get_single_mode_pdf(
-                    ProbDist.COMPOUND_POISSON
-                )
-                bright_mode_pdf = bimodal_histogram.get_single_mode_pdf(
-                    ProbDist.COMPOUND_POISSON_WITH_IONIZATION
-                )
-                dark_mode_line = popt[0] * dark_mode_pdf(x_vals, popt[1])
-                bright_mode_line = (1 - popt[0]) * bright_mode_pdf(x_vals, *popt[1:])
+                # # MCC hack for including ionization
+                # dark_mode_pdf = bimodal_histogram.get_single_mode_pdf(
+                #     ProbDist.COMPOUND_POISSON
+                # )
+                # bright_mode_pdf = bimodal_histogram.get_single_mode_pdf(
+                #     ProbDist.COMPOUND_POISSON
+                # )
+                # dark_mode_line = popt[0] * dark_mode_pdf(x_vals, popt[1])
+                # bright_mode_line = (1 - popt[0]) * bright_mode_pdf(x_vals, *popt[1:])
 
                 bimodal_pdf = bimodal_histogram.get_bimodal_pdf(prob_dist)
                 bimodal_line = bimodal_pdf(x_vals, *popt)
@@ -415,6 +415,8 @@ if __name__ == "__main__":
     # data = dm.get_raw_data(file_id=1769860748790, load_npz=False)  # 24ms readout
 
     # rubin
-    data = dm.get_raw_data(file_id=1793740895846, load_npz=False)  # 60ms readout
+    # data = dm.get_raw_data(file_id=1798326378514, load_npz=False)  # 60ms readout
+    # data = dm.get_raw_data(file_id=1798333706349, load_npz=False)  # 30ms readout
+    data = dm.get_raw_data(file_id=1798346090208, load_npz=False)  # 30ms readout
     process_and_plot(data, do_plot_histograms=True)
     kpl.show(block=True)

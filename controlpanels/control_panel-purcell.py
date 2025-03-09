@@ -323,20 +323,20 @@ def do_calibrate_green_red_delay():
 
 def optimize_scc_amp_and_duration(nv_list):
     # # Single amp
-    # min_duration = 16
-    # max_duration = 272
-    # num_dur_steps = 17
-    # min_amp = 1.0
-    # max_amp = 1.0
-    # num_amp_steps = 1
+    min_duration = 16
+    max_duration = 272
+    num_dur_steps = 17
+    min_amp = 1.0
+    max_amp = 1.0
+    num_amp_steps = 1
 
-    # Single dur
-    min_amp = 0.6
-    max_amp = 1.4
-    num_amp_steps = 15
-    min_duration = 84
-    max_duration = 84
-    num_dur_steps = 1
+    # # Single dur
+    # min_amp = 0.6
+    # max_amp = 1.4
+    # num_amp_steps = 15
+    # min_duration = 84
+    # max_duration = 84
+    # num_dur_steps = 1
     # reps and runs
     num_reps = 11
     num_runs = 200
@@ -1072,24 +1072,24 @@ if __name__ == "__main__":
     print(f"Reference NV:{pixel_coords_list[0]}")
     print(f"Green Laser Coordinates: {green_coords_list[0]}")
     print(f"Red Laser Coordinates: {red_coords_list[0]}")
-    pixel_coords_list = [
-        [109.077, 120.824],
-        [23.746, 15.406],
-        [112.212, 245.732],
-        [227.288, 41.165],
-    ]
-    green_coords_list = [
-        [108.252, 106.927],
-        [118.738, 96.529],
-        [106.336, 120.242],
-        [96.677, 97.108],
-    ]
-    red_coords_list = [
-        [72.859, 72.582],
-        [81.181, 64.012],
-        [71.588, 83.435],
-        [63.208, 64.714],
-    ]
+    # pixel_coords_list = [
+    #     [109.077, 120.824],
+    #     [23.746, 15.406],
+    #     [112.212, 245.732],
+    #     [227.288, 41.165],
+    # ]
+    # green_coords_list = [
+    #     [108.252, 106.927],
+    #     [118.738, 96.529],
+    #     [106.336, 120.242],
+    #     [96.677, 97.108],
+    # ]
+    # red_coords_list = [
+    #     [72.859, 72.582],
+    #     [81.181, 64.012],
+    #     [71.588, 83.435],
+    #     [63.208, 64.714],
+    # ]
 
     num_nvs = len(pixel_coords_list)
     threshold_list = [11.5] * num_nvs
@@ -1334,14 +1334,14 @@ if __name__ == "__main__":
 
         do_compensate_for_drift(nv_sig)
         # do_widefield_image_sample(nv_sig, 50)
-        # do_charge_state_histograms(nv_list)
+        do_charge_state_histograms(nv_list)
         # do_charge_state_conditional_init(nv_list)
 
         # for point in points:
         #     x, y = point
-        #     nv_sig.coords[CoordsKey.SAMPLE][0] += x
+        # nv_sig.coords[CoordsKey.SAMPLE][0] += x
         #     nv_sig.coords[CoordsKey.SAMPLE][1] += y
-        #     print(nv_sig.coords[CoordsKey.SAMPLE])
+        # print(nv_sig.coords[CoordsKey.SAMPLE])
 
         # Move diagonally forward
         # for x, y in zip(x_values, y_values):
@@ -1386,9 +1386,9 @@ if __name__ == "__main__":
 
         # widefield.reset_all_drift()
         # coords_key = None
-        coords_key = green_laser
+        # coords_key = green_laser
         # coords_key = red_laser
-        do_optimize_loop(nv_list, coords_key)
+        # do_optimize_loop(nv_list, coords_key)
 
         # do_optimize_pol_amp(nv_list)
         # do_optimize_pol_duration(nv_list)

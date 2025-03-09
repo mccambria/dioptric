@@ -400,7 +400,7 @@ if __name__ == "__main__":
     # data = dm.get_raw_data(file_id=1751170993877, load_npz=True)
     # data = dm.get_raw_data(file_id=1752794666146, load_npz=True)
     # data = dm.get_raw_data(file_id=1764727515943, load_npz=True)
-    data = dm.get_raw_data(file_id=1797829059826, load_npz=True)
+    data = dm.get_raw_data(file_id=1797862163365, load_npz=True)
 
     img_array = np.array(data["ref_img_array"])
     # img_array = data["img_array"]
@@ -562,10 +562,10 @@ if __name__ == "__main__":
     #     if 0 <= idx < len(updated_spot_weights):  # Ensure index is within valid range
     #         updated_spot_weights[idx] = calcualted_spot_weights[idx]
 
-    aom_voltage = 0.4  # Current AOM voltage
+    aom_voltage = 0.34  # Current AOM voltage
     # aom_voltage = 0.4118  # Current AOM voltage
-    power_law_params = [3.7e5, 6.97, 8e-14]  # Example power-law fit parameters
-    a, b, c = [3.7e5, 6.97, 8e-14]
+    # a, b, c = [3.7e5, 6.97, 8e-14]
+    a, b, c = 161266.751, 6.617, -19.492  # new para
     total_power = a * (aom_voltage) ** b + c
     print(total_power)
     # sys.exit()
@@ -573,9 +573,11 @@ if __name__ == "__main__":
     #     nv_amps_filtered, aom_voltage, power_law_params
     # )
     # adjusted_nv_powers = adjusted_nv_powers * total_power
-    filtered_total_power = np.sum(nv_powers_filtered) / len(nv_coordinates_filtered)
+    # filtered_total_power = np.sum(nv_powers_filtered) / len(nv_coordinates_filtered)
+    filtered_total_power = 280
     adjusted_aom_voltage = ((filtered_total_power - c) / a) ** (1 / b)
-    # print("Adjusted Voltages (V):", adjusted_aom_voltage)
+    print("Adjusted Voltages (V):", adjusted_aom_voltage)
+    sys.exit()
     filtered_reordered_spot_weights = updated_spot_weights
     # print("nv_weights:", spot_weights)
     print("NV Index | Coords    |   previous weights")
