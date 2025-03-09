@@ -523,9 +523,9 @@ def determine_threshold(
     mean_counts_bright = round(mean_counts_bright)
     thresh_options = np.arange(mean_counts_dark - 0.5, mean_counts_bright + 0.5, 1)
     fidelities = []
-    snrs = []
-    left_fidelities = []
-    right_fidelities = []
+    # snrs = []
+    # left_fidelities = []
+    # right_fidelities = []
     single_mode_cdf = get_single_mode_cdf(prob_dist)
     for val in thresh_options:
         # dark_left_prob = single_mode_cdf(val, *popt[1 : 1 + num_single_mode_params])
@@ -548,13 +548,13 @@ def determine_threshold(
         )
         fidelities.append(fidelity)
 
-        signal = (
-            bright_mode_weight * bright_right_prob - dark_mode_weight * dark_right_prob
-        )
-        dark_var = dark_mode_weight**2 * dark_left_prob * dark_right_prob
-        bright_var = bright_mode_weight**2 * bright_left_prob * bright_right_prob
-        noise = np.sqrt(dark_var + bright_var)
-        snrs.append(signal / noise)
+        # signal = (
+        #     bright_mode_weight * bright_right_prob - dark_mode_weight * dark_right_prob
+        # )
+        # dark_var = dark_mode_weight**2 * dark_left_prob * dark_right_prob
+        # bright_var = bright_mode_weight**2 * bright_left_prob * bright_right_prob
+        # noise = np.sqrt(dark_var + bright_var)
+        # snrs.append(signal / noise)
 
         # Two-sided
         # left_fidelity = (dark_ratio * dark_left_prob) / (
@@ -567,10 +567,10 @@ def determine_threshold(
         # right_fidelities.append(right_fidelity)
     fidelity = np.max(fidelities)
     threshold = thresh_options[np.argmax(fidelities)]
-    print(f"Threshold from fidelity: {threshold}")
-    snr = np.max(snrs)
-    threshold = thresh_options[np.argmax(snrs)]
-    print(f"Threshold from SNR: {threshold}")
+    # print(f"Threshold from fidelity: {threshold}")
+    # snr = np.max(snrs)
+    # threshold = thresh_options[np.argmax(snrs)]
+    # print(f"Threshold from SNR: {threshold}")
 
     if do_print:
         print(
