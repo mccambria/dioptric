@@ -295,6 +295,17 @@ def fit(total_evolution_times, nv_counts, nv_counts_ste):
     )
     no_c13_popt[3] -= rolling_minimum_window / 2
 
+    ### No osc
+    popt, pcov, red_chi_sq = curve_fit(
+        fit_fn,
+        total_evolution_times,
+        nv_counts,
+        no_c13_popt,
+        nv_counts_ste,
+        bounds=bounds,
+    )
+    return popt, pcov, red_chi_sq
+
     # fig, ax = plt.subplots()
     # kpl.plot_points(
     #     ax,
@@ -672,8 +683,8 @@ if __name__ == "__main__":
 
     ### Replotting
 
-    # fit_data = dm.get_raw_data(file_id=1796557235526)  # T2_exp variable
-    # # fit_data = dm.get_raw_data(file_id=1797217909266)  # T2_exp = 3
+    # # fit_data = dm.get_raw_data(file_id=1796557235526)  # T2_exp variable
+    # fit_data = dm.get_raw_data(file_id=1798006231161)  # w/ ionization dmw None
     # replot_fits(data, fit_data, nv_inds)
     # kpl.show(block=True)
     # sys.exit()
