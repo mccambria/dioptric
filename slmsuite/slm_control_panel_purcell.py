@@ -291,7 +291,7 @@ def nuvu2thorcam_calibration(coords):
     )
 
     cal_coords_nuvu = np.array(
-        [[228.35, 12.377], [213.36, 241.277], [21.894, 112.43]], dtype="float32"
+        [[227.637, 12.127], [212.996, 241.118], [21.649, 112.436]], dtype="float32"
     )
     # [[227.752, 12.548], [212.599, 241.451], [20.615, 112.523]], dtype="float32"
 
@@ -352,7 +352,7 @@ def compute_and_write_nvs_phase():
         shape=(4096, 2048),
         spot_vectors=thorcam_coords,
         basis="ij",
-        spot_amp=spot_weights,
+        # spot_amp=spot_weights,
         cameraslm=fs,
     )
     # Precondition computationally
@@ -384,11 +384,11 @@ def write_nvs_phase():
     #     "slmsuite\computed_phase\slm_phase_117nvs_20250119_152458.npy"
     # )  # 117NVs weighted spots
     # shallow NVs
-    phase = np.load("slmsuite\computed_phase\slm_phase_255nvs_20250302_162917.npy")
+    phase = np.load("slmsuite\computed_phase\slm_phase_140nvs_20250305_210354.npy")
 
     # phase = np.load("slmsuite\circles\slm_phase_circles_20250118_210419.npy")  # circles
     slm.write(phase, settle=True)
-    cam_plot()
+    # cam_plot()
 
 
 # Define the save function

@@ -400,7 +400,7 @@ if __name__ == "__main__":
     # data = dm.get_raw_data(file_id=1751170993877, load_npz=True)
     # data = dm.get_raw_data(file_id=1752794666146, load_npz=True)
     # data = dm.get_raw_data(file_id=1764727515943, load_npz=True)
-    data = dm.get_raw_data(file_id=1794668490019, load_npz=True)
+    data = dm.get_raw_data(file_id=1797829059826, load_npz=True)
 
     img_array = np.array(data["ref_img_array"])
     # img_array = data["img_array"]

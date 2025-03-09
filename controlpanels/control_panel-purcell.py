@@ -1040,9 +1040,9 @@ if __name__ == "__main__":
     # Define transformations using `transform_coords`
     # pixel_coords_list = [
     #     [109.077, 120.824],
-    #     [16.945, 50.36],
-    #     [108.271, 225.447],
-    #     [228.808, 23.054],
+    #     [23.746, 15.406],
+    #     [112.212, 245.732],
+    #     [227.288, 41.165],
     # ]
     green_coords_list = [
         [
@@ -1064,7 +1064,7 @@ if __name__ == "__main__":
         for nv_pixel_coords in pixel_coords_list
     ]
 
-    # Print first coordinate set for verification
+    # # Print first coordinate set for verification
     # print(f"Number of NVs: {green_coords_list}")
     # print(f"Number of NVs: {red_coords_list}")
     # sys.exit()
@@ -1072,24 +1072,24 @@ if __name__ == "__main__":
     print(f"Reference NV:{pixel_coords_list[0]}")
     print(f"Green Laser Coordinates: {green_coords_list[0]}")
     print(f"Red Laser Coordinates: {red_coords_list[0]}")
-    # pixel_coords_list = [
-    #     [109.077, 120.824],
-    #     [17.659, 51.014],
-    #     [108.383, 225.833],
-    #     [228.154, 23.766],
-    # ]
-    # green_coords_list = [
-    #     [108.3, 106.976],
-    #     [118.949, 100.486],
-    #     [107.014, 118.267],
-    #     [96.819, 95.275],
-    # ]
-    # red_coords_list = [
-    #     [72.951, 72.686],
-    #     [81.468, 67.284],
-    #     [72.094, 81.946],
-    #     [63.465, 63.192],
-    # ]
+    pixel_coords_list = [
+        [109.077, 120.824],
+        [23.746, 15.406],
+        [112.212, 245.732],
+        [227.288, 41.165],
+    ]
+    green_coords_list = [
+        [108.252, 106.927],
+        [118.738, 96.529],
+        [106.336, 120.242],
+        [96.677, 97.108],
+    ]
+    red_coords_list = [
+        [72.859, 72.582],
+        [81.181, 64.012],
+        [71.588, 83.435],
+        [63.208, 64.714],
+    ]
 
     num_nvs = len(pixel_coords_list)
     threshold_list = [11.5] * num_nvs
