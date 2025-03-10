@@ -33,7 +33,13 @@ def replot_fits(data, fit_data, nv_inds):
     total_evolution_times = 2 * np.array(taus) / 1e3
     fit_fn = quartic_decay
 
+    # fmt: off
+    no_osc_inds = [24, 33, 37, 43, 44, 60, 86, 92, 94]
+    # fmt: on
+
     for loop_ind, nv_ind in enumerate(nv_inds):
+        if loop_ind not in no_osc_inds:
+            continue
         nv_counts = norm_counts[nv_ind]
         nv_counts_ste = norm_counts_ste[nv_ind]
         fig, ax = plt.subplots()
@@ -686,9 +692,10 @@ if __name__ == "__main__":
 
     # # fit_data = dm.get_raw_data(file_id=1796557235526)  # T2_exp variable
     # fit_data = dm.get_raw_data(file_id=1798006231161)  # w/ ionization dmw None
-    # replot_fits(data, fit_data, nv_inds)
-    # kpl.show(block=True)
-    # sys.exit()
+    fit_data = dm.get_raw_data(file_id=1798052675001)  # no osc
+    replot_fits(data, fit_data, nv_inds)
+    kpl.show(block=True)
+    sys.exit()
 
     ###
 
