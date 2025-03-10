@@ -40,14 +40,14 @@ calibration_coords_pixel = [
     [227.288, 41.165],
 ]
 calibration_coords_green = [
-    [118.738, 96.529],
-    [106.336, 120.242],
-    [96.677, 97.108],
+    [118.752, 96.491],
+    [106.349, 120.212],
+    [96.673, 97.084],
 ]
 calibration_coords_red = [
-    [81.181, 64.012],
-    [71.588, 83.435],
-    [63.208, 64.714],
+    [81.191, 63.981],
+    [71.598, 83.41],
+    [63.204, 64.694],
 ]
 # Create the dictionaries using the provided lists
 calibration_coords_nv1 = {
@@ -256,8 +256,8 @@ config |= {
             VirtualLaserKey.WIDEFIELD_CHARGE_READOUT: {
                 "physical_name": yellow_laser,
                 # "duration": 200e6,
-                # "duration": 60e6,
-                "duration": 30e6,
+                "duration": 60e6,
+                # "duration": 30e6,
                 # "duration": 24e6,  # for red calibration
             },
             # LaserKey.WIDEFIELD_CHARGE_READOUT: {"physical_name": yellow_laser, "duration": 100e6},
@@ -833,10 +833,8 @@ opx_config = {
         # "yellow_charge_readout": {"type": "constant", "sample": 0.3472},  # 50ms 117NVs
         # "yellow_charge_readout": {"type": "constant", "sample": 0.3741},  # 50ms 117NVs
         # "yellow_charge_readout": {"type": "constant", "sample": 0.325},  # 100ms 117NVs
-        # "yellow_charge_readout": {"type": "constant", "sample": 0.45},
         # "yellow_charge_readout": {"type": "constant", "sample": 0.3727},
-        "yellow_charge_readout": {"type": "constant", "sample": 0.3865},
-        # "yellow_charge_readout": {"type": "constant", "sample": 0.34},
+        "yellow_charge_readout": {"type": "constant", "sample": 0.35},
         "yellow_spin_pol": {"type": "constant", "sample": 0.39},
         "yellow_shelving": {"type": "constant", "sample": 0.33},
         # Other

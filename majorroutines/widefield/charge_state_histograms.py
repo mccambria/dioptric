@@ -416,7 +416,6 @@ if __name__ == "__main__":
 
     # rubin
     # data = dm.get_raw_data(file_id=1798326378514, load_npz=False)  # 60ms readout
-    # data = dm.get_raw_data(file_id=1798333706349, load_npz=False)  # 30ms readout
-    data = dm.get_raw_data(file_id=1798346090208, load_npz=False)  # 30ms readout
+    data = dm.get_raw_data(file_id=1798728176452, load_npz=False)
     process_and_plot(data, do_plot_histograms=True)
     kpl.show(block=True)
