@@ -296,15 +296,15 @@ def fit(total_evolution_times, nv_counts, nv_counts_ste):
     no_c13_popt[3] -= rolling_minimum_window / 2
 
     ### No osc
-    popt, pcov, red_chi_sq = curve_fit(
-        fit_fn,
-        total_evolution_times,
-        nv_counts,
-        no_c13_popt,
-        nv_counts_ste,
-        bounds=bounds,
-    )
-    return popt, pcov, red_chi_sq
+    # popt, pcov, red_chi_sq = curve_fit(
+    #     fit_fn,
+    #     total_evolution_times,
+    #     nv_counts,
+    #     no_c13_popt,
+    #     nv_counts_ste,
+    #     bounds=bounds,
+    # )
+    # return popt, pcov, red_chi_sq
 
     # fig, ax = plt.subplots()
     # kpl.plot_points(
@@ -414,6 +414,7 @@ def create_fit_figure(data, axes_pack=None, layout=None, no_legend=True, nv_inds
     num_steps = data["num_steps"]
     taus = np.array(data["taus"])
     total_evolution_times = 2 * np.array(taus) / 1e3
+    # total_evolution_times -= 0.068  # Account for duration of pi pulse in middle
     num_runs = data["num_runs"]
 
     if "norm_counts" in data:
