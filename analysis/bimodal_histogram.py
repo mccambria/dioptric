@@ -182,6 +182,7 @@ def negative_binomial_pdf(z, rate):
 
 
 def negative_binomial_with_ionization_pdf(z, lambda_0, lambda_m, ion):
+    # ion = 0
     if isinstance(z, list):
         z = np.array(z)
     z_not_array = not isinstance(z, np.ndarray)

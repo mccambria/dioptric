@@ -84,7 +84,7 @@ def plot_histograms(
 def process_and_plot(
     raw_data,
     do_plot_histograms=False,
-    prob_dist: ProbDist = ProbDist.COMPOUND_POISSON_WITH_IONIZATION,
+    prob_dist: ProbDist = ProbDist.NEGATIVE_BINOMIAL_WITH_IONIZATION,
 ):
     ### Setup
 
@@ -109,14 +109,14 @@ def process_and_plot(
 
     for ind in range(num_nvs):
         nv_num = widefield.get_nv_num(nv_list[ind])
-        if nv_num != 142:
-            continue
+        # if nv_num != 142:
+        #     continue
         sig_counts_list = sig_counts_lists[ind]
         ref_counts_list = ref_counts_lists[ind]
 
         # Only use ref counts for threshold determination
         popt, _, red_chi_sq = fit_bimodal_histogram(
-            ref_counts_list, prob_dist, no_print=False, no_plot=False
+            ref_counts_list, prob_dist, no_print=False, no_plot=True
         )
         threshold, readout_fidelity = determine_threshold(
             popt, prob_dist, dark_mode_weight=None, do_print=True, ret_fidelity=True
@@ -160,10 +160,10 @@ def process_and_plot(
 
                 # MCC hack for including ionization
                 dark_mode_pdf = bimodal_histogram.get_single_mode_pdf(
-                    ProbDist.COMPOUND_POISSON
+                    ProbDist.NEGATIVE_BINOMIAL
                 )
                 bright_mode_pdf = bimodal_histogram.get_single_mode_pdf(
-                    ProbDist.COMPOUND_POISSON_WITH_IONIZATION
+                    ProbDist.NEGATIVE_BINOMIAL_WITH_IONIZATION
                 )
                 dark_mode_line = popt[0] * dark_mode_pdf(x_vals, popt[1])
                 bright_mode_line = (1 - popt[0]) * bright_mode_pdf(x_vals, *popt[1:])
@@ -408,7 +408,7 @@ def main(
 
 if __name__ == "__main__":
     kpl.init_kplotlib()
-    # data = dm.get_raw_data(file_id=1733583334808, load_npz=False)
-    data = dm.get_raw_data(file_id=1722013594859, load_npz=False)
+    data = dm.get_raw_data(file_id=1733583334808, load_npz=False)
+    # data = dm.get_raw_data(file_id=1722013594859, load_npz=False)
     process_and_plot(data, do_plot_histograms=True)
     kpl.show(block=True)
