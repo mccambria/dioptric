@@ -3,7 +3,7 @@
 Widefield Rabi experiment - Enhanced
 
 Created on Fall, 2024
-@auhtor
+@auhtor : Saroj Chand
 """
 
 import traceback
