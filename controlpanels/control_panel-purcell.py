@@ -137,7 +137,7 @@ def do_optimize_pol_amp(nv_list):
     # num_reps = 150
     # num_runs = 5
     num_reps = 8
-    num_runs = 300
+    num_runs = 250
     min_amp = 0.6
     max_amp = 1.4
     return optimize_charge_state_histograms_mcc.optimize_pol_amp(
@@ -160,12 +160,14 @@ def do_optimize_readout_duration(nv_list):
 
 def do_optimize_readout_amp(nv_list):
     num_steps = 21
+    # num_steps = 15
     # num_reps = 150
     # num_runs = 5
     num_reps = 10
-    num_runs = 400
-    min_amp = 0.8
-    max_amp = 1.2
+    # num_runs = 400
+    num_runs = 200
+    min_amp = 0.85
+    max_amp = 1.15
     return optimize_charge_state_histograms_mcc.optimize_readout_amp(
         nv_list, num_steps, num_reps, num_runs, min_amp, max_amp
     )
@@ -322,28 +324,24 @@ def do_calibrate_green_red_delay():
 
 
 def optimize_scc_amp_and_duration(nv_list):
-    # num_amp_steps = 15
-    # num_dur_steps = 17
-    # num_reps = 1
-    # num_runs = 1500
-    # num_runs = 400  # Short test version
-    # num_runs = 5
-    # min_amp = 0.75
-    # max_amp = 1.25
+    # # Single amp
     min_duration = 16
     max_duration = 272
     num_dur_steps = 17
-
-    # Single amp
-    num_reps = 11
-    num_runs = 200
     min_amp = 1.0
     max_amp = 1.0
     num_amp_steps = 1
-    # min_duration = 32
-    # max_duration = 496
-    # num_dur_steps = 30
 
+    # # Single dur
+    # min_amp = 0.6
+    # max_amp = 1.4
+    # num_amp_steps = 15
+    # min_duration = 84
+    # max_duration = 84
+    # num_dur_steps = 1
+    # reps and runs
+    num_reps = 11
+    num_runs = 200
     return optimize_scc_amp_duration.optimize_scc_amp_and_duration(
         nv_list,
         num_amp_steps,
@@ -1039,14 +1037,15 @@ if __name__ == "__main__":
         # file_path="slmsuite/nv_blob_detection/nv_blob_shallow_52nvs_reordered.npz",
         # file_path="slmsuite/nv_blob_detection/nv_blob_shallow_161nvs_reordered.npz",
         # file_path="slmsuite/nv_blob_detection/nv_blob_shallow_148nvs_reordered.npz",
-        file_path="slmsuite/nv_blob_detection/nv_blob_rubin_shallow_140nvs_reordered_updated.npz",
+        # file_path="slmsuite/nv_blob_detection/nv_blob_rubin_shallow_140nvs_reordered_updated.npz",
+        file_path="slmsuite/nv_blob_detection/nv_blob_rubin_shallow_107nvs_reordered_updated.npz",
     ).tolist()
     # Define transformations using `transform_coords`
     # pixel_coords_list = [
     #     [109.077, 120.824],
-    #     [16.945, 50.36],
-    #     [108.271, 225.447],
-    #     [228.808, 23.054],
+    #     [23.746, 15.406],
+    #     [112.212, 245.732],
+    #     [227.288, 41.165],
     # ]
     green_coords_list = [
         [
@@ -1068,7 +1067,7 @@ if __name__ == "__main__":
         for nv_pixel_coords in pixel_coords_list
     ]
 
-    # Print first coordinate set for verification
+    # # Print first coordinate set for verification
     # print(f"Number of NVs: {green_coords_list}")
     # print(f"Number of NVs: {red_coords_list}")
     # sys.exit()
@@ -1078,21 +1077,21 @@ if __name__ == "__main__":
     print(f"Red Laser Coordinates: {red_coords_list[0]}")
     # pixel_coords_list = [
     #     [109.077, 120.824],
-    #     [17.659, 51.014],
-    #     [108.383, 225.833],
-    #     [228.154, 23.766],
+    #     [23.746, 15.406],
+    #     [112.212, 245.732],
+    #     [227.288, 41.165],
     # ]
     # green_coords_list = [
-    #     [108.3, 106.976],
-    #     [118.949, 100.486],
-    #     [107.014, 118.267],
-    #     [96.819, 95.275],
+    #     [108.241, 106.938],
+    #     [118.752, 96.491],
+    #     [106.349, 120.212],
+    #     [96.673, 97.084],
     # ]
     # red_coords_list = [
-    #     [72.951, 72.686],
-    #     [81.468, 67.284],
-    #     [72.094, 81.946],
-    #     [63.465, 63.192],
+    #     [72.85, 72.591],
+    #     [81.191, 63.981],
+    #     [71.598, 83.41],
+    #     [63.204, 64.694],
     # ]
 
     num_nvs = len(pixel_coords_list)
@@ -1123,7 +1122,9 @@ if __name__ == "__main__":
     include_inds = [0, 3, 4, 6, 7, 8, 13, 14, 19, 20, 22, 25, 26, 30, 31, 33, 36, 38, 39, 42, 43, 50, 51, 52, 58, 59, 61, 62, 63, 64, 65, 74, 75, 76, 77, 78, 79, 83, 84, 86, 88, 90, 91, 92, 95, 96, 99, 101, 105, 107, 109, 110, 112, 113, 119, 121, 126, 127, 128, 132, 133, 134, 136, 139, 140, 141, 143, 145, 146]
     # scc_duration_list = [104, 56, 88, 92, 80, 72, 80, 80, 48, 88, 64, 272, 20, 124, 96, 84, 216, 16, 124, 92, 60, 96, 272, 108, 16, 64, 100, 56, 100, 84, 16, 100, 92, 64, 128, 128, 60, 100, 44, 272, 16, 120, 20, 88, 88, 116, 112, 48, 16, 272, 92, 272, 80, 84, 92, 96, 112, 112, 24, 92, 80, 28, 84, 92, 72, 92, 156, 56, 272, 272, 272, 124, 84, 272, 80, 68, 200, 72, 272, 272, 272, 72, 248, 116, 180, 120, 92, 16, 16, 72, 68, 84, 272, 40, 272, 80, 140, 144, 248, 72, 92, 56, 100, 92, 108, 108, 88, 88, 88, 228, 100, 128, 100, 72, 128, 16, 16, 124, 140, 116, 272, 80, 272, 96, 144, 80, 80, 68, 76, 192, 272, 16, 48, 96, 272, 180, 120, 36, 272, 152, 16, 76, 136, 124, 164, 200, 124, 140]
     # scc_duration_list = [116, 92, 72, 116, 92, 80, 92, 92, 72, 108, 88, 56, 72, 128, 92, 108, 56, 104, 108, 92, 56, 84, 84, 120, 128, 80, 96, 64, 92, 72, 108, 80, 80, 56, 112, 40, 40, 84, 72, 56, 128, 128, 108, 80, 112, 80, 108, 108, 64, 100, 96, 84, 92, 140, 140, 120, 60, 88, 88, 80, 60, 60, 124, 108, 16, 96, 96, 92, 136, 272, 144, 172, 72, 84, 84, 60, 116, 144, 56, 80, 112, 244, 80, 120, 80, 272, 64, 52, 116, 124, 16, 116, 56, 80, 120, 88, 272, 272, 116, 64, 16, 272, 80, 116, 112, 64, 272, 92, 272, 116, 48, 116, 40, 68, 104, 272, 272, 144, 272, 108, 216, 116, 84, 104, 108, 52, 272, 96, 136, 92, 108, 272, 212, 96, 204, 204, 84, 272, 88, 212, 56, 96, 120, 60, 100, 76, 100, 144]
-    scc_duration_list = [104, 84, 84, 84, 100, 80, 88, 104, 72, 72, 100, 80, 68, 96, 92, 100, 108, 84, 112, 76, 64, 88, 92, 100, 72, 76, 72, 80, 84, 80, 84, 64, 72, 80, 84, 56, 52, 80, 80, 80, 72, 80, 92, 72, 76, 80, 72, 56, 80, 72, 56, 68, 60, 72, 92, 80, 76, 72, 80, 64, 72, 72, 80, 116, 68, 88, 56, 100, 72, 52, 68, 76, 64, 72, 68, 80, 80, 92, 56, 84, 64, 56, 76, 80, 84, 108, 72, 164, 80, 64, 88, 88, 96, 76, 128, 80, 100, 116, 88, 64, 80, 108, 108, 84, 100, 84, 128, 72, 80, 72, 72, 116, 52, 100, 80, 80, 68, 132, 92, 100, 80, 72, 96, 64, 84, 80, 68, 72, 88, 72, 92, 88, 72, 76, 80, 64, 92, 72, 80, 72, 84, 92, 80, 100, 96, 80, 80, 112]
+    # scc_duration_list = [104, 84, 84, 84, 100, 80, 88, 104, 72, 72, 100, 80, 68, 96, 92, 100, 108, 84, 112, 76, 64, 88, 92, 100, 72, 76, 72, 80, 84, 80, 84, 64, 72, 80, 84, 56, 52, 80, 80, 80, 72, 80, 92, 72, 76, 80, 72, 56, 80, 72, 56, 68, 60, 72, 92, 80, 76, 72, 80, 64, 72, 72, 80, 116, 68, 88, 56, 100, 72, 52, 68, 76, 64, 72, 68, 80, 80, 92, 56, 84, 64, 56, 76, 80, 84, 108, 72, 164, 80, 64, 88, 88, 96, 76, 128, 80, 100, 116, 88, 64, 80, 108, 108, 84, 100, 84, 128, 72, 80, 72, 72, 116, 52, 100, 80, 80, 68, 132, 92, 100, 80, 72, 96, 64, 84, 80, 68, 72, 88, 72, 92, 88, 72, 76, 80, 64, 92, 72, 80, 72, 84, 92, 80, 100, 96, 80, 80, 112]
+    # 105 rubin 
+    scc_duration_list = [104, 84, 84, 84, 100, 80, 88, 104, 72, 72, 100, 80, 68, 96, 92, 100, 84, 112, 76, 64, 88, 92, 100, 72, 76, 72, 80, 84, 64, 72, 84, 56, 52, 80, 80, 72, 80, 92, 72, 76, 80, 72, 80, 72, 68, 60, 72, 72, 80, 64, 80, 116, 68, 88, 100, 52, 68, 76, 64, 72, 68, 80, 80, 92, 56, 84, 56, 76, 80, 164, 64, 88, 88, 76, 80, 100, 116, 88, 64, 80, 108, 108, 84, 84, 128, 72, 80, 72, 72, 116, 52, 100, 80, 68, 132, 92, 100, 80, 72, 96, 72, 92, 88, 72, 72]
     # median_value = np.median(scc_duration_list)
     # print(median_value)
     # Replace values less than 50 with the median
@@ -1132,18 +1133,24 @@ if __name__ == "__main__":
     # sys.exit()
     # pol_duration_list =  [188, 108, 120, 96, 148, 120, 140, 128, 120, 128, 120, 140, 148, 128, 120, 128, 108, 96, 108, 120, 120, 120, 140, 128, 120, 128, 128, 108, 120, 128, 140, 404, 148, 96, 160, 128, 128, 128, 140, 120, 128, 188, 120, 120, 168, 140, 140, 128, 128, 120, 140, 140, 108, 68, 120, 96, 140, 120, 140, 128, 140, 160, 108, 120, 120, 140, 120, 140, 140, 424, 168, 140, 140, 120, 120, 140, 180, 128, 56, 120, 128, 240, 128, 120, 160, 160, 96, 128, 120, 128, 128, 168, 168, 140, 120, 128, 108, 140, 140, 120, 140, 120, 128, 148, 168, 168, 140, 128, 220, 120, 108, 148, 120, 140, 140, 128, 120, 168, 160, 108, 148, 120, 128, 120, 212, 180, 128, 120, 120, 120, 140, 168, 120, 128, 140, 128, 128, 140, 140, 108, 140, 140, 140, 180, 120, 220, 128, 140]
     # pol_duration_list = [144, 192, 172, 192, 172, 124, 144, 192, 192, 248, 192, 220, 180, 152, 180, 200, 236, 164, 192, 180, 192, 200, 172, 200, 192, 192, 172, 124, 192, 172, 152, 320, 124, 152, 192, 264, 136, 164, 192, 220, 208, 192, 108, 144, 180, 192, 180, 236, 152, 200, 152, 192, 172, 144, 192, 192, 200, 164, 220, 164, 180, 200, 192, 180, 220, 172, 180, 192, 172, 192, 220, 220, 180, 180, 172, 192, 292, 208, 192, 180, 208, 236, 192, 200, 264, 220, 164, 192, 152, 228, 180, 236, 208, 220, 180, 164, 248, 256, 192, 180, 208, 172, 192, 208, 236, 180, 256, 164, 304, 192, 192, 236, 172, 228, 208, 192, 172, 208, 264, 200, 248, 180, 192, 192, 236, 248, 172, 192, 152, 172, 180, 236, 192, 192, 256, 200, 180, 236, 172, 192, 264, 180, 180, 320, 144, 228, 164, 192]
-    # shallow nvs rubin sample
+    # shallow 140 nvs rubin sample
     pol_duration_list =[80, 84, 84, 104, 68, 72, 84, 92, 92, 72, 92, 84, 92, 84, 84, 84, 84, 72, 84, 72, 84, 68, 84, 92, 68, 84, 72, 92, 92, 72, 48, 92, 80, 84, 92, 116, 72, 84, 92, 80, 84, 72, 84, 84, 80, 72, 84, 68, 84, 80, 72, 92, 72, 72, 84, 92, 80, 72, 84, 84, 92, 96, 104, 48, 92, 72, 84, 92, 84, 92, 92, 72, 92, 72, 116, 120, 92, 92, 96, 128, 92, 92, 80, 72, 56, 84, 84, 84, 96, 96, 120, 72, 120, 60, 128, 128, 80, 104, 84, 140, 92, 84, 92, 92, 92, 84, 84, 96, 120, 92, 116, 84, 84, 120, 116, 108, 84, 116, 84, 92, 144, 128, 92, 92, 92, 120, 84, 80, 84, 116, 116, 120, 72, 96, 92, 128, 72, 84, 108, 128]
-    # Initialize a list with None values
+    # shallow 105nvs rubin sample
+    pol_duration_list =[80, 84, 104, 68, 72, 92, 72, 92, 84, 92, 84, 84, 84, 84, 84, 72, 68, 92, 72, 92, 92, 72, 48, 92, 80, 84, 92, 116, 72, 84, 92, 80, 84, 72, 84, 80, 84, 84, 92, 72, 72, 84, 92, 80, 72, 84, 84, 96, 104, 92, 72, 84, 92, 84, 92, 72, 92, 72, 116, 120, 92, 92, 96, 128, 92, 80, 84, 96, 120, 120, 128, 128, 80, 104, 84, 140, 92, 84, 92, 92, 92, 84, 84, 120, 92, 84, 84, 120, 116, 116, 84, 92, 128, 92, 92, 84, 80, 84, 116, 116, 120, 72, 96, 92, 128, 84, 128]
+    # include_indices = [0, 1, 3, 4, 5, 7, 9, 10, 11, 12, 13, 14, 15, 16, 18, 19, 21, 23, 26, 27, 28, 29, 30, 31, 32, 33, 34, 35, 36, 37, 38, 39, 40, 41, 43, 44, 46, 48, 51, 52, 53, 54, 55, 56, 57, 58, 59, 61, 62, 64, 65, 66, 67, 68, 69, 71, 72, 73, 74, 75, 76, 77, 78, 79, 80, 82, 87, 89, 90, 92, 94, 95, 96, 97, 98, 99, 100, 101, 102, 103, 104, 105, 106, 108, 109, 111, 112, 113, 114, 117, 118, 119, 121, 122, 124, 126, 127, 128, 129, 130, 131, 132, 133, 134, 135, 137, 139]
+    # print([pol_duration_list[ind] for ind in include_indices])
+    # sys.exit()
+    # include_inds = 
+    # # num_nvs = 140
     # arranged_scc_amp_list = [None] * num_nvs
     # arranged_scc_duration_list = [None] * num_nvs
     # arranged_pol_duration_list = [None] * num_nvs
     # for i, idx in enumerate(include_inds):
     #     arranged_scc_duration_list[idx] = scc_duration_list[i]
     #     arranged_pol_duration_list[idx] = pol_duration_list[i]
-    #     arranged_scc_amp_list[idx] = scc_amp_list[i]
+    #     # arranged_scc_amp_list[idx] = scc_amp_list[i]
 
-    # # Assign back to original lists
+    # # # Assign back to original lists
     # scc_duration_list = arranged_scc_duration_list
     # pol_duration_list = arranged_pol_duration_list
     # scc_amp_list = arranged_scc_amp_list
@@ -1210,7 +1217,7 @@ if __name__ == "__main__":
     print(f"First 10 POL durations: {pol_duration_list[:10]}")
 
     # scc_amp_list = [1.0] * num_nvs
-    scc_duration_list = [100] * num_nvs
+    scc_duration_list = [88] * num_nvs
     # pol_duration_list = [200] * num_nvs
     # nv_list[i] will have the ith coordinates from the above lists
     nv_list: list[NVSig] = []
@@ -1343,9 +1350,9 @@ if __name__ == "__main__":
 
         # for point in points:
         #     x, y = point
-        #     nv_sig.coords[CoordsKey.SAMPLE][0] += x
+        # nv_sig.coords[CoordsKey.SAMPLE][0] += x
         #     nv_sig.coords[CoordsKey.SAMPLE][1] += y
-        #     print(nv_sig.coords[CoordsKey.SAMPLE])
+        # print(nv_sig.coords[CoordsKey.SAMPLE])
 
         # Move diagonally forward
         # for x, y in zip(x_values, y_values):
@@ -1404,7 +1411,7 @@ if __name__ == "__main__":
 
         # do_resonance_zoom(nv_list)
         # do_rabi(nv_list)
-        do_resonance(nv_list)
+        # do_resonance(nv_list)
         # do_spin_echo(nv_list)
 
         # do_power_rabi(nv_list)
@@ -1413,7 +1420,7 @@ if __name__ == "__main__":
         # do_sq_relaxation(nv_list)
         # do_dq_relaxation(nv_list)
         # do_xy8(nv_list)
-        # do_detect_cosmic_rays(nv_list)
+        do_detect_cosmic_rays(nv_list)
         # do_check_readout_fidelity(nv_list)
         # do_charge_quantum_jump(nv_list)
         # do_ac_stark(nv_list)

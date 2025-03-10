@@ -35,19 +35,19 @@ red_laser_aod = "laser_COBO_638_aod"
 
 
 calibration_coords_pixel = [
-    [16.945, 50.36],
-    [108.271, 225.447],
-    [228.808, 23.054],
+    [23.746, 15.406],
+    [112.212, 245.732],
+    [227.288, 41.165],
 ]
 calibration_coords_green = [
-    [118.968, 100.503],
-    [107.022, 118.255],
-    [96.814, 95.251],
+    [118.752, 96.491],
+    [106.349, 120.212],
+    [96.673, 97.084],
 ]
 calibration_coords_red = [
-    [81.439, 67.229],
-    [72.097, 81.821],
-    [63.283, 63.221],
+    [81.191, 63.981],
+    [71.598, 83.41],
+    [63.204, 64.694],
 ]
 # Create the dictionaries using the provided lists
 calibration_coords_nv1 = {
@@ -130,11 +130,11 @@ config |= {
             0: {
                 "physical_name": "sig_gen_STAN_sg394",
                 # "uwave_power": 2.3,
-                "uwave_power": 6.0,
+                "uwave_power": 8.0,
                 "frequency": 2.782099,  # shallow NVs O1 ms=-1
                 # "frequency": 2.798175,  # shallow NVs O2 ms=-1
                 # "frequency": 2.790137,  # mean of above two frequency
-                "rabi_period": 176,
+                "rabi_period": 160,
                 # "rabi_period": 96,
                 # IQ modulation part
                 "carrier_frequency": 2.790137,  # Center frequency
@@ -146,12 +146,12 @@ config |= {
             1: {
                 "physical_name": "sig_gen_STAN_sg394_2",
                 # "uwave_power": 8.1,
-                "uwave_power": 6.0,
+                "uwave_power": 8.0,
                 "frequency": 2.840727,  # shallow NV O3 ms=-1
                 # "frequency": 2.856761,  # shallow NVs O4 ms=-1
                 # "frequency": 2.848744,  # mean of above two frequency
                 # "rabi_period": 96,
-                "rabi_period": 176,
+                "rabi_period": 160,
                 # IQ modulation part
                 "carrier_frequency": 2.848744,  # Center frequency for IQ modulation
                 "offset": 0.29839,  # % offset
@@ -256,8 +256,8 @@ config |= {
             VirtualLaserKey.WIDEFIELD_CHARGE_READOUT: {
                 "physical_name": yellow_laser,
                 # "duration": 200e6,
-                # "duration": 80e6,
                 "duration": 60e6,
+                # "duration": 30e6,
                 # "duration": 24e6,  # for red calibration
             },
             # LaserKey.WIDEFIELD_CHARGE_READOUT: {"physical_name": yellow_laser, "duration": 100e6},
@@ -823,8 +823,8 @@ opx_config = {
         "red_aod_cw-opti": {"type": "constant", "sample": 0.15},
         # "red_aod_cw-ion": {"type": "constant", "sample": 0.09},
         "red_aod_cw-ion": {"type": "constant", "sample": 0.15},
-        "red_aod_cw-scc": {"type": "constant", "sample": 0.15},
         # "red_aod_cw-scc": {"type": "constant", "sample": 0.15},
+        "red_aod_cw-scc": {"type": "constant", "sample": 0.12},  # rubin
         # Yellow AOM
         "yellow_imaging": {"type": "constant", "sample": 0.45},  # 0.35
         # "yellow_imaging": {"type": "constant", "sample": 0.50},  # 0.35
@@ -833,9 +833,9 @@ opx_config = {
         # "yellow_charge_readout": {"type": "constant", "sample": 0.3472},  # 50ms 117NVs
         # "yellow_charge_readout": {"type": "constant", "sample": 0.3741},  # 50ms 117NVs
         # "yellow_charge_readout": {"type": "constant", "sample": 0.325},  # 100ms 117NVs
-        # "yellow_charge_readout": {"type": "constant", "sample": 0.35},
-        "yellow_charge_readout": {"type": "constant", "sample": 0.347774},
-        "yellow_spin_pol": {"type": "constant", "sample": 0.36},
+        # "yellow_charge_readout": {"type": "constant", "sample": 0.3727},
+        "yellow_charge_readout": {"type": "constant", "sample": 0.35},
+        "yellow_spin_pol": {"type": "constant", "sample": 0.39},
         "yellow_shelving": {"type": "constant", "sample": 0.33},
         # Other
         "aod_cw": {"type": "constant", "sample": 0.35},

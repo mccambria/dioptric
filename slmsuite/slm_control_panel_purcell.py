@@ -291,7 +291,7 @@ def nuvu2thorcam_calibration(coords):
     )
 
     cal_coords_nuvu = np.array(
-        [[228.35, 12.377], [213.36, 241.277], [21.894, 112.43]], dtype="float32"
+        [[227.882, 12.875], [212.85, 241.635], [21.291, 112.667]], dtype="float32"
     )
     # [[227.752, 12.548], [212.599, 241.451], [20.615, 112.523]], dtype="float32"
 
@@ -310,9 +310,8 @@ def load_nv_coords(
     # file_path="slmsuite/nv_blob_detection/nv_blob_shallow_161nvs_reordered.npz",
     # file_path="slmsuite/nv_blob_detection/nv_blob_shallow_148nvs_reordered.npz",
     # file_path="slmsuite/nv_blob_detection/nv_blob_shallow_148nvs_reordered_updated.npz",
-    # file_path="slmsuite/nv_blob_detection/nv_blob_shallow_69nvs_reordered_updated.npz",
-    # file_path="slmsuite/nv_blob_detection/nv_blob_rubin_shallow_309nvs_reordered_updated.npz",
-    file_path="slmsuite/nv_blob_detection/nv_blob_rubin_shallow_140nvs_reordered_updated.npz",
+    file_path="slmsuite/nv_blob_detection/nv_blob_rubin_shallow_107nvs_reordered_updated.npz",
+    # file_path="slmsuite/nv_blob_detection/nv_blob_rubin_shallow_140nvs_reordered_updated.npz",
     # file_path="slmsuite/nv_blob_detection/nv_blob_shallow_89nvs_reordered.npz",
     # file_path="slmsuite/nv_blob_detection/nv_blob_shallow_52nvs_reordered.npz",
     # file_path="slmsuite/nv_blob_detection/nv_blob_filtered_160nvs_reordered.npz",
@@ -384,11 +383,10 @@ def write_nvs_phase():
     #     "slmsuite\computed_phase\slm_phase_117nvs_20250119_152458.npy"
     # )  # 117NVs weighted spots
     # shallow NVs
-    phase = np.load("slmsuite\computed_phase\slm_phase_255nvs_20250302_162917.npy")
-
+    phase = np.load("slmsuite\computed_phase\slm_phase_140nvs_20250305_210354.npy")
     # phase = np.load("slmsuite\circles\slm_phase_circles_20250118_210419.npy")  # circles
     slm.write(phase, settle=True)
-    cam_plot()
+    # cam_plot()
 
 
 # Define the save function

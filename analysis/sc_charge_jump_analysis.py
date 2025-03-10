@@ -14,13 +14,19 @@ import time
 
 import matplotlib.pyplot as plt
 import numpy as np
+import scipy.stats as stats
 from matplotlib.ticker import MaxNLocator
 from scipy import ndimage
+from scipy.interpolate import griddata
 from scipy.optimize import curve_fit
 from scipy.special import factorial
-from scipy.stats import poisson
-from scipy.interpolate import griddata
+from scipy.stats import ks_2samp, poisson
 
+from analysis.bimodal_histogram import (
+    ProbDist,
+    determine_threshold,
+    fit_bimodal_histogram,
+)
 from majorroutines.widefield import base_routine
 from utils import common, widefield
 from utils import data_manager as dm
@@ -28,11 +34,6 @@ from utils import kplotlib as kpl
 from utils import positioning as pos
 from utils import tool_belt as tb
 from utils.constants import ChargeStateEstimationMode, NVSig, VirtualLaserKey
-from analysis.bimodal_histogram import (
-    ProbDist,
-    determine_threshold,
-    fit_bimodal_histogram,
-)
 
 
 def process_check_readout_fidelity(data, fidelity_ax=None):
@@ -323,7 +324,7 @@ def process_detect_cosmic_rays(data, prob_dist: ProbDist = ProbDist.COMPOUND_POI
     ref_states = np.array(states_0).reshape((num_nvs, -1))
     sig_states = np.array(states_1).reshape((num_nvs, -1))
     states = ref_states
-    # states = sig_states
+    states = sig_states
     # states = np.array(states).reshape((num_nvs, -1))
     print(f"states.shape = {states.shape}")
     # states = np.array(data["counts"]).reshape((num_nvs, -1))
@@ -414,13 +415,13 @@ def process_detect_cosmic_rays(data, prob_dist: ProbDist = ProbDist.COMPOUND_POI
     # )
 
     # Set y-axis limits dynamically based on data range
-    ax.set_yscale("log")
+    # ax.set_yscale("log")
     # ax.set_ylim(0, 4)
 
     # Add labels, title, and legend
     ax.set_xlabel("Number of NVs in NV⁰ State", fontsize=15)
     ax.set_ylabel("Number of occurrences", fontsize=15)
-    ax.set_title("Charge Jump - Coincidence Histogram (Dark Time: 1ms)", fontsize=15)
+    ax.set_title("Charge Jump - Coincidence Histogram (Dark Time: 1s)", fontsize=15)
     ax.legend(fontsize=12, loc="upper right")
 
     # Use logarithmic scale for y-axis
@@ -450,27 +451,80 @@ def process_detect_cosmic_rays(data, prob_dist: ProbDist = ProbDist.COMPOUND_POI
     # Filter points where coincidences > 80
 
     # 3. Spatial Heatmap of NV Activity
-    activity_counts = states.sum(axis=1)
-    x_coords = [nv.coords["pixel"][0] for nv in nv_list]
-    y_coords = [nv.coords["pixel"][1] for nv in nv_list]
+    # activity_counts = states.sum(axis=1)
+    # x_coords = [nv.coords["pixel"][0] for nv in nv_list]
+    # y_coords = [nv.coords["pixel"][1] for nv in nv_list]
 
-    # Create the spatial heatmap without interpolation
-    spatial_heatmap_fig, ax = plt.subplots()
-    scatter = ax.scatter(
-        x_coords,
-        y_coords,
-        c=activity_counts,
-        cmap="viridis",
-        edgecolors="black",
-        s=60,
-        label="NV Positions",
+    # # Create the spatial heatmap without interpolation
+    # spatial_heatmap_fig, ax = plt.subplots()
+    # scatter = ax.scatter(
+    #     x_coords,
+    #     y_coords,
+    #     c=activity_counts,
+    #     cmap="viridis",
+    #     edgecolors="black",
+    #     s=60,
+    #     label="NV Positions",
+    # )
+    # plt.colorbar(scatter, ax=ax, label="Activity Count (Sum)")
+    # ax.set_xlabel("X Coordinate (Pixels)")
+    # ax.set_ylabel("Y Coordinate (Pixels)")
+    # ax.set_title("Spatial map of NV Activity")
+    # ax.legend(fontsize=10)
+    # plt.show()
+    # Compute histogram
+    coincidences_ref = num_nvs - ref_states.sum(axis=0)
+    coincidences_sig = num_nvs - sig_states.sum(axis=0)
+    bin_edges = np.arange(-0.5, max(coincidences_sig) + 1.5, 1)
+    hist_values, _ = np.histogram(coincidences_sig, bins=bin_edges)
+
+    # Fit a Poisson distribution
+    lambda_hat = np.mean(coincidences_sig)
+    poisson_fit = poisson.pmf(np.arange(max(coincidences_sig) + 1), lambda_hat) * len(
+        coincidences_sig
     )
-    plt.colorbar(scatter, ax=ax, label="Activity Count (Sum)")
-    ax.set_xlabel("X Coordinate (Pixels)")
-    ax.set_ylabel("Y Coordinate (Pixels)")
-    ax.set_title("Spatial map of NV Activity")
-    ax.legend(fontsize=10)
+
+    # Compute skewness and kurtosis
+    skewness = stats.skew(coincidences_sig)
+    kurtosis = stats.kurtosis(coincidences_sig)
+
+    # Plot histogram
+    spatial_heatmap_fig = plt.figure(figsize=(8, 6))
+    plt.bar(
+        bin_edges[:-1] + 0.5,
+        hist_values,
+        width=1.0,
+        alpha=0.6,
+        label="Observed Data",
+        color="blue",
+    )
+    plt.plot(
+        np.arange(len(poisson_fit)),
+        poisson_fit,
+        "r--o",
+        label=f"Poisson Fit (λ={lambda_hat:.2f})",
+    )
+    plt.xlabel("Number of NVs in NV⁰ State", fontsize=14)
+    plt.ylabel("Occurrences", fontsize=14)
+    plt.title("Charge Jump - Coincidence Histogram", fontsize=16)
+    plt.legend(fontsize=12)
+    plt.grid(True, linestyle="--", alpha=0.6)
     plt.show()
+
+    print(f"Poisson Fit Mean (λ): {lambda_hat:.2f}")
+    print(f"Skewness: {skewness:.2f}")
+    print(f"Kurtosis: {kurtosis:.2f}")
+
+    # Kolmogorov-Smirnov (KS) test if second dataset is provided
+    if coincidences_ref is not None:
+        ks_stat, p_value = ks_2samp(coincidences_sig, coincidences_ref)
+        print(f"KS Test Statistic: {ks_stat:.4f}, p-value: {p_value:.4f}")
+        if p_value < 0.05:
+            print(
+                "Significant difference detected between the two datasets (p < 0.05)."
+            )
+        else:
+            print("No significant difference detected between the two datasets.")
 
     # Plot the time-dependent NV⁰ counts
     nv0_counts = states.shape[0] - states.sum(axis=0)
@@ -489,7 +543,7 @@ def process_detect_cosmic_rays(data, prob_dist: ProbDist = ProbDist.COMPOUND_POI
     # Add labels, title, grid, and legend
     ax.set_xlabel("Number of Shots", fontsize=14)  # Corrected: Use ax.set_xlabel
     ax.set_ylabel("Number of NVs in NV⁰ State", fontsize=14)
-    ax.set_title("Time-Series NV⁰ Count (dark time: 1ms)", fontsize=16)
+    ax.set_title("Time-Series NV⁰ Count (dark time: 1s)", fontsize=16)
     ax.grid(True, linestyle="--", alpha=0.6)
     ax.legend(fontsize=12)
 
@@ -597,8 +651,8 @@ def generate_timestamps(num_reps, num_runs, dark_time_ns, deadtime_ns, readout_t
     return timestamps_ns / 1e9
 
 
-import numpy as np
 import matplotlib.pyplot as plt
+import numpy as np
 from scipy.stats import poisson, skew
 
 
@@ -835,11 +889,11 @@ if __name__ == "__main__":
     # data = dm.get_raw_data(file_id=1757883746286)  # dark time 10e6
     # data = dm.get_raw_data(file_id=1757904453004)  # dark time 10e6
     # data = dm.get_raw_data(file_id=1758180182062)  # dark time 1ms and 1s
-    data = dm.get_raw_data(file_id=1758336169797)  # dark time 1ms and 1s
+    # data = dm.get_raw_data(file_id=1758336169797)  # dark time 1ms and 1s
 
-    counts = np.array(data["counts"])  # Extract signal counts
+    # counts = np.array(data["counts"])  # Extract signal counts
     # counts = np.array(counts).reshape((num_nvs, -1))
-    print(f"Counts shape: {counts.shape}")
+    # print(f"Counts shape: {counts.shape}")
 
     # Process data
     # (hist_fig, transition_fig, spatial_heatmap_fig, time_series_fig) = (
@@ -854,7 +908,9 @@ if __name__ == "__main__":
     # DATA FILES
     # file_ids = [1758180182062, 1758336169797]
     # file_ids = [1766974557310] # 1ms and 1s dark time data (50ms readout)
-    file_ids = [1767157983900, 1767269375068, 1767395452581, 1767514737339]
+    # file_ids = [1767157983900, 1767269375068, 1767395452581, 1767514737339]
+    # rubin 105NVs
+    file_ids = [1798883656474, 1798997502214, 1799103957221]
     file_names = [dm.get_file_name(file_id) for file_id in file_ids]
     print(f"File names: {file_names}")
     combined_data = dm.get_raw_data(file_id=file_ids[0])
