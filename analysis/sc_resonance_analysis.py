@@ -153,7 +153,7 @@ def plot_nv_resonance_fits_and_residuals(
     # avg_counts = np.array(avg_counts)
     # avg_counts_ste = np.array(avg_counts_ste)
     num_nvs = len(nv_list)
-    freqs_dense = np.linspace(min(freqs), max(freqs), 100)
+    freqs_dense = np.linspace(min(freqs), max(freqs), 60)
 
     def process_nv(nv_idx):
         nv_counts = avg_counts[nv_idx]
@@ -1088,6 +1088,7 @@ if __name__ == "__main__":
 
     # rubin 140NVs
     file_ids = [1795016507394]
+    file_ids = [1796261430133]
 
     # fmt: off
     # fmt: on
@@ -1166,10 +1167,10 @@ if __name__ == "__main__":
                 # Append new data
                 combined_sig_counts = np.append(
                     combined_sig_counts, new_sig_counts, axis=1
-                )  # Extending over runs
+                )
                 combined_ref_counts = np.append(
                     combined_ref_counts, new_ref_counts, axis=1
-                )  # Extending over runs
+                )
                 combined_data["num_runs"] += new_data["num_runs"]
 
             except Exception as e:
@@ -1189,7 +1190,7 @@ if __name__ == "__main__":
             combined_sig_counts,
             combined_ref_counts,
             file_id=combined_file_id,
-            num_cols=6,
+            num_cols=7,
         )
 
         print(f"Combined plot saved to {file_path}")

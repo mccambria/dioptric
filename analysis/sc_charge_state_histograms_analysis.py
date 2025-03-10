@@ -272,7 +272,8 @@ if __name__ == "__main__":
     )  # 60ms readout 140 NVs
     # file_name = dm.get_file_name(file_id=1766803842180)
     # file_name = dm.get_file_name(file_id=1766803842180)
-    data = dm.get_raw_data(file_id=1794714155833, load_npz=False)
+    # data = dm.get_raw_data(file_id=1796486502363, load_npz=False)
+    data = dm.get_raw_data(file_id=1796486502363, load_npz=False)
 
     # print(file_name)
     process_and_plot(data, do_plot_histograms=True)
