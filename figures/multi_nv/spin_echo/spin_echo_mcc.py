@@ -426,7 +426,7 @@ def create_fit_figure(data, axes_pack=None, layout=None, no_legend=True, nv_inds
     num_steps = data["num_steps"]
     taus = np.array(data["taus"])
     total_evolution_times = 2 * np.array(taus) / 1e3
-    # total_evolution_times -= 0.068  # Account for duration of pi pulse in middle
+    total_evolution_times -= 0.068  # Account for duration of pi pulse in middle
     num_runs = data["num_runs"]
 
     if "norm_counts" in data:
@@ -679,8 +679,9 @@ if __name__ == "__main__":
     # More data, del file_ids[3:5], file_ids.extend(file_ids2)
     # data = dm.get_raw_data(file_id=1795168199914)  # w/o ionization, dmw None
     # data = dm.get_raw_data(file_id=1795182451164)  # w/o ionization, dmw 0.5
-    data = dm.get_raw_data(file_id=1797877478132)  # w/ ionization, dmw None
+    # data = dm.get_raw_data(file_id=1797877478132)  # w/ ionization, dmw None
     # data = dm.get_raw_data(file_id=1795131849572)  # w/ ionization, dmw 0.5
+    data = dm.get_raw_data(file_id=1800172893179)  # Otsu
 
     # Skip indices with bad pi pulses etc
     split_esr = [12, 13, 14, 61, 116]
@@ -696,18 +697,18 @@ if __name__ == "__main__":
 
     ### Replotting
 
-    # # fit_data = dm.get_raw_data(file_id=1796557235526)  # T2_exp variable
-    fit_data = dm.get_raw_data(file_id=1798006231161)  # w/ ionization dmw None
-    # fit_data = dm.get_raw_data(file_id=1798052675001)  # no osc
-    replot_fits(data, fit_data, nv_inds)
-    kpl.show(block=True)
-    sys.exit()
+    # # # fit_data = dm.get_raw_data(file_id=1796557235526)  # T2_exp variable
+    # fit_data = dm.get_raw_data(file_id=1798006231161)  # w/ ionization dmw None
+    # # fit_data = dm.get_raw_data(file_id=1798052675001)  # no osc
+    # replot_fits(data, fit_data, nv_inds)
+    # kpl.show(block=True)
+    # sys.exit()
 
     ###
 
     # data = dm.get_raw_data(file_id=1548381879624)
 
-    # Separate files
+    # # Separate files
     # # fmt: off
     # file_ids = [1734158411844, 1734273666255, 1734371251079, 1734461462293, 1734569197701, 1736117258235, 1736254107747, 1736354618206, 1736439112682]
     # file_ids2 = [1736589839249, 1736738087977, 1736932211269, 1737087466998, 1737219491182]
