@@ -566,7 +566,8 @@ if __name__ == "__main__":
     file_ids = file_ids[1:]
     data = dm.get_raw_data(file_id=file_ids)
 
-    # data = dm.get_raw_data(file_id=1797924502964)
+    # data = dm.get_raw_data(file_id=1797924502964)  # Complicated threshold
+    # data = dm.get_raw_data(file_id=)  # Otsu
 
     process_and_plot(data)
 
