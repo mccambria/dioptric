@@ -94,6 +94,7 @@ def create_fit_figure(
     center_freq_errs = []
     splittings = []
     splitting_errs = []
+    linewidths = []
 
     do_fit = True
     if do_fit:
