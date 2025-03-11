@@ -149,7 +149,9 @@ if __name__ == "__main__":
     counts = np.array(data["counts"])
     sig_counts = counts[0]
     ref_counts = counts[1]
-    sig_counts, ref_counts = widefield.threshold_counts(nv_list, sig_counts, ref_counts)
+    sig_counts, ref_counts = widefield.threshold_counts(
+        nv_list, sig_counts, ref_counts, dynamic_thresh=True
+    )
 
     ###
 

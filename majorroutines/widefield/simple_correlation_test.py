@@ -558,16 +558,16 @@ if __name__ == "__main__":
 
     ### Data
 
-    # fmt: off
-    # file_ids = [1737922643755, 1737998031775, 1738069552465, 1738136166264, 1738220449762, ]
-    # file_ids = [1739598841877, 1739660864956, 1739725006836, 1739855966253 ]
-    file_ids = [1739979522556, 1740062954135, 1740252380664, 1740377262591, 1740494528636]
-    # fmt: on
-    file_ids = file_ids[1:]
-    data = dm.get_raw_data(file_id=file_ids)
+    # # fmt: off
+    # # file_ids = [1737922643755, 1737998031775, 1738069552465, 1738136166264, 1738220449762, ]
+    # # file_ids = [1739598841877, 1739660864956, 1739725006836, 1739855966253 ]
+    # file_ids = [1739979522556, 1740062954135, 1740252380664, 1740377262591, 1740494528636]
+    # # fmt: on
+    # file_ids = file_ids[1:]
+    # data = dm.get_raw_data(file_id=file_ids)
 
     # data = dm.get_raw_data(file_id=1797924502964)  # Complicated threshold
-    # data = dm.get_raw_data(file_id=)  # Otsu
+    data = dm.get_raw_data(file_id=1800142842134)  # Otsu
 
     process_and_plot(data)
 
