@@ -41,6 +41,7 @@ def create_raw_data_figure(nv_list, freqs, counts, counts_errs):
 def reformat_counts(counts):
     counts = np.array(counts)
     num_nvs = counts.shape[1]
+    num_runs = counts.shape[2]
     num_steps = counts.shape[3]
     adj_num_steps = num_steps // 4
     exp_ind = 0  # Everything, signal and ref, are under the same exp_rep for resonance
@@ -450,6 +451,7 @@ if __name__ == "__main__":
 
         # Manipulate the counts into the format expected for normalization
         counts = np.array(data.pop("counts"))
+        # counts = counts[:, :, 350:354]
         reformatted_counts = reformat_counts(counts)
         sig_counts = reformatted_counts[0]
         ref_counts = reformatted_counts[1]
@@ -476,6 +478,7 @@ if __name__ == "__main__":
         norm_counts, norm_counts_ste = widefield.process_counts(
             nv_list, sig_counts, ref_counts, threshold=True
         )
+        print(np.mean(norm_counts_ste, axis=1))
         # mean_stes = np.mean(norm_counts_ste, axis=1)
         # print(np.argsort(mean_stes)[::-1])
         # print(np.sort(mean_stes)[::-1])
@@ -584,7 +587,7 @@ if __name__ == "__main__":
         nvb_inds = [ind for ind in range(69) if ind not in nva_inds]  # Smaller splitting
         # weak_esr = [18, 32, 33, 55, 56]
         weak_esr = [18, 35, 54, 56, 61]
-        shifted_esr = [43]
+        shifted_esr = [43, 25]
         # fmt: on
         for ind in weak_esr:
             for nv_list in [nva_inds, nvb_inds]:

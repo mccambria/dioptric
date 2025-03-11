@@ -32,6 +32,7 @@ from analysis.bimodal_histogram import (
     ProbDist,
     determine_threshold,
     fit_bimodal_histogram,
+    otsu_threshold,
 )
 from utils import common
 from utils import data_manager as dm
@@ -376,21 +377,23 @@ def threshold_counts(nv_list, sig_counts, ref_counts=None, dynamic_thresh=False)
             else:
                 combined_counts = sig_counts[nv_ind].flatten()
             prob_dist = ProbDist.NEGATIVE_BINOMIAL_WITH_IONIZATION
+            # prob_dist = ProbDist.GAUSSIAN2_WITH_IONIZATION
             # prob_dist = ProbDist.NEGATIVE_BINOMIAL
-            popt, _, _ = fit_bimodal_histogram(
-                combined_counts, prob_dist, no_print=False, no_plot=False
-            )
+            # popt, _, _ = fit_bimodal_histogram(
+            #     combined_counts, prob_dist, no_print=True, no_plot=True
+            # )
             # print(popt)
             # dark_mode_weight = 0.5
             dark_mode_weight = None
-            threshold = determine_threshold(popt, prob_dist, dark_mode_weight)
+            # threshold = determine_threshold(popt, prob_dist, dark_mode_weight)
+            threshold = otsu_threshold(combined_counts)
             # print(threshold)
             thresholds.append(threshold)
     else:
         thresholds = [nv.threshold for nv in nv_list]
         # thresholds = [2.5 for nv in nv_list]
         # thresholds = adaptive_threshold_counts()
-    # print(thresholds)
+    print(thresholds)
 
     shape = sig_counts.shape
     sig_states = np.empty(shape)
