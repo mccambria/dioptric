@@ -38,12 +38,18 @@ def replot_fits(data, fit_data, nv_inds):
     # fmt: on
 
     for loop_ind, nv_ind in enumerate(nv_inds):
-        if loop_ind not in no_osc_inds:
-            continue
+        # if loop_ind not in no_osc_inds:
+        #     continue
         nv_counts = norm_counts[nv_ind]
         nv_counts_ste = norm_counts_ste[nv_ind]
         fig, ax = plt.subplots()
-        kpl.plot_points(ax, total_evolution_times, nv_counts, nv_counts_ste)
+        kpl.plot_points(
+            # ax, total_evolution_times, nv_counts, nv_counts_ste, size=kpl.Size.TINY
+            ax,
+            total_evolution_times,
+            nv_counts,
+            size=kpl.Size.SMALL,
+        )
         linspace_taus = np.linspace(0, np.max(total_evolution_times), 10000)
         linspace_taus = linspace_taus[1:]  # Exclude tau=0 which can diverge
         popt = popts[loop_ind]
@@ -55,12 +61,12 @@ def replot_fits(data, fit_data, nv_inds):
         )
         red_chi_sq = red_chi_sqs[loop_ind]
         osc_params = popt[-3:]
-        ax.set_title(f"{nv_ind}, {round(red_chi_sq, 3)}")
-        kpl.anchored_text(ax, [round(el, 3) for el in osc_params])
+        # ax.set_title(f"{nv_ind}, {round(red_chi_sq, 3)}")
+        # kpl.anchored_text(ax, [round(el, 3) for el in osc_params])
         ax.set_xlabel("Total evolution time (µs)")
         ax.set_ylabel("Normalized NV$^{-}$ population")
-        figManager = plt.get_current_fig_manager()
-        figManager.window.showMaximized()
+        # figManager = plt.get_current_fig_manager()
+        # figManager.window.showMaximized()
 
 
 def quartic_decay(
@@ -691,8 +697,8 @@ if __name__ == "__main__":
     ### Replotting
 
     # # fit_data = dm.get_raw_data(file_id=1796557235526)  # T2_exp variable
-    # fit_data = dm.get_raw_data(file_id=1798006231161)  # w/ ionization dmw None
-    fit_data = dm.get_raw_data(file_id=1798052675001)  # no osc
+    fit_data = dm.get_raw_data(file_id=1798006231161)  # w/ ionization dmw None
+    # fit_data = dm.get_raw_data(file_id=1798052675001)  # no osc
     replot_fits(data, fit_data, nv_inds)
     kpl.show(block=True)
     sys.exit()
