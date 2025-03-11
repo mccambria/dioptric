@@ -109,8 +109,9 @@ def process_and_plot(
 
     for ind in range(num_nvs):
         nv_num = widefield.get_nv_num(nv_list[ind])
-        # if nv_num != 142:
-        #     continue
+        # if nv_num not in [37, 71, 74]:
+        if nv_num not in [153]:
+            continue
         sig_counts_list = sig_counts_lists[ind]
         ref_counts_list = ref_counts_lists[ind]
 
@@ -408,7 +409,7 @@ def main(
 
 if __name__ == "__main__":
     kpl.init_kplotlib()
-    data = dm.get_raw_data(file_id=1733583334808, load_npz=False)
-    # data = dm.get_raw_data(file_id=1722013594859, load_npz=False)
+    data = dm.get_raw_data(file_id=1733583334808, load_npz=False)  # Bulk
+    # data = dm.get_raw_data(file_id=1722013594859, load_npz=False)  # Shallow?
     process_and_plot(data, do_plot_histograms=True)
     kpl.show(block=True)
