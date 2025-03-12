@@ -715,7 +715,7 @@ def process_and_plot(raw_data):
         median_duration = int(np.nanmedian(numeric_durations))
         # Replace None or out-of-range values with median
         opti_durs = [
-            median_duration if (d is None or not (48 <= d <= 200)) else d
+            median_duration + 100 if (d is None or not (48 <= d <= 400)) else d
             for d in opti_durs
         ]
         #         # Filter out None values to compute median
@@ -782,16 +782,17 @@ if __name__ == "__main__":
     # file_id = 1792169039756  # yellow ampl 50ms
     # file_id = 1793934866370  # yellow ampl 60ms 140NVs
     # file_id = 1794442033227  # yellow ampl 60ms 140NVs
-    file_id = 1800416464270  # yellow ampl 60ms 107NVs
+    # file_id = 1800416464270  # yellow ampl 60ms 107NVs
 
     # file_id = 1794442033227  # yellow ampl 60ms 140NVs
     # file_id = 1793116636570  # yellow ampl 24ms
     # file_id = 1792980892323  # yellow ampl 80ms
     # file_id = 1791756537192  # green durations
-    file_id = 1794216207756  # green durations 60ms 140NVs
+    # file_id = 1794216207756  # green durations 60ms 140NVs
     # file_id = 1791914648483  # green amps
 
     # file_id = 1800302862093  # green amps 107 NVs
+    file_id = 1801385197244  # green durations 60ms
     raw_data = dm.get_raw_data(file_id=file_id, load_npz=False)  # yellow amp var
     file_name = dm.get_file_name(file_id=file_id)
     print(f"{file_name}_{file_id}")

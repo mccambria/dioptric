@@ -394,88 +394,148 @@ def analyze_and_visualize(processed_data):
 # ax2.legend(title="Amplitude (relative)", fontsize=9, title_fontsize=10)
 # plt.show()
 
-# fmt: off
-include_inds =[0, 1, 2, 3, 5, 6, 7, 8, 13, 14, 15, 16, 17, 18, 20, 21, 22, 23, 24, 25, 26, 28, 29, 31, 32, 33, 34, 36, 37, 39, 42, 44, 45, 46, 47, 48, 49, 51, 52, 53, 55, 56, 57, 58, 60, 61, 62, 64, 65, 66, 68, 69, 70, 71, 72, 73, 74, 75, 77, 79, 83, 84, 85, 88, 89, 90, 91, 92, 94, 95, 96, 97, 99, 100, 101, 102, 103, 105, 106, 107, 108, 109, 110, 111, 113, 114, 116, 117, 118, 120, 122, 123, 124, 125, 128, 131, 132, 134, 136, 137, 138, 140, 141, 142, 145, 146, 147, 148, 149, 152, 153, 154, 155, 156, 157, 158, 159]
-# scc_durations = [168, 160, 164, 124, 188, 132, 116, 124, 160, 160, 164, 120, 140, 144, 124, 136, 136, 88, 152, 140, 140, 116, 104, 120, 112, 164, 136, 112, 96, 112, 140, 144, 196, 192, 120, 140, 228, 140, 32, 140, 148, 108, 164, 152, 132, 140, 176, 132, 136, 120, 112, 108, 144, 116, 132, 36, 192, 84, 148, 112, 132, 152, 176, 176, 176, 112, 120, 140, 168, 140, 92, 132, 92, 124, 68, 32, 92, 148, 164, 104, 32, 148, 188, 32, 112, 148, 168, 64, 140, 140, 96, 124, 176, 108, 108, 216, 216, 116, 112, 132, 148, 132, 132, 140, 160, 132, 148, 192, 160, 116, 140, 120, 152, 140, 144, 124, 160]
-scc_durations = [168, 184, 220, 136, 140, 104, 104, 144, 240, 188, 160, 148, 116, 164, 124, 140, 132, 104, 304, 184, 144, 148, 116, 68, 132, 120, 112, 124, 116, 148, 212, 144, 132, 172, 116, 160, 304, 144, 60, 180, 100, 112, 172, 192, 144, 184, 292, 200, 96, 116, 156, 144, 144, 80, 160, 160, 168, 76, 176, 136, 172, 192, 264, 140, 104, 112, 140, 176, 208, 148, 116, 140, 80, 152, 140, 116, 96, 120, 112, 96, 48, 188, 48, 84, 96, 228, 172, 172, 124, 96, 128, 120, 196, 104, 88, 140, 80, 116, 112, 160, 120, 140, 112, 148, 108, 140, 152, 292, 124, 116, 140, 140, 160, 212, 140, 140, 196]
-snr_list = [0.211, 0.203, 0.168, 0.214, 0.236, 0.207, 0.098, 0.176, 0.164, 0.184, 0.222, 0.127, 0.074, 0.104, 0.079, 0.194, 0.221, 0.103, 0.132, 0.194, 0.189, 0.155, 0.193, 0.095, 0.105, 0.163, 0.181, 0.197, 0.142, 0.186, 0.139, 0.181, 0.103, 0.16, 0.195, 0.157, 0.144, 0.192, 0.054, 0.18, 0.153, 0.154, 0.176, 0.126, 0.155, 0.102, 0.161, 0.183, 0.115, 0.203, 0.139, 0.111, 0.138, 0.19, 0.177, 0.079, 0.175, 0.151, 0.114, 0.125, 0.146, 0.104, 0.086, 0.198, 0.126, 0.165, 0.114, 0.157, 0.185, 0.172, 0.106, 0.17, 0.093, 0.182, 0.126, 0.055, 0.139, 0.096, 0.197, 0.149, 0.119, 0.099, 0.114, 0.135, 0.154, 0.126, 0.141, 0.045, 0.155, 0.064, 0.161, 0.151, 0.136, 0.167, 0.13, 0.183, 0.085, 0.18, 0.144, 0.134, 0.097, 0.133, 0.143, 0.134, 0.132, 0.121, 0.162, 0.063, 0.157, 0.141, 0.168, 0.151, 0.072, 0.091, 0.108, 0.162, 0.059]
-print(np.median(snr_list))
-print(min(snr_list))
-# fmt: on
-plt.figure(figsize=(6, 5))
-plt.scatter(
-    scc_durations,
-    snr_list,
-    alpha=0.7,  # Transparency for better visibility
-    edgecolors="black",  # Add black edges to points for clarity
-)
-# Add labels, title, and grid
-plt.xlabel("SCC Duration", fontsize=12)
-plt.ylabel("SNR", fontsize=12)
-plt.title("SCC Duration vs. SNR", fontsize=14)
-plt.grid(alpha=0.3)
-plt.show()
+# # fmt: off
+# include_inds =[0, 1, 2, 3, 5, 6, 7, 8, 13, 14, 15, 16, 17, 18, 20, 21, 22, 23, 24, 25, 26, 28, 29, 31, 32, 33, 34, 36, 37, 39, 42, 44, 45, 46, 47, 48, 49, 51, 52, 53, 55, 56, 57, 58, 60, 61, 62, 64, 65, 66, 68, 69, 70, 71, 72, 73, 74, 75, 77, 79, 83, 84, 85, 88, 89, 90, 91, 92, 94, 95, 96, 97, 99, 100, 101, 102, 103, 105, 106, 107, 108, 109, 110, 111, 113, 114, 116, 117, 118, 120, 122, 123, 124, 125, 128, 131, 132, 134, 136, 137, 138, 140, 141, 142, 145, 146, 147, 148, 149, 152, 153, 154, 155, 156, 157, 158, 159]
+# # scc_durations = [168, 160, 164, 124, 188, 132, 116, 124, 160, 160, 164, 120, 140, 144, 124, 136, 136, 88, 152, 140, 140, 116, 104, 120, 112, 164, 136, 112, 96, 112, 140, 144, 196, 192, 120, 140, 228, 140, 32, 140, 148, 108, 164, 152, 132, 140, 176, 132, 136, 120, 112, 108, 144, 116, 132, 36, 192, 84, 148, 112, 132, 152, 176, 176, 176, 112, 120, 140, 168, 140, 92, 132, 92, 124, 68, 32, 92, 148, 164, 104, 32, 148, 188, 32, 112, 148, 168, 64, 140, 140, 96, 124, 176, 108, 108, 216, 216, 116, 112, 132, 148, 132, 132, 140, 160, 132, 148, 192, 160, 116, 140, 120, 152, 140, 144, 124, 160]
+# scc_durations = [168, 184, 220, 136, 140, 104, 104, 144, 240, 188, 160, 148, 116, 164, 124, 140, 132, 104, 304, 184, 144, 148, 116, 68, 132, 120, 112, 124, 116, 148, 212, 144, 132, 172, 116, 160, 304, 144, 60, 180, 100, 112, 172, 192, 144, 184, 292, 200, 96, 116, 156, 144, 144, 80, 160, 160, 168, 76, 176, 136, 172, 192, 264, 140, 104, 112, 140, 176, 208, 148, 116, 140, 80, 152, 140, 116, 96, 120, 112, 96, 48, 188, 48, 84, 96, 228, 172, 172, 124, 96, 128, 120, 196, 104, 88, 140, 80, 116, 112, 160, 120, 140, 112, 148, 108, 140, 152, 292, 124, 116, 140, 140, 160, 212, 140, 140, 196]
+# snr_list = [0.211, 0.203, 0.168, 0.214, 0.236, 0.207, 0.098, 0.176, 0.164, 0.184, 0.222, 0.127, 0.074, 0.104, 0.079, 0.194, 0.221, 0.103, 0.132, 0.194, 0.189, 0.155, 0.193, 0.095, 0.105, 0.163, 0.181, 0.197, 0.142, 0.186, 0.139, 0.181, 0.103, 0.16, 0.195, 0.157, 0.144, 0.192, 0.054, 0.18, 0.153, 0.154, 0.176, 0.126, 0.155, 0.102, 0.161, 0.183, 0.115, 0.203, 0.139, 0.111, 0.138, 0.19, 0.177, 0.079, 0.175, 0.151, 0.114, 0.125, 0.146, 0.104, 0.086, 0.198, 0.126, 0.165, 0.114, 0.157, 0.185, 0.172, 0.106, 0.17, 0.093, 0.182, 0.126, 0.055, 0.139, 0.096, 0.197, 0.149, 0.119, 0.099, 0.114, 0.135, 0.154, 0.126, 0.141, 0.045, 0.155, 0.064, 0.161, 0.151, 0.136, 0.167, 0.13, 0.183, 0.085, 0.18, 0.144, 0.134, 0.097, 0.133, 0.143, 0.134, 0.132, 0.121, 0.162, 0.063, 0.157, 0.141, 0.168, 0.151, 0.072, 0.091, 0.108, 0.162, 0.059]
+# print(np.median(snr_list))
+# print(min(snr_list))
+# # fmt: on
+# plt.figure(figsize=(6, 5))
+# plt.scatter(
+#     scc_durations,
+#     snr_list,
+#     alpha=0.7,  # Transparency for better visibility
+#     edgecolors="black",  # Add black edges to points for clarity
+# )
+# # Add labels, title, and grid
+# plt.xlabel("SCC Duration", fontsize=12)
+# plt.ylabel("SNR", fontsize=12)
+# plt.title("SCC Duration vs. SNR", fontsize=14)
+# plt.grid(alpha=0.3)
+# plt.show()
 
 
-def plot_scc_amp_duration(file_id):
-    # fmt: off
-    snr_list = [0.207, 0.206, 0.211, 0.183, 0.08, 0.224, 0.095, 0.078, 0.136, 0.038, 0.034, 0.026, 0.039, 0.165, 0.13, 0.18, 0.153, 0.074, 0.08, 0.028, 0.053, 0.142, 0.188, 0.077, 0.121, 0.137, 0.085, 0.067, 0.157, 0.135, 0.036, 0.075, 0.135, 0.168, 0.045, 0.067, 0.158, 0.12, 0.074, 0.167, 0.073, 0.046, 0.149, 0.054, 0.135, 0.064, 0.119, 0.193, 0.104, 0.091, 0.04, 0.127, 0.125, 0.105, 0.054, 0.069, 0.139, 0.151, 0.119, 0.068, 0.134, 0.054, 0.11, 0.096, 0.105, 0.133, 0.149, 0.057, 0.102, 0.083, 0.097, 0.175, 0.096, 0.058, 0.161, 0.158, 0.048, 0.1, 0.093, 0.132, 0.131, 0.055, 0.028, 0.083, 0.05, 0.061, 0.06, 0.082, 0.114, 0.065, 0.144, 0.142, 0.116, 0.095, 0.143, 0.121, 0.116, 0.102, 0.032, 0.061, 0.113, 0.087, 0.061, 0.119, 0.027, 0.119, 0.131, 0.144, 0.122, 0.087, 0.087, 0.067, 0.089, 0.068, 0.089, 0.043, 0.131, 0.05, 0.075, 0.039, 0.09, 0.085, 0.099, 0.123, 0.133, 0.097, 0.083, 0.04, 0.097, 0.032, 0.043, 0.148, 0.092, 0.037, 0.118, 0.051, 0.078, 0.053, 0.081, 0.056, 0.112, 0.119, 0.05, 0.044, 0.131, 0.137, 0.133, 0.074, 0.049, 0.06, 0.043, 0.063, 0.106, 0.165, 0.16, 0.05, 0.132, 0.088, 0.081, 0.062]
-    # scc_duration_list = [304, 304, 304, 156, 304, 148, 244, 100, 304, 60, 304, 76, 88, 304, 112, 304, 144, 304, 304, 48, 76, 140, 144, 88, 304, 304, 304, 112, 304, 172, 304, 96, 72, 168, 128, 48, 304, 112, 124, 304, 48, 304, 304, 48, 304, 304, 168, 144, 304, 304, 60, 304, 108, 304, 48, 304, 164, 160, 304, 268, 240, 196, 304, 112, 304, 48, 264, 304, 152, 304, 184, 148, 304, 52, 160, 112, 104, 304, 88, 116, 56, 304, 68, 304, 304, 112, 52, 304, 304, 96, 304, 120, 304, 140, 304, 304, 156, 48, 304, 64, 304, 304, 132, 124, 304, 148, 304, 148, 80, 136, 124, 148, 108, 132, 132, 68, 124, 132, 304, 92, 80, 64, 304, 152, 136, 304, 48, 96, 304, 48, 64, 304, 64, 304, 216, 304, 304, 144, 176, 140, 304, 136, 104, 304, 56, 136, 76, 112, 304, 120, 164, 304, 88, 104, 128, 152, 132, 112, 100, 304]
-    # scc_amp_list = [1.107, 1.071, 1.214, 1.179, 1.036, 1.179, 0.75, 1.214, 0.857, 0.857, 1.036, 0.821, 0.857, 1.25, 1.036, 1.179, 1.25, 0.786, 1.179, 1.036, 1.25, 1.0, 1.071, 1.25, 1.25, 0.857, 1.036, 1.071, 1.036, 1.143, 1.036, 0.75, 1.214, 0.964, 1.036, 0.75, 0.786, 0.964, 1.107, 0.857, 1.179, 0.857, 1.214, 1.143, 1.071, 1.25, 1.143, 0.857, 1.214, 1.143, 0.786, 0.929, 0.75, 1.071, 0.857, 0.75, 1.036, 1.071, 0.786, 1.107, 1.071, 1.214, 0.964, 0.929, 1.107, 1.143, 1.214, 1.071, 1.036, 1.214, 0.893, 1.071, 0.75, 0.786, 1.25, 1.107, 0.929, 0.786, 0.929, 1.25, 1.107, 1.036, 1.0, 0.893, 1.0, 0.964, 1.107, 1.143, 1.25, 1.214, 0.821, 0.929, 1.107, 1.107, 1.25, 1.214, 0.75, 1.214, 1.0, 1.25, 0.964, 0.857, 0.929, 1.25, 0.893, 1.0, 0.75, 1.179, 1.25, 1.214, 1.036, 0.821, 1.214, 1.0, 1.179, 1.214, 1.107, 1.25, 0.929, 1.036, 1.143, 0.821, 0.893, 1.179, 1.143, 0.893, 1.25, 1.071, 0.786, 1.25, 1.107, 1.179, 0.929, 1.0, 1.25, 0.964, 1.036, 1.036, 1.25, 1.179, 1.143, 1.143, 1.143, 1.179, 1.179, 1.143, 1.214, 1.107, 0.893, 1.25, 1.143, 0.964, 1.25, 1.036, 0.857, 1.107, 1.179, 1.0, 1.214, 0.786]
-    # fmt: on
-    scc_data = dm.get_raw_data(file_id=1725870710271)
-    scc_optimal_durations = scc_data["optimal_durations"]
-    scc_optimal_amplitudes = scc_data["optimal_amplitudes"]
-    scc_duration_list = list(scc_optimal_durations.values())
-    scc_amp_list = list(scc_optimal_amplitudes.values())
-    snr_list = np.array(snr_list)
-    exclude_list = np.argwhere(snr_list >= 0.07).flatten()
-    optimal_durations = [scc_duration_list[i] for i in exclude_list]
-    optimal_amplitudes = [scc_amp_list[i] for i in exclude_list]
-    optimal_snrs = [snr_list[i] for i in exclude_list]
-    num_snrs = len(optimal_snrs)
-    fig = plt.figure(figsize=(6.5, 5))
-    plt.scatter(
-        optimal_durations,
-        optimal_amplitudes,
-        c=optimal_snrs,
-        cmap="viridis",
-        s=40,
-        edgecolors="black",
-    )
+# def plot_scc_amp_duration(file_id):
+#     # fmt: off
+#     snr_list = [0.207, 0.206, 0.211, 0.183, 0.08, 0.224, 0.095, 0.078, 0.136, 0.038, 0.034, 0.026, 0.039, 0.165, 0.13, 0.18, 0.153, 0.074, 0.08, 0.028, 0.053, 0.142, 0.188, 0.077, 0.121, 0.137, 0.085, 0.067, 0.157, 0.135, 0.036, 0.075, 0.135, 0.168, 0.045, 0.067, 0.158, 0.12, 0.074, 0.167, 0.073, 0.046, 0.149, 0.054, 0.135, 0.064, 0.119, 0.193, 0.104, 0.091, 0.04, 0.127, 0.125, 0.105, 0.054, 0.069, 0.139, 0.151, 0.119, 0.068, 0.134, 0.054, 0.11, 0.096, 0.105, 0.133, 0.149, 0.057, 0.102, 0.083, 0.097, 0.175, 0.096, 0.058, 0.161, 0.158, 0.048, 0.1, 0.093, 0.132, 0.131, 0.055, 0.028, 0.083, 0.05, 0.061, 0.06, 0.082, 0.114, 0.065, 0.144, 0.142, 0.116, 0.095, 0.143, 0.121, 0.116, 0.102, 0.032, 0.061, 0.113, 0.087, 0.061, 0.119, 0.027, 0.119, 0.131, 0.144, 0.122, 0.087, 0.087, 0.067, 0.089, 0.068, 0.089, 0.043, 0.131, 0.05, 0.075, 0.039, 0.09, 0.085, 0.099, 0.123, 0.133, 0.097, 0.083, 0.04, 0.097, 0.032, 0.043, 0.148, 0.092, 0.037, 0.118, 0.051, 0.078, 0.053, 0.081, 0.056, 0.112, 0.119, 0.05, 0.044, 0.131, 0.137, 0.133, 0.074, 0.049, 0.06, 0.043, 0.063, 0.106, 0.165, 0.16, 0.05, 0.132, 0.088, 0.081, 0.062]
+#     # scc_duration_list = [304, 304, 304, 156, 304, 148, 244, 100, 304, 60, 304, 76, 88, 304, 112, 304, 144, 304, 304, 48, 76, 140, 144, 88, 304, 304, 304, 112, 304, 172, 304, 96, 72, 168, 128, 48, 304, 112, 124, 304, 48, 304, 304, 48, 304, 304, 168, 144, 304, 304, 60, 304, 108, 304, 48, 304, 164, 160, 304, 268, 240, 196, 304, 112, 304, 48, 264, 304, 152, 304, 184, 148, 304, 52, 160, 112, 104, 304, 88, 116, 56, 304, 68, 304, 304, 112, 52, 304, 304, 96, 304, 120, 304, 140, 304, 304, 156, 48, 304, 64, 304, 304, 132, 124, 304, 148, 304, 148, 80, 136, 124, 148, 108, 132, 132, 68, 124, 132, 304, 92, 80, 64, 304, 152, 136, 304, 48, 96, 304, 48, 64, 304, 64, 304, 216, 304, 304, 144, 176, 140, 304, 136, 104, 304, 56, 136, 76, 112, 304, 120, 164, 304, 88, 104, 128, 152, 132, 112, 100, 304]
+#     # scc_amp_list = [1.107, 1.071, 1.214, 1.179, 1.036, 1.179, 0.75, 1.214, 0.857, 0.857, 1.036, 0.821, 0.857, 1.25, 1.036, 1.179, 1.25, 0.786, 1.179, 1.036, 1.25, 1.0, 1.071, 1.25, 1.25, 0.857, 1.036, 1.071, 1.036, 1.143, 1.036, 0.75, 1.214, 0.964, 1.036, 0.75, 0.786, 0.964, 1.107, 0.857, 1.179, 0.857, 1.214, 1.143, 1.071, 1.25, 1.143, 0.857, 1.214, 1.143, 0.786, 0.929, 0.75, 1.071, 0.857, 0.75, 1.036, 1.071, 0.786, 1.107, 1.071, 1.214, 0.964, 0.929, 1.107, 1.143, 1.214, 1.071, 1.036, 1.214, 0.893, 1.071, 0.75, 0.786, 1.25, 1.107, 0.929, 0.786, 0.929, 1.25, 1.107, 1.036, 1.0, 0.893, 1.0, 0.964, 1.107, 1.143, 1.25, 1.214, 0.821, 0.929, 1.107, 1.107, 1.25, 1.214, 0.75, 1.214, 1.0, 1.25, 0.964, 0.857, 0.929, 1.25, 0.893, 1.0, 0.75, 1.179, 1.25, 1.214, 1.036, 0.821, 1.214, 1.0, 1.179, 1.214, 1.107, 1.25, 0.929, 1.036, 1.143, 0.821, 0.893, 1.179, 1.143, 0.893, 1.25, 1.071, 0.786, 1.25, 1.107, 1.179, 0.929, 1.0, 1.25, 0.964, 1.036, 1.036, 1.25, 1.179, 1.143, 1.143, 1.143, 1.179, 1.179, 1.143, 1.214, 1.107, 0.893, 1.25, 1.143, 0.964, 1.25, 1.036, 0.857, 1.107, 1.179, 1.0, 1.214, 0.786]
+#     # fmt: on
+#     scc_data = dm.get_raw_data(file_id=1725870710271)
+#     scc_optimal_durations = scc_data["optimal_durations"]
+#     scc_optimal_amplitudes = scc_data["optimal_amplitudes"]
+#     scc_duration_list = list(scc_optimal_durations.values())
+#     scc_amp_list = list(scc_optimal_amplitudes.values())
+#     snr_list = np.array(snr_list)
+#     exclude_list = np.argwhere(snr_list >= 0.07).flatten()
+#     optimal_durations = [scc_duration_list[i] for i in exclude_list]
+#     optimal_amplitudes = [scc_amp_list[i] for i in exclude_list]
+#     optimal_snrs = [snr_list[i] for i in exclude_list]
+#     num_snrs = len(optimal_snrs)
+#     fig = plt.figure(figsize=(6.5, 5))
+#     plt.scatter(
+#         optimal_durations,
+#         optimal_amplitudes,
+#         c=optimal_snrs,
+#         cmap="viridis",
+#         s=40,
+#         edgecolors="black",
+#     )
 
-    # for i, (x, y) in enumerate(zip(optimal_durations, optimal_amplitudes)):
-    #     optimal_snr = optimal_snrs[i]
-    #     plt.annotate(f"{optimal_snr:.2f}", (x, y), fontsize=6, alpha=0.6, color="red")
+#     # for i, (x, y) in enumerate(zip(optimal_durations, optimal_amplitudes)):
+#     #     optimal_snr = optimal_snrs[i]
+#     #     plt.annotate(f"{optimal_snr:.2f}", (x, y), fontsize=6, alpha=0.6, color="red")
 
-    colorbar = plt.colorbar(label="Reduced Chi-Squared")
-    colorbar.ax.tick_params(labelsize=12)
-    colorbar.set_label("SNR", fontsize=12)
-    plt.xlabel("Optimal Duration (ns)", fontsize=12)
-    plt.ylabel("Optimal Amplitude", fontsize=12)
-    plt.title(f"Optimal SCC Parameters Across NVs ({num_snrs}NVs)", fontsize=14)
-    plt.grid(alpha=0.3)
-    plt.xticks(fontsize=12)
-    plt.yticks(fontsize=12)
-    plt.show()
-    # file_name = dm.get_file_name(file_id)
-    # file_path = dm.get_file_path(__file__, file_name, f"{file_id}_amp_vs_duration")
-    # dm.save_figure(fig, file_path)
+#     colorbar = plt.colorbar(label="Reduced Chi-Squared")
+#     colorbar.ax.tick_params(labelsize=12)
+#     colorbar.set_label("SNR", fontsize=12)
+#     plt.xlabel("Optimal Duration (ns)", fontsize=12)
+#     plt.ylabel("Optimal Amplitude", fontsize=12)
+#     plt.title(f"Optimal SCC Parameters Across NVs ({num_snrs}NVs)", fontsize=14)
+#     plt.grid(alpha=0.3)
+#     plt.xticks(fontsize=12)
+#     plt.yticks(fontsize=12)
+#     plt.show()
+# file_name = dm.get_file_name(file_id)
+# file_path = dm.get_file_path(__file__, file_name, f"{file_id}_amp_vs_duration")
+# dm.save_figure(fig, file_path)
 
 
 if __name__ == "__main__":
     kpl.init_kplotlib()
     file_id = 1728131481474
+    data = dm.get_raw_data(file_id=1800806173978)  # durs variation
 
     # data = dm.get_raw_data(file_id=file_id)
     # process_and_plot(data)
+    # Parse input data
+    nv_list = data["nv_list"]
+    num_nv = len(nv_list)
+    counts = np.array(data["counts"])
+    sig_counts = counts[0]
+    ref_counts = counts[1]
+    step_vals = np.array(data["step_vals"])
+    duration_vals = np.unique(step_vals[:, 0])
+    amp_vals = np.unique(step_vals[:, 1])
+
+    # Filter NVs by selected orientations
+    # orientation_data = dm.get_raw_data(file_id=1723161184641)
+    # orientation_indices = orientation_data["orientation_indices"]
+    # selected_orientations = ["0.041", "0.147"]
+    # selected_indices = []
+    # for orientation in selected_orientations:
+    #     if str(orientation) in orientation_indices:
+    #         selected_indices.extend(orientation_indices[str(orientation)]["nv_indices"])
+    # selected_indices = list(set(selected_indices))  # Remove duplicates
+
+    # Filter counts and NV listv
+    selected_indices = range(num_nv)
+    nv_list = [nv_list[i] for i in selected_indices]
+    sig_counts = sig_counts[selected_indices, :, :, :]
+    ref_counts = ref_counts[selected_indices, :, :, :]
+    # Filter counts and NV list
+    sig_counts, ref_counts = widefield.threshold_counts(
+        nv_list, sig_counts, ref_counts, dynamic_thresh=True
+    )
+    # Standard errors for signal and reference counts
+    avg_counts, avg_counts_ste, norms = widefield.average_counts(sig_counts, ref_counts)
+    avg_snr, avg_snr_ste = widefield.calc_snr(sig_counts, ref_counts)
+    # Reshape data into 2D grids
+    num_dur_steps = len(duration_vals)
+    num_amp_steps = len(amp_vals)
+    avg_counts_grid = avg_counts.reshape(
+        len(selected_indices), num_dur_steps, num_amp_steps
+    )
+    avg_counts_ste_grid = avg_counts_ste.reshape(
+        len(selected_indices), num_dur_steps, num_amp_steps
+    )
+    avg_snr_grid = avg_snr.reshape(len(selected_indices), num_dur_steps, num_amp_steps)
+    avg_snr_ste_grid = avg_snr_ste.reshape(
+        len(selected_indices), num_dur_steps, num_amp_steps
+    )
+
+    # Save all processed data
+    processed_data = {
+        "nv_list": nv_list,
+        "step_vals": step_vals,
+        "avg_counts_grid": avg_counts_grid,
+        "norms ": norms,
+        "avg_counts_ste_grid": avg_counts_ste_grid,
+        "avg_snr_grid": avg_snr_grid,
+        "avg_snr_ste_grid": avg_snr_ste_grid,
+        "amp_vals": amp_vals,
+        "duration_vals": duration_vals,
+    }
     # # processed data analysis
     # processed_data_id = 1723819842491
     # processed_data_id = 1728147590280
     # processed_data_id = 1729123064963
     # processed_data = dm.get_raw_data(file_id=processed_data_id)
-    # analyze_and_visualize(processed_data)
+    analyze_and_visualize(processed_data)
     # plot_scc_amp_duration(file_id)
     # file_name = dm.get_file_name(file_id)
     # print(dm.get_file_name(1728131481474))
+
     plt.show(block=True)

@@ -156,6 +156,7 @@ def process_and_plot(data):
     """
 
     # Unpack data
+    # print(data.keys())
     nv_list = data["nv_list"]
     counts = np.array(data["counts"])
     sig_counts, ref_counts = counts[0], counts[1]
@@ -318,7 +319,6 @@ def optimize_scc_amp_and_duration(
     """
     ### Initial setup
     seq_file = "optimize_scc_amp_duration.py"
-
     # Generate grid of parameter values
     duration_vals = np.linspace(min_duration, max_duration, num_dur_steps).astype(int)
     amp_vals = np.linspace(min_amp, max_amp, num_amp_steps)
@@ -391,7 +391,9 @@ if __name__ == "__main__":
     kpl.init_kplotlib()
     # data = dm.get_raw_data(file_id=1737831146138)
     # data = dm.get_raw_data(file_id=1781811582216)
-    data = dm.get_raw_data(file_id=1797149751810)  # amps variation
+    # data = dm.get_raw_data(file_id=1797149751810)  # amps variation
+    data = dm.get_raw_data(file_id=1800806173978)  # durs variation
+
     process_and_plot(data)
 
     plt.show(block=True)
