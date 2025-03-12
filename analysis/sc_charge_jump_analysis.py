@@ -323,10 +323,10 @@ def process_detect_cosmic_rays(data, prob_dist: ProbDist = ProbDist.COMPOUND_POI
     states_1 = widefield.threshold_counts(nv_list, ref_counts, dynamic_thresh=True)
     ref_states = np.array(states_0).reshape((num_nvs, -1))
     sig_states = np.array(states_1).reshape((num_nvs, -1))
-    states = ref_states
-    states = sig_states
+    # states = ref_states
+    # states = sig_states
     # states = np.array(states).reshape((num_nvs, -1))
-    print(f"states.shape = {states.shape}")
+    # print(f"states.shape = {states.shape}")
     # states = np.array(data["counts"]).reshape((num_nvs, -1))
 
     # ### Histograms and thresholding
@@ -370,67 +370,106 @@ def process_detect_cosmic_rays(data, prob_dist: ProbDist = ProbDist.COMPOUND_POI
     # Generate timestamps
 
     # Coincidences
-    coincidences = num_nvs - states.sum(axis=0)
     # coincidences = num_nvs - weighted_states.sum(axis=0)
     # coincidences = states.sum(axis=0)
+    ref_coincidences = num_nvs - ref_states.sum(axis=0)
+    sig_coincidences = num_nvs - sig_states.sum(axis=0)
 
-    # 1. Histogram of Coincidences
-    hist_fig, ax = plt.subplots()
-    # Compute histogram data
-    bin_edges = np.arange(-0.5, num_nvs + 1.5, 1)
-    hist_values, _ = np.histogram(coincidences, bins=bin_edges)
+    dark_times = ["1ms", "1s"]
+    coincidences = [ref_coincidences, sig_coincidences]
 
-    # Plot histogram as a bar chart for better readability
-    ax.bar(
-        bin_edges[:-1] + 0.5,  # Center bins
-        hist_values,
-        width=1.0,
-        align="center",
-        alpha=0.6,
-        label=f"Observed ({num_nvs} NVs)",
-        color="blue",
-    )
+    # Iterate over datasets
+    for i, coincidence_data in enumerate(coincidences):
+        dark_time = dark_times[i]
 
-    # ax.vlines(
-    #     78,
-    #     0,
-    #     max(hist_values),
-    #     color="red",
-    #     linestyle="--",
-    #     label="Mean",
-    # )
+        # Compute Poisson Fit
+        lambda_hat = np.mean(coincidence_data)
+        # Compute statistics
+        skewness = stats.skew(coincidence_data)
+        kurtosis = stats.kurtosis(coincidence_data)
 
-    # Add Poisson PMF for comparison
-    # x_vals = np.arange(num_nvs + 1)
-    # expected_dist = len(coincidences) * poisson.pmf(x_vals, np.mean(coincidences))
-    # ax.plot(
-    #     x_vals,
-    #     expected_dist,
-    #     marker="o",
-    #     linestyle="--",
-    #     label="Poisson PMF (Expected Dist.)",
-    #     color="red",
-    #     alpha=0.6,
-    #     markersize=2,
-    # )
+        print(f"\n=== Analysis for Dark Time: {dark_time} ===")
+        print(f"Poisson Fit Mean (λ): {lambda_hat:.2f}")
+        print(f"Skewness: {skewness:.2f}")
+        print(f"Kurtosis: {kurtosis:.2f}")
 
-    # Set y-axis limits dynamically based on data range
-    # ax.set_yscale("log")
-    # ax.set_ylim(0, 4)
+        # Plot histogram
+        bin_edges = np.arange(-0.5, max(coincidence_data) + 1.5, 1)
+        hist_values, _ = np.histogram(coincidence_data, bins=bin_edges)
 
-    # Add labels, title, and legend
-    ax.set_xlabel("Number of NVs in NV⁰ State", fontsize=15)
-    ax.set_ylabel("Number of occurrences", fontsize=15)
-    ax.set_title("Charge Jump - Coincidence Histogram (Dark Time: 1s)", fontsize=15)
-    ax.legend(fontsize=12, loc="upper right")
+    # Kolmogorov-Smirnov (KS) test for difference
+    ks_stat, p_value = ks_2samp(ref_coincidences, sig_coincidences)
+    print("\n=== Kolmogorov-Smirnov (KS) Test ===")
+    print(f"KS Test Statistic: {ks_stat:.4f}, p-value: {p_value:.4f}")
 
-    # Use logarithmic scale for y-axis
-    # ax.set_yscale("log")
-    ax.grid(True, which="both", linestyle="--", alpha=0.6)
-    ax.tick_params(axis="both", which="major", labelsize=15)
+    if p_value < 0.05:
+        print("Significant difference detected between the two datasets (p < 0.05).")
+    else:
+        print("No significant difference detected between the two datasets.")
 
+    # historams
+    figs = {}
+    for idx, time in enumerate(dark_times):
+        # 1. Histogram of Coincidences
+        fig, ax = plt.subplots(figsize=(7, 5))
+        # Compute histogram data
+        bin_edges = np.arange(-0.5, num_nvs + 1.5, 1)
+        hist_values, _ = np.histogram(coincidences[idx], bins=bin_edges)
+
+        # Plot histogram as a bar chart for better readability
+        ax.bar(
+            bin_edges[:-1] + 0.5,  # Center bins
+            hist_values,
+            width=1.0,
+            align="center",
+            alpha=0.6,
+            label=f"Observed ({num_nvs} NVs)",
+            color="blue",
+        )
+
+        # ax.vlines(
+        #     78,
+        #     0,
+        #     max(hist_values),
+        #     color="red",
+        #     linestyle="--",
+        #     label="Mean",
+        # )
+
+        # Add Poisson PMF for comparison
+        # x_vals = np.arange(num_nvs + 1)
+        # expected_dist = len(coincidences) * poisson.pmf(x_vals, np.mean(coincidences))
+        # ax.plot(
+        #     x_vals,
+        #     expected_dist,
+        #     marker="o",
+        #     linestyle="--",
+        #     label="Poisson PMF (Expected Dist.)",
+        #     color="red",
+        #     alpha=0.6,
+        #     markersize=2,
+        # )
+
+        # Set y-axis limits dynamically based on data range
+        # ax.set_yscale("log")
+        # ax.set_ylim(0, 4)
+
+        # Add labels, title, and legend
+        ax.set_xlabel("Number of NVs in NV⁰ State", fontsize=15)
+        ax.set_ylabel("Number of occurrences", fontsize=15)
+        ax.set_title(
+            f"Charge Jump - Coincidence Histogram (Dark Time: {time})", fontsize=15
+        )
+        ax.legend(fontsize=12, loc="upper right")
+
+        # Use logarithmic scale for y-axis
+        # ax.set_yscale("log")
+        ax.grid(True, which="both", linestyle="--", alpha=0.6)
+        ax.tick_params(axis="both", which="major", labelsize=15)
+        plt.tight_layout()
+        plt.show()
     # 2. Time-Resolved Histogram
-    time_resolved_fig, ax = plt.subplots()
+    # time_resolved_fig, ax = plt.subplots()
     # time_bins = np.linspace(timestamps.min(), timestamps.max(), 6)  # 10 time intervals
     # for start, end in zip(time_bins[:-1], time_bins[1:]):
     #     mask = (timestamps >= start) & (timestamps < end)
@@ -472,136 +511,78 @@ def process_detect_cosmic_rays(data, prob_dist: ProbDist = ProbDist.COMPOUND_POI
     # ax.set_title("Spatial map of NV Activity")
     # ax.legend(fontsize=10)
     # plt.show()
-    # Compute histogram
-    coincidences_ref = num_nvs - ref_states.sum(axis=0)
-    coincidences_sig = num_nvs - sig_states.sum(axis=0)
-    bin_edges = np.arange(-0.5, max(coincidences_sig) + 1.5, 1)
-    hist_values, _ = np.histogram(coincidences_sig, bins=bin_edges)
-
-    # Fit a Poisson distribution
-    lambda_hat = np.mean(coincidences_sig)
-    poisson_fit = poisson.pmf(np.arange(max(coincidences_sig) + 1), lambda_hat) * len(
-        coincidences_sig
-    )
-
-    # Compute skewness and kurtosis
-    skewness = stats.skew(coincidences_sig)
-    kurtosis = stats.kurtosis(coincidences_sig)
-
-    # Plot histogram
-    spatial_heatmap_fig = plt.figure(figsize=(8, 6))
-    plt.bar(
-        bin_edges[:-1] + 0.5,
-        hist_values,
-        width=1.0,
-        alpha=0.6,
-        label="Observed Data",
-        color="blue",
-    )
-    plt.plot(
-        np.arange(len(poisson_fit)),
-        poisson_fit,
-        "r--o",
-        label=f"Poisson Fit (λ={lambda_hat:.2f})",
-    )
-    plt.xlabel("Number of NVs in NV⁰ State", fontsize=14)
-    plt.ylabel("Occurrences", fontsize=14)
-    plt.title("Charge Jump - Coincidence Histogram", fontsize=16)
-    plt.legend(fontsize=12)
-    plt.grid(True, linestyle="--", alpha=0.6)
-    plt.show()
-
-    print(f"Poisson Fit Mean (λ): {lambda_hat:.2f}")
-    print(f"Skewness: {skewness:.2f}")
-    print(f"Kurtosis: {kurtosis:.2f}")
-
-    # Kolmogorov-Smirnov (KS) test if second dataset is provided
-    if coincidences_ref is not None:
-        ks_stat, p_value = ks_2samp(coincidences_sig, coincidences_ref)
-        print(f"KS Test Statistic: {ks_stat:.4f}, p-value: {p_value:.4f}")
-        if p_value < 0.05:
-            print(
-                "Significant difference detected between the two datasets (p < 0.05)."
-            )
-        else:
-            print("No significant difference detected between the two datasets.")
 
     # Plot the time-dependent NV⁰ counts
-    nv0_counts = states.shape[0] - states.sum(axis=0)
-    time_series_fig, ax = plt.subplots(figsize=(10, 6))
+    nv0_counts_ref = ref_states.shape[0] - ref_states.sum(axis=0)
+    nv0_counts_sig = sig_states.shape[0] - sig_states.sum(axis=0)
+    nv0_counts = [nv0_counts_ref, nv0_counts_sig]
 
-    # Plot the data
-    ax.plot(
-        nv0_counts,
-        marker="o",
-        markersize=2,
-        linestyle="-",
-        alpha=0.7,
-        label="NV⁰ Count",
-    )
+    for idx, time in enumerate(dark_times):
+        fig, ax = plt.subplots(figsize=(10, 6))
+        # Plot the data
+        ax.plot(
+            nv0_counts[idx],
+            marker="o",
+            markersize=2,
+            linestyle="-",
+            alpha=0.7,
+            label="NV⁰ Count",
+        )
 
-    # Add labels, title, grid, and legend
-    ax.set_xlabel("Number of Shots", fontsize=14)  # Corrected: Use ax.set_xlabel
-    ax.set_ylabel("Number of NVs in NV⁰ State", fontsize=14)
-    ax.set_title("Time-Series NV⁰ Count (dark time: 1s)", fontsize=16)
-    ax.grid(True, linestyle="--", alpha=0.6)
-    ax.legend(fontsize=12)
-
-    # Adjust layout and show the plot
-    plt.tight_layout()
-    plt.show()
+        # Add labels, title, grid, and legend
+        ax.set_xlabel("Number of Shots", fontsize=14)  # Corrected: Use ax.set_xlabel
+        ax.set_ylabel("Number of NVs in NV⁰ State", fontsize=14)
+        ax.set_title(f"Time-Series NV⁰ Count (dark time:{time})", fontsize=16)
+        ax.grid(True, linestyle="--", alpha=0.6)
+        ax.legend(fontsize=12)
+        # Adjust layout and show the plot
+        plt.tight_layout()
+        plt.show()
     # Reshape coincidences to match the NV count (assuming 15,000 = num_shots x num_nvs)
     # Unpack relevant variables
 
-    # Number of NVs
-    num_nvs = len(nv_list)
+    # # Number of NVs
+    # num_nvs = len(nv_list)
 
-    # Compute the sum across all NVs for each shot
-    states = np.array(states_1).reshape((num_nvs, -1))
-    shot_sums = num_nvs - states.sum(axis=0)
+    # # Compute the sum across all NVs for each shot
+    # states = np.array(states_1).reshape((num_nvs, -1))
+    # shot_sums = num_nvs - states.sum(axis=0)
 
-    # Find indices of shots where the sum is greater than 80
-    high_activity_indices = np.where(shot_sums > 100)[0]  # Get 1D array of indices
-    print(f"Selected shots: {len(high_activity_indices)}")
+    # # Find indices of shots where the sum is greater than 80
+    # high_activity_indices = np.where(shot_sums > 100)[0]  # Get 1D array of indices
+    # print(f"Selected shots: {len(high_activity_indices)}")
 
-    # Extract only the selected shots
-    selected_states = states[:, high_activity_indices]
+    # # Extract only the selected shots
+    # selected_states = states[:, high_activity_indices]
 
-    # Extract spatial coordinates
-    x_coords = [nv.coords["pixel"][0] for nv in nv_list]
-    y_coords = [nv.coords["pixel"][1] for nv in nv_list]
+    # # Extract spatial coordinates
+    # x_coords = [nv.coords["pixel"][0] for nv in nv_list]
+    # y_coords = [nv.coords["pixel"][1] for nv in nv_list]
 
-    # Compute activity counts for each NV
-    high_activity_counts = selected_states.sum(
-        axis=1
-    )  # Sum over selected shots for each NV
+    # # Compute activity counts for each NV
+    # high_activity_counts = selected_states.sum(
+    #     axis=1
+    # )  # Sum over selected shots for each NV
 
-    # Plot the spatial heatmap for high-activity NVs
-    high_activity_map_fig, ax = plt.subplots()
-    scatter = ax.scatter(
-        x_coords,
-        y_coords,
-        c=high_activity_counts,
-        cmap="viridis",
-        edgecolors="black",
-        s=60,
-    )
-    plt.colorbar(scatter, ax=ax, label="Activity Count (Sum)")
-    ax.set_xlabel("X Coordinate (Pixels)", fontsize=15)
-    ax.set_ylabel("Y Coordinate (Pixels)", fontsize=15)
-    ax.set_title("NVs with High-Activity Shots in NV⁰ State (>78)", fontsize=15)
-    ax.legend(fontsize=10)
-    ax.grid(True, linestyle="--", alpha=0.6)
-    plt.show()
+    # # Plot the spatial heatmap for high-activity NVs
+    # high_activity_map_fig, ax = plt.subplots()
+    # scatter = ax.scatter(
+    #     x_coords,
+    #     y_coords,
+    #     c=high_activity_counts,
+    #     cmap="viridis",
+    #     edgecolors="black",
+    #     s=60,
+    # )
+    # plt.colorbar(scatter, ax=ax, label="Activity Count (Sum)")
+    # ax.set_xlabel("X Coordinate (Pixels)", fontsize=15)
+    # ax.set_ylabel("Y Coordinate (Pixels)", fontsize=15)
+    # ax.set_title("NVs with High-Activity Shots in NV⁰ State (>78)", fontsize=15)
+    # ax.legend(fontsize=10)
+    # ax.grid(True, linestyle="--", alpha=0.6)
+    # plt.show()
 
-    print(f"High-activity shot indices: {high_activity_indices}")
-
-    return (
-        hist_fig,
-        high_activity_map_fig,
-        spatial_heatmap_fig,
-        time_series_fig,
-    )
+    # print(f"High-activity shot indices: {high_activity_indices}")
 
 
 def analyze_transition_times(states, timestamps):
@@ -900,19 +881,33 @@ if __name__ == "__main__":
     #     process_detect_cosmic_rays(data)
     # )
 
-    # data_files = [1756083081553, 1756161618282, 1756305080720, 1755068762133]
+    # file_ids = [1756083081553, 1756161618282, 1756305080720, 1755068762133]
     # dark_times = [1e6, 10e6, 100e6, 1000e6]
-    data_files = [1756161618282, 1756305080720, 1756699202091, 1755068762133]
-    dark_times = [10e6, 100e6, 500e6, 1000e6]
+    # data_files = [1756161618282, 1756305080720, 1756699202091, 1755068762133]
+    # dark_times = [10e6, 100e6, 500e6, 1000e6]
 
     # DATA FILES
-    # file_ids = [1758180182062, 1758336169797]
+    # file_ids = [1758180182062, 1758336169797] # johnson sample deep NVs
+    # cannon sampel 147NVs
     # file_ids = [1766974557310] # 1ms and 1s dark time data (50ms readout)
     # file_ids = [1767157983900, 1767269375068, 1767395452581, 1767514737339]
     # rubin 105NVs
-    file_ids = [1798883656474, 1798997502214, 1799103957221]
+    # file_ids = [
+    #     1798883656474,
+    #     1798997502214,
+    #     1799103957221,
+    #     1799203370243,
+    #     1799297505028,
+    # ]
+
+    # 8s wait time
+    file_ids = [1799642658475, 1799939800540, 1800188723197]
+
     file_names = [dm.get_file_name(file_id) for file_id in file_ids]
     print(f"File names: {file_names}")
+    combined_file_id = "_".join(map(str, file_ids))
+    file_name = f"charge_jump_{combined_file_id}.png"
+    print(f"File names: {file_name}")
     combined_data = dm.get_raw_data(file_id=file_ids[0])
     for file_id in file_ids[1:]:
         new_data = dm.get_raw_data(file_id=file_id)
@@ -921,9 +916,8 @@ if __name__ == "__main__":
             combined_data["counts"], new_data["counts"], axis=2
         )
     # Process data
-    (hist_fig, transition_fig, spatial_heatmap_fig, time_series_fig) = (
-        process_detect_cosmic_rays(combined_data)
-    )
+    process_detect_cosmic_rays(combined_data)
+
     # data_files = [1756161618282, 1755068762133]
     # dark_times = [10e6, 1000e6]
 
