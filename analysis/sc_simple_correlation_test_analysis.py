@@ -157,7 +157,8 @@ def process_and_plot(data, rearrangement="spin_flip", file_path=None):
     # Unpack data
     nv_list = data.get("nv_list", [])
     counts = np.array(data.get("counts", []))
-    indices_to_remove = [18, 35, 56]
+    # indices_to_remove = [64, 108, 75, 100, 103, 55, 77, 89, 17, 82]
+    indices_to_remove = [64, 108, 75, 100, 103, 55, 77, 89, 17, 82, 38]
     print(counts.shape)
     nv_list = [
         nv_list[ind] for ind in range(len(nv_list)) if ind not in indices_to_remove
@@ -165,17 +166,6 @@ def process_and_plot(data, rearrangement="spin_flip", file_path=None):
     # Use NumPy boolean masking to filter counts
     mask = np.ones(counts.shape[1], dtype=bool)  # Create a mask for NV indices
     mask[list(indices_to_remove)] = False  # Set unwanted indices to False
-    counts = counts[:, mask, :, :, :]  # Apply mask along the NV axis (second dimension)
-    print(counts.shape)
-
-    # high spurious correlation
-    more_indices_to_remove = [16, 20, 28, 47, 50, 56]
-    nv_list = [
-        nv_list[ind] for ind in range(len(nv_list)) if ind not in more_indices_to_remove
-    ]
-    # Use NumPy boolean masking to filter counts
-    mask = np.ones(counts.shape[1], dtype=bool)  # Create a mask for NV indices
-    mask[list(more_indices_to_remove)] = False  # Set unwanted indices to False
     counts = counts[:, mask, :, :, :]  # Apply mask along the NV axis (second dimension)
     print(counts.shape)
 
@@ -346,7 +336,7 @@ def process_and_plot(data, rearrangement="spin_flip", file_path=None):
             square=True,
             mask=np.isnan(val),
             annot=False,
-            cbar_kws={"pad": 0.02, "shrink": 0.6},
+            cbar_kws={"pad": 0.01, "shrink": 0.5},
         )
 
         # Add a colorbar label
@@ -387,7 +377,7 @@ def process_and_plot(data, rearrangement="spin_flip", file_path=None):
         ax.set_ylabel("NV index", fontsize=15, labelpad=-1)
 
     # Adjust subplots for proper spacing
-    fig.subplots_adjust(left=0.05, right=0.95, bottom=0.05, top=0.95, wspace=0.3)
+    fig.subplots_adjust(left=0.05, right=0.95, bottom=0.05, top=0.95, wspace=0.2)
     # if fig is not None:
     #     dm.save_figure(fig, file_path)
     plt.show()
@@ -753,7 +743,8 @@ def plot_nv_network(data):
     nv_list = data.get("nv_list", [])
     counts = np.array(data.get("counts", []))
 
-    indices_to_remove = [18, 35, 56]
+    # # indices_to_remove = [18, 35, 56]
+    indices_to_remove = [64, 108, 75, 100, 103, 55, 77, 89, 17, 82, 38]
     print(counts.shape)
     nv_list = [
         nv_list[ind] for ind in range(len(nv_list)) if ind not in indices_to_remove
@@ -763,16 +754,17 @@ def plot_nv_network(data):
     mask[list(indices_to_remove)] = False  # Set unwanted indices to False
     counts = counts[:, mask, :, :, :]  # Apply mask along the NV axis (second dimension)
     print(counts.shape)
-    # high spurious correlation
-    more_indices_to_remove = [16, 20, 28, 47, 50, 56]
-    nv_list = [
-        nv_list[ind] for ind in range(len(nv_list)) if ind not in more_indices_to_remove
-    ]
-    # Use NumPy boolean masking to filter counts
-    mask = np.ones(counts.shape[1], dtype=bool)  # Create a mask for NV indices
-    mask[list(more_indices_to_remove)] = False  # Set unwanted indices to False
-    counts = counts[:, mask, :, :, :]  # Apply mask along the NV axis (second dimension)
-    print(counts.shape)
+    # # high spurious correlation
+    # more_indices_to_remove = [16, 20, 28, 47, 50, 56]
+    # more_indices_to_remove = [6, 13, 34, 47, 42, 49, 58, 71, 69, 75, 83, 93, 103, 102]
+    # nv_list = [
+    #     nv_list[ind] for ind in range(len(nv_list)) if ind not in more_indices_to_remove
+    # ]
+    # # Use NumPy boolean masking to filter counts
+    # mask = np.ones(counts.shape[1], dtype=bool)  # Create a mask for NV indices
+    # mask[list(more_indices_to_remove)] = False  # Set unwanted indices to False
+    # counts = counts[:, mask, :, :, :]  # Apply mask along the NV axis (second dimension)
+    # print(counts.shape)
 
     if len(nv_list) == 0 or counts.size == 0:
         print("Error: Data does not contain NV list or counts.")
@@ -797,15 +789,40 @@ def plot_nv_network(data):
     sig_corr_coeffs = nan_corr_coef(flattened_sig_counts)
     ref_corr_coeffs = nan_corr_coef(flattened_ref_counts)
     # difference
-    sig_corr_coeffs = sig_corr_coeffs - ref_corr_coeffs
-    # sig_corr_coeffs = ref_corr_coeffs
+    # sig_corr_coeffs = sig_corr_coeffs - ref_corr_coeffs
+    sig_corr_coeffs = ref_corr_coeffs
     # print("sig_corr_coeffs shape:", sig_corr_coeffs.shape)
-    # print("sig_corr_coeffs example values:", sig_corr_coeffs[:5, :5])
 
     if not np.isfinite(sig_corr_coeffs).all():
         print("Invalid values found in sig_corr_coeffs.")
         return
+    # Identify NV pairs with correlation > 0.02
+    from collections import Counter
 
+    spurious_pairs = []
+    nv_occurrences = Counter()
+
+    for i in range(num_nvs):
+        for j in range(i + 1, num_nvs):  # Upper triangle only
+            if abs(sig_corr_coeffs[i, j]) > 0.02:
+                spurious_pairs.append((i, j))
+                nv_occurrences[i] += 1
+                nv_occurrences[j] += 1
+
+    # Print NV pairs with high correlation
+    print("\nSpurious Correlation NV Pairs (Corr > 0.024):")
+    for pair in spurious_pairs:
+        print(f"NV {pair[0]} - NV {pair[1]}")
+
+    # Print all NV occurrences sorted by frequency
+    # print("\nNV Occurrences in Spurious Correlations:")
+    sorted_occurrences = sorted(
+        nv_occurrences.items(), key=lambda x: x[1], reverse=True
+    )
+    print("nv_occurrences:", nv_occurrences)
+    for nv, count in sorted_occurrences:
+        print(f"NV {nv}: {count} times")
+        print("\nNo spurious correlations detected above 0.02.")
     # Extract NV positions
     nv_positions = np.array([nv.coords["pixel"][:2] for nv in nv_list])
     # Compute pairwise distances
@@ -830,7 +847,7 @@ def plot_nv_network(data):
         s=20,
         color="blue",
         edgecolors=None,
-        alpha=0.6,
+        alpha=0.8,
         label="Reference Corr.",
     )
     plt.xlabel("Pair-Wise Distance between NV centers (pixels)", fontsize=15)
@@ -1224,30 +1241,30 @@ if __name__ == "__main__":
     # data = dm.get_raw_data(file_id=file_id)
 
     # final data set after randomizing the scc order between two groups
+    file_ids = [
+        1739979522556,
+        1740062954135,
+        1740252380664,
+        1740377262591,
+        1740494528636,
+    ]
+
+    # # shallow 66 nvs
     # file_ids = [
-    #     1739979522556,
-    #     1740062954135,
-    #     1740252380664,
-    #     1740377262591,
-    #     1740494528636,
+    #     1783769660936,
+    #     1783988286193,
+    #     1784201493337,
+    #     1784384193378,
+    #     1784571011973,
     # ]
 
-    # shallow 66 nvs
-    file_ids = [
-        1783769660936,
-        1783988286193,
-        1784201493337,
-        1784384193378,
-        1784571011973,
-    ]
+    # file_ids = [
+    #     1785959891378,
+    #     1786097958722,
+    #     1786236616251,
+    # ]
 
-    file_ids = [
-        1785959891378,
-        1786097958722,
-        1786236616251,
-    ]
-
-    file_ids = [1788384251424, 1788228402712]
+    # file_ids = [1788384251424, 1788228402712]
     # data = dm.get_raw_data(file_id=file_ids[0])
     # Create a string of all file IDs, separated by underscores
     all_file_ids_str = "_".join(map(str, file_ids))

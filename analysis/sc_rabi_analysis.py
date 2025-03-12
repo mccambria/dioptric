@@ -3,7 +3,7 @@
 Widefield Rabi experiment - Enhanced
 
 Created on Fall, 2024
-@auhtor
+@auhtor : Saroj Chand
 """
 
 import traceback
@@ -321,6 +321,9 @@ if __name__ == "__main__":
     # file_id = 1775776922337  # all four orientation measured with two frequency tone per sig gen with offset pulses both microwaave ()
     # file_id = 1779670263899
     # rubin sample
+    # file_id = 1795718888560
+    file_id = 1796958071866
+
     file_id = 1795718888560
     file_id = 1796958071866
     data = dm.get_raw_data(file_id=file_id, load_npz=False, use_cache=False)
