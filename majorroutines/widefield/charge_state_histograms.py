@@ -419,5 +419,6 @@ if __name__ == "__main__":
     # data = dm.get_raw_data(file_id=1798728176452, load_npz=False)
     data = dm.get_raw_data(file_id=1798741474977, load_npz=False)
 
+    data = dm.get_raw_data(file_id=1800336690568, load_npz=False)
     process_and_plot(data, do_plot_histograms=True)
     kpl.show(block=True)
