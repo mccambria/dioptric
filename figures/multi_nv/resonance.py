@@ -168,6 +168,9 @@ def create_fit_figure(
             if nv_ind in split_esr:
                 splittings.append(popt[-1])
                 splitting_errs.append(np.sqrt(pcov[-1, -1]))
+                print(popt[2])
+                print(popt[-1])
+                test = 0
     else:
         fit_fns = None
         popts = None
@@ -179,15 +182,17 @@ def create_fit_figure(
     for ind in range(num_nvs):
         center_freq_pair = center_freqs[ind]
         if center_freq_pair[1] - center_freq_pair[0] < 0.120:
-            nvb_freqs.append(center_freqs[ind])
-        else:
             nva_freqs.append(center_freqs[ind])
+        else:
+            nvb_freqs.append(center_freqs[ind])
     nva_freqs = np.array(nva_freqs)
     nvb_freqs = np.array(nvb_freqs)
     nvb_mean_freqs = np.mean(nvb_freqs, axis=0)
     nva_mean_freqs = np.mean(nva_freqs, axis=0)
     print(nvb_mean_freqs)
     print(nva_mean_freqs)
+    print(splittings)
+    print(splitting_errs)
 
     ### Make the figure
 
@@ -199,16 +204,16 @@ def create_fit_figure(
         num_cols = 6
 
         # bulk
-        # figsize[1] = 7
-        # num_rows = 19
-        # layout = kpl.calc_mosaic_layout(num_cols * num_rows, num_rows, num_cols)
-        # layout[0] = [".", ".", ".", layout[0][3], layout[0][4], "."]
-        # layout[1] = [layout[1][0], ".", ".", *layout[1][3:]]
-        # shallow
-        figsize[1] = 7 * 13 / 19  #
-        num_rows = 11
+        figsize[1] = 7
+        num_rows = 19
         layout = kpl.calc_mosaic_layout(num_cols * num_rows, num_rows, num_cols)
-        layout[0] = [layout[0][0], layout[0][1], ".", layout[0][3], layout[0][4], "."]
+        layout[0] = [".", ".", ".", layout[0][3], layout[0][4], "."]
+        layout[1] = [layout[1][0], ".", ".", *layout[1][3:]]
+        # shallow
+        # figsize[1] = 7 * 13 / 19  #
+        # num_rows = 11
+        # layout = kpl.calc_mosaic_layout(num_cols * num_rows, num_rows, num_cols)
+        # layout[0] = [layout[0][0], layout[0][1], ".", layout[0][3], layout[0][4], "."]
 
         fig, axes_pack = plt.subplot_mosaic(
             layout,
@@ -449,11 +454,6 @@ if __name__ == "__main__":
         num_runs = data["num_runs"]
         num_reps = data["num_reps"]
         freqs = data["freqs"]
-
-        nva_nums = [widefield.get_nv_num(nv_list[ind]) for ind in nva_inds]
-        nvb_nums = [widefield.get_nv_num(nv_list[ind]) for ind in nvb_inds]
-        print(nva_nums)
-        print(nvb_nums)
 
         # Manipulate the counts into the format expected for normalization
         counts = np.array(data.pop("counts"))

@@ -1245,7 +1245,8 @@ def plot_fit(
             color=color,
             linestyle=linestyle,
         )
-        # nv_num = get_nv_num(nv_sig)
+        nv_num = get_nv_num(nv_sig)
+        kpl.anchored_text(ax, nv_num, size=kpl.Size.TINY)
         # kpl.anchored_text(ax, nv_inds[nv_ind], size=kpl.Size.TINY)
         # kpl.anchored_text(ax, nv_ind, size=kpl.Size.TINY)
 

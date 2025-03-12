@@ -34,6 +34,8 @@ def main(
     hfs_err_echo,
     spin_echo_exp_data,
     spin_echo_fit_data,
+    circle_or_square_echo,
+    circle_or_square_res,
 ):
     # plot_loop_inds = [16, 45, 99]  # 0.9 MHz
     # plot_loop_inds = [0, 34, 83]  # 0.37 MHz
@@ -52,9 +54,12 @@ def main(
     res_order = np.argsort(hfs_res)
     hfs_res = 1000 * np.array(hfs_res)[res_order]
     hfs_err_res = 1000 * np.array(hfs_err_res)[res_order]
+    circle_or_square_res = np.array(circle_or_square_res)[res_order]
     echo_order = np.argsort(hfs_echo)
     hfs_echo = np.array(hfs_echo)[echo_order]
     hfs_err_echo = np.array(hfs_err_echo)[echo_order]
+    circle_or_square_echo_t2 = np.array(circle_or_square_echo)
+    circle_or_square_echo = np.array(circle_or_square_echo)[echo_order]
     sorted_plot_loop_inds = [np.where(echo_order == val)[0] for val in plot_loop_inds]
 
     ### Fig setup
@@ -71,11 +76,12 @@ def main(
 
     first_ind = None
     nv_ind = 0
-    for hfs_list, hfs_err_list, color, label in zip(
+    for hfs_list, hfs_err_list, color, label, circle_or_square in zip(
         (hfs_echo, hfs_res),
         (hfs_err_echo, hfs_err_res),
         (kpl.KplColors.BLUE, kpl.KplColors.RED),
         ("Spin echo", "ESR"),
+        (circle_or_square_echo, circle_or_square_res),
     ):
         for ind in range(len(hfs_list)):
             # if ind == len(hfs_list) - 5:
@@ -96,7 +102,16 @@ def main(
             #     )
             # else:
             if hfs_val > 0:
-                kpl.plot_points(ax, nv_ind, hfs_val, hfs_err, color=color, label=label)
+                marker = "o" if circle_or_square[ind] else "s"
+                kpl.plot_points(
+                    ax,
+                    nv_ind,
+                    hfs_val,
+                    hfs_err,
+                    color=color,
+                    label=label,
+                    marker=marker,
+                )
                 if first_ind is None:
                     first_ind = nv_ind
                 label = None
@@ -123,7 +138,8 @@ def main(
 
     ### Fig labels etc
 
-    ax.set_xlabel("NV index (ascending order)")
+    # ax.set_xlabel("NV index (ascending order)")
+    ax.set_xlabel(r"NV index ($A_{\text{hfs},i}<A_{\text{hfs},i+1}$)")
     num_nvs = nv_ind - 1
     margin = (num_nvs - first_ind) / 70
     ax.set_xlim(first_ind - margin, num_nvs + margin)
@@ -149,23 +165,34 @@ def main(
     echo_order = np.argsort(T2_echo)
     T2_echo = T2_echo[echo_order]
     T2_echo_err = T2_echo_err[echo_order]
+    circle_or_square_echo_t2 = circle_or_square_echo_t2[echo_order]
     keep_inds = T2_echo < 0.3
     num_clipped = len(T2_echo) - np.count_nonzero(keep_inds)
     T2_echo = T2_echo[keep_inds]
     T2_echo_err = T2_echo_err[keep_inds]
+    circle_or_square_echo_t2 = circle_or_square_echo_t2[keep_inds]
 
     num_vals = len(T2_echo)
     x_vals = np.array(range(num_vals)) + num_clipped
 
     ax = axes_pack[1]
 
-    kpl.plot_points(
-        ax, x_vals, T2_echo * 1000, T2_echo_err * 1000, color=kpl.KplColors.GREEN
-    )
-    ax.set_xlabel("NV index (ascending order)")
+    for ind in range(len(x_vals)):
+        marker = "o" if circle_or_square_echo_t2[ind] else "s"
+        kpl.plot_points(
+            ax,
+            x_vals[ind],
+            T2_echo[ind] * 1000,
+            T2_echo_err[ind] * 1000,
+            color=kpl.KplColors.GREEN,
+            marker=marker,
+        )
+    # ax.set_xlabel("NV index (ascending order)")
+    ax.set_xlabel(r"NV index ($T_{2,i}<T_{2,i+1}$)")
     ax.set_ylabel("$T_{2}$ time (µs)")
     ax.set_yscale("log")
     ax.set_yticks([30, 100, 300], [30, 100, 300])
+    ax.set_ylim(30, 600)
     margin = (np.max(x_vals) - np.min(x_vals)) / 70
     ax.set_xlim(np.min(x_vals) - margin, np.max(x_vals) + margin)
 
@@ -355,6 +382,12 @@ def simple():
 if __name__ == "__main__":
     kpl.init_kplotlib()
 
+    # For spin echo
+    # fmt: off
+    nva_inds = [3, 4, 5, 7, 15, 16, 17, 18, 21, 22, 24, 26, 27, 29, 30, 34, 37, 40, 41, 45, 47, 49, 51, 53, 54, 59, 60, 65, 66, 70, 71, 73, 74, 76, 78, 79, 83, 84, 89, 93, 94, 97, 98, 104, 105, 109, 110, 111, 115]
+    nvb_inds = [0, 1, 2, 6, 8, 9, 10, 19, 20, 23, 25, 28, 31, 32, 33, 35, 38, 39, 42, 43, 44, 46, 48, 50, 56, 57, 62, 63, 67, 68, 69, 75, 77, 80, 81, 82, 85, 86, 88, 90, 91, 92, 95, 99, 100, 101, 102, 103, 106, 107, 108, 113, 114]
+    # fmt: on
+
     # w/ ionization, dmw None
     spin_echo_exp_data = dm.get_raw_data(file_id=1797877478132)
     # spin_echo_fit_file_id = 1798006231161  # Complicated
@@ -366,8 +399,11 @@ if __name__ == "__main__":
     ### ESR
     # fmt: off
     # From ./resonance.py, in GHz
-    hfs_res = [0.008270982638238914, 0.015881063467104776, 0.014010042750685282, 0.015391657472928187, 0.012955566280101407, 0.016983227280784243]
-    hfs_err_res = [0.0016409452584717822, 0.0010983852602745553, 0.0004848082620682548, 0.0007214312144406817, 0.0006541485039380769, 0.0012675922107645444]
+    # hfs_res = [0.008270982638238914, 0.015881063467104776, 0.014010042750685282, 0.015391657472928187, 0.012955566280101407, 0.016983227280784243]
+    # hfs_err_res = [0.0016409452584717822, 0.0010983852602745553, 0.0004848082620682548, 0.0007214312144406817, 0.0006541485039380769, 0.0012675922107645444]
+    hfs_res = [0.01594705781409969, 0.008112202302337768, 0.01434832304717241, 0.015095061294166667, 0.012955566278621947, 0.01714009128506917]
+    hfs_err_res = [0.0010531962934879878, 0.0015198744553920284, 0.000490856368946772, 0.0007013394418482069, 0.0006541485041257045, 0.0013231812930978237]
+    circle_or_square_res = [True, True, True, False, False, False]
     # fmt: on
 
     ### ESR
@@ -387,6 +423,7 @@ if __name__ == "__main__":
     hfs_echo = []
     hfs_err_echo = []
     no_osc_inds = []
+    circle_or_square_echo = []
     for nv_ind in range(num_nvs_echo):
         osc_red_chi_sq = osc_red_chi_sqs[nv_ind]
         no_osc_red_chi_sq = no_osc_red_chi_sqs[nv_ind]
@@ -411,6 +448,7 @@ if __name__ == "__main__":
             hfs_echo.append(0)
             hfs_err_echo.append(0)
             no_osc_inds.append(nv_ind)
+        circle_or_square_echo.append(nv_ind in nva_inds)
 
     print(bad_inds)
     print(no_osc_inds)
@@ -425,6 +463,8 @@ if __name__ == "__main__":
         hfs_err_echo,
         spin_echo_exp_data,
         spin_echo_fit_data,
+        circle_or_square_echo,
+        circle_or_square_res,
     )
 
     plt.show(block=True)

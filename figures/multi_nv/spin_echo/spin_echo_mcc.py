@@ -430,11 +430,22 @@ def create_fit_figure(data, axes_pack=None, layout=None, no_legend=True, nv_inds
     num_runs = data["num_runs"]
 
     # fmt: off
-    nva_nums = [14, 15, 25, 26, 31, 33, 37, 44, 45, 46, 48, 52, 53, 57, 58, 60, 62, 65, 68, 74, 75, 85, 88, 92, 94, 95, 102, 105, 108, 109, 110, 114, 116, 118, 122, 123, 124, 131, 137, 138, 140, 141, 142, 147, 148, 149, 156, 157, 18, 84, 159]
-    nvb_nums = [5, 6, 8, 21, 22, 23, 24, 28, 29, 32, 34, 36, 39, 42, 47, 51, 55, 56, 61, 64, 66, 69, 71, 72, 79, 83, 90, 91, 96, 97, 100, 101, 103, 106, 107, 111, 113, 120, 125, 128, 134, 136, 145, 146, 152, 153, 154, 158, 70, 16, 20]
+    nva_nums = [0, 1, 2, 7, 13, 14, 15, 18, 25, 26, 31, 33, 37, 44, 45, 46, 48, 49, 52, 53, 57, 58, 60, 62, 65, 68, 74, 75, 84, 85, 88, 89, 92, 94, 95, 102, 105, 108, 109, 110, 114, 116, 117, 118, 122, 123, 124, 131, 137, 138, 140, 141, 142, 147, 148, 149, 155, 156, 157, 159]
+    nvb_nums = [3, 5, 6, 8, 16, 17, 20, 21, 22, 23, 24, 28, 29, 32, 34, 36, 39, 42, 47, 51, 55, 56, 61, 64, 66, 69, 70, 71, 72, 73, 77, 79, 83, 90, 91, 96, 97, 99, 100, 101, 103, 106, 107, 111, 113, 120, 125, 128, 132, 134, 136, 145, 146, 152, 153, 154, 158]
     # fmt: on
-    nv_nums = [widefield.get_nv_num(nv_list[ind]) for ind in nv_inds]
     nva_inds = []
+    nvb_inds = []
+    nv_nums = [widefield.get_nv_num(nv_list[ind]) for ind in nv_inds]
+    for num, ind in zip(nv_nums, nv_inds):
+        if num in nva_nums:
+            nva_inds.append(ind)
+        elif num in nvb_nums:
+            nvb_inds.append(ind)
+        else:
+            test = 0
+
+    # print(nva_inds)
+    # print(nvb_inds)
 
     if "norm_counts" in data:
         norm_counts = np.array(data["norm_counts"])
@@ -688,7 +699,7 @@ if __name__ == "__main__":
     # data = dm.get_raw_data(file_id=1795182451164)  # w/o ionization, dmw 0.5
     # data = dm.get_raw_data(file_id=1797877478132)  # w/ ionization, dmw None
     # data = dm.get_raw_data(file_id=1795131849572)  # w/ ionization, dmw 0.5
-    data = dm.get_raw_data(file_id=1800172893179)  # Otsu
+    # data = dm.get_raw_data(file_id=1800172893179)  # Otsu
 
     # Skip indices with bad pi pulses etc
     split_esr = [12, 13, 14, 61, 116]
@@ -717,13 +728,23 @@ if __name__ == "__main__":
 
     # # Separate files
     # # fmt: off
-    # file_ids = [1734158411844, 1734273666255, 1734371251079, 1734461462293, 1734569197701, 1736117258235, 1736254107747, 1736354618206, 1736439112682]
+    file_ids = [
+        1734158411844,
+        1734273666255,
+        1734371251079,
+        1734461462293,
+        1734569197701,
+        1736117258235,
+        1736254107747,
+        1736354618206,
+        1736439112682,
+    ]
     # file_ids2 = [1736589839249, 1736738087977, 1736932211269, 1737087466998, 1737219491182]
     # # fmt: on
     # # file_ids = file_ids[:4]
     # file_ids.extend(file_ids2)
     # del file_ids[3:5]
-    # data = dm.get_raw_data(file_id=file_ids)
+    data = dm.get_raw_data(file_id=file_ids[0])
 
     # create_raw_data_figure(data)
     create_fit_figure(data, nv_inds=nv_inds)
