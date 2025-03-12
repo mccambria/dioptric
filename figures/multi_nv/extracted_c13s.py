@@ -61,7 +61,7 @@ def main(
 
     figsize = kpl.figsize
     adj_figsize = (figsize[0], 1.5 * figsize[1])
-    fig, axes_pack = plt.subplots(2, 1, figsize=figsize)
+    fig, axes_pack = plt.subplots(2, 1, figsize=adj_figsize)
 
     ### Mod freq plot
 
@@ -70,7 +70,7 @@ def main(
     num_nvs = len(hfs_res) + len(hfs_echo)
 
     first_ind = None
-    nv_ind = 1
+    nv_ind = 0
     for hfs_list, hfs_err_list, color, label in zip(
         (hfs_echo, hfs_res),
         (hfs_err_echo, hfs_err_res),
@@ -123,11 +123,13 @@ def main(
 
     ### Fig labels etc
 
-    ax.set_xlabel("NV index")
-    margin = num_nvs / 100
+    ax.set_xlabel("NV index (ascending order)")
+    num_nvs = nv_ind - 1
+    margin = (num_nvs - first_ind) / 70
     ax.set_xlim(first_ind - margin, num_nvs + margin)
-    ax.xaxis.set_major_locator(MaxNLocator(integer=True))
-    ax.set_ylabel("$^{13}$C coupling (MHz)")
+    ax.set_xticks([45, 60, 75, 90])
+    # ax.xaxis.set_major_locator(MaxNLocator(integer=True))
+    ax.set_ylabel("Coupling strength (MHz)")
     # ax.set_ylabel("$^{13}$C hyperfine coupling (MHz)")
     ax.set_yscale("log")
     ax.set_yticks([0.1, 1, 10], [0.1, 1, 10])
@@ -135,29 +137,37 @@ def main(
 
     ### T2
 
-    T2_echo = popts[:, 4]
-    T2_echo_err = pstes[:, 4]
+    bad_inds = [47, 55, 61, 62, 68, 97]
+
+    num_vals = len(popts[:, 4])
+    T2_echo = np.array(
+        [popts[ind, 4] for ind in range(num_vals) if ind not in bad_inds]
+    )
+    T2_echo_err = np.array(
+        [pstes[ind, 4] for ind in range(num_vals) if ind not in bad_inds]
+    )
     echo_order = np.argsort(T2_echo)
     T2_echo = T2_echo[echo_order]
     T2_echo_err = T2_echo_err[echo_order]
-    clip_inds = T2_echo < 0.3
-    T2_echo = T2_echo[clip_inds]
-    T2_echo_err = T2_echo_err[clip_inds]
+    keep_inds = T2_echo < 0.3
+    num_clipped = len(T2_echo) - np.count_nonzero(keep_inds)
+    T2_echo = T2_echo[keep_inds]
+    T2_echo_err = T2_echo_err[keep_inds]
 
     num_vals = len(T2_echo)
-    x_vals = np.array(range(num_vals)) + 1
+    x_vals = np.array(range(num_vals)) + num_clipped
 
     ax = axes_pack[1]
 
     kpl.plot_points(
         ax, x_vals, T2_echo * 1000, T2_echo_err * 1000, color=kpl.KplColors.GREEN
     )
-    ax.set_xlabel("NV index")
+    ax.set_xlabel("NV index (ascending order)")
     ax.set_ylabel("$T_{2}$ time (µs)")
     ax.set_yscale("log")
     ax.set_yticks([30, 100, 300], [30, 100, 300])
-    margin = num_vals / 100
-    ax.set_xlim(-margin, num_vals + 1 + margin)
+    margin = (np.max(x_vals) - np.min(x_vals)) / 70
+    ax.set_xlim(np.min(x_vals) - margin, np.max(x_vals) + margin)
 
 
 def main_v1(

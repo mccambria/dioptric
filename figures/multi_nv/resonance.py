@@ -399,7 +399,7 @@ def main(
 if __name__ == "__main__":
     kpl.init_kplotlib()
 
-    bulk_or_shallow = False
+    bulk_or_shallow = True
     make_movie = False
 
     ### Main, bulk diamond
@@ -449,6 +449,11 @@ if __name__ == "__main__":
         num_runs = data["num_runs"]
         num_reps = data["num_reps"]
         freqs = data["freqs"]
+
+        nva_nums = [widefield.get_nv_num(nv_list[ind]) for ind in nva_inds]
+        nvb_nums = [widefield.get_nv_num(nv_list[ind]) for ind in nvb_inds]
+        print(nva_nums)
+        print(nvb_nums)
 
         # Manipulate the counts into the format expected for normalization
         counts = np.array(data.pop("counts"))

@@ -429,6 +429,13 @@ def create_fit_figure(data, axes_pack=None, layout=None, no_legend=True, nv_inds
     total_evolution_times -= 0.068  # Account for duration of pi pulse in middle
     num_runs = data["num_runs"]
 
+    # fmt: off
+    nva_nums = [14, 15, 25, 26, 31, 33, 37, 44, 45, 46, 48, 52, 53, 57, 58, 60, 62, 65, 68, 74, 75, 85, 88, 92, 94, 95, 102, 105, 108, 109, 110, 114, 116, 118, 122, 123, 124, 131, 137, 138, 140, 141, 142, 147, 148, 149, 156, 157, 18, 84, 159]
+    nvb_nums = [5, 6, 8, 21, 22, 23, 24, 28, 29, 32, 34, 36, 39, 42, 47, 51, 55, 56, 61, 64, 66, 69, 71, 72, 79, 83, 90, 91, 96, 97, 100, 101, 103, 106, 107, 111, 113, 120, 125, 128, 134, 136, 145, 146, 152, 153, 154, 158, 70, 16, 20]
+    # fmt: on
+    nv_nums = [widefield.get_nv_num(nv_list[ind]) for ind in nv_inds]
+    nva_inds = []
+
     if "norm_counts" in data:
         norm_counts = np.array(data["norm_counts"])
         norm_counts_ste = np.array(data["norm_counts_ste"])
