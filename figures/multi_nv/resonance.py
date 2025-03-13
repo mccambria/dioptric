@@ -404,7 +404,7 @@ def main(
 if __name__ == "__main__":
     kpl.init_kplotlib()
 
-    bulk_or_shallow = True
+    bulk_or_shallow = False
     make_movie = False
 
     ### Main, bulk diamond
@@ -587,7 +587,7 @@ if __name__ == "__main__":
 
         kpl.show(block=True)
 
-    ### Supp, shallow movie
+    ### Supp, shallow
     if not bulk_or_shallow:
         # Split into orienatations and remove weak NVs
         # fmt: off
