@@ -528,7 +528,7 @@ def plot_points(ax, x, y, yerr=None, size=None, **kwargs):
     params["color"] = color
     params["markerfacecolor"] = face_color
 
-    ax.errorbar(x, y, **params)
+    return ax.errorbar(x, y, **params)
 
 
 def plot_sequence(ax, edges, values, size=None, **kwargs):

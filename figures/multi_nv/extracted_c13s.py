@@ -11,8 +11,10 @@ import sys
 import time
 import traceback
 
+import matplotlib.patches as mpatches
 import matplotlib.pyplot as plt
 import numpy as np
+from matplotlib.legend_handler import HandlerTuple
 from matplotlib.ticker import MaxNLocator
 from numba import njit
 from scipy.optimize import brute
@@ -70,7 +72,7 @@ def main(
 
     ### Mod freq plot
 
-    ax = axes_pack[0]
+    ax = axes_pack[1]
 
     num_nvs = len(hfs_res) + len(hfs_echo)
 
@@ -103,7 +105,7 @@ def main(
             # else:
             if hfs_val > 0:
                 marker = "o" if circle_or_square[ind] else "s"
-                kpl.plot_points(
+                ret_val = kpl.plot_points(
                     ax,
                     nv_ind,
                     hfs_val,
@@ -112,6 +114,16 @@ def main(
                     label=label,
                     marker=marker,
                 )
+                if marker == "o":
+                    if color == KplColors.BLUE:
+                        blue_o = ret_val
+                    elif color == KplColors.RED:
+                        red_o = ret_val
+                elif marker == "s":
+                    if color == KplColors.BLUE:
+                        blue_s = ret_val
+                    elif color == KplColors.RED:
+                        red_s = ret_val
                 if first_ind is None:
                     first_ind = nv_ind
                 label = None
@@ -139,17 +151,23 @@ def main(
     ### Fig labels etc
 
     # ax.set_xlabel("NV index (ascending order)")
-    ax.set_xlabel(r"NV index ($A_{\text{hfs},i}<A_{\text{hfs},i+1}$)")
+    ax.set_xlabel(r"NV index ($A_{\mathrm{hfs},j}<A_{\mathrm{hfs},j+1}$)", usetex=True)
     num_nvs = nv_ind - 1
     margin = (num_nvs - first_ind) / 70
     ax.set_xlim(first_ind - margin, num_nvs + margin)
     ax.set_xticks([45, 60, 75, 90])
     # ax.xaxis.set_major_locator(MaxNLocator(integer=True))
-    ax.set_ylabel("Coupling strength (MHz)")
+    ax.set_ylabel(r"Coupling strength $A_{\mathrm{hfs}}$ (MHz)", usetex=True)
     # ax.set_ylabel("$^{13}$C hyperfine coupling (MHz)")
     ax.set_yscale("log")
     ax.set_yticks([0.1, 1, 10], [0.1, 1, 10])
-    ax.legend(loc=kpl.Loc.UPPER_LEFT)
+    ax.legend(
+        [(blue_o, blue_s), (red_o, red_s)],
+        ["Spin echo", "ESR"],
+        handler_map={tuple: HandlerTuple(ndivide=None)},
+        loc=kpl.Loc.UPPER_LEFT,
+        handlelength=1.2,
+    )
 
     ### T2
 
@@ -175,7 +193,7 @@ def main(
     num_vals = len(T2_echo)
     x_vals = np.array(range(num_vals)) + num_clipped
 
-    ax = axes_pack[1]
+    ax = axes_pack[0]
 
     for ind in range(len(x_vals)):
         marker = "o" if circle_or_square_echo_t2[ind] else "s"
@@ -188,191 +206,22 @@ def main(
             marker=marker,
         )
     # ax.set_xlabel("NV index (ascending order)")
-    ax.set_xlabel(r"NV index ($T_{2,i}<T_{2,i+1}$)")
-    ax.set_ylabel("$T_{2}$ time (µs)")
+    ax.set_xlabel(r"NV index ($T_{2,i}<T_{2,i+1}$)", usetex=True)
+    ax.set_ylabel(r"$T_{2}$ time (µs)", usetex=True)
     ax.set_yscale("log")
     ax.set_yticks([30, 100, 300], [30, 100, 300])
     ax.set_ylim(30, 600)
     margin = (np.max(x_vals) - np.min(x_vals)) / 70
     ax.set_xlim(np.min(x_vals) - margin, np.max(x_vals) + margin)
 
-
-def main_v1(
-    hfs_res,
-    hfs_err_res,
-    hfs_echo,
-    hfs_err_echo,
-    spin_echo_exp_data,
-    spin_echo_fit_data,
-):
-    # plot_loop_inds = [16, 45, 99]  # 0.9 MHz
-    # plot_loop_inds = [0, 34, 83]  # 0.37 MHz
-    # plot_loop_inds = [0, 34]  # 0.37 MHz
-    plot_loop_inds = [34, 0]  # 0.37 MHz
-    # plot_loop_inds = [65, 92]  # 0.102 MHz
-    popts = np.array(spin_echo_fit_data["popts"])
-    mod_freqs = popts[:, -2]
-    plot_loop_freqs = [mod_freqs[ind] for ind in plot_loop_inds]
-    colors = [KplColors.RED, KplColors.BROWN, KplColors.GRAY]
-
-    ### Data work
-
-    res_order = np.argsort(hfs_res)
-    hfs_res = 1000 * np.array(hfs_res)[res_order]
-    hfs_err_res = 1000 * np.array(hfs_err_res)[res_order]
-    echo_order = np.argsort(hfs_echo)
-    hfs_echo = np.array(hfs_echo)[echo_order]
-    hfs_err_echo = np.array(hfs_err_echo)[echo_order]
-    sorted_plot_loop_inds = [np.where(echo_order == val)[0] for val in plot_loop_inds]
-
-    ### Fig setup
-
-    figsize = kpl.figsize
-    adj_figsize = (figsize[0], 1.5 * figsize[1])
-    main_fig = plt.figure(figsize=adj_figsize)
-    main_fig.get_layout_engine().set(rect=[0.002, 0.002, 0.995, 0.996])
-    main_fig.get_layout_engine().set(h_pad=0)
-    main_fig.get_layout_engine().set(w_pad=0)
-    fig_a, fig_b = main_fig.subfigures(nrows=2, height_ratios=(1, 0.6))
-    upper_ax, lower_ax = fig_a.subplots(
-        2,
-        1,
-        sharex=True,
-        height_ratios=[10, 1],
-        gridspec_kw={"hspace": 0},
-    )
-
-    ### Main plot
-
-    num_nvs = len(hfs_res) + len(hfs_echo)
-
-    nv_ind = 1
-    for hfs_list, hfs_err_list, color, label in zip(
-        (hfs_echo, hfs_res),
-        (hfs_err_echo, hfs_err_res),
-        (kpl.KplColors.BLUE, kpl.KplColors.GREEN),
-        ("Spin echo", "ESR"),
-    ):
-        for ind in range(len(hfs_list)):
-            # if ind == len(hfs_list) - 5:
-            #     break
-            hfs_val = hfs_list[ind]
-            hfs_err = hfs_err_list[ind]
-            plot_ax = lower_ax if hfs_val == 0 else upper_ax
-            if color == kpl.KplColors.BLUE and hfs_val in plot_loop_freqs:
-                sub_ind = plot_loop_freqs.index(hfs_val)
-                kpl.plot_points(
-                    plot_ax,
-                    nv_ind,
-                    hfs_val,
-                    hfs_err,
-                    color=colors[sub_ind],
-                    marker="D",
-                    size=kpl.Size.SMALL,
-                )
-            else:
-                kpl.plot_points(
-                    plot_ax, nv_ind, hfs_val, hfs_err, color=color, label=label
-                )
-            nv_ind += 1
-            if hfs_val > 0:
-                label = None
-
-    # From Smeltzer 2011
-    for theory_val, theory_err in zip(
-        [14.8, 13.9, 7.5, 5.7, 4.6, 4.67, 2.63, 2.27],
-        [0.1, 0.1, 0.1, 0.2, 0.1, 0.04, 0.07, 0.04],
-    ):
-        # Experiment values from same paper
-        # for theory_val, theory_err in zip(
-        #     [13.72, 12.78, 8.92, 6.52, 4.2, 2.4],
-        #     [0.03, 0.01, 0.03, 0.04, 0.1, 0.3],
-        # ):
-        # ax.axhline(theory_val, color=kpl.KplColors.LIGHT_GRAY, zorder=-50)
-        upper_ax.fill_between(
-            [-1, num_nvs + 2],
-            theory_val - theory_err,
-            theory_val + theory_err,
-            color=kpl.KplColors.LIGHT_GRAY,
-            zorder=-50,
-        )
-
-    ### Fig labels etc
-
-    lower_ax.set_xlabel("NV index")
-    margin = 0.8
-    lower_ax.set_xlim(-margin, num_nvs + 1 + margin)
-    lower_ax.xaxis.set_major_locator(MaxNLocator(integer=True))
-    lower_ax.set_yticks([0])
-    upper_ax.set_ylabel("$^{13}$C hyperfine coupling (MHz)")
-    # upper_ax.set_ylabel("Envelope frequency (MHz)")
-    # upper_ax.set_ylabel("T2 (ms)")
-    upper_ax.set_yscale("log")
-    upper_ax.legend(loc=kpl.Loc.UPPER_LEFT)
-    upper_ax.tick_params(axis="x", bottom=False)
-
-    ### Lower quad plots showing individual traces
-
-    axes_pack = fig_b.subplots(
-        1,
-        len(plot_loop_inds),
-        sharey=True,
-        gridspec_kw={"wspace": 0},
-    )
-
-    norm_counts = np.array(spin_echo_exp_data["norm_counts"])
-    norm_counts_ste = np.array(spin_echo_exp_data["norm_counts_ste"])
-    red_chi_sqs = spin_echo_fit_data["red_chi_sq_list"]
-    taus = np.array(spin_echo_exp_data["taus"])
-    total_evolution_times = 2 * np.array(taus) / 1e3
-    fit_fn = quartic_decay
-
-    # Skip indices with bad pi pulses etc
-    split_esr = [12, 13, 14, 61, 116]
-    broad_esr = [52, 11]
-    weak_esr = [72, 64, 55, 96, 112, 87, 12, 58, 36]
-    skip_inds = list(set(split_esr + broad_esr + weak_esr))
-    nv_inds = [ind for ind in range(117) if ind not in skip_inds]
-
-    ax_ind = 0
-    for loop_ind, nv_ind in enumerate(nv_inds):
-        if loop_ind not in plot_loop_inds:
-            continue
-        nv_counts = norm_counts[nv_ind]
-        nv_counts_ste = norm_counts_ste[nv_ind]
-        ax = axes_pack[ax_ind]
-        color = colors[ax_ind]
+    for marker, label in zip(("o", "s"), ("Orientation A", "Orientation B")):
         kpl.plot_points(
-            ax,
-            total_evolution_times,
-            nv_counts,
-            nv_counts_ste,
-            color=color,
-            size=kpl.Size.SMALL,
+            ax, -10, 80, 10, color=kpl.KplColors.GRAY, marker=marker, label=label
         )
-        linspace_taus = np.linspace(0, np.max(total_evolution_times), 10000)
-        linspace_taus = linspace_taus[1:]  # Exclude tau=0 which can diverge
-        popt = popts[loop_ind]
-        kpl.plot_line(
-            ax,
-            linspace_taus,
-            fit_fn(linspace_taus, *popt),
-            color=color,
-        )
-        ax_ind += 1
-        ax.set_xlim(41, 62)
+    ax.legend(loc=kpl.Loc.UPPER_LEFT)
 
-    xticks = [42, 50, 58]
-    ax = axes_pack[0]
-    ax.set_ylabel("NV$^{-}$ population (arb. units)")
-    # ax.tick_params(axis="y", right=True)
-    ax.set_xticks(xticks)
-    ax.set_ylim(0.12, 0.71)
-    ax = axes_pack[1]
-    ax.tick_params(axis="y", left=False)
-    # ax.set_xlabel("Total evolution time (µs)")
-    kpl.set_shared_ax_xlabel(ax, "Total evolution time (µs)")
-    ax.set_xticks(xticks)
+    fig.text(0.001, 0.97, "(a)")
+    fig.text(0.001, 0.51, "(b)")
 
 
 def simple():

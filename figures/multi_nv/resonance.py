@@ -452,6 +452,7 @@ if __name__ == "__main__":
         nv_list = data["nv_list"]
         num_nvs = len(nv_list)
         num_steps = data["num_steps"]
+        durs = [nv_list[ind].pulse_durations["3"] for ind in range(num_nvs)]
         num_runs = data["num_runs"]
         num_reps = data["num_reps"]
         freqs = data["freqs"]
