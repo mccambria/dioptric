@@ -32,7 +32,7 @@ from analysis.bimodal_histogram import (
     ProbDist,
     determine_threshold,
     fit_bimodal_histogram,
-    otsu_threshold,
+    weighted_otsu_threshold,
 )
 from utils import common
 from utils import data_manager as dm
@@ -386,7 +386,8 @@ def threshold_counts(nv_list, sig_counts, ref_counts=None, dynamic_thresh=False)
             # dark_mode_weight = 0.5
             dark_mode_weight = None
             # threshold = determine_threshold(popt, prob_dist, dark_mode_weight)
-            threshold = otsu_threshold(combined_counts)
+            # threshold = otsu_threshold(combined_counts)
+            threshold = weighted_otsu_threshold(combined_counts)
             # print(threshold)
             thresholds.append(threshold)
     else:

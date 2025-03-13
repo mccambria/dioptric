@@ -24,6 +24,8 @@ from analysis.bimodal_histogram import (
     ProbDist,
     determine_threshold,
     fit_bimodal_histogram,
+    otsu_threshold2,
+    weighted_otsu_threshold,
 )
 from majorroutines.widefield import base_routine
 from utils import common, widefield
@@ -109,21 +111,27 @@ def process_and_plot(
 
     for ind in range(num_nvs):
         nv_num = widefield.get_nv_num(nv_list[ind])
-        # if nv_num not in [37, 71, 74]:
-        if nv_num not in [153]:
+        # if ind in [72, 64, 55, 96, 112, 87, 12, 58, 36]:  # weak_esr
+        if nv_num not in [37, 71, 74]:
+            # if nv_num not in [153]:
             continue
         sig_counts_list = sig_counts_lists[ind]
         ref_counts_list = ref_counts_lists[ind]
+        combined_counts = np.append(sig_counts_list, ref_counts_list)
 
         # Only use ref counts for threshold determination
+        # threshold = otsu_threshold(ref_counts_list)
+        threshold = weighted_otsu_threshold(combined_counts)
         popt, _, red_chi_sq = fit_bimodal_histogram(
             ref_counts_list, prob_dist, no_print=False, no_plot=True
         )
-        threshold, readout_fidelity = determine_threshold(
-            popt, prob_dist, dark_mode_weight=None, do_print=True, ret_fidelity=True
-        )
+        # threshold, readout_fidelity = determine_threshold(
+        #     popt, prob_dist, dark_mode_weight=None, do_print=True, ret_fidelity=True
+        # )
         threshold_list.append(threshold)
+        readout_fidelity = bimodal_histogram.calc_readout_fidelity(popt, threshold)
         readout_fidelity_list.append(readout_fidelity)
+        print(f"readout fidelity: {readout_fidelity}")
         if popt is not None:
             prep_fidelity = 1 - popt[0]
             ion_prob = popt[-1]
@@ -206,7 +214,7 @@ def process_and_plot(
             # if readout_fidelity < 0.8:
             #     kpl.show(block=True)
             # plt.close(fig)
-            kpl.show(block=True)
+            # kpl.show(block=True)
             fig = None
 
             if fig is not None:
@@ -215,6 +223,7 @@ def process_and_plot(
     print(f"readout_fidelity_list: {readout_fidelity_list}")
     print(f"prep_fidelity_list: {prep_fidelity_list}")
     print(f"red_chi_sq_list: {red_chi_sq_list}")
+    print(f"ion_prob_list: {ion_prob_list}")
     print(f"thresholds: {threshold_list}")
 
     # Report out the results
