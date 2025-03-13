@@ -380,8 +380,10 @@ def threshold_counts(nv_list, sig_counts, ref_counts=None, dynamic_thresh=False)
             prob_dist = ProbDist.NEGATIVE_BINOMIAL_WITH_IONIZATION
             # prob_dist = ProbDist.GAUSSIAN2_WITH_IONIZATION
             # prob_dist = ProbDist.NEGATIVE_BINOMIAL
+            # threshold = weighted_otsu_threshold(combined_counts)
+            # print(threshold)
             # popt, _, _ = fit_bimodal_histogram(
-            #     combined_counts, prob_dist, no_print=True, no_plot=True
+            #     combined_counts, prob_dist, no_print=False, no_plot=False
             # )
             # print(popt)
             # dark_mode_weight = 0.5

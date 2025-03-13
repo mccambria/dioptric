@@ -415,7 +415,7 @@ if __name__ == "__main__":
         nvb_inds = [3, 4, 5, 7, 11, 12, 14, 15, 16, 17, 18, 21, 22, 24, 26, 27, 29, 30, 34, 37, 40, 41, 45, 47, 49, 51, 52, 53, 54, 55, 58, 59, 60, 65, 66, 70, 71, 72, 73, 74, 76, 78, 79, 83, 84, 89, 93, 94, 96, 97, 98, 104, 105, 109, 110, 111, 115]  # Smaller splitting
         split_esr = [12, 13, 14, 61, 116] 
         broad_esr = [52, 11] 
-        split_esr = split_esr + broad_esr
+        split_esr = broad_esr + split_esr
         weak_esr = [72, 64, 55, 96, 112, 87, 12, 58, 36]
         # fmt: on
         for ind in weak_esr:
@@ -452,7 +452,6 @@ if __name__ == "__main__":
         nv_list = data["nv_list"]
         num_nvs = len(nv_list)
         num_steps = data["num_steps"]
-        durs = [nv_list[ind].pulse_durations["3"] for ind in range(num_nvs)]
         num_runs = data["num_runs"]
         num_reps = data["num_reps"]
         freqs = data["freqs"]
@@ -486,7 +485,7 @@ if __name__ == "__main__":
         norm_counts, norm_counts_ste = widefield.process_counts(
             nv_list, sig_counts, ref_counts, threshold=True
         )
-        print(np.mean(norm_counts_ste, axis=1))
+        print(np.mean(norm_counts_ste))
         # mean_stes = np.mean(norm_counts_ste, axis=1)
         # print(np.argsort(mean_stes)[::-1])
         # print(np.sort(mean_stes)[::-1])
