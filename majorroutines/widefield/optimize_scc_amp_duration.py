@@ -11,123 +11,6 @@ import itertools
 import traceback
 
 import matplotlib.pyplot as plt
-
-# def process_and_plot(data):
-#     """
-#     Process and plot the results of the SCC optimization experiment.
-#     Parameters
-#     ----------
-#     data : dict
-#         Raw data object from the experiment
-#     Returns
-#     -------
-#     figs : list
-#         List of matplotlib figures generated during plotting.
-#     """
-#     # Unpack
-#     nv_list = data["nv_list"]
-#     counts = np.array(data["counts"])
-#     sig_counts = counts[0]
-#     ref_counts = counts[1]
-#     step_vals = np.array(data["step_vals"])
-#     num_amp_steps = data["num_amp_steps"]
-#     num_dur_steps = data["num_dur_steps"]
-#     # num_amp_steps = 15
-#     # num_dur_steps = 17
-#     min_amp = data["min_amp"]
-#     max_amp = data["max_amp"]
-#     min_dur = data["min_duration"]
-#     max_dur = data["max_duration"]
-#     amp_vals = np.linspace(min_amp, max_amp, num_amp_steps)
-#     duration_vals = np.linspace(min_dur, max_dur, num_dur_steps).astype(int)
-#     duration_linspace = np.linspace(min_dur, max_dur, 100)
-#     num_nvs = len(nv_list)
-#     # Process the counts
-#     sig_counts, ref_counts = widefield.threshold_counts(
-#         nv_list, sig_counts, ref_counts, dynamic_thresh=True
-#     )
-#     avg_snr, avg_snr_ste = widefield.calc_snr(sig_counts, ref_counts)
-#     opti_inds = [np.argmax(avg_snr[nv_ind]) for nv_ind in range(num_nvs)]
-#     opti_dur_guesses = [step_vals[opti_inds[nv_ind], 0] for nv_ind in range(num_nvs)]
-#     opti_amp_guesses = [step_vals[opti_inds[nv_ind], 1] for nv_ind in range(num_nvs)]
-#     opti_snr_guesses = [avg_snr[nv_ind, opti_inds[nv_ind]] for nv_ind in range(num_nvs)]
-#     # print(f"SNR: {opti_snrs}")
-#     # print(f"Median SNR: {np.median(opti_snrs)}")
-#     # return
-#     # Fit to the linecut at each amplitude value to determine optimal parameters
-#     def fit_fn(tau, delay, slope, dec):
-#         tau = np.array(tau) - delay
-#         return slope * tau * np.exp(-tau / dec)
-#     opti_snrs = []
-#     opti_amps = []
-#     opti_durs = []
-#     for nv_ind in range(num_nvs):
-#         lines = []
-#         opti_snr = 0
-#         snrs_2d = np.reshape(avg_snr[nv_ind], (num_dur_steps, num_amp_steps)).T
-#         snr_errs_2d = np.reshape(avg_snr_ste[nv_ind], (num_dur_steps, num_amp_steps)).T
-#         for amp_ind in range(num_amp_steps):
-#             # slope_guess = opti_snr_guesses[nv_ind] / opti_dur_guesses[nv_ind]
-#             slope_guess = opti_snr_guesses[nv_ind] / opti_amp_guesses[nv_ind]
-#             guess_params = [20, slope_guess, 300]
-#             try:
-#                 popt, pcov, red_chi_sq = curve_fit(
-#                     fit_fn,
-#                     # duration_vals,
-#                     amp_vals,
-#                     snrs_2d[amp_ind],
-#                     guess_params,
-#                     snr_errs_2d[amp_ind],
-#                 )
-#             except Exception:
-#                 lines.append(None)
-#                 continue
-#             line = fit_fn(duration_linspace, *popt)
-#             lines.append(line)
-#             opti_snr_at_amp = np.max(line)
-#             if opti_snr_at_amp > opti_snr:
-#                 opti_snr = opti_snr_at_amp
-#                 opti_dur = duration_linspace[np.argmax(line)]
-#                 opti_amp = amp_vals[amp_ind]
-#         # Plot
-#         # if opti_dur == 32:
-#         fig, ax = plt.subplots()
-#         for amp_ind in range(num_amp_steps):
-#             # kpl.plot_points(ax, duration_vals, snrs_2d[amp_ind])
-#             kpl.plot_points(ax, amp_vals, snrs_2d[amp_ind])
-#             line = lines[amp_ind]
-#             if line is not None:
-#                 kpl.plot_line(ax, duration_linspace, line, label=amp_vals[amp_ind])
-#         ax.set_xlabel("Duration (ns)")
-#         ax.set_ylabel("SNR")
-#         ax.set_title(f"NV num: {widefield.get_nv_num(nv_list[nv_ind])}")
-#         ax.legend()
-#         kpl.show(block=True)
-#         print(opti_snr)
-#         print(opti_amp)
-#         print(opti_dur)
-#         opti_snrs.append(round(opti_snr, 3))
-#         opti_amps.append(round(opti_amp, 3))
-#         opti_durs.append(round(opti_dur / 4) * 4)
-#         # Plot
-#         # fig, ax = plt.subplots()
-#         # kpl.imshow(
-#         #     ax,
-#         #     snrs_2d,
-#         #     extent=(min_dur, max_dur, min_amp, max_amp),
-#         #     aspect="auto",
-#         #     origin="lower",
-#         #     cbar_label="SNR",
-#         #     x_label="Duration (ns)",
-#         #     y_label="Amplitude (arb.)",
-#         # )
-#         # ax.set_title(f"NV index: {nv_ind}")
-#         # kpl.show(block=True)
-#     # Report results
-#     print(opti_snrs)
-#     print(opti_amps)
-#     print(opti_durs)
-#     print(f"Median SNR: {np.median(opti_snrs)}")
 import numpy as np
 from scipy.optimize import curve_fit
 
@@ -143,143 +26,266 @@ from utils.tool_belt import curve_fit
 def process_and_plot(data):
     """
     Process and plot the results of the SCC optimization experiment.
-
     Parameters
     ----------
     data : dict
         Raw data object from the experiment
-
     Returns
     -------
     figs : list
         List of matplotlib figures generated during plotting.
     """
-
-    # Unpack data
-    # print(data.keys())
+    # Unpack
     nv_list = data["nv_list"]
     counts = np.array(data["counts"])
-    sig_counts, ref_counts = counts[0], counts[1]
+    sig_counts = counts[0]
+    ref_counts = counts[1]
     step_vals = np.array(data["step_vals"])
     num_amp_steps = data["num_amp_steps"]
     num_dur_steps = data["num_dur_steps"]
-    min_amp, max_amp = data["min_amp"], data["max_amp"]
-    min_dur, max_dur = data["min_duration"], data["max_duration"]
+    # num_amp_steps = 15
+    # num_dur_steps = 17
+    min_amp = data["min_amp"]
+    max_amp = data["max_amp"]
+    min_dur = data["min_duration"]
+    max_dur = data["max_duration"]
     amp_vals = np.linspace(min_amp, max_amp, num_amp_steps)
     duration_vals = np.linspace(min_dur, max_dur, num_dur_steps).astype(int)
+    duration_linspace = np.linspace(min_dur, max_dur, 100)
     num_nvs = len(nv_list)
-
-    # Determine the varying parameter (either "amplitude" or "duration")
-    varying_param = data.get("varying_param", "amplitude")  # Default to amplitude
-
-    # Generate a finer resolution linspace for fitting
-    finer_linspace = (
-        np.linspace(min_dur, max_dur, 100)
-        if varying_param == "duration"
-        else np.linspace(min_amp, max_amp, 100)
-    )
-
     # Process the counts
     sig_counts, ref_counts = widefield.threshold_counts(
         nv_list, sig_counts, ref_counts, dynamic_thresh=True
     )
     avg_snr, avg_snr_ste = widefield.calc_snr(sig_counts, ref_counts)
+    opti_inds = [np.argmax(avg_snr[nv_ind]) for nv_ind in range(num_nvs)]
+    opti_dur_guesses = [step_vals[opti_inds[nv_ind], 0] for nv_ind in range(num_nvs)]
+    opti_amp_guesses = [step_vals[opti_inds[nv_ind], 1] for nv_ind in range(num_nvs)]
+    opti_snr_guesses = [avg_snr[nv_ind, opti_inds[nv_ind]] for nv_ind in range(num_nvs)]
+
+    # print(f"SNR: {opti_snrs}")
+    # print(f"Median SNR: {np.median(opti_snrs)}")
+    # return
+    # Fit to the linecut at each amplitude value to determine optimal parameters
+    def fit_fn(tau, delay, slope, dec):
+        tau = np.array(tau) - delay
+        return slope * tau * np.exp(-tau / dec)
 
     opti_snrs = []
     opti_amps = []
     opti_durs = []
-
-    # Define fitting function
-    def fit_fn(x, delay, slope, decay):
-        x = np.array(x) - delay
-        return slope * x * np.exp(-x / decay)
-
     for nv_ind in range(num_nvs):
         lines = []
         opti_snr = 0
-        opti_x, opti_fixed = None, None  # Ensure variables are initialized
-
         snrs_2d = np.reshape(avg_snr[nv_ind], (num_dur_steps, num_amp_steps)).T
         snr_errs_2d = np.reshape(avg_snr_ste[nv_ind], (num_dur_steps, num_amp_steps)).T
-
-        # Loop over the varying parameter
-        for ind in range(
-            num_amp_steps if varying_param == "duration" else num_dur_steps
-        ):
-            guess_params = [20, 0.5, 300]
-            x_vals = duration_vals if varying_param == "duration" else amp_vals
-            y_vals = snrs_2d[ind] if varying_param == "duration" else snrs_2d[:, ind]
-            y_errs = (
-                snr_errs_2d[ind] if varying_param == "duration" else snr_errs_2d[:, ind]
-            )
-
+        for amp_ind in range(num_amp_steps):
+            slope_guess = opti_snr_guesses[nv_ind] / opti_dur_guesses[nv_ind]
+            # slope_guess = opti_snr_guesses[nv_ind] / opti_amp_guesses[nv_ind]
+            guess_params = [20, slope_guess, 300]
             try:
-                popt, _ = curve_fit(
-                    fit_fn, x_vals, y_vals, p0=guess_params, sigma=y_errs
+                popt, pcov, red_chi_sq = curve_fit(
+                    fit_fn,
+                    duration_vals,
+                    # amp_vals,
+                    snrs_2d[amp_ind],
+                    guess_params,
+                    snr_errs_2d[amp_ind],
                 )
-                fitted_line = fit_fn(finer_linspace, *popt)
-                lines.append(fitted_line)
-
-                # Find optimal values
-                opti_snr_at_x = np.max(fitted_line)
-                if opti_snr_at_x > opti_snr:
-                    opti_snr = opti_snr_at_x
-                    opti_x = finer_linspace[np.argmax(fitted_line)]
-                    opti_fixed = (
-                        amp_vals[ind]
-                        if varying_param == "duration"
-                        else duration_vals[ind]
-                    )
-
             except Exception:
                 lines.append(None)
                 continue
-
-        # If fitting fails for all cases, set default values to avoid UnboundLocalError
-        if opti_x is None:
-            opti_x = np.nan  # Assign NaN or a fallback value
-        if opti_fixed is None:
-            opti_fixed = np.nan
-
+            line = fit_fn(duration_linspace, *popt)
+            lines.append(line)
+            opti_snr_at_amp = np.max(line)
+            if opti_snr_at_amp > opti_snr:
+                opti_snr = opti_snr_at_amp
+                opti_dur = duration_linspace[np.argmax(line)]
+                opti_amp = amp_vals[amp_ind]
         # Plot
-        fig, ax = plt.subplots()
-        for ind in range(
-            num_amp_steps if varying_param == "duration" else num_dur_steps
-        ):
-            kpl.plot_points(ax, x_vals, y_vals)
-            if lines[ind] is not None:
-                kpl.plot_line(ax, finer_linspace, lines[ind], label=str(x_vals[ind]))
-
-        ax.set_xlabel(
-            "Duration (ns)" if varying_param == "duration" else "Amplitude (arb.)"
-        )
-        ax.set_ylabel("SNR")
-        ax.set_title(f"NV num: {widefield.get_nv_num(nv_list[nv_ind])}")
-        ax.legend()
-        kpl.show(block=True)
-
-        # Store results
-        print(f"Optimal SNR: {opti_snr}")
-        print(f"Optimal {varying_param}: {opti_x}")
-        print(
-            f"Optimal Fixed ({'Amplitude' if varying_param == 'duration' else 'Duration'}): {opti_fixed}"
-        )
-
+        # # if opti_dur == 32:
+        # fig, ax = plt.subplots()
+        # for amp_ind in range(num_amp_steps):
+        #     kpl.plot_points(ax, duration_vals, snrs_2d[amp_ind])
+        #     # kpl.plot_points(ax, amp_vals, snrs_2d[amp_ind])
+        #     line = lines[amp_ind]
+        #     if line is not None:
+        #         kpl.plot_line(ax, duration_linspace, line, label=amp_vals[amp_ind])
+        # ax.set_xlabel("Duration (ns)")
+        # ax.set_ylabel("SNR")
+        # ax.set_title(f"NV num: {widefield.get_nv_num(nv_list[nv_ind])}")
+        # ax.legend()
+        # kpl.show(block=True)
+        print(opti_snr)
+        print(opti_amp)
+        print(opti_dur)
         opti_snrs.append(round(opti_snr, 3))
-        opti_amps.append(
-            round(opti_x, 3) if varying_param == "amplitude" else round(opti_fixed, 3)
-        )
-        # opti_durs.append(
-        #     round(opti_x / 4) * 4
-        #     if varying_param == "duration"
-        #     else round(opti_fixed / 4) * 4
+        opti_amps.append(round(opti_amp, 3))
+        opti_durs.append(round(opti_dur / 4) * 4)
+        # Plot
+        # fig, ax = plt.subplots()
+        # kpl.imshow(
+        #     ax,
+        #     snrs_2d,
+        #     extent=(min_dur, max_dur, min_amp, max_amp),
+        #     aspect="auto",
+        #     origin="lower",
+        #     cbar_label="SNR",
+        #     x_label="Duration (ns)",
+        #     y_label="Amplitude (arb.)",
         # )
-
-    # Final reporting
-    print(f"Optimal SNR values: {opti_snrs}")
-    print(f"Optimal Amplitudes: {opti_amps}")
-    print(f"Optimal Durations: {opti_durs}")
+        # ax.set_title(f"NV index: {nv_ind}")
+        # kpl.show(block=True)
+    # Report results
+    opt_dur_med = round(np.median(opti_durs))
+    opti_durs = [opt_dur_med if not (32 < val < 200) else val for val in opti_durs]
+    print(opti_snrs)
+    print(opti_amps)
+    print(opti_durs)
     print(f"Median SNR: {np.median(opti_snrs)}")
+    print(f"Median Durs: {np.median(opti_durs)}")
+
+
+# def process_and_plot(data):
+#     """
+#     Process and plot the results of the SCC optimization experiment.
+
+#     Parameters
+#     ----------
+#     data : dict
+#         Raw data object from the experiment
+
+#     Returns
+#     -------
+#     figs : list
+#         List of matplotlib figures generated during plotting.
+#     """
+
+#     # Unpack data
+#     # print(data.keys())
+#     nv_list = data["nv_list"]
+#     counts = np.array(data["counts"])
+#     sig_counts, ref_counts = counts[0], counts[1]
+#     step_vals = np.array(data["step_vals"])
+#     num_amp_steps = data["num_amp_steps"]
+#     num_dur_steps = data["num_dur_steps"]
+#     min_amp, max_amp = data["min_amp"], data["max_amp"]
+#     min_dur, max_dur = data["min_duration"], data["max_duration"]
+#     amp_vals = np.linspace(min_amp, max_amp, num_amp_steps)
+#     duration_vals = np.linspace(min_dur, max_dur, num_dur_steps).astype(int)
+#     num_nvs = len(nv_list)
+
+#     # Determine the varying parameter (either "amplitude" or "duration")
+#     varying_param = data.get("varying_param", "amplitude")  # Default to amplitude
+
+#     # Generate a finer resolution linspace for fitting
+#     finer_linspace = (
+#         np.linspace(min_dur, max_dur, 100)
+#         if varying_param == "duration"
+#         else np.linspace(min_amp, max_amp, 100)
+#     )
+
+#     # Process the counts
+#     sig_counts, ref_counts = widefield.threshold_counts(
+#         nv_list, sig_counts, ref_counts, dynamic_thresh=True
+#     )
+#     avg_snr, avg_snr_ste = widefield.calc_snr(sig_counts, ref_counts)
+
+#     opti_snrs = []
+#     opti_amps = []
+#     opti_durs = []
+
+#     # Define fitting function
+#     def fit_fn(x, delay, slope, decay):
+#         x = np.array(x) - delay
+#         return slope * x * np.exp(-x / decay)
+
+#     for nv_ind in range(num_nvs):
+#         lines = []
+#         opti_snr = 0
+#         opti_x, opti_fixed = None, None  # Ensure variables are initialized
+
+#         snrs_2d = np.reshape(avg_snr[nv_ind], (num_dur_steps, num_amp_steps)).T
+#         snr_errs_2d = np.reshape(avg_snr_ste[nv_ind], (num_dur_steps, num_amp_steps)).T
+
+#         # Loop over the varying parameter
+#         for ind in range(
+#             num_amp_steps if varying_param == "duration" else num_dur_steps
+#         ):
+#             guess_params = [20, 0.5, 300]
+#             x_vals = duration_vals if varying_param == "duration" else amp_vals
+#             y_vals = snrs_2d[ind] if varying_param == "duration" else snrs_2d[:, ind]
+#             y_errs = (
+#                 snr_errs_2d[ind] if varying_param == "duration" else snr_errs_2d[:, ind]
+#             )
+
+#             try:
+#                 popt, _ = curve_fit(
+#                     fit_fn, x_vals, y_vals, p0=guess_params, sigma=y_errs
+#                 )
+#                 fitted_line = fit_fn(finer_linspace, *popt)
+#                 lines.append(fitted_line)
+
+#                 # Find optimal values
+#                 opti_snr_at_x = np.max(fitted_line)
+#                 if opti_snr_at_x > opti_snr:
+#                     opti_snr = opti_snr_at_x
+#                     opti_x = finer_linspace[np.argmax(fitted_line)]
+#                     opti_fixed = (
+#                         amp_vals[ind]
+#                         if varying_param == "duration"
+#                         else duration_vals[ind]
+#                     )
+
+#             except Exception:
+#                 lines.append(None)
+#                 continue
+
+#         # If fitting fails for all cases, set default values to avoid UnboundLocalError
+#         if opti_x is None:
+#             opti_x = np.nan  # Assign NaN or a fallback value
+#         if opti_fixed is None:
+#             opti_fixed = np.nan
+
+#         # Plot
+#         fig, ax = plt.subplots()
+#         for ind in range(
+#             num_amp_steps if varying_param == "duration" else num_dur_steps
+#         ):
+#             kpl.plot_points(ax, x_vals, y_vals)
+#             if lines[ind] is not None:
+#                 kpl.plot_line(ax, finer_linspace, lines[ind], label=str(x_vals[ind]))
+
+#         ax.set_xlabel(
+#             "Duration (ns)" if varying_param == "duration" else "Amplitude (arb.)"
+#         )
+#         ax.set_ylabel("SNR")
+#         ax.set_title(f"NV num: {widefield.get_nv_num(nv_list[nv_ind])}")
+#         ax.legend()
+#         kpl.show(block=True)
+
+#         # Store results
+#         print(f"Optimal SNR: {opti_snr}")
+#         print(f"Optimal {varying_param}: {opti_x}")
+#         print(
+#             f"Optimal Fixed ({'Amplitude' if varying_param == 'duration' else 'Duration'}): {opti_fixed}"
+#         )
+
+#         opti_snrs.append(round(opti_snr, 3))
+#         opti_amps.append(
+#             round(opti_x, 3) if varying_param == "amplitude" else round(opti_fixed, 3)
+#         )
+#         # opti_durs.append(
+#         #     round(opti_x / 4) * 4
+#         #     if varying_param == "duration"
+#         #     else round(opti_fixed / 4) * 4
+#         # )
+
+#     # Final reporting
+#     print(f"Optimal SNR values: {opti_snrs}")
+#     print(f"Optimal Amplitudes: {opti_amps}")
+#     print(f"Optimal Durations: {opti_durs}")
+#     print(f"Median SNR: {np.median(opti_snrs)}")
 
 
 def optimize_scc_amp_and_duration(
@@ -315,6 +321,7 @@ def optimize_scc_amp_and_duration(
 
     Returns
     -------
+
     None
     """
     ### Initial setup
@@ -393,7 +400,5 @@ if __name__ == "__main__":
     # data = dm.get_raw_data(file_id=1781811582216)
     # data = dm.get_raw_data(file_id=1797149751810)  # amps variation
     data = dm.get_raw_data(file_id=1800806173978)  # durs variation
-
     process_and_plot(data)
-
     plt.show(block=True)

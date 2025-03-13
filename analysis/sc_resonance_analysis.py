@@ -440,17 +440,17 @@ def plot_nv_resonance_fits_and_residuals(
 
     # return
     # Set plot style
-    # for nv_ind in range(num_nvs):
-    #     fig, ax = plt.subplots(1, 1, figsize=(8, 5))
-    #     ax.plot(freqs, avg_counts[nv_ind], "o", color="steelblue")
-    #     ax.plot(freqs_dense, fit_fns[nv_ind], "-", color="red")
-    #     ax.set_xlabel("Frequency (GHz)")
-    #     ax.set_ylabel("Norm. NV- Population")
-    #     ax.set_title(f"NV Index: {nv_ind}")
-    #     ax.grid(True, linestyle="--", alpha=0.6)
-    #     plt.tight_layout()
-    #     plt.show(block=True)
-    # return!
+    for nv_ind in range(num_nvs):
+        fig, ax = plt.subplots(1, 1, figsize=(8, 5))
+        ax.plot(freqs, avg_counts[nv_ind], "o", color="steelblue")
+        ax.plot(freqs_dense, fit_fns[nv_ind], "-", color="red")
+        ax.set_xlabel("Frequency (GHz)")
+        ax.set_ylabel("Norm. NV- Population")
+        ax.set_title(f"NV Index: {nv_ind}")
+        ax.grid(True, linestyle="--", alpha=0.6)
+        plt.tight_layout()
+        plt.show(block=True)
+    return
     # Plot filtered resonance fits
     sns.set(style="whitegrid", palette="muted")
     num_filtered_nvs = len(filtered_nv_list)
@@ -1089,7 +1089,8 @@ if __name__ == "__main__":
     # rubin 140NVs
     file_ids = [1795016507394]
     file_ids = [1796261430133]
-
+    # rubin 107NVs
+    file_ids = [1801725762770, 1801943804484]
     # fmt: off
     # fmt: on
     # print(len(reference_pixel_coords))

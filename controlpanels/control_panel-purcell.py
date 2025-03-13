@@ -69,8 +69,8 @@ def do_widefield_image_sample(nv_sig, num_reps=1):
 
 
 def do_scanning_image_sample(nv_sig):
-    scan_range = 30
-    num_steps = 30
+    scan_range = 15
+    num_steps = 15
     image_sample.scanning(nv_sig, scan_range, scan_range, num_steps)
 
 
@@ -455,7 +455,7 @@ def do_resonance(nv_list):
     # num_steps = 80
     # Single ref
     # num_reps = 8
-    num_runs = 400
+    # num_runs = 600
     # num_runs = 750
     # num_runs = 350
     # num_runs = 50
@@ -464,13 +464,10 @@ def do_resonance(nv_list):
 
     # Both refs
     num_reps = 2
-    # num_runs = 300
-
-    # num_runs = 2
-    resonance.main(nv_list, num_steps, num_reps, num_runs, freq_center, freq_range)
-
-    # for _ in range(2):
-    #     resonance.main(nv_list, num_steps, num_reps, num_runs, freq_center, freq_range)
+    num_runs = 300
+    # resonance.main(nv_list, num_steps, num_reps, num_runs, freq_center, freq_range)
+    for _ in range(2):
+        resonance.main(nv_list, num_steps, num_reps, num_runs, freq_center, freq_range)
 
 
 def do_resonance_zoom(nv_list):
@@ -814,12 +811,12 @@ def do_opx_constant_ac():
     # opx.stream_start()
 
     # Yellow
-    opx.constant_ac(
-        [],  # Digital channels
-        [7],  # Analog channels
-        [0.45],  # Analog voltages
-        [0],  # Analog frequencies
-    )
+    # opx.constant_ac(
+    #     [],  # Digital channels
+    #     [7],  # Analog channels
+    #     [0.45],  # Analog voltages
+    #     [0],  # Analog frequencies
+    # )
 
     # opx.constant_ac([4])  # Just laser
     # Red
@@ -884,12 +881,12 @@ def do_opx_constant_ac():
     #     [73.166, 72.941],  # Analog frequencies
     # )
     # Green + yellow
-    # opx.constant_ac(
-    #     [4],  # Digital channels
-    #     [3, 4, 7],  # Analog channels
-    #     [0.19, 0.19, 0.45],  # Analog voltages
-    #     [107, 107, 0],  # Analog frequencies
-    # )
+    opx.constant_ac(
+        [4],  # Digital channels
+        [3, 4, 7],  # Analog channels
+        [0.19, 0.19, 0.45],  # Analog voltages
+        [107, 107, 0],  # Analog frequencies
+    )
     # Red + green + Yellow
     # opx.constant_ac(
     #     [4, 1],  # Digital channels1
@@ -1029,7 +1026,7 @@ if __name__ == "__main__":
     # magnet_angle = 90
     date_str = "2025_02_26"
     sample_coords = [-0.4, 2.0]
-    z_coord = 0.6
+    z_coord = 0.25
 
     # Load NV pixel coordinates1
     pixel_coords_list = load_nv_coords(
@@ -1038,7 +1035,8 @@ if __name__ == "__main__":
         # file_path="slmsuite/nv_blob_detection/nv_blob_shallow_161nvs_reordered.npz",
         # file_path="slmsuite/nv_blob_detection/nv_blob_shallow_148nvs_reordered.npz",
         # file_path="slmsuite/nv_blob_detection/nv_blob_rubin_shallow_140nvs_reordered_updated.npz",
-        file_path="slmsuite/nv_blob_detection/nv_blob_rubin_shallow_107nvs_reordered_updated.npz",
+        # file_path="slmsuite/nv_blob_detection/nv_blob_rubin_shallow_107nvs_reordered_updated.npz",
+        file_path="slmsuite/nv_blob_detection/nv_blob_rubin_shallow_453nvs_reordered.npz",
     ).tolist()
     # Define transformations using `transform_coords`
     # pixel_coords_list = [
@@ -1124,7 +1122,8 @@ if __name__ == "__main__":
     # scc_duration_list = [116, 92, 72, 116, 92, 80, 92, 92, 72, 108, 88, 56, 72, 128, 92, 108, 56, 104, 108, 92, 56, 84, 84, 120, 128, 80, 96, 64, 92, 72, 108, 80, 80, 56, 112, 40, 40, 84, 72, 56, 128, 128, 108, 80, 112, 80, 108, 108, 64, 100, 96, 84, 92, 140, 140, 120, 60, 88, 88, 80, 60, 60, 124, 108, 16, 96, 96, 92, 136, 272, 144, 172, 72, 84, 84, 60, 116, 144, 56, 80, 112, 244, 80, 120, 80, 272, 64, 52, 116, 124, 16, 116, 56, 80, 120, 88, 272, 272, 116, 64, 16, 272, 80, 116, 112, 64, 272, 92, 272, 116, 48, 116, 40, 68, 104, 272, 272, 144, 272, 108, 216, 116, 84, 104, 108, 52, 272, 96, 136, 92, 108, 272, 212, 96, 204, 204, 84, 272, 88, 212, 56, 96, 120, 60, 100, 76, 100, 144]
     # scc_duration_list = [104, 84, 84, 84, 100, 80, 88, 104, 72, 72, 100, 80, 68, 96, 92, 100, 108, 84, 112, 76, 64, 88, 92, 100, 72, 76, 72, 80, 84, 80, 84, 64, 72, 80, 84, 56, 52, 80, 80, 80, 72, 80, 92, 72, 76, 80, 72, 56, 80, 72, 56, 68, 60, 72, 92, 80, 76, 72, 80, 64, 72, 72, 80, 116, 68, 88, 56, 100, 72, 52, 68, 76, 64, 72, 68, 80, 80, 92, 56, 84, 64, 56, 76, 80, 84, 108, 72, 164, 80, 64, 88, 88, 96, 76, 128, 80, 100, 116, 88, 64, 80, 108, 108, 84, 100, 84, 128, 72, 80, 72, 72, 116, 52, 100, 80, 80, 68, 132, 92, 100, 80, 72, 96, 64, 84, 80, 68, 72, 88, 72, 92, 88, 72, 76, 80, 64, 92, 72, 80, 72, 84, 92, 80, 100, 96, 80, 80, 112]
     # 105 rubin 
-    scc_duration_list = [104, 84, 84, 84, 100, 80, 88, 104, 72, 72, 100, 80, 68, 96, 92, 100, 84, 112, 76, 64, 88, 92, 100, 72, 76, 72, 80, 84, 64, 72, 84, 56, 52, 80, 80, 72, 80, 92, 72, 76, 80, 72, 80, 72, 68, 60, 72, 72, 80, 64, 80, 116, 68, 88, 100, 52, 68, 76, 64, 72, 68, 80, 80, 92, 56, 84, 56, 76, 80, 164, 64, 88, 88, 76, 80, 100, 116, 88, 64, 80, 108, 108, 84, 84, 128, 72, 80, 72, 72, 116, 52, 100, 80, 68, 132, 92, 100, 80, 72, 96, 72, 92, 88, 72, 72]
+    # scc_duration_list = [104, 84, 84, 84, 100, 80, 88, 104, 72, 72, 100, 80, 68, 96, 92, 100, 84, 112, 76, 64, 88, 92, 100, 72, 76, 72, 80, 84, 64, 72, 84, 56, 52, 80, 80, 72, 80, 92, 72, 76, 80, 72, 80, 72, 68, 60, 72, 72, 80, 64, 80, 116, 68, 88, 100, 52, 68, 76, 64, 72, 68, 80, 80, 92, 56, 84, 56, 76, 80, 164, 64, 88, 88, 76, 80, 100, 116, 88, 64, 80, 108, 108, 84, 84, 128, 72, 80, 72, 72, 116, 52, 100, 80, 68, 132, 92, 100, 80, 72, 96, 72, 92, 88, 72, 72]
+    scc_duration_list = [108, 136, 136, 144, 124, 192, 108, 108, 116, 124, 92, 140, 124, 88, 116, 72, 112, 84, 136, 80, 56, 72, 100, 84, 60, 48, 68, 164, 164, 108, 92, 196, 92, 108, 108, 100, 72, 108, 152, 152, 124, 120, 108, 108, 108, 72, 108, 148, 108, 108, 92, 132, 92, 124, 124, 128, 108, 72, 72, 80, 108, 108, 108, 108, 108, 48, 108, 84, 84, 72, 132, 108, 100, 92, 84, 64, 84, 72, 72, 108, 108, 108, 108, 116, 60, 112, 112, 116, 116, 92, 148, 80, 80, 80, 128, 92, 92, 100, 144, 108, 128, 80, 108, 108, 108, 172, 108]
     # median_value = np.median(scc_duration_list)
     # print(median_value)
     # Replace values less than 50 with the median
@@ -1220,7 +1219,7 @@ if __name__ == "__main__":
 
     # scc_amp_list = [1.0] * num_nvs
     scc_duration_list = [88] * num_nvs
-    # pol_duration_list = [200] * num_nvs
+    pol_duration_list = [200] * num_nvs
     # nv_list[i] will have the ith coordinates from the above lists
     nv_list: list[NVSig] = []
     for ind in range(num_nvs):
@@ -1259,7 +1258,7 @@ if __name__ == "__main__":
     # nv_sig.expected_counts = 4500
     # nv_sig.expected_counts = 900
     # nv_sig.expected_counts = 2100
-    nv_sig.expected_counts = 2540
+    nv_sig.expected_counts = 1600
 
     # num_nvs = len(nv_list)
     # print(f"Final NV List: {nv_list}")
@@ -1347,7 +1346,7 @@ if __name__ == "__main__":
 
         do_compensate_for_drift(nv_sig)
         # do_widefield_image_sample(nv_sig, 50)
-        # do_charge_state_histograms(nv_list)
+        do_charge_state_histograms(nv_list)
         # do_charge_state_conditional_init(nv_list)
 
         # for point in points:
@@ -1435,7 +1434,7 @@ if __name__ == "__main__":
         # do_power_rabi_scc_snr(nv_list)
         # do_optimize_scc_duration(nv_list)
         # do_optimize_scc_amp(nv_list)
-        optimize_scc_amp_and_duration(nv_list)
+        # optimize_scc_amp_and_duration(nv_list)
         # do_crosstalk_check(nv_sig)
         # do_spin_pol_check(nv_sig)
         # do_calibrate_green_red_delay()

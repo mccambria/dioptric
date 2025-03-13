@@ -342,108 +342,108 @@ def get_raw_data(file_name=None, file_id=None, use_cache=True, load_npz=False):
     # return data
 
 
-# from io import BytesIO
+from io import BytesIO
 
-# import numpy as np
-# import orjson
-# import ujson
+import numpy as np
+import orjson
+import ujson
 
 
-# def get_raw_data(file_name=None, file_id=None, use_cache=True, load_npz=False):
-#     """Returns a dictionary containing the JSON object from the specified raw data file,
-#     correctly loading NumPy `.npz` files and converting arrays to lists.
+def get_raw_data(file_name=None, file_id=None, use_cache=True, load_npz=False):
+    """Returns a dictionary containing the JSON object from the specified raw data file,
+    correctly loading NumPy `.npz` files and converting arrays to lists.
 
-#     Parameters
-#     ----------
-#     file_name : str, optional
-#         Name of the raw data file to load, w/o extension.
-#     file_id : str, optional
-#         Cloud ID of the file to load.
-#     use_cache : bool, optional
-#         Whether or not to use the cache.
-#     load_npz: bool, optional
-#         Whether or not to retrieve any linked compressed numpy files.
+    Parameters
+    ----------
+    file_name : str, optional
+        Name of the raw data file to load, w/o extension.
+    file_id : str, optional
+        Cloud ID of the file to load.
+    use_cache : bool, optional
+        Whether or not to use the cache.
+    load_npz: bool, optional
+        Whether or not to retrieve any linked compressed numpy files.
 
-#     Returns
-#     -------
-#     dict
-#         Dictionary containing the JSON object with NumPy arrays properly converted.
-#     """
+    Returns
+    -------
+    dict
+        Dictionary containing the JSON object with NumPy arrays properly converted.
+    """
 
-#     if file_id is not None:
-#         file_id = str(file_id)
+    if file_id is not None:
+        file_id = str(file_id)
 
-#     # Attempt to load from cache
-#     retrieved_from_cache = False
-#     if use_cache:
-#         try:
-#             with open(data_manager_folder / "cache_manifest.txt") as f:
-#                 cache_manifest = ujson.load(f)
-#         except Exception:
-#             cache_manifest = None
+    # Attempt to load from cache
+    retrieved_from_cache = False
+    if use_cache:
+        try:
+            with open(data_manager_folder / "cache_manifest.txt") as f:
+                cache_manifest = ujson.load(f)
+        except Exception:
+            cache_manifest = None
 
-#         try:
-#             if file_id is None:
-#                 for key in cache_manifest.keys():
-#                     if cache_manifest[key]["file_name"] == file_name:
-#                         file_id = key
-#             cache_entry = cache_manifest[file_id]
-#             if not load_npz or cache_entry["load_npz"]:
-#                 if file_name is None:
-#                     file_name = cache_entry["file_name"]
-#                 with open(data_manager_folder / f"{file_name}.txt", "rb") as f:
-#                     file_content = f.read()
-#                 data = orjson.loads(file_content)
-#                 retrieved_from_cache = True
-#         except Exception:
-#             pass
+        try:
+            if file_id is None:
+                for key in cache_manifest.keys():
+                    if cache_manifest[key]["file_name"] == file_name:
+                        file_id = key
+            cache_entry = cache_manifest[file_id]
+            if not load_npz or cache_entry["load_npz"]:
+                if file_name is None:
+                    file_name = cache_entry["file_name"]
+                with open(data_manager_folder / f"{file_name}.txt", "rb") as f:
+                    file_content = f.read()
+                data = orjson.loads(file_content)
+                retrieved_from_cache = True
+        except Exception:
+            pass
 
-#     # If not in cache, download from the cloud
-#     if not retrieved_from_cache:
-#         file_content, file_id, file_name = _cloud.download(file_name, "txt", file_id)
-#         data = orjson.loads(file_content)
+    # If not in cache, download from the cloud
+    if not retrieved_from_cache:
+        file_content, file_id, file_name = _cloud.download(file_name, "txt", file_id)
+        data = orjson.loads(file_content)
 
-#     # Load and process .npz files if required
-#     if load_npz:
-#         npz_keys_to_load = []
-#         for key, val in data.items():
-#             if isinstance(val, str) and val.endswith(".npz"):
-#                 npz_keys_to_load.append((key, val))
+    # Load and process .npz files if required
+    if load_npz:
+        npz_keys_to_load = []
+        for key, val in data.items():
+            if isinstance(val, str) and val.endswith(".npz"):
+                npz_keys_to_load.append((key, val))
 
-#         for key, npz_file_name in npz_keys_to_load:
-#             print(f"Loading NPZ file: {npz_file_name} for key: {key}")
+        for key, npz_file_name in npz_keys_to_load:
+            print(f"Loading NPZ file: {npz_file_name} for key: {key}")
 
-#             npz_file_id = npz_file_name.split(".")[0] if npz_file_name else None
-#             try:
-#                 npz_file_content, _, _ = _cloud.download(file_name, "npz", npz_file_id)
-#                 npz_data = np.load(BytesIO(npz_file_content), allow_pickle=True)
+            npz_file_id = npz_file_name.split(".")[0] if npz_file_name else None
+            try:
+                npz_file_content, _, _ = _cloud.download(file_name, "npz", npz_file_id)
+                npz_data = np.load(BytesIO(npz_file_content), allow_pickle=True)
 
-#                 # Convert NumPy arrays to lists for JSON serialization
-#                 data[key] = {
-#                     k: v.tolist() if isinstance(v, np.ndarray) else v
-#                     for k, v in npz_data.items()
-#                 }
-#                 print(f"Successfully loaded NPZ data for key: {key}")
-#             except Exception as e:
-#                 print(f"Error loading NPZ file {npz_file_name}: {e}")
+                # Convert NumPy arrays to lists for JSON serialization
+                data[key] = {
+                    k: v.tolist() if isinstance(v, np.ndarray) else v
+                    for k, v in npz_data.items()
+                }
+                print(f"Successfully loaded NPZ data for key: {key}")
+            except Exception as e:
+                print(f"Error loading NPZ file {npz_file_name}: {e}")
 
-#     # Convert NumPy types to Python-native types for JSON serialization
-#     def convert_numpy(obj):
-#         if isinstance(obj, np.ndarray):
-#             return obj.tolist()
-#         elif isinstance(obj, (np.float64, np.float32, np.float16)):
-#             return float(obj)
-#         elif isinstance(obj, (np.int64, np.int32, np.int16)):
-#             return int(obj)
-#         elif isinstance(obj, dict):
-#             return {key: convert_numpy(value) for key, value in obj.items()}
-#         elif isinstance(obj, list):
-#             return [convert_numpy(item) for item in obj]
-#         return obj
+    # Convert NumPy types to Python-native types for JSON serialization
+    def convert_numpy(obj):
+        if isinstance(obj, np.ndarray):
+            return obj.tolist()
+        elif isinstance(obj, (np.float64, np.float32, np.float16)):
+            return float(obj)
+        elif isinstance(obj, (np.int64, np.int32, np.int16)):
+            return int(obj)
+        elif isinstance(obj, dict):
+            return {key: convert_numpy(value) for key, value in obj.items()}
+        elif isinstance(obj, list):
+            return [convert_numpy(item) for item in obj]
+        return obj
 
-#     data = convert_numpy(data)
+    data = convert_numpy(data)
 
-#     return data
+    return data
 
 
 def get_img(file_name=None, ext=None, file_id=None):

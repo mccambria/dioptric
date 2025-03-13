@@ -406,7 +406,8 @@ if __name__ == "__main__":
     # sys.exit()
     nv_coordinates, spot_weights = load_nv_coords(
         # file_path="slmsuite/nv_blob_detection/nv_blob_shallow_rubin_140nvs.npz"
-        file_path="slmsuite/nv_blob_detection/nv_blob_rubin_shallow_140nvs_reordered_updated.npz",
+        file_path="slmsuite/nv_blob_detection/nv_blob_shallow_606nvs.npz"
+        # file_path="slmsuite/nv_blob_detection/nv_blob_rubin_shallow_140nvs_reordered_updated.npz",
         # file_path="slmsuite/nv_blob_detection/nv_blob_rubin_shallow_255nvs_reordered_updated.npz"
         # file_path="slmsuite/nv_blob_detection/nv_blob_filtered_160nvs_reordered.npz"
     )
@@ -443,11 +444,11 @@ if __name__ == "__main__":
     # Filter and reorder NV coordinates based on reference NV
     # integrated_intensities = []
     sigma = 3
-    reference_nv = [109.077, 120.824]
-    # reference_nv = [117.596, 129.217]
+    # reference_nv = [109.077, 120.824]
+    reference_nv = [120.258, 124.709]
     filtered_reordered_coords, filtered_reordered_spot_weights, include_indices = (
         filter_and_reorder_nv_coords(
-            nv_coordinates, spot_weights_filtered, reference_nv, min_distance=15
+            nv_coordinates, spot_weights_filtered, reference_nv, min_distance=2
         )
     )
 
@@ -580,7 +581,7 @@ if __name__ == "__main__":
     adjusted_aom_voltage = ((filtered_total_power - c) / a) ** (1 / b)
     print("Adjusted Voltages (V):", adjusted_aom_voltage)
     # sys.exit()
-    filtered_reordered_spot_weights = updated_spot_weights
+    # filtered_reordered_spot_weights = updated_spot_weights
     print("filtered_reordered_spot_weights_len:", len(filtered_reordered_spot_weights))
     print("filtered_reordered_coords_len:", len(filtered_reordered_coords))
     print("NV Index | Coords    |   previous weights")
@@ -611,11 +612,11 @@ if __name__ == "__main__":
 
     # Save the filtered results
 
-    # save_results(
-    #     filtered_reordered_coords,
-    #     filtered_reordered_spot_weights,
-    #     filename="slmsuite/nv_blob_detection/nv_blob_rubin_shallow_107nvs_reordered_updated.npz",
-    # )
+    save_results(
+        filtered_reordered_coords,
+        filtered_reordered_spot_weights,
+        filename="slmsuite/nv_blob_detection/nv_blob_rubin_shallow_453nvs_reordered.npz",
+    )
     # save_results(
     #     nv_coordinates,
     #     filtered_reordered_counts,
