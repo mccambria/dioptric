@@ -398,7 +398,7 @@ if __name__ == "__main__":
     # data = dm.get_raw_data(file_id=1751170993877, load_npz=True)
     # data = dm.get_raw_data(file_id=1752794666146, load_npz=True)
     # data = dm.get_raw_data(file_id=1764727515943, load_npz=True)
-    data = dm.get_raw_data(file_id=1798728176452, load_npz=True)
+    data = dm.get_raw_data(file_id=1802707242802, load_npz=True)
 
     img_array = np.array(data["ref_img_array"])
     # img_array = data["img_array"]
@@ -406,14 +406,14 @@ if __name__ == "__main__":
     # sys.exit()
     nv_coordinates, spot_weights = load_nv_coords(
         # file_path="slmsuite/nv_blob_detection/nv_blob_shallow_rubin_140nvs.npz"
-        file_path="slmsuite/nv_blob_detection/nv_blob_shallow_606nvs.npz"
+        file_path="slmsuite/nv_blob_detection/nv_blob_shallow_rubin_306nvs.npz"
         # file_path="slmsuite/nv_blob_detection/nv_blob_rubin_shallow_140nvs_reordered_updated.npz",
         # file_path="slmsuite/nv_blob_detection/nv_blob_rubin_shallow_255nvs_reordered_updated.npz"
         # file_path="slmsuite/nv_blob_detection/nv_blob_filtered_160nvs_reordered.npz"
     )
     # Convert coordinates to a standard format (lists of lists)
+    # nv_coordinates = [[coord[0] - 3, coord[1] + 3] for coord in nv_coordinates]
     nv_coordinates = [list(coord) for coord in nv_coordinates]
-
     # Debug: Print before filtering
     # print(f"Before filtering: {len(nv_coordinates)} NVs")
     # print(f"Sample NV coordinates: {nv_coordinates[:10]}")  # Check first 10 NVs
@@ -439,18 +439,23 @@ if __name__ == "__main__":
     # Replace original lists with filtered versions
     nv_coordinates = nv_coordinates_filtered
     spot_weights = spot_weights_filtered
-    print(f"After filtering: {len(nv_coordinates_filtered)} NVs")
+
+    print(f"After filtering: {len(spot_weights)} NVs")
 
     # Filter and reorder NV coordinates based on reference NV
     # integrated_intensities = []
     sigma = 3
     # reference_nv = [109.077, 120.824]
-    reference_nv = [120.258, 124.709]
+    # reference_nv = [120.258, 124.709]
+    reference_nv = [113.173, 128.034]
     filtered_reordered_coords, filtered_reordered_spot_weights, include_indices = (
         filter_and_reorder_nv_coords(
-            nv_coordinates, spot_weights_filtered, reference_nv, min_distance=2
+            nv_coordinates, spot_weights, reference_nv, min_distance=6
         )
     )
+    # filtered_reordered_coords = [
+    #     [coord[0] - 5, coord[1] - 0] for coord in filter_and_reorder_nv_coords
+    # ]
 
     # Integration over disk region around each NV coordinate
     filtered_reordered_counts = []
@@ -615,7 +620,7 @@ if __name__ == "__main__":
     save_results(
         filtered_reordered_coords,
         filtered_reordered_spot_weights,
-        filename="slmsuite/nv_blob_detection/nv_blob_rubin_shallow_453nvs_reordered.npz",
+        filename="slmsuite/nv_blob_detection/nv_blob_rubin_shallow_305nvs_reordered.npz",
     )
     # save_results(
     #     nv_coordinates,
