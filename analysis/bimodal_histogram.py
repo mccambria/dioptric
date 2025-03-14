@@ -643,6 +643,13 @@ def otsu_threshold(counts_list):
     # kpl.plot_line(ax, x_vals[:-1] + 0.5, variance12)
     # kpl.show(block=True)
 
+    fig, ax = plt.subplots()
+    ax.set_xlabel("Integrated counts")
+    ax.set_ylabel("Probability")
+    kpl.histogram(ax, counts_list, density=True)
+    ax.axvline(threshold, color=kpl.KplColors.GRAY, ls="dashed")
+    kpl.show(block=True)
+
     return threshold
 
 

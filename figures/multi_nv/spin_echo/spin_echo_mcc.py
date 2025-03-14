@@ -69,7 +69,7 @@ def replot_fits(data, fit_data, nv_inds):
         # figManager.window.showMaximized()
 
 
-def quartic_decay(
+def squartic_decay(
     tau,
     baseline,
     quartic_contrast,
