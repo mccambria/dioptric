@@ -371,6 +371,8 @@ def threshold_counts(nv_list, sig_counts, ref_counts=None, dynamic_thresh=False)
     if dynamic_thresh:
         thresholds = []
         for nv_ind in range(num_nvs):
+            # if nv_ind != 110:  # Corresponds to nv_num 153, from Fig. 1(c)
+            #     continue
             if ref_counts is not None:
                 combined_counts = np.append(
                     sig_counts[nv_ind].flatten(), ref_counts[nv_ind].flatten()

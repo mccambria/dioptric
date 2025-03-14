@@ -404,7 +404,7 @@ def main(
 if __name__ == "__main__":
     kpl.init_kplotlib()
 
-    bulk_or_shallow = False
+    bulk_or_shallow = True
     make_movie = False
 
     ### Main, bulk diamond

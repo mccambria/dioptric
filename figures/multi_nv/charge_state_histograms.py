@@ -24,7 +24,7 @@ from analysis.bimodal_histogram import (
     ProbDist,
     determine_threshold,
     fit_bimodal_histogram,
-    otsu_threshold2,
+    otsu_threshold,
     weighted_otsu_threshold,
 )
 from majorroutines.widefield import base_routine
@@ -112,9 +112,9 @@ def process_and_plot(
     for ind in range(num_nvs):
         nv_num = widefield.get_nv_num(nv_list[ind])
         # if ind in [72, 64, 55, 96, 112, 87, 12, 58, 36]:  # weak_esr
-        if nv_num not in [37, 71, 74]:
-            # if nv_num not in [153]:
-            continue
+        # if nv_num not in [37, 71, 74]:
+        # if nv_num not in [153]:
+        #     continue
         sig_counts_list = sig_counts_lists[ind]
         ref_counts_list = ref_counts_lists[ind]
         combined_counts = np.append(sig_counts_list, ref_counts_list)
@@ -198,6 +198,8 @@ def process_and_plot(
                     ax, x_vals, bimodal_line, color=kpl.KplColors.BLUE, label="Combined"
                 )
                 ax.legend(loc=kpl.Loc.UPPER_RIGHT)
+
+                kpl.show(block=True)
 
             # Threshold line
             if threshold is not None:
