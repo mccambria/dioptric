@@ -69,8 +69,8 @@ def do_widefield_image_sample(nv_sig, num_reps=1):
 
 
 def do_scanning_image_sample(nv_sig):
-    scan_range = 15
-    num_steps = 15
+    scan_range = 30
+    num_steps = 30
     image_sample.scanning(nv_sig, scan_range, scan_range, num_steps)
 
 
@@ -160,14 +160,14 @@ def do_optimize_readout_duration(nv_list):
 
 def do_optimize_readout_amp(nv_list):
     # num_steps = 21
-    num_steps = 15
+    num_steps = 18
     # num_reps = 150
     # num_runs = 5
     num_reps = 12
     # num_runs = 400
     num_runs = 200
     min_amp = 0.9
-    max_amp = 1.1
+    max_amp = 1.15
     return optimize_charge_state_histograms_mcc.optimize_readout_amp(
         nv_list, num_steps, num_reps, num_runs, min_amp, max_amp
     )
@@ -487,7 +487,7 @@ def do_rabi(nv_list):
     # max_tau = 480 + min_tau
     num_steps = 31
     num_reps = 10
-    num_runs = 600
+    num_runs = 400
     # num_runs = 100
     # num_runs = 20
     # num_runs = 5
@@ -811,12 +811,12 @@ def do_opx_constant_ac():
     # opx.stream_start()
 
     # Yellow
-    # opx.constant_ac(
-    #     [],  # Digital channels
-    #     [7],  # Analog channels
-    #     [0.45],  # Analog voltages
-    #     [0],  # Analog frequencies
-    # )
+    opx.constant_ac(
+        [],  # Digital channels
+        [7],  # Analog channels
+        [0.4256],  # Analog voltages
+        [0],  # Analog frequencies
+    )
 
     # opx.constant_ac([4])  # Just laser
     # Red
@@ -881,12 +881,12 @@ def do_opx_constant_ac():
     #     [73.166, 72.941],  # Analog frequencies
     # )
     # Green + yellow
-    opx.constant_ac(
-        [4],  # Digital channels
-        [3, 4, 7],  # Analog channels
-        [0.19, 0.19, 0.45],  # Analog voltages
-        [107, 107, 0],  # Analog frequencies
-    )
+    # opx.constant_ac(
+    #     [4],  # Digital channels
+    #     [3, 4, 7],  # Analog channels
+    #     [0.19, 0.19, 0.45],  # Analog voltages
+    #     [107, 107, 0],  # Analog frequencies
+    # )
     # Red + green + Yellow
     # opx.constant_ac(
     #     [4, 1],  # Digital channels1
@@ -1036,14 +1036,14 @@ if __name__ == "__main__":
         # file_path="slmsuite/nv_blob_detection/nv_blob_shallow_148nvs_reordered.npz",
         # file_path="slmsuite/nv_blob_detection/nv_blob_rubin_shallow_140nvs_reordered_updated.npz",
         # file_path="slmsuite/nv_blob_detection/nv_blob_rubin_shallow_107nvs_reordered_updated.npz",
-        file_path="slmsuite/nv_blob_detection/nv_blob_rubin_shallow_305nvs_reordered.npz",
+        file_path="slmsuite/nv_blob_detection/nv_blob_rubin_shallow_303nvs_reordered.npz",
     ).tolist()
     # Define transformations using `transform_coords`
     # pixel_coords_list = [
-    #     [109.077, 120.824],
-    #     [23.746, 15.406],
-    #     [112.212, 245.732],
-    #     [227.288, 41.165],
+    #     [113.173, 128.034],
+    #     [18.24, 9.848],
+    #     [108.384, 227.38],
+    #     [227.438, 19.199],
     # ]
     green_coords_list = [
         [
@@ -1074,22 +1074,22 @@ if __name__ == "__main__":
     print(f"Green Laser Coordinates: {green_coords_list[0]}")
     print(f"Red Laser Coordinates: {red_coords_list[0]}")
     # pixel_coords_list = [
-    #     [109.077, 120.824],
-    #     [23.746, 15.406],
-    #     [112.212, 245.732],
-    #     [227.288, 41.165],
+    #     [113.173, 128.034],
+    #     [18.24, 9.848],
+    #     [108.384, 227.38],
+    #     [227.438, 19.199],
     # ]
     # green_coords_list = [
-    #     [108.282, 106.905],
-    #     [118.752, 96.509],
-    #     [106.357, 120.267],
-    #     [96.699, 97.095],
+    #     [107.74, 107.574],
+    #     [119.222, 95.998],
+    #     [107.027, 118.213],
+    #     [96.77, 94.657],
     # ]
     # red_coords_list = [
-    #     [72.883, 72.563],
-    #     [81.192, 63.996],
-    #     [71.606, 83.455],
-    #     [63.225, 64.703],
+    #     [72.456, 73.113],
+    #     [81.581, 63.607],
+    #     [72.091, 81.775],
+    #     [63.232, 62.732],
     # ]
 
     num_nvs = len(pixel_coords_list)
@@ -1137,7 +1137,8 @@ if __name__ == "__main__":
     # shallow 105nvs rubin sample
     # pol_duration_list =[80, 84, 104, 68, 72, 92, 72, 92, 84, 92, 84, 84, 84, 84, 84, 72, 68, 92, 72, 92, 92, 72, 48, 92, 80, 84, 92, 116, 72, 84, 92, 80, 84, 72, 84, 80, 84, 84, 92, 72, 72, 84, 92, 80, 72, 84, 84, 96, 104, 92, 72, 84, 92, 84, 92, 72, 92, 72, 116, 120, 92, 92, 96, 128, 92, 80, 84, 96, 120, 120, 128, 128, 80, 104, 84, 140, 92, 84, 92, 92, 92, 84, 84, 120, 92, 84, 84, 120, 116, 116, 84, 92, 128, 92, 92, 84, 80, 84, 116, 116, 120, 72, 96, 92, 128, 84, 128]
     # pol_duration_list =[176, 152, 228, 156, 164, 192, 176, 192, 216, 192, 180, 232, 168, 156, 204, 152, 144, 220, 156, 168, 280, 164, 132, 156, 180, 168, 180, 180, 164, 232, 188, 204, 220, 156, 168, 168, 192, 228, 168, 192, 140, 204, 164, 168, 180, 156, 180, 192, 164, 156, 168, 164, 164, 256, 200, 204, 164, 204, 280, 188, 200, 228, 264, 144, 212, 176, 176, 220, 156, 156, 280, 156, 192, 200, 152, 244, 168, 116, 180, 164, 152, 244, 144, 252, 200, 188, 168, 192, 188, 156, 164, 168, 204, 268, 204, 192, 176, 228, 204, 176, 252, 164, 152, 232, 312, 152, 280]
-    pol_duration_list = [168, 144, 244, 152, 168, 192, 192, 216, 212, 216, 176, 288, 164, 152, 188, 164, 152, 188, 176, 164, 288, 180, 164, 164, 176, 164, 192, 200, 180, 176, 220, 204, 232, 156, 176, 188, 200, 244, 212, 156, 144, 164, 132, 164, 192, 168, 204, 204, 176, 168, 180, 144, 164, 288, 232, 212, 180, 288, 360, 192, 232, 176, 288, 164, 216, 188, 176, 288, 164, 152, 288, 164, 216, 204, 188, 256, 180, 140, 156, 144, 156, 288, 164, 212, 212, 164, 180, 288, 200, 144, 164, 156, 216, 288, 228, 220, 228, 268, 212, 200, 240, 180, 152, 388, 228, 156, 288]
+    # pol_duration_list = [168, 144, 244, 152, 168, 192, 192, 216, 212, 216, 176, 288, 164, 152, 188, 164, 152, 188, 176, 164, 288, 180, 164, 164, 176, 164, 192, 200, 180, 176, 220, 204, 232, 156, 176, 188, 200, 244, 212, 156, 144, 164, 132, 164, 192, 168, 204, 204, 176, 168, 180, 144, 164, 288, 232, 212, 180, 288, 360, 192, 232, 176, 288, 164, 216, 188, 176, 288, 164, 152, 288, 164, 216, 204, 188, 256, 180, 140, 156, 144, 156, 288, 164, 212, 212, 164, 180, 288, 200, 144, 164, 156, 216, 288, 228, 220, 228, 268, 212, 200, 240, 180, 152, 388, 228, 156, 288]
+    pol_duration_list = [120, 176, 116, 188, 364, 180, 164, 176, 164, 188, 188, 188, 116, 188, 132, 156, 140, 228, 104, 156, 152, 176, 156, 140, 188, 164, 188, 188, 156, 188, 176, 168, 232, 188, 204, 164, 188, 188, 156, 188, 164, 180, 144, 200, 164, 188, 128, 144, 212, 188, 176, 156, 188, 156, 176, 116, 180, 128, 140, 176, 80, 168, 168, 144, 180, 156, 144, 168, 156, 132, 152, 164, 156, 128, 168, 152, 156, 164, 180, 164, 188, 156, 164, 188, 176, 204, 240, 188, 188, 188, 188, 168, 164, 156, 164, 188, 204, 180, 156, 220, 120, 180, 168, 192, 156, 168, 176, 220, 192, 176, 240, 188, 164, 372, 204, 200, 168, 156, 132, 180, 188, 164, 180, 204, 168, 188, 164, 156, 180, 176, 280, 200, 156, 188, 188, 176, 144, 144, 200, 212, 188, 164, 188, 200, 132, 188, 128, 188, 192, 168, 140, 168, 188, 188, 188, 220, 140, 132, 188, 188, 188, 156, 228, 220, 188, 188, 176, 188, 176, 168, 188, 188, 188, 188, 188, 188, 176, 200, 120, 244, 188, 268, 188, 360, 188, 188, 232, 164, 152, 188, 188, 192, 244, 168, 188, 188, 188, 180, 188, 204, 156, 188, 140, 204, 188, 132, 220, 228, 244, 180, 188, 200, 188, 188, 188, 188, 188, 188, 220, 212, 188, 304, 188, 176, 188, 204, 180, 144, 188, 204, 188, 168, 256, 168, 204, 188, 188, 256, 188, 176, 188, 188, 56, 256, 204, 188, 188, 188, 244, 168, 188, 244, 240, 188, 188, 188, 168, 188, 232, 192, 212, 188, 128, 360, 188, 188, 104, 256, 152, 188, 220, 188, 168, 192, 188, 156, 200, 176, 328, 188, 188, 228, 188, 176, 228, 188, 188, 188, 188, 328, 188, 244, 232, 188, 264, 204, 188, 188, 244, 216, 220, 188, 188]
     # include_indices = [0, 1, 3, 4, 5, 7, 9, 10, 11, 12, 13, 14, 15, 16, 18, 19, 21, 23, 26, 27, 28, 29, 30, 31, 32, 33, 34, 35, 36, 37, 38, 39, 40, 41, 43, 44, 46, 48, 51, 52, 53, 54, 55, 56, 57, 58, 59, 61, 62, 64, 65, 66, 67, 68, 69, 71, 72, 73, 74, 75, 76, 77, 78, 79, 80, 82, 87, 89, 90, 92, 94, 95, 96, 97, 98, 99, 100, 101, 102, 103, 104, 105, 106, 108, 109, 111, 112, 113, 114, 117, 118, 119, 121, 122, 124, 126, 127, 128, 129, 130, 131, 132, 133, 134, 135, 137, 139]
     # print([pol_duration_list[ind] for ind in include_indices])
     # sys.exit()
@@ -1218,8 +1219,8 @@ if __name__ == "__main__":
     print(f"First 10 POL durations: {pol_duration_list[:10]}")
 
     # scc_amp_list = [1.0] * num_nvs
-    scc_duration_list = [88] * num_nvs
-    pol_duration_list = [200] * num_nvs
+    scc_duration_list = [112] * num_nvs
+    # pol_duration_list = [200] * num_nvs
     # nv_list[i] will have the ith coordinates from the above lists
     nv_list: list[NVSig] = []
     for ind in range(num_nvs):
@@ -1258,7 +1259,7 @@ if __name__ == "__main__":
     # nv_sig.expected_counts = 4500
     # nv_sig.expected_counts = 900
     # nv_sig.expected_counts = 2100
-    nv_sig.expected_counts = 1500
+    nv_sig.expected_counts = 1460
 
     # num_nvs = len(nv_list)
     # print(f"Final NV List: {nv_list}")
@@ -1346,7 +1347,7 @@ if __name__ == "__main__":
 
         do_compensate_for_drift(nv_sig)
         # do_widefield_image_sample(nv_sig, 50)
-        do_charge_state_histograms(nv_list)
+        # do_charge_state_histograms(nv_list)
         # do_charge_state_conditional_init(nv_list)
 
         # for point in points:
@@ -1412,7 +1413,7 @@ if __name__ == "__main__":
 
         # do_resonance_zoom(nv_list)
         # do_rabi(nv_list)
-        # do_resonance(nv_list)
+        do_resonance(nv_list)
         # do_spin_echo(nv_list)
 
         # do_power_rabi(nv_list)
