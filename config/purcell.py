@@ -40,14 +40,14 @@ calibration_coords_pixel = [
     [227.438, 19.199],
 ]
 calibration_coords_green = [
-    [119.222, 96.012],
-    [106.99, 118.173],
-    [96.762, 94.655],
+    [119.242, 96.037],
+    [107.008, 118.211],
+    [96.772, 94.673],
 ]
 calibration_coords_red = [
-    [81.564, 63.587],
-    [72.076, 81.744],
-    [63.223, 62.717],
+    [81.581, 63.607],
+    [72.091, 81.775],
+    [63.232, 62.732],
 ]
 # Create the dictionaries using the provided lists
 calibration_coords_nv1 = {
@@ -130,7 +130,7 @@ config |= {
             0: {
                 "physical_name": "sig_gen_STAN_sg394",
                 # "uwave_power": 2.3,
-                "uwave_power": 8.0,
+                "uwave_power": 6.0,
                 "frequency": 2.782099,  # shallow NVs O1 ms=-1
                 # "frequency": 2.798175,  # shallow NVs O2 ms=-1
                 # "frequency": 2.790137,  # mean of above two frequency
@@ -146,7 +146,7 @@ config |= {
             1: {
                 "physical_name": "sig_gen_STAN_sg394_2",
                 # "uwave_power": 8.1,
-                "uwave_power": 8.0,
+                "uwave_power": 6.0,
                 "frequency": 2.840727,  # shallow NV O3 ms=-1
                 # "frequency": 2.856761,  # shallow NVs O4 ms=-1
                 # "frequency": 2.848744,  # mean of above two frequency
@@ -834,8 +834,8 @@ opx_config = {
         # "yellow_charge_readout": {"type": "constant", "sample": 0.3741},  # 50ms 117NVs
         # "yellow_charge_readout": {"type": "constant", "sample": 0.325},  # 100ms 117NVs
         # "yellow_charge_readout": {"type": "constant", "sample": 0.4527},
-        "yellow_charge_readout": {"type": "constant", "sample": 0.40},
-        "yellow_spin_pol": {"type": "constant", "sample": 0.38},
+        "yellow_charge_readout": {"type": "constant", "sample": 0.4328},
+        "yellow_spin_pol": {"type": "constant", "sample": 0.45},
         "yellow_shelving": {"type": "constant", "sample": 0.33},
         # Other
         "aod_cw": {"type": "constant", "sample": 0.35},
