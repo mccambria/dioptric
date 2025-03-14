@@ -291,7 +291,7 @@ def nuvu2thorcam_calibration(coords):
     )
 
     cal_coords_nuvu = np.array(
-        [[228.3, 12.778], [213.719, 241.93], [21.084, 113.328]], dtype="float32"
+        [[227.907, 12.61], [213.482, 242.097], [20.182, 112.409]], dtype="float32"
     )
     # [[227.752, 12.548], [212.599, 241.451], [20.615, 112.523]], dtype="float32"
 
@@ -377,14 +377,14 @@ def compute_and_write_nvs_phase():
     # cam_plot()
 
 
-def write_nvs_phase():
+def write_pre_computed_nvs_phase():
     # phase = np.load("slmsuite\computed_phase\slm_phase_148nvs_20250203_171815.npy")
     # phase = np.load("slmsuite\computed_phase\slm_phase_148nvs_20250203_171815.npy")
     # phase = np.load(
     #     "slmsuite\computed_phase\slm_phase_117nvs_20250119_152458.npy"
     # )  # 117NVs weighted spots
     # shallow NVs
-    phase = np.load("slmsuite\computed_phase\slm_phase_140nvs_20250305_210354.npy")
+    phase = np.load("slmsuite\computed_phase\slm_phase_303nvs_20250314_013401.npy")
     # phase = np.load("slmsuite\circles\slm_phase_circles_20250118_210419.npy")  # circles
     slm.write(phase, settle=True)
     # cam_plot()
@@ -430,7 +430,7 @@ try:
     # wavefront_calibration()
     # load_wavefront_calibration()
     compute_and_write_nvs_phase()
-    # write_nvs_phase()
+    # write_pre_computed_nvs_phase()
     # calibration_triangle()
     # circles()
     # smiley()

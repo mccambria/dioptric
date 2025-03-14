@@ -335,7 +335,7 @@ if __name__ == "__main__":
     # data = dm.get_raw_data(file_id=1796486502363, load_npz=False)
     # data = dm.get_raw_data(file_id=1796486502363, load_npz=False)
     # data = dm.get_raw_data(file_i1d=1796486502363, load_npz=False)
-    data = dm.get_raw_data(file_id=1798741474977, load_npz=False)
+    data = dm.get_raw_data(file_id=1803639885419, load_npz=False)
 
     # print(file_name)
     process_and_plot(data, do_plot_histograms=False)

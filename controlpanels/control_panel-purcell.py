@@ -69,8 +69,8 @@ def do_widefield_image_sample(nv_sig, num_reps=1):
 
 
 def do_scanning_image_sample(nv_sig):
-    scan_range = 15
-    num_steps = 15
+    scan_range = 30
+    num_steps = 30
     image_sample.scanning(nv_sig, scan_range, scan_range, num_steps)
 
 
@@ -811,12 +811,12 @@ def do_opx_constant_ac():
     # opx.stream_start()
 
     # Yellow
-    # opx.constant_ac(
-    #     [],  # Digital channels
-    #     [7],  # Analog channels
-    #     [0.45],  # Analog voltages
-    #     [0],  # Analog frequencies
-    # )
+    opx.constant_ac(
+        [],  # Digital channels
+        [7],  # Analog channels
+        [0.4256],  # Analog voltages
+        [0],  # Analog frequencies
+    )
 
     # opx.constant_ac([4])  # Just laser
     # Red
@@ -881,12 +881,12 @@ def do_opx_constant_ac():
     #     [73.166, 72.941],  # Analog frequencies
     # )
     # Green + yellow
-    opx.constant_ac(
-        [4],  # Digital channels
-        [3, 4, 7],  # Analog channels
-        [0.19, 0.19, 0.45],  # Analog voltages
-        [107, 107, 0],  # Analog frequencies
-    )
+    # opx.constant_ac(
+    #     [4],  # Digital channels
+    #     [3, 4, 7],  # Analog channels
+    #     [0.19, 0.19, 0.45],  # Analog voltages
+    #     [107, 107, 0],  # Analog frequencies
+    # )
     # Red + green + Yellow
     # opx.constant_ac(
     #     [4, 1],  # Digital channels1
@@ -1081,9 +1081,9 @@ if __name__ == "__main__":
     # ]
     # green_coords_list = [
     #     [107.74, 107.574],
-    #     [119.242, 96.037],
-    #     [107.008, 118.211],
-    #     [96.772, 94.673],
+    #     [119.222, 95.998],
+    #     [107.027, 118.213],
+    #     [96.77, 94.657],
     # ]
     # red_coords_list = [
     #     [72.456, 73.113],
@@ -1347,7 +1347,7 @@ if __name__ == "__main__":
 
         do_compensate_for_drift(nv_sig)
         # do_widefield_image_sample(nv_sig, 50)
-        do_charge_state_histograms(nv_list)
+        # do_charge_state_histograms(nv_list)
         # do_charge_state_conditional_init(nv_list)
 
         # for point in points:
@@ -1413,7 +1413,7 @@ if __name__ == "__main__":
 
         # do_resonance_zoom(nv_list)
         # do_rabi(nv_list)
-        # do_resonance(nv_list)
+        do_resonance(nv_list)
         # do_spin_echo(nv_list)
 
         # do_power_rabi(nv_list)

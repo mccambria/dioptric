@@ -417,8 +417,8 @@ if __name__ == "__main__":
     # rubin
     # data = dm.get_raw_data(file_id=1798326378514, load_npz=False)  # 60ms readout
     # data = dm.get_raw_data(file_id=1798728176452, load_npz=False)
-    data = dm.get_raw_data(file_id=1798741474977, load_npz=False)
+    # data = dm.get_raw_data(file_id=1798741474977, load_npz=False)
 
-    data = dm.get_raw_data(file_id=1800336690568, load_npz=False)
-    process_and_plot(data, do_plot_histograms=True)
+    data = dm.get_raw_data(file_id=1803617430430, load_npz=False)
+    process_and_plot(data, do_plot_histograms=False)
     kpl.show(block=True)
