@@ -439,18 +439,18 @@ def plot_nv_resonance_fits_and_residuals(
     filtered_fitted_data = [fit_fns[idx] for idx in filtered_indices]
 
     # return
-    # Set plot style
-    for nv_ind in range(num_nvs):
-        fig, ax = plt.subplots(1, 1, figsize=(8, 5))
-        ax.plot(freqs, avg_counts[nv_ind], "o", color="steelblue")
-        ax.plot(freqs_dense, fit_fns[nv_ind], "-", color="red")
-        ax.set_xlabel("Frequency (GHz)")
-        ax.set_ylabel("Norm. NV- Population")
-        ax.set_title(f"NV Index: {nv_ind}")
-        ax.grid(True, linestyle="--", alpha=0.6)
-        plt.tight_layout()
-        plt.show(block=True)
-    return
+    # # Set plot style
+    # for nv_ind in range(num_nvs):
+    #     fig, ax = plt.subplots(1, 1, figsize=(8, 5))
+    #     ax.plot(freqs, avg_counts[nv_ind], "o", color="steelblue")
+    #     ax.plot(freqs_dense, fit_fns[nv_ind], "-", color="red")
+    #     ax.set_xlabel("Frequency (GHz)")
+    #     ax.set_ylabel("Norm. NV- Population")
+    #     ax.set_title(f"NV Index: {nv_ind}")
+    #     ax.grid(True, linestyle="--", alpha=0.6)
+    #     plt.tight_layout()
+    #     plt.show(block=True)
+    # return
     # Plot filtered resonance fits
     sns.set(style="whitegrid", palette="muted")
     num_filtered_nvs = len(filtered_nv_list)
