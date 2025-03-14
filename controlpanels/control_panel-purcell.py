@@ -160,14 +160,14 @@ def do_optimize_readout_duration(nv_list):
 
 def do_optimize_readout_amp(nv_list):
     # num_steps = 21
-    num_steps = 15
+    num_steps = 18
     # num_reps = 150
     # num_runs = 5
     num_reps = 12
     # num_runs = 400
     num_runs = 200
     min_amp = 0.9
-    max_amp = 1.1
+    max_amp = 1.15
     return optimize_charge_state_histograms_mcc.optimize_readout_amp(
         nv_list, num_steps, num_reps, num_runs, min_amp, max_amp
     )
@@ -1036,14 +1036,14 @@ if __name__ == "__main__":
         # file_path="slmsuite/nv_blob_detection/nv_blob_shallow_148nvs_reordered.npz",
         # file_path="slmsuite/nv_blob_detection/nv_blob_rubin_shallow_140nvs_reordered_updated.npz",
         # file_path="slmsuite/nv_blob_detection/nv_blob_rubin_shallow_107nvs_reordered_updated.npz",
-        file_path="slmsuite/nv_blob_detection/nv_blob_rubin_shallow_305nvs_reordered.npz",
+        file_path="slmsuite/nv_blob_detection/nv_blob_rubin_shallow_303nvs_reordered.npz",
     ).tolist()
     # Define transformations using `transform_coords`
     # pixel_coords_list = [
-    #     [109.077, 120.824],
-    #     [23.746, 15.406],
-    #     [112.212, 245.732],
-    #     [227.288, 41.165],
+    #     [113.173, 128.034],
+    #     [18.24, 9.848],
+    #     [108.384, 227.38],
+    #     [227.438, 19.199],
     # ]
     green_coords_list = [
         [
@@ -1074,22 +1074,22 @@ if __name__ == "__main__":
     print(f"Green Laser Coordinates: {green_coords_list[0]}")
     print(f"Red Laser Coordinates: {red_coords_list[0]}")
     # pixel_coords_list = [
-    #     [109.077, 120.824],
-    #     [23.746, 15.406],
-    #     [112.212, 245.732],
-    #     [227.288, 41.165],
+    #     [113.173, 128.034],
+    #     [18.24, 9.848],
+    #     [108.384, 227.38],
+    #     [227.438, 19.199],
     # ]
     # green_coords_list = [
-    #     [108.282, 106.905],
-    #     [118.752, 96.509],
-    #     [106.357, 120.267],
-    #     [96.699, 97.095],
+    #     [107.74, 107.574],
+    #     [119.222, 96.012],
+    #     [106.99, 118.173],
+    #     [96.762, 94.655],
     # ]
     # red_coords_list = [
-    #     [72.883, 72.563],
-    #     [81.192, 63.996],
-    #     [71.606, 83.455],
-    #     [63.225, 64.703],
+    #     [72.456, 73.113],
+    #     [81.564, 63.587],
+    #     [72.076, 81.744],
+    #     [63.223, 62.717],
     # ]
 
     num_nvs = len(pixel_coords_list)
@@ -1346,7 +1346,7 @@ if __name__ == "__main__":
 
         do_compensate_for_drift(nv_sig)
         # do_widefield_image_sample(nv_sig, 50)
-        do_charge_state_histograms(nv_list)
+        # do_charge_state_histograms(nv_list)
         # do_charge_state_conditional_init(nv_list)
 
         # for point in points:
@@ -1404,7 +1404,7 @@ if __name__ == "__main__":
 
         # do_optimize_pol_amp(nv_list)
         # do_optimize_pol_duration(nv_list)
-        # do_optimize_readout_amp(nv_list)
+        do_optimize_readout_amp(nv_list)
         # do_optimize_readout_duration(nv_list)
         # optimize_readout_amp_and_duration(nv_list)
         # do_charge_state_histograms_images(nv_list, vary_pol_laser=True)

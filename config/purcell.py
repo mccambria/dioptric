@@ -35,19 +35,19 @@ red_laser_aod = "laser_COBO_638_aod"
 
 
 calibration_coords_pixel = [
-    [23.746, 15.406],
-    [112.212, 245.732],
-    [227.288, 41.165],
+    [18.24, 9.848],
+    [108.384, 227.38],
+    [227.438, 19.199],
 ]
 calibration_coords_green = [
-    [118.752, 96.509],
-    [106.357, 120.267],
-    [96.699, 97.095],
+    [119.222, 96.012],
+    [106.99, 118.173],
+    [96.762, 94.655],
 ]
 calibration_coords_red = [
-    [81.192, 63.996],
-    [71.606, 83.455],
-    [63.225, 64.703],
+    [81.564, 63.587],
+    [72.076, 81.744],
+    [63.223, 62.717],
 ]
 # Create the dictionaries using the provided lists
 calibration_coords_nv1 = {
@@ -833,8 +833,8 @@ opx_config = {
         # "yellow_charge_readout": {"type": "constant", "sample": 0.3472},  # 50ms 117NVs
         # "yellow_charge_readout": {"type": "constant", "sample": 0.3741},  # 50ms 117NVs
         # "yellow_charge_readout": {"type": "constant", "sample": 0.325},  # 100ms 117NVs
-        "yellow_charge_readout": {"type": "constant", "sample": 0.4527},
-        # "yellow_charge_readout": {"type": "constant", "sample": 0.3343},
+        # "yellow_charge_readout": {"type": "constant", "sample": 0.4527},
+        "yellow_charge_readout": {"type": "constant", "sample": 0.40},
         "yellow_spin_pol": {"type": "constant", "sample": 0.38},
         "yellow_shelving": {"type": "constant", "sample": 0.33},
         # Other

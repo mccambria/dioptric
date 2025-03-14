@@ -398,7 +398,7 @@ if __name__ == "__main__":
     # data = dm.get_raw_data(file_id=1751170993877, load_npz=True)
     # data = dm.get_raw_data(file_id=1752794666146, load_npz=True)
     # data = dm.get_raw_data(file_id=1764727515943, load_npz=True)
-    data = dm.get_raw_data(file_id=1802707242802, load_npz=True)
+    data = dm.get_raw_data(file_id=1802802596578, load_npz=True)
 
     img_array = np.array(data["ref_img_array"])
     # img_array = data["img_array"]
@@ -470,17 +470,20 @@ if __name__ == "__main__":
     calcualted_spot_weights = linear_weights(filtered_reordered_counts, alpha=0.3)
     filtered_reordered_spot_weights = calcualted_spot_weights
     # Manually remove NVs with specified indices
-    # indices_to_remove = [2]  # Example indices to remove
-    # filtered_reordered_coords = [
-    #     coord
-    #     for i, coord in enumerate(filtered_reordered_coords)
-    #     if i not in indices_to_remove
-    # ]
-    # filtered_reordered_spot_weights = [
-    #     count
-    #     for i, count in enumerate(filtered_reordered_spot_weights)
-    #     if i not in indices_to_remove
-    # ]
+    indices_to_remove = [2, 8]
+    filtered_reordered_coords_0 = [
+        coord
+        for i, coord in enumerate(filtered_reordered_coords)
+        if i not in indices_to_remove
+    ]
+    filtered_reordered_spot_weights_0 = [
+        count
+        for i, count in enumerate(filtered_reordered_spot_weights)
+        if i not in indices_to_remove
+    ]
+    filtered_reordered_coords = filtered_reordered_coords_0
+    filtered_reordered_spot_weights = filtered_reordered_spot_weights_0
+
     # print(filtered_reordered_coords)
     # print("Filter:", filtered_reordered_counts)
     # print("Filtered and Reordered NV Coordinates:", filtered_reordered_coords)
@@ -617,11 +620,11 @@ if __name__ == "__main__":
 
     # Save the filtered results
 
-    save_results(
-        filtered_reordered_coords,
-        filtered_reordered_spot_weights,
-        filename="slmsuite/nv_blob_detection/nv_blob_rubin_shallow_305nvs_reordered.npz",
-    )
+    # save_results(
+    #     filtered_reordered_coords,
+    #     filtered_reordered_spot_weights,
+    #     filename="slmsuite/nv_blob_detection/nv_blob_rubin_shallow_303nvs_reordered.npz",
+    # )
     # save_results(
     #     nv_coordinates,
     #     filtered_reordered_counts,
