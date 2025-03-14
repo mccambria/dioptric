@@ -636,6 +636,21 @@ if __name__ == "__main__":
         sig_counts = reformatted_counts[0]
         ref_counts = reformatted_counts[1]
 
+        # ms0_ref_counts = ref_counts[:, :, :, 0::2]
+        # ms1_ref_counts = ref_counts[:, :, :, 1::2]
+        # ms0_ref_counts = ms0_ref_counts.reshape(*ms0_ref_counts.shape[0:2], 1, -1)
+        # ms1_ref_counts = ms1_ref_counts.reshape(*ms1_ref_counts.shape[0:2], 1, -1)
+        # snrs, snr_errs = widefield.calc_snr(ms1_ref_counts, ms0_ref_counts)
+        # snrs = [
+        #     snrs[ind] for ind in range(num_nvs) if ind not in weak_esr + shifted_esr
+        # ]
+        # snr_errs = [
+        #     snr_errs[ind] for ind in range(num_nvs) if ind not in weak_esr + shifted_esr
+        # ]
+        # print(np.mean(snrs))
+        # print(np.std(snrs))
+        # test = 0
+
         norm_counts, norm_counts_ste = widefield.process_counts(
             nv_list, sig_counts, ref_counts, threshold=True
         )

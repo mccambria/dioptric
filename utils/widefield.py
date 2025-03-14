@@ -641,8 +641,8 @@ def calc_snr(sig_counts, ref_counts):
     """Calculate SNR for a single shot"""
     avg_contrast, avg_contrast_ste = calc_contrast(sig_counts, ref_counts)
     noise = np.sqrt(
-        np.std(sig_counts, axis=run_rep_axes, ddof=1) ** 2
-        + np.std(ref_counts, axis=run_rep_axes, ddof=1) ** 2
+        np.var(sig_counts, axis=run_rep_axes, ddof=1)
+        + np.var(ref_counts, axis=run_rep_axes, ddof=1)
     )
     avg_snr = avg_contrast / noise
     avg_snr_ste = avg_contrast_ste / noise

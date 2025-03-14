@@ -362,8 +362,12 @@ def process_and_plot(
         ideal_ref_corr_coeffs = np.array(data["ideal_ref_corr_coeffs"])
 
     ### Print analysis
-    print(np.mean(ref_corr_coeffs[np.triu_indices_from(ref_corr_coeffs, 1)]))
-    print(np.mean(np.abs(sig_corr_coeffs[np.triu_indices_from(sig_corr_coeffs, 1)])))
+    upper_ref_corr_coeffs = ref_corr_coeffs[np.triu_indices_from(ref_corr_coeffs, 1)]
+    print(np.mean(upper_ref_corr_coeffs))
+    print(np.std(upper_ref_corr_coeffs, ddof=1))
+    upper_sig_corr_coeffs = sig_corr_coeffs[np.triu_indices_from(sig_corr_coeffs, 1)]
+    print(np.mean(np.abs(upper_sig_corr_coeffs)))
+    print(np.std(np.abs(upper_sig_corr_coeffs), ddof=1))
 
     ### Plot
 
@@ -417,7 +421,7 @@ def process_and_plot(
     # cbar_maxes = [sig_max, sig_max, 1]
     cbar_max = np.nanmax(vals[1:]) / 2 if passed_cbar_max is None else passed_cbar_max
     cbar_max = 0.03
-    cbar_max = 0.02
+    # cbar_max = 0.02
     # cbar_max = sig_max / 2 if passed_cbar_max is None else passed_cbar_max
     for ind in range(len_vals):
         if passed_ax is None:
@@ -578,7 +582,7 @@ if __name__ == "__main__":
     # weak_esr = [72, 64, 55, 96, 112, 87, 12, 58, 36]
     # # weak_esr = []
 
-    # process_and_plot(data, bad_inds = weak_esr)
+    # process_and_plot(data, bad_inds=weak_esr)
 
     # plt.show(block=True)
     # sys.exit()
