@@ -28,7 +28,7 @@ import utils.common as common
 
 # from utils import data_manager
 
-alphabet = tuple(string.ascii_lowercase)
+alphabet = list(string.ascii_letters)
 
 
 # matplotlib semantic locations for legends and text boxes

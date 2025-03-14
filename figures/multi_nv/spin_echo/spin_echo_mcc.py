@@ -69,7 +69,109 @@ def replot_fits(data, fit_data, nv_inds):
         # figManager.window.showMaximized()
 
 
-def squartic_decay(
+def replot_fits_single_plot(data, fit_data, no_osc_fit_data, nv_inds):
+    figsize = kpl.double_figsize
+    figsize[1] = 7
+    num_rows = 17
+    num_cols = 6
+    layout = kpl.calc_mosaic_layout(num_cols * num_rows, num_rows, num_cols)
+    # layout[0] = [".", ".", ".", layout[0][3], layout[0][4], "."]
+    # layout[1] = [layout[1][0], ".", ".", *layout[1][3:]]
+    fig, axes_pack = plt.subplot_mosaic(
+        layout,
+        figsize=figsize,
+        sharex=True,
+        sharey=True,
+        gridspec_kw={"hspace": 0.015},
+    )
+    axes_pack_flat = list(axes_pack.values())
+
+    nv_list = data["nv_list"]
+    norm_counts = np.array(data["norm_counts"])
+    norm_counts_ste = np.array(data["norm_counts_ste"])
+    osc_popts = fit_data["popts"]
+    no_osc_popts = no_osc_fit_data["popts"]
+    red_chi_sqs = fit_data["red_chi_sq_list"]
+    taus = np.array(data["taus"])
+    total_evolution_times = 2 * np.array(taus) / 1e3
+    fit_fn = quartic_decay
+    num_nvs = len(nv_inds)
+
+    # Sort
+    # fmt: off
+    bad_inds = [47, 55, 61, 62, 68, 97]
+    no_osc_inds = [6, 10, 17, 19, 20, 23, 26, 30, 33, 35, 36, 39, 40, 41, 43, 49, 53, 59, 63, 64, 66, 69, 70, 71, 73, 75, 77, 79, 81, 86, 87, 89, 90, 92, 93, 95, 100]
+    # fmt: on
+    fit_fns = []
+    popts = []
+    mod_freqs = []
+    for loop_ind, nv_ind in enumerate(nv_inds):
+        if loop_ind in bad_inds:
+            fit_fns.append(None)
+            popts.append(None)
+            mod_freqs.append(10)  # Just a high value
+        elif loop_ind in no_osc_inds:
+            fit_fns.append(quartic_decay)
+            popt = no_osc_popts[loop_ind] + [0] * 3
+            popts.append(popt)
+            mod_freqs.append(0)
+        else:
+            fit_fns.append(quartic_decay)
+            popts.append(osc_popts[loop_ind])
+            mod_freqs.append(osc_popts[loop_ind][-2])
+    sort_order = np.argsort(mod_freqs)
+    sorted_nv_inds = np.array(nv_inds)[sort_order]
+
+    widefield.plot_fit(
+        axes_pack_flat,
+        [nv_list[ind] for ind in sorted_nv_inds],
+        total_evolution_times,
+        norm_counts[sorted_nv_inds],
+        norm_counts_ste[sorted_nv_inds],
+        [fit_fns[ind] for ind in sort_order],
+        [popts[ind] for ind in sort_order],
+        no_legend=True,
+        nv_inds=sorted_nv_inds,
+    )
+
+    # for loop_ind, nv_ind in enumerate(nv_inds):
+    #     # if loop_ind not in no_osc_inds:
+    #     #     continue
+    #     nv_counts = norm_counts[nv_ind]
+    #     nv_counts_ste = norm_counts_ste[nv_ind]
+    #     ax = axes_pack_flat[loop_ind]
+    #     kpl.plot_points(
+    #         # ax, total_evolution_times, nv_counts, nv_counts_ste, size=kpl.Size.TINY
+    #         ax,
+    #         total_evolution_times,
+    #         nv_counts,
+    #         size=kpl.Size.SMALL,
+    #     )
+    #     linspace_taus = np.linspace(0, np.max(total_evolution_times), 10000)
+    #     linspace_taus = linspace_taus[1:]  # Exclude tau=0 which can diverge
+    #     popt = popts[loop_ind]
+    #     kpl.plot_line(
+    #         ax,
+    #         linspace_taus,
+    #         fit_fn(linspace_taus, *popt),
+    #         color=kpl.KplColors.GRAY,
+    #     )
+    #     red_chi_sq = red_chi_sqs[loop_ind]
+    #     osc_params = popt[-3:]
+
+    ax = axes_pack[layout[-1, 0]]
+    kpl.set_shared_ax_xlabel(ax, "Total evolution time (µs)")
+    kpl.set_shared_ax_ylabel(ax, "Normalized NV$^{-}$ population")
+    ax.set_xlim(42, 62)
+    ax.set_xticks([45, 60])
+    # ax.set_xlim(90, 110)
+    # ax.set_xticks([0, 50, 100])
+    ax.set_yticks([0, 1], [None, None])
+    for ax in axes_pack_flat:
+        ax.tick_params(which="both", direction="in")
+
+
+def quartic_decay(
     tau,
     baseline,
     quartic_contrast,
@@ -699,7 +801,7 @@ if __name__ == "__main__":
     # data = dm.get_raw_data(file_id=1795182451164)  # w/o ionization, dmw 0.5
     # data = dm.get_raw_data(file_id=1797877478132)  # w/ ionization, dmw None
     # data = dm.get_raw_data(file_id=1795131849572)  # w/ ionization, dmw 0.5
-    # data = dm.get_raw_data(file_id=1800172893179)  # Otsu
+    data = dm.get_raw_data(file_id=1800172893179)  # Otsu
 
     # Skip indices with bad pi pulses etc
     split_esr = [12, 13, 14, 61, 116]
@@ -715,12 +817,12 @@ if __name__ == "__main__":
 
     ### Replotting
 
-    # # # fit_data = dm.get_raw_data(file_id=1796557235526)  # T2_exp variable
-    # fit_data = dm.get_raw_data(file_id=1798006231161)  # w/ ionization dmw None
-    # # fit_data = dm.get_raw_data(file_id=1798052675001)  # no osc
+    fit_data = dm.get_raw_data(file_id=1800359001443)  # Otsu
+    no_osc_fit_data = dm.get_raw_data(file_id=1798052675001)  # no osc
     # replot_fits(data, fit_data, nv_inds)
-    # kpl.show(block=True)
-    # sys.exit()
+    replot_fits_single_plot(data, fit_data, no_osc_fit_data, nv_inds)
+    kpl.show(block=True)
+    sys.exit()
 
     ###
 

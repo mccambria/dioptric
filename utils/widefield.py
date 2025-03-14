@@ -1213,7 +1213,7 @@ def plot_fit(
         xlim[0] = min(x)
     if xlim[1] is None:
         xlim[1] = max(x)
-    x_linspace = np.linspace(*xlim, 1000)
+    x_linspace = np.linspace(*xlim, 10000)
     num_nvs = len(nv_list)
     for nv_ind in range(num_nvs):
         fn = None if fns is None else fns[nv_ind]
@@ -1251,8 +1251,8 @@ def plot_fit(
             color=color,
             linestyle=linestyle,
         )
-        nv_num = get_nv_num(nv_sig)
-        kpl.anchored_text(ax, nv_num, size=kpl.Size.TINY)
+        # nv_num = get_nv_num(nv_sig)
+        # kpl.anchored_text(ax, nv_num, size=kpl.Size.TINY)
         # kpl.anchored_text(ax, nv_inds[nv_ind], size=kpl.Size.TINY)
         # kpl.anchored_text(ax, nv_ind, size=kpl.Size.TINY)
 
