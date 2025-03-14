@@ -54,7 +54,8 @@ def main():
         [0.03, 0.3e-6, 0],
         [0.02, 0, 0.3e-6],
         [0.25, 5e-3, 0],
-        [0.25, 21e-6, 62e-3],
+        # [0.25, 21e-6, 62e-3],  # widefield
+        [0.15, 21e-6, 62e-3],  # SLM
         [0.25, 21e-6, 17e-3],
     ]
     labels = [
@@ -62,7 +63,7 @@ def main():
         "Conv., parallel",
         "SCC, serial",
         "SCC, parallel",
-        "SCC (proj.), parallel",
+        "SCC, parallel (proj.)",
     ]
     serial_or_parallels = [
         True,
@@ -121,6 +122,9 @@ def main():
         ax.set_xlabel("Interrogation time (s)")
         ax.set_ylabel("Time to unit SNR (s)")
         ax.set_xticks(np.logspace(-8, -1, 8))
+
+    fig.text(0.001, 0.955, "(a)")
+    fig.text(0.501, 0.955, "(b)")
 
 
 if __name__ == "__main__":
