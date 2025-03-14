@@ -134,7 +134,7 @@ config |= {
                 "frequency": 2.782099,  # shallow NVs O1 ms=-1
                 # "frequency": 2.798175,  # shallow NVs O2 ms=-1
                 # "frequency": 2.790137,  # mean of above two frequency
-                "rabi_period": 160,
+                "rabi_period": 144,
                 # "rabi_period": 96,
                 # IQ modulation part
                 "carrier_frequency": 2.790137,  # Center frequency
@@ -151,7 +151,7 @@ config |= {
                 # "frequency": 2.856761,  # shallow NVs O4 ms=-1
                 # "frequency": 2.848744,  # mean of above two frequency
                 # "rabi_period": 96,
-                "rabi_period": 160,
+                "rabi_period": 144,
                 # IQ modulation part
                 "carrier_frequency": 2.848744,  # Center frequency for IQ modulation
                 "offset": 0.29839,  # % offset

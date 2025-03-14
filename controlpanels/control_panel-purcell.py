@@ -487,7 +487,7 @@ def do_rabi(nv_list):
     # max_tau = 480 + min_tau
     num_steps = 31
     num_reps = 10
-    num_runs = 600
+    num_runs = 400
     # num_runs = 100
     # num_runs = 20
     # num_runs = 5
@@ -1259,7 +1259,7 @@ if __name__ == "__main__":
     # nv_sig.expected_counts = 4500
     # nv_sig.expected_counts = 900
     # nv_sig.expected_counts = 2100
-    nv_sig.expected_counts = 1500
+    nv_sig.expected_counts = 1460
 
     # num_nvs = len(nv_list)
     # print(f"Final NV List: {nv_list}")
@@ -1347,7 +1347,7 @@ if __name__ == "__main__":
 
         do_compensate_for_drift(nv_sig)
         # do_widefield_image_sample(nv_sig, 50)
-        # do_charge_state_histograms(nv_list)
+        do_charge_state_histograms(nv_list)
         # do_charge_state_conditional_init(nv_list)
 
         # for point in points:
@@ -1412,7 +1412,7 @@ if __name__ == "__main__":
         # do_check_readout_fidelity(nv_list)
 
         # do_resonance_zoom(nv_list)
-        do_rabi(nv_list)
+        # do_rabi(nv_list)
         # do_resonance(nv_list)
         # do_spin_echo(nv_list)
 
