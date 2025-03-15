@@ -162,7 +162,7 @@ def replot_fits_single_plot(data, fit_data, no_osc_fit_data, nv_inds):
     ax = axes_pack[layout[-1, 0]]
     kpl.set_shared_ax_xlabel(ax, "Total evolution time (µs)")
     kpl.set_shared_ax_ylabel(ax, "Normalized NV$^{-}$ population")
-    ax.set_xlim(42, 62)
+    ax.set_xlim(41, 61.5)
     ax.set_xticks([45, 60])
     # ax.set_xlim(90, 110)
     # ax.set_xticks([0, 50, 100])
