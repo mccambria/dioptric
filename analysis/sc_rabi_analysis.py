@@ -327,7 +327,8 @@ if __name__ == "__main__":
     # file_id = 1796958071866
 
     # 300 NVs
-    file_id = 1803593992080
+    # file_id = 1803593992080
+    file_id = 1804466558303
     data = dm.get_raw_data(file_id=file_id, load_npz=False, use_cache=False)
     nv_list = data["nv_list"]
     taus = data["taus"]

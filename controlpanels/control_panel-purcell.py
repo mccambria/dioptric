@@ -164,8 +164,8 @@ def do_optimize_readout_amp(nv_list):
     # num_reps = 150
     # num_runs = 5
     num_reps = 12
-    # num_runs = 400
-    num_runs = 200
+    num_runs = 400
+    # num_runs = 200
     min_amp = 0.9
     max_amp = 1.15
     return optimize_charge_state_histograms_mcc.optimize_readout_amp(
@@ -491,7 +491,6 @@ def do_rabi(nv_list):
     # num_runs = 100
     # num_runs = 20
     # num_runs = 5
-
     # uwave_ind_list = [1]
     uwave_ind_list = [0, 1]
     rabi.main(nv_list, num_steps, num_reps, num_runs, min_tau, max_tau, uwave_ind_list)
@@ -1081,9 +1080,9 @@ if __name__ == "__main__":
     # ]
     # green_coords_list = [
     #     [107.74, 107.574],
-    #     [119.222, 95.998],
-    #     [107.027, 118.213],
-    #     [96.77, 94.657],
+    #     [119.18, 96.054],
+    #     [107.006, 118.253],
+    #     [96.71, 94.683],
     # ]
     # red_coords_list = [
     #     [72.456, 73.113],
@@ -1347,7 +1346,7 @@ if __name__ == "__main__":
 
         do_compensate_for_drift(nv_sig)
         # do_widefield_image_sample(nv_sig, 50)
-        # do_charge_state_histograms(nv_list)
+        do_charge_state_histograms(nv_list)
         # do_charge_state_conditional_init(nv_list)
 
         # for point in points:
@@ -1378,7 +1377,7 @@ if __name__ == "__main__":
         # do_scanning_image_full_roi(nv_sig)
         # do_scanning_image_sample_zoom(nv_sig)
         # do_widefield_image_sample(nv_sig, 50)
-        # do_widefield_image_sample(nv_sig, 200)
+        # do_widefield_image_sample(nv_sig, 100)
 
         # do_image_nv_list(nv_list)
         # do_image_single_nv(nv_sig)
@@ -1413,7 +1412,7 @@ if __name__ == "__main__":
 
         # do_resonance_zoom(nv_list)
         # do_rabi(nv_list)
-        do_resonance(nv_list)
+        # do_resonance(nv_list)
         # do_spin_echo(nv_list)
 
         # do_power_rabi(nv_list)

@@ -130,11 +130,11 @@ config |= {
             0: {
                 "physical_name": "sig_gen_STAN_sg394",
                 # "uwave_power": 2.3,
-                "uwave_power": 6.0,
-                "frequency": 2.782099,  # shallow NVs O1 ms=-1
+                "uwave_power": 8.3,
+                "frequency": 2.7784,  # shallow NVs O1 ms=-1
                 # "frequency": 2.798175,  # shallow NVs O2 ms=-1
                 # "frequency": 2.790137,  # mean of above two frequency
-                "rabi_period": 144,
+                "rabi_period": 128,
                 # "rabi_period": 96,
                 # IQ modulation part
                 "carrier_frequency": 2.790137,  # Center frequency
@@ -146,12 +146,12 @@ config |= {
             1: {
                 "physical_name": "sig_gen_STAN_sg394_2",
                 # "uwave_power": 8.1,
-                "uwave_power": 6.0,
-                "frequency": 2.840727,  # shallow NV O3 ms=-1
+                "uwave_power": 8.3,
+                "frequency": 2.8434,  # shallow NV O3 ms=-1
                 # "frequency": 2.856761,  # shallow NVs O4 ms=-1
                 # "frequency": 2.848744,  # mean of above two frequency
                 # "rabi_period": 96,
-                "rabi_period": 144,
+                "rabi_period": 128,
                 # IQ modulation part
                 "carrier_frequency": 2.848744,  # Center frequency for IQ modulation
                 "offset": 0.29839,  # % offset
