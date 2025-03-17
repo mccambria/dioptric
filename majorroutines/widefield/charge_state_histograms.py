@@ -422,9 +422,11 @@ if __name__ == "__main__":
 
     # data = dm.get_raw_data(file_id=1800336690568, load_npz=False)
     # 300 NVs
-    data = dm.get_raw_data(file_id=1802802596578, load_npz=False)
+    # data = dm.get_raw_data(file_id=1802802596578, load_npz=False)
+    # 200 NVs
+    data = dm.get_raw_data(file_id=1804953793322, load_npz=False)
 
     process_and_plot(data, do_plot_histograms=True)
     data = dm.get_raw_data(file_id=1803617430430, load_npz=False)
-    process_and_plot(data, do_plot_histograms=False)
+    process_and_plot(data, do_plot_histograms=True)
     kpl.show(block=True)
