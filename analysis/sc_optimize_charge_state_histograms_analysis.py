@@ -236,60 +236,60 @@ def process_and_plot(raw_data):
             optimal_values.append((nv_ind, np.nan, np.nan))
             continue
 
-        # # Plotting
-        # fig, ax1 = plt.subplots(figsize=(7, 5))
-        # # Plot readout fidelity
-        # ax1.plot(
-        #     step_vals,
-        #     readout_fidelity_arr[nv_ind],
-        #     label="Readout Fidelity",
-        #     color="orange",
-        # )
-        # ax1.plot(
-        #     step_vals,
-        #     prep_fidelity_arr[nv_ind],
-        #     label="Prep Fidelity",
-        #     linestyle="--",
-        #     color="green",
-        # )
-        # ax1.set_xlabel(x_label)
-        # ax1.set_ylabel("Fidelity")
-        # ax1.tick_params(axis="y", labelcolor="blue")
-        # ax1.grid(True, linestyle="--", alpha=0.6)
+        # Plotting
+        fig, ax1 = plt.subplots(figsize=(7, 5))
+        # Plot readout fidelity
+        ax1.plot(
+            step_vals,
+            readout_fidelity_arr[nv_ind],
+            label="Readout Fidelity",
+            color="orange",
+        )
+        ax1.plot(
+            step_vals,
+            prep_fidelity_arr[nv_ind],
+            label="Prep Fidelity",
+            linestyle="--",
+            color="green",
+        )
+        ax1.set_xlabel(x_label)
+        ax1.set_ylabel("Fidelity")
+        ax1.tick_params(axis="y", labelcolor="blue")
+        ax1.grid(True, linestyle="--", alpha=0.6)
 
-        # # Plot Goodness of Fit ()
-        # ax2 = ax1.twinx()
-        # ax2.plot(
-        #     step_vals,
-        #     goodness_of_fit_arr[nv_ind],
-        #     color="gray",
-        #     linestyle="--",
-        #     label=r"Goodness of Fit ($\chi^2_{\text{reduced}}$)",
-        #     alpha=0.7,
-        # )
-        # ax2.set_ylabel(r"Goodness of Fit ($\chi^2_{\text{reduced}}$)", color="gray")
-        # ax2.tick_params(axis="y", labelcolor="gray")
+        # Plot Goodness of Fit ()
+        ax2 = ax1.twinx()
+        ax2.plot(
+            step_vals,
+            goodness_of_fit_arr[nv_ind],
+            color="gray",
+            linestyle="--",
+            label=r"Goodness of Fit ($\chi^2_{\text{reduced}}$)",
+            alpha=0.7,
+        )
+        ax2.set_ylabel(r"Goodness of Fit ($\chi^2_{\text{reduced}}$)", color="gray")
+        ax2.tick_params(axis="y", labelcolor="gray")
 
-        # # Highlight optimal step value
-        # ax1.axvline(
-        #     optimal_step_val,
-        #     color="red",
-        #     linestyle="--",
-        #     label=f"Optimal Step Val: {optimal_step_val:.3f}",
-        # )
-        # ax2.axvline(
-        #     optimal_step_val,
-        #     color="red",
-        #     linestyle="--",
-        # )
+        # Highlight optimal step value
+        ax1.axvline(
+            optimal_step_val,
+            color="red",
+            linestyle="--",
+            label=f"Optimal Step Val: {optimal_step_val:.3f}",
+        )
+        ax2.axvline(
+            optimal_step_val,
+            color="red",
+            linestyle="--",
+        )
 
-        # # Combine legends
-        # lines, labels = ax1.get_legend_handles_labels()
-        # lines2, labels2 = ax2.get_legend_handles_labels()
-        # ax1.legend(lines + lines2, labels + labels2, loc="upper left", fontsize=11)
-        # ax1.set_title(f"NV{nv_ind} - Optimal Step Val: {optimal_step_val:.3f}")
-        # plt.tight_layout()
-        # plt.show(block=True)
+        # Combine legends
+        lines, labels = ax1.get_legend_handles_labels()
+        lines2, labels2 = ax2.get_legend_handles_labels()
+        ax1.legend(lines + lines2, labels + labels2, loc="upper left", fontsize=11)
+        ax1.set_title(f"NV{nv_ind} - Optimal Step Val: {optimal_step_val:.3f}")
+        plt.tight_layout()
+        plt.show(block=True)
 
     # save opimal step values
     # total_power = np.sum(optimal_step_vals) / len(optimal_step_vals)
@@ -567,174 +567,174 @@ def process_nv_step(nv_ind, step_ind, condensed_counts):
         return np.nan, np.nan, np.nan
 
 
-# def process_and_plot(raw_data):
-#     nv_list = raw_data["nv_list"]
-#     num_nvs = len(nv_list)
-#     min_step_val = raw_data["min_step_val"]
-#     max_step_val = raw_data["max_step_val"]
-#     num_steps = raw_data["num_steps"]
-#     step_vals = np.linspace(min_step_val, max_step_val, num_steps)
+def process_and_plot(raw_data):
+    nv_list = raw_data["nv_list"]
+    num_nvs = len(nv_list)
+    min_step_val = raw_data["min_step_val"]
+    max_step_val = raw_data["max_step_val"]
+    num_steps = raw_data["num_steps"]
+    step_vals = np.linspace(min_step_val, max_step_val, num_steps)
 
-#     counts = np.array(raw_data["counts"])
-#     ref_exp_ind = 1
-#     condensed_counts = np.array(
-#         [
-#             [
-#                 counts[ref_exp_ind, nv_ind, :, step_ind, :].flatten()
-#                 for step_ind in range(num_steps)
-#             ]
-#             for nv_ind in range(num_nvs)
-#         ]
-#     )
+    counts = np.array(raw_data["counts"])
+    ref_exp_ind = 1
+    condensed_counts = np.array(
+        [
+            [
+                counts[ref_exp_ind, nv_ind, :, step_ind, :].flatten()
+                for step_ind in range(num_steps)
+            ]
+            for nv_ind in range(num_nvs)
+        ]
+    )
 
-#     # Process each NV-step pair in parallel
-#     results = Parallel(n_jobs=-1)(
-#         delayed(process_nv_step)(nv_ind, step_ind, condensed_counts)
-#         for nv_ind in range(num_nvs)
-#         for step_ind in range(num_steps)
-#     )
+    # Process each NV-step pair in parallel
+    results = Parallel(n_jobs=-1)(
+        delayed(process_nv_step)(nv_ind, step_ind, condensed_counts)
+        for nv_ind in range(num_nvs)
+        for step_ind in range(num_steps)
+    )
 
-#     try:
-#         results = np.array(results, dtype=float).reshape(num_nvs, num_steps, 3)
-#     except ValueError as e:
-#         print(f"Error reshaping results: {e}")
-#         return
+    try:
+        results = np.array(results, dtype=float).reshape(num_nvs, num_steps, 3)
+    except ValueError as e:
+        print(f"Error reshaping results: {e}")
+        return
 
-#     readout_fidelity_arr = results[:, :, 0]
-#     prep_fidelity_arr = results[:, :, 1]
+    readout_fidelity_arr = results[:, :, 0]
+    prep_fidelity_arr = results[:, :, 1]
 
-#     ### **Perform Fitting**
-#     duration_linspace = np.linspace(min_step_val, max_step_val, 100)
-#     opti_durs, opti_fidelities = [], []
+    ### **Perform Fitting**
+    duration_linspace = np.linspace(min_step_val, max_step_val, 100)
+    opti_durs, opti_fidelities = [], []
 
-#     for nv_ind in range(num_nvs):
-#         valid_indices = step_vals != 20  # Remove the 16 ns outlier
-#         filtered_step_vals = step_vals[valid_indices]
-#         filtered_prep_fidelity = prep_fidelity_arr[nv_ind][valid_indices]
-#         print(filtered_step_vals)
-#         # Ensure there are no NaNs or Infs in the filtered data
-#         valid_mask = np.isfinite(filtered_prep_fidelity) & np.isfinite(
-#             filtered_step_vals
-#         )
-#         filtered_step_vals = filtered_step_vals[valid_mask]
-#         filtered_prep_fidelity = filtered_prep_fidelity[valid_mask]
+    for nv_ind in range(num_nvs):
+        valid_indices = step_vals != 20  # Remove the 16 ns outlier
+        filtered_step_vals = step_vals[valid_indices]
+        filtered_prep_fidelity = prep_fidelity_arr[nv_ind][valid_indices]
+        print(filtered_step_vals)
+        # Ensure there are no NaNs or Infs in the filtered data
+        valid_mask = np.isfinite(filtered_prep_fidelity) & np.isfinite(
+            filtered_step_vals
+        )
+        filtered_step_vals = filtered_step_vals[valid_mask]
+        filtered_prep_fidelity = filtered_prep_fidelity[valid_mask]
 
-#         try:
-#             # Use the full range for slope estimation
-#             slope_guess = (filtered_prep_fidelity[-1] - filtered_prep_fidelity[0]) / (
-#                 filtered_step_vals[-1] - filtered_step_vals[0]
-#             )
+        try:
+            # Use the full range for slope estimation
+            slope_guess = (filtered_prep_fidelity[-1] - filtered_prep_fidelity[0]) / (
+                filtered_step_vals[-1] - filtered_step_vals[0]
+            )
 
-#             # Indices corresponding to 64 ns and 104 ns in the filtered_step_vals
-#             time_64ns_index = np.argmin(
-#                 np.abs(filtered_step_vals - 48)
-#             )  # Closest to 64 ns
-#             time_104ns_index = np.argmin(
-#                 np.abs(filtered_step_vals - 76)
-#             )  # Closest to 104 ns
+            # Indices corresponding to 64 ns and 104 ns in the filtered_step_vals
+            time_64ns_index = np.argmin(
+                np.abs(filtered_step_vals - 48)
+            )  # Closest to 64 ns
+            time_104ns_index = np.argmin(
+                np.abs(filtered_step_vals - 76)
+            )  # Closest to 104 ns
 
-#             # Ensure indices are valid before using them
-#             if time_64ns_index >= len(filtered_step_vals) or time_104ns_index >= len(
-#                 filtered_step_vals
-#             ):
-#                 print(
-#                     f"Skipping NV {nv_ind}: Invalid index selection for slope calculation."
-#                 )
-#                 continue
+            # Ensure indices are valid before using them
+            if time_64ns_index >= len(filtered_step_vals) or time_104ns_index >= len(
+                filtered_step_vals
+            ):
+                print(
+                    f"Skipping NV {nv_ind}: Invalid index selection for slope calculation."
+                )
+                continue
 
-#             # Calculate slope based on two selected points
-#             slope_guess = (
-#                 filtered_prep_fidelity[time_104ns_index]
-#                 - filtered_prep_fidelity[time_64ns_index]
-#             ) / (
-#                 filtered_step_vals[time_104ns_index]
-#                 - filtered_step_vals[time_64ns_index]
-#             )
+            # Calculate slope based on two selected points
+            slope_guess = (
+                filtered_prep_fidelity[time_104ns_index]
+                - filtered_prep_fidelity[time_64ns_index]
+            ) / (
+                filtered_step_vals[time_104ns_index]
+                - filtered_step_vals[time_64ns_index]
+            )
 
-#             peak_guess = filtered_step_vals[np.argmax(filtered_prep_fidelity)]
-#             guess_params = [32, slope_guess, peak_guess, 100]
+            peak_guess = filtered_step_vals[np.argmax(filtered_prep_fidelity)]
+            guess_params = [32, slope_guess, peak_guess, 100]
 
-#             # Use Poisson-based sigma if data comes from counting
-#             sigma = np.sqrt(np.maximum(filtered_prep_fidelity, 1e-6))
+            # Use Poisson-based sigma if data comes from counting
+            sigma = np.sqrt(np.maximum(filtered_prep_fidelity, 1e-6))
 
-#             # Perform curve fitting
-#             popt, _ = curve_fit(
-#                 fit_fn,
-#                 filtered_step_vals,
-#                 filtered_prep_fidelity,
-#                 p0=guess_params,
-#                 sigma=sigma,
-#                 maxfev=50000,
-#             )
+            # Perform curve fitting
+            popt, _ = curve_fit(
+                fit_fn,
+                filtered_step_vals,
+                filtered_prep_fidelity,
+                p0=guess_params,
+                sigma=sigma,
+                maxfev=50000,
+            )
 
-#             # Generate fitted curve
-#             fitted_curve = fit_fn(duration_linspace, *popt)
+            # Generate fitted curve
+            fitted_curve = fit_fn(duration_linspace, *popt)
 
-#             # Find optimal duration based on the fitted curve
-#             opti_dur = duration_linspace[np.nanargmax(fitted_curve)]
-#             opti_fidelity = np.nanmax(fitted_curve)
+            # Find optimal duration based on the fitted curve
+            opti_dur = duration_linspace[np.nanargmax(fitted_curve)]
+            opti_fidelity = np.nanmax(fitted_curve)
 
-#             opti_durs.append(round(opti_dur / 4) * 4)
-#             opti_fidelities.append(round(opti_fidelity, 3))
+            opti_durs.append(round(opti_dur / 4) * 4)
+            opti_fidelities.append(round(opti_fidelity, 3))
 
-#             # # Plot results
-#             # plt.figure()
-#             # plt.scatter(
-#             #     filtered_step_vals,
-#             #     filtered_prep_fidelity,
-#             #     label="Measured Fidelity",
-#             #     color="blue",
-#             # )
-#             # plt.plot(duration_linspace, fitted_curve, label="Fitted Curve", color="red")
-#             # plt.axvline(
-#             #     opti_dur,
-#             #     color="green",
-#             #     linestyle="--",
-#             #     label=f"Opt. Duration: {opti_dur:.1f} ns",
-#             # )
-#             # plt.xlabel("Polarization Duration (ns)")
-#             # plt.ylabel("Preparation Fidelity")
-#             # plt.title(f"NV Num: {nv_ind}")
-#             # plt.legend()
-#             # plt.show(block=True)
+            # # Plot results
+            # plt.figure()
+            # plt.scatter(
+            #     filtered_step_vals,
+            #     filtered_prep_fidelity,
+            #     label="Measured Fidelity",
+            #     color="blue",
+            # )
+            # plt.plot(duration_linspace, fitted_curve, label="Fitted Curve", color="red")
+            # plt.axvline(
+            #     opti_dur,
+            #     color="green",
+            #     linestyle="--",
+            #     label=f"Opt. Duration: {opti_dur:.1f} ns",
+            # )
+            # plt.xlabel("Polarization Duration (ns)")
+            # plt.ylabel("Preparation Fidelity")
+            # plt.title(f"NV Num: {nv_ind}")
+            # plt.legend()
+            # plt.show(block=True)
 
-#             # print(
-#             #     f"NV {nv_ind} - Optimal Duration: {opti_dur:.1f} ns, Optimal Fidelity: {opti_fidelity}"
-#             # )
+            # print(
+            #     f"NV {nv_ind} - Optimal Duration: {opti_dur:.1f} ns, Optimal Fidelity: {opti_fidelity}"
+            # )
 
-#         except RuntimeError:
-#             print(f"Skipping NV {nv_ind}: Curve fitting failed.")
-#             opti_durs.append(None)
-#             opti_fidelities.append(None)
+        except RuntimeError:
+            print(f"Skipping NV {nv_ind}: Curve fitting failed.")
+            opti_durs.append(None)
+            opti_fidelities.append(None)
 
-#     if opti_durs:
-#         print("Optimal Polarization Durations:", opti_durs)
+    if opti_durs:
+        print("Optimal Polarization Durations:", opti_durs)
 
-#         # Filter out None values to compute median
-#         numeric_durations = [d for d in opti_durs if d is not None]
-#         median_duration = int(np.nanmedian(numeric_durations))
-#         # Replace None or out-of-range values with median
-#         opti_durs = [
-#             median_duration if (d is None or not (48 <= d <= 400)) else d
-#             for d in opti_durs
-#         ]
-#         #         # Filter out None values to compute median
-#         #         numeric_durations = [d for d in opti_durs if d is not None]
-#         #         median_duration = int(np.nanmedian(numeric_durations))
-#         #         # Replace None or out-of-range values with median
-#         #         opti_durs = [
-#         #             median_duration + 100 if (d is None or not (48 <= d <= 400)) else d
-#         #             for d in opti_durs
-#         #         ]
+        # Filter out None values to compute median
+        numeric_durations = [d for d in opti_durs if d is not None]
+        median_duration = int(np.nanmedian(numeric_durations))
+        # Replace None or out-of-range values with median
+        opti_durs = [
+            median_duration if (d is None or not (48 <= d <= 400)) else d
+            for d in opti_durs
+        ]
+        #         # Filter out None values to compute median
+        #         numeric_durations = [d for d in opti_durs if d is not None]
+        #         median_duration = int(np.nanmedian(numeric_durations))
+        #         # Replace None or out-of-range values with median
+        #         opti_durs = [
+        #             median_duration + 100 if (d is None or not (48 <= d <= 400)) else d
+        #             for d in opti_durs
+        #         ]
 
-#         print("Updated Optimal Durations:", opti_durs)
-#         print("Optimal Preparation Fidelities:", opti_fidelities)
-#         print(f"Median Optimal Duration: {np.median(opti_durs)} ns")
-#         print(f"Median Optimal Fidelity: {np.median(opti_fidelities)}")
-#         print(f"Max Optimal Duration: {np.max(opti_durs)} ns")
-#         print(f"Min Optimal Duration: {np.min(opti_durs)} ns")
+        print("Updated Optimal Durations:", opti_durs)
+        print("Optimal Preparation Fidelities:", opti_fidelities)
+        print(f"Median Optimal Duration: {np.median(opti_durs)} ns")
+        print(f"Median Optimal Fidelity: {np.median(opti_fidelities)}")
+        print(f"Max Optimal Duration: {np.max(opti_durs)} ns")
+        print(f"Min Optimal Duration: {np.min(opti_durs)} ns")
 
-#     return
+    return
 
 
 # endregion
@@ -784,8 +784,9 @@ if __name__ == "__main__":
     # file_id = 1794442033227  # yellow ampl 60ms 140NVs
     # file_id = 1800416464270  # yellow ampl 60ms 107NVs
 
-    file_id = 1802933502486  # yellow ampl 60ms 300NVs
-    file_id = 1804148043654  # yellow ampl 60ms 300NVs
+    # file_id = 1802933502486  # yellow ampl 60ms 300NVs
+    # file_id = 1804148043654  # yellow ampl 60ms 300NVs
+    # file_id = 1804934228627 # yellow ampl 60ms 200NVs
 
     # file_id = 1794442033227  # yellow ampl 60ms 140NVs
     # file_id = 1793116636570  # yellow ampl 24ms
@@ -796,7 +797,8 @@ if __name__ == "__main__":
 
     # file_id = 1800302862093  # green amps 107 NVs
     # file_id = 1801385197244  # green durations 60ms
-    # file_id = 1803091794064
+    # file_id = 1803091794064 # green durations 303NVs
+    file_id = 1805059857054  # green durations 203NVs
     raw_data = dm.get_raw_data(file_id=file_id, load_npz=False)  # yellow amp var
     file_name = dm.get_file_name(file_id=file_id)
     print(f"{file_name}_{file_id}")

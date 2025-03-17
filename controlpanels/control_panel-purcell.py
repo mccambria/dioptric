@@ -164,8 +164,8 @@ def do_optimize_readout_amp(nv_list):
     # num_reps = 150
     # num_runs = 5
     num_reps = 12
-    num_runs = 400
-    # num_runs = 200
+    # num_runs = 400
+    num_runs = 200
     min_amp = 0.9
     max_amp = 1.15
     return optimize_charge_state_histograms_mcc.optimize_readout_amp(
@@ -1035,7 +1035,7 @@ if __name__ == "__main__":
         # file_path="slmsuite/nv_blob_detection/nv_blob_shallow_148nvs_reordered.npz",
         # file_path="slmsuite/nv_blob_detection/nv_blob_rubin_shallow_140nvs_reordered_updated.npz",
         # file_path="slmsuite/nv_blob_detection/nv_blob_rubin_shallow_107nvs_reordered_updated.npz",
-        file_path="slmsuite/nv_blob_detection/nv_blob_rubin_shallow_303nvs_reordered.npz",
+        file_path="slmsuite/nv_blob_detection/nv_blob_rubin_shallow_203nvs_reordered.npz",
     ).tolist()
     # Define transformations using `transform_coords`
     # pixel_coords_list = [
@@ -1079,10 +1079,10 @@ if __name__ == "__main__":
     #     [227.438, 19.199],
     # ]
     # green_coords_list = [
-    #     [107.74, 107.574],
-    #     [119.18, 96.054],
-    #     [107.006, 118.253],
-    #     [96.71, 94.683],
+    #     [107.746, 107.609],
+    #     [119.24, 96.05],
+    #     [107.041, 118.254],
+    #     [96.75, 94.686],
     # ]
     # red_coords_list = [
     #     [72.456, 73.113],
@@ -1219,7 +1219,7 @@ if __name__ == "__main__":
 
     # scc_amp_list = [1.0] * num_nvs
     scc_duration_list = [112] * num_nvs
-    # pol_duration_list = [200] * num_nvs
+    pol_duration_list = [200] * num_nvs
     # nv_list[i] will have the ith coordinates from the above lists
     nv_list: list[NVSig] = []
     for ind in range(num_nvs):
@@ -1346,7 +1346,7 @@ if __name__ == "__main__":
 
         do_compensate_for_drift(nv_sig)
         # do_widefield_image_sample(nv_sig, 50)
-        do_charge_state_histograms(nv_list)
+        # do_charge_state_histograms(nv_list)
         # do_charge_state_conditional_init(nv_list)
 
         # for point in points:
@@ -1403,7 +1403,7 @@ if __name__ == "__main__":
         # do_optimize_loop(nv_list, coords_key)
 
         # do_optimize_pol_amp(nv_list)
-        # do_optimize_pol_duration(nv_list)
+        do_optimize_pol_duration(nv_list)
         # do_optimize_readout_amp(nv_list)
         # do_optimize_readout_duration(nv_list)
         # optimize_readout_amp_and_duration(nv_list)
