@@ -45,9 +45,9 @@ calibration_coords_green = [
     [96.75, 94.686],
 ]
 calibration_coords_red = [
-    [81.581, 63.607],
-    [72.091, 81.775],
-    [63.232, 62.732],
+    [81.579, 63.689],
+    [72.101, 81.846],
+    [63.215, 62.781],
 ]
 # Create the dictionaries using the provided lists
 calibration_coords_nv1 = {
@@ -834,8 +834,8 @@ opx_config = {
         # "yellow_charge_readout": {"type": "constant", "sample": 0.3741},  # 50ms 117NVs
         # "yellow_charge_readout": {"type": "constant", "sample": 0.325},  # 100ms 117NVs
         # "yellow_charge_readout": {"type": "constant", "sample": 0.4527},
-        "yellow_charge_readout": {"type": "constant", "sample": 0.4211},
-        "yellow_spin_pol": {"type": "constant", "sample": 0.45},
+        "yellow_charge_readout": {"type": "constant", "sample": 0.38},
+        "yellow_spin_pol": {"type": "constant", "sample": 0.44},
         "yellow_shelving": {"type": "constant", "sample": 0.33},
         # Other
         "aod_cw": {"type": "constant", "sample": 0.35},

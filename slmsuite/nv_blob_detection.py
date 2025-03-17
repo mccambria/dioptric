@@ -383,7 +383,7 @@ if __name__ == "__main__":
     # data = dm.get_raw_data(file_id=1766620461342, load_npz=True)
     # data = dm.get_raw_data(file_id=1791296034768, load_npz=True)
     # data = dm.get_raw_data(file_id=1791776254933, load_npz=True)  # rubin green scan
-    data = dm.get_raw_data(file_id=1802802596578, load_npz=True)
+    data = dm.get_raw_data(file_id=1803639885419, load_npz=True)
     img_array = np.array(data["ref_img_array"])
     # img_array = np.array(data["ref_img_array"]["ref_img_array"])
     # img_array = np.array(data["img_array"])
@@ -426,7 +426,7 @@ if __name__ == "__main__":
         for existing_coord in filtered_nv_coords:
             distance = np.linalg.norm(np.array(existing_coord) - np.array(coord))
 
-            if distance < 6:
+            if distance < 8:
                 keep_coord = False  # Mark it for exclusion if too close
                 break  # No need to check further distances
 
@@ -468,12 +468,12 @@ if __name__ == "__main__":
 
     print(f"Detected NV coordinates (optimized): {len(filtered_nv_coords)}")
 
-    # # Save the results
+    # Save the results
     # save_results(
     #     filtered_nv_coords,
     #     filtered_counts,
     #     path="slmsuite/nv_blob_detection",
-    #     filename="nv_blob_shallow_rubin_306nvs.npz",
+    #     filename="nv_blob_shallow_rubin_243nvs.npz",
     # )
 
     # full ROI -- multiple images save in the same file
