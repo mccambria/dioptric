@@ -207,7 +207,7 @@ def process_and_plot(raw_data):
                 readout_fidelity_arr[nv_ind],
                 prep_fidelity_arr[nv_ind],
                 goodness_of_fit_arr[nv_ind],
-                weights=(1.0, 2.0, 1.0),
+                weights=(1.4, 1.0, 1.0),
             )
             # Manually override for the first NV
             # if nv_ind == 0:
@@ -292,8 +292,8 @@ def process_and_plot(raw_data):
         # plt.show(block=True)
 
     # save opimal step values
-    # total_power = np.sum(optimal_step_vals) / len(optimal_step_vals)
-    # aom_voltage = ((total_power - c) / a) ** (1 / b)
+    total_power = np.sum(optimal_step_vals) / len(optimal_step_vals)
+    aom_voltage = ((total_power - c) / a) ** (1 / b)
     # Compute total power and AOM voltage
     valid_step_vals = [val for val in optimal_step_vals if not np.isnan(val)]
     if not valid_step_vals:
@@ -313,7 +313,7 @@ def process_and_plot(raw_data):
     file_name = f"optimal_values_{file_id}"
     file_path = dm.get_file_path(__file__, timestamp, file_name)
     # dm.save_raw_data(results, file_path)
-    # print(results)
+    print(results)
     # Get NV indices where readout fidelity is greater than 0.5
     count_above_threshold = sum(
         1 for val in optimal_values if val[2] > 0.4 and val[3] > 0.8
@@ -546,7 +546,7 @@ def fit_fn(tau, delay, slope, decay, transition):
     transition = max(transition, 48)
 
     # Smooth transition function using tanh
-    smooth_transition = 0.45 * (1 + np.tanh((tau - transition) / (0.6 * transition)))
+    smooth_transition = 0.5 * (1 + np.tanh((tau - transition) / (0.6 * transition)))
 
     # Enforce an initial steep rise
     linear_part = slope * tau
@@ -687,30 +687,30 @@ def process_and_plot_green(raw_data):
             opti_durs.append(round(opti_dur / 4) * 4)
             opti_fidelities.append(round(opti_fidelity, 3))
 
-            # Plot results
-            plt.figure()
-            plt.scatter(
-                filtered_step_vals,
-                filtered_prep_fidelity,
-                label="Measured Fidelity",
-                color="blue",
-            )
-            plt.plot(duration_linspace, fitted_curve, label="Fitted Curve", color="red")
-            plt.axvline(
-                opti_dur,
-                color="green",
-                linestyle="--",
-                label=f"Opt. Duration: {opti_dur:.1f} ns",
-            )
-            plt.xlabel("Polarization Duration (ns)")
-            plt.ylabel("Preparation Fidelity")
-            plt.title(f"NV Num: {nv_ind}")
-            plt.legend()
-            plt.show(block=True)
+            # # Plot results
+            # plt.figure()
+            # plt.scatter(
+            #     filtered_step_vals,
+            #     filtered_prep_fidelity,
+            #     label="Measured Fidelity",
+            #     color="blue",
+            # )
+            # plt.plot(duration_linspace, fitted_curve, label="Fitted Curve", color="red")
+            # plt.axvline(
+            #     opti_dur,
+            #     color="green",
+            #     linestyle="--",
+            #     label=f"Opt. Duration: {opti_dur:.1f} ns",
+            # )
+            # plt.xlabel("Polarization Duration (ns)")
+            # plt.ylabel("Preparation Fidelity")
+            # plt.title(f"NV Num: {nv_ind}")
+            # plt.legend()
+            # plt.show(block=True)
 
-            print(
-                f"NV {nv_ind} - Optimal Duration: {opti_dur:.1f} ns, Optimal Fidelity: {opti_fidelity}"
-            )
+            # print(
+            #     f"NV {nv_ind} - Optimal Duration: {opti_dur:.1f} ns, Optimal Fidelity: {opti_fidelity}"
+            # )
 
         except RuntimeError:
             print(f"Skipping NV {nv_ind}: Curve fitting failed.")
@@ -725,7 +725,7 @@ def process_and_plot_green(raw_data):
         median_duration = int(np.nanmedian(numeric_durations))
         # Replace None or out-of-range values with median
         opti_durs = [
-            median_duration + 82 if (d is None or not (48 <= d <= 400)) else d
+            median_duration + 82 if (d is None or not (48 <= d <= 600)) else d
             for d in opti_durs
         ]
         #         # Filter out None values to compute median
@@ -798,6 +798,7 @@ if __name__ == "__main__":
     # file_id = 1804148043654  # yellow ampl 60ms 300NVs
     # file_id = 1804934228627 # yellow ampl 60ms 200NVs
     # file_id = 1805383839845  # yellow ampl 60ms 240NVs
+    # file_id = 1806165457282  # yellow ampl 60ms 154NVs
 
     # file_id = 1794442033227  # yellow ampl 60ms 140NVs
     # file_id = 1793116636570  # yellow ampl 24ms
@@ -810,8 +811,10 @@ if __name__ == "__main__":
     # file_id = 1801385197244  # green durations 60ms
     # file_id = 1803091794064  # green durations 303NVs
     # file_id = 1805189336738  # green durations 203NVs
-    file_id = 1805991515134  # green durations 240NVs
-    raw_data = dm.get_raw_data(file_id=file_id, load_npz=False)  # yellow amp var
+    # file_id = 1805991515134  # green durations 240NVs
+    file_id = 1806362913488  # green durations 154NVs
+
+    raw_data = dm.get_raw_data(file_id=file_id, load_npz=False)
     file_name = dm.get_file_name(file_id=file_id)
     print(f"{file_name}_{file_id}")
     # process_and_plot(raw_data)

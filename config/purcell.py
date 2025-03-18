@@ -165,7 +165,7 @@ config |= {
     "Camera": {
         "server_name": "camera_NUVU_hnu512gamma",
         "resolution": (512, 512),
-        "spot_radius": 3.0,  # Radius for integrating NV counts in a camera image
+        "spot_radius": 2.5,  # Radius for integrating NV counts in a camera image
         "bias_clamp": 300,  # (changing this won't actually change the value on the camera currently)
         "em_gain": 5000,
         # "em_gain": 1000,
@@ -834,8 +834,9 @@ opx_config = {
         # "yellow_charge_readout": {"type": "constant", "sample": 0.3741},  # 50ms 117NVs
         # "yellow_charge_readout": {"type": "constant", "sample": 0.325},  # 100ms 117NVs
         # "yellow_charge_readout": {"type": "constant", "sample": 0.4527},
-        "yellow_charge_readout": {"type": "constant", "sample": 0.38},
-        "yellow_spin_pol": {"type": "constant", "sample": 0.44},
+        "yellow_charge_readout": {"type": "constant", "sample": 0.3989},
+        # "yellow_charge_readout": {"type": "constant", "sample": 0.40},
+        "yellow_spin_pol": {"type": "constant", "sample": 0.42},
         "yellow_shelving": {"type": "constant", "sample": 0.33},
         # Other
         "aod_cw": {"type": "constant", "sample": 0.35},

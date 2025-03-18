@@ -424,9 +424,13 @@ if __name__ == "__main__":
     # 300 NVs
     # data = dm.get_raw_data(file_id=1802802596578, load_npz=False)
     # 200 NVs
-    data = dm.get_raw_data(file_id=1804953793322, load_npz=False)
-
+    # data = dm.get_raw_data(file_id=1804953793322, load_npz=False)
+    # 154 NVs
+    # data = dm.get_raw_data(file_id=1806214782623, load_npz=False)
+    # data = dm.get_raw_data(file_id=1806222218365, load_npz=False)
+    # data = dm.get_raw_data(file_id=1806227898070, load_npz=False)
+    data = dm.get_raw_data(file_id=1806410973406, load_npz=False)
     process_and_plot(data, do_plot_histograms=True)
-    data = dm.get_raw_data(file_id=1803617430430, load_npz=False)
-    process_and_plot(data, do_plot_histograms=True)
+    # data = dm.get_raw_data(file_id=1803617430430, load_npz=False)
+    # process_and_plot(data, do_plot_histograms=True)
     kpl.show(block=True)
