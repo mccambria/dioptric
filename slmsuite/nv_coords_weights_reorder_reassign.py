@@ -398,7 +398,7 @@ if __name__ == "__main__":
     # data = dm.get_raw_data(file_id=1751170993877, load_npz=True)
     # data = dm.get_raw_data(file_id=1752794666146, load_npz=True)
     # data = dm.get_raw_data(file_id=1782616297820, load_npz=True)
-    data = dm.get_raw_data(file_id=1804953793322, load_npz=True)
+    data = dm.get_raw_data(file_id=1806410973406, load_npz=True)
 
     img_array = np.array(data["ref_img_array"])
     # img_array = data["img_array"]
@@ -407,7 +407,9 @@ if __name__ == "__main__":
     nv_coordinates, spot_weights = load_nv_coords(
         # file_path="slmsuite/nv_blob_detection/nv_blob_shallow_rubin_140nvs.npz"
         # file_path="slmsuite/nv_blob_detection/nv_blob_shallow_rubin_306nvs.npz"
-        file_path="slmsuite/nv_blob_detection/nv_blob_rubin_shallow_303nvs_reordered.npz"
+        file_path="slmsuite/nv_blob_detection/nv_blob_shallow_rubin_81nvs.npz"
+        # file_path="slmsuite/nv_blob_detection/nv_blob_rubin_shallow_303nvs_reordered.npz"
+        # file_path="slmsuite/nv_blob_detection/nv_blob_rubin_shallow_154nvs_reordered.npz"
         # file_path="slmsuite/nv_blob_detection/nv_blob_shallow_rubin_243nvs.npz"
         # file_path="slmsuite/nv_blob_detection/nv_blob_rubin_shallow_140nvs_reordered_updated.npz",
         # file_path="slmsuite/nv_blob_detection/nv_blob_rubin_shallow_255nvs_reordered_updated.npz"
@@ -538,18 +540,18 @@ if __name__ == "__main__":
     # include_indices = [0, 3, 4, 6, 7, 8, 13, 14, 19, 20, 22, 25, 26, 30, 31, 33, 36, 38, 39, 42, 43, 50, 51, 52, 58, 59, 61, 62, 63, 64, 65, 74, 75, 76, 77, 78, 79, 83, 84, 86, 88, 90, 91, 92, 95, 96, 99, 101, 105, 107, 109, 110, 112, 113, 119, 121, 126, 127, 128, 132, 133, 134, 136, 139, 140, 141, 143, 145, 146]
     # include_indices = [ind for ind in include_indices if ind not in final_drop_inds]
     # include_indices = [0, 1, 3, 4, 5, 7, 9, 10, 11, 12, 13, 14, 15, 16, 18, 19, 21, 23, 26, 27, 28, 29, 30, 31, 32, 33, 34, 35, 36, 37, 38, 39, 40, 41, 43, 44, 46, 48, 51, 52, 53, 54, 55, 56, 57, 58, 59, 61, 62, 64, 65, 66, 67, 68, 69, 71, 72, 73, 74, 75, 76, 77, 78, 79, 80, 82, 87, 89, 90, 92, 94, 95, 96, 97, 98, 99, 100, 101, 102, 103, 104, 105, 106, 108, 109, 111, 112, 113, 114, 117, 118, 119, 121, 122, 124, 126, 127, 128, 129, 130, 131, 132, 133, 134, 135, 137, 139]
-    include_indices_1 = [0, 4, 5, 7, 8, 11, 12, 14, 15, 17, 19, 23, 27, 28, 32, 38, 39, 40, 42, 43, 48, 49, 51, 53, 57, 62, 64, 66, 68, 69, 71, 74, 76, 77, 78, 92, 93, 95, 97, 98, 105, 106, 108, 109, 112, 113, 114, 121, 122, 125, 127, 128, 129, 134, 136, 137, 138, 139, 142, 143, 150, 158, 161, 162, 163, 165, 166, 168, 170, 172, 173, 174, 176, 178, 180, 181, 183, 187, 188, 190, 191, 196, 197, 201, 202, 203, 206, 212, 216, 217, 219, 227, 229, 231, 234, 235, 246, 251, 254, 255, 258, 259, 262, 267, 268, 273, 275, 280, 282, 286, 301] 
-    include_indices_2 =  [1, 6, 8, 15, 19, 21, 28, 30, 35, 36, 38, 39, 42, 43, 44, 46, 47, 49, 50, 53, 54, 57, 58, 59, 60, 63, 64, 65, 66, 68, 71, 72, 76, 77, 78, 82, 84, 87, 90, 91, 92, 94, 96, 97, 98, 101, 103, 104, 105, 110, 112, 114, 121, 125, 127, 128, 129, 131, 132, 134, 137, 138, 139, 140, 141, 143, 144, 148, 149, 150, 151, 161, 163, 166, 168, 169, 170, 172, 181, 183, 186, 188, 194, 195, 196, 198, 199, 201, 202, 204, 206, 207, 209, 210, 211, 214, 219, 221, 223, 224, 226, 227, 228, 234, 235, 237, 239, 240, 242, 244, 245, 247, 249, 251, 252, 257, 258, 259, 260, 261, 264, 265, 266, 270, 271, 273, 274, 276, 277, 279, 280, 281, 282, 283, 284, 285, 298]
+    include_indices_1 = [0, 3, 6, 8, 9, 10, 11, 18, 20, 21, 23, 24, 29, 34, 36, 39, 41, 42, 52, 63, 64, 69, 79, 82, 84, 85, 86, 98, 99, 101, 102, 105, 106, 115, 116, 120, 123, 129, 150, 152]
+    include_indices_2 =  [12, 13, 16, 19, 22, 35, 40, 43, 45, 49, 50, 51, 54, 56, 57, 59, 72, 75, 89, 91, 92, 93, 94, 95, 96, 103, 107, 108, 113, 117, 122, 124, 128, 131, 132, 133, 135, 136, 137, 139, 142, 146]
     include_indices= sorted(set(include_indices_1 + include_indices_2))
-    # print(include_indices)
+    print(include_indices)
     # print(len(include_indices))
     # fmt: on
-    filtered_reordered_coords = [filtered_reordered_coords[i] for i in include_indices]
-    # print(f"len nv_powers: {len(filtered_reordered_coords)}")
+    # filtered_reordered_coords = [filtered_reordered_coords[i] for i in include_indices]
+    # print(f"len filtered_reordered_coords: {len(filtered_reordered_coords)}")
     # select_half_left_side_nvs_and_plot(nv_coordinates_filtered)
-    spot_weights_filtered = np.array(
-        [weight for i, weight in enumerate(spot_weights) if i in include_indices]
-    )
+    # spot_weights_filtered = np.array(
+    #     [weight for i, weight in enumerate(spot_weights) if i in include_indices]
+    # )
     # print(spot_weights_filtered.tolist())
     # spot_weights_filtered = [0.37115681925012395, 0.8973806566252908, 0.6492505531018116, 0.8973806566252908, 0.6492505531018116, 0.8973806566252908, 1.2079865694275362, 0.7662133180933878, 0.5452027843379944, 1.8186401643947878, 0.8973806566252908, 0.8973806566252908, 0.7662133180933878, 0.6492505531018116, 0.37115681925012395, 0.7662133180933878, 0.8973806566252908, 1.3905197641719333, 0.7662133180933878, 0.7662133180933878, 1.0441409149317271, 0.8973806566252908, 0.5452027843379944, 0.5452027843379944, 1.3905197641719333, 0.5452027843379944, 0.5452027843379944, 0.5452027843379944, 0.7662133180933878, 0.6492505531018116, 1.0441409149317271, 1.2079865694275362, 0.7662133180933878, 0.6492505531018116, 0.45287401617381423, 0.7662133180933878, 2.983174023576911, 0.5452027843379944, 2.983174023576911, 0.37115681925012395, 0.29902748466528467, 0.8973806566252908, 1.8186401643947878, 0.6492505531018116, 0.5452027843379944, 0.37115681925012395, 0.8973806566252908, 0.45287401617381423, 0.5452027843379944, 0.7662133180933878, 0.7662133180933878, 0.5452027843379944, 0.6492505531018116, 0.6492505531018116, 1.3905197641719333, 0.6492505531018116, 0.5452027843379944, 0.8973806566252908, 1.5934580267032499, 0.45287401617381423, 1.2079865694275362, 0.7662133180933878, 0.7662133180933878, 0.5452027843379944, 0.5452027843379944, 0.5452027843379944, 1.0441409149317271, 1.8186401643947878, 1.5934580267032499, 1.0441409149317271, 1.0441409149317271, 3.3518383788301915, 0.8973806566252908, 0.5452027843379944, 1.0441409149317271, 0.5452027843379944, 0.7662133180933878, 1.8186401643947878, 0.45287401617381423, 0.5452027843379944, 0.23554134553186165, 1.0441409149317271, 2.343734352768041, 0.8973806566252908, 1.8186401643947878, 0.7662133180933878, 1.2079865694275362, 0.8973806566252908, 2.0680323434660104, 0.5452027843379944, 1.2079865694275362, 0.5452027843379944, 1.3905197641719333, 1.0441409149317271, 0.6492505531018116, 0.45287401617381423, 0.6492505531018116, 2.983174023576911, 1.2079865694275362, 2.343734352768041, 1.0441409149317271, 0.5452027843379944, 1.0441409149317271, 0.29902748466528467, 0.8973806566252908]
     # print(len(spot_weights_filtered))
@@ -572,6 +574,13 @@ if __name__ == "__main__":
     updated_spot_weights = curve_extreme_weights_simple(
         spot_weights, scaling_factor=1.0
     )
+    # filtered_reordered_spot_weights = np.array(
+    #     [
+    #         weight
+    #         for i, weight in enumerate(updated_spot_weights)
+    #         if i in include_indices
+    #     ]
+    # )
     # updated_spot_weights = spot_weights
     # print(filter_and_reorder_nv_coords)
     # updated_spot_weights = np.array(
@@ -606,16 +615,16 @@ if __name__ == "__main__":
     adjusted_aom_voltage = ((filtered_total_power - c) / a) ** (1 / b)
     print("Adjusted Voltages (V):", adjusted_aom_voltage)
     # sys.exit()
-    filtered_reordered_spot_weights = updated_spot_weights
+    # filtered_reordered_spot_weights = updated_spot_weights
 
-    filtered_reordered_coords, filtered_reordered_spot_weights, include_indices = (
-        filter_and_reorder_nv_coords(
-            filtered_reordered_coords,
-            filtered_reordered_spot_weights,
-            reference_nv,
-            min_distance=9,
-        )
-    )
+    # filtered_reordered_coords, filtered_reordered_spot_weights, include_indices = (
+    #     filter_and_reorder_nv_coords(
+    #         filtered_reordered_coords,
+    #         filtered_reordered_spot_weights,
+    #         reference_nv,
+    #         min_distance=9,
+    #     )
+    # )
     print("filtered_reordered_spot_weights_len:", len(filtered_reordered_spot_weights))
     print("filtered_reordered_coords_len:", len(filtered_reordered_coords))
     print("NV Index | Coords    |   previous weights")
@@ -646,11 +655,11 @@ if __name__ == "__main__":
 
     # Save the filtered results
 
-    save_results(
-        filtered_reordered_coords,
-        filtered_reordered_spot_weights,
-        filename="slmsuite/nv_blob_detection/nv_blob_rubin_shallow_154nvs_reordered.npz",
-    )
+    # save_results(
+    #     filtered_reordered_coords,
+    #     filtered_reordered_spot_weights,
+    #     filename="slmsuite/nv_blob_detection/nv_blob_rubin_shallow_81nvs_reordered.npz",
+    # )
     # save_results(
     #     nv_coordinates,
     #     filtered_reordered_counts,

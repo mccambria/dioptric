@@ -40,14 +40,14 @@ calibration_coords_pixel = [
     [227.438, 19.199],
 ]
 calibration_coords_green = [
-    [119.24, 96.05],
-    [107.041, 118.254],
-    [96.75, 94.686],
+    [119.219, 96.078],
+    [107.062, 118.24],
+    [96.742, 94.703],
 ]
 calibration_coords_red = [
-    [81.579, 63.689],
-    [72.101, 81.846],
-    [63.215, 62.781],
+    [81.563, 63.64],
+    [72.136, 81.798],
+    [63.208, 62.756],
 ]
 # Create the dictionaries using the provided lists
 calibration_coords_nv1 = {
@@ -131,7 +131,7 @@ config |= {
                 "physical_name": "sig_gen_STAN_sg394",
                 # "uwave_power": 2.3,
                 "uwave_power": 8.3,
-                "frequency": 2.7784,  # shallow NVs O1 ms=-1
+                "frequency": 2.779138,  # shallow NVs O1 ms=-1
                 # "frequency": 2.798175,  # shallow NVs O2 ms=-1
                 # "frequency": 2.790137,  # mean of above two frequency
                 "rabi_period": 128,
@@ -147,7 +147,7 @@ config |= {
                 "physical_name": "sig_gen_STAN_sg394_2",
                 # "uwave_power": 8.1,
                 "uwave_power": 8.3,
-                "frequency": 2.8434,  # shallow NV O3 ms=-1
+                "frequency": 2.842301,  # shallow NV O3 ms=-1
                 # "frequency": 2.856761,  # shallow NVs O4 ms=-1
                 # "frequency": 2.848744,  # mean of above two frequency
                 # "rabi_period": 96,
@@ -834,9 +834,10 @@ opx_config = {
         # "yellow_charge_readout": {"type": "constant", "sample": 0.3741},  # 50ms 117NVs
         # "yellow_charge_readout": {"type": "constant", "sample": 0.325},  # 100ms 117NVs
         # "yellow_charge_readout": {"type": "constant", "sample": 0.4527},
-        "yellow_charge_readout": {"type": "constant", "sample": 0.3989},
+        # "yellow_charge_readout": {"type": "constant", "sample": 0.3989},
+        "yellow_charge_readout": {"type": "constant", "sample": 0.37},
         # "yellow_charge_readout": {"type": "constant", "sample": 0.40},
-        "yellow_spin_pol": {"type": "constant", "sample": 0.42},
+        "yellow_spin_pol": {"type": "constant", "sample": 0.40},
         "yellow_shelving": {"type": "constant", "sample": 0.33},
         # Other
         "aod_cw": {"type": "constant", "sample": 0.35},
