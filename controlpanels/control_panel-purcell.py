@@ -384,7 +384,7 @@ def do_optimize_scc_amp(nv_list):
 
 
 def do_scc_snr_check(nv_list):
-    num_reps = 240
+    num_reps = 200
     num_runs = 60
     # num_runs = 200
     # num_runs = 160 * 4
@@ -1124,6 +1124,7 @@ if __name__ == "__main__":
     # 105 rubin 
     # scc_duration_list = [104, 84, 84, 84, 100, 80, 88, 104, 72, 72, 100, 80, 68, 96, 92, 100, 84, 112, 76, 64, 88, 92, 100, 72, 76, 72, 80, 84, 64, 72, 84, 56, 52, 80, 80, 72, 80, 92, 72, 76, 80, 72, 80, 72, 68, 60, 72, 72, 80, 64, 80, 116, 68, 88, 100, 52, 68, 76, 64, 72, 68, 80, 80, 92, 56, 84, 56, 76, 80, 164, 64, 88, 88, 76, 80, 100, 116, 88, 64, 80, 108, 108, 84, 84, 128, 72, 80, 72, 72, 116, 52, 100, 80, 68, 132, 92, 100, 80, 72, 96, 72, 92, 88, 72, 72]
     scc_duration_list = [108, 136, 136, 144, 124, 192, 108, 108, 116, 124, 92, 140, 124, 88, 116, 72, 112, 84, 136, 80, 56, 72, 100, 84, 60, 48, 68, 164, 164, 108, 92, 196, 92, 108, 108, 100, 72, 108, 152, 152, 124, 120, 108, 108, 108, 72, 108, 148, 108, 108, 92, 132, 92, 124, 124, 128, 108, 72, 72, 80, 108, 108, 108, 108, 108, 48, 108, 84, 84, 72, 132, 108, 100, 92, 84, 64, 84, 72, 72, 108, 108, 108, 108, 116, 60, 112, 112, 116, 116, 92, 148, 80, 80, 80, 128, 92, 92, 100, 144, 108, 128, 80, 108, 108, 108, 172, 108]
+    # 81NVs
     # median_value = np.median(scc_duration_list)
     # print(median_value)
     # Replace values less than 50 with the median
@@ -1160,6 +1161,9 @@ if __name__ == "__main__":
     # # # Assign back to original lists
     # scc_duration_list = arranged_scc_duration_list
     pol_duration_list = arranged_pol_duration_list
+    #81NVs
+    pol_duration_list = [132, 140, 140, 132, 116, 156, 104, 164, 156, 156, 108, 152, 168, 116, 220, 92, 168, 116, 120, 140, 104, 180, 144, 152, 232, 132, 156, 228, 200, 96, 188, 168, 300, 128, 200, 176, 108, 220, 164, 128, 288, 436, 376, 108, 132, 252, 176, 128, 312, 140, 180, 116, 220, 328, 128, 324, 132, 164, 292, 176, 364, 276, 92, 104, 352, 388, 180, 328, 412, 152, 156, 164, 116, 168, 580, 372, 168, 152, 176, 164, 244]
+    scc_duration_list = [124, 128, 152, 164, 112, 124, 92, 124, 124, 148, 116, 124, 164, 104, 164, 92, 144, 92, 92, 80, 144, 124, 136, 100, 164, 108, 84, 156, 168, 100, 160, 172, 124, 148, 108, 108, 84, 172, 108, 84, 160, 164, 124, 124, 84, 180, 104, 136, 152, 124, 116, 124, 84, 172, 84, 172, 72, 124, 108, 84, 180, 144, 116, 72, 124, 124, 132, 124, 196, 84, 124, 116, 72, 92, 120, 124, 172, 84, 100, 124, 124]
     # scc_amp_list = arranged_scc_amp_list
     # print(f"Length of pol_duration_list: {len(pol_duration_list)}")
     # print(f"First 10 SCC durations: {scc_duration_list[:10]}")
@@ -1224,7 +1228,7 @@ if __name__ == "__main__":
     print(f"First 10 POL durations: {pol_duration_list[:10]}")
 
     # scc_amp_list = [1.0] * num_nvs
-    scc_duration_list = [112] * num_nvs
+    # scc_duration_list = [112] * num_nvs
     # pol_duration_list = [200] * num_nvs
     # nv_list[i] will have the ith coordinates from the above lists
     nv_list: list[NVSig] = []
@@ -1409,7 +1413,7 @@ if __name__ == "__main__":
         # do_optimize_loop(nv_list, coords_key)
 
         # do_optimize_pol_amp(nv_list)
-        do_optimize_pol_duration(nv_list)
+        # do_optimize_pol_duration(nv_list)
         # do_optimize_readout_amp(nv_list)
         # do_optimize_readout_duration(nv_list)
         # optimize_readout_amp_and_duration(nv_list)
@@ -1436,7 +1440,7 @@ if __name__ == "__main__":
         # do_opx_square_wave()
 
         # nv_list = nv_list[::-1]
-        # do_scc_snr_check(nv_list)
+        do_scc_snr_check(nv_list)
         # do_power_rabi_scc_snr(nv_list)
         # do_optimize_scc_duration(nv_list)
         # do_optimize_scc_amp(nv_list)
