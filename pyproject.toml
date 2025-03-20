@@ -2,7 +2,6 @@
 name = "dioptric"
 dynamic = ["version"]
 dependencies = [
-  "python",
   "ipython",
   "pip",
   "matplotlib",
@@ -11,15 +10,14 @@ dependencies = [
   "pillow",
   "gitpython",
   "pandas",
-  "pyqt",
+  "pyqt6",
   "pathos",
   "scipy",
   "keyring",
   "chardet",
   "numba",
-  "pywin32",
   "scikit-image",
-  "opencv",
+  "opencv-python",
   "colorutils",
   "nidaqmx",
   "pylabrad",
@@ -35,5 +33,6 @@ dependencies = [
   "boxsdk",
   "PyJWT",
   "ujson",
-  "orjson"
+  "orjson",
+  "ftplib"
 ]

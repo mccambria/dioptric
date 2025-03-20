@@ -7,16 +7,22 @@ from ftplib import FTP
 class Indexer:
     index_filename = "index"
     index = dict()
-    
-    def __init__(self, ftp, update=False):
+    ftp = None
+    def __init__(self, ftpclient, update=True):
         index = BytesIO()
+        ftp = ftpclient
         if(update):
-            with open(index_filename, "wb") as file:
+            download_index()
+        
+        
+        
+    def download_index():
+        with open(index_filename, "wb") as file:
                 ftp.retrbinary(f"RETR {index_filename}", file.write)
-        
-        
-        
 
+
+                
+        
     def gen_search_index(directory):
     #Gen the search index by recursively traversing the ftp server and creating a new index
         index = dict()
@@ -27,7 +33,10 @@ class Indexer:
                 list_recursive(ftp, remotepath)
             else:
                 index[entry[0]] = directory + "/" + name
-        #todo, write and upload index
+        save_index_to_file()
+        upload_index()
+
+
 
 
     def load_index():
@@ -38,13 +47,31 @@ class Indexer:
                 index[key] = val
 
 
-    def add_to_search_index(data_full_path):
+    def add_to_search_index(parent_path, file_name):
         #downloads latest index, checks if file exits, if not adds it
-        return
-    
+        download_index()
+        load_index()
+        if file_name not in index:
+            index[file_name] = parent_path + "/" + file_name
+        append_to_index(file_name, index[file_name])
+
+    def append_to_index(key, val):
+        file = open(index_filename, "a")
+        f.write(key + " " + value)
+        f.close()
 
 
+    def save_index_to_file():
+        file = open(index_filename, "w")
+        for key, value in index.items():
+            f.write(key + " " + value)
+        f.close()
 
+
+    def upload_index():
+        file = open(index_filename, 'rb')
+        ftp.storbinary(f'Stor {index_filename}', file)
+        file.close()
 
 
     def get_data_path(data_file_name):

@@ -18,9 +18,10 @@ from ftplib import FTP
 from utils import common
 from utils import indexer
 from io import BytesIO
-
+import io import StringIO
 hostname = "192.168.1.197"
 ftp = FTP(host=hostname,user=kolkowitzadmin,password="r8Y.>CL$y=P}X7^")
+converter = indexer(ftp)
 
 folder_path_cache = {}
 try:
@@ -33,7 +34,7 @@ except:
     )
 
 
-def download(file_name=None, ext=None):
+def download(file_name, ext=None):
     """Download file from the cloud
 
     Parameters
@@ -42,22 +43,18 @@ def download(file_name=None, ext=None):
         Name of the file, without file extension
     ext : str
         File extension
-    file_id : id
-        Box file ID, can be read off from the URL:
-        https://berkeley.app.box.com/file/<file_id>
 
     Returns
     -------
     Binary string
         Contents of the file
     """
-    
-    search_results = indexer.get_data_path(file_name)
+    search_results = converter.get_data_path(file_name)
     if not search_results:
         raise RuntimeError("No file found. Try running gen_search_index")
     search_command = "RETR " + search_results
-    file_content = BytesIO()
-    ftp.retrbinary(search_cmd, file_content.write)
+    file_content = StringIO.StringIO()
+    ftp.retrbinary(search_command, file_content.write)
     return file_content, file_name
 
 
@@ -75,6 +72,7 @@ def upload(file_path_w_ext, content):
     folder_path = file_path_w_ext.parent
     file_name = file_path_w_ext.name
     ftp.storbinary(f'STOR {folder_path}/{file_name}', content)
+    converter.add_to_search_index(folder_path, file_name)
 
 
 
