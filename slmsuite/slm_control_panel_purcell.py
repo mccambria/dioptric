@@ -353,7 +353,7 @@ def compute_and_write_nvs_phase():
         shape=(4096, 2048),
         spot_vectors=thorcam_coords,
         basis="ij",
-        spot_amp=spot_weights,
+        # spot_amp=spot_weights,
         cameraslm=fs,
     )
     # Precondition computationally
@@ -385,7 +385,7 @@ def write_pre_computed_nvs_phase():
     #     "slmsuite\computed_phase\slm_phase_117nvs_20250119_152458.npy"
     # )  # 117NVs weighted spots
     # shallow NVs
-    phase = np.load("slmsuite\computed_phase\slm_phase_240nvs_20250317_113725.npy")
+    phase = np.load("slmsuite\computed_phase\slm_phase_81nvs_20250319_165528.npy")
     # phase = np.load("slmsuite\circles\slm_phase_circles_20250118_210419.npy")  # circles
     slm.write(phase, settle=True)
     # cam_plot()
@@ -430,8 +430,8 @@ try:
     # test_wavefront_calibration()
     # wavefront_calibration()
     # load_wavefront_calibration()
-    compute_and_write_nvs_phase()
-    # write_pre_computed_nvs_phase()
+    # compute_and_write_nvs_phase()
+    write_pre_computed_nvs_phase()
     # calibration_triangle()
     # circles()
     # smiley()
