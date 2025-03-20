@@ -131,7 +131,7 @@ def main(nv_list, num_reps, num_runs, uwave_ind_list=[0, 1]):
     # uwave_ind_list = [1]
     # uwave_ind_list = [0, 1]
 
-    seq_file = "v"
+    seq_file = "scc_snr_check.py"
     pulse_gen = tb.get_server_pulse_gen()
 
     def run_fn(step_inds):

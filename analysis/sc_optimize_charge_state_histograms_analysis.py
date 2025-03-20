@@ -212,7 +212,7 @@ def process_and_plot(raw_data):
                 readout_fidelity_arr[nv_ind],
                 prep_fidelity_arr[nv_ind],
                 goodness_of_fit_arr[nv_ind],
-                weights=(1.5, 1.0, 2.0),
+                weights=(1.0, 1.0, 1.0),
             )
             # Manually override for the first NV
             # if nv_ind == 0:

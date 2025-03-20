@@ -1073,7 +1073,7 @@ if __name__ == "__main__":
     #     print(f"NV {i+1}: Magnetic Field: {B:.4f} T")
 
     # Generate a 2D magnetic field map
-    dist_conversion_factor = 0.072
+    dist_conversion_factor = 0.130
     # generate_2d_magnetic_field_map_rbf(nv_list, magnetic_fields, dist_conversion_factor, grid_size=100)
     # generate_2d_magnetic_field_map_kriging(nv_list, magnetic_fields, dist_conversion_factor, grid_size=100)
 
@@ -1097,6 +1097,8 @@ if __name__ == "__main__":
     file_ids = [1803870882950]
     # rubin 154NVs
     file_ids = [1806862148858]
+    # rubib 81
+    file_ids = [1809016009780]
     # fmt: off
     # fmt: on
     # print(len(reference_pixel_coords))

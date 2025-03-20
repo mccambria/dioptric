@@ -106,8 +106,8 @@ def macro(
             scc_coords_list[::-1],
             scc_duration_list[::-1],
             scc_amp_list[::-1],
-            scc_duration_override,
-            scc_amp_override,
+            scc_duration_override[::-1] if scc_duration_override is not None else None,
+            scc_amp_override[::-1] if scc_amp_override is not None else None,
             (do_target_list[::-1] if do_target_list is not None else None),
         )
 
@@ -131,7 +131,11 @@ def macro(
             if spin_flip_do_target_list is None or True not in spin_flip_do_target_list:
                 # macro_scc_sub()
                 # SBC randomize the ordern of the scc on NVs list
-                with qua.if_(rep_ind % 2 == 0):
+                # with qua.if_((rep_ind, 1) == 0):  # Check if rep_ind is even
+                #     macro_scc_sub()
+                # with qua.else_():
+                #     macro_scc_sub_reversed()
+                with qua.if_(random_order == 1):
                     macro_scc_sub()
                 with qua.else_():
                     macro_scc_sub_reversed()
