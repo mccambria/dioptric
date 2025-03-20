@@ -353,7 +353,7 @@ def compute_and_write_nvs_phase():
         shape=(4096, 2048),
         spot_vectors=thorcam_coords,
         basis="ij",
-        # spot_amp=spot_weights,
+        spot_amp=spot_weights,
         cameraslm=fs,
     )
     # Precondition computationally
@@ -430,8 +430,8 @@ try:
     # test_wavefront_calibration()
     # wavefront_calibration()
     # load_wavefront_calibration()
-    # compute_and_write_nvs_phase()
-    write_pre_computed_nvs_phase()
+    compute_and_write_nvs_phase()
+    # write_pre_computed_nvs_phase()
     # calibration_triangle()
     # circles()
     # smiley()

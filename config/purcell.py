@@ -837,7 +837,7 @@ opx_config = {
         # "yellow_charge_readout": {"type": "constant", "sample": 0.3989},
         # "yellow_charge_readout": {"type": "constant", "sample": 0.3678},
         # "yellow_charge_readout": {"type": "constant", "sample": 0.3715},
-        "yellow_charge_readout": {"type": "constant", "sample": 0.36},
+        "yellow_charge_readout": {"type": "constant", "sample": 0.3678},
         "yellow_spin_pol": {"type": "constant", "sample": 0.42},
         "yellow_shelving": {"type": "constant", "sample": 0.33},
         # Other
