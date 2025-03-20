@@ -191,7 +191,7 @@ def fit_duration(taus, avg_snr_nv, avg_snr_ste_nv):
             p0=guess_params,
             sigma=avg_snr_ste_nv,
             absolute_sigma=True,
-            maxfev=10000,  # Increase the max number of iterations
+            maxfev=20000,  # Increase the max number of iterations
         )
     except Exception as e:
         print(f"Fitting failed for this NV: {e}")
@@ -667,35 +667,35 @@ def process_and_plot_durations(nv_list, duration_file_id):
             optimal_durations[nv_index] = median_duration
 
     # Plot individual NV fits
-    # for nv_index in selected_indices:
-    #     plt.figure(figsize=(6, 4))
-    #     plt.errorbar(
-    #         taus,
-    #         avg_snr[nv_index],
-    #         yerr=avg_snr_ste[nv_index],
-    #         fmt="o",
-    #         label="SNR Data",
-    #     )
-    #     if optimal_durations[nv_index] is not None:
-    #         tau_linspace = np.linspace(min(taus), max(taus), 1000)
-    #         popt, fit_fn = fit_duration(taus, avg_snr[nv_index], avg_snr_ste[nv_index])
-    #         plt.plot(
-    #             tau_linspace,
-    #             fit_fn(tau_linspace, *popt),
-    #             label="Fitted Curve",
-    #         )
-    #         plt.axvline(
-    #             optimal_durations[nv_index],
-    #             color="r",
-    #             linestyle="--",
-    #             label=f"Optimal Duration: {optimal_durations[nv_index]}",
-    #         )
-    #     plt.title(f"NV {nv_index} - Duration Optimization")
-    #     plt.xlabel("Duration")
-    #     plt.ylabel("SNR")
-    #     plt.legend()
-    #     plt.grid(alpha=0.3)
-    #     plt.show()
+    for nv_index in selected_indices:
+        plt.figure(figsize=(6, 4))
+        plt.errorbar(
+            taus,
+            avg_snr[nv_index],
+            yerr=avg_snr_ste[nv_index],
+            fmt="o",
+            label="SNR Data",
+        )
+        if optimal_durations[nv_index] is not None:
+            tau_linspace = np.linspace(min(taus), max(taus), 1000)
+            popt, fit_fn = fit_duration(taus, avg_snr[nv_index], avg_snr_ste[nv_index])
+            plt.plot(
+                tau_linspace,
+                fit_fn(tau_linspace, *popt),
+                label="Fitted Curve",
+            )
+            plt.axvline(
+                optimal_durations[nv_index],
+                color="r",
+                linestyle="--",
+                label=f"Optimal Duration: {optimal_durations[nv_index]}",
+            )
+        plt.title(f"NV {nv_index} - Duration Optimization")
+        plt.xlabel("Duration")
+        plt.ylabel("SNR")
+        plt.legend()
+        plt.grid(alpha=0.3)
+        plt.show(block=True)
 
     # Print lists of durations and SNRs
     print("Optimal Durations:")
@@ -741,14 +741,16 @@ if __name__ == "__main__":
     # amp_file_id = 1771055850280
     # duration_file_id = 1732098676751  # duration
     # duration_file_id = 1732098676751  # duration
-    amp_file_id = 1786527980407
-    data = dm.get_raw_data(file_id=amp_file_id)  # Load NV list
-    file_name = dm.get_file_name(file_id=amp_file_id)
+    duration_file_id = 1800578617426  # duration
+
+    # amp_file_id = 1786527980407
+    data = dm.get_raw_data(file_id=duration_file_id)  # Load NV list
+    file_name = dm.get_file_name(file_id=duration_file_id)
     nv_list = data["nv_list"]
 
     # results = process_and_plot(nv_list, duration_file_id, amp_file_id)
-    results = process_and_plot_amplitudes(nv_list, amp_file_id)
-    # results = process_and_plot_durations(nv_list, duration_file_id)
+    # results = process_and_plot_amplitudes(nv_list, amp_file_id)
+    results = process_and_plot_durations(nv_list, duration_file_id)
     print("Results:", results)
-    print(f"{file_name}_{amp_file_id}")
+    print(f"{file_name}_{duration_file_id}")
     kpl.show(block=True)

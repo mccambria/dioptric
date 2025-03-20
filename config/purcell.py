@@ -35,19 +35,19 @@ red_laser_aod = "laser_COBO_638_aod"
 
 
 calibration_coords_pixel = [
-    [23.746, 15.406],
-    [112.212, 245.732],
-    [227.288, 41.165],
+    [18.24, 9.848],
+    [108.384, 227.38],
+    [227.438, 19.199],
 ]
 calibration_coords_green = [
-    [118.738, 96.529],
-    [106.336, 120.242],
-    [96.677, 97.108],
+    [119.189, 96.084],
+    [107.01, 118.245],
+    [96.733, 94.7],
 ]
 calibration_coords_red = [
-    [81.181, 64.012],
-    [71.588, 83.435],
-    [63.208, 64.714],
+    [81.539, 63.646],
+    [72.094, 81.803],
+    [63.201, 62.754],
 ]
 # Create the dictionaries using the provided lists
 calibration_coords_nv1 = {
@@ -130,11 +130,11 @@ config |= {
             0: {
                 "physical_name": "sig_gen_STAN_sg394",
                 # "uwave_power": 2.3,
-                "uwave_power": 8.0,
-                "frequency": 2.782099,  # shallow NVs O1 ms=-1
+                "uwave_power": 8.3,
+                "frequency": 2.779138,  # shallow NVs O1 ms=-1
                 # "frequency": 2.798175,  # shallow NVs O2 ms=-1
                 # "frequency": 2.790137,  # mean of above two frequency
-                "rabi_period": 160,
+                "rabi_period": 128,
                 # "rabi_period": 96,
                 # IQ modulation part
                 "carrier_frequency": 2.790137,  # Center frequency
@@ -146,12 +146,12 @@ config |= {
             1: {
                 "physical_name": "sig_gen_STAN_sg394_2",
                 # "uwave_power": 8.1,
-                "uwave_power": 8.0,
-                "frequency": 2.840727,  # shallow NV O3 ms=-1
+                "uwave_power": 8.3,
+                "frequency": 2.842301,  # shallow NV O3 ms=-1
                 # "frequency": 2.856761,  # shallow NVs O4 ms=-1
                 # "frequency": 2.848744,  # mean of above two frequency
                 # "rabi_period": 96,
-                "rabi_period": 160,
+                "rabi_period": 128,
                 # IQ modulation part
                 "carrier_frequency": 2.848744,  # Center frequency for IQ modulation
                 "offset": 0.29839,  # % offset
@@ -165,7 +165,7 @@ config |= {
     "Camera": {
         "server_name": "camera_NUVU_hnu512gamma",
         "resolution": (512, 512),
-        "spot_radius": 3.0,  # Radius for integrating NV counts in a camera image
+        "spot_radius": 2.5,  # Radius for integrating NV counts in a camera image
         "bias_clamp": 300,  # (changing this won't actually change the value on the camera currently)
         "em_gain": 5000,
         # "em_gain": 1000,
@@ -256,8 +256,8 @@ config |= {
             VirtualLaserKey.WIDEFIELD_CHARGE_READOUT: {
                 "physical_name": yellow_laser,
                 # "duration": 200e6,
-                # "duration": 60e6,
-                "duration": 30e6,
+                "duration": 60e6,
+                # "duration": 30e6,
                 # "duration": 24e6,  # for red calibration
             },
             # LaserKey.WIDEFIELD_CHARGE_READOUT: {"physical_name": yellow_laser, "duration": 100e6},
@@ -833,11 +833,12 @@ opx_config = {
         # "yellow_charge_readout": {"type": "constant", "sample": 0.3472},  # 50ms 117NVs
         # "yellow_charge_readout": {"type": "constant", "sample": 0.3741},  # 50ms 117NVs
         # "yellow_charge_readout": {"type": "constant", "sample": 0.325},  # 100ms 117NVs
-        # "yellow_charge_readout": {"type": "constant", "sample": 0.45},
-        # "yellow_charge_readout": {"type": "constant", "sample": 0.3727},
-        "yellow_charge_readout": {"type": "constant", "sample": 0.3865},
-        # "yellow_charge_readout": {"type": "constant", "sample": 0.34},
-        "yellow_spin_pol": {"type": "constant", "sample": 0.39},
+        # "yellow_charge_readout": {"type": "constant", "sample": 0.4527},
+        # "yellow_charge_readout": {"type": "constant", "sample": 0.3989},
+        # "yellow_charge_readout": {"type": "constant", "sample": 0.3678},
+        # "yellow_charge_readout": {"type": "constant", "sample": 0.3715},
+        "yellow_charge_readout": {"type": "constant", "sample": 0.3678},
+        "yellow_spin_pol": {"type": "constant", "sample": 0.42},
         "yellow_shelving": {"type": "constant", "sample": 0.33},
         # Other
         "aod_cw": {"type": "constant", "sample": 0.35},

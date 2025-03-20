@@ -281,7 +281,7 @@ def process_scan_file():
     # raw_data = dm.get_raw_data(file_id=1766305651080, load_npz=True)
     # raw_data = dm.get_raw_data(file_id=1764604364429, load_npz=True)
     # raw_data = dm.get_raw_data(file_id=1788823078836, load_npz=True)  # rubin
-    raw_data = dm.get_raw_data(file_id=1791239123631, load_npz=True)  # rubin
+    raw_data = dm.get_raw_data(file_id=1802697426409, load_npz=True)  # rubin
 
     # Extract scanned data
     scanned_data = raw_data["scanned_data"]["scanned_data"]
@@ -327,7 +327,7 @@ def process_scan_file():
         blob_coords,
         spot_weights,
         path="slmsuite/nv_blob_detection",
-        filename=f"nv_blob_shallow_{len(blob_coords)}nvs.npz",
+        filename=f"nv_blob_shallow_rubin_{len(blob_coords)}nvs.npz",
     )
 
     timestamp = dm.get_time_stamp()
@@ -383,7 +383,7 @@ if __name__ == "__main__":
     # data = dm.get_raw_data(file_id=1766620461342, load_npz=True)
     # data = dm.get_raw_data(file_id=1791296034768, load_npz=True)
     # data = dm.get_raw_data(file_id=1791776254933, load_npz=True)  # rubin green scan
-    data = dm.get_raw_data(file_id=1797862163365, load_npz=True)
+    data = dm.get_raw_data(file_id=1807103519645, load_npz=True)
     img_array = np.array(data["ref_img_array"])
     # img_array = np.array(data["ref_img_array"]["ref_img_array"])
     # img_array = np.array(data["img_array"])
@@ -393,16 +393,16 @@ if __name__ == "__main__":
     # print(type(img_array), img_array.dtype, img_array.shape)
 
     # # Parameters for detection and resolution
-    wavelength = 0.65  # Wavelength in micrometers (650 nm)
+    wavelength = 0.7  # Wavelength in micrometers (650 nm)
     NA = 1.45  # Numerical Aperture of objective
 
-    # # Calculate the resolution (in micrometers)
+    # Calculate the resolution (in micrometers)
     resolution = calculate_resolution(wavelength, NA)
-    # print(f"Resolution: {round(resolution,3)} µm")
+    print(f"Resolution: {round(resolution, 3)} µm")
 
     # Apply the blob detection and Gaussian fitting
     sigma = 2.0
-    lower_threshold = 0.08
+    lower_threshold = 0.09
     upper_threshold = None
     smoothing_sigma = 0.0
 
@@ -426,7 +426,7 @@ if __name__ == "__main__":
         for existing_coord in filtered_nv_coords:
             distance = np.linalg.norm(np.array(existing_coord) - np.array(coord))
 
-            if distance < 11:
+            if distance < 8:
                 keep_coord = False  # Mark it for exclusion if too close
                 break  # No need to check further distances
 
@@ -468,6 +468,17 @@ if __name__ == "__main__":
 
     print(f"Detected NV coordinates (optimized): {len(filtered_nv_coords)}")
 
+    # Save the results
+    # save_results(
+    #     filtered_nv_coords,
+    #     filtered_counts,
+    #     path="slmsuite/nv_blob_detection",
+    #     filename="nv_blob_shallow_rubin_81nvs.npz",
+    # )
+
+    # full ROI -- multiple images save in the same file
+    # process_scan_file()
+
     # Calculate and print the average FWHM
     # if len(spot_sizes) > 0:
     #     avg_fwhm = np.mean([(fwhm_x + fwhm_y) / 2 for fwhm_x, fwhm_y in spot_sizes])
@@ -480,16 +491,6 @@ if __name__ == "__main__":
     #     )
     # else:
     #     print("No spots detected. Unable to calculate conversion factor.")
-
-    # Save the results
-    # save_results(
-    #     filtered_nv_coords,
-    #     filtered_counts,
-    #     path="slmsuite/nv_blob_detection",
-    #     filename="nv_blob_shallow_rubin_140nvs.npz",
-    # )
-    ### full ROI -- multiple images save in the same file
-    # process_scan_file()
 
     # fig, ax = plt.subplots()
     # title = "24ms, Ref"

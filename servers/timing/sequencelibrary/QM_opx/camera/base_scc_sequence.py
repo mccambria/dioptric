@@ -100,6 +100,17 @@ def macro(
             do_target_list,
         )
 
+    # SBC Reverse the scc order on NVs
+    def macro_scc_sub_reversed(do_target_list=None):
+        seq_utils.macro_scc(
+            scc_coords_list[::-1],
+            scc_duration_list[::-1],
+            scc_amp_list[::-1],
+            scc_duration_override,
+            scc_amp_override,
+            (do_target_list[::-1] if do_target_list is not None else None),
+        )
+
     ### QUA stuff
     def one_exp(rep_ind, exp_ind):
         # exp_ind = num_exps_per_rep - 1  # MCC
@@ -108,7 +119,7 @@ def macro(
         )
         qua.align()
         skip_spin_flip = uwave_macro[exp_ind](uwave_ind_list, step_val)
-
+        # reverse order of scc
         # Randomize SCC order between the two groups
         random_order = qua.declare(int)
         qua.assign(random_order, qua.Random().rand_int(2))
@@ -118,7 +129,12 @@ def macro(
         # Signal experiment
         if not ref_exp:
             if spin_flip_do_target_list is None or True not in spin_flip_do_target_list:
-                macro_scc_sub()
+                # macro_scc_sub()
+                # SBC randomize the ordern of the scc on NVs list
+                with qua.if_(rep_ind % 2 == 0):
+                    macro_scc_sub()
+                with qua.else_():
+                    macro_scc_sub_reversed()
             else:
                 spin_flip_do_not_target_list = [
                     not val for val in spin_flip_do_target_list

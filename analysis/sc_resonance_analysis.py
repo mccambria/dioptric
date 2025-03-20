@@ -153,7 +153,7 @@ def plot_nv_resonance_fits_and_residuals(
     # avg_counts = np.array(avg_counts)
     # avg_counts_ste = np.array(avg_counts_ste)
     num_nvs = len(nv_list)
-    freqs_dense = np.linspace(min(freqs), max(freqs), 100)
+    freqs_dense = np.linspace(min(freqs), max(freqs), 60)
 
     def process_nv(nv_idx):
         nv_counts = avg_counts[nv_idx]
@@ -339,8 +339,9 @@ def plot_nv_resonance_fits_and_residuals(
 
     filter_nvs = True
     if filter_nvs:
-        target_peak_values = [0.041, 0.069, 0.152, 0.178]
-        tolerance = 0.006
+        # target_peak_values = [0.025, 0.068, 0.146, 0.185]
+        target_peak_values = [0.068, 0.185]
+        tolerance = 0.01
         # Filter indices based on proximity to target peak differences
         filtered_indices = [
             idx
@@ -412,15 +413,15 @@ def plot_nv_resonance_fits_and_residuals(
     else:
         filtered_indices = list(range(num_nvs))
     # filtered_indices = cleaned_nv_indices
-    filtered_indices = range(num_nvs)
+    # filtered_indices = range(num_nvs)
     # # Filter NVs for plotting
     # mannual removal of indices
-    indices_to_remove_manually = [18, 35, 56]
-    filtered_indices = [
-        filtered_indices[idx]
-        for idx in range(num_nvs)
-        if idx not in indices_to_remove_manually
-    ]
+    # indices_to_remove_manually = []
+    # filtered_indices = [
+    #     filtered_indices[idx]
+    #     for idx in range(num_nvs)
+    #     if idx not in indices_to_remove_manually
+    # ]
     # return
     filtered_nv_list = [nv_list[idx] for idx in filtered_indices]
     filtered_avg_counts = [avg_counts[idx] for idx in filtered_indices]
@@ -439,7 +440,7 @@ def plot_nv_resonance_fits_and_residuals(
     filtered_fitted_data = [fit_fns[idx] for idx in filtered_indices]
 
     # return
-    # Set plot style
+    # # Set plot style
     # for nv_ind in range(num_nvs):
     #     fig, ax = plt.subplots(1, 1, figsize=(8, 5))
     #     ax.plot(freqs, avg_counts[nv_ind], "o", color="steelblue")
@@ -449,8 +450,9 @@ def plot_nv_resonance_fits_and_residuals(
     #     ax.set_title(f"NV Index: {nv_ind}")
     #     ax.grid(True, linestyle="--", alpha=0.6)
     #     plt.tight_layout()
+    #     # plt.show()
     #     plt.show(block=True)
-    # return!
+    # return
     # Plot filtered resonance fits
     sns.set(style="whitegrid", palette="muted")
     num_filtered_nvs = len(filtered_nv_list)
@@ -1088,7 +1090,13 @@ if __name__ == "__main__":
 
     # rubin 140NVs
     file_ids = [1795016507394]
-
+    file_ids = [1796261430133]
+    # rubin 107NVs
+    file_ids = [1801725762770, 1801943804484]
+    # rubin 304NVs
+    file_ids = [1803870882950]
+    # rubin 154NVs
+    file_ids = [1806862148858]
     # fmt: off
     # fmt: on
     # print(len(reference_pixel_coords))
@@ -1166,10 +1174,10 @@ if __name__ == "__main__":
                 # Append new data
                 combined_sig_counts = np.append(
                     combined_sig_counts, new_sig_counts, axis=1
-                )  # Extending over runs
+                )
                 combined_ref_counts = np.append(
                     combined_ref_counts, new_ref_counts, axis=1
-                )  # Extending over runs
+                )
                 combined_data["num_runs"] += new_data["num_runs"]
 
             except Exception as e:
@@ -1189,7 +1197,7 @@ if __name__ == "__main__":
             combined_sig_counts,
             combined_ref_counts,
             file_id=combined_file_id,
-            num_cols=6,
+            num_cols=7,
         )
 
         print(f"Combined plot saved to {file_path}")

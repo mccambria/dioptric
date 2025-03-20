@@ -291,9 +291,8 @@ def nuvu2thorcam_calibration(coords):
     )
 
     cal_coords_nuvu = np.array(
-        [[227.637, 12.127], [212.996, 241.118], [21.649, 112.436]], dtype="float32"
+        [[228.036, 12.722], [213.072, 241.814], [21.426, 112.809]], dtype="float32"
     )
-    # [[227.752, 12.548], [212.599, 241.451], [20.615, 112.523]], dtype="float32"
 
     # Compute the affine transformation matrix
     M = cv2.getAffineTransform(cal_coords_nuvu, cal_coords_thorcam)
@@ -309,10 +308,12 @@ def load_nv_coords(
     # file_path="slmsuite/nv_blob_detection/nv_blob_filtered_437nvs_reordered.npz",
     # file_path="slmsuite/nv_blob_detection/nv_blob_shallow_161nvs_reordered.npz",
     # file_path="slmsuite/nv_blob_detection/nv_blob_shallow_148nvs_reordered.npz",
+    # file_path="slmsuite/nv_blob_detection/nv_blob_rubin_shallow_240nvs_reordered.npz",
+    # file_path="slmsuite/nv_blob_detection/nv_blob_rubin_shallow_154nvs_reordered.npz",
+    file_path="slmsuite/nv_blob_detection/nv_blob_rubin_shallow_81nvs_reordered.npz",
     # file_path="slmsuite/nv_blob_detection/nv_blob_shallow_148nvs_reordered_updated.npz",
-    # file_path="slmsuite/nv_blob_detection/nv_blob_shallow_69nvs_reordered_updated.npz",
-    # file_path="slmsuite/nv_blob_detection/nv_blob_rubin_shallow_309nvs_reordered_updated.npz",
-    file_path="slmsuite/nv_blob_detection/nv_blob_rubin_shallow_140nvs_reordered_updated.npz",
+    # file_path="slmsuite/nv_blob_detection/nv_blob_rubin_shallow_107nvs_reordered_updated.npz",
+    # file_path="slmsuite/nv_blob_detection/nv_blob_rubin_shallow_140nvs_reordered_updated.npz",
     # file_path="slmsuite/nv_blob_detection/nv_blob_shallow_89nvs_reordered.npz",
     # file_path="slmsuite/nv_blob_detection/nv_blob_shallow_52nvs_reordered.npz",
     # file_path="slmsuite/nv_blob_detection/nv_blob_filtered_160nvs_reordered.npz",
@@ -352,7 +353,7 @@ def compute_and_write_nvs_phase():
         shape=(4096, 2048),
         spot_vectors=thorcam_coords,
         basis="ij",
-        # spot_amp=spot_weights,
+        spot_amp=spot_weights,
         cameraslm=fs,
     )
     # Precondition computationally
@@ -377,15 +378,14 @@ def compute_and_write_nvs_phase():
     # cam_plot()
 
 
-def write_nvs_phase():
+def write_pre_computed_nvs_phase():
     # phase = np.load("slmsuite\computed_phase\slm_phase_148nvs_20250203_171815.npy")
     # phase = np.load("slmsuite\computed_phase\slm_phase_148nvs_20250203_171815.npy")
     # phase = np.load(
     #     "slmsuite\computed_phase\slm_phase_117nvs_20250119_152458.npy"
     # )  # 117NVs weighted spots
     # shallow NVs
-    phase = np.load("slmsuite\computed_phase\slm_phase_140nvs_20250305_210354.npy")
-
+    phase = np.load("slmsuite\computed_phase\slm_phase_81nvs_20250319_165528.npy")
     # phase = np.load("slmsuite\circles\slm_phase_circles_20250118_210419.npy")  # circles
     slm.write(phase, settle=True)
     # cam_plot()
@@ -431,7 +431,7 @@ try:
     # wavefront_calibration()
     # load_wavefront_calibration()
     compute_and_write_nvs_phase()
-    # write_nvs_phase()
+    # write_pre_computed_nvs_phase()
     # calibration_triangle()
     # circles()
     # smiley()
