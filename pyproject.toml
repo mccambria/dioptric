@@ -34,5 +34,4 @@ dependencies = [
   "PyJWT",
   "ujson",
   "orjson",
-  "ftplib"
 ]

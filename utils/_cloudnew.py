@@ -18,9 +18,9 @@ from ftplib import FTP
 from utils import common
 from utils import indexer
 from io import BytesIO
-import io import StringIO
+from io import StringIO
 hostname = "192.168.1.197"
-ftp = FTP(host=hostname,user=kolkowitzadmin,password="r8Y.>CL$y=P}X7^")
+ftp = FTP(host=hostname,user="kolkowitzadmin",password="r8Y.>CL$y=P}X7^")
 converter = indexer(ftp)
 
 folder_path_cache = {}

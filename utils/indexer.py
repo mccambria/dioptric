@@ -3,6 +3,7 @@
 
 
 from ftplib import FTP
+from io import BytesIO
 
 class Indexer:
     index_filename = "index"
@@ -32,7 +33,7 @@ class Indexer:
                 remotepath = remotedir + "/" + entry[0]
                 list_recursive(ftp, remotepath)
             else:
-                index[entry[0]] = directory + "/" + name
+                index[entry[0]] = directory + "/" + entry[0]
         save_index_to_file()
         upload_index()
 
