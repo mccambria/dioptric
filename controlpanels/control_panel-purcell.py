@@ -164,8 +164,8 @@ def do_optimize_readout_amp(nv_list):
     # num_reps = 150
     # num_runs = 5
     num_reps = 12
-    # num_runs = 400
-    num_runs = 200
+    num_runs = 300
+    # num_runs = 200
     min_amp = 0.8
     max_amp = 1.2
     return optimize_charge_state_histograms_mcc.optimize_readout_amp(
@@ -1080,16 +1080,16 @@ if __name__ == "__main__":
     #     [227.438, 19.199],
     # ]
     # green_coords_list = [
-    #     [107.778, 107.583],
-    #     [119.189, 96.084],
-    #     [107.01, 118.245],
-    #     [96.733, 94.7],
+    #     [107.716, 107.588],
+    #     [119.198, 96.043],
+    #     [107.0, 118.266],
+    #     [96.74, 94.671],
     # ]
     # red_coords_list = [
-    #     [72.487, 73.12],
-    #     [81.539, 63.646],
-    #     [72.094, 81.803],
-    #     [63.201, 62.754],
+    #     [72.436, 73.125],
+    #     [81.545, 63.612],
+    #     [72.086, 81.82],
+    #     [63.206, 62.73],
     # ]
 
     num_nvs = len(pixel_coords_list)
@@ -1415,7 +1415,7 @@ if __name__ == "__main__":
 
         # do_optimize_pol_amp(nv_list)
         # do_optimize_pol_duration(nv_list)
-        # do_optimize_readout_amp(nv_list)s
+        do_optimize_readout_amp(nv_list)
         # do_optimize_readout_duration(nv_list)
         # optimize_readout_amp_and_duration(nv_list)
         # do_charge_state_histograms_images(nv_list, vary_pol_laser=True)
@@ -1441,7 +1441,7 @@ if __name__ == "__main__":
         # do_opx_square_wave()
 
         # nv_list = nv_list[::-1]
-        do_scc_snr_check(nv_list)
+        # do_scc_snr_check(nv_list)
         # do_power_rabi_scc_snr(nv_list)
         # do_optimize_scc_duration(nv_list)
         # do_optimize_scc_amp(nv_list)

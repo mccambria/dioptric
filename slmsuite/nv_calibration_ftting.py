@@ -101,7 +101,7 @@ def plot_fitting(
 if __name__ == "__main__":
     kpl.init_kplotlib()
     # Load the image array (replace this with your own method for loading image data)
-    data = dm.get_raw_data(file_id=1809128577409, load_npz=True)
+    data = dm.get_raw_data(file_id=1809219667198, load_npz=True)
 
     img_array = np.array(data["img_array"])
     # fig, ax = plt.subplots()
