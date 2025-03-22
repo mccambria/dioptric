@@ -69,20 +69,21 @@ def create_fit_figure(data):
 
     nv_list = data["nv_list"]
     taus = data["taus"]
-    counts = data["counts"]
+    counts = np.array(data["counts"])
 
-    counts = np.array(data["states"])
-    a_counts, b_counts = counts[0], counts[1]
+    # counts = np.array(data["states"])
+    # sig_counts, ref_counts = counts[0], counts[1]
+    sig_counts, ref_counts = counts[1], counts[0]
 
-    a_avg_counts, a_avg_counts_ste, _ = widefield.process_counts(
-        nv_list, a_counts, threshold=False
+    sig_avg_counts, sig_avg_counts_ste = widefield.process_counts(
+        nv_list, sig_counts, threshold=False
     )
-    b_avg_counts, b_avg_counts_ste, _ = widefield.process_counts(
-        nv_list, b_counts, threshold=False
+    ref_avg_counts, ref_avg_counts_ste = widefield.process_counts(
+        nv_list, ref_counts, threshold=False
     )
 
-    diff_counts = b_avg_counts - a_avg_counts
-    diff_counts_ste = np.sqrt(a_avg_counts_ste**2 + b_avg_counts_ste**2)
+    diff_counts = sig_avg_counts - ref_avg_counts
+    diff_counts_ste = np.sqrt(sig_avg_counts_ste**2 + ref_avg_counts_ste**2)
     # Omega_or_gamma = False
     # Do the fits
 
@@ -171,8 +172,8 @@ def create_fit_figure(data):
         fit_fns,
         popts,
     )
-    kpl.set_shared_ax_xlabel(fig, axes_pack, layout, "Relaxation time (ms)")
-    kpl.set_shared_ax_ylabel(fig, axes_pack, layout, "Change in NV- fraction")
+    # kpl.set_shared_ax_xlabel(axes_pack, "Relaxation time (ms)")
+    # kpl.set_shared_ax_ylabel(axes_pack, "Change in NV- fraction")
     return fig
 
 
@@ -221,11 +222,18 @@ def main(
     # seq_file = "relaxation_interleave.py"
     uwave_ind_list = [0, 1]
 
-    # Get taus with a roughly even spacing on the y axis
-    taus = np.geomspace(1 / num_steps, 1, num_steps)
-    taus = (taus - taus[0]) / (taus[-1] - taus[0])  # Normalize to 0 to 1
-    taus = (taus * (max_tau - min_tau)) + min_tau  # Normalize to mix/max tau
-    taus = (taus // 4) * 4  # Make sure they're multiples of 4 for the OPX
+    # # Get taus with a roughly even spacing on the y axis
+    # taus = np.geomspace(1 / num_steps, 1, num_steps)
+    # taus = (taus - taus[0]) / (taus[-1] - taus[0])  # Normalize to 0 to 1
+    # taus = (taus * (max_tau - min_tau)) + min_tau  # Normalize to mix/max tau
+    # taus = (taus // 4) * 4  # Make sure they're multiples of 4 for the OPX
+
+    def generate_log_spaced_taus(min_tau, max_tau, num_steps, base=4):
+        taus = np.logspace(np.log10(min_tau), np.log10(max_tau), num_steps)
+        taus = np.floor(taus / base) * base
+        return taus
+
+    taus = generate_log_spaced_taus(min_tau, max_tau, num_steps, base=4)
 
     ### Collect the data
 
@@ -239,9 +247,7 @@ def main(
             widefield.get_base_scc_seq_args(nv_list, uwave_ind_list),
             shuffled_taus,
         ]
-
-        print(f"DEBUG: seq_args before encoding: {seq_args}")
-
+        # print(seq_args)
         seq_args_string = tb.encode_seq_args(seq_args)
         pulse_gen.stream_load(seq_file, seq_args_string, num_reps)
 
@@ -265,24 +271,28 @@ def main(
         # "readout_state_1": readout_state_1,
     }
 
+    # save raw data
+    repr_nv_sig = widefield.get_repr_nv_sig(nv_list)
+    repr_nv_name = repr_nv_sig.name
+    file_path = dm.get_file_path(__file__, timestamp, repr_nv_name)
+    dm.save_raw_data(raw_data, file_path)
+
+    ### Clean up and return
+    tb.reset_cfm()
+
+    # plot region
     try:
         figs = create_raw_data_figures(raw_data)
     except Exception:
         figs = None
 
-    ### Clean up and return
-
-    tb.reset_cfm()
-    kpl.show()
-
-    repr_nv_sig = widefield.get_repr_nv_sig(nv_list)
-    repr_nv_name = repr_nv_sig.name
-    file_path = dm.get_file_path(__file__, timestamp, repr_nv_name)
-    dm.save_raw_data(raw_data, file_path)
+    # save figure if any
     if figs is not None:
         for ind in range(len(figs)):
             file_path = dm.get_file_path(__file__, timestamp, f"{repr_nv_name}-{ind}")
             dm.save_figure(figs[ind], file_path)
+
+    kpl.show()
 
 
 if __name__ == "__main__":
