@@ -1083,7 +1083,7 @@ if __name__ == "__main__":
     #     [107.716, 107.588],
     #     [119.184, 96.058],
     #     [107.054, 118.224],
-    #     [96.749, 94.712],
+    #     [96.695, 94.739],
     # ]
     # red_coords_list = [
     #     [72.436, 73.125],
@@ -1172,6 +1172,7 @@ if __name__ == "__main__":
     scc_duration_list = [
         val for ind, val in enumerate(scc_duration_list) if ind not in drop_indices
     ]
+    pol_duration_list = [164, 144, 168, 108, 132, 176, 132, 152, 176, 168, 140, 200, 204, 120, 268, 116, 200, 128, 152, 144, 116, 192, 156, 156, 256, 140, 156, 240, 232, 116, 200, 176, 340, 116, 108, 216, 104, 200, 144, 140, 304, 416, 140, 156, 292, 188, 164, 352, 180, 156, 232, 144, 328, 132, 228, 288, 164, 384, 292, 140, 400, 388, 192, 348, 412, 144, 200, 180, 120, 188, 436, 180, 164, 232, 252]
     # scc_amp_list = arranged_scc_amp_list
     # print(f"Length of pol_duration_list: {len(pol_duration_list)}")
     # print(f"First 10 SCC durations: {scc_duration_list[:10]}")
@@ -1421,7 +1422,7 @@ if __name__ == "__main__":
         # do_optimize_loop(nv_list, coords_key)
 
         # do_optimize_pol_amp(nv_list)
-        do_optimize_pol_duration(nv_list)
+        # do_optimize_pol_duration(nv_list)
         # do_optimize_readout_amp(nv_list)
         # do_optimize_readout_duration(nv_list)
         # optimize_readout_amp_and_duration(nv_list)
@@ -1452,7 +1453,7 @@ if __name__ == "__main__":
         # do_power_rabi_scc_snr(nv_list)
         # do_optimize_scc_duration(nv_list)
         # do_optimize_scc_amp(nv_list)
-        # optimize_scc_amp_and_duration(nv_list)
+        optimize_scc_amp_and_duration(nv_list)
         # do_crosstalk_check(nv_sig)
         # do_spin_pol_check(nv_sig)
         # do_calibrate_green_red_delay()
