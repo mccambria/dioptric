@@ -1099,6 +1099,8 @@ if __name__ == "__main__":
     file_ids = [1806862148858]
     # rubib 81
     file_ids = [1809016009780]
+    # rubib 75
+    file_ids = [1810826711017]
     # fmt: off
     # fmt: on
     # print(len(reference_pixel_coords))
