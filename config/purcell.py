@@ -40,14 +40,14 @@ calibration_coords_pixel = [
     [227.438, 19.199],
 ]
 calibration_coords_green = [
-    [119.189, 96.084],
-    [107.01, 118.245],
-    [96.733, 94.7],
+    [119.184, 96.058],
+    [107.054, 118.224],
+    [96.749, 94.712],
 ]
 calibration_coords_red = [
-    [81.539, 63.646],
-    [72.094, 81.803],
-    [63.201, 62.754],
+    [81.534, 63.624],
+    [72.129, 81.785],
+    [63.214, 62.764],
 ]
 # Create the dictionaries using the provided lists
 calibration_coords_nv1 = {
@@ -169,7 +169,7 @@ config |= {
         "bias_clamp": 300,  # (changing this won't actually change the value on the camera currently)
         "em_gain": 5000,
         # "em_gain": 1000,
-        # "em_gain": 10,s
+        # "em_gain": 10,
         "temp": -60,
         "timeout": 30e3,  # ms
         # "timeout": -1,  # No timeout
@@ -833,10 +833,9 @@ opx_config = {
         # "yellow_charge_readout": {"type": "constant", "sample": 0.3472},  # 50ms 117NVs
         # "yellow_charge_readout": {"type": "constant", "sample": 0.3741},  # 50ms 117NVs
         # "yellow_charge_readout": {"type": "constant", "sample": 0.325},  # 100ms 117NVs
-        # "yellow_charge_readout": {"type": "constant", "sample": 0.4527},
-        # "yellow_charge_readout": {"type": "constant", "sample": 0.3989},
-        "yellow_charge_readout": {"type": "constant", "sample": 0.3678},
-        # "yellow_charge_readout": {"type": "constant", "sample": 0.3660},
+        # "yellow_charge_readout": {"type": "constant", "sample": 0.3678},
+        # "yellow_charge_readout": {"type": "constant", "sample": 0.356721},
+        "yellow_charge_readout": {"type": "constant", "sample": 0.352407},
         "yellow_spin_pol": {"type": "constant", "sample": 0.44},
         "yellow_shelving": {"type": "constant", "sample": 0.33},
         # Other

@@ -164,8 +164,8 @@ def do_optimize_readout_amp(nv_list):
     # num_reps = 150
     # num_runs = 5
     num_reps = 12
-    # num_runs = 400
-    num_runs = 200
+    num_runs = 300
+    # num_runs = 200
     min_amp = 0.8
     max_amp = 1.2
     return optimize_charge_state_histograms_mcc.optimize_readout_amp(
@@ -1025,7 +1025,7 @@ if __name__ == "__main__":
     # magnet_angle = 90
     date_str = "2025_02_26"
     sample_coords = [-0.4, 2.0]
-    z_coord = 0.4
+    z_coord = 0.6
 
     # Load NV pixel coordinates1
     pixel_coords_list = load_nv_coords(
@@ -1036,7 +1036,7 @@ if __name__ == "__main__":
         # file_path="slmsuite/nv_blob_detection/nv_blob_rubin_shallow_140nvs_reordered_updated.npz",
         # file_path="slmsuite/nv_blob_detection/nv_blob_rubin_shallow_107nvs_reordered_updated.npz",
         # file_path="slmsuite/nv_blob_detection/nv_blob_rubin_shallow_154nvs_reordered.npz",
-        file_path="slmsuite/nv_blob_detection/nv_blob_rubin_shallow_81nvs_reordered.npz",
+        file_path="slmsuite/nv_blob_detection/nv_blob_rubin_shallow_75nvs_reordered.npz",
     ).tolist()
     # Define transformations using `transform_coords`
     # pixel_coords_list = [
@@ -1080,16 +1080,16 @@ if __name__ == "__main__":
     #     [227.438, 19.199],
     # ]
     # green_coords_list = [
-    #     [107.778, 107.583],
-    #     [119.189, 96.084],
-    #     [107.01, 118.245],
-    #     [96.733, 94.7],
+    #     [107.716, 107.588],
+    #     [119.184, 96.058],
+    #     [107.054, 118.224],
+    #     [96.749, 94.712],
     # ]
     # red_coords_list = [
-    #     [72.487, 73.12],
-    #     [81.539, 63.646],
-    #     [72.094, 81.803],
-    #     [63.201, 62.754],
+    #     [72.436, 73.125],
+    #     [81.534, 63.624],
+    #     [72.129, 81.785],
+    #     [63.214, 62.764],
     # ]
 
     num_nvs = len(pixel_coords_list)
@@ -1163,8 +1163,15 @@ if __name__ == "__main__":
     pol_duration_list = arranged_pol_duration_list
     #81NVs
     pol_duration_list = [132, 140, 140, 132, 116, 156, 104, 164, 156, 156, 108, 152, 168, 116, 220, 92, 168, 116, 120, 140, 104, 180, 144, 152, 232, 132, 156, 228, 200, 96, 188, 168, 300, 128, 200, 176, 108, 220, 164, 128, 288, 436, 376, 108, 132, 252, 176, 128, 312, 140, 180, 116, 220, 328, 128, 324, 132, 164, 292, 176, 364, 276, 92, 104, 352, 388, 180, 328, 412, 152, 156, 164, 116, 168, 580, 372, 168, 152, 176, 164, 244]
-    # scc_duration_list = [124, 128, 152, 164, 112, 124, 92, 124, 124, 148, 116, 124, 164, 104, 164, 92, 144, 92, 92, 80, 144, 124, 136, 100, 164, 108, 84, 156, 168, 100, 160, 172, 124, 148, 108, 108, 84, 172, 108, 84, 160, 164, 124, 124, 84, 180, 104, 136, 152, 124, 116, 124, 84, 172, 84, 172, 72, 124, 108, 84, 180, 144, 116, 72, 124, 124, 132, 124, 196, 84, 124, 116, 72, 92, 120, 124, 172, 84, 100, 124, 124]
     scc_duration_list = [64, 80, 80, 80, 64, 88, 64, 100, 84, 84, 76, 92, 92, 80, 116, 76, 104, 72, 60, 72, 84, 68, 84, 80, 120, 80, 72, 100, 88, 72, 116, 84, 116, 88, 92, 84, 48, 128, 104, 72, 136, 128, 52, 84, 84, 136, 88, 88, 124, 56, 112, 104, 72, 108, 64, 120, 80, 148, 84, 76, 108, 80, 80, 64, 148, 120, 100, 148, 136, 72, 92, 96, 52, 88, 156, 84, 128, 72, 124, 72, 188]
+    #75NVs
+    drop_indices = [42, 49, 53, 62, 75, 79] #drop these from 81 Nvs
+    pol_duration_list = [
+        val for ind, val in enumerate(pol_duration_list) if ind not in drop_indices
+    ]
+    scc_duration_list = [
+        val for ind, val in enumerate(scc_duration_list) if ind not in drop_indices
+    ]
     # scc_amp_list = arranged_scc_amp_list
     # print(f"Length of pol_duration_list: {len(pol_duration_list)}")
     # print(f"First 10 SCC durations: {scc_duration_list[:10]}")
@@ -1414,8 +1421,8 @@ if __name__ == "__main__":
         # do_optimize_loop(nv_list, coords_key)
 
         # do_optimize_pol_amp(nv_list)
-        # do_optimize_pol_duration(nv_list)
-        # do_optimize_readout_amp(nv_list)s
+        do_optimize_pol_duration(nv_list)
+        # do_optimize_readout_amp(nv_list)
         # do_optimize_readout_duration(nv_list)
         # optimize_readout_amp_and_duration(nv_list)
         # do_charge_state_histograms_images(nv_list, vary_pol_laser=True)
@@ -1441,7 +1448,7 @@ if __name__ == "__main__":
         # do_opx_square_wave()
 
         # nv_list = nv_list[::-1]
-        do_scc_snr_check(nv_list)
+        # do_scc_snr_check(nv_list)
         # do_power_rabi_scc_snr(nv_list)
         # do_optimize_scc_duration(nv_list)
         # do_optimize_scc_amp(nv_list)
