@@ -106,8 +106,8 @@ def macro(
             scc_coords_list[::-1],
             scc_duration_list[::-1],
             scc_amp_list[::-1],
-            scc_duration_override[::-1] if scc_duration_override is not None else None,
-            scc_amp_override[::-1] if scc_amp_override is not None else None,
+            scc_duration_override,
+            scc_amp_override,
             (do_target_list[::-1] if do_target_list is not None else None),
         )
 
