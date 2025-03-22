@@ -386,8 +386,11 @@ if __name__ == "__main__":
     file_id = 1808261754113
     file_id = 1808216414257
 
-    # file_id = 1809068442975
-    # file_id = 1809075570936
+    file_id = 1809068442975
+    # file_id =ValueError 1809075570936
+
+    file_id = 1809168832402
+    # file_id = 1809192678440
     data = dm.get_raw_data(file_id=file_id)
     file_name = dm.get_file_name(file_id=file_id)
     print(f"{file_name}_{file_id}")
