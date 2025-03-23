@@ -1,10 +1,12 @@
 # -*- coding: utf-8 -*-
 """
-Widefield ESR
+Widefield SQ T1 Rexaltion
 
 Created on October 13th, 2023
-
 @author: mccambria
+
+Modified on March 22th, 2025
+@author: saroj chand
 """
 
 import matplotlib.pyplot as plt

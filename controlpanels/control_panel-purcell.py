@@ -589,24 +589,31 @@ def do_power_rabi(nv_list):
 #         spin_echo.main(nv_list, num_steps, num_reps, num_runs, taus=taus)
 
 
-def do_spin_echo(nv_list):
-    revival_period = int(51.5e3 / 2)
-    min_tau = 200
-    max_tau = 2 * revival_period + 5e3  # Matching the previous range
-    num_steps = 100  # Adjust as needed for resolution
+def do_spin_echo(nv_list, revival_period=None):
+    min_tau = 200  # ns
+    max_tau = 100e3  # fallback if no revival_period given
+    taus = []
 
-    # Generate linearly spaced taus
-    taus = np.linspace(min_tau, max_tau, num_steps).tolist()
+    # Densely sample early decay
+    decay_width = 5e3
+    decay = np.linspace(min_tau, min_tau + decay_width, 6)
+    taus.extend(decay.tolist())
 
-    # Round to the nearest multiple of 4
+    taus.extend(np.geomspace(min_tau + decay_width, max_tau, 60).tolist())
+
+    # Round to clock-cycle-compatible units
     taus = [round(el / 4) * 4 for el in taus]
 
     # Remove duplicates and sort
     taus = sorted(set(taus))
 
     num_steps = len(taus)
-    num_reps = 2
-    num_runs = 400
+    num_reps = 3
+    num_runs = 200
+
+    print(
+        f"[Spin Echo] Running with {num_steps} τ values, revival_period={revival_period}"
+    )
 
     for ind in range(6):
         spin_echo.main(nv_list, num_steps, num_reps, num_runs, taus=taus)
@@ -1438,12 +1445,12 @@ if __name__ == "__main__":
         # do_resonance_zoom(nv_list)
         # do_rabi(nv_list)
         # do_resonance(nv_list)
-        # do_spin_echo(nv_list)
+        do_spin_echo(nv_list)
 
         # do_power_rabi(nv_list)
         # do_correlation_test(nv_list)
         # do_ramsey(nv_list)
-        do_sq_relaxation(nv_list)
+        # do_sq_relaxation(nv_list)
         # do_dq_relaxation(nv_list)
         # do_xy8(nv_list)
         # do_detect_cosmic_rays(nv_list)

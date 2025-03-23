@@ -357,6 +357,54 @@ def macro_pi_on_2_pulse(uwave_ind_list):
         qua.wait(uwave_buffer, sig_gen_el)
 
 
+def macro_pi_pulse_with_phase(uwave_ind_list, axis="X", duration_cc=None):
+    if uwave_ind_list is None:
+        return
+
+    phase_map = {"X": 0.0, "Y": 0.25, "-X": 0.5, "-Y": 0.75}
+    if axis not in phase_map:
+        raise ValueError(f"Invalid axis '{axis}'. Must be 'X', 'Y', '-X', or '-Y'.")
+
+    phase_2pi = phase_map[axis]
+    uwave_buffer = get_uwave_buffer()
+
+    for uwave_ind in uwave_ind_list:
+        sig_gen_el = get_sig_gen_iq_element(uwave_ind)
+        qua.align()
+        qua.frame_rotation_2pi(phase_2pi, sig_gen_el)
+        if duration_cc is None:
+            qua.play("pi_pulse", sig_gen_el)
+        else:
+            with qua.if_(duration_cc > 0):
+                qua.play("pi_pulse", sig_gen_el, duration=duration_cc)
+        qua.reset_frame(sig_gen_el)
+        qua.wait(uwave_buffer, sig_gen_el)
+
+
+def macro_pi_on_2_pulse_with_phase(uwave_ind_list, axis="X", duration_cc=None):
+    if uwave_ind_list is None:
+        return
+
+    phase_map = {"X": 0.0, "Y": 0.25, "-X": 0.5, "-Y": 0.75}
+    if axis not in phase_map:
+        raise ValueError(f"Invalid axis '{axis}'. Must be 'X', 'Y', '-X', or '-Y'.")
+
+    phase_2pi = phase_map[axis]
+    uwave_buffer = get_uwave_buffer()
+
+    for uwave_ind in uwave_ind_list:
+        sig_gen_el = get_sig_gen_iq_element(uwave_ind)
+        qua.align()
+        qua.frame_rotation_2pi(phase_2pi, sig_gen_el)
+        if duration_cc is None:
+            qua.play("pi_on_2_pulse", sig_gen_el)
+        else:
+            with qua.if_(duration_cc > 0):
+                qua.play("pi_on_2_pulse", sig_gen_el, duration=duration_cc)
+        qua.reset_frame(sig_gen_el)
+        qua.wait(uwave_buffer, sig_gen_el)
+
+
 def macro_run_aods(
     laser_names: list[str] = None,
     aod_suffices: list[str] = None,
@@ -898,6 +946,15 @@ def get_sig_gen_element(uwave_ind=0):
     virtual_sig_gen_dict = tb.get_virtual_sig_gen_dict(uwave_ind)
     sig_gen_name = virtual_sig_gen_dict["physical_name"]
     sig_gen_element = f"do_{sig_gen_name}_dm"
+    return sig_gen_element
+
+
+@cache
+def get_sig_gen_iq_element(uwave_ind=0):
+    """Returns the IQ-modulated signal generator element for a given uwave index."""
+    virtual_sig_gen_dict = tb.get_virtual_sig_gen_dict(uwave_ind)
+    sig_gen_name = virtual_sig_gen_dict["physical_name"]
+    sig_gen_element = f"ao_{sig_gen_name}_iq"  # Use I-channel as default control
     return sig_gen_element
 
 
