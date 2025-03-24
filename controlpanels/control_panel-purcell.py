@@ -595,11 +595,11 @@ def do_spin_echo(nv_list, revival_period=None):
     taus = []
 
     # Densely sample early decay
-    decay_width = 5e3
-    decay = np.linspace(min_tau, min_tau + decay_width, 6)
+    decay_width = 8e3
+    decay = np.linspace(min_tau, min_tau + decay_width, 11)
     taus.extend(decay.tolist())
 
-    taus.extend(np.geomspace(min_tau + decay_width, max_tau, 60).tolist())
+    taus.extend(np.geomspace(min_tau + decay_width, max_tau, 78).tolist())
 
     # Round to clock-cycle-compatible units
     taus = [round(el / 4) * 4 for el in taus]
@@ -1092,16 +1092,16 @@ if __name__ == "__main__":
     #     [227.438, 19.199],
     # ]
     # green_coords_list = [
-    #     [107.716, 107.588],
-    #     [119.184, 96.058],
-    #     [107.054, 118.224],
-    #     [96.695, 94.739],
+    #     [107.789, 107.653],
+    #     [119.219, 96.111],
+    #     [107.034, 118.305],
+    #     [96.787, 94.732],
     # ]
     # red_coords_list = [
-    #     [72.436, 73.125],
-    #     [81.534, 63.624],
-    #     [72.129, 81.785],
-    #     [63.214, 62.764],
+    #     [72.497, 73.177],
+    #     [81.564, 63.667],
+    #     [72.115, 81.851],
+    #     [63.246, 62.779],
     # ]
 
     num_nvs = len(pixel_coords_list)
