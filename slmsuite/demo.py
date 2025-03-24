@@ -118,6 +118,7 @@
 import sys
 
 import cv2
+import matplotlib.pyplot as plt
 import numpy as np
 
 # Given pixel coordinates and corresponding red coordinates
@@ -146,10 +147,10 @@ if len(pixel_coords_list) >= 3:
     # New pixel coordinate for which we want to find the corresponding red coordinate
     new_pixel_coord = np.array(
         [
-            [107.716, 107.588],
-            [119.184, 96.058],
-            [107.054, 118.224],
-            [96.749, 94.712],
+            [107.789, 107.653],
+            [119.219, 96.111],
+            [107.034, 118.305],
+            [96.787, 94.732],
         ],
         dtype=np.float32,
     )
@@ -215,6 +216,26 @@ else:
     # )
     # print("Corresponding red coordinates:", new_red_coord)
 
+min_tau = 200  # ns
+max_tau = 100e3  # fallback if no revival_period given
+taus = []
+
+# Densely sample early decay
+decay_width = 5e3
+decay = np.linspace(min_tau, min_tau + decay_width, 6)
+taus.extend(decay.tolist())
+
+taus.extend(np.geomspace(min_tau + decay_width, max_tau, 81).tolist())
+
+# Round to clock-cycle-compatible units
+taus = [round(el / 4) * 4 for el in taus]
+
+# Remove duplicates and sort
+taus = sorted(set(taus))
+taus_x = np.linspace(1, len(taus), len(taus))
+plt.figure()
+plt.scatter(taus_x, taus)
+plt.show(block=True)
 sys.exit()
 
 

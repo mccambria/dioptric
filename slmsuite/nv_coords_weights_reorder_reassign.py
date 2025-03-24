@@ -580,7 +580,7 @@ if __name__ == "__main__":
     # print(nv_powers_filtered)
     # Create a copy or initialize spot weights for modification
     updated_spot_weights = curve_extreme_weights_simple(
-        spot_weights, scaling_factor=2.0
+        spot_weights, scaling_factor=1.0
     )
     # filtered_reordered_spot_weights = np.array(
     #     [
