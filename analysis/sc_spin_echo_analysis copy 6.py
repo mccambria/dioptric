@@ -304,8 +304,8 @@ def plot_spin_echo_fits(
     taus,
     norm_counts,
     norm_counts_ste,
-    fit_fns,
-    popts,
+    fit_fns=None,
+    popts=None,
 ):
     """
     Plot the fitted spin echo data for each NV center separately and print fitting quality metrics.
@@ -315,7 +315,6 @@ def plot_spin_echo_fits(
 
     for nv_ind in range(num_nvs):
         fig, ax = plt.subplots()
-
         # Scatter plot with error bars
         ax.errorbar(
             taus,
@@ -325,42 +324,41 @@ def plot_spin_echo_fits(
             label="Data",
         )
 
-        # Compute fitting quality metrics
-        if fit_fns[nv_ind] is not None:
-            tau_dense = np.linspace(0, taus.max(), 300)
-            fit_values = fit_fns[nv_ind](taus)
-            residuals = norm_counts[nv_ind] - fit_values
+        # # Compute fitting quality metrics
+        # if fit_fns[nv_ind] is not None:
+        #     tau_dense = np.linspace(0, taus.max(), 300)
+        #     fit_values = fit_fns[nv_ind](taus)
+        #     residuals = norm_counts[nv_ind] - fit_values
 
-            # Residual Sum of Squares (RSS)
-            rss = np.sum(residuals**2)
+        #     # Residual Sum of Squares (RSS)
+        #     rss = np.sum(residuals**2)
 
-            # Reduced Chi-Square (assuming errors are std errors in counts)
-            degrees_of_freedom = len(taus) - len(popts[nv_ind])
-            chi_squared_red = (
-                np.sum((residuals / np.abs(norm_counts_ste[nv_ind])) ** 2)
-                / degrees_of_freedom
-                if degrees_of_freedom > 0
-                else np.nan
-            )
+        #     # Reduced Chi-Square (assuming errors are std errors in counts)
+        #     degrees_of_freedom = len(taus) - len(popts[nv_ind])
+        #     chi_squared_red = (
+        #         np.sum((residuals / np.abs(norm_counts_ste[nv_ind])) ** 2)
+        #         / degrees_of_freedom
+        #         if degrees_of_freedom > 0
+        #         else np.nan
+        #     )
 
-            # Coefficient of Determination (R^2)
-            ss_total = np.sum((norm_counts[nv_ind] - np.mean(norm_counts[nv_ind])) ** 2)
-            r_squared = 1 - (rss / ss_total) if ss_total > 0 else np.nan
+        #     # Coefficient of Determination (R^2)
+        #     ss_total = np.sum((norm_counts[nv_ind] - np.mean(norm_counts[nv_ind])) ** 2)
+        #     r_squared = 1 - (rss / ss_total) if ss_total > 0 else np.nan
 
-            print(
-                f"NV {nv_ind}: RSS = {rss:.4f}, Chi-Squared_red = {chi_squared_red:.4f}, R^2 = {r_squared:.4f}"
-            )
+        #     print(
+        #         f"NV {nv_ind}: RSS = {rss:.4f}, Chi-Squared_red = {chi_squared_red:.4f}, R^2 = {r_squared:.4f}"
+        #     )
 
-            # Plot the fitted curve
-            ax.plot(tau_dense, fit_fns[nv_ind](tau_dense), "-", label="Fit")
+        #     # Plot the fitted curve
+        #     ax.plot(tau_dense, fit_fns[nv_ind](tau_dense), "-", label="Fit")
 
         ax.set_title(f"NV {nv_ind}")
         ax.set_xlabel("Time (us)")
         ax.set_ylabel("Norm. NV- Population")
         ax.legend()
         ax.grid(True)
-        fig.tight_layout()
-        kpl.show()
+        plt.show(block=True)
 
 
 def plot_analysis_parameters(meaningful_parameters):
@@ -524,9 +522,9 @@ if __name__ == "__main__":
     #     1734569197701,
     # ]
     # rubin75 NVs
-    file_ids = [1809864601542, 1810050697942, 1810230561491, 1810371359284]
+    # file_ids = [1809864601542, 1810050697942, 1810230561491, 1810371359284]
     # rubin75 NVs
-    # file_ids = [1811334050314, 1811401206447, 1811464617147, 1811540653210]
+    file_ids = [1811334050314, 1811401206447, 1811464617147, 1811540653210]
     # Process and analyze data from multiple files
     try:
         data = process_multiple_files(file_ids)
@@ -553,10 +551,10 @@ if __name__ == "__main__":
         # fit_fns, popts = fit_spin_echo(
         #     nv_list, total_evolution_times, norm_counts, norm_counts_ste
         # )
-        # plot_spin_echo_fits(
-        #     nv_list, total_evolution_times, norm_counts, norm_counts_ste, fit_fns, popts
-        # )
-        plot_spin_echo_all(nv_list, total_evolution_times, norm_counts, norm_counts_ste)
+        plot_spin_echo_fits(
+            nv_list, total_evolution_times, norm_counts, norm_counts_ste
+        )
+        # plot_spin_echo_all(nv_list, total_evolution_times, norm_counts, norm_counts_ste)
     except Exception as e:
         print(f"Error occurred: {e}")
         print(traceback.format_exc())

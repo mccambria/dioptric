@@ -1093,6 +1093,8 @@ if __name__ == "__main__":
     file_ids = [1796261430133]
     # rubin 107NVs
     file_ids = [1801725762770, 1801943804484]
+
+    # after remoutnig the sample 
     # rubin 304NVs
     file_ids = [1803870882950]
     # rubin 154NVs

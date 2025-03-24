@@ -135,89 +135,130 @@ def process_and_fit_data(data, use_double_fit=False):
     )
 
 
-def plot_fitted_data(nv_list, taus, norm_counts, norm_counts_ste, fit_functions):
+def plot_fitted_data(
+    nv_list,
+    taus,
+    norm_counts,
+    norm_counts_ste,
+    fit_functions,
+    fit_params,
+    fit_errors,
+    num_cols=8,
+):
     """Plot for raw data with fitted curves using Seaborn style, including NV index labels."""
+    fit_params = np.array(fit_params)
+    param_errors = np.array(fit_errors)
+    rates = fit_params[:, 1]
+    rate_errors = param_errors[:, 1]
+    T1 = 1 / rates
+    T1_err = rate_errors / (rates**2)
+    T1, T1_err = list(T1), list(T1_err)
+
     sns.set(style="whitegrid")
     num_nvs = len(nv_list)
-    num_cols = 6
     num_rows = int(np.ceil(num_nvs / num_cols))
-    fig, axes = plt.subplots(num_rows, num_cols, figsize=(num_cols * 3, num_rows * 3))
+    # Full plot
+    fig, axes = plt.subplots(
+        num_rows,
+        num_cols,
+        figsize=(num_cols * 1.5, num_rows * 3),
+        sharex=True,
+        sharey=False,
+        constrained_layout=True,
+        gridspec_kw={"wspace": 0.0, "hspace": 0.0},
+    )
     axes = axes.flatten()
-
-    for nv_idx in range(num_nvs):
-        ax = axes[nv_idx]
-
-        # Plot data with Seaborn's lineplot for a cleaner look
-        sns.lineplot(
+    # axes = axes[::-1]
+    for nv_idx, ax in enumerate(axes):
+        if nv_idx >= len(nv_list):
+            ax.axis("off")
+            continue
+        sns.scatterplot(
             x=taus,
             y=norm_counts[nv_idx],
             ax=ax,
-            marker="o",
             color="blue",
-            label=f"NV {nv_idx + 1}",
-            lw=1,
-            markersize=4,
+            label=f"NV {nv_idx}(T1 = {T1[nv_idx]:.2f} ± {T1_err[nv_idx]:.2f} ms)",
+            s=10,
+            alpha=0.7,
         )
-
         # Plot error bars separately for clarity
         ax.errorbar(
             taus,
             norm_counts[nv_idx],
             yerr=norm_counts_ste[nv_idx],
             fmt="o",
-            alpha=0.5,
+            alpha=0.9,
             ecolor="gray",
+            markersize=0.1,
         )
+
         taus_fit = np.logspace(np.log10(taus[0]), np.log10(taus[-1]), 200)
         # Plot fitted curve if available
         if fit_functions[nv_idx]:
             fit_curve = fit_functions[nv_idx](taus_fit)
             sns.lineplot(
-                x=taus,
+                x=taus_fit,
                 y=fit_curve,
                 ax=ax,
-                color="red",
+                color="blue",
                 # label='Fit',
-                lw=2,
+                lw=1,
             )
+        ax.legend(fontsize="xx-small")
+        ax.grid(True, which="both", linestyle="--", linewidth=0.5)
+        ax.tick_params(labelleft=False)
+        ax.set_xscale("log")
+        # # Add NV index within the plot at the center
+        # for col in range(num_cols):
+        #     bottom_row_idx = num_rows * num_cols - num_cols + col
+        #     if bottom_row_idx < len(axes):
+        #         ax = axes[bottom_row_idx]
+        #         # tick_positions = np.linspace(min(taus), max(taus), 5)
+        #         tick_positions = np.logspace(np.log10(taus[0]), np.log10(taus[-1]), 6)
+        #         ax.set_xticks(tick_positions)
+        #         ax.set_xticklabels(
+        #             [f"{tick:.2f}" for tick in tick_positions],
+        #             rotation=45,
+        #             fontsize=9,
+        #         )
+        #         ax.set_xlabel("Time (ms)")
+        #     else:
+        #         ax.set_xticklabels([])
 
-        # Add NV index within the plot at the center
-        # ax.text(
-        #     0.5, 0.5, f'NV {nv_idx + 1}',
-        #     transform=ax.transAxes, fontsize=10, va='center', ha='center',
-        #     bbox=dict(facecolor='white', alpha=0.6, edgecolor='none')
-        # )
+        # num_axes = len(axes)
+        axes_grid = np.array(axes).reshape((num_rows, num_cols))
 
-        # Only show y-axis label on the leftmost subplots
-        # if nv_idx % num_cols == 0:
-        #     ax.set_ylabel('Normalized Counts')
-        # else:
-        #     ax.set_yticklabels([])  # Remove y-tick labels for compactness
-        ax.set_yticklabels([])
+        # Loop over each column
+        for col in range(num_cols):
+            # Go from bottom row upwards
+            for row in reversed(range(num_rows)):
+                if row * num_cols + col < len(axes):  # Check if subplot exists
+                    ax = axes_grid[row, col]
 
-        # Only show x-axis label on the bottommost subplots
-        if nv_idx >= (num_rows - 1) * num_cols:
-            ax.set_xlabel("Relaxation Time (ms)")
-        else:
-            ax.set_xticklabels([])  # Remove x-tick labels for compactness
+                    # Apply ticks
+                    tick_positions = np.logspace(
+                        np.log10(taus[0]), np.log10(taus[-1]), 6
+                    )
+                    ax.set_xticks(tick_positions)
+                    ax.set_xticklabels(
+                        [f"{tick:.2f}" for tick in tick_positions],
+                        rotation=45,
+                        fontsize=9,
+                    )
+                    ax.set_xlabel("Time (ms)")
+                    break  # Done for this column
 
-        ax.legend(fontsize="small")
-
-    # Hide unused subplots
-    for ax in axes[num_nvs:]:
-        ax.axis("off")
-
-    # plt.subplots_adjust(left=0.1, right=0.95, top=0.95, bottom=0.1, hspace=0.01, wspace=0.01)
-
-    # Save the figure with a timestamped filename
-    # plt.tight_layout()
-    # now = datetime.now()
-    # date_time_str = now.strftime("%Y%m%d_%H%M%S")
-    # file_name = dm.get_file_name(file_id=file_ids)
-    # file_path = dm.get_file_path(__file__, file_name, f"{file_id}_{date_time_str}")
-    # kpl.show(block=True)
-    # dm.save_figure(fig, file_path)
-    # plt.close(fig_fitting)
+    fig.text(
+        0.005,
+        0.5,
+        "NV$^{-}$ Population",
+        va="center",
+        rotation="vertical",
+        fontsize=12,
+    )
+    fig.suptitle(f"T1 Relaxation {all_file_ids_str}", fontsize=16)
+    fig.tight_layout(pad=0.4, rect=[0.01, 0.01, 0.99, 0.99])
     plt.show(block=True)
 
 
@@ -376,18 +417,27 @@ if __name__ == "__main__":
         norm_counts,
         norm_counts_ste,
         nv_list,
-        param_errors,
+        fit_errors,
     ) = process_and_fit_data(data, use_double_fit=True)
-    # plot_fitted_data(nv_list, taus, norm_counts, norm_counts_ste, fit_functions)
-    # scatter_fitted_parameters(fit_params, nv_list)
-    plot_T1_with_errorbars(fit_params, param_errors, nv_list)
-    plot_fitted_data_separately(
+    plot_fitted_data(
         nv_list,
         taus,
         norm_counts,
         norm_counts_ste,
         fit_functions,
         fit_params,
-        param_errors,
+        fit_errors,
+        num_cols=10,
     )
+    # scatter_fitted_parameters(fit_params, nv_list)
+    plot_T1_with_errorbars(fit_params, fit_errors, nv_list)
+    # plot_fitted_data_separately(
+    #     nv_list,
+    #     taus,
+    #     norm_counts,
+    #     norm_counts_ste,
+    #     fit_functions,
+    #     fit_params,
+    #     fit_errors,
+    # )
     kpl.show(block=True)
