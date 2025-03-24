@@ -461,7 +461,7 @@ def plot_spin_echo_all(nv_list, taus, norm_counts, norm_counts_ste):
         ax.errorbar(
             nv_tau,
             norm_counts[nv_idx],
-            yerr=norm_counts_ste[nv_idx],
+            yerr=abs(norm_counts_ste[nv_idx]),
             fmt="none",
             ecolor=colors[nv_idx % len(colors)],
             alpha=0.9,
@@ -525,6 +525,8 @@ if __name__ == "__main__":
     # ]
     # rubin75 NVs
     file_ids = [1809864601542, 1810050697942, 1810230561491, 1810371359284]
+    # rubin75 NVs
+    # file_ids = [1811334050314, 1811401206447, 1811464617147, 1811540653210]
     # Process and analyze data from multiple files
     try:
         data = process_multiple_files(file_ids)
@@ -533,9 +535,19 @@ if __name__ == "__main__":
         total_evolution_times = 2 * np.array(taus) / 1e3
         counts = np.array(data["counts"])
         sig_counts, ref_counts = counts[0], counts[1]
-        norm_counts, norm_counts_ste = widefield.process_counts(
-            nv_list, sig_counts, ref_counts, threshold=True
+        # norm_counts, norm_counts_ste = widefield.process_counts(
+        #     nv_list, sig_counts, ref_counts, threshold=True
+        # )
+        # Process counts using widefield's process_counts function
+        sig_avg_counts, sig_avg_counts_ste = widefield.process_counts(
+            nv_list, sig_counts, threshold=False
         )
+        ref_avg_counts, ref_avg_counts_ste = widefield.process_counts(
+            nv_list, ref_counts, threshold=False
+        )
+        # Compute the difference between the states
+        norm_counts = sig_avg_counts - ref_avg_counts
+        norm_counts_ste = np.sqrt(sig_avg_counts_ste**2 + ref_avg_counts_ste**2)
         nv_num = len(nv_list)
         ids_num = len(file_ids)
         # fit_fns, popts = fit_spin_echo(
