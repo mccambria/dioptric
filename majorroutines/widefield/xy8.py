@@ -38,7 +38,12 @@ def main(nv_list, num_steps, num_reps, num_runs, min_tau, max_tau):
 
     pulse_gen = tb.get_server_pulse_gen()
     seq_file = "xy8.py"
-    taus = np.linspace(min_tau, max_tau, num_steps)
+
+    # taus = np.linspace(min_tau, max_tau, num_steps)
+    taus = np.geomspace(1 / num_steps, 1, num_steps)
+    taus = (taus - taus[0]) / (taus[-1] - taus[0])  # normalize 0 → 1
+    taus = taus * (max_tau - min_tau) + min_tau
+    # taus = (taus // 4) * 4  # optional: round to 4 ns if using OPX
 
     ### Collect the data
 

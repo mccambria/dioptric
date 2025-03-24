@@ -589,24 +589,31 @@ def do_power_rabi(nv_list):
 #         spin_echo.main(nv_list, num_steps, num_reps, num_runs, taus=taus)
 
 
-def do_spin_echo(nv_list):
-    revival_period = int(51.5e3 / 2)
-    min_tau = 200
-    max_tau = 2 * revival_period + 5e3  # Matching the previous range
-    num_steps = 100  # Adjust as needed for resolution
+def do_spin_echo(nv_list, revival_period=None):
+    min_tau = 200  # ns
+    max_tau = 100e3  # fallback if no revival_period given
+    taus = []
 
-    # Generate linearly spaced taus
-    taus = np.linspace(min_tau, max_tau, num_steps).tolist()
+    # Densely sample early decay
+    decay_width = 5e3
+    decay = np.linspace(min_tau, min_tau + decay_width, 6)
+    taus.extend(decay.tolist())
 
-    # Round to the nearest multiple of 4
+    taus.extend(np.geomspace(min_tau + decay_width, max_tau, 60).tolist())
+
+    # Round to clock-cycle-compatible units
     taus = [round(el / 4) * 4 for el in taus]
 
     # Remove duplicates and sort
     taus = sorted(set(taus))
 
     num_steps = len(taus)
-    num_reps = 2
-    num_runs = 400
+    num_reps = 3
+    num_runs = 200
+
+    print(
+        f"[Spin Echo] Running with {num_steps} τ values, revival_period={revival_period}"
+    )
 
     for ind in range(6):
         spin_echo.main(nv_list, num_steps, num_reps, num_runs, taus=taus)
@@ -661,12 +668,16 @@ def do_sq_relaxation(nv_list):
     min_tau = 1e3
     max_tau = 20e6 + min_tau
     num_steps = 21
-    num_reps = 15
+    num_reps = 10
     num_runs = 200
     # num_runs = 2
-    relaxation_interleave.sq_relaxation(
-        nv_list, num_steps, num_reps, num_runs, min_tau, max_tau
-    )
+    # relaxation_interleave.sq_relaxation(
+    #     nv_list, num_steps, num_reps, num_runs, min_tau, max_tau
+    # )
+    for _ in range(4):
+        relaxation_interleave.sq_relaxation(
+            nv_list, num_steps, num_reps, num_runs, min_tau, max_tau
+        )
 
 
 def do_dq_relaxation(nv_list):
@@ -1041,6 +1052,7 @@ if __name__ == "__main__":
     # Define transformations using `transform_coords`
     # pixel_coords_list = [
     #     [113.173, 128.034],
+    #     [20.024, 58.194],
     #     [18.24, 9.848],
     #     [108.384, 227.38],
     #     [227.438, 19.199],
@@ -1165,14 +1177,15 @@ if __name__ == "__main__":
     pol_duration_list = [132, 140, 140, 132, 116, 156, 104, 164, 156, 156, 108, 152, 168, 116, 220, 92, 168, 116, 120, 140, 104, 180, 144, 152, 232, 132, 156, 228, 200, 96, 188, 168, 300, 128, 200, 176, 108, 220, 164, 128, 288, 436, 376, 108, 132, 252, 176, 128, 312, 140, 180, 116, 220, 328, 128, 324, 132, 164, 292, 176, 364, 276, 92, 104, 352, 388, 180, 328, 412, 152, 156, 164, 116, 168, 580, 372, 168, 152, 176, 164, 244]
     scc_duration_list = [64, 80, 80, 80, 64, 88, 64, 100, 84, 84, 76, 92, 92, 80, 116, 76, 104, 72, 60, 72, 84, 68, 84, 80, 120, 80, 72, 100, 88, 72, 116, 84, 116, 88, 92, 84, 48, 128, 104, 72, 136, 128, 52, 84, 84, 136, 88, 88, 124, 56, 112, 104, 72, 108, 64, 120, 80, 148, 84, 76, 108, 80, 80, 64, 148, 120, 100, 148, 136, 72, 92, 96, 52, 88, 156, 84, 128, 72, 124, 72, 188]
     #75NVs
-    drop_indices = [42, 49, 53, 62, 75, 79] #drop these from 81 Nvs
-    pol_duration_list = [
-        val for ind, val in enumerate(pol_duration_list) if ind not in drop_indices
-    ]
-    scc_duration_list = [
-        val for ind, val in enumerate(scc_duration_list) if ind not in drop_indices
-    ]
+    # drop_indices = [42, 49, 53, 62, 75, 79] #drop these from 81 Nvs
+    # pol_duration_list = [
+    #     val for ind, val in enumerate(pol_duration_list) if ind not in drop_indices
+    # ]
+    # scc_duration_list = [
+    #     val for ind, val in enumerate(scc_duration_list) if ind not in drop_indices
+    # ]
     pol_duration_list = [164, 144, 168, 108, 132, 176, 132, 152, 176, 168, 140, 200, 204, 120, 268, 116, 200, 128, 152, 144, 116, 192, 156, 156, 256, 140, 156, 240, 232, 116, 200, 176, 340, 116, 108, 216, 104, 200, 144, 140, 304, 416, 140, 156, 292, 188, 164, 352, 180, 156, 232, 144, 328, 132, 228, 288, 164, 384, 292, 140, 400, 388, 192, 348, 412, 144, 200, 180, 120, 188, 436, 180, 164, 232, 252]
+    scc_duration_list = [88, 80, 100, 100, 76, 88, 68, 88, 88, 92, 72, 68, 88, 80, 116, 64, 112, 48, 64, 60, 96, 92, 92, 72, 108, 84, 68, 100, 108, 76, 108, 108, 124, 84, 92, 72, 56, 140, 96, 76, 104, 136, 88, 64, 108, 80, 124, 120, 144, 88, 72, 68, 124, 80, 116, 84, 80, 132, 80, 36, 88, 108, 92, 152, 140, 68, 136, 80, 64, 84, 152, 140, 76, 92, 196] 
     # scc_amp_list = arranged_scc_amp_list
     # print(f"Length of pol_duration_list: {len(pol_duration_list)}")
     # print(f"First 10 SCC durations: {scc_duration_list[:10]}")
@@ -1432,7 +1445,7 @@ if __name__ == "__main__":
         # do_resonance_zoom(nv_list)
         # do_rabi(nv_list)
         # do_resonance(nv_list)
-        # do_spin_echo(nv_list)
+        do_spin_echo(nv_list)
 
         # do_power_rabi(nv_list)
         # do_correlation_test(nv_list)
@@ -1453,7 +1466,7 @@ if __name__ == "__main__":
         # do_power_rabi_scc_snr(nv_list)
         # do_optimize_scc_duration(nv_list)
         # do_optimize_scc_amp(nv_list)
-        optimize_scc_amp_and_duration(nv_list)
+        # optimize_scc_amp_and_duration(nv_list)
         # do_crosstalk_check(nv_sig)
         # do_spin_pol_check(nv_sig)
         # do_calibrate_green_red_delay()

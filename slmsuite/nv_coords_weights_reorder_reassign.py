@@ -408,6 +408,7 @@ if __name__ == "__main__":
         # file_path="slmsuite/nv_blob_detection/nv_blob_shallow_rubin_140nvs.npz"
         # file_path="slmsuite/nv_blob_detection/nv_blob_shallow_rubin_306nvs.npz"
         file_path="slmsuite/nv_blob_detection/nv_blob_shallow_rubin_81nvs.npz"
+        # file_path="slmsuite/nv_blob_detection/nv_blob_shallow_rubin_75nvs_reordered_.npz"
         # file_path="slmsuite/nv_blob_detection/nv_blob_rubin_shallow_303nvs_reordered.npz"
         # file_path="slmsuite/nv_blob_detection/nv_blob_rubin_shallow_154nvs_reordered.npz"
         # file_path="slmsuite/nv_blob_detection/nv_blob_shallow_rubin_243nvs.npz"
@@ -579,7 +580,7 @@ if __name__ == "__main__":
     # print(nv_powers_filtered)
     # Create a copy or initialize spot weights for modification
     updated_spot_weights = curve_extreme_weights_simple(
-        spot_weights, scaling_factor=1.0
+        spot_weights, scaling_factor=2.0
     )
     # filtered_reordered_spot_weights = np.array(
     #     [

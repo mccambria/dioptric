@@ -136,11 +136,6 @@ config |= {
                 # "frequency": 2.790137,  # mean of above two frequency
                 "rabi_period": 128,
                 # "rabi_period": 96,
-                # IQ modulation part
-                "carrier_frequency": 2.790137,  # Center frequency
-                "offset": 0.2670,  # % offset
-                "iq_freq_I": -7.45,  # IQ modulation frequency for I-channel (MHz)
-                "iq_freq_Q": 7.45,  # IQ modulation frequency for Q-channel (MHz)
                 "iq_delay": 140,
             },
             1: {
@@ -152,11 +147,6 @@ config |= {
                 # "frequency": 2.848744,  # mean of above two frequency
                 # "rabi_period": 96,
                 "rabi_period": 128,
-                # IQ modulation part
-                "carrier_frequency": 2.848744,  # Center frequency for IQ modulation
-                "offset": 0.29839,  # % offset
-                "iq_freq_I": -8.5,  # IQ modulation frequency for I-channel (MHz)
-                "iq_freq_Q": 8.5,  # IQ modulation frequency for Q-channel (MHz)
                 "iq_delay": 140,
             },
         },
@@ -362,7 +352,8 @@ virtual_sig_gens_dict = config["Microwaves"]["VirtualSigGens"]
 rabi_period_0 = virtual_sig_gens_dict[0]["rabi_period"]
 rabi_period_1 = virtual_sig_gens_dict[1]["rabi_period"]
 ramp_to_zero_duration = 64
-iq_buffer = 0
+# iq_buffer = 0
+iq_buffer = 64  # SBC
 virtual_lasers_dict = config["Optics"]["VirtualLasers"]
 
 opx_config = {
@@ -579,6 +570,32 @@ opx_config = {
             "operations": {
                 "on": "ao_cw",
                 "off": "ao_off",
+                "pi_pulse": "iq_pi_pulse_0",
+                "pi_on_2_pulse": "iq_pi_on_2_pulse_0",
+            },
+        },
+        "ao_sig_gen_STAN_sg394_iq": {
+            "mixInputs": {
+                "I": ("con1", 9),
+                "Q": ("con1", 10),
+                "LO_frequency": 0,  # External LO assumed
+                "mixer": "nv_mixer",
+            },
+            "intermediate_frequency": 0,
+            "operations": {
+                "pi_pulse": "iq_pi_pulse_0",
+                "pi_on_2_pulse": "iq_pi_on_2_pulse_0",
+            },
+        },
+        "ao_sig_gen_STAN_sg394_2_iq": {
+            "mixInputs": {
+                "I": ("con1", 9),
+                "Q": ("con1", 10),
+                "LO_frequency": 0,  # External LO assumed
+                "mixer": "nv_mixer",
+            },
+            "intermediate_frequency": 0,
+            "operations": {
                 "pi_pulse": "iq_pi_pulse_0",
                 "pi_on_2_pulse": "iq_pi_on_2_pulse_0",
             },
@@ -849,6 +866,13 @@ opx_config = {
         "off": {"samples": [(0, 0)]},
         "square": {"samples": [(1, 100), (0, 100)]},
     },
+    "nv_mixer": [
+        {
+            "intermediate_frequency": 0,
+            "lo_frequency": 0,
+            "correction": [1.0, 0.0, 0.0, 1.0],  # Identity matrix = no correction
+        }
+    ],
     # endregion
 }
 # endregion

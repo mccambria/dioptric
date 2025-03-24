@@ -1,10 +1,12 @@
 # -*- coding: utf-8 -*-
 """
-Widefield ESR
+Widefield SQ T1 Rexaltion
 
 Created on October 13th, 2023
-
 @author: mccambria
+
+Modified on March 22th, 2025
+@author: saroj chand
 """
 
 import matplotlib.pyplot as plt
@@ -23,8 +25,8 @@ def get_seq(
     step_vals,
     num_reps=1,
 ):
-    # step_vals = [seq_utils.convert_ns_to_cc(el) for el in step_vals]
-    print(step_vals)
+    step_vals = [seq_utils.convert_ns_to_cc(el) for el in step_vals]
+    # print(step_vals)
     with qua.program() as seq:
         ### init
         seq_utils.init()
@@ -32,34 +34,23 @@ def get_seq(
 
         step_val = qua.declare(int)
 
-        def uwave_macro_0(uwave_ind_list, step_val):
+        def uwave_macro_ref(uwave_ind_list, step_val):
             qua.align()
             qua.wait(step_val)
 
-        def uwave_macro_1(uwave_ind_list, step_val):
+        def uwave_macro_sig(uwave_ind_list, step_val):
             qua.align()
             qua.wait(step_val)
             seq_utils.macro_pi_pulse(uwave_ind_list)
 
-        # base_scc_sequence.macro(
-        #     base_scc_seq_args,
-        #     [uwave_macro_0, uwave_macro_1],
-        #     step_vals,
-        #     num_reps,
-        #     reference=False,
-        # )
-
-        def one_step():
+        with qua.for_each_(step_val, step_vals):
             base_scc_sequence.macro(
                 base_scc_seq_args,
-                [uwave_macro_0, uwave_macro_1],
-                step_vals=step_vals,
+                [uwave_macro_sig, uwave_macro_ref],
+                step_val,
                 num_reps=num_reps,
                 reference=False,
             )
-
-        with qua.for_each_(step_val, step_vals):
-            one_step()
 
     seq_ret_vals = []
     return seq, seq_ret_vals
@@ -75,34 +66,34 @@ if __name__ == "__main__":
     opx = qmm.open_qm(opx_config)
 
     try:
-        args = [
+        seq, seq_ret_vals = get_seq(
             [
-                [[108.826, 106.773], [110.002, 105.138], [110.183, 108.395]],
-                [1000, 1000, 1000],
-                [1.0, 1.0, 1.0],
-                [[73.347, 72.222], [74.196, 70.89], [74.442, 73.533]],
-                [240, 240, 240],
-                [1.0, 1.0, 1.0],
-                [False, False, False],
+                [[107.689, 107.586], [107.405, 105.849]],
+                [164, 144],
+                [1.0, 1.0],
+                [[72.414, 73.124], [72.145, 71.713]],
+                [88, 80],
+                [1.0, 1.0],
+                [False, False],
                 [0, 1],
             ],
             [
-                1493672.0,
-                3583572.0,
-                579820.0,
-                2380772.0,
-                12302064.0,
-                1141692.0,
-                356880.0,
-                20001000.0,
-                2936488.0,
-                6236064.0,
-                7425680.0,
-                14489072.0,
+                2692.0,
+                19512.0,
+                52528.0,
+                1640.0,
+                11892.0,
+                7244.0,
+                380740.0,
+                86192.0,
+                4416.0,
+                232048.0,
+                141424.0,
                 1000.0,
+                1025028.0,
+                12189868.0,
             ],
-        ]
-        seq, seq_ret_vals = get_seq(args, 5)
+        )
 
         sim_config = SimulationConfig(duration=int(400e3 / 4))
         sim = opx.simulate(seq, sim_config)
