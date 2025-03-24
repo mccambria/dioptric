@@ -684,11 +684,16 @@ def do_dq_relaxation(nv_list):
     min_tau = 1e3
     max_tau = 15e6 + min_tau
     num_steps = 21
-    num_reps = 15
+    num_reps = 10
     num_runs = 200
-    relaxation_interleave.dq_relaxation(
-        nv_list, num_steps, num_reps, num_runs, min_tau, max_tau
-    )
+
+    # relaxation_interleave.dq_relaxation(
+    #     nv_list, num_steps, num_reps, num_runs, min_tau, max_tau
+    # )
+    for _ in range(4):
+        relaxation_interleave.dq_relaxation(
+            nv_list, num_steps, num_reps, num_runs, min_tau, max_tau
+        )
 
 
 def do_opx_square_wave():
@@ -1036,7 +1041,7 @@ if __name__ == "__main__":
     # magnet_angle = 90
     date_str = "2025_02_26"
     sample_coords = [-0.4, 2.0]
-    z_coord = 0.6
+    z_coord = 0.8
 
     # Load NV pixel coordinates1
     pixel_coords_list = load_nv_coords(
@@ -1092,16 +1097,16 @@ if __name__ == "__main__":
     #     [227.438, 19.199],
     # ]
     # green_coords_list = [
-    #     [107.789, 107.653],
-    #     [119.219, 96.111],
-    #     [107.034, 118.305],
-    #     [96.787, 94.732],
+    #     [107.776, 107.708],
+    #     [119.238, 96.213],
+    #     [107.065, 118.364],
+    #     [96.781, 94.799],
     # ]
     # red_coords_list = [
-    #     [72.497, 73.177],
-    #     [81.564, 63.667],
-    #     [72.115, 81.851],
-    #     [63.246, 62.779],
+    #     [72.488, 73.222],
+    #     [81.581, 63.75],
+    #     [72.141, 81.899],
+    #     [63.242, 62.834],
     # ]
 
     num_nvs = len(pixel_coords_list)
@@ -1445,13 +1450,13 @@ if __name__ == "__main__":
         # do_resonance_zoom(nv_list)
         # do_rabi(nv_list)
         # do_resonance(nv_list)
-        do_spin_echo(nv_list)
+        # do_spin_echo(nv_list)
 
         # do_power_rabi(nv_list)
         # do_correlation_test(nv_list)
         # do_ramsey(nv_list)
         # do_sq_relaxation(nv_list)
-        # do_dq_relaxation(nv_list)
+        do_dq_relaxation(nv_list)
         # do_xy8(nv_list)
         # do_detect_cosmic_rays(nv_list)
         # do_check_readout_fidelity(nv_list)
