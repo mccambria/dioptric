@@ -168,20 +168,29 @@ if __name__ == "__main__":
 
     guess_params = [0.15, 0.5, 0.18]
 
+    # Exclude middle point
     popt, pcov = curve_fit(
         fit_fn,
-        displacement,
-        avg_snr,
+        np.r_[displacement[0:10], displacement[11:21]],
+        np.r_[avg_snr[0:10], avg_snr[11:21]],
         p0=guess_params,
-        sigma=avg_snr_ste,
+        sigma=np.r_[avg_snr_ste[0:10], avg_snr_ste[11:21]],
         absolute_sigma=True,
     )
+    # popt, pcov = curve_fit(
+    #     fit_fn,
+    #     displacement,
+    #     avg_snr,
+    #     p0=guess_params,
+    #     sigma=avg_snr_ste,
+    #     absolute_sigma=True,
+    # )
     norm = popt[-1]
     std = popt[-2]
     errors = np.sqrt(np.diag(pcov))
     stde = errors[-2]
-    print(std)
-    print(stde)
+    print(2 * std)
+    print(2 * stde)
 
     # Plot
     fig, ax = plt.subplots()
