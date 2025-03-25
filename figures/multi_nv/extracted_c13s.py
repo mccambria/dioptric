@@ -282,7 +282,8 @@ if __name__ == "__main__":
         # Osc fit is significantly better than no osc fit
         # elif True:
         elif (
-            osc_red_chi_sq < no_osc_red_chi_sq - 0.5
+            # osc_red_chi_sq < no_osc_red_chi_sq - 0.5
+            osc_red_chi_sq < no_osc_red_chi_sq - 0.7 and osc_red_chi_sq < 3
             # and not osc_red_chi_sq < no_osc_red_chi_sq - 0.7
         ):
             # no_osc_inds.append(nv_ind)

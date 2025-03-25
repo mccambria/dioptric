@@ -71,7 +71,7 @@ def replot_fits(data, fit_data, nv_inds):
 
 def replot_fits_single_plot(data, fit_data, no_osc_fit_data, nv_inds):
     figsize = kpl.double_figsize
-    figsize[1] = 7
+    figsize[1] = 8
     num_rows = 17
     num_cols = 6
     layout = kpl.calc_mosaic_layout(num_cols * num_rows, num_rows, num_cols)
@@ -101,6 +101,7 @@ def replot_fits_single_plot(data, fit_data, no_osc_fit_data, nv_inds):
     # fmt: off
     bad_inds = [47, 55, 61, 62, 68, 97]
     no_osc_inds = [6, 10, 17, 19, 20, 23, 26, 30, 33, 35, 36, 39, 40, 41, 43, 49, 53, 59, 63, 64, 66, 69, 70, 71, 73, 75, 77, 79, 81, 86, 87, 89, 90, 92, 93, 95, 100]
+    # no_osc_inds = [6, 10, 13, 17, 19, 20, 23, 26, 30, 33, 35, 36, 37, 39, 40, 41, 43, 44, 49, 53, 59, 63, 64, 66, 69, 70, 71, 73, 75, 77, 79, 81, 84, 85, 86, 87, 88, 89, 90, 91, 92, 93, 95, 100]
     # fmt: on
     fit_fns = []
     popts = []
@@ -162,11 +163,13 @@ def replot_fits_single_plot(data, fit_data, no_osc_fit_data, nv_inds):
     ax = axes_pack[layout[-1, 0]]
     kpl.set_shared_ax_xlabel(ax, "Total evolution time (µs)")
     kpl.set_shared_ax_ylabel(ax, "Normalized NV$^{-}$ population")
-    ax.set_xlim(41, 61.5)
-    ax.set_xticks([45, 60])
+    # ax.set_xlim(41 - 5, 61.5 + 5)
+    # ax.set_xlim(41, 61.5)
+    # ax.set_xticks([45, 60])
     # ax.set_xlim(90, 110)
     # ax.set_xticks([0, 50, 100])
     ax.set_yticks([0, 1], [None, None])
+    ax.set_ylim(-0.05, 1.05)
     for ax in axes_pack_flat:
         ax.tick_params(which="both", direction="in")
 
