@@ -114,68 +114,68 @@ class SigGenStanSg394(LabradServer, SigGenVector):
         if task is not None:
             task.close()
 
-    # @setting(7)
-    # def load_iq(self, c):
-    #     """
-    #     Set up external IQ modulation
-    #     """
-
-    #     # The sg394 only supports up to 10 dBm of power output with IQ modulation
-    #     # Let's check what the amplitude is set as, and if it's over 10 dBm,
-    #     # we'll quit out and save a note in the labrad logging
-    #     if float(self.sig_gen.query("AMPR?")) > 10:
-    #         msg = (
-    #             "IQ modulation on sg394 supports up to 10 dBm. The power was"
-    #             " set to {} dBm and the operation was stopped.".format(
-    #                 self.sig_gen.query("AMPR?")
-    #             )
-    #         )
-    #         raise Exception(msg)
-    #         return
-
-    #     # QAM is type 7
-    #     self.sig_gen.write("TYPE 7")
-    #     # STYP 1 is vector modulation
-    #     # self.sig_gen.write('STYP 1')
-    #     # External mode is modulation function 5
-    #     self.sig_gen.write("QFNC 5")
-    #     # Turn on modulation
-    #     cmd = "MODL 1"
-    #     self.sig_gen.write(cmd)
-    #     # logging.info(cmd)
-
-    @setting(7, carrier_freq="v[]", offset_I="v[]", offset_Q="v[]")
-    def load_iq(self, c, carrier_freq, offset_I, offset_Q):
+    @setting(7)
+    def load_iq(self, c):
         """
-        Set up internal IQ modulation.
-
-        Parameters:
-            carrier_freq: float
-                Carrier frequency in GHz.
-            freq_I: float
-                Frequency for the I-channel modulation (MHz).
-            freq_Q: float
-                Frequency for the Q-channel modulation (MHz).
+        Set up external IQ modulation
         """
-        # Ensure that the signal generator does not exceed 10 dBm with IQ modulation
+
+        # The sg394 only supports up to 10 dBm of power output with IQ modulation
+        # Let's check what the amplitude is set as, and if it's over 10 dBm,
+        # we'll quit out and save a note in the labrad logging
         if float(self.sig_gen.query("AMPR?")) > 10:
             msg = (
-                "IQ modulation on SG394 supports up to 10 dBm. The power was"
+                "IQ modulation on sg394 supports up to 10 dBm. The power was"
                 " set to {} dBm and the operation was stopped.".format(
                     self.sig_gen.query("AMPR?")
                 )
             )
             raise Exception(msg)
-        # Enable IQ modulation
-        self.sig_gen.write("MODL 1")
-        # Set carrier frequency (GHz)
-        self.sig_gen.write(f"FREQ {carrier_freq} GHz")
-        # Use internal IQ modulation mode
-        self.sig_gen.write("QFNC 7")  # INTERNAL Cosine/Sine
-        # Apply optional I/Q offsets (-5% to +5%)
-        self.sig_gen.write(f"OFSI {offset_I}")  # in %
-        self.sig_gen.write(f"OFSQ {offset_Q}")  # in %
-        # Enable RF output for IQ modulation
+            return
+
+        # QAM is type 7
+        self.sig_gen.write("TYPE 7")
+        # STYP 1 is vector modulation
+        # self.sig_gen.write('STYP 1')
+        # External mode is modulation function 5
+        self.sig_gen.write("QFNC 5")
+        # Turn on modulation
+        cmd = "MODL 1"
+        self.sig_gen.write(cmd)
+        # logging.info(cmd)
+
+    # @setting(7, carrier_freq="v[]", offset_I="v[]", offset_Q="v[]")
+    # def load_iq(self, c, carrier_freq, offset_I, offset_Q):
+    #     """
+    #     Set up internal IQ modulation.
+
+    #     Parameters:
+    #         carrier_freq: float
+    #             Carrier frequency in GHz.
+    #         freq_I: float
+    #             Frequency for the I-channel modulation (MHz).
+    #         freq_Q: float
+    #             Frequency for the Q-channel modulation (MHz).
+    #     """
+    #     # Ensure that the signal generator does not exceed 10 dBm with IQ modulation
+    #     if float(self.sig_gen.query("AMPR?")) > 10:
+    #         msg = (
+    #             "IQ modulation on SG394 supports up to 10 dBm. The power was"
+    #             " set to {} dBm and the operation was stopped.".format(
+    #                 self.sig_gen.query("AMPR?")
+    #             )
+    #         )
+    #         raise Exception(msg)
+    #     # Enable IQ modulation
+    #     self.sig_gen.write("MODL 1")
+    #     # Set carrier frequency (GHz)
+    #     self.sig_gen.write(f"FREQ {carrier_freq} GHz")
+    #     # Use internal IQ modulation mode
+    #     self.sig_gen.write("QFNC 7")  # INTERNAL Cosine/Sine
+    #     # Apply optional I/Q offsets (-5% to +5%)
+    #     self.sig_gen.write(f"OFSI {offset_I}")  # in %
+    #     self.sig_gen.write(f"OFSQ {offset_Q}")  # in %
+    #     # Enable RF output for IQ modulation
 
     @setting(8, carrier_freq="v[]", deviation="v[]")
     def load_fm(self, c, carrier_freq, deviation):

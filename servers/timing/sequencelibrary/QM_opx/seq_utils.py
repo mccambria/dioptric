@@ -12,6 +12,7 @@ import logging
 import time
 from functools import cache
 
+import numpy as np
 from qm import qua
 
 from utils import common
@@ -331,77 +332,64 @@ def macro_charge_state_readout(duration: int = None, amp: float = None):
     qua.ramp_to_zero(camera_el)
 
 
-def macro_pi_pulse(uwave_ind_list, duration_cc=None):
+def macro_pi_pulse(uwave_ind_list, duration_cc=None, phase=None):
+    _macro_uwave_pulse(
+        uwave_ind_list, pulse_name="pi_pulse", duration_cc=duration_cc, phase=phase
+    )
+
+
+def macro_pi_on_2_pulse(uwave_ind_list, duration_cc=None, phase=None):
+    _macro_uwave_pulse(
+        uwave_ind_list, pulse_name="pi_on_2_pulse", duration_cc=duration_cc, phase=phase
+    )
+
+
+def _macro_uwave_pulse(
+    uwave_ind_list, pulse_name="pi_pulse", duration_cc=None, phase=None
+):
     if uwave_ind_list is None:
         return
+
     uwave_buffer = get_uwave_buffer()
+    iq_buffer = get_iq_buffer()
+
     for uwave_ind in uwave_ind_list:
         sig_gen_el = get_sig_gen_element(uwave_ind)
+        if phase is not None:
+            i_el = get_sig_gen_i_element(uwave_ind)
+            q_el = get_sig_gen_q_element(uwave_ind)
+            if np.isscalar(phase):
+                phase = qua.declare(qua.fixed, phase)
+            i_comp = qua.Math.cos(phase)
+            q_comp = qua.Math.sin(phase)
+
         qua.align()
+
         if duration_cc is None:
-            qua.play("pi_pulse", sig_gen_el)
+            if phase is not None:
+                qua.play(pulse_name * qua.amp(i_comp), i_el)
+                qua.play(pulse_name * qua.amp(q_comp), q_el)
+                qua.wait(iq_buffer, sig_gen_el)
+            qua.play(pulse_name, sig_gen_el)
+
         else:
             with qua.if_(duration_cc > 0):
-                qua.play("pi_pulse", sig_gen_el, duration=duration_cc)
-        qua.wait(uwave_buffer, sig_gen_el)
+                if phase is not None:
+                    iq_duration_cc = duration_cc + 2 * iq_buffer
+                    qua.play(
+                        pulse_name * qua.amp(i_comp),
+                        i_el,
+                        duration=iq_duration_cc,
+                    )
+                    qua.play(
+                        pulse_name * qua.amp(q_comp),
+                        q_el,
+                        duration=iq_duration_cc,
+                    )
+                    qua.wait(iq_buffer, sig_gen_el)
+                qua.play(pulse_name, sig_gen_el, duration=duration_cc)
 
-
-def macro_pi_on_2_pulse(uwave_ind_list):
-    if uwave_ind_list is None:
-        return
-    uwave_buffer = get_uwave_buffer()
-    for uwave_ind in uwave_ind_list:
-        sig_gen_el = get_sig_gen_element(uwave_ind)
         qua.align()
-        qua.play("pi_on_2_pulse", sig_gen_el)
-        qua.wait(uwave_buffer, sig_gen_el)
-
-
-def macro_pi_pulse_with_phase(uwave_ind_list, axis="X", duration_cc=None):
-    if uwave_ind_list is None:
-        return
-
-    phase_map = {"X": 0.0, "Y": 0.25, "-X": 0.5, "-Y": 0.75}
-    if axis not in phase_map:
-        raise ValueError(f"Invalid axis '{axis}'. Must be 'X', 'Y', '-X', or '-Y'.")
-
-    phase_2pi = phase_map[axis]
-    uwave_buffer = get_uwave_buffer()
-
-    for uwave_ind in uwave_ind_list:
-        sig_gen_el = get_sig_gen_iq_element(uwave_ind)
-        qua.align()
-        qua.frame_rotation_2pi(phase_2pi, sig_gen_el)
-        if duration_cc is None:
-            qua.play("pi_pulse", sig_gen_el)
-        else:
-            with qua.if_(duration_cc > 0):
-                qua.play("pi_pulse", sig_gen_el, duration=duration_cc)
-        qua.reset_frame(sig_gen_el)
-        qua.wait(uwave_buffer, sig_gen_el)
-
-
-def macro_pi_on_2_pulse_with_phase(uwave_ind_list, axis="X", duration_cc=None):
-    if uwave_ind_list is None:
-        return
-
-    phase_map = {"X": 0.0, "Y": 0.25, "-X": 0.5, "-Y": 0.75}
-    if axis not in phase_map:
-        raise ValueError(f"Invalid axis '{axis}'. Must be 'X', 'Y', '-X', or '-Y'.")
-
-    phase_2pi = phase_map[axis]
-    uwave_buffer = get_uwave_buffer()
-
-    for uwave_ind in uwave_ind_list:
-        sig_gen_el = get_sig_gen_iq_element(uwave_ind)
-        qua.align()
-        qua.frame_rotation_2pi(phase_2pi, sig_gen_el)
-        if duration_cc is None:
-            qua.play("pi_on_2_pulse", sig_gen_el)
-        else:
-            with qua.if_(duration_cc > 0):
-                qua.play("pi_on_2_pulse", sig_gen_el, duration=duration_cc)
-        qua.reset_frame(sig_gen_el)
         qua.wait(uwave_buffer, sig_gen_el)
 
 
@@ -918,6 +906,11 @@ def get_uwave_buffer():
 
 
 @cache
+def get_iq_buffer():
+    return get_common_duration_cc("iq_buffer")
+
+
+@cache
 def get_common_duration_cc(key):
     common_duration_ns = tb.get_common_duration(key)
     common_duration_cc = convert_ns_to_cc(common_duration_ns)
@@ -950,11 +943,20 @@ def get_sig_gen_element(uwave_ind=0):
 
 
 @cache
-def get_sig_gen_iq_element(uwave_ind=0):
+def get_sig_gen_i_element(uwave_ind=0):
     """Returns the IQ-modulated signal generator element for a given uwave index."""
     virtual_sig_gen_dict = tb.get_virtual_sig_gen_dict(uwave_ind)
     sig_gen_name = virtual_sig_gen_dict["physical_name"]
-    sig_gen_element = f"ao_{sig_gen_name}_iq"  # Use I-channel as default control
+    sig_gen_element = f"ao_{sig_gen_name}_i"
+    return sig_gen_element
+
+
+@cache
+def get_sig_gen_q_element(uwave_ind=0):
+    """Returns the IQ-modulated signal generator element for a given uwave index."""
+    virtual_sig_gen_dict = tb.get_virtual_sig_gen_dict(uwave_ind)
+    sig_gen_name = virtual_sig_gen_dict["physical_name"]
+    sig_gen_element = f"ao_{sig_gen_name}_q"
     return sig_gen_element
 
 

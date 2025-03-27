@@ -43,6 +43,7 @@ from majorroutines.widefield import (
     scc_snr_check,
     simple_correlation_test,
     spin_echo,
+    spin_echo_phase_scan_test,
     spin_pol_check,
     xy8,
 )
@@ -491,7 +492,7 @@ def do_rabi(nv_list):
     # num_runs = 100
     # num_runs = 20
     # num_runs = 5
-    # uwave_ind_list = [1]
+    # uwave_ind_list = [1]  # only one
     uwave_ind_list = [0, 1]
     rabi.main(nv_list, num_steps, num_reps, num_runs, min_tau, max_tau, uwave_ind_list)
     # for _ in range(2):
@@ -502,6 +503,24 @@ def do_rabi(nv_list):
     # rabi.main(nv_list, num_steps, num_reps, num_runs, min_tau, max_tau, uwave_ind_list)
     # uwave_ind_list = [1]
     # rabi.main(nv_list, num_steps, num_reps, num_runs, min_tau, max_tau, uwave_ind_list)
+
+
+def do_ramsey_phase_scan_test(nv_list):
+    min_phi = 0
+    max_phi = 2 * np.pi
+    num_steps = 31
+    num_reps = 10
+    # num_runs = 400
+    num_runs = 200
+    # num_runs = 5
+    uwave_ind_list = [1]  # only one
+    # spin_echo_phase_scan_test.main(
+    #     nv_list, num_steps, num_reps, num_runs, min_phi, max_phi, uwave_ind_list
+    # )
+    for _ in range(2):
+        spin_echo_phase_scan_test.main(
+            nv_list, num_steps, num_reps, num_runs, min_phi, max_phi, uwave_ind_list
+        )
 
 
 def do_ac_stark(nv_list):
@@ -1352,7 +1371,7 @@ if __name__ == "__main__":
 
     # nv_list = [nv_list[
     # nv_list = [nv_list[2]]
-    # nv_list = nv_list[:2]
+    nv_list = nv_list[:2]
     # print(nv_list[:5])
     print(f"length of NVs list:{len(nv_list)}")
     # sys.exit()
@@ -1381,7 +1400,7 @@ if __name__ == "__main__":
         # pos.set_xyz_on_nv(nv_sig)
         # piezo_voltage_to_pixel_calibration()
 
-        do_compensate_for_drift(nv_sig)
+        # do_compensate_for_drift(nv_sig)
         # do_widefield_image_sample(nv_sig, 50)
         # do_charge_state_histograms(nv_list)
         # do_charge_state_conditional_init(nv_list)
@@ -1452,11 +1471,13 @@ if __name__ == "__main__":
         # do_resonance(nv_list)
         # do_spin_echo(nv_list)
 
+        # do_ramsey_phase_scan_test(nv_list)
+
         # do_power_rabi(nv_list)
         # do_correlation_test(nv_list)
         # do_ramsey(nv_list)
         # do_sq_relaxation(nv_list)
-        do_dq_relaxation(nv_list)
+        # do_dq_relaxation(nv_list)
         # do_xy8(nv_list)
         # do_detect_cosmic_rays(nv_list)
         # do_check_readout_fidelity(nv_list)

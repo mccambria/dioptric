@@ -34,19 +34,19 @@ def get_seq(
         #
         def uwave_macro_ref(uwave_ind_list, step_val):
             qua.align()
-            # seq_utils.macro_pi_pulse(uwave_ind_list[:1])
-            seq_utils.macro_pi_pulse(uwave_ind_list[1:])
+            seq_utils.macro_pi_pulse(uwave_ind_list[:1])
+            # seq_utils.macro_pi_pulse(uwave_ind_list[1:])
             qua.wait(step_val)
-            seq_utils.macro_pi_pulse(uwave_ind_list[1:])
-            # seq_utils.macro_pi_pulse(uwave_ind_list[:1])
+            # seq_utils.macro_pi_pulse(uwave_ind_list[1:])
+            seq_utils.macro_pi_pulse(uwave_ind_list[:1])
 
         def uwave_macro_sig(uwave_ind_list, step_val):
             qua.align()
-            seq_utils.macro_pi_pulse(uwave_ind_list[1:])
-            # seq_utils.macro_pi_pulse(uwave_ind_list[:1])
-            qua.wait(step_val)
-            seq_utils.macro_pi_pulse(uwave_ind_list[:1])
             # seq_utils.macro_pi_pulse(uwave_ind_list[1:])
+            seq_utils.macro_pi_pulse(uwave_ind_list[:1])
+            qua.wait(step_val)
+            # seq_utils.macro_pi_pulse(uwave_ind_list[:1])
+            seq_utils.macro_pi_pulse(uwave_ind_list[1:])
 
         with qua.for_each_(step_val, step_vals):
             base_scc_sequence.macro(
