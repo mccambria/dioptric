@@ -1109,24 +1109,24 @@ if __name__ == "__main__":
     print(f"Reference NV:{pixel_coords_list[0]}")
     print(f"Green Laser Coordinates: {green_coords_list[0]}")
     print(f"Red Laser Coordinates: {red_coords_list[0]}")
-    # pixel_coords_list = [
-    #     [113.173, 128.034],
-    #     [18.24, 9.848],
-    #     [108.384, 227.38],
-    #     [227.438, 19.199],
-    # ]
-    # green_coords_list = [
-    #     [107.776, 107.708],
-    #     [119.238, 96.213],
-    #     [107.065, 118.364],
-    #     [96.781, 94.799],
-    # ]
-    # red_coords_list = [
-    #     [72.488, 73.222],
-    #     [81.581, 63.75],
-    #     [72.141, 81.899],
-    #     [63.242, 62.834],
-    # ]
+    pixel_coords_list = [
+        [113.173, 128.034],
+        [18.24, 9.848],
+        [108.384, 227.38],
+        [227.438, 19.199],
+    ]
+    green_coords_list = [
+        [107.776, 107.701],
+        [119.232, 96.182],
+        [107.077, 118.343],
+        [96.787, 94.81],
+    ]
+    red_coords_list = [
+        [72.488, 73.222],
+        [81.581, 63.75],
+        [72.141, 81.899],
+        [63.242, 62.834],
+    ]
 
     num_nvs = len(pixel_coords_list)
     threshold_list = [11.5] * num_nvs
@@ -1371,7 +1371,7 @@ if __name__ == "__main__":
 
     # nv_list = [nv_list[
     # nv_list = [nv_list[2]]
-    nv_list = nv_list[:2]
+    # nv_list = nv_list[:2]
     # print(nv_list[:5])
     print(f"length of NVs list:{len(nv_list)}")
     # sys.exit()
@@ -1400,7 +1400,7 @@ if __name__ == "__main__":
         # pos.set_xyz_on_nv(nv_sig)
         # piezo_voltage_to_pixel_calibration()
 
-        # do_compensate_for_drift(nv_sig)
+        do_compensate_for_drift(nv_sig)
         # do_widefield_image_sample(nv_sig, 50)
         # do_charge_state_histograms(nv_list)
         # do_charge_state_conditional_init(nv_list)
@@ -1454,9 +1454,9 @@ if __name__ == "__main__":
 
         # widefield.reset_all_drift()
         # coords_key = None
-        # coords_key = green_laser
+        coords_key = green_laser
         # coords_key = red_laser
-        # do_optimize_loop(nv_list, coords_key)
+        do_optimize_loop(nv_list, coords_key)
 
         # do_optimize_pol_amp(nv_list)
         # do_optimize_pol_duration(nv_list)
