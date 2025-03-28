@@ -25,17 +25,7 @@ from utils import widefield as widefield
 from utils.constants import NVSig
 
 
-def create_fit_figure(nv_list, phis, counts, counts_ste, norms):
-    num_nvs = len(nv_list)
-    phi_step = phis[1] - phis[0]
-    num_steps = len(phis)
-
-    norms_ms0_newaxis = norms[0][:, np.newaxis]
-    norms_ms1_newaxis = norms[1][:, np.newaxis]
-    contrast = norms_ms1_newaxis - norms_ms0_newaxis
-    norm_counts = (counts - norms_ms0_newaxis) / contrast
-    norm_counts_ste = counts_ste / contrast
-
+def create_fit_figure(nv_list, phis, norm_counts, norm_counts_ste):
     def cos_func(phi, amp, phase_offset):
         return 0.5 * amp * np.cos(phi - phase_offset) + 0.5
 
@@ -62,39 +52,40 @@ def create_fit_figure(nv_list, phis, counts, counts_ste, norms):
 
         fit_fns.append(cos_func if popt is not None else None)
         popts.append(popt)
+        # Create new figure for this NV
+        fig, ax = plt.subplots(figsize=(6, 5))
 
+        # Plot data points
+        ax.errorbar(
+            phis,
+            nv_counts,
+            yerr=abs(nv_counts_ste),
+            fmt="o",
+            label=f"NV {nv_ind}",
+            capsize=3,
+        )
+
+        # Plot fit if successful
         if popt is not None:
+            phi_fit = np.linspace(min(phis), max(phis), 300)
+            fit_vals = cos_func(phi_fit, *popt)
+            ax.plot(phi_fit, fit_vals, "-", label="Fit")
             residuals = cos_func(phis, *popt) - nv_counts
             chi_sq = np.sum((residuals / nv_counts_ste) ** 2)
             red_chi_sq = chi_sq / (len(nv_counts) - len(popt))
-            print(f"Red chi sq: {round(red_chi_sq, 3)}")
+            print(f"NV {nv_ind} - Reduced chi²: {red_chi_sq:.3f}")
 
-    layout = kpl.calc_mosaic_layout(num_nvs, num_rows=2)
-    fig, axes_pack = plt.subplot_mosaic(
-        layout, figsize=[6.5, 5.0], sharex=True, sharey=True
-    )
-    axes_pack_flat = list(axes_pack.values())
+        ax.set_xlabel("Phase (rad)")
+        ax.set_ylabel("Normalized Counts")
+        ax.set_title(f"Cosine Fit for NV {nv_ind}")
+        ax.legend()
+        ax.grid(True)
 
-    widefield.plot_fit(
-        axes_pack_flat,
-        nv_list,
-        phis,
-        norm_counts,
-        norm_counts_ste,
-        fit_fns,
-        popts,
-        xlim=[0, 2 * np.pi],
-        no_legend=True,
-    )
-
-    ax = axes_pack[layout[-1][0]]
-    kpl.set_shared_ax_xlabel(ax, "Phase (radians)")
-    kpl.set_shared_ax_ylabel(ax, "Norm. NV$^{-}$ population")
-    ax.set_xticks([0, np.pi, 2 * np.pi])
-    ax.set_xticklabels(["0", "π", "2π"])
-    ax.set_yticks([0, 1])
-
-    return fig
+        # Beautify
+        ax.spines["right"].set_visible(False)
+        ax.spines["top"].set_visible(False)
+        plt.tight_layout()
+        plt.show(block=True)
 
 
 def main(nv_list, num_steps, num_reps, num_runs, min_phi, max_phi, uwave_ind_list):
@@ -124,6 +115,7 @@ def main(nv_list, num_steps, num_reps, num_runs, min_phi, max_phi, uwave_ind_lis
         run_fn=run_fn,
         uwave_ind_list=uwave_ind_list,
         save_images=False,
+        load_iq=True,
     )
 
     ### Process and plot
@@ -172,3 +164,23 @@ def main(nv_list, num_steps, num_reps, num_runs, min_phi, max_phi, uwave_ind_lis
 
 if __name__ == "__main__":
     kpl.init_kplotlib()
+    data = dm.get_raw_data(file_id=1816491475200, load_npz=False, use_cache=True)
+    nv_list = data["nv_list"]
+    num_nvs = len(nv_list)
+    num_steps = data["num_steps"]
+    num_runs = data["num_runs"]
+    phis = data["phis"]
+
+    counts = np.array(data["counts"])
+    sig_counts = counts[0]
+    ref_counts = counts[1]
+
+    norm_counts, norm_counts_ste = widefield.process_counts(
+        nv_list, sig_counts, ref_counts, threshold=True
+    )
+    num_nvs = len(nv_list)
+    phi_step = phis[1] - phis[0]
+    num_steps = len(phis)
+    fit_fig = create_fit_figure(nv_list, phis, norm_counts, norm_counts_ste)
+
+    kpl.show(block=True)

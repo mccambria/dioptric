@@ -492,8 +492,8 @@ def do_rabi(nv_list):
     # num_runs = 100
     # num_runs = 20
     # num_runs = 5
-    # uwave_ind_list = [1]  # only one
-    uwave_ind_list = [0, 1]
+    uwave_ind_list = [1]  # only one
+    # uwave_ind_list = [0, 1]
     rabi.main(nv_list, num_steps, num_reps, num_runs, min_tau, max_tau, uwave_ind_list)
     # for _ in range(2):
     #     rabi.main(
@@ -505,15 +505,14 @@ def do_rabi(nv_list):
     # rabi.main(nv_list, num_steps, num_reps, num_runs, min_tau, max_tau, uwave_ind_list)
 
 
-def do_ramsey_phase_scan_test(nv_list):
+def do_spin_echo_phase_scan_test(nv_list):
     min_phi = 0
     max_phi = 2 * np.pi
-    num_steps = 31
-    num_reps = 10
-    # num_runs = 400
+    num_steps = 33
+    num_reps = 5
     num_runs = 200
-    # num_runs = 5
-    uwave_ind_list = [1]  # only one
+    # num_runs = 2
+    uwave_ind_list = [1]  # only one has iq modulation
     # spin_echo_phase_scan_test.main(
     #     nv_list, num_steps, num_reps, num_runs, min_phi, max_phi, uwave_ind_list
     # )
@@ -1109,24 +1108,24 @@ if __name__ == "__main__":
     print(f"Reference NV:{pixel_coords_list[0]}")
     print(f"Green Laser Coordinates: {green_coords_list[0]}")
     print(f"Red Laser Coordinates: {red_coords_list[0]}")
-    pixel_coords_list = [
-        [113.173, 128.034],
-        [18.24, 9.848],
-        [108.384, 227.38],
-        [227.438, 19.199],
-    ]
-    green_coords_list = [
-        [107.776, 107.701],
-        [119.232, 96.182],
-        [107.077, 118.343],
-        [96.787, 94.81],
-    ]
-    red_coords_list = [
-        [72.488, 73.222],
-        [81.581, 63.75],
-        [72.141, 81.899],
-        [63.242, 62.834],
-    ]
+    # pixel_coords_list = [
+    #     [113.173, 128.034],
+    #     [18.24, 9.848],
+    #     [108.384, 227.38],
+    #     [227.438, 19.199],
+    # ]
+    # green_coords_list = [
+    #     [107.776, 107.701],
+    #     [119.232, 96.182],
+    #     [107.077, 118.343],
+    #     [96.787, 94.81],
+    # ]
+    # red_coords_list = [
+    #     [72.488, 73.222],
+    #     [81.576, 63.725],
+    #     [72.15, 81.882],
+    #     [63.247, 62.843],
+    # ]
 
     num_nvs = len(pixel_coords_list)
     threshold_list = [11.5] * num_nvs
@@ -1454,9 +1453,9 @@ if __name__ == "__main__":
 
         # widefield.reset_all_drift()
         # coords_key = None
-        coords_key = green_laser
+        # coords_key = green_laser
         # coords_key = red_laser
-        do_optimize_loop(nv_list, coords_key)
+        # do_optimize_loop(nv_list, coords_key)
 
         # do_optimize_pol_amp(nv_list)
         # do_optimize_pol_duration(nv_list)
@@ -1471,7 +1470,7 @@ if __name__ == "__main__":
         # do_resonance(nv_list)
         # do_spin_echo(nv_list)
 
-        # do_ramsey_phase_scan_test(nv_list)
+        do_spin_echo_phase_scan_test(nv_list)
 
         # do_power_rabi(nv_list)
         # do_correlation_test(nv_list)

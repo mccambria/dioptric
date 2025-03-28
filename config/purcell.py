@@ -40,14 +40,14 @@ calibration_coords_pixel = [
     [227.438, 19.199],
 ]
 calibration_coords_green = [
-    [119.238, 96.213],
-    [107.065, 118.364],
-    [96.781, 94.799],
+    [119.232, 96.182],
+    [107.077, 118.343],
+    [96.787, 94.81],
 ]
 calibration_coords_red = [
-    [81.581, 63.75],
-    [72.141, 81.899],
-    [63.242, 62.834],
+    [81.576, 63.725],
+    [72.15, 81.882],
+    [63.247, 62.843],
 ]
 # Create the dictionaries using the provided lists
 calibration_coords_nv1 = {
@@ -136,27 +136,15 @@ config |= {
                 # "frequency": 2.909381,  # rubin shallow NV O3 ms=+1
                 "rabi_period": 128,
                 # "rabi_period": 96,
-                # IQ modulation part
-                "carrier_frequency": 2.790137,  # Center frequency
-                "offset": 0.2670,  # % offset
-                "iq_freq_I": -7.45,  # IQ modulation frequency for I-channel (MHz)
-                "iq_freq_Q": 7.45,  # IQ modulation frequency for Q-channel (MHz)
-                "iq_delay": 140,
             },
             1: {
                 "physical_name": "sig_gen_STAN_sg394_2",
                 # "uwave_power": 8.1,
                 "uwave_power": 8.3,
-                "frequency": 2.964545,  # rubin shallow NV O1 ms=+1
-                # "frequency": 2.842478,  # rubin shallow NV O3 ms=-1
+                # "frequency": 2.964545,  # rubin shallow NV O1 ms=+1
+                "frequency": 2.842478,  # rubin shallow NV O3 ms=-1
                 # "rabi_period": 96,
                 "rabi_period": 128,
-                # IQ modulation part
-                "carrier_frequency": 2.848744,  # Center frequency for IQ modulation
-                "offset": 0.29839,  # % offset
-                "iq_freq_I": -8.5,  # IQ modulation frequency for I-channel (MHz)
-                "iq_freq_Q": 8.5,  # IQ modulation frequency for Q-channel (MHz)
-                "iq_delay": 140,
             },
         },
     },
