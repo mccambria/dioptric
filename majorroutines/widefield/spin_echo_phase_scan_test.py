@@ -164,7 +164,7 @@ def main(nv_list, num_steps, num_reps, num_runs, min_phi, max_phi, uwave_ind_lis
 
 if __name__ == "__main__":
     kpl.init_kplotlib()
-    data = dm.get_raw_data(file_id=1816491475200, load_npz=False, use_cache=True)
+    data = dm.get_raw_data(file_id=1817334208399, load_npz=False, use_cache=True)
     nv_list = data["nv_list"]
     num_nvs = len(nv_list)
     num_steps = data["num_steps"]

@@ -156,7 +156,12 @@ def macro(
             # for odd by applying an extra pi pulse just before SCC
             with qua.if_(qua.Cast.unsafe_cast_bool(rep_ind)):
                 seq_utils.macro_pi_pulse(uwave_ind_list, phase=0)
-            macro_scc_sub()
+            # macro_scc_sub()
+            #  SBC randomize the order of the scc by alterntively reversing the order
+            with qua.if_(random_order == 1):
+                macro_scc_sub()
+            with qua.else_():
+                macro_scc_sub_reversed()
 
         seq_utils.macro_charge_state_readout()
         seq_utils.macro_wait_for_trigger()
