@@ -657,7 +657,7 @@ def do_xy8(nv_list):
     num_runs = 200
     # num_runs = 6
     # xy8.main(nv_list, num_steps, num_reps, num_runs, min_tau, max_tau, uwave_ind_list)
-    for _ in range(4):
+    for _ in range(6):
         xy8.main(
             nv_list, num_steps, num_reps, num_runs, min_tau, max_tau, uwave_ind_list
         )
@@ -1119,16 +1119,16 @@ if __name__ == "__main__":
     #     [227.438, 19.199],
     # ]
     # green_coords_list = [
-    #     [107.776, 107.701],
-    #     [119.232, 96.182],
-    #     [107.077, 118.343],
-    #     [96.787, 94.81],
+    #     [107.752, 107.695],
+    #     [119.22, 96.159],
+    #     [107.075, 118.329],
+    #     [96.758, 94.793],
     # ]
     # red_coords_list = [
-    #     [72.488, 73.222],
-    #     [81.576, 63.725],
-    #     [72.15, 81.882],
-    #     [63.247, 62.843],
+    #     [72.468, 73.212],
+    #     [81.566, 63.706],
+    #     [72.149, 81.87],
+    #     [63.223, 62.829],
     # ]
 
     num_nvs = len(pixel_coords_list)
@@ -1199,24 +1199,24 @@ if __name__ == "__main__":
     # ]
     pol_duration_list = [164, 144, 168, 108, 132, 176, 132, 152, 176, 168, 140, 200, 204, 120, 268, 116, 200, 128, 152, 144, 116, 192, 156, 156, 256, 140, 156, 240, 232, 116, 200, 176, 340, 116, 108, 216, 104, 200, 144, 140, 304, 416, 140, 156, 292, 188, 164, 352, 180, 156, 232, 144, 328, 132, 228, 288, 164, 384, 292, 140, 400, 388, 192, 348, 412, 144, 200, 180, 120, 188, 436, 180, 164, 232, 252]
     scc_duration_list = [88, 80, 100, 100, 76, 88, 68, 88, 88, 92, 72, 68, 88, 80, 116, 64, 112, 48, 64, 60, 96, 92, 92, 72, 108, 84, 68, 100, 108, 76, 108, 108, 124, 84, 92, 72, 56, 140, 96, 76, 104, 136, 88, 64, 108, 80, 124, 120, 144, 88, 72, 68, 124, 80, 116, 84, 80, 132, 80, 36, 88, 108, 92, 152, 140, 68, 136, 80, 64, 84, 152, 140, 76, 92, 196] 
-    selected_indices_68MHz = [0, 7, 8, 9, 11, 14, 18, 22, 24, 25, 26, 27, 28, 30, 31, 32, 33, 35, 38, 44, 45, 46, 47, 48, 49, 53, 55, 57, 58, 60, 62, 64, 66, 67, 68, 69, 70, 71, 72, 73]
-    # selected_indices_185MHz  =[0, 1, 2, 3, 4, 5, 6, 10, 12, 13, 15, 16, 17, 19, 20, 21, 23, 29, 34, 36, 39, 40, 41, 42, 43, 50, 51, 52, 54, 56, 59, 61, 63, 65, 74]
+    # selected_indices_68MHz = [0, 7, 8, 9, 11, 14, 18, 22, 24, 25, 26, 27, 28, 30, 31, 32, 33, 35, 38, 44, 45, 46, 47, 48, 49, 53, 55, 57, 58, 60, 62, 64, 66, 67, 68, 69, 70, 71, 72, 73]
+    selected_indices_185MHz  =[0, 1, 2, 3, 4, 5, 6, 10, 12, 13, 15, 16, 17, 19, 20, 21, 23, 29, 34, 36, 39, 40, 41, 42, 43, 50, 51, 52, 54, 56, 59, 61, 63, 65, 74]
 
     # print([pol_duration_list[ind] for ind in include_indices])
     # sys.exit()
-    # include_inds = 
-    # # num_nvs = 140
+
     # arranged_scc_amp_list = [None] * num_nvs
-    arranged_scc_duration_list = [None] * num_nvs
-    arranged_pol_duration_list = [None] * len(pol_duration_list) 
-    for i, idx in enumerate(selected_indices_68MHz):
-        arranged_scc_duration_list[idx] = scc_duration_list[i]
-        arranged_pol_duration_list[idx] = pol_duration_list[i]
-        # arranged_scc_amp_list[idx] = scc_amp_list[i]
-    # # # Assign back to original lists
-    scc_duration_list = arranged_scc_duration_list
-    pol_duration_list = arranged_pol_duration_list
+    # arranged_scc_duration_list = [None] * num_nvs
+    # arranged_pol_duration_list = [None] * len(pol_duration_list) 
+    # for i, idx in enumerate(selected_indices_185MHz):
+    #     arranged_scc_duration_list[idx] = scc_duration_list[i]
+    #     arranged_pol_duration_list[idx] = pol_duration_list[i]
+    #     # arranged_scc_amp_list[idx] = scc_amp_list[i]
+    # # # # Assign back to original lists
+    # scc_duration_list = arranged_scc_duration_list
+    # pol_duration_list = arranged_pol_duration_list
     # scc_amp_list = arranged_scc_amp_list
+
     # print(f"Length of pol_duration_list: {len(pol_duration_list)}")
     # print(f"First 10 SCC durations: {scc_duration_list[:10]}")
     # print(f"First 10 POL durations: {pol_duration_list[:10]}")
@@ -1285,7 +1285,7 @@ if __name__ == "__main__":
     # nv_list[i] will have the ith coordinates from the above lists
     nv_list: list[NVSig] = []
     for ind in range(num_nvs):
-        if ind not in selected_indices_68MHz:
+        if ind not in selected_indices_185MHz:
             continue
         coords = {
             CoordsKey.SAMPLE: sample_coords,
@@ -1484,7 +1484,7 @@ if __name__ == "__main__":
         # do_ramsey(nv_list)
         # do_sq_relaxation(nv_list)
         # do_dq_relaxation(nv_list)
-        # do_xy8(nv_list)
+        do_xy8(nv_list)
         # do_detect_cosmic_rays(nv_list)
         # do_check_readout_fidelity(nv_list)
         # do_charge_quantum_jump(nv_list)
