@@ -3,12 +3,11 @@
 Created on Fall, 2024
 @author: Saroj Chand
 """
-
 import os
 import sys
 import time
-import traceback
 from datetime import datetime
+import traceback
 from random import shuffle
 
 import matplotlib.pyplot as plt
@@ -1094,7 +1093,7 @@ if __name__ == "__main__":
     # rubin 107NVs
     file_ids = [1801725762770, 1801943804484]
 
-    # after remoutnig the sample 
+    # after remoutnig the sample
     # rubin 304NVs
     file_ids = [1803870882950]
     # rubin 154NVs
