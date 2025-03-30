@@ -26,7 +26,7 @@ def process_and_plot_xy8(nv_list, taus, norm_counts, norm_counts_ste):
 
     # Fit function: stretched exponential decay
     def stretched_exp(tau, a, t2, n, b):
-        return a * np.exp(-((tau / t2) ** n)) + b
+        return a * (1 - np.exp(-((tau / t2) ** n))) + b
 
     for nv_ind in range(num_nvs):
         nv_counts = norm_counts[nv_ind]
