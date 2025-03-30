@@ -421,6 +421,22 @@ def process_counts(nv_list, sig_counts, ref_counts=None, threshold=True):
     return norm_counts, norm_counts_ste
 
 
+# Combine data from multiple file IDs
+def process_multiple_files(file_ids):
+    """
+    Load and combine data from multiple file IDs.
+
+    """
+    combined_data = dm.get_raw_data(file_id=file_ids[0])
+    for file_id in file_ids[1:]:
+        new_data = dm.get_raw_data(file_id=file_id)
+        combined_data["num_runs"] += new_data["num_runs"]
+        combined_data["counts"] = np.append(
+            combined_data["counts"], new_data["counts"], axis=2
+        )
+    return combined_data
+
+
 def threshold_counts_selected_method(
     nv_list, sig_counts, ref_counts=None, method="otsu"
 ):

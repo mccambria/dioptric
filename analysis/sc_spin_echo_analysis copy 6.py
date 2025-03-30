@@ -9,6 +9,8 @@ Created on December 22nd, 2024
 
 import sys
 import time
+from datetime import datetime
+
 import traceback
 
 import matplotlib.pyplot as plt
@@ -525,6 +527,15 @@ if __name__ == "__main__":
     # file_ids = [1809864601542, 1810050697942, 1810230561491, 1810371359284]
     # rubin75 NVs
     file_ids = [1811334050314, 1811401206447, 1811464617147, 1811540653210]
+    all_file_ids_str = "_".join(map(str, file_ids))
+    now = datetime.now()
+    date_time_str = now.strftime("%Y%m%d_%H%M%S")
+    file_name = dm.get_file_name(file_id=file_ids[0])
+    timestamp = dm.get_time_stamp()
+    file_path = dm.get_file_path(
+        __file__, file_name, f"{all_file_ids_str}_{date_time_str}"
+    )
+    print(f"File path: {file_path}")
     # Process and analyze data from multiple files
     try:
         data = process_multiple_files(file_ids)
@@ -551,10 +562,10 @@ if __name__ == "__main__":
         # fit_fns, popts = fit_spin_echo(
         #     nv_list, total_evolution_times, norm_counts, norm_counts_ste
         # )
-        plot_spin_echo_fits(
-            nv_list, total_evolution_times, norm_counts, norm_counts_ste
-        )
-        # plot_spin_echo_all(nv_list, total_evolution_times, norm_counts, norm_counts_ste)
+        # plot_spin_echo_fits(
+        #     nv_list, total_evolution_times, norm_counts, norm_counts_ste
+        # )
+        plot_spin_echo_all(nv_list, total_evolution_times, norm_counts, norm_counts_ste)
     except Exception as e:
         print(f"Error occurred: {e}")
         print(traceback.format_exc())

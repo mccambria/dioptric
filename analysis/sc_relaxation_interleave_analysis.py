@@ -74,7 +74,7 @@ def T1_fit(tau, y, yerr=None, model="single"):
     return result.x, result.success, param_errors
 
 
-def process_and_fit_data(data, use_double_fit=False):
+def process_and_fit_data(data, use_double_fit=False, selected_indices=None):
     """Processes and fits NV relaxation data with robust fitting."""
     nv_list = data["nv_list"]
     taus = np.array(data["taus"]) / 1e6  # Convert ns to ms
@@ -91,6 +91,11 @@ def process_and_fit_data(data, use_double_fit=False):
     # Compute the difference between the states
     norm_counts = sig_avg_counts - ref_avg_counts
     norm_counts_ste = np.sqrt(sig_avg_counts_ste**2 + ref_avg_counts_ste**2)
+
+    num_nvs = len(nv_list)
+    nv_list = [nv_list[ind] for ind in selected_indices]
+    norm_counts = [norm_counts[ind] for ind in selected_indices]
+    norm_counts_ste = [norm_counts_ste[ind] for ind in selected_indices]
 
     fit_params, fit_functions, residuals, param_errors = [], [], [], []
 
@@ -123,6 +128,13 @@ def process_and_fit_data(data, use_double_fit=False):
         )
         residuals.append(nv_counts - fit_curve)
 
+    # print(f"rate_3Omega = {list(fit_params[:, 1])}")
+    # print(f"rate_3Omega_error = {list(param_errors[:, 1])}")
+    fit_params = np.array(fit_params)
+    param_errors = np.array(param_errors)
+
+    print(f"rate_3Omega = {list(fit_params[:, 1])}")
+    print(f"rate_3Omega_error = {list(param_errors[:, 1])}")
     return (
         fit_params,
         fit_functions,
@@ -144,6 +156,7 @@ def plot_fitted_data(
     fit_params,
     fit_errors,
     num_cols=8,
+    selected_indices=None,
 ):
     """Plot for raw data with fitted curves using Seaborn style, including NV index labels."""
     fit_params = np.array(fit_params)
@@ -173,12 +186,16 @@ def plot_fitted_data(
         if nv_idx >= len(nv_list):
             ax.axis("off")
             continue
+        if selected_indices is not None:
+            nv_idx_label = selected_indices[nv_idx]
+        else:
+            nv_idx_label = nv_idx
         sns.scatterplot(
             x=taus,
             y=norm_counts[nv_idx],
             ax=ax,
             color="blue",
-            label=f"NV {nv_idx}(T1 = {T1[nv_idx]:.2f} ± {T1_err[nv_idx]:.2f} ms)",
+            label=f"NV {nv_idx_label}(T1 = {T1[nv_idx]:.2f} ± {T1_err[nv_idx]:.2f} ms)",
             s=10,
             alpha=0.7,
         )
@@ -201,7 +218,7 @@ def plot_fitted_data(
                 x=taus_fit,
                 y=fit_curve,
                 ax=ax,
-                color="blue",
+                # color="blue",
                 # label='Fit',
                 lw=1,
             )
@@ -357,7 +374,7 @@ def plot_T1_with_errorbars(fit_params, param_errors, nv_list=None):
             T1,
             yerr=T1_err,
             fmt="o",
-            capsize=5,
+            capsize=2,
             label="T1 (Median: {:.2f} ms)".format(np.median(T1)),
             # color="blue",
             ecolor="gray",
@@ -366,6 +383,7 @@ def plot_T1_with_errorbars(fit_params, param_errors, nv_list=None):
         # plt.xticks(nv_indices, nv_indices, rotation=45, ha="right")
         plt.xticks(nv_ticks, fontsize=15)
         plt.yticks(fontsize=15)
+        # plt.ylim(0, 6)
         plt.xlabel("NV Index", fontsize=15)
         plt.ylabel("T1 (ms)", fontsize=15)
         plt.title("T1 Relaxation Times", fontsize=15)
@@ -375,6 +393,318 @@ def plot_T1_with_errorbars(fit_params, param_errors, nv_list=None):
         plt.show()
     else:
         print("Double exponential model not yet supported in this plot.")
+
+
+# plot of rates gamma and omega
+def plots_rates_omega_gamma():
+    # fmt:off
+    selected_indices = [1, 2, 3, 4, 5, 6, 10, 12, 13, 15, 16, 17, 19, 20, 21, 23, 29, 34, 36, 39, 40, 41, 42, 43, 50, 51, 52, 54, 56, 59, 61, 63, 65, 74, 7, 8, 9, 11, 14, 18, 22, 24, 25, 26, 27, 28, 30, 31, 32, 33, 35, 38, 44, 45, 46, 47, 48, 49, 53, 55, 57, 58, 60, 62, 64, 66, 67, 68, 69, 70, 71, 72, 73]
+    # orientation both
+    rate_3Omega = [1.1976936889180865, 0.17635336350178202, 0.23207348681798132, 0.2379128860377774, 0.18377801719493864, 0.5750862179035522, 0.16161420979784533, 0.175357065112601, 0.35126974595121474, 0.2531256764795871, 0.22963997947989892, 0.2085497884267198, 0.1721189879220002, 0.3066930565073538, 1.5713073513830704, 0.2982985035299495, 0.22647517031149733, 0.2533841224924307, 0.18561857131220302, 0.17979467738319446, 0.24096829438433148, 0.1644795059342368, 0.3617068484791432, 0.21124976706108137, 0.2630984837400458, 0.29026653518687145, 0.19104752465027888, 0.42487877034203303, 0.17642317931885196, 0.42384402088692574, 0.1298782653877778, 0.21398279086855007, 0.23460825331997678, 0.274614373782283, 0.39659161274916177, 0.18114344213880662, 0.47734949645507657, 0.1969312452486425, 0.26306780262999946, 0.45419310004592023, 0.40496629180232663, 0.17440746598886298, 0.2202568949559647, 0.22605876232157365, 0.18346840995872907, 0.3823276903571677, 0.22704498547508387, 0.21584324810935793, 0.1704386109470164, 0.25330245144528163, 0.5936691580365423, 0.2645986856705085, 0.3315547082791894, 0.19096084427489537, 1.4992957231969237, 0.40998672407328735, 0.967889500351763, 0.2959707265775542, 0.2865808940643565, 0.4562341521942319, 0.17387044298258242, 0.16570351302136305, 0.271433386420418, 0.273040472869139, 0.12905843279530146, 0.250632942657402, 0.2018139016675621, 0.22235038245319685, 0.20869624962483996, 0.19313588778197704, 0.24069131433702193, 0.19963709512912292, 0.260765567624031]
+    rate_3Omega_error = [0.09149802325571099, 0.006383904881166195, 0.02390240170749795, 0.025970539287805825, 0.02447279492420767, 0.07294193823720474, 0.01646084347913541, 0.03616632706471028, 0.03959039127285494, 0.017629956235876976, 0.017104976540962626, 0.01923503786157632, 0.011464338448519289, 0.046713489611564636, 0.22902712865861202, 0.026175097857274253, 0.02649487898534962, 0.06538722996859575, 0.02005145550374968, 0.013145870126826173, 0.01847416627488859, 0.01127012229233595, 0.07257081407479277, 0.03199317510374231, 0.01683083042335524, 0.03151361615836153, 0.01413384652993107, 0.021388637956370055, 0.01870569178983584, 0.07972574290406255, 0.011619044451812437, 0.0256728849543209, 0.027388798165514084, 0.018973959306608133, 0.04852698582635914, 0.033105436240177, 0.04583310464273806, 0.014607405905134934, 0.026480456723623085, 0.044406816280894476, 0.013401343969808995, 0.016933342927761233, 0.02092458426393885, 0.03370248934222166, 0.015787161664728943, 0.04898119926852212, 0.04232357762651195, 0.017227852577017134, 0.02048679208287819, 0.033302156673985485, 0.07116217123038969, 0.032644300358302784, 0.02185936713611569, 0.013562306007071825, 0.1956355876964972, 0.0735310292702796, 0.0633389291050173, 0.020624251514081572, 0.02012822524467345, 0.12233344641685023, 0.0113803014161342, 0.03224702849157224, 0.03694970889292201, 0.02624575218781167, 0.020122339454199698, 0.041182181162721314, 0.02176175841967699, 0.04898565252103019, 0.021698807966266605, 0.03657669695783045, 0.016333005261542886, 0.018510934314347735, 0.02212144370927943]
+    # orientation_185MHz
+    rate_180MHz = [3.9934763584260375, 0.35966731922061, 0.33207053639324463, 0.32604983383541275, 0.2897296106662776, 7.34840585431916, 0.3323119591071501, 0.6387132917777691, 0.2890933972779319, 0.4651780391498491, 0.36771094862341125, 0.2991913719455162, 0.36423211961265345, 1.4994476376282748, 1.1611413033535722, 0.37551389170644955, 0.6221808043147038, 0.22895204795842822, 0.2650488870024354, 0.36368139195808014, 0.47025496681684387, 0.3572888851078669, 0.82822527570202, 0.37494044610190524, 0.2917092949627433, 0.5254765343456955, 0.366113184205232, 0.7074924828880482, 0.23173451877488782, 2.8865425075854882, 0.2754841053929161, 0.2879539687770452, 0.3039791901417385, 0.35994633250992214]
+    rate_180MHz_error  = [0.555434387231143, 0.05736811258897919, 0.037078731098652035, 0.03454341058137145, 0.03761814902076132, 1.7237276839569107, 0.040687593828151035, 0.20558755862977257, 0.05133986367170311, 0.04553923153770551, 0.025162210643080746, 0.0419226560220524, 0.05942011533787585, 0.2571156681223821, 0.1394211590700833, 0.02839118748991241, 0.04937695979208159, 0.08498667243398579, 0.04197123578853126, 0.056581048534034874, 0.07209297478389706, 0.03659425707438303, 0.042215853272456826, 0.029345892972961564, 0.03246628556601034, 0.031510760319036143, 0.017472451443373845, 0.06825576354510986, 0.02789237641040155, 0.3301138732676395, 0.01811855069002202, 0.03132604485826009, 0.027971616066746766, 0.05739818888107261]
+    #rientation_68MHz
+    rate_68MHz = [1.2355668481662014, 0.31820001829292105, 1.267117064267596, 0.37732536320859483, 0.5432519796164539, 0.7031028476543627, 0.45896311789369865, 0.3260576038616472, 0.4242335779894588, 0.348622095256152, 2.340500121279145, 0.6534111776612976, 2.1152392529257313, 0.8731240198927788, 0.33040974002334983, 0.28800293387772014, 0.9916799229167227, 0.25184749199773543, 2.445473468259843, 0.8004561580968046, 3.0059907394720526, 0.9331009047497419, 0.7825063820321756, 0.600861735638757, 3.5560148484363205, 0.2053517823632356, 0.36900787392217255, 0.4252402979571251, 0.9130284540975632, 3.2442174685450147, 0.14006130383939672, 6.360383049026441, 0.26899633314207877, 1.792299864149572, 0.403884109491424, 0.4046718871251261, 0.37823670183264285, 0.5980846168851024, 0.5548361880569093]
+    rate_68MHz_error  = [0.09522774282138666, 0.09529288981172788, 0.15270678523225342, 0.026511954831080358, 0.017768546608314388, 0.06391182340838614, 0.05435798031105914, 0.02619673758880805, 0.03533137701449433, 0.053856058684344135, 0.1677613397426233, 0.04719259902612614, 0.12446836440524768, 0.09832054319117368, 0.025335356667678912, 0.03287655802765803, 0.10930664686541096, 0.04398512146462449, 0.1607509323702159, 0.04727445267873274, 0.36553754318733833, 0.12426476292725848, 0.08699474143863824, 0.04468854208830564, 0.3009525188944822, 0.054928893676152085, 0.02558669189527077, 0.028169722094463275, 0.1032504985899434, 0.2804536254667047, 0.046437665251114944, 0.5611583727526772, 0.04142000977004301, 0.16560002800329338, 0.023471389611513137, 0.03873443407917636, 0.032877730134903416, 0.05360765403399946, 0.045863757162936516]
+    # ll rates
+    rate_omega_2gamma = rate_180MHz + rate_68MHz
+    rate_omega_2gamma_error = rate_180MHz_error  + rate_68MHz_error
+    # fmt:on
+    omega = [r / 3 for r in rate_3Omega]
+    omega_error = [err / 3 for err in rate_3Omega_error]
+
+    # Example: assuming you already have these
+    R = np.array(rate_omega_2gamma)
+    sigma_R = np.array(rate_omega_2gamma_error)
+
+    omega = np.array(omega)  # from earlier (rate_3Omega / 3)
+    sigma_omega = np.array(omega_error)  # from earlier (rate_3Omega_error / 3)
+    # Compute gamma
+    gamma = (R - omega) / 2
+
+    # Error propagation
+    gamma_error = 0.5 * np.sqrt(sigma_R**2 + sigma_omega**2)
+
+    # Convert to arrays in case they're lists
+
+    omega = np.array(omega)
+    gamma = np.array(gamma)
+    sigma_omega = np.array(omega_error)
+    sigma_gamma = np.array(gamma_error)
+    # print(f"Omega min/max: {min(omega):.3f}, {max(omega):.3f}")
+    # Compute medians
+    median_omega = np.median(omega)
+    median_gamma = np.median(gamma)
+    # Format with 3 decimal places
+    formatted_omega = np.round(omega, 3)
+    formatted_gamma = np.round(gamma, 3)
+    print(f"omega = {list(formatted_omega)}")
+    print(f"gamma = {list(formatted_gamma)}")
+    plt.figure(figsize=(6.5, 5))
+    # Use error bars in both x and y
+    plt.errorbar(
+        omega,
+        gamma,
+        xerr=sigma_omega,
+        yerr=sigma_gamma,
+        fmt="o",
+        capsize=4,
+        ecolor="gray",
+        # alpha=0.5,
+        elinewidth=1,
+        label=r"$\gamma$ vs $\Omega$",
+    )
+    # Text box with median values
+    textstr = "\n".join(
+        (
+            r"$\mathrm{Median\ }\Omega=%.3f\ \mathrm{kHz}$" % median_omega,
+            r"$\mathrm{Median\ }\gamma=%.3f\ \mathrm{kHz}$" % median_gamma,
+        )
+    )
+
+    # Placement of box: upper right inside axes
+    plt.gca().text(
+        0.97,
+        0.97,
+        textstr,
+        transform=plt.gca().transAxes,
+        fontsize=10,
+        verticalalignment="top",
+        horizontalalignment="right",
+        bbox=dict(boxstyle="round", facecolor="white", alpha=0.8),
+    )
+    plt.xlabel(r"$\Omega$ (KHz)", fontsize=15)
+    plt.ylabel(r"$\gamma$ (KHz)", fontsize=15)
+    plt.title(r"$\gamma$ vs $\Omega$", fontsize=15)
+    plt.legend(fontsize=11)
+    # plt.xlim(0, max(omega) + 0.1)
+    # plt.xscale("log")
+    # plt.yscale("log")
+    # plt.grid(True)
+    # plt.tight_layout()
+    plt.legend()
+    plt.show()
+
+    # Split data
+    omega_185 = omega[:34]
+    gamma_185 = gamma[:34]
+    sigma_omega_185 = sigma_omega[:34]
+    sigma_gamma_185 = sigma_gamma[:34]
+
+    omega_68 = omega[34:]
+    gamma_68 = gamma[34:]
+    sigma_omega_68 = sigma_omega[34:]
+    sigma_gamma_68 = sigma_gamma[34:]
+
+    # Calculate medians
+    median_omega_185 = np.median(omega_185)
+    median_gamma_185 = np.median(gamma_185)
+
+    median_omega_68 = np.median(omega_68)
+    median_gamma_68 = np.median(gamma_68)
+
+    # Plot
+    plt.figure(figsize=(6.5, 5))
+
+    # 185 MHz group (e.g., blue)
+    plt.errorbar(
+        omega_185,
+        gamma_185,
+        xerr=sigma_omega_185,
+        yerr=sigma_gamma_185,
+        fmt="o",
+        capsize=4,
+        ecolor="gray",
+        elinewidth=1,
+        color="tab:blue",
+        label=r"$185\ \mathrm{MHz}$",
+    )
+
+    # 68 MHz group (e.g., orange)
+    plt.errorbar(
+        omega_68,
+        gamma_68,
+        xerr=sigma_omega_68,
+        yerr=sigma_gamma_68,
+        fmt="o",
+        capsize=4,
+        ecolor="gray",
+        elinewidth=1,
+        color="tab:orange",
+        label=r"$68\ \mathrm{MHz}$",
+    )
+
+    # Median text box for 185 MHz (top right)
+    textstr_185 = "\n".join(
+        (
+            r"$\mathrm{Median\ }\Omega=%.3f\ \mathrm{kHz}$" % median_omega_185,
+            r"$\mathrm{Median\ }\gamma=%.3f\ \mathrm{kHz}$" % median_gamma_185,
+        )
+    )
+    plt.gca().text(
+        0.97,
+        0.97,
+        textstr_185,
+        transform=plt.gca().transAxes,
+        fontsize=10,
+        verticalalignment="top",
+        horizontalalignment="right",
+        bbox=dict(boxstyle="round", facecolor="tab:blue", alpha=0.2),
+    )
+
+    # Median text box for 68 MHz (bottom left)
+    textstr_68 = "\n".join(
+        (
+            r"$\mathrm{Median\ }\Omega=%.3f\ \mathrm{kHz}$" % median_omega_68,
+            r"$\mathrm{Median\ }\gamma=%.3f\ \mathrm{kHz}$" % median_gamma_68,
+        )
+    )
+    plt.gca().text(
+        0.03,
+        0.03,
+        textstr_68,
+        transform=plt.gca().transAxes,
+        fontsize=10,
+        verticalalignment="bottom",
+        horizontalalignment="left",
+        bbox=dict(boxstyle="round", facecolor="tab:orange", alpha=0.2),
+    )
+
+    # Labels and appearance
+    plt.xlabel(r"$\Omega$ (kHz)", fontsize=15)
+    plt.ylabel(r"$\gamma$ (kHz)", fontsize=15)
+    plt.title(r"$\gamma$ vs $\Omega$", fontsize=15)
+    plt.legend(fontsize=11)
+    plt.xscale("log")
+    plt.yscale("log")
+    # plt.grid(True)
+    plt.tight_layout()
+    plt.show()
+
+    # Plot histograms
+    fig, axs = plt.subplots(2, 2, figsize=(10, 6))
+    fig.suptitle(
+        "Histograms of $\Omega$ and $\gamma$ for Different Orientations", fontsize=14
+    )
+
+    # Ω histogram for 185 MHz
+    axs[0, 0].hist(omega_185, bins=10, color="tab:blue", alpha=0.7)
+    axs[0, 0].axvline(median_omega_185, color="k", linestyle="dashed", linewidth=1)
+    axs[0, 0].set_title(r"$\Omega$ (kHz) – 185 MHz", fontsize=13)
+    axs[0, 0].set_xlabel(r"$\Omega$ (kHz)", fontsize=13)
+    axs[0, 0].set_ylabel("Count", fontsize=13)
+
+    # γ histogram for 185 MHz
+    axs[1, 0].hist(gamma_185, bins=10, color="tab:blue", alpha=0.7)
+    axs[1, 0].axvline(median_gamma_185, color="k", linestyle="dashed", linewidth=1)
+    axs[1, 0].set_title(r"$\gamma$ (kHz) – 185 MHz", fontsize=13)
+    axs[1, 0].set_xlabel(r"$\gamma$ (kHz)", fontsize=13)
+    axs[1, 0].set_ylabel("Count", fontsize=13)
+
+    # Ω histogram for 68 MHz
+    axs[0, 1].hist(omega_68, bins=10, color="tab:orange", alpha=0.7)
+    axs[0, 1].axvline(median_omega_68, color="k", linestyle="dashed", linewidth=1)
+    axs[0, 1].set_title(r"$\Omega$ (kHz) – 68 MHz", fontsize=13)
+    axs[0, 1].set_xlabel(r"$\Omega$ (kHz)", fontsize=13)
+    axs[0, 1].set_ylabel("Count", fontsize=13)
+
+    # γ histogram for 68 MHz
+    axs[1, 1].hist(gamma_68, bins=10, color="tab:orange", alpha=0.7)
+    axs[1, 1].axvline(median_gamma_68, color="k", linestyle="dashed", linewidth=1)
+    axs[1, 1].set_title(r"$\gamma$ (kHz) – 68 MHz", fontsize=13)
+    axs[1, 1].set_xlabel(r"$\gamma$ (kHz)", fontsize=13)
+    axs[1, 1].set_ylabel("Count", fontsize=13)
+
+    plt.tight_layout(rect=[0, 0.03, 1, 0.95])
+    plt.show()
+
+    # Histogram for Ω (omega)
+    plt.figure(figsize=(6, 5))
+    plt.hist(omega_185, bins=11, alpha=0.6, label="185 MHz", color="tab:blue")
+    plt.hist(omega_68, bins=11, alpha=0.6, label="68 MHz", color="tab:orange")
+    plt.axvline(median_omega_185, color="tab:blue", linestyle="dashed", linewidth=1)
+    plt.axvline(median_omega_68, color="tab:orange", linestyle="dashed", linewidth=1)
+    plt.xlabel(r"$\Omega$ (kHz)", fontsize=13)
+    plt.ylabel("Count", fontsize=13)
+    plt.xticks(fontsize=13)
+    plt.yticks(fontsize=13)
+    plt.title(r"Histogram of $\Omega$ for Two Orientations", fontsize=14)
+    plt.legend()
+    plt.tight_layout()
+    plt.show()
+
+    # Histogram for γ (gamma)
+    plt.figure(figsize=(6, 5))
+    plt.hist(gamma_185, bins=11, alpha=0.6, label="185 MHz", color="tab:blue")
+    plt.hist(gamma_68, bins=11, alpha=0.6, label="68 MHz", color="tab:orange")
+    plt.axvline(median_gamma_185, color="tab:blue", linestyle="dashed", linewidth=1)
+    plt.axvline(median_gamma_68, color="tab:orange", linestyle="dashed", linewidth=1)
+    plt.xlabel(r"$\gamma$ (kHz)", fontsize=13)
+    plt.ylabel("Count", fontsize=13)
+    plt.xticks(fontsize=13)
+    plt.yticks(fontsize=13)
+    plt.title(r"Histogram of $\gamma$ for Two Orientations", fontsize=14)
+    plt.legend()
+    plt.tight_layout()
+    plt.show()
+
+
+# nv_indices = np.arange(len(omega))  # Or use your own x-axis
+
+# plt.figure(figsize=(7, 5))
+
+# # Plot omega
+# plt.errorbar(
+#     nv_indices,
+#     omega,
+#     yerr=sigma_omega,
+#     fmt="o",
+#     capsize=4,
+#     alpha=0.5,
+#     label=r"$\Omega$",
+# )
+
+# # Plot gamma
+# plt.errorbar(
+#     nv_indices,
+#     gamma,
+#     yerr=sigma_gamma,
+#     fmt="s",
+#     capsize=4,
+#     color="orange",
+#     alpha=0.5,
+#     label=r"$\gamma$",
+# )
+# # Text box with median values
+# textstr = "\n".join(
+#     (
+#         r"$\mathrm{Median\ }\Omega=%.3f\ \mathrm{kHz}$" % median_omega,
+#         r"$\mathrm{Median\ }\gamma=%.3f\ \mathrm{kHz}$" % median_gamma,
+#     )
+# )
+
+# # Placement of box: upper right inside axes
+# plt.gca().text(
+#     0.6,
+#     0.97,
+#     textstr,
+#     transform=plt.gca().transAxes,
+#     fontsize=10,
+#     verticalalignment="top",
+#     horizontalalignment="right",
+#     bbox=dict(boxstyle="round", facecolor="white", alpha=0.8),
+# )
+# plt.xlabel("NV Index", fontsize=15)
+# plt.ylabel("Rate (KHz)", fontsize=15)
+# plt.title("$\Omega$ and $\gamma$", fontsize=15)
+# plt.xticks(fontsize=15)
+# plt.yticks(fontsize=15)
+# plt.legend(fontsize=11)
+# plt.grid(True)
+# plt.tight_layout()
+# plt.show()
 
 
 # Combine data from multiple file IDs
@@ -395,42 +725,64 @@ def process_multiple_files(file_ids):
 # Usage Example
 if __name__ == "__main__":
     kpl.init_kplotlib()
+    # sig0 is Prepare--> wait t --> readout S(0,0)
+    # sig1 repare --> wait t --> ms=-1 pi pulse --> readout S(0,-1)
     file_ids = [1811090565552, 1811157726815, 1811214987613, 1811261374947]
-    all_file_ids_str = "_".join(map(str, file_ids))
-    now = datetime.now()
-    date_time_str = now.strftime("%Y%m%d_%H%M%S")
-    file_name = dm.get_file_name(file_id=file_ids[0])
-    timestamp = dm.get_time_stamp()
-    file_path = dm.get_file_path(
-        __file__, file_name, f"{all_file_ids_str}_{date_time_str}"
-    )
 
-    print(f"File path: {file_path}")
+    # Orientation 68 MHz
+    # sig0 is Prepare -->  ms=-1 pi pulse --wait t -->  ms=-1 pi pulse --> readout S(-1,-1)
+    # sig0 is Prepare -->  ms=-1 pi pulse --wait t -->  ms=+1 pi pulse --> readout S(-1,+1)
+    # file_ids = [1812751434024, 1812874254999, 1812983279270, 1813093367715]
 
-    data = process_multiple_files(file_ids)
+    # Orientation 185 MHz
+    # sig0 is Prepare -->  ms=-1 pi pulse --wait t -->  ms=-1 pi pulse --> readout S(-1,-1)
+    # sig0 is Prepare -->  ms=-1 pi pulse --wait t -->  ms=+1 pi pulse --> readout S(-1,+1)
+    # file_ids = [1813232235609, 1813330917197, 1813433255605, 1813532080202]
+    # fmt: off
+    # # orientation_68MHz_indice
+    selected_indices_68MHz = [7, 8, 9, 11, 14, 18, 22, 24, 25, 26, 27, 28, 30, 31, 32, 33, 35, 38, 44, 45, 46, 47, 48, 49, 53, 55, 57, 58, 60, 62, 64, 66, 67, 68, 69, 70, 71, 72, 73]
+    # orientation_185MHz_indices
+    selected_indices_185MHz  =[1, 2, 3, 4, 5, 6, 10, 12, 13, 15, 16, 17, 19, 20, 21, 23, 29, 34, 36, 39, 40, 41, 42, 43, 50, 51, 52, 54, 56, 59, 61, 63, 65, 74]
+    # combined_indices
+    selected_indices= selected_indices_185MHz + selected_indices_68MHz
+    # selected_indices= selected_indices_185MHz
+    # selected_indices= selected_indices_68MHz
+    print(selected_indices)
+    #fmt: off
+    # all_file_ids_str = "_".join(map(str, file_ids))
+    # now = datetime.now()
+    # date_time_str = now.strftime("%Y%m%d_%H%M%S")
+    # file_name = dm.get_file_name(file_id=file_ids[0])
+    # timestamp = dm.get_time_stamp()
+    # file_path = dm.get_file_path(
+    #     __file__, file_name, f"{all_file_ids_str}_{date_time_str}"
+    # )
+    # print(f"File path: {file_path}")
+    # data = process_multiple_files(file_ids)
     # data = dm.get_raw_data(file_id=1550610460299)  # Example file ID
-    (
-        fit_params,
-        fit_functions,
-        residuals,
-        taus,
-        norm_counts,
-        norm_counts_ste,
-        nv_list,
-        fit_errors,
-    ) = process_and_fit_data(data, use_double_fit=True)
-    plot_fitted_data(
-        nv_list,
-        taus,
-        norm_counts,
-        norm_counts_ste,
-        fit_functions,
-        fit_params,
-        fit_errors,
-        num_cols=10,
-    )
+    # (
+    #     fit_params,
+    #     fit_functions,
+    #     residuals,
+    #     taus,
+    #     norm_counts,
+    #     norm_counts_ste,
+    #     nv_list,
+    #     fit_errors,
+    # ) = process_and_fit_data(data, use_double_fit=False, selected_indices=selected_indices)
+    # plot_fitted_data(
+    #     nv_list,
+    #     taus,
+    #     norm_counts,
+    #     norm_counts_ste,
+    #     fit_functions,
+    #     fit_params,
+    #     fit_errors,
+    #     num_cols=10,
+    #     selected_indices=selected_indices,
+    # )
     # scatter_fitted_parameters(fit_params, nv_list)
-    plot_T1_with_errorbars(fit_params, fit_errors, nv_list)
+    # plot_T1_with_errorbars(fit_params, fit_errors, nv_list)
     # plot_fitted_data_separately(
     #     nv_list,
     #     taus,
@@ -440,4 +792,5 @@ if __name__ == "__main__":
     #     fit_params,
     #     fit_errors,
     # )
+    plots_rates_omega_gamma()
     kpl.show(block=True)
