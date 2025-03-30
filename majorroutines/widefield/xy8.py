@@ -166,17 +166,17 @@ def main(nv_list, num_steps, num_reps, num_runs, min_tau, max_tau, uwave_ind_lis
     tb.reset_cfm()
 
     ### Process and plot
-    try:
-        counts = np.array(raw_data["counts"])  # shape: (2, num_nvs, num_steps)
-        sig_counts = counts[0]
-        ref_counts = counts[1]
-        norm_counts, norm_counts_ste = widefield.process_counts(
-            nv_list, sig_counts, ref_counts, threshold=True
-        )
-        process_and_plot_xy8(nv_list, taus, norm_counts, norm_counts_ste)
-    except Exception as exc:
-        print(exc)
-        fig = None
+    # try:
+    #     counts = np.array(raw_data["counts"])  # shape: (2, num_nvs, num_steps)
+    #     sig_counts = counts[0]
+    #     ref_counts = counts[1]
+    #     norm_counts, norm_counts_ste = widefield.process_counts(
+    #         nv_list, sig_counts, ref_counts, threshold=True
+    #     )
+    #     # process_and_plot_xy8(nv_list, taus, norm_counts, norm_counts_ste)
+    # except Exception as exc:
+    #     print(exc)
+    #     fig = None
 
     # if fig is not None:
     #     dm.save_figure(fig, file_path)
@@ -189,7 +189,7 @@ if __name__ == "__main__":
     kpl.init_kplotlib()
 
     # file_name = ""
-    raw_data = dm.get_raw_data(file_id=1818171426486)
+    raw_data = dm.get_raw_data(file_id=1818240906171)
 
     nv_list = raw_data["nv_list"]
     taus = np.array(raw_data["taus"])  # τ values (in ns)
