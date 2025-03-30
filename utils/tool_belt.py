@@ -204,7 +204,7 @@ def set_delays_to_zero(config):
     """
     for key in config:
         # Check if any entries are delays and set them to 0
-        if key.endswith("delay"):
+        if key == "delay":
             config[key] = 0
             return
         # Check if we're at a sublevel - if so, recursively set its delay to 0

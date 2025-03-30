@@ -40,14 +40,14 @@ calibration_coords_pixel = [
     [227.438, 19.199],
 ]
 calibration_coords_green = [
-    [119.184, 96.058],
-    [107.054, 118.224],
-    [96.749, 94.712],
+    [119.232, 96.182],
+    [107.077, 118.343],
+    [96.787, 94.81],
 ]
 calibration_coords_red = [
-    [81.534, 63.624],
-    [72.129, 81.785],
-    [63.214, 62.764],
+    [81.576, 63.725],
+    [72.15, 81.882],
+    [63.247, 62.843],
 ]
 # Create the dictionaries using the provided lists
 calibration_coords_nv1 = {
@@ -91,6 +91,7 @@ config |= {
         "aod_access_time": 11e3,  # access time in specs is 10us
         "widefield_operation_buffer": 1e3,
         "uwave_buffer": 16,
+        "iq_buffer": 100,
     },
     ###
     "DeviceIDs": {
@@ -131,33 +132,18 @@ config |= {
                 "physical_name": "sig_gen_STAN_sg394",
                 # "uwave_power": 2.3,
                 "uwave_power": 8.3,
-                "frequency": 2.779138,  # shallow NVs O1 ms=-1
-                # "frequency": 2.798175,  # shallow NVs O2 ms=-1
-                # "frequency": 2.790137,  # mean of above two frequency
+                "frequency": 2.779138,  # rubin shallow NVs O1 ms=-1
+                # "frequency": 2.909381,  # rubin shallow NV O3 ms=+1
                 "rabi_period": 128,
-                # "rabi_period": 96,
-                # IQ modulation part
-                "carrier_frequency": 2.790137,  # Center frequency
-                "offset": 0.2670,  # % offset
-                "iq_freq_I": -7.45,  # IQ modulation frequency for I-channel (MHz)
-                "iq_freq_Q": 7.45,  # IQ modulation frequency for Q-channel (MHz)
-                "iq_delay": 140,
             },
+            # sig gen 1 is iq molulated
             1: {
                 "physical_name": "sig_gen_STAN_sg394_2",
                 # "uwave_power": 8.1,
                 "uwave_power": 8.3,
-                "frequency": 2.842301,  # shallow NV O3 ms=-1
-                # "frequency": 2.856761,  # shallow NVs O4 ms=-1
-                # "frequency": 2.848744,  # mean of above two frequency
-                # "rabi_period": 96,
+                # "frequency": 2.964545,  # rubin shallow NV O1 ms=+1
+                "frequency": 2.842478,  # rubin shallow NV O3 ms=-1
                 "rabi_period": 128,
-                # IQ modulation part
-                "carrier_frequency": 2.848744,  # Center frequency for IQ modulation
-                "offset": 0.29839,  # % offset
-                "iq_freq_I": -8.5,  # IQ modulation frequency for I-channel (MHz)
-                "iq_freq_Q": 8.5,  # IQ modulation frequency for Q-channel (MHz)
-                "iq_delay": 140,
             },
         },
     },
@@ -362,8 +348,8 @@ virtual_sig_gens_dict = config["Microwaves"]["VirtualSigGens"]
 rabi_period_0 = virtual_sig_gens_dict[0]["rabi_period"]
 rabi_period_1 = virtual_sig_gens_dict[1]["rabi_period"]
 ramp_to_zero_duration = 64
-iq_buffer = 0
 virtual_lasers_dict = config["Optics"]["VirtualLasers"]
+iq_buffer = config["CommonDurations"]["iq_buffer"]
 
 opx_config = {
     "version": 1,
@@ -380,7 +366,7 @@ opx_config = {
                 7: {"offset": 0.0, "delay": 0},
                 8: {"offset": 0.0, "delay": 0},
                 9: {"offset": 0.0, "delay": 0},
-                10: {"offset": 0.0, "delay": 0},
+                10: {"offset": 0.0, "delay": 70},
             },
             "digital_outputs": {
                 1: {},  #
@@ -553,34 +539,41 @@ opx_config = {
             },
         },
         "do_sig_gen_STAN_sg394_2_dm": {
-            "digitalInputs": {"chan": {"port": ("con1", 9), "delay": 0, "buffer": 0}},
+            # 230 ns I channel latency measured 3/26/25 MCC and Saroj
+            "digitalInputs": {
+                "chan": {"port": ("con1", 9), "delay": 230, "buffer": 0}
+                # "chan": {"port": ("con1", 9), "delay": 230 + iq_buffer, "buffer": 0}
+            },
             "operations": {
+                "iq_test": "do_iq_test",
                 "on": "do_on",
                 "off": "do_off",
                 "pi_pulse": "do_pi_pulse_1",
                 "pi_on_2_pulse": "do_pi_on_2_pulse_1",
             },
         },
-        "ao_sig_gen_STAN_sg394_i": {
+        "ao_sig_gen_STAN_sg394_2_i": {
             "singleInput": {"port": ("con1", 9)},
             "intermediate_frequency": 0,
             # "sticky": {"analog": True, "duration": ramp_to_zero_duration},
             "operations": {
+                "iq_test": "iq_test",
                 "on": "ao_cw",
                 "off": "ao_off",
-                "pi_pulse": "iq_pi_pulse_0",
-                "pi_on_2_pulse": "iq_pi_on_2_pulse_0",
+                "pi_pulse": "ao_iq_pi_pulse_1",
+                "pi_on_2_pulse": "ao_iq_pi_on_2_pulse_1",
             },
         },
-        "ao_sig_gen_STAN_sg394_q": {
+        "ao_sig_gen_STAN_sg394_2_q": {
             "singleInput": {"port": ("con1", 10)},
             "intermediate_frequency": 0,
             # "sticky": {"analog": True, "duration": ramp_to_zero_duration},
             "operations": {
+                "iq_test": "iq_test",
                 "on": "ao_cw",
                 "off": "ao_off",
-                "pi_pulse": "iq_pi_pulse_0",
-                "pi_on_2_pulse": "iq_pi_on_2_pulse_0",
+                "pi_pulse": "ao_iq_pi_pulse_1",
+                "pi_on_2_pulse": "ao_iq_pi_on_2_pulse_1",
             },
         },
         "do_camera_trigger": {
@@ -727,18 +720,27 @@ opx_config = {
             "length": default_pulse_duration,
             "waveforms": {"single": "off"},
         },
-        "iq_pi_pulse_0": {
+        "iq_test": {
             "operation": "control",
-            "length": int(rabi_period_0 / 2) + iq_buffer,
+            "length": 10000,
             "waveforms": {"single": "cw"},
         },
-        "iq_pi_on_2_pulse_0": {
+        "ao_iq_pi_pulse_1": {
             "operation": "control",
-            "length": int(rabi_period_0 / 4) + iq_buffer,
-            # "length": 20,
+            "length": int(rabi_period_1 / 2) + 2 * iq_buffer,
+            "waveforms": {"single": "cw"},
+        },
+        "ao_iq_pi_on_2_pulse_1": {
+            "operation": "control",
+            "length": int(rabi_period_1 / 4) + 2 * iq_buffer,
             "waveforms": {"single": "cw"},
         },
         ### Digital
+        "do_iq_test": {
+            "operation": "control",
+            "length": 10000,
+            "digital_marker": "on",
+        },
         "do_on": {
             "operation": "control",
             "length": default_pulse_duration,

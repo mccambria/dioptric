@@ -46,7 +46,7 @@ def get_seq(base_scc_seq_args, step_vals, num_reps=1):
             # with qua.if_(step_val > 0):
             qua.wait(step_val)
             seq_utils.macro_pi_on_2_pulse(uwave_ind_list)
-            qua.wait(step_val)
+            qua.wait(buffer)
 
         # Reference: just wait
         def uwave_macro_ref(uwave_ind_list, step_val):
