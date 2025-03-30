@@ -40,14 +40,14 @@ calibration_coords_pixel = [
     [227.438, 19.199],
 ]
 calibration_coords_green = [
-    [119.232, 96.182],
-    [107.077, 118.343],
-    [96.787, 94.81],
+    [119.22, 96.159],
+    [107.075, 118.329],
+    [96.758, 94.793],
 ]
 calibration_coords_red = [
-    [81.576, 63.725],
-    [72.15, 81.882],
-    [63.247, 62.843],
+    [81.566, 63.706],
+    [72.149, 81.87],
+    [63.223, 62.829],
 ]
 # Create the dictionaries using the provided lists
 calibration_coords_nv1 = {
@@ -141,8 +141,9 @@ config |= {
                 "physical_name": "sig_gen_STAN_sg394_2",
                 # "uwave_power": 8.1,
                 "uwave_power": 8.3,
+                "frequency": 2.779138,  # rubin shallow NVs O1 ms=-1
                 # "frequency": 2.964545,  # rubin shallow NV O1 ms=+1
-                "frequency": 2.842478,  # rubin shallow NV O3 ms=-1
+                # "frequency": 2.842478,  # rubin shallow NV O3 ms=-1
                 "rabi_period": 128,
             },
         },
@@ -835,9 +836,8 @@ opx_config = {
         # "yellow_charge_readout": {"type": "constant", "sample": 0.3472},  # 50ms 117NVs
         # "yellow_charge_readout": {"type": "constant", "sample": 0.3741},  # 50ms 117NVs
         # "yellow_charge_readout": {"type": "constant", "sample": 0.325},  # 100ms 117NVs
-        # "yellow_charge_readout": {"type": "constant", "sample": 0.3678},
-        # "yellow_charge_readout": {"type": "constant", "sample": 0.356721},
-        "yellow_charge_readout": {"type": "constant", "sample": 0.352407},
+        # "yellow_charge_readout": {"type": "constant", "sample": 0.352407},  # 75NVs all
+        "yellow_charge_readout": {"type": "constant", "sample": 0.32350},  # 35NV/185MHz
         "yellow_spin_pol": {"type": "constant", "sample": 0.44},
         "yellow_shelving": {"type": "constant", "sample": 0.33},
         # Other
