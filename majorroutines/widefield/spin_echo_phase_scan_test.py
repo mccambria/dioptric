@@ -67,7 +67,7 @@ def create_fit_figure(nv_list, phis, norm_counts, norm_counts_ste):
 
         # Plot fit if successful
         if popt is not None:
-            phi_fit = np.linspace(min(phis), max(phis), 300)
+            phi_fit = np.linspace(min(phis), max(phis), 200)
             fit_vals = cos_func(phi_fit, *popt)
             ax.plot(phi_fit, fit_vals, "-", label="Fit")
             residuals = cos_func(phis, *popt) - nv_counts
@@ -164,7 +164,8 @@ def main(nv_list, num_steps, num_reps, num_runs, min_phi, max_phi, uwave_ind_lis
 
 if __name__ == "__main__":
     kpl.init_kplotlib()
-    data = dm.get_raw_data(file_id=1817334208399, load_npz=False, use_cache=True)
+    file_id = 1817334208399
+    data = dm.get_raw_data(file_id=file_id, load_npz=False, use_cache=True)
     nv_list = data["nv_list"]
     num_nvs = len(nv_list)
     num_steps = data["num_steps"]
@@ -178,6 +179,8 @@ if __name__ == "__main__":
     norm_counts, norm_counts_ste = widefield.process_counts(
         nv_list, sig_counts, ref_counts, threshold=True
     )
+    file_name = dm.get_file_name(file_id=file_id)
+    print(f"{file_name}_{file_id}")
     num_nvs = len(nv_list)
     phi_step = phis[1] - phis[0]
     num_steps = len(phis)

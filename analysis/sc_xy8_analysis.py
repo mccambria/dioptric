@@ -4,11 +4,13 @@ Widefield Rabi experiment
 
 Created on November 29th, 2023
 
-@author: mccambria
+@author: Saroj Chand
 """
 
 import time
+import numpy as np
 
+import matplotlib.ticker as ticker
 import matplotlib.pyplot as plt
 import numpy as np
 from scipy.optimize import curve_fit
@@ -19,22 +21,24 @@ from utils import data_manager as dm
 from utils import kplotlib as kpl
 from utils import widefield
 from utils import widefield as widefield
+from scipy.optimize import least_squares
 
-from scipy.optimize import curve_fit
-import numpy as np
+
+def stretched_exp(tau, a, t2, n, b):
+    n = 1.0
+    return a * (1 - np.exp(-((tau / t2) ** n))) + b
+
+
+def residuals(params, x, y, yerr):
+    return (stretched_exp(x, *params) - y) / yerr
 
 
 def process_and_fit_xy8(nv_list, taus, norm_counts, norm_counts_ste):
     num_nvs = len(nv_list)
-
-    def stretched_exp(tau, a, t2, n, b):
-        return a * (1 - np.exp(-((tau / t2) ** n))) + b
-
     T2_list = []
     n_list = []
     chi2_list = []
     param_errors_list = []
-    fit_funtions = []
     fit_params = []
     for nv_ind in range(num_nvs):
         nv_counts = norm_counts[nv_ind]
@@ -74,7 +78,6 @@ def process_and_fit_xy8(nv_list, taus, norm_counts, norm_counts_ste):
             red_chi_sq = np.sum((residuals / nv_counts_ste) ** 2) / (
                 len(taus) - len(popt)
             )
-            fit_funtion = lambda x: stretched_exp(x, *popt)
             # Parameter uncertainties
             param_errors = np.sqrt(np.diag(pcov))
 
@@ -83,7 +86,6 @@ def process_and_fit_xy8(nv_list, taus, norm_counts, norm_counts_ste):
             fit_params.append(popt)
             chi2_list.append(red_chi_sq)
             param_errors_list.append(param_errors)
-            fit_funtions.append(fit_funtion)
             print(
                 f"NV {nv_ind} - T2 = {popt[1]:.1f} ns, n = {popt[2]:.2f}, χ² = {red_chi_sq:.2f}"
             )
@@ -94,7 +96,6 @@ def process_and_fit_xy8(nv_list, taus, norm_counts, norm_counts_ste):
 
     return (
         fit_params,
-        fit_funtions,
         T2_list,
         n_list,
         chi2_list,
@@ -105,15 +106,11 @@ def process_and_fit_xy8(nv_list, taus, norm_counts, norm_counts_ste):
 def process_and_plot_xy8(nv_list, taus, norm_counts, norm_counts_ste):
     num_nvs = len(nv_list)
 
-    def stretched_exp(tau, a, t2, n, b):
-        n = 1.0
-        return a * (1 - np.exp(-((tau / t2) ** n))) + b
-
     T2_list = []
     n_list = []
     nv_indices = []
     chi2_list = []
-    fit_functions = []
+    T2_errs = []
     fit_params = []
     for nv_ind in range(num_nvs):
         nv_counts = norm_counts[nv_ind]
@@ -151,20 +148,49 @@ def process_and_plot_xy8(nv_list, taus, norm_counts, norm_counts_ste):
             red_chi_sq = np.sum((residuals / nv_counts_ste) ** 2) / (
                 len(taus) - len(popt)
             )
+            # if red_chi_sq > 1.0:
+            #     pcov *= red_chi_sq
             param_errors = np.sqrt(np.diag(pcov))
             # if red_chi_sq > 10 or np.isnan(popt).any():
             #     print(f"NV {nv_ind} rejected: high χ² or NaNs")
             #     continue
+
+            ### Manaual fit with least squares
+            # try:
+            #     result = least_squares(
+            #         residuals,
+            #         p0,
+            #         args=(taus, nv_counts, nv_counts_ste),
+            #         bounds=bounds,
+            #         jac="2-point",
+            #         max_nfev=20000,
+            #     )
+            #     popt = result.x
+
+            #     # Compute chi-squared
+            #     res = residuals(popt, taus, nv_counts, nv_counts_ste)
+            #     red_chi_sq = np.sum(res**2) / (len(taus) - len(popt))
+
+            #     # Estimate parameter uncertainties
+            #     try:
+            #         dof = max(0, len(taus) - len(result.x))
+            #         residual_var = np.sum(result.fun**2) / dof
+            #         J = result.jac
+            #         cov = np.linalg.pinv(J.T @ J) * residual_var
+            #         param_errors = np.sqrt(np.diag(cov))
+            #     except Exception as e:
+            #         print(f"Error estimating param errors for NV {nv_ind}: {e}")
+            #         param_errors = np.full_like(result.x, np.nan)
+
             fit_params.append(popt)
             T2_list.append(popt[1])
             n_list.append(popt[2])
             nv_indices.append(nv_ind)
             chi2_list.append(red_chi_sq)
-            T2_err = param_errors[1]
+            T2_errs.append(param_errors[1])
             T2 = round(popt[1], 1)
             n = round(popt[2], 2)
             print(f"NV {nv_ind} - T2 = {T2} ns, n = {n}, χ² = {red_chi_sq:.2f}")
-
         except Exception as e:
             print(f"NV {nv_ind} fit failed: {e}")
             # continue
@@ -200,6 +226,76 @@ def process_and_plot_xy8(nv_list, taus, norm_counts, norm_counts_ste):
         # # ax.spines["right"].set_visible(False)
         # # ax.spines["top"].set_visible(False)
         # plt.show(block=True)
+        # Convert T2 from ns → µs for plotting
+    ## plot T2
+    median_T2_us = np.median(T2_list)
+    nv_indices = np.arange(num_nvs)
+    fig, ax = plt.subplots(figsize=(6, 5))
+    scatter = ax.scatter(
+        nv_indices,
+        T2_list,
+        c=chi2_list,
+        s=40,
+        edgecolors="blue",
+    )
+    # Error bars using errorbar (no color map here)
+    if T2_errs is not None:
+        ax.errorbar(
+            nv_indices,
+            T2_list,
+            yerr=T2_errs,
+            fmt="none",
+            ecolor="gray",
+            elinewidth=1,
+            capsize=3,
+            alpha=0.7,
+            zorder=1,
+        )
+    # Add median line
+    ax.axhline(
+        median_T2_us,
+        color="r",
+        linestyle="--",
+        linewidth=0.8,
+        label=f"Median T2 ≈ {median_T2_us:.1f} µs",
+    )
+
+    # Annotate χ² values if provided
+    if n_list is not None:
+        for idx, n in zip(nv_indices, chi2_list):
+            ax.annotate(
+                f"n={n:.2f}",
+                (idx, T2_list[idx]),
+                textcoords="offset points",
+                xytext=(0, 5),
+                ha="center",
+                fontsize=6,
+                color="black",
+            )
+    # Stretching exponent note
+    ax.text(
+        0.99,
+        0.95,
+        "n is the stretching exponent in the fit",
+        transform=ax.transAxes,
+        fontsize=10,
+        color="dimgray",
+        ha="right",
+        va="bottom",
+        bbox=dict(boxstyle="round,pad=0.3", edgecolor="gray", facecolor="whitesmoke"),
+    )
+    # Labels and formatting
+    ax.set_xlabel("NV Index", fontsize=15)
+    ax.set_ylabel("T2 (µs)", fontsize=15)
+    ax.tick_params(axis="both", which="major", labelsize=15)
+    # ax.set_yscale("log")
+    ax.set_title("T2 per NV from XY8 Fits", fontsize=15)
+    ax.grid(True, which="both", ls="--", alpha=0.6)
+    cbar = plt.colorbar(scatter, ax=ax, pad=0.02)
+    cbar.set_label("Reduced χ²", fontsize=15)
+    cbar.ax.tick_params(labelsize=15)
+    ax.legend(fontsize=11)
+    plt.show()
 
     ### plot all
     sns.set(style="whitegrid")
@@ -210,7 +306,7 @@ def process_and_plot_xy8(nv_list, taus, norm_counts, norm_counts_ste):
     fig, axes = plt.subplots(
         num_rows,
         num_cols,
-        figsize=(num_cols * 1.5, num_rows * 3),
+        figsize=(num_cols * 1.8, num_rows * 3),
         sharex=True,
         sharey=False,
         constrained_layout=True,
@@ -225,11 +321,11 @@ def process_and_plot_xy8(nv_list, taus, norm_counts, norm_counts_ste):
             continue
         sns.scatterplot(
             x=taus,
-            y= max_counts - nv_counts,
+            y=max_counts - nv_counts,
             ax=ax,
             color="blue",
-            # label=f"NV {nv_idx}(T1 = {T2_list[nv_idx]:.2f} ± {T2_err[nv_idx]:.2f} us)",
-            label=f"NV {nv_idx}(T1 = {T2_list[nv_idx]:.2f} us)",
+            label=f"NV {nv_idx}(T2 = {T2_list[nv_idx]:.2f} ± {T2_errs[nv_idx]:.2f} us)",
+            # label=f"NV {nv_idx}(T1 = {T2_list[nv_idx]:.2f} us)",
             s=10,
             alpha=0.7,
         )
@@ -243,12 +339,10 @@ def process_and_plot_xy8(nv_list, taus, norm_counts, norm_counts_ste):
             ecolor="gray",
             markersize=0.1,
         )
-
-        taus_fit = np.logspace(np.log10(taus[0]), np.log10(taus[-1]), 200)
         # Plot fitted curve if available
         popt = fit_params[nv_idx]
         if popt is not None:
-            tau_fit = tau_fit = np.logspace(
+            taus_fit = tau_fit = np.logspace(
                 np.log10(min(taus)), np.log10(max(taus)), 200
             )
             fit_vals = max_counts - stretched_exp(tau_fit, *popt)
@@ -265,25 +359,7 @@ def process_and_plot_xy8(nv_list, taus, norm_counts, norm_counts_ste):
         ax.tick_params(labelleft=False)
         ax.set_xscale("log")
         # # Add NV index within the plot at the center
-        # for col in range(num_cols):
-        #     bottom_row_idx = num_rows * num_cols - num_cols + col
-        #     if bottom_row_idx < len(axes):
-        #         ax = axes[bottom_row_idx]
-        #         # tick_positions = np.linspace(min(taus), max(taus), 5)
-        #         tick_positions = np.logspace(np.log10(taus[0]), np.log10(taus[-1]), 6)
-        #         ax.set_xticks(tick_positions)
-        #         ax.set_xticklabels(
-        #             [f"{tick:.2f}" for tick in tick_positions],
-        #             rotation=45,
-        #             fontsize=9,
-        #         )
-        #         ax.set_xlabel("Time (ms)")
-        #     else:
-        #         ax.set_xticklabels([])
-
-        # num_axes = len(axes)
         axes_grid = np.array(axes).reshape((num_rows, num_cols))
-
         # Loop over each column
         for col in range(num_cols):
             # Go from bottom row upwards
@@ -293,26 +369,24 @@ def process_and_plot_xy8(nv_list, taus, norm_counts, norm_counts_ste):
 
                     # Apply ticks
                     tick_positions = np.logspace(
-                        np.log10(taus[0]), np.log10(taus[-1]), 6
+                        np.log10(taus[0]), np.log10(taus[-1] - 1), 4
                     )
                     ax.set_xticks(tick_positions)
                     ax.set_xticklabels(
-                        [f"{tick:.2f}" for tick in tick_positions],
+                        [f"{tick:.0f}" for tick in tick_positions],
                         rotation=45,
                         fontsize=9,
                     )
-                    ax.set_xlabel("Time (ms)")
+                    for label in ax.get_xticklabels():
+                        label.set_y(0.08)
+                    # Label
+                    ax.set_xlabel("Time (μs)", fontsize=11, labelpad=1)
                     break  # Done for this column
 
     fig.text(
-        0.005,
-        0.5,
-        "NV$^{-}$ Population",
-        va="center",
-        rotation="vertical",
-        fontsize=12,
+        0.005, 0.5, "NV$^{-}$ Population", va="center", rotation="vertical", fontsize=11
     )
-    fig.suptitle(f"T1 Relaxation {all_file_ids_str}", fontsize=16)
+    fig.suptitle(f"XY8 fits for T2 ({all_file_ids_str})", fontsize=12)
     fig.tight_layout(pad=0.4, rect=[0.01, 0.01, 0.99, 0.99])
     plt.show(block=True)
 
@@ -324,6 +398,7 @@ def plot_xy8(
     norm_counts_ste,
     T2_list,
     n_list,
+    chi2_list,
     fit_funtions,
 ):
     # plotting
@@ -538,7 +613,7 @@ def plot_fitted_data(
         rotation="vertical",
         fontsize=12,
     )
-    fig.suptitle(f"T1 Relaxation {all_file_ids_str}", fontsize=16)
+    fig.suptitle(f"T1 Relaxation ({all_file_ids_str})", fontsize=15)
     fig.tight_layout(pad=0.4, rect=[0.01, 0.01, 0.99, 0.99])
     plt.show(block=True)
 
@@ -576,8 +651,9 @@ if __name__ == "__main__":
         nv_list, sig_counts, ref_counts, threshold=True
     )
     process_and_plot_xy8(nv_list, taus, norm_counts, norm_counts_ste)
-    # fit_params, fit_funtions, T2_list, n_list, chi2_list, param_errors_list = (
-    #     process_and_fit_xy8(nv_list, taus, norm_counts, norm_counts_ste)
+
+    # fit_params, T2_list, n_list, chi2_list, param_errors_list = process_and_fit_xy8(
+    #     nv_list, taus, norm_counts, norm_counts_ste
     # )
-    # plot_xy8(nv_list, taus, norm_counts, norm_counts_ste, T2_list, n_list, fit_funtions)
+    # plot_xy8(nv_list, taus, norm_counts, norm_counts_ste, T2_list, n_list, fit_params)
     plt.show(block=True)

@@ -329,7 +329,7 @@ if __name__ == "__main__":
     # 300 NVs
     # file_id = 1803593992080
     # file_id = 1804466558303
-    file_id = 1817818887926  # 75NVs iq modulation test
+    file_id = 1817818887926  # 75NVs iq modulation test 68Mhz orientation
     data = dm.get_raw_data(file_id=file_id, load_npz=False, use_cache=False)
     nv_list = data["nv_list"]
     taus = data["taus"]

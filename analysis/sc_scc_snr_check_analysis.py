@@ -397,9 +397,12 @@ if __name__ == "__main__":
     file_id = 1809589650041
     file_id = 1809068442975
     # file_id =ValueError 1809075570936
-
     file_id = 1809168832402
     # file_id = 1809192678440
+    # otu of 75 NVs these are NVs selected based on orientation
+    # file_id = 1819822931940  # 185MHz splitting
+    file_id = 1819995258302  # 68MHz splitting
+
     data = dm.get_raw_data(file_id=file_id)
     file_name = dm.get_file_name(file_id=file_id)
     print(f"{file_name}_{file_id}")
