@@ -838,7 +838,8 @@ opx_config = {
         # "yellow_charge_readout": {"type": "constant", "sample": 0.325},  # 100ms 117NVs
         # "yellow_charge_readout": {"type": "constant", "sample": 0.352407},  # 75NVs all
         "yellow_charge_readout": {"type": "constant", "sample": 0.32350},  # 35NV/185MHz
-        "yellow_spin_pol": {"type": "constant", "sample": 0.44},
+        # "yellow_spin_pol": {"type": "constant", "sample": 0.44},  # 71 NVs
+        "yellow_spin_pol": {"type": "constant", "sample": 0.42},
         "yellow_shelving": {"type": "constant", "sample": 0.33},
         # Other
         "aod_cw": {"type": "constant", "sample": 0.35},
