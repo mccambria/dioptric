@@ -33,6 +33,7 @@ from majorroutines.widefield import (
     optimize_amp_duration_charge_state_histograms,
     optimize_charge_state_histograms_mcc,
     optimize_scc,
+    optimize_spin_pol,
     optimize_scc_amp_duration,
     power_rabi,
     power_rabi_scc_snr,
@@ -380,6 +381,18 @@ def do_optimize_scc_amp(nv_list):
     num_runs = 200
     # num_runs = 2
     optimize_scc.optimize_scc_amp(
+        nv_list, num_steps, num_reps, num_runs, min_tau, max_tau
+    )
+
+
+def do_optimize_spin_amp(nv_list):
+    min_tau = 0.8
+    max_tau = 1.2
+    num_steps = 16
+    num_reps = 15
+    num_runs = 200
+    # num_runs = 2
+    optimize_spin_pol.optimize_spin_pol_amp(
         nv_list, num_steps, num_reps, num_runs, min_tau, max_tau
     )
 
@@ -1466,9 +1479,10 @@ if __name__ == "__main__":
 
         # do_optimize_pol_amp(nv_list)
         # do_optimize_pol_duration(nv_list)
-        do_optimize_readout_amp(nv_list)
+        # do_optimize_readout_amp(nv_list)
         # do_optimize_readout_duration(nv_list)
         # optimize_readout_amp_and_duration(nv_list)
+        # do_optimize_spin_amp(nv_list)
         # do_charge_state_histograms_images(nv_list, vary_pol_laser=True)
         # do_check_readout_fidelity(nv_list)
 
