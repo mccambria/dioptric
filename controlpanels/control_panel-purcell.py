@@ -1493,7 +1493,7 @@ if __name__ == "__main__":
 
         # do_spin_echo_phase_scan_test(nv_list)
 
-        # do_power_rabi(nv_list)
+        do_power_rabi(nv_list)
         # do_correlation_test(nv_list)
         # do_ramsey(nv_list)
         # do_sq_relaxation(nv_list)
