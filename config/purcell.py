@@ -141,9 +141,9 @@ config |= {
                 "physical_name": "sig_gen_STAN_sg394_2",
                 # "uwave_power": 8.1,
                 "uwave_power": 8.3,
-                "frequency": 2.779138,  # rubin shallow NVs O1 ms=-1
+                # "frequency": 2.779138,   # rubin shallow NVs O1 ms=-1
                 # "frequency": 2.964545,  # rubin shallow NV O1 ms=+1
-                # "frequency": 2.842478,  # rubin shallow NV O3 ms=-1
+                "frequency": 2.842478,  # rubin shallow NV O3 ms=-1
                 "rabi_period": 128,
             },
         },
@@ -836,8 +836,9 @@ opx_config = {
         # "yellow_charge_readout": {"type": "constant", "sample": 0.3472},  # 50ms 117NVs
         # "yellow_charge_readout": {"type": "constant", "sample": 0.3741},  # 50ms 117NVs
         # "yellow_charge_readout": {"type": "constant", "sample": 0.325},  # 100ms 117NVs
-        # "yellow_charge_readout": {"type": "constant", "sample": 0.352407},  # 75NVs all
-        "yellow_charge_readout": {"type": "constant", "sample": 0.32350},  # 35NV/185MHz
+        # "yellow_charge_readout": {"type": "constant", "sample": 0.35240}, # 75NVs all
+        # "yellow_charge_readout": {"type": "constant", "sample": 0.32350},  # 35NV/185MHz
+        "yellow_charge_readout": {"type": "constant", "sample": 0.32238},  # 48NV/68MHz
         # "yellow_spin_pol": {"type": "constant", "sample": 0.44},  # 71 NVs
         "yellow_spin_pol": {"type": "constant", "sample": 0.42},
         "yellow_shelving": {"type": "constant", "sample": 0.33},
