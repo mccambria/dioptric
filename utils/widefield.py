@@ -14,7 +14,7 @@ import sys
 from functools import cache
 from importlib import import_module
 from pathlib import Path
-
+from datetime import datetime
 import matplotlib.patches as patches
 import matplotlib.pyplot as plt
 import numpy as np
@@ -435,6 +435,17 @@ def process_multiple_files(file_ids):
             combined_data["counts"], new_data["counts"], axis=2
         )
     return combined_data
+
+
+def combined_filename(file_ids):
+    all_file_ids_str = "_".join(map(str, file_ids))
+    now = datetime.now()
+    date_time_str = now.strftime("%Y%m%d_%H%M%S")
+    file_name = dm.get_file_name(file_id=file_ids[0])
+    file_path = dm.get_file_path(
+        __file__, file_name, f"{all_file_ids_str}_{date_time_str}"
+    )
+    return file_path
 
 
 def threshold_counts_selected_method(

@@ -131,6 +131,8 @@ def macro_polarize(
     targeted_polarization: bool = False,
     verify_charge_states: bool = False,
     spin_pol: bool = True,
+    spin_pol_duration_override: int = None,
+    spin_pol_amp_override: float = None,
 ):
     """Apply a green polarization pulse to each coordinate pair in the passed coords_list.
     Supports conditional charge-state initialization with targeted_polarization and
@@ -198,16 +200,49 @@ def macro_polarize(
     else:
         charge_pol_sub()
 
-    # Spin polarization with widefield yellow
+    ## SBC Spin polarization with include sweeping
     if spin_pol:
-        spin_pol_laser_name = tb.get_physical_laser_name(
-            VirtualLaserKey.WIDEFIELD_SPIN_POL
-        )
-        spin_pol_laser_el = get_laser_mod_element(spin_pol_laser_name)
-        buffer = get_widefield_operation_buffer()
-        qua.align()
+        macro_spin_polarize(spin_pol_duration_override, spin_pol_amp_override)
+
+    ## previous version of spin_pol
+    # if spin_pol:
+    #     spin_pol_laser_name = tb.get_physical_laser_name(
+    #         VirtualLaserKey.WIDEFIELD_SPIN_POL
+    #     )
+    #     spin_pol_laser_el = get_laser_mod_element(spin_pol_laser_name)
+    #     buffer = get_widefield_operation_buffer()
+    #     qua.align()
+    #     qua.play("spin_pol", spin_pol_laser_el)
+    #     qua.wait(buffer, spin_pol_laser_el)
+
+
+# SBC spin polarization:
+def macro_spin_polarize(duration: int = None, amp: float = None):
+    """
+    Apply a widefield yellow spin polarization pulse.
+
+    Parameters
+    ----------
+    duration : int, optional
+        Pulse duration in clock cycles (cc). Defaults to config value.
+    amp : float, optional
+        Pulse amplitude. Defaults to config value.
+    """
+    spin_pol_laser_name = tb.get_physical_laser_name(VirtualLaserKey.WIDEFIELD_SPIN_POL)
+    spin_pol_laser_el = get_laser_mod_element(spin_pol_laser_name)
+
+    if duration is None:
+        duration = get_default_spin_pol_duration()
+
+    buffer = get_widefield_operation_buffer()
+
+    qua.align()
+    if amp is not None:
+        qua.play("spin_pol" * qua.amp(amp), spin_pol_laser_el)
+    else:
         qua.play("spin_pol", spin_pol_laser_el)
-        qua.wait(buffer, spin_pol_laser_el)
+
+    qua.wait(buffer, spin_pol_laser_el)
 
 
 def macro_ionize(ion_coords_list: list[list[float]], do_target_list: list[bool] = None):
@@ -882,6 +917,13 @@ def get_default_charge_readout_duration():
     )
     readout_duration_ns = readout_laser_dict["duration"]
     return convert_ns_to_cc(readout_duration_ns)
+
+
+@cache
+def get_default_spin_pol_duration():
+    spin_pol_laser_dict = tb.get_virtual_laser_dict(VirtualLaserKey.WIDEFIELD_SPIN_POL)
+    spin_pol_duration_ns = spin_pol_laser_dict["duration"]
+    return convert_ns_to_cc(spin_pol_duration_ns)
 
 
 @cache
