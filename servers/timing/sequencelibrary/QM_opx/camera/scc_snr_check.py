@@ -29,9 +29,7 @@ def get_seq(base_scc_seq_args, num_reps=1):
         seq_utils.macro_run_aods()
 
         def uwave_macro_sig(uwave_ind_list, step_val):
-            # pass
-            #     uwave_ind_list = [0]
-            seq_utils.macro_pi_pulse(uwave_ind_list)
+            seq_utils.macro_pi_pulse(uwave_ind_list, phase=0)
             # qua.align()
             # seq_utils.macro_pi_on_2_pulse(uwave_ind_list[1:])
             # qua.wait(tau)
