@@ -21,6 +21,8 @@ def macro(
     num_reps=1,
     scc_duration_override=None,
     scc_amp_override=None,
+    spin_pol_duration_override=None,
+    spin_pol_amp_override=None,
     reference=True,
 ):
     """Base spin sequence as a QUA macro for widefield experiments with many
@@ -90,6 +92,15 @@ def macro(
     num_exps_per_rep = len(uwave_macro)
     num_nvs = len(pol_coords_list)
 
+    def macro_polarize_sub():
+        seq_utils.macro_polarize(
+            pol_coords_list,
+            duration_list=pol_duration_list,
+            amp_list=pol_amp_list,
+            spin_pol_duration_override=spin_pol_duration_override,
+            spin_pol_amp_override=spin_pol_amp_override,
+        )
+
     def macro_scc_sub(do_target_list=None):
         seq_utils.macro_scc(
             scc_coords_list,
@@ -114,9 +125,7 @@ def macro(
     ### QUA stuff
     def one_exp(rep_ind, exp_ind):
         # exp_ind = num_exps_per_rep - 1  # MCC
-        seq_utils.macro_polarize(
-            pol_coords_list, duration_list=pol_duration_list, amp_list=pol_amp_list
-        )
+        macro_polarize_sub()
         qua.align()
         skip_spin_flip = uwave_macro[exp_ind](uwave_ind_list, step_val)
         # qua variable for randomize SCC order
