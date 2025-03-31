@@ -707,21 +707,6 @@ def plots_rates_omega_gamma():
 # plt.show()
 
 
-# Combine data from multiple file IDs
-def process_multiple_files(file_ids):
-    """
-    Load and combine data from multiple file IDs.
-    """
-    combined_data = dm.get_raw_data(file_id=file_ids[0])
-    for file_id in file_ids[1:]:
-        new_data = dm.get_raw_data(file_id=file_id)
-        combined_data["num_runs"] += new_data["num_runs"]
-        combined_data["counts"] = np.append(
-            combined_data["counts"], new_data["counts"], axis=2
-        )
-    return combined_data
-
-
 # Usage Example
 if __name__ == "__main__":
     kpl.init_kplotlib()
@@ -749,27 +734,20 @@ if __name__ == "__main__":
     # selected_indices= selected_indices_68MHz
     print(selected_indices)
     #fmt: off
-    # all_file_ids_str = "_".join(map(str, file_ids))
-    # now = datetime.now()
-    # date_time_str = now.strftime("%Y%m%d_%H%M%S")
-    # file_name = dm.get_file_name(file_id=file_ids[0])
-    # timestamp = dm.get_time_stamp()
-    # file_path = dm.get_file_path(
-    #     __file__, file_name, f"{all_file_ids_str}_{date_time_str}"
-    # )
-    # print(f"File path: {file_path}")
-    # data = process_multiple_files(file_ids)
+    file_path, all_file_ids_str = widefield.combined_filename(file_ids)
+    print(f"File path: {file_path}")
+    data = widefield.process_multiple_files(file_ids)
     # data = dm.get_raw_data(file_id=1550610460299)  # Example file ID
-    # (
-    #     fit_params,
-    #     fit_functions,
-    #     residuals,
-    #     taus,
-    #     norm_counts,
-    #     norm_counts_ste,
-    #     nv_list,
-    #     fit_errors,
-    # ) = process_and_fit_data(data, use_double_fit=False, selected_indices=selected_indices)
+    (
+        fit_params,
+        fit_functions,
+        residuals,
+        taus,
+        norm_counts,
+        norm_counts_ste,
+        nv_list,
+        fit_errors,
+    ) = process_and_fit_data(data, use_double_fit=False, selected_indices=selected_indices)
     # plot_fitted_data(
     #     nv_list,
     #     taus,

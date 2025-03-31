@@ -445,7 +445,7 @@ def combined_filename(file_ids):
     file_path = dm.get_file_path(
         __file__, file_name, f"{all_file_ids_str}_{date_time_str}"
     )
-    return file_path
+    return file_path, all_file_ids_str
 
 
 def threshold_counts_selected_method(

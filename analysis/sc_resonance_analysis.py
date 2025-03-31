@@ -337,6 +337,7 @@ def plot_nv_resonance_fits_and_residuals(
     # return
 
     filter_nvs = True
+    # filter_nvs = False
     if filter_nvs:
         # target_peak_values = [0.025, 0.068, 0.146, 0.185]
         target_peak_values = [0.068, 0.185]
