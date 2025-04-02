@@ -1077,7 +1077,7 @@ if __name__ == "__main__":
     # magnet_angle = 90
     date_str = "2025_02_26"
     sample_coords = [-0.4, 2.0]
-    z_coord = 0.8
+    z_coord = 1.0
 
     # Load NV pixel coordinates1
     pixel_coords_list = load_nv_coords(
@@ -1134,15 +1134,15 @@ if __name__ == "__main__":
     # ]
     # green_coords_list = [
     #     [107.752, 107.695],
-    #     [119.22, 96.159],
-    #     [107.075, 118.329],
-    #     [96.758, 94.793],
+    #     [119.216, 96.155],
+    #     [107.042, 118.326],
+    #     [96.737, 94.794],
     # ]
     # red_coords_list = [
     #     [72.468, 73.212],
-    #     [81.566, 63.706],
-    #     [72.149, 81.87],
-    #     [63.223, 62.829],
+    #     [81.562, 63.703],
+    #     [72.122, 81.868],
+    #     [63.206, 62.83],
     # ]
 
     num_nvs = len(pixel_coords_list)
@@ -1220,14 +1220,14 @@ if __name__ == "__main__":
     # print([pol_duration_list[ind] for ind in include_indices])
     # sys.exit()
 
-    # arranged_scc_amp_list = [None] * num_nvs
+    arranged_scc_amp_list = [None] * num_nvs
     arranged_scc_duration_list = [None] * num_nvs
     arranged_pol_duration_list = [None] * len(pol_duration_list)
     for i, idx in enumerate(selected_indices_68MHz):
         arranged_scc_duration_list[idx] = scc_duration_list[i]
         arranged_pol_duration_list[idx] = pol_duration_list[i]
         # arranged_scc_amp_list[idx] = scc_amp_list[i]
-    # # # Assign back to original lists
+    # # # # Assign back to original lists
     scc_duration_list = arranged_scc_duration_list
     pol_duration_list = arranged_pol_duration_list
     # scc_amp_list = arranged_scc_amp_list
@@ -1291,8 +1291,8 @@ if __name__ == "__main__":
     pol_duration_list = [
         4 * round(el / 4) if el is not None else None for el in pol_duration_list
     ]
-    print(f"First 10 SCC durations: {scc_duration_list[:10]}")
-    print(f"First 10 POL durations: {pol_duration_list[:10]}")
+    print(f"First 10 SCC durations: {len(scc_duration_list)}")
+    print(f"First 10 POL durations: {len(pol_duration_list)}")
 
     # scc_amp_list = [1.0] * num_nvs
     # scc_duration_list = [112] * num_nvs

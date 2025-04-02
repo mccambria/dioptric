@@ -8,20 +8,19 @@ Created on November 29th, 2023
 """
 
 import time
-import numpy as np
 
-import matplotlib.ticker as ticker
 import matplotlib.pyplot as plt
+import matplotlib.ticker as ticker
 import numpy as np
-from scipy.optimize import curve_fit
 import seaborn as sns
+from scipy.optimize import curve_fit, least_squares
+
 import utils.tool_belt as tb
 from majorroutines.widefield import base_routine
 from utils import data_manager as dm
 from utils import kplotlib as kpl
 from utils import widefield
 from utils import widefield as widefield
-from scipy.optimize import least_squares
 
 
 def stretched_exp(tau, a, t2, n, b):
@@ -299,7 +298,7 @@ def process_and_plot_xy8(nv_list, taus, norm_counts, norm_counts_ste):
 
     ### plot all
     sns.set(style="whitegrid")
-    num_cols = 7
+    num_cols = 8
     num_nvs = len(nv_list)
     num_rows = int(np.ceil(num_nvs / num_cols))
     # Full plot
@@ -630,13 +629,18 @@ if __name__ == "__main__":
     #     1818240906171,
     # ]
     # 186MHz orientation
+    # file_ids = [
+    #     1818816006504,
+    #     1818985247947,
+    #     1819154094977,
+    #     1819318427055,
+    #     1819466247867,
+    #     1819611450115,
+    # ]
+
     file_ids = [
-        1818816006504,
-        1818985247947,
-        1819154094977,
-        1819318427055,
-        1819466247867,
-        1819611450115,
+        1820151354472,
+        1820301119952,
     ]
     file_path, all_file_ids_str = widefield.combined_filename(file_ids)
     print(f"File name: {file_path}")

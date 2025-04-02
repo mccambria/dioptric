@@ -62,12 +62,25 @@ def get_seq(base_scc_seq_args, step_vals, num_reps=1):
             seq_utils.macro_pi_on_2_pulse(uwave_ind_list, phase=0)
             qua.wait(buffer)
 
+        # SBC this test to compare with other dual rail ref
+        def uwave_macro_ref(uwave_ind_list, step_val):
+            qua.align()
+            qua.wait(step_val)
+            for i in range(len(xy8_phases)):
+                if i < len(xy8_phases) - 1:
+                    qua.wait(2 * step_val)  # 2τ between πs
+                else:
+                    qua.wait(step_val)  # τ after last would-be π
+
+            qua.wait(buffer)
+
         with qua.for_each_(step_val, step_vals):
             base_scc_sequence.macro(
                 base_scc_seq_args,
-                [uwave_macro_sig],
+                [uwave_macro_sig, uwave_macro_ref],
                 step_val,
                 num_reps,
+                reference=False,
             )
 
     seq_ret_vals = []
