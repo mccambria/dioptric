@@ -90,7 +90,6 @@ def create_fit_figure(nv_list, phis, norm_counts, norm_counts_ste):
 
 def main(nv_list, num_steps, num_reps, num_runs, min_phi, max_phi, uwave_ind_list):
     ### Some initial setup
-
     pulse_gen = tb.get_server_pulse_gen()
     seq_file = "spin_echo_phase_scan.py"
     phi_list = np.linspace(0, 2 * np.pi, num_steps)

@@ -189,7 +189,7 @@ def process_and_plot_xy8(nv_list, taus, norm_counts, norm_counts_ste):
             T2_errs.append(param_errors[1])
             T2 = round(popt[1], 1)
             n = round(popt[2], 2)
-            print(f"NV {nv_ind} - T2 = {T2} ns, n = {n}, χ² = {red_chi_sq:.2f}")
+            print(f"NV {nv_ind} - T2 = {T2} us, n = {n}, χ² = {red_chi_sq:.2f}")
         except Exception as e:
             print(f"NV {nv_ind} fit failed: {e}")
             # continue
@@ -227,12 +227,26 @@ def process_and_plot_xy8(nv_list, taus, norm_counts, norm_counts_ste):
         # plt.show(block=True)
         # Convert T2 from ns → µs for plotting
     ## plot T2
+    # Define outliers
+    # outlier_indices = [0, 10, 36]
+
+    # Create a copy of T2_list for plotting with clipped or masked values
+    T2_list_plot = T2_list.copy()
+    T2_clipped_vals = []
+
+    # Replace outlier T2s with np.nan or a capped value for visualization
+    # for i in outlier_indices:
+    #     T2_clipped_vals.append(T2_list_plot[i])
+    #     T2_list_plot[i] = np.nan  # or use: T2_list_plot[i] = np.percentile(T2_list, 95)
+
     median_T2_us = np.median(T2_list)
     nv_indices = np.arange(num_nvs)
+
+    ###plot
     fig, ax = plt.subplots(figsize=(6, 5))
     scatter = ax.scatter(
         nv_indices,
-        T2_list,
+        T2_list_plot,
         c=chi2_list,
         s=40,
         edgecolors="blue",
@@ -241,7 +255,7 @@ def process_and_plot_xy8(nv_list, taus, norm_counts, norm_counts_ste):
     if T2_errs is not None:
         ax.errorbar(
             nv_indices,
-            T2_list,
+            T2_list_plot,
             yerr=T2_errs,
             fmt="none",
             ecolor="gray",
@@ -288,7 +302,7 @@ def process_and_plot_xy8(nv_list, taus, norm_counts, norm_counts_ste):
     ax.set_ylabel("T2 (µs)", fontsize=15)
     ax.tick_params(axis="both", which="major", labelsize=15)
     # ax.set_yscale("log")
-    ax.set_title("T2 per NV from XY8 Fits", fontsize=15)
+    ax.set_title("T2 per NV (XY8-1, 185 MHz Orientation)", fontsize=15)
     ax.grid(True, which="both", ls="--", alpha=0.6)
     cbar = plt.colorbar(scatter, ax=ax, pad=0.02)
     cbar.set_label("Reduced χ²", fontsize=15)
@@ -368,7 +382,7 @@ def process_and_plot_xy8(nv_list, taus, norm_counts, norm_counts_ste):
 
                     # Apply ticks
                     tick_positions = np.logspace(
-                        np.log10(taus[0]), np.log10(taus[-1] - 1), 4
+                        np.log10(taus[0]), np.log10(taus[-1] - 2), 4
                     )
                     ax.set_xticks(tick_positions)
                     ax.set_xticklabels(
@@ -379,13 +393,16 @@ def process_and_plot_xy8(nv_list, taus, norm_counts, norm_counts_ste):
                     for label in ax.get_xticklabels():
                         label.set_y(0.08)
                     # Label
+                    ax.set_xlim(taus[0] - 0.4, taus[-1])
                     ax.set_xlabel("Time (μs)", fontsize=11, labelpad=1)
                     break  # Done for this column
 
     fig.text(
         0.005, 0.5, "NV$^{-}$ Population", va="center", rotation="vertical", fontsize=11
     )
-    fig.suptitle(f"XY8 fits for T2 ({all_file_ids_str})", fontsize=12)
+    fig.suptitle(
+        f"XY8-1 T2 Fits (185 MHz Orientation - {all_file_ids_str})", fontsize=12
+    )
     fig.tight_layout(pad=0.4, rect=[0.01, 0.01, 0.99, 0.99])
     plt.show(block=True)
 
@@ -620,7 +637,7 @@ def plot_fitted_data(
 if __name__ == "__main__":
     kpl.init_kplotlib()
 
-    # 68MHz orientation
+    # 68MHz orientation --> spacing is not logrithmic
     # file_ids = [
     #     1818535967472,
     #     1818490062733,
@@ -628,25 +645,32 @@ if __name__ == "__main__":
     #     1818371630370,
     #     1818240906171,
     # ]
-    # 186MHz orientation
-    # file_ids = [
-    #     1818816006504,
-    #     1818985247947,
-    #     1819154094977,
-    #     1819318427055,
-    #     1819466247867,
-    #     1819611450115,
-    # ]
 
+    # 185MHz orientation
     file_ids = [
-        1820151354472,
-        1820301119952,
+        1818816006504,
+        1818985247947,
+        1819154094977,
+        1819318427055,
+        1819466247867,
+        1819611450115,
     ]
+    # 68MHz orientation
+    # file_ids = [
+    #     1820856154901,
+    #     1820741644537,
+    #     1820575030849,
+    #     1820447821240,
+    #     1820301119952,
+    #     1820151354472,
+    # ]
     file_path, all_file_ids_str = widefield.combined_filename(file_ids)
     print(f"File name: {file_path}")
     raw_data = widefield.process_multiple_files(file_ids)
     nv_list = raw_data["nv_list"]
-    taus = np.array(raw_data["taus"]) / 1e3  # τ values (in us)
+    taus = 2 * np.array(raw_data["taus"]) / 1e3  # τ values (in us)
+    # taus = 2 * np.array(raw_data["taus"]) / 2e3  # τ values (in us)
+    # taus = 2 * 8 * taus
     counts = np.array(raw_data["counts"])  # shape: (2, num_nvs, num_steps)
     sig_counts = counts[0]
     ref_counts = counts[1]

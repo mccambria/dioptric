@@ -428,8 +428,12 @@ def process_multiple_files(file_ids):
 
     """
     combined_data = dm.get_raw_data(file_id=file_ids[0])
+    counts = np.array(combined_data["counts"])
+    print(f"combined data shape : {counts.shape}")
     for file_id in file_ids[1:]:
         new_data = dm.get_raw_data(file_id=file_id)
+        new_counts = np.array(new_data["counts"])
+        print(f"new data shape : {new_counts.shape}")
         combined_data["num_runs"] += new_data["num_runs"]
         combined_data["counts"] = np.append(
             combined_data["counts"], new_data["counts"], axis=2
