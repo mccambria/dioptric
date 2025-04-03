@@ -403,9 +403,12 @@ def process_counts(nv_list, sig_counts, ref_counts=None, threshold=True):
     _validate_counts_structure(sig_counts)
     _validate_counts_structure(ref_counts)
     if threshold:
-        sig_counts, ref_counts = threshold_counts(
-            nv_list, sig_counts, ref_counts, dynamic_thresh=True
-        )
+        if ref_counts is not None:
+            sig_counts, ref_counts = threshold_counts(
+                nv_list, sig_counts, ref_counts, dynamic_thresh=True
+            )
+        else:
+            sig_counts = threshold_counts(nv_list, sig_counts, dynamic_thresh=True)
     avg_counts, avg_counts_ste, norms = average_counts(sig_counts, ref_counts)
 
     if ref_counts is None:

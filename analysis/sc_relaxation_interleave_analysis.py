@@ -97,7 +97,7 @@ def process_and_fit_data(data, use_double_fit=False, selected_indices=None):
     norm_counts = [norm_counts[ind] for ind in selected_indices]
     norm_counts_ste = [norm_counts_ste[ind] for ind in selected_indices]
 
-    fit_params, fit_functions, residuals, param_errors = [], [], [], []
+    fit_params, fit_functions, residuals, param_errors, contrasts = [], [], [], [], []
 
     for nv_idx in range(len(nv_list)):
         nv_counts = gaussian_filter1d(
@@ -707,6 +707,22 @@ def plots_rates_omega_gamma():
 # plt.show()
 
 
+def plot_contrast(nv_list, fit_params):
+    nv_indices = np.arange(len(nv_list))
+    contrast_list = fit_params[:, 0]
+    print(f"contrst_list = {list(contrast_list)}")
+    fig, ax = plt.subplots(figsize=(6, 5))
+    nv_indices = np.array(nv_indices)
+    ax.bar(nv_indices, contrast_list, color="teal", edgecolor="k")
+    ax.set_xlabel("NV Index", fontsize=14)
+    ax.set_ylabel("Contrast", fontsize=14)
+    ax.set_title("XY8 Fit Contrast per NV", fontsize=15)
+    ax.tick_params(labelsize=12)
+    plt.grid(True, linestyle="--", alpha=0.5)
+    plt.tight_layout()
+    plt.show()
+
+
 # Usage Example
 if __name__ == "__main__":
     kpl.init_kplotlib()
@@ -748,6 +764,9 @@ if __name__ == "__main__":
         nv_list,
         fit_errors,
     ) = process_and_fit_data(data, use_double_fit=False, selected_indices=selected_indices)
+    offset_list = fit_params[:, 2]
+    print(f"contrst_list = {list(offset_list)}")
+    # plot_contrast(nv_list, fit_params)
     # plot_fitted_data(
     #     nv_list,
     #     taus,
@@ -770,5 +789,5 @@ if __name__ == "__main__":
     #     fit_params,
     #     fit_errors,
     # )
-    plots_rates_omega_gamma()
+    # plots_rates_omega_gamma()
     kpl.show(block=True)
