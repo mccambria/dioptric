@@ -8,6 +8,8 @@ Created on November 29th, 2023
 """
 
 import time
+
+import matplotlib.pyplot as plt
 import numpy as np
 import sys
 import matplotlib.ticker as ticker
@@ -15,15 +17,15 @@ from matplotlib.ticker import FormatStrFormatter
 
 import matplotlib.pyplot as plt
 import numpy as np
-from scipy.optimize import curve_fit
 import seaborn as sns
+from scipy.optimize import curve_fit, least_squares
+
 import utils.tool_belt as tb
 from majorroutines.widefield import base_routine
 from utils import data_manager as dm
 from utils import kplotlib as kpl
 from utils import widefield
 from utils import widefield as widefield
-from scipy.optimize import least_squares
 
 
 def stretched_exp(tau, a, t2, n, b):
@@ -324,6 +326,7 @@ def process_and_plot_xy8(nv_list, taus, norm_counts, norm_counts_ste):
 
     ### plot all
     sns.set(style="whitegrid")
+    num_cols = 8
     num_cols = 8
     num_nvs = len(nv_list)
     num_rows = int(np.ceil(num_nvs / num_cols))
