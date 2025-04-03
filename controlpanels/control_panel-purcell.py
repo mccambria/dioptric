@@ -46,7 +46,7 @@ from majorroutines.widefield import (
     spin_echo,
     spin_echo_phase_scan_test,
     spin_pol_check,
-    xy8,
+    xy,
 )
 
 # from slmsuite import optimize_slm_calibration
@@ -662,18 +662,25 @@ def do_ramsey(nv_list):
     ramsey.main(nv_list, num_steps, num_reps, num_runs, min_tau, max_tau, detuning)
 
 
-def do_xy8(nv_list):
+def do_xy(nv_list, xy_seq="xy8"):
     min_tau = 1e3
     max_tau = 1e6 + min_tau
     num_steps = 24
     num_reps = 10
     uwave_ind_list = [1]  # iq modulated
-    num_runs = 200
-    # num_runs = 6
+    num_runs = 600
+    # num_runs = 2
     # xy8.main(nv_list, num_steps, num_reps, num_runs, min_tau, max_tau, uwave_ind_list)
-    for _ in range(6):
-        xy8.main(
-            nv_list, num_steps, num_reps, num_runs, min_tau, max_tau, uwave_ind_list
+    for _ in range(2):
+        xy.main(
+            nv_list,
+            num_steps,
+            num_reps,
+            num_runs,
+            min_tau,
+            max_tau,
+            uwave_ind_list,
+            xy_seq,
         )
 
 
@@ -1133,16 +1140,16 @@ if __name__ == "__main__":
     #     [227.438, 19.199],
     # ]
     # green_coords_list = [
-    #     [107.752, 107.695],
-    #     [119.216, 96.155],
-    #     [107.042, 118.326],
-    #     [96.737, 94.794],
+    #     [107.769, 107.623],
+    #     [119.24, 96.109],
+    #     [107.042, 118.295],
+    #     [96.743, 94.744],
     # ]
     # red_coords_list = [
-    #     [72.468, 73.212],
-    #     [81.562, 63.703],
-    #     [72.122, 81.868],
-    #     [63.206, 62.83],
+    #     [72.499, 73.157],
+    #     [81.581, 63.665],
+    #     [72.121, 81.843],
+    #     [63.21, 62.79],
     # ]
 
     num_nvs = len(pixel_coords_list)
@@ -1500,11 +1507,13 @@ if __name__ == "__main__":
         # do_ramsey(nv_list)
         # do_sq_relaxation(nv_list)
         # do_dq_relaxation(nv_list)
-        do_xy8(nv_list)
         # do_detect_cosmic_rays(nv_list)
         # do_check_readout_fidelity(nv_list)
         # do_charge_quantum_jump(nv_list)
         # do_ac_stark(nv_list)
+
+        # AVAILABLE_XY = ["hahn", "xy2", "xy4", "xy8", "xy16"]
+        do_xy(nv_list, xy_seq="xy4")
 
         # do_opx_constant_ac()
         # do_opx_square_wave()

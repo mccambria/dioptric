@@ -32,6 +32,17 @@ def get_seq(base_scc_seq_args, step_vals, num_reps=1):
         seq_utils.convert_ns_to_cc(el) - macro_pi_pulse_duration for el in step_vals
     ]
     # Define XY8 pulse phase sequence (in radians)
+    # Define XY pulse phase sequence (in radians)
+    # xy2_phases = [
+    #     0,  # π_X
+    #     np.pi / 2,  # π_Y
+    # ]
+    # xy4_phases = [
+    #     0,  # π_X
+    #     np.pi / 2,  # π_Y
+    #     0,  # π_X
+    #     np.pi / 2,  # π_Y
+    # ]
     xy8_phases = [
         0,  # π_X
         np.pi / 2,  # π_Y
@@ -42,6 +53,24 @@ def get_seq(base_scc_seq_args, step_vals, num_reps=1):
         np.pi / 2,  # π_Y
         0,  # π_X
     ]
+    # xy16_phases = [
+    #     0,  # π_X
+    #     np.pi / 2,  # π_Y
+    #     0,  # π_X
+    #     np.pi / 2,  # π_Y
+    #     np.pi / 2,  # π_Y
+    #     0,  # π_X
+    #     np.pi / 2,  # π_Y
+    #     0,  # π_X
+    #     0,  # π_X
+    #     -np.pi / 2,  # -π_Y
+    #     0,  # π_X
+    #     -np.pi / 2,  # -π_Y
+    #     -np.pi / 2,  # -π_Y
+    #     0,  # π_X
+    #     -np.pi / 2,  # -π_Y
+    #     0,  # π_X
+    # ]
     with qua.program() as seq:
         seq_utils.init()
         seq_utils.macro_run_aods()
