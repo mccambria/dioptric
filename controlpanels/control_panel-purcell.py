@@ -669,18 +669,78 @@ def do_xy(nv_list, xy_seq="xy8"):
     num_reps = 10
     uwave_ind_list = [1]  # iq modulated
     num_runs = 600
+
+    # taus calculation
+    # taus = np.linspace(min_tau, max_tau, num_steps)
+    # taus = np.geomspace(1 / num_steps, 1, num_steps)
+    # taus = (taus - taus[0]) / (taus[-1] - taus[0])  # normalize 0 → 1
+    # taus = taus * (max_tau - min_tau) + min_tau
+    # taus = [round(el / 4) * 4 for el in taus]
+    # taus = hybrid_tau_spacing(min_tau, max_tau, num_steps, log_frac=0.6)
+
+    def generate_log_spaced_taus(min_tau, max_tau, num_steps, base=4):
+        taus = np.logspace(np.log10(min_tau), np.log10(max_tau), num_steps)
+        taus = np.floor(taus / base) * base
+        return taus
+
+    taus = generate_log_spaced_taus(min_tau, max_tau, num_steps, base=4)
     # num_runs = 2
-    # xy8.main(nv_list, num_steps, num_reps, num_runs, min_tau, max_tau, uwave_ind_list)
+    # xy8.main(nv_list, num_steps, num_reps, num_runs, taus , uwave_ind_list)
     for _ in range(2):
         xy.main(
             nv_list,
             num_steps,
             num_reps,
             num_runs,
-            min_tau,
-            max_tau,
+            taus,
             uwave_ind_list,
             xy_seq,
+        )
+
+
+def do_xy_dense(nv_list, xy_seq="xy8"):
+    # Revival-based τ selection (targeting 13C collapse and first revival only)
+    revival_period = int(51.5e3 / 2)  # ~25.75 µs for 37 G
+    min_tau = 200  # ns
+    taus = []
+    revival_width = 5e3  # ns = 5 µs width around revival
+
+    # 1. Initial decay region
+    decay = np.linspace(min_tau, min_tau + revival_width, 6)
+    taus.extend(decay.tolist())
+
+    # 2. Gap region between decay and first revival
+    gap = np.linspace(min_tau + revival_width, revival_period - revival_width, 7)
+    taus.extend(gap[1:-1].tolist())
+
+    # 3. First revival region
+    first_revival = np.linspace(
+        revival_period - revival_width, revival_period + revival_width, 61
+    )
+    taus.extend(first_revival.tolist())
+
+    # Round taus to nearest multiple of 4 ns (if required by timing resolution)
+    taus = [round(el / 4) * 4 for el in taus]
+
+    # Remove duplicates and sort
+    taus = sorted(set(taus))
+
+    # Experiment parameters
+    num_steps = len(taus)
+    num_reps = 2
+    num_runs = 600
+    uwave_ind_list = [1]  # IQ-modulated channel index
+
+    # Run the experiment
+    for _ in range(2):
+        xy.main(
+            nv_list,
+            num_steps,
+            num_reps,
+            num_runs,
+            taus=taus,
+            uwave_ind_list=uwave_ind_list,
+            xy_seq=xy_seq,
         )
 
 
@@ -1513,7 +1573,8 @@ if __name__ == "__main__":
         # do_ac_stark(nv_list)
 
         # AVAILABLE_XY = ["hahn", "xy2", "xy4", "xy8", "xy16"]
-        do_xy(nv_list, xy_seq="xy4")
+        do_xy(nv_list, xy_seq="xy16")
+        # do_xy_dense(nv_list, xy_seq="xy8")
 
         # do_opx_constant_ac()
         # do_opx_square_wave()

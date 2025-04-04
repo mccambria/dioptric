@@ -110,8 +110,7 @@ def main(
     num_steps,
     num_reps,
     num_runs,
-    min_tau,
-    max_tau,
+    taus,
     uwave_ind_list,
     xy_seq,
 ):
@@ -171,8 +170,6 @@ def main(
         "timestamp": timestamp,
         "taus": taus,
         "tau-units": "ns",
-        "min_tau": max_tau,
-        "max_tau": max_tau,
         "xy_seq": xy_seq,
     }
 
