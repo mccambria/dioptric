@@ -345,7 +345,10 @@ def process_and_plot(data):
     distance = df["Distance"]
     snr = df["SNR"]
     yerr = df["SNR STE"]
-    indices_to_remove = [18, 35, 56]
+
+    # indices_to_remove = [ind for ind in range(len(snr)) if snr[ind] < 0.05]
+    indices_to_remove = []
+    print(indices_to_remove)
     selected_indices = [ind for ind in range(num_nvs) if ind not in indices_to_remove]
     distance = [distance[ind] for ind in selected_indices]
     snr = [snr[ind] for ind in selected_indices]
@@ -385,6 +388,21 @@ if __name__ == "__main__":
     file_id = 1808307867614
     file_id = 1808261754113
     file_id = 1808216414257
+
+    # file_id = 1809068442975
+    # file_id = 1809075570936
+    file_id = 1809453810157
+    # file_id = 1809507194286
+    file_id = 1809558487107
+    file_id = 1809589650041
+    file_id = 1809068442975
+    # file_id =ValueError 1809075570936
+    file_id = 1809168832402
+    # file_id = 1809192678440
+    # otu of 75 NVs these are NVs selected based on orientation
+    # file_id = 1819822931940  # 185MHz splitting
+    file_id = 1819995258302  # 68MHz splitting
+
     data = dm.get_raw_data(file_id=file_id)
     file_name = dm.get_file_name(file_id=file_id)
     print(f"{file_name}_{file_id}")

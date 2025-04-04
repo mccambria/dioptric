@@ -5,6 +5,9 @@ Widefield ESR
 Created on October 13th, 2023
 
 @author: mccambria
+
+Modified on March 22th, 2025
+@author: saroj chand
 """
 
 import matplotlib.pyplot as plt
@@ -22,25 +25,79 @@ def get_seq(base_scc_seq_args, step_vals, num_reps=1):
     macro_pi_on_2_pulse_duration = seq_utils.get_macro_pi_on_2_pulse_duration(
         uwave_ind_list
     )
+
+    # Protect against negative wait values
     step_vals = [
-        seq_utils.convert_ns_to_cc(el) - macro_pi_on_2_pulse_duration
+        max(0, seq_utils.convert_ns_to_cc(el) - macro_pi_on_2_pulse_duration)
         for el in step_vals
     ]
 
     with qua.program() as seq:
+        ### init
+        seq_utils.init()
+        seq_utils.macro_run_aods()
 
+        step_val = qua.declare(int)
+
+        # Signal: π/2 – wait – π/2
         def uwave_macro_sig(uwave_ind_list, step_val):
             qua.align()
             seq_utils.macro_pi_on_2_pulse(uwave_ind_list)
-            with qua.if_(step_val > 0):
-                qua.wait(step_val)
+            # with qua.if_(step_val > 0):
+            qua.wait(step_val)
             seq_utils.macro_pi_on_2_pulse(uwave_ind_list)
             qua.wait(buffer)
 
-        base_scc_sequence.macro(base_scc_seq_args, uwave_macro_sig, step_vals, num_reps)
+        # Reference: just wait
+        def uwave_macro_ref(uwave_ind_list, step_val):
+            qua.align()
+            qua.wait(step_val + 2 * macro_pi_on_2_pulse_duration)
 
-    seq_ret_vals = []
-    return seq, seq_ret_vals
+        with qua.for_each_(step_val, step_vals):
+            base_scc_sequence.macro(
+                base_scc_seq_args,
+                [uwave_macro_sig, uwave_macro_ref],
+                step_val,
+                num_reps=num_reps,
+                reference=False,
+            )
+
+    return seq, step_vals
+
+
+# def get_seq(base_scc_seq_args, step_vals, num_reps=1):
+#     buffer = seq_utils.get_widefield_operation_buffer()
+#     uwave_ind_list = base_scc_seq_args[-1]
+#     macro_pi_on_2_pulse_duration = seq_utils.get_macro_pi_on_2_pulse_duration(
+#         uwave_ind_list
+#     )
+#     step_vals = [
+#         seq_utils.convert_ns_to_cc(el) - macro_pi_on_2_pulse_duration
+#         for el in step_vals
+#     ]
+
+#     with qua.program() as seq:
+#         ### init
+#         seq_utils.init()
+#         seq_utils.macro_run_aods()
+
+#         def uwave_macro_sig(uwave_ind_list, step_val):
+#             qua.align()
+#             seq_utils.macro_pi_on_2_pulse(uwave_ind_list)
+#             with qua.if_(step_val > 0):
+#                 qua.wait(step_val)
+#             seq_utils.macro_pi_on_2_pulse(uwave_ind_list)
+#             qua.wait(buffer)
+
+#         base_scc_sequence.macro(
+#             base_scc_seq_args,
+#             uwave_macro_sig,
+#             step_vals,
+#             num_reps,
+#         )
+
+#     seq_ret_vals = []
+#     return seq, seq_ret_vals
 
 
 if __name__ == "__main__":

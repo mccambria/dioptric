@@ -12,6 +12,7 @@ import logging
 import time
 from functools import cache
 
+import numpy as np
 from qm import qua
 
 from utils import common
@@ -130,6 +131,8 @@ def macro_polarize(
     targeted_polarization: bool = False,
     verify_charge_states: bool = False,
     spin_pol: bool = True,
+    spin_pol_duration_override: int = None,
+    spin_pol_amp_override: float = None,
 ):
     """Apply a green polarization pulse to each coordinate pair in the passed coords_list.
     Supports conditional charge-state initialization with targeted_polarization and
@@ -197,16 +200,49 @@ def macro_polarize(
     else:
         charge_pol_sub()
 
-    # Spin polarization with widefield yellow
+    ## SBC Spin polarization with include sweeping
     if spin_pol:
-        spin_pol_laser_name = tb.get_physical_laser_name(
-            VirtualLaserKey.WIDEFIELD_SPIN_POL
-        )
-        spin_pol_laser_el = get_laser_mod_element(spin_pol_laser_name)
-        buffer = get_widefield_operation_buffer()
-        qua.align()
+        macro_spin_polarize(spin_pol_duration_override, spin_pol_amp_override)
+
+    ## previous version of spin_pol
+    # if spin_pol:
+    #     spin_pol_laser_name = tb.get_physical_laser_name(
+    #         VirtualLaserKey.WIDEFIELD_SPIN_POL
+    #     )
+    #     spin_pol_laser_el = get_laser_mod_element(spin_pol_laser_name)
+    #     buffer = get_widefield_operation_buffer()
+    #     qua.align()
+    #     qua.play("spin_pol", spin_pol_laser_el)
+    #     qua.wait(buffer, spin_pol_laser_el)
+
+
+# SBC spin polarization:
+def macro_spin_polarize(duration: int = None, amp: float = None):
+    """
+    Apply a widefield yellow spin polarization pulse.
+
+    Parameters
+    ----------
+    duration : int, optional
+        Pulse duration in clock cycles (cc). Defaults to config value.
+    amp : float, optional
+        Pulse amplitude. Defaults to config value.
+    """
+    spin_pol_laser_name = tb.get_physical_laser_name(VirtualLaserKey.WIDEFIELD_SPIN_POL)
+    spin_pol_laser_el = get_laser_mod_element(spin_pol_laser_name)
+
+    if duration is None:
+        duration = get_default_spin_pol_duration()
+
+    buffer = get_widefield_operation_buffer()
+
+    qua.align()
+    if amp is not None:
+        qua.play("spin_pol" * qua.amp(amp), spin_pol_laser_el)
+    else:
         qua.play("spin_pol", spin_pol_laser_el)
-        qua.wait(buffer, spin_pol_laser_el)
+
+    qua.wait(buffer, spin_pol_laser_el)
 
 
 def macro_ionize(ion_coords_list: list[list[float]], do_target_list: list[bool] = None):
@@ -331,29 +367,64 @@ def macro_charge_state_readout(duration: int = None, amp: float = None):
     qua.ramp_to_zero(camera_el)
 
 
-def macro_pi_pulse(uwave_ind_list, duration_cc=None):
+def macro_pi_pulse(uwave_ind_list, duration_cc=None, phase=None):
+    _macro_uwave_pulse(
+        uwave_ind_list, pulse_name="pi_pulse", duration_cc=duration_cc, phase=phase
+    )
+
+
+def macro_pi_on_2_pulse(uwave_ind_list, duration_cc=None, phase=None):
+    _macro_uwave_pulse(
+        uwave_ind_list, pulse_name="pi_on_2_pulse", duration_cc=duration_cc, phase=phase
+    )
+
+
+def _macro_uwave_pulse(
+    uwave_ind_list, pulse_name="pi_pulse", duration_cc=None, phase=None
+):
     if uwave_ind_list is None:
         return
+
     uwave_buffer = get_uwave_buffer()
+    iq_buffer = get_iq_buffer()
+
     for uwave_ind in uwave_ind_list:
         sig_gen_el = get_sig_gen_element(uwave_ind)
+        if phase is not None:
+            i_el = get_sig_gen_i_element(uwave_ind)
+            q_el = get_sig_gen_q_element(uwave_ind)
+            if np.isscalar(phase):
+                phase = qua.declare(qua.fixed, phase)
+            i_comp = qua.Math.cos(phase)
+            q_comp = qua.Math.sin(phase)
+
         qua.align()
+
         if duration_cc is None:
-            qua.play("pi_pulse", sig_gen_el)
+            if phase is not None:
+                qua.play(pulse_name * qua.amp(i_comp), i_el)
+                qua.play(pulse_name * qua.amp(q_comp), q_el)
+                qua.wait(iq_buffer, sig_gen_el)
+            qua.play(pulse_name, sig_gen_el)
+
         else:
             with qua.if_(duration_cc > 0):
-                qua.play("pi_pulse", sig_gen_el, duration=duration_cc)
-        qua.wait(uwave_buffer, sig_gen_el)
+                if phase is not None:
+                    iq_duration_cc = duration_cc + 2 * iq_buffer
+                    qua.play(
+                        pulse_name * qua.amp(i_comp),
+                        i_el,
+                        duration=iq_duration_cc,
+                    )
+                    qua.play(
+                        pulse_name * qua.amp(q_comp),
+                        q_el,
+                        duration=iq_duration_cc,
+                    )
+                    qua.wait(iq_buffer, sig_gen_el)
+                qua.play(pulse_name, sig_gen_el, duration=duration_cc)
 
-
-def macro_pi_on_2_pulse(uwave_ind_list):
-    if uwave_ind_list is None:
-        return
-    uwave_buffer = get_uwave_buffer()
-    for uwave_ind in uwave_ind_list:
-        sig_gen_el = get_sig_gen_element(uwave_ind)
         qua.align()
-        qua.play("pi_on_2_pulse", sig_gen_el)
         qua.wait(uwave_buffer, sig_gen_el)
 
 
@@ -849,6 +920,13 @@ def get_default_charge_readout_duration():
 
 
 @cache
+def get_default_spin_pol_duration():
+    spin_pol_laser_dict = tb.get_virtual_laser_dict(VirtualLaserKey.WIDEFIELD_SPIN_POL)
+    spin_pol_duration_ns = spin_pol_laser_dict["duration"]
+    return convert_ns_to_cc(spin_pol_duration_ns)
+
+
+@cache
 def get_default_pulse_duration():
     """Get the default OPX pulse duration in units of clock cycles"""
     return get_common_duration_cc("default_pulse_duration")
@@ -867,6 +945,11 @@ def get_widefield_operation_buffer():
 @cache
 def get_uwave_buffer():
     return get_common_duration_cc("uwave_buffer")
+
+
+@cache
+def get_iq_buffer():
+    return get_common_duration_cc("iq_buffer")
 
 
 @cache
@@ -898,6 +981,24 @@ def get_sig_gen_element(uwave_ind=0):
     virtual_sig_gen_dict = tb.get_virtual_sig_gen_dict(uwave_ind)
     sig_gen_name = virtual_sig_gen_dict["physical_name"]
     sig_gen_element = f"do_{sig_gen_name}_dm"
+    return sig_gen_element
+
+
+@cache
+def get_sig_gen_i_element(uwave_ind=0):
+    """Returns the IQ-modulated signal generator element for a given uwave index."""
+    virtual_sig_gen_dict = tb.get_virtual_sig_gen_dict(uwave_ind)
+    sig_gen_name = virtual_sig_gen_dict["physical_name"]
+    sig_gen_element = f"ao_{sig_gen_name}_i"
+    return sig_gen_element
+
+
+@cache
+def get_sig_gen_q_element(uwave_ind=0):
+    """Returns the IQ-modulated signal generator element for a given uwave index."""
+    virtual_sig_gen_dict = tb.get_virtual_sig_gen_dict(uwave_ind)
+    sig_gen_name = virtual_sig_gen_dict["physical_name"]
+    sig_gen_element = f"ao_{sig_gen_name}_q"
     return sig_gen_element
 
 

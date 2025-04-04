@@ -9,6 +9,8 @@ Created on December 22nd, 2024
 
 import sys
 import time
+from datetime import datetime
+
 import traceback
 
 import matplotlib.pyplot as plt
@@ -304,8 +306,8 @@ def plot_spin_echo_fits(
     taus,
     norm_counts,
     norm_counts_ste,
-    fit_fns,
-    popts,
+    fit_fns=None,
+    popts=None,
 ):
     """
     Plot the fitted spin echo data for each NV center separately and print fitting quality metrics.
@@ -315,7 +317,6 @@ def plot_spin_echo_fits(
 
     for nv_ind in range(num_nvs):
         fig, ax = plt.subplots()
-
         # Scatter plot with error bars
         ax.errorbar(
             taus,
@@ -325,42 +326,41 @@ def plot_spin_echo_fits(
             label="Data",
         )
 
-        # Compute fitting quality metrics
-        if fit_fns[nv_ind] is not None:
-            tau_dense = np.linspace(0, taus.max(), 300)
-            fit_values = fit_fns[nv_ind](taus)
-            residuals = norm_counts[nv_ind] - fit_values
+        # # Compute fitting quality metrics
+        # if fit_fns[nv_ind] is not None:
+        #     tau_dense = np.linspace(0, taus.max(), 300)
+        #     fit_values = fit_fns[nv_ind](taus)
+        #     residuals = norm_counts[nv_ind] - fit_values
 
-            # Residual Sum of Squares (RSS)
-            rss = np.sum(residuals**2)
+        #     # Residual Sum of Squares (RSS)
+        #     rss = np.sum(residuals**2)
 
-            # Reduced Chi-Square (assuming errors are std errors in counts)
-            degrees_of_freedom = len(taus) - len(popts[nv_ind])
-            chi_squared_red = (
-                np.sum((residuals / np.abs(norm_counts_ste[nv_ind])) ** 2)
-                / degrees_of_freedom
-                if degrees_of_freedom > 0
-                else np.nan
-            )
+        #     # Reduced Chi-Square (assuming errors are std errors in counts)
+        #     degrees_of_freedom = len(taus) - len(popts[nv_ind])
+        #     chi_squared_red = (
+        #         np.sum((residuals / np.abs(norm_counts_ste[nv_ind])) ** 2)
+        #         / degrees_of_freedom
+        #         if degrees_of_freedom > 0
+        #         else np.nan
+        #     )
 
-            # Coefficient of Determination (R^2)
-            ss_total = np.sum((norm_counts[nv_ind] - np.mean(norm_counts[nv_ind])) ** 2)
-            r_squared = 1 - (rss / ss_total) if ss_total > 0 else np.nan
+        #     # Coefficient of Determination (R^2)
+        #     ss_total = np.sum((norm_counts[nv_ind] - np.mean(norm_counts[nv_ind])) ** 2)
+        #     r_squared = 1 - (rss / ss_total) if ss_total > 0 else np.nan
 
-            print(
-                f"NV {nv_ind}: RSS = {rss:.4f}, Chi-Squared_red = {chi_squared_red:.4f}, R^2 = {r_squared:.4f}"
-            )
+        #     print(
+        #         f"NV {nv_ind}: RSS = {rss:.4f}, Chi-Squared_red = {chi_squared_red:.4f}, R^2 = {r_squared:.4f}"
+        #     )
 
-            # Plot the fitted curve
-            ax.plot(tau_dense, fit_fns[nv_ind](tau_dense), "-", label="Fit")
+        #     # Plot the fitted curve
+        #     ax.plot(tau_dense, fit_fns[nv_ind](tau_dense), "-", label="Fit")
 
         ax.set_title(f"NV {nv_ind}")
         ax.set_xlabel("Time (us)")
         ax.set_ylabel("Norm. NV- Population")
         ax.legend()
         ax.grid(True)
-        fig.tight_layout()
-        kpl.show()
+        plt.show(block=True)
 
 
 def plot_analysis_parameters(meaningful_parameters):
@@ -421,36 +421,28 @@ def plot_analysis_parameters(meaningful_parameters):
 
 
 def plot_spin_echo_all(nv_list, taus, norm_counts, norm_counts_ste):
+    kpl.init_kplotlib()
     sns.set(style="whitegrid", palette="muted")
     num_nvs = len(nv_list)
     colors = sns.color_palette("deep", num_nvs)
-    num_cols = 6
+    num_cols = 7
     num_rows = int(np.ceil(len(nv_list) / num_cols))
 
     # Full plot
     fig, axes = plt.subplots(
         num_rows,
         num_cols,
-        figsize=(num_cols * 3, num_rows * 3),
+        figsize=(num_cols * 2, num_rows * 1.5),
         sharex=True,
         sharey=False,
+        constrained_layout=True,
+        gridspec_kw={"wspace": 0.0, "hspace": 0.0},
     )
     axes = axes.flatten()
 
-    # Zoomed-in plot
-    zoom_fig, zoom_axes = plt.subplots(
-        num_rows,
-        num_cols,
-        figsize=(num_cols * 3, num_rows * 3),
-        sharex=True,
-        sharey=False,
-    )
-    zoom_ax = zoom_axes.flatten()
-
-    for nv_idx, (ax, zoom_ax) in enumerate(zip(axes, zoom_ax)):
+    for nv_idx, ax in enumerate(axes):
         if nv_idx >= len(nv_list):
             ax.axis("off")
-            zoom_ax.axis("off")
             continue
 
         nv_tau = taus  # Convert to µs
@@ -466,76 +458,17 @@ def plot_spin_echo_all(nv_list, taus, norm_counts, norm_counts_ste):
             markersize=4,
             label=f"NV {nv_idx}",
         )
-        # ax.plot(
-        #     nv_tau,
-        #     quartic_decay(nv_tau, *popt),
-        #     "-",
-        #     color=colors[nv_idx % len(colors)],
-        #     label="Fit",
-        #     lw=2,
-        # )
         ax.errorbar(
             nv_tau,
             norm_counts[nv_idx],
-            yerr=norm_counts_ste[nv_idx],
+            yerr=abs(norm_counts_ste[nv_idx]),
             fmt="none",
-            ecolor="gray",
-            alpha=0.6,
+            ecolor=colors[nv_idx % len(colors)],
+            alpha=0.9,
         )
-        ax.legend(fontsize="small")
+        ax.legend(fontsize="xx-small")
         ax.grid(True, which="both", linestyle="--", linewidth=0.5)
-        ax.set_yticklabels([])
-
-        # Plot zoomed-in data and fit
-        sns.lineplot(
-            x=nv_tau,
-            y=nv_counts,
-            ax=zoom_ax,
-            color=colors[nv_idx % len(colors)],
-            lw=2,
-            marker="o",
-            markersize=3,
-            label=f"NV {nv_idx}",
-        )
-        # zoom_ax.plot(
-        #     nv_tau,
-        #     quartic_decay(nv_tau, *popt),
-        #     "-",
-        #     color=colors[nv_idx % len(colors)],
-        #     label="Fit",
-        #     lw=2,
-        # )
-        zoom_ax.errorbar(
-            nv_tau,
-            norm_counts[nv_idx],
-            yerr=norm_counts_ste[nv_idx],
-            fmt="none",
-            ecolor="gray",
-            alpha=0.6,
-        )
-        zoom_ax.legend(fontsize="small")
-        zoom_ax.grid(True, which="both", linestyle="--", linewidth=0.5)
-        zoom_ax.set_yticklabels([])
-        zoom_ax.set_xlim(40e-6, 60e-6)
-        zoom_ax.set_xlim(min(nv_tau), min(nv_tau) + 0.2 * (max(nv_tau) - min(nv_tau)))
-        zoom_ax.figure.canvas.draw()
-
-    fig.text(
-        0.08,
-        0.5,
-        "NV$^{-}$ Population",
-        va="center",
-        rotation="vertical",
-        fontsize=12,
-    )
-    zoom_fig.text(
-        0.08,
-        0.5,
-        "NV$^{-}$ Population (Zoomed)",
-        va="center",
-        rotation="vertical",
-        fontsize=12,
-    )
+        ax.tick_params(labelleft=False)
 
     for col in range(num_cols):
         bottom_row_idx = num_rows * num_cols - num_cols + col
@@ -549,40 +482,38 @@ def plot_spin_echo_all(nv_list, taus, norm_counts, norm_counts_ste):
                 fontsize=9,
             )
             ax.set_xlabel("Time (µs)")
-
-            zoom_ax = zoom_axes[bottom_row_idx]
-            zoom_ax.set_xticks(tick_positions)
-            zoom_ax.set_xticklabels(
-                [f"{tick:.2f}" for tick in tick_positions],
-                rotation=45,
-                fontsize=9,
-            )
-            zoom_ax.set_xlabel("Time (µs)")
         else:
             ax.set_xticklabels([])
-            zoom_ax.set_xticklabels([])
-
-    fig.suptitle("Spin Echo Fits", fontsize=16)
-    zoom_fig.suptitle("Zoomed Spin Echo Fits", fontsize=16)
-
-    # plt.subplots_adjust(
-    #     left=0.1, right=0.95, top=0.95, bottom=0.1, hspace=0.01, wspace=0.01
+    fig.text(
+        0.000,
+        0.5,
+        "NV$^{-}$ Population",
+        va="center",
+        rotation="vertical",
+        fontsize=12,
+    )
+    fig.suptitle("Spin Echo", fontsize=16)
+    # fig.set_constrained_layout(False)
+    # fig.subplots_adjust(left=0.01, right=0.98, top=0.99, bottom=0.08, hspace=0.01, wspace=0.01)
+    # fig.subplots_adjust(
+    #     left=0.01, right=0.99, top=0.99, bottom=0.01, hspace=0.000, wspace=0.000
     # )
-    plt.show()
+    fig.tight_layout(pad=0.2, rect=[0.01, 0.01, 0.99, 0.99])
+    kpl.show()
 
 
 if __name__ == "__main__":
     kpl.init_kplotlib()
     # Define the file IDs to process (66 shallow NVs)
-    file_ids = [1783227865584, 1783326666625, 1783448620086, 1783572765304]
-    file_ids = [
-        1785346398683,
-        1785254038960,
-        1785155665809,
-        1785057603893,
-        1784917916514,
-        1784779506353,
-    ]
+    # file_ids = [1783227865584, 1783326666625, 1783448620086, 1783572765304]
+    # file_ids = [
+    #     1785346398683,
+    #     1785254038960,
+    #     1785155665809,
+    #     1785057603893,
+    #     1784917916514,
+    #     1784779506353,
+    # ]
 
     # 117 deep NVs
     # file_ids = [
@@ -592,26 +523,49 @@ if __name__ == "__main__":
     #     1734461462293,
     #     1734569197701,
     # ]
+    # rubin75 NVs
+    file_ids = [1809864601542, 1810050697942, 1810230561491, 1810371359284]
+    # rubin75 NVs
+    # file_ids = [1811334050314, 1811401206447, 1811464617147, 1811540653210]
+    all_file_ids_str = "_".join(map(str, file_ids))
+    now = datetime.now()
+    date_time_str = now.strftime("%Y%m%d_%H%M%S")
+    file_name = dm.get_file_name(file_id=file_ids[0])
+    timestamp = dm.get_time_stamp()
+    file_path = dm.get_file_path(
+        __file__, file_name, f"{all_file_ids_str}_{date_time_str}"
+    )
+    print(f"File path: {file_path}")
     # Process and analyze data from multiple files
     try:
         data = process_multiple_files(file_ids)
         nv_list = data["nv_list"]
         taus = data["taus"]
-        total_evolution_times = 2 * np.array(taus) / 1e9
+        total_evolution_times = 2 * np.array(taus) / 1e3
         counts = np.array(data["counts"])
         sig_counts, ref_counts = counts[0], counts[1]
-        norm_counts, norm_counts_ste = widefield.process_counts(
-            nv_list, sig_counts, ref_counts, threshold=True
+        # norm_counts, norm_counts_ste = widefield.process_counts(
+        #     nv_list, sig_counts, ref_counts, threshold=True
+        # )
+        # Process counts using widefield's process_counts function
+        sig_avg_counts, sig_avg_counts_ste = widefield.process_counts(
+            nv_list, sig_counts, threshold=False
         )
+        ref_avg_counts, ref_avg_counts_ste = widefield.process_counts(
+            nv_list, ref_counts, threshold=False
+        )
+        # Compute the difference between the states
+        norm_counts = sig_avg_counts - ref_avg_counts
+        norm_counts_ste = np.sqrt(sig_avg_counts_ste**2 + ref_avg_counts_ste**2)
         nv_num = len(nv_list)
         ids_num = len(file_ids)
         # fit_fns, popts = fit_spin_echo(
         #     nv_list, total_evolution_times, norm_counts, norm_counts_ste
         # )
         # plot_spin_echo_fits(
-        #     nv_list, total_evolution_times, norm_counts, norm_counts_ste, fit_fns, popts
+        #     nv_list, total_evolution_times, norm_counts, norm_counts_ste
         # )
-        plot_spin_echo_all(nv_list, taus, norm_counts, norm_counts_ste)
+        plot_spin_echo_all(nv_list, total_evolution_times, norm_counts, norm_counts_ste)
     except Exception as e:
         print(f"Error occurred: {e}")
         print(traceback.format_exc())

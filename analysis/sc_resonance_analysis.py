@@ -3,12 +3,11 @@
 Created on Fall, 2024
 @author: Saroj Chand
 """
-
 import os
 import sys
 import time
-import traceback
 from datetime import datetime
+import traceback
 from random import shuffle
 
 import matplotlib.pyplot as plt
@@ -338,6 +337,7 @@ def plot_nv_resonance_fits_and_residuals(
     # return
 
     filter_nvs = True
+    # filter_nvs = False
     if filter_nvs:
         # target_peak_values = [0.025, 0.068, 0.146, 0.185]
         target_peak_values = [0.068, 0.185]
@@ -464,6 +464,7 @@ def plot_nv_resonance_fits_and_residuals(
         figsize=(num_cols * 2, num_rows * 1),
         sharex=True,
         sharey=False,
+        constrained_layout=True,
     )
     axes_fitting = axes_fitting.flatten()
 
@@ -505,15 +506,6 @@ def plot_nv_resonance_fits_and_residuals(
             # else:
             #     ax.set_yticklabels([])
             ax.set_yticklabels([])
-
-            fig_fitting.text(
-                0.0,
-                0.5,
-                "NV$^{-}$ Population",
-                va="center",
-                rotation="vertical",
-                fontsize=12,
-            )
             # Set custom tick locations in x axis
             if nv_idx >= (num_rows - 1) * num_cols:  # Bottom row
                 ax.set_xlabel("Frequency (GHz)")
@@ -560,16 +552,24 @@ def plot_nv_resonance_fits_and_residuals(
             ax.grid(True, which="both", linestyle="--", linewidth=0.5)
         else:
             ax.axis("off")
-    fig_fitting.suptitle(f"Shallow NV Resonance Fits ({file_id})", fontsize=16)
     plt.subplots_adjust(
-        left=0.2, right=0.95, top=0.95, bottom=0.1, hspace=0.001, wspace=0.001
+        left=0.1, right=0.95, top=0.95, bottom=0.1, hspace=0.001, wspace=0.001
     )
+    fig_fitting.text(
+        -0.005,
+        0.5,
+        "NV$^{-}$ Population",
+        va="center",
+        rotation="vertical",
+        fontsize=12,
+    )
+    # file_name = dm.get_file_name(file_id=file_id)
+    fig_fitting.suptitle(f"ESR {file_id}", fontsize=16)
     # plt.tight_layout()
     # now = datetime.now()
     # date_time_str = now.strftime("%Y%m%d_%H%M%S")
-    # file_name = dm.get_file_name(file_id=file_id)
     # # file_path = dm.get_file_path(__file__, file_name, f"{file_id}_{date_time_str}")
-    kpl.show()
+    plt.show()
     # dm.save_figure(fig_fitting, file_path)
     # plt.close(fig_fitting)
     # return
@@ -616,7 +616,7 @@ def plot_nv_resonance_fits_and_residuals(
 
     for title, x_data, y_data, xlabel, ylabel, color, unit in plots_data:
         kpl.init_kplotlib()
-        fig = plt.figure(figsize=(6, 5))
+        plt.figure()
         if isinstance(y_data, list):
             plt.scatter(x_data, y_data, color=color, alpha=0.7, edgecolors="k")
             # plt.figtext(
@@ -636,9 +636,9 @@ def plot_nv_resonance_fits_and_residuals(
         plt.ylabel(ylabel)
         plt.title(title)
         plt.grid(True, linestyle="--", alpha=0.6)
-        file_path = dm.get_file_path(
-            __file__, file_name, f"{file_id}_{date_time_str}_{title}"
-        )
+        # file_path = dm.get_file_path(
+        #     __file__, file_name, f"{file_id}_{date_time_str}_{title}"
+        # )
         kpl.show()
         # dm.save_figure(fig, file_path)
         # plt.close(fig)
@@ -1073,7 +1073,7 @@ if __name__ == "__main__":
     #     print(f"NV {i+1}: Magnetic Field: {B:.4f} T")
 
     # Generate a 2D magnetic field map
-    dist_conversion_factor = 0.072
+    dist_conversion_factor = 0.130
     # generate_2d_magnetic_field_map_rbf(nv_list, magnetic_fields, dist_conversion_factor, grid_size=100)
     # generate_2d_magnetic_field_map_kriging(nv_list, magnetic_fields, dist_conversion_factor, grid_size=100)
 
@@ -1093,10 +1093,16 @@ if __name__ == "__main__":
     file_ids = [1796261430133]
     # rubin 107NVs
     file_ids = [1801725762770, 1801943804484]
+
+    # after remoutnig the sample
     # rubin 304NVs
     file_ids = [1803870882950]
     # rubin 154NVs
     file_ids = [1806862148858]
+    # rubib 81
+    file_ids = [1809016009780]
+    # rubib 75
+    file_ids = [1810826711017]
     # fmt: off
     # fmt: on
     # print(len(reference_pixel_coords))
@@ -1201,7 +1207,6 @@ if __name__ == "__main__":
         )
 
         print(f"Combined plot saved to {file_path}")
-
     else:
         print("No valid data available for plotting.")
 

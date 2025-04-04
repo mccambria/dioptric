@@ -21,6 +21,8 @@ def macro(
     num_reps=1,
     scc_duration_override=None,
     scc_amp_override=None,
+    spin_pol_duration_override=None,
+    spin_pol_amp_override=None,
     reference=True,
 ):
     """Base spin sequence as a QUA macro for widefield experiments with many
@@ -60,7 +62,6 @@ def macro(
     """
 
     ### Non-QUA stuff
-
     (
         pol_coords_list,
         pol_duration_list,
@@ -87,8 +88,18 @@ def macro(
             pass
 
         uwave_macro.append(ref_exp)
+
     num_exps_per_rep = len(uwave_macro)
     num_nvs = len(pol_coords_list)
+
+    def macro_polarize_sub():
+        seq_utils.macro_polarize(
+            pol_coords_list,
+            duration_list=pol_duration_list,
+            amp_list=pol_amp_list,
+            spin_pol_duration_override=spin_pol_duration_override,
+            spin_pol_amp_override=spin_pol_amp_override,
+        )
 
     def macro_scc_sub(do_target_list=None):
         seq_utils.macro_scc(
@@ -114,13 +125,10 @@ def macro(
     ### QUA stuff
     def one_exp(rep_ind, exp_ind):
         # exp_ind = num_exps_per_rep - 1  # MCC
-        seq_utils.macro_polarize(
-            pol_coords_list, duration_list=pol_duration_list, amp_list=pol_amp_list
-        )
+        macro_polarize_sub()
         qua.align()
         skip_spin_flip = uwave_macro[exp_ind](uwave_ind_list, step_val)
-        # reverse order of scc
-        # Randomize SCC order between the two groups
+        # qua variable for randomize SCC order
         random_order = qua.declare(int)
         qua.assign(random_order, qua.Random().rand_int(2))
         # Check if this is the automatically included reference experiment
@@ -129,9 +137,9 @@ def macro(
         # Signal experiment
         if not ref_exp:
             if spin_flip_do_target_list is None or True not in spin_flip_do_target_list:
-                # macro_scc_sub()
-                # SBC randomize the ordern of the scc on NVs list
-                with qua.if_(rep_ind % 2 == 0):
+                # macro_scc_sub() # do scc alwayd in the order of NVs
+                # SBC randomize the order of the scc by alterntively reversing the order
+                with qua.if_(random_order == 1):
                     macro_scc_sub()
                 with qua.else_():
                     macro_scc_sub_reversed()
@@ -156,8 +164,13 @@ def macro(
             # "Dual-rail" referencing: measure ms=0 for even reps, and ms=+/-1
             # for odd by applying an extra pi pulse just before SCC
             with qua.if_(qua.Cast.unsafe_cast_bool(rep_ind)):
-                seq_utils.macro_pi_pulse(uwave_ind_list)
-            macro_scc_sub()
+                seq_utils.macro_pi_pulse(uwave_ind_list, phase=0)
+            # macro_scc_sub()
+            #  SBC randomize the order of the scc by alterntively reversing the order
+            with qua.if_(random_order == 1):
+                macro_scc_sub()
+            with qua.else_():
+                macro_scc_sub_reversed()
 
         seq_utils.macro_charge_state_readout()
         seq_utils.macro_wait_for_trigger()

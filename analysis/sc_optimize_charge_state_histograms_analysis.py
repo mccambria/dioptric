@@ -212,7 +212,7 @@ def process_and_plot(raw_data):
                 readout_fidelity_arr[nv_ind],
                 prep_fidelity_arr[nv_ind],
                 goodness_of_fit_arr[nv_ind],
-                weights=(1.5, 1.0, 2.0),
+                weights=(1.0, 1.0, 2.0),
             )
             # Manually override for the first NV
             # if nv_ind == 0:
@@ -241,60 +241,60 @@ def process_and_plot(raw_data):
             optimal_values.append((nv_ind, np.nan, np.nan))
             continue
 
-        # # Plotting
-        # fig, ax1 = plt.subplots(figsize=(7, 5))
-        # # Plot readout fidelity
-        # ax1.plot(
-        #     step_vals,
-        #     readout_fidelity_arr[nv_ind],
-        #     label="Readout Fidelity",
-        #     color="orange",
-        # )
-        # ax1.plot(
-        #     step_vals,
-        #     prep_fidelity_arr[nv_ind],
-        #     label="Prep Fidelity",
-        #     linestyle="--",
-        #     color="green",
-        # )
-        # ax1.set_xlabel(x_label)
-        # ax1.set_ylabel("Fidelity")
-        # ax1.tick_params(axis="y", labelcolor="blue")
-        # ax1.grid(True, linestyle="--", alpha=0.6)
+        # Plotting
+        fig, ax1 = plt.subplots(figsize=(7, 5))
+        # Plot readout fidelity
+        ax1.plot(
+            step_vals,
+            readout_fidelity_arr[nv_ind],
+            label="Readout Fidelity",
+            color="orange",
+        )
+        ax1.plot(
+            step_vals,
+            prep_fidelity_arr[nv_ind],
+            label="Prep Fidelity",
+            linestyle="--",
+            color="green",
+        )
+        ax1.set_xlabel(x_label)
+        ax1.set_ylabel("Fidelity")
+        ax1.tick_params(axis="y", labelcolor="blue")
+        ax1.grid(True, linestyle="--", alpha=0.6)
 
-        # # Plot Goodness of Fit ()
-        # ax2 = ax1.twinx()
-        # ax2.plot(
-        #     step_vals,
-        #     goodness_of_fit_arr[nv_ind],
-        #     color="gray",
-        #     linestyle="--",
-        #     label=r"Goodness of Fit ($\chi^2_{\text{reduced}}$)",
-        #     alpha=0.7,
-        # )
-        # ax2.set_ylabel(r"Goodness of Fit ($\chi^2_{\text{reduced}}$)", color="gray")
-        # ax2.tick_params(axis="y", labelcolor="gray")
+        # Plot Goodness of Fit ()
+        ax2 = ax1.twinx()
+        ax2.plot(
+            step_vals,
+            goodness_of_fit_arr[nv_ind],
+            color="gray",
+            linestyle="--",
+            label=r"Goodness of Fit ($\chi^2_{\text{reduced}}$)",
+            alpha=0.7,
+        )
+        ax2.set_ylabel(r"Goodness of Fit ($\chi^2_{\text{reduced}}$)", color="gray")
+        ax2.tick_params(axis="y", labelcolor="gray")
 
-        # # Highlight optimal step value
-        # ax1.axvline(
-        #     optimal_step_val,
-        #     color="red",
-        #     linestyle="--",
-        #     label=f"Optimal Step Val: {optimal_step_val:.3f}",
-        # )
-        # ax2.axvline(
-        #     optimal_step_val,
-        #     color="red",
-        #     linestyle="--",
-        # )
+        # Highlight optimal step value
+        ax1.axvline(
+            optimal_step_val,
+            color="red",
+            linestyle="--",
+            label=f"Optimal Step Val: {optimal_step_val:.3f}",
+        )
+        ax2.axvline(
+            optimal_step_val,
+            color="red",
+            linestyle="--",
+        )
 
-        # # Combine legends
-        # lines, labels = ax1.get_legend_handles_labels()
-        # lines2, labels2 = ax2.get_legend_handles_labels()
-        # ax1.legend(lines + lines2, labels + labels2, loc="upper left", fontsize=11)
-        # ax1.set_title(f"NV{nv_ind} - Optimal Step Val: {optimal_step_val:.3f}")
-        # plt.tight_layout()
-        # plt.show(block=True)
+        # Combine legends
+        lines, labels = ax1.get_legend_handles_labels()
+        lines2, labels2 = ax2.get_legend_handles_labels()
+        ax1.legend(lines + lines2, labels + labels2, loc="upper left", fontsize=11)
+        ax1.set_title(f"NV{nv_ind} - Optimal Step Val: {optimal_step_val:.3f}")
+        plt.tight_layout()
+        plt.show(block=True)
 
     # save opimal step values
     total_power = np.sum(optimal_step_vals) / len(optimal_step_vals)
@@ -692,30 +692,30 @@ def process_and_plot_green(raw_data):
             opti_durs.append(round(opti_dur / 4) * 4)
             opti_fidelities.append(round(opti_fidelity, 3))
 
-            # # Plot results
-            # plt.figure()
-            # plt.scatter(
-            #     filtered_step_vals,
-            #     filtered_prep_fidelity,
-            #     label="Measured Fidelity",
-            #     color="blue",
-            # )
-            # plt.plot(duration_linspace, fitted_curve, label="Fitted Curve", color="red")
-            # plt.axvline(
-            #     opti_dur,
-            #     color="green",
-            #     linestyle="--",
-            #     label=f"Opt. Duration: {opti_dur:.1f} ns",
-            # )
-            # plt.xlabel("Polarization Duration (ns)")
-            # plt.ylabel("Preparation Fidelity")
-            # plt.title(f"NV Num: {nv_ind}")
-            # plt.legend()
-            # plt.show(block=True)
+            # Plot results
+            plt.figure()
+            plt.scatter(
+                filtered_step_vals,
+                filtered_prep_fidelity,
+                label="Measured Fidelity",
+                color="blue",
+            )
+            plt.plot(duration_linspace, fitted_curve, label="Fitted Curve", color="red")
+            plt.axvline(
+                opti_dur,
+                color="green",
+                linestyle="--",
+                label=f"Opt. Duration: {opti_dur:.1f} ns",
+            )
+            plt.xlabel("Polarization Duration (ns)")
+            plt.ylabel("Preparation Fidelity")
+            plt.title(f"NV Num: {nv_ind}")
+            plt.legend()
+            plt.show(block=True)
 
-            # print(
-            #     f"NV {nv_ind} - Optimal Duration: {opti_dur:.1f} ns, Optimal Fidelity: {opti_fidelity}"
-            # )
+            print(
+                f"NV {nv_ind} - Optimal Duration: {opti_dur:.1f} ns, Optimal Fidelity: {opti_fidelity}"
+            )
 
         except RuntimeError:
             print(f"Skipping NV {nv_ind}: Curve fitting failed.")
@@ -806,7 +806,8 @@ if __name__ == "__main__":
     # file_id = 1806165457282  # yellow ampl 60ms 154NVs
     # file_id = 1807233914030  # yellow ampl 60ms 81NVs
     # file_id = 1807632138996  # yellow ampl 60ms 81NVs
-    file_id = 1808503038483  # yellow ampl 60ms 81NVs
+    # file_id = 1808503038483  # yellow ampl 60ms 81NVs
+    # file_id = 1809414309242  # yellow ampl 60ms 81NVs
 
     # file_id = 1794442033227  # yellow ampl 60ms 140NVs
     # file_id = 1793116636570  # yellow ampl 24ms
@@ -822,10 +823,11 @@ if __name__ == "__main__":
     # file_id = 1805991515134  # green durations 240NVs
     # file_id = 1806362913488  # green durations 154NVs
     # file_id = 1807384237764  # green durations 81NVs
+    file_id = 1810477160439  # green durations 75NVs
     raw_data = dm.get_raw_data(file_id=file_id, load_npz=False)
     file_name = dm.get_file_name(file_id=file_id)
     print(f"{file_name}_{file_id}")
-    process_and_plot(raw_data)
-    # process_and_plot_green(raw_data)
+    # process_and_plot(raw_data)
+    process_and_plot_green(raw_data)
     plt.show(block=True)
     # print(dm.get_file_name(1717056176426))

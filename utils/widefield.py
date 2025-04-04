@@ -14,7 +14,7 @@ import sys
 from functools import cache
 from importlib import import_module
 from pathlib import Path
-
+from datetime import datetime
 import matplotlib.patches as patches
 import matplotlib.pyplot as plt
 import numpy as np
@@ -419,6 +419,37 @@ def process_counts(nv_list, sig_counts, ref_counts=None, threshold=True):
     norm_counts_ste = avg_counts_ste / contrast
 
     return norm_counts, norm_counts_ste
+
+
+# Combine data from multiple file IDs
+def process_multiple_files(file_ids):
+    """
+    Load and combine data from multiple file IDs.
+
+    """
+    combined_data = dm.get_raw_data(file_id=file_ids[0])
+    counts = np.array(combined_data["counts"])
+    print(f"combined data shape : {counts.shape}")
+    for file_id in file_ids[1:]:
+        new_data = dm.get_raw_data(file_id=file_id)
+        new_counts = np.array(new_data["counts"])
+        print(f"new data shape : {new_counts.shape}")
+        combined_data["num_runs"] += new_data["num_runs"]
+        combined_data["counts"] = np.append(
+            combined_data["counts"], new_data["counts"], axis=2
+        )
+    return combined_data
+
+
+def combined_filename(file_ids):
+    all_file_ids_str = "_".join(map(str, file_ids))
+    now = datetime.now()
+    date_time_str = now.strftime("%Y%m%d_%H%M%S")
+    file_name = dm.get_file_name(file_id=file_ids[0])
+    file_path = dm.get_file_path(
+        __file__, file_name, f"{all_file_ids_str}_{date_time_str}"
+    )
+    return file_path, all_file_ids_str
 
 
 def threshold_counts_selected_method(

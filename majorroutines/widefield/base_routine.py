@@ -234,22 +234,21 @@ def main(
             freq = uwave_freq_list[uwave_ind]
 
         sig_gen = tb.get_server_sig_gen(uwave_ind)
+
         if load_iq:
+            sig_gen.load_iq()
             # uwave_power += 0.4
-            # freq_I = uwave_dict["iq_freq_I"]
-            # freq_Q = uwave_dict["iq_freq_Q"]
-            carrier_freq = uwave_dict["carrier_frequency"]
-            offset_I = uwave_dict["offset"]
-            offset_Q = -offset_I
             sig_gen.set_amp(uwave_power)
-            sig_gen.load_iq(carrier_freq, offset_I, offset_Q)
+            sig_gen.set_freq(freq)
             print(
-                f"Using IQ Modulation: Carrier {carrier_freq} GHz, offset={offset_I} MHz, Power={uwave_power} dBm"
+                f"Using IQ Modulation: Rabi frequency {freq} and Power={uwave_power} dBm"
             )
         else:
             sig_gen.set_amp(uwave_power)
             sig_gen.set_freq(freq)
-            print(f"Rabi frequency {freq} GHz and period {rabi_period}ns ")
+            print(
+                f"No IQ Modulation: Rabi frequency {freq} GHz and period {rabi_period}ns "
+            )
 
     ### Data tracking
 
