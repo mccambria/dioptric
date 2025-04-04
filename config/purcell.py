@@ -144,7 +144,7 @@ config |= {
                 # "frequency": 2.779138,   # rubin shallow NVs O1 ms=-1
                 # "frequency": 2.964545,  # rubin shallow NV O1 ms=+1
                 "frequency": 2.842478,  # rubin shallow NV O3 ms=-1
-                "rabi_period": 128,
+                "rabi_period": 112,
             },
         },
     },
