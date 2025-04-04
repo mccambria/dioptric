@@ -668,7 +668,7 @@ def do_xy(nv_list, xy_seq="xy8"):
     num_steps = 24
     num_reps = 10
     uwave_ind_list = [1]  # iq modulated
-    num_runs = 600
+    num_runs = 400
 
     # taus calculation
     # taus = np.linspace(min_tau, max_tau, num_steps)
@@ -1573,7 +1573,7 @@ if __name__ == "__main__":
         # do_ac_stark(nv_list)
 
         # AVAILABLE_XY = ["hahn", "xy2", "xy4", "xy8", "xy16"]
-        do_xy(nv_list, xy_seq="xy16")
+        # do_xy(nv_list, xy_seq="xy8")
         # do_xy_dense(nv_list, xy_seq="xy8")
 
         # do_opx_constant_ac()
