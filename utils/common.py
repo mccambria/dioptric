@@ -23,6 +23,20 @@ import numpy as np
 
 global_cxn = None
 
+windows_nvdata_dir = Path("E:/Shared drives/Kolkowitz Lab Group/nvdata")
+linux_nvdata_dir = Path.home() / "E/nvdata"
+
+
+def get_nvdata_dir():
+    """Returns an OS-dependent Path to the nvdata directory (configured above)"""
+    os_name = platform.system()
+    if os_name == "Windows":
+        nvdata_dir = windows_nvdata_dir
+    elif os_name == "Linux":
+        nvdata_dir = linux_nvdata_dir
+
+    return nvdata_dir
+
 
 def get_config_module(pc_name=None, reload=False):
     if pc_name is None:
