@@ -106,7 +106,6 @@ def macro_wait_for_trigger():
     qua.align()
     qua.wait_for_trigger(dummy_element)
 
-
 def macro_pause():
     """Pause the sequence and pass control back to the top-level routine for processing,
     switching signal generator frequencies, etc.
@@ -200,7 +199,7 @@ def macro_polarize(
     else:
         charge_pol_sub()
 
-    ## SBC Spin polarization with include sweeping
+    ### SBC: updated Spin polarization which includes sweeping amp and duration
     if spin_pol:
         macro_spin_polarize(spin_pol_duration_override, spin_pol_amp_override)
 
@@ -215,8 +214,7 @@ def macro_polarize(
     #     qua.play("spin_pol", spin_pol_laser_el)
     #     qua.wait(buffer, spin_pol_laser_el)
 
-
-# SBC spin polarization:
+# SBC: spin polarization updates
 def macro_spin_polarize(duration: int = None, amp: float = None):
     """
     Apply a widefield yellow spin polarization pulse.

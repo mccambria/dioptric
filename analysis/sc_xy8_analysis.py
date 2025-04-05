@@ -33,8 +33,8 @@ def stretched_exp(tau, a, t2, n, b):
     return a * (1 - np.exp(-((tau / t2) ** n))) + b
 
 
-def stretched_exp(tau, a, t2, n, b):
-    return a * (1 - np.exp(-((tau / t2)))) + b
+# def stretched_exp(tau, a, t2, n, b):
+#     return a * (1 - np.exp(-((tau / t2)))) + b
 
 
 def residuals(params, x, y, yerr):
@@ -113,7 +113,6 @@ def process_and_fit_xy8(nv_list, taus, norm_counts, norm_counts_ste):
 
 def process_and_plot_xy8(nv_list, taus, norm_counts, norm_counts_ste):
     num_nvs = len(nv_list)
-
     T2_list = []
     n_list = []
     nv_indices = []
@@ -255,7 +254,7 @@ def process_and_plot_xy8(nv_list, taus, norm_counts, norm_counts_ste):
     print(f"median T2: {median_T2_us}us")
     nv_indices = np.arange(num_nvs)
     # sys.exit()
-    ###plot
+    ##plot
     fig, ax = plt.subplots(figsize=(6, 5))
     scatter = ax.scatter(
         nv_indices,
@@ -286,7 +285,7 @@ def process_and_plot_xy8(nv_list, taus, norm_counts, norm_counts_ste):
         label=f"Median T2 ≈ {median_T2_us:.1f} µs",
     )
 
-    # Annotate χ² values if provided
+    # # Annotate χ² values if provided
     # if n_list is not None:
     #     for idx, n in zip(nv_indices, n_list):
     #         ax.annotate(
@@ -315,7 +314,7 @@ def process_and_plot_xy8(nv_list, taus, norm_counts, norm_counts_ste):
     ax.set_ylabel("T2 (µs)", fontsize=15)
     ax.tick_params(axis="both", which="major", labelsize=15)
     # ax.set_yscale("log")
-    ax.set_title("T2 per NV (XY8-1, 185 MHz Orientation)", fontsize=15)
+    ax.set_title(f"T2  per NV ({seq_xy}-1, 68 MHz Orientation)", fontsize=15)
     ax.grid(True, which="both", ls="--", alpha=0.6)
     cbar = plt.colorbar(scatter, ax=ax, pad=0.02)
     cbar.set_label("Reduced χ²", fontsize=15)
@@ -323,10 +322,9 @@ def process_and_plot_xy8(nv_list, taus, norm_counts, norm_counts_ste):
     ax.legend(fontsize=11)
     plt.tight_layout
     plt.show()
-
+    # sys.exit()
     ### plot all
     sns.set(style="whitegrid")
-    num_cols = 8
     num_cols = 8
     num_nvs = len(nv_list)
     num_rows = int(np.ceil(num_nvs / num_cols))
@@ -355,7 +353,7 @@ def process_and_plot_xy8(nv_list, taus, norm_counts, norm_counts_ste):
             ax=ax,
             color="blue",
             # label=f"NV {nv_idx}(T2 = {T2_list[nv_idx]:.2f} ± {T2_errs[nv_idx]:.2f} us)",
-            label=f"NV {nv_idx}(T1 = {T2_list[nv_idx]:.2f} us)",
+            label=f"NV {nv_idx}(T2 = {T2_list[nv_idx]:.2f} us)",
             s=10,
             alpha=0.7,
         )
@@ -396,8 +394,8 @@ def process_and_plot_xy8(nv_list, taus, norm_counts, norm_counts_ste):
         # Adjust label position and alignment
 
         # Set y-tick formatter to 2 decimal places
-        ax.yaxis.set_major_formatter(FormatStrFormatter("%.3f"))
-        ax.tick_params(axis="y", labelsize=8, direction="in", pad=-15)
+        ax.yaxis.set_major_formatter(FormatStrFormatter("%.1f"))
+        ax.tick_params(axis="y", labelsize=8, direction="in", pad=-10)
         for label in ax.get_yticklabels():
             label.set_horizontalalignment("right")
             label.set_x(0.01)  # Fine-tune this as needed
@@ -412,7 +410,7 @@ def process_and_plot_xy8(nv_list, taus, norm_counts, norm_counts_ste):
         #     label.set_horizontalalignment("right")
         #     label.set_x(0.15)
         # Optional: adjust tick line size and font
-        ax.set_xscale("log")
+        # ax.set_xscale("log")
         # # Add NV index within the plot at the center
         axes_grid = np.array(axes).reshape((num_rows, num_cols))
         # Loop over each column
@@ -444,7 +442,7 @@ def process_and_plot_xy8(nv_list, taus, norm_counts, norm_counts_ste):
         0.005, 0.5, "NV$^{-}$ Population", va="center", rotation="vertical", fontsize=11
     )
     fig.suptitle(
-        f"XY8-1 T2 Fits (185 MHz Orientation - {all_file_ids_str})", fontsize=12
+        f"{seq_xy}-1 Fits (68 MHz Orientation - {all_file_ids_str})", fontsize=12
     )
     fig.tight_layout(pad=0.4, rect=[0.01, 0.01, 0.99, 0.99])
     plt.show(block=True)
@@ -578,16 +576,6 @@ def T2_diff_xy():
 
 if __name__ == "__main__":
     kpl.init_kplotlib()
-
-    # 68MHz orientation --> spacing is not logrithmic
-    # file_ids = [
-    #     1818535967472,
-    #     1818490062733,
-    #     1818428014990,
-    #     1818371630370,
-    #     1818240906171,
-    # ]
-
     # 185MHz orientation
     # file_ids = [
     #     1818816006504,
@@ -607,24 +595,29 @@ if __name__ == "__main__":
     #     1820151354472,
     # ]
     ## 68MHz orientation/ manuual reference
-    file_ids = [
-        1822348912678,
-        1822231688646,
-        1822119685591,
-        1821983732646,
-        1821816914155,
-        1821689973348,
-    ]
+    # file_ids = [
+    #     1822348912678,
+    #     1822231688646,
+    #     1822119685591,
+    #     1821983732646,
+    #     1821816914155,
+    #     1821689973348,
+    # ]
 
     ## 68MHz orientation XY4
-    # file_ids = [1823061683325, 1823448847102]
+    file_ids = [1823061683325, 1823448847102]
+    ## 68MHz orientation XY16
+    file_ids = [1823813420689, 1824210908904]
+    ## 68MHz orientation XY8 buffer/wait updated
+    # file_ids = [1824501762414, 1824732255862]
 
+    file_ids = [1825497210263, 1825365856229]
     ## Internal Test Plots
-    plot_T2_on_T1()
+    # plot_T2_on_T1()
     # contrast_plot()
     # T2_ratio_xy()
-    plt.show(block=True)
-    sys.exit()
+    # plt.show(block=True)
+    # sys.exit()
     file_path, all_file_ids_str = widefield.combined_filename(file_ids)
     print(f"File name: {file_path}")
     raw_data = widefield.process_multiple_files(file_ids)
@@ -651,13 +644,13 @@ if __name__ == "__main__":
     sig_counts = counts[0]
     ref_counts = counts[1]
     # Normalize counts
-    # norm_counts, norm_counts_ste = widefield.process_counts(
-    #     nv_list, sig_counts, ref_counts, threshold=True
-    # )
-    #
     norm_counts, norm_counts_ste = widefield.process_counts(
-        nv_list, ref_counts, threshold=True
+        nv_list, sig_counts, ref_counts, threshold=True
     )
+
+    # norm_counts, norm_counts_ste = widefield.process_counts(
+    #     nv_list, sig_counts, threshold=True
+    # )
     process_and_plot_xy8(nv_list, taus, norm_counts, norm_counts_ste)
 
     # fit_params, T2_list, n_list, chi2_list, param_errors_list = process_and_fit_xy8(
