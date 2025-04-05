@@ -672,22 +672,30 @@ def do_xy(nv_list, xy_seq="xy8"):
 
 def do_xy_dense(nv_list, xy_seq="xy8"):
     # Revival-based τ selection (targeting 13C collapse and first revival only)
-    revival_period = int(51.5e3 / 2)  # ~25.75 µs for 37 G
+    # Parameters
+    # B_dc = 37  # Gauss
+    # gamma_nuc = 1.07e3  # Hz/G for 13C
+
+    # Calculate τ at which revival occurs
+    # tau_rev_ns = 1e9 * (np.pi / (N * gamma_nuc * B_dc))  # in ns
+    # print(f"Expected revival at τ ≈ {tau_rev_ns:.1f} ns for XY8-{N}")
+
+    revival_period = int(51.5e3 / 16)  # ~25.75 µs for 37 G
     min_tau = 200  # ns
     taus = []
-    revival_width = 5e3  # ns = 5 µs width around revival
+    revival_width = 600  # ns = 5 µs width around revival
 
     # 1. Initial decay region
     decay = np.linspace(min_tau, min_tau + revival_width, 6)
     taus.extend(decay.tolist())
 
     # 2. Gap region between decay and first revival
-    gap = np.linspace(min_tau + revival_width, revival_period - revival_width, 7)
+    gap = np.linspace(min_tau + revival_width, revival_period - revival_width, 15)
     taus.extend(gap[1:-1].tolist())
 
     # 3. First revival region
     first_revival = np.linspace(
-        revival_period - revival_width, revival_period + revival_width, 61
+        revival_period - revival_width, revival_period + revival_width, 56
     )
     taus.extend(first_revival.tolist())
 
@@ -1546,7 +1554,7 @@ if __name__ == "__main__":
 
         # AVAILABLE_XY = ["hahn-n", "xy2-n", "xy4-n", "xy8-n", "xy16-n"]
         # n is number of repitition
-        # do_xy(nv_list, xy_seq="xy8-1")
+        # do_xy(nv_list, xy_seq="xy8")
         do_xy_dense(nv_list, xy_seq="xy8-1")
 
         # do_opx_constant_ac()

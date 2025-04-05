@@ -131,7 +131,7 @@ config |= {
             0: {
                 "physical_name": "sig_gen_STAN_sg394",
                 # "uwave_power": 2.3,
-                "uwave_power": 8.3,
+                "uwave_power": 8.7,
                 "frequency": 2.779138,  # rubin shallow NVs O1 ms=-1
                 # "frequency": 2.909381,  # rubin shallow NV O3 ms=+1
                 "rabi_period": 128,
