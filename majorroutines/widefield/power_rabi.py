@@ -46,29 +46,16 @@ def create_raw_data_figure(data):
     nv_list = data["nv_list"]
     num_nvs = len(nv_list)
     powers = data["powers"]
-    counts = np.array(data["states"])
+    counts = np.array(data["counts"])
     sig_counts, ref_counts = counts[0], counts[1]
 
-    avg_counts, avg_counts_ste = widefield.process_counts(
-        nv_list, sig_counts, ref_counts, threshold=False
+    norm_counts, norm_counts_ste = widefield.process_counts(
+        nv_list, sig_counts, ref_counts, threshold=True
     )
     # norm_counts = avg_counts - norms[0][:, np.newaxis]
-    norm_counts = avg_counts
-    norm_counts_ste = abs(avg_counts_ste)
+    norm_counts_ste = abs(norm_counts_ste)
 
-    # fig, axes_pack, layout = kpl.subplot_mosaic(num_nvs, num_rows=2)
-
-    # widefield.plot_fit(axes_pack, nv_list, powers, norm_counts, norm_counts_ste)
-
-    # # kpl.set_shared_ax_xlabel(fig, axes_pack, layout, "Microwave power (dBm)")
-    # # kpl.set_shared_ax_ylabel(fig, axes_pack, layout, "Normalized NV- population")
-
-    # # Find the lower-left axis dynamically using the helper function
-    # lower_left_ax = get_lower_left_ax(axes_pack)
-    # kpl.set_shared_ax_xlabel(lower_left_ax, "Microwave power (dBm)")
-    # kpl.set_shared_ax_ylabel(lower_left_ax, "Normalized NV- population")
-    # 🔹 Additional Plotting to visualize raw data
-    fig_raw, ax_raw = plt.subplots(figsize=(6, 4))
+    fig, ax_raw = plt.subplots(figsize=(6, 4))
 
     for nv_idx, nv in enumerate(nv_list):
         ax_raw.errorbar(
@@ -84,12 +71,159 @@ def create_raw_data_figure(data):
     ax_raw.set_title("Raw ESR Data")
     ax_raw.legend()
     ax_raw.grid(True)
-
     plt.show()
-
-    return fig_raw
+    return fig
 
     # return fig
+
+
+import matplotlib.pyplot as plt
+import numpy as np
+from scipy.optimize import curve_fit
+
+
+def lorentzian(x, a, x0, gamma, c):
+    return a * gamma**2 / ((x - x0) ** 2 + gamma**2) + c
+
+
+def create_raw_data_figure_with_fit(data):
+    nv_list = data["nv_list"]
+    num_nvs = len(nv_list)
+    powers = np.array(data["powers"])
+    counts = np.array(data["counts"])
+    sig_counts, ref_counts = counts[0], counts[1]
+
+    # Normalize
+    norm_counts, norm_counts_ste = widefield.process_counts(
+        nv_list, sig_counts, ref_counts, threshold=True
+    )
+    norm_counts_ste = np.abs(norm_counts_ste)
+
+    fig, (ax_raw, ax_median) = plt.subplots(1, 2, figsize=(12, 4))
+
+    # Plot individual NVs
+    for nv_idx, nv in enumerate(nv_list):
+        ax_raw.errorbar(
+            powers,
+            norm_counts[nv_idx],
+            yerr=norm_counts_ste[nv_idx],
+            fmt="o",
+            alpha=0.4,
+            label=f"NV {nv_idx + 1}",
+        )
+
+    ax_raw.set_xlabel("Microwave power (dBm)")
+    ax_raw.set_ylabel("Normalized NV⁻ population")
+    ax_raw.set_title("Raw ESR Data")
+    ax_raw.legend(fontsize="x-small")
+    ax_raw.grid(True)
+
+    # Compute median and std error
+    median_vals = np.median(norm_counts, axis=0)
+    std_error = np.std(norm_counts, axis=0) / np.sqrt(num_nvs)
+
+    # Fit the median to Lorentzian
+    try:
+        popt, _ = curve_fit(
+            lorentzian,
+            powers,
+            median_vals,
+            p0=[-1, powers[np.argmin(median_vals)], 5, 1],
+        )
+        fitted_curve = lorentzian(powers, *popt)
+        optimal_power = popt[1]
+    except RuntimeError:
+        fitted_curve = None
+        optimal_power = None
+
+    # Plot median and fit
+    ax_median.errorbar(
+        powers,
+        median_vals,
+        yerr=std_error,
+        fmt="o",
+        color="black",
+        label="Median across NVs",
+    )
+    if fitted_curve is not None:
+        ax_median.plot(
+            powers,
+            fitted_curve,
+            "--",
+            color="red",
+            label=f"Fit (min at {optimal_power:.2f} dBm)",
+        )
+        ax_median.axvline(optimal_power, color="red", linestyle=":", alpha=0.6)
+
+    ax_median.set_xlabel("Microwave power (dBm)")
+    ax_median.set_ylabel("Median NV⁻ population")
+    ax_median.set_title("Median ESR Response & Fit")
+    ax_median.legend()
+    ax_median.grid(True)
+
+    plt.tight_layout()
+    plt.show()
+
+    return fig, optimal_power
+
+
+def create_median_snr_vs_power_figure(data):
+    powers = np.array(data["powers"])
+    sig_counts = np.array(data["counts"][0])
+    ref_counts = np.array(data["counts"][1])
+    nv_list = data["nv_list"]
+    num_nvs = len(nv_list)
+    avg_snr, avg_snr_ste = widefield.calc_snr(sig_counts, ref_counts)
+    # Compute median and standard error of the median
+    median_snr = np.median(avg_snr, axis=0)
+    std_err_median = np.median(avg_snr_ste, axis=0)
+
+    # Fit to inverted Lorentzian
+    # Fit the median to Lorentzian
+    try:
+        popt, _ = curve_fit(
+            lorentzian,
+            powers,
+            median_snr,
+            p0=[-1, powers[np.argmax(median_snr)], 5, 1],
+        )
+        fit_curve = lorentzian(powers, *popt)
+        optimal_power = popt[1]
+    except RuntimeError:
+        fit_curve = None
+        optimal_power = None
+
+    # Plot
+    fig, ax = plt.subplots(figsize=(6, 4))
+    ax.errorbar(
+        powers,
+        median_snr,
+        yerr=std_err_median,
+        fmt="o",
+        color="black",
+        label="Median SNR",
+    )
+
+    if fit_curve is not None:
+        ax.plot(
+            powers,
+            fit_curve,
+            "--",
+            color="red",
+            label=f"Fit (max at {optimal_power:.2f} dBm)",
+        )
+        ax.axvline(optimal_power, color="red", linestyle=":", alpha=0.6)
+
+    ax.set_xlabel("Microwave power (dBm)")
+    ax.set_ylabel("Median SNR across NVs")
+    ax.set_title("Median SNR vs Microwave Power")
+    ax.legend()
+    ax.grid(True)
+
+    plt.tight_layout()
+    plt.show()
+
+    return fig, optimal_power
 
 
 def main(
@@ -165,9 +299,7 @@ def main(
 
 if __name__ == "__main__":
     kpl.init_kplotlib()
-
-    data = dm.get_raw_data(file_id=1661020621314)
-
-    raw_fig = create_raw_data_figure(data)
-
+    data = dm.get_raw_data(file_id=1825159739742)
+    # raw_fig = create_raw_data_figure(data)
+    create_median_snr_vs_power_figure(data)
     kpl.show(block=True)

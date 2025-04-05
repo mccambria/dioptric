@@ -1172,16 +1172,16 @@ if __name__ == "__main__":
     #     [227.438, 19.199],
     # ]
     # green_coords_list = [
-    #     [107.769, 107.623],
-    #     [119.24, 96.109],
-    #     [107.042, 118.295],
-    #     [96.743, 94.744],
+    #     [107.726, 107.645],
+    #     [119.158, 96.062],
+    #     [107.057, 118.269],
+    #     [96.715, 94.724],
     # ]
     # red_coords_list = [
-    #     [72.499, 73.157],
-    #     [81.581, 63.665],
-    #     [72.121, 81.843],
-    #     [63.21, 62.79],
+    #     [72.446, 73.171],
+    #     [81.513, 63.628],
+    #     [72.133, 81.822],
+    #     [63.187, 62.774],
     # ]
 
     num_nvs = len(pixel_coords_list)
@@ -1534,7 +1534,7 @@ if __name__ == "__main__":
 
         # do_spin_echo_phase_scan_test(nv_list)
 
-        do_power_rabi(nv_list)
+        # do_power_rabi(nv_list)
         # do_correlation_test(nv_list)
         # do_ramsey(nv_list)
         # do_sq_relaxation(nv_list)
@@ -1546,8 +1546,8 @@ if __name__ == "__main__":
 
         # AVAILABLE_XY = ["hahn-n", "xy2-n", "xy4-n", "xy8-n", "xy16-n"]
         # n is number of repitition
-        # do_xy(nv_list, xy_seq="xy8")
-        # do_xy_dense(nv_list, xy_seq="xy8")
+        # do_xy(nv_list, xy_seq="xy8-1")
+        do_xy_dense(nv_list, xy_seq="xy8-1")
 
         # do_opx_constant_ac()
         # do_opx_square_wave()
