@@ -104,15 +104,12 @@ def main(
 
     pulse_gen = tb.get_server_pulse_gen()
     powers = calculate_powers(0, power_range, num_steps)
-    # powers = np.linspace(0, power_range, num_steps) + 1
-
-    seq_file = "resonance_ref.py"
+    seq_file = "power_rabi.py"
 
     ### Collect the data
-
     def run_fn(step_inds):
         seq_args = [widefield.get_base_scc_seq_args(nv_list, uwave_ind_list), step_inds]
-        print(seq_args)
+        # print(seq_args)
         seq_args_string = tb.encode_seq_args(seq_args)
         pulse_gen.stream_load(seq_file, seq_args_string, num_reps)
 
@@ -133,8 +130,22 @@ def main(
         run_fn,
         step_fn,
         uwave_ind_list=uwave_ind_list,
+        load_iq=True,
     )
 
+    ### save the data
+    timestamp = dm.get_time_stamp()
+    data |= {
+        "timestamp": timestamp,
+        "power-units": "GHz",
+        "power_range": power_range,
+        "powers": powers,
+    }
+
+    repr_nv_sig = widefield.get_repr_nv_sig(nv_list)
+    repr_nv_name = repr_nv_sig.name
+    file_path = dm.get_file_path(__file__, timestamp, repr_nv_name)
+    dm.save_raw_data(data, file_path)
     ### Process and plot
 
     data["powers"] = powers
@@ -145,21 +156,9 @@ def main(
         raw_fig = None
 
     ### Clean up and return
-
     tb.reset_cfm()
     kpl.show()
 
-    timestamp = dm.get_time_stamp()
-    data |= {
-        "timestamp": timestamp,
-        "power-units": "GHz",
-        "power_range": power_range,
-    }
-
-    repr_nv_sig = widefield.get_repr_nv_sig(nv_list)
-    repr_nv_name = repr_nv_sig.name
-    file_path = dm.get_file_path(__file__, timestamp, repr_nv_name)
-    dm.save_raw_data(data, file_path)
     if raw_fig is not None:
         dm.save_figure(raw_fig, file_path)
 

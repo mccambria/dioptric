@@ -19,47 +19,25 @@ from servers.timing.sequencelibrary.QM_opx import seq_utils
 from servers.timing.sequencelibrary.QM_opx.camera import base_scc_sequence
 
 
-def get_seq(
-    base_scc_seq_args,
-    step_inds=None,
-    num_reps=1,
-    reference=True,
-    pol_duration_ns=None,
-    ion_duration_ns=None,
-    readout_duration_ns=None,
-    phase=None,
-):
-    # if phase is not None:
-    #     i_el, q_el = seq_utils.get_iq_mod_elements(uwave_ind)
-    # phase_rad = phase * (np.pi / 180)
-    # i_comp = 0.5 * np.cos(phase_rad)
-    # q_comp = 0.5 * np.sin(phase_rad)
-    # iq_pulse_dict = {0: , 90:}
-
+def get_seq(base_scc_seq_args, step_inds=None, num_reps=1):
     with qua.program() as seq:
         seq_utils.init()
         seq_utils.macro_run_aods()
         step_ind = qua.declare(int)
 
         def uwave_macro_sig(uwave_ind_list, step_val):
-            seq_utils.macro_pi_pulse(uwave_ind_list)
+            seq_utils.macro_pi_pulse(uwave_ind_list, phase=0)
 
-        # MCC
-        # def uwave_macro_sig(uwave_ind_list, step_val):
-        #     qua.align()
-        #     seq_utils.macro_pi_on_2_pulse(uwave_ind_list)
-        #     qua.wait(4)
-        #     seq_utils.macro_pi_pulse(uwave_ind_list)
-        #     qua.wait(4)
-        #     # seq_utils.macro_pi_pulse([uwave_ind])
-        #     seq_utils.macro_pi_on_2_pulse(uwave_ind_list)
+        def uwave_macro_ref(uwave_ind_list, step_val):
+            pass
+
         with qua.for_each_(step_ind, step_inds):
             base_scc_sequence.macro(
                 base_scc_seq_args,
-                uwave_macro_sig,
+                [uwave_macro_sig, uwave_macro_ref],
                 step_ind,
                 num_reps=num_reps,
-                reference=reference,
+                reference=False,
             )
 
     seq_ret_vals = []

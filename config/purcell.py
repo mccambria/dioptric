@@ -139,12 +139,12 @@ config |= {
             # sig gen 1 is iq molulated
             1: {
                 "physical_name": "sig_gen_STAN_sg394_2",
-                # "uwave_power": 8.1,
-                "uwave_power": 8.3,
+                # "uwave_power": 8.3,
+                "uwave_power": 8.0,
                 # "frequency": 2.779138,   # rubin shallow NVs O1 ms=-1
                 # "frequency": 2.964545,  # rubin shallow NV O1 ms=+1
                 "frequency": 2.842478,  # rubin shallow NV O3 ms=-1
-                "rabi_period": 112,
+                "rabi_period": 128,
             },
         },
     },

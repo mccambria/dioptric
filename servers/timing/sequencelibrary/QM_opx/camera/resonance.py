@@ -14,7 +14,7 @@ import matplotlib.pyplot as plt
 from qm import QuantumMachinesManager
 from qm.simulate import SimulationConfig
 
-from servers.timing.sequencelibrary.QM_opx.camera import resonance_ref
+from servers.timing.sequencelibrary.QM_opx.camera import power_rabi
 from utils import common
 
 
@@ -26,7 +26,7 @@ def get_seq(
     uwave_duration_ns,
     num_reps,
 ):
-    return resonance_ref.get_seq(
+    return power_rabi.get_seq(
         pol_coords_list,
         repol_coords_list,
         ion_coords_list,

@@ -90,21 +90,6 @@ def process_and_plot_xy8(nv_list, taus, norm_counts, norm_counts_ste):
         plt.show(block=True)
 
 
-def hybrid_tau_spacing(min_tau, max_tau, num_steps, log_frac=0.6):
-    N_log = int(num_steps * log_frac)
-    N_lin = num_steps - N_log
-
-    log_max = 10 ** (
-        np.log10(min_tau) + (np.log10(max_tau) - np.log10(min_tau)) * log_frac
-    )
-    taus_log = np.logspace(np.log10(min_tau), np.log10(log_max), N_log, endpoint=False)
-    taus_lin = np.linspace(log_max, max_tau, N_lin)
-
-    taus = np.unique(np.concatenate([taus_log, taus_lin]))
-    taus = [round(tau / 4) * 4 for tau in taus]
-    return taus
-
-
 def main(
     nv_list,
     num_steps,

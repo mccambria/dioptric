@@ -36,7 +36,6 @@ from majorroutines.widefield import (
     optimize_scc_amp_duration,
     optimize_spin_pol,
     power_rabi,
-    power_rabi_scc_snr,
     rabi,
     ramsey,
     relaxation_interleave,
@@ -407,16 +406,21 @@ def do_scc_snr_check(nv_list):
     scc_snr_check.main(nv_list, num_reps, num_runs, uwave_ind_list=[1])
 
 
-def do_power_rabi_scc_snr(nv_list):
+def do_power_rabi(nv_list):
     num_reps = 10
     num_runs = 200
-    power_range = 6
-    num_steps = 16
+    power_range = 4
+    num_steps = 15
+    uwave_ind_list = [1]
     # num_runs = 200
-    # num_runs = 160 * 4
     # num_runs = 3
-    power_rabi_scc_snr.main(
-        nv_list, num_steps, num_reps, num_runs, power_range, uwave_ind_list=[0, 1]
+    power_rabi.main(
+        nv_list,
+        num_steps,
+        num_reps,
+        num_runs,
+        power_range,
+        uwave_ind_list,
     )
 
 
@@ -524,7 +528,7 @@ def do_spin_echo_phase_scan_test(nv_list):
     max_phi = 2 * np.pi
     num_steps = 17
     num_reps = 11
-    num_runs = 200
+    num_runs = 100
     # num_runs = 2
     uwave_ind_list = [1]  # only one has iq modulation
     spin_echo_phase_scan_test.main(
@@ -552,29 +556,6 @@ def do_ac_stark(nv_list):
 
     ac_stark.main(
         nv_list, num_steps, num_reps, num_runs, min_tau, max_tau, uwave_ind_list
-    )
-
-
-def do_power_rabi(nv_list):
-    # power_center = -3.6
-    power_range = 6
-    num_steps = 16
-    num_reps = 24
-    # num_reps = 20
-    num_runs = 300
-    # num_runs = 50
-    # num_runs = 2
-
-    # uwave_ind_list = [0]
-    uwave_ind_list = [0, 1]
-
-    power_rabi.main(
-        nv_list,
-        num_steps,
-        num_reps,
-        num_runs,
-        power_range,
-        uwave_ind_list,
     )
 
 
@@ -673,17 +654,8 @@ def do_xy(nv_list, xy_seq="xy8"):
     # taus calculation
     # taus = np.linspace(min_tau, max_tau, num_steps)
     # taus = np.geomspace(1 / num_steps, 1, num_steps)
-    # taus = (taus - taus[0]) / (taus[-1] - taus[0])  # normalize 0 → 1
-    # taus = taus * (max_tau - min_tau) + min_tau
-    # taus = [round(el / 4) * 4 for el in taus]
-    # taus = hybrid_tau_spacing(min_tau, max_tau, num_steps, log_frac=0.6)
-
-    def generate_log_spaced_taus(min_tau, max_tau, num_steps, base=4):
-        taus = np.logspace(np.log10(min_tau), np.log10(max_tau), num_steps)
-        taus = np.floor(taus / base) * base
-        return taus
-
-    taus = generate_log_spaced_taus(min_tau, max_tau, num_steps, base=4)
+    # taus = widefield.hybrid_tau_spacing(min_tau, max_tau, num_steps, log_frac=0.6)
+    taus = widefield.generate_log_spaced_taus(min_tau, max_tau, num_steps, base=4)
     # num_runs = 2
     # xy8.main(nv_list, num_steps, num_reps, num_runs, taus , uwave_ind_list)
     for _ in range(2):
@@ -1560,9 +1532,9 @@ if __name__ == "__main__":
         # do_resonance(nv_list)
         # do_spin_echo(nv_list)
 
-        do_spin_echo_phase_scan_test(nv_list)
+        # do_spin_echo_phase_scan_test(nv_list)
 
-        # do_power_rabi(nv_list)
+        do_power_rabi(nv_list)
         # do_correlation_test(nv_list)
         # do_ramsey(nv_list)
         # do_sq_relaxation(nv_list)
@@ -1582,7 +1554,6 @@ if __name__ == "__main__":
 
         # nv_list = nv_list[::-1]
         # do_scc_snr_check(nv_list)
-        # do_power_rabi_scc_snr(nv_list)
         # do_optimize_scc_duration(nv_list)
         # do_optimize_scc_amp(nv_list)
         # optimize_scc_amp_and_duration(nv_list)
