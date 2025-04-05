@@ -34,7 +34,6 @@ def get_seq(base_scc_seq_args, step_vals, num_reps=1):
             qua.align()
             seq_utils.macro_pi_on_2_pulse(uwave_ind_list, phase=0)
             seq_utils.macro_pi_pulse(uwave_ind_list, phase=0)
-            # qua.wait(24)  # wait for 24 clock cycle corresponding to 96ns
             seq_utils.macro_pi_on_2_pulse(uwave_ind_list, phase=phi)
             qua.wait(buffer)
 

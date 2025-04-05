@@ -90,28 +90,12 @@ def process_and_plot_xy8(nv_list, taus, norm_counts, norm_counts_ste):
         plt.show(block=True)
 
 
-def hybrid_tau_spacing(min_tau, max_tau, num_steps, log_frac=0.6):
-    N_log = int(num_steps * log_frac)
-    N_lin = num_steps - N_log
-
-    log_max = 10 ** (
-        np.log10(min_tau) + (np.log10(max_tau) - np.log10(min_tau)) * log_frac
-    )
-    taus_log = np.logspace(np.log10(min_tau), np.log10(log_max), N_log, endpoint=False)
-    taus_lin = np.linspace(log_max, max_tau, N_lin)
-
-    taus = np.unique(np.concatenate([taus_log, taus_lin]))
-    taus = [round(tau / 4) * 4 for tau in taus]
-    return taus
-
-
 def main(
     nv_list,
     num_steps,
     num_reps,
     num_runs,
-    min_tau,
-    max_tau,
+    taus,
     uwave_ind_list,
     xy_seq,
 ):
@@ -121,22 +105,7 @@ def main(
     # seq_file = "xy8.py"
     seq_file = "xy.py"
 
-    # taus = np.linspace(min_tau, max_tau, num_steps)
-    # taus = np.geomspace(1 / num_steps, 1, num_steps)
-    # taus = (taus - taus[0]) / (taus[-1] - taus[0])  # normalize 0 → 1
-    # taus = taus * (max_tau - min_tau) + min_tau
-    # taus = [round(el / 4) * 4 for el in taus]
-
-    # taus = hybrid_tau_spacing(min_tau, max_tau, num_steps, log_frac=0.6)
-    def generate_log_spaced_taus(min_tau, max_tau, num_steps, base=4):
-        taus = np.logspace(np.log10(min_tau), np.log10(max_tau), num_steps)
-        taus = np.floor(taus / base) * base
-        return taus
-
-    taus = generate_log_spaced_taus(min_tau, max_tau, num_steps, base=4)
-    ### Collect the data
-
-    # old version
+    # old version of exp run using step function
     # def step_fn(tau_ind):
     #     tau = taus[tau_ind]
     #     seq_args = widefield.get_base_scc_seq_args(nv_list)
@@ -171,8 +140,6 @@ def main(
         "timestamp": timestamp,
         "taus": taus,
         "tau-units": "ns",
-        "min_tau": max_tau,
-        "max_tau": max_tau,
         "xy_seq": xy_seq,
     }
 
@@ -201,7 +168,7 @@ def main(
     #     dm.save_figure(fig, file_path)
     #     file_path = dm.get_file_path(__file__, timestamp, repr_nv_name + "-fit")
     #     dm.save_figure(fit_fig, file_path)
-    kpl.show()
+    # kpl.show()
 
 
 if __name__ == "__main__":

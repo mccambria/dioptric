@@ -26,17 +26,20 @@ from utils.constants import NVSig
 
 
 def create_fit_figure(nv_list, phis, norm_counts, norm_counts_ste):
-    def cos_func(phi, amp, phase_offset):
-        return 0.5 * amp * np.cos(phi - phase_offset) + 0.5
+    # def cos_func(phi, amp, phase_offset):
+    #     return 0.5 * amp * np.cos(phi - phase_offset) + 0.5
+    def cos_func(phi, amp, phase_offset, offset):
+        return amp * np.cos(phi - phase_offset) + offset
 
     fit_fns = []
     popts = []
-
+    phi_degrees = []
     for nv_ind in range(num_nvs):
         nv_counts = norm_counts[nv_ind]
         nv_counts_ste = norm_counts_ste[nv_ind]
 
-        guess_params = [1.0, 0.0]
+        # guess_params = [1.0, 0.0]
+        guess_params = [1.0, 0.0, 0.0]  # amp, phase_offset, baseline offset
 
         try:
             popt, _ = curve_fit(
@@ -74,18 +77,26 @@ def create_fit_figure(nv_list, phis, norm_counts, norm_counts_ste):
             chi_sq = np.sum((residuals / nv_counts_ste) ** 2)
             red_chi_sq = chi_sq / (len(nv_counts) - len(popt))
             print(f"NV {nv_ind} - Reduced chi²: {red_chi_sq:.3f}")
+            peak_phi = popt[1]  # phase_offset
+            phi_degrees.append(peak_phi)
+            print(
+                f"Peak occurs at φ ≈ {peak_phi:.2f} rad ≈ {np.degrees(peak_phi):.1f}°"
+            )
 
-        ax.set_xlabel("Phase (rad)")
-        ax.set_ylabel("Normalized Counts")
-        ax.set_title(f"Cosine Fit for NV {nv_ind}")
-        ax.legend()
-        ax.grid(True)
+    good_offsets = [phi for phi in phi_degrees if abs(phi) < 0.3]
+    avg_phase_offset = np.mean(good_offsets)
+    print(f"Suggested global IQ phase correction: {np.degrees(avg_phase_offset):.1f}°")
+    # ax.set_xlabel("Phase (rad)")
+    # ax.set_ylabel("Normalized Counts")
+    # ax.set_title(f"Cosine Fit for NV {nv_ind}")
+    # ax.legend()
+    # ax.grid(True)
 
-        # Beautify
-        ax.spines["right"].set_visible(False)
-        ax.spines["top"].set_visible(False)
-        plt.tight_layout()
-        plt.show(block=True)
+    # # Beautify
+    # ax.spines["right"].set_visible(False)
+    # ax.spines["top"].set_visible(False)
+    # plt.tight_layout()
+    # plt.show(block=True)
 
 
 def main(nv_list, num_steps, num_reps, num_runs, min_phi, max_phi, uwave_ind_list):
@@ -163,7 +174,9 @@ def main(nv_list, num_steps, num_reps, num_runs, min_phi, max_phi, uwave_ind_lis
 
 if __name__ == "__main__":
     kpl.init_kplotlib()
-    file_id = 1817334208399
+    # file_id = 1817334208399
+    file_id = 1825020210830  #
+    # file_id = 1825070485845
     data = dm.get_raw_data(file_id=file_id, load_npz=False, use_cache=True)
     nv_list = data["nv_list"]
     num_nvs = len(nv_list)

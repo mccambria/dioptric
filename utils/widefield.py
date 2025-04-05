@@ -11,10 +11,11 @@ Updated on September 16th, 2024
 
 import pickle
 import sys
+from datetime import datetime
 from functools import cache
 from importlib import import_module
 from pathlib import Path
-from datetime import datetime
+
 import matplotlib.patches as patches
 import matplotlib.pyplot as plt
 import numpy as np
@@ -644,19 +645,6 @@ def charge_state_mle(nv_list, img_array):
     return states
 
 
-# def process_counts(nv_list, sig_counts, ref_counts=None, threshold=True, method="otsu"):
-#     """Alias for threshold_counts with a more generic name."""
-#     _validate_counts_structure(sig_counts)
-#     _validate_counts_structure(ref_counts)
-#     if threshold:
-#         sig_states_array, ref_states_array = threshold_counts(
-#             nv_list, sig_counts, ref_counts, method=method
-#         )
-#         return average_counts(sig_states_array, ref_states_array)
-#     else:
-#         return average_counts(sig_counts, ref_counts)
-
-
 def calc_snr(sig_counts, ref_counts):
     """Calculate SNR for a single shot"""
     avg_contrast, avg_contrast_ste = calc_contrast(sig_counts, ref_counts)
@@ -691,37 +679,10 @@ def _validate_counts_structure(counts):
         raise RuntimeError("Passed counts object has the wrong number of dimensions.")
 
 
-# def average_counts(sig_counts, ref_counts=None):
-#     """Gets average and standard error for counts data structure.
-#     Counts arrays must have the structure [nv_ind, run_ind, freq_ind, rep_ind].
-#     Returns the structure [nv_ind, freq_ind] for avg_counts and avg_counts_ste.
-#     Returns the [nv_ind] for norms.
-#     """
-#     _validate_counts_structure(sig_counts)
-#     _validate_counts_structure(ref_counts)
-
-#     avg_counts = np.mean(sig_counts, axis=run_rep_axes)
-#     num_shots = sig_counts.shape[rep_ax] * sig_counts.shape[run_ax]
-#     avg_counts_std = np.std(sig_counts, axis=run_rep_axes, ddof=1)
-#     avg_counts_ste = avg_counts_std / np.sqrt(num_shots)
-
-#     if ref_counts is None:
-#         norms = None
-#     else:
-#         ms0_ref_counts = ref_counts[:, :, :, 0::2]
-#         ms1_ref_counts = ref_counts[:, :, :, 1::2]
-#         norms = [
-#             np.mean(ms0_ref_counts, axis=(1, 2, 3)),
-#             np.mean(ms1_ref_counts, axis=(1, 2, 3)),
-#         ]
-
-#     return avg_counts, avg_counts_ste, norms
-
-
 # endregion
+
+
 # region Miscellaneous public functions
-
-
 def get_default_keys_to_compress(raw_data):
     keys_to_compress = []
     if "img_arrays" in raw_data:
@@ -903,6 +864,7 @@ def get_threshold_list(nv_list: list[NVSig], include_inds=None):
 # endregion
 
 
+# region public funtion for control panel
 # Assuming nv_list is a list of NV centers with their (x, y, z) coordinates
 def select_well_separated_nvs(nv_list, num_nvs_to_select):
     """
@@ -968,6 +930,31 @@ def select_half_left_side_nvs(nv_list):
     left_indices = [i for i, coord in enumerate(nv_coordinates) if coord[0] < median_x]
 
     return left_indices
+
+
+def hybrid_tau_spacing(min_tau, max_tau, num_steps, log_frac=0.6):
+    N_log = int(num_steps * log_frac)
+    N_lin = num_steps - N_log
+
+    log_max = 10 ** (
+        np.log10(min_tau) + (np.log10(max_tau) - np.log10(min_tau)) * log_frac
+    )
+    taus_log = np.logspace(np.log10(min_tau), np.log10(log_max), N_log, endpoint=False)
+    taus_lin = np.linspace(log_max, max_tau, N_lin)
+
+    taus = np.unique(np.concatenate([taus_log, taus_lin]))
+    taus = [round(tau / 4) * 4 for tau in taus]
+
+    return taus
+
+
+def generate_log_spaced_taus(min_tau, max_tau, num_steps, base=4):
+    taus = np.logspace(np.log10(min_tau), np.log10(max_tau), num_steps)
+    taus = np.floor(taus / base) * base
+    return taus
+
+
+# endregion
 
 
 # region Camera getters - probably only needed internally

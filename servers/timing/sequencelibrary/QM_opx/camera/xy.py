@@ -6,6 +6,8 @@ Created on October 13th, 2023
 Saroj Chand on March 22nd, 2025
 """
 
+import re
+import sys
 import time
 
 import matplotlib.pyplot as plt
@@ -28,9 +30,11 @@ def get_seq(base_scc_seq_args, step_vals, xy_seq, num_reps=1):
     )
 
     # Adjust step values to compensate for internal delays
-    step_vals = [
-        seq_utils.convert_ns_to_cc(el) - macro_pi_pulse_duration for el in step_vals
-    ]
+    # step_vals = [
+    #     seq_utils.convert_ns_to_cc(el) - macro_pi_pulse_duration for el in step_vals
+    # ]
+    correction = macro_pi_pulse_duration + macro_pi_on_2_pulse_duration // 2
+    step_vals = [seq_utils.convert_ns_to_cc(el) - correction for el in step_vals]
     # Choose pulse phase pattern
     phase_dict = {
         "hahn": [0],
@@ -56,8 +60,16 @@ def get_seq(base_scc_seq_args, step_vals, xy_seq, num_reps=1):
             0,
         ],
     }
-    # xy_phases = phase_dict.get(xy_seq.lower(), phase_dict["xy8"])  # fallback to xy8
-    xy_phases = phase_dict.get(xy_seq.lower())
+
+    # Parse xy_seq, e.g. "xy8-4" → base="xy8", reps=4
+    match = re.match(r"([a-zA-Z]+\d*)(?:-(\d+))?", xy_seq.lower())
+    base_seq = match.group(1)
+    num_blocks = int(match.group(2)) if match.group(2) else 1
+    # Fetch and repeat the base phase pattern
+    base_phases = phase_dict.get(base_seq)
+    xy_phases = base_phases * num_blocks
+    # xy_phases = phase_dict.get(xy_seq.lower())
+
     with qua.program() as seq:
         seq_utils.init()
         seq_utils.macro_run_aods()
@@ -67,7 +79,6 @@ def get_seq(base_scc_seq_args, step_vals, xy_seq, num_reps=1):
             qua.align()
             seq_utils.macro_pi_on_2_pulse(uwave_ind_list, phase=0)
             qua.wait(step_val)
-
             for i, phase in enumerate(xy_phases):
                 seq_utils.macro_pi_pulse(uwave_ind_list, phase=phase)
                 if i < len(xy_phases) - 1:
@@ -77,18 +88,6 @@ def get_seq(base_scc_seq_args, step_vals, xy_seq, num_reps=1):
 
             seq_utils.macro_pi_on_2_pulse(uwave_ind_list, phase=0)
             qua.wait(buffer)
-
-        # SBC this test to compare with other dual rail ref
-        # def uwave_macro_ref(uwave_ind_list, step_val):
-        #     qua.align()
-        #     qua.wait(step_val)
-        #     for i in range(len(xy8_phases)):
-        #         if i < len(xy8_phases) - 1:
-        #             qua.wait(2 * step_val)  # 2τ between πs
-        #         else:
-        #             qua.wait(step_val)  # τ after last would-be π
-
-        #     qua.wait(buffer)
 
         with qua.for_each_(step_val, step_vals):
             base_scc_sequence.macro(
@@ -133,11 +132,11 @@ if __name__ == "__main__":
                 1000,
                 147776,
             ],
-            "xy4",
+            "xy4-4",
             1,
         )
 
-        sim_config = SimulationConfig(duration=int(240e3 / 4))
+        sim_config = SimulationConfig(duration=int(200e3 / 4))
         sim = opx.simulate(seq, sim_config)
         samples = sim.get_simulated_samples()
         samples.con1.plot()

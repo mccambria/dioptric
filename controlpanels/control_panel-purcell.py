@@ -36,7 +36,6 @@ from majorroutines.widefield import (
     optimize_scc_amp_duration,
     optimize_spin_pol,
     power_rabi,
-    power_rabi_scc_snr,
     rabi,
     ramsey,
     relaxation_interleave,
@@ -407,16 +406,21 @@ def do_scc_snr_check(nv_list):
     scc_snr_check.main(nv_list, num_reps, num_runs, uwave_ind_list=[1])
 
 
-def do_power_rabi_scc_snr(nv_list):
+def do_power_rabi(nv_list):
     num_reps = 10
     num_runs = 200
-    power_range = 6
-    num_steps = 16
+    power_range = 4
+    num_steps = 15
+    uwave_ind_list = [1]
     # num_runs = 200
-    # num_runs = 160 * 4
     # num_runs = 3
-    power_rabi_scc_snr.main(
-        nv_list, num_steps, num_reps, num_runs, power_range, uwave_ind_list=[0, 1]
+    power_rabi.main(
+        nv_list,
+        num_steps,
+        num_reps,
+        num_runs,
+        power_range,
+        uwave_ind_list,
     )
 
 
@@ -522,18 +526,18 @@ def do_rabi(nv_list):
 def do_spin_echo_phase_scan_test(nv_list):
     min_phi = 0
     max_phi = 2 * np.pi
-    num_steps = 33
-    num_reps = 5
-    num_runs = 200
+    num_steps = 17
+    num_reps = 11
+    num_runs = 100
     # num_runs = 2
     uwave_ind_list = [1]  # only one has iq modulation
-    # spin_echo_phase_scan_test.main(
-    #     nv_list, num_steps, num_reps, num_runs, min_phi, max_phi, uwave_ind_list
-    # )
-    for _ in range(2):
-        spin_echo_phase_scan_test.main(
-            nv_list, num_steps, num_reps, num_runs, min_phi, max_phi, uwave_ind_list
-        )
+    spin_echo_phase_scan_test.main(
+        nv_list, num_steps, num_reps, num_runs, min_phi, max_phi, uwave_ind_list
+    )
+    # for _ in range(2):
+    #     spin_echo_phase_scan_test.main(
+    #         nv_list, num_steps, num_reps, num_runs, min_phi, max_phi, uwave_ind_list
+    #     )
 
 
 def do_ac_stark(nv_list):
@@ -552,29 +556,6 @@ def do_ac_stark(nv_list):
 
     ac_stark.main(
         nv_list, num_steps, num_reps, num_runs, min_tau, max_tau, uwave_ind_list
-    )
-
-
-def do_power_rabi(nv_list):
-    # power_center = -3.6
-    power_range = 6
-    num_steps = 16
-    num_reps = 24
-    # num_reps = 20
-    num_runs = 300
-    # num_runs = 50
-    # num_runs = 2
-
-    # uwave_ind_list = [0]
-    uwave_ind_list = [0, 1]
-
-    power_rabi.main(
-        nv_list,
-        num_steps,
-        num_reps,
-        num_runs,
-        power_range,
-        uwave_ind_list,
     )
 
 
@@ -668,19 +649,78 @@ def do_xy(nv_list, xy_seq="xy8"):
     num_steps = 24
     num_reps = 10
     uwave_ind_list = [1]  # iq modulated
-    num_runs = 600
+    num_runs = 400
+
+    # taus calculation
+    # taus = np.linspace(min_tau, max_tau, num_steps)
+    # taus = np.geomspace(1 / num_steps, 1, num_steps)
+    # taus = widefield.hybrid_tau_spacing(min_tau, max_tau, num_steps, log_frac=0.6)
+    taus = widefield.generate_log_spaced_taus(min_tau, max_tau, num_steps, base=4)
     # num_runs = 2
-    # xy8.main(nv_list, num_steps, num_reps, num_runs, min_tau, max_tau, uwave_ind_list)
+    # xy8.main(nv_list, num_steps, num_reps, num_runs, taus , uwave_ind_list)
     for _ in range(2):
         xy.main(
             nv_list,
             num_steps,
             num_reps,
             num_runs,
-            min_tau,
-            max_tau,
+            taus,
             uwave_ind_list,
             xy_seq,
+        )
+
+
+def do_xy_dense(nv_list, xy_seq="xy8"):
+    # Revival-based τ selection (targeting 13C collapse and first revival only)
+    # Parameters
+    # B_dc = 37  # Gauss
+    # gamma_nuc = 1.07e3  # Hz/G for 13C
+
+    # Calculate τ at which revival occurs
+    # tau_rev_ns = 1e9 * (np.pi / (N * gamma_nuc * B_dc))  # in ns
+    # print(f"Expected revival at τ ≈ {tau_rev_ns:.1f} ns for XY8-{N}")
+
+    revival_period = int(51.5e3 / 16)  # ~25.75 µs for 37 G
+    min_tau = 200  # ns
+    taus = []
+    revival_width = 600  # ns = 5 µs width around revival
+
+    # 1. Initial decay region
+    decay = np.linspace(min_tau, min_tau + revival_width, 6)
+    taus.extend(decay.tolist())
+
+    # 2. Gap region between decay and first revival
+    gap = np.linspace(min_tau + revival_width, revival_period - revival_width, 15)
+    taus.extend(gap[1:-1].tolist())
+
+    # 3. First revival region
+    first_revival = np.linspace(
+        revival_period - revival_width, revival_period + revival_width, 56
+    )
+    taus.extend(first_revival.tolist())
+
+    # Round taus to nearest multiple of 4 ns (if required by timing resolution)
+    taus = [round(el / 4) * 4 for el in taus]
+
+    # Remove duplicates and sort
+    taus = sorted(set(taus))
+
+    # Experiment parameters
+    num_steps = len(taus)
+    num_reps = 2
+    num_runs = 600
+    uwave_ind_list = [1]  # IQ-modulated channel index
+
+    # Run the experiment
+    for _ in range(2):
+        xy.main(
+            nv_list,
+            num_steps,
+            num_reps,
+            num_runs,
+            taus=taus,
+            uwave_ind_list=uwave_ind_list,
+            xy_seq=xy_seq,
         )
 
 
@@ -1140,16 +1180,16 @@ if __name__ == "__main__":
     #     [227.438, 19.199],
     # ]
     # green_coords_list = [
-    #     [107.769, 107.623],
-    #     [119.24, 96.109],
-    #     [107.042, 118.295],
-    #     [96.743, 94.744],
+    #     [107.726, 107.645],
+    #     [119.158, 96.062],
+    #     [107.057, 118.269],
+    #     [96.715, 94.724],
     # ]
     # red_coords_list = [
-    #     [72.499, 73.157],
-    #     [81.581, 63.665],
-    #     [72.121, 81.843],
-    #     [63.21, 62.79],
+    #     [72.446, 73.171],
+    #     [81.513, 63.628],
+    #     [72.133, 81.822],
+    #     [63.187, 62.774],
     # ]
 
     num_nvs = len(pixel_coords_list)
@@ -1512,15 +1552,16 @@ if __name__ == "__main__":
         # do_charge_quantum_jump(nv_list)
         # do_ac_stark(nv_list)
 
-        # AVAILABLE_XY = ["hahn", "xy2", "xy4", "xy8", "xy16"]
-        do_xy(nv_list, xy_seq="xy4")
+        # AVAILABLE_XY = ["hahn-n", "xy2-n", "xy4-n", "xy8-n", "xy16-n"]
+        # n is number of repitition
+        # do_xy(nv_list, xy_seq="xy8")
+        do_xy_dense(nv_list, xy_seq="xy8-1")
 
         # do_opx_constant_ac()
         # do_opx_square_wave()
 
         # nv_list = nv_list[::-1]
         # do_scc_snr_check(nv_list)
-        # do_power_rabi_scc_snr(nv_list)
         # do_optimize_scc_duration(nv_list)
         # do_optimize_scc_amp(nv_list)
         # optimize_scc_amp_and_duration(nv_list)
