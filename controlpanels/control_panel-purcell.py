@@ -468,8 +468,8 @@ def do_calibrate_iq_delay(nv_list):
 
 def do_resonance(nv_list):
     freq_center = 2.87
-    freq_range = 0.240
-    # freq_range = 0.300
+    # freq_range = 0.240
+    freq_range = 0.300
     num_steps = 60
     # num_steps = 80
     # Single ref
@@ -480,7 +480,6 @@ def do_resonance(nv_list):
     # num_runs = 50
     # num_runs = 10
     # num_runs = 2
-
     # Both refs
     num_reps = 2
     num_runs = 600
@@ -1267,16 +1266,16 @@ if __name__ == "__main__":
     # print([pol_duration_list[ind] for ind in include_indices])
     # sys.exit()
 
-    arranged_scc_amp_list = [None] * num_nvs
-    arranged_scc_duration_list = [None] * num_nvs
-    arranged_pol_duration_list = [None] * len(pol_duration_list)
-    for i, idx in enumerate(selected_indices_68MHz):
-        arranged_scc_duration_list[idx] = scc_duration_list[i]
-        arranged_pol_duration_list[idx] = pol_duration_list[i]
-        # arranged_scc_amp_list[idx] = scc_amp_list[i]
-    # # # # Assign back to original lists
-    scc_duration_list = arranged_scc_duration_list
-    pol_duration_list = arranged_pol_duration_list
+    # arranged_scc_amp_list = [None] * num_nvs
+    # arranged_scc_duration_list = [None] * num_nvs
+    # arranged_pol_duration_list = [None] * len(pol_duration_list)
+    # for i, idx in enumerate(selected_indices_68MHz):
+    #     arranged_scc_duration_list[idx] = scc_duration_list[i]
+    #     arranged_pol_duration_list[idx] = pol_duration_list[i]
+    #     # arranged_scc_amp_list[idx] = scc_amp_list[i]
+    # # # Assign back to original lists
+    # scc_duration_list = arranged_scc_duration_list
+    # pol_duration_list = arranged_pol_duration_list
     # scc_amp_list = arranged_scc_amp_list
 
     # print(f"Length of pol_duration_list: {len(pol_duration_list)}")
@@ -1347,8 +1346,8 @@ if __name__ == "__main__":
     # nv_list[i] will have the ith coordinates from the above lists
     nv_list: list[NVSig] = []
     for ind in range(num_nvs):
-        if ind not in selected_indices_68MHz:
-            continue
+        # if ind not in selected_indices_68MHz:
+        #     continue
         coords = {
             CoordsKey.SAMPLE: sample_coords,
             CoordsKey.Z: z_coord,
@@ -1537,7 +1536,7 @@ if __name__ == "__main__":
 
         # do_resonance_zoom(nv_list)
         # do_rabi(nv_list)
-        # do_resonance(nv_list)
+        do_resonance(nv_list)
         # do_spin_echo(nv_list)
 
         # do_spin_echo_phase_scan_test(nv_list)
