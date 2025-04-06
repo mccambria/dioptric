@@ -611,7 +611,8 @@ if __name__ == "__main__":
     ## 68MHz orientation XY8 buffer/wait updated
     # file_ids = [1824501762414, 1824732255862]
 
-    file_ids = [1825497210263, 1825365856229]
+    ## 68MHz orientation XY8
+    file_ids = [1825683241321, 1825803148127]
     ## Internal Test Plots
     # plot_T2_on_T1()
     # contrast_plot()
