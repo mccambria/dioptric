@@ -1555,7 +1555,7 @@ if __name__ == "__main__":
         # AVAILABLE_XY = ["hahn-n", "xy2-n", "xy4-n", "xy8-n", "xy16-n"]
         # n is number of repitition
         # do_xy(nv_list, xy_seq="xy8")
-        do_xy_dense(nv_list, xy_seq="xy8-1")
+        # do_xy_dense(nv_list, xy_seq="xy8-1")
 
         # do_opx_constant_ac()
         # do_opx_square_wave()
