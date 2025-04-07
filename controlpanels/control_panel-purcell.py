@@ -602,16 +602,18 @@ def do_ac_stark(nv_list):
 
 
 def do_spin_echo(nv_list, revival_period=None):
-    min_tau = 200  # ns
-    max_tau = 100e3  # fallback if no revival_period given
+    # min_tau = 200  # ns
+    min_tau = 600  # ns
+    max_tau = 60e3  # fallback
     taus = []
 
     # Densely sample early decay
-    decay_width = 8e3
-    decay = np.linspace(min_tau, min_tau + decay_width, 11)
-    taus.extend(decay.tolist())
+    # decay_width = 8e3
+    # decay = np.linspace(min_tau, min_tau + decay_width, 11)
+    # taus.extend(decay.tolist())
 
-    taus.extend(np.geomspace(min_tau + decay_width, max_tau, 78).tolist())
+    # taus.extend(np.geomspace(min_tau, max_tau, 66).tolist())
+    taus.extend(np.linspace(min_tau, max_tau, 66).tolist())
 
     # Round to clock-cycle-compatible units
     taus = [round(el / 4) * 4 for el in taus]
@@ -621,13 +623,13 @@ def do_spin_echo(nv_list, revival_period=None):
 
     num_steps = len(taus)
     num_reps = 3
-    num_runs = 200
+    num_runs = 400
 
     print(
         f"[Spin Echo] Running with {num_steps} τ values, revival_period={revival_period}"
     )
 
-    for ind in range(6):
+    for ind in range(3):
         spin_echo.main(nv_list, num_steps, num_reps, num_runs, taus=taus)
 
 
@@ -1133,8 +1135,8 @@ if __name__ == "__main__":
         # file_path="slmsuite/nv_blob_detection/nv_blob_shallow_148nvs_reordered.npz",
         # file_path="slmsuite/nv_blob_detection/nv_blob_rubin_shallow_140nvs_reordered_updated.npz",
         # file_path="slmsuite/nv_blob_detection/nv_blob_rubin_shallow_107nvs_reordered_updated.npz",
-        # file_path="slmsuite/nv_blob_detection/nv_blob_rubin_shallow_154nvs_reordered.npz",
-        file_path="slmsuite/nv_blob_detection/nv_blob_rubin_shallow_75nvs_reordered.npz",
+        file_path="slmsuite/nv_blob_detection/nv_blob_rubin_shallow_154nvs_reordered.npz",
+        # file_path="slmsuite/nv_blob_detection/nv_blob_rubin_shallow_75nvs_reordered.npz",
     ).tolist()
     # Define transformations using `transform_coords`
     # pixel_coords_list = [
@@ -1179,16 +1181,16 @@ if __name__ == "__main__":
     #     [227.438, 19.199],
     # ]
     # green_coords_list = [
-    #     [107.726, 107.645],
-    #     [119.158, 96.062],
-    #     [107.057, 118.269],
-    #     [96.715, 94.724],
+    #     [107.793, 107.669],
+    #     [119.267, 96.136],
+    #     [107.09, 118.345],
+    #     [96.788, 94.788],
     # ]
     # red_coords_list = [
-    #     [72.446, 73.171],
-    #     [81.513, 63.628],
-    #     [72.133, 81.822],
-    #     [63.187, 62.774],
+    #     [72.501, 73.19],
+    #     [81.603, 63.687],
+    #     [72.161, 81.883],
+    #     [63.248, 62.825],
     # ]
 
     num_nvs = len(pixel_coords_list)
@@ -1242,7 +1244,6 @@ if __name__ == "__main__":
     #200NVs
     # pol_duration_list = [144, 156, 164, 168, 180, 204, 180, 180, 152, 188, 164, 156, 176, 204, 192, 180, 192, 140, 120, 164, 128, 168, 180, 180, 168, 164, 220, 176, 144, 168, 152, 180, 192, 212, 228, 384, 192, 200, 188, 168, 176, 168, 200, 176, 132, 152, 156, 168, 192, 188, 176, 176, 216, 192, 164, 204, 212, 176, 212, 200, 220, 284, 284, 216, 176, 168, 212, 228, 156, 180, 156, 192, 252, 176, 284, 240, 176, 284, 192, 156, 284, 156, 156, 180, 216, 152, 192, 164, 284, 216, 240, 204, 284, 176, 284, 212, 212, 284, 156, 216, 216, 212, 284, 216, 188, 192, 284, 180, 284, 188, 284, 232, 284, 284, 144, 164, 284, 168, 220, 192, 164, 284, 284, 204, 256, 176, 176, 284, 284, 284, 180, 180, 228, 204, 284, 164, 284, 204, 284, 220, 284, 284, 284, 384, 284, 284, 192, 180, 156, 164, 284, 284, 128, 284, 324, 284, 168, 284, 104, 256, 216, 212, 284, 284, 284, 284, 200, 284, 284, 284, 204, 176, 284, 284, 284, 284, 284, 264, 284, 188, 192, 220, 212, 284, 284, 216, 284, 304, 284, 168, 104, 284, 252, 284, 284, 284, 220, 284, 140, 284, 284, 284, 284]
     # pol_duration_list = [192, 164, 176, 164, 180, 140, 192, 132, 104, 156, 204, 108, 164, 268, 256, 200, 188, 176, 176, 220, 276, 144, 300, 96, 144, 176, 264, 212, 312, 264, 276, 228, 116, 128, 152, 192, 180, 192, 216, 120, 200, 212, 240, 312, 256, 204, 188, 168, 200, 424, 240, 276, 128, 256, 216, 188, 140, 408, 384, 152, 180, 140, 400, 120, 252, 256, 152, 220, 164, 92, 232, 336, 232, 256, 428, 204, 104, 204, 176, 216, 388, 316, 400, 424, 256, 424, 216, 298, 268, 264, 364, 312, 176, 300, 328, 140, 180, 132, 280, 204, 216, 396, 428, 144, 520, 256, 264, 408, 416, 400, 512, 164, 192, 298, 192, 144, 168, 460, 328, 536, 440, 460, 204, 340, 352, 440, 364, 264, 120, 188, 298, 340, 188, 300, 324, 500, 304, 396, 384, 256, 200, 220, 212, 544, 116, 264, 312, 464, 200, 156, 140, 572, 204, 424]
-    # include_inds = [0, 3, 6, 8, 9, 10, 11, 12, 13, 16, 18, 19, 20, 21, 22, 23, 24, 29, 34, 35, 36, 39, 40, 41, 42, 43, 45, 49, 50, 51, 52, 54, 56, 57, 59, 63, 64, 69, 72, 75, 79, 82, 84, 85, 86, 89, 91, 92, 93, 94, 95, 96, 98, 99, 101, 102, 103, 105, 106, 107, 108, 113, 115, 116, 117, 120, 122, 123, 124, 128, 129, 131, 132, 133, 135, 136, 137, 139, 142, 146, 150, 152]
     # include_indices = [0, 1, 3, 4, 5, 7, 9, 10, 11, 12, 13, 14, 15, 16, 18, 19, 21, 23, 26, 27, 28, 29, 30, 31, 32, 33, 34, 35, 36, 37, 38, 39, 40, 41, 43, 44, 46, 48, 51, 52, 53, 54, 55, 56, 57, 58, 59, 61, 62, 64, 65, 66, 67, 68, 69, 71, 72, 73, 74, 75, 76, 77, 78, 79, 80, 82, 87, 89, 90, 92, 94, 95, 96, 97, 98, 99, 100, 101, 102, 103, 104, 105, 106, 108, 109, 111, 112, 113, 114, 117, 118, 119, 121, 122, 124, 126, 127, 128, 129, 130, 131, 132, 133, 134, 135, 137, 139]
     # include_indices = [0, 1, 3, 4, 5, 7, 9, 10, 11, 12, 13, 14, 15, 16, 18, 19, 21, 23, 26, 27, 28, 29, 30, 31, 32, 33, 34, 35, 36, 37, 38, 39, 40, 41, 43, 44, 46, 48, 51, 52, 53, 54, 55, 56, 57, 58, 59, 61, 62, 64, 65, 66, 67, 68, 69, 71, 72, 73, 74, 75, 76, 77, 78, 79, 80, 82, 87, 89, 90, 92, 94, 95, 96, 97, 98, 99, 100, 101, 102, 103, 104, 105, 106, 108, 109, 111, 112, 113, 114, 117, 118, 119, 121, 122, 124, 126, 127, 128, 129, 130, 131, 132, 133, 134, 135, 137, 139]
 
@@ -1258,9 +1259,9 @@ if __name__ == "__main__":
     #     val for ind, val in enumerate(scc_duration_list) if ind not in drop_indices
     # ]
     #75NVs optimized
-    pol_duration_list = [164, 144, 168, 108, 132, 176, 132, 152, 176, 168, 140, 200, 204, 120, 268, 116, 200, 128, 152, 144, 116, 192, 156, 156, 256, 140, 156, 240, 232, 116, 200, 176, 340, 116, 108, 216, 104, 200, 144, 140, 304, 416, 140, 156, 292, 188, 164, 352, 180, 156, 232, 144, 328, 132, 228, 288, 164, 384, 292, 140, 400, 388, 192, 348, 412, 144, 200, 180, 120, 188, 436, 180, 164, 232, 252]
-    scc_duration_list = [88, 80, 100, 100, 76, 88, 68, 88, 88, 92, 72, 68, 88, 80, 116, 64, 112, 48, 64, 60, 96, 92, 92, 72, 108, 84, 68, 100, 108, 76, 108, 108, 124, 84, 92, 72, 56, 140, 96, 76, 104, 136, 88, 64, 108, 80, 124, 120, 144, 88, 72, 68, 124, 80, 116, 84, 80, 132, 80, 36, 88, 108, 92, 152, 140, 68, 136, 80, 64, 84, 152, 140, 76, 92, 196]
-    selected_indices_68MHz = [0, 7, 8, 9, 11, 14, 18, 22, 24, 25, 26, 27, 28, 30, 31, 32, 33, 35, 38, 44, 45, 46, 47, 48, 49, 53, 55, 57, 58, 60, 62, 64, 66, 67, 68, 69, 70, 71, 72, 73]
+    # pol_duration_list = [164, 144, 168, 108, 132, 176, 132, 152, 176, 168, 140, 200, 204, 120, 268, 116, 200, 128, 152, 144, 116, 192, 156, 156, 256, 140, 156, 240, 232, 116, 200, 176, 340, 116, 108, 216, 104, 200, 144, 140, 304, 416, 140, 156, 292, 188, 164, 352, 180, 156, 232, 144, 328, 132, 228, 288, 164, 384, 292, 140, 400, 388, 192, 348, 412, 144, 200, 180, 120, 188, 436, 180, 164, 232, 252]
+    # scc_duration_list = [88, 80, 100, 100, 76, 88, 68, 88, 88, 92, 72, 68, 88, 80, 116, 64, 112, 48, 64, 60, 96, 92, 92, 72, 108, 84, 68, 100, 108, 76, 108, 108, 124, 84, 92, 72, 56, 140, 96, 76, 104, 136, 88, 64, 108, 80, 124, 120, 144, 88, 72, 68, 124, 80, 116, 84, 80, 132, 80, 36, 88, 108, 92, 152, 140, 68, 136, 80, 64, 84, 152, 140, 76, 92, 196]
+    # selected_indices_68MHz = [0, 7, 8, 9, 11, 14, 18, 22, 24, 25, 26, 27, 28, 30, 31, 32, 33, 35, 38, 44, 45, 46, 47, 48, 49, 53, 55, 57, 58, 60, 62, 64, 66, 67, 68, 69, 70, 71, 72, 73]
     # selected_indices_185MHz  =[0, 1, 2, 3, 4, 5, 6, 10, 12, 13, 15, 16, 17, 19, 20, 21, 23, 29, 34, 36, 39, 40, 41, 42, 43, 50, 51, 52, 54, 56, 59, 61, 63, 65, 74]
 
     # print([pol_duration_list[ind] for ind in include_indices])
@@ -1269,7 +1270,7 @@ if __name__ == "__main__":
     # arranged_scc_amp_list = [None] * num_nvs
     # arranged_scc_duration_list = [None] * num_nvs
     # arranged_pol_duration_list = [None] * len(pol_duration_list)
-    # for i, idx in enumerate(selected_indices_68MHz):
+    # for i, idx in enumerate(include_indices):
     #     arranged_scc_duration_list[idx] = scc_duration_list[i]
     #     arranged_pol_duration_list[idx] = pol_duration_list[i]
     #     # arranged_scc_amp_list[idx] = scc_amp_list[i]
@@ -1331,18 +1332,18 @@ if __name__ == "__main__":
     # ax.set_ylabel("SNR difference")
     # kpl.show(block=True)
     # sys.exit()
-    scc_duration_list = [
-        4 * round(el / 4) if el is not None else None for el in scc_duration_list
-    ]
-    pol_duration_list = [
-        4 * round(el / 4) if el is not None else None for el in pol_duration_list
-    ]
-    print(f"First 10 SCC durations: {len(scc_duration_list)}")
-    print(f"First 10 POL durations: {len(pol_duration_list)}")
+    # scc_duration_list = [
+    #     4 * round(el / 4) if el is not None else None for el in scc_duration_list
+    # ]
+    # pol_duration_list = [
+    #     4 * round(el / 4) if el is not None else None for el in pol_duration_list
+    # ]
+    # print(f"First 10 SCC durations: {len(scc_duration_list)}")
+    # print(f"First 10 POL durations: {len(pol_duration_list)}")
 
     # scc_amp_list = [1.0] * num_nvs
-    # scc_duration_list = [112] * num_nvs
-    # pol_duration_list = [200] * num_nvs
+    scc_duration_list = [112] * num_nvs
+    pol_duration_list = [200] * num_nvs
     # nv_list[i] will have the ith coordinates from the above lists
     nv_list: list[NVSig] = []
     for ind in range(num_nvs):
@@ -1381,7 +1382,7 @@ if __name__ == "__main__":
     # nv_sig.expected_counts = 4500
     # nv_sig.expected_counts = 900
     # nv_sig.expected_counts = 2100
-    nv_sig.expected_counts = 1250
+    nv_sig.expected_counts = 1200
 
     # num_nvs = len(nv_list)
     # print(f"Final NV List: {nv_list}")
