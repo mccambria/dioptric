@@ -252,6 +252,21 @@ def plot_nv_resonance_fits_and_residuals(
     avg_peak_amplitudes = list(avg_peak_amplitudes)
     snrs = list(snrs)
 
+    # Plot SNR vs frequency for all NVs
+    fig_snr, ax_snr = plt.subplots(figsize=(8, 5))
+    for nv_idx in range(num_nvs):
+        snrs = np.reshape(avg_snr[nv_idx], len(freqs))
+        ax_snr.plot(freqs, snrs, linewidth=0.5)
+
+    ax_snr.set_xlabel("Microwave Frequency (MHz)")
+    ax_snr.set_ylabel("Signal-to-Noise Ratio (SNR)")
+    ax_snr.set_title("SNR vs Frequency for All NVs")
+    ax_snr.legend(fontsize="small", ncol=2)
+    ax_snr.grid(True)
+    plt.tight_layout()
+    plt.show(block=True)
+    sys.exit()
+    ### snrs
     median_snr = np.median(snrs)
     print(f"median snr:{median_snr:.2f}")
     # Remove outliers from a data array using the IQR method.
@@ -336,8 +351,8 @@ def plot_nv_resonance_fits_and_residuals(
     plt.tight_layout()
     # return
 
-    filter_nvs = True
-    # filter_nvs = False
+    # filter_nvs = True
+    filter_nvs = False
     if filter_nvs:
         # target_peak_values = [0.025, 0.068, 0.146, 0.185]
         target_peak_values = [0.068, 0.185]
@@ -1103,6 +1118,9 @@ if __name__ == "__main__":
     file_ids = [1809016009780]
     # rubib 75
     file_ids = [1810826711017]
+
+    # rubib 154
+    file_ids = [1827020564514]
     # fmt: off
     # fmt: on
     # print(len(reference_pixel_coords))
