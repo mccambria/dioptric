@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 """
-Extract the magnitude and orientation of a b field from three 
+Extract the magnitude and orientation of a b field from three
 NV splittings with different orientations
 
 Created on November 29th, 2023
@@ -8,25 +8,7 @@ Created on November 29th, 2023
 @author: mccambria
 """
 
-
-import os
-import sys
-import time
-from random import shuffle
-
-import matplotlib.pyplot as plt
 import numpy as np
-from scipy.optimize import curve_fit
-
-from majorroutines.widefield import targeting
-from utils import common
-from utils import data_manager as dm
-from utils import kplotlib as kpl
-from utils import positioning as pos
-from utils import tool_belt as tb
-from utils import widefield as widefield
-from utils.constants import NVSpinState, VirtualLaserKey
-from utils.positioning import get_scan_1d as calculate_freqs
 
 degrees_1095 = 109.5 * (2 * np.pi / 360)
 degrees_120 = 120 * (2 * np.pi / 360)
@@ -34,7 +16,9 @@ degrees_120 = 120 * (2 * np.pi / 360)
 
 ### Splittings here
 
-splittings = [59, 0, 63]  # MHz
+splittings = [214, 162, 85, 50]  # new spliting
+splittings = [splittings[jnd] for jnd in range(4) if jnd != 3]
+# splittings = [59, 0, 63]  # MHz
 
 ### Calculate
 
