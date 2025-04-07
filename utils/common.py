@@ -11,6 +11,7 @@ Created September 10th, 2021
 import copy
 import importlib
 import json
+import os
 import platform
 import socket
 import sys
@@ -29,12 +30,9 @@ linux_nvdata_dir = Path.home() / "E/nvdata"
 
 def get_nvdata_dir():
     """Returns an OS-dependent Path to the nvdata directory (configured above)"""
-    os_name = platform.system()
-    if os_name == "Windows":
-        nvdata_dir = windows_nvdata_dir
-    elif os_name == "Linux":
-        nvdata_dir = linux_nvdata_dir
-
+    os_name = platform.system().lower()
+    config = get_config_dict()
+    nvdata_dir = config[f"{os_name}_nvdata_dir"]
     return nvdata_dir
 
 
@@ -71,7 +69,10 @@ def get_opx_config_dict(pc_name=None):
 
 @cache
 def get_data_manager_folder():
-    return get_repo_path() / "data_manager"
+    data_manager_folder = get_repo_path() / "data_manager"
+    if not data_manager_folder.is_dir():
+        data_manager_folder.mkdir()
+    return data_manager_folder
 
 
 @cache
@@ -166,8 +167,5 @@ def get_registry_entry(directory, key):
 # endregion
 
 if __name__ == "__main__":
-    start = time.time()
-    for ind in range(1000):
-        get_config_dict()
-    stop = time.time()
-    print(stop - start)
+    nas = get_nvdata_dir()
+    print(os.listdir(nas))

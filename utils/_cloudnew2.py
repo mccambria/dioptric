@@ -8,19 +8,19 @@ Created November 18th, 2023
 @author: mccambria
 """
 
+import os
 import re
+import shutil
 import time
 from pathlib import Path
 
-import os
-import shutil
-from utils import common
 import utils.search_index as search_index
+from utils import common
+
+nvdata_dir = common.get_nvdata_dir()
 
 
-def download(file_name,
-    path_from_nvdata=None,
-    nvdata_dir=None,):
+def download(file_name=None, ext=None, path_from_nvdata=None, nvdata_dir=None):
     """Download file from the cloud
 
     Parameters
@@ -35,14 +35,13 @@ def download(file_name,
     Binary string
         Contents of the file
     """
-    file_path = get_raw_data_path(file_name, path_from_nvdata, nvdata_dir)
+    file_path = get_raw_data_path(file_name, ext, path_from_nvdata, nvdata_dir)
     with file_path.open() as f:
         res = f.read()
         return res
 
 
-
-def upload(file_path, content):
+def upload(path_from_nvdata, content):
     """Upload file to the cloud
 
     Parameters
@@ -53,9 +52,12 @@ def upload(file_path, content):
     content : BytesIO
         Byte stream to write to the file
     """
-    path = common.get_nvdata_dir / file_path
-    with path.open('w') as f:
+    path = common.get_nvdata_dir() / path_from_nvdata
+    if not path.parent.is_dir():
+        path.parent.mkdir(parents=True)
+    with path.open("wb+") as f:
         f.write(content.getbuffer())
+    search_index.add_to_search_index(path)
 
 
 def get_folder_id(folder_path, no_create=False):
@@ -86,9 +88,7 @@ def get_folder_id(folder_path, no_create=False):
     return folder_id
 
 
-def _get_folder_id_recursion(
-    folder_path_parts, start_id=root_folder_id, no_create=False
-):
+def _get_folder_id_recursion(folder_path_parts, start_id=nvdata_dir, no_create=False):
     """
     Starting from the root data folder, find each subsequent folder in folder_path_parts,
     finally returning the ID of the last folder. Optionally create the folders that don't
@@ -139,7 +139,7 @@ def _delete_empty_folders(folder_path):
 
 
 def _batch_delete(condition_fn, folder_path):
-    #folder path from root
+    # folder path from root
     folder_path = common.get_nvdata_dir / folder_path
 
     # Delete this folder if it satisfies the passed condition
@@ -158,21 +158,16 @@ def _batch_delete(condition_fn, folder_path):
             #     return res
 
 
-def get_raw_data_path(
-    file_name,
-    path_from_nvdata=None,
-    nvdata_dir=None,
-):
+def get_raw_data_path(file_name, ext="txt", path_from_nvdata=None, nvdata_dir=None):
     """Same as get_raw_data, but just returns the path to the file"""
     if nvdata_dir is None:
         nvdata_dir = common.get_nvdata_dir()
     if path_from_nvdata is None:
         path_from_nvdata = search_index.get_data_path_from_nvdata(file_name)
     data_dir = nvdata_dir / path_from_nvdata
-    file_name_ext = "{}.txt".format(file_name)
+    file_name_ext = f"{file_name}.{ext}"
     file_path = data_dir / file_name_ext
     return file_path
-
 
 
 def _get_folder_path(folder_info):
@@ -190,4 +185,9 @@ if __name__ == "__main__":
     # reg_exp = r"nvdata\/pc_[a-zA-Z]*\/branch_[a-zA-Z]*\/.+\/2018_[0-9]{2}"
     # _delete_folders(reg_exp)
 
-    _delete_empty_folders()
+    # _delete_empty_folders()
+
+    file_name = "2024_05_06-15_18_46-johnson-nv0_2024_03_12"
+    path_from_nvdata = "pc_Purcell/branch_master/resonance/2025_04"
+    test = download(file_name, path_from_nvdata, nvdata_dir=None)
+    debug = 0

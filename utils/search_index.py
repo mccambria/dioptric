@@ -12,11 +12,13 @@ Created September 10th, 2021
 
 # region Imports and constants
 
-import utils.common as common
 import os
-from pathlib import PurePath
 import sqlite3
+import sys
 import time
+from pathlib import PurePath
+
+import utils.common as common
 
 search_index_file_name = "search_index.db"
 nvdata_dir = common.get_nvdata_dir()
@@ -78,7 +80,7 @@ def get_data_path_from_nvdata(data_file_name):
         print("Attempting on-the-fly indexing.")
         index_path = index_on_the_fly(data_file_name)
         if index_path is None:
-            msg = f"File {data_file_name} does not appear to exist in data" " folders."
+            msg = f"File {data_file_name} does not appear to exist in data folders."
             raise RuntimeError(msg)
         return index_path
 
@@ -154,8 +156,8 @@ def gen_search_index():
 
 
 if __name__ == "__main__":
-
-    # gen_search_index()
+    gen_search_index()
+    sys.exit()
     # index_on_the_fly("2022_07_06-16_38_20-hopper-search")
 
     root = nvdata_dir / "pc_hahn/branch_master/pulsed_resonance/2023_02"
