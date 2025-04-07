@@ -610,18 +610,18 @@ if __name__ == "__main__":
     # Update weights for the specified indices using the calculated weights
     # fmt: off
     # selected_indices_68MHz = [0, 7, 8, 9, 11, 14, 18, 22, 24, 25, 26, 27, 28, 30, 31, 32, 33, 35, 38, 44, 45, 46, 47, 48, 49, 53, 55, 57, 58, 60, 62, 64, 66, 67, 68, 69, 70, 71, 72, 73]
-    selected_indices_185MHz  =[0, 1, 2, 3, 4, 5, 6, 10, 12, 13, 15, 16, 17, 19, 20, 21, 23, 29, 34, 36, 39, 40, 41, 42, 43, 50, 51, 52, 54, 56, 59, 61, 63, 65, 74]
-    selected_indices = selected_indices_185MHz
+    # selected_indices_185MHz  =[0, 1, 2, 3, 4, 5, 6, 10, 12, 13, 15, 16, 17, 19, 20, 21, 23, 29, 34, 36, 39, 40, 41, 42, 43, 50, 51, 52, 54, 56, 59, 61, 63, 65, 74]
+    # selected_indices = selected_indices_185MHz
     # fmt: on
-    updated_spot_weights = [
-        val for ind, val in enumerate(updated_spot_weights) if ind in selected_indices
-    ]
-    filtered_reordered_coords = [
-        filtered_reordered_coords[ind]
-        for ind in range(len(filtered_reordered_coords))
-        if ind in selected_indices
-    ]
-    nv_powers = [val for ind, val in enumerate(nv_powers) if ind in selected_indices]
+    # updated_spot_weights = [
+    #     val for ind, val in enumerate(updated_spot_weights) if ind in selected_indices
+    # ]
+    # filtered_reordered_coords = [
+    #     filtered_reordered_coords[ind]
+    #     for ind in range(len(filtered_reordered_coords))
+    #     if ind in selected_indices
+    # ]
+    # nv_powers = [val for ind, val in enumerate(nv_powers) if ind in selected_indices]
 
     ####
     filtered_total_power = np.sum(nv_powers)
@@ -677,7 +677,7 @@ if __name__ == "__main__":
     # save_results(
     #     filtered_reordered_coords,
     #     filtered_reordered_spot_weights,
-    #     filename="slmsuite/nv_blob_detection/nv_blob_rubin_shallow_35nvs_reordered.npz",
+    #     filename="slmsuite/nv_blob_detection/nv_blob_rubin_shallow_75nvs_reordered.npz",
     # )
     # save_results(
     #     nv_coordinates,
