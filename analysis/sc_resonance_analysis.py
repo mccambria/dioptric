@@ -3,11 +3,12 @@
 Created on Fall, 2024
 @author: Saroj Chand
 """
+
 import os
 import sys
 import time
-from datetime import datetime
 import traceback
+from datetime import datetime
 from random import shuffle
 
 import matplotlib.pyplot as plt
@@ -336,8 +337,8 @@ def plot_nv_resonance_fits_and_residuals(
     plt.tight_layout()
     # return
 
-    filter_nvs = True
-    # filter_nvs = False
+    # filter_nvs = True
+    filter_nvs = False
     if filter_nvs:
         # target_peak_values = [0.025, 0.068, 0.146, 0.185]
         target_peak_values = [0.068, 0.185]
@@ -1103,6 +1104,8 @@ if __name__ == "__main__":
     file_ids = [1809016009780]
     # rubib 75
     file_ids = [1810826711017]
+    # rubib 75 after change magnet position
+    file_ids = [1826522639984]
     # fmt: off
     # fmt: on
     # print(len(reference_pixel_coords))
