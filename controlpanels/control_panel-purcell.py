@@ -475,14 +475,10 @@ def do_resonance(nv_list):
     # Single ref
     # num_reps = 8
     # num_runs = 600
-    # num_runs = 750
-    # num_runs = 350
-    # num_runs = 50
-    # num_runs = 10
-    # num_runs = 2
+    num_runs = 400
     # Both refs
     num_reps = 2
-    num_runs = 600
+    # num_runs = 600
     resonance.main(nv_list, num_steps, num_reps, num_runs, freq_center, freq_range)
     # for _ in range(2):
     #     resonance.main(nv_list, num_steps, num_reps, num_runs, freq_center, freq_range)
@@ -606,21 +602,11 @@ def do_spin_echo(nv_list, revival_period=None):
     min_tau = 600  # ns
     max_tau = 60e3  # fallback
     taus = []
-
-    # Densely sample early decay
-    # decay_width = 8e3
-    # decay = np.linspace(min_tau, min_tau + decay_width, 11)
-    # taus.extend(decay.tolist())
-
-    # taus.extend(np.geomspace(min_tau, max_tau, 66).tolist())
     taus.extend(np.linspace(min_tau, max_tau, 66).tolist())
-
     # Round to clock-cycle-compatible units
     taus = [round(el / 4) * 4 for el in taus]
-
     # Remove duplicates and sort
     taus = sorted(set(taus))
-
     num_steps = len(taus)
     num_reps = 3
     num_runs = 400
@@ -671,56 +657,72 @@ def do_xy(nv_list, xy_seq="xy8"):
         )
 
 
-def do_xy_dense(nv_list, xy_seq="xy8"):
-    # Revival-based τ selection (targeting 13C collapse and first revival only)
-    # Parameters
-    # B_dc = 37  # Gauss
-    # gamma_nuc = 1.07e3  # Hz/G for 13C
+def do_xy8_uniform_revival_scan(nv_list, xy_seq="xy8-1"):
+    min_tau = 0.5
+    max_tau = 20.0
+    num_steps = 60
+    taus = np.linspace(min_tau, max_tau, num_steps)
 
-    # Calculate τ at which revival occurs
-    # tau_rev_ns = 1e9 * (np.pi / (N * gamma_nuc * B_dc))  # in ns
-    # print(f"Expected revival at τ ≈ {tau_rev_ns:.1f} ns for XY8-{N}")
+    # Round to multiple of 4 ns (or your pulse time unit)
+    taus = [round(tau / 4) * 4 for tau in taus]
+    taus = sorted(set(taus))  # remove duplicates
 
-    revival_period = int(51.5e3 / 16)  # ~25.75 µs for 37 G
-    min_tau = 200  # ns
-    taus = []
-    revival_width = 600  # ns = 5 µs width around revival
-
-    # 1. Initial decay region
-    decay = np.linspace(min_tau, min_tau + revival_width, 6)
-    taus.extend(decay.tolist())
-
-    # 2. Gap region between decay and first revival
-    gap = np.linspace(min_tau + revival_width, revival_period - revival_width, 15)
-    taus.extend(gap[1:-1].tolist())
-
-    # 3. First revival region
-    first_revival = np.linspace(
-        revival_period - revival_width, revival_period + revival_width, 56
-    )
-    taus.extend(first_revival.tolist())
-
-    # Round taus to nearest multiple of 4 ns (if required by timing resolution)
-    taus = [round(el / 4) * 4 for el in taus]
-
-    # Remove duplicates and sort
-    taus = sorted(set(taus))
-
-    # Experiment parameters
+    num_reps = 3
+    num_runs = 200
     num_steps = len(taus)
-    num_reps = 2
-    num_runs = 600
     uwave_ind_list = [1]  # IQ-modulated channel index
 
-    # Run the experiment
-    for _ in range(2):
+    for ind in range(6):
         xy.main(
             nv_list,
             num_steps,
             num_reps,
             num_runs,
-            taus=taus,
             uwave_ind_list=uwave_ind_list,
+            taus=taus,
+            xy_seq=xy_seq,
+        )
+
+
+def do_xy8_revival_scan(nv_list, xy_seq="xy8-1", T_rev_us=25.75, N=1):
+    tau_rev = T_rev_us / (2 * N)
+    revival_width = 4  # µs width around revival
+    min_tau = 0.5  # to see initial decay
+
+    taus = []
+
+    # Pre-revival: to see decay before revival
+    decay_range = np.linspace(min_tau, tau_rev - revival_width, 5)
+    taus.extend(decay_range.tolist())
+
+    # Around revival
+    revival_range = np.linspace(tau_rev - revival_width, tau_rev + revival_width, 61)
+    taus.extend(revival_range.tolist())
+
+    # Second revival
+    second_tau = 2 * tau_rev
+    second_range = np.linspace(
+        second_tau - revival_width, second_tau + revival_width, 31
+    )
+    taus.extend(second_range.tolist())
+
+    # Format: round and remove duplicates
+    taus = [round(el / 4) * 4 for el in taus]
+    taus = sorted(set(taus))
+
+    num_reps = 3
+    num_runs = 200
+    num_steps = len(taus)
+    uwave_ind_list = [1]  # IQ-modulated channel index
+
+    for _ in range(6):
+        xy.main(
+            nv_list,
+            num_steps,
+            num_reps,
+            num_runs,
+            uwave_ind_list=uwave_ind_list,
+            taus=taus,
             xy_seq=xy_seq,
         )
 
@@ -1135,8 +1137,8 @@ if __name__ == "__main__":
         # file_path="slmsuite/nv_blob_detection/nv_blob_shallow_148nvs_reordered.npz",
         # file_path="slmsuite/nv_blob_detection/nv_blob_rubin_shallow_140nvs_reordered_updated.npz",
         # file_path="slmsuite/nv_blob_detection/nv_blob_rubin_shallow_107nvs_reordered_updated.npz",
-        file_path="slmsuite/nv_blob_detection/nv_blob_rubin_shallow_154nvs_reordered.npz",
-        # file_path="slmsuite/nv_blob_detection/nv_blob_rubin_shallow_75nvs_reordered.npz",
+        # file_path="slmsuite/nv_blob_detection/nv_blob_rubin_shallow_154nvs_reordered.npz",
+        file_path="slmsuite/nv_blob_detection/nv_blob_rubin_shallow_75nvs_reordered.npz",
     ).tolist()
     # Define transformations using `transform_coords`
     # pixel_coords_list = [
@@ -1181,16 +1183,16 @@ if __name__ == "__main__":
     #     [227.438, 19.199],
     # ]
     # green_coords_list = [
-    #     [107.793, 107.669],
-    #     [119.267, 96.136],
-    #     [107.09, 118.345],
-    #     [96.788, 94.788],
+    #     [107.736, 107.71],
+    #     [119.247, 96.173],
+    #     [107.049, 118.35],
+    #     [96.761, 94.813],
     # ]
     # red_coords_list = [
-    #     [72.501, 73.19],
-    #     [81.603, 63.687],
-    #     [72.161, 81.883],
-    #     [63.248, 62.825],
+    #     [72.455, 73.224],
+    #     [81.588, 63.717],
+    #     [72.128, 81.888],
+    #     [63.226, 62.846],
     # ]
 
     num_nvs = len(pixel_coords_list)
@@ -1259,8 +1261,8 @@ if __name__ == "__main__":
     #     val for ind, val in enumerate(scc_duration_list) if ind not in drop_indices
     # ]
     #75NVs optimized
-    # pol_duration_list = [164, 144, 168, 108, 132, 176, 132, 152, 176, 168, 140, 200, 204, 120, 268, 116, 200, 128, 152, 144, 116, 192, 156, 156, 256, 140, 156, 240, 232, 116, 200, 176, 340, 116, 108, 216, 104, 200, 144, 140, 304, 416, 140, 156, 292, 188, 164, 352, 180, 156, 232, 144, 328, 132, 228, 288, 164, 384, 292, 140, 400, 388, 192, 348, 412, 144, 200, 180, 120, 188, 436, 180, 164, 232, 252]
-    # scc_duration_list = [88, 80, 100, 100, 76, 88, 68, 88, 88, 92, 72, 68, 88, 80, 116, 64, 112, 48, 64, 60, 96, 92, 92, 72, 108, 84, 68, 100, 108, 76, 108, 108, 124, 84, 92, 72, 56, 140, 96, 76, 104, 136, 88, 64, 108, 80, 124, 120, 144, 88, 72, 68, 124, 80, 116, 84, 80, 132, 80, 36, 88, 108, 92, 152, 140, 68, 136, 80, 64, 84, 152, 140, 76, 92, 196]
+    pol_duration_list = [164, 144, 168, 108, 132, 176, 132, 152, 176, 168, 140, 200, 204, 120, 268, 116, 200, 128, 152, 144, 116, 192, 156, 156, 256, 140, 156, 240, 232, 116, 200, 176, 340, 116, 108, 216, 104, 200, 144, 140, 304, 416, 140, 156, 292, 188, 164, 352, 180, 156, 232, 144, 328, 132, 228, 288, 164, 384, 292, 140, 400, 388, 192, 348, 412, 144, 200, 180, 120, 188, 436, 180, 164, 232, 252]
+    scc_duration_list = [88, 80, 100, 100, 76, 88, 68, 88, 88, 92, 72, 68, 88, 80, 116, 64, 112, 48, 64, 60, 96, 92, 92, 72, 108, 84, 68, 100, 108, 76, 108, 108, 124, 84, 92, 72, 56, 140, 96, 76, 104, 136, 88, 64, 108, 80, 124, 120, 144, 88, 72, 68, 124, 80, 116, 84, 80, 132, 80, 36, 88, 108, 92, 152, 140, 68, 136, 80, 64, 84, 152, 140, 76, 92, 196]
     # selected_indices_68MHz = [0, 7, 8, 9, 11, 14, 18, 22, 24, 25, 26, 27, 28, 30, 31, 32, 33, 35, 38, 44, 45, 46, 47, 48, 49, 53, 55, 57, 58, 60, 62, 64, 66, 67, 68, 69, 70, 71, 72, 73]
     # selected_indices_185MHz  =[0, 1, 2, 3, 4, 5, 6, 10, 12, 13, 15, 16, 17, 19, 20, 21, 23, 29, 34, 36, 39, 40, 41, 42, 43, 50, 51, 52, 54, 56, 59, 61, 63, 65, 74]
 
@@ -1332,18 +1334,18 @@ if __name__ == "__main__":
     # ax.set_ylabel("SNR difference")
     # kpl.show(block=True)
     # sys.exit()
-    # scc_duration_list = [
-    #     4 * round(el / 4) if el is not None else None for el in scc_duration_list
-    # ]
-    # pol_duration_list = [
-    #     4 * round(el / 4) if el is not None else None for el in pol_duration_list
-    # ]
-    # print(f"First 10 SCC durations: {len(scc_duration_list)}")
-    # print(f"First 10 POL durations: {len(pol_duration_list)}")
+    scc_duration_list = [
+        4 * round(el / 4) if el is not None else None for el in scc_duration_list
+    ]
+    pol_duration_list = [
+        4 * round(el / 4) if el is not None else None for el in pol_duration_list
+    ]
+    print(f"First 10 SCC durations: {len(scc_duration_list)}")
+    print(f"First 10 POL durations: {len(pol_duration_list)}")
 
     # scc_amp_list = [1.0] * num_nvs
-    scc_duration_list = [112] * num_nvs
-    pol_duration_list = [200] * num_nvs
+    # scc_duration_list = [112] * num_nvs
+    # pol_duration_list = [200] * num_nvs
     # nv_list[i] will have the ith coordinates from the above lists
     nv_list: list[NVSig] = []
     for ind in range(num_nvs):
@@ -1382,7 +1384,7 @@ if __name__ == "__main__":
     # nv_sig.expected_counts = 4500
     # nv_sig.expected_counts = 900
     # nv_sig.expected_counts = 2100
-    nv_sig.expected_counts = 1200
+    nv_sig.expected_counts = 1190
 
     # num_nvs = len(nv_list)
     # print(f"Final NV List: {nv_list}")
@@ -1555,7 +1557,8 @@ if __name__ == "__main__":
         # AVAILABLE_XY = ["hahn-n", "xy2-n", "xy4-n", "xy8-n", "xy16-n"]
         # n is number of repitition
         # do_xy(nv_list, xy_seq="xy8")
-        # do_xy_dense(nv_list, xy_seq="xy8-1")
+        # do_xy8_uniform_revival_scan(nv_list, xy_seq="xy8-1")
+        # do_xy8_revival_scan(nv_list, xy_seq="xy8-1", T_rev_us=2 * 25.75, N=8)
 
         # do_opx_constant_ac()
         # do_opx_square_wave()
