@@ -574,6 +574,87 @@ def T2_diff_xy():
     plt.show()
 
 
+def plot_xy_all(nv_list, taus, norm_counts, norm_counts_ste):
+    sns.set(style="whitegrid", palette="muted")
+    num_nvs = len(nv_list)
+    colors = sns.color_palette("deep", num_nvs)
+    num_cols = 7
+    num_rows = int(np.ceil(len(nv_list) / num_cols))
+
+    # Full plot
+    fig, axes = plt.subplots(
+        num_rows,
+        num_cols,
+        figsize=(num_cols * 2, num_rows * 1.5),
+        sharex=True,
+        sharey=False,
+        constrained_layout=True,
+        gridspec_kw={"wspace": 0.0, "hspace": 0.0},
+    )
+    axes = axes.flatten()
+
+    for nv_idx, ax in enumerate(axes):
+        if nv_idx >= len(nv_list):
+            ax.axis("off")
+            continue
+
+        nv_tau = taus  # Convert to µs
+        nv_counts = norm_counts[nv_idx]
+        # Plot data and fit on full plot
+        sns.lineplot(
+            x=nv_tau,
+            y=nv_counts,
+            ax=ax,
+            color=colors[nv_idx % len(colors)],
+            lw=0,
+            marker="o",
+            markersize=4,
+            label=f"NV {nv_idx}",
+        )
+        ax.errorbar(
+            nv_tau,
+            norm_counts[nv_idx],
+            yerr=abs(norm_counts_ste[nv_idx]),
+            fmt="none",
+            ecolor=colors[nv_idx % len(colors)],
+            alpha=0.9,
+        )
+        ax.legend(fontsize="xx-small")
+        ax.grid(True, which="both", linestyle="--", linewidth=0.5)
+        ax.tick_params(labelleft=False)
+
+    for col in range(num_cols):
+        bottom_row_idx = num_rows * num_cols - num_cols + col
+        if bottom_row_idx < len(axes):
+            ax = axes[bottom_row_idx]
+            tick_positions = np.linspace(min(taus), max(taus), 5)
+            ax.set_xticks(tick_positions)
+            ax.set_xticklabels(
+                [f"{tick:.2f}" for tick in tick_positions],
+                rotation=45,
+                fontsize=9,
+            )
+            ax.set_xlabel("Time (µs)")
+        else:
+            ax.set_xticklabels([])
+    fig.text(
+        0.000,
+        0.5,
+        "NV$^{-}$ Population",
+        va="center",
+        rotation="vertical",
+        fontsize=12,
+    )
+    fig.suptitle("Spin Echo", fontsize=16)
+    # fig.set_constrained_layout(False)
+    # fig.subplots_adjust(left=0.01, right=0.98, top=0.99, bottom=0.08, hspace=0.01, wspace=0.01)
+    # fig.subplots_adjust(
+    #     left=0.01, right=0.99, top=0.99, bottom=0.01, hspace=0.000, wspace=0.000
+    # )
+    fig.tight_layout(pad=0.2, rect=[0.01, 0.01, 0.99, 0.99])
+    kpl.show()
+
+
 if __name__ == "__main__":
     kpl.init_kplotlib()
     # 185MHz orientation
@@ -610,10 +691,10 @@ if __name__ == "__main__":
     file_ids = [1823813420689, 1824210908904]
     ## 68MHz orientation XY8 buffer/wait updated
     # file_ids = [1824501762414, 1824732255862]
-
     ## 68MHz orientation XY8 dense
     file_ids = [1825683241321, 1825803148127]
-    ## Internal Test Plots
+
+    ### Internal Test Plots
     # plot_T2_on_T1()
     # contrast_plot()
     # T2_ratio_xy()
@@ -626,21 +707,11 @@ if __name__ == "__main__":
     taus = np.array(raw_data["taus"]) / 1e3  # τ values (in us)
     # Get sequence type
     seq_xy = raw_data.get("xy_seq", "xy8").lower()
-    # sys.exit()
-    # Define N values for each sequence type
-    seq_n_map = {
-        "hahn": 1,
-        "xy2": 2,
-        "xy4": 4,
-        "xy8": 8,
-        "xy16": 16,
-    }
-    # Get N from the map, default to 8 (xy8)
-    N = seq_n_map.get(seq_xy, 8)
-    print(N)
-    # Calculate effective evolution time
+    base, N = widefield.parse_xy_sequence(seq_xy)
+    print(f"Input Sequence Type: {seq_xy}")
+    print(f"Total π pulses: {N}")
     taus = 2 * N * taus
-    # taus = 2 * np.array(raw_data["taus"]) / 1e3  # τ values (in us)
+    # sys.exit()
     counts = np.array(raw_data["counts"])  # shape: (2, num_nvs, num_steps)
     sig_counts = counts[0]
     ref_counts = counts[1]
@@ -648,12 +719,11 @@ if __name__ == "__main__":
     norm_counts, norm_counts_ste = widefield.process_counts(
         nv_list, sig_counts, ref_counts, threshold=True
     )
-
     # norm_counts, norm_counts_ste = widefield.process_counts(
     #     nv_list, sig_counts, threshold=True
     # )
-    process_and_plot_xy8(nv_list, taus, norm_counts, norm_counts_ste)
-
+    # process_and_plot_xy8(nv_list, taus, norm_counts, norm_counts_ste)
+    plot_xy_all(nv_list, taus, norm_counts, norm_counts_ste)
     # fit_params, T2_list, n_list, chi2_list, param_errors_list = process_and_fit_xy8(
     #     nv_list, taus, norm_counts, norm_counts_ste
     # )

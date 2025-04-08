@@ -9,30 +9,136 @@ Created on March 23th, 2025
 import numpy as np
 import matplotlib.pyplot as plt
 from scipy.optimize import minimize
-
-splittings = [68, 186]  # in MHz
-gamma_e = 2.8  # MHz/Gauss
-
-B_parallel_1 = 68 / (2 * gamma_e)  # = 68 / 5.6
-B_parallel_2 = 185 / (2 * gamma_e)  # = 186 / 5.6
-
-print(f"B_parallel 1: {B_parallel_1:.2f} G")
-print(f"B_parallel 2: {B_parallel_2:.2f} G")
-
-
-B1 = 68 / 5.6  # = 12.14 G
-B2 = 186 / 5.6  # = 33.21 G
-cos_theta = -1 / 3
-
-B_est = np.sqrt(B1**2 + B2**2 - 2 * B1 * B2 * cos_theta)
-print(f"Estimated |B| ≈ {B_est:.2f} G")
+from itertools import combinations
 
 # Magnetic Field vs. Distance
 B_current = 41.6  # Gauss
 B_target = 80.0  # Gauss
-
 scaling_factor = (B_current / B_target) ** (1 / 3)
 print(f"r₂ / r₁ = {scaling_factor:.3f}")
+
+
+#######
+def estimate_magnetic_field(splittings_MHz):
+    gamma_e = 2.8  # MHz/G
+    # Normalize tetrahedral NV orientation unit vectors
+    nv_axes = np.array(
+        [
+            [1, 1, 1],
+            [1, -1, -1],
+            [-1, 1, -1],
+            [-1, -1, 1],
+        ]
+    ) / np.sqrt(3)
+    # Convert ESR splittings to B projections (in Gauss)
+    b_parallel = np.array(splittings_MHz) / (2 * gamma_e)
+    # Solve A·B = b in least-squares sense
+    B_vec_full, residuals_full, *_ = np.linalg.lstsq(nv_axes, b_parallel, rcond=None)
+    B_mag_full = np.linalg.norm(B_vec_full)
+    # Full 4-NV fit
+    print(
+        f"Full 4-NV fit → B = {np.round(B_vec_full, 2)}, |B| = {B_mag_full:.2f} G , residual = {np.round(residuals_full, 2)}"
+    )
+    # Try all 3-NV combinations
+    print("\nAll 3-NV combinations:")
+    B_mags = []
+    for indices in combinations(range(4), 3):
+        A_3 = nv_axes[list(indices)]
+        b_3 = b_parallel[list(indices)]
+        B_vec_3 = np.linalg.solve(A_3, b_3)
+        B_mag_3 = np.linalg.norm(B_vec_3)
+        B_mags.append(B_mag_3)
+        print(f" NVs {indices} → B = {np.round(B_vec_3, 2)}, |B| = {B_mag_3:.2f} G")
+    print(f"average B magnitude from 3-NVs fit: {np.mean(B_mags):.2f} G")
+    # residuals = []
+    # for i in range(4):
+    #     n_i = nv_axes[i]
+    #     pred_split = 2 * gamma_e * np.dot(B_vec_full, n_i)
+    #     actual_split = splittings[i]
+    #     res = np.abs(pred_split - actual_split)
+    #     residuals.append(res)
+    #     print(f"Residual for NV {i}: {res:.2f} MHz")
+
+
+# Your 4 ESR splittings in MHz
+# splittings = [186, 145, 68, 25]  # old spliting
+splittings = [214, 162, 90, 45]  # new spliting
+estimate_magnetic_field(splittings)
+
+
+def estimate_revival_time(B_gauss):
+    gamma_nuc_on_2pi = 1.071  # KHz/G
+    omega = gamma_nuc_on_2pi * B_gauss  # Larmor frequency in KHz
+    omega = omega / 1e3  # Larmor frequency in MHz
+    T_rev = 1 / (omega)  # Revival time in microseconds
+    return T_rev, omega  # Return revival time in nanoseconds
+
+
+# Example: 80 Gauss
+rev_time_us, larmor_freq_MHz = estimate_revival_time(44)
+# rev_time_us, larmor_freq_MHz = estimate_revival_time(84)
+
+print(f"Larmor frequency: {larmor_freq_MHz:.2f} Khz")
+print(f"Revival time: {rev_time_us:.2f} us")
+
+
+# def get_collapse_and_revival_times(B_gauss, num_revivals=1):
+#     """
+#     Calculate collapse and revival times in spin echo / XY8 experiments due to
+#     Larmor precession of 13C nuclear spins.
+
+#     Parameters:
+#     - B_gauss: Magnetic field in Gauss
+#     - num_revivals: Number of revival times to compute
+
+#     Returns:
+#     - dict with Larmor frequency (kHz), collapse time (µs), and revival times (µs)
+#     """
+#     gamma_c13_kHz_per_G = 1.071  # kHz/G
+#     omega_nuc_kHz = gamma_c13_kHz_per_G * B_gauss
+
+#     t_collapse_us = np.pi / omega_nuc_kHz
+#     t_revivals_us = [2 * n * np.pi / omega_nuc_kHz for n in range(1, num_revivals + 1)]
+
+#     return {
+#         "B_field_G": B_gauss,
+#         "omega_nuc_kHz": omega_nuc_kHz,
+#         "collapse_time_us": t_collapse_us,
+#         "revival_times_us": t_revivals_us,
+#     }
+
+
+# def print_revival_table(B_fields, num_revivals=1):
+#     print(
+#         f"{'B (G)':>6} | {'ω_nuc (kHz)':>12} | {'Collapse Time (µs)':>20} | Revival Times (µs)"
+#     )
+#     print("-" * 70)
+#     for B in B_fields:
+#         info = get_collapse_and_revival_times(B, num_revivals)
+#         revivals_str = ", ".join([f"{t:.2f}" for t in info["revival_times_us"]])
+#         print(
+#             f"{B:6.1f} | {info['omega_nuc_kHz']:12.2f} | {info['collapse_time_us']:20.2f} | {revivals_str}"
+#         )
+
+
+# # Example usage
+# B_fields = [37, 50, 84, 150]  # Magnetic fields in Gauss
+# print_revival_table(B_fields, num_revivals=1)
+
+
+# Optional plot
+# def plot_revival_times(B_fields):
+#     T_revs = [2 * np.pi / (1.071 * B) for B in B_fields]  # µs
+#     plt.plot(B_fields, T_revs, "o-", label="13C revival period")
+#     plt.xlabel("Magnetic Field (G)")
+#     plt.ylabel("Revival Period (µs)")
+#     plt.title("13C Revival Period vs Magnetic Field")
+#     plt.grid(True)
+#     plt.legend()
+#     plt.show()
+
+
+# plot_revival_times(np.linspace(10, 100, 50))
 
 
 # Spin-1 matrices
@@ -162,112 +268,3 @@ def estimate_field_exact_H(splittings_MHz, nv_axes):
 #     H = hamiltonian(B_vec, nv_axis)
 #     eigvals = np.sort(np.linalg.eigvalsh(H))
 #     print(f"Eigenvalues (MHz): {np.round(eigvals, 2)}")
-
-
-#######
-def estimate_magnetic_field_from_all_four(splittings_MHz):
-    gamma_e = 2.8  # MHz/G
-
-    # Normalize tetrahedral NV orientation unit vectors
-    nv_axes = np.array(
-        [
-            # [1, 1, 1],
-            [1, -1, -1],
-            [-1, 1, -1],
-            [-1, -1, 1],
-        ]
-    ) / np.sqrt(3)
-
-    # Convert ESR splittings to B projections (in Gauss)
-    b_parallel = np.array(splittings_MHz) / (2 * gamma_e)
-
-    # Solve A·B = b in least-squares sense
-    B_vec, residuals, rank, s = np.linalg.lstsq(nv_axes, b_parallel, rcond=None)
-    B_mag = np.linalg.norm(B_vec)
-
-    return B_vec, B_mag, residuals
-    # return B_vec, B_mag
-
-
-# Your 4 ESR splittings in MHz
-# splittings = [186, 68, 25, 145] #old spliting
-splittings = [214, 162, 89]  # new spliting
-B_vec, B_mag, res = estimate_magnetic_field_from_all_four(splittings)
-print("B vector (G):", np.round(B_vec, 2))
-print("B magnitude (G):", round(B_mag, 2))
-print("Residual (fit error):", res)
-
-
-def estimate_revival_time(B_gauss):
-    gamma = 1.071  # KHz/G
-    omega = gamma * B_gauss  # Larmor frequency in KHz
-    omega = omega / 1e3  # Larmor frequency in MHz
-    # T_rev = 1 / (2 * np.pi * omega)  # Revival time in microseconds
-    T_rev = 1 / (omega)  # Revival time in microseconds
-    return T_rev, omega  # Return revival time in nanoseconds
-
-
-# Example: 80 Gauss
-rev_time_us, larmor_freq_MHz = estimate_revival_time(37)
-
-print(f"Larmor frequency: {larmor_freq_MHz:.2f} Khz")
-print(f"Revival time: {rev_time_us:.2f} us")
-
-
-def get_collapse_and_revival_times(B_gauss, num_revivals=1):
-    """
-    Calculate collapse and revival times in spin echo / XY8 experiments due to
-    Larmor precession of 13C nuclear spins.
-
-    Parameters:
-    - B_gauss: Magnetic field in Gauss
-    - num_revivals: Number of revival times to compute
-
-    Returns:
-    - dict with Larmor frequency (kHz), collapse time (µs), and revival times (µs)
-    """
-    gamma_c13_kHz_per_G = 1.071  # kHz/G
-    omega_nuc_kHz = gamma_c13_kHz_per_G * B_gauss
-
-    t_collapse_us = np.pi / omega_nuc_kHz
-    t_revivals_us = [2 * n * np.pi / omega_nuc_kHz for n in range(1, num_revivals + 1)]
-
-    return {
-        "B_field_G": B_gauss,
-        "omega_nuc_kHz": omega_nuc_kHz,
-        "collapse_time_us": t_collapse_us,
-        "revival_times_us": t_revivals_us,
-    }
-
-
-def print_revival_table(B_fields, num_revivals=1):
-    print(
-        f"{'B (G)':>6} | {'ω_nuc (kHz)':>12} | {'Collapse Time (µs)':>20} | Revival Times (µs)"
-    )
-    print("-" * 70)
-    for B in B_fields:
-        info = get_collapse_and_revival_times(B, num_revivals)
-        revivals_str = ", ".join([f"{t:.2f}" for t in info["revival_times_us"]])
-        print(
-            f"{B:6.1f} | {info['omega_nuc_kHz']:12.2f} | {info['collapse_time_us']:20.2f} | {revivals_str}"
-        )
-
-
-# Example usage
-B_fields = [37, 50, 84, 150]  # Magnetic fields in Gauss
-print_revival_table(B_fields, num_revivals=1)
-
-
-# Optional plot
-# def plot_revival_times(B_fields):
-#     T_revs = [2 * np.pi / (1.071 * B) for B in B_fields]  # µs
-#     plt.plot(B_fields, T_revs, "o-", label="13C revival period")
-#     plt.xlabel("Magnetic Field (G)")
-#     plt.ylabel("Revival Period (µs)")
-#     plt.title("13C Revival Period vs Magnetic Field")
-#     plt.grid(True)
-#     plt.legend()
-#     plt.show()
-
-
-# plot_revival_times(np.linspace(10, 100, 50))
