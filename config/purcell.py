@@ -40,14 +40,14 @@ calibration_coords_pixel = [
     [227.438, 19.199],
 ]
 calibration_coords_green = [
-    [119.267, 96.136],
-    [107.09, 118.345],
-    [96.788, 94.788],
+    [119.247, 96.173],
+    [107.049, 118.35],
+    [96.761, 94.813],
 ]
 calibration_coords_red = [
-    [81.603, 63.687],
-    [72.161, 81.883],
-    [63.248, 62.825],
+    [81.588, 63.717],
+    [72.128, 81.888],
+    [63.226, 62.846],
 ]
 # Create the dictionaries using the provided lists
 calibration_coords_nv1 = {
@@ -836,8 +836,8 @@ opx_config = {
         # "yellow_charge_readout": {"type": "constant", "sample": 0.3472},  # 50ms 117NVs
         # "yellow_charge_readout": {"type": "constant", "sample": 0.3741},  # 50ms 117NVs
         # "yellow_charge_readout": {"type": "constant", "sample": 0.325},  # 100ms 117NVs
-        "yellow_charge_readout": {"type": "constant", "sample": 0.37240},  # 150NVs all
-        # "yellow_charge_readout": {"type": "constant", "sample": 0.35240},  # 75NVs all
+        # "yellow_charge_readout": {"type": "constant", "sample": 0.37240},  # 150NVs all
+        "yellow_charge_readout": {"type": "constant", "sample": 0.35240},  # 75NVs all
         # "yellow_charge_readout": {"type": "constant", "sample": 0.32350},  # 35NV/185MHz
         # "yellow_charge_readout": {"type": "constant", "sample": 0.32238},  # 48NV/68MHz
         # "yellow_spin_pol": {"type": "constant", "sample": 0.44},  # 71 NVs
