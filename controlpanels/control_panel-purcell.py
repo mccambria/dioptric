@@ -475,13 +475,13 @@ def do_resonance(nv_list):
     # Single ref
     # num_reps = 8
     # num_runs = 600
-    num_runs = 400
+    num_runs = 300
     # Both refs
     num_reps = 2
     # num_runs = 600
-    resonance.main(nv_list, num_steps, num_reps, num_runs, freq_center, freq_range)
-    # for _ in range(2):
-    #     resonance.main(nv_list, num_steps, num_reps, num_runs, freq_center, freq_range)
+    # resonance.main(nv_list, num_steps, num_reps, num_runs, freq_center, freq_range)
+    for _ in range(2):
+        resonance.main(nv_list, num_steps, num_reps, num_runs, freq_center, freq_range)
 
 
 def do_resonance_zoom(nv_list):
@@ -1183,16 +1183,16 @@ if __name__ == "__main__":
     #     [227.438, 19.199],
     # ]
     # green_coords_list = [
-    #     [107.736, 107.71],
-    #     [119.247, 96.173],
-    #     [107.049, 118.35],
-    #     [96.761, 94.813],
+    #     [107.825, 107.707],
+    #     [119.258, 96.165],
+    #     [107.114, 118.361],
+    #     [96.765, 94.826],
     # ]
     # red_coords_list = [
-    #     [72.455, 73.224],
-    #     [81.588, 63.717],
-    #     [72.128, 81.888],
-    #     [63.226, 62.846],
+    #     [72.528, 73.221],
+    #     [81.597, 63.711],
+    #     [72.181, 81.896],
+    #     [63.23, 62.856],
     # ]
 
     num_nvs = len(pixel_coords_list)
@@ -1384,7 +1384,7 @@ if __name__ == "__main__":
     # nv_sig.expected_counts = 4500
     # nv_sig.expected_counts = 900
     # nv_sig.expected_counts = 2100
-    nv_sig.expected_counts = 1190
+    nv_sig.expected_counts = 1200
 
     # num_nvs = len(nv_list)
     # print(f"Final NV List: {nv_list}")
