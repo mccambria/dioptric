@@ -55,6 +55,7 @@ from utils import kplotlib as kpl
 from utils import positioning as pos
 from utils import tool_belt as tb
 from utils.constants import Axes, CoordsKey, NVSig, VirtualLaserKey
+from utils.positioning import get_scan_1d as calculate_freqs
 
 green_laser = "laser_INTE_520"
 red_laser = "laser_COBO_638"
@@ -402,8 +403,8 @@ def do_scc_snr_check(nv_list):
     # num_runs = 200
     # num_runs = 160 * 4
     # num_runs = 3
-    # scc_snr_check.main(nv_list, num_reps, num_runs, uwave_ind_list=[0, 1])
-    scc_snr_check.main(nv_list, num_reps, num_runs, uwave_ind_list=[1])
+    scc_snr_check.main(nv_list, num_reps, num_runs, uwave_ind_list=[0, 1])
+    # scc_snr_check.main(nv_list, num_reps, num_runs, uwave_ind_list=[1])
 
 
 def do_power_rabi(nv_list):
@@ -467,21 +468,33 @@ def do_calibrate_iq_delay(nv_list):
 
 
 def do_resonance(nv_list):
-    freq_center = 2.87
+    # freq_center = 2.87
     # freq_range = 0.240
-    freq_range = 0.300
-    num_steps = 60
+    # freq_range = 0.30
+    # num_steps = 60
     # num_steps = 80
     # Single ref
     # num_reps = 8
     # num_runs = 600
-    num_runs = 300
+    num_runs = 200
     # Both refs
-    num_reps = 2
+    # num_reps = 2
+    num_reps = 3
     # num_runs = 600
-    # resonance.main(nv_list, num_steps, num_reps, num_runs, freq_center, freq_range)
-    for _ in range(2):
-        resonance.main(nv_list, num_steps, num_reps, num_runs, freq_center, freq_range)
+    freqs = []
+    centers = [2.70, 3.06]
+    range_each = 0.08
+    lower_freqs = calculate_freqs(centers[0], range_each, 16)
+    freqs.extend(lower_freqs)
+    upper_freqs = calculate_freqs(centers[1], range_each, 16)
+    freqs.extend(upper_freqs)
+    # Remove duplicates and sort
+    freqs = sorted(set(freqs))
+    num_steps = len(freqs)
+    # sys.exit()
+    resonance.main(nv_list, num_steps, num_reps, num_runs, freqs=freqs)
+    # for _ in range(2):
+    #     resonance.main(nv_list, num_steps, num_reps, num_runs, freqs=freqs)
 
 
 def do_resonance_zoom(nv_list):
@@ -1183,16 +1196,16 @@ if __name__ == "__main__":
     #     [227.438, 19.199],
     # ]
     # green_coords_list = [
-    #     [107.825, 107.707],
-    #     [119.258, 96.165],
-    #     [107.114, 118.361],
-    #     [96.765, 94.826],
+    #     [107.807, 107.72],
+    #     [119.279, 96.253],
+    #     [107.103, 118.379],
+    #     [96.77, 94.821],
     # ]
     # red_coords_list = [
-    #     [72.528, 73.221],
-    #     [81.597, 63.711],
-    #     [72.181, 81.896],
-    #     [63.23, 62.856],
+    #     [72.514, 73.231],
+    #     [81.616, 63.782],
+    #     [72.172, 81.911],
+    #     [63.234, 62.852],
     # ]
 
     num_nvs = len(pixel_coords_list)
