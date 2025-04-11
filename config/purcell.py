@@ -72,7 +72,6 @@ pixel_to_sample_affine_transformation_matrix = [
     [-0.01472387, 0.00052569, 1.28717911],
     [0.00040197, -0.01455135, 1.73876545],
 ]
-
 # endregion
 # region Base config
 # Add on to the default config

@@ -468,29 +468,31 @@ def do_calibrate_iq_delay(nv_list):
 
 
 def do_resonance(nv_list):
-    # freq_center = 2.87
+    freq_center = 2.87
     # freq_range = 0.240
-    # freq_range = 0.30
+    freq_range = 0.40
     # num_steps = 60
-    # num_steps = 80
+    num_steps = 80
     # Single ref
     # num_reps = 8
-    # num_runs = 600
-    num_runs = 200
+    num_runs = 1100
+    # num_runs = 200
     # Both refs
-    # num_reps = 2
-    num_reps = 3
+    num_reps = 1
+    # num_reps = 3
     # num_runs = 600
-    freqs = []
-    centers = [2.70, 3.06]
-    range_each = 0.08
-    lower_freqs = calculate_freqs(centers[0], range_each, 16)
-    freqs.extend(lower_freqs)
-    upper_freqs = calculate_freqs(centers[1], range_each, 16)
-    freqs.extend(upper_freqs)
+    # freqs = []
+    # centers = [2.70, 3.06]
+    # range_each = 0.08
+    # lower_freqs = calculate_freqs(centers[0], range_each, 16)
+    # freqs.extend(lower_freqs)
+    # upper_freqs = calculate_freqs(centers[1], range_each, 16)
+    # freqs.extend(upper_freqs)
+    ##
+    freqs = calculate_freqs(freq_center, freq_range, num_steps)
     # Remove duplicates and sort
-    freqs = sorted(set(freqs))
-    num_steps = len(freqs)
+    # freqs = sorted(set(freqs))
+    # num_steps = len(freqs)
     # sys.exit()
     resonance.main(nv_list, num_steps, num_reps, num_runs, freqs=freqs)
     # for _ in range(2):
@@ -925,12 +927,12 @@ def do_opx_constant_ac():
     # opx.stream_start()
 
     # Yellow
-    opx.constant_ac(
-        [],  # Digital channels
-        [7],  # Analog channels
-        [0.4256],  # Analog voltages
-        [0],  # Analog frequencies
-    )
+    # opx.constant_ac(
+    #     [],  # Digital channels
+    #     [7],  # Analog channels
+    #     [0.4256],  # Analog voltages
+    #     [0],  # Analog frequencies
+    # )
 
     # opx.constant_ac([4])  # Just laser
     # Red
@@ -995,12 +997,12 @@ def do_opx_constant_ac():
     #     [73.166, 72.941],  # Analog frequencies
     # )
     # Green + yellow
-    # opx.constant_ac(
-    #     [4],  # Digital channels
-    #     [3, 4, 7],  # Analog channels
-    #     [0.19, 0.19, 0.45],  # Analog voltages
-    #     [107, 107, 0],  # Analog frequencies
-    # )
+    opx.constant_ac(
+        [4],  # Digital channels
+        [3, 4, 7],  # Analog channels
+        [0.19, 0.19, 0.45],  # Analog voltages
+        [107, 107, 0],  # Analog frequencies
+    )
     # Red + green + Yellow
     # opx.constant_ac(
     #     [4, 1],  # Digital channels1
@@ -1129,6 +1131,19 @@ def load_thresholds(file_path="slmsuite/nv_blob_detection/threshold_list_nvs_162
     return thresholds
 
 
+def estimate_z(x, y, z0=0.15, slope=-0.0265):
+    """Estimate Z from (x, y) using diagonal slope."""
+    return z0 + slope * (x + y) / np.sqrt(2)
+
+
+def equilateral_triangle_around(center, radius):
+    """Returns 3 points in an equilateral triangle around the center."""
+    x0, y0 = center
+    angles = np.deg2rad([0, 120, 240])  # 3 vertices at 0°, 120°, 240°
+    points = [[x0 + radius * np.cos(a), y0 + radius * np.sin(a)] for a in angles]
+    return points
+
+
 ### Run the file
 
 if __name__ == "__main__":
@@ -1139,9 +1154,9 @@ if __name__ == "__main__":
     sample_name = "rubin"
     # magnet_angle = 90
     date_str = "2025_02_26"
-    sample_coords = [-0.4, 2.0]
-    z_coord = 1.0
-
+    # sample_coords = [-0.4, 2.0]
+    sample_coords = [2.0, 4.0]
+    z_coord = 0.0
     # Load NV pixel coordinates1
     pixel_coords_list = load_nv_coords(
         # file_path="slmsuite/nv_blob_detection/nv_blob_filtered_160nvs_reordered.npz",
@@ -1500,13 +1515,35 @@ if __name__ == "__main__":
         # nv_sig.coords[CoordsKey.SAMPLE][1] = y
         # do_scanning_image_sample(nv_sig)
 
-        # for z in np.linspace(1.0, 2.0, 11):
-        #     nv_sig.coords[CoordsKey.Z] = z
-        #     do_scanning_image_sample(nv_sig)
-
-        # nv_sig.coords[CoordsKey.z] = 0.4
+        # x_range = np.linspace(-2.0, 6.0, 6)
+        # y_range = np.linspace(-2.0, 6.0, 6)
+        # # --- Step 1: Start at (0, 0) ---
+        # sample_coord = [0.0, 0.0]
+        # z = estimate_z(*sample_coord)
+        # nv_sig.coords[CoordsKey.SAMPLE] = sample_coord
+        # nv_sig.coords[CoordsKey.Z] = z
+        # print(f"[START] Scanning SAMPLE: {sample_coord}, estimated Z: {z:.3f}")
         # do_scanning_image_sample(nv_sig)
 
+        # # --- Step 2: Loop over all other (x, y) positions ---
+        # for x in x_range:
+        #     for y in y_range:
+        #         if np.isclose(x, 0.0) and np.isclose(y, 0.0):
+        #             continue  # already scanned at (0, 0)
+        #         sample_coord = [x, y]
+        #         z = estimate_z(x, y)
+        #         nv_sig.coords[CoordsKey.SAMPLE] = sample_coord
+        #         nv_sig.coords[CoordsKey.Z] = z
+        #         print(f"Scanning SAMPLE: {sample_coord}, estimated Z: {z:.3f}")
+        #         do_scanning_image_sample(nv_sig)
+
+        # sample_coord = [0.0, 0.0]
+        # z = estimate_z(*sample_coord)
+        # nv_sig.coords[CoordsKey.SAMPLE] = sample_coord
+        # nv_sig.coords[CoordsKey.Z] = z
+        # print(f"[START] Scanning SAMPLE: {sample_coord}, estimated Z: {z:.3f}")
+        # do_scanning_image_sample(nv_sig)
+        # do_smart_xy_z_scan(nv_sig)
         # for y in np.linspace(0, 16, 5):
         #     for y in np.linspace(0, 16, 5):
         # nv_sig.coords[green_laser_aod : green_coords_list[ind]] + x
