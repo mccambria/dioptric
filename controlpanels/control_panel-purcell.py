@@ -385,15 +385,22 @@ def do_optimize_scc_amp(nv_list):
     )
 
 
-def do_optimize_spin_amp(nv_list):
+def do_optimize_spin_pol_amp(nv_list):
     min_tau = 0.8
     max_tau = 1.2
     num_steps = 16
     num_reps = 15
     num_runs = 200
     # num_runs = 2
+    uwave_ind_list = [1]  # iq modulated
     optimize_spin_pol.optimize_spin_pol_amp(
-        nv_list, num_steps, num_reps, num_runs, min_tau, max_tau
+        nv_list,
+        num_steps,
+        num_reps,
+        num_runs,
+        min_tau,
+        max_tau,
+        uwave_ind_list,
     )
 
 
@@ -403,8 +410,7 @@ def do_scc_snr_check(nv_list):
     # num_runs = 200
     # num_runs = 160 * 4
     # num_runs = 3
-    scc_snr_check.main(nv_list, num_reps, num_runs, uwave_ind_list=[0, 1])
-    # scc_snr_check.main(nv_list, num_reps, num_runs, uwave_ind_list=[1])
+    scc_snr_check.main(nv_list, num_reps, num_runs, uwave_ind_list=[1])
 
 
 def do_power_rabi(nv_list):
@@ -1211,16 +1217,16 @@ if __name__ == "__main__":
     #     [227.438, 19.199],
     # ]
     # green_coords_list = [
-    #     [107.807, 107.72],
-    #     [119.279, 96.253],
-    #     [107.103, 118.379],
-    #     [96.77, 94.821],
+    #     [107.821, 107.747],
+    #     [119.367, 96.211],
+    #     [107.058, 118.382],
+    #     [96.827, 94.795],
     # ]
     # red_coords_list = [
     #     [72.514, 73.231],
-    #     [81.616, 63.782],
-    #     [72.172, 81.911],
-    #     [63.234, 62.852],
+    #     [81.687, 63.747],
+    #     [72.136, 81.914],
+    #     [63.28, 62.83],
     # ]
 
     num_nvs = len(pixel_coords_list)
@@ -1537,11 +1543,6 @@ if __name__ == "__main__":
         #         print(f"Scanning SAMPLE: {sample_coord}, estimated Z: {z:.3f}")
         #         do_scanning_image_sample(nv_sig)
 
-        # sample_coord = [0.0, 0.0]
-        # z = estimate_z(*sample_coord)
-        # nv_sig.coords[CoordsKey.SAMPLE] = sample_coord
-        # nv_sig.coords[CoordsKey.Z] = z
-        # print(f"[START] Scanning SAMPLE: {sample_coord}, estimated Z: {z:.3f}")
         # do_scanning_image_sample(nv_sig)
         # do_smart_xy_z_scan(nv_sig)
         # for y in np.linspace(0, 16, 5):
@@ -1583,13 +1584,13 @@ if __name__ == "__main__":
         # do_optimize_readout_amp(nv_list)
         # do_optimize_readout_duration(nv_list)
         # optimize_readout_amp_and_duration(nv_list)
-        # do_optimize_spin_amp(nv_list)
+        do_optimize_spin_pol_amp(nv_list)
         # do_charge_state_histograms_images(nv_list, vary_pol_laser=True)
         # do_check_readout_fidelity(nv_list)
 
         # do_resonance_zoom(nv_list)
         # do_rabi(nv_list)
-        do_resonance(nv_list)
+        # do_resonance(nv_list)
         # do_spin_echo(nv_list)
 
         # do_spin_echo_phase_scan_test(nv_list)
@@ -1614,12 +1615,12 @@ if __name__ == "__main__":
         # do_opx_square_wave()
 
         # nv_list = nv_list[::-1]
-        # do_scc_snr_check(nv_list)
+        do_scc_snr_check(nv_list)
         # do_optimize_scc_duration(nv_list)
         # do_optimize_scc_amp(nv_list)
         # optimize_scc_amp_and_duration(nv_list)
         # do_crosstalk_check(nv_sig)
-        # do_spin_pol_check(nv_sig)
+        do_spin_pol_check(nv_sig)
         # do_calibrate_green_red_delay()
 
         # do_simple_correlation_test(nv_list)

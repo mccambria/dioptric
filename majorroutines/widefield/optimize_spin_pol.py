@@ -145,18 +145,58 @@ def process_and_plot(nv_list, taus, sig_counts, ref_counts, duration_or_amp):
 
 
 def optimize_spin_pol_duration(
-    nv_list, num_steps, num_reps, num_runs, min_tau, max_tau
+    nv_list,
+    num_steps,
+    num_reps,
+    num_runs,
+    min_tau,
+    max_tau,
+    uwave_ind_list,
 ):
-    return _main(nv_list, num_steps, num_reps, num_runs, min_tau, max_tau, True)
+    return _main(
+        nv_list,
+        num_steps,
+        num_reps,
+        num_runs,
+        min_tau,
+        max_tau,
+        True,
+        uwave_ind_list,
+    )
 
 
-def optimize_spin_pol_amp(nv_list, num_steps, num_reps, num_runs, min_amp, max_amp):
-    return _main(nv_list, num_steps, num_reps, num_runs, min_amp, max_amp, False)
+def optimize_spin_pol_amp(
+    nv_list,
+    num_steps,
+    num_reps,
+    num_runs,
+    min_amp,
+    max_amp,
+    uwave_ind_list,
+):
+    return _main(
+        nv_list,
+        num_steps,
+        num_reps,
+        num_runs,
+        min_amp,
+        max_amp,
+        False,
+        uwave_ind_list,
+    )
 
 
-def _main(nv_list, num_steps, num_reps, num_runs, min_tau, max_tau, duration_or_amp):
+def _main(
+    nv_list,
+    num_steps,
+    num_reps,
+    num_runs,
+    min_tau,
+    max_tau,
+    duration_or_amp,
+    uwave_ind_list=[0, 1],
+):
     ### Some initial setup
-    uwave_ind_list = [0, 1]
 
     seq_file = (
         "optimize_spin_pol_duration.py"
@@ -187,6 +227,7 @@ def _main(nv_list, num_steps, num_reps, num_runs, min_tau, max_tau, duration_or_
         num_runs,
         run_fn=run_fn,
         uwave_ind_list=uwave_ind_list,
+        load_iq=True,
     )
 
     # save data
@@ -237,7 +278,6 @@ if __name__ == "__main__":
 
     # data = dm.get_raw_data(file_id=1564881159891)
     data = dm.get_raw_data(file_id=1720799193270)
-
     nv_list = data["nv_list"]
     taus = data["taus"]
     counts = np.array(data["counts"])
