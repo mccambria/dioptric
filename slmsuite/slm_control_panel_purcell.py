@@ -291,7 +291,7 @@ def nuvu2thorcam_calibration(coords):
     )
 
     cal_coords_nuvu = np.array(
-        [[229.963, 12.008], [214.673, 241.448], [22.933, 112.185]], dtype="float32"
+        [[229.573, 11.847], [214.757, 241.195], [22.902, 112.119]], dtype="float32"
     )
 
     # Compute the affine transformation matrix
@@ -389,8 +389,8 @@ def write_pre_computed_nvs_phase():
     # )  # 117NVs weighted spots
     # shallow NVs
     # phase = np.load("slmsuite\computed_phase\slm_phase_75nvs_20250322_131455.npy")
-    phase = np.load("slmsuite\computed_phase\slm_phase_40nvs_20250404_225907.npy")
-    # phase = np.load("slmsuite\computed_phase\slm_phase_75nvs_20250322_140641.npy")
+    # phase = np.load("slmsuite\computed_phase\slm_phase_40nvs_20250404_225907.npy")
+    phase = np.load("slmsuite\computed_phase\slm_phase_75nvs_20250412_140055.npy")
     # phase = np.load("slmsuite\circles\slm_phase_circles_20250118_210419.npy")  # circles
     slm.write(phase, settle=True)
     # cam_plot()

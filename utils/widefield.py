@@ -954,6 +954,18 @@ def generate_log_spaced_taus(min_tau, max_tau, num_steps, base=4):
     return taus
 
 
+# Power equation constants for yellow aom
+a, b, c = 161266.751, 6.617, -19.492
+
+
+def power_from_voltage(v):
+    return a * v**b + c
+
+
+def voltage_from_power(p):
+    return ((p - c) / a) ** (1 / b)
+
+
 # endregion
 
 

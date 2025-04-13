@@ -139,13 +139,15 @@ config |= {
             # sig gen 1 is iq molulated
             1: {
                 "physical_name": "sig_gen_STAN_sg394_2",
-                # "uwave_power": 8.3,
-                "uwave_power": 8.7,
+                # "uwave_power": 8.5,
+                "uwave_power": 9.6,
                 # "frequency": 2.779138,   # rubin shallow NVs O1 ms=-1
                 # "frequency": 2.964545,  # rubin shallow NV O1 ms=+1
                 # "frequency": 2.842478,  # rubin shallow NV O3 ms=-1
                 "frequency": 2.730905,  # lower esr peak for both orientation
-                "rabi_period": 128,
+                # "rabi_period": 128,
+                # "rabi_period": 160,
+                "rabi_period": 176,
             },
         },
     },
@@ -165,7 +167,6 @@ config |= {
         # See camera server file for details
         "readout_mode": 1,  # 16 for double horizontal readout rate (em mode)
         # "readout_mode": 6,  # Fast conventional
-        # "roi": (121, 110, 250, 250),  # offsetX, offsetY, width, height"roi": (121, 110, 250, 250),  # offsetX, offsetY, width, height
         "roi": (134, 105, 250, 250),  # offsetX, offsetY, width, height
         # "roi": None,  # offsetX, offsetY, width, height
         "scale": 5 / 0.6,  # pixels / micron
@@ -841,8 +842,7 @@ opx_config = {
         "yellow_charge_readout": {"type": "constant", "sample": 0.35240},  # 75NVs all
         # "yellow_charge_readout": {"type": "constant", "sample": 0.32350},  # 35NV/185MHz
         # "yellow_charge_readout": {"type": "constant", "sample": 0.32238},  # 48NV/68MHz
-        # "yellow_spin_pol": {"type": "constant", "sample": 0.44},  # 75 NVs
-        "yellow_spin_pol": {"type": "constant", "sample": 0.40},  # for oprtimization
+        "yellow_spin_pol": {"type": "constant", "sample": 0.44},  # 75 NVs
         # "yellow_spin_pol": {"type": "constant", "sample": 0.42},
         "yellow_shelving": {"type": "constant", "sample": 0.33},
         # Other

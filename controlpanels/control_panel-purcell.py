@@ -386,7 +386,7 @@ def do_optimize_scc_amp(nv_list):
 
 
 def do_optimize_spin_pol_amp(nv_list):
-    min_tau = 0.8
+    min_tau = 0.9
     max_tau = 1.2
     num_steps = 16
     num_reps = 15
@@ -416,9 +416,10 @@ def do_scc_snr_check(nv_list):
 def do_power_rabi(nv_list):
     num_reps = 10
     num_runs = 200
-    power_range = 4
-    num_steps = 15
+    power_range = 1.5
+    num_steps = 10
     uwave_ind_list = [1]
+    powers = np.linspace(0, power_range, num_steps)
     # num_runs = 200
     # num_runs = 3
     power_rabi.main(
@@ -426,7 +427,7 @@ def do_power_rabi(nv_list):
         num_steps,
         num_reps,
         num_runs,
-        power_range,
+        powers,
         uwave_ind_list,
     )
 
@@ -1160,7 +1161,6 @@ if __name__ == "__main__":
     sample_name = "rubin"
     # magnet_angle = 90
     date_str = "2025_02_26"
-    # sample_coords = [-0.4, 2.0]
     sample_coords = [2.0, 4.0]
     z_coord = 0.0
     # Load NV pixel coordinates1
@@ -1230,7 +1230,7 @@ if __name__ == "__main__":
     # ]
 
     num_nvs = len(pixel_coords_list)
-    threshold_list = [11.5] * num_nvs
+    threshold_list = [None] * num_nvs
     # fmt: off
     #threholds values
     # 140NVs runin sample
@@ -1580,11 +1580,11 @@ if __name__ == "__main__":
         # do_optimize_loop(nv_list, coords_key)
 
         # do_optimize_pol_amp(nv_list)
-        # do_optimize_pol_duration(nv_list)
+        do_optimize_pol_duration(nv_list)
         # do_optimize_readout_amp(nv_list)
         # do_optimize_readout_duration(nv_list)
         # optimize_readout_amp_and_duration(nv_list)
-        do_optimize_spin_pol_amp(nv_list)
+        # do_optimize_spin_pol_amp(nv_list)
         # do_charge_state_histograms_images(nv_list, vary_pol_laser=True)
         # do_check_readout_fidelity(nv_list)
 
@@ -1615,12 +1615,12 @@ if __name__ == "__main__":
         # do_opx_square_wave()
 
         # nv_list = nv_list[::-1]
-        do_scc_snr_check(nv_list)
+        # do_scc_snr_check(nv_list)
         # do_optimize_scc_duration(nv_list)
         # do_optimize_scc_amp(nv_list)
         # optimize_scc_amp_and_duration(nv_list)
         # do_crosstalk_check(nv_sig)
-        do_spin_pol_check(nv_sig)
+        # do_spin_pol_check(nv_sig)
         # do_calibrate_green_red_delay()
 
         # do_simple_correlation_test(nv_list)

@@ -231,13 +231,12 @@ def main(
     num_steps,
     num_reps,
     num_runs,
-    power_range,
+    powers,
     uwave_ind_list=[0, 1],
 ):
     ### Some initial setup
 
     pulse_gen = tb.get_server_pulse_gen()
-    powers = calculate_powers(0, power_range, num_steps)
     seq_file = "power_rabi.py"
 
     ### Collect the data
@@ -266,13 +265,13 @@ def main(
         uwave_ind_list=uwave_ind_list,
         load_iq=True,
     )
-
+    # uwave_power = uwave_dict["uwave_power"]
+    # uwave_powers = uwave_power + power
     ### save the data
     timestamp = dm.get_time_stamp()
     data |= {
         "timestamp": timestamp,
         "power-units": "GHz",
-        "power_range": power_range,
         "powers": powers,
     }
 
