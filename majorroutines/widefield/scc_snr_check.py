@@ -127,9 +127,6 @@ def process_and_plot(data):
 def main(nv_list, num_reps, num_runs, uwave_ind_list=[0, 1]):
     ### Some initial setup
     num_steps = 1
-    # uwave_ind_list = [0]
-    # uwave_ind_list = [1]
-    # uwave_ind_list = [0, 1]
 
     seq_file = "scc_snr_check.py"
     pulse_gen = tb.get_server_pulse_gen()
@@ -138,13 +135,11 @@ def main(nv_list, num_reps, num_runs, uwave_ind_list=[0, 1]):
         seq_args = [
             widefield.get_base_scc_seq_args(nv_list, uwave_ind_list),
         ]
-
         # print(seq_args)
         seq_args_string = tb.encode_seq_args(seq_args)
         pulse_gen.stream_load(seq_file, seq_args_string, num_reps)
 
     ### Collect the data
-
     data = base_routine.main(
         nv_list,
         num_steps,

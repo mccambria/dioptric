@@ -260,13 +260,11 @@ def main(
     num_steps,
     num_reps,
     num_runs,
-    freq_center,
-    freq_range,
+    freqs,
     uwave_ind_list=[0, 1],
 ):
     ### Some initial setup
     pulse_gen = tb.get_server_pulse_gen()
-    freqs = calculate_freqs(freq_center, freq_range, num_steps)
     original_num_steps = num_steps
     num_steps *= 4  # For sig, ms=0 ref, and ms=+/-1 ref
 
@@ -352,8 +350,8 @@ def main(
         "timestamp": timestamp,
         "freqs": freqs,
         "freq-units": "GHz",
-        "freq_range": freq_range,
-        "freq_center": freq_center,
+        # "freq_range": freq_range,
+        # "freq_center": freq_center,
     }
 
     repr_nv_sig = widefield.get_repr_nv_sig(nv_list)

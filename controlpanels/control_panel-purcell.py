@@ -55,6 +55,7 @@ from utils import kplotlib as kpl
 from utils import positioning as pos
 from utils import tool_belt as tb
 from utils.constants import Axes, CoordsKey, NVSig, VirtualLaserKey
+from utils.positioning import get_scan_1d as calculate_freqs
 
 green_laser = "laser_INTE_520"
 red_laser = "laser_COBO_638"
@@ -384,15 +385,22 @@ def do_optimize_scc_amp(nv_list):
     )
 
 
-def do_optimize_spin_amp(nv_list):
-    min_tau = 0.8
+def do_optimize_spin_pol_amp(nv_list):
+    min_tau = 0.9
     max_tau = 1.2
     num_steps = 16
     num_reps = 15
     num_runs = 200
     # num_runs = 2
+    uwave_ind_list = [1]  # iq modulated
     optimize_spin_pol.optimize_spin_pol_amp(
-        nv_list, num_steps, num_reps, num_runs, min_tau, max_tau
+        nv_list,
+        num_steps,
+        num_reps,
+        num_runs,
+        min_tau,
+        max_tau,
+        uwave_ind_list,
     )
 
 
@@ -402,16 +410,16 @@ def do_scc_snr_check(nv_list):
     # num_runs = 200
     # num_runs = 160 * 4
     # num_runs = 3
-    # scc_snr_check.main(nv_list, num_reps, num_runs, uwave_ind_list=[0, 1])
     scc_snr_check.main(nv_list, num_reps, num_runs, uwave_ind_list=[1])
 
 
 def do_power_rabi(nv_list):
     num_reps = 10
     num_runs = 200
-    power_range = 4
-    num_steps = 15
+    power_range = 1.5
+    num_steps = 10
     uwave_ind_list = [1]
+    powers = np.linspace(0, power_range, num_steps)
     # num_runs = 200
     # num_runs = 3
     power_rabi.main(
@@ -419,7 +427,7 @@ def do_power_rabi(nv_list):
         num_steps,
         num_reps,
         num_runs,
-        power_range,
+        powers,
         uwave_ind_list,
     )
 
@@ -469,19 +477,33 @@ def do_calibrate_iq_delay(nv_list):
 def do_resonance(nv_list):
     freq_center = 2.87
     # freq_range = 0.240
-    freq_range = 0.300
-    num_steps = 60
-    # num_steps = 80
+    freq_range = 0.40
+    # num_steps = 60
+    num_steps = 80
     # Single ref
     # num_reps = 8
-    # num_runs = 600
-    num_runs = 400
+    num_runs = 1100
+    # num_runs = 200
     # Both refs
-    num_reps = 2
+    num_reps = 1
+    # num_reps = 3
     # num_runs = 600
-    resonance.main(nv_list, num_steps, num_reps, num_runs, freq_center, freq_range)
+    # freqs = []
+    # centers = [2.70, 3.06]
+    # range_each = 0.08
+    # lower_freqs = calculate_freqs(centers[0], range_each, 16)
+    # freqs.extend(lower_freqs)
+    # upper_freqs = calculate_freqs(centers[1], range_each, 16)
+    # freqs.extend(upper_freqs)
+    ##
+    freqs = calculate_freqs(freq_center, freq_range, num_steps)
+    # Remove duplicates and sort
+    # freqs = sorted(set(freqs))
+    # num_steps = len(freqs)
+    # sys.exit()
+    resonance.main(nv_list, num_steps, num_reps, num_runs, freqs=freqs)
     # for _ in range(2):
-    #     resonance.main(nv_list, num_steps, num_reps, num_runs, freq_center, freq_range)
+    #     resonance.main(nv_list, num_steps, num_reps, num_runs, freqs=freqs)
 
 
 def do_resonance_zoom(nv_list):
@@ -912,12 +934,12 @@ def do_opx_constant_ac():
     # opx.stream_start()
 
     # Yellow
-    opx.constant_ac(
-        [],  # Digital channels
-        [7],  # Analog channels
-        [0.4256],  # Analog voltages
-        [0],  # Analog frequencies
-    )
+    # opx.constant_ac(
+    #     [],  # Digital channels
+    #     [7],  # Analog channels
+    #     [0.4256],  # Analog voltages
+    #     [0],  # Analog frequencies
+    # )
 
     # opx.constant_ac([4])  # Just laser
     # Red
@@ -982,12 +1004,12 @@ def do_opx_constant_ac():
     #     [73.166, 72.941],  # Analog frequencies
     # )
     # Green + yellow
-    # opx.constant_ac(
-    #     [4],  # Digital channels
-    #     [3, 4, 7],  # Analog channels
-    #     [0.19, 0.19, 0.45],  # Analog voltages
-    #     [107, 107, 0],  # Analog frequencies
-    # )
+    opx.constant_ac(
+        [4],  # Digital channels
+        [3, 4, 7],  # Analog channels
+        [0.19, 0.19, 0.45],  # Analog voltages
+        [107, 107, 0],  # Analog frequencies
+    )
     # Red + green + Yellow
     # opx.constant_ac(
     #     [4, 1],  # Digital channels1
@@ -1116,6 +1138,19 @@ def load_thresholds(file_path="slmsuite/nv_blob_detection/threshold_list_nvs_162
     return thresholds
 
 
+def estimate_z(x, y, z0=0.15, slope=-0.0265):
+    """Estimate Z from (x, y) using diagonal slope."""
+    return z0 + slope * (x + y) / np.sqrt(2)
+
+
+def equilateral_triangle_around(center, radius):
+    """Returns 3 points in an equilateral triangle around the center."""
+    x0, y0 = center
+    angles = np.deg2rad([0, 120, 240])  # 3 vertices at 0°, 120°, 240°
+    points = [[x0 + radius * np.cos(a), y0 + radius * np.sin(a)] for a in angles]
+    return points
+
+
 ### Run the file
 
 if __name__ == "__main__":
@@ -1126,9 +1161,8 @@ if __name__ == "__main__":
     sample_name = "rubin"
     # magnet_angle = 90
     date_str = "2025_02_26"
-    sample_coords = [-0.4, 2.0]
-    z_coord = 1.0
-
+    sample_coords = [2.0, 4.0]
+    z_coord = 0.0
     # Load NV pixel coordinates1
     pixel_coords_list = load_nv_coords(
         # file_path="slmsuite/nv_blob_detection/nv_blob_filtered_160nvs_reordered.npz",
@@ -1183,20 +1217,20 @@ if __name__ == "__main__":
     #     [227.438, 19.199],
     # ]
     # green_coords_list = [
-    #     [107.736, 107.71],
-    #     [119.247, 96.173],
-    #     [107.049, 118.35],
-    #     [96.761, 94.813],
+    #     [107.821, 107.747],
+    #     [119.367, 96.211],
+    #     [107.058, 118.382],
+    #     [96.827, 94.795],
     # ]
     # red_coords_list = [
-    #     [72.455, 73.224],
-    #     [81.588, 63.717],
-    #     [72.128, 81.888],
-    #     [63.226, 62.846],
+    #     [72.514, 73.231],
+    #     [81.687, 63.747],
+    #     [72.136, 81.914],
+    #     [63.28, 62.83],
     # ]
 
     num_nvs = len(pixel_coords_list)
-    threshold_list = [11.5] * num_nvs
+    threshold_list = [None] * num_nvs
     # fmt: off
     #threholds values
     # 140NVs runin sample
@@ -1384,7 +1418,7 @@ if __name__ == "__main__":
     # nv_sig.expected_counts = 4500
     # nv_sig.expected_counts = 900
     # nv_sig.expected_counts = 2100
-    nv_sig.expected_counts = 1190
+    nv_sig.expected_counts = 1200
 
     # num_nvs = len(nv_list)
     # print(f"Final NV List: {nv_list}")
@@ -1487,13 +1521,30 @@ if __name__ == "__main__":
         # nv_sig.coords[CoordsKey.SAMPLE][1] = y
         # do_scanning_image_sample(nv_sig)
 
-        # for z in np.linspace(1.0, 2.0, 11):
-        #     nv_sig.coords[CoordsKey.Z] = z
-        #     do_scanning_image_sample(nv_sig)
-
-        # nv_sig.coords[CoordsKey.z] = 0.4
+        # x_range = np.linspace(-2.0, 6.0, 6)
+        # y_range = np.linspace(-2.0, 6.0, 6)
+        # # --- Step 1: Start at (0, 0) ---
+        # sample_coord = [0.0, 0.0]
+        # z = estimate_z(*sample_coord)
+        # nv_sig.coords[CoordsKey.SAMPLE] = sample_coord
+        # nv_sig.coords[CoordsKey.Z] = z
+        # print(f"[START] Scanning SAMPLE: {sample_coord}, estimated Z: {z:.3f}")
         # do_scanning_image_sample(nv_sig)
 
+        # # --- Step 2: Loop over all other (x, y) positions ---
+        # for x in x_range:
+        #     for y in y_range:
+        #         if np.isclose(x, 0.0) and np.isclose(y, 0.0):
+        #             continue  # already scanned at (0, 0)
+        #         sample_coord = [x, y]
+        #         z = estimate_z(x, y)
+        #         nv_sig.coords[CoordsKey.SAMPLE] = sample_coord
+        #         nv_sig.coords[CoordsKey.Z] = z
+        #         print(f"Scanning SAMPLE: {sample_coord}, estimated Z: {z:.3f}")
+        #         do_scanning_image_sample(nv_sig)
+
+        # do_scanning_image_sample(nv_sig)
+        # do_smart_xy_z_scan(nv_sig)
         # for y in np.linspace(0, 16, 5):
         #     for y in np.linspace(0, 16, 5):
         # nv_sig.coords[green_laser_aod : green_coords_list[ind]] + x
@@ -1529,17 +1580,17 @@ if __name__ == "__main__":
         # do_optimize_loop(nv_list, coords_key)
 
         # do_optimize_pol_amp(nv_list)
-        # do_optimize_pol_duration(nv_list)
+        do_optimize_pol_duration(nv_list)
         # do_optimize_readout_amp(nv_list)
         # do_optimize_readout_duration(nv_list)
         # optimize_readout_amp_and_duration(nv_list)
-        # do_optimize_spin_amp(nv_list)
+        # do_optimize_spin_pol_amp(nv_list)
         # do_charge_state_histograms_images(nv_list, vary_pol_laser=True)
         # do_check_readout_fidelity(nv_list)
 
         # do_resonance_zoom(nv_list)
         # do_rabi(nv_list)
-        do_resonance(nv_list)
+        # do_resonance(nv_list)
         # do_spin_echo(nv_list)
 
         # do_spin_echo_phase_scan_test(nv_list)

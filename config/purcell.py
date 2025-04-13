@@ -40,14 +40,14 @@ calibration_coords_pixel = [
     [227.438, 19.199],
 ]
 calibration_coords_green = [
-    [119.247, 96.173],
-    [107.049, 118.35],
-    [96.761, 94.813],
+    [119.367, 96.211],
+    [107.058, 118.382],
+    [96.827, 94.795],
 ]
 calibration_coords_red = [
-    [81.588, 63.717],
-    [72.128, 81.888],
-    [63.226, 62.846],
+    [81.687, 63.747],
+    [72.136, 81.914],
+    [63.28, 62.83],
 ]
 # Create the dictionaries using the provided lists
 calibration_coords_nv1 = {
@@ -72,7 +72,6 @@ pixel_to_sample_affine_transformation_matrix = [
     [-0.01472387, 0.00052569, 1.28717911],
     [0.00040197, -0.01455135, 1.73876545],
 ]
-
 # endregion
 # region Base config
 # Add on to the default config
@@ -132,19 +131,23 @@ config |= {
                 "physical_name": "sig_gen_STAN_sg394",
                 # "uwave_power": 2.3,
                 "uwave_power": 8.7,
-                "frequency": 2.779138,  # rubin shallow NVs O1 ms=-1
+                # "frequency": 2.779138,  # rubin shallow NVs O1 ms=-1
                 # "frequency": 2.909381,  # rubin shallow NV O3 ms=+1
+                "frequency": 2.730905,
                 "rabi_period": 128,
             },
             # sig gen 1 is iq molulated
             1: {
                 "physical_name": "sig_gen_STAN_sg394_2",
-                # "uwave_power": 8.3,
-                "uwave_power": 8.7,
+                # "uwave_power": 8.5,
+                "uwave_power": 9.6,
                 # "frequency": 2.779138,   # rubin shallow NVs O1 ms=-1
                 # "frequency": 2.964545,  # rubin shallow NV O1 ms=+1
-                "frequency": 2.842478,  # rubin shallow NV O3 ms=-1
-                "rabi_period": 128,
+                # "frequency": 2.842478,  # rubin shallow NV O3 ms=-1
+                "frequency": 2.730905,  # lower esr peak for both orientation
+                # "rabi_period": 128,
+                # "rabi_period": 160,
+                "rabi_period": 176,
             },
         },
     },
@@ -164,7 +167,6 @@ config |= {
         # See camera server file for details
         "readout_mode": 1,  # 16 for double horizontal readout rate (em mode)
         # "readout_mode": 6,  # Fast conventional
-        # "roi": (121, 110, 250, 250),  # offsetX, offsetY, width, height"roi": (121, 110, 250, 250),  # offsetX, offsetY, width, height
         "roi": (134, 105, 250, 250),  # offsetX, offsetY, width, height
         # "roi": None,  # offsetX, offsetY, width, height
         "scale": 5 / 0.6,  # pixels / micron
@@ -840,8 +842,8 @@ opx_config = {
         "yellow_charge_readout": {"type": "constant", "sample": 0.35240},  # 75NVs all
         # "yellow_charge_readout": {"type": "constant", "sample": 0.32350},  # 35NV/185MHz
         # "yellow_charge_readout": {"type": "constant", "sample": 0.32238},  # 48NV/68MHz
-        # "yellow_spin_pol": {"type": "constant", "sample": 0.44},  # 71 NVs
-        "yellow_spin_pol": {"type": "constant", "sample": 0.42},
+        "yellow_spin_pol": {"type": "constant", "sample": 0.44},  # 75 NVs
+        # "yellow_spin_pol": {"type": "constant", "sample": 0.42},
         "yellow_shelving": {"type": "constant", "sample": 0.33},
         # Other
         "aod_cw": {"type": "constant", "sample": 0.35},
