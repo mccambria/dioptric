@@ -144,7 +144,7 @@ def plot_nv_resonance_fits_and_residuals(
         )
 
     avg_counts, avg_counts_ste = widefield.process_counts(
-        nv_list, sig_counts, ref_counts, threshold=False
+        nv_list, sig_counts, ref_counts, threshold=True
     )
     #
     avg_snr, avg_snr_ste = widefield.calc_snr(sig_counts, ref_counts)
@@ -251,19 +251,21 @@ def plot_nv_resonance_fits_and_residuals(
     snrs = list(snrs)
 
     # Plot SNR vs frequency for all NVs
-    fig_snr, ax_snr = plt.subplots(figsize=(6, 5))
+    fig_snr, ax_snr = plt.subplots(figsize=(6.5, 5))
     for nv_idx in range(num_nvs):
         snrs = np.reshape(avg_snr[nv_idx], len(freqs))
         ax_snr.plot(freqs, snrs, linewidth=0.5)
 
-    ax_snr.set_xlabel("Microwave Frequency (MHz)")
-    ax_snr.set_ylabel("Signal-to-Noise Ratio (SNR)")
-    ax_snr.set_title("SNR vs Frequency for All NVs")
+    ax_snr.set_xlabel("Microwave Frequency (MHz)", fontsize=15)
+    ax_snr.set_ylabel("Signal-to-Noise Ratio (SNR)", fontsize=15)
+    ax_snr.set_title("SNR vs Frequency for All NVs", fontsize=15)
     ax_snr.legend(fontsize="small", ncol=2)
     ax_snr.grid(True)
+    ax_snr.tick_params(axis="both", labelsize=14)
     plt.tight_layout()
     # plt.show(block=True)
-    # sys.exit()
+    # sys.exit()'
+    # return
     ### snrs
     median_snr = np.median(snrs)
     print(f"median snr:{median_snr:.2f}")
@@ -347,15 +349,14 @@ def plot_nv_resonance_fits_and_residuals(
     plt.legend(loc="upper right", fontsize=9)
     plt.grid(True, linestyle="--", alpha=0.5)
     plt.tight_layout()
-    return
+    # return
 
-    # filter_nvs = True
-    filter_nvs = False
-    # filter_nvs = True
-    filter_nvs = False
+    filter_nvs = True
+    # filter_nvs = False
     if filter_nvs:
         # target_peak_values = [0.025, 0.068, 0.146, 0.185]
         target_peak_values = [0.068, 0.185]
+        target_peak_values = [0.290]
         tolerance = 0.01
         # Filter indices based on proximity to target peak differences
         filtered_indices = [
@@ -383,24 +384,6 @@ def plot_nv_resonance_fits_and_residuals(
                 if target - tolerance <= freq_diff <= target + tolerance:
                     orientation_indices[target].append(idx)
 
-        # # Save the results
-        # results = {
-        #     "orientation_indices": {
-        #         target: {
-        #             "nv_indices": indices,
-        #             "count": len(indices),
-        #         }
-        #         for target, indices in orientation_indices.items()
-        #     },
-        #     "non_matching_indices": {
-        #         "nv_indices": non_matching_indices,
-        #         "count": len(non_matching_indices),
-        #     },
-        # }
-
-        # file_name = dm.get_file_name(file_id=file_id)
-        # file_path = dm.get_file_path(__file__, file_name, f"{file_id}_all_results")
-        # dm.save_raw_data(results, file_path)
         avg_center_freqs = {}
         for orientation, indices in orientation_indices.items():
             if indices:
@@ -1115,17 +1098,17 @@ if __name__ == "__main__":
     file_ids = [1809016009780]
     # rubib 75
     file_ids = [1810826711017]
-    # rubib 154
-    file_ids = [1827020564514]
     # rubib 75 after change magnet position
     file_ids = [1826522639984]
     # rubib 154 after change magnet position
     file_ids = [1827020564514]
-    # # rubib 154 after change magnet position (new position)
-    # file_ids = []
-
+    # # rubib 75 after change magnet position (new position)
+    # file_ids = [1829782989309]
+    # file_ids = [1830447165544]
+    # file_ids = [1831411242534]
+    file_ids = [1832069584608]
     # fmt: off
-    # fmt: onn   x
+    # fmt: on
     # print(len(reference_pixel_coords))
     # sys.exit()
     # Load the first dataset as a base
@@ -1216,7 +1199,7 @@ if __name__ == "__main__":
         combined_file_id = "_".join(map(str, file_ids))
         file_name = f"combined_{combined_file_id}_{date_time_str}.png"
         file_path = dm.get_file_path(__file__, "combined_plot", file_name)
-
+        print(f"Combined plot saved to {file_path}")
         # Plot combined data
         plot_nv_resonance_fits_and_residuals(
             nv_list,
@@ -1226,8 +1209,6 @@ if __name__ == "__main__":
             file_id=combined_file_id,
             num_cols=7,
         )
-
-        print(f"Combined plot saved to {file_path}")
     else:
         print("No valid data available for plotting.")
 

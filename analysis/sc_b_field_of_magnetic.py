@@ -61,8 +61,8 @@ def estimate_magnetic_field(splittings_MHz):
 
 
 # Your 4 ESR splittings in MHz
-# splittings = [186, 145, 68, 25]  # old spliting
-splittings = [214, 162, 90, 45]  # new spliting
+splittings = [186, 145, 68, 25]  # old spliting
+# splittings = [214, 162, 90, 45]  # new spliting
 estimate_magnetic_field(splittings)
 
 

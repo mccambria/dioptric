@@ -1,9 +1,7 @@
 # -*- coding: utf-8 -*-
 """
-Widefield Rabi experiment
-
+Widefield xy experiment
 Created on November 29th, 2023
-
 @author: Saroj Chand
 """
 
@@ -29,12 +27,8 @@ from utils import widefield as widefield
 
 
 def stretched_exp(tau, a, t2, n, b):
-    n = 1.0
+    n = 3.0
     return a * (1 - np.exp(-((tau / t2) ** n))) + b
-
-
-# def stretched_exp(tau, a, t2, n, b):
-#     return a * (1 - np.exp(-((tau / t2)))) + b
 
 
 def residuals(params, x, y, yerr):
@@ -299,9 +293,9 @@ def process_and_plot_xy8(nv_list, taus, norm_counts, norm_counts_ste):
     #         )
     # Stretching exponent note
     ax.text(
-        0.99,
+        0.01,
         0.95,
-        "n is the stretching exponent in the fit",
+        "n = 1.0",
         transform=ax.transAxes,
         fontsize=10,
         color="dimgray",
@@ -410,7 +404,7 @@ def process_and_plot_xy8(nv_list, taus, norm_counts, norm_counts_ste):
         #     label.set_horizontalalignment("right")
         #     label.set_x(0.15)
         # Optional: adjust tick line size and font
-        # ax.set_xscale("log")
+        ax.set_xscale("log")
         # # Add NV index within the plot at the center
         axes_grid = np.array(axes).reshape((num_rows, num_cols))
         # Loop over each column
@@ -538,11 +532,315 @@ def plot_T2_on_T1():
         label=f"T₂ / T₁ Ratio (median:{median:.2f})",
     )
     ax.set_xlabel("NV Index", fontsize=14)
-    ax.set_ylabel("T₂ / T₁ Ratio", fontsize=14)
-    ax.set_title("T₂ / T₁ Ratio per NV", fontsize=15)
+    ax.set_ylabel("T2 / T1 Ratio", fontsize=14)
+    ax.set_title("T2 / T1 Ratio per NV", fontsize=15)
     ax.tick_params(labelsize=14)
     plt.grid(True, linestyle="--", alpha=0.5)
     plt.legend(fontsize=14)
+    plt.tight_layout()
+    plt.show()
+
+
+def stretched_exp_fixed_n(tau, a, t2, b, n_fixed):
+    return a * (1 - np.exp(-((tau / t2) ** n_fixed))) + b
+
+
+def plot_xy8_fits_fixed_n(
+    nv_list, taus, norm_counts, norm_counts_ste, n_fixed, save_prefix=None
+):
+
+    num_nvs = len(nv_list)
+    T2_list, fit_params = [], []
+    b_list, a_list = [], []
+    chi2_list, T2_error_list = []
+    for nv_ind in range(num_nvs):
+        y = norm_counts[nv_ind]
+        yerr = norm_counts_ste[nv_ind]
+        a0 = np.clip(np.ptp(y), 0.1, 1.0)
+        t2_0 = np.median(taus)
+        b0 = np.mean(y[-4:])
+        p0 = [a0, t2_0, b0]
+        bounds = ([0, 1e-1, -10], [1.5, 1e5, 10])
+
+        try:
+            popt, pcov = curve_fit(
+                lambda tau, a, t2, b: stretched_exp_fixed_n(tau, a, t2, b, n_fixed),
+                taus,
+                y,
+                p0=p0,
+                bounds=bounds,
+                sigma=yerr,
+                absolute_sigma=True,
+                maxfev=20000,
+            )
+            T2_list.append(popt[1])
+            fit_params.append(popt)
+            param_errors = np.sqrt(np.diag(pcov))
+            a_list.append(popt[0])
+            b_list.append(popt[2])
+            T2_error_list.append(param_errors[1])
+            # Calculate reduced chi-squared
+            residuals = stretched_exp_fixed_n(taus, *popt, n_fixed) - y
+            red_chi_sq = np.sum((residuals / yerr) ** 2) / (len(taus) - len(popt))
+            T2_list.append(popt[1])
+            chi2_list.append(red_chi_sq)
+        except Exception as e:
+            print(f"Fit failed for NV {nv_ind} at n={n_fixed}: {e}")
+            T2_list.append(np.nan)
+            fit_params.append(None)
+            T2_error_list.append(np.nan)
+            a_list.append(np.nan)
+            b_list.append(np.nan)
+            chi2_list.append(np.nan)
+
+    # === Plotting ===
+    sns.set(style="whitegrid")
+    num_cols = 8
+    num_rows = int(np.ceil(num_nvs / num_cols))
+    fig, axes = plt.subplots(
+        num_rows,
+        num_cols,
+        figsize=(num_cols * 1.8, num_rows * 3),
+        sharex=True,
+        sharey=False,
+        constrained_layout=True,
+        gridspec_kw={"wspace": 0.0, "hspace": 0.0},
+    )
+    axes = axes.flatten()
+    taus_fit = np.logspace(np.log10(min(taus)), np.log10(max(taus)), 200)
+
+    for nv_idx, ax in enumerate(axes):
+        if nv_idx >= len(nv_list):
+            ax.axis("off")
+            continue
+        y = norm_counts[nv_idx]
+        yerr = norm_counts_ste[nv_idx]
+        max_y = np.max(y)
+        a = a_list[nv_idx]
+        b = b_list[nv_idx]
+        popt = fit_params[nv_idx]
+
+        sns.scatterplot(
+            x=taus,
+            y=max_y - y + b,
+            ax=ax,
+            color="blue",
+            label=f"NV {nv_idx} (T2 = {T2_list[nv_idx]:.2f} µs)",
+            s=10,
+            alpha=0.7,
+        )
+        ax.errorbar(
+            taus,
+            max_y - y + b,
+            yerr=yerr,
+            fmt="o",
+            alpha=0.9,
+            ecolor="gray",
+            markersize=0.1,
+        )
+        if popt is not None:
+            y_fit = max_y - stretched_exp_fixed_n(taus_fit, *popt, n_fixed=n_fixed) + b
+            sns.lineplot(
+                x=taus_fit,
+                y=y_fit,
+                ax=ax,
+                lw=1,
+            )
+
+        ax.legend(fontsize="xx-small")
+        ax.grid(True, which="both", linestyle="--", linewidth=0.5)
+        ax.yaxis.set_major_formatter(FormatStrFormatter("%.1f"))
+        ax.tick_params(axis="y", labelsize=8, direction="in", pad=-10)
+        for label in ax.get_yticklabels():
+            label.set_horizontalalignment("right")
+            label.set_x(0.01)
+
+        ax.set_xscale("log")
+        ax.set_xlabel("Time (μs)", fontsize=9, labelpad=1)
+
+    fig.text(
+        0.005, 0.5, "NV$^{-}$ Population", va="center", rotation="vertical", fontsize=11
+    )
+    fig.suptitle(f"XY8 Fits (n = {n_fixed})", fontsize=13)
+    fig.tight_layout(pad=0.4, rect=[0.01, 0.01, 0.99, 0.99])
+    # if save_prefix:
+    #     plt.savefig(f"{save_prefix}_n{n_fixed}.png", dpi=300)
+    plt.show()
+
+    return T2_list
+
+
+def full_xy8_fitting_over_n(
+    nv_list, taus, norm_counts, norm_counts_ste, n_values=[1, 2, 3, 4, 5, 6]
+):
+    median_T2s = []
+    all_T2s_by_n = {}
+
+    for n in n_values:
+        print(f"\n=== Fitting with n = {n} ===")
+        T2_list = plot_xy8_fits_fixed_n(
+            nv_list,
+            taus,
+            norm_counts,
+            norm_counts_ste,
+            n_fixed=n,
+            save_prefix="xy8_fits",
+        )
+        T2_clean = np.array(T2_list)
+        T2_clean = T2_clean[~np.isnan(T2_clean)]
+        median_T2 = np.median(T2_clean)
+        print(f"Median T2 for n={n}: {median_T2:.2f} µs")
+        median_T2s.append(median_T2)
+        all_T2s_by_n[n] = T2_clean
+
+    # Final summary plot
+    plt.figure(figsize=(6, 5))
+    plt.plot(n_values, median_T2s, "o-", lw=2)
+    plt.xlabel("Fixed Stretching Exponent n", fontsize=15)
+    plt.ylabel("Median T2 (µs)", fontsize=15)
+    plt.title("Median T2 vs. Fixed n", fontsize=15)
+    plt.grid(True, linestyle="--", alpha=0.6)
+    plt.xticks(n_values)
+    plt.tight_layout()
+    plt.show()
+
+    return all_T2s_by_n
+
+
+def fit_and_plot_all_T2_with_chi2(
+    nv_list, taus, norm_counts, norm_counts_ste, n_values=[1, 2, 3, 4]
+):
+    all_T2s = {}
+    all_chi2s = {}
+    num_nvs = len(nv_list)
+
+    for n_fixed in n_values:
+        T2_list = []
+        chi2_list = []
+
+        for nv_ind in range(num_nvs):
+            y = norm_counts[nv_ind]
+            yerr = norm_counts_ste[nv_ind]
+
+            a0 = np.clip(np.ptp(y), 0.1, 1.0)
+            t2_0 = np.median(taus)
+            b0 = np.mean(y[-4:])
+            p0 = [a0, t2_0, b0]
+            bounds = ([0, 1e-1, -10], [1.5, 1e5, 10])
+
+            try:
+                popt, pcov = curve_fit(
+                    lambda tau, a, t2, b: stretched_exp_fixed_n(tau, a, t2, b, n_fixed),
+                    taus,
+                    y,
+                    p0=p0,
+                    bounds=bounds,
+                    sigma=yerr,
+                    absolute_sigma=True,
+                    maxfev=20000,
+                )
+                residuals = stretched_exp_fixed_n(taus, *popt, n_fixed) - y
+                red_chi_sq = np.sum((residuals / yerr) ** 2) / (len(taus) - len(popt))
+                T2_list.append(popt[1])
+                chi2_list.append(red_chi_sq)
+
+            except Exception as e:
+                print(f"Fit failed for NV {nv_ind} at n={n_fixed}: {e}")
+                T2_list.append(np.nan)
+                chi2_list.append(np.nan)
+
+        all_T2s[n_fixed] = T2_list
+        all_chi2s[n_fixed] = chi2_list
+
+        # === Plotting for this n ===
+        T2_arr = np.array(T2_list)
+        chi2_arr = np.array(chi2_list)
+        nv_indices = np.arange(num_nvs)
+        median_T2 = np.nanmedian(T2_arr)
+
+        fig, ax = plt.subplots(figsize=(6, 5))
+        scatter = ax.scatter(
+            nv_indices,
+            T2_arr,
+            c=chi2_arr,
+            edgecolors="black",
+            s=50,
+            label="T2 per NV",
+        )
+        ax.axhline(
+            median_T2,
+            color="r",
+            linestyle="--",
+            label=f"Median T2 ≈ {median_T2:.1f} µs",
+        )
+        ax.set_xlabel("NV Index", fontsize=15)
+        ax.set_ylabel("T2 (µs)", fontsize=15)
+        ax.set_title(f"T2 per NV (n = {n_fixed})", fontsize=15)
+        ax.grid(True, which="both", linestyle="--", alpha=0.5)
+        ax.tick_params(labelsize=14)
+
+        cbar = plt.colorbar(scatter, ax=ax)
+        cbar.set_label("Reduced χ²", fontsize=13)
+        cbar.ax.tick_params(labelsize=12)
+        ax.legend(fontsize=11)
+        plt.tight_layout
+        plt.show()
+
+    return all_T2s, all_chi2s
+
+
+# def fit_for_fixed_n_range(
+#     nv_list, taus, norm_counts, norm_counts_ste, n_values=[1, 2, 3, 4]
+# ):
+#     medians_by_n = []
+#     all_T2s_by_n = {}
+
+#     for n_fixed in n_values:
+#         T2s = []
+
+#         for nv_ind in range(len(nv_list)):
+#             y = norm_counts[nv_ind]
+#             yerr = norm_counts_ste[nv_ind]
+#             a0 = np.clip(np.ptp(y), 0.1, 1.0)
+#             t2_0 = np.median(taus)
+#             b0 = np.mean(y[-4:])
+#             p0 = [a0, t2_0, b0]
+#             bounds = ([0, 1e-1, -10], [1.5, 1e5, 10])
+
+#             try:
+#                 popt, _ = curve_fit(
+#                     lambda tau, a, t2, b: stretched_exp_fixed_n(tau, a, t2, b, n_fixed),
+#                     taus,
+#                     y,
+#                     p0=p0,
+#                     bounds=bounds,
+#                     sigma=yerr,
+#                     absolute_sigma=True,
+#                     maxfev=20000,
+#                 )
+#                 T2s.append(popt[1])
+#             except Exception as e:
+#                 print(f"Fit failed for NV {nv_ind} at n={n_fixed}: {e}")
+#                 T2s.append(np.nan)
+
+#         T2s = np.array(T2s)
+#         T2s = T2s[~np.isnan(T2s)]
+#         all_T2s_by_n[n_fixed] = T2s
+#         median_T2 = np.median(T2s)
+#         medians_by_n.append(median_T2)
+#         print(f"n={n_fixed}: median T2 = {median_T2:.2f} µs")
+
+#     return n_values, medians_by_n, all_T2s_by_n
+
+
+def plot_medians(n_values, medians_by_n):
+    plt.figure(figsize=(6, 4))
+    plt.plot(n_values, medians_by_n, "o-", lw=2)
+    plt.xlabel("Fixed Stretching Exponent n", fontsize=14)
+    plt.ylabel("Median T₂ (µs)", fontsize=14)
+    plt.title("Median T₂ vs. Fixed n", fontsize=15)
+    plt.grid(True, linestyle="--", alpha=0.6)
+    plt.xticks(n_values)
     plt.tight_layout()
     plt.show()
 
@@ -666,7 +964,7 @@ if __name__ == "__main__":
     #     1819466247867,
     #     1819611450115,
     # ]
-    # 68MHz orientation
+    # 68MHz orientation xy8
     # file_ids = [
     #     1820856154901,
     #     1820741644537,
@@ -675,7 +973,7 @@ if __name__ == "__main__":
     #     1820301119952,
     #     1820151354472,
     # ]
-    ## 68MHz orientation/ manuual reference
+    ## 68MHz orientation/ manuual reference xy8
     # file_ids = [
     #     1822348912678,
     #     1822231688646,
@@ -687,12 +985,12 @@ if __name__ == "__main__":
 
     ## 68MHz orientation XY4
     file_ids = [1823061683325, 1823448847102]
-    ## 68MHz orientation XY16
-    file_ids = [1823813420689, 1824210908904]
+    # 68MHz orientation XY16
+    # file_ids = [1823813420689, 1824210908904]
     ## 68MHz orientation XY8 buffer/wait updated
     # file_ids = [1824501762414, 1824732255862]
     ## 68MHz orientation XY8 dense
-    file_ids = [1825683241321, 1825803148127]
+    # file_ids = [1825683241321, 1825803148127]
 
     ### Internal Test Plots
     # plot_T2_on_T1()
@@ -720,10 +1018,20 @@ if __name__ == "__main__":
         nv_list, sig_counts, ref_counts, threshold=True
     )
     # norm_counts, norm_counts_ste = widefield.process_counts(
-    #     nv_list, sig_counts, threshold=True
+    #     nv_list, ref_counts, threshold=True
     # )
-    # process_and_plot_xy8(nv_list, taus, norm_counts, norm_counts_ste)
-    plot_xy_all(nv_list, taus, norm_counts, norm_counts_ste)
+    process_and_plot_xy8(nv_list, taus, norm_counts, norm_counts_ste)
+    # n_values, medians_by_n, all_T2s_by_n = fit_for_fixed_n_range(
+    #     nv_list, taus, norm_counts, norm_counts_ste, n_values=[1, 2, 3, 4, 5, 6]
+    # )
+    # plot_medians(n_values, medians_by_n)
+    # full_xy8_fitting_over_n(
+    #     nv_list, taus, norm_counts, norm_counts_ste, n_values=[1, 2, 3, 4, 5, 6]
+    # )
+    # fit_and_plot_all_T2_with_chi2(
+    #     nv_list, taus, norm_counts, norm_counts_ste, n_values=[1, 2, 3, 4, 5, 6]
+    # )
+    # plot_xy_all(nv_list, taus, norm_counts, norm_counts_ste)
     # fit_params, T2_list, n_list, chi2_list, param_errors_list = process_and_fit_xy8(
     #     nv_list, taus, norm_counts, norm_counts_ste
     # )

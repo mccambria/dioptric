@@ -221,7 +221,6 @@ def simulate_pulse_errors():
     pulse_counts = [0, 2, 4, 8, 16, 32]
     overrotation = 0.01  # 1% overrotation error
     axis_error_deg = 2.0  # 2° axis error
-
     signals = []
     for n in pulse_counts:
         signal = apply_sequence(
