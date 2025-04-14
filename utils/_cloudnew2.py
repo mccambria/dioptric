@@ -20,7 +20,7 @@ from utils import common
 nvdata_dir = common.get_nvdata_dir()
 
 
-def download(file_name=None, ext=None, path_from_nvdata=None, nvdata_dir=None):
+def download(file_name=None, ext="txt", path_from_nvdata=None, nvdata_dir=None):
     """Download file from the cloud
 
     Parameters
@@ -187,7 +187,7 @@ if __name__ == "__main__":
 
     # _delete_empty_folders()
 
-    file_name = "2024_05_06-15_18_46-johnson-nv0_2024_03_12"
+    file_name = "2024_07_04-18_14_37-johnson-nv0_2024_03_12"
     path_from_nvdata = "pc_Purcell/branch_master/resonance/2025_04"
-    test = download(file_name, path_from_nvdata, nvdata_dir=None)
+    test = download(file_name, nvdata_dir=None)
     debug = 0
