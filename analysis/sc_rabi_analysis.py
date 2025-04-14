@@ -337,7 +337,7 @@ if __name__ == "__main__":
 
     # After changing magnet postion
     file_id = 1832587019842  # 75NVs iq modulation both degenerate orientation
-    
+    file_id = 1833635613442
     data = dm.get_raw_data(file_id=file_id, load_npz=False, use_cache=False)
     nv_list = data["nv_list"]
     taus = data["taus"]

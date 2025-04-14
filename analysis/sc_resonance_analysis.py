@@ -137,16 +137,11 @@ def plot_nv_resonance_fits_and_residuals(
     """
     Plot NV resonance data with fitted Voigt profiles (including background), with residuals and contrast values.
     """
-    do_threshold = False
-    if do_threshold:
-        sig_counts, ref_counts = widefield.threshold_counts(
-            nv_list, sig_counts, ref_counts, dynamic_thresh=True
-        )
 
     avg_counts, avg_counts_ste = widefield.process_counts(
         nv_list, sig_counts, ref_counts, threshold=True
     )
-    #
+
     avg_snr, avg_snr_ste = widefield.calc_snr(sig_counts, ref_counts)
     num_nvs = len(nv_list)
     freqs_dense = np.linspace(min(freqs), max(freqs), 60)
