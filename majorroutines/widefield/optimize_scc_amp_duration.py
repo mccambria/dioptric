@@ -332,7 +332,8 @@ def optimize_scc_amp_and_duration(
     step_vals = np.array(list(itertools.product(duration_vals, amp_vals)))
     # step_vals = np.array(np.meshgrid(duration_vals, amp_vals)).T.reshape(-1, 2)
     num_steps = num_amp_steps * num_dur_steps
-    uwave_ind_list = [0, 1]
+    # uwave_ind_list = [0, 1]
+    uwave_ind_list = [1]  # iq modulated
     pulse_gen = tb.get_server_pulse_gen()
 
     ### Define run function
@@ -353,6 +354,8 @@ def optimize_scc_amp_and_duration(
         num_reps,
         num_runs,
         run_fn=run_fn,
+        uwave_ind_list=uwave_ind_list,
+        load_iq=True,
     )
 
     ### Process and plot results
