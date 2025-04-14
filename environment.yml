@@ -38,4 +38,5 @@ dependencies:
       - PyJWT
       - ujson
       - orjson
+      - synology-api
 
