@@ -133,7 +133,7 @@ config |= {
                 "uwave_power": 8.7,
                 # "frequency": 2.779138,  # rubin shallow NVs O1 ms=-1
                 # "frequency": 2.909381,  # rubin shallow NV O3 ms=+1
-                "frequency": 2.730905,
+                "frequency": 2.730700,
                 "rabi_period": 128,
             },
             # sig gen 1 is iq molulated
@@ -144,7 +144,7 @@ config |= {
                 # "frequency": 2.779138,   # rubin shallow NVs O1 ms=-1
                 # "frequency": 2.964545,  # rubin shallow NV O1 ms=+1
                 # "frequency": 2.842478,  # rubin shallow NV O3 ms=-1
-                "frequency": 2.730905,  # lower esr peak for both orientation
+                "frequency": 2.730700,  # lower esr peak for both orientation
                 # "rabi_period": 128,
                 # "rabi_period": 160,
                 "rabi_period": 176,
