@@ -808,6 +808,7 @@ if __name__ == "__main__":
     # file_id = 1807632138996  # yellow ampl 60ms 81NVs
     # file_id = 1808503038483  # yellow ampl 60ms 81NVs
     # file_id = 1809414309242  # yellow ampl 60ms 81NVs
+    file_id = 1834021972039  # yellow ampl 60ms 75NVs
 
     # file_id = 1794442033227  # yellow ampl 60ms 140NVs
     # file_id = 1793116636570  # yellow ampl 24ms
@@ -823,11 +824,11 @@ if __name__ == "__main__":
     # file_id = 1805991515134  # green durations 240NVs
     # file_id = 1806362913488  # green durations 154NVs
     # file_id = 1807384237764  # green durations 81NVs
-    file_id = 1810477160439  # green durations 75NVs
+    # file_id = 1810477160439  # green durations 75NVs
     raw_data = dm.get_raw_data(file_id=file_id, load_npz=False)
     file_name = dm.get_file_name(file_id=file_id)
     print(f"{file_name}_{file_id}")
-    # process_and_plot(raw_data)
-    process_and_plot_green(raw_data)
+    process_and_plot(raw_data)
+    # process_and_plot_green(raw_data)
     plt.show(block=True)
     # print(dm.get_file_name(1717056176426))
