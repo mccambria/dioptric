@@ -17,6 +17,7 @@ import numpy as np
 from joblib import Parallel, delayed
 from matplotlib import font_manager as fm
 from matplotlib import rcParams
+from scipy.optimize import curve_fit
 
 from analysis.bimodal_histogram import (
     ProbDist,
@@ -28,7 +29,6 @@ from utils import data_manager as dm
 from utils import kplotlib as kpl
 from utils import positioning as pos
 from utils import tool_belt as tb
-from utils.constants import NVSig, VirtualLaserKey
 from utils.tool_belt import curve_fit
 
 
@@ -533,12 +533,6 @@ def fit_fn(tau, delay, slope, decay, transition):
     return (1 - smooth_transition) * linear_part + smooth_transition * exp_part
 
 
-import matplotlib.pyplot as plt
-import numpy as np
-from joblib import Parallel, delayed
-from scipy.optimize import curve_fit
-
-
 def fit_fn(tau, delay, slope, decay, transition):
     """
     Fit function modeling the preparation fidelity as a function of polarization duration.
@@ -808,7 +802,7 @@ if __name__ == "__main__":
     # file_id = 1807632138996  # yellow ampl 60ms 81NVs
     # file_id = 1808503038483  # yellow ampl 60ms 81NVs
     # file_id = 1809414309242  # yellow ampl 60ms 81NVs
-    file_id = 1834021972039  # yellow ampl 60ms 75NVs
+    # file_id = 1834021972039  # yellow ampl 60ms 75NVs
 
     # file_id = 1794442033227  # yellow ampl 60ms 140NVs
     # file_id = 1793116636570  # yellow ampl 24ms
@@ -826,11 +820,12 @@ if __name__ == "__main__":
     # file_id = 1807384237764  # green durations 81NVs
     # file_id = 1810477160439  # green durations 75NVs
     # file_id = 1810477160439  # green durations 75NVs
-    file_id = 1833010688783  # green durations 75NVs (4/13/2025)
+    # file_id = 1833010688783  # green durations 75NVs (4/13/2025)
+    file_id = 1834390490156  # green durations 75NVs (4/13/2025)
     raw_data = dm.get_raw_data(file_id=file_id, load_npz=False)
     file_name = dm.get_file_name(file_id=file_id)
     print(f"{file_name}_{file_id}")
-    process_and_plot(raw_data)
+    # process_and_plot(raw_data)
     # process_and_plot_green(raw_data)
-    plt.show(block=True)
+    # plt.show(block=True)
     # print(dm.get_file_name(1717056176426))

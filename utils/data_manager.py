@@ -5,7 +5,7 @@ Tools for managing our experimental database
 Created November 15th, 2023
 
 @author: mccambria
-@author: mccam
+@author:
 """
 
 # region Imports and constants
@@ -29,7 +29,17 @@ from git import Repo
 from PIL import Image
 
 # from utils import _cloud as cloud
-from utils import _cloudnew2 as cloud
+
+#
+USE_NEW_CLOUD = False  # or load this from a config file
+
+if USE_NEW_CLOUD:
+    from utils import _cloudnew2 as cloud
+else:
+    from utils import _cloud as cloud
+
+# from utils import _cloudnew2 as cloud
+
 from utils import common, widefield
 from utils.constants import NVSig
 
@@ -270,7 +280,14 @@ def get_raw_data(file_name=None, file_id=None, use_cache=True, load_npz=False):
 
     if not retrieved_from_cache:
         # Download the base file
-        file_content = cloud.download(file_name, "txt", file_id)
+        # file_content = cloud.download(file_name, "txt", file_id)
+        file_content_tuple = cloud.download(file_name, "txt", file_id)
+        # Ensure backward compatibility: support both old (tuple) and new (bytes-only) formats
+        if isinstance(file_content_tuple, tuple):
+            file_content, file_id, file_name = file_content_tuple
+        else:
+            file_content = file_content_tuple
+
         data = orjson.loads(file_content)
 
         # Find and decompress the linked numpy arrays
@@ -284,7 +301,15 @@ def get_raw_data(file_name=None, file_id=None, use_cache=True, load_npz=False):
                     continue
                 first_part = val_split[0]
                 npz_file_id = first_part if first_part else None
-                npz_file_content, _, _ = cloud.download(file_name, "npz", npz_file_id)
+                # npz_file_content, _, _ = cloud.download(file_name, "npz", npz_file_id)
+                npz_file_file_content_tuple = cloud.download(
+                    file_name, "npz", npz_file_id
+                )
+                if isinstance(npz_file_file_content_tuple, tuple):
+                    npz_file_content, file_id, file_name = file_content_tuple
+                else:
+                    npz_file_content = file_content_tuple
+
                 npz_data = np.load(BytesIO(npz_file_content))
                 data |= npz_data
                 break
@@ -303,7 +328,10 @@ def get_raw_data(file_name=None, file_id=None, use_cache=True, load_npz=False):
             while len(cached_file_names) > 10:
                 file_name_to_remove = cached_file_names.pop(0)
                 del cache_manifest[file_name_to_remove]
-                os.remove(data_manager_folder / f"{file_name_to_remove}.txt")
+                file_to_remove = data_manager_folder / f"{file_name_to_remove}.txt"
+                if file_to_remove.exists():
+                    os.remove(file_to_remove)
+                # os.remove(data_manager_folder / f"{file_name_to_remove}.txt")
             cache_manifest_updated = True
         if cache_manifest_updated:
             with open(data_manager_folder / "cache_manifest.txt", "w+") as f:
@@ -442,7 +470,13 @@ def get_raw_data(file_name=None, file_id=None, use_cache=True, load_npz=False):
 
 
 def get_img(file_name=None, ext=None, file_id=None):
-    file_content, file_id, file_name = cloud.download(file_name, ext, file_id)
+    # file_content, file_id, file_name = cloud.download(file_name, ext, file_id)
+    file_content_tuple = cloud.download(file_name, ext, file_id)
+    if isinstance(file_content_tuple, tuple):
+        file_content, file_id, file_name = file_content_tuple
+    else:
+        file_content = file_content_tuple
+
     img = Image.open(io.BytesIO(file_content))
     img = np.asarray(img)
     return np.asarray(img)

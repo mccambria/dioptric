@@ -386,10 +386,10 @@ def main(nv_list, num_steps, num_reps, num_runs, min_tau=None, max_tau=None, tau
     pulse_gen = tb.get_server_pulse_gen()
     seq_file = "spin_echo.py"
 
-    uwave_ind_list = [0, 1]
+    # uwave_ind_list = [0, 1]
+    uwave_ind_list = [1]  # iq modulated
 
     ### Collect the data
-
     def run_fn(shuffled_step_inds):
         shuffled_taus = [taus[ind] for ind in shuffled_step_inds]
         seq_args = [
@@ -407,7 +407,7 @@ def main(nv_list, num_steps, num_reps, num_runs, min_tau=None, max_tau=None, tau
         num_runs,
         run_fn,
         uwave_ind_list=uwave_ind_list,
-        save_images=False,
+        load_iq=True,
     )
 
     ### Process and plot

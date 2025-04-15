@@ -620,24 +620,23 @@ def do_ac_stark(nv_list):
 
 
 def do_spin_echo(nv_list, revival_period=None):
-    # min_tau = 200  # ns
-    min_tau = 600  # ns
-    max_tau = 60e3  # fallback
+    min_tau = 200  # ns
+    max_tau = 20e3  # fallback
     taus = []
-    taus.extend(np.linspace(min_tau, max_tau, 66).tolist())
+    taus.extend(np.linspace(min_tau, max_tau, 51).tolist())
     # Round to clock-cycle-compatible units
     taus = [round(el / 4) * 4 for el in taus]
     # Remove duplicates and sort
     taus = sorted(set(taus))
     num_steps = len(taus)
     num_reps = 3
-    num_runs = 400
+    num_runs = 600
 
     print(
         f"[Spin Echo] Running with {num_steps} τ values, revival_period={revival_period}"
     )
 
-    for ind in range(3):
+    for ind in range(2):
         spin_echo.main(nv_list, num_steps, num_reps, num_runs, taus=taus)
 
 
@@ -1583,7 +1582,7 @@ if __name__ == "__main__":
         # do_optimize_loop(nv_list, coords_key)
 
         # do_optimize_pol_amp(nv_list)
-        do_optimize_pol_duration(nv_list)
+        # do_optimize_pol_duration(nv_list)
         # do_optimize_readout_amp(nv_list)
         # do_optimize_readout_duration(nv_list)
         # optimize_readout_amp_and_duration(nv_list)
@@ -1594,7 +1593,7 @@ if __name__ == "__main__":
         # do_resonance_zoom(nv_list)
         # do_rabi(nv_list)
         # do_resonance(nv_list)
-        # do_spin_echo(nv_list)
+        do_spin_echo(nv_list)
 
         # do_spin_echo_phase_scan_test(nv_list)
 
