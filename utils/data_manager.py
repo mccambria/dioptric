@@ -29,19 +29,15 @@ from git import Repo
 from PIL import Image
 
 # from utils import _cloud as cloud
+# from utils import _cloudnew2 as cloud
+from utils import common, widefield
+from utils.constants import NVSig
 
-#
-USE_NEW_CLOUD = False  # or load this from a config file
-
+USE_NEW_CLOUD = False  # by defualt box
 if USE_NEW_CLOUD:
     from utils import _cloudnew2 as cloud
 else:
     from utils import _cloud as cloud
-
-# from utils import _cloudnew2 as cloud
-
-from utils import common, widefield
-from utils.constants import NVSig
 
 data_manager_folder = common.get_data_manager_folder()
 
