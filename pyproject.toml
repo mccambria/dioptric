@@ -16,7 +16,6 @@ dependencies = [
   "keyring",
   "chardet",
   "numba",
-  "pywin32",
   "scikit-image",
   "opencv-python",
   "colorutils",
@@ -34,5 +33,5 @@ dependencies = [
   "boxsdk",
   "PyJWT",
   "ujson",
-  "orjson"
+  "orjson",
 ]
