@@ -291,7 +291,7 @@ def nuvu2thorcam_calibration(coords):
     )
 
     cal_coords_nuvu = np.array(
-        [[229.573, 11.847], [214.757, 241.195], [22.902, 112.119]], dtype="float32"
+        [[229.298, 12.109], [214.033, 241.021], [22.603, 112.013]], dtype="float32"
     )
 
     # Compute the affine transformation matrix
@@ -390,7 +390,7 @@ def write_pre_computed_nvs_phase():
     # shallow NVs
     # phase = np.load("slmsuite\computed_phase\slm_phase_75nvs_20250322_131455.npy")
     # phase = np.load("slmsuite\computed_phase\slm_phase_40nvs_20250404_225907.npy")
-    phase = np.load("slmsuite\computed_phase\slm_phase_75nvs_20250412_140055.npy")
+    phase = np.load("slmsuite\computed_phase\slm_phase_75nvs_20250416_175337.npy")
     # phase = np.load("slmsuite\circles\slm_phase_circles_20250118_210419.npy")  # circles
     slm.write(phase, settle=True)
     # cam_plot()
@@ -403,27 +403,6 @@ def save(data, path, filename):
     np.save(os.path.join(path, filename), data)
 
 
-# Replace with your SLM's serial number
-serial_number = "00429430"
-
-# try:
-#     print("Attempting to initialize ThorSLM...")
-#     slm = ThorSLM(serial_number)
-#     print("SLM successfully initialized!")
-
-#     print("SLM details:")
-#     print(f"Serial Number: {slm.serialNumber}")
-#     print(f"Device Handle: {slm.device_hdl}")
-#     print(f"Window Handle: {slm.window_hdl}")
-
-#     print("Closing SLM connection...")
-#     slm.close()
-#     print("SLM successfully closed!")
-
-# except Exception as e:
-#     print(f"Initialization failed: {e}")
-# sys.exit()
-# region run funtions
 try:
     slm = ThorSLM(serialNumber="00429430")
     cam = ThorCam(serial="26438", verbose=True)
@@ -435,8 +414,8 @@ try:
     # test_wavefront_calibration()
     # wavefront_calibration()
     # load_wavefront_calibration()
-    compute_and_write_nvs_phase()
-    # write_pre_computed_nvs_phase()
+    # compute_and_write_nvs_phase()
+    write_pre_computed_nvs_phase()
     # calibration_triangle()
     # circles()
     # smiley()

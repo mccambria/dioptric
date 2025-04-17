@@ -261,7 +261,8 @@ def main(
     num_reps,
     num_runs,
     freqs,
-    uwave_ind_list=[0, 1],
+    # uwave_ind_list=[0, 1],
+    uwave_ind_list=[1],
 ):
     ### Some initial setup
     pulse_gen = tb.get_server_pulse_gen()
@@ -292,9 +293,9 @@ def main(
             sig_gen.set_freq(freq)
             sig_gen.uwave_on()
 
-            uwave_ind = uwave_ind_list[1]
-            sig_gen = tb.get_server_sig_gen(uwave_ind)
-            sig_gen.uwave_off()
+            # uwave_ind = uwave_ind_list[1]
+            # sig_gen = tb.get_server_sig_gen(uwave_ind)
+            # sig_gen.uwave_off()
 
         elif step_ind < (3 / 4) * num_steps:  # ms=0 ref
             for uwave_ind in uwave_ind_list:
@@ -319,6 +320,7 @@ def main(
         save_images=False,
         num_exps=1,
         ref_by_rep_parity=False,
+        load_iq=True,
     )
 
     ### Process and plot

@@ -477,29 +477,27 @@ def do_calibrate_iq_delay(nv_list):
 def do_resonance(nv_list):
     freq_center = 2.87
     # freq_range = 0.240
-    freq_range = 0.40
+    freq_range = 0.36
     # num_steps = 60
-    num_steps = 80
+    # num_steps = 72
     # Single ref
     # num_reps = 8
-    num_runs = 1100
+    # num_runs = 1100
     # num_runs = 200
     # Both refs
-    num_reps = 1
-    # num_reps = 3
-    # num_runs = 600
-    # freqs = []
-    # centers = [2.70, 3.06]
-    # range_each = 0.08
-    # lower_freqs = calculate_freqs(centers[0], range_each, 16)
-    # freqs.extend(lower_freqs)
-    # upper_freqs = calculate_freqs(centers[1], range_each, 16)
-    # freqs.extend(upper_freqs)
+    num_reps = 3
+    num_runs = 400
+    freqs = []
+    centers = [2.730700, 3.022277]
+    range_each = 0.1
+    lower_freqs = calculate_freqs(centers[0], range_each, 20)
+    freqs.extend(lower_freqs)
+    upper_freqs = calculate_freqs(centers[1], range_each, 20)
+    freqs.extend(upper_freqs)
     ##
-    freqs = calculate_freqs(freq_center, freq_range, num_steps)
     # Remove duplicates and sort
-    # freqs = sorted(set(freqs))
-    # num_steps = len(freqs)
+    freqs = sorted(set(freqs))
+    num_steps = len(freqs)
     # sys.exit()
     resonance.main(nv_list, num_steps, num_reps, num_runs, freqs=freqs)
     # for _ in range(2):
@@ -577,10 +575,12 @@ def do_ac_stark(nv_list):
 
 
 # def do_spin_echo(nv_list):
-#     revival_period = int(51.5e3 / 2)
+#     # revival_period = int(51.5e3 / 2)
+#     revival_period = int(30e3 / 2)
 #     min_tau = 200
 #     taus = []
-#     revival_width = 5e3
+#     # revival_width = 5e3
+#     revival_width = 4e3
 #     decay = np.linspace(min_tau, min_tau + revival_width, 6)
 #     taus.extend(decay.tolist())
 #     gap = np.linspace(min_tau + revival_width, revival_period - revival_width, 7)
@@ -619,11 +619,20 @@ def do_ac_stark(nv_list):
 #         spin_echo.main(nv_list, num_steps, num_reps, num_runs, taus=taus)
 
 
-def do_spin_echo(nv_list, revival_period=None):
+def do_spin_echo(nv_lis):
     min_tau = 200  # ns
-    max_tau = 20e3  # fallback
+    # max_tau = 20e3  # fallback
+    revival_period = int(15e3)
     taus = []
-    taus.extend(np.linspace(min_tau, max_tau, 51).tolist())
+    revival_width = 5e3
+    decay = np.linspace(min_tau, min_tau + revival_width, 6)
+    taus.extend(decay.tolist())
+    gap = np.linspace(min_tau + revival_width, revival_period - revival_width, 6)
+    taus.extend(gap[1:-1].tolist())
+    first_revival = np.linspace(
+        revival_period - revival_width, revival_period + revival_width, 61
+    )
+    taus.extend(first_revival.tolist())
     # Round to clock-cycle-compatible units
     taus = [round(el / 4) * 4 for el in taus]
     # Remove duplicates and sort
@@ -636,7 +645,7 @@ def do_spin_echo(nv_list, revival_period=None):
         f"[Spin Echo] Running with {num_steps} τ values, revival_period={revival_period}"
     )
 
-    for ind in range(2):
+    for _ in range(2):
         spin_echo.main(nv_list, num_steps, num_reps, num_runs, taus=taus)
 
 
@@ -933,12 +942,12 @@ def do_opx_constant_ac():
     # opx.stream_start()
 
     # Yellow
-    # opx.constant_ac(
-    #     [],  # Digital channels
-    #     [7],  # Analog channels
-    #     [0.4256],  # Analog voltages
-    #     [0],  # Analog frequencies
-    # )
+    opx.constant_ac(
+        [],  # Digital channels
+        [7],  # Analog channels
+        [0.4256],  # Analog voltages
+        [0],  # Analog frequencies
+    )
 
     # opx.constant_ac([4])  # Just laser
     # Red
@@ -1003,12 +1012,12 @@ def do_opx_constant_ac():
     #     [73.166, 72.941],  # Analog frequencies
     # )
     # Green + yellow
-    opx.constant_ac(
-        [4],  # Digital channels
-        [3, 4, 7],  # Analog channels
-        [0.19, 0.19, 0.45],  # Analog voltages
-        [107, 107, 0],  # Analog frequencies
-    )
+    # opx.constant_ac(
+    #     [4],  # Digital channels
+    #     [3, 4, 7],  # Analog channels
+    #     [0.19, 0.19, 0.45],  # Analog voltages
+    #     [107, 107, 0],  # Analog frequencies
+    # )
     # Red + green + Yellow
     # opx.constant_ac(
     #     [4, 1],  # Digital channels1
@@ -1176,7 +1185,7 @@ if __name__ == "__main__":
     # Define transformations using `transform_coords`
     # pixel_coords_list = [
     #     [113.173, 128.034],
-    #     [20.024, 58.194],
+    #     [27.44, 23.014],
     #     [18.24, 9.848],
     #     [108.384, 227.38],
     #     [227.438, 19.199],
@@ -1211,21 +1220,21 @@ if __name__ == "__main__":
     print(f"Red Laser Coordinates: {red_coords_list[0]}")
     # pixel_coords_list = [
     #     [113.173, 128.034],
-    #     [18.24, 9.848],
+    #     [27.44, 23.014],
     #     [108.384, 227.38],
     #     [227.438, 19.199],
     # ]
     # green_coords_list = [
-    #     [107.821, 107.747],
-    #     [119.367, 96.211],
-    #     [107.058, 118.382],
-    #     [96.827, 94.795],
+    #     [107.785, 107.762],
+    #     [118.17, 97.459],
+    #     [107.043, 118.383],
+    #     [96.817, 94.818],
     # ]
     # red_coords_list = [
-    #     [72.514, 73.231],
-    #     [81.687, 63.747],
-    #     [72.136, 81.914],
-    #     [63.28, 62.83],
+    #     [72.497, 73.266],
+    #     [80.677, 64.803],
+    #     [72.099, 81.915],
+    #     [63.25, 62.849],
     # ]
 
     num_nvs = len(pixel_coords_list)
@@ -1297,7 +1306,8 @@ if __name__ == "__main__":
     # pol_duration_list = [164, 144, 168, 108, 132, 176, 132, 152, 176, 168, 140, 200, 204, 120, 268, 116, 200, 128, 152, 144, 116, 192, 156, 156, 256, 140, 156, 240, 232, 116, 200, 176, 340, 116, 108, 216, 104, 200, 144, 140, 304, 416, 140, 156, 292, 188, 164, 352, 180, 156, 232, 144, 328, 132, 228, 288, 164, 384, 292, 140, 400, 388, 192, 348, 412, 144, 200, 180, 120, 188, 436, 180, 164, 232, 252]
     # scc_duration_list = [88, 80, 100, 100, 76, 88, 68, 88, 88, 92, 72, 68, 88, 80, 116, 64, 112, 48, 64, 60, 96, 92, 92, 72, 108, 84, 68, 100, 108, 76, 108, 108, 124, 84, 92, 72, 56, 140, 96, 76, 104, 136, 88, 64, 108, 80, 124, 120, 144, 88, 72, 68, 124, 80, 116, 84, 80, 132, 80, 36, 88, 108, 92, 152, 140, 68, 136, 80, 64, 84, 152, 140, 76, 92, 196]
     #new set 75NVs optimized
-    pol_duration_list = [116, 152, 140, 104, 96, 152, 104, 128, 192, 164, 120, 152, 164, 108, 212, 96, 144, 104, 132, 164, 84, 176, 144, 132, 240, 120, 140, 168, 280, 116, 156, 176, 360, 128, 104, 240, 96, 228, 128, 116, 360, 460, 108, 108, 352, 152, 132, 384, 200, 164, 128, 104, 264, 116, 240, 200, 116, 300, 228, 84, 384, 336, 176, 268, 348, 116, 164, 132, 92, 152, 408, 156, 96, 244, 128]
+    # pol_duration_list = [116, 152, 140, 104, 96, 152, 104, 128, 192, 164, 120, 152, 164, 108, 212, 96, 144, 104, 132, 164, 84, 176, 144, 132, 240, 120, 140, 168, 280, 116, 156, 176, 360, 128, 104, 240, 96, 228, 128, 116, 360, 460, 108, 108, 352, 152, 132, 384, 200, 164, 128, 104, 264, 116, 240, 200, 116, 300, 228, 84, 384, 336, 176, 268, 348, 116, 164, 132, 92, 152, 408, 156, 96, 244, 128]
+    pol_duration_list = [96, 152, 156, 92, 108, 192, 120, 144, 216, 212, 120, 152, 220, 128, 244, 104, 212, 120, 132, 132, 104, 204, 192, 144, 300, 128, 152, 220, 312, 128, 188, 192, 396, 132, 80, 264, 108, 232, 156, 120, 424, 476, 104, 128, 440, 132, 156, 416, 252, 180, 144, 128, 292, 116, 256, 216, 128, 348, 232, 96, 428, 352, 176, 324, 376, 152, 216, 180, 104, 176, 460, 180, 120, 268, 188]
     scc_duration_list = [96, 100, 92, 108, 76, 88, 100, 84, 124, 92, 96, 92, 88, 72, 124, 72, 92, 56, 72, 72, 56, 96, 80, 80, 108, 92, 80, 128, 96, 60, 112, 144, 116, 80, 96, 72, 64, 140, 100, 72, 104, 124, 80, 56, 120, 80, 112, 128, 108, 128, 68, 48, 112, 64, 156, 84, 68, 128, 96, 44, 136, 136, 100, 132, 84, 84, 152, 96, 52, 92, 164, 136, 84, 108, 164]
     # selected_indices_68MHz = [0, 7, 8, 9, 11, 14, 18, 22, 24, 25, 26, 27, 28, 30, 31, 32, 33, 35, 38, 44, 45, 46, 47, 48, 49, 53, 55, 57, 58, 60, 62, 64, 66, 67, 68, 69, 70, 71, 72, 73]
     # selected_indices_185MHz  =[0, 1, 2, 3, 4, 5, 6, 10, 12, 13, 15, 16, 17, 19, 20, 21, 23, 29, 34, 36, 39, 40, 41, 42, 43, 50, 51, 52, 54, 56, 59, 61, 63, 65, 74]
@@ -1512,7 +1522,7 @@ if __name__ == "__main__":
         # do_charge_state_conditional_init(nv_list)
 
         # for point in points:
-        #     x, y = point
+        # x, y = point
         # nv_sig.coords[CoordsKey.SAMPLE][0] += x
         #     nv_sig.coords[CoordsKey.SAMPLE][1] += y
         # print(nv_sig.coords[CoordsKey.SAMPLE])
@@ -1593,7 +1603,7 @@ if __name__ == "__main__":
         # do_resonance_zoom(nv_list)
         # do_rabi(nv_list)
         # do_resonance(nv_list)
-        do_spin_echo(nv_list)
+        # do_spin_echo(nv_list)
 
         # do_spin_echo_phase_scan_test(nv_list)
 
@@ -1617,7 +1627,7 @@ if __name__ == "__main__":
         # do_opx_square_wave()
 
         # nv_list = nv_list[::-1]
-        # do_scc_snr_check(nv_list)
+        do_scc_snr_check(nv_list)
         # do_optimize_scc_duration(nv_list)
         # do_optimize_scc_amp(nv_list)
         # optimize_scc_amp_and_duration(nv_list)
