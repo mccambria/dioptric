@@ -9,23 +9,18 @@ Created on December 22nd, 2024
 
 import sys
 import time
-from datetime import datetime
-
 import traceback
+from datetime import datetime
 
 import matplotlib.pyplot as plt
 import numpy as np
 import seaborn as sns
-from scipy.optimize import curve_fit
 from joblib import Parallel, delayed
+from scipy.optimize import curve_fit
 
 from utils import data_manager as dm
 from utils import kplotlib as kpl
 from utils import widefield as widefield
-
-import numpy as np
-import matplotlib.pyplot as plt
-
 
 # def revival_model(
 #     tau,
@@ -458,7 +453,7 @@ def plot_spin_echo_all(nv_list, taus, norm_counts, norm_counts_ste):
         bottom_row_idx = num_rows * num_cols - num_cols + col
         if bottom_row_idx < len(axes):
             ax = axes[bottom_row_idx]
-            tick_positions = np.linspace(min(taus) + 2, max(taus) - 2, 4)
+            tick_positions = np.linspace(min(taus) + 2, max(taus) - 2, 6)
             ax.set_xticks(tick_positions)
             ax.set_xticklabels(
                 [f"{tick:.2f}" for tick in tick_positions],
@@ -510,7 +505,8 @@ if __name__ == "__main__":
     # file_ids = [1811334050314, 1811401206447, 1811464617147, 1811540653210]
     # rubin75 NVs after making both orientation degenerate
     # file_ids = [1835778335625, 1836023279415]
-    file_ids = [1837153340732]
+
+    file_ids = [1837153340732, 1837462226158]
     all_file_ids_str = "_".join(map(str, file_ids))
     now = datetime.now()
     date_time_str = now.strftime("%Y%m%d_%H%M%S")

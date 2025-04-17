@@ -1,11 +1,10 @@
 # -*- coding: utf-8 -*-
 """
-Config file for the PC rabi
+Config file for the PC purcell
 
 Created July 20th, 2023
-
 @author: mccambria
-@author: saroj chand
+@author: sbchand
 """
 
 from pathlib import Path
@@ -40,14 +39,14 @@ calibration_coords_pixel = [
     [227.438, 19.199],
 ]
 calibration_coords_green = [
-    [118.17, 97.459],
-    [107.043, 118.383],
-    [96.817, 94.818],
+    [118.117, 97.488],
+    [107.028, 118.414],
+    [96.832, 94.812],
 ]
 calibration_coords_red = [
-    [80.738, 64.775],
-    [72.124, 81.915],
-    [63.272, 62.849],
+    [80.695, 64.799],
+    [72.112, 81.94],
+    [63.284, 62.844],
 ]
 # Create the dictionaries using the provided lists
 calibration_coords_nv1 = {

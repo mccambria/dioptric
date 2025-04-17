@@ -7,7 +7,6 @@ Created on October 13th, 2023
 @author: mccambria
 """
 
-
 import matplotlib.pyplot as plt
 from qm import QuantumMachinesManager, qua
 from qm.simulate import SimulationConfig
@@ -26,6 +25,20 @@ def get_seq(args, num_reps):
     i_el, q_el = seq_utils.get_iq_mod_elements(uwave_ind)
     iq_el = i_el if i_or_q else q_el
 
+    # def uwave_macro():
+    #     # IQ
+    #     # qua.ramp_to_zero(iq_el)
+    #     # qua.play("on", iq_el)
+    #     qua.wait(buffer - tau, iq_el)
+    #     qua.play("on", iq_el)
+    #     # qua.play("pi_pulse", iq_el)
+    #     # qua.wait(buffer + tau, iq_el)
+    #     # Pi pulse
+    #     qua.wait(buffer, sig_gen_el)
+    #     qua.play("pi_pulse", sig_gen_el)
+    #     qua.wait(buffer, sig_gen_el)
+    #     qua.align()
+
     def uwave_macro():
         # IQ
         # qua.ramp_to_zero(iq_el)
@@ -38,7 +51,6 @@ def get_seq(args, num_reps):
         qua.wait(buffer, sig_gen_el)
         qua.play("pi_pulse", sig_gen_el)
         qua.wait(buffer, sig_gen_el)
-        #
         qua.align()
 
     seq = base_scc_sequence.get_seq(
