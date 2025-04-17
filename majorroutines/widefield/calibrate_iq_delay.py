@@ -1,10 +1,12 @@
 # -*- coding: utf-8 -*-
 """
-Widefield Rabi experiment
-
 Created on November 29th, 2023
 
 @author: mccambria
+
+Updated on April 17th, 2023
+
+@author: sbchand
 """
 
 import time
@@ -28,59 +30,58 @@ def create_raw_data_figure(nv_list, taus, counts, counts_ste):
     return fig
 
 
-def main(
-    nv_list, num_steps, num_reps, num_runs, min_tau, max_tau, uwave_ind=0, i_or_q=True
-):
+def main(nv_list, num_steps, num_reps, num_runs, taus, i_or_q=True):
     ### Some initial setup
 
     pulse_gen = tb.get_server_pulse_gen()
     seq_file = "calibrate_iq_delay.py"
-    taus = np.linspace(min_tau, max_tau, num_steps)
+    # taus = np.linspace(min_tau, max_tau, num_steps)
+    uwave_ind_list = [1]
 
-    ### Collect the data
-
-    def step_fn(tau_ind):
-        tau = taus[tau_ind]
-        seq_args = widefield.get_base_scc_seq_args(nv_list)
-        seq_args.extend([uwave_ind, i_or_q, tau])
+    def run_fn(shuffled_step_inds):
+        shuffled_taus = [taus[ind] for ind in shuffled_step_inds]
+        seq_args = [
+            widefield.get_base_scc_seq_args(nv_list, uwave_ind_list),
+            shuffled_taus,
+        ]
+        # print(seq_args)
         seq_args_string = tb.encode_seq_args(seq_args)
         pulse_gen.stream_load(seq_file, seq_args_string, num_reps)
 
-    counts, raw_data = base_routine.main(
+    ### Collect the data
+    raw_data = base_routine.main(
         nv_list,
         num_steps,
         num_reps,
         num_runs,
-        step_fn,
-        uwave_ind_list=uwave_ind,
+        run_fn=run_fn,
+        uwave_ind_list=uwave_ind_list,
         load_iq=True,
-        save_images=False,
     )
-
-    ### Process and plot
-
-    avg_counts, avg_counts_ste = widefield.process_counts(counts)
-    raw_fig = create_raw_data_figure(nv_list, taus, avg_counts, avg_counts_ste)
-
-    ### Clean up and return
-
-    tb.reset_cfm()
-    kpl.show()
 
     timestamp = dm.get_time_stamp()
     raw_data |= {
         "timestamp": timestamp,
         "taus": taus,
         "tau-units": "ns",
-        "min_tau": max_tau,
-        "max_tau": max_tau,
     }
-
+    ### save the raw data
     repr_nv_sig = widefield.get_repr_nv_sig(nv_list)
     repr_nv_name = repr_nv_sig["name"]
     file_path = dm.get_file_path(__file__, timestamp, repr_nv_name)
     dm.save_raw_data(raw_data, file_path)
+    ### Clean up and return
+    tb.reset_cfm()
+
+    ### Process and plot
+    counts = raw_data["counts"]
+    sig_counts, ref_counts = counts[0], counts[1]
+    norm_counts, norm_counts_ste = widefield.process_counts(
+        nv_list, sig_counts, ref_counts, threshold=True
+    )
+    raw_fig = create_raw_data_figure(nv_list, taus, norm_counts, norm_counts_ste)
     dm.save_figure(raw_fig, file_path)
+    kpl.show()
 
 
 if __name__ == "__main__":

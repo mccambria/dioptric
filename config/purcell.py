@@ -5,7 +5,7 @@ Config file for the PC rabi
 Created July 20th, 2023
 
 @author: mccambria
-@author: saroj chand
+@author: sbchand
 """
 
 from pathlib import Path
@@ -86,11 +86,12 @@ config |= {
     ###
     # Common durations are in ns
     "CommonDurations": {
-        "default_pulse_duration": 1000,
+        "default_pulse_duration": 1e3,
         "aod_access_time": 11e3,  # access time in specs is 10us
         "widefield_operation_buffer": 1e3,
         "uwave_buffer": 16,
-        "iq_buffer": 100,
+        # "iq_buffer": 100,
+        "iq_buffer": 24,
     },
     ###
     "DeviceIDs": {
@@ -369,7 +370,8 @@ opx_config = {
                 7: {"offset": 0.0, "delay": 0},
                 8: {"offset": 0.0, "delay": 0},
                 9: {"offset": 0.0, "delay": 0},
-                10: {"offset": 0.0, "delay": 70},
+                # 10: {"offset": 0.0, "delay": 70},
+                10: {"offset": 0.0, "delay": 0},
             },
             "digital_outputs": {
                 1: {},  #
@@ -544,7 +546,8 @@ opx_config = {
         "do_sig_gen_STAN_sg394_2_dm": {
             # 230 ns I channel latency measured 3/26/25 MCC and Saroj
             "digitalInputs": {
-                "chan": {"port": ("con1", 9), "delay": 230, "buffer": 0}
+                # "chan": {"port": ("con1", 9), "delay": 230, "buffer": 0}
+                "chan": {"port": ("con1", 9), "delay": 240, "buffer": 0}
                 # "chan": {"port": ("con1", 9), "delay": 230 + iq_buffer, "buffer": 0}
             },
             "operations": {
