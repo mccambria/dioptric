@@ -278,7 +278,7 @@ def get_raw_data(file_name=None, file_id=None, use_cache=True, load_npz=False):
         # Download the base file
         # file_content = cloud.download(file_name, "txt", file_id)
         file_content_tuple = cloud.download(file_name, "txt", file_id)
-        # Ensure backward compatibility: support both old (tuple) and new (bytes-only) formats
+        # support both old (tuple) and new (bytes-only) formats
         if isinstance(file_content_tuple, tuple):
             file_content, file_id, file_name = file_content_tuple
         else:
@@ -302,9 +302,9 @@ def get_raw_data(file_name=None, file_id=None, use_cache=True, load_npz=False):
                     file_name, "npz", npz_file_id
                 )
                 if isinstance(npz_file_file_content_tuple, tuple):
-                    npz_file_content, file_id, file_name = file_content_tuple
+                    npz_file_content, file_id, file_name = npz_file_file_content_tuple
                 else:
-                    npz_file_content = file_content_tuple
+                    npz_file_content = npz_file_file_content_tuple
 
                 npz_data = np.load(BytesIO(npz_file_content))
                 data |= npz_data

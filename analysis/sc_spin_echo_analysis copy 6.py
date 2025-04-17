@@ -432,7 +432,7 @@ def plot_spin_echo_all(nv_list, taus, norm_counts, norm_counts_ste):
     fig, axes = plt.subplots(
         num_rows,
         num_cols,
-        figsize=(num_cols * 2, num_rows * 1.5),
+        figsize=(num_cols * 1.5, num_rows * 3),
         sharex=True,
         sharey=False,
         constrained_layout=True,
@@ -474,13 +474,15 @@ def plot_spin_echo_all(nv_list, taus, norm_counts, norm_counts_ste):
         bottom_row_idx = num_rows * num_cols - num_cols + col
         if bottom_row_idx < len(axes):
             ax = axes[bottom_row_idx]
-            tick_positions = np.linspace(min(taus), max(taus), 5)
+            tick_positions = np.linspace(min(taus) + 2, max(taus) - 2, 4)
             ax.set_xticks(tick_positions)
             ax.set_xticklabels(
                 [f"{tick:.2f}" for tick in tick_positions],
                 rotation=45,
                 fontsize=9,
+                y=0.00,
             )
+            ax.set_xlim(min(taus), max(taus))
             ax.set_xlabel("Time (µs)")
         else:
             ax.set_xticklabels([])
@@ -492,13 +494,8 @@ def plot_spin_echo_all(nv_list, taus, norm_counts, norm_counts_ste):
         rotation="vertical",
         fontsize=12,
     )
-    fig.suptitle("Spin Echo", fontsize=16)
-    # fig.set_constrained_layout(False)
-    # fig.subplots_adjust(left=0.01, right=0.98, top=0.99, bottom=0.08, hspace=0.01, wspace=0.01)
-    # fig.subplots_adjust(
-    #     left=0.01, right=0.99, top=0.99, bottom=0.01, hspace=0.000, wspace=0.000
-    # )
-    fig.tight_layout(pad=0.2, rect=[0.01, 0.01, 0.99, 0.99])
+    fig.suptitle(f"Spin Echo {all_file_ids_str}", fontsize=12, y=0.99)
+    fig.tight_layout(pad=0.2, rect=[0.02, 0.01, 0.99, 0.99])
     kpl.show()
 
 
@@ -524,9 +521,11 @@ if __name__ == "__main__":
     #     1734569197701,
     # ]
     # rubin75 NVs
-    file_ids = [1809864601542, 1810050697942, 1810230561491, 1810371359284]
+    # file_ids = [1809864601542, 1810050697942, 1810230561491, 1810371359284]
     # rubin75 NVs
     # file_ids = [1811334050314, 1811401206447, 1811464617147, 1811540653210]
+    # rubin75 NVs after making both orientation degenerate
+    file_ids = [1835778335625, 1836023279415]
     all_file_ids_str = "_".join(map(str, file_ids))
     now = datetime.now()
     date_time_str = now.strftime("%Y%m%d_%H%M%S")
@@ -544,19 +543,9 @@ if __name__ == "__main__":
         total_evolution_times = 2 * np.array(taus) / 1e3
         counts = np.array(data["counts"])
         sig_counts, ref_counts = counts[0], counts[1]
-        # norm_counts, norm_counts_ste = widefield.process_counts(
-        #     nv_list, sig_counts, ref_counts, threshold=True
-        # )
-        # Process counts using widefield's process_counts function
-        sig_avg_counts, sig_avg_counts_ste = widefield.process_counts(
-            nv_list, sig_counts, threshold=False
+        norm_counts, norm_counts_ste = widefield.process_counts(
+            nv_list, sig_counts, ref_counts, threshold=True
         )
-        ref_avg_counts, ref_avg_counts_ste = widefield.process_counts(
-            nv_list, ref_counts, threshold=False
-        )
-        # Compute the difference between the states
-        norm_counts = sig_avg_counts - ref_avg_counts
-        norm_counts_ste = np.sqrt(sig_avg_counts_ste**2 + ref_avg_counts_ste**2)
         nv_num = len(nv_list)
         ids_num = len(file_ids)
         # fit_fns, popts = fit_spin_echo(

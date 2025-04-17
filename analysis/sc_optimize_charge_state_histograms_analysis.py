@@ -29,7 +29,8 @@ from utils import data_manager as dm
 from utils import kplotlib as kpl
 from utils import positioning as pos
 from utils import tool_belt as tb
-from utils.tool_belt import curve_fit
+
+# from utils.tool_belt import curve_fit
 
 
 def find_optimal_value_geom_mean(
@@ -821,12 +822,12 @@ if __name__ == "__main__":
     # file_id = 1810477160439  # green durations 75NVs
     # file_id = 1810477160439  # green durations 75NVs
     # file_id = 1833010688783  # green durations 75NVs (4/13/2025)
-    file_id = 1834390490156  # green durations 75NVs (4/13/2025)
+    file_id = 1834390490156  # green durations 75NVs (4/14/2025)
     dm.USE_NEW_CLOUD = False
     raw_data = dm.get_raw_data(file_id=file_id, load_npz=False)
     file_name = dm.get_file_name(file_id=file_id)
     print(f"{file_name}_{file_id}")
     # process_and_plot(raw_data)
-    # process_and_plot_green(raw_data)
-    # plt.show(block=True)
+    process_and_plot_green(raw_data)
     # print(dm.get_file_name(1717056176426))
+    plt.show(block=True)
