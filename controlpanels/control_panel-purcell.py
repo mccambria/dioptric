@@ -1312,18 +1312,6 @@ if __name__ == "__main__":
         # do_image_nv_list(nv_list)
         # do_image_single_nv(nv_sig)
 
-        # for point in points:
-        # x, y = point
-        # nv_sig.coords[CoordsKey.SAMPLE][0] += x
-        #     nv_sig.coords[CoordsKey.SAMPLE][1] += y
-        # print(nv_sig.coords[CoordsKey.SAMPLE])
-
-        # Move diagonally forward
-        # for x, y in zip(x_values, y_values):
-        # nv_sig.coords[CoordsKey.SAMPLE][0] = x
-        # nv_sig.coords[CoordsKey.SAMPLE][1] = y
-        # do_scanning_image_sample(nv_sig)
-
         # x_range = np.linspace(-2.0, 6.0, 6)
         # y_range = np.linspace(-2.0, 6.0, 6)
         # # --- Step 1: Start at (0, 0) ---
@@ -1380,11 +1368,13 @@ if __name__ == "__main__":
         # do_spin_pol_check(nv_sig)
         # do_calibrate_green_red_delay()
 
-        # do_resonance_zoom(nv_list)
+        do_spin_echo_phase_scan_test(nv_list)  # for iq mod test
+
         # do_rabi(nv_list)
         # do_power_rabi(nv_list)
         # do_resonance(nv_list)
-        do_spin_echo(nv_list)
+        # do_resonance_zoom(nv_list)
+        # do_spin_echo(nv_list)
         # do_ramsey(nv_list)
 
         # do_simple_correlation_test(nv_list)
@@ -1395,8 +1385,6 @@ if __name__ == "__main__":
         # do_check_readout_fidelity(nv_list)
         # do_charge_quantum_jump(nv_list)
         # do_ac_stark(nv_list)
-
-        # do_spin_echo_phase_scan_test(nv_list) #for iq mod test
 
         # AVAILABLE_XY = ["hahn-n", "xy2-n", "xy4-n", "xy8-n", "xy16-n"]
         # do_xy(nv_list, xy_seq="xy8")

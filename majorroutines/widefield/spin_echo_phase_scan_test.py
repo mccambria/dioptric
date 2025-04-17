@@ -26,19 +26,17 @@ from utils.constants import NVSig
 
 
 def create_fit_figure(nv_list, phis, norm_counts, norm_counts_ste):
-    # def cos_func(phi, amp, phase_offset):
-    #     return 0.5 * amp * np.cos(phi - phase_offset) + 0.5
+    # fit function
     def cos_func(phi, amp, phase_offset, offset):
         return amp * np.cos(phi - phase_offset) + offset
 
+    num_nvs = len(nv_list)
     fit_fns = []
     popts = []
     phi_degrees = []
     for nv_ind in range(num_nvs):
         nv_counts = norm_counts[nv_ind]
         nv_counts_ste = norm_counts_ste[nv_ind]
-
-        # guess_params = [1.0, 0.0]
         guess_params = [1.0, 0.0, 0.0]  # amp, phase_offset, baseline offset
 
         try:
@@ -86,17 +84,15 @@ def create_fit_figure(nv_list, phis, norm_counts, norm_counts_ste):
     good_offsets = [phi for phi in phi_degrees if abs(phi) < 0.3]
     avg_phase_offset = np.mean(good_offsets)
     print(f"Suggested global IQ phase correction: {np.degrees(avg_phase_offset):.1f}°")
-    # ax.set_xlabel("Phase (rad)")
-    # ax.set_ylabel("Normalized Counts")
-    # ax.set_title(f"Cosine Fit for NV {nv_ind}")
-    # ax.legend()
-    # ax.grid(True)
-
-    # # Beautify
-    # ax.spines["right"].set_visible(False)
-    # ax.spines["top"].set_visible(False)
-    # plt.tight_layout()
-    # plt.show(block=True)
+    ax.set_xlabel("Phase (rad)")
+    ax.set_ylabel("Normalized Counts")
+    ax.set_title(f"Cosine Fit for NV {nv_ind}")
+    ax.legend()
+    ax.grid(True)
+    ax.spines["right"].set_visible(False)
+    ax.spines["top"].set_visible(False)
+    plt.tight_layout()
+    plt.show(block=True)
 
 
 def main(nv_list, num_steps, num_reps, num_runs, min_phi, max_phi, uwave_ind_list):
@@ -128,30 +124,7 @@ def main(nv_list, num_steps, num_reps, num_runs, min_phi, max_phi, uwave_ind_lis
         load_iq=True,
     )
 
-    ### Process and plot
-
-    try:
-        raw_fig = None
-        fit_fig = None
-        # counts = raw_data["counts"]
-        # sig_counts = counts[0]
-        # ref_counts = counts[1]
-        # avg_counts, avg_counts_ste, norms = widefield.process_counts(
-        #     nv_list, sig_counts, ref_counts, threshold=True
-        # )
-
-        # raw_fig = create_raw_data_figure(nv_list, taus, avg_counts, avg_counts_ste)
-        # fit_fig = create_fit_figure(nv_list, taus, avg_counts, avg_counts_ste, norms)
-    except Exception:
-        print(traceback.format_exc())
-        raw_fig = None
-        fit_fig = None
-
-    ### Clean up and return
-
-    tb.reset_cfm()
-    kpl.show()
-
+    ### save the raw data
     timestamp = dm.get_time_stamp()
     raw_data |= {
         "timestamp": timestamp,
@@ -165,6 +138,27 @@ def main(nv_list, num_steps, num_reps, num_runs, min_phi, max_phi, uwave_ind_lis
     repr_nv_name = repr_nv_sig.name
     file_path = dm.get_file_path(__file__, timestamp, repr_nv_name)
     dm.save_raw_data(raw_data, file_path)
+
+    ### Clean up
+    tb.reset_cfm()
+
+    ### Process and plot
+    try:
+        raw_fig = None
+        fit_fig = None
+        counts = raw_data["counts"]
+        sig_counts = counts[0]
+        ref_counts = counts[1]
+        norm_counts, norm_counts_ste = widefield.process_counts(
+            nv_list, sig_counts, ref_counts, threshold=True
+        )
+        fit_fig = create_fit_figure(nv_list, phi_list, norm_counts, norm_counts_ste)
+    except Exception:
+        print(traceback.format_exc())
+        raw_fig = None
+        fit_fig = None
+    kpl.show()
+
     if raw_fig is not None:
         dm.save_figure(raw_fig, file_path)
     if fit_fig is not None:

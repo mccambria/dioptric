@@ -43,7 +43,6 @@ def get_seq(args, num_reps):
         # IQ
         # qua.ramp_to_zero(iq_el)
         # qua.play("on", iq_el)
-
         qua.wait(buffer - tau, iq_el)
         qua.play("on", iq_el)
         # qua.play("pi_pulse", iq_el)
