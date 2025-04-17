@@ -234,22 +234,6 @@ def generate_initial_guess_and_bounds_single(tau, counts):
     return initial_guess, bounds
 
 
-# Combine data from multiple file IDs
-def process_multiple_files(file_ids):
-    """
-    Load and combine data from multiple file IDs.
-
-    """
-    combined_data = dm.get_raw_data(file_id=file_ids[0])
-    for file_id in file_ids[1:]:
-        new_data = dm.get_raw_data(file_id=file_id)
-        combined_data["num_runs"] += new_data["num_runs"]
-        combined_data["counts"] = np.append(
-            combined_data["counts"], new_data["counts"], axis=2
-        )
-    return combined_data
-
-
 # Analyze and visualize spin echo data
 def fit_spin_echo(nv_list, taus, norm_counts, norm_counts_ste):
     num_nvs = len(nv_list)
@@ -456,7 +440,7 @@ def plot_spin_echo_all(nv_list, taus, norm_counts, norm_counts_ste):
             lw=0,
             marker="o",
             markersize=4,
-            label=f"NV {nv_idx}",
+            # label=f"NV {nv_idx}",
         )
         ax.errorbar(
             nv_tau,
@@ -466,7 +450,7 @@ def plot_spin_echo_all(nv_list, taus, norm_counts, norm_counts_ste):
             ecolor=colors[nv_idx % len(colors)],
             alpha=0.9,
         )
-        ax.legend(fontsize="xx-small")
+        # ax.legend(fontsize="xx-small")
         ax.grid(True, which="both", linestyle="--", linewidth=0.5)
         ax.tick_params(labelleft=False)
 
@@ -525,7 +509,8 @@ if __name__ == "__main__":
     # rubin75 NVs
     # file_ids = [1811334050314, 1811401206447, 1811464617147, 1811540653210]
     # rubin75 NVs after making both orientation degenerate
-    file_ids = [1835778335625, 1836023279415]
+    # file_ids = [1835778335625, 1836023279415]
+    file_ids = [1837153340732]
     all_file_ids_str = "_".join(map(str, file_ids))
     now = datetime.now()
     date_time_str = now.strftime("%Y%m%d_%H%M%S")
@@ -537,7 +522,7 @@ if __name__ == "__main__":
     print(f"File path: {file_path}")
     # Process and analyze data from multiple files
     try:
-        data = process_multiple_files(file_ids)
+        data = widefield.process_multiple_files(file_ids)
         nv_list = data["nv_list"]
         taus = data["taus"]
         total_evolution_times = 2 * np.array(taus) / 1e3

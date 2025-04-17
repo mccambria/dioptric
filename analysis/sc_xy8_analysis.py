@@ -6,15 +6,13 @@ Created on November 29th, 2023
 """
 
 import time
+import sys
 
 import matplotlib.pyplot as plt
 import numpy as np
-import sys
 import matplotlib.ticker as ticker
 from matplotlib.ticker import FormatStrFormatter
 
-import matplotlib.pyplot as plt
-import numpy as np
 import seaborn as sns
 from scipy.optimize import curve_fit, least_squares
 
