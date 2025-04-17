@@ -33,7 +33,7 @@ from PIL import Image
 from utils import common, widefield
 from utils.constants import NVSig
 
-USE_NEW_CLOUD = False  # by defualt box
+USE_NEW_CLOUD = False  # by defualt box cloud
 if USE_NEW_CLOUD:
     from utils import _cloudnew2 as cloud
 else:
@@ -559,10 +559,10 @@ def _json_escape(raw_data):
 
 
 if __name__ == "__main__":
-    file_name = "2025_04_07-10_39_36-testing"
+    file_name = "2025_03_14-11_57_49-rubin-nv0_2025_02_26"
     data = get_raw_data(file_name, use_cache=True, load_npz=False)
-    timestamp = get_time_stamp()
-    repr_nv_name = "testing"
-    file_path = get_file_path(__file__, timestamp, repr_nv_name)
-    save_raw_data(data, file_path)
+    # timestamp = get_time_stamp()
+    # repr_nv_name = "testing"
+    # file_path = get_file_path(__file__, timestamp, repr_nv_name)
+    # save_raw_data(data, file_path)
     debu = 0

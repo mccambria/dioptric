@@ -35,19 +35,19 @@ red_laser_aod = "laser_COBO_638_aod"
 
 
 calibration_coords_pixel = [
-    [18.24, 9.848],
+    [27.44, 23.014],
     [108.384, 227.38],
     [227.438, 19.199],
 ]
 calibration_coords_green = [
-    [119.367, 96.211],
-    [107.058, 118.382],
-    [96.827, 94.795],
+    [118.17, 97.459],
+    [107.043, 118.383],
+    [96.817, 94.818],
 ]
 calibration_coords_red = [
-    [81.687, 63.747],
-    [72.136, 81.914],
-    [63.28, 62.83],
+    [80.738, 64.775],
+    [72.124, 81.915],
+    [63.272, 62.849],
 ]
 # Create the dictionaries using the provided lists
 calibration_coords_nv1 = {
@@ -139,8 +139,8 @@ config |= {
             # sig gen 1 is iq molulated
             1: {
                 "physical_name": "sig_gen_STAN_sg394_2",
-                # "uwave_power": 8.5,
-                "uwave_power": 9.6,
+                "uwave_power": 8.7,
+                # "uwave_power": 9.6,
                 # "frequency": 2.779138,   # rubin shallow NVs O1 ms=-1
                 # "frequency": 2.964545,  # rubin shallow NV O1 ms=+1
                 # "frequency": 2.842478,  # rubin shallow NV O3 ms=-1
