@@ -822,7 +822,8 @@ if __name__ == "__main__":
     # file_id = 1810477160439  # green durations 75NVs
     # file_id = 1810477160439  # green durations 75NVs
     # file_id = 1833010688783  # green durations 75NVs (4/13/2025)
-    file_id = 1834390490156  # green durations 75NVs (4/14/2025)
+    # file_id = 1834390490156  # green durations 75NVs (4/14/2025)
+    file_id = 1836625491633  # green durations 75NVs (4/16/2025)
     dm.USE_NEW_CLOUD = False
     raw_data = dm.get_raw_data(file_id=file_id, load_npz=False)
     file_name = dm.get_file_name(file_id=file_id)
