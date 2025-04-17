@@ -99,10 +99,6 @@ if __name__ == "__main__":
     # Load the image array (replace this with your own method for loading image data)
     data = dm.get_raw_data(file_id=1836465819699, load_npz=True)
     img_array = np.array(data["img_array"])
-    # fig, ax = plt.subplots()
-    # title = "50ms, Ref"
-    # kpl.imshow(ax, img_array, title=title, cbar_label="Photons")
-    # plt.show(block=True)
     # List of initial peak coordinates
     initial_peaks = np.array([[229.298, 12.109], [214.033, 241.021], [22.603, 112.013]])
     # Fit Gaussian to each peak
