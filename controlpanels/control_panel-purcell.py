@@ -644,7 +644,7 @@ def do_spin_echo(nv_lis):
         f"[Spin Echo] Running with {num_steps} τ values, revival_period={revival_period}"
     )
 
-    for _ in range(2):
+    for _ in range(1):
         spin_echo.main(nv_list, num_steps, num_reps, num_runs, taus=taus)
 
 
@@ -1202,15 +1202,15 @@ if __name__ == "__main__":
     # ]
     # green_coords_list = [
     #     [107.812, 107.76],
-    #     [118.117, 97.488],
-    #     [107.028, 118.414],
-    #     [96.832, 94.812],
+    #     [118.121, 97.495],
+    #     [107.036, 118.377],
+    #     [96.826, 94.813],
     # ]
     # red_coords_list = [
     #     [72.518, 73.264],
-    #     [80.695, 64.799],
-    #     [72.112, 81.94],
-    #     [63.284, 62.844],
+    #     [80.699, 64.805],
+    #     [72.118, 81.91],
+    #     [63.279, 62.845],
     # ]
 
     num_nvs = len(pixel_coords_list)
@@ -1396,7 +1396,7 @@ if __name__ == "__main__":
         # do_power_rabi(nv_list)
         # do_resonance(nv_list)
         # do_resonance_zoom(nv_list)
-        # do_spin_echo(nv_list)
+        do_spin_echo(nv_list)
         # do_ramsey(nv_list)
 
         # do_simple_correlation_test(nv_list)
@@ -1411,7 +1411,7 @@ if __name__ == "__main__":
         # AVAILABLE_XY = ["hahn-n", "xy2-n", "xy4-n", "xy8-n", "xy16-n"]
         # do_xy(nv_list, xy_seq="xy8")
         # do_xy8_uniform_revival_scan(nv_list, xy_seq="xy8-1")
-        do_xy8_revival_scan(nv_list, xy_seq="xy8-1")
+        # do_xy8_revival_scan(nv_list, xy_seq="xy8-1")
 
         # for nv in nv_list:
         #     nv.spin_flip = False
