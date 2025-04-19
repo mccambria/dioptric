@@ -236,7 +236,7 @@ taus_x = np.linspace(1, len(taus), len(taus))
 plt.figure()
 plt.scatter(taus_x, taus)
 plt.show(block=True)
-sys.exit()
+# sys.exit()
 
 
 def generate_divisible_by_4(min_val, max_val, num_steps):
@@ -252,12 +252,13 @@ def generate_divisible_by_4(min_val, max_val, num_steps):
 
 
 # Example Usage
-min_duration = 20
-max_duration = 620
-num_steps = 22
+min_duration = 16
+max_duration = 400
+num_steps = 21
 
 step_values = generate_divisible_by_4(min_duration, max_duration, num_steps)
 print(step_values)
+print(len(step_values))
 
 sys.exit()
 # Updating plot with center frequencies in the legend

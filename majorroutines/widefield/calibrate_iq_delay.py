@@ -9,6 +9,7 @@ Updated on April 17th, 2023
 @author: sbchand
 """
 
+import sys
 import time
 
 import matplotlib.pyplot as plt
@@ -22,15 +23,67 @@ from utils import tool_belt as tb
 from utils import widefield as widefield
 
 
-def create_raw_data_figure(nv_list, taus, counts, counts_ste):
+# def create_raw_data_figure(raw_data):
+#     nv_list = raw_data["nv_list"]
+#     counts = raw_data["counts"]
+#     i_counts, q_counts = counts[0], counts[1]
+#     i_norm_counts, i_norm_counts_ste = widefield.process_counts(
+#         nv_list, i_counts, threshold=True
+#     )
+#     q_norm_counts, q_norm_counts_ste = widefield.process_counts(
+#         nv_list, q_counts, threshold=True
+#     )
+#     fig, ax = plt.subplots()
+#     ax.set_xlabel("Delay (ns)")
+#     ax.set_ylabel("Counts")
+#     return fig
+def create_median_data_figure(raw_data):
+    nv_list = raw_data["nv_list"]
+    delays = raw_data["taus"]  # assumed in ns
+    counts = np.array(raw_data["counts"])
+    i_counts, q_counts = counts[0], counts[1]
+
+    # Normalize and threshold counts
+    i_norm_counts, i_norm_counts_ste = widefield.process_counts(
+        nv_list, i_counts, threshold=False
+    )
+    q_norm_counts, q_norm_counts_ste = widefield.process_counts(
+        nv_list, q_counts, threshold=False
+    )
+
+    # Compute median across NVs (axis 0: NV index)
+    i_median = np.median(i_norm_counts, axis=0)
+    q_median = np.median(q_norm_counts, axis=0)
+
+    i_median_ste = np.median(i_norm_counts_ste, axis=0)
+    q_median_ste = np.median(q_norm_counts_ste, axis=0)
+    # Plot
     fig, ax = plt.subplots()
-    widefield.plot_raw_data(ax, nv_list, taus, counts, counts_ste)
+    ax.errorbar(
+        delays,
+        i_median,
+        yerr=i_median_ste,
+        label="I Median",
+        fmt="-o",
+        capsize=3,
+    )
+    ax.errorbar(
+        delays,
+        q_median,
+        yerr=q_median_ste,
+        label="Q Median",
+        fmt="-s",
+        capsize=3,
+    )
     ax.set_xlabel("Delay (ns)")
-    ax.set_ylabel("Counts")
+    ax.set_ylabel("Normalized Counts")
+    ax.legend()
+    ax.set_title("Median NV Counts vs IQ Delay")
+
     return fig
 
 
-def main(nv_list, num_steps, num_reps, num_runs, taus, i_or_q=True):
+def main(nv_list, num_steps, num_reps, num_runs, taus):
     ### Some initial setup
 
     pulse_gen = tb.get_server_pulse_gen()
@@ -45,6 +98,7 @@ def main(nv_list, num_steps, num_reps, num_runs, taus, i_or_q=True):
             shuffled_taus,
         ]
         # print(seq_args)
+        # sys.exit()
         seq_args_string = tb.encode_seq_args(seq_args)
         pulse_gen.stream_load(seq_file, seq_args_string, num_reps)
 
@@ -67,20 +121,15 @@ def main(nv_list, num_steps, num_reps, num_runs, taus, i_or_q=True):
     }
     ### save the raw data
     repr_nv_sig = widefield.get_repr_nv_sig(nv_list)
-    repr_nv_name = repr_nv_sig["name"]
+    repr_nv_name = repr_nv_sig.name
     file_path = dm.get_file_path(__file__, timestamp, repr_nv_name)
     dm.save_raw_data(raw_data, file_path)
     ### Clean up and return
     tb.reset_cfm()
 
     ### Process and plot
-    counts = raw_data["counts"]
-    sig_counts, ref_counts = counts[0], counts[1]
-    norm_counts, norm_counts_ste = widefield.process_counts(
-        nv_list, sig_counts, ref_counts, threshold=True
-    )
-    raw_fig = create_raw_data_figure(nv_list, taus, norm_counts, norm_counts_ste)
-    dm.save_figure(raw_fig, file_path)
+    create_median_data_figure(raw_data)
+    # dm.save_figure(raw_fig, file_path)
     kpl.show()
 
 
@@ -89,16 +138,16 @@ if __name__ == "__main__":
 
     # file_name = ""
     # data = dm.get_raw_data(file_name)
-    data = dm.get_raw_data(file_id=1386933040254)
+    data = dm.get_raw_data(file_id=1838740014417)
 
-    nv_list = data["nv_list"]
-    num_nvs = len(nv_list)
-    num_steps = data["num_steps"]
-    num_runs = data["num_runs"]
-    taus = data["taus"]
-    counts = np.array(data["counts"])
+    # nv_list = data["nv_list"]
+    # num_nvs = len(nv_list)
+    # num_steps = data["num_steps"]
+    # num_runs = data["num_runs"]
+    # taus = data["taus"]
+    # counts = np.array(data["counts"])
 
-    avg_counts, avg_counts_ste = widefield.process_counts(counts)
-    raw_fig = create_raw_data_figure(nv_list, taus, avg_counts, avg_counts_ste)
-
+    # avg_counts, avg_counts_ste = widefield.process_counts(counts)
+    # raw_fig = create_raw_data_figure(nv_list, taus, avg_counts, avg_counts_ste)
+    create_median_data_figure(data)
     plt.show(block=True)
