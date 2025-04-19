@@ -39,16 +39,6 @@ def process_and_plot(data):
 
     ### Report the results
 
-    # Include this block if the ref shots measure both ms=0 and ms=+/-1
-    # avg_sig_counts, avg_sig_counts_ste, norms = widefield.average_counts(
-    #     sig_counts, ref_counts
-    # )
-    # norms_ms0_newaxis = norms[0][:, np.newaxis]
-    # norms_ms1_newaxis = norms[1][:, np.newaxis]
-    # contrast = norms_ms1_newaxis - norms_ms0_newaxis
-    # norm_counts = (avg_sig_counts - norms_ms0_newaxis) / contrast
-    # norm_counts_ste = avg_sig_counts_ste / contrast
-
     avg_sig_counts, avg_sig_counts_ste, _ = widefield.average_counts(sig_counts)
     avg_ref_counts, avg_ref_counts_ste, _ = widefield.average_counts(ref_counts)
 
