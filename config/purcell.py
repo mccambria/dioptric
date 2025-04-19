@@ -94,7 +94,7 @@ config |= {
         "aod_access_time": 11e3,  # access time in specs is 10us
         "widefield_operation_buffer": 1e3,
         "uwave_buffer": 16,
-        "iq_buffer": 32,
+        "iq_buffer": 16,  # SBC measured using NVs 4/18/2025
         "iq_delay": 140,  # SBC measured using NVs 4/18/2025
     },
     ###
@@ -535,8 +535,6 @@ opx_config = {
                 "chan": {
                     "port": ("con1", 10),
                     "delay": 0,
-                    # "delay": config["Microwaves"]["sig_gen_0"]["iq_delay"]
-                    # + iq_buffer // 2,
                     "buffer": 0,
                 }
             },
@@ -548,11 +546,10 @@ opx_config = {
             },
         },
         "do_sig_gen_STAN_sg394_2_dm": {
-            # 230 ns I channel latency measured 3/26/25 MCC and Saroj
+            # 230 ns I channel latency measured 3/26/25 MCC and Saroj using oscilloscope
             "digitalInputs": {
                 # "chan": {"port": ("con1", 9), "delay": 230, "buffer": 0}
-                "chan": {"port": ("con1", 9), "delay": 140, "buffer": 0}
-                # iq140ns is measured u
+                "chan": {"port": ("con1", 9), "delay": iq_delay, "buffer": 0}
             },
             "operations": {
                 "iq_test": "do_iq_test",

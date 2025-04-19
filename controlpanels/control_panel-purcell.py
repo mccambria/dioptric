@@ -713,38 +713,40 @@ def do_xy8_uniform_revival_scan(nv_list, xy_seq="xy8-1"):
         )
 
 
-def do_xy8_revival_scan(nv_list, xy_seq="xy8-1", T_rev_us=25.75, N=1):
-    tau_rev = T_rev_us / (2 * N)
-    revival_width = 4  # µs width around revival
-    min_tau = 0.5  # to see initial decay
+def do_xy8_revival_scan(nv_list, xy_seq="xy8-1"):
+    min_total_time = 800  # ns, minimum total evolution time (for smallest τ)
+    revival_time = 15e3  # ns, center of first Larmor revival
+    revival_width = 5e3  # ns, width around the revival window
+    N = 8  # XY8 = 8 π-pulses
+    factor = 2 * N  # Total time = 2Nτ
 
     taus = []
 
-    # Pre-revival: to see decay before revival
-    decay_range = np.linspace(min_tau, tau_rev - revival_width, 5)
-    taus.extend(decay_range.tolist())
+    # Initial coherence decay region
+    decay = np.linspace(min_total_time, min_total_time + revival_width, 6)
+    taus.extend((decay / factor).tolist())
 
-    # Around revival
-    revival_range = np.linspace(tau_rev - revival_width, tau_rev + revival_width, 61)
-    taus.extend(revival_range.tolist())
+    # Flat gap region
+    gap = np.linspace(min_total_time + revival_width, revival_time - revival_width, 6)
+    taus.extend((gap[1:-1] / factor).tolist())
 
-    # Second revival
-    second_tau = 2 * tau_rev
-    second_range = np.linspace(
-        second_tau - revival_width, second_tau + revival_width, 31
+    # High-resolution scan across first revival
+    revival_scan = np.linspace(
+        revival_time - revival_width, revival_time + revival_width, 51
     )
-    taus.extend(second_range.tolist())
+    taus.extend((revival_scan / factor).tolist())
 
-    # Format: round and remove duplicates
-    taus = [round(el / 4) * 4 for el in taus]
-    taus = sorted(set(taus))
-
-    num_reps = 3
-    num_runs = 200
+    # Round to 4 ns granularity
+    taus = sorted(set(round(tau / 4) * 4 for tau in taus))
     num_steps = len(taus)
+    num_reps = 3
+    num_runs = 600
     uwave_ind_list = [1]  # IQ-modulated channel index
+    print(
+        f"[XY8] Running with {num_steps} τ values, targeting revival @ {revival_time} ns"
+    )
 
-    for _ in range(6):
+    for _ in range(2):
         xy.main(
             nv_list,
             num_steps,
@@ -1319,7 +1321,7 @@ if __name__ == "__main__":
         # pos.set_xyz_on_nv(nv_sig)
 
         do_compensate_for_drift(nv_sig)
-        do_widefield_image_sample(nv_sig, 50)
+        # do_widefield_image_sample(nv_sig, 50)
         # do_widefield_image_sample(nv_sig, 200)
 
         # scan_equilateral_triangle(nv_sig, center_coord=sample_coords, radius=0.2)
@@ -1379,7 +1381,7 @@ if __name__ == "__main__":
         # do_optimize_spin_pol_amp(nv_list)
         # do_check_readout_fidelity(nv_list)
 
-        do_scc_snr_check(nv_list)
+        # do_scc_snr_check(nv_list)
         # do_optimize_scc_duration(nv_list)
         # do_optimize_scc_amp(nv_list)
         # optimize_scc_amp_and_duration(nv_list)
@@ -1409,7 +1411,7 @@ if __name__ == "__main__":
         # AVAILABLE_XY = ["hahn-n", "xy2-n", "xy4-n", "xy8-n", "xy16-n"]
         # do_xy(nv_list, xy_seq="xy8")
         # do_xy8_uniform_revival_scan(nv_list, xy_seq="xy8-1")
-        # do_xy8_revival_scan(nv_list, xy_seq="xy8-1", T_rev_us=2 * 25.75, N=8)
+        do_xy8_revival_scan(nv_list, xy_seq="xy8-1")
 
         # for nv in nv_list:
         #     nv.spin_flip = False
