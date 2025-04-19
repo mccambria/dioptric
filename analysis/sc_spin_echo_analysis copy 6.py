@@ -506,7 +506,6 @@ if __name__ == "__main__":
     # rubin75 NVs after making both orientation degenerate
     # file_ids = [1835778335625, 1836023279415]
     file_ids = [1837153340732, 1837462226158]
-
     # xy8
     file_ids = [1838226467730, 1838534721391]
 

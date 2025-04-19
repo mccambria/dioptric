@@ -341,7 +341,6 @@ def init_kplotlib(
         plt.rcParams["text.latex.preamble"] = preamble
 
     ### Other rcparams
-
     # plt.rcParams["legend.handlelength"] = 0.5
     plt.rcParams["font.family"] = "sans-serif"
     if font == Font.ROBOTO:
