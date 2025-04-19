@@ -45,10 +45,10 @@ def create_median_data_figure(raw_data):
 
     # Normalize and threshold counts
     i_norm_counts, i_norm_counts_ste = widefield.process_counts(
-        nv_list, i_counts, threshold=False
+        nv_list, i_counts, threshold=True
     )
     q_norm_counts, q_norm_counts_ste = widefield.process_counts(
-        nv_list, q_counts, threshold=False
+        nv_list, q_counts, threshold=True
     )
 
     # Compute median across NVs (axis 0: NV index)
@@ -81,6 +81,74 @@ def create_median_data_figure(raw_data):
     ax.set_title("Median NV Counts vs IQ Delay")
 
     return fig
+
+
+# import numpy as np
+# import matplotlib.pyplot as plt
+# from scipy.optimize import curve_fit
+
+
+# def gaussian(x, a, x0, sigma, offset):
+#     return a * np.exp(-((x - x0) ** 2) / (2 * sigma**2)) + offset
+
+
+# def create_median_data_figure(raw_data):
+#     nv_list = raw_data["nv_list"]
+#     delays = np.array(raw_data["taus"])  # assumed in ns
+#     counts = np.array(raw_data["counts"])
+#     i_counts, q_counts = counts[0], counts[1]
+
+#     # Normalize and threshold counts
+#     i_norm_counts, i_norm_counts_ste = widefield.process_counts(
+#         nv_list, i_counts, threshold=True
+#     )
+#     q_norm_counts, q_norm_counts_ste = widefield.process_counts(
+#         nv_list, q_counts, threshold=True
+#     )
+
+#     # Compute median and STE across NVs
+#     i_median = np.median(i_norm_counts, axis=0)
+#     q_median = np.median(q_norm_counts, axis=0)
+#     i_median_ste = np.median(i_norm_counts_ste, axis=0)
+#     q_median_ste = np.median(q_norm_counts_ste, axis=0)
+
+#     # Fit Gaussian to both I and Q
+#     try:
+#         popt_i, _ = curve_fit(
+#             gaussian, delays, i_median, p0=[-0.5, delays[np.argmin(i_median)], 100, 0.1]
+#         )
+#     except RuntimeError:
+#         popt_i = None
+
+#     try:
+#         popt_q, _ = curve_fit(
+#             gaussian, delays, q_median, p0=[-0.5, delays[np.argmin(q_median)], 100, 0.1]
+#         )
+#     except RuntimeError:
+#         popt_q = None
+
+#     # Plot
+#     fig, ax = plt.subplots()
+#     ax.errorbar(
+#         delays, i_median, yerr=i_median_ste, label="I Median", fmt="-o", capsize=3
+#     )
+#     ax.errorbar(
+#         delays, q_median, yerr=q_median_ste, label="Q Median", fmt="-s", capsize=3
+#     )
+
+#     # Plot fitted curves if fit succeeded
+#     fit_x = np.linspace(delays[0], delays[-1], 300)
+#     if popt_i is not None:
+#         ax.plot(fit_x, gaussian(fit_x, *popt_i), label="I Fit", linestyle="--")
+#     if popt_q is not None:
+#         ax.plot(fit_x, gaussian(fit_x, *popt_q), label="Q Fit", linestyle="--")
+
+#     ax.set_xlabel("Delay (ns)")
+#     ax.set_ylabel("Normalized Counts")
+#     ax.set_title("Median NV Counts vs IQ Delay")
+#     ax.legend()
+
+#     return fig
 
 
 def main(nv_list, num_steps, num_reps, num_runs, taus):
@@ -138,7 +206,8 @@ if __name__ == "__main__":
 
     # file_name = ""
     # data = dm.get_raw_data(file_name)
-    data = dm.get_raw_data(file_id=1838740014417)
+    # data = dm.get_raw_data(file_id=1838788378840)  # buffer 100ns
+    data = dm.get_raw_data(file_id=1838833811044)  # buffer 32ns
 
     # nv_list = data["nv_list"]
     # num_nvs = len(nv_list)

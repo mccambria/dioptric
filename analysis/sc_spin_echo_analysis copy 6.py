@@ -505,10 +505,10 @@ if __name__ == "__main__":
     # file_ids = [1811334050314, 1811401206447, 1811464617147, 1811540653210]
     # rubin75 NVs after making both orientation degenerate
     # file_ids = [1835778335625, 1836023279415]
-    file_ids = [1837153340732, 1837462226158]
+    file_ids = [1837153340732, 1837462226158]  #
     # xy8
     file_ids = [1838226467730, 1838534721391]
-
+    file_ids = [1839161749987]
     all_file_ids_str = "_".join(map(str, file_ids))
     now = datetime.now()
     date_time_str = now.strftime("%Y%m%d_%H%M%S")
