@@ -67,9 +67,14 @@ calibration_coords_nv3 = {
     red_laser_aod: calibration_coords_red[2],
 }
 
+# pixel_to_sample_affine_transformation_matrix = [
+#     [-0.01472387, 0.00052569, 1.28717911],
+#     [0.00040197, -0.01455135, 1.73876545],
+# ]
+
 pixel_to_sample_affine_transformation_matrix = [
-    [-0.01472387, 0.00052569, 1.28717911],
-    [0.00040197, -0.01455135, 1.73876545],
+    [-0.01478989, -0.00127903, 3.85073374],
+    [0.00138559, -0.01471450, 5.74068819],
 ]
 # endregion
 # region Base config
@@ -90,6 +95,7 @@ config |= {
         "widefield_operation_buffer": 1e3,
         "uwave_buffer": 16,
         "iq_buffer": 100,
+        # "iq_buffer": 144,
     },
     ###
     "DeviceIDs": {
@@ -368,7 +374,8 @@ opx_config = {
                 7: {"offset": 0.0, "delay": 0},
                 8: {"offset": 0.0, "delay": 0},
                 9: {"offset": 0.0, "delay": 0},
-                10: {"offset": 0.0, "delay": 70},
+                # 10: {"offset": 0.0, "delay": 70},
+                10: {"offset": 0.0, "delay": 0},
             },
             "digital_outputs": {
                 1: {},  #
@@ -543,7 +550,8 @@ opx_config = {
         "do_sig_gen_STAN_sg394_2_dm": {
             # 230 ns I channel latency measured 3/26/25 MCC and Saroj
             "digitalInputs": {
-                "chan": {"port": ("con1", 9), "delay": 230, "buffer": 0}
+                # "chan": {"port": ("con1", 9), "delay": 230, "buffer": 0}
+                "chan": {"port": ("con1", 9), "delay": 0, "buffer": 0}
                 # "chan": {"port": ("con1", 9), "delay": 230 + iq_buffer, "buffer": 0}
             },
             "operations": {

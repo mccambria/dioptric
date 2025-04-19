@@ -464,14 +464,13 @@ def do_simple_correlation_test(nv_list):
 
 
 def do_calibrate_iq_delay(nv_list):
-    min_tau = -100
-    max_tau = +100
-    num_steps = 21
+    min_tau = 20
+    max_tau = 400
+    num_steps = 20
     num_reps = 10
-    num_runs = 25
-    calibrate_iq_delay.main(
-        nv_list, num_steps, num_reps, num_runs, min_tau, max_tau, i_or_q=False
-    )
+    num_runs = 100
+    taus = np.linspace(min_tau, max_tau, num_steps)
+    calibrate_iq_delay.main(nv_list, num_steps, num_reps, num_runs, taus)
 
 
 def do_resonance(nv_list):
@@ -688,9 +687,9 @@ def do_xy(nv_list, xy_seq="xy8"):
 
 
 def do_xy8_uniform_revival_scan(nv_list, xy_seq="xy8-1"):
-    min_tau = 0.5
-    max_tau = 20.0
-    num_steps = 60
+    min_tau = 2e3
+    max_tau = 20e3
+    num_steps = 66
     taus = np.linspace(min_tau, max_tau, num_steps)
 
     # Round to multiple of 4 ns (or your pulse time unit)
@@ -698,11 +697,11 @@ def do_xy8_uniform_revival_scan(nv_list, xy_seq="xy8-1"):
     taus = sorted(set(taus))  # remove duplicates
 
     num_reps = 3
-    num_runs = 200
+    num_runs = 600
     num_steps = len(taus)
     uwave_ind_list = [1]  # IQ-modulated channel index
 
-    for ind in range(6):
+    for ind in range(2):
         xy.main(
             nv_list,
             num_steps,
@@ -1058,10 +1057,10 @@ def compile_speed_test(nv_list):
 
 def piezo_voltage_to_pixel_calibration():
     cal_voltage_coords = np.array(
-        [[3.0, 0.0], [2.0, 1.0], [1.5, -0.5]], dtype="float32"
+        [[2.2, 4.0], [1.9, 4.1732], [1.9, 3.8267]], dtype="float32"
     )
     cal_pixel_coords = np.array(
-        [[50.133, 115.925], [91.972, 64.584], [130.875, 153.92]], dtype="float32"
+        [[100.563, 127.767], [121.693, 117.986], [119.673, 141.344]], dtype="float32"
     )
     # Compute the affine transformation matrix
     M = cv2.getAffineTransform(cal_voltage_coords, cal_pixel_coords)
@@ -1118,12 +1117,29 @@ def estimate_z(x, y, z0=0.15, slope=-0.0265):
     return z0 + slope * (x + y) / np.sqrt(2)
 
 
-def equilateral_triangle_around(center, radius):
-    """Returns 3 points in an equilateral triangle around the center."""
-    x0, y0 = center
-    angles = np.deg2rad([0, 120, 240])  # 3 vertices at 0°, 120°, 240°
-    points = [[x0 + radius * np.cos(a), y0 + radius * np.sin(a)] for a in angles]
+def generate_equilateral_triangle_around_center(center=(0, 0), r=2.0):
+    angles = [0, 120, 240]  # degrees
+    points = []
+    for angle_deg in angles:
+        theta = np.radians(angle_deg)
+        x = center[0] + r * np.cos(theta)
+        y = center[1] + r * np.sin(theta)
+        points.append((x, y))
     return points
+
+
+def scan_equilateral_triangle(nv_sig, center_coord=(0, 0), radius=0.2):
+    triangle_coords = generate_equilateral_triangle_around_center(
+        center_coord, r=radius
+    )
+    triangle_coords.append(center_coord)  # Return to center
+
+    for sample_coord in triangle_coords:
+        z = estimate_z(*sample_coord)
+        nv_sig.coords[CoordsKey.SAMPLE] = sample_coord
+        nv_sig.coords[CoordsKey.Z] = z
+        print(f"Scanning SAMPLE: {sample_coord}, estimated Z: {z:.3f}")
+        do_scanning_image_sample(nv_sig)
 
 
 ### Run the file
@@ -1303,10 +1319,13 @@ if __name__ == "__main__":
         # pos.set_xyz_on_nv(nv_sig)
 
         do_compensate_for_drift(nv_sig)
-        # do_widefield_image_sample(nv_sig, 50)
+        do_widefield_image_sample(nv_sig, 50)
         # do_widefield_image_sample(nv_sig, 200)
 
+        # scan_equilateral_triangle(nv_sig, center_coord=sample_coords, radius=0.2)
         # do_scanning_image_sample(nv_sig)
+        # piezo_voltage_to_pixel_calibration()
+
         # do_scanning_image_full_roi(nv_sig)
         # do_scanning_image_sample_zoom(nv_sig)
         # do_image_nv_list(nv_list)
@@ -1368,7 +1387,8 @@ if __name__ == "__main__":
         # do_spin_pol_check(nv_sig)
         # do_calibrate_green_red_delay()
 
-        do_spin_echo_phase_scan_test(nv_list)  # for iq mod test
+        # do_spin_echo_phase_scan_test(nv_list)  # for iq mod test
+        do_calibrate_iq_delay(nv_list)
 
         # do_rabi(nv_list)
         # do_power_rabi(nv_list)

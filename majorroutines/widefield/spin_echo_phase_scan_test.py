@@ -159,11 +159,11 @@ def main(nv_list, num_steps, num_reps, num_runs, min_phi, max_phi, uwave_ind_lis
         fit_fig = None
     kpl.show()
 
-    if raw_fig is not None:
-        dm.save_figure(raw_fig, file_path)
-    if fit_fig is not None:
-        file_path = dm.get_file_path(__file__, timestamp, repr_nv_name + "-fit")
-        dm.save_figure(fit_fig, file_path)
+    # if raw_fig is not None:
+    #     dm.save_figure(raw_fig, file_path)
+    # if fit_fig is not None:
+    #     file_path = dm.get_file_path(__file__, timestamp, repr_nv_name + "-fit")
+    #     dm.save_figure(fit_fig, file_path)
 
 
 if __name__ == "__main__":
