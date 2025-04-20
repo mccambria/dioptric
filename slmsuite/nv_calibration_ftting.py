@@ -97,7 +97,7 @@ def plot_fitting(
 if __name__ == "__main__":
     kpl.init_kplotlib()
     # Load the image array (replace this with your own method for loading image data)
-    data = dm.get_raw_data(file_id=1837523454211, load_npz=True)
+    data = dm.get_raw_data(file_id=1839399220213, load_npz=True)
     img_array = np.array(data["img_array"])
     # List of initial peak coordinates
     initial_peaks = np.array([[229.609, 11.801], [214.199, 241.218], [22.407, 112.071]])
