@@ -94,8 +94,8 @@ config |= {
         "aod_access_time": 11e3,  # access time in specs is 10us
         "widefield_operation_buffer": 1e3,
         "uwave_buffer": 16,
-        "iq_buffer": 100,
-        # "iq_buffer": 144,
+        "iq_buffer": 32,
+        "iq_delay": 140,  # SBC measured using NVs 4/18/2025
     },
     ###
     "DeviceIDs": {
@@ -130,7 +130,7 @@ config |= {
             "sig_gen_TEKT_tsg4104a": {"delay": 57},
         },
         "iq_comp_amp": 0.5,
-        "iq_delay": 630,
+        "iq_delay": 140,  # SBC measured using NVs 4/18/2025
         "VirtualSigGens": {
             0: {
                 "physical_name": "sig_gen_STAN_sg394",
@@ -358,6 +358,7 @@ rabi_period_1 = virtual_sig_gens_dict[1]["rabi_period"]
 ramp_to_zero_duration = 64
 virtual_lasers_dict = config["Optics"]["VirtualLasers"]
 iq_buffer = config["CommonDurations"]["iq_buffer"]
+iq_delay = config["CommonDurations"]["iq_delay"]
 
 opx_config = {
     "version": 1,
@@ -374,7 +375,6 @@ opx_config = {
                 7: {"offset": 0.0, "delay": 0},
                 8: {"offset": 0.0, "delay": 0},
                 9: {"offset": 0.0, "delay": 0},
-                # 10: {"offset": 0.0, "delay": 70},
                 10: {"offset": 0.0, "delay": 0},
             },
             "digital_outputs": {
@@ -551,8 +551,8 @@ opx_config = {
             # 230 ns I channel latency measured 3/26/25 MCC and Saroj
             "digitalInputs": {
                 # "chan": {"port": ("con1", 9), "delay": 230, "buffer": 0}
-                "chan": {"port": ("con1", 9), "delay": 0, "buffer": 0}
-                # "chan": {"port": ("con1", 9), "delay": 230 + iq_buffer, "buffer": 0}
+                "chan": {"port": ("con1", 9), "delay": 140, "buffer": 0}
+                # iq140ns is measured u
             },
             "operations": {
                 "iq_test": "do_iq_test",

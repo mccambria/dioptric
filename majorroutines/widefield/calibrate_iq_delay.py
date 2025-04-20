@@ -46,8 +46,10 @@ def create_median_data_figure(raw_data):
     # Normalize and threshold counts
     i_norm_counts, i_norm_counts_ste = widefield.process_counts(
         nv_list, i_counts, threshold=True
+        nv_list, i_counts, threshold=True
     )
     q_norm_counts, q_norm_counts_ste = widefield.process_counts(
+        nv_list, q_counts, threshold=True
         nv_list, q_counts, threshold=True
     )
 
@@ -208,6 +210,8 @@ if __name__ == "__main__":
     # data = dm.get_raw_data(file_name)
     # data = dm.get_raw_data(file_id=1838788378840)  # buffer 100ns
     data = dm.get_raw_data(file_id=1838833811044)  # buffer 32ns
+    # data = dm.get_raw_data(file_id=1838740014417)
+    data = dm.get_raw_data(file_id=1838919367119)
 
     # nv_list = data["nv_list"]
     # num_nvs = len(nv_list)
