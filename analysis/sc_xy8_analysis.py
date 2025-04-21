@@ -787,48 +787,48 @@ def fit_and_plot_all_T2_with_chi2(
     return all_T2s, all_chi2s
 
 
-# def fit_for_fixed_n_range(
-#     nv_list, taus, norm_counts, norm_counts_ste, n_values=[1, 2, 3, 4]
-# ):
-#     medians_by_n = []
-#     all_T2s_by_n = {}
+def fit_for_fixed_n_range(
+    nv_list, taus, norm_counts, norm_counts_ste, n_values=[1, 2, 3, 4]
+):
+    medians_by_n = []
+    all_T2s_by_n = {}
 
-#     for n_fixed in n_values:
-#         T2s = []
+    for n_fixed in n_values:
+        T2s = []
 
-#         for nv_ind in range(len(nv_list)):
-#             y = norm_counts[nv_ind]
-#             yerr = norm_counts_ste[nv_ind]
-#             a0 = np.clip(np.ptp(y), 0.1, 1.0)
-#             t2_0 = np.median(taus)
-#             b0 = np.mean(y[-4:])
-#             p0 = [a0, t2_0, b0]
-#             bounds = ([0, 1e-1, -10], [1.5, 1e5, 10])
+        for nv_ind in range(len(nv_list)):
+            y = norm_counts[nv_ind]
+            yerr = norm_counts_ste[nv_ind]
+            a0 = np.clip(np.ptp(y), 0.1, 1.0)
+            t2_0 = np.median(taus)
+            b0 = np.mean(y[-4:])
+            p0 = [a0, t2_0, b0]
+            bounds = ([0, 1e-1, -10], [1.5, 1e5, 10])
 
-#             try:
-#                 popt, _ = curve_fit(
-#                     lambda tau, a, t2, b: stretched_exp_fixed_n(tau, a, t2, b, n_fixed),
-#                     taus,
-#                     y,
-#                     p0=p0,
-#                     bounds=bounds,
-#                     sigma=yerr,
-#                     absolute_sigma=True,
-#                     maxfev=20000,
-#                 )
-#                 T2s.append(popt[1])
-#             except Exception as e:
-#                 print(f"Fit failed for NV {nv_ind} at n={n_fixed}: {e}")
-#                 T2s.append(np.nan)
+            try:
+                popt, _ = curve_fit(
+                    lambda tau, a, t2, b: stretched_exp_fixed_n(tau, a, t2, b, n_fixed),
+                    taus,
+                    y,
+                    p0=p0,
+                    bounds=bounds,
+                    sigma=yerr,
+                    absolute_sigma=True,
+                    maxfev=20000,
+                )
+                T2s.append(popt[1])
+            except Exception as e:
+                print(f"Fit failed for NV {nv_ind} at n={n_fixed}: {e}")
+                T2s.append(np.nan)
 
-#         T2s = np.array(T2s)
-#         T2s = T2s[~np.isnan(T2s)]
-#         all_T2s_by_n[n_fixed] = T2s
-#         median_T2 = np.median(T2s)
-#         medians_by_n.append(median_T2)
-#         print(f"n={n_fixed}: median T2 = {median_T2:.2f} µs")
+        T2s = np.array(T2s)
+        T2s = T2s[~np.isnan(T2s)]
+        all_T2s_by_n[n_fixed] = T2s
+        median_T2 = np.median(T2s)
+        medians_by_n.append(median_T2)
+        print(f"n={n_fixed}: median T2 = {median_T2:.2f} µs")
 
-#     return n_values, medians_by_n, all_T2s_by_n
+    return n_values, medians_by_n, all_T2s_by_n
 
 
 def plot_medians(n_values, medians_by_n):
@@ -1018,11 +1018,11 @@ if __name__ == "__main__":
     # norm_counts, norm_counts_ste = widefield.process_counts(
     #     nv_list, ref_counts, threshold=True
     # )
-    process_and_plot_xy8(nv_list, taus, norm_counts, norm_counts_ste)
-    # n_values, medians_by_n, all_T2s_by_n = fit_for_fixed_n_range(
-    #     nv_list, taus, norm_counts, norm_counts_ste, n_values=[1, 2, 3, 4, 5, 6]
-    # )
-    # plot_medians(n_values, medians_by_n)
+    # process_and_plot_xy8(nv_list, taus, norm_counts, norm_counts_ste)
+    n_values, medians_by_n, all_T2s_by_n = fit_for_fixed_n_range(
+        nv_list, taus, norm_counts, norm_counts_ste, n_values=[1, 2, 3, 4, 5, 6]
+    )
+    plot_medians(n_values, medians_by_n)
     # full_xy8_fitting_over_n(
     #     nv_list, taus, norm_counts, norm_counts_ste, n_values=[1, 2, 3, 4, 5, 6]
     # )
