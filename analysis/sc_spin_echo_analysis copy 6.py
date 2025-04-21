@@ -505,11 +505,12 @@ if __name__ == "__main__":
     # file_ids = [1811334050314, 1811401206447, 1811464617147, 1811540653210]
     # rubin75 NVs after making both orientation degenerate
     # file_ids = [1835778335625, 1836023279415]
-    # file_ids = [1837153340732, 1837462226158]  #
-    file_ids = [1839747727194, 1839907420053, 1837153340732, 1837462226158]  #
+    # file_ids = [1837153340732, 1837462226158]  # 15us revival
+    # file_ids = [1839747727194, 1839907420053]  # 13us revial
+    # file_ids = [1839747727194, 1839907420053, 1837153340732, 1837462226158]  #
     # xy8
-    # file_ids = [1838226467730, 1838534721391]
-    # file_ids = [1839161749987, 1839342727027]
+    file_ids = [1838226467730, 1838534721391]
+    # file_ids = [1839161749987, 1839342727027]  # 15 us reval
     all_file_ids_str = "_".join(map(str, file_ids))
     now = datetime.now()
     date_time_str = now.strftime("%Y%m%d_%H%M%S")
@@ -524,6 +525,11 @@ if __name__ == "__main__":
         data = widefield.process_multiple_files(file_ids)
         nv_list = data["nv_list"]
         taus = data["taus"]
+        rabi_feq = data["config"]["Microwaves"]["VirtualSigGens"][str(1)]["uwave_power"]
+        rabi_period = data["config"]["Microwaves"]["VirtualSigGens"][str(1)][
+            "rabi_period"
+        ]
+        print(f"rabi freq:{rabi_feq}, rabi period: {rabi_period}")
         total_evolution_times = 2 * np.array(taus) / 1e3
         counts = np.array(data["counts"])
         sig_counts, ref_counts = counts[0], counts[1]
