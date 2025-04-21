@@ -621,7 +621,39 @@ def do_ac_stark(nv_list):
 def do_spin_echo(nv_lis):
     min_tau = 200  # ns
     # max_tau = 20e3  # fallback
+    # revival_period = int(15e3)
+    revival_period = int(13e3)
+    taus = []
+    revival_width = 6e3
+    decay = np.linspace(min_tau, min_tau + revival_width, 6)
+    taus.extend(decay.tolist())
+    gap = np.linspace(min_tau + revival_width, revival_period - revival_width, 6)
+    taus.extend(gap[1:-1].tolist())
+    first_revival = np.linspace(
+        revival_period - revival_width, revival_period + revival_width, 61
+    )
+    taus.extend(first_revival.tolist())
+    # Round to clock-cycle-compatible units
+    taus = [round(el / 4) * 4 for el in taus]
+    # Remove duplicates and sort
+    taus = sorted(set(taus))
+    num_steps = len(taus)
+    num_reps = 3
+    num_runs = 600
+
+    print(
+        f"[Spin Echo] Running with {num_steps} τ values, revival_period={revival_period}"
+    )
+
+    for _ in range(1):
+        spin_echo.main(nv_list, num_steps, num_reps, num_runs, taus=taus)
+
+
+def do_spin_echo_1(nv_lis):
+    min_tau = 200  # ns
+    # max_tau = 20e3  # fallback
     revival_period = int(15e3)
+    # revival_period = int(13e3)
     taus = []
     revival_width = 5e3
     decay = np.linspace(min_tau, min_tau + revival_width, 6)
@@ -746,7 +778,7 @@ def do_xy8_revival_scan(nv_list, xy_seq="xy8-1"):
         f"[XY8] Running with {num_steps} τ values, targeting revival @ {revival_time} ns"
     )
 
-    for _ in range(2):
+    for _ in range(1):
         xy.main(
             nv_list,
             num_steps,
@@ -1397,6 +1429,7 @@ if __name__ == "__main__":
         # do_resonance(nv_list)
         # do_resonance_zoom(nv_list)
         do_spin_echo(nv_list)
+        do_spin_echo_1(nv_list)
         # do_ramsey(nv_list)
 
         # do_simple_correlation_test(nv_list)
@@ -1411,7 +1444,7 @@ if __name__ == "__main__":
         # AVAILABLE_XY = ["hahn-n", "xy2-n", "xy4-n", "xy8-n", "xy16-n"]
         # do_xy(nv_list, xy_seq="xy8")
         # do_xy8_uniform_revival_scan(nv_list, xy_seq="xy8-1")
-        # do_xy8_revival_scan(nv_list, xy_seq="xy8-1")
+        do_xy8_revival_scan(nv_list, xy_seq="xy8-1")
 
         # for nv in nv_list:
         #     nv.spin_flip = False

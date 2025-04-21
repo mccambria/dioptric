@@ -843,8 +843,8 @@ opx_config = {
         # "yellow_charge_readout": {"type": "constant", "sample": 0.3741},  # 50ms 117NVs
         # "yellow_charge_readout": {"type": "constant", "sample": 0.325},  # 100ms 117NVs
         # "yellow_charge_readout": {"type": "constant", "sample": 0.37240},  # 150NVs all
-        # "yellow_charge_readout": {"type": "constant", "sample": 0.35240},  # 75NVs all old
-        "yellow_charge_readout": {"type": "constant", "sample": 0.35736},  # 75NVs new
+        # "yellow_charge_readout": {"type": "constant", "sample": 0.35736},  # 75NVs new
+        "yellow_charge_readout": {"type": "constant", "sample": 0.3600},  # 75NVs new
         # "yellow_charge_readout": {"type": "constant", "sample": 0.32350},  # 35NV/185MHz
         # "yellow_charge_readout": {"type": "constant", "sample": 0.32238},  # 48NV/68MHz
         "yellow_spin_pol": {"type": "constant", "sample": 0.44},  # 75 NVs

@@ -428,24 +428,24 @@ def main(nv_list, num_steps, num_reps, num_runs, min_tau=None, max_tau=None, tau
     dm.save_raw_data(raw_data, file_path)
 
     # creat fugure and save
-    raw_fig = None
-    try:
-        # raw_fig = create_raw_data_figure(raw_data)
-        fit_fig = create_fit_figure(raw_data)
-    except Exception:
-        print(traceback.format_exc())
-        # raw_fig = None
-        fit_fig = None
+    # raw_fig = None
+    # try:
+    #     # raw_fig = create_raw_data_figure(raw_data)
+    #     fit_fig = create_fit_figure(raw_data)
+    # except Exception:
+    #     print(traceback.format_exc())
+    #     # raw_fig = None
+    #     fit_fig = None
 
     ### Clean up and return
     tb.reset_cfm()
     kpl.show()
 
-    if raw_fig is not None:
-        dm.save_figure(raw_fig, file_path)
-    if fit_fig is not None:
-        file_path = dm.get_file_path(__file__, timestamp, repr_nv_name + "-fit")
-        dm.save_figure(fit_fig, file_path)
+    # if raw_fig is not None:
+    #     dm.save_figure(raw_fig, file_path)
+    # if fit_fig is not None:
+    #     file_path = dm.get_file_path(__file__, timestamp, repr_nv_name + "-fit")
+    #     dm.save_figure(fit_fig, file_path)
 
 
 if __name__ == "__main__":
