@@ -18,6 +18,7 @@ import time
 import traceback
 from dataclasses import fields
 from datetime import datetime
+from enum import Enum, auto
 from io import BytesIO
 from pathlib import Path
 
@@ -33,11 +34,17 @@ from PIL import Image
 from utils import common, widefield
 from utils.constants import NVSig
 
-USE_NEW_CLOUD = False  # by defualt box cloud
-if USE_NEW_CLOUD:
-    from utils import _cloudnew2 as cloud
-else:
-    from utils import _cloud as cloud
+
+class Backends(Enum):
+    NAS = auto()
+    BOX = auto()
+
+
+backend = Backends.NAS
+if backend == Backends.NAS:
+    from utils import _cloud_nas as cloud
+elif backend == Backends.BOX:
+    from utils import _cloud_box as cloud
 
 data_manager_folder = common.get_data_manager_folder()
 
