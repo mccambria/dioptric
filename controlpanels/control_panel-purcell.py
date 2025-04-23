@@ -22,6 +22,7 @@ import numpy as np
 from majorroutines import targeting
 from majorroutines.widefield import (
     ac_stark,
+    bootstrapped_pulse_error_tomography,
     calibrate_iq_delay,
     charge_monitor,
     charge_state_conditional_init,
@@ -411,6 +412,17 @@ def do_scc_snr_check(nv_list):
     # num_runs = 160 * 4
     # num_runs = 3
     scc_snr_check.main(nv_list, num_reps, num_runs, uwave_ind_list=[1])
+
+
+def do_bootstrapped_pulse_error_tomography(nv_list):
+    num_reps = 15
+    # num_runs = 600
+    # num_runs = 200
+    # num_runs = 160 * 4
+    num_runs = 1100
+    bootstrapped_pulse_error_tomography.main(
+        nv_list, num_reps, num_runs, uwave_ind_list=[1]
+    )
 
 
 def do_power_rabi(nv_list):
@@ -1435,9 +1447,10 @@ if __name__ == "__main__":
         # do_calibrate_green_red_delay()
 
         # do_spin_echo_phase_scan_test(nv_list)  # for iq mod test
+        do_bootstrapped_pulse_error_tomography(nv_list)
         # do_calibrate_iq_delay(nv_list)
 
-        do_rabi(nv_list)
+        # do_rabi(nv_list)
         # do_power_rabi(nv_list)
         # do_resonance(nv_list)
         # do_resonance_zoom(nv_list)
