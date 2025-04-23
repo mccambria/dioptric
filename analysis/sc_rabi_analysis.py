@@ -153,8 +153,8 @@ def plot_rabi_fits(
         Q1 = np.percentile(data, 25)
         Q3 = np.percentile(data, 75)
         IQR = Q3 - Q1
-        lower_bound = Q1 - 2 * IQR
-        upper_bound = Q3 + 2 * IQR
+        lower_bound = Q1 - 1.5 * IQR
+        upper_bound = Q3 + 1.5 * IQR
         return [val for val in data if lower_bound <= val <= upper_bound]
 
     filtered_rabi_periods = remove_outliers(rabi_periods)
@@ -176,16 +176,17 @@ def plot_rabi_fits(
 
     # Plotting
     fig, ax = plt.subplots(figsize=(6, 5))
-    ax.scatter(
-        filtered_rabi_periods,
-        np.abs(filtered_amps),
-        marker="o",
-        color="blue",
-        alpha=0.7,
-    )
-    ax.set_title("Rabi Period vs Amplitude", fontsize=15)
+    # ax.scatter(
+    #     filtered_rabi_periods,
+    #     np.abs(filtered_amps),
+    #     marker="o",
+    #     color="blue",
+    #     alpha=0.7,
+    # )
+    ax.hist(filtered_rabi_periods, bins=10)
+    ax.set_title("Rabi Periods (I-Channel)", fontsize=15)
     ax.set_xlabel("Rabi Period (ns)", fontsize=15)
-    ax.set_ylabel("Amplitude", fontsize=15)
+    ax.set_ylabel("Number of Occurance", fontsize=15)
     ax.tick_params(axis="both", labelsize=14)
     ax.grid(True)
     # plt.show()
@@ -337,7 +338,8 @@ if __name__ == "__main__":
 
     # After changing magnet postion
     file_id = 1832587019842  # 75NVs iq modulation both degenerate orientation
-    file_id = 1833635613442
+    # file_id = 1833635613442
+    # file_id = 1842383067959
     data = dm.get_raw_data(file_id=file_id, load_npz=False, use_cache=False)
     nv_list = data["nv_list"]
     taus = data["taus"]

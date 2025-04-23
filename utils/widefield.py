@@ -445,6 +445,30 @@ def process_multiple_files(file_ids):
     return combined_data
 
 
+# def process_multiple_files(file_ids):
+#     """
+#     Efficiently load and combine data from multiple file IDs.
+#     Assumes all files have the same shape for 'counts' except the run axis (axis=2).
+#     """
+#     all_counts = []
+#     combined_data = dm.get_raw_data(file_id=file_ids[0])
+#     all_counts.append(np.array(combined_data["counts"]))
+#     total_runs = combined_data["num_runs"]
+
+#     for file_id in file_ids[1:]:
+#         new_data = dm.get_raw_data(file_id)
+#         new_counts = np.array(new_data["counts"])
+#         total_runs += new_data["num_runs"]
+#         all_counts.append(new_counts)
+
+#     # Efficient concatenation
+#     combined_data["counts"] = np.concatenate(all_counts, axis=2)
+#     combined_data["num_runs"] = total_runs
+
+#     print(f"Combined shape: {combined_data['counts'].shape}")
+#     return combined_data
+
+
 def combined_filename(file_ids):
     all_file_ids_str = "_".join(map(str, file_ids))
     now = datetime.now()

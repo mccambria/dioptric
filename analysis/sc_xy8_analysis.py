@@ -1018,7 +1018,7 @@ if __name__ == "__main__":
     # norm_counts, norm_counts_ste = widefield.process_counts(
     #     nv_list, ref_counts, threshold=True
     # )
-    # process_and_plot_xy8(nv_list, taus, norm_counts, norm_counts_ste)
+    process_and_plot_xy8(nv_list, taus, norm_counts, norm_counts_ste)
     n_values, medians_by_n, all_T2s_by_n = fit_for_fixed_n_range(
         nv_list, taus, norm_counts, norm_counts_ste, n_values=[1, 2, 3, 4, 5, 6]
     )

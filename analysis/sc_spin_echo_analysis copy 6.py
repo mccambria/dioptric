@@ -11,6 +11,7 @@ import sys
 import time
 import traceback
 from datetime import datetime
+from matplotlib.ticker import FormatStrFormatter
 
 import matplotlib.pyplot as plt
 import numpy as np
@@ -400,7 +401,6 @@ def plot_analysis_parameters(meaningful_parameters):
 
 
 def plot_spin_echo_all(nv_list, taus, norm_counts, norm_counts_ste):
-    kpl.init_kplotlib()
     sns.set(style="whitegrid", palette="muted")
     num_nvs = len(nv_list)
     colors = sns.color_palette("deep", num_nvs)
@@ -447,24 +447,42 @@ def plot_spin_echo_all(nv_list, taus, norm_counts, norm_counts_ste):
         )
         # ax.legend(fontsize="xx-small")
         ax.grid(True, which="both", linestyle="--", linewidth=0.5)
-        ax.tick_params(labelleft=False)
+        # ax.tick_params(labelleft=False)
+        ax.yaxis.set_major_formatter(FormatStrFormatter("%.1f"))
+        ax.tick_params(axis="y", labelsize=8, direction="in", pad=-10)
+        for label in ax.get_yticklabels():
+            label.set_horizontalalignment("right")
+            label.set_x(0.02)  # Fine-tune this as needed
+            label.set_zorder(100)
+        # for col in range(num_cols):
+        #     bottom_row_idx = num_rows * num_cols - num_cols + col
+        #     if bottom_row_idx < len(axes):
+        #         ax = axes[bottom_row_idx]
+        #         tick_positions = np.linspace(min(taus) + 2, max(taus) - 2, 6)
+        #         ax.set_xticks(tick_positions)
+        #         ax.set_xticklabels(
+        #             [f"{tick:.2f}" for tick in tick_positions],
+        #             rotation=45,
+        #             fontsize=9,
+        #             y=0.00,
+        #         )
+        #         ax.set_xlim(min(taus), max(taus))
+        #         ax.set_xlabel("Time (µs)")
+        #     else:
+        #         ax.set_xticklabels([])
+    # Set xticks only for bottom row
 
     for col in range(num_cols):
         bottom_row_idx = num_rows * num_cols - num_cols + col
-        if bottom_row_idx < len(axes):
+        if bottom_row_idx < len(nv_list):
             ax = axes[bottom_row_idx]
             tick_positions = np.linspace(min(taus) + 2, max(taus) - 2, 6)
             ax.set_xticks(tick_positions)
             ax.set_xticklabels(
-                [f"{tick:.2f}" for tick in tick_positions],
-                rotation=45,
-                fontsize=9,
-                y=0.00,
+                [f"{tick:.2f}" for tick in tick_positions], rotation=45, fontsize=9
             )
-            ax.set_xlim(min(taus), max(taus))
             ax.set_xlabel("Time (µs)")
-        else:
-            ax.set_xticklabels([])
+
     fig.text(
         0.000,
         0.5,
@@ -473,7 +491,7 @@ def plot_spin_echo_all(nv_list, taus, norm_counts, norm_counts_ste):
         rotation="vertical",
         fontsize=12,
     )
-    fig.suptitle(f"Spin Echo {all_file_ids_str}", fontsize=12, y=0.99)
+    fig.suptitle(f"XY8 {all_file_ids_str}", fontsize=12, y=0.99)
     fig.tight_layout(pad=0.2, rect=[0.02, 0.01, 0.99, 0.99])
     kpl.show()
 
@@ -504,18 +522,18 @@ if __name__ == "__main__":
     # rubin75 NVs
     # file_ids = [1811334050314, 1811401206447, 1811464617147, 1811540653210]
     # rubin75 NVs after making both orientation degenerate
-    # file_ids = [1835778335625, 1836023279415]
-    # file_ids = [1837153340732, 1837462226158]  # 15us revival
-    # file_ids = [1839747727194, 1839907420053]  # 13us revial
-    # file_ids = [1839747727194, 1839907420053, 1837153340732, 1837462226158]  #
+    # file_ids = [1835778335625, 1836023279415] #
+    # file_ids = [1837153340732, 1837462226158, 1840851716659]  # 15us revival
+    # file_ids = [1839747727194, 1839907420053, 1840570618939]  # 13us revial
     # xy8
-    # file_ids = [1838226467730, 1838534721391]
-    # file_ids = [1839161749987, 1839342727027]
-    # file_ids = [1838226467730, 1838534721391]
-    file_ids = [1839161749987, 1839342727027, 1839161749987]
+    file_ids = [1838226467730, 1838534721391]  # 2us to 20us ) uniform spacing
+    # file_ids = [1839161749987, 1839342727027, 1841082599417]  # (2us to 20us )/ 2*8
+    # file_ids = [
+    #     1841472330271,
+    #     1841783840740,
+    #     1842055914148,
+    # ]  # (2us to 20us )/ 2*8 uniform spacing
 
-    file_ids = [1838226467730, 1838534721391]
-    # file_ids = [1839161749987, 1839342727027]  # 15 us reval
     all_file_ids_str = "_".join(map(str, file_ids))
     now = datetime.now()
     date_time_str = now.strftime("%Y%m%d_%H%M%S")
@@ -535,7 +553,7 @@ if __name__ == "__main__":
             "rabi_period"
         ]
         print(f"rabi freq:{rabi_feq}, rabi period: {rabi_period}")
-        total_evolution_times = 2 * np.array(taus) / 1e3
+        total_evolution_times = 2 * 8 * np.array(taus) / 1e3
         counts = np.array(data["counts"])
         sig_counts, ref_counts = counts[0], counts[1]
         norm_counts, norm_counts_ste = widefield.process_counts(
