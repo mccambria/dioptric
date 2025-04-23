@@ -22,6 +22,7 @@ import numpy as np
 from majorroutines import targeting
 from majorroutines.widefield import (
     ac_stark,
+    bootstrapped_pulse_error_tomography,
     calibrate_iq_delay,
     charge_monitor,
     charge_state_conditional_init,
@@ -413,6 +414,17 @@ def do_scc_snr_check(nv_list):
     scc_snr_check.main(nv_list, num_reps, num_runs, uwave_ind_list=[1])
 
 
+def do_bootstrapped_pulse_error_tomography(nv_list):
+    num_reps = 15
+    # num_runs = 600
+    # num_runs = 200
+    # num_runs = 160 * 4
+    num_runs = 1100
+    bootstrapped_pulse_error_tomography.main(
+        nv_list, num_reps, num_runs, uwave_ind_list=[1]
+    )
+
+
 def do_power_rabi(nv_list):
     num_reps = 10
     num_runs = 200
@@ -719,12 +731,18 @@ def do_xy(nv_list, xy_seq="xy8"):
 
 
 def do_xy8_uniform_revival_scan(nv_list, xy_seq="xy8-1"):
-    min_tau = 2e3
-    max_tau = 20e3
-    num_steps = 66
-    taus = np.linspace(min_tau, max_tau, num_steps)
+    T_min = 2e3  # ns, total evolution time (1 μs)
+    T_max = 20e3  # ns, total evolution time (20 μs)
+    N = 8  # XY8 has 8 π pulses
+    factor = 2 * N  # total time T = 2Nτ = 16τ
 
-    # Round to multiple of 4 ns (or your pulse time unit)
+    num_steps = 65
+    total_times = np.linspace(T_min, T_max, num_steps)
+
+    # Convert total evolution time to τ
+    taus = [T / factor for T in total_times]
+
+    # Round τ to 4 ns resolution
     taus = [round(tau / 4) * 4 for tau in taus]
     taus = sorted(set(taus))  # remove duplicates
 
@@ -733,7 +751,11 @@ def do_xy8_uniform_revival_scan(nv_list, xy_seq="xy8-1"):
     num_steps = len(taus)
     uwave_ind_list = [1]  # IQ-modulated channel index
 
-    for ind in range(2):
+    print(
+        f"[XY8 Uniform] Scanning {num_steps} τ values from {taus[0]} to {taus[-1]} ns"
+    )
+
+    for ind in range(3):
         xy.main(
             nv_list,
             num_steps,
@@ -759,12 +781,15 @@ def do_xy8_revival_scan(nv_list, xy_seq="xy8-1"):
     taus.extend((decay / factor).tolist())
 
     # Flat gap region
-    gap = np.linspace(min_total_time + revival_width, revival_time - revival_width, 6)
-    taus.extend((gap[1:-1] / factor).tolist())
+    # gap = np.linspace(min_total_time + revival_width, revival_time - revival_width, 6)
+    # taus.extend((gap[1:-1] / factor).tolist())
 
     # High-resolution scan across first revival
+    # revival_scan = np.linspace(
+    #     revival_time - revival_width, revival_time + revival_width, 51
+    # )
     revival_scan = np.linspace(
-        revival_time - revival_width, revival_time + revival_width, 51
+        min_total_time + revival_width, revival_time + revival_width, 51
     )
     taus.extend((revival_scan / factor).tolist())
 
@@ -1422,14 +1447,15 @@ if __name__ == "__main__":
         # do_calibrate_green_red_delay()
 
         # do_spin_echo_phase_scan_test(nv_list)  # for iq mod test
+        do_bootstrapped_pulse_error_tomography(nv_list)
         # do_calibrate_iq_delay(nv_list)
 
         # do_rabi(nv_list)
         # do_power_rabi(nv_list)
         # do_resonance(nv_list)
         # do_resonance_zoom(nv_list)
-        do_spin_echo(nv_list)
-        do_spin_echo_1(nv_list)
+        # do_spin_echo(nv_list)
+        # do_spin_echo_1(nv_list)
         # do_ramsey(nv_list)
 
         # do_simple_correlation_test(nv_list)
@@ -1444,7 +1470,7 @@ if __name__ == "__main__":
         # AVAILABLE_XY = ["hahn-n", "xy2-n", "xy4-n", "xy8-n", "xy16-n"]
         # do_xy(nv_list, xy_seq="xy8")
         # do_xy8_uniform_revival_scan(nv_list, xy_seq="xy8-1")
-        do_xy8_revival_scan(nv_list, xy_seq="xy8-1")
+        # do_xy8_revival_scan(nv_list, xy_seq="xy8-1")
 
         # for nv in nv_list:
         #     nv.spin_flip = False

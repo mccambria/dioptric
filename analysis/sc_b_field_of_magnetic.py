@@ -5,11 +5,25 @@ Created on March 23th, 2025
 @author: Saroj Chand
 """
 
-
-import numpy as np
 import matplotlib.pyplot as plt
-from scipy.optimize import minimize
-from itertools import combinations
+import numpy as np
+
+splittings = [68, 186]  # in MHz
+gamma_e = 2.8  # MHz/Gauss
+
+B_parallel_1 = 68 / (2 * gamma_e)  # = 68 / 5.6
+B_parallel_2 = 185 / (2 * gamma_e)  # = 186 / 5.6
+
+print(f"B_parallel 1: {B_parallel_1:.2f} G")
+print(f"B_parallel 2: {B_parallel_2:.2f} G")
+
+
+B1 = 68 / 5.6  # = 12.14 G
+B2 = 186 / 5.6  # = 33.21 G
+cos_theta = -1 / 3
+
+B_est = np.sqrt(B1**2 + B2**2 - 2 * B1 * B2 * cos_theta)
+print(f"Estimated |B| ≈ {B_est:.2f} G")
 
 # Magnetic Field vs. Distance
 B_current = 41.6  # Gauss
@@ -214,35 +228,15 @@ def estimate_field_exact_H(splittings_MHz, nv_axes):
     b_parallel = np.array(splittings_MHz) / (2 * 2.8)
     # B_init, _, _, _ = np.linalg.lstsq(nv_axes, b_parallel, rcond=None)
 
-    # result = minimize(
-    #     objective, B_init, args=(nv_axes, splittings_MHz), method="Nelder-Mead"
-    # )
-    from scipy.optimize import Bounds
+    # Solve the linear system: A·B = b
+    for ind in range(4):
+        test = [b[jnd] for jnd in range(4) if jnd != ind]
+        B_vec, _, _, _ = np.linalg.lstsq(nv_axes, test, rcond=None)
+        B_mag = np.linalg.norm(B_vec)
+        print(B_mag)
+        # print(np.matmul(nv_axes, B_vec) * (2 * gamma_e))
 
-    B_init = np.array([20, 30, 40])  # or from high-field estimate
-    # bounds = Bounds([-100, -100, -100], [100, 100, 100])
-    # result = minimize(
-    #     objective,
-    #     B_init,
-    #     args=(nv_axes, splittings_MHz),
-    #     bounds=bounds,
-    #     method="L-BFGS-B",
-    # )
-
-    bounds = Bounds([-150, -150, -150], [150, 150, 150])  # in Gauss
-
-    result = minimize(
-        objective,
-        B_init,
-        args=(nv_axes, splittings_MHz),
-        bounds=bounds,
-        method="L-BFGS-B",
-        options={"maxiter": 10000},
-    )
-
-    B_vec = result.x
-    B_mag = np.linalg.norm(B_vec)
-    return B_vec, B_mag, result.fun  # fun = final residual
+    return B_vec, B_mag
 
 
 # nv_axes = np.array(
