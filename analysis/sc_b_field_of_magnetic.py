@@ -5,10 +5,8 @@ Created on March 23th, 2025
 @author: Saroj Chand
 """
 
-
-import numpy as np
 import matplotlib.pyplot as plt
-
+import numpy as np
 
 splittings = [68, 186]  # in MHz
 gamma_e = 2.8  # MHz/Gauss
@@ -52,8 +50,12 @@ def estimate_magnetic_field_from_all_four(splittings_MHz):
     b = np.array(splittings_MHz) / (2 * gamma_e)
 
     # Solve the linear system: A·B = b
-    B_vec, _, _, _ = np.linalg.lstsq(nv_axes, b, rcond=None)
-    B_mag = np.linalg.norm(B_vec)
+    for ind in range(4):
+        test = [b[jnd] for jnd in range(4) if jnd != ind]
+        B_vec, _, _, _ = np.linalg.lstsq(nv_axes, test, rcond=None)
+        B_mag = np.linalg.norm(B_vec)
+        print(B_mag)
+        # print(np.matmul(nv_axes, B_vec) * (2 * gamma_e))
 
     return B_vec, B_mag
 
