@@ -227,4 +227,5 @@ if __name__ == "__main__":
     # avg_counts, avg_counts_ste = widefield.process_counts(counts)
     # raw_fig = create_raw_data_figure(nv_list, taus, avg_counts, avg_counts_ste)
     create_median_data_figure(data)
+    
     plt.show(block=True)
