@@ -415,14 +415,17 @@ def do_scc_snr_check(nv_list):
 
 
 def do_bootstrapped_pulse_error_tomography(nv_list):
-    num_reps = 15
-    # num_runs = 600
-    # num_runs = 200
-    # num_runs = 160 * 4
-    num_runs = 1100
-    bootstrapped_pulse_error_tomography.main(
-        nv_list, num_reps, num_runs, uwave_ind_list=[1]
-    )
+    num_reps = 11
+    num_runs = 200
+    # num_runs = 10
+    # num_runs = 1100
+    # bootstrapped_pulse_error_tomography.main(
+    #     nv_list, num_reps, num_runs, uwave_ind_list=[1]
+    # )
+    for _ in range(6):
+        bootstrapped_pulse_error_tomography.main(
+            nv_list, num_reps, num_runs, uwave_ind_list=[1]
+        )
 
 
 def do_power_rabi(nv_list):
@@ -1258,16 +1261,16 @@ if __name__ == "__main__":
     #     [227.438, 19.199],
     # ]
     # green_coords_list = [
-    #     [107.812, 107.76],
-    #     [118.121, 97.495],
-    #     [107.036, 118.377],
-    #     [96.826, 94.813],
+    #     [107.777, 107.721],
+    #     [118.12, 97.467],
+    #     [107.04, 118.366],
+    #     [96.822, 94.809],
     # ]
     # red_coords_list = [
-    #     [72.518, 73.264],
-    #     [80.699, 64.805],
-    #     [72.118, 81.91],
-    #     [63.279, 62.845],
+    #     [72.489, 73.232],
+    #     [80.697, 64.782],
+    #     [72.121, 81.901],
+    #     [63.276, 62.842],
     # ]
 
     num_nvs = len(pixel_coords_list)

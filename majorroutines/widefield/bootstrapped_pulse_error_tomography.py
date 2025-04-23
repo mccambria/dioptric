@@ -109,8 +109,10 @@ def main(nv_list, num_reps, num_runs, uwave_ind_list):
         "pi_2_X_pi_Y_pi_2_Y",
         "pi_2_Y_pi_Y_pi_2_X",
     ]
-    ### Collect the data
 
+    num_exps = len(seq_names) + 1  # last exp is reference
+
+    ### Collect the data
     def run_fn(shuffled_step_inds):
         seq_args = [
             widefield.get_base_scc_seq_args(nv_list, uwave_ind_list),
@@ -127,7 +129,7 @@ def main(nv_list, num_reps, num_runs, uwave_ind_list):
         num_runs,
         run_fn=run_fn,
         uwave_ind_list=uwave_ind_list,
-        save_images=False,
+        num_exps=num_exps,
         load_iq=True,
     )
 
