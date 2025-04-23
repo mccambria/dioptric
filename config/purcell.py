@@ -1,11 +1,10 @@
 # -*- coding: utf-8 -*-
 """
-Config file for the PC rabi
+Config file for the PC purcell
 
 Created July 20th, 2023
-
 @author: mccambria
-@author: saroj chand
+@author: sbchand
 """
 
 from pathlib import Path
@@ -35,19 +34,19 @@ red_laser_aod = "laser_COBO_638_aod"
 
 
 calibration_coords_pixel = [
-    [18.24, 9.848],
+    [27.44, 23.014],
     [108.384, 227.38],
     [227.438, 19.199],
 ]
 calibration_coords_green = [
-    [119.158, 96.062],
-    [107.057, 118.269],
-    [96.715, 94.724],
+    [118.121, 97.495],
+    [107.036, 118.377],
+    [96.826, 94.813],
 ]
 calibration_coords_red = [
-    [81.513, 63.628],
-    [72.133, 81.822],
-    [63.187, 62.774],
+    [80.699, 64.805],
+    [72.118, 81.91],
+    [63.279, 62.845],
 ]
 # Create the dictionaries using the provided lists
 calibration_coords_nv1 = {
@@ -68,11 +67,15 @@ calibration_coords_nv3 = {
     red_laser_aod: calibration_coords_red[2],
 }
 
-pixel_to_sample_affine_transformation_matrix = [
-    [-0.01472387, 0.00052569, 1.28717911],
-    [0.00040197, -0.01455135, 1.73876545],
-]
+# pixel_to_sample_affine_transformation_matrix = [
+#     [-0.01472387, 0.00052569, 1.28717911],
+#     [0.00040197, -0.01455135, 1.73876545],
+# ]
 
+pixel_to_sample_affine_transformation_matrix = [
+    [-0.01478989, -0.00127903, 3.85073374],
+    [0.00138559, -0.01471450, 5.74068819],
+]
 # endregion
 # region Base config
 # Add on to the default config
@@ -91,7 +94,8 @@ config |= {
         "aod_access_time": 11e3,  # access time in specs is 10us
         "widefield_operation_buffer": 1e3,
         "uwave_buffer": 16,
-        "iq_buffer": 100,
+        "iq_buffer": 16,  # SBC measured using NVs 4/18/2025
+        "iq_delay": 140,  # SBC measured using NVs 4/18/2025
     },
     ###
     "DeviceIDs": {
@@ -126,25 +130,29 @@ config |= {
             "sig_gen_TEKT_tsg4104a": {"delay": 57},
         },
         "iq_comp_amp": 0.5,
-        "iq_delay": 630,
+        "iq_delay": 140,  # SBC measured using NVs 4/18/2025
         "VirtualSigGens": {
             0: {
                 "physical_name": "sig_gen_STAN_sg394",
                 # "uwave_power": 2.3,
                 "uwave_power": 8.7,
-                "frequency": 2.779138,  # rubin shallow NVs O1 ms=-1
+                # "frequency": 2.779138,  # rubin shallow NVs O1 ms=-1
                 # "frequency": 2.909381,  # rubin shallow NV O3 ms=+1
+                "frequency": 2.730700,
                 "rabi_period": 128,
             },
             # sig gen 1 is iq molulated
             1: {
                 "physical_name": "sig_gen_STAN_sg394_2",
-                # "uwave_power": 8.3,
                 "uwave_power": 8.7,
+                # "uwave_power": 9.6,
                 # "frequency": 2.779138,   # rubin shallow NVs O1 ms=-1
                 # "frequency": 2.964545,  # rubin shallow NV O1 ms=+1
-                "frequency": 2.842478,  # rubin shallow NV O3 ms=-1
-                "rabi_period": 128,
+                # "frequency": 2.842478,  # rubin shallow NV O3 ms=-1
+                "frequency": 2.730700,  # lower esr peak for both orientation
+                # "rabi_period": 128,
+                # "rabi_period": 160,
+                "rabi_period": 176,
             },
         },
     },
@@ -164,7 +172,6 @@ config |= {
         # See camera server file for details
         "readout_mode": 1,  # 16 for double horizontal readout rate (em mode)
         # "readout_mode": 6,  # Fast conventional
-        # "roi": (121, 110, 250, 250),  # offsetX, offsetY, width, height"roi": (121, 110, 250, 250),  # offsetX, offsetY, width, height
         "roi": (134, 105, 250, 250),  # offsetX, offsetY, width, height
         # "roi": None,  # offsetX, offsetY, width, height
         "scale": 5 / 0.6,  # pixels / micron
@@ -351,6 +358,7 @@ rabi_period_1 = virtual_sig_gens_dict[1]["rabi_period"]
 ramp_to_zero_duration = 64
 virtual_lasers_dict = config["Optics"]["VirtualLasers"]
 iq_buffer = config["CommonDurations"]["iq_buffer"]
+iq_delay = config["CommonDurations"]["iq_delay"]
 
 opx_config = {
     "version": 1,
@@ -367,7 +375,7 @@ opx_config = {
                 7: {"offset": 0.0, "delay": 0},
                 8: {"offset": 0.0, "delay": 0},
                 9: {"offset": 0.0, "delay": 0},
-                10: {"offset": 0.0, "delay": 70},
+                10: {"offset": 0.0, "delay": 0},
             },
             "digital_outputs": {
                 1: {},  #
@@ -527,8 +535,6 @@ opx_config = {
                 "chan": {
                     "port": ("con1", 10),
                     "delay": 0,
-                    # "delay": config["Microwaves"]["sig_gen_0"]["iq_delay"]
-                    # + iq_buffer // 2,
                     "buffer": 0,
                 }
             },
@@ -540,10 +546,10 @@ opx_config = {
             },
         },
         "do_sig_gen_STAN_sg394_2_dm": {
-            # 230 ns I channel latency measured 3/26/25 MCC and Saroj
+            # 230 ns I channel latency measured 3/26/25 MCC and Saroj using oscilloscope
             "digitalInputs": {
-                "chan": {"port": ("con1", 9), "delay": 230, "buffer": 0}
-                # "chan": {"port": ("con1", 9), "delay": 230 + iq_buffer, "buffer": 0}
+                # "chan": {"port": ("con1", 9), "delay": 230, "buffer": 0}
+                "chan": {"port": ("con1", 9), "delay": iq_delay, "buffer": 0}
             },
             "operations": {
                 "iq_test": "do_iq_test",
@@ -836,11 +842,13 @@ opx_config = {
         # "yellow_charge_readout": {"type": "constant", "sample": 0.3472},  # 50ms 117NVs
         # "yellow_charge_readout": {"type": "constant", "sample": 0.3741},  # 50ms 117NVs
         # "yellow_charge_readout": {"type": "constant", "sample": 0.325},  # 100ms 117NVs
-        "yellow_charge_readout": {"type": "constant", "sample": 0.35240},  # 75NVs all
+        # "yellow_charge_readout": {"type": "constant", "sample": 0.37240},  # 150NVs all
+        # "yellow_charge_readout": {"type": "constant", "sample": 0.35736},  # 75NVs new
+        "yellow_charge_readout": {"type": "constant", "sample": 0.3600},  # 75NVs new
         # "yellow_charge_readout": {"type": "constant", "sample": 0.32350},  # 35NV/185MHz
         # "yellow_charge_readout": {"type": "constant", "sample": 0.32238},  # 48NV/68MHz
-        # "yellow_spin_pol": {"type": "constant", "sample": 0.44},  # 71 NVs
-        "yellow_spin_pol": {"type": "constant", "sample": 0.42},
+        "yellow_spin_pol": {"type": "constant", "sample": 0.44},  # 75 NVs
+        # "yellow_spin_pol": {"type": "constant", "sample": 0.42},
         "yellow_shelving": {"type": "constant", "sample": 0.33},
         # Other
         "aod_cw": {"type": "constant", "sample": 0.35},

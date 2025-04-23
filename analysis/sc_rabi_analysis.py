@@ -131,61 +131,66 @@ def plot_rabi_fits(
     """
     num_nvs = len(nv_list)
     taus = np.array(taus)
-    # # scatter rabi period
-    # epsilon = 1e-10
-    # rabi_periods = []
-    # amps = []
-    # for nv_ind in range(num_nvs):
-    #     popt = popts[nv_ind]
-    #     amp = popt[0]  # FIXED: Use actual amplitude
-    #     rabi_freq = popt[1]
+    # scatter rabi period
+    epsilon = 1e-10
+    rabi_periods = []
+    amps = []
+    for nv_ind in range(num_nvs):
+        popt = popts[nv_ind]
+        amp = popt[0]  # FIXED: Use actual amplitude
+        rabi_freq = popt[1]
 
-    #     if rabi_freq > epsilon:
-    #         rabi_period = 1 / rabi_freq
-    #         rabi_period = round(rabi_period / 4) * 4  # Keep nearest multiple of 4
-    #         rabi_periods.append(rabi_period)
-    #         amps.append(amp)
+        if rabi_freq > epsilon:
+            rabi_period = 1 / rabi_freq
+            rabi_period = round(rabi_period / 4) * 4  # Keep nearest multiple of 4
+            rabi_periods.append(rabi_period)
+            amps.append(amp)
 
-    # # print(f"Raw Rabi Periods: {rabi_periods}")
+    # print(f"Raw Rabi Periods: {rabi_periods}")
 
-    # # Remove outliers using IQR method
-    # def remove_outliers(data):
-    #     Q1 = np.percentile(data, 25)
-    #     Q3 = np.percentile(data, 75)
-    #     IQR = Q3 - Q1
-    #     lower_bound = Q1 - 1.5 * IQR
-    #     upper_bound = Q3 + 1.5 * IQR
-    #     return [val for val in data if lower_bound <= val <= upper_bound]
+    # Remove outliers using IQR method
+    def remove_outliers(data):
+        Q1 = np.percentile(data, 25)
+        Q3 = np.percentile(data, 75)
+        IQR = Q3 - Q1
+        lower_bound = Q1 - 2 * IQR
+        upper_bound = Q3 + 2 * IQR
+        return [val for val in data if lower_bound <= val <= upper_bound]
 
-    # filtered_rabi_periods = remove_outliers(rabi_periods)
-    # filtered_amps = remove_outliers(amps)
+    filtered_rabi_periods = remove_outliers(rabi_periods)
+    filtered_amps = remove_outliers(amps)
 
-    # print(f"Filtered Rabi Periods: {filtered_rabi_periods}")
-    # print(f"Median Rabi Periods: {np.median(filtered_rabi_periods)}")
-    # # print(f"Filtered Amplitudes: {filtered_amps}")
+    print(f"Filtered Rabi Periods: {filtered_rabi_periods}")
+    print(f"Median Rabi Periods: {np.median(filtered_rabi_periods)}")
+    # print(f"Filtered Amplitudes: {filtered_amps}")
 
-    # # Ensure lists remain the same length after filtering
-    # filtered_data = [
-    #     (rabi, amp)
-    #     for rabi, amp in zip(rabi_periods, amps)
-    #     if rabi in filtered_rabi_periods and amp in filtered_amps
-    # ]
-    # filtered_rabi_periods, filtered_amps = (
-    #     zip(*filtered_data) if filtered_data else ([], [])
-    # )
+    # Ensure lists remain the same length after filtering
+    filtered_data = [
+        (rabi, amp)
+        for rabi, amp in zip(rabi_periods, amps)
+        if rabi in filtered_rabi_periods and amp in filtered_amps
+    ]
+    filtered_rabi_periods, filtered_amps = (
+        zip(*filtered_data) if filtered_data else ([], [])
+    )
 
-    # # Plotting
-    # fig, ax = plt.subplots()
-    # ax.scatter(filtered_rabi_periods, filtered_amps, marker="o", color="b")  # FIXED
-    # ax.set_title("Rabi Period vs Amplitude")
-    # ax.set_xlabel("Rabi Period (ns)")
-    # ax.set_ylabel("Amplitude")
-    # ax.grid(True)
-
+    # Plotting
+    fig, ax = plt.subplots(figsize=(6, 5))
+    ax.scatter(
+        filtered_rabi_periods,
+        np.abs(filtered_amps),
+        marker="o",
+        color="blue",
+        alpha=0.7,
+    )
+    ax.set_title("Rabi Period vs Amplitude", fontsize=15)
+    ax.set_xlabel("Rabi Period (ns)", fontsize=15)
+    ax.set_ylabel("Amplitude", fontsize=15)
+    ax.tick_params(axis="both", labelsize=14)
+    ax.grid(True)
     # plt.show()
     for nv_ind in range(num_nvs):
         fig, ax = plt.subplots()
-
         # Scatter plot with error bars
         ax.errorbar(
             taus,
@@ -193,7 +198,6 @@ def plot_rabi_fits(
             yerr=np.abs(avg_counts_ste[nv_ind]),
             fmt="o",
         )
-
         # Plot the fitted curve if available
         tau_dense = np.linspace(0, taus.max(), 300)
         if fit_fns[nv_ind] is not None:
@@ -209,8 +213,8 @@ def plot_rabi_fits(
         ax.set_ylabel("Norm. NV- Population")
         ax.grid(True)
         fig.tight_layout()
-        # Save or show the plot
-        kpl.show(block=True)
+        plt.show(block=True)
+    # Save or show the plot
     # Print Rabi periods for each NV center
     # for i, popt in enumerate(popts):
     #     rabi_freq = popt[1]
@@ -220,6 +224,7 @@ def plot_rabi_fits(
     #     else:
     #         print(f"NV {nv_list[i]}: Invalid Rabi frequency (f = {rabi_freq})")
 
+    ### Plotiitg all NVs
     # num_rows = int(np.ceil(num_nvs / num_cols))
     # sns.set(style="whitegrid", palette="muted")
     # fig, axes = plt.subplots(
@@ -325,11 +330,14 @@ if __name__ == "__main__":
     # file_id = 1796958071866
     # file_id = 1795718888560
     # file_id = 1796958071866
-
     # 300 NVs
     # file_id = 1803593992080
     # file_id = 1804466558303
-    file_id = 1817818887926  # 75NVs iq modulation test 68Mhz orientation
+    # file_id = 1817818887926  # 75NVs iq modulation test 68Mhz orientation
+
+    # After changing magnet postion
+    file_id = 1832587019842  # 75NVs iq modulation both degenerate orientation
+    file_id = 1833635613442
     data = dm.get_raw_data(file_id=file_id, load_npz=False, use_cache=False)
     nv_list = data["nv_list"]
     taus = data["taus"]
@@ -342,7 +350,6 @@ if __name__ == "__main__":
     print(f"{file_name}_{file_id}")
     # Call to process Rabi data without normalization (can still perform fitting)
     fit_fns, popts = fit_rabi_data(nv_list, taus, avg_counts, avg_counts_ste)
-
     # Plotting without normalization
     plot_rabi_fits(
         nv_list,

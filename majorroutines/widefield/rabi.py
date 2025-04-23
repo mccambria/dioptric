@@ -246,7 +246,6 @@ def main(nv_list, num_steps, num_reps, num_runs, min_tau, max_tau, uwave_ind_lis
     taus = np.linspace(min_tau, max_tau, num_steps)
 
     ### Collect the data
-
     def run_fn(shuffled_step_inds):
         shuffled_taus = [taus[ind] for ind in shuffled_step_inds]
         seq_args = [

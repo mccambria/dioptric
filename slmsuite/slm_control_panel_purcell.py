@@ -291,7 +291,7 @@ def nuvu2thorcam_calibration(coords):
     )
 
     cal_coords_nuvu = np.array(
-        [[229.663, 11.772], [214.463, 241.439], [22.774, 112.453]], dtype="float32"
+        [[229.66, 11.725], [214.219, 241.037], [22.827, 111.972]], dtype="float32"
     )
 
     # Compute the affine transformation matrix
@@ -331,21 +331,12 @@ def load_nv_coords(
     spot_weights = data["updated_spot_weights"]
     # spot_weights = data["integrated_counts"]
     # print(len(spot_weights))
-    print(spot_weights)
+    print(f"spot_weights: {spot_weights}")
     # spot_weights = data["integrated_counts"]
     return nv_coordinates, spot_weights
 
 
-# Set the threshold for x and y coordinates, assuming the SLM has a 2048x2048 pixel grid
 nuvu_pixel_coords, spot_weights = load_nv_coords()
-# nuvu_pixel_coords = np.array(
-#     [
-#         [107.51, 120.42],
-#         [242.728, 64.946],
-#         [7.856, 74.462],
-#         [86.077, 231.364],
-#     ]
-# )
 print(f"Total NV coordinates: {len(nuvu_pixel_coords)}")
 thorcam_coords = nuvu2thorcam_calibration(nuvu_pixel_coords).T
 # sys.exit()
@@ -382,16 +373,7 @@ def compute_and_write_nvs_phase():
 
 
 def write_pre_computed_nvs_phase():
-    # phase = np.load("slmsuite\computed_phase\slm_phase_148nvs_20250203_171815.npy")
-    # phase = np.load("slmsuite\computed_phase\slm_phase_148nvs_20250203_171815.npy")
-    # phase = np.load(
-    #     "slmsuite\computed_phase\slm_phase_117nvs_20250119_152458.npy"
-    # )  # 117NVs weighted spots
-    # shallow NVs
-    # phase = np.load("slmsuite\computed_phase\slm_phase_75nvs_20250322_131455.npy")
-    phase = np.load("slmsuite\computed_phase\slm_phase_40nvs_20250404_225907.npy")
-    # phase = np.load("slmsuite\computed_phase\slm_phase_75nvs_20250322_140641.npy")
-    # phase = np.load("slmsuite\circles\slm_phase_circles_20250118_210419.npy")  # circles
+    phase = np.load("slmsuite\computed_phase\slm_phase_75nvs_20250416_175337.npy")
     slm.write(phase, settle=True)
     # cam_plot()
 
@@ -403,27 +385,6 @@ def save(data, path, filename):
     np.save(os.path.join(path, filename), data)
 
 
-# Replace with your SLM's serial number
-serial_number = "00429430"
-
-# try:
-#     print("Attempting to initialize ThorSLM...")
-#     slm = ThorSLM(serial_number)
-#     print("SLM successfully initialized!")
-
-#     print("SLM details:")
-#     print(f"Serial Number: {slm.serialNumber}")
-#     print(f"Device Handle: {slm.device_hdl}")
-#     print(f"Window Handle: {slm.window_hdl}")
-
-#     print("Closing SLM connection...")
-#     slm.close()
-#     print("SLM successfully closed!")
-
-# except Exception as e:
-#     print(f"Initialization failed: {e}")
-# sys.exit()
-# region run funtions
 try:
     slm = ThorSLM(serialNumber="00429430")
     cam = ThorCam(serial="26438", verbose=True)

@@ -147,10 +147,10 @@ if len(pixel_coords_list) >= 3:
     # New pixel coordinate for which we want to find the corresponding red coordinate
     new_pixel_coord = np.array(
         [
-            [107.726, 107.645],
-            [119.158, 96.062],
-            [107.057, 118.269],
-            [96.715, 94.724],
+            [107.812, 107.76],
+            [118.121, 97.495],
+            [107.036, 118.377],
+            [96.826, 94.813],
         ],
         dtype=np.float32,
     )
@@ -236,7 +236,7 @@ taus_x = np.linspace(1, len(taus), len(taus))
 plt.figure()
 plt.scatter(taus_x, taus)
 plt.show(block=True)
-sys.exit()
+# sys.exit()
 
 
 def generate_divisible_by_4(min_val, max_val, num_steps):
@@ -252,12 +252,13 @@ def generate_divisible_by_4(min_val, max_val, num_steps):
 
 
 # Example Usage
-min_duration = 20
-max_duration = 620
-num_steps = 22
+min_duration = 16
+max_duration = 400
+num_steps = 21
 
 step_values = generate_divisible_by_4(min_duration, max_duration, num_steps)
 print(step_values)
+print(len(step_values))
 
 sys.exit()
 # Updating plot with center frequencies in the legend

@@ -260,13 +260,12 @@ def main(
     num_steps,
     num_reps,
     num_runs,
-    freq_center,
-    freq_range,
-    uwave_ind_list=[0, 1],
+    freqs,
+    # uwave_ind_list=[0, 1],
+    uwave_ind_list=[1],
 ):
     ### Some initial setup
     pulse_gen = tb.get_server_pulse_gen()
-    freqs = calculate_freqs(freq_center, freq_range, num_steps)
     original_num_steps = num_steps
     num_steps *= 4  # For sig, ms=0 ref, and ms=+/-1 ref
 
@@ -294,9 +293,9 @@ def main(
             sig_gen.set_freq(freq)
             sig_gen.uwave_on()
 
-            uwave_ind = uwave_ind_list[1]
-            sig_gen = tb.get_server_sig_gen(uwave_ind)
-            sig_gen.uwave_off()
+            # uwave_ind = uwave_ind_list[1]
+            # sig_gen = tb.get_server_sig_gen(uwave_ind)
+            # sig_gen.uwave_off()
 
         elif step_ind < (3 / 4) * num_steps:  # ms=0 ref
             for uwave_ind in uwave_ind_list:
@@ -321,6 +320,7 @@ def main(
         save_images=False,
         num_exps=1,
         ref_by_rep_parity=False,
+        load_iq=True,
     )
 
     ### Process and plot
@@ -352,8 +352,8 @@ def main(
         "timestamp": timestamp,
         "freqs": freqs,
         "freq-units": "GHz",
-        "freq_range": freq_range,
-        "freq_center": freq_center,
+        # "freq_range": freq_range,
+        # "freq_center": freq_center,
     }
 
     repr_nv_sig = widefield.get_repr_nv_sig(nv_list)

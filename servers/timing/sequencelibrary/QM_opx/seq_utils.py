@@ -5,7 +5,8 @@ QM OPX sequence utils. Should only be used by sequence files
 Created June 25th, 2023
 
 @author: mccambria
-@author: Saroj Chand
+
+@author: sbchand
 """
 
 import logging
@@ -105,6 +106,7 @@ def macro_wait_for_trigger():
     dummy_element = "do_camera_trigger"
     qua.align()
     qua.wait_for_trigger(dummy_element)
+
 
 def macro_pause():
     """Pause the sequence and pass control back to the top-level routine for processing,
@@ -213,6 +215,7 @@ def macro_polarize(
     #     qua.align()
     #     qua.play("spin_pol", spin_pol_laser_el)
     #     qua.wait(buffer, spin_pol_laser_el)
+
 
 # SBC: spin polarization updates
 def macro_spin_polarize(duration: int = None, amp: float = None):

@@ -9,23 +9,18 @@ Created on December 22nd, 2024
 
 import sys
 import time
-from datetime import datetime
-
 import traceback
+from datetime import datetime
 
 import matplotlib.pyplot as plt
 import numpy as np
 import seaborn as sns
-from scipy.optimize import curve_fit
 from joblib import Parallel, delayed
+from scipy.optimize import curve_fit
 
 from utils import data_manager as dm
 from utils import kplotlib as kpl
 from utils import widefield as widefield
-
-import numpy as np
-import matplotlib.pyplot as plt
-
 
 # def revival_model(
 #     tau,
@@ -234,22 +229,6 @@ def generate_initial_guess_and_bounds_single(tau, counts):
     return initial_guess, bounds
 
 
-# Combine data from multiple file IDs
-def process_multiple_files(file_ids):
-    """
-    Load and combine data from multiple file IDs.
-
-    """
-    combined_data = dm.get_raw_data(file_id=file_ids[0])
-    for file_id in file_ids[1:]:
-        new_data = dm.get_raw_data(file_id=file_id)
-        combined_data["num_runs"] += new_data["num_runs"]
-        combined_data["counts"] = np.append(
-            combined_data["counts"], new_data["counts"], axis=2
-        )
-    return combined_data
-
-
 # Analyze and visualize spin echo data
 def fit_spin_echo(nv_list, taus, norm_counts, norm_counts_ste):
     num_nvs = len(nv_list)
@@ -432,7 +411,7 @@ def plot_spin_echo_all(nv_list, taus, norm_counts, norm_counts_ste):
     fig, axes = plt.subplots(
         num_rows,
         num_cols,
-        figsize=(num_cols * 2, num_rows * 1.5),
+        figsize=(num_cols * 1.5, num_rows * 3),
         sharex=True,
         sharey=False,
         constrained_layout=True,
@@ -456,7 +435,7 @@ def plot_spin_echo_all(nv_list, taus, norm_counts, norm_counts_ste):
             lw=0,
             marker="o",
             markersize=4,
-            label=f"NV {nv_idx}",
+            # label=f"NV {nv_idx}",
         )
         ax.errorbar(
             nv_tau,
@@ -466,7 +445,7 @@ def plot_spin_echo_all(nv_list, taus, norm_counts, norm_counts_ste):
             ecolor=colors[nv_idx % len(colors)],
             alpha=0.9,
         )
-        ax.legend(fontsize="xx-small")
+        # ax.legend(fontsize="xx-small")
         ax.grid(True, which="both", linestyle="--", linewidth=0.5)
         ax.tick_params(labelleft=False)
 
@@ -474,13 +453,15 @@ def plot_spin_echo_all(nv_list, taus, norm_counts, norm_counts_ste):
         bottom_row_idx = num_rows * num_cols - num_cols + col
         if bottom_row_idx < len(axes):
             ax = axes[bottom_row_idx]
-            tick_positions = np.linspace(min(taus), max(taus), 5)
+            tick_positions = np.linspace(min(taus) + 2, max(taus) - 2, 6)
             ax.set_xticks(tick_positions)
             ax.set_xticklabels(
                 [f"{tick:.2f}" for tick in tick_positions],
                 rotation=45,
                 fontsize=9,
+                y=0.00,
             )
+            ax.set_xlim(min(taus), max(taus))
             ax.set_xlabel("Time (µs)")
         else:
             ax.set_xticklabels([])
@@ -492,13 +473,8 @@ def plot_spin_echo_all(nv_list, taus, norm_counts, norm_counts_ste):
         rotation="vertical",
         fontsize=12,
     )
-    fig.suptitle("Spin Echo", fontsize=16)
-    # fig.set_constrained_layout(False)
-    # fig.subplots_adjust(left=0.01, right=0.98, top=0.99, bottom=0.08, hspace=0.01, wspace=0.01)
-    # fig.subplots_adjust(
-    #     left=0.01, right=0.99, top=0.99, bottom=0.01, hspace=0.000, wspace=0.000
-    # )
-    fig.tight_layout(pad=0.2, rect=[0.01, 0.01, 0.99, 0.99])
+    fig.suptitle(f"Spin Echo {all_file_ids_str}", fontsize=12, y=0.99)
+    fig.tight_layout(pad=0.2, rect=[0.02, 0.01, 0.99, 0.99])
     kpl.show()
 
 
@@ -524,9 +500,22 @@ if __name__ == "__main__":
     #     1734569197701,
     # ]
     # rubin75 NVs
-    file_ids = [1809864601542, 1810050697942, 1810230561491, 1810371359284]
+    # file_ids = [1809864601542, 1810050697942, 1810230561491, 1810371359284]
     # rubin75 NVs
     # file_ids = [1811334050314, 1811401206447, 1811464617147, 1811540653210]
+    # rubin75 NVs after making both orientation degenerate
+    # file_ids = [1835778335625, 1836023279415]
+    # file_ids = [1837153340732, 1837462226158]  # 15us revival
+    # file_ids = [1839747727194, 1839907420053]  # 13us revial
+    # file_ids = [1839747727194, 1839907420053, 1837153340732, 1837462226158]  #
+    # xy8
+    # file_ids = [1838226467730, 1838534721391]
+    # file_ids = [1839161749987, 1839342727027]
+    # file_ids = [1838226467730, 1838534721391]
+    file_ids = [1839161749987, 1839342727027, 1839161749987]
+
+    file_ids = [1838226467730, 1838534721391]
+    # file_ids = [1839161749987, 1839342727027]  # 15 us reval
     all_file_ids_str = "_".join(map(str, file_ids))
     now = datetime.now()
     date_time_str = now.strftime("%Y%m%d_%H%M%S")
@@ -538,25 +527,20 @@ if __name__ == "__main__":
     print(f"File path: {file_path}")
     # Process and analyze data from multiple files
     try:
-        data = process_multiple_files(file_ids)
+        data = widefield.process_multiple_files(file_ids)
         nv_list = data["nv_list"]
         taus = data["taus"]
+        rabi_feq = data["config"]["Microwaves"]["VirtualSigGens"][str(1)]["uwave_power"]
+        rabi_period = data["config"]["Microwaves"]["VirtualSigGens"][str(1)][
+            "rabi_period"
+        ]
+        print(f"rabi freq:{rabi_feq}, rabi period: {rabi_period}")
         total_evolution_times = 2 * np.array(taus) / 1e3
         counts = np.array(data["counts"])
         sig_counts, ref_counts = counts[0], counts[1]
-        # norm_counts, norm_counts_ste = widefield.process_counts(
-        #     nv_list, sig_counts, ref_counts, threshold=True
-        # )
-        # Process counts using widefield's process_counts function
-        sig_avg_counts, sig_avg_counts_ste = widefield.process_counts(
-            nv_list, sig_counts, threshold=False
+        norm_counts, norm_counts_ste = widefield.process_counts(
+            nv_list, sig_counts, ref_counts, threshold=True
         )
-        ref_avg_counts, ref_avg_counts_ste = widefield.process_counts(
-            nv_list, ref_counts, threshold=False
-        )
-        # Compute the difference between the states
-        norm_counts = sig_avg_counts - ref_avg_counts
-        norm_counts_ste = np.sqrt(sig_avg_counts_ste**2 + ref_avg_counts_ste**2)
         nv_num = len(nv_list)
         ids_num = len(file_ids)
         # fit_fns, popts = fit_spin_echo(

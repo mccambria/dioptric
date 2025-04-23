@@ -33,8 +33,8 @@ def get_seq(base_scc_seq_args, step_vals, xy_seq, num_reps=1):
     # step_vals = [
     #     seq_utils.convert_ns_to_cc(el) - macro_pi_pulse_duration for el in step_vals
     # ]
-    correction = macro_pi_pulse_duration + macro_pi_on_2_pulse_duration // 2
-    step_vals = [seq_utils.convert_ns_to_cc(el) - correction for el in step_vals]
+    # correction = macro_pi_pulse_duration + macro_pi_on_2_pulse_duration // 2
+    step_vals = [seq_utils.convert_ns_to_cc(el) for el in step_vals]
     # Choose pulse phase pattern
     phase_dict = {
         "hahn": [0],

@@ -5,7 +5,7 @@ Tools for managing our experimental database
 Created November 15th, 2023
 
 @author: mccambria
-@author: mccam
+@author:
 """
 
 # region Imports and constants
@@ -28,8 +28,16 @@ import ujson  # usjson is faster than standard json library
 from git import Repo
 from PIL import Image
 
-from utils import _cloud, common, widefield
+# from utils import _cloud as cloud
+# from utils import _cloudnew2 as cloud
+from utils import common, widefield
 from utils.constants import NVSig
+
+USE_NEW_CLOUD = False  # by defualt box cloud
+if USE_NEW_CLOUD:
+    from utils import _cloudnew2 as cloud
+else:
+    from utils import _cloud as cloud
 
 data_manager_folder = common.get_data_manager_folder()
 
@@ -107,7 +115,7 @@ def save_figure(fig, file_path):
     content = BytesIO()
     # fig.savefig(content, format=ext)
     fig.savefig(content, format=ext, dpi=300, bbox_inches="tight")
-    _cloud.upload(file_path_ext, content)
+    cloud.upload(file_path_ext, content)
 
 
 def save_raw_data(raw_data, file_path, keys_to_compress=None):
@@ -145,7 +153,7 @@ def save_raw_data(raw_data, file_path, keys_to_compress=None):
             content = BytesIO()
             np.savez_compressed(content, **kwargs)
             file_path_npz = file_path.with_suffix(".npz")
-            npz_file_id = _cloud.upload(file_path_npz, content)
+            npz_file_id = cloud.upload(file_path_npz, content)
             # Replace the value in the raw data with a string that tells us where
             # to find the compressed file
             for key in keys_to_compress:
@@ -172,7 +180,7 @@ def save_raw_data(raw_data, file_path, keys_to_compress=None):
             orjson.OPT_INDENT_2 | orjson.OPT_SERIALIZE_NUMPY | orjson.OPT_NON_STR_KEYS
         )
         content = orjson.dumps(raw_data, option=option)
-        file_id = _cloud.upload(file_path_txt, BytesIO(content))
+        file_id = cloud.upload(file_path_txt, BytesIO(content))
     except Exception:
         print(traceback.format_exc())
         # Save to local file instead
@@ -195,7 +203,7 @@ def get_file_name(file_id):
             cache_manifest = ujson.load(f)
         file_name = cache_manifest[file_id]
     except Exception:
-        _, _, file_name = _cloud.download(file_id=file_id)
+        _, _, file_name = cloud.download(file_id=file_id)
     return file_name
 
 
@@ -254,15 +262,9 @@ def get_raw_data(file_name=None, file_id=None, use_cache=True, load_npz=False):
 
         # Try to open the cached file
         try:
-            if file_id is None:
-                for key in cache_manifest.keys():
-                    if cache_manifest[key]["file_name"] == file_name:
-                        file_id = key
-            cache_entry = cache_manifest[file_id]
+            cache_entry = cache_manifest[file_name]
             # Only load from cache if we either don't need the npz or we already have it
             if not load_npz or cache_entry["load_npz"]:
-                if file_name is None:
-                    file_name = cache_entry["file_name"]
                 with open(data_manager_folder / f"{file_name}.txt", "rb") as f:
                     file_content = f.read()
                 data = orjson.loads(file_content)
@@ -274,7 +276,14 @@ def get_raw_data(file_name=None, file_id=None, use_cache=True, load_npz=False):
 
     if not retrieved_from_cache:
         # Download the base file
-        file_content, file_id, file_name = _cloud.download(file_name, "txt", file_id)
+        # file_content = cloud.download(file_name, "txt", file_id)
+        file_content_tuple = cloud.download(file_name, "txt", file_id)
+        # support both old (tuple) and new (bytes-only) formats
+        if isinstance(file_content_tuple, tuple):
+            file_content, file_id, file_name = file_content_tuple
+        else:
+            file_content = file_content_tuple
+
         data = orjson.loads(file_content)
 
         # Find and decompress the linked numpy arrays
@@ -288,7 +297,15 @@ def get_raw_data(file_name=None, file_id=None, use_cache=True, load_npz=False):
                     continue
                 first_part = val_split[0]
                 npz_file_id = first_part if first_part else None
-                npz_file_content, _, _ = _cloud.download(file_name, "npz", npz_file_id)
+                # npz_file_content, _, _ = cloud.download(file_name, "npz", npz_file_id)
+                npz_file_file_content_tuple = cloud.download(
+                    file_name, "npz", npz_file_id
+                )
+                if isinstance(npz_file_file_content_tuple, tuple):
+                    npz_file_content, file_id, file_name = npz_file_file_content_tuple
+                else:
+                    npz_file_content = npz_file_file_content_tuple
+
                 npz_data = np.load(BytesIO(npz_file_content))
                 data |= npz_data
                 break
@@ -300,18 +317,20 @@ def get_raw_data(file_name=None, file_id=None, use_cache=True, load_npz=False):
         if not retrieved_from_cache:
             if cache_manifest is None:
                 cache_manifest = {}
-            cached_file_ids = list(cache_manifest.keys())
+            cached_file_names = list(cache_manifest.keys())
             # Add the new file to the manifest
-            cache_manifest[file_id] = {"file_name": file_name, "load_npz": load_npz}
-            cached_file_ids.append(file_id)
-            while len(cached_file_ids) > 10:
-                file_id_to_remove = cached_file_ids.pop(0)
-                file_name_to_remove = cache_manifest[file_id_to_remove]["file_name"]
-                del cache_manifest[file_id_to_remove]
-                os.remove(data_manager_folder / f"{file_name_to_remove}.txt")
+            cache_manifest[file_name] = {"file_id": file_id, "load_npz": load_npz}
+            cached_file_names.append(file_name)
+            while len(cached_file_names) > 10:
+                file_name_to_remove = cached_file_names.pop(0)
+                del cache_manifest[file_name_to_remove]
+                file_to_remove = data_manager_folder / f"{file_name_to_remove}.txt"
+                if file_to_remove.exists():
+                    os.remove(file_to_remove)
+                # os.remove(data_manager_folder / f"{file_name_to_remove}.txt")
             cache_manifest_updated = True
         if cache_manifest_updated:
-            with open(data_manager_folder / "cache_manifest.txt", "w") as f:
+            with open(data_manager_folder / "cache_manifest.txt", "w+") as f:
                 ujson.dump(cache_manifest, f, indent=2)
 
         # Write the actual data file to the cache
@@ -400,7 +419,7 @@ def get_raw_data(file_name=None, file_id=None, use_cache=True, load_npz=False):
 
 #     # If not in cache, download from the cloud
 #     if not retrieved_from_cache:
-#         file_content, file_id, file_name = _cloud.download(file_name, "txt", file_id)
+#         file_content, file_id, file_name = cloud.download(file_name, "txt", file_id)
 #         data = orjson.loads(file_content)
 
 #     # Load and process .npz files if required
@@ -415,7 +434,7 @@ def get_raw_data(file_name=None, file_id=None, use_cache=True, load_npz=False):
 
 #             npz_file_id = npz_file_name.split(".")[0] if npz_file_name else None
 #             try:
-#                 npz_file_content, _, _ = _cloud.download(file_name, "npz", npz_file_id)
+#                 npz_file_content, _, _ = cloud.download(file_name, "npz", npz_file_id)
 #                 npz_data = np.load(BytesIO(npz_file_content), allow_pickle=True)
 
 #                 # Convert NumPy arrays to lists for JSON serialization
@@ -447,7 +466,13 @@ def get_raw_data(file_name=None, file_id=None, use_cache=True, load_npz=False):
 
 
 def get_img(file_name=None, ext=None, file_id=None):
-    file_content, file_id, file_name = _cloud.download(file_name, ext, file_id)
+    # file_content, file_id, file_name = cloud.download(file_name, ext, file_id)
+    file_content_tuple = cloud.download(file_name, ext, file_id)
+    if isinstance(file_content_tuple, tuple):
+        file_content, file_id, file_name = file_content_tuple
+    else:
+        file_content = file_content_tuple
+
     img = Image.open(io.BytesIO(file_content))
     img = np.asarray(img)
     return np.asarray(img)
@@ -534,10 +559,10 @@ def _json_escape(raw_data):
 
 
 if __name__ == "__main__":
-    file_path = data_manager_folder / "test"
-    file_path_txt = file_path.with_suffix(".txt")
-    raw_data = get_raw_data(file_id=1475961484392)
-    option = orjson.OPT_INDENT_2 | orjson.OPT_SERIALIZE_NUMPY | orjson.OPT_NON_STR_KEYS
-    content = orjson.dumps(raw_data, option=option)
-    with open(data_manager_folder / file_path_txt.name, "wb") as f:
-        f.write(content)
+    file_name = "2025_03_14-11_57_49-rubin-nv0_2025_02_26"
+    data = get_raw_data(file_name, use_cache=True, load_npz=False)
+    # timestamp = get_time_stamp()
+    # repr_nv_name = "testing"
+    # file_path = get_file_path(__file__, timestamp, repr_nv_name)
+    # save_raw_data(data, file_path)
+    debu = 0

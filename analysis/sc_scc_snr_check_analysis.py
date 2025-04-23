@@ -364,11 +364,13 @@ def process_and_plot(data):
         capsize=3,
         label=f"SNR (Median: {median})",
     )
-    plt.title("SNR vs. Distance")
-    plt.xlabel("Distance from Center Red AOD Freq (MHz)")
-    plt.ylabel("SNR")
+    plt.title("SNR vs. Distance", fontsize=15)
+    plt.xlabel("Distance from Center Red AOD Freq (MHz)", fontsize=15)
+    plt.ylabel("SNR", fontsize=15)
+    plt.xticks(fontsize=15)
+    plt.yticks(fontsize=15)
     plt.grid(True)
-    plt.legend()
+    plt.legend(fontsize=11)
     plt.show()
 
     return df
@@ -402,6 +404,21 @@ if __name__ == "__main__":
     # otu of 75 NVs these are NVs selected based on orientation
     # file_id = 1819822931940  # 185MHz splitting
     file_id = 1819995258302  # 68MHz splitting
+
+    # after making both orientation degenerate
+    # file_id = 1832307679039
+    # file_id = 1832324663858
+    file_id = 1832404389063
+    file_id = 1832798159468  # 176ns
+    file_id = 1832817621548  # 192ns
+    file_id = 1833844818805  # 176ns
+    # file_id = 1833871660179
+    # file_id = 1834116721897
+    file_id = 1834252235587
+    file_id = 1836504855692
+    file_id = 1840088912512
+    file_id = 1840125164899
+    # file_id = 1840156737057
 
     data = dm.get_raw_data(file_id=file_id)
     file_name = dm.get_file_name(file_id=file_id)

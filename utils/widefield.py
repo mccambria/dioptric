@@ -418,7 +418,7 @@ def process_counts(nv_list, sig_counts, ref_counts=None, threshold=True):
     norms_ms0_newaxis = norms[0][:, np.newaxis]
     norms_ms1_newaxis = norms[1][:, np.newaxis]
     contrast = norms_ms1_newaxis - norms_ms0_newaxis
-    # contrast = np.where(contrast > 0.03, contrast, 0.03)
+    contrast = np.where(contrast > 0.03, contrast, 0.03)
     norm_counts = (avg_counts - norms_ms0_newaxis) / contrast
     norm_counts_ste = avg_counts_ste / contrast
 
@@ -454,6 +454,54 @@ def combined_filename(file_ids):
         __file__, file_name, f"{all_file_ids_str}_{date_time_str}"
     )
     return file_path, all_file_ids_str
+
+
+def parse_xy_sequence(seq_name: str):
+    """
+    Parses sequence names like 'xy8' or 'xy8-2' into base sequence and number of blocks (N).
+    Returns (base_seq, N, total_pulses, total_evolution_time_units).
+    """
+    # Comprehensive code to parse XY sequence strings (e.g., 'xy8', 'xy8-2')
+    # and calculate key sequence parameters.
+    available = ["hahn-n", "xy2-n", "xy4-n", "xy8-n", "xy16-n"]
+    # Default values
+    default_seq = "xy8"
+    default_n = 1
+    seq_name = seq_name.lower().strip()
+    base_seq, N = default_seq, default_n
+
+    # Try to parse the sequence string
+    if "-" in seq_name:
+        base_seq, n_str = seq_name.split("-", 1)
+        try:
+            N = int(n_str)
+        except ValueError:
+            print(f"Invalid N in '{seq_name}'. Defaulting to N={default_n}.")
+            base_seq = default_seq
+    else:
+        base_seq = seq_name
+
+    # Check if it's allowed
+    if f"{base_seq}-n" not in available:
+        print(
+            f"Sequence '{base_seq}' not recognized. Defaulting to '{default_seq}-{default_n}'."
+        )
+        base_seq = default_seq
+        N = default_n
+
+    # Define pulses per block for each sequence type
+    pulses_per_block = {
+        "hahn": 1,
+        "xy2": 2,
+        "xy4": 4,
+        "xy8": 8,
+        "xy16": 16,
+    }
+    pulses_per = pulses_per_block.get(base_seq, 8)  # Default to xy8 if unknown
+
+    N = pulses_per * N
+
+    return base_seq, N
 
 
 def threshold_counts_selected_method(
@@ -952,6 +1000,18 @@ def generate_log_spaced_taus(min_tau, max_tau, num_steps, base=4):
     taus = np.logspace(np.log10(min_tau), np.log10(max_tau), num_steps)
     taus = np.floor(taus / base) * base
     return taus
+
+
+# Power equation constants for yellow aom
+a, b, c = 161266.751, 6.617, -19.492
+
+
+def power_from_voltage(v):
+    return a * v**b + c
+
+
+def voltage_from_power(p):
+    return ((p - c) / a) ** (1 / b)
 
 
 # endregion

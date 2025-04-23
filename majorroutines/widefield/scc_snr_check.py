@@ -39,16 +39,6 @@ def process_and_plot(data):
 
     ### Report the results
 
-    # Include this block if the ref shots measure both ms=0 and ms=+/-1
-    # avg_sig_counts, avg_sig_counts_ste, norms = widefield.average_counts(
-    #     sig_counts, ref_counts
-    # )
-    # norms_ms0_newaxis = norms[0][:, np.newaxis]
-    # norms_ms1_newaxis = norms[1][:, np.newaxis]
-    # contrast = norms_ms1_newaxis - norms_ms0_newaxis
-    # norm_counts = (avg_sig_counts - norms_ms0_newaxis) / contrast
-    # norm_counts_ste = avg_sig_counts_ste / contrast
-
     avg_sig_counts, avg_sig_counts_ste, _ = widefield.average_counts(sig_counts)
     avg_ref_counts, avg_ref_counts_ste, _ = widefield.average_counts(ref_counts)
 
@@ -127,9 +117,6 @@ def process_and_plot(data):
 def main(nv_list, num_reps, num_runs, uwave_ind_list=[0, 1]):
     ### Some initial setup
     num_steps = 1
-    # uwave_ind_list = [0]
-    # uwave_ind_list = [1]
-    # uwave_ind_list = [0, 1]
 
     seq_file = "scc_snr_check.py"
     pulse_gen = tb.get_server_pulse_gen()
@@ -138,13 +125,11 @@ def main(nv_list, num_reps, num_runs, uwave_ind_list=[0, 1]):
         seq_args = [
             widefield.get_base_scc_seq_args(nv_list, uwave_ind_list),
         ]
-
         # print(seq_args)
         seq_args_string = tb.encode_seq_args(seq_args)
         pulse_gen.stream_load(seq_file, seq_args_string, num_reps)
 
     ### Collect the data
-
     data = base_routine.main(
         nv_list,
         num_steps,
