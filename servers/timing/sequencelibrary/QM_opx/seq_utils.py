@@ -12,8 +12,10 @@ Created June 25th, 2023
 import logging
 import time
 from functools import cache
+
 import numpy as np
 from qm import qua
+
 from utils import common
 from utils import positioning as pos
 from utils import tool_belt as tb
@@ -392,21 +394,26 @@ def _macro_uwave_pulse(
     if uwave_ind_list is None:
         return
 
-    uwave_buffer = get_uwave_buffer()
     iq_buffer = get_iq_buffer()
-
     for uwave_ind in uwave_ind_list:
-        sig_gen_el = get_sig_gen_element(uwave_ind)
+        # List of elements controlling this specific transition
+        elements = []
+        # Phase component calculations
         if phase is not None:
             i_el = get_sig_gen_i_element(uwave_ind)
             q_el = get_sig_gen_q_element(uwave_ind)
+            elements += [i_el, q_el]
             if np.isscalar(phase):
                 phase = qua.declare(qua.fixed, phase)
             i_comp = qua.Math.cos(phase) * amp
             q_comp = qua.Math.sin(phase) * amp
 
-        qua.align()
+        sig_gen_el = get_sig_gen_element(uwave_ind)
+        elements.append(sig_gen_el)
 
+        qua.align(*elements)
+
+        # Default duration
         if duration_cc is None:
             if phase is not None:
                 qua.play(pulse_name * qua.amp(i_comp), i_el)
@@ -414,6 +421,7 @@ def _macro_uwave_pulse(
                 qua.wait(iq_buffer, sig_gen_el)
             qua.play(pulse_name, sig_gen_el)
 
+        # Passed duration
         else:
             with qua.if_(duration_cc > 0):
                 if phase is not None:
@@ -431,8 +439,7 @@ def _macro_uwave_pulse(
                     qua.wait(iq_buffer, sig_gen_el)
                 qua.play(pulse_name, sig_gen_el, duration=duration_cc)
 
-        qua.align()
-        qua.wait(uwave_buffer, sig_gen_el)
+        qua.align(*elements)
 
 
 def macro_run_aods(

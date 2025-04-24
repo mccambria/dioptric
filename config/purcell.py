@@ -583,6 +583,30 @@ opx_config = {
                 "pi_on_2_pulse": "ao_iq_pi_on_2_pulse_1",
             },
         },
+        "ao_sig_gen_STAN_sg394_i": {
+            "singleInput": {"port": ("con1", 5)},
+            "intermediate_frequency": 0,
+            # "sticky": {"analog": True, "duration": ramp_to_zero_duration},
+            "operations": {
+                "iq_test": "iq_test",
+                "on": "ao_cw",
+                "off": "ao_off",
+                "pi_pulse": "ao_iq_pi_pulse_0",
+                "pi_on_2_pulse": "ao_iq_pi_on_2_pulse_0",
+            },
+        },
+        "ao_sig_gen_STAN_sg394_q": {
+            "singleInput": {"port": ("con1", 8)},
+            "intermediate_frequency": 0,
+            # "sticky": {"analog": True, "duration": ramp_to_zero_duration},
+            "operations": {
+                "iq_test": "iq_test",
+                "on": "ao_cw",
+                "off": "ao_off",
+                "pi_pulse": "ao_iq_pi_pulse_0",
+                "pi_on_2_pulse": "ao_iq_pi_on_2_pulse_0",
+            },
+        },
         "do_camera_trigger": {
             "digitalInputs": {"chan": {"port": ("con1", 5), "delay": 0, "buffer": 0}},
             "sticky": {
@@ -730,6 +754,16 @@ opx_config = {
         "iq_test": {
             "operation": "control",
             "length": 10000,
+            "waveforms": {"single": "cw"},
+        },
+        "ao_iq_pi_pulse_0": {
+            "operation": "control",
+            "length": int(rabi_period_0 / 2) + 2 * iq_buffer,
+            "waveforms": {"single": "cw"},
+        },
+        "ao_iq_pi_on_2_pulse_0": {
+            "operation": "control",
+            "length": int(rabi_period_0 / 4) + 2 * iq_buffer,
             "waveforms": {"single": "cw"},
         },
         "ao_iq_pi_pulse_1": {

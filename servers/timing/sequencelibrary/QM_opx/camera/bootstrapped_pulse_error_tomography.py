@@ -36,6 +36,11 @@ def get_seq(base_scc_seq_args, seq_names, num_reps=1):
         "pi_2_Y_pi_X_pi_2_X": [("pi/2", np.pi / 2), ("pi", 0), ("pi/2", 0)],
         "pi_2_X_pi_Y_pi_2_Y": [("pi/2", 0), ("pi", np.pi / 2), ("pi/2", np.pi / 2)],
         "pi_2_Y_pi_Y_pi_2_X": [("pi/2", np.pi / 2), ("pi", np.pi / 2), ("pi/2", 0)],
+        "pi_2_Y_pi_X_pi_2_Y": [
+            ("pi/2", np.pi / 2),
+            ("pi", 0),
+            ("pi/2", np.pi / 2),
+        ],  # test
     }
 
     with qua.program() as seq:
@@ -54,16 +59,12 @@ def get_seq(base_scc_seq_args, seq_names, num_reps=1):
                     uwave_ind_list, step_val, pulses=pulses
                 ):  # bind pulse sequence
                     for kind, phase in pulses:
-                        amp_corr, phase_corr = correct_pulse_params(kind)
-                        corrected_phase = phase + phase_corr
+                        # amp_corr, phase_corr = correct_pulse_params(kind)
+                        # corrected_phase = phase + phase_corr
                         if kind == "pi/2":
-                            seq_utils.macro_pi_on_2_pulse(
-                                uwave_ind_list, phase=corrected_phase, amp=amp_corr
-                            )
+                            seq_utils.macro_pi_on_2_pulse(uwave_ind_list, phase=phase)
                         elif kind == "pi":
-                            seq_utils.macro_pi_pulse(
-                                uwave_ind_list, phase=corrected_phase, amp=amp_corr
-                            )
+                            seq_utils.macro_pi_pulse(uwave_ind_list, phase=phase)
                     qua.wait(buffer)
 
                 return macro_fn
@@ -108,9 +109,10 @@ if __name__ == "__main__":
                 [40, 88],
                 [1.0, 1.0],
                 [False, False],
-                [1],
+                [0],
             ],
             [
+                "pi_2_Y_pi_X_pi_2_Y",  # created for test
                 "pi_2_X",
                 "pi_2_Y",
                 "pi_2_X_pi_X",
@@ -127,7 +129,7 @@ if __name__ == "__main__":
             1,
         )
 
-        sim_config = SimulationConfig(duration=int(100e3 / 4))
+        sim_config = SimulationConfig(duration=int(50e3 / 4))
         sim = opx.simulate(seq, sim_config)
         samples = sim.get_simulated_samples()
         samples.con1.plot()
