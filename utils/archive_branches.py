@@ -127,9 +127,10 @@ if __name__ == "__main__":
 
     # List of branches to archive
     branches_to_archive = [
-        "branch",
+        "mcc_nas",
+        "nasbranch",
     ]
 
-    skip_merged_check = True
+    skip_merged_check = False
 
     main(repo_path, branches_to_archive, skip_merged_check)
