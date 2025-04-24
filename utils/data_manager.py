@@ -17,7 +17,7 @@ import socket
 import time
 import traceback
 from dataclasses import fields
-from datetime import datetime
+from datetime import datetime, timezone
 from enum import Enum, auto
 from io import BytesIO
 from pathlib import Path
@@ -29,21 +29,19 @@ import ujson  # usjson is faster than standard json library
 from git import Repo
 from PIL import Image
 
-# from utils import _cloud as cloud
-# from utils import _cloudnew2 as cloud
 from utils import common, widefield
 from utils.constants import NVSig
 
 
-class Backends(Enum):
+class CloudBackends(Enum):
     NAS = auto()
     BOX = auto()
 
 
-backend = Backends.NAS
-if backend == Backends.NAS:
+cloud_backend = CloudBackends.NAS
+if cloud_backend == CloudBackends.NAS:
     from utils import _cloud_nas as cloud
-elif backend == Backends.BOX:
+elif cloud_backend == CloudBackends.BOX:
     from utils import _cloud_box as cloud
 
 data_manager_folder = common.get_data_manager_folder()
@@ -147,7 +145,7 @@ def save_raw_data(raw_data, file_path, keys_to_compress=None):
     file_path_txt = file_path.with_suffix(".txt")
 
     # Work with a copy of the raw data to avoid mutation
-    # raw_data = copy.deepcopy(raw_data)
+    raw_data = copy.deepcopy(raw_data)
 
     # Compress numpy arrays to linked file
     try:
@@ -214,19 +212,16 @@ def get_file_name(file_id):
     return file_name
 
 
-def get_raw_data(file_name=None, file_id=None, use_cache=True, load_npz=False):
+def get_raw_data(file_name, use_cache=True, load_npz=False):
     """Returns a dictionary containing the json object from the specified
     raw data file
 
     Parameters
     ----------
-    file_name : str, optional
-        Name of the raw data file to load, w/o extension. If file_name is passed,
-        file_id is None, and the file is not in the cache, then we'll identify
-        the proper file by searching the cloud for it. By default None
-    file_id : str, optional
-        Cloud ID of the file to load. Loaded directly from the cloud or cache, no
-        search necessary. By default None
+    file_name : str or list(str)
+        Name of the raw data file to load, w/o extension. File names are unique
+        so it is not necessary to specify a folder. If list, then data in each
+        file will be concatenated into one larger object
     use_cache : bool, optional
         Whether or not to use the cache. If True, we'll try to pull the file from
         the cache - if it's not there already we'll add it to the cache. Otherwise
@@ -243,18 +238,16 @@ def get_raw_data(file_name=None, file_id=None, use_cache=True, load_npz=False):
         Dictionary containing the json object from the specified raw data file
     """
 
-    # Recurse if multiple file_ids passed
-    if isinstance(file_id, (list, tuple)):
-        file_ids = file_id
-        data = get_raw_data(file_id=file_ids[0])
-        for file_id in file_ids[1:]:
-            new_data = get_raw_data(file_id=file_id)
+    ### Recurse if multiple files passed
+
+    if isinstance(file_name, (list, tuple)):
+        file_names = file_name
+        data = get_raw_data(file_id=file_names[0])
+        for file_name in file_names[1:]:
+            new_data = get_raw_data(file_name)
             data["num_runs"] += new_data["num_runs"]
             data["counts"] = np.append(data["counts"], new_data["counts"], axis=2)
         return data
-
-    if file_id is not None:
-        file_id = str(file_id)
 
     ### Check the cache first
 
@@ -316,6 +309,7 @@ def get_raw_data(file_name=None, file_id=None, use_cache=True, load_npz=False):
                 npz_data = np.load(BytesIO(npz_file_content))
                 data |= npz_data
                 break
+
     ### Add to cache and return the data
 
     # Update the cache manifest
@@ -366,131 +360,14 @@ def get_raw_data(file_name=None, file_id=None, use_cache=True, load_npz=False):
     #     data["nv_list"] = nv_list
 
     # return data
-
-
-# from io import BytesIO
-
-# import numpy as np
-# import orjson
-# import ujson
-
-
-# def get_raw_data(file_name=None, file_id=None, use_cache=True, load_npz=False):
-#     """Returns a dictionary containing the JSON object from the specified raw data file,
-#     correctly loading NumPy `.npz` files and converting arrays to lists.
-
-#     Parameters
-#     ----------
-#     file_name : str, optional
-#         Name of the raw data file to load, w/o extension.
-#     file_id : str, optional
-#         Cloud ID of the file to load.
-#     use_cache : bool, optional
-#         Whether or not to use the cache.
-#     load_npz: bool, optional
-#         Whether or not to retrieve any linked compressed numpy files.
-
-#     Returns
-#     -------
-#     dict
-#         Dictionary containing the JSON object with NumPy arrays properly converted.
-#     """
-
-#     if file_id is not None:
-#         file_id = str(file_id)
-
-#     # Attempt to load from cache
-#     retrieved_from_cache = False
-#     if use_cache:
-#         try:
-#             with open(data_manager_folder / "cache_manifest.txt") as f:
-#                 cache_manifest = ujson.load(f)
-#         except Exception:
-#             cache_manifest = None
-
-#         try:
-#             if file_id is None:
-#                 for key in cache_manifest.keys():
-#                     if cache_manifest[key]["file_name"] == file_name:
-#                         file_id = key
-#             cache_entry = cache_manifest[file_id]
-#             if not load_npz or cache_entry["load_npz"]:
-#                 if file_name is None:
-#                     file_name = cache_entry["file_name"]
-#                 with open(data_manager_folder / f"{file_name}.txt", "rb") as f:
-#                     file_content = f.read()
-#                 data = orjson.loads(file_content)
-#                 retrieved_from_cache = True
-#         except Exception:
-#             pass
-
-#     # If not in cache, download from the cloud
-#     if not retrieved_from_cache:
-#         file_content, file_id, file_name = cloud.download(file_name, "txt", file_id)
-#         data = orjson.loads(file_content)
-
-#     # Load and process .npz files if required
-#     if load_npz:
-#         npz_keys_to_load = []
-#         for key, val in data.items():
-#             if isinstance(val, str) and val.endswith(".npz"):
-#                 npz_keys_to_load.append((key, val))
-
-#         for key, npz_file_name in npz_keys_to_load:
-#             print(f"Loading NPZ file: {npz_file_name} for key: {key}")
-
-#             npz_file_id = npz_file_name.split(".")[0] if npz_file_name else None
-#             try:
-#                 npz_file_content, _, _ = cloud.download(file_name, "npz", npz_file_id)
-#                 npz_data = np.load(BytesIO(npz_file_content), allow_pickle=True)
-
-#                 # Convert NumPy arrays to lists for JSON serialization
-#                 data[key] = {
-#                     k: v.tolist() if isinstance(v, np.ndarray) else v
-#                     for k, v in npz_data.items()
-#                 }
-#                 print(f"Successfully loaded NPZ data for key: {key}")
-#             except Exception as e:
-#                 print(f"Error loading NPZ file {npz_file_name}: {e}")
-
-#     # Convert NumPy types to Python-native types for JSON serialization
-#     def convert_numpy(obj):
-#         if isinstance(obj, np.ndarray):
-#             return obj.tolist()
-#         elif isinstance(obj, (np.float64, np.float32, np.float16)):
-#             return float(obj)
-#         elif isinstance(obj, (np.int64, np.int32, np.int16)):
-#             return int(obj)
-#         elif isinstance(obj, dict):
-#             return {key: convert_numpy(value) for key, value in obj.items()}
-#         elif isinstance(obj, list):
-#             return [convert_numpy(item) for item in obj]
-#         return obj
-
-#     data = convert_numpy(data)
-
-#     return data
-
-
-def get_img(file_name=None, ext=None, file_id=None):
-    # file_content, file_id, file_name = cloud.download(file_name, ext, file_id)
-    file_content_tuple = cloud.download(file_name, ext, file_id)
-    if isinstance(file_content_tuple, tuple):
-        file_content, file_id, file_name = file_content_tuple
-    else:
-        file_content = file_content_tuple
-
-    img = Image.open(io.BytesIO(file_content))
-    img = np.asarray(img)
-    return np.asarray(img)
-
++
 
 # endregion
 # region Misc public functions
 
 
 def get_time_stamp_from_file_name(file_name):
-    """Get the formatted timestamp from a file name
+    """Extract the formatted timestamp from a file name
 
     Returns:
         string: <year>_<month>_<day>-<hour>_<minute>_<second>
@@ -502,29 +379,14 @@ def get_time_stamp_from_file_name(file_name):
     return timestamp
 
 
-def utc_from_file_name(file_name, time_zone="CST"):
+def utc_from_file_name(file_name, time_zone="PT"):
+    """Convert the timestamp in a file name to a UTC time code"""
     # First 19 characters are human-readable timestamp
     date_time_str = file_name[0:19]
-    # Assume timezone is CST
     date_time_str += f"-{time_zone}"
     date_time = datetime.strptime(date_time_str, r"%Y_%m_%d-%H_%M_%S-%Z")
     timestamp = date_time.timestamp()
     return timestamp
-
-
-def get_nv_sig_units_no_cxn():
-    with labrad.connect() as cxn:
-        nv_sig_units = get_nv_sig_units(cxn)
-    return nv_sig_units
-
-
-def get_nv_sig_units():
-    try:
-        config = common.get_config_dict()
-        nv_sig_units = config["nv_sig_units"]
-    except Exception:
-        nv_sig_units = ""
-    return nv_sig_units
 
 
 # endregion
