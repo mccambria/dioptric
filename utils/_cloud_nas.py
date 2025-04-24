@@ -1,11 +1,12 @@
 # -*- coding: utf-8 -*-
 """
-Tools for talking to our cloud provider, Box, which hosts all our data.
-This file should only be accessed by the data_manager util
+Tools for talking to the NAS, which hosts all our data. The
+NAS is assumed to be present as a network drive on your machine.
+This file should only be accessed by data_manager
 
-Created November 18th, 2023
+Created March 2025
 
-@author: mccambria
+@author: egediman
 """
 
 import os
@@ -14,113 +15,63 @@ import shutil
 import time
 from pathlib import Path
 
-import utils.search_index as search_index
-from utils import common
+import numpy as np
+import orjson
+
+from utils import common, search_index
 
 nvdata_dir = common.get_nvdata_dir()
 
+# region Required public functions
 
-def download(file_name=None, ext="txt", path_from_nvdata=None, nvdata_dir=None):
-    """Download file from the cloud
+
+def download(file_stem=None, ext=".txt", file_parent=None):
+    """Download file from the NAS. Figures out how to load based on the extension
 
     Parameters
     ----------
-    file_name : str
+    file_stem : str
         Name of the file, without file extension
-    path_from_nvdata = path to file, searched for if not provided
-    nvdata_dir = directory for nvdata folder, grabbed from common otherwise
+    ext : str
+        File extension
+    file_parent : Path
+        Parent Path for the file. If specified, we will not query the search
+        index to find the parent
 
     Returns
     -------
-    Binary string
-        Contents of the file
+    bytes
+        bytes from the file
     """
-    file_path = get_raw_data_path(file_name, ext, path_from_nvdata, nvdata_dir)
-    with file_path.open() as f:
-        res = f.read()
-        return res
+    if file_parent is None:
+        file_parent = search_index.get_file_parent(file_stem)
+    file_path = file_parent / f"{file_stem}{ext}"
+    with file_path.open("rb") as f:
+        return f.read()
 
 
-def upload(path_from_nvdata, content):
-    """Upload file to the cloud
+def upload(file_path, content, do_add_to_search_index=False):
+    """Upload file to the NAS
 
     Parameters
     ----------
     file_path : Path
-        File path to upload to. Form should be folder1/folder2/... where folder1
-        is under directly the root data folder. Should include extension
-    content : BytesIO
-        Byte stream to write to the file
+        Complete file path to upload to
+    content : bytes | memoryview
+        bytes to write to the file
+    do_add_to_search_index : bool, optional
+        Whether to add the file stem and relative parent to the search index for
+        quick lookup later, by default False
     """
-    path = common.get_nvdata_dir() / path_from_nvdata
-    if not path.parent.is_dir():
-        path.parent.mkdir(parents=True)
-    with path.open("wb+") as f:
-        f.write(content.getbuffer())
-    search_index.add_to_search_index(path)
+    if not file_path.parent.is_dir():
+        file_path.parent.mkdir(parents=True)
+    with file_path.open("wb+") as f:
+        f.write(content)
+    if do_add_to_search_index:
+        search_index.add_to_search_index(file_path)
 
 
-def get_folder_id(folder_path, no_create=False):
-    """Gets the Box ID of the specified folder. Optionally creates the folder if
-    it does not exist yet
-
-    Parameters
-    ----------
-    folder_path : Path
-        Folder path to ID. Form should be folder1/folder2/... where folder1
-        is directly under the root data folder
-
-    Returns
-    -------
-    str
-        ID of the folder
-    """
-
-    # See if the ID is stored in the cache
-    global folder_path_cache
-    if folder_path in folder_path_cache:
-        return folder_path_cache[folder_path]
-
-    # If it's not in the cache, look it up from the cloud
-    folder_path_parts = list(folder_path.parts)
-    folder_id = _get_folder_id_recursion(folder_path_parts, no_create=no_create)
-    folder_path_cache[folder_path] = folder_id
-    return folder_id
-
-
-def _get_folder_id_recursion(folder_path_parts, start_id=nvdata_dir, no_create=False):
-    """
-    Starting from the root data folder, find each subsequent folder in folder_path_parts,
-    finally returning the ID of the last folder. Optionally create the folders that don't
-    exist yet
-    """
-    target_folder_name = folder_path_parts.pop(0)
-
-    # Find the target folder if it already exists
-    target_folder_id = None
-    start_folder = box_client.folder(start_id)
-    items = start_folder.get_items()
-    for item in items:
-        if item.type == "folder" and item.name == target_folder_name:
-            target_folder_id = item.id
-
-    # Otherwise create it
-    if target_folder_id is None:
-        if no_create:
-            return None
-        else:
-            target_folder = start_folder.create_subfolder(target_folder_name)
-            target_folder_id = target_folder.id
-
-    # Return or recurse
-    if len(folder_path_parts) == 0:
-        return target_folder_id
-    else:
-        return _get_folder_id_recursion(
-            folder_path_parts, start_id=target_folder_id, no_create=no_create
-        )
-
-
+# endregion
 # region Delete functions, for cleaning up old data
 
 
@@ -158,35 +109,9 @@ def _batch_delete(condition_fn, folder_path):
             #     return res
 
 
-def get_raw_data_path(file_name, ext="txt", path_from_nvdata=None, nvdata_dir=None):
-    """Same as get_raw_data, but just returns the path to the file"""
-    if nvdata_dir is None:
-        nvdata_dir = common.get_nvdata_dir()
-    if path_from_nvdata is None:
-        path_from_nvdata = search_index.get_data_path_from_nvdata(file_name)
-    data_dir = nvdata_dir / path_from_nvdata
-    file_name_ext = f"{file_name}.{ext}"
-    file_path = data_dir / file_name_ext
-    return file_path
-
-
-def _get_folder_path(folder_info):
-    folder_path = [parent.name for parent in folder_info.path_collection["entries"][1:]]
-    folder_path.append(folder_info.name)
-    folder_path = "/".join(folder_path)
-    return folder_path
-
-
 # endregion
 
 if __name__ == "__main__":
-    # print(box_client.folder("235259643840").get().item_status)
-
-    # reg_exp = r"nvdata\/pc_[a-zA-Z]*\/branch_[a-zA-Z]*\/.+\/2018_[0-9]{2}"
-    # _delete_folders(reg_exp)
-
-    # _delete_empty_folders()
-
     file_name = "2024_07_04-18_14_37-johnson-nv0_2024_03_12"
     path_from_nvdata = "pc_Purcell/branch_master/resonance/2025_04"
     test = download(file_name, nvdata_dir=None)

@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 """
-Tools for talking to our cloud provider, Box, which hosts all our data.
-This file should only be accessed by the data_manager util
+Tools for talking to the cloud provider Box which hosted our data from
+late 2023 to early 2025. This file should only be accessed by data_manager
 
 Created November 18th, 2023
 
@@ -36,13 +36,15 @@ except Exception as exc:
     )
     raise exc
 
+# region Required public functions
 
-def download(file_name=None, ext=None, file_id=None):
+
+def download(file_stem=None, ext="txt", file_id=None):
     """Download file from the cloud
 
     Parameters
     ----------
-    file_name : str
+    file_stem : str
         Name of the file, without file extension
     ext : str
         File extension
@@ -57,7 +59,7 @@ def download(file_name=None, ext=None, file_id=None):
     """
     if file_id is None:
         search_results = box_client.search().query(
-            f'"{file_name}"',
+            f'"{file_stem}"',
             type="file",
             limit=1,
             content_types=["name"],
@@ -71,26 +73,28 @@ def download(file_name=None, ext=None, file_id=None):
     box_file = box_client.file(file_id)
     file_content = box_file.content()
     file_info = box_file.get()
-    file_name = file_info.name.split(".")[0]
-    return file_content, file_id, file_name
+    file_stem = file_info.name.split(".")[0]
+    return file_content, file_id, file_stem
 
 
-def upload(file_path_w_ext, content):
+def upload(file_path, content):
     """Upload file to the cloud
 
     Parameters
     ----------
     file_path : Path
-        File path to upload to. Form should be folder1/folder2/... where folder1
-        is under directly the root data folder. Should include extension
+        Complete file path to upload to
     content : BytesIO
         Byte stream to write to the file
     """
-    folder_path = file_path_w_ext.parent
+    folder_path = file_path.parent
     folder_id = get_folder_id(folder_path)
-    file_name = file_path_w_ext.name
+    file_name = file_path.name
     new_file = box_client.folder(folder_id).upload_stream(content, file_name)
     return new_file.id
+
+
+# endregion
 
 
 def get_folder_id(folder_path, no_create=False):
@@ -116,6 +120,9 @@ def get_folder_id(folder_path, no_create=False):
 
     # If it's not in the cache, look it up from the cloud
     folder_path_parts = list(folder_path.parts)
+    # Start from nvdata
+    start_index = folder_path_parts.index("nvdata") + 1
+    folder_path_parts = folder_path_parts[start_index]
     folder_id = _get_folder_id_recursion(folder_path_parts, no_create=no_create)
     folder_path_cache[folder_path] = folder_id
     return folder_id

@@ -30,32 +30,27 @@ search_index_glob = f"{nvdata_dir_str}/pc_*/branch_*/*/{date_glob}/*.txt"
 # region Private functions
 
 
-def process_full_path(full_path):
-    """Return just what we want for writing to the database. Expects a string
-    containing the entire path to the file, including nvdata, the file
-    name, the extension...
+def process_file_path(file_path):
+    """Extract the information we want to index from the file path for quick
+    lookup later
+
+    Parameters
+    ----------
+    file_path : Path
+        Complete path to the file
+
+    Returns
+    -------
+    tuple(str, str)
+        File stem and file parent relative to nvdata as a string
     """
-
-    # Make sure we have a PurePath to manipulate
-    full_path = PurePath(full_path)
-
-    # Get the path to the file separated from the file name itself and nvdata
-    path_to_file = full_path.parent
-    path_to_file_parts = path_to_file.parts
-    nvdata_ind = path_to_file_parts.index("nvdata")
-    index_path_parts = path_to_file_parts[nvdata_ind + 1 :]
-    index_path = PurePath(index_path_parts[0]).joinpath(*index_path_parts[1:])
-    # Save the path string in the posix format
-    index_path = str(index_path.as_posix())
-
-    # Get the file name, no extension
-    index_file_name = full_path.stem
-
-    return (index_file_name, index_path)
+    file_stem = file_path.stem
+    relative_parent = str(file_path.parent.relative_to(nvdata_dir))
+    return (file_stem, relative_parent)
 
 
-def add_to_search_index(data_full_path):
-    db_vals = process_full_path(data_full_path)
+def add_to_search_index(file_path):
+    db_vals = process_file_path(file_path)
     search_index = sqlite3.connect(nvdata_dir / search_index_file_name)
     cursor = search_index.cursor()
     cursor.execute("INSERT INTO search_index VALUES (?, ?)", db_vals)
@@ -66,33 +61,14 @@ def add_to_search_index(data_full_path):
     return db_vals[1]
 
 
-def get_data_path_from_nvdata(data_file_name):
-    try:
-        search_index = sqlite3.connect(nvdata_dir / search_index_file_name)
-        cursor = search_index.cursor()
-        cursor.execute(
-            "SELECT * FROM search_index WHERE file_name = '{}'".format(data_file_name)
-        )
-        res = cursor.fetchone()
-        return res[1]
-    except Exception as exc:
-        print(f"Failed to find file {data_file_name} in search index.")
-        print("Attempting on-the-fly indexing.")
-        index_path = index_on_the_fly(data_file_name)
-        if index_path is None:
-            msg = f"File {data_file_name} does not appear to exist in data folders."
-            raise RuntimeError(msg)
-        return index_path
-
-
-def index_on_the_fly(data_file_name):
+def index_on_the_fly(file_stem):
     """If a file fails to be indexed for whatever reason and we subsequently
     unsuccesfully attempt to look it up, we'll just index it on the fly
     """
 
-    data_file_name_w_ext = f"{data_file_name}.txt"
-    data_full_path = None
-    yyyy_mm = data_file_name[0:7]
+    file_name = f"{file_stem}.txt"
+    file_path = None
+    yyyy_mm = file_stem[0:7]
 
     for root, _, files in os.walk(nvdata_dir):
         path_root = PurePath(root)
@@ -104,17 +80,39 @@ def index_on_the_fly(data_file_name):
         # Make sure the folder matches when the file was created
         if not root.endswith(yyyy_mm):
             continue
-        if data_file_name_w_ext in files:
+        if file_name in files:
             # for f in files:
-            data_full_path = f"{root}/{data_file_name_w_ext}"
+            file_path = f"{root}/{file_name}"
             break
 
-    if data_full_path is None:
-        print(f"Failed to index file {data_file_name} on the fly.")
+    if file_path is None:
+        print(f"Failed to index file {file_stem} on the fly.")
         return None
     else:
-        index_path = add_to_search_index(data_full_path)
+        index_path = add_to_search_index(file_path)
         return index_path
+
+
+def get_file_parent(file_name):
+    """Return the file parent for a file name in nvdata. Allows for easy retrieval of
+    the file without needing to manually input the file path."""
+    try:
+        search_index = sqlite3.connect(nvdata_dir / search_index_file_name)
+        cursor = search_index.cursor()
+        cursor.execute(
+            "SELECT * FROM search_index WHERE file_name = '{}'".format(file_name)
+        )
+        res = cursor.fetchone()
+        parent_from_nvdata = res[1]
+    except Exception as exc:
+        print(f"Failed to find file {file_name} in search index.")
+        print("Attempting on-the-fly indexing.")
+        index_path = index_on_the_fly(file_name)
+        if index_path is None:
+            msg = f"File {file_name} does not appear to exist in data folders."
+            raise RuntimeError(msg)
+        parent_from_nvdata = index_path
+    return nvdata_dir / parent_from_nvdata
 
 
 # endregion
@@ -145,7 +143,7 @@ def gen_search_index():
             continue
         for f in files:
             if f.split(".")[-1] == "txt":
-                db_vals = process_full_path(f"{root}/{f}")
+                db_vals = process_file_path(f"{root}/{f}")
                 cursor.execute("INSERT INTO search_index VALUES (?, ?)", db_vals)
 
     search_index.commit()
