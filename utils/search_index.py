@@ -117,7 +117,6 @@ def get_file_parent(file_name):
 
 # endregion
 # region Public functions
-"""See also get_raw_data and get_raw_data_path in tool_belt"""
 
 
 def gen_search_index():
