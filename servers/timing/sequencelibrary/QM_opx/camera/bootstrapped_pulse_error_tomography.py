@@ -50,7 +50,7 @@ def get_seq(base_scc_seq_args, seq_names, num_reps=1):
 
             def make_sig_macro(pulses):
                 def macro_fn(
-                    uwave_ind_list, step_val=None, pulses=pulses
+                    uwave_ind_list, step_val, pulses=pulses
                 ):  # bind pulse sequence
                     for kind, phase in pulses:
                         if kind == "pi/2":
@@ -71,6 +71,13 @@ def get_seq(base_scc_seq_args, seq_names, num_reps=1):
 
             sig_macro = make_sig_macro(pulse_list)
             uwave_macro_list.append(sig_macro)
+
+        def ref_macro(uwave_ind_list, step_val=None):
+            pass
+
+        uwave_macro_list.append(ref_macro)
+        print(len(uwave_macro_list))
+
         base_scc_sequence.macro(
             base_scc_seq_args,
             uwave_macro_list,
@@ -121,7 +128,7 @@ if __name__ == "__main__":
             1,
         )
 
-        sim_config = SimulationConfig(duration=int(50e3 / 4))
+        sim_config = SimulationConfig(duration=int(100e3 / 4))
         sim = opx.simulate(seq, sim_config)
         samples = sim.get_simulated_samples()
         samples.con1.plot()
