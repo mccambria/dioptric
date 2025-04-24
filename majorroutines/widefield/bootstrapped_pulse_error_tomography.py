@@ -30,11 +30,10 @@ def extract_error_params(norm_counts, seq_names):
     See PRL 105, 077601 (2010), Table I.
     """
     norm_counts = np.array(norm_counts)
-    medians = np.median(norm_counts, axis=0)
     error_dict = {}
 
     for i, seq in enumerate(seq_names):
-        val = medians[i]
+        val = np.asarray(norm_counts[i]).item()
         if seq == "pi_2_X":
             error_dict["phi_prime"] = -0.5 * val
         elif seq == "pi_2_Y":
@@ -63,30 +62,115 @@ def extract_error_params(norm_counts, seq_names):
     return error_dict
 
 
-def plot_pulse_errors(error_dict, title="Extracted Pulse Errors"):
-    # Sort keys for consistent ordering
-    keys = sorted(error_dict.keys())
+def plot_pulse_errors(error_dict):
+    # keys = sorted(error_dict.keys())
+    keys = error_dict.keys()
     values = [error_dict[k] for k in keys]
 
-    plt.figure(figsize=(10, 6))
+    # Check for problematic values
+    for k, v in zip(keys, values):
+        if not isinstance(v, (int, float, np.number)) or np.isnan(v):
+            raise ValueError(f"Invalid value for {k}: {v}")
+
+    plt.figure(figsize=(6, 5))
     bars = plt.bar(keys, values)
     plt.axhline(0, color="gray", linewidth=0.8, linestyle="--")
-    plt.xticks(rotation=45)
-    plt.ylabel("Error Amplitude")
-    plt.title(title)
+    plt.xticks(rotation=45, fontsize=11)
+    plt.yticks(fontsize=11)
+    plt.ylabel("Error Amplitude", fontsize=12)
+    plt.title("Extracted Pulse Errors", fontsize=12)
     plt.tight_layout()
 
-    # Annotate bars with values
     for bar, val in zip(bars, values):
         plt.text(
             bar.get_x() + bar.get_width() / 2,
-            bar.get_height() * 1.05,
+            bar.get_height() * 1.0,
             f"{val:.3f}",
             ha="center",
             va="bottom",
             fontsize=9,
         )
 
+    plt.show()
+
+
+def spherical_arc(start, end, n_points=100):
+    start = start / np.linalg.norm(start)
+    end = end / np.linalg.norm(end)
+    omega = np.arccos(np.clip(np.dot(start, end), -1, 1))
+    if omega == 0:
+        return np.tile(start, (n_points, 1)).T
+    sin_omega = np.sin(omega)
+    t = np.linspace(0, 1, n_points)
+    arc = (
+        np.sin((1 - t) * omega)[:, None] * start + np.sin(t * omega)[:, None] * end
+    ) / sin_omega
+    return arc.T, np.degrees(omega)
+
+
+def Bloch_Sphere_Visualization(pulse_errors):
+    # Ideal unit vectors for X and Y pulses
+    ideal_X = np.array([1, 0, 0])
+    ideal_Y = np.array([0, 1, 0])
+    ideal_Z = np.array([0, 0, 1])
+    # Actual axes derived from errors
+    actual_X = np.array([1, pulse_errors["ey"], pulse_errors["ez"]])
+    actual_Y = np.array([pulse_errors["vx"], 1, pulse_errors["vz"]])
+
+    # Normalize to map on Bloch sphere
+    actual_X = actual_X / np.linalg.norm(actual_X)
+    actual_Y = actual_Y / np.linalg.norm(actual_Y)
+
+    # Bloch sphere setup
+    fig = plt.figure(figsize=(6.5, 6))
+    ax = fig.add_subplot(111, projection="3d")
+
+    # Draw the Bloch sphere
+    u = np.linspace(0, 2 * np.pi, 100)
+    v = np.linspace(0, np.pi, 100)
+    x = np.outer(np.cos(u), np.sin(v))
+    y = np.outer(np.sin(u), np.sin(v))
+    z = np.outer(np.ones_like(u), np.cos(v))
+    ax.plot_surface(x, y, z, color="lightblue", alpha=0.1, edgecolor="gray")
+
+    # Draw ideal and actual vectors
+    ax.quiver(0, 0, 0, *ideal_X, color="blue", label="Ideal X")
+    ax.quiver(0, 0, 0, *ideal_Y, color="green", label="Ideal Y")
+    ax.quiver(0, 0, 0, *actual_X, color="red", linestyle="dashed", label="Exp X")
+    ax.quiver(0, 0, 0, *actual_Y, color="orange", linestyle="dashed", label="Exp Y")
+    ax.quiver(
+        0,
+        0,
+        0,
+        *ideal_Z,
+        color="black",
+        alpha=0.5,
+        linestyle="dotted",
+        label="Z reference",
+    )
+
+    arc_X, angle_X = spherical_arc(ideal_X, actual_X)
+    arc_Y, angle_Y = spherical_arc(ideal_Y, actual_Y)
+    ax.plot(*arc_X, color="red", linestyle="--", linewidth=1.5)
+    ax.plot(*arc_Y, color="orange", linestyle="--", linewidth=1.5)
+
+    mid_X = arc_X[:, len(arc_X[0]) // 2]
+    mid_Y = arc_Y[:, len(arc_Y[0]) // 2]
+
+    ax.text(*mid_X, f"{angle_X:.1f}°", color="red", fontsize=11, ha="center")
+    ax.text(*mid_Y, f"{angle_Y:.1f}°", color="orange", fontsize=11, ha="center")
+
+    # Axis settings
+    ax.set_xlim([-1.2, 1.2])
+    ax.set_ylim([-1.2, 1.2])
+    ax.set_zlim([-1.2, 1.2])
+    ax.set_xlabel("X", fontsize=12)
+    ax.set_ylabel("Y", fontsize=12)
+    ax.set_zlabel("Z", fontsize=12)
+    ax.tick_params(labelsize=11)
+    ax.set_title("Bloch Sphere Axis Tilt due to Pulse Errors", fontsize=12)
+    ax.legend(fontsize=11)
+    plt.tight_layout()
     plt.show()
 
 
@@ -168,24 +252,28 @@ def main(nv_list, num_reps, num_runs, uwave_ind_list):
 
 if __name__ == "__main__":
     kpl.init_kplotlib()
-    file_id = 1837498410890
-    data = dm.get_raw_data(file_id=file_id, load_npz=False, use_cache=True)
+    # file_id = 1843336828775
+    file_ids = [1843336828775, 1843444108428, 1843662119540]
+    # data = dm.get_raw_data(file_id=file_id, load_npz=False, use_cache=True)
+    data = widefield.process_multiple_files(file_ids=file_ids)
     nv_list = data["nv_list"]
-    seq_names = data["nv_list"]
+    seq_names = data["bootstrap_sequence_names"]
     num_nvs = len(nv_list)
     counts = np.array(data["counts"])
+    print(counts.shape)
+    # sys.exit()
+    ref_counts = counts[-1]  # last data is ref
     norm_counts = []
-    for c in len(seq_names):
-        count = counts[c]  #
-        nc, _ = widefield.process_counts(nv_list, count, threshold=True)
-        norm_counts.append(nc)
+    for c in range(len(seq_names)):
+        sig_counts = counts[c]  #
+        nc, _ = widefield.process_counts(nv_list, sig_counts, threshold=True)
+        nc_medians = np.median(nc, axis=0)
+        norm_counts.append(nc_medians)
     norm_counts = np.array(norm_counts)  # shape: (num_seqs, num_nvs)
-
-    file_name = dm.get_file_name(file_id=file_id)
-    print(f"{file_name}_{file_id}")
-    file_name = dm.get_file_name(file_id=file_id)
-    print(f"{file_name}_{file_id}")
+    # file_name = dm.get_file_name(file_id=file_id)
+    # print(f"{file_name}_{file_id}")
     error_dict = extract_error_params(norm_counts, seq_names)
+    print(error_dict)
     plot_pulse_errors(error_dict)
-
-    kpl.show(block=True)
+    # Bloch_Sphere_Visualization(error_dict)
+    plt.show(block=True)

@@ -184,7 +184,7 @@ def plot_rabi_fits(
     #     alpha=0.7,
     # )
     ax.hist(filtered_rabi_periods, bins=10)
-    ax.set_title("Rabi Periods (I-Channel)", fontsize=15)
+    ax.set_title("Rabi Periods (Q-Channel)", fontsize=15)
     ax.set_xlabel("Rabi Period (ns)", fontsize=15)
     ax.set_ylabel("Number of Occurance", fontsize=15)
     ax.tick_params(axis="both", labelsize=14)

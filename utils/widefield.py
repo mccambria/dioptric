@@ -15,6 +15,7 @@ from datetime import datetime
 from functools import cache
 from importlib import import_module
 from pathlib import Path
+from scipy.linalg import expm
 
 import matplotlib.patches as patches
 import matplotlib.pyplot as plt
@@ -443,6 +444,150 @@ def process_multiple_files(file_ids):
             combined_data["counts"], new_data["counts"], axis=2
         )
     return combined_data
+
+
+class QPTCorrector:
+    def __init__(self, pulse_errors):
+        self.errors = pulse_errors
+        self.paulis = self._get_pauli_basis()
+        self.M = self._build_basis_map_matrix()
+
+    def _get_pauli_basis(self):
+        I = np.eye(2)
+        X = np.array([[0, 1], [1, 0]])
+        Y = np.array([[0, -1j], [1j, 0]])
+        Z = np.array([[1, 0], [0, -1]])
+        return [I, X, Y, Z]
+
+    def _construct_error_unitary(self, kind):
+        err = self.errors
+        if kind == "pi_X":
+            theta = np.pi + 2 * err.get("phi", 0)
+            axis = np.array([1, err.get("ey", 0), err.get("ez", 0)])
+        elif kind == "pi_Y":
+            theta = np.pi + 2 * err.get("chi", 0)
+            axis = np.array([err.get("vx", 0), 1, err.get("vz", 0)])
+        elif kind == "pi_2_X":
+            theta = np.pi / 2 + 2 * err.get("phi_prime", 0)
+            axis = np.array([1, 0, 0])
+        elif kind == "pi_2_Y":
+            theta = np.pi / 2 + 2 * err.get("chi_prime", 0)
+            axis = np.array([0, 1, 0])
+        else:
+            return np.eye(2)
+
+        axis = axis / np.linalg.norm(axis)
+        X, Y, Z = self.paulis[1:]
+        n_x, n_y, n_z = axis
+        H = theta / 2 * (n_x * X + n_y * Y + n_z * Z)
+        return expm(-1j * H)
+
+    def _transform_basis(self, U):
+        """Transform Pauli basis under U: σ' = U† σ U"""
+        return [U.conj().T @ P @ U for P in self.paulis]
+
+    def _build_basis_map_matrix(self):
+        """Construct M: the matrix that maps actual to ideal Pauli basis."""
+        U_prep_X = self._construct_error_unitary("pi_2_X")
+        U_prep_Y = self._construct_error_unitary("pi_2_Y")
+        prep_transforms = self._transform_basis(U_prep_X), self._transform_basis(
+            U_prep_Y
+        )
+
+        M = np.zeros((4, 4), dtype=complex)
+        for i, P in enumerate(self.paulis):
+            vec = np.array([np.trace(P @ Q) / 2 for Q in self.paulis])
+            M[:, i] = vec
+        return M
+
+    def correct_chi_matrix(self, chi_raw):
+        """Correct χ matrix using basis map M"""
+        M = self.M
+        M_inv = np.linalg.inv(M)
+        chi_corrected = M_inv @ chi_raw @ M_inv.conj().T
+        return chi_corrected
+
+    def compare_chi_matrices(self, chi_raw, chi_corrected):
+        fidelity = np.trace(chi_raw.conj().T @ chi_corrected).real
+        diff = chi_raw - chi_corrected
+        hs_norm = np.trace(diff @ diff.conj().T).real
+        return {"process_fidelity": fidelity, "hilbert_schmidt_norm": hs_norm}
+
+    def pauli_label(self):
+        return ["I", "X", "Y", "Z"]
+
+    def get_phase_correction(self, kind):
+        """Get phase offset correction in radians to pre-compensate control pulses."""
+        if kind == "pi_2_X":
+            ez = self.errors.get("ez", 0)
+            return np.arctan2(ez, 1.0)  # Correction for axis tilt in Z
+        elif kind == "pi_2_Y":
+            vx = self.errors.get("vx", 0)
+            return np.arctan2(vx, 1.0)
+        elif kind == "pi_X":
+            ez = self.errors.get("ez", 0)
+            return np.arctan2(ez, 1.0)
+        elif kind == "pi_Y":
+            vx = self.errors.get("vx", 0)
+            return np.arctan2(vx, 1.0)
+        else:
+            return 0.0
+
+    def get_amplitude_correction_factor(self, kind):
+        """Return scaling factor to correct over- or under-rotation."""
+        if kind == "pi_2_X":
+            delta = self.errors.get("phi_prime", 0)
+        elif kind == "pi_2_Y":
+            delta = self.errors.get("chi_prime", 0)
+        elif kind == "pi_X":
+            delta = self.errors.get("phi", 0)
+        elif kind == "pi_Y":
+            delta = self.errors.get("chi", 0)
+        else:
+            return 1.0
+
+        return 1.0 / (1 + delta)  # First-order correction
+
+
+def correct_pulse_params(kind):
+    """
+    Returns (amplitude_factor, phase_offset_rad) to correct the specified pulse.
+    Can be used to update pulse amplitude and IQ phase prior to experiment.
+    """
+    # --- Pulse errors from bootstrap tomography (manually inserted) ---
+    pulse_errors = {
+        "phi_prime": -0.096,
+        "chi_prime": -0.098,
+        "phi": 0.201,
+        "chi": 0.202,
+        "vx": -0.200,
+        "vy": -0.199,
+        "vz": -0.202,
+        "ex": 0.199,
+        "ey": 0.198,
+        "ez": 0.204,
+        "vz_alt": -0.201,
+        "ez_alt": 0.203,
+    }
+    # pulse_errors = {
+    #     "phi_prime": -0.09636363636363636,
+    #     "chi_prime": -0.09806818181818182,
+    #     "phi": 0.20124999999999998,
+    #     "chi": 0.2015909090909091,
+    #     "vz": -0.20238636363636364,
+    #     "ez": 0.20420454545454547,
+    #     "vx": -0.19988636363636364,
+    #     "ex": 0.19874999999999998,
+    #     "ey": 0.19738636363636364,
+    #     "vy": -0.19852272727272727,
+    #     "vz_alt": -0.20079545454545455,
+    #     "ez_alt": 0.20261363636363636,
+    # }
+    # --- Pulse errors from bootstrap tomography (manually inserted) ---
+    corrector = QPTCorrector(pulse_errors)
+    amp = corrector.get_amplitude_correction_factor(kind)
+    phase = corrector.get_phase_correction(kind)
+    return amp, phase
 
 
 # def process_multiple_files(file_ids):

@@ -12,10 +12,8 @@ Created June 25th, 2023
 import logging
 import time
 from functools import cache
-
 import numpy as np
 from qm import qua
-
 from utils import common
 from utils import positioning as pos
 from utils import tool_belt as tb
@@ -368,20 +366,28 @@ def macro_charge_state_readout(duration: int = None, amp: float = None):
     qua.ramp_to_zero(camera_el)
 
 
-def macro_pi_pulse(uwave_ind_list, duration_cc=None, phase=None):
+def macro_pi_pulse(uwave_ind_list, duration_cc=None, phase=None, amp=1.0):
     _macro_uwave_pulse(
-        uwave_ind_list, pulse_name="pi_pulse", duration_cc=duration_cc, phase=phase
+        uwave_ind_list,
+        pulse_name="pi_pulse",
+        duration_cc=duration_cc,
+        phase=phase,
+        amp=amp,
     )
 
 
-def macro_pi_on_2_pulse(uwave_ind_list, duration_cc=None, phase=None):
+def macro_pi_on_2_pulse(uwave_ind_list, duration_cc=None, phase=None, amp=1.0):
     _macro_uwave_pulse(
-        uwave_ind_list, pulse_name="pi_on_2_pulse", duration_cc=duration_cc, phase=phase
+        uwave_ind_list,
+        pulse_name="pi_on_2_pulse",
+        duration_cc=duration_cc,
+        phase=phase,
+        amp=amp,
     )
 
 
 def _macro_uwave_pulse(
-    uwave_ind_list, pulse_name="pi_pulse", duration_cc=None, phase=None
+    uwave_ind_list, pulse_name="pi_pulse", duration_cc=None, phase=None, amp=1.0
 ):
     if uwave_ind_list is None:
         return
@@ -396,8 +402,8 @@ def _macro_uwave_pulse(
             q_el = get_sig_gen_q_element(uwave_ind)
             if np.isscalar(phase):
                 phase = qua.declare(qua.fixed, phase)
-            i_comp = qua.Math.cos(phase)
-            q_comp = qua.Math.sin(phase)
+            i_comp = qua.Math.cos(phase) * amp
+            q_comp = qua.Math.sin(phase) * amp
 
         qua.align()
 
