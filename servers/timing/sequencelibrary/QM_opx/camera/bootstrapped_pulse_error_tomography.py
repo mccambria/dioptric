@@ -8,16 +8,17 @@ Created on March 25th, 2025
 """
 
 import time
-import numpy as np
+
 import matplotlib.pyplot as plt
+import numpy as np
 from qm import QuantumMachinesManager, qua
 from qm.simulate import SimulationConfig
 
 import utils.common as common
-from utils.widefield import correct_pulse_params
 import utils.tool_belt as tb
 from servers.timing.sequencelibrary.QM_opx import seq_utils
 from servers.timing.sequencelibrary.QM_opx.camera import base_scc_sequence
+from utils.widefield import correct_pulse_params
 
 
 def get_seq(base_scc_seq_args, seq_names, num_reps=1):
@@ -53,15 +54,13 @@ def get_seq(base_scc_seq_args, seq_names, num_reps=1):
                     uwave_ind_list, step_val, pulses=pulses
                 ):  # bind pulse sequence
                     for kind, phase in pulses:
+                        amp_corr, phase_corr = correct_pulse_params(kind)
+                        corrected_phase = phase + phase_corr
                         if kind == "pi/2":
-                            amp_corr, phase_corr = correct_pulse_params(kind)
-                            corrected_phase = phase + phase_corr
                             seq_utils.macro_pi_on_2_pulse(
                                 uwave_ind_list, phase=corrected_phase, amp=amp_corr
                             )
                         elif kind == "pi":
-                            amp_corr, phase_corr = correct_pulse_params(kind)
-                            corrected_phase = phase + phase_corr
                             seq_utils.macro_pi_pulse(
                                 uwave_ind_list, phase=corrected_phase, amp=amp_corr
                             )

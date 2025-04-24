@@ -422,7 +422,7 @@ def do_bootstrapped_pulse_error_tomography(nv_list):
     # bootstrapped_pulse_error_tomography.main(
     #     nv_list, num_reps, num_runs, uwave_ind_list=[1]
     # )
-    for _ in range(6):
+    for _ in range(4):
         bootstrapped_pulse_error_tomography.main(
             nv_list, num_reps, num_runs, uwave_ind_list=[1]
         )

@@ -15,7 +15,6 @@ from datetime import datetime
 from functools import cache
 from importlib import import_module
 from pathlib import Path
-from scipy.linalg import expm
 
 import matplotlib.patches as patches
 import matplotlib.pyplot as plt
@@ -23,6 +22,7 @@ import numpy as np
 import scipy.optimize as opt
 from matplotlib import animation
 from numpy import inf
+from scipy.linalg import expm
 from scipy.special import gamma
 from scipy.stats import poisson
 from skimage.filters import threshold_li, threshold_otsu, threshold_triangle
@@ -490,8 +490,9 @@ class QPTCorrector:
         """Construct M: the matrix that maps actual to ideal Pauli basis."""
         U_prep_X = self._construct_error_unitary("pi_2_X")
         U_prep_Y = self._construct_error_unitary("pi_2_Y")
-        prep_transforms = self._transform_basis(U_prep_X), self._transform_basis(
-            U_prep_Y
+        prep_transforms = (
+            self._transform_basis(U_prep_X),
+            self._transform_basis(U_prep_Y),
         )
 
         M = np.zeros((4, 4), dtype=complex)
@@ -569,49 +570,11 @@ def correct_pulse_params(kind):
         "vz_alt": -0.201,
         "ez_alt": 0.203,
     }
-    # pulse_errors = {
-    #     "phi_prime": -0.09636363636363636,
-    #     "chi_prime": -0.09806818181818182,
-    #     "phi": 0.20124999999999998,
-    #     "chi": 0.2015909090909091,
-    #     "vz": -0.20238636363636364,
-    #     "ez": 0.20420454545454547,
-    #     "vx": -0.19988636363636364,
-    #     "ex": 0.19874999999999998,
-    #     "ey": 0.19738636363636364,
-    #     "vy": -0.19852272727272727,
-    #     "vz_alt": -0.20079545454545455,
-    #     "ez_alt": 0.20261363636363636,
-    # }
     # --- Pulse errors from bootstrap tomography (manually inserted) ---
     corrector = QPTCorrector(pulse_errors)
     amp = corrector.get_amplitude_correction_factor(kind)
     phase = corrector.get_phase_correction(kind)
     return amp, phase
-
-
-# def process_multiple_files(file_ids):
-#     """
-#     Efficiently load and combine data from multiple file IDs.
-#     Assumes all files have the same shape for 'counts' except the run axis (axis=2).
-#     """
-#     all_counts = []
-#     combined_data = dm.get_raw_data(file_id=file_ids[0])
-#     all_counts.append(np.array(combined_data["counts"]))
-#     total_runs = combined_data["num_runs"]
-
-#     for file_id in file_ids[1:]:
-#         new_data = dm.get_raw_data(file_id)
-#         new_counts = np.array(new_data["counts"])
-#         total_runs += new_data["num_runs"]
-#         all_counts.append(new_counts)
-
-#     # Efficient concatenation
-#     combined_data["counts"] = np.concatenate(all_counts, axis=2)
-#     combined_data["num_runs"] = total_runs
-
-#     print(f"Combined shape: {combined_data['counts'].shape}")
-#     return combined_data
 
 
 def combined_filename(file_ids):
