@@ -875,13 +875,17 @@ opx_config = {
 
 
 def generate_iq_pulses(pulse_names, phases):
-    """Adds iq pulses to opx_config for the passed phases to match the
-    microwave pulses already defined manually in the config.
+    """Adds iq pulses to opx_config for the passed phases to match the microwave pulses
+    already defined manually in the config. The pulses names that are intended for use
+    are of the form f"{pulse_name}_{phase}" with duration equal to that of the pulse
+    with pulse_name defined on the corresponding digital modulation element for a
+    given microwave channel
     """
     # Define the waveforms
+    amp = 0.5
     for phase in phases:
-        i_comp = np.cos(np.deg2rad(phase)) * 0.5
-        q_comp = np.sin(np.deg2rad(phase)) * 0.5
+        i_comp = np.cos(np.deg2rad(phase)) * amp
+        q_comp = np.sin(np.deg2rad(phase)) * amp
         opx_config["waveforms"][f"i_{phase}"] = {"type": "constant", "sample": i_comp}
         opx_config["waveforms"][f"q_{phase}"] = {"type": "constant", "sample": q_comp}
 
@@ -889,17 +893,17 @@ def generate_iq_pulses(pulse_names, phases):
     for comp in ["i", "q"]:
         for pulse_name in pulse_names:
             for phase in phases:
-                for ind in range(num_sig_gens):
+                for chan in range(num_sig_gens):
                     # Define the pulse
-                    full_pulse_name = f"ao_{comp}_{pulse_name}_{phase}_{ind}"
-                    length = opx_config["pulses"][f"do_{pulse_name}_{ind}"]["length"]
+                    full_pulse_name = f"ao_{comp}_{pulse_name}_{phase}_{chan}"
+                    length = opx_config["pulses"][f"do_{pulse_name}_{chan}"]["length"]
                     opx_config["pulses"][full_pulse_name] = {
                         "operation": "control",
                         "length": length,
-                        "waveforms": {"single": f"{comp}_comp"},
+                        "waveforms": {"single": f"{comp}_{phase}"},
                     }
                     # Add the pulse to the element
-                    dev = virtual_lasers_dict[ind]["physical_name"]
+                    dev = virtual_lasers_dict[chan]["physical_name"]
                     opx_config["elements"][f"ao_{dev}_{comp}"]["operations"][
                         f"{pulse_name}_{phase}"
                     ] = full_pulse_name
