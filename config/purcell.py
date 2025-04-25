@@ -880,6 +880,13 @@ def generate_iq_pulses(pulse_names, phases):
     are of the form f"{pulse_name}_{phase}" with duration equal to that of the pulse
     with pulse_name defined on the corresponding digital modulation element for a
     given microwave channel
+
+    Parameters
+    ----------
+    pulse_names : list(str)
+        List of microwave pulse names
+    phases : list(int)
+        List of phases in degrees. Expects integers.
     """
     # Define the waveforms
     amp = 0.5
@@ -903,7 +910,7 @@ def generate_iq_pulses(pulse_names, phases):
                         "waveforms": {"single": f"{comp}_{phase}"},
                     }
                     # Add the pulse to the element
-                    dev = virtual_lasers_dict[chan]["physical_name"]
+                    dev = virtual_sig_gens_dict[chan]["physical_name"]
                     opx_config["elements"][f"ao_{dev}_{comp}"]["operations"][
                         f"{pulse_name}_{phase}"
                     ] = full_pulse_name

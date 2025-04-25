@@ -43,7 +43,7 @@ def get_config_module(pc_name=None, reload=False):
     try:
         module_name = f"config.{pc_name}"
         module = importlib.import_module(module_name)
-    except Exception:  # Fallback to the default
+    except Exception as exc:  # Fallback to the default
         module_name = "config.default"
         module = importlib.import_module(module_name)
     if reload:

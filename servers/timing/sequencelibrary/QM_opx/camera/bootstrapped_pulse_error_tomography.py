@@ -8,6 +8,7 @@ Created on March 25th, 2025
 """
 
 import time
+import traceback
 
 import matplotlib.pyplot as plt
 import numpy as np
@@ -25,22 +26,18 @@ def get_seq(base_scc_seq_args, seq_names, num_reps=1):
     buffer = seq_utils.get_widefield_operation_buffer()
     bootstrap_dict = {
         "pi_2_X": [("pi/2", 0)],
-        "pi_2_Y": [("pi/2", np.pi / 2)],
+        "pi_2_Y": [("pi/2", 90)],
         "pi_2_X_pi_X": [("pi/2", 0), ("pi", 0)],
-        "pi_2_Y_pi_Y": [("pi/2", np.pi / 2), ("pi", np.pi / 2)],
-        "pi_Y_pi_2_X": [("pi", np.pi / 2), ("pi/2", 0)],
-        "pi_X_pi_2_Y": [("pi", 0), ("pi/2", np.pi / 2)],
-        "pi_2_Y_pi_2_X": [("pi/2", np.pi / 2), ("pi/2", 0)],
-        "pi_2_X_pi_2_Y": [("pi/2", 0), ("pi/2", np.pi / 2)],
-        "pi_2_X_pi_X_pi_2_Y": [("pi/2", 0), ("pi", 0), ("pi/2", np.pi / 2)],
-        "pi_2_Y_pi_X_pi_2_X": [("pi/2", np.pi / 2), ("pi", 0), ("pi/2", 0)],
-        "pi_2_X_pi_Y_pi_2_Y": [("pi/2", 0), ("pi", np.pi / 2), ("pi/2", np.pi / 2)],
-        "pi_2_Y_pi_Y_pi_2_X": [("pi/2", np.pi / 2), ("pi", np.pi / 2), ("pi/2", 0)],
-        "pi_2_Y_pi_X_pi_2_Y": [
-            ("pi/2", np.pi / 2),
-            ("pi", 0),
-            ("pi/2", np.pi / 2),
-        ],  # test
+        "pi_2_Y_pi_Y": [("pi/2", 90), ("pi", 90)],
+        "pi_Y_pi_2_X": [("pi", 90), ("pi/2", 0)],
+        "pi_X_pi_2_Y": [("pi", 0), ("pi/2", 90)],
+        "pi_2_Y_pi_2_X": [("pi/2", 90), ("pi/2", 0)],
+        "pi_2_X_pi_2_Y": [("pi/2", 0), ("pi/2", 90)],
+        "pi_2_X_pi_X_pi_2_Y": [("pi/2", 0), ("pi", 0), ("pi/2", 90)],
+        "pi_2_Y_pi_X_pi_2_X": [("pi/2", 90), ("pi", 0), ("pi/2", 0)],
+        "pi_2_X_pi_Y_pi_2_Y": [("pi/2", 0), ("pi", 90), ("pi/2", 90)],
+        "pi_2_Y_pi_Y_pi_2_X": [("pi/2", 90), ("pi", 90), ("pi/2", 0)],
+        "pi_2_Y_pi_X_pi_2_Y": [("pi/2", 90), ("pi", 0), ("pi/2", 90)],  # test
     }
 
     with qua.program() as seq:
@@ -112,7 +109,7 @@ if __name__ == "__main__":
                 [40, 88],
                 [1.0, 1.0],
                 [False, False],
-                [0],
+                [0, 1],
             ],
             [
                 "pi_2_Y_pi_X_pi_2_Y",  # created for test
@@ -138,7 +135,7 @@ if __name__ == "__main__":
         samples.con1.plot()
         plt.show(block=True)
 
-    except Exception as exc:
-        print(f"An error occurred: {exc}")
+    except Exception:
+        traceback.print_exc()
     finally:
         qmm.close_all_quantum_machines()

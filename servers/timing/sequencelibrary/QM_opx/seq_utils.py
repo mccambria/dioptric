@@ -388,7 +388,7 @@ def macro_pi_on_2_pulse(uwave_ind_list, duration_cc=None, phase=None, amp=1.0):
     )
 
 
-def _get_iq_pulses(pulse_name, phase):
+def _get_iq_pulse(pulse_name, phase):
     return f"{pulse_name}_{phase}"
 
 
@@ -408,7 +408,7 @@ def _macro_uwave_pulse(
             i_el = get_sig_gen_i_element(uwave_ind)
             q_el = get_sig_gen_q_element(uwave_ind)
             elements.extend([i_el, q_el])
-            i_pulse, q_pulse = _get_iq_pulses(pulse_name, phase)
+            iq_pulse = _get_iq_pulse(pulse_name, phase)
 
         sig_gen_el = get_sig_gen_element(uwave_ind)
         elements.append(sig_gen_el)
@@ -417,8 +417,8 @@ def _macro_uwave_pulse(
 
         def pulse_sub(duration_arg=None):
             if phase is not None:
-                qua.play(i_pulse, i_el, duration=duration_arg)
-                qua.play(q_pulse, q_el, duration=duration_arg)
+                qua.play(iq_pulse, i_el, duration=duration_arg)
+                qua.play(iq_pulse, q_el, duration=duration_arg)
             qua.play(pulse_name, sig_gen_el, duration=duration_arg)
 
         if duration_cc is None:
@@ -894,22 +894,22 @@ def convert_ns_to_cc(duration_ns, allow_rounding=False, allow_zero=False):
     return round(duration_ns / 4)
 
 
-def get_macro_pi_pulse_duration(uwave_ind_list):
-    duration = 0
-    uwave_buffer = get_uwave_buffer()
-    for uwave_ind in uwave_ind_list:
-        duration += get_rabi_period(uwave_ind) // 2
-        duration += uwave_buffer
-    return duration
+@cache
+def get_pi_pulse_duration(uwave_ind):
+    """Returns the duration of a pi pulse on the specified microwave
+    channel in units of clock cycles. Useful for adjusting interpulse
+    wait times to account for finite pulse duration effects.
+    """
+    return convert_ns_to_cc(get_rabi_period(uwave_ind) // 2)
 
 
-def get_macro_pi_on_2_pulse_duration(uwave_ind_list):
-    duration = 0
-    uwave_buffer = get_uwave_buffer()
-    for uwave_ind in uwave_ind_list:
-        duration += get_rabi_period(uwave_ind) // 4
-        duration += uwave_buffer
-    return duration
+@cache
+def get_pi_on_2_pulse_duration(uwave_ind):
+    """Returns the duration of a pi/2 pulse on the specified microwave
+    channel in units of clock cycles. Useful for adjusting interpulse
+    wait times to account for finite pulse duration effects.
+    """
+    return convert_ns_to_cc(get_rabi_period(uwave_ind) // 4)
 
 
 @cache
