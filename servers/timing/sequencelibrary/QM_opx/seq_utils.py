@@ -388,56 +388,44 @@ def macro_pi_on_2_pulse(uwave_ind_list, duration_cc=None, phase=None, amp=1.0):
     )
 
 
+def _get_iq_pulses(pulse_name, phase):
+    return f"{pulse_name}_{phase}"
+
+
 def _macro_uwave_pulse(
     uwave_ind_list, pulse_name="pi_pulse", duration_cc=None, phase=None, amp=1.0
 ):
     if uwave_ind_list is None:
         return
 
-    iq_buffer = get_iq_buffer()
     for uwave_ind in uwave_ind_list:
-        # List of elements controlling this specific transition
-        elements = []
+        ## Setup
+
+        elements = []  # List of elements controlling this specific microwave tone
+
         # Phase component calculations
         if phase is not None:
             i_el = get_sig_gen_i_element(uwave_ind)
             q_el = get_sig_gen_q_element(uwave_ind)
-            elements += [i_el, q_el]
-            if np.isscalar(phase):
-                phase = qua.declare(qua.fixed, phase)
-            i_comp = qua.Math.cos(phase) * amp
-            q_comp = qua.Math.sin(phase) * amp
+            elements.extend([i_el, q_el])
+            i_pulse, q_pulse = _get_iq_pulses(pulse_name, phase)
 
         sig_gen_el = get_sig_gen_element(uwave_ind)
         elements.append(sig_gen_el)
 
         qua.align(*elements)
 
-        # Default duration
-        if duration_cc is None:
+        def pulse_sub(duration_arg=None):
             if phase is not None:
-                qua.play(pulse_name * qua.amp(i_comp), i_el)
-                qua.play(pulse_name * qua.amp(q_comp), q_el)
-                qua.wait(iq_buffer, sig_gen_el)
-            qua.play(pulse_name, sig_gen_el)
+                qua.play(i_pulse, i_el, duration=duration_arg)
+                qua.play(q_pulse, q_el, duration=duration_arg)
+            qua.play(pulse_name, sig_gen_el, duration=duration_arg)
 
-        # Passed duration
+        if duration_cc is None:
+            pulse_sub()
         else:
             with qua.if_(duration_cc > 0):
-                if phase is not None:
-                    iq_duration_cc = duration_cc + 2 * iq_buffer
-                    qua.play(
-                        pulse_name * qua.amp(i_comp),
-                        i_el,
-                        duration=iq_duration_cc,
-                    )
-                    qua.play(
-                        pulse_name * qua.amp(q_comp),
-                        q_el,
-                        duration=iq_duration_cc,
-                    )
-                    qua.wait(iq_buffer, sig_gen_el)
-                qua.play(pulse_name, sig_gen_el, duration=duration_cc)
+                pulse_sub(duration_cc)
 
         qua.align(*elements)
 

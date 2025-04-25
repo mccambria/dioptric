@@ -58,13 +58,16 @@ def get_seq(base_scc_seq_args, seq_names, num_reps=1):
                 def macro_fn(
                     uwave_ind_list, step_val, pulses=pulses
                 ):  # bind pulse sequence
-                    for kind, phase in pulses:
-                        # amp_corr, phase_corr = correct_pulse_params(kind)
-                        # corrected_phase = phase + phase_corr
-                        if kind == "pi/2":
-                            seq_utils.macro_pi_on_2_pulse(uwave_ind_list, phase=phase)
-                        elif kind == "pi":
-                            seq_utils.macro_pi_pulse(uwave_ind_list, phase=phase)
+                    with qua.strict_timing_():
+                        for kind, phase in pulses:
+                            # amp_corr, phase_corr = correct_pulse_params(kind)
+                            # corrected_phase = phase + phase_corr
+                            if kind == "pi/2":
+                                seq_utils.macro_pi_on_2_pulse(
+                                    uwave_ind_list, phase=phase
+                                )
+                            elif kind == "pi":
+                                seq_utils.macro_pi_pulse(uwave_ind_list, phase=phase)
                     qua.wait(buffer)
 
                 return macro_fn
