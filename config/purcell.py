@@ -94,7 +94,8 @@ config |= {
         "aod_access_time": 11e3,  # access time in specs is 10us
         "widefield_operation_buffer": 1e3,
         "uwave_buffer": 16,
-        "iq_buffer": 16,  # SBC measured using NVs 4/18/2025
+        "iq_buffer": 0,
+        # "iq_buffer": 16,  # SBC measured using NVs 4/18/2025
         "iq_delay": 140,  # SBC measured using NVs 4/18/2025
     },
     ###
@@ -348,17 +349,21 @@ config |= {
 }
 
 # endregion
+
+
 # region OPX config
 
 default_pulse_duration = config["CommonDurations"]["default_pulse_duration"]
 default_int_freq = 75e6
 virtual_sig_gens_dict = config["Microwaves"]["VirtualSigGens"]
+num_sig_gens = len(virtual_sig_gens_dict)
 rabi_period_0 = virtual_sig_gens_dict[0]["rabi_period"]
 rabi_period_1 = virtual_sig_gens_dict[1]["rabi_period"]
 ramp_to_zero_duration = 64
 virtual_lasers_dict = config["Optics"]["VirtualLasers"]
 iq_buffer = config["CommonDurations"]["iq_buffer"]
 iq_delay = config["CommonDurations"]["iq_delay"]
+
 
 opx_config = {
     "version": 1,
@@ -531,13 +536,7 @@ opx_config = {
             },
         },
         "do_sig_gen_STAN_sg394_dm": {
-            "digitalInputs": {
-                "chan": {
-                    "port": ("con1", 10),
-                    "delay": 0,
-                    "buffer": 0,
-                }
-            },
+            "digitalInputs": {"chan": {"port": ("con1", 10), "delay": 0, "buffer": 0}},
             "operations": {
                 "on": "do_on",
                 "off": "do_off",
@@ -559,30 +558,29 @@ opx_config = {
                 "pi_on_2_pulse": "do_pi_on_2_pulse_1",
             },
         },
+        # region Microwave iq modulation
+        # Additional operations are generated algorithmically with generate_iq_pulses()
+        "ao_sig_gen_STAN_sg394_i": {
+            "singleInput": {"port": ("con1", 5)},
+            "intermediate_frequency": 0,
+            "operations": {"iq_test": "iq_test", "on": "ao_cw", "off": "ao_off"},
+        },
+        "ao_sig_gen_STAN_sg394_q": {
+            "singleInput": {"port": ("con1", 8)},
+            "intermediate_frequency": 0,
+            "operations": {"iq_test": "iq_test", "on": "ao_cw", "off": "ao_off"},
+        },
         "ao_sig_gen_STAN_sg394_2_i": {
             "singleInput": {"port": ("con1", 9)},
             "intermediate_frequency": 0,
-            # "sticky": {"analog": True, "duration": ramp_to_zero_duration},
-            "operations": {
-                "iq_test": "iq_test",
-                "on": "ao_cw",
-                "off": "ao_off",
-                "pi_pulse": "ao_iq_pi_pulse_1",
-                "pi_on_2_pulse": "ao_iq_pi_on_2_pulse_1",
-            },
+            "operations": {"iq_test": "iq_test", "on": "ao_cw", "off": "ao_off"},
         },
         "ao_sig_gen_STAN_sg394_2_q": {
             "singleInput": {"port": ("con1", 10)},
             "intermediate_frequency": 0,
-            # "sticky": {"analog": True, "duration": ramp_to_zero_duration},
-            "operations": {
-                "iq_test": "iq_test",
-                "on": "ao_cw",
-                "off": "ao_off",
-                "pi_pulse": "ao_iq_pi_pulse_1",
-                "pi_on_2_pulse": "ao_iq_pi_on_2_pulse_1",
-            },
+            "operations": {"iq_test": "iq_test", "on": "ao_cw", "off": "ao_off"},
         },
+        # endregion
         "do_camera_trigger": {
             "digitalInputs": {"chan": {"port": ("con1", 5), "delay": 0, "buffer": 0}},
             "sticky": {
@@ -732,6 +730,16 @@ opx_config = {
             "length": 10000,
             "waveforms": {"single": "cw"},
         },
+        "ao_iq_pi_pulse_0": {
+            "operation": "control",
+            "length": int(rabi_period_0 / 2) + 2 * iq_buffer,
+            "waveforms": {"single": "cw"},
+        },
+        "ao_iq_pi_on_2_pulse_0": {
+            "operation": "control",
+            "length": int(rabi_period_0 / 4) + 2 * iq_buffer,
+            "waveforms": {"single": "cw"},
+        },
         "ao_iq_pi_pulse_1": {
             "operation": "control",
             "length": int(rabi_period_1 / 2) + 2 * iq_buffer,
@@ -865,7 +873,51 @@ opx_config = {
 }
 # endregion
 
+
+def generate_iq_pulses(pulse_names, phases):
+    """Adds iq pulses to opx_config for the passed phases to match the microwave pulses
+    already defined manually in the config. The pulses names that are intended for use
+    are of the form f"{pulse_name}_{phase}" with duration equal to that of the pulse
+    with pulse_name defined on the corresponding digital modulation element for a
+    given microwave channel
+
+    Parameters
+    ----------
+    pulse_names : list(str)
+        List of microwave pulse names
+    phases : list(int)
+        List of phases in degrees. Expects integers.
+    """
+    # Define the waveforms
+    amp = 0.5
+    for phase in phases:
+        i_comp = np.cos(np.deg2rad(phase)) * amp
+        q_comp = np.sin(np.deg2rad(phase)) * amp
+        opx_config["waveforms"][f"i_{phase}"] = {"type": "constant", "sample": i_comp}
+        opx_config["waveforms"][f"q_{phase}"] = {"type": "constant", "sample": q_comp}
+
+    # Define the pulses and add the pulses to the elements
+    for comp in ["i", "q"]:
+        for pulse_name in pulse_names:
+            for phase in phases:
+                for chan in range(num_sig_gens):
+                    # Define the pulse
+                    full_pulse_name = f"ao_{comp}_{pulse_name}_{phase}_{chan}"
+                    length = opx_config["pulses"][f"do_{pulse_name}_{chan}"]["length"]
+                    opx_config["pulses"][full_pulse_name] = {
+                        "operation": "control",
+                        "length": length,
+                        "waveforms": {"single": f"{comp}_{phase}"},
+                    }
+                    # Add the pulse to the element
+                    dev = virtual_sig_gens_dict[chan]["physical_name"]
+                    opx_config["elements"][f"ao_{dev}_{comp}"]["operations"][
+                        f"{pulse_name}_{phase}"
+                    ] = full_pulse_name
+
+
 ref_img_array = np.array([])
+generate_iq_pulses(["pi_pulse", "pi_on_2_pulse"], [0, 90, 180, 270])
 
 
 if __name__ == "__main__":
