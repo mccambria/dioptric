@@ -26,12 +26,22 @@ from utils.constants import NVSig
 
 # def extract_error_params(norm_counts, seq_names):
 #     """
-#     Extracts pulse error parameters from median signal values across NVs.
-#     See PRL 105, 077601 (2010), Table I.
+#     Bootstrap Pulse Error Extraction using Full Linear System
+#     Based on PRL 105, 077601 (2010) - Dobrovitski et al.
+#     Block 3: Solves for 6 axis error parameters via least-squares
+#     Assumes: ε'_y = 0 to fix gauge
+#     @author: YourNam
+
+#     Combined extraction function:
+#     - Extracts angle and z-axis errors from Blocks 1 & 2 (explicit formulas)
+#     - Solves axis tilt errors from Block 3 (least-squares)
+
 #     """
 #     norm_counts = np.array(norm_counts)
 #     error_dict = {}
-
+#     error_ste = {}
+#     block3_signals = []
+#     seq_block3 = []
 #     for i, seq in enumerate(seq_names):
 #         val = np.asarray(norm_counts[i]).item()
 #         if seq == "pi_2_X":
@@ -46,40 +56,73 @@ from utils.constants import NVSig
 #             error_dict["vz"] = -0.5 * val + error_dict.get("phi_prime", 0)
 #         elif seq == "pi_X_pi_2_Y":
 #             error_dict["ez"] = 0.5 * val - error_dict.get("chi_prime", 0)
-#         elif seq == "pi_2_Y_pi_2_X":
-#             error_dict["vx"] = -0.5 * val + error_dict.get("phi_prime", 0)
-#         elif seq == "pi_2_X_pi_2_Y":
-#             error_dict["ex"] = 0.5 * val - error_dict.get("chi_prime", 0)
-#         elif seq == "pi_2_X_pi_X_pi_2_Y":
-#             error_dict["ey"] = 0.5 * val - error_dict.get("phi_prime", 0)
-#         elif seq == "pi_2_Y_pi_X_pi_2_X":
-#             error_dict["vy"] = -0.5 * val + error_dict.get("phi_prime", 0)
-#         elif seq == "pi_2_X_pi_Y_pi_2_Y":
-#             error_dict["vz_alt"] = -0.5 * val + error_dict.get("chi_prime", 0)
-#         elif seq == "pi_2_Y_pi_Y_pi_2_X":
-#             error_dict["ez_alt"] = 0.5 * val - error_dict.get("phi_prime", 0)
 
-#     return error_dict
+#         # Collect signals for Block 3
+#         elif seq in [
+#             "pi_2_Y_pi_2_X",
+#             "pi_2_X_pi_2_Y",
+#             "pi_2_X_pi_X_pi_2_Y",
+#             "pi_2_Y_pi_X_pi_2_X",
+#             "pi_2_X_pi_Y_pi_2_Y",
+#             "pi_2_Y_pi_Y_pi_2_X",
+#         ]:
+#             block3_signals.append(val)
+#             seq_block3.append(seq)
+
+#     if len(block3_signals) == 6:
+#         A = np.array(
+#             [
+#                 [-1, -1, -1, 0, 0],
+#                 [1, -1, 1, 0, 0],
+#                 [1, 1, -1, 2, 0],
+#                 [-1, 1, 1, 2, 0],
+#                 [-1, -1, 1, 0, 2],
+#                 [1, -1, -1, 0, 2],
+#             ]
+#         )
+#         block3_names = [
+#             "epsilon_z_prime",  # ε′_z
+#             "nu_x_prime",  # ν′_x
+#             "nu_z_prime",  # ν′_z
+#             "epsilon_y",  # ε_y
+#             "nu_x",  # ν_x
+#         ]
+
+#         block3_signals = np.array(block3_signals)
+#         x, residuals, rank, s = np.linalg.lstsq(A, block3_signals, rcond=None)
+#         cov_matrix = np.linalg.inv(A.T @ A)
+#         std_errors = np.sqrt(np.diag(cov_matrix)) * np.std(block3_signals - A @ x)
+
+#         error_dict.update(dict(zip(block3_names, x)))
+#         error_ste.update(dict(zip(block3_names, std_errors)))
+#         # predicted_signals = A @ x
+#         # error = np.linalg.norm(predicted_signals - block3_signals)
+#         # print("Residual norm:", error)
+#         predicted_signals = A @ x
+#         residuals = block3_signals - predicted_signals
+#         residual_norm = np.linalg.norm(residuals)
+#         print("Residual norm:", residual_norm)
+
+
+#     return error_dict, error_ste
+
+import numpy as np
+import matplotlib.pyplot as plt
 
 
 def extract_error_params(norm_counts, seq_names):
     """
     Bootstrap Pulse Error Extraction using Full Linear System
-    Based on PRL 105, 077601 (2010) - Dobrovitski et al.
-    Block 3: Solves for 6 axis error parameters via least-squares
+    Implements exact protocol from Dobrovitski et al., PRL 105, 077601 (2010)
     Assumes: ε'_y = 0 to fix gauge
-    @author: YourNam
-
-    Combined extraction function:
-    - Extracts angle and z-axis errors from Blocks 1 & 2 (explicit formulas)
-    - Solves axis tilt errors from Block 3 (least-squares)
-
+    Returns angle errors (phi, chi) and axis tilt errors (ε and ν)
     """
     norm_counts = np.array(norm_counts)
     error_dict = {}
     error_ste = {}
     block3_signals = []
     seq_block3 = []
+
     for i, seq in enumerate(seq_names):
         val = np.asarray(norm_counts[i]).item()
         if seq == "pi_2_X":
@@ -94,8 +137,6 @@ def extract_error_params(norm_counts, seq_names):
             error_dict["vz"] = -0.5 * val + error_dict.get("phi_prime", 0)
         elif seq == "pi_X_pi_2_Y":
             error_dict["ez"] = 0.5 * val - error_dict.get("chi_prime", 0)
-
-        # Collect signals for Block 3
         elif seq in [
             "pi_2_Y_pi_2_X",
             "pi_2_X_pi_2_Y",
@@ -108,17 +149,20 @@ def extract_error_params(norm_counts, seq_names):
             seq_block3.append(seq)
 
     if len(block3_signals) == 6:
-        A = np.array(
+        # Full 6x6 matrix from paper
+        A_full = np.array(
             [
-                [-1, -1, -1, 0, 0],
-                [1, -1, 1, 0, 0],
-                [1, 1, -1, 2, 0],
-                [-1, 1, 1, 2, 0],
-                [-1, -1, 1, 0, 2],
-                [1, -1, -1, 0, 2],
+                [-1, -1, -1, -1, 0, 0],
+                [-1, 1, -1, 1, 0, 0],
+                [-1, 1, 1, -1, 2, 0],
+                [-1, -1, 1, 1, 2, 0],
+                [1, -1, -1, 1, 0, 2],
+                [1, 1, -1, -1, 0, 2],
             ]
         )
+
         block3_names = [
+            "epsilon_y_prime",  # fixed to 0, not solved
             "epsilon_z_prime",  # ε′_z
             "nu_x_prime",  # ν′_x
             "nu_z_prime",  # ν′_z
@@ -127,21 +171,22 @@ def extract_error_params(norm_counts, seq_names):
         ]
 
         block3_signals = np.array(block3_signals)
-        x, residuals, rank, s = np.linalg.lstsq(A, block3_signals, rcond=None)
-        cov_matrix = np.linalg.inv(A.T @ A)
-        std_errors = np.sqrt(np.diag(cov_matrix)) * np.std(block3_signals - A @ x)
+        # Manually fix ε'_y = 0
+        A = A_full[:, 1:]  # Remove first column
 
-        error_dict.update(dict(zip(block3_names, x)))
-        error_ste.update(dict(zip(block3_names, std_errors)))
-        # predicted_signals = A @ x
-        # error = np.linalg.norm(predicted_signals - block3_signals)
-        # print("Residual norm:", error)
+        x = np.linalg.solve(
+            A.T @ A, A.T @ block3_signals
+        )  # exact solution using pseudo-inverse
+
+        block3_names_used = block3_names[1:]  # skip ε'_y
+        error_dict.update(dict(zip(block3_names_used, x)))
+
         predicted_signals = A @ x
         residuals = block3_signals - predicted_signals
         residual_norm = np.linalg.norm(residuals)
         print("Residual norm:", residual_norm)
 
-        # Plot comparison of measured vs predicted
+        # Optional: plot comparison
         fig, ax = plt.subplots(figsize=(8, 4))
         ax.plot(seq_block3, block3_signals, "o-", label="Measured", color="blue")
         ax.plot(seq_block3, predicted_signals, "s--", label="Predicted", color="orange")
@@ -527,9 +572,7 @@ if __name__ == "__main__":
     norm_counts = []
     for c in range(len(seq_names)):
         sig_counts = counts[c]  #
-        nc, _ = widefield.process_counts(
-            nv_list, sig_counts, ref_counts, threshold=True
-        )
+        sc, _ = widefield.process_counts(nv_list, sig_counts, threshold=True)
         bright_ref = np.max(nc)
         dark_ref = np.min(nc)
         nc = normalize_to_sigma_z(nc, bright_ref, dark_ref)
