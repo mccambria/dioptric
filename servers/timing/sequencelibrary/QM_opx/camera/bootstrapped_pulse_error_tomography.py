@@ -82,7 +82,7 @@ def get_seq(base_scc_seq_args, seq_names, num_reps=1):
             base_scc_seq_args,
             uwave_macro_list,
             num_reps=num_reps,
-            reference=False,
+            reference=True,
         )
 
     return seq, []
