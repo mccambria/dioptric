@@ -23,9 +23,18 @@ from utils import tool_belt as tb
 from utils import widefield as widefield
 from utils.constants import NVSig
 
-
 # def extract_error_params(norm_counts, seq_names):
 #     """
+#     Bootstrap Pulse Error Extraction using Full Linear System
+#     Based on PRL 105, 077601 (2010) - Dobrovitski et al.
+#     Block 3: Solves for 6 axis error parameters via least-squares
+#     Assumes: ε'_y = 0 to fix gauge
+#     @author: YourNam
+
+#     Combined extraction function:
+#     - Extracts angle and z-axis errors from Blocks 1 & 2 (explicit formulas)
+#     - Solves axis tilt errors from Block 3 (least-squares)
+
 #     Bootstrap Pulse Error Extraction using Full Linear System
 #     Based on PRL 105, 077601 (2010) - Dobrovitski et al.
 #     Block 3: Solves for 6 axis error parameters via least-squares
@@ -39,6 +48,9 @@ from utils.constants import NVSig
 #     """
 #     norm_counts = np.array(norm_counts)
 #     error_dict = {}
+#     error_ste = {}
+#     block3_signals = []
+#     seq_block3 = []
 #     error_ste = {}
 #     block3_signals = []
 #     seq_block3 = []
@@ -103,6 +115,67 @@ from utils.constants import NVSig
 #         residual_norm = np.linalg.norm(residuals)
 #         print("Residual norm:", residual_norm)
 
+#         # Plot comparison of measured vs predicted
+#         # fig, ax = plt.subplots(figsize=(8, 4))
+#         # ax.plot(seq_block3, block3_signals, "o-", label="Measured", color="blue")
+#         # ax.plot(seq_block3, predicted_signals, "s--", label="Predicted", color="orange")
+#         # ax.set_title("Measured vs Predicted Signals (Block 3)")
+#         # ax.set_ylabel("Signal Value")
+#         # ax.set_xticks(range(len(seq_block3)))
+#         # ax.set_xticklabels(seq_block3, rotation=45, ha="right")
+#         # ax.legend()
+#         # ax.grid(True)
+#         # plt.tight_layout()
+#         # plt.show()
+
+#     return error_dict, error_ste
+
+#         # Collect signals for Block 3
+#         elif seq in [
+#             "pi_2_Y_pi_2_X",
+#             "pi_2_X_pi_2_Y",
+#             "pi_2_X_pi_X_pi_2_Y",
+#             "pi_2_Y_pi_X_pi_2_X",
+#             "pi_2_X_pi_Y_pi_2_Y",
+#             "pi_2_Y_pi_Y_pi_2_X",
+#         ]:
+#             block3_signals.append(val)
+#             seq_block3.append(seq)
+
+#     if len(block3_signals) == 6:
+#         A = np.array(
+#             [
+#                 [-1, -1, -1, 0, 0],
+#                 [1, -1, 1, 0, 0],
+#                 [1, 1, -1, 2, 0],
+#                 [-1, 1, 1, 2, 0],
+#                 [-1, -1, 1, 0, 2],
+#                 [1, -1, -1, 0, 2],
+#             ]
+#         )
+#         block3_names = [
+#             "epsilon_z_prime",  # ε′_z
+#             "nu_x_prime",  # ν′_x
+#             "nu_z_prime",  # ν′_z
+#             "epsilon_y",  # ε_y
+#             "nu_x",  # ν_x
+#         ]
+
+#         block3_signals = np.array(block3_signals)
+#         x, residuals, rank, s = np.linalg.lstsq(A, block3_signals, rcond=None)
+#         cov_matrix = np.linalg.inv(A.T @ A)
+#         std_errors = np.sqrt(np.diag(cov_matrix)) * np.std(block3_signals - A @ x)
+
+#         error_dict.update(dict(zip(block3_names, x)))
+#         error_ste.update(dict(zip(block3_names, std_errors)))
+#         # predicted_signals = A @ x
+#         # error = np.linalg.norm(predicted_signals - block3_signals)
+#         # print("Residual norm:", error)
+#         predicted_signals = A @ x
+#         residuals = block3_signals - predicted_signals
+#         residual_norm = np.linalg.norm(residuals)
+#         print("Residual norm:", residual_norm)
+
 
 #     return error_dict, error_ste
 
@@ -114,7 +187,9 @@ def extract_error_params(norm_counts, seq_names):
     """
     Bootstrap Pulse Error Extraction using Full Linear System
     Implements exact protocol from Dobrovitski et al., PRL 105, 077601 (2010)
+    Implements exact protocol from Dobrovitski et al., PRL 105, 077601 (2010)
     Assumes: ε'_y = 0 to fix gauge
+    Returns angle errors (phi, chi) and axis tilt errors (ε and ν)
     Returns angle errors (phi, chi) and axis tilt errors (ε and ν)
     """
     norm_counts = np.array(norm_counts)
@@ -122,6 +197,7 @@ def extract_error_params(norm_counts, seq_names):
     error_ste = {}
     block3_signals = []
     seq_block3 = []
+
 
     for i, seq in enumerate(seq_names):
         val = np.asarray(norm_counts[i]).item()
@@ -151,7 +227,15 @@ def extract_error_params(norm_counts, seq_names):
     if len(block3_signals) == 6:
         # Full 6x6 matrix from paper
         A_full = np.array(
+        # Full 6x6 matrix from paper
+        A_full = np.array(
             [
+                [-1, -1, -1, -1, 0, 0],
+                [-1, 1, -1, 1, 0, 0],
+                [-1, 1, 1, -1, 2, 0],
+                [-1, -1, 1, 1, 2, 0],
+                [1, -1, -1, 1, 0, 2],
+                [1, 1, -1, -1, 0, 2],
                 [-1, -1, -1, -1, 0, 0],
                 [-1, 1, -1, 1, 0, 0],
                 [-1, 1, 1, -1, 2, 0],
@@ -161,7 +245,9 @@ def extract_error_params(norm_counts, seq_names):
             ]
         )
 
+
         block3_names = [
+            "epsilon_y_prime",  # fixed to 0, not solved
             "epsilon_y_prime",  # fixed to 0, not solved
             "epsilon_z_prime",  # ε′_z
             "nu_x_prime",  # ν′_x
@@ -171,6 +257,16 @@ def extract_error_params(norm_counts, seq_names):
         ]
 
         block3_signals = np.array(block3_signals)
+        # Manually fix ε'_y = 0
+        A = A_full[:, 1:]  # Remove first column
+
+        x = np.linalg.solve(
+            A.T @ A, A.T @ block3_signals
+        )  # exact solution using pseudo-inverse
+
+        block3_names_used = block3_names[1:]  # skip ε'_y
+        error_dict.update(dict(zip(block3_names_used, x)))
+
         # Manually fix ε'_y = 0
         A = A_full[:, 1:]  # Remove first column
 
@@ -234,69 +330,7 @@ def plot_pulse_errors(error_dict):
     plt.show()
 
 
-# def plot_pulse_errors_with_meaning(error_dict):
-#     keys = list(error_dict.keys())
-#     values = [error_dict[k] for k in keys]
-
-#     for k, v in zip(keys, values):
-#         if not isinstance(v, (int, float, np.number)) or np.isnan(v):
-#             raise ValueError(f"Invalid value for {k}: {v}")
-
-#     descriptions = {
-#         "phi_prime": "π/2 X angle error",
-#         "chi_prime": "π/2 Y angle error",
-#         "phi": "π X angle error",
-#         "chi": "π Y angle error",
-#         "vz": "π Y Z-axis tilt",
-#         "ez": "π X Z-axis tilt",
-#         "vx": "π/2 Y X-axis tilt",
-#         "ex": "π/2 X X-axis tilt",
-#         "ey": "π X Y-axis tilt",
-#         "vy": "π Y Y-axis tilt",
-#         "vz_alt": "π/2 Y Y-axis tilt",
-#         "ez_alt": "π/2 Y Z-axis tilt",
-#         "epsilon_z_prime": "Z tilt in π/2X",
-#         "nu_x_prime": "X tilt in π/2Y",
-#         "nu_z_prime": "Z tilt in π/2Y",
-#         "epsilon_y": "Y tilt in πX",
-#         "nu_x": "X tilt in πY",
-#         "epsilon_z": "Z tilt in πX",
-#     }
-
-#     fig, (ax1, ax2) = plt.subplots(
-#         2, 1, figsize=(6, 9), gridspec_kw={"height_ratios": [2, 1]}
-#     )
-#     bars = ax1.bar(keys, values)
-#     ax1.axhline(0, color="gray", linewidth=0.8, linestyle="--")
-#     ax1.set_xticks(range(len(keys)))
-#     ax1.set_xticklabels(keys, rotation=45, ha="right", fontsize=10)
-#     ax1.set_ylabel("Error Amplitude", fontsize=12)
-#     ax1.set_title("Extracted Pulse Errors", fontsize=14)
-#     ax1.tick_params(labelsize=11)
-
-#     for bar, val in zip(bars, values):
-#         ax1.text(
-#             bar.get_x() + bar.get_width() / 2,
-#             bar.get_height() * 1.01,
-#             f"{val:.3f}",
-#             ha="center",
-#             va="bottom",
-#             fontsize=9,
-#         )
-
-#     ax2.axis("off")
-#     text_y = 1.0
-#     line_height = 0.12
-#     for k in keys:
-#         label = descriptions.get(k, "Unknown")
-#         ax2.text(0.01, text_y, f"{k}: {label}", fontsize=10, va="top")
-#         text_y -= line_height
-
-#     plt.tight_layout()
-#     plt.show()
-
-
-def plot_pulse_errors_with_math_labels(error_dict, error_ste=None):
+def plot_pulse_errors(error_dict, error_ste=None):
     keys = list(error_dict.keys())
     values = [error_dict[k] for k in keys]
     errors = [error_ste.get(k, 0) if error_ste else 0 for k in keys]
@@ -486,7 +520,7 @@ def main(nv_list, num_reps, num_runs, uwave_ind_list):
         "pi_2_Y_pi_Y_pi_2_X",
     ]
 
-    num_exps = len(seq_names) + 1  # last exp is reference
+    num_exps = len(seq_names) + 2  # last two exp are reference
 
     ### Collect the data
     def run_fn(shuffled_step_inds):
@@ -544,47 +578,73 @@ def main(nv_list, num_reps, num_runs, uwave_ind_list):
     #     dm.save_figure(fit_fig, file_path)
 
 
-def normalize_to_sigma_z(raw_counts, bright_ref, dark_ref):
-    """Return signal mapped to [-1, 1] based on reference levels."""
-    return 2 * (raw_counts - dark_ref) / (bright_ref - dark_ref) - 1
+# def normalize_to_sigma_z(raw_counts, bright_ref, dark_ref):
+#     """Return signal mapped to [-1, 1] based on reference levels."""
+#     return 2 * (raw_counts - dark_ref) / (bright_ref - dark_ref) - 1
+#     # return (raw_counts - dark_ref) / (bright_ref - dark_ref)
+
+
+def normalize_to_sigma_z_scc(counts, bright_ref, dark_ref):
+    norm = (counts - dark_ref) / (bright_ref - dark_ref)
+    sigma_z = 2 * norm - 1
+    return -1 * sigma_z  # Flip for SCC interpretation
 
 
 if __name__ == "__main__":
     kpl.init_kplotlib()
-    file_ids = [1843336828775, 1843444108428, 1843662119540]  # before correction
+    # 32ns gap bewteen pi pulses due to buffer
+    # file_ids = [
+    #     1843336828775,
+    #     1843444108428,
+    #     1843662119540,
+    # ]  # before correction
     # file_ids = [
     #     1844234382841,
     #     1844135699091,
     #     1844039507259,
     #     1843920112174,
     # ]  # after correction
+
+    # no gap bewteen pi pulses
+    # before correction
+    file_ids = [
+        "2025_04_25-19_40_02-rubin-nv0_2025_02_26",
+        "2025_04_25-23_30_53-rubin-nv0_2025_02_26",
+        "2025_04_25-21_33_07-rubin-nv0_2025_02_26",
+        "2025_04_26-01_32_52-rubin-nv0_2025_02_26",
+    ]
+    # after correction
+    # file_ids = [
+    #     "2025_04_26-21_46_33-rubin-nv0_2025_02_26",
+    #     "2025_04_26-23_49_07-rubin-nv0_2025_02_26",
+    #     "2025_04_27-01_50_38-rubin-nv0_2025_02_26",
+    #     "2025_04_27-03_46_22-rubin-nv0_2025_02_26",
+    # ]
     # data = dm.get_raw_data(file_id=file_id, load_npz=False, use_cache=True)
     data = widefield.process_multiple_files(file_ids=file_ids)
-    file_name = widefield.combined_filename(file_ids=file_ids)
-    print(file_name)
+    # file_name = widefield.combined_filename(file_ids=file_ids)
     nv_list = data["nv_list"]
     seq_names = data["bootstrap_sequence_names"]
     num_nvs = len(nv_list)
     counts = np.array(data["counts"])
-    print(counts.shape)
-    # sys.exit()
     ref_counts = counts[-1]  # last data is ref
     norm_counts = []
     for c in range(len(seq_names)):
         sig_counts = counts[c]  #
+        nc, _ = widefield.process_counts(nv_list, sig_counts, threshold=True)
         sc, _ = widefield.process_counts(nv_list, sig_counts, threshold=True)
         bright_ref = np.max(nc)
         dark_ref = np.min(nc)
-        nc = normalize_to_sigma_z(nc, bright_ref, dark_ref)
+        nc = normalize_to_sigma_z_scc(nc, bright_ref, dark_ref)
         nc_medians = np.median(nc, axis=0)
         norm_counts.append(nc_medians)
-        # print(nc)
+        # print(f"{bright_ref}, {dark_ref}")
     norm_counts = np.array(norm_counts)  # shape: (num_seqs, num_nvs)
     # file_name = dm.get_file_name(file_id=file_id)
     # print(f"{file_name}_{file_id}")
     error_dict, error_ste = extract_error_params(norm_counts, seq_names)
-    print(error_dict)
-    # plot_pulse_errors(error_dict)
-    plot_pulse_errors_with_math_labels(error_dict, error_ste)
+    formatted_dict = {k: round(v, 6) for k, v in error_dict.items()}
+    print(formatted_dict)
+    plot_pulse_errors(error_dict, error_ste)
     # Bloch_Sphere_Visualization(error_dict)
     plt.show(block=True)

@@ -39,14 +39,14 @@ calibration_coords_pixel = [
     [227.438, 19.199],
 ]
 calibration_coords_green = [
-    [118.12, 97.467],
-    [107.04, 118.366],
-    [96.822, 94.809],
+    [118.13, 97.404],
+    [107.024, 118.34],
+    [96.795, 94.775],
 ]
 calibration_coords_red = [
-    [80.697, 64.782],
-    [72.121, 81.901],
-    [63.276, 62.842],
+    [80.704, 64.731],
+    [72.107, 81.88],
+    [63.253, 62.814],
 ]
 # Create the dictionaries using the provided lists
 calibration_coords_nv1 = {
@@ -874,6 +874,39 @@ opx_config = {
 # endregion
 
 
+# Centralized pulse error values (from bootstrap tomography)
+def correct_pulse_params_by_phase(phase_deg, base_amp=0.5):
+    # Determine which pulse axis the phase aligns with
+    pulse_errors = {
+        "phi_prime": -0.178439,
+        "chi_prime": -0.192049,
+        "phi": 0.403461,
+        "chi": 0.386181,
+        "vz": -0.302293,
+        "ez": 0.376963,
+        "epsilon_z_prime": 0.051347,
+        "nu_x_prime": -0.279457,
+        "nu_z_prime": 0.038526,
+        "epsilon_y": 0.283488,
+        "nu_x": -0.066811,
+    }
+
+    phase_mod = phase_deg % 360
+    if phase_mod in [0, 180]:  # X-aligned pulses
+        angle_error = pulse_errors.get("phi", 0)
+        tilt = pulse_errors.get("ez", 0)
+    elif phase_mod in [90, 270]:  # Y-aligned pulses
+        angle_error = pulse_errors.get("chi", 0)
+        tilt = pulse_errors.get("vx", 0)
+    else:
+        raise ValueError(f"Unsupported phase: {phase_deg}. Use 0, 90, 180, 270.")
+
+    amp_correction = base_amp * (1.0 / (1 + angle_error))
+    phase_correction_rad = -np.arctan2(tilt, 1.0)
+
+    return amp_correction, phase_correction_rad
+
+
 def generate_iq_pulses(pulse_names, phases):
     """Adds iq pulses to opx_config for the passed phases to match the microwave pulses
     already defined manually in the config. The pulses names that are intended for use
@@ -890,7 +923,15 @@ def generate_iq_pulses(pulse_names, phases):
     """
     # Define the waveforms
     amp = 0.5
+
     for phase in phases:
+        # amp_corr, phase_corr_rad = correct_pulse_params_by_phase(phase, base_amp=amp)
+        # corrected_phase_rad = np.deg2rad(phase) + phase_corr_rad  # note: addition
+        # i_comp = np.cos(corrected_phase_rad) * amp_corr
+        # q_comp = np.sin(corrected_phase_rad) * amp_corr
+        # print(
+        #     f"Phase {phase}° → corrected amp: {amp_corr:.3f}, phase (deg): {np.rad2deg(corrected_phase_rad):.2f}"
+        # )
         i_comp = np.cos(np.deg2rad(phase)) * amp
         q_comp = np.sin(np.deg2rad(phase)) * amp
         opx_config["waveforms"][f"i_{phase}"] = {"type": "constant", "sample": i_comp}
@@ -925,3 +966,4 @@ if __name__ == "__main__":
     mat = np.array(config["Positioning"][key])
     mat[:, 2] = [0, 0]
     print(mat)
+    # generate_iq_pulses(["pi_pulse", "pi_on_2_pulse"], [0, 90])

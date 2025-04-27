@@ -274,7 +274,8 @@ def get_raw_data(file_stem, use_cache=True, load_npz=False):
                     break
             if found_npz:
                 npz_bytes = cloud.download(file_stem, ".npz")
-                npz_data = np.load(npz_bytes)
+                # npz_data = np.load(npz_bytes)
+                npz_data = np.load(io.BytesIO(npz_bytes))
                 data |= npz_data
 
     ### Add to cache and return the data
