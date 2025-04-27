@@ -23,7 +23,6 @@ from utils import tool_belt as tb
 from utils import widefield as widefield
 from utils.constants import NVSig
 
-
 # def extract_error_params(norm_counts, seq_names):
 #     """
 #     Extracts pulse error parameters from median signal values across NVs.
@@ -142,17 +141,17 @@ def extract_error_params(norm_counts, seq_names):
         print("Residual norm:", residual_norm)
 
         # Plot comparison of measured vs predicted
-        fig, ax = plt.subplots(figsize=(8, 4))
-        ax.plot(seq_block3, block3_signals, "o-", label="Measured", color="blue")
-        ax.plot(seq_block3, predicted_signals, "s--", label="Predicted", color="orange")
-        ax.set_title("Measured vs Predicted Signals (Block 3)")
-        ax.set_ylabel("Signal Value")
-        ax.set_xticks(range(len(seq_block3)))
-        ax.set_xticklabels(seq_block3, rotation=45, ha="right")
-        ax.legend()
-        ax.grid(True)
-        plt.tight_layout()
-        plt.show()
+        # fig, ax = plt.subplots(figsize=(8, 4))
+        # ax.plot(seq_block3, block3_signals, "o-", label="Measured", color="blue")
+        # ax.plot(seq_block3, predicted_signals, "s--", label="Predicted", color="orange")
+        # ax.set_title("Measured vs Predicted Signals (Block 3)")
+        # ax.set_ylabel("Signal Value")
+        # ax.set_xticks(range(len(seq_block3)))
+        # ax.set_xticklabels(seq_block3, rotation=45, ha="right")
+        # ax.legend()
+        # ax.grid(True)
+        # plt.tight_layout()
+        # plt.show()
 
     return error_dict, error_ste
 
@@ -501,12 +500,19 @@ def main(nv_list, num_reps, num_runs, uwave_ind_list):
 
 def normalize_to_sigma_z(raw_counts, bright_ref, dark_ref):
     """Return signal mapped to [-1, 1] based on reference levels."""
-    return 2 * (raw_counts - dark_ref) / (bright_ref - dark_ref) - 1
+    # return 2 * (raw_counts - dark_ref) / (bright_ref - dark_ref) - 1
+    return (raw_counts - dark_ref) / (bright_ref - dark_ref)
 
 
 if __name__ == "__main__":
     kpl.init_kplotlib()
-    file_ids = [1843336828775, 1843444108428, 1843662119540]  # before correction
+    # file_ids = [1843336828775, 1843444108428, 1843662119540]  # before correction
+    file_ids = [
+        "2025_04_25-19_40_02-rubin-nv0_2025_02_26",
+        "2025_04_25-23_30_53-rubin-nv0_2025_02_26",
+        "2025_04_25-21_33_07-rubin-nv0_2025_02_26",
+        "2025_04_26-01_32_52-rubin-nv0_2025_02_26",
+    ]
     # file_ids = [
     #     1844234382841,
     #     1844135699091,
@@ -515,8 +521,8 @@ if __name__ == "__main__":
     # ]  # after correction
     # data = dm.get_raw_data(file_id=file_id, load_npz=False, use_cache=True)
     data = widefield.process_multiple_files(file_ids=file_ids)
-    file_name = widefield.combined_filename(file_ids=file_ids)
-    print(file_name)
+    # file_name = widefield.combined_filename(file_ids=file_ids)
+    # print(file_name)
     nv_list = data["nv_list"]
     seq_names = data["bootstrap_sequence_names"]
     num_nvs = len(nv_list)
@@ -527,15 +533,13 @@ if __name__ == "__main__":
     norm_counts = []
     for c in range(len(seq_names)):
         sig_counts = counts[c]  #
-        nc, _ = widefield.process_counts(
-            nv_list, sig_counts, ref_counts, threshold=True
-        )
+        nc, _ = widefield.process_counts(nv_list, sig_counts, threshold=True)
         bright_ref = np.max(nc)
         dark_ref = np.min(nc)
-        nc = normalize_to_sigma_z(nc, bright_ref, dark_ref)
+        # nc = normalize_to_sigma_z(nc, bright_ref, dark_ref)
         nc_medians = np.median(nc, axis=0)
         norm_counts.append(nc_medians)
-        # print(nc)
+        print(f"{bright_ref}, {dark_ref}")
     norm_counts = np.array(norm_counts)  # shape: (num_seqs, num_nvs)
     # file_name = dm.get_file_name(file_id=file_id)
     # print(f"{file_name}_{file_id}")
