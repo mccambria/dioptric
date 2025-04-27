@@ -24,14 +24,62 @@ from utils import widefield as widefield
 from utils.constants import NVSig
 
 
+# def extract_error_params(norm_counts, seq_names):
+#     """
+#     Extracts pulse error parameters from median signal values across NVs.
+#     See PRL 105, 077601 (2010), Table I.
+#     """
+#     norm_counts = np.array(norm_counts)
+#     error_dict = {}
+
+#     for i, seq in enumerate(seq_names):
+#         val = np.asarray(norm_counts[i]).item()
+#         if seq == "pi_2_X":
+#             error_dict["phi_prime"] = -0.5 * val
+#         elif seq == "pi_2_Y":
+#             error_dict["chi_prime"] = -0.5 * val
+#         elif seq == "pi_2_X_pi_X":
+#             error_dict["phi"] = 0.5 * val - error_dict.get("phi_prime", 0)
+#         elif seq == "pi_2_Y_pi_Y":
+#             error_dict["chi"] = 0.5 * val - error_dict.get("chi_prime", 0)
+#         elif seq == "pi_Y_pi_2_X":
+#             error_dict["vz"] = -0.5 * val + error_dict.get("phi_prime", 0)
+#         elif seq == "pi_X_pi_2_Y":
+#             error_dict["ez"] = 0.5 * val - error_dict.get("chi_prime", 0)
+#         elif seq == "pi_2_Y_pi_2_X":
+#             error_dict["vx"] = -0.5 * val + error_dict.get("phi_prime", 0)
+#         elif seq == "pi_2_X_pi_2_Y":
+#             error_dict["ex"] = 0.5 * val - error_dict.get("chi_prime", 0)
+#         elif seq == "pi_2_X_pi_X_pi_2_Y":
+#             error_dict["ey"] = 0.5 * val - error_dict.get("phi_prime", 0)
+#         elif seq == "pi_2_Y_pi_X_pi_2_X":
+#             error_dict["vy"] = -0.5 * val + error_dict.get("phi_prime", 0)
+#         elif seq == "pi_2_X_pi_Y_pi_2_Y":
+#             error_dict["vz_alt"] = -0.5 * val + error_dict.get("chi_prime", 0)
+#         elif seq == "pi_2_Y_pi_Y_pi_2_X":
+#             error_dict["ez_alt"] = 0.5 * val - error_dict.get("phi_prime", 0)
+
+#     return error_dict
+
+
 def extract_error_params(norm_counts, seq_names):
     """
-    Extracts pulse error parameters from median signal values across NVs.
-    See PRL 105, 077601 (2010), Table I.
+    Bootstrap Pulse Error Extraction using Full Linear System
+    Based on PRL 105, 077601 (2010) - Dobrovitski et al.
+    Block 3: Solves for 6 axis error parameters via least-squares
+    Assumes: ε'_y = 0 to fix gauge
+    @author: YourNam
+
+    Combined extraction function:
+    - Extracts angle and z-axis errors from Blocks 1 & 2 (explicit formulas)
+    - Solves axis tilt errors from Block 3 (least-squares)
+
     """
     norm_counts = np.array(norm_counts)
     error_dict = {}
-
+    error_ste = {}
+    block3_signals = []
+    seq_block3 = []
     for i, seq in enumerate(seq_names):
         val = np.asarray(norm_counts[i]).item()
         if seq == "pi_2_X":
@@ -46,20 +94,67 @@ def extract_error_params(norm_counts, seq_names):
             error_dict["vz"] = -0.5 * val + error_dict.get("phi_prime", 0)
         elif seq == "pi_X_pi_2_Y":
             error_dict["ez"] = 0.5 * val - error_dict.get("chi_prime", 0)
-        elif seq == "pi_2_Y_pi_2_X":
-            error_dict["vx"] = -0.5 * val + error_dict.get("phi_prime", 0)
-        elif seq == "pi_2_X_pi_2_Y":
-            error_dict["ex"] = 0.5 * val - error_dict.get("chi_prime", 0)
-        elif seq == "pi_2_X_pi_X_pi_2_Y":
-            error_dict["ey"] = 0.5 * val - error_dict.get("phi_prime", 0)
-        elif seq == "pi_2_Y_pi_X_pi_2_X":
-            error_dict["vy"] = -0.5 * val + error_dict.get("phi_prime", 0)
-        elif seq == "pi_2_X_pi_Y_pi_2_Y":
-            error_dict["vz_alt"] = -0.5 * val + error_dict.get("chi_prime", 0)
-        elif seq == "pi_2_Y_pi_Y_pi_2_X":
-            error_dict["ez_alt"] = 0.5 * val - error_dict.get("phi_prime", 0)
 
-    return error_dict
+        # Collect signals for Block 3
+        elif seq in [
+            "pi_2_Y_pi_2_X",
+            "pi_2_X_pi_2_Y",
+            "pi_2_X_pi_X_pi_2_Y",
+            "pi_2_Y_pi_X_pi_2_X",
+            "pi_2_X_pi_Y_pi_2_Y",
+            "pi_2_Y_pi_Y_pi_2_X",
+        ]:
+            block3_signals.append(val)
+            seq_block3.append(seq)
+
+    if len(block3_signals) == 6:
+        A = np.array(
+            [
+                [-1, -1, -1, 0, 0],
+                [1, -1, 1, 0, 0],
+                [1, 1, -1, 2, 0],
+                [-1, 1, 1, 2, 0],
+                [-1, -1, 1, 0, 2],
+                [1, -1, -1, 0, 2],
+            ]
+        )
+        block3_names = [
+            "epsilon_z_prime",  # ε′_z
+            "nu_x_prime",  # ν′_x
+            "nu_z_prime",  # ν′_z
+            "epsilon_y",  # ε_y
+            "nu_x",  # ν_x
+        ]
+
+        block3_signals = np.array(block3_signals)
+        x, residuals, rank, s = np.linalg.lstsq(A, block3_signals, rcond=None)
+        cov_matrix = np.linalg.inv(A.T @ A)
+        std_errors = np.sqrt(np.diag(cov_matrix)) * np.std(block3_signals - A @ x)
+
+        error_dict.update(dict(zip(block3_names, x)))
+        error_ste.update(dict(zip(block3_names, std_errors)))
+        # predicted_signals = A @ x
+        # error = np.linalg.norm(predicted_signals - block3_signals)
+        # print("Residual norm:", error)
+        predicted_signals = A @ x
+        residuals = block3_signals - predicted_signals
+        residual_norm = np.linalg.norm(residuals)
+        print("Residual norm:", residual_norm)
+
+        # Plot comparison of measured vs predicted
+        fig, ax = plt.subplots(figsize=(8, 4))
+        ax.plot(seq_block3, block3_signals, "o-", label="Measured", color="blue")
+        ax.plot(seq_block3, predicted_signals, "s--", label="Predicted", color="orange")
+        ax.set_title("Measured vs Predicted Signals (Block 3)")
+        ax.set_ylabel("Signal Value")
+        ax.set_xticks(range(len(seq_block3)))
+        ax.set_xticklabels(seq_block3, rotation=45, ha="right")
+        ax.legend()
+        ax.grid(True)
+        plt.tight_layout()
+        plt.show()
+
+    return error_dict, error_ste
 
 
 def plot_pulse_errors(error_dict):
@@ -91,6 +186,158 @@ def plot_pulse_errors(error_dict):
             fontsize=9,
         )
 
+    plt.show()
+
+
+# def plot_pulse_errors_with_meaning(error_dict):
+#     keys = list(error_dict.keys())
+#     values = [error_dict[k] for k in keys]
+
+#     for k, v in zip(keys, values):
+#         if not isinstance(v, (int, float, np.number)) or np.isnan(v):
+#             raise ValueError(f"Invalid value for {k}: {v}")
+
+#     descriptions = {
+#         "phi_prime": "π/2 X angle error",
+#         "chi_prime": "π/2 Y angle error",
+#         "phi": "π X angle error",
+#         "chi": "π Y angle error",
+#         "vz": "π Y Z-axis tilt",
+#         "ez": "π X Z-axis tilt",
+#         "vx": "π/2 Y X-axis tilt",
+#         "ex": "π/2 X X-axis tilt",
+#         "ey": "π X Y-axis tilt",
+#         "vy": "π Y Y-axis tilt",
+#         "vz_alt": "π/2 Y Y-axis tilt",
+#         "ez_alt": "π/2 Y Z-axis tilt",
+#         "epsilon_z_prime": "Z tilt in π/2X",
+#         "nu_x_prime": "X tilt in π/2Y",
+#         "nu_z_prime": "Z tilt in π/2Y",
+#         "epsilon_y": "Y tilt in πX",
+#         "nu_x": "X tilt in πY",
+#         "epsilon_z": "Z tilt in πX",
+#     }
+
+#     fig, (ax1, ax2) = plt.subplots(
+#         2, 1, figsize=(6, 9), gridspec_kw={"height_ratios": [2, 1]}
+#     )
+#     bars = ax1.bar(keys, values)
+#     ax1.axhline(0, color="gray", linewidth=0.8, linestyle="--")
+#     ax1.set_xticks(range(len(keys)))
+#     ax1.set_xticklabels(keys, rotation=45, ha="right", fontsize=10)
+#     ax1.set_ylabel("Error Amplitude", fontsize=12)
+#     ax1.set_title("Extracted Pulse Errors", fontsize=14)
+#     ax1.tick_params(labelsize=11)
+
+#     for bar, val in zip(bars, values):
+#         ax1.text(
+#             bar.get_x() + bar.get_width() / 2,
+#             bar.get_height() * 1.01,
+#             f"{val:.3f}",
+#             ha="center",
+#             va="bottom",
+#             fontsize=9,
+#         )
+
+#     ax2.axis("off")
+#     text_y = 1.0
+#     line_height = 0.12
+#     for k in keys:
+#         label = descriptions.get(k, "Unknown")
+#         ax2.text(0.01, text_y, f"{k}: {label}", fontsize=10, va="top")
+#         text_y -= line_height
+
+#     plt.tight_layout()
+#     plt.show()
+
+
+def plot_pulse_errors_with_math_labels(error_dict, error_ste=None):
+    keys = list(error_dict.keys())
+    values = [error_dict[k] for k in keys]
+    errors = [error_ste.get(k, 0) if error_ste else 0 for k in keys]
+    for k, v in zip(keys, values):
+        if not isinstance(v, (int, float, np.number)) or np.isnan(v):
+            raise ValueError(f"Invalid value for {k}: {v}")
+
+    # Mathematical labels using LaTeX
+    math_labels = {
+        "phi_prime": r"$\phi'$",
+        "chi_prime": r"$\chi'$",
+        "phi": r"$\phi$",
+        "chi": r"$\chi$",
+        "vz": r"$\nu_z$",
+        "ez": r"$\epsilon_z$",
+        "vx": r"$\nu'_x$",
+        "ex": r"$\epsilon'_x$",
+        "ey": r"$\epsilon_y$",
+        "vy": r"$\nu_y$",
+        "vz_alt": r"$\nu'_y$",
+        "ez_alt": r"$\epsilon'_z$",
+        "epsilon_z_prime": r"$\epsilon'_z$",
+        "nu_x_prime": r"$\nu'_x$",
+        "nu_z_prime": r"$\nu'_z$",
+        "epsilon_y": r"$\epsilon_y$",
+        "nu_x": r"$\nu_x$",
+        "epsilon_z": r"$\epsilon_z$",
+    }
+
+    descriptions = {
+        "phi_prime": r"Rotation angle error of $\pi/2\,X$ pulse",
+        "chi_prime": r"Rotation angle error of $\pi/2\,Y$ pulse",
+        "phi": r"Rotation angle error of $\pi\,X$ pulse",
+        "chi": r"Rotation angle error of $\pi\,Y$ pulse",
+        "vz": r"$Z$-axis tilt of $\pi\,Y$ pulse",
+        "ez": r"$Z$-axis tilt of $\pi\,X$ pulse",
+        "vx": r"$X$-axis tilt of $\pi/2\,Y$ pulse",
+        "ex": r"$X$-axis tilt of $\pi/2\,X$ pulse",
+        "ey": r"$Y$-axis tilt of $\pi\,X$ pulse",
+        "vy": r"$Y$-axis tilt of $\pi\,Y$ pulse",
+        "vz_alt": r"$Y$-axis tilt of $\pi/2\,Y$ pulse",
+        "ez_alt": r"$Z$-axis tilt of $\pi/2\,Y$ pulse",
+        "epsilon_z_prime": r"$Z$-axis tilt of $\pi/2\,X$ pulse",
+        "nu_x_prime": r"$X$-axis tilt of $\pi/2\,Y$ pulse",
+        "nu_z_prime": r"$Z$-axis tilt of $\pi/2\,Y$ pulse",
+        "epsilon_y": r"$Y$-axis tilt of $\pi\,X$ pulse",
+        "nu_x": r"$X$-axis tilt of $\pi\,Y$ pulse",
+        "epsilon_z": r"$Z$-axis tilt of $\pi\,X$ pulse",
+    }
+
+    fig, (ax1, ax2) = plt.subplots(
+        2, 1, figsize=(6, 6), gridspec_kw={"height_ratios": [2, 1]}
+    )
+    x_pos = np.arange(len(keys))
+    # x_pos = range(len(keys))
+    bars = ax1.bar(x_pos, values, yerr=errors, capsize=2)
+    ax1.axhline(0, color="gray", linewidth=0.8, linestyle="--")
+    ax1.set_xticks(x_pos)
+    ax1.set_xticklabels(
+        [math_labels.get(k, k) for k in keys], rotation=0, ha="right", fontsize=11
+    )
+    ax1.set_ylabel("Error Amplitude (radians)", fontsize=12)
+    ax1.set_title("Extracted Pulse Errors", fontsize=14)
+    ax1.tick_params(labelsize=11)
+
+    for i, (bar, val) in enumerate(zip(bars, values)):
+        ax1.text(
+            bar.get_x() + bar.get_width() / 2,
+            bar.get_height() * 1.01,
+            f"{val:.3f}",
+            ha="center",
+            va="bottom",
+            fontsize=9,
+        )
+
+    ax2.axis("off")
+    # text_block = ", ".join([f"{math_labels[k]}: {descriptions[k]}" for k in keys])
+    # ax2.text(0.01, 0.8, text_block, fontsize=11, wrap=False)
+    text_y = 1.0
+    line_height = 0.12
+    for k in keys:
+        symbol = math_labels.get(k, k)
+        label = descriptions.get(k, "Unknown")
+        ax2.text(0.01, text_y, f"{symbol}: {label}", fontsize=11, va="top")
+        text_y -= line_height
+    plt.tight_layout()
     plt.show()
 
 
@@ -252,12 +499,24 @@ def main(nv_list, num_reps, num_runs, uwave_ind_list):
     #     dm.save_figure(fit_fig, file_path)
 
 
+def normalize_to_sigma_z(raw_counts, bright_ref, dark_ref):
+    """Return signal mapped to [-1, 1] based on reference levels."""
+    return 2 * (raw_counts - dark_ref) / (bright_ref - dark_ref) - 1
+
+
 if __name__ == "__main__":
     kpl.init_kplotlib()
-    # file_id = 1843336828775
-    file_ids = [1843336828775, 1843444108428, 1843662119540]
+    file_ids = [1843336828775, 1843444108428, 1843662119540]  # before correction
+    # file_ids = [
+    #     1844234382841,
+    #     1844135699091,
+    #     1844039507259,
+    #     1843920112174,
+    # ]  # after correction
     # data = dm.get_raw_data(file_id=file_id, load_npz=False, use_cache=True)
     data = widefield.process_multiple_files(file_ids=file_ids)
+    file_name = widefield.combined_filename(file_ids=file_ids)
+    print(file_name)
     nv_list = data["nv_list"]
     seq_names = data["bootstrap_sequence_names"]
     num_nvs = len(nv_list)
@@ -268,14 +527,21 @@ if __name__ == "__main__":
     norm_counts = []
     for c in range(len(seq_names)):
         sig_counts = counts[c]  #
-        nc, _ = widefield.process_counts(nv_list, sig_counts, threshold=True)
+        nc, _ = widefield.process_counts(
+            nv_list, sig_counts, ref_counts, threshold=True
+        )
+        bright_ref = np.max(nc)
+        dark_ref = np.min(nc)
+        nc = normalize_to_sigma_z(nc, bright_ref, dark_ref)
         nc_medians = np.median(nc, axis=0)
         norm_counts.append(nc_medians)
+        # print(nc)
     norm_counts = np.array(norm_counts)  # shape: (num_seqs, num_nvs)
     # file_name = dm.get_file_name(file_id=file_id)
     # print(f"{file_name}_{file_id}")
-    error_dict = extract_error_params(norm_counts, seq_names)
+    error_dict, error_ste = extract_error_params(norm_counts, seq_names)
     print(error_dict)
-    plot_pulse_errors(error_dict)
+    # plot_pulse_errors(error_dict)
+    plot_pulse_errors_with_math_labels(error_dict, error_ste)
     # Bloch_Sphere_Visualization(error_dict)
     plt.show(block=True)
