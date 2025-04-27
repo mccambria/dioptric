@@ -416,16 +416,16 @@ def do_scc_snr_check(nv_list):
 
 def do_bootstrapped_pulse_error_tomography(nv_list):
     num_reps = 11
-    num_runs = 200
+    num_runs = 400
     # num_runs = 10
     # num_runs = 1100
-    # bootstrapped_pulse_error_tomography.main(
-    #     nv_list, num_reps, num_runs, uwave_ind_list=[1]
-    # )
-    for _ in range(4):
-        bootstrapped_pulse_error_tomography.main(
-            nv_list, num_reps, num_runs, uwave_ind_list=[1]
-        )
+    bootstrapped_pulse_error_tomography.main(
+        nv_list, num_reps, num_runs, uwave_ind_list=[1]
+    )
+    # for _ in range(2):
+    #     bootstrapped_pulse_error_tomography.main(
+    #         nv_list, num_reps, num_runs, uwave_ind_list=[1]
+    #     )
 
 
 def do_power_rabi(nv_list):

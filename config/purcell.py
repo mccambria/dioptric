@@ -878,18 +878,17 @@ opx_config = {
 def correct_pulse_params_by_phase(phase_deg, base_amp=0.5):
     # Determine which pulse axis the phase aligns with
     pulse_errors = {
-        "phi": 0.19875,
-        "chi": 0.19994,
-        "ez": 0.20136,
-        "vx": -0.201,
-        "phi_prime": -0.1005,
-        "chi_prime": -0.09977,
-        "vz": -0.19847,
-        "epsilon_z_prime": -0.00132,
-        "nu_x_prime": -0.2010,
-        "nu_z_prime": 0.00274,
-        "epsilon_y": 0.20074,
-        "nu_x": 0.00168,
+        "phi_prime": -0.178439,
+        "chi_prime": -0.192049,
+        "phi": 0.403461,
+        "chi": 0.386181,
+        "vz": -0.302293,
+        "ez": 0.376963,
+        "epsilon_z_prime": 0.051347,
+        "nu_x_prime": -0.279457,
+        "nu_z_prime": 0.038526,
+        "epsilon_y": 0.283488,
+        "nu_x": -0.066811,
     }
 
     phase_mod = phase_deg % 360
@@ -926,11 +925,15 @@ def generate_iq_pulses(pulse_names, phases):
     amp = 0.5
 
     for phase in phases:
-        amp, phase_rad = correct_pulse_params_by_phase(phase, base_amp=amp)
-        corrected_phase = phase - np.rad2deg(phase_rad)
-        # print(f"phase, amp: {phase, amp}")
-        i_comp = np.cos(np.deg2rad(corrected_phase)) * amp
-        q_comp = np.sin(np.deg2rad(corrected_phase)) * amp
+        # amp_corr, phase_corr_rad = correct_pulse_params_by_phase(phase, base_amp=amp)
+        # corrected_phase_rad = np.deg2rad(phase) + phase_corr_rad  # note: addition
+        # i_comp = np.cos(corrected_phase_rad) * amp_corr
+        # q_comp = np.sin(corrected_phase_rad) * amp_corr
+        # print(
+        #     f"Phase {phase}° → corrected amp: {amp_corr:.3f}, phase (deg): {np.rad2deg(corrected_phase_rad):.2f}"
+        # )
+        i_comp = np.cos(np.deg2rad(phase)) * amp
+        q_comp = np.sin(np.deg2rad(phase)) * amp
         opx_config["waveforms"][f"i_{phase}"] = {"type": "constant", "sample": i_comp}
         opx_config["waveforms"][f"q_{phase}"] = {"type": "constant", "sample": q_comp}
 
