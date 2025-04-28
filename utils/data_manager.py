@@ -31,9 +31,9 @@ from PIL import Image
 
 # fmt: off
 # Select your cloud backend here. Box was used up until May 2025. Nas is used currently
-from utils import _cloud_nas as cloud
+# from utils import _cloud_nas as cloud
 
-# from utils import _cloud_box as cloud
+from utils import _cloud_box as cloud
 # fmt: on
 from utils import common, widefield
 from utils.constants import NVSig
@@ -392,6 +392,164 @@ def _json_escape(raw_data):
 
 
 # endregion
+
+
+## to get box data
+def get_file_name(file_id):
+    try:
+        with open(data_manager_folder / "cache_manifest.txt") as f:
+            cache_manifest = ujson.load(f)
+        file_name = cache_manifest[file_id]
+    except Exception:
+        _, _, file_name = cloud.download(file_id=file_id)
+    return file_name
+
+
+def get_raw_data_box(file_name=None, file_id=None, use_cache=True, load_npz=False):
+    """Returns a dictionary containing the json object from the specified
+    raw data file
+
+    Parameters
+    ----------
+    file_name : str, optional
+        Name of the raw data file to load, w/o extension. If file_name is passed,
+        file_id is None, and the file is not in the cache, then we'll identify
+        the proper file by searching the cloud for it. By default None
+    file_id : str, optional
+        Cloud ID of the file to load. Loaded directly from the cloud or cache, no
+        search necessary. By default None
+    use_cache : bool, optional
+        Whether or not to use the cache. If True, we'll try to pull the file from
+        the cache - if it's not there already we'll add it to the cache. Otherwise
+        we'll get the file straight from the cloud and skip caching it. By default
+        True
+    load_npz: bool, optional
+        Whether or not to retrieve any linked compressed numpy files (.npz files).
+        Retrieving these can be slow if the file is very large so it's better to
+        skip it if you don't need it.
+
+    Returns
+    -------
+    dict
+        Dictionary containing the json object from the specified raw data file
+    """
+
+    # Recurse if multiple file_ids passed
+    if isinstance(file_id, (list, tuple)):
+        file_ids = file_id
+        data = get_raw_data(file_id=file_ids[0])
+        for file_id in file_ids[1:]:
+            new_data = get_raw_data(file_id=file_id)
+            data["num_runs"] += new_data["num_runs"]
+            data["counts"] = np.append(data["counts"], new_data["counts"], axis=2)
+        return data
+
+    if file_id is not None:
+        file_id = str(file_id)
+
+    ### Check the cache first
+
+    # Try to open an existing cache manifest
+    retrieved_from_cache = False
+    if use_cache:
+        try:
+            with open(data_manager_folder / "cache_manifest.txt") as f:
+                cache_manifest = ujson.load(f)
+        except Exception:
+            cache_manifest = None
+
+        # Try to open the cached file
+        try:
+            cache_entry = cache_manifest[file_name]
+            # Only load from cache if we either don't need the npz or we already have it
+            if not load_npz or cache_entry["load_npz"]:
+                with open(data_manager_folder / f"{file_name}.txt", "rb") as f:
+                    file_content = f.read()
+                data = orjson.loads(file_content)
+                retrieved_from_cache = True
+        except Exception:
+            pass
+
+    ### If not in cache, download from the cloud
+
+    if not retrieved_from_cache:
+        # Download the base file
+        # file_content = cloud.download(file_name, "txt", file_id)
+        file_content_tuple = cloud.download(file_name, "txt", file_id)
+        # support both old (tuple) and new (bytes-only) formats
+        if isinstance(file_content_tuple, tuple):
+            file_content, file_id, file_name = file_content_tuple
+        else:
+            file_content = file_content_tuple
+
+        data = orjson.loads(file_content)
+
+        # Find and decompress the linked numpy arrays
+        if load_npz:
+            for key in data:
+                val = data[key]
+                if not isinstance(val, str):
+                    continue
+                val_split = val.split(".")
+                if val_split[-1] != "npz":
+                    continue
+                first_part = val_split[0]
+                npz_file_id = first_part if first_part else None
+                # npz_file_content, _, _ = cloud.download(file_name, "npz", npz_file_id)
+                npz_file_file_content_tuple = cloud.download(
+                    file_name, "npz", npz_file_id
+                )
+                if isinstance(npz_file_file_content_tuple, tuple):
+                    npz_file_content, file_id, file_name = npz_file_file_content_tuple
+                else:
+                    npz_file_content = npz_file_file_content_tuple
+
+                npz_data = np.load(BytesIO(npz_file_content))
+                data |= npz_data
+                break
+    ### Add to cache and return the data
+
+    # Update the cache manifest
+    if use_cache:
+        cache_manifest_updated = False
+        if not retrieved_from_cache:
+            if cache_manifest is None:
+                cache_manifest = {}
+            cached_file_names = list(cache_manifest.keys())
+            # Add the new file to the manifest
+            cache_manifest[file_name] = {"file_id": file_id, "load_npz": load_npz}
+            cached_file_names.append(file_name)
+            while len(cached_file_names) > 10:
+                file_name_to_remove = cached_file_names.pop(0)
+                del cache_manifest[file_name_to_remove]
+                file_to_remove = data_manager_folder / f"{file_name_to_remove}.txt"
+                if file_to_remove.exists():
+                    os.remove(file_to_remove)
+                # os.remove(data_manager_folder / f"{file_name_to_remove}.txt")
+            cache_manifest_updated = True
+        if cache_manifest_updated:
+            with open(data_manager_folder / "cache_manifest.txt", "w+") as f:
+                ujson.dump(cache_manifest, f, indent=2)
+
+        # Write the actual data file to the cache
+        if not retrieved_from_cache:
+            file_content = orjson.dumps(data, option=orjson.OPT_SERIALIZE_NUMPY)
+            with open(data_manager_folder / f"{file_name}.txt", "wb") as f:
+                f.write(file_content)
+
+    # Retrieve valid fields for NVSig
+    valid_fields = {field.name for field in fields(NVSig)}
+
+    if "nv_list" in data:
+        nv_list = data["nv_list"]
+        # Filter out unexpected fields
+        nv_list = [
+            NVSig(**{key: nv[key] for key in nv if key in valid_fields})
+            for nv in nv_list
+        ]
+        data["nv_list"] = nv_list
+
+    return data
 
 
 if __name__ == "__main__":
