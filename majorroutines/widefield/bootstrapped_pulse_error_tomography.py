@@ -512,7 +512,11 @@ if __name__ == "__main__":
     #     "2025_04_25-21_33_07-rubin-nv0_2025_02_26",
     #     "2025_04_26-01_32_52-rubin-nv0_2025_02_26",
     # ]
-    file_ids = ["2025_04_27-18_43_06-rubin-nv0_2025_02_26"]
+    # file_ids = ["2025_04_27-18_43_06-rubin-nv0_2025_02_26"]  # before
+    file_ids = [
+        "2025_04_28-03_05_19-rubin-nv0_2025_02_26",
+        "2025_04_28-12_17_15-rubin-nv0_2025_02_26",
+    ]  # after
     # after correction
     # file_ids = [
     #     "2025_04_26-21_46_33-rubin-nv0_2025_02_26",
@@ -531,7 +535,7 @@ if __name__ == "__main__":
     norm_counts = []
     for c in range(len(seq_names)):
         sig_counts = counts[c]  #
-        nc, _ = widefield.process_counts(nv_list, sig_counts, threshold=True)
+        nc, _ = widefield.process_counts(nv_list, sig_counts, threshold=False)
         bright_ref = np.max(nc)
         dark_ref = np.min(nc)
         nc = normalize_to_sigma_z_scc(nc, bright_ref, dark_ref)

@@ -891,15 +891,34 @@ def correct_pulse_params_by_phase(phase_deg, base_amp=0.5):
         "nu_x": -0.01994,
     }
 
+    # phase_mod = phase_deg % 360
+    # if phase_mod in [0, 180]:  # X-aligned pulses
+    #     angle_error = pulse_errors.get("phi", 0)
+    #     tilt = pulse_errors.get("ez", 0)
+    # elif phase_mod in [90, 270]:  # Y-aligned pulses
+    #     angle_error = pulse_errors.get("chi", 0)
+    #     tilt = pulse_errors.get("vx", 0)
+    # else:
+    #     raise ValueError(f"Unsupported phase: {phase_deg}. Use 0, 90, 180, 270.")
+
+    # amp_correction = base_amp * (1.0 / (1 + angle_error))
+    # phase_correction_rad = -np.arctan2(tilt, 1.0)
+
+    # return amp_correction, phase_correction_rad
     phase_mod = phase_deg % 360
-    if phase_mod in [0, 180]:  # X-aligned pulses
+
+    if np.isclose(phase_mod, 0, atol=5) or np.isclose(phase_mod, 180, atol=5):
+        # X-aligned pulses
         angle_error = pulse_errors.get("phi", 0)
         tilt = pulse_errors.get("ez", 0)
-    elif phase_mod in [90, 270]:  # Y-aligned pulses
+    elif np.isclose(phase_mod, 90, atol=5) or np.isclose(phase_mod, 270, atol=5):
+        # Y-aligned pulses
         angle_error = pulse_errors.get("chi", 0)
-        tilt = pulse_errors.get("vx", 0)
+        tilt = pulse_errors.get("epsilon_y", 0)
     else:
-        raise ValueError(f"Unsupported phase: {phase_deg}. Use 0, 90, 180, 270.")
+        raise ValueError(
+            f"Unsupported phase: {phase_deg}. Expected near 0, 90, 180, 270 degrees."
+        )
 
     amp_correction = base_amp * (1.0 / (1 + angle_error))
     phase_correction_rad = -np.arctan2(tilt, 1.0)
