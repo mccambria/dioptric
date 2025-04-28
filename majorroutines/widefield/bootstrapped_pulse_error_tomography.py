@@ -506,12 +506,13 @@ if __name__ == "__main__":
 
     # no gap bewteen pi pulses
     # before correction
-    file_ids = [
-        "2025_04_25-19_40_02-rubin-nv0_2025_02_26",
-        "2025_04_25-23_30_53-rubin-nv0_2025_02_26",
-        "2025_04_25-21_33_07-rubin-nv0_2025_02_26",
-        "2025_04_26-01_32_52-rubin-nv0_2025_02_26",
-    ]
+    # file_ids = [
+    #     "2025_04_25-19_40_02-rubin-nv0_2025_02_26",
+    #     "2025_04_25-23_30_53-rubin-nv0_2025_02_26",
+    #     "2025_04_25-21_33_07-rubin-nv0_2025_02_26",
+    #     "2025_04_26-01_32_52-rubin-nv0_2025_02_26",
+    # ]
+    file_ids = ["2025_04_27-18_43_06-rubin-nv0_2025_02_26"]
     # after correction
     # file_ids = [
     #     "2025_04_26-21_46_33-rubin-nv0_2025_02_26",
@@ -536,7 +537,7 @@ if __name__ == "__main__":
         nc = normalize_to_sigma_z_scc(nc, bright_ref, dark_ref)
         nc_medians = np.median(nc, axis=0)
         norm_counts.append(nc_medians)
-        # print(f"{bright_ref}, {dark_ref}")
+        print(f"{bright_ref}, {dark_ref}")
     norm_counts = np.array(norm_counts)  # shape: (num_seqs, num_nvs)
     # file_name = dm.get_file_name(file_id=file_id)
     # print(f"{file_name}_{file_id}")

@@ -1360,7 +1360,8 @@ if __name__ == "__main__":
     nv_sig = widefield.get_repr_nv_sig(nv_list)
     # print(f"Created NV: {nv_sig.name}, Coords: {nv_sig.coords}")
     # nv_sig.expected_counts = 900
-    nv_sig.expected_counts = 1200
+    nv_sig.expected_counts = 1100
+    # nv_sig.expected_counts = 1200
 
     # nv_list = nv_list[::-1]  # flipping the order of NVs
     # nv_list = nv_list[:2]
@@ -1381,7 +1382,7 @@ if __name__ == "__main__":
         # pos.set_xyz_on_nv(nv_sig)
 
         do_compensate_for_drift(nv_sig)
-        # do_widefield_image_sample(nv_sig, 50)
+        do_widefield_image_sample(nv_sig, 50)
         # do_widefield_image_sample(nv_sig, 200)
 
         # scan_equilateral_triangle(nv_sig, center_coord=sample_coords, radius=0.2)
