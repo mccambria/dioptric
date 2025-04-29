@@ -1079,13 +1079,13 @@ def do_opx_constant_ac():
     #     [0.19, 0.19, 0.45],  # Analog voltages
     #     [107, 107, 0],  # Analog frequencies
     # )
-    # Red + green + Yellow
-    # opx.constant_ac(
-    #     [4, 1],  # Digital channels1
-    #     [3, 4, 2, 6, 7],  # Analog channels
-    #     [0.19, 0.19, 0.17, 0.17, 0.40],  # Analog voltages
-    #     [107, 107, 72, 72, 0],  # Analog frequencies
-    # )
+    # # Red + green + Yellow
+    opx.constant_ac(
+        [4, 1],  # Digital channels1
+        [3, 4, 2, 6, 7],  # Analog channels
+        [0.19, 0.19, 0.17, 0.17, 0.40],  # Analog voltages
+        [107, 107, 72, 72, 0],  # Analog frequencies
+    )
     input("Press enter to stop...")
     # sig_gen.uwave_off()
 
@@ -1261,16 +1261,16 @@ if __name__ == "__main__":
     #     [227.438, 19.199],
     # ]
     # green_coords_list = [
-    #     [107.743, 107.657],
-    #     [118.13, 97.404],
-    #     [107.024, 118.34],
-    #     [96.795, 94.775],
+    #     [107.777, 107.746],
+    #     [118.117, 97.426],
+    #     [107.015, 118.387],
+    #     [96.843, 94.8],
     # ]
     # red_coords_list = [
-    #     [72.46, 73.181],
-    #     [80.704, 64.731],
-    #     [72.107, 81.88],
-    #     [63.253, 62.814],
+    #     [72.49, 73.253],
+    #     [80.694, 64.749],
+    #     [72.101, 81.918],
+    #     [63.293, 62.834],
     # ]
 
     num_nvs = len(pixel_coords_list)
