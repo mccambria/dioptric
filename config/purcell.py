@@ -946,13 +946,13 @@ def generate_iq_pulses(pulse_names, phases):
     for phase in phases:
         amp_corr, phase_corr_rad = correct_pulse_params_by_phase(phase, base_amp=amp)
         corrected_phase_rad = np.deg2rad(phase) + phase_corr_rad  # note: addition
-        i_comp = np.cos(corrected_phase_rad) * amp_corr
-        q_comp = np.sin(corrected_phase_rad) * amp_corr
-        print(
-            f"Phase {phase}° → corrected amp: {amp_corr:.3f}, phase (deg): {np.rad2deg(corrected_phase_rad):.2f}"
-        )
-        # i_comp = np.cos(np.deg2rad(phase)) * amp
-        # q_comp = np.sin(np.deg2rad(phase)) * amp
+        # i_comp = np.cos(corrected_phase_rad) * amp_corr
+        # q_comp = np.sin(corrected_phase_rad) * amp_corr
+        # print(
+        #     f"Phase {phase}° → corrected amp: {amp_corr:.3f}, phase (deg): {np.rad2deg(corrected_phase_rad):.2f}"
+        # )
+        i_comp = np.cos(np.deg2rad(phase)) * amp
+        q_comp = np.sin(np.deg2rad(phase)) * amp
         opx_config["waveforms"][f"i_{phase}"] = {"type": "constant", "sample": i_comp}
         opx_config["waveforms"][f"q_{phase}"] = {"type": "constant", "sample": q_comp}
 
