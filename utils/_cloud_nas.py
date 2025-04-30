@@ -112,7 +112,5 @@ def _batch_delete(condition_fn, folder_path):
 # endregion
 
 if __name__ == "__main__":
-    file_name = "2024_07_04-18_14_37-johnson-nv0_2024_03_12"
-    path_from_nvdata = "pc_Purcell/branch_master/resonance/2025_04"
-    test = download(file_name, nvdata_dir=None)
-    debug = 0
+    file_stem = "2025_04_17-22_09_45-rubin-nv0_2025_02_26"
+    print(search_index.get_file_parent(file_stem))

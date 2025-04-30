@@ -72,8 +72,6 @@ def download(file_stem=None, ext="txt", file_id=None):
             raise RuntimeError("No file found with the passed file_name.")
     box_file = box_client.file(file_id)
     file_content = box_file.content()
-    file_info = box_file.get()
-    file_stem = file_info.name.split(".")[0]
     return file_content
 
 
@@ -95,6 +93,13 @@ def upload(file_path, content):
 
 
 # endregion
+
+
+def get_file_stem_from_file_id(file_id):
+    box_file = box_client.file(file_id)
+    file_info = box_file.get()
+    file_stem = file_info.name.split(".")[0]
+    return file_stem
 
 
 def get_folder_id(folder_path, no_create=False):
