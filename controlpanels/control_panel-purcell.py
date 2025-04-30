@@ -553,15 +553,17 @@ def do_rabi(nv_list):
 
 
 def do_spin_echo_phase_scan_test(nv_list):
-    min_phi = 0
-    max_phi = 2 * np.pi
-    num_steps = 17
+    num_steps = 21
     num_reps = 11
-    num_runs = 100
+    num_runs = 150
     # num_runs = 2
+    # phi_list = np.linspace(0, 360, num_steps)
+    # fmt: off
+    phi_list = [0, 18, 36, 54, 72, 90, 108, 126, 144, 162, 180, 198, 216, 234, 252, 270, 288, 306, 324, 342, 360]
+    # fmt: on
     uwave_ind_list = [1]  # only one has iq modulation
     spin_echo_phase_scan_test.main(
-        nv_list, num_steps, num_reps, num_runs, min_phi, max_phi, uwave_ind_list
+        nv_list, num_steps, num_reps, num_runs, phi_list, uwave_ind_list
     )
     # for _ in range(2):
     #     spin_echo_phase_scan_test.main(
@@ -1441,7 +1443,7 @@ if __name__ == "__main__":
         # do_optimize_spin_pol_amp(nv_list)
         # do_check_readout_fidelity(nv_list)
 
-        do_scc_snr_check(nv_list)
+        # do_scc_snr_check(nv_list)
         # do_optimize_scc_duration(nv_list)
         # do_optimize_scc_amp(nv_list)
         # optimize_scc_amp_and_duration(nv_list)
@@ -1449,7 +1451,7 @@ if __name__ == "__main__":
         # do_spin_pol_check(nv_sig)
         # do_calibrate_green_red_delay()
 
-        # do_spin_echo_phase_scan_test(nv_list)  # for iq mod test
+        do_spin_echo_phase_scan_test(nv_list)  # for iq mod test
         # do_bootstrapped_pulse_error_tomography(nv_list)
         # do_calibrate_iq_delay(nv_list)
 

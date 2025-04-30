@@ -36,7 +36,7 @@ def get_seq(base_scc_seq_args, seq_names, num_reps=1):
         "pi_2_Y_pi_X_pi_2_X": [("pi/2", 90), ("pi", 0), ("pi/2", 0)],
         "pi_2_X_pi_Y_pi_2_Y": [("pi/2", 0), ("pi", 90), ("pi/2", 90)],
         "pi_2_Y_pi_Y_pi_2_X": [("pi/2", 90), ("pi", 90), ("pi/2", 0)],
-        "pi_2_Y_pi_X_pi_2_Y": [("pi/2", 90), ("pi", 0), ("pi/2", 90)],  # test
+        "pi_2_Y_pi_X_pi_2_Y": [("pi/2", 90), ("pi", 0), ("pi/2", 90)],
     }
 
     with qua.program() as seq:
@@ -54,6 +54,7 @@ def get_seq(base_scc_seq_args, seq_names, num_reps=1):
                 def macro_fn(
                     uwave_ind_list, step_val, pulses=pulses
                 ):  # bind pulse sequence
+                    qua.align()
                     with qua.strict_timing_():
                         for kind, phase in pulses:
                             if kind == "pi/2":
@@ -69,10 +70,10 @@ def get_seq(base_scc_seq_args, seq_names, num_reps=1):
             sig_macro = make_sig_macro(pulse_list)
             uwave_macro_list.append(sig_macro)
 
-        def ref_macro(uwave_ind_list, step_val=None):
-            pass
+        # def ref_macro(uwave_ind_list, step_val=None):
+        #     pass
 
-        uwave_macro_list.append(ref_macro)
+        # uwave_macro_list.append(ref_macro)
         print(len(uwave_macro_list))
 
         base_scc_sequence.macro(
@@ -106,7 +107,7 @@ if __name__ == "__main__":
                 [40, 88],
                 [1.0, 1.0],
                 [False, False],
-                [0, 1],
+                [1],
             ],
             [
                 "pi_2_Y_pi_X_pi_2_Y",  # created for test

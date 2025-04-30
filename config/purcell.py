@@ -563,22 +563,46 @@ opx_config = {
         "ao_sig_gen_STAN_sg394_i": {
             "singleInput": {"port": ("con1", 5)},
             "intermediate_frequency": 0,
-            "operations": {"iq_test": "iq_test", "on": "ao_cw", "off": "ao_off"},
+            "operations": {
+                "iq_test": "iq_test",
+                "on": "ao_cw",
+                "off": "ao_off",
+                "pi_pulse": "ao_iq_pi_pulse_0",
+                "pi_on_2_pulse": "ao_iq_pi_on_2_pulse_0",
+            },
         },
         "ao_sig_gen_STAN_sg394_q": {
             "singleInput": {"port": ("con1", 8)},
             "intermediate_frequency": 0,
-            "operations": {"iq_test": "iq_test", "on": "ao_cw", "off": "ao_off"},
+            "operations": {
+                "iq_test": "iq_test",
+                "on": "ao_cw",
+                "off": "ao_off",
+                "pi_pulse": "ao_iq_pi_pulse_0",
+                "pi_on_2_pulse": "ao_iq_pi_on_2_pulse_0",
+            },
         },
         "ao_sig_gen_STAN_sg394_2_i": {
             "singleInput": {"port": ("con1", 9)},
             "intermediate_frequency": 0,
-            "operations": {"iq_test": "iq_test", "on": "ao_cw", "off": "ao_off"},
+            "operations": {
+                "iq_test": "iq_test",
+                "on": "ao_cw",
+                "off": "ao_off",
+                "pi_pulse": "ao_iq_pi_pulse_1",
+                "pi_on_2_pulse": "ao_iq_pi_on_2_pulse_1",
+            },
         },
         "ao_sig_gen_STAN_sg394_2_q": {
             "singleInput": {"port": ("con1", 10)},
             "intermediate_frequency": 0,
-            "operations": {"iq_test": "iq_test", "on": "ao_cw", "off": "ao_off"},
+            "operations": {
+                "iq_test": "iq_test",
+                "on": "ao_cw",
+                "off": "ao_off",
+                "pi_pulse": "ao_iq_pi_pulse_1",
+                "pi_on_2_pulse": "ao_iq_pi_on_2_pulse_1",
+            },
         },
         # endregion
         "do_camera_trigger": {
@@ -890,20 +914,6 @@ def correct_pulse_params_by_phase(phase_deg, base_amp=0.5):
         "epsilon_y": 0.197103,
         "nu_x": -0.01994,
     }
-
-    # phase_mod = phase_deg % 360
-    # if phase_mod in [0, 180]:  # X-aligned pulses
-    #     angle_error = pulse_errors.get("phi", 0)
-    #     tilt = pulse_errors.get("ez", 0)
-    # elif phase_mod in [90, 270]:  # Y-aligned pulses
-    #     angle_error = pulse_errors.get("chi", 0)
-    #     tilt = pulse_errors.get("vx", 0)
-    # else:
-    #     raise ValueError(f"Unsupported phase: {phase_deg}. Use 0, 90, 180, 270.")
-
-    # amp_correction = base_amp * (1.0 / (1 + angle_error))
-    # phase_correction_rad = -np.arctan2(tilt, 1.0)
-
     # return amp_correction, phase_correction_rad
     phase_mod = phase_deg % 360
 
@@ -944,8 +954,8 @@ def generate_iq_pulses(pulse_names, phases):
     amp = 0.5
 
     for phase in phases:
-        amp_corr, phase_corr_rad = correct_pulse_params_by_phase(phase, base_amp=amp)
-        corrected_phase_rad = np.deg2rad(phase) + phase_corr_rad  # note: addition
+        # amp_corr, phase_corr_rad = correct_pulse_params_by_phase(phase, base_amp=amp)
+        # corrected_phase_rad = np.deg2rad(phase) + phase_corr_rad  # note: addition
         # i_comp = np.cos(corrected_phase_rad) * amp_corr
         # q_comp = np.sin(corrected_phase_rad) * amp_corr
         # print(
@@ -963,7 +973,9 @@ def generate_iq_pulses(pulse_names, phases):
                 for chan in range(num_sig_gens):
                     # Define the pulse
                     full_pulse_name = f"ao_{comp}_{pulse_name}_{phase}_{chan}"
+                    # print(full_pulse_name)
                     length = opx_config["pulses"][f"do_{pulse_name}_{chan}"]["length"]
+                    # print(length)
                     opx_config["pulses"][full_pulse_name] = {
                         "operation": "control",
                         "length": length,
@@ -976,8 +988,12 @@ def generate_iq_pulses(pulse_names, phases):
                     ] = full_pulse_name
 
 
-ref_img_array = np.array([])
-generate_iq_pulses(["pi_pulse", "pi_on_2_pulse"], [0, 90, 180, 270])
+# ref_img_array = np.array([])
+# generate_iq_pulses(["pi_pulse", "pi_on_2_pulse"], [0, 90, 180, 270])
+# fmt: off
+phases =[0, 18, 36, 54, 72, 90, 108, 126, 144, 162, 180, 198, 216, 234, 252, 270, 288, 306, 324, 342, 360]
+# fmt:on
+generate_iq_pulses(["pi_pulse", "pi_on_2_pulse"], phases)
 
 
 if __name__ == "__main__":
