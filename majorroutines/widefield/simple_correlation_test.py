@@ -360,7 +360,9 @@ def process_and_plot(
 
     ### Print analysis
     print(np.mean(ref_corr_coeffs[np.triu_indices_from(ref_corr_coeffs, 1)]))
+    print(np.std(ref_corr_coeffs[np.triu_indices_from(ref_corr_coeffs, 1)]))
     print(np.mean(np.abs(sig_corr_coeffs[np.triu_indices_from(sig_corr_coeffs, 1)])))
+    print(np.std(np.abs(sig_corr_coeffs[np.triu_indices_from(sig_corr_coeffs, 1)])))
 
     ### Plot
 

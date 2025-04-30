@@ -96,6 +96,7 @@ def create_fit_figure(
     splittings = []
     splitting_errs = []
     linewidths = []
+    linewidth_errs = []
 
     do_fit = True
     if do_fit:
@@ -165,6 +166,8 @@ def create_fit_figure(
             #     center_freqs.append((popt[2], popt[5]))
             center_freqs.append((popt[2], popt[5]))
             center_freq_errs.append((np.sqrt(pcov[2, 2]), np.sqrt(pcov[5, 5])))
+            linewidths.append((popt[1], popt[4]))
+            linewidth_errs.append((np.sqrt(pcov[1, 1]), np.sqrt(pcov[4, 4])))
             if nv_ind in split_esr:
                 splittings.append(popt[-1])
                 splitting_errs.append(np.sqrt(pcov[-1, -1]))
@@ -176,18 +179,30 @@ def create_fit_figure(
     # print(center_freq_errs)
     nvb_freqs = []
     nva_freqs = []
+    nva_linewidths = []
+    nvb_linewidths = []
     for ind in range(num_nvs):
         center_freq_pair = center_freqs[ind]
-        if center_freq_pair[1] - center_freq_pair[0] < 0.120:
+        if center_freq_pair[1] - center_freq_pair[0] > 0.120:
             nvb_freqs.append(center_freqs[ind])
+            nvb_linewidths.append(linewidths[ind])
         else:
             nva_freqs.append(center_freqs[ind])
+            nva_linewidths.append(linewidths[ind])
     nva_freqs = np.array(nva_freqs)
     nvb_freqs = np.array(nvb_freqs)
-    nvb_mean_freqs = np.mean(nvb_freqs, axis=0)
     nva_mean_freqs = np.mean(nva_freqs, axis=0)
+    nvb_mean_freqs = np.mean(nvb_freqs, axis=0)
     print(nvb_mean_freqs)
     print(nva_mean_freqs)
+
+    nva_devs = (nva_freqs - nva_mean_freqs).flatten()
+    nvb_devs = (nvb_freqs - nvb_mean_freqs).flatten()
+
+    print(np.sqrt((1 / (len(nva_devs) - 1)) * np.sum(nva_devs**2)))
+    print(np.sqrt((1 / (len(nvb_devs) - 1)) * np.sum(nvb_devs**2)))
+    print(np.mean(nva_linewidths))
+    print(np.mean(nvb_linewidths))
 
     ### Make the figure
 
@@ -199,16 +214,16 @@ def create_fit_figure(
         num_cols = 6
 
         # bulk
-        # figsize[1] = 7
-        # num_rows = 19
-        # layout = kpl.calc_mosaic_layout(num_cols * num_rows, num_rows, num_cols)
-        # layout[0] = [".", ".", ".", layout[0][3], layout[0][4], "."]
-        # layout[1] = [layout[1][0], ".", ".", *layout[1][3:]]
-        # shallow
-        figsize[1] = 7 * 13 / 19  #
-        num_rows = 11
+        figsize[1] = 7
+        num_rows = 19
         layout = kpl.calc_mosaic_layout(num_cols * num_rows, num_rows, num_cols)
-        layout[0] = [layout[0][0], layout[0][1], ".", layout[0][3], layout[0][4], "."]
+        layout[0] = [".", ".", ".", layout[0][3], layout[0][4], "."]
+        layout[1] = [layout[1][0], ".", ".", *layout[1][3:]]
+        # shallow
+        # figsize[1] = 7 * 13 / 19  #
+        # num_rows = 11
+        # layout = kpl.calc_mosaic_layout(num_cols * num_rows, num_rows, num_cols)
+        # layout[0] = [layout[0][0], layout[0][1], ".", layout[0][3], layout[0][4], "."]
 
         fig, axes_pack = plt.subplot_mosaic(
             layout,
@@ -399,7 +414,7 @@ def main(
 if __name__ == "__main__":
     kpl.init_kplotlib()
 
-    bulk_or_shallow = False
+    bulk_or_shallow = True
     make_movie = False
 
     ### Main, bulk diamond
@@ -589,6 +604,8 @@ if __name__ == "__main__":
         # weak_esr = [18, 32, 33, 55, 56]
         weak_esr = [18, 35, 54, 56, 61]
         shifted_esr = [43, 25]
+        weak_esr += shifted_esr
+        shifted_esr = []
         # fmt: on
         for ind in weak_esr:
             for nv_list in [nva_inds, nvb_inds]:
