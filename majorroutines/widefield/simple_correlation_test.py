@@ -268,7 +268,13 @@ def combine_symmetric_matrices(upper, lower):
 
 
 def process_and_plot(
-    data, ax=None, sig_or_ref=True, no_cbar=False, cbar_max=None, no_labels=False
+    data,
+    ax=None,
+    sig_or_ref=True,
+    no_cbar=False,
+    cbar_max=None,
+    no_labels=False,
+    bad_inds=[],
 ):
     # Run this to process a big data set from scratch. Otherwise just use the saved processed version
     if "sig_corr_coeffs" not in data:
@@ -276,11 +282,8 @@ def process_and_plot(
         ### Unpack
 
         nv_list = data["nv_list"]
-        weak_esr = [72, 64, 55, 96, 112, 87, 89, 114, 17, 12, 99, 116, 32, 107, 58, 36]
-        weak_esr = [72, 64, 55, 96, 112, 87, 17, 12, 116]  # , 36, 114]
-        weak_esr = [72, 64, 55, 96, 112, 87, 12, 58, 36]
-        # weak_esr = []
-        nice_esr = [ind for ind in range(117) if ind not in weak_esr]
+        num_nvs = len(nv_list)
+        nice_esr = [ind for ind in range(num_nvs) if ind not in bad_inds]
         nv_list = [nv_list[ind] for ind in nice_esr]
         counts = np.array(data["counts"])
         counts = counts[:, nice_esr]
@@ -316,7 +319,7 @@ def process_and_plot(
         b_group_inds = [ind for ind in range(num_nvs) if spin_flips[ind] == -1]
         random.shuffle(b_group_inds)
         pattern_inds = a_group_inds + b_group_inds
-        spin_flips = np.sort(spin_flips)
+        spin_flips = np.sort(spin_flips)[::-1]  # Start with 1s, then -1s
         # if -1 not in spin_flips:
         #     spin_flips[0] = -1
         #     spin_flips[1] = -1
@@ -359,10 +362,12 @@ def process_and_plot(
         ideal_ref_corr_coeffs = np.array(data["ideal_ref_corr_coeffs"])
 
     ### Print analysis
-    print(np.mean(ref_corr_coeffs[np.triu_indices_from(ref_corr_coeffs, 1)]))
-    print(np.std(ref_corr_coeffs[np.triu_indices_from(ref_corr_coeffs, 1)]))
-    print(np.mean(np.abs(sig_corr_coeffs[np.triu_indices_from(sig_corr_coeffs, 1)])))
-    print(np.std(np.abs(sig_corr_coeffs[np.triu_indices_from(sig_corr_coeffs, 1)])))
+    upper_ref_corr_coeffs = ref_corr_coeffs[np.triu_indices_from(ref_corr_coeffs, 1)]
+    print(np.mean(upper_ref_corr_coeffs))
+    print(np.std(upper_ref_corr_coeffs, ddof=1))
+    upper_sig_corr_coeffs = sig_corr_coeffs[np.triu_indices_from(sig_corr_coeffs, 1)]
+    print(np.mean(np.abs(upper_sig_corr_coeffs)))
+    print(np.std(np.abs(upper_sig_corr_coeffs), ddof=1))
 
     ### Plot
 
@@ -416,6 +421,7 @@ def process_and_plot(
     # cbar_maxes = [sig_max, sig_max, 1]
     cbar_max = np.nanmax(vals[1:]) / 2 if passed_cbar_max is None else passed_cbar_max
     cbar_max = 0.03
+    # cbar_max = 0.02
     # cbar_max = sig_max / 2 if passed_cbar_max is None else passed_cbar_max
     for ind in range(len_vals):
         if passed_ax is None:
@@ -558,20 +564,42 @@ def main(nv_list, num_reps, num_runs):
 if __name__ == "__main__":
     kpl.init_kplotlib()
 
-    ### Data
+    ### Bulk data
+
+    # # # fmt: off
+    # # # file_ids = [1737922643755, 1737998031775, 1738069552465, 1738136166264, 1738220449762, ]
+    # # # file_ids = [1739598841877, 1739660864956, 1739725006836, 1739855966253 ]
+    # # file_ids = [1739979522556, 1740062954135, 1740252380664, 1740377262591, 1740494528636]
+    # # # fmt: on
+    # # file_ids = file_ids[1:]
+    # # data = dm.get_raw_data(file_id=file_ids)
+
+    # # # data = dm.get_raw_data(file_id=1797924502964)  # charge state histogram fitting
+    # data = dm.get_raw_data(file_id=1800142842134)  # Otsu
+
+    # weak_esr = [72, 64, 55, 96, 112, 87, 89, 114, 17, 12, 99, 116, 32, 107, 58, 36]
+    # weak_esr = [72, 64, 55, 96, 112, 87, 17, 12, 116]  # , 36, 114]
+    # weak_esr = [72, 64, 55, 96, 112, 87, 12, 58, 36]
+    # # weak_esr = []
+
+    # process_and_plot(data, bad_inds=weak_esr)
+
+    # plt.show(block=True)
+    # sys.exit()
+
+    ### Shallow data
 
     # # fmt: off
-    # # file_ids = [1737922643755, 1737998031775, 1738069552465, 1738136166264, 1738220449762, ]
-    # # file_ids = [1739598841877, 1739660864956, 1739725006836, 1739855966253 ]
-    # file_ids = [1739979522556, 1740062954135, 1740252380664, 1740377262591, 1740494528636]
+    # file_ids = [1783769660936, 1783988286193, 1784201493337, 1784384193378, 1784571011973]
     # # fmt: on
-    # file_ids = file_ids[1:]
     # data = dm.get_raw_data(file_id=file_ids)
 
-    # data = dm.get_raw_data(file_id=1797924502964)  # Complicated threshold
-    data = dm.get_raw_data(file_id=1800142842134)  # Otsu
+    data = dm.get_raw_data(file_id=1802638624628)  # Otsu
 
-    process_and_plot(data)
+    weak_esr = [18, 35, 54, 56, 61]
+    shifted_esr = [43, 25]
+
+    process_and_plot(data, bad_inds=weak_esr + shifted_esr)
 
     plt.show(block=True)
     sys.exit()

@@ -69,6 +69,111 @@ def replot_fits(data, fit_data, nv_inds):
         # figManager.window.showMaximized()
 
 
+def replot_fits_single_plot(data, fit_data, no_osc_fit_data, nv_inds):
+    figsize = kpl.double_figsize
+    figsize[1] = 8
+    num_rows = 17
+    num_cols = 6
+    layout = kpl.calc_mosaic_layout(num_cols * num_rows, num_rows, num_cols)
+    # layout[0] = [".", ".", ".", layout[0][3], layout[0][4], "."]
+    # layout[1] = [layout[1][0], ".", ".", *layout[1][3:]]
+    fig, axes_pack = plt.subplot_mosaic(
+        layout,
+        figsize=figsize,
+        sharex=True,
+        sharey=True,
+        gridspec_kw={"hspace": 0.015},
+    )
+    axes_pack_flat = list(axes_pack.values())
+
+    nv_list = data["nv_list"]
+    norm_counts = np.array(data["norm_counts"])
+    norm_counts_ste = np.array(data["norm_counts_ste"])
+    osc_popts = fit_data["popts"]
+    no_osc_popts = no_osc_fit_data["popts"]
+    red_chi_sqs = fit_data["red_chi_sq_list"]
+    taus = np.array(data["taus"])
+    total_evolution_times = 2 * np.array(taus) / 1e3
+    fit_fn = quartic_decay
+    num_nvs = len(nv_inds)
+
+    # Sort
+    # fmt: off
+    bad_inds = [47, 55, 61, 62, 68, 97]
+    no_osc_inds = [6, 10, 17, 19, 20, 23, 26, 30, 33, 35, 36, 39, 40, 41, 43, 49, 53, 59, 63, 64, 66, 69, 70, 71, 73, 75, 77, 79, 81, 86, 87, 89, 90, 92, 93, 95, 100]
+    # no_osc_inds = [6, 10, 13, 17, 19, 20, 23, 26, 30, 33, 35, 36, 37, 39, 40, 41, 43, 44, 49, 53, 59, 63, 64, 66, 69, 70, 71, 73, 75, 77, 79, 81, 84, 85, 86, 87, 88, 89, 90, 91, 92, 93, 95, 100]
+    # fmt: on
+    fit_fns = []
+    popts = []
+    mod_freqs = []
+    for loop_ind, nv_ind in enumerate(nv_inds):
+        if loop_ind in bad_inds:
+            fit_fns.append(None)
+            popts.append(None)
+            mod_freqs.append(10)  # Just a high value
+        elif loop_ind in no_osc_inds:
+            fit_fns.append(quartic_decay)
+            popt = no_osc_popts[loop_ind] + [0] * 3
+            popts.append(popt)
+            mod_freqs.append(0)
+        else:
+            fit_fns.append(quartic_decay)
+            popts.append(osc_popts[loop_ind])
+            mod_freqs.append(osc_popts[loop_ind][-2])
+    sort_order = np.argsort(mod_freqs)
+    sorted_nv_inds = np.array(nv_inds)[sort_order]
+
+    widefield.plot_fit(
+        axes_pack_flat,
+        [nv_list[ind] for ind in sorted_nv_inds],
+        total_evolution_times,
+        norm_counts[sorted_nv_inds],
+        norm_counts_ste[sorted_nv_inds],
+        [fit_fns[ind] for ind in sort_order],
+        [popts[ind] for ind in sort_order],
+        no_legend=True,
+        nv_inds=sorted_nv_inds,
+    )
+
+    # for loop_ind, nv_ind in enumerate(nv_inds):
+    #     # if loop_ind not in no_osc_inds:
+    #     #     continue
+    #     nv_counts = norm_counts[nv_ind]
+    #     nv_counts_ste = norm_counts_ste[nv_ind]
+    #     ax = axes_pack_flat[loop_ind]
+    #     kpl.plot_points(
+    #         # ax, total_evolution_times, nv_counts, nv_counts_ste, size=kpl.Size.TINY
+    #         ax,
+    #         total_evolution_times,
+    #         nv_counts,
+    #         size=kpl.Size.SMALL,
+    #     )
+    #     linspace_taus = np.linspace(0, np.max(total_evolution_times), 10000)
+    #     linspace_taus = linspace_taus[1:]  # Exclude tau=0 which can diverge
+    #     popt = popts[loop_ind]
+    #     kpl.plot_line(
+    #         ax,
+    #         linspace_taus,
+    #         fit_fn(linspace_taus, *popt),
+    #         color=kpl.KplColors.GRAY,
+    #     )
+    #     red_chi_sq = red_chi_sqs[loop_ind]
+    #     osc_params = popt[-3:]
+
+    ax = axes_pack[layout[-1, 0]]
+    kpl.set_shared_ax_xlabel(ax, "Total evolution time (µs)")
+    kpl.set_shared_ax_ylabel(ax, "Normalized NV$^{-}$ population")
+    # ax.set_xlim(41 - 5, 61.5 + 5)
+    # ax.set_xlim(41, 61.5)
+    # ax.set_xticks([45, 60])
+    # ax.set_xlim(90, 110)
+    # ax.set_xticks([0, 50, 100])
+    ax.set_yticks([0, 1], [None, None])
+    ax.set_ylim(-0.05, 1.05)
+    for ax in axes_pack_flat:
+        ax.tick_params(which="both", direction="in")
+
+
 def quartic_decay(
     tau,
     baseline,
@@ -426,8 +531,26 @@ def create_fit_figure(data, axes_pack=None, layout=None, no_legend=True, nv_inds
     num_steps = data["num_steps"]
     taus = np.array(data["taus"])
     total_evolution_times = 2 * np.array(taus) / 1e3
-    # total_evolution_times -= 0.068  # Account for duration of pi pulse in middle
+    total_evolution_times -= 0.068  # Account for duration of pi pulse in middle
     num_runs = data["num_runs"]
+
+    # fmt: off
+    nva_nums = [0, 1, 2, 7, 13, 14, 15, 18, 25, 26, 31, 33, 37, 44, 45, 46, 48, 49, 52, 53, 57, 58, 60, 62, 65, 68, 74, 75, 84, 85, 88, 89, 92, 94, 95, 102, 105, 108, 109, 110, 114, 116, 117, 118, 122, 123, 124, 131, 137, 138, 140, 141, 142, 147, 148, 149, 155, 156, 157, 159]
+    nvb_nums = [3, 5, 6, 8, 16, 17, 20, 21, 22, 23, 24, 28, 29, 32, 34, 36, 39, 42, 47, 51, 55, 56, 61, 64, 66, 69, 70, 71, 72, 73, 77, 79, 83, 90, 91, 96, 97, 99, 100, 101, 103, 106, 107, 111, 113, 120, 125, 128, 132, 134, 136, 145, 146, 152, 153, 154, 158]
+    # fmt: on
+    nva_inds = []
+    nvb_inds = []
+    nv_nums = [widefield.get_nv_num(nv_list[ind]) for ind in nv_inds]
+    for num, ind in zip(nv_nums, nv_inds):
+        if num in nva_nums:
+            nva_inds.append(ind)
+        elif num in nvb_nums:
+            nvb_inds.append(ind)
+        else:
+            test = 0
+
+    # print(nva_inds)
+    # print(nvb_inds)
 
     if "norm_counts" in data:
         norm_counts = np.array(data["norm_counts"])
@@ -679,8 +802,9 @@ if __name__ == "__main__":
     # More data, del file_ids[3:5], file_ids.extend(file_ids2)
     # data = dm.get_raw_data(file_id=1795168199914)  # w/o ionization, dmw None
     # data = dm.get_raw_data(file_id=1795182451164)  # w/o ionization, dmw 0.5
-    data = dm.get_raw_data(file_id=1797877478132)  # w/ ionization, dmw None
+    # data = dm.get_raw_data(file_id=1797877478132)  # w/ ionization, dmw None
     # data = dm.get_raw_data(file_id=1795131849572)  # w/ ionization, dmw 0.5
+    data = dm.get_raw_data(file_id=1800172893179)  # Otsu
 
     # Skip indices with bad pi pulses etc
     split_esr = [12, 13, 14, 61, 116]
@@ -696,10 +820,10 @@ if __name__ == "__main__":
 
     ### Replotting
 
-    # # fit_data = dm.get_raw_data(file_id=1796557235526)  # T2_exp variable
-    fit_data = dm.get_raw_data(file_id=1798006231161)  # w/ ionization dmw None
-    # fit_data = dm.get_raw_data(file_id=1798052675001)  # no osc
-    replot_fits(data, fit_data, nv_inds)
+    fit_data = dm.get_raw_data(file_id=1800359001443)  # Otsu
+    no_osc_fit_data = dm.get_raw_data(file_id=1798052675001)  # no osc
+    # replot_fits(data, fit_data, nv_inds)
+    replot_fits_single_plot(data, fit_data, no_osc_fit_data, nv_inds)
     kpl.show(block=True)
     sys.exit()
 
@@ -708,14 +832,14 @@ if __name__ == "__main__":
     # data = dm.get_raw_data(file_id=1548381879624)
 
     # Separate files
-    # # fmt: off
-    # file_ids = [1734158411844, 1734273666255, 1734371251079, 1734461462293, 1734569197701, 1736117258235, 1736254107747, 1736354618206, 1736439112682]
-    # file_ids2 = [1736589839249, 1736738087977, 1736932211269, 1737087466998, 1737219491182]
-    # # fmt: on
-    # # file_ids = file_ids[:4]
-    # file_ids.extend(file_ids2)
-    # del file_ids[3:5]
-    # data = dm.get_raw_data(file_id=file_ids)
+    # fmt: off
+    file_ids = [1734158411844, 1734273666255, 1734371251079, 1734461462293, 1734569197701, 1736117258235, 1736254107747, 1736354618206, 1736439112682]
+    file_ids2 = [1736589839249, 1736738087977, 1736932211269, 1737087466998, 1737219491182]
+    # fmt: on
+    # file_ids = file_ids[:4]
+    file_ids.extend(file_ids2)
+    del file_ids[3:5]
+    data = dm.get_raw_data(file_id=file_ids)
 
     # create_raw_data_figure(data)
     create_fit_figure(data, nv_inds=nv_inds)

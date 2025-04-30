@@ -33,6 +33,7 @@ from analysis.bimodal_histogram import (
     determine_threshold,
     fit_bimodal_histogram,
     otsu_threshold,
+    weighted_otsu_threshold,
 )
 from utils import common
 from utils import data_manager as dm
@@ -370,6 +371,8 @@ def threshold_counts(nv_list, sig_counts, ref_counts=None, dynamic_thresh=False)
     if dynamic_thresh:
         thresholds = []
         for nv_ind in range(num_nvs):
+            # if nv_ind != 110:  # Corresponds to nv_num 153, from Fig. 1(c)
+            #     continue
             if ref_counts is not None:
                 combined_counts = np.append(
                     sig_counts[nv_ind].flatten(), ref_counts[nv_ind].flatten()
@@ -379,14 +382,17 @@ def threshold_counts(nv_list, sig_counts, ref_counts=None, dynamic_thresh=False)
             prob_dist = ProbDist.NEGATIVE_BINOMIAL_WITH_IONIZATION
             # prob_dist = ProbDist.GAUSSIAN2_WITH_IONIZATION
             # prob_dist = ProbDist.NEGATIVE_BINOMIAL
+            # threshold = weighted_otsu_threshold(combined_counts)
+            # print(threshold)
             # popt, _, _ = fit_bimodal_histogram(
-            #     combined_counts, prob_dist, no_print=True, no_plot=True
+            #     combined_counts, prob_dist, no_print=False, no_plot=False
             # )
             # print(popt)
             # dark_mode_weight = 0.5
             dark_mode_weight = None
             # threshold = determine_threshold(popt, prob_dist, dark_mode_weight)
             threshold = otsu_threshold(combined_counts)
+            # threshold = weighted_otsu_threshold(combined_counts)
             # print(threshold)
             thresholds.append(threshold)
     else:
@@ -637,8 +643,8 @@ def calc_snr(sig_counts, ref_counts):
     """Calculate SNR for a single shot"""
     avg_contrast, avg_contrast_ste = calc_contrast(sig_counts, ref_counts)
     noise = np.sqrt(
-        np.std(sig_counts, axis=run_rep_axes, ddof=1) ** 2
-        + np.std(ref_counts, axis=run_rep_axes, ddof=1) ** 2
+        np.var(sig_counts, axis=run_rep_axes, ddof=1)
+        + np.var(ref_counts, axis=run_rep_axes, ddof=1)
     )
     avg_snr = avg_contrast / noise
     avg_snr_ste = avg_contrast_ste / noise
@@ -1207,7 +1213,7 @@ def plot_fit(
         xlim[0] = min(x)
     if xlim[1] is None:
         xlim[1] = max(x)
-    x_linspace = np.linspace(*xlim, 1000)
+    x_linspace = np.linspace(*xlim, 10000)
     num_nvs = len(nv_list)
     for nv_ind in range(num_nvs):
         fn = None if fns is None else fns[nv_ind]
@@ -1246,6 +1252,7 @@ def plot_fit(
             linestyle=linestyle,
         )
         # nv_num = get_nv_num(nv_sig)
+        # kpl.anchored_text(ax, nv_num, size=kpl.Size.TINY)
         # kpl.anchored_text(ax, nv_inds[nv_ind], size=kpl.Size.TINY)
         # kpl.anchored_text(ax, nv_ind, size=kpl.Size.TINY)
 

@@ -171,6 +171,9 @@ def create_fit_figure(
             if nv_ind in split_esr:
                 splittings.append(popt[-1])
                 splitting_errs.append(np.sqrt(pcov[-1, -1]))
+                print(popt[2])
+                print(popt[-1])
+                test = 0
     else:
         fit_fns = None
         popts = None
@@ -195,6 +198,8 @@ def create_fit_figure(
     nvb_mean_freqs = np.mean(nvb_freqs, axis=0)
     print(nvb_mean_freqs)
     print(nva_mean_freqs)
+    print(splittings)
+    print(splitting_errs)
 
     nva_devs = (nva_freqs - nva_mean_freqs).flatten()
     nvb_devs = (nvb_freqs - nvb_mean_freqs).flatten()
@@ -425,6 +430,7 @@ if __name__ == "__main__":
         nvb_inds = [3, 4, 5, 7, 11, 12, 14, 15, 16, 17, 18, 21, 22, 24, 26, 27, 29, 30, 34, 37, 40, 41, 45, 47, 49, 51, 52, 53, 54, 55, 58, 59, 60, 65, 66, 70, 71, 72, 73, 74, 76, 78, 79, 83, 84, 89, 93, 94, 96, 97, 98, 104, 105, 109, 110, 111, 115]  # Smaller splitting
         split_esr = [12, 13, 14, 61, 116] 
         broad_esr = [52, 11] 
+        split_esr = broad_esr + split_esr
         weak_esr = [72, 64, 55, 96, 112, 87, 12, 58, 36]
         # fmt: on
         for ind in weak_esr:
@@ -494,7 +500,7 @@ if __name__ == "__main__":
         norm_counts, norm_counts_ste = widefield.process_counts(
             nv_list, sig_counts, ref_counts, threshold=True
         )
-        print(np.mean(norm_counts_ste, axis=1))
+        print(np.mean(norm_counts_ste))
         # mean_stes = np.mean(norm_counts_ste, axis=1)
         # print(np.argsort(mean_stes)[::-1])
         # print(np.sort(mean_stes)[::-1])
@@ -595,7 +601,7 @@ if __name__ == "__main__":
 
         kpl.show(block=True)
 
-    ### Supp, shallow movie
+    ### Supp, shallow
     if not bulk_or_shallow:
         # Split into orienatations and remove weak NVs
         # fmt: off
@@ -646,6 +652,21 @@ if __name__ == "__main__":
         reformatted_counts = reformat_counts(counts)
         sig_counts = reformatted_counts[0]
         ref_counts = reformatted_counts[1]
+
+        # ms0_ref_counts = ref_counts[:, :, :, 0::2]
+        # ms1_ref_counts = ref_counts[:, :, :, 1::2]
+        # ms0_ref_counts = ms0_ref_counts.reshape(*ms0_ref_counts.shape[0:2], 1, -1)
+        # ms1_ref_counts = ms1_ref_counts.reshape(*ms1_ref_counts.shape[0:2], 1, -1)
+        # snrs, snr_errs = widefield.calc_snr(ms1_ref_counts, ms0_ref_counts)
+        # snrs = [
+        #     snrs[ind] for ind in range(num_nvs) if ind not in weak_esr + shifted_esr
+        # ]
+        # snr_errs = [
+        #     snr_errs[ind] for ind in range(num_nvs) if ind not in weak_esr + shifted_esr
+        # ]
+        # print(np.mean(snrs))
+        # print(np.std(snrs))
+        # test = 0
 
         norm_counts, norm_counts_ste = widefield.process_counts(
             nv_list, sig_counts, ref_counts, threshold=True

@@ -561,6 +561,44 @@ def fit_bimodal_histogram(
         return None, None, None
 
 
+def weighted_otsu_threshold(counts_list):
+    counts_list = counts_list.flatten()
+
+    # Remove outliers
+    median = np.median(counts_list)
+    std = np.std(counts_list)
+    counts_list = counts_list[counts_list < median + 10 * std]
+    counts_list = counts_list[counts_list > 0]
+    num_samples = len(counts_list)
+
+    min_count = 0
+    max_count = round(max(counts_list))
+    thresh_options = np.arange(min_count - 0.5, max_count + 0.5, 1)
+
+    intra_class_variances = []
+    for thresh_option in thresh_options:
+        left_counts = counts_list[counts_list < thresh_option]
+        right_counts = counts_list[counts_list > thresh_option]
+        left_var = np.var(left_counts) / np.mean(left_counts)
+        right_var = np.var(right_counts) / np.mean(right_counts)
+        icv = len(left_counts) * left_var + len(right_counts) * right_var
+        intra_class_variances.append(icv)
+
+    # # Handle zeros
+    # intra_class_variances[weight1[:-1] == 0] = 0
+    # intra_class_variances[weight2[1:] == 0] = 0
+
+    idx = np.nanargmin(intra_class_variances)
+    threshold = thresh_options[idx]
+
+    # print(threshold)
+    # fig, ax = plt.subplots()
+    # kpl.plot_line(ax, thresh_options, intra_class_variances)
+    # kpl.show(block=True)
+
+    return threshold
+
+
 def otsu_threshold(counts_list):
     counts_list = counts_list.flatten()
 
@@ -591,6 +629,7 @@ def otsu_threshold(counts_list):
     # The last value of ``weight1``/``mean1`` should pair with zero values in
     # ``weight2``/``mean2``, which do not exist.
     variance12 = weight1[:-1] * weight2[1:] * (mean1[:-1] - mean2[1:]) ** 2
+    # weighted_variance12 =
 
     # Handle zeros
     variance12[weight1[:-1] == 0] = 0
@@ -604,7 +643,37 @@ def otsu_threshold(counts_list):
     # kpl.plot_line(ax, x_vals[:-1] + 0.5, variance12)
     # kpl.show(block=True)
 
+    # fig, ax = plt.subplots()
+    # ax.set_xlabel("Integrated counts")
+    # ax.set_ylabel("Probability")
+    # kpl.histogram(ax, counts_list, density=True)
+    # ax.axvline(threshold, color=kpl.KplColors.GRAY, ls="dashed")
+    # kpl.show(block=True)
+
     return threshold
+
+
+def calc_readout_fidelity(popt, threshold, dark_mode_weight=None):
+    if dark_mode_weight is None:
+        dark_mode_weight = popt[0]
+    bright_mode_weight = 1 - dark_mode_weight
+
+    dark_mode_cdf = get_single_mode_cdf(ProbDist.NEGATIVE_BINOMIAL)
+    dark_left_prob = dark_mode_cdf(threshold, popt[1])
+    bright_mode_cdf = get_single_mode_cdf(ProbDist.NEGATIVE_BINOMIAL_WITH_IONIZATION)
+    bright_left_prob = bright_mode_cdf(threshold, *popt[1:])
+
+    # Pass lambda_0, lambda_m, ion
+    # bright_left_prob = bright_mode_cdf(val, popt[1], popt[2], popt[3])
+
+    dark_right_prob = 1 - dark_left_prob
+    bright_right_prob = 1 - bright_left_prob
+
+    fidelity = (
+        dark_mode_weight * dark_left_prob + bright_mode_weight * bright_right_prob
+    )
+
+    return fidelity
 
 
 def determine_threshold(
