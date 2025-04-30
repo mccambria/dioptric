@@ -48,6 +48,13 @@ def get_seq(base_scc_seq_args, step_vals, num_reps=1):
             qua.align()
             seq_utils.macro_pi_on_2_pulse(uwave_ind_list, phase=0)
             seq_utils.macro_pi_pulse(uwave_ind_list, phase=0)
+            seq_utils.macro_pi_pulse(uwave_ind_list, phase=90)
+            seq_utils.macro_pi_pulse(uwave_ind_list, phase=0)
+            seq_utils.macro_pi_pulse(uwave_ind_list, phase=90)
+            seq_utils.macro_pi_pulse(uwave_ind_list, phase=90)
+            seq_utils.macro_pi_pulse(uwave_ind_list, phase=0)
+            seq_utils.macro_pi_pulse(uwave_ind_list, phase=90)
+            seq_utils.macro_pi_pulse(uwave_ind_list, phase=0)
             with qua.switch_(phi):
                 with qua.case_(0):
                     seq_utils.macro_pi_on_2_pulse(uwave_ind_list, phase=0)

@@ -4,6 +4,7 @@ Widefield ESR
 Created on October 13th, 2023
 
 @author: mccambria
+@author: sbchand
 """
 
 import time
@@ -31,7 +32,10 @@ def get_seq(base_scc_seq_args, step_vals, num_reps=1):
 
         with qua.for_each_(step_val, step_vals):
             base_scc_sequence.macro(
-                base_scc_seq_args, [uwave_macro_sig], step_val, num_reps
+                base_scc_seq_args,
+                [uwave_macro_sig],
+                step_val,
+                num_reps,
             )
 
     seq_ret_vals = []
@@ -72,7 +76,7 @@ if __name__ == "__main__":
             10,
         )
 
-        sim_config = SimulationConfig(duration=int(300e3 / 4))
+        sim_config = SimulationConfig(duration=int(50e3 / 4))
         sim = opx.simulate(seq, sim_config)
         samples = sim.get_simulated_samples()
         samples.con1.plot()
