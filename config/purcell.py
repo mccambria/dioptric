@@ -899,37 +899,71 @@ opx_config = {
 
 
 # Centralized pulse error values (from bootstrap tomography)
+# def correct_pulse_params_by_phase(phase_deg, base_amp=0.5):
+#     # Determine which pulse axis the phase aligns with
+#     pulse_errors = {
+#         "phi_prime": -0.091249,
+#         "chi_prime": 0.047725,
+#         "phi": 0.08768,
+#         "chi": -0.046245,
+#         "vz": -0.041764,
+#         "ez": -0.081076,
+#         "epsilon_z_prime": -0.010492,
+#         "nu_x_prime": -0.001294,
+#         "nu_z_prime": -0.15388,
+#         "epsilon_y": 0.014685,
+#         "nu_x": -0.018655,
+#     }
+#     # return amp_correction, phase_correction_rad
+#     phase_mod = phase_deg % 360
+
+#     if np.isclose(phase_mod, 0, atol=5) or np.isclose(phase_mod, 180, atol=5):
+#         # X-aligned pulses
+#         angle_error = pulse_errors.get("phi", 0)
+#         tilt = pulse_errors.get("ez", 0)
+#     elif np.isclose(phase_mod, 90, atol=5) or np.isclose(phase_mod, 270, atol=5):
+#         # Y-aligned pulses
+#         angle_error = pulse_errors.get("chi", 0)
+#         tilt = pulse_errors.get("epsilon_y", 0)
+#     else:
+#         raise ValueError(
+#             f"Unsupported phase: {phase_deg}. Expected near 0, 90, 180, 270 degrees."
+#         )
+
+#     amp_correction = base_amp * (1.0 / (1 + angle_error))
+#     phase_correction_rad = -np.arctan2(tilt, 1.0)
+#     print(phase_correction_rad)
+#     return amp_correction, phase_correction_rad
+
+
 def correct_pulse_params_by_phase(phase_deg, base_amp=0.5):
-    # Determine which pulse axis the phase aligns with
+    # Centralized pulse error values from bootstrap
     pulse_errors = {
-        "phi_prime": -0.161932,
-        "chi_prime": -0.142105,
-        "phi": 0.259166,
-        "chi": 0.191546,
-        "vz": -0.191076,
-        "ez": 0.267936,
-        "epsilon_z_prime": 0.02024,
-        "nu_x_prime": -0.184118,
-        "nu_z_prime": 0.048014,
-        "epsilon_y": 0.197103,
-        "nu_x": -0.01994,
+        "phi": 0.08768,  # amplitude error on X
+        "chi": -0.046245,  # amplitude error on Y
+        "ez": -0.081076,  # Z-axis tilt for X
+        "epsilon_y": 0.014685,  # Z-axis tilt for Y
     }
-    # return amp_correction, phase_correction_rad
+
+    # Normalize phase to [0, 360)
     phase_mod = phase_deg % 360
 
-    if np.isclose(phase_mod, 0, atol=5) or np.isclose(phase_mod, 180, atol=5):
-        # X-aligned pulses
-        angle_error = pulse_errors.get("phi", 0)
-        tilt = pulse_errors.get("ez", 0)
-    elif np.isclose(phase_mod, 90, atol=5) or np.isclose(phase_mod, 270, atol=5):
-        # Y-aligned pulses
-        angle_error = pulse_errors.get("chi", 0)
-        tilt = pulse_errors.get("epsilon_y", 0)
-    else:
-        raise ValueError(
-            f"Unsupported phase: {phase_deg}. Expected near 0, 90, 180, 270 degrees."
-        )
+    # Determine closest axis: X-like or Y-like
+    # X-like: around 0° or 180°, Y-like: around 90° or 270°
+    # Use shortest angular distance modulo 180°
+    # distance_to_x = min(abs(phase_mod - 0), abs(phase_mod - 180))
+    # distance_to_y = min(abs(phase_mod - 90), abs(phase_mod - 270))
 
+    # if distance_to_x <= distance_to_y:
+    # X-aligned rotation
+    angle_error = pulse_errors.get("phi", 0)
+    tilt = pulse_errors.get("ez", 0)
+    # else:
+    # Y-aligned rotation
+    angle_error = pulse_errors.get("chi", 0)
+    tilt = pulse_errors.get("epsilon_y", 0)
+
+    # Apply amplitude and phase correction
     amp_correction = base_amp * (1.0 / (1 + angle_error))
     phase_correction_rad = -np.arctan2(tilt, 1.0)
 
@@ -954,8 +988,9 @@ def generate_iq_pulses(pulse_names, phases):
     amp = 0.5
 
     for phase in phases:
-        # amp_corr, phase_corr_rad = correct_pulse_params_by_phase(phase, base_amp=amp)
-        # corrected_phase_rad = np.deg2rad(phase) + phase_corr_rad  # note: addition
+        # amp_corr, phase_corr = correct_pulse_params_by_phase(phase, base_amp=0.5)
+        # corrected_phase_rad = np.round(np.deg2rad(phase) + phase_corr)  # note: addition
+
         # i_comp = np.cos(corrected_phase_rad) * amp_corr
         # q_comp = np.sin(corrected_phase_rad) * amp_corr
         # print(

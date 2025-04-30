@@ -24,41 +24,21 @@ from servers.timing.sequencelibrary.QM_opx.camera import base_scc_sequence
 def get_seq(base_scc_seq_args, step_vals, xy_seq, num_reps=1):
     buffer = seq_utils.get_widefield_operation_buffer()
     uwave_ind_list = base_scc_seq_args[-1]
-    macro_pi_pulse_duration = seq_utils.get_macro_pi_pulse_duration(uwave_ind_list)
-    macro_pi_on_2_pulse_duration = seq_utils.get_macro_pi_on_2_pulse_duration(
-        uwave_ind_list
-    )
-
+    # macro_pi_pulse_duration = seq_utils.get_macro_pi_pulse_duration(uwave_ind_list)
+    macro_pi_pulse_duration = seq_utils.convert_ns_to_cc(88)
     # Adjust step values to compensate for internal delays
-    # step_vals = [
-    #     seq_utils.convert_ns_to_cc(el) - macro_pi_pulse_duration for el in step_vals
-    # ]
+    step_vals = [
+        seq_utils.convert_ns_to_cc(el) - macro_pi_pulse_duration for el in step_vals
+    ]
     # correction = macro_pi_pulse_duration + macro_pi_on_2_pulse_duration // 2
-    step_vals = [seq_utils.convert_ns_to_cc(el) for el in step_vals]
+    # step_vals = [seq_utils.convert_ns_to_cc(el) for el in step_vals]
     # Choose pulse phase pattern
     phase_dict = {
         "hahn": [0],
-        "xy2": [0, np.pi / 2],
-        "xy4": [0, np.pi / 2, 0, np.pi / 2],
-        "xy8": [0, np.pi / 2, 0, np.pi / 2, np.pi / 2, 0, np.pi / 2, 0],
-        "xy16": [
-            0,
-            np.pi / 2,
-            0,
-            np.pi / 2,
-            np.pi / 2,
-            0,
-            np.pi / 2,
-            0,
-            0,
-            -np.pi / 2,
-            0,
-            -np.pi / 2,
-            -np.pi / 2,
-            0,
-            -np.pi / 2,
-            0,
-        ],
+        "xy2": [0, 90],
+        "xy4": [0, 90, 0, 90],
+        "xy8": [0, 90, 0, 90, 90, 0, 90, 0],
+        "xy16": [0, 90, 0, 90, 90, 0, 90, 0, 0, -90, 0, -90, -90, 0, -90, 0],
     }
 
     # Parse xy_seq, e.g. "xy8-4" → base="xy8", reps=4
@@ -86,7 +66,7 @@ def get_seq(base_scc_seq_args, step_vals, xy_seq, num_reps=1):
                 else:
                     qua.wait(step_val)  # τ after last π
 
-            seq_utils.macro_pi_on_2_pulse(uwave_ind_list, phase=0)
+            seq_utils.macro_pi_on_2_pulse(uwave_ind_list, phase=180)
             qua.wait(buffer)
 
         with qua.for_each_(step_val, step_vals):
@@ -132,7 +112,7 @@ if __name__ == "__main__":
                 1000,
                 147776,
             ],
-            "xy4-4",
+            "xy4-1",
             1,
         )
 

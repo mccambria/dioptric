@@ -742,10 +742,10 @@ def do_xy8_uniform_revival_scan(nv_list, xy_seq="xy8-1"):
     factor = 2 * N  # total time T = 2Nτ = 16τ
 
     num_steps = 65
-    total_times = np.linspace(T_min, T_max, num_steps)
+    taus = np.linspace(T_min, T_max, num_steps)
 
     # Convert total evolution time to τ
-    taus = [T / factor for T in total_times]
+    # taus = [T / factor for T in total_times]
 
     # Round τ to 4 ns resolution
     taus = [round(tau / 4) * 4 for tau in taus]
@@ -1451,7 +1451,7 @@ if __name__ == "__main__":
         # do_spin_pol_check(nv_sig)
         # do_calibrate_green_red_delay()
 
-        do_spin_echo_phase_scan_test(nv_list)  # for iq mod test
+        # do_spin_echo_phase_scan_test(nv_list)  # for iq mod test
         # do_bootstrapped_pulse_error_tomography(nv_list)
         # do_calibrate_iq_delay(nv_list)
 
@@ -1474,7 +1474,7 @@ if __name__ == "__main__":
 
         # AVAILABLE_XY = ["hahn-n", "xy2-n", "xy4-n", "xy8-n", "xy16-n"]
         # do_xy(nv_list, xy_seq="xy8")
-        # do_xy8_uniform_revival_scan(nv_list, xy_seq="xy8-1")
+        do_xy8_uniform_revival_scan(nv_list, xy_seq="xy8-1")
         # do_xy8_revival_scan(nv_list, xy_seq="xy8-1")
 
         # for nv in nv_list:

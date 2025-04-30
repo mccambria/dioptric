@@ -93,7 +93,7 @@ def create_fit_figure(nv_list, phis, norm_counts, norm_counts_ste):
 
     ax_all.set_xlabel("Phase (degrees)")
     ax_all.set_ylabel("Normalized Counts")
-    ax_all.set_title("Individual NV Cosine Fits")
+    ax_all.set_title(r"Cosine Fits ($\frac{\pi}{2}_x$ - xy8 – $\frac{\pi}{2}_\phi$)")
     ax_all.grid(True)
     ax_all.spines["right"].set_visible(False)
     ax_all.spines["top"].set_visible(False)
@@ -121,8 +121,13 @@ def create_fit_figure(nv_list, phis, norm_counts, norm_counts_ste):
     if fit_median:
         phi_fit = np.linspace(min(phis), max(phis), 200)
         ax_median.plot(phi_fit, cos_func(phi_fit, *popt_median), label="Fit")
-        ax_median.set_title(f"Median Fit: phase offset ≈ {popt_median[1]:.1f}°")
-    ax_median.set_xlabel("Phase (degrees)")
+        # ax_median.set_title(f"Median Fit  : phase offset ≈ {popt_median[1]:.1f}°")
+        # ax_median.set_title(f"Median Fit Pi/2x-pix-pi/2 (phi)")
+        ax_median.set_title(
+            r"Median Fit: $\frac{\pi}{2}_x$ - xy8 – $\frac{\pi}{2}_\phi$"
+        )
+
+    ax_median.set_xlabel("Phase, $\phi$ (degrees)")
     ax_median.set_ylabel("Median Normalized Counts")
     ax_median.legend()
     ax_median.grid(True)
@@ -147,7 +152,9 @@ def create_fit_figure(nv_list, phis, norm_counts, norm_counts_ste):
         ax.grid(True)
         ax.spines["right"].set_visible(False)
         ax.spines["top"].set_visible(False)
-
+    fig_params.suptitle(
+        r"Fitted Parameters: $\frac{\pi}{2}_x$ - xy8 – $\frac{\pi}{2}_\phi$"
+    )
     plt.tight_layout()
     # import ace_tools as tools
 
@@ -325,8 +332,10 @@ if __name__ == "__main__":
 
     # data = dm.get_raw_data(file_id=file_id, load_npz=False, use_cache=True)
     data = dm.get_raw_data(
-        file_stem="2025_04_29-21_46_40-rubin-nv0_2025_02_26",
-        # file_stem="2025_04_04-17_38_13-rubin-nv0_2025_02_26",
+        # file_stem="2025_04_04-17_38_13-rubin-nv0_2025_02_26", #spin echo old
+        # file_stem="2025_04_29-21_46_40-rubin-nv0_2025_02_26",  # spin echo
+        # file_stem="2025_04_30-00_36_54-rubin-nv0_2025_02_26",  # ramsey
+        file_stem="2025_04_30-12_43_15-rubin-nv0_2025_02_26",  # xy8
         load_npz=False,
         use_cache=True,
     )
@@ -342,7 +351,7 @@ if __name__ == "__main__":
     ref_counts = counts[1]
 
     norm_counts, norm_counts_ste = widefield.process_counts(
-        nv_list, sig_counts, ref_counts, threshold=True
+        nv_list, sig_counts, ref_counts, threshold=False
     )
     # file_name = dm.get_file_name(file_id=file_id)
     # print(f"{file_name}_{file_id}")
