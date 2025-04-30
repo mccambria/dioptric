@@ -17,6 +17,6 @@ config = {
     "windows_repo_path": home / "Documents/GitHub/dioptric",
     "linux_repo_path": home / "Documents/GitHub/dioptric",
     "windows_nvdata_dir": Path("G:\\nvdata"),
-    "linux_nvdata_dir": home / "Documents/GitHub/dioptric",
+    "linux_nvdata_dir": Path("/mnt/G/nvdata"),
     "nv_sig_units": "{'coords': 'V', 'expected_count_rate': 'kcps', 'durations': 'ns', 'magnet_angle': 'deg', 'resonance': 'GHz', 'rabi': 'ns', 'uwave_power': 'dBm'}",
 }

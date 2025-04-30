@@ -553,11 +553,11 @@ def get_raw_data_box(file_name=None, file_id=None, use_cache=True, load_npz=Fals
 
 
 if __name__ == "__main__":
-    # file_name = "2024_12_19-22_38_10-johnson-nv0_2024_03_12"
-    file_name = "2025_03_14-11_57_49-rubin-nv0_2025_02_26"
+    file_name = "2024_12_19-22_38_10-johnson-nv0_2024_03_12"
+    # file_name = "2025_03_14-11_57_49-rubin-nv0_2025_02_26"
     data = get_raw_data(file_name, use_cache=True, load_npz=False)
-    timestamp = get_time_stamp()
-    repr_nv_name = "testing"
-    file_path = get_file_path(__file__, timestamp, repr_nv_name)
-    save_raw_data(data, file_path)
+    # timestamp = get_time_stamp()
+    # repr_nv_name = "testing"
+    # file_path = get_file_path(__file__, timestamp, repr_nv_name)
+    # save_raw_data(data, file_path)
     debu = 0

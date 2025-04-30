@@ -63,7 +63,7 @@ def download(file_stem=None, ext="txt", file_id=None):
             type="file",
             limit=1,
             content_types=["name"],
-            file_extensions=[ext],
+            file_extensions=[ext[1:]],  # [1:] excludes the dot
         )
         try:
             match = next(search_results)
@@ -74,7 +74,7 @@ def download(file_stem=None, ext="txt", file_id=None):
     file_content = box_file.content()
     file_info = box_file.get()
     file_stem = file_info.name.split(".")[0]
-    return file_content, file_id, file_stem
+    return file_content
 
 
 def upload(file_path, content):
