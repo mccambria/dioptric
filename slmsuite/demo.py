@@ -147,10 +147,10 @@ if len(pixel_coords_list) >= 3:
     # New pixel coordinate for which we want to find the corresponding red coordinate
     new_pixel_coord = np.array(
         [
-            [107.743, 107.657],
-            [118.13, 97.404],
-            [107.024, 118.34],
-            [96.795, 94.775],
+            [107.777, 107.746],
+            [118.117, 97.426],
+            [107.015, 118.387],
+            [96.843, 94.8],
         ],
         dtype=np.float32,
     )
@@ -252,7 +252,7 @@ def generate_divisible_by_4(min_val, max_val, num_steps):
 
 
 # Example Usage
-min_duration = 16
+min_duration = 20
 max_duration = 400
 num_steps = 21
 

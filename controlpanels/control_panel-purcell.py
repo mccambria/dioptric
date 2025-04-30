@@ -553,15 +553,17 @@ def do_rabi(nv_list):
 
 
 def do_spin_echo_phase_scan_test(nv_list):
-    min_phi = 0
-    max_phi = 2 * np.pi
-    num_steps = 17
+    num_steps = 21
     num_reps = 11
-    num_runs = 100
+    num_runs = 150
     # num_runs = 2
+    # phi_list = np.linspace(0, 360, num_steps)
+    # fmt: off
+    phi_list = [0, 18, 36, 54, 72, 90, 108, 126, 144, 162, 180, 198, 216, 234, 252, 270, 288, 306, 324, 342, 360]
+    # fmt: on
     uwave_ind_list = [1]  # only one has iq modulation
     spin_echo_phase_scan_test.main(
-        nv_list, num_steps, num_reps, num_runs, min_phi, max_phi, uwave_ind_list
+        nv_list, num_steps, num_reps, num_runs, phi_list, uwave_ind_list
     )
     # for _ in range(2):
     #     spin_echo_phase_scan_test.main(
@@ -740,10 +742,10 @@ def do_xy8_uniform_revival_scan(nv_list, xy_seq="xy8-1"):
     factor = 2 * N  # total time T = 2Nτ = 16τ
 
     num_steps = 65
-    total_times = np.linspace(T_min, T_max, num_steps)
+    taus = np.linspace(T_min, T_max, num_steps)
 
     # Convert total evolution time to τ
-    taus = [T / factor for T in total_times]
+    # taus = [T / factor for T in total_times]
 
     # Round τ to 4 ns resolution
     taus = [round(tau / 4) * 4 for tau in taus]
@@ -1079,13 +1081,13 @@ def do_opx_constant_ac():
     #     [0.19, 0.19, 0.45],  # Analog voltages
     #     [107, 107, 0],  # Analog frequencies
     # )
-    # Red + green + Yellow
-    # opx.constant_ac(
-    #     [4, 1],  # Digital channels1
-    #     [3, 4, 2, 6, 7],  # Analog channels
-    #     [0.19, 0.19, 0.17, 0.17, 0.40],  # Analog voltages
-    #     [107, 107, 72, 72, 0],  # Analog frequencies
-    # )
+    # # Red + green + Yellow
+    opx.constant_ac(
+        [4, 1],  # Digital channels1
+        [3, 4, 2, 6, 7],  # Analog channels
+        [0.19, 0.19, 0.17, 0.17, 0.40],  # Analog voltages
+        [107, 107, 72, 72, 0],  # Analog frequencies
+    )
     input("Press enter to stop...")
     # sig_gen.uwave_off()
 
@@ -1261,16 +1263,16 @@ if __name__ == "__main__":
     #     [227.438, 19.199],
     # ]
     # green_coords_list = [
-    #     [107.743, 107.657],
-    #     [118.13, 97.404],
-    #     [107.024, 118.34],
-    #     [96.795, 94.775],
+    #     [107.777, 107.746],
+    #     [118.117, 97.426],
+    #     [107.015, 118.387],
+    #     [96.843, 94.8],
     # ]
     # red_coords_list = [
-    #     [72.46, 73.181],
-    #     [80.704, 64.731],
-    #     [72.107, 81.88],
-    #     [63.253, 62.814],
+    #     [72.49, 73.253],
+    #     [80.694, 64.749],
+    #     [72.101, 81.918],
+    #     [63.293, 62.834],
     # ]
 
     num_nvs = len(pixel_coords_list)
@@ -1380,17 +1382,16 @@ if __name__ == "__main__":
         # do_optimize_z(nv_sig)
         # do_optimize_xyz(nv_sig)
         # pos.set_xyz_on_nv(nv_sig)
-
-        do_compensate_for_drift(nv_sig)
-        do_widefield_image_sample(nv_sig, 50)
-        # do_widefield_image_sample(nv_sig, 200)
-
-        # scan_equilateral_triangle(nv_sig, center_coord=sample_coords, radius=0.2)
-        # do_scanning_image_sample(nv_sig)
         # piezo_voltage_to_pixel_calibration()
 
+        do_compensate_for_drift(nv_sig)
+        # do_widefield_image_sample(nv_sig, 50)
+        # do_widefield_image_sample(nv_sig, 200)
+
+        # do_scanning_image_sample(nv_sig)
         # do_scanning_image_full_roi(nv_sig)
         # do_scanning_image_sample_zoom(nv_sig)
+        # scan_equilateral_triangle(nv_sig, center_coord=sample_coords, radius=0.2)
         # do_image_nv_list(nv_list)
         # do_image_single_nv(nv_sig)
 
@@ -1451,7 +1452,7 @@ if __name__ == "__main__":
         # do_calibrate_green_red_delay()
 
         # do_spin_echo_phase_scan_test(nv_list)  # for iq mod test
-        do_bootstrapped_pulse_error_tomography(nv_list)
+        # do_bootstrapped_pulse_error_tomography(nv_list)
         # do_calibrate_iq_delay(nv_list)
 
         # do_rabi(nv_list)
@@ -1473,7 +1474,7 @@ if __name__ == "__main__":
 
         # AVAILABLE_XY = ["hahn-n", "xy2-n", "xy4-n", "xy8-n", "xy16-n"]
         # do_xy(nv_list, xy_seq="xy8")
-        # do_xy8_uniform_revival_scan(nv_list, xy_seq="xy8-1")
+        do_xy8_uniform_revival_scan(nv_list, xy_seq="xy8-1")
         # do_xy8_revival_scan(nv_list, xy_seq="xy8-1")
 
         # for nv in nv_list:

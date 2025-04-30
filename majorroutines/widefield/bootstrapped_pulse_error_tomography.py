@@ -197,41 +197,9 @@ def extract_error_params(norm_counts, seq_names):
     return error_dict, error_ste
 
 
-def plot_pulse_errors(error_dict):
-    # keys = sorted(error_dict.keys())
-    keys = error_dict.keys()
-    values = [error_dict[k] for k in keys]
-
-    # Check for problematic values
-    for k, v in zip(keys, values):
-        if not isinstance(v, (int, float, np.number)) or np.isnan(v):
-            raise ValueError(f"Invalid value for {k}: {v}")
-
-    plt.figure(figsize=(6, 5))
-    bars = plt.bar(keys, values)
-    plt.axhline(0, color="gray", linewidth=0.8, linestyle="--")
-    plt.xticks(rotation=45, fontsize=11)
-    plt.yticks(fontsize=11)
-    plt.ylabel("Error Amplitude", fontsize=12)
-    plt.title("Extracted Pulse Errors", fontsize=12)
-    plt.tight_layout()
-
-    for bar, val in zip(bars, values):
-        plt.text(
-            bar.get_x() + bar.get_width() / 2,
-            bar.get_height() * 1.0,
-            f"{val:.3f}",
-            ha="center",
-            va="bottom",
-            fontsize=9,
-        )
-
-    plt.show()
-
-
 def plot_pulse_errors(error_dict, error_ste=None):
     keys = list(error_dict.keys())
-    values = [error_dict[k] for k in keys]
+    values = [np.degrees(error_dict[k]) for k in keys]
     errors = [error_ste.get(k, 0) if error_ste else 0 for k in keys]
     for k, v in zip(keys, values):
         if not isinstance(v, (int, float, np.number)) or np.isnan(v):
@@ -291,8 +259,8 @@ def plot_pulse_errors(error_dict, error_ste=None):
     ax1.set_xticklabels(
         [math_labels.get(k, k) for k in keys], rotation=0, ha="right", fontsize=11
     )
-    ax1.set_ylabel("Error Amplitude (radians)", fontsize=12)
-    ax1.set_title("Extracted Pulse Errors", fontsize=14)
+    ax1.set_ylabel("Error (degrees)", fontsize=12)
+    ax1.set_title("Pulse Errors Bootsrap T", fontsize=14)
     ax1.tick_params(labelsize=11)
 
     for i, (bar, val) in enumerate(zip(bars, values)):
@@ -512,7 +480,14 @@ if __name__ == "__main__":
     #     "2025_04_25-21_33_07-rubin-nv0_2025_02_26",
     #     "2025_04_26-01_32_52-rubin-nv0_2025_02_26",
     # ]
-    file_ids = ["2025_04_27-18_43_06-rubin-nv0_2025_02_26"]
+    # file_ids = ["2025_04_27-18_43_06-rubin-nv0_2025_02_26"]  # before
+    # file_ids = [
+    #     "2025_04_28-03_05_19-rubin-nv0_2025_02_26",
+    #     "2025_04_28-12_17_15-rubin-nv0_2025_02_26",
+    # ]  # after
+    # file_ids = ["2025_04_28-19_41_12-rubin-nv0_2025_02_26"]  # after
+    file_ids = ["2025_04_30-00_49_18-rubin-nv0_2025_02_26"]  # after
+
     # after correction
     # file_ids = [
     #     "2025_04_26-21_46_33-rubin-nv0_2025_02_26",
@@ -531,7 +506,9 @@ if __name__ == "__main__":
     norm_counts = []
     for c in range(len(seq_names)):
         sig_counts = counts[c]  #
-        nc, _ = widefield.process_counts(nv_list, sig_counts, threshold=True)
+        nc, _ = widefield.process_counts(
+            nv_list, sig_counts, ref_counts, threshold=True
+        )
         bright_ref = np.max(nc)
         dark_ref = np.min(nc)
         nc = normalize_to_sigma_z_scc(nc, bright_ref, dark_ref)

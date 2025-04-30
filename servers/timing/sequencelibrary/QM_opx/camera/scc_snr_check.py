@@ -21,7 +21,7 @@ from servers.timing.sequencelibrary.QM_opx.camera import base_scc_sequence
 
 def get_seq(base_scc_seq_args, num_reps=1):
     buffer = seq_utils.get_widefield_operation_buffer()
-    pi_pulse_duration = seq_utils.get_macro_pi_pulse_duration([1])
+    # pi_pulse_duration = seq_utils.get_macro_pi_pulse_duration([1])
 
     with qua.program() as seq:
         seq_utils.init()
