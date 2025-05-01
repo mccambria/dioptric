@@ -39,14 +39,14 @@ calibration_coords_pixel = [
     [227.438, 19.199],
 ]
 calibration_coords_green = [
-    [118.117, 97.426],
-    [107.015, 118.387],
-    [96.843, 94.8],
+    [118.088, 97.57],
+    [107.064, 118.434],
+    [96.815, 94.848],
 ]
 calibration_coords_red = [
-    [80.694, 64.749],
-    [72.101, 81.918],
-    [63.293, 62.834],
+    [80.674, 64.866],
+    [72.142, 81.956],
+    [63.271, 62.874],
 ]
 # Create the dictionaries using the provided lists
 calibration_coords_nv1 = {
@@ -856,7 +856,8 @@ opx_config = {
         "green_aod_cw-opti": {"type": "constant", "sample": 0.11},
         # "green_aod_cw-opti": {"type": "constant", "sample": 0.07},
         # "green_aod_cw-charge_pol": {"type": "constant", "sample": 0.06},  # Negative
-        "green_aod_cw-charge_pol": {"type": "constant", "sample": 0.139},  # median
+        # "green_aod_cw-charge_pol": {"type": "constant", "sample": 0.139},  # median
+        "green_aod_cw-charge_pol": {"type": "constant", "sample": 0.15},  # median
         "green_aod_cw-spin_pol": {"type": "constant", "sample": 0.05},
         "green_aod_cw-shelving": {"type": "constant", "sample": 0.05},
         "green_aod_cw-scc": {"type": "constant", "sample": 0.15},
