@@ -31,9 +31,9 @@ from PIL import Image
 
 # fmt: off
 # Select your cloud backend here. Box was used up until May 2025. Nas is used currently
-# from utils import _cloud_nas as cloud
-from utils import _cloud_box as cloud
+from utils import _cloud_nas as cloud
 
+# from utils import _cloud_box as cloud
 # fmt: on
 from utils import common, widefield
 from utils.constants import NVSig
