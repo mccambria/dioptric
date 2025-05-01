@@ -1443,7 +1443,7 @@ if __name__ == "__main__":
         # do_optimize_spin_pol_amp(nv_list)
         # do_check_readout_fidelity(nv_list)
 
-        # do_scc_snr_check(nv_list)
+        do_scc_snr_check(nv_list)
         # do_optimize_scc_duration(nv_list)
         # do_optimize_scc_amp(nv_list)
         # optimize_scc_amp_and_duration(nv_list)
@@ -1474,7 +1474,7 @@ if __name__ == "__main__":
 
         # AVAILABLE_XY = ["hahn-n", "xy2-n", "xy4-n", "xy8-n", "xy16-n"]
         # do_xy(nv_list, xy_seq="xy8")
-        do_xy8_uniform_revival_scan(nv_list, xy_seq="xy4-1")
+        # do_xy8_uniform_revival_scan(nv_list, xy_seq="xy4-1")
         # do_xy8_revival_scan(nv_list, xy_seq="xy8-1")
 
         # for nv in nv_list:

@@ -153,6 +153,7 @@ config |= {
                 "frequency": 2.730700,  # lower esr peak for both orientation
                 # "rabi_period": 128,
                 "rabi_period": 208,
+                # "rabi_period": 52,
                 # "rabi_period": 176,
             },
         },
