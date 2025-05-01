@@ -152,8 +152,8 @@ config |= {
                 # "frequency": 2.842478,  # rubin shallow NV O3 ms=-1
                 "frequency": 2.730700,  # lower esr peak for both orientation
                 # "rabi_period": 128,
-                # "rabi_period": 160,
-                "rabi_period": 176,
+                "rabi_period": 208,
+                # "rabi_period": 176,
             },
         },
     },
