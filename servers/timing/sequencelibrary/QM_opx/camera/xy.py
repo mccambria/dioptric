@@ -25,7 +25,7 @@ def get_seq(base_scc_seq_args, step_vals, xy_seq, num_reps=1):
     buffer = seq_utils.get_widefield_operation_buffer()
     uwave_ind_list = base_scc_seq_args[-1]
     # macro_pi_pulse_duration = seq_utils.get_macro_pi_pulse_duration(uwave_ind_list)
-    macro_pi_pulse_duration = seq_utils.convert_ns_to_cc(88)
+    macro_pi_pulse_duration = seq_utils.convert_ns_to_cc(88)  # mannually used for now
     # Adjust step values to compensate for internal delays
     step_vals = [
         seq_utils.convert_ns_to_cc(el) - macro_pi_pulse_duration for el in step_vals

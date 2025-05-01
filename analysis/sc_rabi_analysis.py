@@ -67,24 +67,6 @@ def fit_rabi_data(nv_list, taus, avg_counts, avg_counts_ste, epsilon=1e-10):
             tau_phase_guess,
             baseline_guess,
         ]
-        # print(f"guess parameter of NV {nv_idx}: {guess_params}")
-        # bounds = (
-        #     [
-        #         0,
-        #         0.1,
-        #         1e-3,
-        #         -np.pi,
-        #         np.min(avg_counts[nv_idx]),
-        #     ],  # Lower bounds
-        #     [
-        #         np.max(avg_counts[nv_idx]),
-        #         10,
-        #         max(taus),
-        #         np.pi,
-        #         np.max(avg_counts[nv_idx]),
-        #     ],  # Upper bounds
-        # )
-
         try:
             popt, _ = curve_fit(
                 cos_decay,
@@ -113,17 +95,78 @@ def fit_rabi_data(nv_list, taus, avg_counts, avg_counts_ste, epsilon=1e-10):
         return fit_fn, popt
 
     # Parallel execution of fitting for each NV
+
     results = Parallel(n_jobs=-1)(
         delayed(fit_single_nv)(nv_idx) for nv_idx in range(num_nvs)
     )
 
     fit_fns, popts = zip(*results)
 
-    return fit_fns, popts
+    def fit_median_trace():
+        print("Fitting median NV trace...")
+        median_trace = np.median(avg_counts, axis=0)
+        median_ste = np.sqrt(np.sum(avg_counts_ste**2, axis=0)) / len(nv_list)
+        # Estimate frequency via FFT
+        num_steps = len(taus)
+        tau_step = taus[1] - taus[0]
+        transform = np.fft.rfft(median_trace)
+        freqs = np.fft.rfftfreq(num_steps, d=tau_step)
+        transform_mag = np.abs(transform)
+        max_ind = np.argmax(transform_mag[1:]) + 1
+        max_ind = min(max_ind, len(freqs) - 1)
+        freq_guess = freqs[max_ind] if freqs[max_ind] > epsilon else epsilon
+
+        angular_freq_guess = 2 * np.pi * freq_guess
+        tau_phase_guess = (
+            -np.angle(transform[max_ind]) / angular_freq_guess
+            if angular_freq_guess > epsilon
+            else 0
+        )
+        decay_guess = max(taus) / 2
+        amp_guess = np.max(median_trace - np.mean(median_trace))
+        baseline_guess = np.min(median_trace)
+        guess_params = [
+            amp_guess,
+            freq_guess,
+            decay_guess,
+            tau_phase_guess,
+            baseline_guess,
+        ]
+
+        try:
+            median_popt, _ = curve_fit(
+                cos_decay,
+                taus,
+                median_trace,
+                p0=guess_params,
+                sigma=median_ste + epsilon,
+                absolute_sigma=True,
+                maxfev=20000,
+            )
+            median_fit_fn = lambda tau: cos_decay(tau, *median_popt)
+            print(f"Median Rabi Period = {1/median_popt[1]:.3f} µs")
+        except RuntimeError as e:
+            print(f"Median fitting failed: {e}")
+            median_fit_fn = None
+            median_popt = [None] * 5
+
+        return median_fit_fn, median_popt
+
+    median_fit_fn, median_popt = fit_median_trace()
+
+    return fit_fns, popts, median_fit_fn, median_popt
 
 
 def plot_rabi_fits(
-    nv_list, taus, avg_counts, avg_counts_ste, fit_fns, popts, num_cols=9
+    nv_list,
+    taus,
+    avg_counts,
+    avg_counts_ste,
+    fit_fns,
+    popts,
+    median_fit_fn,
+    median_popt,
+    num_cols=9,
 ):
     """
     Plot the fitted Rabi oscillation data for each NV center separately.
@@ -163,7 +206,6 @@ def plot_rabi_fits(
     print(f"Filtered Rabi Periods: {filtered_rabi_periods}")
     print(f"Median Rabi Periods: {np.median(filtered_rabi_periods)}")
     # print(f"Filtered Amplitudes: {filtered_amps}")
-
     # Ensure lists remain the same length after filtering
     filtered_data = [
         (rabi, amp)
@@ -174,47 +216,69 @@ def plot_rabi_fits(
         zip(*filtered_data) if filtered_data else ([], [])
     )
 
-    # Plotting
+    # histogam Plotting
     fig, ax = plt.subplots(figsize=(6, 5))
-    # ax.scatter(
-    #     filtered_rabi_periods,
-    #     np.abs(filtered_amps),
-    #     marker="o",
-    #     color="blue",
-    #     alpha=0.7,
-    # )
     ax.hist(filtered_rabi_periods, bins=10)
-    ax.set_title("Rabi Periods (Q-Channel)", fontsize=15)
+    ax.set_title("Median Rabi Periods (I-Channel)", fontsize=15)
     ax.set_xlabel("Rabi Period (ns)", fontsize=15)
     ax.set_ylabel("Number of Occurance", fontsize=15)
     ax.tick_params(axis="both", labelsize=14)
     ax.grid(True)
+
     # plt.show()
-    for nv_ind in range(num_nvs):
-        fig, ax = plt.subplots()
-        # Scatter plot with error bars
-        ax.errorbar(
-            taus,
-            avg_counts[nv_ind],
-            yerr=np.abs(avg_counts_ste[nv_ind]),
-            fmt="o",
-        )
-        # Plot the fitted curve if available
-        tau_dense = np.linspace(0, taus.max(), 300)
-        if fit_fns[nv_ind] is not None:
-            ax.plot(tau_dense, fit_fns[nv_ind](tau_dense), "-")
-        rabi_freq = popts[nv_ind][1]
-        if rabi_freq is not None:
-            rabi_period = round((1 / rabi_freq) / 4) * 4
-            title = f"NV {nv_ind} (Rabi Period: {rabi_period}ns)"
-        else:
-            title = f"NV {nv_ind} (Rabi Period: N/A)"
-        ax.set_title(title)
-        ax.set_xlabel("Pulse Duration (ns)")
-        ax.set_ylabel("Norm. NV- Population")
-        ax.grid(True)
-        fig.tight_layout()
-        plt.show(block=True)
+    # for nv_ind in range(num_nvs):
+    #     fig, ax = plt.subplots()
+    #     # Scatter plot with error bars
+    #     ax.errorbar(
+    #         taus,
+    #         avg_counts[nv_ind],
+    #         yerr=np.abs(avg_counts_ste[nv_ind]),
+    #         fmt="o",
+    #     )
+    #     # Plot the fitted curve if available
+    #     tau_dense = np.linspace(0, taus.max(), 300)
+    #     if fit_fns[nv_ind] is not None:
+    #         ax.plot(tau_dense, fit_fns[nv_ind](tau_dense), "-")
+    #     rabi_freq = popts[nv_ind][1]
+    #     if rabi_freq is not None:
+    #         rabi_period = round((1 / rabi_freq) / 4) * 4
+    #         title = f"NV {nv_ind} (Rabi Period: {rabi_period}ns)"
+    #     else:
+    #         title = f"NV {nv_ind} (Rabi Period: N/A)"
+    #     ax.set_title(title)
+    #     ax.set_xlabel("Pulse Duration (ns)")
+    #     ax.set_ylabel("Norm. NV- Population")
+    #     ax.grid(True)
+    #     fig.tight_layout()
+    #     plt.show(block=True)
+
+    # plotting median acroos all NVs
+
+    fig, ax = plt.subplots()
+    # Scatter plot with error bars
+    median_counts = np.median(avg_counts, axis=0)
+    median_counts_ste = np.median(avg_counts_ste, axis=0)
+    # median_counts_ste = np.sqrt(np.sum(avg_counts_ste**2, axis=0)) / len(nv_list)
+
+    ax.errorbar(
+        taus,
+        median_counts,
+        yerr=np.abs(median_counts_ste),
+        fmt="o",
+    )
+    # Plot the fitted curve if available
+    tau_dense = np.linspace(0, taus.max(), 300)
+    if fit_fns[nv_ind] is not None:
+        # fit_fns_median = median_fit_fn(tau_dense)
+        ax.plot(tau_dense, median_fit_fn(tau_dense), "-")
+    title = f"Median across {len(nv_list)} NVs"
+    ax.set_title(title)
+    ax.set_xlabel("Pulse Duration (ns)")
+    ax.set_ylabel("Norm. NV- Population")
+    ax.grid(True)
+    fig.tight_layout()
+    plt.show(block=True)
+
     # Save or show the plot
     # Print Rabi periods for each NV center
     # for i, popt in enumerate(popts):
@@ -337,10 +401,12 @@ if __name__ == "__main__":
     # file_id = 1817818887926  # 75NVs iq modulation test 68Mhz orientation
 
     # After changing magnet postion
-    file_id = 1832587019842  # 75NVs iq modulation both degenerate orientation
+    # file_id = 1832587019842  # 75NVs iq modulation both degenerate orientation
     # file_id = 1833635613442
     # file_id = 1842383067959
-    data = dm.get_raw_data(file_id=file_id, load_npz=False, use_cache=False)
+    # data = dm.get_raw_data(file_id=file_id, load_npz=False, use_cache=False)
+    file_stem = "2025_04_30-07_09_33-rubin-nv0_2025_02_26"
+    data = dm.get_raw_data(file_stem=file_stem, load_npz=False, use_cache=False)
     nv_list = data["nv_list"]
     taus = data["taus"]
     counts = np.array(data["counts"])
@@ -348,10 +414,12 @@ if __name__ == "__main__":
     avg_counts, avg_counts_ste = widefield.process_counts(
         nv_list, sig_counts, ref_counts, threshold=True
     )
-    file_name = dm.get_file_name(file_id=file_id)
-    print(f"{file_name}_{file_id}")
+    # file_name = dm.get_file_name(file_id=file_id)
+    # print(f"{file_name}_{file_id}")
     # Call to process Rabi data without normalization (can still perform fitting)
-    fit_fns, popts = fit_rabi_data(nv_list, taus, avg_counts, avg_counts_ste)
+    fit_fns, popts, median_fit_fn, median_popt = fit_rabi_data(
+        nv_list, taus, avg_counts, avg_counts_ste
+    )
     # Plotting without normalization
     plot_rabi_fits(
         nv_list,
@@ -360,5 +428,7 @@ if __name__ == "__main__":
         avg_counts_ste,
         fit_fns,
         popts,
+        median_fit_fn,
+        median_popt,
     )
     kpl.show(block=True)

@@ -259,8 +259,8 @@ def plot_pulse_errors(error_dict, error_ste=None):
     ax1.set_xticklabels(
         [math_labels.get(k, k) for k in keys], rotation=0, ha="right", fontsize=11
     )
-    ax1.set_ylabel("Error (degrees)", fontsize=12)
-    ax1.set_title("Pulse Errors Bootsrap T", fontsize=14)
+    ax1.set_ylabel("Errors (degrees)", fontsize=12)
+    ax1.set_title("Bootstrap Tomography of Pulse Errors", fontsize=14)
     ax1.tick_params(labelsize=11)
 
     for i, (bar, val) in enumerate(zip(bars, values)):
@@ -474,19 +474,20 @@ if __name__ == "__main__":
 
     # no gap bewteen pi pulses
     # before correction
-    # file_ids = [
-    #     "2025_04_25-19_40_02-rubin-nv0_2025_02_26",
-    #     "2025_04_25-23_30_53-rubin-nv0_2025_02_26",
-    #     "2025_04_25-21_33_07-rubin-nv0_2025_02_26",
-    #     "2025_04_26-01_32_52-rubin-nv0_2025_02_26",
-    # ]
+    file_ids = [
+        "2025_04_25-19_40_02-rubin-nv0_2025_02_26",
+        "2025_04_25-23_30_53-rubin-nv0_2025_02_26",
+        "2025_04_25-21_33_07-rubin-nv0_2025_02_26",
+        "2025_04_26-01_32_52-rubin-nv0_2025_02_26",
+    ]
     # file_ids = ["2025_04_27-18_43_06-rubin-nv0_2025_02_26"]  # before
     # file_ids = [
     #     "2025_04_28-03_05_19-rubin-nv0_2025_02_26",
     #     "2025_04_28-12_17_15-rubin-nv0_2025_02_26",
     # ]  # after
     # file_ids = ["2025_04_28-19_41_12-rubin-nv0_2025_02_26"]  # after
-    file_ids = ["2025_04_30-00_49_18-rubin-nv0_2025_02_26"]  # after
+    ### strick timeing
+    # file_ids = ["2025_04_30-00_49_18-rubin-nv0_2025_02_26"]  # after
 
     # after correction
     # file_ids = [
