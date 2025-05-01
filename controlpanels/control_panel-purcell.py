@@ -773,7 +773,7 @@ def do_xy8_uniform_revival_scan(nv_list, xy_seq="xy8-1"):
 
 
 def do_xy8_revival_scan(nv_list, xy_seq="xy8-1"):
-    min_total_time = 800  # ns, minimum total evolution time (for smallest τ)
+    min_total_time = 200  # ns, minimum total evolution time (for smallest τ)
     revival_time = 15e3  # ns, center of first Larmor revival
     revival_width = 5e3  # ns, width around the revival window
     N = 8  # XY8 = 8 π-pulses
@@ -794,7 +794,7 @@ def do_xy8_revival_scan(nv_list, xy_seq="xy8-1"):
     #     revival_time - revival_width, revival_time + revival_width, 51
     # )
     revival_scan = np.linspace(
-        min_total_time + revival_width, revival_time + revival_width, 51
+        min_total_time + revival_width, revival_time + revival_width, 56
     )
     taus.extend((revival_scan / factor).tolist())
 
@@ -1474,7 +1474,7 @@ if __name__ == "__main__":
 
         # AVAILABLE_XY = ["hahn-n", "xy2-n", "xy4-n", "xy8-n", "xy16-n"]
         # do_xy(nv_list, xy_seq="xy8")
-        do_xy8_uniform_revival_scan(nv_list, xy_seq="xy8-1")
+        do_xy8_uniform_revival_scan(nv_list, xy_seq="xy4-1")
         # do_xy8_revival_scan(nv_list, xy_seq="xy8-1")
 
         # for nv in nv_list:

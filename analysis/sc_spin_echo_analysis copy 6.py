@@ -11,12 +11,12 @@ import sys
 import time
 import traceback
 from datetime import datetime
-from matplotlib.ticker import FormatStrFormatter
 
 import matplotlib.pyplot as plt
 import numpy as np
 import seaborn as sns
 from joblib import Parallel, delayed
+from matplotlib.ticker import FormatStrFormatter
 from scipy.optimize import curve_fit
 
 from utils import data_manager as dm
@@ -491,7 +491,7 @@ def plot_spin_echo_all(nv_list, taus, norm_counts, norm_counts_ste):
         rotation="vertical",
         fontsize=12,
     )
-    fig.suptitle(f"XY8 {all_file_ids_str}", fontsize=12, y=0.99)
+    # fig.suptitle(f"XY8 {all_file_ids_str}", fontsize=12, y=0.99)
     fig.tight_layout(pad=0.2, rect=[0.02, 0.01, 0.99, 0.99])
     kpl.show()
 
@@ -533,19 +533,22 @@ if __name__ == "__main__":
     #     1841783840740,
     #     1842055914148,
     # ]  # (2us to 20us )/ 2*8 uniform spacing
-
-    all_file_ids_str = "_".join(map(str, file_ids))
-    now = datetime.now()
-    date_time_str = now.strftime("%Y%m%d_%H%M%S")
-    file_name = dm.get_file_name(file_id=file_ids[0])
-    timestamp = dm.get_time_stamp()
-    file_path = dm.get_file_path(
-        __file__, file_name, f"{all_file_ids_str}_{date_time_str}"
-    )
-    print(f"File path: {file_path}")
+    file_stem = "2025_04_30-22_07_41-rubin-nv0_2025_02_26"
+    # all_file_ids_str = "_".join(map(str, file_ids))
+    # now = datetime.now()
+    # date_time_str = now.strftime("%Y%m%d_%H%M%S")
+    # file_name = dm.get_file_name(file_id=file_ids[0])
+    # timestamp = dm.get_time_stamp()
+    # file_path = dm.get_file_path(
+    #     __file__, file_name, f"{all_file_ids_str}_{date_time_str}"
+    # )
+    # print(f"File path: {file_path}")
     # Process and analyze data from multiple files
     try:
-        data = widefield.process_multiple_files(file_ids)
+        # data = widefield.process_multiple_files(file_ids)
+        # data = widefield.process_multiple_files(file_ids)
+        data = dm.get_raw_data(file_stem=file_stem, load_npz=False, use_cache=False)
+
         nv_list = data["nv_list"]
         taus = data["taus"]
         rabi_feq = data["config"]["Microwaves"]["VirtualSigGens"][str(1)]["uwave_power"]

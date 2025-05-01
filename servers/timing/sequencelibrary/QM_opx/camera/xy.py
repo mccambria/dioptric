@@ -25,7 +25,7 @@ def get_seq(base_scc_seq_args, step_vals, xy_seq, num_reps=1):
     buffer = seq_utils.get_widefield_operation_buffer()
     uwave_ind_list = base_scc_seq_args[-1]
     # macro_pi_pulse_duration = seq_utils.get_macro_pi_pulse_duration(uwave_ind_list)
-    macro_pi_pulse_duration = seq_utils.convert_ns_to_cc(88)  # mannually used for now
+    macro_pi_pulse_duration = seq_utils.convert_ns_to_cc(104)
     # Adjust step values to compensate for internal delays
     step_vals = [
         seq_utils.convert_ns_to_cc(el) - macro_pi_pulse_duration for el in step_vals
@@ -57,7 +57,7 @@ def get_seq(base_scc_seq_args, step_vals, xy_seq, num_reps=1):
 
         def uwave_macro_sig(uwave_ind_list, step_val):
             qua.align()
-            seq_utils.macro_pi_on_2_pulse(uwave_ind_list, phase=0)
+            seq_utils.macro_pi_on_2_pulse(uwave_ind_list, phase=90)
             qua.wait(step_val)
             for i, phase in enumerate(xy_phases):
                 seq_utils.macro_pi_pulse(uwave_ind_list, phase=phase)
@@ -66,7 +66,7 @@ def get_seq(base_scc_seq_args, step_vals, xy_seq, num_reps=1):
                 else:
                     qua.wait(step_val)  # τ after last π
 
-            seq_utils.macro_pi_on_2_pulse(uwave_ind_list, phase=180)
+            seq_utils.macro_pi_on_2_pulse(uwave_ind_list, phase=270)
             qua.wait(buffer)
 
         with qua.for_each_(step_val, step_vals):
@@ -112,7 +112,7 @@ if __name__ == "__main__":
                 1000,
                 147776,
             ],
-            "xy4-1",
+            "xy8-1",
             1,
         )
 
