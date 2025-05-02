@@ -95,8 +95,8 @@ config |= {
         "widefield_operation_buffer": 1e3,
         "uwave_buffer": 16,
         "iq_buffer": 0,
-        # "iq_buffer": 16,  # SBC measured using NVs 4/18/2025
-        "iq_delay": 140,  # SBC measured using NVs 4/18/2025
+        "iq_delay": 136,  # SBC measured using NVs 4/18/2025
+        # "iq_delay": 140,  # SBC measured using NVs 4/18/2025
     },
     ###
     "DeviceIDs": {
