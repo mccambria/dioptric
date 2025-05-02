@@ -5,20 +5,23 @@ Widefield Rabi experiment - Enhanced
 Created on Fall, 2024
 @auhtor : Saroj Chand
 """
-
+import sys
 import traceback
 import warnings
 from datetime import datetime
 
-import matplotlib.pyplot as plt
 import numpy as np
+from numpy.linalg import lstsq
+import matplotlib.pyplot as plt
 import seaborn as sns
 from joblib import Parallel, delayed
+from scipy.stats import pearsonr
 from scipy.optimize import curve_fit, least_squares
 
 from utils import data_manager as dm
 from utils import kplotlib as kpl
 from utils import widefield as widefield
+from utils import _cloud_box as box_cloud
 
 
 def fit_rabi_data(nv_list, taus, avg_counts, avg_counts_ste, epsilon=1e-10):
@@ -95,7 +98,6 @@ def fit_rabi_data(nv_list, taus, avg_counts, avg_counts_ste, epsilon=1e-10):
         return fit_fn, popt
 
     # Parallel execution of fitting for each NV
-
     results = Parallel(n_jobs=-1)(
         delayed(fit_single_nv)(nv_idx) for nv_idx in range(num_nvs)
     )
@@ -381,6 +383,17 @@ def plot_rabi_fits(
     # plt.close(fig)
 
 
+def remove_outliers(data):
+    data = np.array(data)
+    Q1 = np.percentile(data, 25)
+    Q3 = np.percentile(data, 75)
+    IQR = Q3 - Q1
+    lower_bound = Q1 - IQR
+    upper_bound = Q3 + 1.5 * IQR
+    print(f"({Q1, Q3, IQR, lower_bound, upper_bound})")
+    return (data >= lower_bound) & (data <= upper_bound)
+
+
 if __name__ == "__main__":
     kpl.init_kplotlib()
     # file_id = 1772297872545  # two orientations with freqsa round 2.79
@@ -401,9 +414,11 @@ if __name__ == "__main__":
     # file_id = 1817818887926  # 75NVs iq modulation test 68Mhz orientation
 
     # After changing magnet postion
-    # file_id = 1832587019842  # 75NVs iq modulation both degenerate orientation
-    # file_id = 1833635613442
-    # file_id = 1842383067959
+    # file_id = 1833635613442  # i channel
+    # 75NVs iq modulation both degenerate orientation
+    # file_id = 1832587019842  # q channel
+    # file_id = 1842383067959  # i channel
+    # file_stem = box_cloud.get_file_stem_from_file_id(file_id)
     # data = dm.get_raw_data(file_id=file_id, load_npz=False, use_cache=False)
     file_stem = "2025_04_30-07_09_33-rubin-nv0_2025_02_26"
     data = dm.get_raw_data(file_stem=file_stem, load_npz=False, use_cache=False)
@@ -431,4 +446,122 @@ if __name__ == "__main__":
         median_fit_fn,
         median_popt,
     )
-    kpl.show(block=True)
+sys.exit()
+
+
+# plot rabi periods for i and q channels
+file_ids = [1832587019842, 1842383067959]  # [Q, I]
+# file_ids = [1832587019842]  # [Q, I]
+rabi_periods_all = []
+pi_pulses_all = []
+pi_half_pulses_all = []
+# Loop over both channels
+for file_id in file_ids:
+    file_stem = box_cloud.get_file_stem_from_file_id(file_id)
+    # file_stem = "2025_04_30-07_09_33-rubin-nv0_2025_02_26"
+    data = dm.get_raw_data(file_stem=file_stem, load_npz=False, use_cache=False)
+    nv_list = data["nv_list"]
+    taus = data["taus"]
+    counts = np.array(data["counts"])
+    sig_counts, ref_counts = counts[0], counts[1]
+
+    avg_counts, avg_counts_ste = widefield.process_counts(
+        nv_list, sig_counts, ref_counts, threshold=True
+    )
+
+    # Fit the Rabi data
+    fit_fns, popts, median_fit_fn, median_popt = fit_rabi_data(
+        nv_list, taus, avg_counts, avg_counts_ste
+    )
+
+    # Compute Rabi periods from frequency: T = 1 / f
+    # rabi_periods = np.array(
+    #     [1.0 / p[1] if p is not None and p[1] > 0 else np.nan for p in popts]
+    # )
+    # rabi_periods_all.append(rabi_periods)
+
+    rabi_periods = []
+    pi_pulses = []
+    pi_half_pulses = []
+
+    for p in popts:
+        # if p is not None and p[1] > 0:
+        freq = p[1]
+        tau_phase = p[3]
+        rabi_period = 1.0 / freq
+        rabi_periods.append(rabi_period)
+        pi_pulses.append(tau_phase + 0.5 * rabi_period)
+        pi_half_pulses.append(tau_phase + 0.25 * rabi_period)
+        # else:
+        # rabi_periods.append(np.nan)
+        # pi_pulses.append(np.nan)
+        # pi_half_pulses.append(np.nan)
+    print("median rabi period", np.median(rabi_periods))
+    print("median pi pulse", np.median(pi_pulses))
+    print("median pi/2 pulse", np.median(pi_half_pulses))
+    rabi_periods_all.append(np.array(rabi_periods))
+    pi_pulses_all.append(np.array(pi_pulses))
+    pi_half_pulses_all.append(np.array(pi_half_pulses))
+
+
+# Extract Q and I
+rabi_q, rabi_i = rabi_periods_all
+mask = ~np.isnan(rabi_q) & ~np.isnan(rabi_i)
+
+# Apply outlier mask to both
+combined = np.vstack([rabi_q[mask], rabi_i[mask]])
+outlier_mask_q = remove_outliers(combined[0])
+outlier_mask_i = remove_outliers(combined[1])
+final_mask = outlier_mask_q & outlier_mask_i
+
+rabi_q_filtered = combined[0][final_mask]
+rabi_i_filtered = combined[1][final_mask]
+
+# Fit line through origin: y = a * x
+# a_fit, _, _, _ = lstsq(rabi_q_filtered.reshape(-1, 1), rabi_i_filtered, rcond=None)
+
+
+def model(x, a):
+    return a * x
+
+
+a_fit, _ = curve_fit(model, rabi_q_filtered, rabi_i_filtered)
+
+# Plot
+plt.figure()
+plt.scatter(rabi_q_filtered, rabi_i_filtered, alpha=0.7, label="Data")
+plt.plot(
+    rabi_q_filtered,
+    # a_fit[0] * rabi_q_filtered,
+    1.0 * rabi_q_filtered,
+    "r--",
+    # label=f"Fit: y = {a_fit[0]:.3f}x",
+    label=f"Fit: y = {1.0}x",
+)
+plt.xlabel("Rabi Period (Q channel) [ns]")
+plt.ylabel("Rabi Period (I channel) [ns]")
+plt.title("Rabi Period Correlation (Outliers Removed)")
+plt.grid(True)
+plt.axis("equal")
+plt.legend()
+plt.show()
+
+# Pearson correlation
+r, p = pearsonr(rabi_q_filtered, rabi_i_filtered)
+print(f"Pearson r = {r:.3f}, p = {p:.2e}")
+print(f"Fitted slope (through origin): {a_fit[0]:.4f}")
+
+# pi_q, pi_i = pi_pulses_all
+# mask = ~np.isnan(pi_q) & ~np.isnan(pi_i)
+# pi_q, pi_i = pi_q[mask], pi_i[mask]
+
+# plt.figure()
+# plt.scatter(pi_q, pi_i, alpha=0.7)
+# plt.xlabel("π Pulse Time (Q Channel) [ns]")
+# plt.ylabel("π Pulse Time (I Channel) [ns]")
+# plt.title("π Pulse Time Correlation")
+# plt.grid(True)
+# plt.axis("equal")
+# plt.show()
+
+kpl.show(block=True)

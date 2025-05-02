@@ -432,11 +432,14 @@ def process_multiple_files(file_ids):
     Load and combine data from multiple file IDs.
 
     """
-    combined_data = dm.get_raw_data(file_stem=file_ids[0])
+    print(file_ids[0])
+    combined_data = dm.get_raw_data(
+        file_stem=file_ids[0], load_npz=False, use_cache=False
+    )
     counts = np.array(combined_data["counts"])
     print(f"combined data shape : {counts.shape}")
     for file_id in file_ids[1:]:
-        new_data = dm.get_raw_data(file_stem=file_id)
+        new_data = dm.get_raw_data(file_stem=file_id, load_npz=False, use_cache=False)
         new_counts = np.array(new_data["counts"])
         print(f"new data shape : {new_counts.shape}")
         combined_data["num_runs"] += new_data["num_runs"]

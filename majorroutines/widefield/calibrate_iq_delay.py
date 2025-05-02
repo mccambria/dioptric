@@ -212,11 +212,10 @@ if __name__ == "__main__":
     # file_id = 1838833811044  # buffer 32ns
     file_id = 1838880724558
     # file_id = 1838788378840  # buffer 100
-
-    data = dm.get_raw_data(file_id=file_id)
-
-    file_name = dm.get_file_name(file_id=file_id)
-    print(f"{file_name}_{file_id}")
+    file_stem = "2025_05_01-20_52_49-rubin-nv0_2025_02_26"
+    data = dm.get_raw_data(file_stem=file_stem, load_npz=False, use_cache=False)
+    # file_name = dm.get_file_name(file_id=file_id)
+    # print(f"{file_name}_{file_id}")
     # nv_list = data["nv_list"]
     # num_nvs = len(nv_list)
     # num_steps = data["num_steps"]
@@ -227,5 +226,5 @@ if __name__ == "__main__":
     # avg_counts, avg_counts_ste = widefield.process_counts(counts)
     # raw_fig = create_raw_data_figure(nv_list, taus, avg_counts, avg_counts_ste)
     create_median_data_figure(data)
-    
+
     plt.show(block=True)

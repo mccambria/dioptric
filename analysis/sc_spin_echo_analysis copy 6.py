@@ -401,6 +401,26 @@ def plot_analysis_parameters(meaningful_parameters):
 
 
 def plot_spin_echo_all(nv_list, taus, norm_counts, norm_counts_ste):
+    fig, ax = plt.subplots()
+    # Scatter plot with error bars
+    print(norm_counts.shape)
+    median_counts = np.median(norm_counts, axis=0)
+    median_counts_ste = np.median(norm_counts_ste, axis=0)
+    ax.errorbar(
+        taus,
+        median_counts,
+        yerr=np.abs(median_counts_ste),
+        fmt="o",
+    )
+    # Plot the fitted curve if available
+    title = f"Median across {len(nv_list)} NVs"
+    ax.set_title(title)
+    ax.set_xlabel("Total Evolution time (us)")
+    ax.set_ylabel("Norm. NV- Population")
+    ax.grid(True)
+    fig.tight_layout()
+    # plt.show(block=True)
+
     sns.set(style="whitegrid", palette="muted")
     num_nvs = len(nv_list)
     colors = sns.color_palette("deep", num_nvs)
@@ -493,7 +513,6 @@ def plot_spin_echo_all(nv_list, taus, norm_counts, norm_counts_ste):
     )
     # fig.suptitle(f"XY8 {all_file_ids_str}", fontsize=12, y=0.99)
     fig.tight_layout(pad=0.2, rect=[0.02, 0.01, 0.99, 0.99])
-    kpl.show()
 
 
 if __name__ == "__main__":
@@ -533,7 +552,11 @@ if __name__ == "__main__":
     #     1841783840740,
     #     1842055914148,
     # ]  # (2us to 20us )/ 2*8 uniform spacing
-    file_stem = "2025_04_30-22_07_41-rubin-nv0_2025_02_26"
+    file_stems = ["2025_04_30-22_07_41-rubin-nv0_2025_02_26"]  # xy8
+    file_stems = [
+        "2025_05_01-05_35_44-rubin-nv0_2025_02_26",
+        "2025_05_01-11_56_26-rubin-nv0_2025_02_26",
+    ]  # xy4
     # all_file_ids_str = "_".join(map(str, file_ids))
     # now = datetime.now()
     # date_time_str = now.strftime("%Y%m%d_%H%M%S")
@@ -546,8 +569,8 @@ if __name__ == "__main__":
     # Process and analyze data from multiple files
     try:
         # data = widefield.process_multiple_files(file_ids)
-        # data = widefield.process_multiple_files(file_ids)
-        data = dm.get_raw_data(file_stem=file_stem, load_npz=False, use_cache=False)
+        data = widefield.process_multiple_files(file_stems)
+        # data = dm.get_raw_data(file_stem=file_stem, load_npz=False, use_cache=False)
 
         nv_list = data["nv_list"]
         taus = data["taus"]
@@ -556,7 +579,7 @@ if __name__ == "__main__":
             "rabi_period"
         ]
         print(f"rabi freq:{rabi_feq}, rabi period: {rabi_period}")
-        total_evolution_times = 2 * 8 * np.array(taus) / 1e3
+        total_evolution_times = 2 * 4 * np.array(taus) / 1e3
         counts = np.array(data["counts"])
         sig_counts, ref_counts = counts[0], counts[1]
         norm_counts, norm_counts_ste = widefield.process_counts(

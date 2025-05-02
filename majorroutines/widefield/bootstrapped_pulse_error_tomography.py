@@ -192,6 +192,13 @@ def extract_error_params(norm_counts, seq_names):
         predicted_signals = A @ x
         residuals = block3_signals - predicted_signals
         residual_norm = np.linalg.norm(residuals)
+
+        # x, residuals, rank, s = np.linalg.lstsq(A, block3_signals, rcond=None)
+        # cov_matrix = np.linalg.inv(A.T @ A)
+        # std_errors = np.sqrt(np.diag(cov_matrix)) * np.std(block3_signals - A @ x)
+
+        # error_dict.update(dict(zip(block3_names, x)))
+        # error_ste.update(dict(zip(block3_names, std_errors)))
         print("Residual norm:", residual_norm)
 
     return error_dict, error_ste
@@ -474,28 +481,13 @@ if __name__ == "__main__":
 
     # no gap bewteen pi pulses
     # before correction
-    file_ids = [
-        "2025_04_25-19_40_02-rubin-nv0_2025_02_26",
-        "2025_04_25-23_30_53-rubin-nv0_2025_02_26",
-        "2025_04_25-21_33_07-rubin-nv0_2025_02_26",
-        "2025_04_26-01_32_52-rubin-nv0_2025_02_26",
-    ]
-    # file_ids = ["2025_04_27-18_43_06-rubin-nv0_2025_02_26"]  # before
     # file_ids = [
-    #     "2025_04_28-03_05_19-rubin-nv0_2025_02_26",
-    #     "2025_04_28-12_17_15-rubin-nv0_2025_02_26",
-    # ]  # after
-    # file_ids = ["2025_04_28-19_41_12-rubin-nv0_2025_02_26"]  # after
-    ### strick timeing
-    # file_ids = ["2025_04_30-00_49_18-rubin-nv0_2025_02_26"]  # after
-
-    # after correction
-    # file_ids = [
-    #     "2025_04_26-21_46_33-rubin-nv0_2025_02_26",
-    #     "2025_04_26-23_49_07-rubin-nv0_2025_02_26",
-    #     "2025_04_27-01_50_38-rubin-nv0_2025_02_26",
-    #     "2025_04_27-03_46_22-rubin-nv0_2025_02_26",
+    #     "2025_04_25-19_40_02-rubin-nv0_2025_02_26",
+    #     "2025_04_25-23_30_53-rubin-nv0_2025_02_26",
+    #     "2025_04_25-21_33_07-rubin-nv0_2025_02_26",
+    #     "2025_04_26-01_32_52-rubin-nv0_2025_02_26",
     # ]
+    file_ids = ["2025_04_27-18_43_06-rubin-nv0_2025_02_26"]  # before
     # data = dm.get_raw_data(file_id=file_id, load_npz=False, use_cache=True)
     data = widefield.process_multiple_files(file_ids=file_ids)
     # file_name = widefield.combined_filename(file_ids=file_ids)
@@ -507,9 +499,7 @@ if __name__ == "__main__":
     norm_counts = []
     for c in range(len(seq_names)):
         sig_counts = counts[c]  #
-        nc, _ = widefield.process_counts(
-            nv_list, sig_counts, ref_counts, threshold=True
-        )
+        nc, _ = widefield.process_counts(nv_list, sig_counts, threshold=True)
         bright_ref = np.max(nc)
         dark_ref = np.min(nc)
         nc = normalize_to_sigma_z_scc(nc, bright_ref, dark_ref)
