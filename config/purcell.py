@@ -39,14 +39,14 @@ calibration_coords_pixel = [
     [227.438, 19.199],
 ]
 calibration_coords_green = [
-    [118.117, 97.426],
-    [107.015, 118.387],
-    [96.843, 94.8],
+    [118.088, 97.57],
+    [107.064, 118.434],
+    [96.815, 94.848],
 ]
 calibration_coords_red = [
-    [80.694, 64.749],
-    [72.101, 81.918],
-    [63.293, 62.834],
+    [80.674, 64.866],
+    [72.142, 81.956],
+    [63.271, 62.874],
 ]
 # Create the dictionaries using the provided lists
 calibration_coords_nv1 = {
@@ -95,8 +95,8 @@ config |= {
         "widefield_operation_buffer": 1e3,
         "uwave_buffer": 16,
         "iq_buffer": 0,
-        # "iq_buffer": 16,  # SBC measured using NVs 4/18/2025
-        "iq_delay": 140,  # SBC measured using NVs 4/18/2025
+        "iq_delay": 136,  # SBC measured using NVs 4/18/2025
+        # "iq_delay": 140,  # SBC measured using NVs 4/18/2025
     },
     ###
     "DeviceIDs": {
@@ -151,9 +151,10 @@ config |= {
                 # "frequency": 2.964545,  # rubin shallow NV O1 ms=+1
                 # "frequency": 2.842478,  # rubin shallow NV O3 ms=-1
                 "frequency": 2.730700,  # lower esr peak for both orientation
-                # "rabi_period": 128,
                 "rabi_period": 208,
-                # "rabi_period": 176,
+                "pi_pulse": 104,
+                "pi_on_2_pulse": 56,
+                # "rabi_period": 52,
             },
         },
     },
@@ -359,6 +360,8 @@ virtual_sig_gens_dict = config["Microwaves"]["VirtualSigGens"]
 num_sig_gens = len(virtual_sig_gens_dict)
 rabi_period_0 = virtual_sig_gens_dict[0]["rabi_period"]
 rabi_period_1 = virtual_sig_gens_dict[1]["rabi_period"]
+pi_pulse_1 = virtual_sig_gens_dict[1]["pi_pulse"]
+pi_on_2_pulse_1 = virtual_sig_gens_dict[1]["pi_on_2_pulse"]
 ramp_to_zero_duration = 64
 virtual_lasers_dict = config["Optics"]["VirtualLasers"]
 iq_buffer = config["CommonDurations"]["iq_buffer"]
@@ -766,12 +769,12 @@ opx_config = {
         },
         "ao_iq_pi_pulse_1": {
             "operation": "control",
-            "length": int(rabi_period_1 / 2) + 2 * iq_buffer,
+            "length": int(pi_pulse_1) + 2 * iq_buffer,
             "waveforms": {"single": "cw"},
         },
         "ao_iq_pi_on_2_pulse_1": {
             "operation": "control",
-            "length": int(rabi_period_1 / 4) + 2 * iq_buffer,
+            "length": int(pi_on_2_pulse_1) + 2 * iq_buffer,
             "waveforms": {"single": "cw"},
         },
         ### Digital
@@ -837,12 +840,12 @@ opx_config = {
         },
         "do_pi_pulse_1": {
             "operation": "control",
-            "length": int(rabi_period_1 / 2),
+            "length": int(pi_pulse_1),
             "digital_marker": "on",
         },
         "do_pi_on_2_pulse_1": {
             "operation": "control",
-            "length": int(rabi_period_1 / 4),
+            "length": int(pi_on_2_pulse_1),
             "digital_marker": "on",
         },
         ### Mixed
@@ -856,6 +859,7 @@ opx_config = {
         # "green_aod_cw-opti": {"type": "constant", "sample": 0.07},
         # "green_aod_cw-charge_pol": {"type": "constant", "sample": 0.06},  # Negative
         "green_aod_cw-charge_pol": {"type": "constant", "sample": 0.139},  # median
+        # "green_aod_cw-charge_pol": {"type": "constant", "sample": 0.15},  # median
         "green_aod_cw-spin_pol": {"type": "constant", "sample": 0.05},
         "green_aod_cw-shelving": {"type": "constant", "sample": 0.05},
         "green_aod_cw-scc": {"type": "constant", "sample": 0.15},

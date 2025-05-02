@@ -70,10 +70,6 @@ def get_seq(base_scc_seq_args, seq_names, num_reps=1):
             sig_macro = make_sig_macro(pulse_list)
             uwave_macro_list.append(sig_macro)
 
-        # def ref_macro(uwave_ind_list, step_val=None):
-        #     pass
-
-        # uwave_macro_list.append(ref_macro)
         print(len(uwave_macro_list))
 
         base_scc_sequence.macro(

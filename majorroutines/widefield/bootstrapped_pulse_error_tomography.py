@@ -394,7 +394,7 @@ def main(nv_list, num_reps, num_runs, uwave_ind_list):
         "pi_2_Y_pi_Y_pi_2_X",
     ]
 
-    num_exps = len(seq_names) + 2  # last two exp are reference
+    num_exps = len(seq_names) + 1  # last two exp are reference
 
     ### Collect the data
     def run_fn(shuffled_step_inds):
@@ -416,7 +416,6 @@ def main(nv_list, num_reps, num_runs, uwave_ind_list):
         num_exps=num_exps,
         load_iq=True,
     )
-
     ### save the raw data
     timestamp = dm.get_time_stamp()
     raw_data |= {"timestamp": timestamp, "bootstrap_sequence_names": seq_names}

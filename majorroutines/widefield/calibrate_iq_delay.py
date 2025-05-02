@@ -155,13 +155,12 @@ def create_median_data_figure(raw_data):
 #     return fig
 
 
-def main(nv_list, num_steps, num_reps, num_runs, taus):
+def main(nv_list, num_steps, num_reps, num_runs, taus, uwave_ind_list=[1]):
     ### Some initial setup
 
     pulse_gen = tb.get_server_pulse_gen()
     seq_file = "calibrate_iq_delay.py"
     # taus = np.linspace(min_tau, max_tau, num_steps)
-    uwave_ind_list = [1]
 
     def run_fn(shuffled_step_inds):
         shuffled_taus = [taus[ind] for ind in shuffled_step_inds]

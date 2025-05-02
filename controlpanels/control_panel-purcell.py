@@ -416,16 +416,16 @@ def do_scc_snr_check(nv_list):
 
 def do_bootstrapped_pulse_error_tomography(nv_list):
     num_reps = 11
-    num_runs = 400
+    num_runs = 200
     # num_runs = 10
     # num_runs = 1100
-    bootstrapped_pulse_error_tomography.main(
-        nv_list, num_reps, num_runs, uwave_ind_list=[1]
-    )
-    # for _ in range(2):
-    #     bootstrapped_pulse_error_tomography.main(
-    #         nv_list, num_reps, num_runs, uwave_ind_list=[1]
-    #     )
+    # bootstrapped_pulse_error_tomography.main(
+    #     nv_list, num_reps, num_runs, uwave_ind_list=[1]
+    # )
+    for _ in range(2):
+        bootstrapped_pulse_error_tomography.main(
+            nv_list, num_reps, num_runs, uwave_ind_list=[1]
+        )
 
 
 def do_power_rabi(nv_list):
@@ -480,18 +480,21 @@ def do_simple_correlation_test(nv_list):
 
 def do_calibrate_iq_delay(nv_list):
     min_tau = 20
-    max_tau = 400
-    num_steps = 20
+    max_tau = 292
+    num_steps = 18
     num_reps = 10
     num_runs = 100
+    uwave_ind_list = [1]
     taus = np.linspace(min_tau, max_tau, num_steps)
-    calibrate_iq_delay.main(nv_list, num_steps, num_reps, num_runs, taus)
+    calibrate_iq_delay.main(
+        nv_list, num_steps, num_reps, num_runs, taus, uwave_ind_list
+    )
 
 
 def do_resonance(nv_list):
-    freq_center = 2.87
+    # freq_center = 2.87
     # freq_range = 0.240
-    freq_range = 0.36
+    # freq_range = 0.36
     # num_steps = 60
     # num_steps = 72
     # Single ref
@@ -1264,15 +1267,15 @@ if __name__ == "__main__":
     # ]
     # green_coords_list = [
     #     [107.777, 107.746],
-    #     [118.117, 97.426],
-    #     [107.015, 118.387],
-    #     [96.843, 94.8],
+    #     [118.088, 97.57],
+    #     [107.064, 118.434],
+    #     [96.815, 94.848],
     # ]
     # red_coords_list = [
     #     [72.49, 73.253],
-    #     [80.694, 64.749],
-    #     [72.101, 81.918],
-    #     [63.293, 62.834],
+    #     [80.674, 64.866],
+    #     [72.142, 81.956],
+    #     [63.271, 62.874],
     # ]
 
     num_nvs = len(pixel_coords_list)
@@ -1297,7 +1300,8 @@ if __name__ == "__main__":
     pol_duration_list = [132, 132, 144, 176, 104, 164, 116, 128, 168, 204, 116, 156, 180, 104, 220, 96, 132, 104, 120, 120, 104, 192, 132, 128, 228, 120, 132, 200, 276, 96, 204, 192, 376, 120, 84, 244, 104, 232, 116, 108, 340, 436, 96, 116, 340, 116, 104, 416, 168, 120, 108, 104, 300, 104, 192, 188, 116, 336, 220, 92, 372, 328, 156, 300, 384, 120, 144, 140, 120, 132, 472, 132, 96, 192, 168]
     # scc_duration_list = [88, 80, 100, 100, 76, 88, 68, 88, 88, 92, 72, 68, 88, 80, 116, 64, 112, 48, 64, 60, 96, 92, 92, 72, 108, 84, 68, 100, 108, 76, 108, 108, 124, 84, 92, 72, 56, 140, 96, 76, 104, 136, 88, 64, 108, 80, 124, 120, 144, 88, 72, 68, 124, 80, 116, 84, 80, 132, 80, 36, 88, 108, 92, 152, 140, 68, 136, 80, 64, 84, 152, 140, 76, 92, 196]
     # scc_duration_list = [96, 100, 92, 108, 76, 88, 100, 84, 124, 92, 96, 92, 88, 72, 124, 72, 92, 56, 72, 72, 56, 96, 80, 80, 108, 92, 80, 128, 96, 60, 112, 144, 116, 80, 96, 72, 64, 140, 100, 72, 104, 124, 80, 56, 120, 80, 112, 128, 108, 128, 68, 48, 112, 64, 156, 84, 68, 128, 96, 44, 136, 136, 100, 132, 84, 84, 152, 96, 52, 92, 164, 136, 84, 108, 164]
-    scc_duration_list = [40, 88, 84, 84, 76, 92, 76, 84, 112, 100, 84, 72, 160, 80, 112, 72, 92, 64, 72, 64, 72, 84, 104, 72, 100, 80, 80, 96, 96, 64, 100, 104, 108, 84, 132, 64, 60, 152, 84, 60, 120, 128, 116, 56, 120, 80, 92, 124, 104, 84, 56, 48, 116, 60, 120, 104, 76, 148, 108, 56, 160, 136, 92, 156, 108, 68, 80, 100, 48, 80, 156, 112, 80, 84, 164] 
+    # scc_duration_list = [40, 88, 84, 84, 76, 92, 76, 84, 112, 100, 84, 72, 160, 80, 112, 72, 92, 64, 72, 64, 72, 84, 104, 72, 100, 80, 80, 96, 96, 64, 100, 104, 108, 84, 132, 64, 60, 152, 84, 60, 120, 128, 116, 56, 120, 80, 92, 124, 104, 84, 56, 48, 116, 60, 120, 104, 76, 148, 108, 56, 160, 136, 92, 156, 108, 68, 80, 100, 48, 80, 156, 112, 80, 84, 164] 
+    scc_duration_list = [92, 88, 96, 92, 72, 88, 56, 84, 92, 108, 80, 80, 88, 72, 108, 64, 92, 72, 72, 64, 76, 128, 84, 76, 100, 76, 64, 104, 104, 64, 112, 116, 124, 80, 72, 100, 56, 136, 84, 64, 104, 124, 92, 64, 120, 80, 120, 116, 100, 100, 76, 56, 120, 64, 132, 84, 72, 144, 100, 44, 92, 136, 92, 176, 128, 76, 116, 88, 68, 96, 144, 120, 68, 92, 160] 
     # selected_indices_68MHz = [0, 7, 8, 9, 11, 14, 18, 22, 24, 25, 26, 27, 28, 30, 31, 32, 33, 35, 38, 44, 45, 46, 47, 48, 49, 53, 55, 57, 58, 60, 62, 64, 66, 67, 68, 69, 70, 71, 72, 73]
     # selected_indices_185MHz  =[0, 1, 2, 3, 4, 5, 6, 10, 12, 13, 15, 16, 17, 19, 20, 21, 23, 29, 34, 36, 39, 40, 41, 42, 43, 50, 51, 52, 54, 56, 59, 61, 63, 65, 74]
     # fmt: on
@@ -1385,7 +1389,7 @@ if __name__ == "__main__":
         # piezo_voltage_to_pixel_calibration()
 
         do_compensate_for_drift(nv_sig)
-        # do_widefield_image_sample(nv_sig, 50)
+        do_widefield_image_sample(nv_sig, 50)
         # do_widefield_image_sample(nv_sig, 200)
 
         # do_scanning_image_sample(nv_sig)
@@ -1452,7 +1456,7 @@ if __name__ == "__main__":
         # do_calibrate_green_red_delay()
 
         # do_spin_echo_phase_scan_test(nv_list)  # for iq mod test
-        # do_bootstrapped_pulse_error_tomography(nv_list)
+        do_bootstrapped_pulse_error_tomography(nv_list)
         # do_calibrate_iq_delay(nv_list)
 
         # do_rabi(nv_list)
@@ -1474,7 +1478,7 @@ if __name__ == "__main__":
 
         # AVAILABLE_XY = ["hahn-n", "xy2-n", "xy4-n", "xy8-n", "xy16-n"]
         # do_xy(nv_list, xy_seq="xy8")
-        do_xy8_uniform_revival_scan(nv_list, xy_seq="xy4-1")
+        # do_xy8_uniform_revival_scan(nv_list, xy_seq="xy4-1")
         # do_xy8_revival_scan(nv_list, xy_seq="xy8-1")
 
         # for nv in nv_list:

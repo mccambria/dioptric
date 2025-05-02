@@ -30,8 +30,6 @@ def get_seq(base_scc_seq_args, step_vals, xy_seq, num_reps=1):
     step_vals = [
         seq_utils.convert_ns_to_cc(el) - macro_pi_pulse_duration for el in step_vals
     ]
-    # correction = macro_pi_pulse_duration + macro_pi_on_2_pulse_duration // 2
-    # step_vals = [seq_utils.convert_ns_to_cc(el) for el in step_vals]
     # Choose pulse phase pattern
     phase_dict = {
         "hahn": [0],
@@ -57,16 +55,16 @@ def get_seq(base_scc_seq_args, step_vals, xy_seq, num_reps=1):
 
         def uwave_macro_sig(uwave_ind_list, step_val):
             qua.align()
-            seq_utils.macro_pi_on_2_pulse(uwave_ind_list, phase=90)
+            seq_utils.macro_pi_on_2_pulse(uwave_ind_list, phase=0)
             qua.wait(step_val)
             for i, phase in enumerate(xy_phases):
                 seq_utils.macro_pi_pulse(uwave_ind_list, phase=phase)
                 if i < len(xy_phases) - 1:
-                    qua.wait(2 * step_val)  # 2τ between πs
+                    qua.wait(2 * step_val)  # 2τ between pis
                 else:
-                    qua.wait(step_val)  # τ after last π
+                    qua.wait(step_val)  # τ after last pi
 
-            seq_utils.macro_pi_on_2_pulse(uwave_ind_list, phase=270)
+            seq_utils.macro_pi_on_2_pulse(uwave_ind_list, phase=180)
             qua.wait(buffer)
 
         with qua.for_each_(step_val, step_vals):
@@ -105,7 +103,7 @@ if __name__ == "__main__":
                 [1],
             ],
             [
-                9220,
+                200,
                 18796,
                 312752,
                 42920,
