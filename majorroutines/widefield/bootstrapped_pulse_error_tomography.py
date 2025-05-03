@@ -486,7 +486,14 @@ if __name__ == "__main__":
     #     "2025_04_25-21_33_07-rubin-nv0_2025_02_26",
     #     "2025_04_26-01_32_52-rubin-nv0_2025_02_26",
     # ]
-    file_ids = ["2025_04_27-18_43_06-rubin-nv0_2025_02_26"]  # before
+    # file_ids = ["2025_04_27-18_43_06-rubin-nv0_2025_02_26"]  # before
+    # file_ids = ["2025_05_01-23_21_40-rubin-nv0_2025_02_26"]  # before
+    file_ids = [
+        "2025_05_02-02_23_53-rubin-nv0_2025_02_26",
+        "2025_05_02-04_10_46-rubin-nv0_2025_02_26",
+    ]  # before
+    # file_ids = ["2025_05_02-04_10_46-rubin-nv0_2025_02_26"]  # before
+
     # data = dm.get_raw_data(file_id=file_id, load_npz=False, use_cache=True)
     data = widefield.process_multiple_files(file_ids=file_ids)
     # file_name = widefield.combined_filename(file_ids=file_ids)
@@ -498,7 +505,7 @@ if __name__ == "__main__":
     norm_counts = []
     for c in range(len(seq_names)):
         sig_counts = counts[c]  #
-        nc, _ = widefield.process_counts(nv_list, sig_counts, threshold=True)
+        nc, _ = widefield.process_counts(nv_list, sig_counts, threshold=False)
         bright_ref = np.max(nc)
         dark_ref = np.min(nc)
         nc = normalize_to_sigma_z_scc(nc, bright_ref, dark_ref)
