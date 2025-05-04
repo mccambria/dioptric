@@ -93,9 +93,9 @@ config |= {
         "default_pulse_duration": 1000,
         "aod_access_time": 11e3,  # access time in specs is 10us
         "widefield_operation_buffer": 1e3,
-        "uwave_buffer": 16,
+        "uwave_buffer": 0,
         "iq_buffer": 0,
-        "iq_delay": 136,  # SBC measured using NVs 4/18/2025
+        "iq_delay": 136,  # SBC measured using NVs 5/1/2025
         # "iq_delay": 140,  # SBC measured using NVs 4/18/2025
     },
     ###
@@ -251,9 +251,7 @@ config |= {
             # LaserKey.WIDEFIELD_SPIN_POL: {"physical_name": yellow_laser, "duration": 1e6},
             VirtualLaserKey.WIDEFIELD_CHARGE_READOUT: {
                 "physical_name": yellow_laser,
-                # "duration": 200e6,
                 "duration": 60e6,
-                # "duration": 30e6,
                 # "duration": 24e6,  # for red calibration
             },
             # LaserKey.WIDEFIELD_CHARGE_READOUT: {"physical_name": yellow_laser, "duration": 100e6},
@@ -353,7 +351,6 @@ config |= {
 
 
 # region OPX config
-
 default_pulse_duration = config["CommonDurations"]["default_pulse_duration"]
 default_int_freq = 75e6
 virtual_sig_gens_dict = config["Microwaves"]["VirtualSigGens"]
@@ -856,10 +853,8 @@ opx_config = {
     "waveforms": {
         # Green AOD
         "green_aod_cw-opti": {"type": "constant", "sample": 0.11},
-        # "green_aod_cw-opti": {"type": "constant", "sample": 0.07},
         # "green_aod_cw-charge_pol": {"type": "constant", "sample": 0.06},  # Negative
         "green_aod_cw-charge_pol": {"type": "constant", "sample": 0.139},  # median
-        # "green_aod_cw-charge_pol": {"type": "constant", "sample": 0.15},  # median
         "green_aod_cw-spin_pol": {"type": "constant", "sample": 0.05},
         "green_aod_cw-shelving": {"type": "constant", "sample": 0.05},
         "green_aod_cw-scc": {"type": "constant", "sample": 0.15},
@@ -869,7 +864,6 @@ opx_config = {
         # "red_aod_cw-ion": {"type": "constant", "sample": 0.09},
         "red_aod_cw-ion": {"type": "constant", "sample": 0.15},
         "red_aod_cw-scc": {"type": "constant", "sample": 0.15},
-        # "red_aod_cw-scc": {"type": "constant", "sample": 0.12},  # rubin
         # Yellow AOM
         "yellow_imaging": {"type": "constant", "sample": 0.45},  # 0.35
         # "yellow_imaging": {"type": "constant", "sample": 0.50},  # 0.35
@@ -902,76 +896,32 @@ opx_config = {
 # endregion
 
 
-# Centralized pulse error values (from bootstrap tomography)
-# def correct_pulse_params_by_phase(phase_deg, base_amp=0.5):
-#     # Determine which pulse axis the phase aligns with
-#     pulse_errors = {
-#         "phi_prime": -0.091249,
-#         "chi_prime": 0.047725,
-#         "phi": 0.08768,
-#         "chi": -0.046245,
-#         "vz": -0.041764,
-#         "ez": -0.081076,
-#         "epsilon_z_prime": -0.010492,
-#         "nu_x_prime": -0.001294,
-#         "nu_z_prime": -0.15388,
-#         "epsilon_y": 0.014685,
-#         "nu_x": -0.018655,
-#     }
-#     # return amp_correction, phase_correction_rad
-#     phase_mod = phase_deg % 360
-
-#     if np.isclose(phase_mod, 0, atol=5) or np.isclose(phase_mod, 180, atol=5):
-#         # X-aligned pulses
-#         angle_error = pulse_errors.get("phi", 0)
-#         tilt = pulse_errors.get("ez", 0)
-#     elif np.isclose(phase_mod, 90, atol=5) or np.isclose(phase_mod, 270, atol=5):
-#         # Y-aligned pulses
-#         angle_error = pulse_errors.get("chi", 0)
-#         tilt = pulse_errors.get("epsilon_y", 0)
-#     else:
-#         raise ValueError(
-#             f"Unsupported phase: {phase_deg}. Expected near 0, 90, 180, 270 degrees."
-#         )
-
-#     amp_correction = base_amp * (1.0 / (1 + angle_error))
-#     phase_correction_rad = -np.arctan2(tilt, 1.0)
-#     print(phase_correction_rad)
-#     return amp_correction, phase_correction_rad
-
-
-def correct_pulse_params_by_phase(phase_deg, base_amp=0.5):
+def correct_pulse_params_by_phase(phase_deg):
     # Centralized pulse error values from bootstrap
     pulse_errors = {
-        "phi": 0.08768,  # amplitude error on X
-        "chi": -0.046245,  # amplitude error on Y
-        "ez": -0.081076,  # Z-axis tilt for X
-        "epsilon_y": 0.014685,  # Z-axis tilt for Y
+        "phi_prime": -0.013781,
+        "chi_prime": -0.030103,
+        "phi": 0.028953,
+        "chi": 0.050192,
+        "vz": -0.028262,
+        "ez": 0.076654,
+        "epsilon_z_prime": -0.011943,
+        "nu_x_prime": -0.040587,
+        "nu_z_prime": -0.01359,
+        "epsilon_y": 0.043858,
+        "nu_x": 0.030547,
     }
 
-    # Normalize phase to [0, 360)
-    phase_mod = phase_deg % 360
+    if phase_deg in [90, 270]:
+        tilt = pulse_errors.get("ez", 0.0)
+        phase_corr_deg = -np.degrees(tilt)
+    elif phase_deg in [0, 180]:
+        tilt = pulse_errors.get("vz", 0.0)
+        phase_corr_deg = -np.degrees(tilt)
+    else:
+        phase_corr_deg = 0.0
 
-    # Determine closest axis: X-like or Y-like
-    # X-like: around 0° or 180°, Y-like: around 90° or 270°
-    # Use shortest angular distance modulo 180°
-    # distance_to_x = min(abs(phase_mod - 0), abs(phase_mod - 180))
-    # distance_to_y = min(abs(phase_mod - 90), abs(phase_mod - 270))
-
-    # if distance_to_x <= distance_to_y:
-    # X-aligned rotation
-    angle_error = pulse_errors.get("phi", 0)
-    tilt = pulse_errors.get("ez", 0)
-    # else:
-    # Y-aligned rotation
-    angle_error = pulse_errors.get("chi", 0)
-    tilt = pulse_errors.get("epsilon_y", 0)
-
-    # Apply amplitude and phase correction
-    amp_correction = base_amp * (1.0 / (1 + angle_error))
-    phase_correction_rad = -np.arctan2(tilt, 1.0)
-
-    return amp_correction, phase_correction_rad
+    return phase_corr_deg
 
 
 def generate_iq_pulses(pulse_names, phases):
@@ -992,16 +942,14 @@ def generate_iq_pulses(pulse_names, phases):
     amp = 0.5
 
     for phase in phases:
-        # amp_corr, phase_corr = correct_pulse_params_by_phase(phase, base_amp=0.5)
-        # corrected_phase_rad = np.round(np.deg2rad(phase) + phase_corr)  # note: addition
-
-        # i_comp = np.cos(corrected_phase_rad) * amp_corr
-        # q_comp = np.sin(corrected_phase_rad) * amp_corr
-        # print(
-        #     f"Phase {phase}° → corrected amp: {amp_corr:.3f}, phase (deg): {np.rad2deg(corrected_phase_rad):.2f}"
-        # )
-        i_comp = np.cos(np.deg2rad(phase)) * amp
-        q_comp = np.sin(np.deg2rad(phase)) * amp
+        phase_corr = correct_pulse_params_by_phase(phase)
+        corrected_phase = np.round(phase + phase_corr)
+        corrected_phase = corrected_phase % 360  # Wrap phase to [0, 360)
+        i_comp = np.cos(np.deg2rad(corrected_phase)) * amp
+        q_comp = np.sin(np.deg2rad(corrected_phase)) * amp
+        print(f"phase (deg): {(corrected_phase):.2f}")
+        # i_comp = np.cos(np.deg2rad(phase)) * amp
+        # q_comp = np.sin(np.deg2rad(phase)) * amp
         opx_config["waveforms"][f"i_{phase}"] = {"type": "constant", "sample": i_comp}
         opx_config["waveforms"][f"q_{phase}"] = {"type": "constant", "sample": q_comp}
 
@@ -1027,7 +975,6 @@ def generate_iq_pulses(pulse_names, phases):
                     ] = full_pulse_name
 
 
-# ref_img_array = np.array([])
 # generate_iq_pulses(["pi_pulse", "pi_on_2_pulse"], [0, 90, 180, 270])
 # fmt: off
 phases =[0, 18, 36, 54, 72, 90, 108, 126, 144, 162, 180, 198, 216, 234, 252, 270, 288, 306, 324, 342, 360]
@@ -1040,4 +987,3 @@ if __name__ == "__main__":
     mat = np.array(config["Positioning"][key])
     mat[:, 2] = [0, 0]
     print(mat)
-    # generate_iq_pulses(["pi_pulse", "pi_on_2_pulse"], [0, 90])
