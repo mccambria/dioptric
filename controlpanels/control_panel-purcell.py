@@ -1388,11 +1388,11 @@ if __name__ == "__main__":
         # pos.set_xyz_on_nv(nv_sig)
         # piezo_voltage_to_pixel_calibration()
 
-        do_compensate_for_drift(nv_sig)
+        # do_compensate_for_drift(nv_sig)
         # do_widefield_image_sample(nv_sig, 50)
         # do_widefield_image_sample(nv_sig, 200)
 
-        # do_scanning_image_sample(nv_sig)
+        do_scanning_image_sample(nv_sig)
         # do_scanning_image_full_roi(nv_sig)
         # do_scanning_image_sample_zoom(nv_sig)
         # scan_equilateral_triangle(nv_sig, center_coord=sample_coords, radius=0.2)
