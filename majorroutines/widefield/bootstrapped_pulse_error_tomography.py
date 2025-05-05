@@ -414,6 +414,9 @@ if __name__ == "__main__":
         "2025_05_03-14_42_57-rubin-nv0_2025_02_26",
         # "2025_05_03-16_25_44-rubin-nv0_2025_02_26",
     ]  # before
+    file_ids = [
+        "2025_05_03-18_31_28-rubin-nv0_2025_02_26",
+    ]  # before
     data = widefield.process_multiple_files(file_ids=file_ids)
     # file_name = widefield.combined_filename(file_ids=file_ids)
     nv_list = data["nv_list"]

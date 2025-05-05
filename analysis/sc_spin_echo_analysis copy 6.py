@@ -560,6 +560,13 @@ if __name__ == "__main__":
         "2025_05_02-17_30_41-rubin-nv0_2025_02_26",
         "2025_05_02-23_57_21-rubin-nv0_2025_02_26",
     ]  # xy4
+    # cpdd
+    # file_stems = [
+    #     "2025_05_04-02_06_22-rubin-nv0_2025_02_26",
+    #     "2025_05_04-07_37_32-rubin-nv0_2025_02_26",
+    #     "2025_05_04-13_07_43-rubin-nv0_2025_02_26",
+    #     "2025_05_04-19_00_22-rubin-nv0_2025_02_26",
+    # ]  # xy8 cpdd
     # all_file_ids_str = "_".join(map(str, file_ids))
     # now = datetime.now()
     # date_time_str = now.strftime("%Y%m%d_%H%M%S")
