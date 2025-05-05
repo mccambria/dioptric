@@ -430,6 +430,43 @@ def _macro_uwave_pulse(
         qua.align(*elements)
 
 
+def macro_cpdd_drive(
+    uwave_ind_list,
+    phase_list,
+    duration_cc,
+    total_duration,
+    pulse_name="pi_pulse",
+):
+    """
+    Play a continuous drive with discrete phase changes (for CPDD).
+
+    Args:
+        uwave_ind_list: List of indices of microwave channels.
+        phase_list: List of phases (degrees) to cycle through.
+        duration_cc: Time (in clock cycles) between phase changes.
+        amp: Amplitude.
+    """
+    if uwave_ind_list is None:
+        return
+
+    for uwave_ind in uwave_ind_list:
+        i_el = get_sig_gen_i_element(uwave_ind)
+        q_el = get_sig_gen_q_element(uwave_ind)
+        sig_gen_el = get_sig_gen_element(uwave_ind)
+        el_list = [i_el, q_el, sig_gen_el]
+
+        qua.align(*el_list)
+        # Turn on analog microwave output (switch) for full duration
+        # with qua.strict_timing_():
+        qua.play(pulse_name, sig_gen_el, duration=total_duration)
+        for phase in phase_list:
+            iq_pulse = _get_iq_pulse(pulse_name, phase=phase)
+            qua.play(iq_pulse, i_el, duration=duration_cc)
+            qua.play(iq_pulse, q_el, duration=duration_cc)
+
+        qua.align(*el_list)
+
+
 def macro_run_aods(
     laser_names: list[str] = None,
     aod_suffices: list[str] = None,

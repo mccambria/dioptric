@@ -103,7 +103,8 @@ def main(
 
     pulse_gen = tb.get_server_pulse_gen()
     # seq_file = "xy8.py"
-    seq_file = "xy.py"
+    # seq_file = "xy.py"
+    seq_file = "xycp.py"
 
     # old version of exp run using step function
     # def step_fn(tau_ind):
