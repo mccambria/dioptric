@@ -36,6 +36,7 @@ def get_seq(base_scc_seq_args, seq_names, num_reps=1):
         "pi_2_Y_pi_X_pi_2_X": [("pi/2", 90), ("pi", 0), ("pi/2", 0)],
         "pi_2_X_pi_Y_pi_2_Y": [("pi/2", 0), ("pi", 90), ("pi/2", 90)],
         "pi_2_Y_pi_Y_pi_2_X": [("pi/2", 90), ("pi", 90), ("pi/2", 0)],
+        # created for test not a part of the original bootstrap sequence
         "pi_2_Y_pi_X_pi_2_Y": [("pi/2", 90), ("pi", 0), ("pi/2", 90)],
     }
 

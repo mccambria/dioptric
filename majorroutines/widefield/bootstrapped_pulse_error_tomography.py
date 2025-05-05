@@ -1,9 +1,7 @@
 # -*- coding: utf-8 -*-
 """
-Widefield Rabi experiment
-
-Created on November 29th, 2023
-
+Widefield bootstrap tomography of pulses experiment
+Created on April, 2025
 @author: sbchand
 """
 
@@ -233,7 +231,6 @@ def plot_pulse_errors(error_dict, error_ste=None):
         "nu_x": r"$\nu_x$",
         "epsilon_z": r"$\epsilon_z$",
     }
-
     descriptions = {
         "phi_prime": r"Rotation angle error of $\pi/2\,X$ pulse",
         "chi_prime": r"Rotation angle error of $\pi/2\,Y$ pulse",
@@ -294,86 +291,13 @@ def plot_pulse_errors(error_dict, error_ste=None):
     plt.show()
 
 
-def spherical_arc(start, end, n_points=100):
-    start = start / np.linalg.norm(start)
-    end = end / np.linalg.norm(end)
-    omega = np.arccos(np.clip(np.dot(start, end), -1, 1))
-    if omega == 0:
-        return np.tile(start, (n_points, 1)).T
-    sin_omega = np.sin(omega)
-    t = np.linspace(0, 1, n_points)
-    arc = (
-        np.sin((1 - t) * omega)[:, None] * start + np.sin(t * omega)[:, None] * end
-    ) / sin_omega
-    return arc.T, np.degrees(omega)
+def normalize_to_sigma_z_scc(counts, bright_ref, dark_ref):
+    norm = (counts - dark_ref) / (bright_ref - dark_ref)
+    sigma_z = 2 * norm - 1
+    return -1 * sigma_z  # Flip for SCC interpretation
 
 
-def Bloch_Sphere_Visualization(pulse_errors):
-    # Ideal unit vectors for X and Y pulses
-    ideal_X = np.array([1, 0, 0])
-    ideal_Y = np.array([0, 1, 0])
-    ideal_Z = np.array([0, 0, 1])
-    # Actual axes derived from errors
-    actual_X = np.array([1, pulse_errors["ey"], pulse_errors["ez"]])
-    actual_Y = np.array([pulse_errors["vx"], 1, pulse_errors["vz"]])
-
-    # Normalize to map on Bloch sphere
-    actual_X = actual_X / np.linalg.norm(actual_X)
-    actual_Y = actual_Y / np.linalg.norm(actual_Y)
-
-    # Bloch sphere setup
-    fig = plt.figure(figsize=(6.5, 6))
-    ax = fig.add_subplot(111, projection="3d")
-
-    # Draw the Bloch sphere
-    u = np.linspace(0, 2 * np.pi, 100)
-    v = np.linspace(0, np.pi, 100)
-    x = np.outer(np.cos(u), np.sin(v))
-    y = np.outer(np.sin(u), np.sin(v))
-    z = np.outer(np.ones_like(u), np.cos(v))
-    ax.plot_surface(x, y, z, color="lightblue", alpha=0.1, edgecolor="gray")
-
-    # Draw ideal and actual vectors
-    ax.quiver(0, 0, 0, *ideal_X, color="blue", label="Ideal X")
-    ax.quiver(0, 0, 0, *ideal_Y, color="green", label="Ideal Y")
-    ax.quiver(0, 0, 0, *actual_X, color="red", linestyle="dashed", label="Exp X")
-    ax.quiver(0, 0, 0, *actual_Y, color="orange", linestyle="dashed", label="Exp Y")
-    ax.quiver(
-        0,
-        0,
-        0,
-        *ideal_Z,
-        color="black",
-        alpha=0.5,
-        linestyle="dotted",
-        label="Z reference",
-    )
-
-    arc_X, angle_X = spherical_arc(ideal_X, actual_X)
-    arc_Y, angle_Y = spherical_arc(ideal_Y, actual_Y)
-    ax.plot(*arc_X, color="red", linestyle="--", linewidth=1.5)
-    ax.plot(*arc_Y, color="orange", linestyle="--", linewidth=1.5)
-
-    mid_X = arc_X[:, len(arc_X[0]) // 2]
-    mid_Y = arc_Y[:, len(arc_Y[0]) // 2]
-
-    ax.text(*mid_X, f"{angle_X:.1f}°", color="red", fontsize=11, ha="center")
-    ax.text(*mid_Y, f"{angle_Y:.1f}°", color="orange", fontsize=11, ha="center")
-
-    # Axis settings
-    ax.set_xlim([-1.2, 1.2])
-    ax.set_ylim([-1.2, 1.2])
-    ax.set_zlim([-1.2, 1.2])
-    ax.set_xlabel("X", fontsize=12)
-    ax.set_ylabel("Y", fontsize=12)
-    ax.set_zlabel("Z", fontsize=12)
-    ax.tick_params(labelsize=11)
-    ax.set_title("Bloch Sphere Axis Tilt due to Pulse Errors", fontsize=12)
-    ax.legend(fontsize=11)
-    plt.tight_layout()
-    plt.show()
-
-
+### Experiment setup
 def main(nv_list, num_reps, num_runs, uwave_ind_list):
     ### Some initial setup
     pulse_gen = tb.get_server_pulse_gen()
@@ -393,8 +317,7 @@ def main(nv_list, num_reps, num_runs, uwave_ind_list):
         "pi_2_X_pi_Y_pi_2_Y",
         "pi_2_Y_pi_Y_pi_2_X",
     ]
-
-    num_exps = len(seq_names) + 1  # last two exp are reference
+    num_exps = len(seq_names) + 1  # last exp is dual-rail reference
 
     ### Collect the data
     def run_fn(shuffled_step_inds):
@@ -429,38 +352,31 @@ def main(nv_list, num_reps, num_runs, uwave_ind_list):
     tb.reset_cfm()
 
     ### Process and plot
-    # try:
-    #     fig = None
-    #     counts = raw_data["counts"]
-    #     sig_counts_0 = counts[0]  #  "pi_2_X",
-    #     rsig_counts_1 = counts[1]
-    #     ....
-    #     norm_counts, norm_counts_ste = widefield.process_counts(
-    #         nv_list, sig_counts_1, threshold=True
-    #     )
-    #     analyze_bootstrap_data(nv_list, norm_counts, norm_counts_ste)
-    # except Exception:
-    #     print(traceback.format_exc())
-    #     fig = None
-    kpl.show()
-
+    try:
+        counts = raw_data["counts"]
+        nv_list = data["nv_list"]
+        seq_names = data["bootstrap_sequence_names"]
+        counts = np.array(data["counts"])
+        norm_counts = []
+        for c in range(len(seq_names)):
+            sig_counts = counts[c]  #
+            nc, _ = widefield.process_counts(nv_list, sig_counts, threshold=False)
+            bright_ref = np.max(nc)
+            dark_ref = np.min(nc)
+            nc = normalize_to_sigma_z_scc(nc, bright_ref, dark_ref)
+            nc_medians = np.median(nc, axis=0)
+            norm_counts.append(nc_medians)
+        norm_counts = np.array(norm_counts)  # shape: (num_seqs, num_nvs)
+        error_dict, error_ste = extract_error_params(norm_counts, seq_names)
+        plot_pulse_errors(error_dict, error_ste)
+    except Exception:
+        print(traceback.format_exc())
+    kpl.show(block=True)
     # if raw_fig is not None:
     #     dm.save_figure(raw_fig, file_path)
     # if fit_fig is not None:
     #     file_path = dm.get_file_path(__file__, timestamp, repr_nv_name + "-fit")
     #     dm.save_figure(fit_fig, file_path)
-
-
-# def normalize_to_sigma_z(raw_counts, bright_ref, dark_ref):
-#     """Return signal mapped to [-1, 1] based on reference levels."""
-#     return 2 * (raw_counts - dark_ref) / (bright_ref - dark_ref) - 1
-#     # return (raw_counts - dark_ref) / (bright_ref - dark_ref)
-
-
-def normalize_to_sigma_z_scc(counts, bright_ref, dark_ref):
-    norm = (counts - dark_ref) / (bright_ref - dark_ref)
-    sigma_z = 2 * norm - 1
-    return -1 * sigma_z  # Flip for SCC interpretation
 
 
 if __name__ == "__main__":
@@ -493,8 +409,11 @@ if __name__ == "__main__":
         "2025_05_02-04_10_46-rubin-nv0_2025_02_26",
     ]  # before
     # file_ids = ["2025_05_02-04_10_46-rubin-nv0_2025_02_26"]  # before
-
     # data = dm.get_raw_data(file_id=file_id, load_npz=False, use_cache=True)
+    file_ids = [
+        "2025_05_03-14_42_57-rubin-nv0_2025_02_26",
+        # "2025_05_03-16_25_44-rubin-nv0_2025_02_26",
+    ]  # before
     data = widefield.process_multiple_files(file_ids=file_ids)
     # file_name = widefield.combined_filename(file_ids=file_ids)
     nv_list = data["nv_list"]
