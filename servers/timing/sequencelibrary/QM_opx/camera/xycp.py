@@ -23,55 +23,48 @@ from servers.timing.sequencelibrary.QM_opx.camera import base_scc_sequence
 
 def get_seq(base_scc_seq_args, step_vals, xy_seq, num_reps=1):
     buffer = seq_utils.get_widefield_operation_buffer()
-    uwave_ind_list = base_scc_seq_args[-1]
-    # macro_pi_pulse_duration = seq_utils.get_macro_pi_pulse_duration(uwave_ind_list)
-    macro_pi_pulse_duration = seq_utils.convert_ns_to_cc(104)
-    # Adjust step values to compensate for internal delays
-    step_vals = [
-        seq_utils.convert_ns_to_cc(el) - macro_pi_pulse_duration for el in step_vals
-    ]
-    # Choose pulse phase pattern
+    step_vals = [seq_utils.convert_ns_to_cc(el) for el in step_vals]
+    # Define robust phase sequences
     phase_dict = {
-        "hahn": [0],
         "xy2": [0, 90],
         "xy4": [0, 90, 0, 90],
         "xy8": [0, 90, 0, 90, 90, 0, 90, 0],
         "xy16": [0, 90, 0, 90, 90, 0, 90, 0, 0, -90, 0, -90, -90, 0, -90, 0],
     }
-
     # Parse xy_seq, e.g. "xy8-4" → base="xy8", reps=4
     match = re.match(r"([a-zA-Z]+\d*)(?:-(\d+))?", xy_seq.lower())
     base_seq = match.group(1)
     num_blocks = int(match.group(2)) if match.group(2) else 1
     # Fetch and repeat the base phase pattern
     base_phases = phase_dict.get(base_seq)
-    xy_phases = base_phases * num_blocks
-
+    phase_list = base_phases * num_blocks
+    pulse_num = len(phase_list)
     with qua.program() as seq:
         seq_utils.init()
         seq_utils.macro_run_aods()
         step_val = qua.declare(int)
 
-        def uwave_macro_sig(uwave_ind_list, step_val):
+        def cpdd_block(uwave_ind_list, step_val):
+            total_duration = step_val * pulse_num
+            step_val -= 4  # 4cc to account gap bewteen i and q pulse
             qua.align()
+            # with qua.strict_timing_():
             seq_utils.macro_pi_on_2_pulse(uwave_ind_list, phase=0)
-            qua.wait(step_val)
-            for i, phase in enumerate(xy_phases):
-                seq_utils.macro_pi_pulse(uwave_ind_list, phase=phase)
-                if i < len(xy_phases) - 1:
-                    qua.wait(2 * step_val)  # 2τ between pis
-                else:
-                    qua.wait(step_val)  # τ after last pi
-
-            seq_utils.macro_pi_on_2_pulse(uwave_ind_list, phase=180)
+            seq_utils.macro_cpdd_drive(
+                uwave_ind_list,
+                phase_list=phase_list,
+                duration_cc=step_val,
+                total_duration=total_duration,
+            )
+            seq_utils.macro_pi_on_2_pulse(uwave_ind_list, phase=0)
             qua.wait(buffer)
 
         with qua.for_each_(step_val, step_vals):
             base_scc_sequence.macro(
                 base_scc_seq_args,
-                [uwave_macro_sig],
-                step_val,
-                num_reps,
+                [cpdd_block],
+                step_val=step_val,
+                num_reps=num_reps,
             )
 
     seq_ret_vals = []
@@ -102,18 +95,16 @@ if __name__ == "__main__":
                 [1],
             ],
             [
+                1000,
                 200,
                 18796,
-                312752,
                 42920,
-                1000,
-                147776,
             ],
             "xy8-1",
             1,
         )
 
-        sim_config = SimulationConfig(duration=int(200e3 / 4))
+        sim_config = SimulationConfig(duration=int(80e3 / 4))
         sim = opx.simulate(seq, sim_config)
         samples = sim.get_simulated_samples()
         samples.con1.plot()

@@ -739,12 +739,12 @@ def do_xy(nv_list, xy_seq="xy8"):
 
 
 def do_xy8_uniform_revival_scan(nv_list, xy_seq="xy8-1"):
-    T_min = 2e3  # ns, total evolution time (1 μs)
+    T_min = 1e3  # ns, total evolution time (1 μs)
     T_max = 20e3  # ns, total evolution time (20 μs)
     N = 8  # XY8 has 8 π pulses
     factor = 2 * N  # total time T = 2Nτ = 16τ
 
-    num_steps = 65
+    num_steps = 80
     taus = np.linspace(T_min, T_max, num_steps)
 
     # Convert total evolution time to τ
@@ -754,7 +754,7 @@ def do_xy8_uniform_revival_scan(nv_list, xy_seq="xy8-1"):
     taus = [round(tau / 4) * 4 for tau in taus]
     taus = sorted(set(taus))  # remove duplicates
 
-    num_reps = 3
+    num_reps = 2
     num_runs = 600
     num_steps = len(taus)
     uwave_ind_list = [1]  # IQ-modulated channel index
@@ -763,7 +763,7 @@ def do_xy8_uniform_revival_scan(nv_list, xy_seq="xy8-1"):
         f"[XY8 Uniform] Scanning {num_steps} τ values from {taus[0]} to {taus[-1]} ns"
     )
 
-    for ind in range(3):
+    for ind in range(4):
         xy.main(
             nv_list,
             num_steps,
@@ -1389,7 +1389,7 @@ if __name__ == "__main__":
         # piezo_voltage_to_pixel_calibration()
 
         do_compensate_for_drift(nv_sig)
-        do_widefield_image_sample(nv_sig, 50)
+        # do_widefield_image_sample(nv_sig, 50)
         # do_widefield_image_sample(nv_sig, 200)
 
         # do_scanning_image_sample(nv_sig)
@@ -1456,7 +1456,7 @@ if __name__ == "__main__":
         # do_calibrate_green_red_delay()
 
         # do_spin_echo_phase_scan_test(nv_list)  # for iq mod test
-        do_bootstrapped_pulse_error_tomography(nv_list)
+        # do_bootstrapped_pulse_error_tomography(nv_list)
         # do_calibrate_iq_delay(nv_list)
 
         # do_rabi(nv_list)
@@ -1478,7 +1478,7 @@ if __name__ == "__main__":
 
         # AVAILABLE_XY = ["hahn-n", "xy2-n", "xy4-n", "xy8-n", "xy16-n"]
         # do_xy(nv_list, xy_seq="xy8")
-        # do_xy8_uniform_revival_scan(nv_list, xy_seq="xy4-1")
+        # do_xy8_uniform_revival_scan(nv_list, xy_seq="xy8-1")
         # do_xy8_revival_scan(nv_list, xy_seq="xy8-1")
 
         # for nv in nv_list:
