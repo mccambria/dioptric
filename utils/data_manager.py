@@ -32,6 +32,7 @@ from PIL import Image
 # fmt: off
 # Select your cloud backend here. Box was used up until May 2025. Nas is used currently
 from utils import _cloud_nas as cloud
+
 # from utils import _cloud_box as cloud
 # fmt: on
 from utils import common, widefield
@@ -396,8 +397,7 @@ def _json_escape(raw_data):
 if __name__ == "__main__":
     # file_stem = "2024_12_19-22_38_10-johnson-nv0_2024_03_12"
     # file_stem = "2025_03_14-11_57_49-rubin-nv0_2025_02_26"
-    file_stem = "2025_04_17-22_09_45-rubin-nv0_2025_02_26"
-    file_stem = cloud.get_file_stem_from_file_id(1837889512383)
+    file_stem = "2025_05_02-10_43_10-rubin-nv0_2025_02_26"
     data = get_raw_data(file_stem, use_cache=True, load_npz=False)
     # timestamp = get_time_stamp()
     # repr_nv_name = "testing"
