@@ -1266,16 +1266,16 @@ if __name__ == "__main__":
     #     [227.438, 19.199],
     # ]
     # green_coords_list = [
-    #     [107.777, 107.746],
-    #     [118.088, 97.57],
-    #     [107.064, 118.434],
-    #     [96.815, 94.848],
+    #     [107.781, 107.724],
+    #     [118.119, 97.452],
+    #     [107.046, 118.361],
+    #     [96.844, 94.775],
     # ]
     # red_coords_list = [
-    #     [72.49, 73.253],
-    #     [80.674, 64.866],
-    #     [72.142, 81.956],
-    #     [63.271, 62.874],
+    #     [72.492, 73.235],
+    #     [80.696, 64.77],
+    #     [72.126, 81.897],
+    #     [63.293, 62.814],
     # ]
 
     num_nvs = len(pixel_coords_list)
@@ -1389,7 +1389,7 @@ if __name__ == "__main__":
         # piezo_voltage_to_pixel_calibration()
 
         do_compensate_for_drift(nv_sig)
-        # do_widefield_image_sample(nv_sig, 50)
+        do_widefield_image_sample(nv_sig, 50)
         # do_widefield_image_sample(nv_sig, 200)
 
         # do_scanning_image_sample(nv_sig)
@@ -1447,7 +1447,7 @@ if __name__ == "__main__":
         # do_optimize_spin_pol_amp(nv_list)
         # do_check_readout_fidelity(nv_list)
 
-        # do_scc_snr_check(nv_list)
+        do_scc_snr_check(nv_list)
         # do_optimize_scc_duration(nv_list)
         # do_optimize_scc_amp(nv_list)
         # optimize_scc_amp_and_duration(nv_list)
