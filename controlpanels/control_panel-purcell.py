@@ -738,15 +738,14 @@ def do_xy(nv_list, xy_seq="xy8"):
         )
 
 
-def do_xy8_uniform_revival_scan(nv_list, xy_seq="xy8-1"):
-    T_min = 1e3  # ns, total evolution time (1 μs)
-    T_max = 20e3  # ns, total evolution time (20 μs)
+def do_xy_uniform_revival_scan(nv_list, xy_seq="xy8-1"):
+    T_min = 2e3  # ns, total evolution time (1 μs)
+    T_max = 42e3  # ns, total evolution time (20 μs)
     N = 8  # XY8 has 8 π pulses
     factor = 2 * N  # total time T = 2Nτ = 16τ
 
-    num_steps = 80
+    num_steps = 100
     taus = np.linspace(T_min, T_max, num_steps)
-
     # Convert total evolution time to τ
     # taus = [T / factor for T in total_times]
 
@@ -1366,7 +1365,7 @@ if __name__ == "__main__":
     nv_sig = widefield.get_repr_nv_sig(nv_list)
     # print(f"Created NV: {nv_sig.name}, Coords: {nv_sig.coords}")
     # nv_sig.expected_counts = 900
-    nv_sig.expected_counts = 1100
+    nv_sig.expected_counts = 1120
     # nv_sig.expected_counts = 1200
 
     # nv_list = nv_list[::-1]  # flipping the order of NVs
@@ -1389,7 +1388,7 @@ if __name__ == "__main__":
         # piezo_voltage_to_pixel_calibration()
 
         do_compensate_for_drift(nv_sig)
-        do_widefield_image_sample(nv_sig, 50)
+        # do_widefield_image_sample(nv_sig, 50)
         # do_widefield_image_sample(nv_sig, 200)
 
         # do_scanning_image_sample(nv_sig)
@@ -1447,7 +1446,7 @@ if __name__ == "__main__":
         # do_optimize_spin_pol_amp(nv_list)
         # do_check_readout_fidelity(nv_list)
 
-        do_scc_snr_check(nv_list)
+        # do_scc_snr_check(nv_list)
         # do_optimize_scc_duration(nv_list)
         # do_optimize_scc_amp(nv_list)
         # optimize_scc_amp_and_duration(nv_list)
@@ -1478,7 +1477,7 @@ if __name__ == "__main__":
 
         # AVAILABLE_XY = ["hahn-n", "xy2-n", "xy4-n", "xy8-n", "xy16-n"]
         # do_xy(nv_list, xy_seq="xy8")
-        # do_xy8_uniform_revival_scan(nv_list, xy_seq="xy8-1")
+        do_xy_uniform_revival_scan(nv_list, xy_seq="xy4-1")
         # do_xy8_revival_scan(nv_list, xy_seq="xy8-1")
 
         # for nv in nv_list:
