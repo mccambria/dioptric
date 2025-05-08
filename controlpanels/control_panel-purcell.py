@@ -738,15 +738,14 @@ def do_xy(nv_list, xy_seq="xy8"):
         )
 
 
-def do_xy8_uniform_revival_scan(nv_list, xy_seq="xy8-1"):
-    T_min = 1e3  # ns, total evolution time (1 μs)
-    T_max = 20e3  # ns, total evolution time (20 μs)
+def do_xy_uniform_revival_scan(nv_list, xy_seq="xy8-1"):
+    T_min = 2e3  # ns, total evolution time (1 μs)
+    T_max = 42e3  # ns, total evolution time (20 μs)
     N = 8  # XY8 has 8 π pulses
     factor = 2 * N  # total time T = 2Nτ = 16τ
 
-    num_steps = 80
+    num_steps = 100
     taus = np.linspace(T_min, T_max, num_steps)
-
     # Convert total evolution time to τ
     # taus = [T / factor for T in total_times]
 
@@ -775,43 +774,52 @@ def do_xy8_uniform_revival_scan(nv_list, xy_seq="xy8-1"):
         )
 
 
-def do_xy8_revival_scan(nv_list, xy_seq="xy8-1"):
-    min_total_time = 200  # ns, minimum total evolution time (for smallest τ)
-    revival_time = 15e3  # ns, center of first Larmor revival
-    revival_width = 5e3  # ns, width around the revival window
-    N = 8  # XY8 = 8 π-pulses
-    factor = 2 * N  # Total time = 2Nτ
-
+def do_xy_revival_scan(nv_list, xy_seq="xy8-1"):
+    min_total_time = 100  # ns
+    revival_time = 14.1e3  # ns
+    revival_width = 4e3  # ns
+    high_res_points = 24
+    gap_points = 6
+    decay_points = 6
+    num_revivals = 4
     taus = []
-
     # Initial coherence decay region
-    decay = np.linspace(min_total_time, min_total_time + revival_width, 6)
-    taus.extend((decay / factor).tolist())
+    decay = np.linspace(min_total_time, min_total_time + revival_width, decay_points)
+    taus.extend(decay.tolist())
 
-    # Flat gap region
-    # gap = np.linspace(min_total_time + revival_width, revival_time - revival_width, 6)
-    # taus.extend((gap[1:-1] / factor).tolist())
+    for i in range(1, num_revivals + 1):
+        center = i * revival_time
 
-    # High-resolution scan across first revival
-    # revival_scan = np.linspace(
-    #     revival_time - revival_width, revival_time + revival_width, 51
-    # )
-    revival_scan = np.linspace(
-        min_total_time + revival_width, revival_time + revival_width, 56
-    )
-    taus.extend((revival_scan / factor).tolist())
+        # Gap before revival
+        if i == 1:
+            gap_start = min_total_time + revival_width
+        else:
+            gap_start = (i - 1) * revival_time + revival_width
+        gap_end = center - revival_width
+
+        if gap_end > gap_start:
+            gap = np.linspace(gap_start, gap_end, gap_points)
+            taus.extend(gap[1:-1].tolist())  # exclude endpoints to avoid duplication
+
+        # High-resolution scan across revival
+        revival_scan = np.linspace(
+            center - revival_width, center + revival_width, high_res_points
+        )
+        taus.extend(revival_scan.tolist())
 
     # Round to 4 ns granularity
     taus = sorted(set(round(tau / 4) * 4 for tau in taus))
+
     num_steps = len(taus)
-    num_reps = 3
-    num_runs = 600
-    uwave_ind_list = [1]  # IQ-modulated channel index
+    num_reps = 1
+    num_runs = 2000
+    uwave_ind_list = [1]
+
     print(
-        f"[XY8] Running with {num_steps} τ values, targeting revival @ {revival_time} ns"
+        f"[{xy_seq}] Running with {num_steps} τ values, targeting {num_revivals} revivals starting at {revival_time} ns"
     )
 
-    for _ in range(1):
+    for _ in range(4):
         xy.main(
             nv_list,
             num_steps,
@@ -1266,16 +1274,16 @@ if __name__ == "__main__":
     #     [227.438, 19.199],
     # ]
     # green_coords_list = [
-    #     [107.777, 107.746],
-    #     [118.088, 97.57],
-    #     [107.064, 118.434],
-    #     [96.815, 94.848],
+    #     [107.781, 107.724],
+    #     [118.152, 97.466],
+    #     [107.051, 118.372],
+    #     [96.878, 94.81],
     # ]
     # red_coords_list = [
-    #     [72.49, 73.253],
-    #     [80.674, 64.866],
-    #     [72.142, 81.956],
-    #     [63.271, 62.874],
+    #     [72.492, 73.235],
+    #     [80.723, 64.781],
+    #     [72.13, 81.906],
+    #     [63.321, 62.842],
     # ]
 
     num_nvs = len(pixel_coords_list)
@@ -1366,7 +1374,7 @@ if __name__ == "__main__":
     nv_sig = widefield.get_repr_nv_sig(nv_list)
     # print(f"Created NV: {nv_sig.name}, Coords: {nv_sig.coords}")
     # nv_sig.expected_counts = 900
-    nv_sig.expected_counts = 1100
+    nv_sig.expected_counts = 1150
     # nv_sig.expected_counts = 1200
 
     # nv_list = nv_list[::-1]  # flipping the order of NVs
@@ -1388,11 +1396,11 @@ if __name__ == "__main__":
         # pos.set_xyz_on_nv(nv_sig)
         # piezo_voltage_to_pixel_calibration()
 
-        # do_compensate_for_drift(nv_sig)
+        do_compensate_for_drift(nv_sig)
         # do_widefield_image_sample(nv_sig, 50)
         # do_widefield_image_sample(nv_sig, 200)
 
-        do_scanning_image_sample(nv_sig)
+        # do_scanning_image_sample(nv_sig)
         # do_scanning_image_full_roi(nv_sig)
         # do_scanning_image_sample_zoom(nv_sig)
         # scan_equilateral_triangle(nv_sig, center_coord=sample_coords, radius=0.2)
@@ -1478,8 +1486,8 @@ if __name__ == "__main__":
 
         # AVAILABLE_XY = ["hahn-n", "xy2-n", "xy4-n", "xy8-n", "xy16-n"]
         # do_xy(nv_list, xy_seq="xy8")
-        # do_xy8_uniform_revival_scan(nv_list, xy_seq="xy8-1")
-        # do_xy8_revival_scan(nv_list, xy_seq="xy8-1")
+        # do_xy_uniform_revival_scan(nv_list, xy_seq="xy4-1")
+        do_xy_revival_scan(nv_list, xy_seq="xy4-1")
 
         # for nv in nv_list:
         #     nv.spin_flip = False

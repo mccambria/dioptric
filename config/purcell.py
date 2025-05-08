@@ -39,14 +39,14 @@ calibration_coords_pixel = [
     [227.438, 19.199],
 ]
 calibration_coords_green = [
-    [118.088, 97.57],
-    [107.064, 118.434],
-    [96.815, 94.848],
+    [118.152, 97.466],
+    [107.051, 118.372],
+    [96.878, 94.81],
 ]
 calibration_coords_red = [
-    [80.674, 64.866],
-    [72.142, 81.956],
-    [63.271, 62.874],
+    [80.723, 64.781],
+    [72.13, 81.906],
+    [63.321, 62.842],
 ]
 # Create the dictionaries using the provided lists
 calibration_coords_nv1 = {
@@ -164,9 +164,9 @@ config |= {
         "resolution": (512, 512),
         "spot_radius": 2.5,  # Radius for integrating NV counts in a camera image
         "bias_clamp": 300,  # (changing this won't actually change the value on the camera currently)
-        # "em_gain": 5000,
+        "em_gain": 5000,
         # "em_gain": 1000,
-        "em_gain": 10,
+        # "em_gain": 10,
         "temp": -60,
         "timeout": 30e3,  # ms
         # "timeout": -1,  # No timeout
