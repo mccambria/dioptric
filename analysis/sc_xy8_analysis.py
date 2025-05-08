@@ -7,7 +7,6 @@ Created on November 29th, 2023
 
 import time
 import sys
-
 import matplotlib.pyplot as plt
 import numpy as np
 import matplotlib.ticker as ticker
@@ -870,7 +869,7 @@ def T2_diff_xy():
     plt.show()
 
 
-def plot_xy_all(nv_list, taus, norm_counts, norm_counts_ste):
+def plot_xy_all(nv_list, taus, norm_counts, norm_counts_ste, seq_xy):
     sns.set(style="whitegrid", palette="muted")
     num_nvs = len(nv_list)
     colors = sns.color_palette("deep", num_nvs)
@@ -881,7 +880,7 @@ def plot_xy_all(nv_list, taus, norm_counts, norm_counts_ste):
     fig, axes = plt.subplots(
         num_rows,
         num_cols,
-        figsize=(num_cols * 2, num_rows * 1.5),
+        figsize=(num_cols * 1.5, num_rows * 3),
         sharex=True,
         sharey=False,
         constrained_layout=True,
@@ -941,13 +940,13 @@ def plot_xy_all(nv_list, taus, norm_counts, norm_counts_ste):
         rotation="vertical",
         fontsize=12,
     )
-    fig.suptitle("Spin Echo", fontsize=16)
+    fig.suptitle(f"{seq_xy}", fontsize=16)
     # fig.set_constrained_layout(False)
     # fig.subplots_adjust(left=0.01, right=0.98, top=0.99, bottom=0.08, hspace=0.01, wspace=0.01)
     # fig.subplots_adjust(
     #     left=0.01, right=0.99, top=0.99, bottom=0.01, hspace=0.000, wspace=0.000
     # )
-    fig.tight_layout(pad=0.2, rect=[0.01, 0.01, 0.99, 0.99])
+    fig.tight_layout(pad=0.2, rect=[0.02, 0.01, 0.99, 0.99])
     kpl.show()
 
 
@@ -982,7 +981,7 @@ if __name__ == "__main__":
     # ]
 
     ## 68MHz orientation XY4
-    file_ids = [1823061683325, 1823448847102]
+    # file_ids = [1823061683325, 1823448847102]
     # 68MHz orientation XY16
     # file_ids = [1823813420689, 1824210908904]
     ## 68MHz orientation XY8 buffer/wait updated
@@ -990,22 +989,49 @@ if __name__ == "__main__":
     ## 68MHz orientation XY8 dense
     # file_ids = [1825683241321, 1825803148127]
 
+    #### xy8 after making the both orientation degenerate
+    # file_ids = [1838226467730, 1838534721391]  # 2us to 20us ) uniform spacing
+    # file_ids = [1839161749987, 1839342727027, 1841082599417]  # (2us to 20us )/ 2*8
+    # file_ids = [
+    #     1841472330271,
+    #     1841783840740,
+    #     1842055914148,
+    # ]  # (2us to 20us )/ 2*8 uniform spacing
+    # file_stems = ["2025_04_30-22_07_41-rubin-nv0_2025_02_26"]  # xy8
+    ### New data sets
+    file_stems = [
+        # "2025_05_01-05_35_44-rubin-nv0_2025_02_26",
+        # "2025_05_01-11_56_26-rubin-nv0_2025_02_26",
+        "2025_05_02-10_43_10-rubin-nv0_2025_02_26",
+        "2025_05_02-17_30_41-rubin-nv0_2025_02_26",
+        "2025_05_02-23_57_21-rubin-nv0_2025_02_26",
+    ]  # xy4
+
+    file_stems = ["2025_05_06-20_59_05-rubin-nv0_2025_02_26"]  # xy4
+
+    # cpdd
+    # file_stems = [
+    #     "2025_05_04-02_06_22-rubin-nv0_2025_02_26",
+    #     "2025_05_04-07_37_32-rubin-nv0_2025_02_26",
+    #     "2025_05_04-13_07_43-rubin-nv0_2025_02_26",
+    #     "2025_05_04-19_00_22-rubin-nv0_2025_02_26",
+    # ]  # xy8 cpdd
     ### Internal Test Plots
     # plot_T2_on_T1()
     # contrast_plot()
     # T2_ratio_xy()
     # plt.show(block=True)
     # sys.exit()
-    file_path, all_file_ids_str = widefield.combined_filename(file_ids)
-    print(f"File name: {file_path}")
-    raw_data = widefield.process_multiple_files(file_ids)
+    all_file_ids_str = widefield.combined_filenames_numbered(file_stems)
+    print(f"File name: {all_file_ids_str}")
+    raw_data = widefield.process_multiple_files(file_stems)
     nv_list = raw_data["nv_list"]
     taus = np.array(raw_data["taus"]) / 1e3  # τ values (in us)
     # Get sequence type
     seq_xy = raw_data.get("xy_seq", "xy8").lower()
     base, N = widefield.parse_xy_sequence(seq_xy)
     print(f"Input Sequence Type: {seq_xy}")
-    print(f"Total π pulses: {N}")
+    print(f"Total pi pulses: {N}")
     taus = 2 * N * taus
     # sys.exit()
     counts = np.array(raw_data["counts"])  # shape: (2, num_nvs, num_steps)
@@ -1018,18 +1044,18 @@ if __name__ == "__main__":
     # norm_counts, norm_counts_ste = widefield.process_counts(
     #     nv_list, ref_counts, threshold=True
     # )
-    process_and_plot_xy8(nv_list, taus, norm_counts, norm_counts_ste)
-    n_values, medians_by_n, all_T2s_by_n = fit_for_fixed_n_range(
-        nv_list, taus, norm_counts, norm_counts_ste, n_values=[1, 2, 3, 4, 5, 6]
-    )
-    plot_medians(n_values, medians_by_n)
+    # process_and_plot_xy8(nv_list, taus, norm_counts, norm_counts_ste)
+    # n_values, medians_by_n, all_T2s_by_n = fit_for_fixed_n_range(
+    #     nv_list, taus, norm_counts, norm_counts_ste, n_values=[1, 2, 3, 4, 5, 6]
+    # )
+    # plot_medians(n_values, medians_by_n)
     # full_xy8_fitting_over_n(
     #     nv_list, taus, norm_counts, norm_counts_ste, n_values=[1, 2, 3, 4, 5, 6]
     # )
     # fit_and_plot_all_T2_with_chi2(
     #     nv_list, taus, norm_counts, norm_counts_ste, n_values=[1, 2, 3, 4, 5, 6]
     # )
-    # plot_xy_all(nv_list, taus, norm_counts, norm_counts_ste)
+    plot_xy_all(nv_list, taus, norm_counts, norm_counts_ste, seq_xy)
     # fit_params, T2_list, n_list, chi2_list, param_errors_list = process_and_fit_xy8(
     #     nv_list, taus, norm_counts, norm_counts_ste
     # )

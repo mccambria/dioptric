@@ -432,7 +432,7 @@ def process_multiple_files(file_ids):
     Load and combine data from multiple file IDs.
 
     """
-    print(file_ids[0])
+    # print(file_ids[0])
     combined_data = dm.get_raw_data(
         file_stem=file_ids[0], load_npz=False, use_cache=False
     )
@@ -561,6 +561,16 @@ def combined_filename(file_ids):
         __file__, file_name, f"{all_file_ids_str}_{date_time_str}"
     )
     return file_path, all_file_ids_str
+
+
+def combined_filenames(file_stems):
+    all_file_ids_str = "_".join(file_stems)
+    return all_file_ids_str
+
+
+def combined_filenames_numbered(file_stems):
+    all_file_ids_str = "_".join(f"F{i}={stem}" for i, stem in enumerate(file_stems))
+    return all_file_ids_str
 
 
 def parse_xy_sequence(seq_name: str):

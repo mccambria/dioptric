@@ -543,30 +543,7 @@ if __name__ == "__main__":
     # rubin75 NVs after making both orientation degenerate
     # file_ids = [1835778335625, 1836023279415] #
     # file_ids = [1837153340732, 1837462226158, 1840851716659]  # 15us revival
-    # file_ids = [1839747727194, 1839907420053, 1840570618939]  # 13us revial
-    # xy8
-    file_ids = [1838226467730, 1838534721391]  # 2us to 20us ) uniform spacing
-    # file_ids = [1839161749987, 1839342727027, 1841082599417]  # (2us to 20us )/ 2*8
-    # file_ids = [
-    #     1841472330271,
-    #     1841783840740,
-    #     1842055914148,
-    # ]  # (2us to 20us )/ 2*8 uniform spacing
-    # file_stems = ["2025_04_30-22_07_41-rubin-nv0_2025_02_26"]  # xy8
-    file_stems = [
-        # "2025_05_01-05_35_44-rubin-nv0_2025_02_26",
-        # "2025_05_01-11_56_26-rubin-nv0_2025_02_26",
-        "2025_05_02-10_43_10-rubin-nv0_2025_02_26",
-        "2025_05_02-17_30_41-rubin-nv0_2025_02_26",
-        "2025_05_02-23_57_21-rubin-nv0_2025_02_26",
-    ]  # xy4
-    # cpdd
-    # file_stems = [
-    #     "2025_05_04-02_06_22-rubin-nv0_2025_02_26",
-    #     "2025_05_04-07_37_32-rubin-nv0_2025_02_26",
-    #     "2025_05_04-13_07_43-rubin-nv0_2025_02_26",
-    #     "2025_05_04-19_00_22-rubin-nv0_2025_02_26",
-    # ]  # xy8 cpdd
+    file_ids = [1839747727194, 1839907420053, 1840570618939]  # 13us revial
     # all_file_ids_str = "_".join(map(str, file_ids))
     # now = datetime.now()
     # date_time_str = now.strftime("%Y%m%d_%H%M%S")
@@ -578,8 +555,8 @@ if __name__ == "__main__":
     # print(f"File path: {file_path}")
     # Process and analyze data from multiple files
     try:
-        # data = widefield.process_multiple_files(file_ids)
-        data = widefield.process_multiple_files(file_stems)
+        data = widefield.process_multiple_files(file_ids)
+        # data = widefield.process_multiple_files(file_stems)
         # data = dm.get_raw_data(file_stem=file_stem, load_npz=False, use_cache=False)
 
         nv_list = data["nv_list"]
@@ -595,6 +572,9 @@ if __name__ == "__main__":
         norm_counts, norm_counts_ste = widefield.process_counts(
             nv_list, sig_counts, ref_counts, threshold=True
         )
+        # norm_counts, norm_counts_ste = widefield.process_counts(
+        #     nv_list, sig_counts, ref_counts, threshold=True
+        # )
         nv_num = len(nv_list)
         ids_num = len(file_ids)
         # fit_fns, popts = fit_spin_echo(
