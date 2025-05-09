@@ -16,7 +16,7 @@ import os
 import sqlite3
 import sys
 import time
-from pathlib import PurePosixPath
+from pathlib import PurePath, PurePosixPath
 
 import utils.common as common
 
@@ -45,8 +45,8 @@ def process_file_path(file_path):
         File stem and file parent relative to nvdata as a string
     """
     file_stem = file_path.stem
-    relative_parent = str(file_path.parent.relative_to(nvdata_dir))
-    return (file_stem, relative_parent)
+    relative_parent = file_path.parent.relative_to(nvdata_dir).as_posix()
+    return (file_stem, str(relative_parent))
 
 
 def add_to_search_index(file_path):
@@ -134,14 +134,14 @@ def gen_search_index():
     )
 
     for root, _, files in os.walk(nvdata_dir):
-        path_root = PurePosixPath(root)
+        path_root = PurePath(root)
         # Before looping through all the files make sure the folder fits the glob
         test_path_root = path_root / "test.txt"
         if not test_path_root.match(search_index_glob):
             continue
         for f in files:
             if f.split(".")[-1] == "txt":
-                db_vals = process_file_path(PurePosixPath(f"{root}/{f}"))
+                db_vals = process_file_path(path_root / f)
                 cursor.execute("INSERT INTO search_index VALUES (?, ?)", db_vals)
 
     search_index.commit()
