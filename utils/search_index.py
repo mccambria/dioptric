@@ -16,7 +16,7 @@ import os
 import sqlite3
 import sys
 import time
-from pathlib import PurePath
+from pathlib import PurePosixPath
 
 import utils.common as common
 
@@ -71,7 +71,7 @@ def index_on_the_fly(file_stem):
     yyyy_mm = file_stem[0:7]
 
     for root, _, files in os.walk(nvdata_dir):
-        path_root = PurePath(root)
+        path_root = PurePosixPath(root)
         # Before looping through all the files make sure the folder fits
         # the glob
         test_path_root = path_root / "test.txt"
@@ -134,7 +134,7 @@ def gen_search_index():
     )
 
     for root, _, files in os.walk(nvdata_dir):
-        path_root = PurePath(root)
+        path_root = PurePosixPath(root)
         # Before looping through all the files make sure the folder fits
         # the glob
         test_path_root = path_root / "test.txt"

@@ -395,9 +395,11 @@ def _json_escape(raw_data):
 
 
 if __name__ == "__main__":
-    # file_stem = "2024_12_19-22_38_10-johnson-nv0_2024_03_12"
-    # file_stem = "2025_03_14-11_57_49-rubin-nv0_2025_02_26"
-    file_stem = "2025_05_02-10_43_10-rubin-nv0_2025_02_26"
+    # file_stem = "2025_05_02-10_43_10-rubin-nv0_2025_02_26"
+    file_stem = [
+        "2025_05_08-04_29_55-rubin-nv0_2025_02_26",
+        "2025_05_07-12_41_35-rubin-nv0_2025_02_26",
+    ]
     data = get_raw_data(file_stem, use_cache=True, load_npz=False)
     # timestamp = get_time_stamp()
     # repr_nv_name = "testing"
