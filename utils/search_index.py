@@ -82,7 +82,7 @@ def index_on_the_fly(file_stem):
             continue
         if file_name in files:
             # for f in files:
-            file_path = f"{root}/{file_name}"
+            file_path = PurePosixPath(f"{root}/{file_name}")
             break
 
     if file_path is None:
@@ -135,14 +135,13 @@ def gen_search_index():
 
     for root, _, files in os.walk(nvdata_dir):
         path_root = PurePosixPath(root)
-        # Before looping through all the files make sure the folder fits
-        # the glob
+        # Before looping through all the files make sure the folder fits the glob
         test_path_root = path_root / "test.txt"
         if not test_path_root.match(search_index_glob):
             continue
         for f in files:
             if f.split(".")[-1] == "txt":
-                db_vals = process_file_path(f"{root}/{f}")
+                db_vals = process_file_path(PurePosixPath(f"{root}/{f}"))
                 cursor.execute("INSERT INTO search_index VALUES (?, ?)", db_vals)
 
     search_index.commit()
