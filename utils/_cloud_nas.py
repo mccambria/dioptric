@@ -26,7 +26,7 @@ nvdata_dir = common.get_nvdata_dir()
 
 
 def download(file_stem=None, ext=".txt", file_parent=None):
-    """Download file from the NAS. Figures out how to load based on the extension
+    """Download file from the NAS
 
     Parameters
     ----------

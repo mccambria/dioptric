@@ -22,12 +22,10 @@ from enum import Enum, auto
 from io import BytesIO
 from pathlib import Path
 
-import labrad
 import numpy as np
 import orjson  # orjson is faster and more lightweight than ujson, but can't write straight to file
 import ujson  # usjson is faster than standard json library
 from git import Repo
-from PIL import Image
 
 # fmt: off
 # Select your cloud backend here. Box was used up until May 2025. Nas is used currently
@@ -37,6 +35,7 @@ from utils import _cloud_nas as cloud
 # fmt: on
 from utils import common, widefield
 from utils.constants import NVSig
+from utils.search_index import get_file_parent
 
 data_manager_folder = common.get_data_manager_folder()
 nvdata_dir = common.get_nvdata_dir()
@@ -400,9 +399,6 @@ if __name__ == "__main__":
         "2025_05_08-04_29_55-rubin-nv0_2025_02_26",
         "2025_05_07-12_41_35-rubin-nv0_2025_02_26",
     ]
-    data = get_raw_data(file_stem, use_cache=True, load_npz=False)
-    # timestamp = get_time_stamp()
-    # repr_nv_name = "testing"
-    # file_path = get_file_path(__file__, timestamp, repr_nv_name)
-    # save_raw_data(data, file_path)
+    # data = get_raw_data(file_stem, use_cache=True, load_npz=False)
+    print(get_file_parent(file_stem[0]))
     debu = 0

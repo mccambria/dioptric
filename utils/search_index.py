@@ -93,23 +93,23 @@ def index_on_the_fly(file_stem):
         return index_path
 
 
-def get_file_parent(file_name):
-    """Return the file parent for a file name in nvdata. Allows for easy retrieval of
+def get_file_parent(file_stem):
+    """Return the file parent for a file stem in nvdata. Allows for easy retrieval of
     the file without needing to manually input the file path."""
     try:
         search_index = sqlite3.connect(nvdata_dir / search_index_file_name)
         cursor = search_index.cursor()
         cursor.execute(
-            "SELECT * FROM search_index WHERE file_name = '{}'".format(file_name)
+            "SELECT * FROM search_index WHERE file_name = '{}'".format(file_stem)
         )
         res = cursor.fetchone()
         parent_from_nvdata = res[1]
     except Exception as exc:
-        print(f"Failed to find file {file_name} in search index.")
+        print(f"Failed to find file {file_stem} in search index.")
         print("Attempting on-the-fly indexing.")
-        index_path = index_on_the_fly(file_name)
+        index_path = index_on_the_fly(file_stem)
         if index_path is None:
-            msg = f"File {file_name} does not appear to exist in data folders."
+            msg = f"File {file_stem} does not appear to exist in data folders."
             raise RuntimeError(msg)
         parent_from_nvdata = index_path
     return nvdata_dir / parent_from_nvdata
