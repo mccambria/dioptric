@@ -14,6 +14,7 @@ import copy
 import io
 import os
 import socket
+import sys
 import time
 import traceback
 from dataclasses import fields
@@ -133,8 +134,13 @@ def save_raw_data(raw_data, file_path, keys_to_compress=None):
             a separate compressed file. Currently supports numpy arrays
     """
 
+    # Always compress a few specific large items
     if keys_to_compress is None:
-        keys_to_compress = widefield.get_default_keys_to_compress(raw_data)
+        keys_to_compress = []
+    key_options = ["img_arrays", "mean_img_arrays", "counts"]
+    for key in key_options:
+        if key in raw_data:
+            keys_to_compress.append(key)
 
     # start = time.time()
     file_stem = file_path.parent
@@ -394,11 +400,23 @@ def _json_escape(raw_data):
 
 
 if __name__ == "__main__":
-    # file_stem = "2025_05_02-10_43_10-rubin-nv0_2025_02_26"
-    file_stem = [
-        "2025_05_08-04_29_55-rubin-nv0_2025_02_26",
-        "2025_05_07-12_41_35-rubin-nv0_2025_02_26",
-    ]
-    # data = get_raw_data(file_stem, use_cache=True, load_npz=False)
-    print(get_file_parent(file_stem[0]))
+    file_path = data_manager_folder / "test.txt"
+
+    # test = {"key": np.array([[1.1, 1.2], [2.1, 2.2]], dtype=np.float16)}
+    # option = orjson.OPT_INDENT_2 | orjson.OPT_SERIALIZE_NUMPY | orjson.OPT_NON_STR_KEYS
+    # content = orjson.dumps(test, option=option)
+    # file_path.write_bytes(content)
+
+    data_bytes = file_path.read_bytes()
+    data = orjson.loads(data_bytes)
+
+    sys.exit()
+
+    file_stem = "2025_05_02-10_43_10-rubin-nv0_2025_02_26"
+    # file_stem = [
+    #     "2025_05_08-04_29_55-rubin-nv0_2025_02_26",
+    #     # "2025_05_07-12_41_35-rubin-nv0_2025_02_26",
+    # ]
+    data = get_raw_data(file_stem, use_cache=False, load_npz=False)
+    # print(get_file_parent(file_stem[0]))
     debu = 0
