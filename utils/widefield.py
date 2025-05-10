@@ -848,13 +848,6 @@ def _validate_counts_structure(counts):
 
 
 # region Miscellaneous public functions
-def get_default_keys_to_compress(raw_data):
-    keys_to_compress = []
-    if "img_arrays" in raw_data:
-        keys_to_compress.append("img_arrays")
-    if "mean_img_arrays" in raw_data:
-        keys_to_compress.append("mean_img_arrays")
-    return keys_to_compress
 
 
 def rep_loop(num_reps, rep_fn):

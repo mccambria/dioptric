@@ -26,7 +26,7 @@ nvdata_dir = common.get_nvdata_dir()
 
 
 def download(file_stem=None, ext=".txt", file_parent=None):
-    """Download file from the NAS. Figures out how to load based on the extension
+    """Download file from the NAS
 
     Parameters
     ----------
@@ -46,8 +46,7 @@ def download(file_stem=None, ext=".txt", file_parent=None):
     if file_parent is None:
         file_parent = search_index.get_file_parent(file_stem)
     file_path = file_parent / f"{file_stem}{ext}"
-    with file_path.open("rb") as f:
-        return f.read()
+    return file_path.read_bytes()
 
 
 def upload(file_path, content, do_add_to_search_index=False):
@@ -65,8 +64,7 @@ def upload(file_path, content, do_add_to_search_index=False):
     """
     if not file_path.parent.is_dir():
         file_path.parent.mkdir(parents=True)
-    with file_path.open("wb+") as f:
-        f.write(content)
+    file_path.write_bytes(content)
     if do_add_to_search_index:
         search_index.add_to_search_index(file_path)
 

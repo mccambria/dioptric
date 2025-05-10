@@ -16,7 +16,7 @@ import os
 import sqlite3
 import sys
 import time
-from pathlib import PurePath
+from pathlib import PurePath, PurePosixPath
 
 import utils.common as common
 
@@ -45,8 +45,8 @@ def process_file_path(file_path):
         File stem and file parent relative to nvdata as a string
     """
     file_stem = file_path.stem
-    relative_parent = str(file_path.parent.relative_to(nvdata_dir))
-    return (file_stem, relative_parent)
+    relative_parent = file_path.parent.relative_to(nvdata_dir).as_posix()
+    return (file_stem, str(relative_parent))
 
 
 def add_to_search_index(file_path):
@@ -71,7 +71,7 @@ def index_on_the_fly(file_stem):
     yyyy_mm = file_stem[0:7]
 
     for root, _, files in os.walk(nvdata_dir):
-        path_root = PurePath(root)
+        path_root = PurePosixPath(root)
         # Before looping through all the files make sure the folder fits
         # the glob
         test_path_root = path_root / "test.txt"
@@ -82,7 +82,7 @@ def index_on_the_fly(file_stem):
             continue
         if file_name in files:
             # for f in files:
-            file_path = f"{root}/{file_name}"
+            file_path = PurePosixPath(f"{root}/{file_name}")
             break
 
     if file_path is None:
@@ -93,23 +93,23 @@ def index_on_the_fly(file_stem):
         return index_path
 
 
-def get_file_parent(file_name):
-    """Return the file parent for a file name in nvdata. Allows for easy retrieval of
+def get_file_parent(file_stem):
+    """Return the file parent for a file stem in nvdata. Allows for easy retrieval of
     the file without needing to manually input the file path."""
     try:
         search_index = sqlite3.connect(nvdata_dir / search_index_file_name)
         cursor = search_index.cursor()
         cursor.execute(
-            "SELECT * FROM search_index WHERE file_name = '{}'".format(file_name)
+            "SELECT * FROM search_index WHERE file_name = '{}'".format(file_stem)
         )
         res = cursor.fetchone()
         parent_from_nvdata = res[1]
     except Exception as exc:
-        print(f"Failed to find file {file_name} in search index.")
+        print(f"Failed to find file {file_stem} in search index.")
         print("Attempting on-the-fly indexing.")
-        index_path = index_on_the_fly(file_name)
+        index_path = index_on_the_fly(file_stem)
         if index_path is None:
-            msg = f"File {file_name} does not appear to exist in data folders."
+            msg = f"File {file_stem} does not appear to exist in data folders."
             raise RuntimeError(msg)
         parent_from_nvdata = index_path
     return nvdata_dir / parent_from_nvdata
@@ -135,14 +135,13 @@ def gen_search_index():
 
     for root, _, files in os.walk(nvdata_dir):
         path_root = PurePath(root)
-        # Before looping through all the files make sure the folder fits
-        # the glob
+        # Before looping through all the files make sure the folder fits the glob
         test_path_root = path_root / "test.txt"
         if not test_path_root.match(search_index_glob):
             continue
         for f in files:
             if f.split(".")[-1] == "txt":
-                db_vals = process_file_path(f"{root}/{f}")
+                db_vals = process_file_path(path_root / f)
                 cursor.execute("INSERT INTO search_index VALUES (?, ?)", db_vals)
 
     search_index.commit()
