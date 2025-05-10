@@ -1007,7 +1007,11 @@ if __name__ == "__main__":
         "2025_05_02-23_57_21-rubin-nv0_2025_02_26",
     ]  # xy4
 
-    file_stems = ["2025_05_06-20_59_05-rubin-nv0_2025_02_26"]  # xy4
+    # file_stems = ["2025_05_06-20_59_05-rubin-nv0_2025_02_26"]  # xy4
+    file_stems = [
+        "2025_05_08-04_29_55-rubin-nv0_2025_02_26",
+        "2025_05_07-12_41_35-rubin-nv0_2025_02_26",
+    ]  # xy4 to obseve multiple peaks
 
     # cpdd
     # file_stems = [
