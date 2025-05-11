@@ -136,13 +136,13 @@ def do_optimize_pol_duration(nv_list):
 
 
 def do_optimize_pol_amp(nv_list):
-    num_steps = 24
+    num_steps = 18
     # num_reps = 150
     # num_runs = 5
     num_reps = 8
-    num_runs = 250
-    min_amp = 0.6
-    max_amp = 1.4
+    num_runs = 200
+    min_amp = 0.7
+    max_amp = 1.3
     return optimize_charge_state_histograms_mcc.optimize_pol_amp(
         nv_list, num_steps, num_reps, num_runs, min_amp, max_amp
     )
@@ -1274,16 +1274,16 @@ if __name__ == "__main__":
     #     [227.438, 19.199],
     # ]
     # green_coords_list = [
-    #     [107.781, 107.724],
-    #     [118.152, 97.466],
-    #     [107.051, 118.372],
-    #     [96.878, 94.81],
+    #     [107.748, 107.743],
+    #     [118.109, 97.484],
+    #     [107.012, 118.417],
+    #     [96.82, 94.814],
     # ]
     # red_coords_list = [
-    #     [72.492, 73.235],
-    #     [80.723, 64.781],
-    #     [72.13, 81.906],
-    #     [63.321, 62.842],
+    #     [72.466, 73.251],
+    #     [80.689, 64.796],
+    #     [72.099, 81.943],
+    #     [63.274, 62.846],
     # ]
 
     num_nvs = len(pixel_coords_list)
@@ -1374,7 +1374,7 @@ if __name__ == "__main__":
     nv_sig = widefield.get_repr_nv_sig(nv_list)
     # print(f"Created NV: {nv_sig.name}, Coords: {nv_sig.coords}")
     # nv_sig.expected_counts = 900
-    nv_sig.expected_counts = 1150
+    nv_sig.expected_counts = 1000
     # nv_sig.expected_counts = 1200
 
     # nv_list = nv_list[::-1]  # flipping the order of NVs
@@ -1397,6 +1397,7 @@ if __name__ == "__main__":
         # piezo_voltage_to_pixel_calibration()
 
         do_compensate_for_drift(nv_sig)
+
         # do_widefield_image_sample(nv_sig, 50)
         # do_widefield_image_sample(nv_sig, 200)
 
@@ -1447,7 +1448,7 @@ if __name__ == "__main__":
         # do_charge_state_conditional_init(nv_list)
         # do_charge_state_histograms_images(nv_list, vary_pol_laser=True)
 
-        # do_optimize_pol_amp(nv_list)
+        do_optimize_pol_amp(nv_list)
         # do_optimize_pol_duration(nv_list)
         # do_optimize_readout_amp(nv_list)
         # do_optimize_readout_duration(nv_list)
@@ -1487,7 +1488,7 @@ if __name__ == "__main__":
         # AVAILABLE_XY = ["hahn-n", "xy2-n", "xy4-n", "xy8-n", "xy16-n"]
         # do_xy(nv_list, xy_seq="xy8")
         # do_xy_uniform_revival_scan(nv_list, xy_seq="xy4-1")
-        do_xy_revival_scan(nv_list, xy_seq="xy4-1")
+        # do_xy_revival_scan(nv_list, xy_seq="xy4-1")
 
         # for nv in nv_list:
         #     nv.spin_flip = False
