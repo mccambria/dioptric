@@ -136,13 +136,13 @@ def do_optimize_pol_duration(nv_list):
 
 
 def do_optimize_pol_amp(nv_list):
-    num_steps = 24
+    num_steps = 18
     # num_reps = 150
     # num_runs = 5
     num_reps = 8
-    num_runs = 250
-    min_amp = 0.6
-    max_amp = 1.4
+    num_runs = 200
+    min_amp = 0.7
+    max_amp = 1.3
     return optimize_charge_state_histograms_mcc.optimize_pol_amp(
         nv_list, num_steps, num_reps, num_runs, min_amp, max_amp
     )
@@ -712,18 +712,16 @@ def do_ramsey(nv_list):
 
 
 def do_xy(nv_list, xy_seq="xy8"):
-    min_tau = 1e3
+    min_tau = 200
     max_tau = 1e6 + min_tau
     num_steps = 24
     num_reps = 10
     uwave_ind_list = [1]  # iq modulated
     num_runs = 400
-
     # taus calculation
-    # taus = np.linspace(min_tau, max_tau, num_steps)
-    # taus = np.geomspace(1 / num_steps, 1, num_steps)
-    # taus = widefield.hybrid_tau_spacing(min_tau, max_tau, num_steps, log_frac=0.6)
     taus = widefield.generate_log_spaced_taus(min_tau, max_tau, num_steps, base=4)
+    # print(taus)
+    # sys.exit()
     # num_runs = 2
     # xy8.main(nv_list, num_steps, num_reps, num_runs, taus , uwave_ind_list)
     for _ in range(2):
@@ -1274,16 +1272,16 @@ if __name__ == "__main__":
     #     [227.438, 19.199],
     # ]
     # green_coords_list = [
-    #     [107.781, 107.724],
-    #     [118.152, 97.466],
-    #     [107.051, 118.372],
-    #     [96.878, 94.81],
+    #     [107.767, 107.757],
+    #     [118.127, 97.472],
+    #     [107.036, 118.416],
+    #     [96.822, 94.821],
     # ]
     # red_coords_list = [
-    #     [72.492, 73.235],
-    #     [80.723, 64.781],
-    #     [72.13, 81.906],
-    #     [63.321, 62.842],
+    #     [72.466, 73.251],
+    #     [80.703, 64.786],
+    #     [72.119, 81.942],
+    #     [63.276, 62.851],
     # ]
 
     num_nvs = len(pixel_coords_list)
@@ -1374,7 +1372,7 @@ if __name__ == "__main__":
     nv_sig = widefield.get_repr_nv_sig(nv_list)
     # print(f"Created NV: {nv_sig.name}, Coords: {nv_sig.coords}")
     # nv_sig.expected_counts = 900
-    nv_sig.expected_counts = 1150
+    nv_sig.expected_counts = 1160
     # nv_sig.expected_counts = 1200
 
     # nv_list = nv_list[::-1]  # flipping the order of NVs
@@ -1397,6 +1395,7 @@ if __name__ == "__main__":
         # piezo_voltage_to_pixel_calibration()
 
         do_compensate_for_drift(nv_sig)
+
         # do_widefield_image_sample(nv_sig, 50)
         # do_widefield_image_sample(nv_sig, 200)
 
@@ -1485,9 +1484,9 @@ if __name__ == "__main__":
         # do_ac_stark(nv_list)
 
         # AVAILABLE_XY = ["hahn-n", "xy2-n", "xy4-n", "xy8-n", "xy16-n"]
-        # do_xy(nv_list, xy_seq="xy8")
+        do_xy(nv_list, xy_seq="xy4-1")
         # do_xy_uniform_revival_scan(nv_list, xy_seq="xy4-1")
-        do_xy_revival_scan(nv_list, xy_seq="xy4-1")
+        # do_xy_revival_scan(nv_list, xy_seq="xy4-1")
 
         # for nv in nv_list:
         #     nv.spin_flip = False
