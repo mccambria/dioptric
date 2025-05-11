@@ -712,18 +712,16 @@ def do_ramsey(nv_list):
 
 
 def do_xy(nv_list, xy_seq="xy8"):
-    min_tau = 1e3
+    min_tau = 200
     max_tau = 1e6 + min_tau
     num_steps = 24
     num_reps = 10
     uwave_ind_list = [1]  # iq modulated
     num_runs = 400
-
     # taus calculation
-    # taus = np.linspace(min_tau, max_tau, num_steps)
-    # taus = np.geomspace(1 / num_steps, 1, num_steps)
-    # taus = widefield.hybrid_tau_spacing(min_tau, max_tau, num_steps, log_frac=0.6)
     taus = widefield.generate_log_spaced_taus(min_tau, max_tau, num_steps, base=4)
+    # print(taus)
+    # sys.exit()
     # num_runs = 2
     # xy8.main(nv_list, num_steps, num_reps, num_runs, taus , uwave_ind_list)
     for _ in range(2):
@@ -1274,16 +1272,16 @@ if __name__ == "__main__":
     #     [227.438, 19.199],
     # ]
     # green_coords_list = [
-    #     [107.748, 107.743],
-    #     [118.109, 97.484],
-    #     [107.012, 118.417],
-    #     [96.82, 94.814],
+    #     [107.767, 107.757],
+    #     [118.127, 97.472],
+    #     [107.036, 118.416],
+    #     [96.822, 94.821],
     # ]
     # red_coords_list = [
     #     [72.466, 73.251],
-    #     [80.689, 64.796],
-    #     [72.099, 81.943],
-    #     [63.274, 62.846],
+    #     [80.703, 64.786],
+    #     [72.119, 81.942],
+    #     [63.276, 62.851],
     # ]
 
     num_nvs = len(pixel_coords_list)
@@ -1374,7 +1372,7 @@ if __name__ == "__main__":
     nv_sig = widefield.get_repr_nv_sig(nv_list)
     # print(f"Created NV: {nv_sig.name}, Coords: {nv_sig.coords}")
     # nv_sig.expected_counts = 900
-    nv_sig.expected_counts = 1000
+    nv_sig.expected_counts = 1160
     # nv_sig.expected_counts = 1200
 
     # nv_list = nv_list[::-1]  # flipping the order of NVs
@@ -1448,7 +1446,7 @@ if __name__ == "__main__":
         # do_charge_state_conditional_init(nv_list)
         # do_charge_state_histograms_images(nv_list, vary_pol_laser=True)
 
-        do_optimize_pol_amp(nv_list)
+        # do_optimize_pol_amp(nv_list)
         # do_optimize_pol_duration(nv_list)
         # do_optimize_readout_amp(nv_list)
         # do_optimize_readout_duration(nv_list)
@@ -1486,7 +1484,7 @@ if __name__ == "__main__":
         # do_ac_stark(nv_list)
 
         # AVAILABLE_XY = ["hahn-n", "xy2-n", "xy4-n", "xy8-n", "xy16-n"]
-        # do_xy(nv_list, xy_seq="xy8")
+        do_xy(nv_list, xy_seq="xy4-1")
         # do_xy_uniform_revival_scan(nv_list, xy_seq="xy4-1")
         # do_xy_revival_scan(nv_list, xy_seq="xy4-1")
 
