@@ -1484,7 +1484,7 @@ if __name__ == "__main__":
         # do_ac_stark(nv_list)
 
         # AVAILABLE_XY = ["hahn-n", "xy2-n", "xy4-n", "xy8-n", "xy16-n"]
-        do_xy(nv_list, xy_seq="xy4-1")
+        # do_xy(nv_list, xy_seq="xy4-1")
         # do_xy_uniform_revival_scan(nv_list, xy_seq="xy4-1")
         # do_xy_revival_scan(nv_list, xy_seq="xy4-1")
 
