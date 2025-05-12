@@ -880,7 +880,7 @@ def plot_xy_all(nv_list, taus, norm_counts, norm_counts_ste, seq_xy):
     fig, axes = plt.subplots(
         num_rows,
         num_cols,
-        figsize=(num_cols * 1.5, num_rows * 3),
+        figsize=(num_cols * 3, num_rows * 3),
         sharex=True,
         sharey=False,
         constrained_layout=True,
@@ -903,7 +903,7 @@ def plot_xy_all(nv_list, taus, norm_counts, norm_counts_ste, seq_xy):
             color=colors[nv_idx % len(colors)],
             lw=0,
             marker="o",
-            markersize=4,
+            markersize=2,
             label=f"NV {nv_idx}",
         )
         ax.errorbar(
@@ -912,6 +912,7 @@ def plot_xy_all(nv_list, taus, norm_counts, norm_counts_ste, seq_xy):
             yerr=abs(norm_counts_ste[nv_idx]),
             fmt="none",
             ecolor=colors[nv_idx % len(colors)],
+            edgewidth=0.5,
             alpha=0.9,
         )
         ax.legend(fontsize="xx-small")
@@ -940,7 +941,7 @@ def plot_xy_all(nv_list, taus, norm_counts, norm_counts_ste, seq_xy):
         rotation="vertical",
         fontsize=12,
     )
-    fig.suptitle(f"{seq_xy}", fontsize=16)
+    fig.suptitle(f"{seq_xy}", fontsize=16, y=1.0)
     # fig.set_constrained_layout(False)
     # fig.subplots_adjust(left=0.01, right=0.98, top=0.99, bottom=0.08, hspace=0.01, wspace=0.01)
     # fig.subplots_adjust(
@@ -999,16 +1000,18 @@ if __name__ == "__main__":
     # ]  # (2us to 20us )/ 2*8 uniform spacing
     # file_stems = ["2025_04_30-22_07_41-rubin-nv0_2025_02_26"]  # xy8
     ### New data sets
-    file_stems = [
-        # "2025_05_01-05_35_44-rubin-nv0_2025_02_26",
-        # "2025_05_01-11_56_26-rubin-nv0_2025_02_26",
-        "2025_05_02-10_43_10-rubin-nv0_2025_02_26",
-        "2025_05_02-17_30_41-rubin-nv0_2025_02_26",
-        "2025_05_02-23_57_21-rubin-nv0_2025_02_26",
-    ]  # xy4
+    # file_stems = [
+    #     # "2025_05_01-05_35_44-rubin-nv0_2025_02_26",
+    #     # "2025_05_01-11_56_26-rubin-nv0_2025_02_26",
+    #     "2025_05_02-10_43_10-rubin-nv0_2025_02_26",
+    #     "2025_05_02-17_30_41-rubin-nv0_2025_02_26",
+    #     "2025_05_02-23_57_21-rubin-nv0_2025_02_26",
+    # ]  # xy4
 
     # file_stems = ["2025_05_06-20_59_05-rubin-nv0_2025_02_26"]  # xy4
     file_stems = [
+        "2025_05_09-11_56_26-rubin-nv0_2025_02_26",
+        "2025_05_08-20_36_14-rubin-nv0_2025_02_26",
         "2025_05_08-04_29_55-rubin-nv0_2025_02_26",
         "2025_05_07-12_41_35-rubin-nv0_2025_02_26",
     ]  # xy4 to obseve multiple peaks
