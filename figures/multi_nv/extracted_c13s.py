@@ -10,10 +10,12 @@ Created on November 29th, 2023
 import sys
 import time
 import traceback
+from pathlib import Path
 
 import matplotlib.patches as mpatches
 import matplotlib.pyplot as plt
 import numpy as np
+import orjson
 from matplotlib.legend_handler import HandlerTuple
 from matplotlib.ticker import MaxNLocator
 from numba import njit
@@ -305,6 +307,19 @@ if __name__ == "__main__":
 
     # hfs_res = []
     # hfs_err_res = []
+
+    # data = {
+    #     "hfs_res": hfs_res,
+    #     "hfs_err_res": hfs_err_res,
+    #     "hfs_echo": hfs_echo,
+    #     "hfs_err_echo": hfs_err_echo,
+    # }
+    # option = orjson.OPT_INDENT_2 | orjson.OPT_SERIALIZE_NUMPY | orjson.OPT_NON_STR_KEYS
+    # content = orjson.dumps(data, option=option)
+    # with open(Path.home() / "hfs_exp.txt", "wb") as f:
+    #     f.write(content)
+
+    # sys.exit()
 
     main(
         hfs_res,
