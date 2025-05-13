@@ -24,7 +24,7 @@ from utils import widefield as widefield
 
 
 def stretched_exp(tau, a, t2, n, b):
-    n = 3.0
+    n = 2.0
     return a * (1 - np.exp(-((tau / t2) ** n))) + b
 
 
@@ -174,35 +174,35 @@ def process_and_plot_xy8(nv_list, taus, norm_counts, norm_counts_ste):
         # fit funtions
         # fit_funtion = lambda x: stretched_exp(x, *popt)
         # fit_functions.append(fit_funtion)
-        # # plotting
-        # fig, ax = plt.subplots(figsize=(6, 5))
-        # ax.errorbar(
-        #     taus,
-        #     max_counts - nv_counts,
-        #     yerr=np.abs(nv_counts_ste),
-        #     fmt="o",
-        #     capsize=3,
-        #     label=f"NV {nv_ind}",
-        # )
-        # # fit funtions
-        # if popt is not None:
-        #     tau_fit = tau_fit = np.logspace(
-        #         np.log10(min(taus)), np.log10(max(taus)), 200
-        #     )
-        #     fit_vals = max_counts - stretched_exp(tau_fit, *popt)
-        #     ax.plot(tau_fit, fit_vals, "-", label="Fit")
-        # ax.set_title(f"XY8 Decay: NV {nv_ind} - T₂ = {T2} µs, n = {n}", fontsize=15)
-        # ax.set_xlabel("τ (µs)", fontsize=15)
-        # ax.set_ylabel("Norm. NV⁻ Population", fontsize=15)
-        # ax.tick_params(axis="both", labelsize=15)
-        # # ax.set_xscale("symlog", linthresh=1e5)
-        # ax.set_xscale("log")
-        # # ax.set_yscale("log")
-        # # ax.legend()
-        # # ax.grid(True)
-        # # ax.spines["right"].set_visible(False)
-        # # ax.spines["top"].set_visible(False)
-        # plt.show(block=True)
+        # plotting
+        fig, ax = plt.subplots(figsize=(6, 5))
+        ax.errorbar(
+            taus,
+            max_counts - nv_counts,
+            yerr=np.abs(nv_counts_ste),
+            fmt="o",
+            capsize=3,
+            label=f"NV {nv_ind}",
+        )
+        # fit funtions
+        if popt is not None:
+            tau_fit = tau_fit = np.logspace(
+                np.log10(min(taus)), np.log10(max(taus)), 200
+            )
+            fit_vals = max_counts - stretched_exp(tau_fit, *popt)
+            ax.plot(tau_fit, fit_vals, "-", label="Fit")
+        ax.set_title(f"XY8 Decay: NV {nv_ind} - T₂ = {T2} µs, n = {n}", fontsize=15)
+        ax.set_xlabel("τ (µs)", fontsize=15)
+        ax.set_ylabel("Norm. NV⁻ Population", fontsize=15)
+        ax.tick_params(axis="both", labelsize=15)
+        # ax.set_xscale("symlog", linthresh=1e5)
+        ax.set_xscale("log")
+        # ax.set_yscale("log")
+        # ax.legend()
+        # ax.grid(True)
+        # ax.spines["right"].set_visible(False)
+        # ax.spines["top"].set_visible(False)
+        plt.show(block=True)
     ## plot contrast
 
     print(f"list_T2 = {T2_list}")
@@ -333,6 +333,9 @@ def process_and_plot_xy8(nv_list, taus, norm_counts, norm_counts_ste):
     # axes = axes[::-1]
     taus_fit = np.logspace(np.log10(min(taus)), np.log10(max(taus)), 200)
     for nv_idx, ax in enumerate(axes):
+        if nv_ind >= len(nv_list):
+            ax.axis("off")
+            continue
         nv_counts = norm_counts[nv_idx]
         max_counts = np.max(nv_counts)
         if nv_idx >= len(nv_list):
@@ -887,7 +890,7 @@ def plot_xy_all(nv_list, taus, norm_counts, norm_counts_ste, seq_xy):
         gridspec_kw={"wspace": 0.0, "hspace": 0.0},
     )
     axes = axes.flatten()
-
+    print(f"axes: {axes}, len(axes): {len(axes)}")
     for nv_idx, ax in enumerate(axes):
         if nv_idx >= len(nv_list):
             ax.axis("off")
@@ -903,7 +906,7 @@ def plot_xy_all(nv_list, taus, norm_counts, norm_counts_ste, seq_xy):
             color=colors[nv_idx % len(colors)],
             lw=0,
             marker="o",
-            markersize=2,
+            markersize=4,
             label=f"NV {nv_idx}",
         )
         ax.errorbar(
@@ -912,12 +915,19 @@ def plot_xy_all(nv_list, taus, norm_counts, norm_counts_ste, seq_xy):
             yerr=abs(norm_counts_ste[nv_idx]),
             fmt="none",
             ecolor=colors[nv_idx % len(colors)],
-            edgewidth=0.5,
+            # elinewidth=0.5,
             alpha=0.9,
         )
         ax.legend(fontsize="xx-small")
         ax.grid(True, which="both", linestyle="--", linewidth=0.5)
         ax.tick_params(labelleft=False)
+
+        ax.yaxis.set_major_formatter(FormatStrFormatter("%.1f"))
+        ax.tick_params(axis="y", labelsize=8, direction="in", pad=-10)
+        for label in ax.get_yticklabels():
+            label.set_horizontalalignment("right")
+            label.set_x(0.01)
+        # ax.set_xlabel("Time (μs)", fontsize=9, labelpad=1)
 
     for col in range(num_cols):
         bottom_row_idx = num_rows * num_cols - num_cols + col
@@ -1016,6 +1026,11 @@ if __name__ == "__main__":
         "2025_05_07-12_41_35-rubin-nv0_2025_02_26",
     ]  # xy4 to obseve multiple peaks
 
+    # file_stems = [
+    #     "2025_05_12-00_18_03-rubin-nv0_2025_02_26",
+    #     "2025_05_11-19_15_33-rubin-nv0_2025_02_26",
+    # ]  # xy4 log scale
+
     # cpdd
     # file_stems = [
     #     "2025_05_04-02_06_22-rubin-nv0_2025_02_26",
@@ -1031,7 +1046,7 @@ if __name__ == "__main__":
     # sys.exit()
     all_file_ids_str = widefield.combined_filenames_numbered(file_stems)
     print(f"File name: {all_file_ids_str}")
-    raw_data = widefield.process_multiple_files(file_stems)
+    raw_data = widefield.process_multiple_files(file_stems, load_npz=False)
     nv_list = raw_data["nv_list"]
     taus = np.array(raw_data["taus"]) / 1e3  # τ values (in us)
     # Get sequence type

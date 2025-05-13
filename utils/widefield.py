@@ -427,19 +427,21 @@ def process_counts(nv_list, sig_counts, ref_counts=None, threshold=True):
 
 
 # Combine data from multiple file IDs
-def process_multiple_files(file_ids):
+def process_multiple_files(file_ids, load_npz=False):
     """
     Load and combine data from multiple file IDs.
 
     """
     # print(file_ids[0])
     combined_data = dm.get_raw_data(
-        file_stem=file_ids[0], load_npz=False, use_cache=False
+        file_stem=file_ids[0], load_npz=load_npz, use_cache=False
     )
     counts = np.array(combined_data["counts"])
     print(f"combined data shape : {counts.shape}")
     for file_id in file_ids[1:]:
-        new_data = dm.get_raw_data(file_stem=file_id, load_npz=False, use_cache=False)
+        new_data = dm.get_raw_data(
+            file_stem=file_id, load_npz=load_npz, use_cache=False
+        )
         new_counts = np.array(new_data["counts"])
         print(f"new data shape : {new_counts.shape}")
         combined_data["num_runs"] += new_data["num_runs"]
