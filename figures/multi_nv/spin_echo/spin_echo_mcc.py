@@ -16,10 +16,8 @@ import numpy as np
 from numba import njit
 from scipy.optimize import brute
 
-from majorroutines.widefield import base_routine
 from utils import data_manager as dm
 from utils import kplotlib as kpl
-from utils import tool_belt as tb
 from utils import widefield as widefield
 from utils.tool_belt import curve_fit
 
@@ -723,74 +721,6 @@ def calc_T2_times(
         )
         pste = np.sqrt(np.diag(pcov))
         print(f"{round(popt[0])} +/- {round(pste[0])}")
-
-
-def main(nv_list, num_steps, num_reps, num_runs, min_tau=None, max_tau=None, taus=None):
-    ### Some initial setup
-
-    pulse_gen = tb.get_server_pulse_gen()
-    seq_file = "spin_echo.py"
-
-    uwave_ind_list = [0, 1]
-
-    ### Collect the data
-
-    def run_fn(shuffled_step_inds):
-        shuffled_taus = [taus[ind] for ind in shuffled_step_inds]
-        seq_args = [
-            widefield.get_base_scc_seq_args(nv_list, uwave_ind_list),
-            shuffled_taus,
-        ]
-        # print(seq_args)
-        seq_args_string = tb.encode_seq_args(seq_args)
-        pulse_gen.stream_load(seq_file, seq_args_string, num_reps)
-
-    raw_data = base_routine.main(
-        nv_list,
-        num_steps,
-        num_reps,
-        num_runs,
-        run_fn,
-        uwave_ind_list=uwave_ind_list,
-        save_images=False,
-    )
-
-    ### Process and plot
-
-    timestamp = dm.get_time_stamp()
-    raw_data |= {
-        "timestamp": timestamp,
-        "tau-units": "ns",
-        "taus": taus,
-        "min_tau": min_tau,
-        "max_tau": max_tau,
-    }
-
-    # save data
-    repr_nv_sig = widefield.get_repr_nv_sig(nv_list)
-    repr_nv_name = repr_nv_sig.name
-    file_path = dm.get_file_path(__file__, timestamp, repr_nv_name)
-    dm.save_raw_data(raw_data, file_path)
-
-    # creat fugure and save
-    raw_fig = None
-    try:
-        # raw_fig = create_raw_data_figure(raw_data)
-        fit_fig = create_fit_figure(raw_data)
-    except Exception:
-        print(traceback.format_exc())
-        # raw_fig = None
-        fit_fig = None
-
-    ### Clean up and return
-    tb.reset_cfm()
-    kpl.show()
-
-    if raw_fig is not None:
-        dm.save_figure(raw_fig, file_path)
-    if fit_fig is not None:
-        file_path = dm.get_file_path(__file__, timestamp, repr_nv_name + "-fit")
-        dm.save_figure(fit_fig, file_path)
 
 
 if __name__ == "__main__":
