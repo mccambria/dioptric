@@ -191,20 +191,41 @@ def main():
 
 
 def test():
-    # fig, ax = plt.subplots()
-    # x_vals = np.linspace(0, 100, 10000)
-    # # kpl.plot_line(ax, x_vals, poisson(x_vals, 10))
-    # # kpl.plot_line(ax, x_vals, neg_bin(x_vals, 37.5))
-    # # kpl.plot_line(ax, x_vals, emccd(x_vals, 1e3, 50e-3))
-    # kpl.plot_line(ax, x_vals, qcmos(x_vals, 1e3, 50e-3))
-
-    # x_vals = np.linspace(0.05, 0.2, 1000)
     qubit_rate_0 = 1.0e3 / 4
     qubit_rate_1 = 1.0e3
-    exposure_time = 0.02
-    # single_shot_snr(qcmos, qubit_rate_0, qubit_rate_1, exposure_time)
-    optimize(1e-6, emccd, qubit_rate_0, qubit_rate_1)
-    # calc_char_avg_time(1e-6, qcmos, qubit_rate_0, qubit_rate_1, 0.0002)
+    exposure_time = 20e-3
+
+    fig, ax = plt.subplots()
+    x_vals = np.linspace(0, 35, 10000)
+    # x_vals = np.linspace(-2, 35, 10000)
+    # # kpl.plot_line(ax, x_vals, poisson(x_vals, 10))
+    # # kpl.plot_line(ax, x_vals, neg_bin(x_vals, 37.5))
+    fn = emccd
+    # fn = qcmos
+    kpl.plot_line(
+        ax, x_vals, fn(x_vals, qubit_rate_0, exposure_time), label="placeholder"
+    )
+    kpl.plot_line(
+        ax, x_vals, fn(x_vals, qubit_rate_1, exposure_time), label="placeholder"
+    )
+    ax.set_xlabel(r"Readout value $X_{i}$", usetex=True)
+    ax.set_ylabel("Probability density")
+    legend = ax.legend()
+
+    labels = [r"$\ket{0}$", r"$\ket{1}$"]
+    for ind, text in enumerate(legend.get_texts()):
+        text.set_text(labels[ind])
+        text.set_usetex(True)
+    ax.set_xlim(-2, 35)
+    # plt.draw()
+
+    # # x_vals = np.linspace(0.05, 0.2, 1000)
+    # qubit_rate_0 = 1.0e3 / 4
+    # qubit_rate_1 = 1.0e3
+    # exposure_time = 0.02
+    # # single_shot_snr(qcmos, qubit_rate_0, qubit_rate_1, exposure_time)
+    # optimize(1e-6, emccd, qubit_rate_0, qubit_rate_1)
+    # # calc_char_avg_time(1e-6, qcmos, qubit_rate_0, qubit_rate_1, 0.0002)
 
     # y_vals = [
     #     single_shot_snr(qcmos, qubit_rate_0, qubit_rate_1, x_val) for x_val in x_vals
@@ -218,6 +239,6 @@ def test():
 
 if __name__ == "__main__":
     kpl.init_kplotlib()
-    # test()
-    main()
+    test()
+    # main()
     kpl.show(block=True)
