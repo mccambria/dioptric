@@ -371,16 +371,23 @@ def main(
 if __name__ == "__main__":
     kpl.init_kplotlib()
 
-    # # Tweezered NVs
-    # data = dm.get_raw_data(file_id=1693166192526, load_npz=True)
-    # img_array = data["ref_img_array"]
-    # fig, ax = plt.subplots()
-    # kpl.imshow(ax, img_array, cbar_label="Photons")
-    # ax.axis("off")
-    # scale = 4 * (2.3 / 0.29714285714)
-    # kpl.scale_bar(ax, scale, "4 µm", kpl.Loc.LOWER_RIGHT)
-    # kpl.show(block=True)
-    # sys.exit()
+    # Tweezered NVs
+    file_name = "2024_12_23-17_43_12-johnson-nv0_2024_03_12"
+    # file_name = "2024_11_06-10_29_37-johnson-nv0_2024_03_12"
+    # file_name = "2025_03_10-01_16_27-rubin-nv0_2025_02_26"
+    data = dm.get_raw_data(file_name, load_npz=True)
+    img_array = data["ref_img_array"]
+    widefield.replace_dead_pixel(img_array)
+    fig, ax = plt.subplots()
+    kpl.imshow(ax, img_array, cbar_label="Photons")
+    ax.axis("off")
+    num_microns = 5
+    scale = num_microns * (2.3 / 0.29714285714)
+    kpl.scale_bar(ax, scale, f"{num_microns} µm", kpl.Loc.LOWER_RIGHT)
+    img = ax.images[-1]
+    img.set_clim(0.5, 3.5)
+    kpl.show(block=True)
+    sys.exit()
 
     # # Tweezer pattern
     # data = np.load("/home/mccambria/Downloads/captured_image_raw.npy")
