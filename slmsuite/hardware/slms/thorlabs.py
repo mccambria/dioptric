@@ -30,7 +30,7 @@ class ThorSLM(SLM):
     superclass that sets the requirements for :class:`Template`.
     """
 
-    def __init__(self, serialNumber):
+    def __init__(self, serialNumber="00429430"):
         """
         Initializes an instance of a Thorabs SLM.
 
@@ -53,7 +53,7 @@ class ThorSLM(SLM):
         #     )
 
         if self.device_hdl < 0:
-            print("Connect ", serialNumber, "fail")
+            print("Connect ", serialNumber, "failed")
             return -1
         else:
             print("Connect ", serialNumber, "successfully")
@@ -135,15 +135,15 @@ class ThorSLM(SLM):
         # return 0
 
     def close(self):
-        self.close_window()
-        self.close_device()
+        self._close_window()
+        self._close_device()
 
-    def close_device(self):
+    def _close_device(self):
         """Close SLM connection."""
         if self.device_hdl:
             EXULUSClose(self.device_hdl)
 
-    def close_window(self):
+    def _close_window(self):
         """Close SLM connection."""
         if self.window_hdl:
             CghDisplayCloseWindow(self.window_hdl)

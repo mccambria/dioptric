@@ -1017,7 +1017,7 @@ def do_opx_constant_ac():
     opx.constant_ac(
         [],  # Digital channels
         [7],  # Analog channels
-        [0.4256],  # Analog voltages
+        [0.5],  # Analog voltages
         [0],  # Analog frequencies
     )
 
@@ -1094,7 +1094,7 @@ def do_opx_constant_ac():
     opx.constant_ac(
         [4, 1],  # Digital channels1
         [3, 4, 2, 6, 7],  # Analog channels
-        [0.19, 0.19, 0.17, 0.17, 0.40],  # Analog voltages
+        [0.19, 0.19, 0.17, 0.17, 0.45],  # Analog voltages
         [107, 107, 72, 72, 0],  # Analog frequencies
     )
     input("Press enter to stop...")
@@ -1396,7 +1396,7 @@ if __name__ == "__main__":
         # pos.set_xyz_on_nv(nv_sig)
         # piezo_voltage_to_pixel_calibration()
 
-        do_compensate_for_drift(nv_sig)
+        # do_compensate_for_drift(nv_sig)
 
         # do_widefield_image_sample(nv_sig, 50)
         # do_widefield_image_sample(nv_sig, 200)
@@ -1430,7 +1430,7 @@ if __name__ == "__main__":
         #         print(f"Scanning SAMPLE: {sample_coord}, estimated Z: {z:.3f}")
         #         do_scanning_image_sample(nv_sig)
 
-        # do_opx_constant_ac()
+        do_opx_constant_ac()
         # do_opx_square_wave()
 
         # do_optimize_pixel(nv_sig)
@@ -1486,7 +1486,7 @@ if __name__ == "__main__":
         # do_ac_stark(nv_list)
 
         # AVAILABLE_XY = ["hahn-n", "xy2-n", "xy4-n", "xy8-n", "xy16-n"]
-        do_xy(nv_list, xy_seq="xy8-1")
+        # do_xy(nv_list, xy_seq="xy16-1")
         # do_xy_uniform_revival_scan(nv_list, xy_seq="xy4-1")
         # do_xy_revival_scan(nv_list, xy_seq="xy4-1")
 

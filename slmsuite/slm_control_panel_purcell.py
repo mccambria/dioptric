@@ -29,6 +29,7 @@ from scipy.optimize import curve_fit
 from slmsuite import example_library
 from slmsuite.hardware.cameras.thorlabs import ThorCam
 from slmsuite.hardware.cameraslms import FourierSLM
+from slmsuite.hardware.slms.meadowlark import Meadowlark
 from slmsuite.hardware.slms.thorlabs import ThorSLM
 from slmsuite.holography import analysis, toolbox
 from slmsuite.holography.algorithms import FeedbackHologram, SpotHologram
@@ -386,7 +387,8 @@ def save(data, path, filename):
 
 
 try:
-    slm = ThorSLM(serialNumber="00429430")
+    # slm = ThorSLM()
+    slm = Meadowlark()
     cam = ThorCam(serial="26438", verbose=True)
     fs = FourierSLM(cam, slm)
     # cam = tb.get_server_thorcam()
@@ -404,7 +406,8 @@ try:
     # cam_plot()
 finally:
     print("Closing")
-    slm.close_window()
-    slm.close_device()
+    # slm.close_window()
+    # slm.close_device()
+    slm.close()
     cam.close()
 # endregions
