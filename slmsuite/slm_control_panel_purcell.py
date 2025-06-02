@@ -387,8 +387,8 @@ def save(data, path, filename):
 
 
 try:
-    # slm = ThorSLM()
-    slm = Meadowlark()
+    slm = ThorSLM()
+    # slm = Meadowlark()
     cam = ThorCam(serial="26438", verbose=True)
     fs = FourierSLM(cam, slm)
     # cam = tb.get_server_thorcam()
@@ -408,6 +408,5 @@ finally:
     print("Closing")
     # slm.close_window()
     # slm.close_device()
-    slm.close()
     cam.close()
 # endregions

@@ -53,7 +53,7 @@ class ThorSLM(SLM):
         #     )
 
         if self.device_hdl < 0:
-            print("Connect ", serialNumber, "failed")
+            print("Connect ", serialNumber, "fail")
             return -1
         else:
             print("Connect ", serialNumber, "successfully")
@@ -135,15 +135,15 @@ class ThorSLM(SLM):
         # return 0
 
     def close(self):
-        self._close_window()
-        self._close_device()
+        self.close_window()
+        self.close_device()
 
-    def _close_device(self):
+    def close_device(self):
         """Close SLM connection."""
         if self.device_hdl:
             EXULUSClose(self.device_hdl)
 
-    def _close_window(self):
+    def close_window(self):
         """Close SLM connection."""
         if self.window_hdl:
             CghDisplayCloseWindow(self.window_hdl)
