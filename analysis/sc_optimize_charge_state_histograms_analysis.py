@@ -827,11 +827,14 @@ if __name__ == "__main__":
     file_id = (
         "2025_04_29-00_04_37-rubin-nv0_2025_02_26"  # green amplitude 75NVs (4/16/2025)
     )
+    file_id = (
+        "2025_05_12-21_22_21-rubin-nv0_2025_02_26"  # green amplitude 75NVs (4/16/2025)
+    )
     # dm.USE_NEW_CLOUD = False
-    raw_data = dm.get_raw_data(file_stem=file_id, load_npz=False)
+    raw_data = dm.get_raw_data(file_stem=file_id, load_npz=True)
     # file_name = dm.get_file_name(file_id=file_id)
     # print(f"{file_name}_{file_id}")
-    process_and_plot(raw_data)
-    # process_and_plot_green(raw_data)
+    # process_and_plot(raw_data)
+    process_and_plot_green(raw_data)
     # print(dm.get_file_name(1717056176426))
     plt.show(block=True)

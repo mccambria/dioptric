@@ -7,13 +7,16 @@ Note
 Check that the Blink SDK, inlcuding DLL files etc, are in the default folder
 or otherwise pass the correct directory in the constructor.
 """
-import os
+
 import ctypes
+import os
+import time
 import warnings
 
 from .slm import SLM
 
 DEFAULT_SDK_PATH = "C:\\Program Files\\Meadowlark Optics\\Blink 1920 HDMI\\"
+
 
 class Meadowlark(SLM):
     """
@@ -27,7 +30,15 @@ class Meadowlark(SLM):
         Path of the Blink SDK folder.
     """
 
-    def __init__(self, verbose=True, sdk_path=DEFAULT_SDK_PATH, lut_path=None, dx_um=8, dy_um=8, **kwargs):
+    def __init__(
+        self,
+        verbose=True,
+        sdk_path=DEFAULT_SDK_PATH,
+        lut_path=None,
+        dx_um=8,
+        dy_um=8,
+        **kwargs,
+    ):
         r"""
         Initializes an instance of a Meadowlark SLM.
 
@@ -49,22 +60,29 @@ class Meadowlark(SLM):
             See :meth:`.SLM.__init__` for permissible options.
         """
         # Validates the DPI awareness of this context, which is presumably important for scaling.
-        if verbose: print("Validating DPI awareness...", end="")
+        if verbose:
+            print("Validating DPI awareness...", end="")
 
         awareness = ctypes.c_int()
-        error_get = ctypes.windll.shcore.GetProcessDpiAwareness(0, ctypes.byref(awareness))
+        error_get = ctypes.windll.shcore.GetProcessDpiAwareness(
+            0, ctypes.byref(awareness)
+        )
         error_set = ctypes.windll.shcore.SetProcessDpiAwareness(2)
         success = ctypes.windll.user32.SetProcessDPIAware()
 
         if not success:
             raise RuntimeError(
                 "Meadowlark failed to validate DPI awareness."
-                "Errors: get={}, set={}, awareness={}".format(error_get, error_set, awareness.value)
+                "Errors: get={}, set={}, awareness={}".format(
+                    error_get, error_set, awareness.value
+                )
             )
-        if verbose: print("success")
+        if verbose:
+            print("success")
 
         # Open the SLM library
-        if verbose: print("Constructing Blink SDK...", end="")
+        if verbose:
+            print("Constructing Blink SDK...", end="")
 
         dll_path = os.path.join(sdk_path, "SDK", "Blink_C_wrapper")
         try:
@@ -73,8 +91,9 @@ class Meadowlark(SLM):
         except:
             print("failure")
             raise ImportError(
-                "Meadowlark .dlls did not did not import correctly. Is '{}' the correct path?"
-                .format(dll_path)
+                "Meadowlark .dlls did not did not import correctly. Is '{}' the correct path?".format(
+                    dll_path
+                )
             )
 
         self.sdk_path = sdk_path
@@ -90,10 +109,12 @@ class Meadowlark(SLM):
         # self.slm_lib.SetPreRampSlope(20) # default is 7
         # self.slm_lib.SetPostRampSlope(24) # default is 24
 
-        if verbose: print("success")
+        if verbose:
+            print("success")
 
         # Load LUT.
-        if verbose: print("Loading LUT file...", end="")
+        if verbose:
+            print("Loading LUT file...", end="")
 
         try:
             true_lut_path = self.load_lut(lut_path)
@@ -111,15 +132,17 @@ class Meadowlark(SLM):
             name="Meadowlark",
             dx_um=dx_um,
             dy_um=dy_um,
-            **kwargs
+            **kwargs,
         )
 
         if self.bitdepth > 8:
             warnings.warn(
-                "Bitdepth of {} > 8 detected; this has not been tested and might fail.".format(self.bitdepth)
+                "Bitdepth of {} > 8 detected; this has not been tested and might fail.".format(
+                    self.bitdepth
+                )
             )
 
-        self.write(None)
+        # self.write(None)
 
     def load_lut(self, lut_path=None):
         """
@@ -155,7 +178,7 @@ class Meadowlark(SLM):
         # If we already have a .lut file, proceed.
         if len(lut_path) > 4 and lut_path[-4:] == ".lut":
             pass
-        else:   # Otherwise, treat the path like a folder and search inside the folder.
+        else:  # Otherwise, treat the path like a folder and search inside the folder.
             lut_file = None
 
             for file in os.listdir(lut_path):
@@ -217,8 +240,14 @@ class Meadowlark(SLM):
         """
         self.slm_lib.Write_image(
             display.ctypes.data_as(ctypes.POINTER(ctypes.c_ubyte)),
-            ctypes.c_uint(self.bitdepth == 8)   # Is 8-bit
+            ctypes.c_uint(self.bitdepth == 8),  # Is 8-bit
         )
+        time.sleep(2.0)
+        # Ask before closing the SLM display
+        user_input = input("Press Enter to close SLM display... ")
+        if user_input:
+            print("Window closing aborted by user")
+            return -1
 
     ### Additional Meadowlark-specific functionality
 

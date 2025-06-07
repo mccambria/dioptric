@@ -30,7 +30,7 @@ class ThorSLM(SLM):
     superclass that sets the requirements for :class:`Template`.
     """
 
-    def __init__(self, serialNumber):
+    def __init__(self, serialNumber="00429430"):
         """
         Initializes an instance of a Thorabs SLM.
 

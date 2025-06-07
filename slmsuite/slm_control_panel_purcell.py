@@ -29,6 +29,7 @@ from scipy.optimize import curve_fit
 from slmsuite import example_library
 from slmsuite.hardware.cameras.thorlabs import ThorCam
 from slmsuite.hardware.cameraslms import FourierSLM
+from slmsuite.hardware.slms.meadowlark import Meadowlark
 from slmsuite.hardware.slms.thorlabs import ThorSLM
 from slmsuite.holography import analysis, toolbox
 from slmsuite.holography.algorithms import FeedbackHologram, SpotHologram
@@ -291,7 +292,7 @@ def nuvu2thorcam_calibration(coords):
     )
 
     cal_coords_nuvu = np.array(
-        [[229.609, 11.449], [214.144, 240.823], [22.711, 111.838]], dtype="float32"
+        [[229.343, 11.347], [214.213, 240.751], [22.536, 111.783]], dtype="float32"
     )
 
     # Compute the affine transformation matrix
@@ -386,7 +387,8 @@ def save(data, path, filename):
 
 
 try:
-    slm = ThorSLM(serialNumber="00429430")
+    slm = ThorSLM()
+    # slm = Meadowlark()
     cam = ThorCam(serial="26438", verbose=True)
     fs = FourierSLM(cam, slm)
     # cam = tb.get_server_thorcam()
@@ -404,7 +406,7 @@ try:
     # cam_plot()
 finally:
     print("Closing")
-    slm.close_window()
-    slm.close_device()
+    # slm.close_window()
+    # slm.close_device()
     cam.close()
 # endregions
