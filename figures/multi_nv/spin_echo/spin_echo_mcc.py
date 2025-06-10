@@ -68,11 +68,21 @@ def replot_fits(data, fit_data, nv_inds):
 
 
 def replot_fits_single_plot(data, fit_data, no_osc_fit_data, nv_inds):
+    # plot_nv_inds = [15, 41, 48, 60]
+    # plot_nv_inds = list(range(30, 40))
+    plot_nv_inds = list(range(102))
+
     figsize = kpl.double_figsize
     figsize[1] = 8
-    num_rows = 17
-    num_cols = 6
-    layout = kpl.calc_mosaic_layout(num_cols * num_rows, num_rows, num_cols)
+
+    num_plot_nvs = len(plot_nv_inds)
+    if num_plot_nvs == 102:
+        num_rows = 17
+        num_cols = 6
+        layout = kpl.calc_mosaic_layout(num_cols * num_rows, num_rows, num_cols)
+    else:
+        layout = kpl.calc_mosaic_layout(num_plot_nvs)
+
     # layout[0] = [".", ".", ".", layout[0][3], layout[0][4], "."]
     # layout[1] = [layout[1][0], ".", ".", *layout[1][3:]]
     fig, axes_pack = plt.subplot_mosaic(
@@ -93,7 +103,6 @@ def replot_fits_single_plot(data, fit_data, no_osc_fit_data, nv_inds):
     taus = np.array(data["taus"])
     total_evolution_times = 2 * np.array(taus) / 1e3
     fit_fn = quartic_decay
-    num_nvs = len(nv_inds)
 
     # Sort
     # fmt: off
@@ -121,14 +130,19 @@ def replot_fits_single_plot(data, fit_data, no_osc_fit_data, nv_inds):
     sort_order = np.argsort(mod_freqs)
     sorted_nv_inds = np.array(nv_inds)[sort_order]
 
+    plot_nv_list = [nv_list[ind] for ind in sorted_nv_inds]
+    plot_norm_counts = norm_counts[sorted_nv_inds]
+    plot_norm_counts_ste = norm_counts_ste[sorted_nv_inds]
+    plot_fit_fns = [fit_fns[ind] for ind in sort_order]
+    plot_popts = [popts[ind] for ind in sort_order]
     widefield.plot_fit(
         axes_pack_flat,
-        [nv_list[ind] for ind in sorted_nv_inds],
+        [plot_nv_list[ind] for ind in plot_nv_inds],
         total_evolution_times,
-        norm_counts[sorted_nv_inds],
-        norm_counts_ste[sorted_nv_inds],
-        [fit_fns[ind] for ind in sort_order],
-        [popts[ind] for ind in sort_order],
+        plot_norm_counts[plot_nv_inds],
+        plot_norm_counts_ste[plot_nv_inds],
+        [plot_fit_fns[ind] for ind in plot_nv_inds],
+        [plot_popts[ind] for ind in plot_nv_inds],
         no_legend=True,
         nv_inds=sorted_nv_inds,
     )
