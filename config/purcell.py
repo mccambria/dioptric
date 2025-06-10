@@ -167,8 +167,7 @@ config |= {
         # "em_gain": 5000,
         # "em_gain": 1000,
         "em_gain": 10,
-        # "temp": -60,
-        "temp": -55,
+        "temp": -60,
         "timeout": 30e3,  # ms
         # "timeout": -1,  # No timeout
         # Readout mode specifies EM vs conventional, as well as vertical and horizontal readout frequencies.
