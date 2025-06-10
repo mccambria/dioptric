@@ -11,20 +11,17 @@ import matplotlib.pyplot as plt
 import numpy as np
 import matplotlib.ticker as ticker
 from matplotlib.ticker import FormatStrFormatter
-
 import seaborn as sns
 from scipy.optimize import curve_fit, least_squares
-
 import utils.tool_belt as tb
 from majorroutines.widefield import base_routine
 from utils import data_manager as dm
 from utils import kplotlib as kpl
 from utils import widefield
-from utils import widefield as widefield
 
 
 def stretched_exp(tau, a, t2, n, b):
-    n = 2.0
+    n = 3.0
     return a * (1 - np.exp(-((tau / t2) ** n))) + b
 
 
@@ -102,7 +99,7 @@ def process_and_fit_xy8(nv_list, taus, norm_counts, norm_counts_ste):
     )
 
 
-def process_and_plot_xy8(nv_list, taus, norm_counts, norm_counts_ste):
+def process_and_plot_xy8(nv_list, taus, norm_counts, norm_counts_ste, seq_xy):
     num_nvs = len(nv_list)
     T2_list = []
     n_list = []
@@ -175,59 +172,61 @@ def process_and_plot_xy8(nv_list, taus, norm_counts, norm_counts_ste):
         # fit_funtion = lambda x: stretched_exp(x, *popt)
         # fit_functions.append(fit_funtion)
         # plotting
-        fig, ax = plt.subplots(figsize=(6, 5))
-        ax.errorbar(
-            taus,
-            max_counts - nv_counts,
-            yerr=np.abs(nv_counts_ste),
-            fmt="o",
-            capsize=3,
-            label=f"NV {nv_ind}",
-        )
-        # fit funtions
-        if popt is not None:
-            tau_fit = tau_fit = np.logspace(
-                np.log10(min(taus)), np.log10(max(taus)), 200
-            )
-            fit_vals = max_counts - stretched_exp(tau_fit, *popt)
-            ax.plot(tau_fit, fit_vals, "-", label="Fit")
-        ax.set_title(f"XY8 Decay: NV {nv_ind} - T₂ = {T2} µs, n = {n}", fontsize=15)
-        ax.set_xlabel("τ (µs)", fontsize=15)
-        ax.set_ylabel("Norm. NV⁻ Population", fontsize=15)
-        ax.tick_params(axis="both", labelsize=15)
-        # ax.set_xscale("symlog", linthresh=1e5)
-        ax.set_xscale("log")
-        # ax.set_yscale("log")
-        # ax.legend()
-        # ax.grid(True)
-        # ax.spines["right"].set_visible(False)
-        # ax.spines["top"].set_visible(False)
-        plt.show(block=True)
+        # fig, ax = plt.subplots(figsize=(6, 5))
+        # ax.errorbar(
+        #     taus,
+        #     max_counts - nv_counts,
+        #     yerr=np.abs(nv_counts_ste),
+        #     fmt="o",
+        #     capsize=3,
+        #     label=f"NV {nv_ind}",
+        # )
+        # # fit funtions
+        # if popt is not None:
+        #     tau_fit = tau_fit = np.logspace(
+        #         np.log10(min(taus)), np.log10(max(taus)), 200
+        #     )
+        #     fit_vals = max_counts - stretched_exp(tau_fit, *popt)
+        #     ax.plot(tau_fit, fit_vals, "-", label="Fit")
+        # ax.set_title(
+        #     f"{seq_xy} : NV {nv_ind} - T₂ = {T2} µs, n = {n}", fontsize=15
+        # )
+        # ax.set_xlabel("τ (µs)", fontsize=15)
+        # ax.set_ylabel("Norm. NV⁻ Population", fontsize=15)
+        # ax.tick_params(axis="both", labelsize=15)
+        # # ax.set_xscale("symlog", linthresh=1e5)
+        # ax.set_xscale("log")
+        # # ax.set_yscale("log")
+        # # ax.legend()
+        # # ax.grid(True)
+        # # ax.spines["right"].set_visible(False)
+        # # ax.spines["top"].set_visible(False)
+        # plt.show(block=True)
     ## plot contrast
 
     print(f"list_T2 = {T2_list}")
     print(f"list_b = {b_list}")
     print(f"list_a = {a_list}")
     # sys.exit()
-    # fig, ax = plt.subplots(figsize=(6, 5))
-    # nv_indices_T1 = np.arange(len(contrast_list))
-    # ax.bar(
-    #     nv_indices_T1,
-    #     contrast_list,
-    #     color="teal",
-    #     edgecolor="k",
-    #     alpha=0.7,
-    #     label="T1",
-    # )
+    fig, ax = plt.subplots(figsize=(6, 5))
+    nv_indices_T1 = np.arange(len(contrast_list))
+    ax.bar(
+        nv_indices_T1,
+        contrast_list,
+        color="teal",
+        edgecolor="k",
+        alpha=0.7,
+        label="T1",
+    )
 
-    # ax.set_xlabel("NV Index", fontsize=14)
-    # ax.set_ylabel("Contrast", fontsize=14)
-    # ax.set_title("XY8 Fit Contrast per NV", fontsize=15)
-    # ax.tick_params(labelsize=12)
-    # plt.grid(True, linestyle="--", alpha=0.5)
-    # plt.legend()
-    # # plt.tight_layout()
-    # plt.show()
+    ax.set_xlabel("NV Index", fontsize=14)
+    ax.set_ylabel("Contrast", fontsize=14)
+    ax.set_title("XY8 Fit Contrast per NV", fontsize=15)
+    ax.tick_params(labelsize=12)
+    plt.grid(True, linestyle="--", alpha=0.5)
+    plt.legend()
+    # plt.tight_layout()
+    plt.show()
 
     ## plot T2
     # Define outliers
@@ -333,14 +332,13 @@ def process_and_plot_xy8(nv_list, taus, norm_counts, norm_counts_ste):
     # axes = axes[::-1]
     taus_fit = np.logspace(np.log10(min(taus)), np.log10(max(taus)), 200)
     for nv_idx, ax in enumerate(axes):
-        if nv_ind >= len(nv_list):
+        if nv_idx >= len(norm_counts):  # Safe bound check
             ax.axis("off")
             continue
+
         nv_counts = norm_counts[nv_idx]
         max_counts = np.max(nv_counts)
-        if nv_idx >= len(nv_list):
-            ax.axis("off")
-            continue
+
         sns.scatterplot(
             x=taus,
             y=max_counts - nv_counts + b_list[nv_idx],
@@ -435,9 +433,7 @@ def process_and_plot_xy8(nv_list, taus, norm_counts, norm_counts_ste):
     fig.text(
         0.005, 0.5, "NV$^{-}$ Population", va="center", rotation="vertical", fontsize=11
     )
-    fig.suptitle(
-        f"{seq_xy}-1 Fits (68 MHz Orientation - {all_file_ids_str})", fontsize=12
-    )
+    fig.suptitle(f"{seq_xy}-1 Fits ({all_file_ids_str})", fontsize=12)
     fig.tight_layout(pad=0.4, rect=[0.01, 0.01, 0.99, 0.99])
     plt.show(block=True)
 
@@ -1019,17 +1015,29 @@ if __name__ == "__main__":
     # ]  # xy4
 
     # file_stems = ["2025_05_06-20_59_05-rubin-nv0_2025_02_26"]  # xy4
-    file_stems = [
-        "2025_05_09-11_56_26-rubin-nv0_2025_02_26",
-        "2025_05_08-20_36_14-rubin-nv0_2025_02_26",
-        "2025_05_08-04_29_55-rubin-nv0_2025_02_26",
-        "2025_05_07-12_41_35-rubin-nv0_2025_02_26",
-    ]  # xy4 to obseve multiple peaks
+    # file_stems = [
+    #     "2025_05_09-11_56_26-rubin-nv0_2025_02_26",
+    #     "2025_05_08-20_36_14-rubin-nv0_2025_02_26",
+    #     "2025_05_08-04_29_55-rubin-nv0_2025_02_26",
+    #     "2025_05_07-12_41_35-rubin-nv0_2025_02_26",
+    # ]  # xy4 to obseve multiple peaks
 
     # file_stems = [
     #     "2025_05_12-00_18_03-rubin-nv0_2025_02_26",
     #     "2025_05_11-19_15_33-rubin-nv0_2025_02_26",
+    #     "2025_05_12-17_17_40-rubin-nv0_2025_02_26",
     # ]  # xy4 log scale
+    # file_stems = [
+    #     "2025_05_14-01_03_29-rubin-nv0_2025_02_26",
+    #     "2025_05_13-19_56_05-rubin-nv0_2025_02_26",
+    #     "2025_05_13-14_50_04-rubin-nv0_2025_02_26",
+    # ]  # xy8 log scale
+
+    file_stems = [
+        "2025_05_15-00_30_58-rubin-nv0_2025_02_26",
+        "2025_05_14-19_25_27-rubin-nv0_2025_02_26",
+        "2025_05_14-14_20_16-rubin-nv0_2025_02_26",
+    ]  # xy16 log scale
 
     # cpdd
     # file_stems = [
@@ -1046,7 +1054,7 @@ if __name__ == "__main__":
     # sys.exit()
     all_file_ids_str = widefield.combined_filenames_numbered(file_stems)
     print(f"File name: {all_file_ids_str}")
-    raw_data = widefield.process_multiple_files(file_stems, load_npz=False)
+    raw_data = widefield.process_multiple_files(file_stems, load_npz=True)
     nv_list = raw_data["nv_list"]
     taus = np.array(raw_data["taus"]) / 1e3  # τ values (in us)
     # Get sequence type
@@ -1066,7 +1074,7 @@ if __name__ == "__main__":
     # norm_counts, norm_counts_ste = widefield.process_counts(
     #     nv_list, ref_counts, threshold=True
     # )
-    # process_and_plot_xy8(nv_list, taus, norm_counts, norm_counts_ste)
+    process_and_plot_xy8(nv_list, taus, norm_counts, norm_counts_ste, seq_xy)
     # n_values, medians_by_n, all_T2s_by_n = fit_for_fixed_n_range(
     #     nv_list, taus, norm_counts, norm_counts_ste, n_values=[1, 2, 3, 4, 5, 6]
     # )
@@ -1077,7 +1085,7 @@ if __name__ == "__main__":
     # fit_and_plot_all_T2_with_chi2(
     #     nv_list, taus, norm_counts, norm_counts_ste, n_values=[1, 2, 3, 4, 5, 6]
     # )
-    plot_xy_all(nv_list, taus, norm_counts, norm_counts_ste, seq_xy)
+    # plot_xy_all(nv_list, taus, norm_counts, norm_counts_ste, seq_xy)
     # fit_params, T2_list, n_list, chi2_list, param_errors_list = process_and_fit_xy8(
     #     nv_list, taus, norm_counts, norm_counts_ste
     # )
