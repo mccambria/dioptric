@@ -240,8 +240,8 @@ config |= {
             },
             VirtualLaserKey.WIDEFIELD_IMAGING: {
                 "physical_name": yellow_laser,
-                # "duration": 12e6,
-                "duration": 24e6,
+                "duration": 12e6,
+                # "duration": 24e6,
             },
             # LaserKey.WIDEFIELD_SPIN_POL: {"physical_name": yellow_laser, "duration": 10e3},
             VirtualLaserKey.WIDEFIELD_SPIN_POL: {

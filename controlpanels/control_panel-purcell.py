@@ -72,8 +72,8 @@ def do_widefield_image_sample(nv_sig, num_reps=1):
 
 
 def do_scanning_image_sample(nv_sig):
-    scan_range = 30
-    num_steps = 30
+    scan_range = 10
+    num_steps = 10
     image_sample.scanning(nv_sig, scan_range, scan_range, num_steps)
 
 
@@ -1017,7 +1017,7 @@ def do_opx_constant_ac():
     opx.constant_ac(
         [],  # Digital channels
         [7],  # Analog channels
-        [0.5],  # Analog voltages
+        [0.20],  # Analog voltages
         [0],  # Analog frequencies
     )
 
@@ -1084,19 +1084,19 @@ def do_opx_constant_ac():
     #     [73.166, 72.941],  # Analog frequencies
     # )
     # Green + yellow
-    # opx.constant_ac(
-    #     [4],  # Digital channels
-    #     [3, 4, 7],  # Analog channels
-    #     [0.19, 0.19, 0.45],  # Analog voltages
-    #     [107, 107, 0],  # Analog frequencies
-    # )
-    # # Red + green + Yellow
     opx.constant_ac(
-        [4, 1],  # Digital channels1
-        [3, 4, 2, 6, 7],  # Analog channels
-        [0.19, 0.19, 0.17, 0.17, 0.45],  # Analog voltages
-        [107, 107, 72, 72, 0],  # Analog frequencies
+        [4],  # Digital channels
+        [3, 4, 7],  # Analog channels
+        [0.19, 0.19, 0.45],  # Analog voltages
+        [107, 107, 0],  # Analog frequencies
     )
+    # # Red + green + Yellow
+    # opx.constant_ac(
+    #     [4, 1],  # Digital channels1
+    #     [3, 4, 2, 6, 7],  # Analog channels
+    #     [0.19, 0.19, 0.17, 0.17, 0.25],  # Analog voltages
+    #     [107, 107, 72, 72, 0],  # Analog frequencies
+    # )
     input("Press enter to stop...")
     # sig_gen.uwave_off()
 
@@ -1225,7 +1225,7 @@ if __name__ == "__main__":
     # magnet_angle = 90
     date_str = "2025_02_26"
     sample_coords = [2.0, 4.0]
-    z_coord = 0.0
+    z_coord = 0.4
     # Load NV pixel coordinates1
     pixel_coords_list = load_nv_coords(
         # file_path="slmsuite/nv_blob_detection/nv_blob_rubin_shallow_154nvs_reordered.npz",
@@ -1407,7 +1407,10 @@ if __name__ == "__main__":
         # scan_equilateral_triangle(nv_sig, center_coord=sample_coords, radius=0.2)
         # do_image_nv_list(nv_list)
         # do_image_single_nv(nv_sig)
-
+        # z_range = np.linspace(0.0, 1.0, 6)
+        # for z in z_range:
+        #     nv_sig.coords[CoordsKey.Z] = z
+        #     do_scanning_image_sample(nv_sig)
         # x_range = np.linspace(-2.0, 6.0, 6)
         # y_range = np.linspace(-2.0, 6.0, 6)
         # # --- Step 1: Start at (0, 0) ---
@@ -1430,7 +1433,7 @@ if __name__ == "__main__":
         #         print(f"Scanning SAMPLE: {sample_coord}, estimated Z: {z:.3f}")
         #         do_scanning_image_sample(nv_sig)
 
-        do_opx_constant_ac()
+        # do_opx_constant_ac()
         # do_opx_square_wave()
 
         # do_optimize_pixel(nv_sig)
