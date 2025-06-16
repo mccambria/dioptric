@@ -1,2 +1,1 @@
-
-[Dioptric_Short_Guide.pdf](https://github.com/mccambria/dioptric/files/10253202/Dioptric_Short_Guide.pdf)
+[Dioptric_Short_Guide.pdf](https://github.com/user-attachments/files/20762984/Dioptric_Short_Guide.pdf)
