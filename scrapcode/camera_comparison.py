@@ -29,10 +29,13 @@ from utils.kplotlib import KplColors
 from utils.tool_belt import bose
 
 inv_root_2_pi = 1 / np.sqrt(2 * np.pi)
-area = np.pi * 3**2
+area = 10
 emccd_readout_time = 12e-3
 # emccd_readout_time = 1e-3
 qcmos_readout_time = 1e-3
+w_star = 1 / 2
+p0p = 0.6
+p1p = 0.1
 
 # endregion
 
@@ -54,9 +57,7 @@ def neg_bin(x, mean):
 def emccd(x, qubit_rate, exposure_time):
     dark_rate = 0.0015
     clock_induced_charges = 0.0009
-    readout_noise = 100
     quantum_efficiency = 0.75
-    em_gain = 5000
     qubit_counts = quantum_efficiency * qubit_rate * exposure_time
     dark_counts = area * dark_rate * exposure_time
     clock_induced_counts = area * clock_induced_charges
@@ -77,7 +78,7 @@ def emccd(x, qubit_rate, exposure_time):
 
 def qcmos(x, qubit_rate, exposure_time):
     dark_rate = 0.006
-    readout_noise = 0.43
+    readout_noise = 0.43 * area
     quantum_efficiency = 0.55
     qubit_counts = quantum_efficiency * qubit_rate * exposure_time
     dark_counts = area * dark_rate * exposure_time
@@ -85,7 +86,7 @@ def qcmos(x, qubit_rate, exposure_time):
     # return neg_bin(x, mean)
 
     # Accounting for readout noise
-    sigma = np.sqrt(2 * mean)
+    sigma = np.sqrt(mean)
     stop = np.round(mean + 4 * sigma) + 10
     integral_range = np.arange(0, stop)
     return np.sum(
@@ -95,8 +96,8 @@ def qcmos(x, qubit_rate, exposure_time):
     )
 
 
-def single_shot_snr(dist, qubit_rate_0, qubit_rate_1, exposure_time):
-    w = 1 / 2
+def measurement_noise(dist, qubit_rate_0, qubit_rate_1, exposure_time):
+    w_star = 1 / 2
     mean_0 = qubit_rate_0 * exposure_time
     mean_1 = qubit_rate_1 * exposure_time
     start = 0 if dist == emccd else -5
@@ -110,48 +111,46 @@ def single_shot_snr(dist, qubit_rate_0, qubit_rate_1, exposure_time):
     cdf_0 /= cdf_0[-1]
     cdf_1 /= cdf_1[-1]
 
-    q0 = cdf_0
-    p0 = 1 - q0
-    q1 = cdf_1
-    p1 = 1 - q1
-    signal = w * (p1 - p0)
-    noise = np.sqrt(
-        w * p1 * (q1 + p1) + (1 - w) * p0 * (q0 + p0) - (w * p1 + (1 - w) * p0) ** 2
-    )
-    snrs = signal / noise
-    snrs = np.nan_to_num(snrs, nan=np.nan, posinf=np.nan, neginf=np.nan)
-    threshold = integral_vals[np.nanargmax(snrs)]
-    snr = np.nanmax(snrs)
+    r0 = 1 - cdf_0
+    r1 = 1 - cdf_1
+    yp = p0p * (1 - w_star) + (1 - p1p) * w_star
+    y = r0 * (1 - yp) + (1 - r1) * yp
+    meas_noises = np.sqrt(y * (1 - y))
+
+    opti_ind = np.nanargmin(meas_noises)
+    threshold = integral_vals[opti_ind]
+    meas_noise = meas_noises[opti_ind]
 
     # return threshold
-    return snr
+    return meas_noise
 
 
-def calc_char_avg_time(meas_time, dist, qubit_rate_0, qubit_rate_1, exposure_time):
+def calc_char_avg_time(inte_time, dist, qubit_rate_0, qubit_rate_1, exposure_time):
     readout_time = emccd_readout_time if dist == emccd else qcmos_readout_time
-    snr = single_shot_snr(dist, qubit_rate_0, qubit_rate_1, exposure_time)
-    # return snr
-    return (1 / (snr**2)) * (meas_time + exposure_time + readout_time)
+    shot_time = inte_time + exposure_time + readout_time
+    meas_noise = measurement_noise(dist, qubit_rate_0, qubit_rate_1, exposure_time)
+    return (meas_noise**2) * shot_time
 
 
-def optimize(meas_time, dist, qubit_rate_0, qubit_rate_1):
+def optimize(inte_time, dist, qubit_rate_0, qubit_rate_1):
     exposure_times = np.linspace(0.0001, 0.1, 1000)
     # char_avg_times = []
     # for exposure_time in exposure_times:
     #     char_avg_time = calc_char_avg_time(
-    #         meas_time, dist, qubit_rate_0, qubit_rate_1, exposure_time
+    #         inte_time, dist, qubit_rate_0, qubit_rate_1, exposure_time
     #     )
     #     char_avg_times.append(char_avg_time)
 
     calc_char_avg_time_sub = partial(
-        calc_char_avg_time, meas_time, dist, qubit_rate_0, qubit_rate_1
+        calc_char_avg_time, inte_time, dist, qubit_rate_0, qubit_rate_1
     )
     # calc_char_avg_time_sub(0.01)
     with Pool() as p:
         char_avg_times = p.map(calc_char_avg_time_sub, exposure_times)
 
-    exposure_time = exposure_times[np.argmin(char_avg_times)]
-    char_avg_time = np.min(char_avg_times)
+    min_ind = np.argmin(char_avg_times)
+    exposure_time = exposure_times[min_ind]
+    char_avg_time = char_avg_times[min_ind]
 
     # plt.plot(exposure_times, char_avg_times)
     # kpl.show(block=True)
@@ -160,34 +159,42 @@ def optimize(meas_time, dist, qubit_rate_0, qubit_rate_1):
 
 
 def main():
-    qubit_rate_0 = 1.0e3 / 4
+    qubit_rate_0 = 1.0e3 / 5
     qubit_rate_1 = 1.0e3
 
-    num_meas_times = 100
-    # num_meas_times = 3
-    meas_times = np.logspace(-7, 0, num_meas_times)
-    data = np.empty((num_meas_times, 2, 2))
-    for ind, meas_time in enumerate(meas_times):
+    # num_inte_times = 100
+    num_inte_times = 3
+    inte_times = np.logspace(-7, 0, num_inte_times)
+    data = np.empty((num_inte_times, 2, 2))
+    for ind, inte_time in enumerate(inte_times):
         for jnd in [0, 1]:
             dist = emccd if jnd == 0 else qcmos
-            opti_vals = optimize(meas_time, dist, qubit_rate_0, qubit_rate_1)
-            data[ind, jnd, :] = opti_vals
+            data[ind, jnd, :] = (0, 1)
+            # opti_vals = optimize(inte_time, dist, qubit_rate_0, qubit_rate_1)
+            # data[ind, jnd, :] = opti_vals
 
-    fig, ax = plt.subplots()
-    kpl.plot_line(ax, meas_times, data[:, 0, 0], label="EMCCD")
-    kpl.plot_line(ax, meas_times, data[:, 1, 0], label="qCMOS")
-    ax.set_xlabel("Integration time (s)")
-    ax.set_xscale("log")
-    ax.set_ylabel("Characteristic averaging time (s)")
-    ax.legend()
+    figsize = kpl.figsize
+    figsize[0] *= 2
+    fig, axes_pack = plt.subplots(1, 2, figsize=figsize)
+    for ax in axes_pack:
+        kpl.plot_line(ax, inte_times, data[:, 0, 0], label="EMCCD")
+        kpl.plot_line(ax, inte_times, data[:, 1, 0], label="QCMOS")
+        ax.set_xlabel(r"Integration time $t_{\text{i}}$ (s)")  # , usetex=True)
+        ax.set_xscale("log")
+        ax.set_ylabel(r"Char. averaging time $T^{*}$ (s)")  # , usetex=True)
+        ax.legend()
 
-    fig, ax = plt.subplots()
-    kpl.plot_line(ax, meas_times, data[:, 0, 1], label="EMCCD")
-    kpl.plot_line(ax, meas_times, data[:, 1, 1], label="qCMOS")
-    ax.set_xlabel("Integration time (s)")
-    ax.set_xscale("log")
-    ax.set_ylabel("Optimal exposure time (s)")
-    ax.legend()
+    fig.text(0.002, 0.95, "(a)")
+    fig.text(0.502, 0.95, "(b)")
+
+    fig, axes_pack = plt.subplots(1, 2, figsize=figsize)
+    for ax in axes_pack:
+        kpl.plot_line(ax, inte_times, data[:, 0, 1], label="EMCCD")
+        kpl.plot_line(ax, inte_times, data[:, 1, 1], label="QCMOS")
+        ax.set_xlabel(r"Integration time $t_{\text{i}}$ (s)")  # , usetex=True)
+        ax.set_xscale("log")
+        ax.set_ylabel(r"Optimal exposure time $t_{\text{e}}$ (s)")  # , usetex=True)
+        ax.legend()
 
 
 def test():
@@ -239,6 +246,6 @@ def test():
 
 if __name__ == "__main__":
     kpl.init_kplotlib()
-    test()
-    # main()
+    # test()
+    main()
     kpl.show(block=True)
