@@ -158,8 +158,8 @@ def optimize(inte_time, dist, qubit_rate_0, qubit_rate_1):
     exposure_time = exposure_times[min_ind]
     char_avg_time = char_avg_times[min_ind]
 
-    plt.plot(exposure_times, char_avg_times)
-    kpl.show(block=True)
+    # plt.plot(exposure_times, char_avg_times)
+    # kpl.show(block=True)
 
     return (char_avg_time, exposure_time)
 
@@ -208,6 +208,6 @@ def main():
 
 if __name__ == "__main__":
     kpl.init_kplotlib()
-    # main()
-    optimize(0.05, qcmos, 200, 1000)
+    main()
+    # optimize(0.05, qcmos, 200, 1000)
     kpl.show(block=True)
