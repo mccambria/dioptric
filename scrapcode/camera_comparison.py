@@ -121,6 +121,7 @@ def measurement_noise(dist, qubit_rate_0, qubit_rate_1, exposure_time):
     contrast = 1 - (1 - calc_y(1)) - calc_y(0)
     y = calc_y(w_star)
     meas_noises = np.sqrt(y * (1 - y)) / contrast
+    meas_noises[contrast < 0.001] = np.nan
 
     opti_ind = np.nanargmin(meas_noises)
     threshold = integral_vals[opti_ind]
@@ -149,7 +150,7 @@ def optimize(inte_time, dist, qubit_rate_0, qubit_rate_1):
     calc_char_avg_time_sub = partial(
         calc_char_avg_time, inte_time, dist, qubit_rate_0, qubit_rate_1
     )
-    # val = calc_char_avg_time_sub(0.01)
+    # val = calc_char_avg_time_sub(0.05)
     with Pool() as p:
         char_avg_times = p.map(calc_char_avg_time_sub, exposure_times)
 
@@ -157,8 +158,8 @@ def optimize(inte_time, dist, qubit_rate_0, qubit_rate_1):
     exposure_time = exposure_times[min_ind]
     char_avg_time = char_avg_times[min_ind]
 
-    # plt.plot(exposure_times, char_avg_times)
-    # kpl.show(block=True)
+    plt.plot(exposure_times, char_avg_times)
+    kpl.show(block=True)
 
     return (char_avg_time, exposure_time)
 
