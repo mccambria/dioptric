@@ -37,6 +37,8 @@ qcmos_readout_time = 1e-3
 w_star = 1 / 2
 p0p = 0.1
 p1p = 0.6
+qubit_rate_1 = 40 / (0.75 * 0.05)
+qubit_rate_0 = qubit_rate_1 / 4
 
 # endregion
 
@@ -168,9 +170,6 @@ def optimize(inte_time, dist, qubit_rate_0, qubit_rate_1):
 
 
 def main():
-    qubit_rate_1 = 40 / (0.75 * 0.05)
-    qubit_rate_0 = qubit_rate_1 / 4
-
     num_inte_times = 100
     # num_inte_times = 3
     inte_times = np.logspace(-7, -2, num_inte_times)
