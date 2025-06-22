@@ -29,10 +29,11 @@ from utils.kplotlib import KplColors
 from utils.tool_belt import bose
 
 inv_root_2_pi = 1 / np.sqrt(2 * np.pi)
-area = 10
+area = 5
 emccd_readout_time = 12e-3
 # emccd_readout_time = 1e-3
 qcmos_readout_time = 1e-3
+# qcmos_readout_time = 5e-3
 w_star = 1 / 2
 p0p = 0.1
 p1p = 0.6
@@ -79,6 +80,7 @@ def emccd(x, qubit_rate, exposure_time):
 def qcmos(x, qubit_rate, exposure_time):
     dark_rate = 0.006
     readout_noise = 0.43 * area
+    # readout_noise = 0.3 * area
     quantum_efficiency = 0.55
     qubit_counts = quantum_efficiency * qubit_rate * exposure_time
     dark_counts = area * dark_rate * exposure_time
@@ -139,7 +141,8 @@ def calc_char_avg_time(inte_time, dist, qubit_rate_0, qubit_rate_1, exposure_tim
 
 
 def optimize(inte_time, dist, qubit_rate_0, qubit_rate_1):
-    exposure_times = np.linspace(0.0001, 0.1, 1000)
+    # exposure_times = np.linspace(0.0001, 0.1, 1000)
+    exposure_times = np.linspace(0.015, 0.025, 1000)
     # char_avg_times = []
     # for exposure_time in exposure_times:
     #     char_avg_time = calc_char_avg_time(
@@ -165,12 +168,12 @@ def optimize(inte_time, dist, qubit_rate_0, qubit_rate_1):
 
 
 def main():
-    qubit_rate_0 = 1.0e3 / 5
-    qubit_rate_1 = 1.0e3
+    qubit_rate_1 = 40 / (0.75 * 0.05)
+    qubit_rate_0 = qubit_rate_1 / 4
 
     num_inte_times = 100
     # num_inte_times = 3
-    inte_times = np.logspace(-7, 0, num_inte_times)
+    inte_times = np.logspace(-7, -2, num_inte_times)
     data = np.empty((num_inte_times, 2, 2))
     for ind, inte_time in enumerate(inte_times):
         for jnd in [0, 1]:
@@ -180,27 +183,25 @@ def main():
             data[ind, jnd, :] = opti_vals
 
     figsize = kpl.figsize
-    figsize[0] *= 2
-    fig, axes_pack = plt.subplots(1, 2, figsize=figsize)
-    for ax in axes_pack:
-        kpl.plot_line(ax, inte_times, data[:, 0, 0], label="EMCCD")
-        kpl.plot_line(ax, inte_times, data[:, 1, 0], label="QCMOS")
-        ax.set_xlabel(r"Integration time $t_{\mathrm{i}}$ (s)", usetex=True)
-        ax.set_xscale("log")
-        ax.set_ylabel(r"Char. averaging time $T^{*}$ (s)", usetex=True)
-        ax.legend()
+    double_figsize = figsize.copy()
+    double_figsize[0] *= 2
+    fig, axes_pack = plt.subplots(1, 2, figsize=double_figsize)
+    ax = axes_pack[0]
+    kpl.plot_line(ax, inte_times, data[:, 0, 0] * 1000, label="EMCCD")
+    kpl.plot_line(ax, inte_times, data[:, 1, 0] * 1000, label="QCMOS")
+    ax.set_xlabel(r"Integration time $t_{\mathrm{i}}$ (ms)", usetex=True)
+    ax.set_xscale("log")
+    ax.set_ylabel(r"Char. averaging time $T^{*}$ (ms)", usetex=True)
+    ax.legend()
 
-    fig.text(0.002, 0.95, "(a)")
-    fig.text(0.502, 0.95, "(b)")
-
-    fig, axes_pack = plt.subplots(1, 2, figsize=figsize)
-    for ax in axes_pack:
-        kpl.plot_line(ax, inte_times, data[:, 0, 1], label="EMCCD")
-        kpl.plot_line(ax, inte_times, data[:, 1, 1], label="QCMOS")
-        ax.set_xlabel(r"Integration time $t_{\mathrm{i}}$ (s)", usetex=True)
-        ax.set_xscale("log")
-        ax.set_ylabel(r"Optimal exposure time $t_{\mathrm{e}}$ (s)", usetex=True)
-        ax.legend()
+    # fig, ax = plt.subplots(figsize=figsize)
+    ax = axes_pack[1]
+    kpl.plot_line(ax, inte_times, data[:, 0, 1] * 1000, label="EMCCD")
+    kpl.plot_line(ax, inte_times, data[:, 1, 1] * 1000, label="QCMOS")
+    ax.set_xlabel(r"Integration time $t_{\mathrm{i}}$ (ms)", usetex=True)
+    ax.set_xscale("log")
+    ax.set_ylabel(r"Optimal exposure time $t_{\mathrm{e}}$ (ms)", usetex=True)
+    ax.legend()
 
     fig.text(0.002, 0.95, "(a)")
     fig.text(0.502, 0.95, "(b)")
