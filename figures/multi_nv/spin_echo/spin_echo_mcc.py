@@ -16,10 +16,8 @@ import numpy as np
 from numba import njit
 from scipy.optimize import brute
 
-from majorroutines.widefield import base_routine
 from utils import data_manager as dm
 from utils import kplotlib as kpl
-from utils import tool_belt as tb
 from utils import widefield as widefield
 from utils.tool_belt import curve_fit
 
@@ -70,11 +68,22 @@ def replot_fits(data, fit_data, nv_inds):
 
 
 def replot_fits_single_plot(data, fit_data, no_osc_fit_data, nv_inds):
+    # plot_nv_inds = [15, 41, 48, 60]
+    # plot_nv_inds = list(range(30, 40))
+    plot_nv_inds = list(range(102))
+
     figsize = kpl.double_figsize
-    figsize[1] = 8
-    num_rows = 17
-    num_cols = 6
-    layout = kpl.calc_mosaic_layout(num_cols * num_rows, num_rows, num_cols)
+    figsize[1] = 7
+    # figsize[1] = 8
+
+    num_plot_nvs = len(plot_nv_inds)
+    if num_plot_nvs == 102:
+        num_rows = 17
+        num_cols = 6
+        layout = kpl.calc_mosaic_layout(num_cols * num_rows, num_rows, num_cols)
+    else:
+        layout = kpl.calc_mosaic_layout(num_plot_nvs)
+
     # layout[0] = [".", ".", ".", layout[0][3], layout[0][4], "."]
     # layout[1] = [layout[1][0], ".", ".", *layout[1][3:]]
     fig, axes_pack = plt.subplot_mosaic(
@@ -95,7 +104,6 @@ def replot_fits_single_plot(data, fit_data, no_osc_fit_data, nv_inds):
     taus = np.array(data["taus"])
     total_evolution_times = 2 * np.array(taus) / 1e3
     fit_fn = quartic_decay
-    num_nvs = len(nv_inds)
 
     # Sort
     # fmt: off
@@ -123,14 +131,19 @@ def replot_fits_single_plot(data, fit_data, no_osc_fit_data, nv_inds):
     sort_order = np.argsort(mod_freqs)
     sorted_nv_inds = np.array(nv_inds)[sort_order]
 
+    plot_nv_list = [nv_list[ind] for ind in sorted_nv_inds]
+    plot_norm_counts = norm_counts[sorted_nv_inds]
+    plot_norm_counts_ste = norm_counts_ste[sorted_nv_inds]
+    plot_fit_fns = [fit_fns[ind] for ind in sort_order]
+    plot_popts = [popts[ind] for ind in sort_order]
     widefield.plot_fit(
         axes_pack_flat,
-        [nv_list[ind] for ind in sorted_nv_inds],
+        [plot_nv_list[ind] for ind in plot_nv_inds],
         total_evolution_times,
-        norm_counts[sorted_nv_inds],
-        norm_counts_ste[sorted_nv_inds],
-        [fit_fns[ind] for ind in sort_order],
-        [popts[ind] for ind in sort_order],
+        plot_norm_counts[plot_nv_inds],
+        plot_norm_counts_ste[plot_nv_inds],
+        [plot_fit_fns[ind] for ind in plot_nv_inds],
+        [plot_popts[ind] for ind in plot_nv_inds],
         no_legend=True,
         nv_inds=sorted_nv_inds,
     )
@@ -162,7 +175,7 @@ def replot_fits_single_plot(data, fit_data, no_osc_fit_data, nv_inds):
 
     ax = axes_pack[layout[-1, 0]]
     kpl.set_shared_ax_xlabel(ax, "Total evolution time (µs)")
-    kpl.set_shared_ax_ylabel(ax, "Normalized NV$^{-}$ population")
+    kpl.set_shared_ax_ylabel(ax, "NV$^{-}$ population (arb. units)")
     # ax.set_xlim(41 - 5, 61.5 + 5)
     # ax.set_xlim(41, 61.5)
     # ax.set_xticks([45, 60])
@@ -723,74 +736,6 @@ def calc_T2_times(
         )
         pste = np.sqrt(np.diag(pcov))
         print(f"{round(popt[0])} +/- {round(pste[0])}")
-
-
-def main(nv_list, num_steps, num_reps, num_runs, min_tau=None, max_tau=None, taus=None):
-    ### Some initial setup
-
-    pulse_gen = tb.get_server_pulse_gen()
-    seq_file = "spin_echo.py"
-
-    uwave_ind_list = [0, 1]
-
-    ### Collect the data
-
-    def run_fn(shuffled_step_inds):
-        shuffled_taus = [taus[ind] for ind in shuffled_step_inds]
-        seq_args = [
-            widefield.get_base_scc_seq_args(nv_list, uwave_ind_list),
-            shuffled_taus,
-        ]
-        # print(seq_args)
-        seq_args_string = tb.encode_seq_args(seq_args)
-        pulse_gen.stream_load(seq_file, seq_args_string, num_reps)
-
-    raw_data = base_routine.main(
-        nv_list,
-        num_steps,
-        num_reps,
-        num_runs,
-        run_fn,
-        uwave_ind_list=uwave_ind_list,
-        save_images=False,
-    )
-
-    ### Process and plot
-
-    timestamp = dm.get_time_stamp()
-    raw_data |= {
-        "timestamp": timestamp,
-        "tau-units": "ns",
-        "taus": taus,
-        "min_tau": min_tau,
-        "max_tau": max_tau,
-    }
-
-    # save data
-    repr_nv_sig = widefield.get_repr_nv_sig(nv_list)
-    repr_nv_name = repr_nv_sig.name
-    file_path = dm.get_file_path(__file__, timestamp, repr_nv_name)
-    dm.save_raw_data(raw_data, file_path)
-
-    # creat fugure and save
-    raw_fig = None
-    try:
-        # raw_fig = create_raw_data_figure(raw_data)
-        fit_fig = create_fit_figure(raw_data)
-    except Exception:
-        print(traceback.format_exc())
-        # raw_fig = None
-        fit_fig = None
-
-    ### Clean up and return
-    tb.reset_cfm()
-    kpl.show()
-
-    if raw_fig is not None:
-        dm.save_figure(raw_fig, file_path)
-    if fit_fig is not None:
-        file_path = dm.get_file_path(__file__, timestamp, repr_nv_name + "-fit")
-        dm.save_figure(fit_fig, file_path)
 
 
 if __name__ == "__main__":

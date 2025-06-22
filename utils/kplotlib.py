@@ -426,6 +426,7 @@ def anchored_text(ax, text, loc=Loc.UPPER_RIGHT, size=None, **kwargs):
 def scale_bar(ax, length, label, loc):
     ylim = ax.get_ylim()
     size_vertical = 0.01 * (max(ylim) - min(ylim))
+    fontprops = mpl.font_manager.FontProperties(size=26)
     bar = AnchoredSizeBar(
         ax.transData,
         length,
@@ -435,6 +436,7 @@ def scale_bar(ax, length, label, loc):
         borderpad=0.2,
         pad=0.2,
         sep=4,
+        fontproperties=fontprops,
     )
     ax.add_artist(bar)
     return bar

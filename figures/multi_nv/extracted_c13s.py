@@ -41,6 +41,8 @@ def main(
     circle_or_square_echo,
     circle_or_square_res,
 ):
+    ignore_orientations = True
+
     # plot_loop_inds = [16, 45, 99]  # 0.9 MHz
     # plot_loop_inds = [0, 34, 83]  # 0.37 MHz
     # plot_loop_inds = [0, 34]  # 0.37 MHz
@@ -106,7 +108,7 @@ def main(
             #     )
             # else:
             if hfs_val > 0:
-                marker = "o" if circle_or_square[ind] else "s"
+                marker = "o" if ignore_orientations or circle_or_square[ind] else "s"
                 ret_val = kpl.plot_points(
                     ax,
                     nv_ind,
@@ -163,13 +165,21 @@ def main(
     # ax.set_ylabel("$^{13}$C hyperfine coupling (MHz)")
     ax.set_yscale("log")
     ax.set_yticks([0.1, 1, 10], [0.1, 1, 10])
-    ax.legend(
-        [(blue_o, blue_s), (red_o, red_s)],
-        ["Spin echo", "ESR"],
-        handler_map={tuple: HandlerTuple(ndivide=None)},
-        loc=kpl.Loc.UPPER_LEFT,
-        handlelength=1.2,
-    )
+    if ignore_orientations:
+        ax.legend(
+            [blue_o, red_o],
+            ["Spin echo", "ESR"],
+            loc=kpl.Loc.UPPER_LEFT,
+            handlelength=1.2,
+        )
+    else:
+        ax.legend(
+            [(blue_o, blue_s), (red_o, red_s)],
+            ["Spin echo", "ESR"],
+            handler_map={tuple: HandlerTuple(ndivide=None)},
+            loc=kpl.Loc.UPPER_LEFT,
+            handlelength=1.2,
+        )
 
     ### T2
 
@@ -198,7 +208,7 @@ def main(
     ax = axes_pack[0]
 
     for ind in range(len(x_vals)):
-        marker = "o" if circle_or_square_echo_t2[ind] else "s"
+        marker = "o" if ignore_orientations or circle_or_square_echo_t2[ind] else "s"
         kpl.plot_points(
             ax,
             x_vals[ind],
@@ -216,11 +226,12 @@ def main(
     margin = (np.max(x_vals) - np.min(x_vals)) / 70
     ax.set_xlim(np.min(x_vals) - margin, np.max(x_vals) + margin)
 
-    for marker, label in zip(("o", "s"), ("Orientation A", "Orientation B")):
-        kpl.plot_points(
-            ax, -10, 80, 10, color=kpl.KplColors.GRAY, marker=marker, label=label
-        )
-    ax.legend(loc=kpl.Loc.UPPER_LEFT)
+    if not ignore_orientations:
+        for marker, label in zip(("o", "s"), ("Orientation A", "Orientation B")):
+            kpl.plot_points(
+                ax, -10, 80, 10, color=kpl.KplColors.GRAY, marker=marker, label=label
+            )
+        ax.legend(loc=kpl.Loc.UPPER_LEFT)
 
     fig.text(0.001, 0.97, "(a)")
     fig.text(0.001, 0.51, "(b)")
