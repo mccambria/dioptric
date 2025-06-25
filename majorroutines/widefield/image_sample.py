@@ -362,8 +362,8 @@ def main(
 
     nv_name = nv_sig.name
     file_path = dm.get_file_path(__file__, timestamp, nv_name)
-    dm.save_figure(fig, file_path)
-    dm.save_raw_data(raw_data, file_path, keys_to_compress=["img_array"])
+    # dm.save_figure(fig, file_path)
+    # dm.save_raw_data(raw_data, file_path, keys_to_compress=["img_array"])
 
     return img_array
 

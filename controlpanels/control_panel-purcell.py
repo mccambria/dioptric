@@ -78,9 +78,9 @@ def do_scanning_image_sample(nv_sig):
 
 
 def do_scanning_image_full_roi(nv_sig):
-    total_range = 24
-    scan_range = 8
-    num_steps = 8
+    total_range = 30
+    scan_range = 10
+    num_steps = 10
     image_sample.scanning_full_roi(nv_sig, total_range, scan_range, num_steps)
 
 
@@ -1087,7 +1087,7 @@ def do_opx_constant_ac():
     opx.constant_ac(
         [4],  # Digital channels
         [3, 4, 7],  # Analog channels
-        [0.19, 0.19, 0.45],  # Analog voltages
+        [0.19, 0.19, 0.20],  # Analog voltages
         [107, 107, 0],  # Analog frequencies
     )
     # # Red + green + Yellow
@@ -1224,8 +1224,8 @@ if __name__ == "__main__":
     sample_name = "rubin"
     # magnet_angle = 90
     date_str = "2025_02_26"
-    sample_coords = [2.0, 4.0]
-    z_coord = 0.4
+    sample_coords = [0.0, 0.0]
+    z_coord = 0.0
     # Load NV pixel coordinates1
     pixel_coords_list = load_nv_coords(
         # file_path="slmsuite/nv_blob_detection/nv_blob_rubin_shallow_154nvs_reordered.npz",
@@ -1401,7 +1401,7 @@ if __name__ == "__main__":
         # do_widefield_image_sample(nv_sig, 50)
         # do_widefield_image_sample(nv_sig, 200)
 
-        # do_scanning_image_sample(nv_sig)
+        do_scanning_image_sample(nv_sig)
         # do_scanning_image_full_roi(nv_sig)
         # do_scanning_image_sample_zoom(nv_sig)
         # scan_equilateral_triangle(nv_sig, center_coord=sample_coords, radius=0.2)
@@ -1433,7 +1433,7 @@ if __name__ == "__main__":
         #         print(f"Scanning SAMPLE: {sample_coord}, estimated Z: {z:.3f}")
         #         do_scanning_image_sample(nv_sig)
 
-        # do_opx_constant_ac()
+        do_opx_constant_ac()
         # do_opx_square_wave()
 
         # do_optimize_pixel(nv_sig)
