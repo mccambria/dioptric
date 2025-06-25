@@ -336,6 +336,7 @@ def init_kplotlib(
     if False:  # Global usetex?
         preamble += r"\usepackage[mathrmOrig, mathitOrig]{sfmath}"
         plt.rcParams["text.latex.preamble"] = preamble
+        plt.rcParams["text.usetex"] = True
         plt.rc("text", usetex=True)
     else:
         plt.rcParams["text.latex.preamble"] = preamble
@@ -420,6 +421,13 @@ def anchored_text(ax, text, loc=Loc.UPPER_RIGHT, size=None, **kwargs):
     text_box.patch.set_alpha(0.5)
     ax.add_artist(text_box)
     return text_box
+
+
+def legend(ax, usetex=False, *args, **kwargs):
+    global_usetex = plt.rcParams["text.usetex"]
+    plt.rcParams["text.usetex"] = usetex
+    ax.legend(*args, **kwargs)
+    plt.rcParams["text.usetex"] = global_usetex
 
 
 def scale_bar(ax, length, label, loc):
