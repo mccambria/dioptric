@@ -1224,14 +1224,15 @@ if __name__ == "__main__":
     sample_name = "rubin"
     # magnet_angle = 90
     date_str = "2025_02_26"
-    sample_coords = [0.0, 0.0]
-    z_coord = 0.0
+    sample_coords = [0.0, 0.2]
+    z_coord = 0.20
     # Load NV pixel coordinates1
     pixel_coords_list = load_nv_coords(
         # file_path="slmsuite/nv_blob_detection/nv_blob_rubin_shallow_154nvs_reordered.npz",
         file_path="slmsuite/nv_blob_detection/nv_blob_rubin_shallow_75nvs_reordered.npz",
     ).tolist()
     # pixel_coords_list = [
+    #     [122.027, 118.236],
     #     [113.173, 128.034],
     #     [27.44, 23.014],
     #     [108.384, 227.38],
@@ -1265,24 +1266,25 @@ if __name__ == "__main__":
     print(f"Reference NV:{pixel_coords_list[0]}")
     print(f"Green Laser Coordinates: {green_coords_list[0]}")
     print(f"Red Laser Coordinates: {red_coords_list[0]}")
-    # pixel_coords_list = [
-    #     [113.173, 128.034],
-    #     [27.44, 23.014],
-    #     [108.384, 227.38],
-    #     [227.438, 19.199],
-    # ]
-    # green_coords_list = [
-    #     [107.767, 107.757],
-    #     [118.127, 97.472],
-    #     [107.036, 118.416],
-    #     [96.822, 94.821],
-    # ]
-    # red_coords_list = [
-    #     [72.466, 73.251],
-    #     [80.703, 64.786],
-    #     [72.119, 81.942],
-    #     [63.276, 62.851],
-    # ]
+    pixel_coords_list = [
+        # [113.173, 128.034],
+        [122.027, 118.236],
+        [27.44, 23.014],
+        [108.384, 227.38],
+        [227.438, 19.199],
+    ]
+    green_coords_list = [
+        [108.48, 107.401],
+        [118.127, 97.472],
+        [107.036, 118.416],
+        [96.822, 94.821],
+    ]
+    red_coords_list = [
+        [72.466, 73.251],
+        [80.703, 64.786],
+        [72.119, 81.942],
+        [63.276, 62.851],
+    ]
 
     num_nvs = len(pixel_coords_list)
     threshold_list = [None] * num_nvs
@@ -1374,7 +1376,7 @@ if __name__ == "__main__":
     nv_sig = widefield.get_repr_nv_sig(nv_list)
     # print(f"Created NV: {nv_sig.name}, Coords: {nv_sig.coords}")
     # nv_sig.expected_counts = 900
-    nv_sig.expected_counts = 1160
+    # nv_sig.expected_counts = 1160
     # nv_sig.expected_counts = 1200
 
     # nv_list = nv_list[::-1]  # flipping the order of NVs
@@ -1401,8 +1403,8 @@ if __name__ == "__main__":
         # do_widefield_image_sample(nv_sig, 50)
         # do_widefield_image_sample(nv_sig, 200)
 
-        do_scanning_image_sample(nv_sig)
-        # do_scanning_image_full_roi(nv_sig)
+        # do_scanning_image_sample(nv_sig)
+        # do_scanning_image1_full_roi(nv_sig)
         # do_scanning_image_sample_zoom(nv_sig)
         # scan_equilateral_triangle(nv_sig, center_coord=sample_coords, radius=0.2)
         # do_image_nv_list(nv_list)

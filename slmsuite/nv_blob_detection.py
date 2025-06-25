@@ -284,7 +284,7 @@ def process_scan_file():
     # raw_data = dm.get_raw_data(file_id=1802697426409, load_npz=True)  # rubin
 
     ### Nas
-    file_stem = "2025_06_24-17_01_53-rubin-nv0_2025_02_26"
+    file_stem = "2025_06_24-18_16_26-rubin-nv0_2025_02_26"
     raw_data = dm.get_raw_data(
         file_stem=file_stem, load_npz=True, allow_pickle=True
     )  # rubin
@@ -322,7 +322,7 @@ def process_scan_file():
         # Plot final image
         fig, ax = plt.subplots()
         kpl.imshow(
-            ax, combined_img, title="Combined_img_laser_INTI_520", cbar_label="Photons"
+            ax, combined_img, title="Max_Int_Proj_laser_INTI_520", cbar_label="Photons"
         )
         ax.axis("off")
         print(f"Final detected NV count: {len(blob_coords)}")
