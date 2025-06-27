@@ -121,7 +121,7 @@ def measurement_noise(dist, qubit_rate_0, qubit_rate_1, exposure_time):
     contrast = 1 - (1 - calc_y(1)) - calc_y(0)
     y = calc_y(w_star)
     meas_noises = np.sqrt(y * (1 - y)) / contrast
-    meas_noises[contrast < 0.001] = np.nan
+    meas_noises[contrast < 0.001] = np.nan  # Prevent 0/0
 
     opti_ind = np.nanargmin(meas_noises)
     threshold = integral_vals[opti_ind]
