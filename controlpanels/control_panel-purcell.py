@@ -1130,10 +1130,10 @@ def compile_speed_test(nv_list):
 
 def piezo_voltage_to_pixel_calibration():
     cal_voltage_coords = np.array(
-        [[2.2, 4.0], [1.9, 4.1732], [1.9, 3.8267]], dtype="float32"
+        [[0.4, 0.2], [-0.1999, 0.5464], [-0.2, -0.1464]], dtype="float32"
     )
     cal_pixel_coords = np.array(
-        [[100.563, 127.767], [121.693, 117.986], [119.673, 141.344]], dtype="float32"
+        [[135.141, 117.788], [97.234, 144.799], [92.568, 98.422]], dtype="float32"
     )
     # Compute the affine transformation matrix
     M = cv2.getAffineTransform(cal_voltage_coords, cal_pixel_coords)
@@ -1206,12 +1206,12 @@ def scan_equilateral_triangle(nv_sig, center_coord=(0, 0), radius=0.2):
         center_coord, r=radius
     )
     triangle_coords.append(center_coord)  # Return to center
-
+    print(triangle_coords)
     for sample_coord in triangle_coords:
-        z = estimate_z(*sample_coord)
+        # z = estimate_z(*sample_coord)
         nv_sig.coords[CoordsKey.SAMPLE] = sample_coord
-        nv_sig.coords[CoordsKey.Z] = z
-        print(f"Scanning SAMPLE: {sample_coord}, estimated Z: {z:.3f}")
+        # nv_sig.coords[CoordsKey.Z] = z
+        # print(f"Scanning SAMPLE: {sample_coord}, estimated Z: {z:.3f}")
         do_scanning_image_sample(nv_sig)
 
 
@@ -1224,8 +1224,8 @@ if __name__ == "__main__":
     sample_name = "rubin"
     # magnet_angle = 90
     date_str = "2025_02_26"
-    sample_coords = [0.0, 0.2]
-    z_coord = 0.20
+    sample_coords = [0.0, 0.0]
+    z_coord = 0.6
     # Load NV pixel coordinates1
     pixel_coords_list = load_nv_coords(
         # file_path="slmsuite/nv_blob_detection/nv_blob_rubin_shallow_154nvs_reordered.npz",
@@ -1268,13 +1268,13 @@ if __name__ == "__main__":
     print(f"Red Laser Coordinates: {red_coords_list[0]}")
     pixel_coords_list = [
         # [113.173, 128.034],
-        [122.027, 118.236],
+        [126.55, 128.472],
         [27.44, 23.014],
         [108.384, 227.38],
         [227.438, 19.199],
     ]
     green_coords_list = [
-        [108.48, 107.401],
+        [108.628, 107.119],
         [118.127, 97.472],
         [107.036, 118.416],
         [96.822, 94.821],
@@ -1404,9 +1404,9 @@ if __name__ == "__main__":
         # do_widefield_image_sample(nv_sig, 200)
 
         # do_scanning_image_sample(nv_sig)
-        # do_scanning_image1_full_roi(nv_sig)
+        # do_scanning_image_full_roi(nv_sig)
         # do_scanning_image_sample_zoom(nv_sig)
-        # scan_equilateral_triangle(nv_sig, center_coord=sample_coords, radius=0.2)
+        # scan_equilateral_triangle(nv_sig, center_coord=sample_coords, radius=0.4)
         # do_image_nv_list(nv_list)
         # do_image_single_nv(nv_sig)
         # z_range = np.linspace(0.0, 1.0, 6)
@@ -1435,7 +1435,7 @@ if __name__ == "__main__":
         #         print(f"Scanning SAMPLE: {sample_coord}, estimated Z: {z:.3f}")
         #         do_scanning_image_sample(nv_sig)
 
-        do_opx_constant_ac()
+        # do_opx_constant_ac()
         # do_opx_square_wave()
 
         # do_optimize_pixel(nv_sig)

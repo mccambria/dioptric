@@ -73,8 +73,8 @@ calibration_coords_nv3 = {
 # ]
 
 pixel_to_sample_affine_transformation_matrix = [
-    [-0.01478989, -0.00127903, 3.85073374],
-    [0.00138559, -0.01471450, 5.74068819],
+    [0.01476835, -0.00148369, -1.42104908],
+    [0.00140560, 0.01479702, -1.73286644],
 ]
 # endregion
 # region Base config
