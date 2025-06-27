@@ -981,13 +981,6 @@ def do_charge_quantum_jump(nv_list):
     num_reps = 3000
     charge_monitor.charge_quantum_jump(nv_list, num_reps)
 
-def do_enclosure_temp_monitoring():
-    cxn = common.labrad_connect()
-    opx = cxn.enclosure_continuous_temp
-    while True:
-        opx.run_templog()
-        time.sleep(60*15)
-
 
 def do_opx_constant_ac():
     cxn = common.labrad_connect()
