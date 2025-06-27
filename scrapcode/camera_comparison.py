@@ -144,7 +144,8 @@ def calc_char_avg_time(inte_time, dist, qubit_rate_0, qubit_rate_1, exposure_tim
 
 def optimize(inte_time, dist, qubit_rate_0, qubit_rate_1):
     # exposure_times = np.linspace(0.0001, 0.1, 1000)
-    exposure_times = np.linspace(0.015, 0.025, 1000)
+    exposure_times = np.logspace(-2, -1, 1000)
+    # exposure_times = np.linspace(0.015, 0.025, 1000)
     # char_avg_times = []
     # for exposure_time in exposure_times:
     #     char_avg_time = calc_char_avg_time(
@@ -170,9 +171,10 @@ def optimize(inte_time, dist, qubit_rate_0, qubit_rate_1):
 
 
 def main():
-    num_inte_times = 100
+    # num_inte_times = 100
+    num_inte_times = 10
     # num_inte_times = 3
-    inte_times = np.logspace(-7, -2, num_inte_times)
+    inte_times = np.logspace(-7, 0, num_inte_times)
     data = np.empty((num_inte_times, 2, 2))
     for ind, inte_time in enumerate(inte_times):
         for jnd in [0, 1]:
@@ -191,6 +193,7 @@ def main():
     ax.set_xlabel(r"Integration time $t_{\mathrm{i}}$ (ms)", usetex=True)
     ax.set_xscale("log")
     ax.set_ylabel(r"Char. averaging time $T^{*}$ (ms)", usetex=True)
+    ax.set_yscale("log")
     ax.legend()
 
     # fig, ax = plt.subplots(figsize=figsize)
