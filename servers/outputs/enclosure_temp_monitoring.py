@@ -36,7 +36,7 @@ class EnclosureTemp(LabradServer):
 
     port = "COM9"
     baudrate = 9600
-    output_file = "G:\\Enclosure_Temp\\062025"
+    output_file = ""
     # Os specific, edit as needed
 
     # edit this as needed
@@ -56,45 +56,42 @@ class EnclosureTemp(LabradServer):
         # On linux, you may have to give perms for this, use chmod 666
 
     def run_templog(self):
-        while True:
-            if (
-                datetime.datetime.now().strftime("%m%Y")
-                != os.path.split(os.path.split(self.output_file)[0])[1]
-            ):
-                self.output_file = os.path.join(
-                    self.nv_folder_path,
-                    datetime.datetime.now().strftime("%m%Y"),
-                    "temp_data",
-                )
-            if not os.path.isdir(
-                os.path.join(
-                    self.nv_folder_path, datetime.datetime.now().strftime("%m%Y")
-                )
-            ):
-                os.mkdir(
+        if (
+            datetime.datetime.now().strftime("%m%Y")
+            != os.path.split(os.path.split(self.output_file)[0])[1]
+        ):
+            self.output_file = os.path.join(
+                self.nv_folder_path,
+                datetime.datetime.now().strftime("%m%Y"),
+                "temp_data",
+            )
+        if not os.path.isdir(
+            os.path.join(
+                self.nv_folder_path, datetime.datetime.now().strftime("%m%Y")
+            )
+        ):
+            os.mkdir(
                     os.path.join(
-                        self.nv_folder_path, datetime.datetime.now().strftime("%m%Y")
+                    self.nv_folder_path, datetime.datetime.now().strftime("%m%Y")
                     )
-                )
+            )
 
-            file = open(self.output_file, "a")
-            self.ser.write(b"4A?\n")
-            time.sleep(1)
-            data = b""
-            while not data:
-                data = self.ser.readline()
-                if len(data) > 0:
-                    # grabs the int value of temp
-                    result = float(data.split(b"\r")[0])
-                    print(
-                        str(result)
-                        + ","
-                        + datetime.datetime.now().strftime("%d:%H:%M:%S"),
-                        file=file,
-                    )
-                file.close()
-            for i in range(6):
-                time.sleep(10)
+        file = open(self.output_file, "a")
+        self.ser.write(b"4A?\n")
+        time.sleep(1)
+        data = b""
+        while not data:
+            data = self.ser.readline()
+            if len(data) > 0:
+                # grabs the int value of temp
+                result = float(data.split(b"\r")[0])
+                print(
+                    str(result)
+                    + ","
+                    + datetime.datetime.now().strftime("%d:%H:%M:%S"),
+                    file=file,
+                )
+            file.close()
 
     def stopServer(self):
         """Ensure all everything is closed."""
