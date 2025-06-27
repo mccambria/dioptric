@@ -100,7 +100,9 @@ def qcmos(x, qubit_rate, exposure_time):
     )
 
 
-def measurement_noise(dist, qubit_rate_0, qubit_rate_1, exposure_time):
+def measurement_noise(
+    dist, qubit_rate_0, qubit_rate_1, exposure_time, ret_thresh=False
+):
     mean_0 = qubit_rate_0 * exposure_time
     mean_1 = qubit_rate_1 * exposure_time
     start = 0 if dist == emccd else -15
@@ -131,7 +133,8 @@ def measurement_noise(dist, qubit_rate_0, qubit_rate_1, exposure_time):
     threshold = integral_vals[opti_ind]
     meas_noise = meas_noises[opti_ind]
 
-    # return threshold
+    if ret_thresh:
+        return threshold
     return meas_noise
 
 
@@ -209,8 +212,51 @@ def main():
     fig.text(0.502, 0.95, "(b)")
 
 
+def plot_dists():
+    figsize = kpl.figsize
+    figsize[0] *= 2
+    fig, axes_pack = plt.subplots(1, 2, figsize=figsize)
+
+    dists = [emccd, qcmos]
+    dist_names = ["EMCCD", "QCMOS"]
+    state_names = [r"$\ket{0}$", r"$\ket{1}$"]
+    qubit_rates = [qubit_rate_0, qubit_rate_1]
+    exp_times = [16.9, 17.4]  # ms
+    starts = [0, -14]
+
+    for ind in range(2):
+        ax = axes_pack[ind]
+        dist = dists[ind]
+        dist_name = dist_names[ind]
+        start = starts[ind]
+        x_vals = np.linspace(start, 40, 1000)
+        for jnd in range(2):
+            qubit_rate = qubit_rates[jnd]
+            exp_time = exp_times[jnd] / 1000
+            state_name = state_names[jnd]
+            dist_vals = dist(x_vals, qubit_rate, exp_time)
+            dist_vals /= np.cumsum(dist_vals)[-1]
+            kpl.plot_line(ax, x_vals, dist_vals, label=f"{dist_name}, {state_name}")
+
+        threshold = measurement_noise(
+            dist, qubit_rate_0, qubit_rate_1, exp_time, ret_thresh=True
+        )
+        ax.axvline(threshold, color=kpl.KplColors.DARK_GRAY)
+
+        ax.set_xlabel("Readout value")
+        ax.set_ylabel("Probability density")
+
+        plt.rcParams["text.usetex"] = True
+        ax.legend()
+        plt.rcParams["text.usetex"] = False
+
+    fig.text(0.002, 0.95, "(a)")
+    fig.text(0.502, 0.95, "(b)")
+
+
 if __name__ == "__main__":
     kpl.init_kplotlib()
-    main()
+    # main()
     # optimize(0.05, qcmos, 200, 1000)
+    plot_dists()
     kpl.show(block=True)
