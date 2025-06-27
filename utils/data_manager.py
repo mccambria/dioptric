@@ -334,6 +334,109 @@ def get_raw_data(file_stem, use_cache=True, load_npz=False):
     # return data
 
 
+def get_raw_data(file_stem, use_cache=True, load_npz=False, allow_pickle=False):
+    """Returns a dictionary containing the json object from the specified
+    raw data file
+
+    Parameters
+    ----------
+    file_stem : str or list(str)
+        Name of the raw data file to load, w/o extension. File names are unique
+        so it is not necessary to specify a folder. If list, then data in each
+        file will be concatenated into one larger object
+    use_cache : bool, optional
+        Whether or not to use the cache.
+    load_npz : bool, optional
+        Whether or not to retrieve any linked compressed numpy files (.npz files).
+    allow_pickle : bool, optional
+        If True, allows loading object arrays from .npz files that require pickling.
+        Use with caution — only enable if you trust the source.
+
+    Returns
+    -------
+    dict
+        Dictionary containing the json object from the specified raw data file
+    """
+
+    if isinstance(file_stem, (list, tuple)):
+        file_stems = file_stem
+        data = get_raw_data(file_stems[0], use_cache, load_npz, allow_pickle)
+        for file_stem in file_stems[1:]:
+            new_data = get_raw_data(file_stem, use_cache, load_npz, allow_pickle)
+            data["num_runs"] += new_data["num_runs"]
+            data["counts"] = np.append(data["counts"], new_data["counts"], axis=2)
+        return data
+
+    retrieved_from_cache = False
+    if use_cache:
+        try:
+            with open(data_manager_folder / "cache_manifest.txt") as f:
+                cache_manifest = ujson.load(f)
+        except Exception:
+            cache_manifest = None
+
+        try:
+            cache_entry = cache_manifest[file_stem]
+            if not load_npz or cache_entry["load_npz"]:
+                with open(data_manager_folder / f"{file_stem}.txt", "rb") as f:
+                    data = orjson.load(f)
+                retrieved_from_cache = True
+        except Exception:
+            pass
+
+    if not retrieved_from_cache:
+        data_bytes = cloud.download(file_stem, ".txt")
+        data = orjson.loads(data_bytes)
+
+        if load_npz:
+            found_npz = False
+            for key in data:
+                val = data[key]
+                if isinstance(val, str) and val.endswith(".npz"):
+                    found_npz = True
+                    break
+            if found_npz:
+                npz_bytes = cloud.download(file_stem, ".npz")
+                npz_data = np.load(io.BytesIO(npz_bytes), allow_pickle=allow_pickle)
+                data |= npz_data
+
+    if use_cache and not allow_pickle:
+        cache_manifest_updated = False
+        if not retrieved_from_cache:
+            if cache_manifest is None:
+                cache_manifest = {}
+            cached_file_stems = list(cache_manifest.keys())
+            cache_manifest[file_stem] = {"load_npz": load_npz}
+            cached_file_stems.append(file_stem)
+            while len(cached_file_stems) > 10:
+                file_stem_to_remove = cached_file_stems.pop(0)
+                del cache_manifest[file_stem_to_remove]
+                file_to_remove = data_manager_folder / f"{file_stem_to_remove}.txt"
+                if file_to_remove.exists():
+                    os.remove(file_to_remove)
+            cache_manifest_updated = True
+        if cache_manifest_updated:
+            with open(data_manager_folder / "cache_manifest.txt", "w+") as f:
+                ujson.dump(cache_manifest, f, indent=2)
+
+        if not retrieved_from_cache:
+            file_content = orjson.dumps(data, option=orjson.OPT_SERIALIZE_NUMPY)
+            with open(data_manager_folder / f"{file_stem}.txt", "wb") as f:
+                f.write(file_content)
+
+    valid_fields = {field.name for field in fields(NVSig)}
+
+    if "nv_list" in data:
+        nv_list = data["nv_list"]
+        nv_list = [
+            NVSig(**{key: nv[key] for key in nv if key in valid_fields})
+            for nv in nv_list
+        ]
+        data["nv_list"] = nv_list
+
+    return data
+
+
 # endregion
 # region Misc public functions
 
