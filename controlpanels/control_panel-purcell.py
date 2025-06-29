@@ -1389,7 +1389,7 @@ if __name__ == "__main__":
     email_recipient = "mccambria@berkeley.edu"
     do_email = False
     try:
-        # this is to create a flag that telll expt is runnig
+        # this is to create a flag that tell expt is runnig
         with open("experiment_running.flag", "w") as f:
             f.write("running")
         # pass
@@ -1404,7 +1404,8 @@ if __name__ == "__main__":
         # do_compensate_for_drift(nv_sig)
 
         # do_widefield_image_sample(nv_sig, 50)
-        do_widefield_image_sample(nv_sig, 600)
+        # for _ in range(5):
+        #     do_widefield_image_sample(nv_sig, 600)
 
         # do_scanning_image_sample(nv_sig)
         # do_scanning_image_full_roi(nv_sig)

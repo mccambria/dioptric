@@ -96,6 +96,7 @@ config |= {
         "uwave_buffer": 16,
         "iq_buffer": 0,
         "iq_delay": 136,  # SBC measured using NVs 4/18/2025
+        "temp_reading_interval": 15 * 60,  # for PID
         # "iq_delay": 140,  # SBC measured using NVs 4/18/2025
     },
     ###
