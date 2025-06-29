@@ -5,6 +5,7 @@ import time
 
 from utils import common
 
+# from the srs documentation
 cmd = b"4A?\n"
 
 cxn = common.labrad_connect()

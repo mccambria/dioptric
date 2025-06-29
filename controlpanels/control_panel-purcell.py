@@ -1389,6 +1389,9 @@ if __name__ == "__main__":
     email_recipient = "mccambria@berkeley.edu"
     do_email = False
     try:
+        # this is to create a flag that telll expt is runnig
+        with open("experiment_running.flag", "w") as f:
+            f.write("running")
         # pass
         kpl.init_kplotlib()
         # tb.init_safe_stop()
@@ -1401,7 +1404,7 @@ if __name__ == "__main__":
         # do_compensate_for_drift(nv_sig)
 
         # do_widefield_image_sample(nv_sig, 50)
-        # do_widefield_image_sample(nv_sig, 200)
+        do_widefield_image_sample(nv_sig, 600)
 
         # do_scanning_image_sample(nv_sig)
         # do_scanning_image_full_roi(nv_sig)
@@ -1510,6 +1513,9 @@ if __name__ == "__main__":
         raise exc
 
     finally:
+        if os.path.exists("experiment_running.flag"):
+            os.remove("experiment_running.flag")  # Clear flag
+
         if do_email:
             msg = "Experiment complete!"
             recipient = email_recipient
