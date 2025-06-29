@@ -73,8 +73,8 @@ calibration_coords_nv3 = {
 # ]
 
 pixel_to_sample_affine_transformation_matrix = [
-    [-0.01478989, -0.00127903, 3.85073374],
-    [0.00138559, -0.01471450, 5.74068819],
+    [0.01476835, -0.00148369, -1.42104908],
+    [0.00140560, 0.01479702, -1.73286644],
 ]
 # endregion
 # region Base config
@@ -96,6 +96,7 @@ config |= {
         "uwave_buffer": 16,
         "iq_buffer": 0,
         "iq_delay": 136,  # SBC measured using NVs 4/18/2025
+        "temp_reading_interval": 15 * 60,  # for PID
         # "iq_delay": 140,  # SBC measured using NVs 4/18/2025
     },
     ###
@@ -167,8 +168,9 @@ config |= {
         # "em_gain": 5000,
         # "em_gain": 1000,
         "em_gain": 10,
-        "temp": -60,
-        "timeout": 30e3,  # ms
+        # "temp": -60,
+        "temp": -55,
+        "timeout": 60e3,  # ms
         # "timeout": -1,  # No timeout
         # Readout mode specifies EM vs conventional, as well as vertical and horizontal readout frequencies.
         # See camera server file for details

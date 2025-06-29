@@ -78,9 +78,9 @@ def do_scanning_image_sample(nv_sig):
 
 
 def do_scanning_image_full_roi(nv_sig):
-    total_range = 24
-    scan_range = 8
-    num_steps = 8
+    total_range = 30
+    scan_range = 10
+    num_steps = 10
     image_sample.scanning_full_roi(nv_sig, total_range, scan_range, num_steps)
 
 
@@ -1087,7 +1087,7 @@ def do_opx_constant_ac():
     opx.constant_ac(
         [4],  # Digital channels
         [3, 4, 7],  # Analog channels
-        [0.19, 0.19, 0.45],  # Analog voltages
+        [0.19, 0.19, 0.20],  # Analog voltages
         [107, 107, 0],  # Analog frequencies
     )
     # # Red + green + Yellow
@@ -1130,10 +1130,10 @@ def compile_speed_test(nv_list):
 
 def piezo_voltage_to_pixel_calibration():
     cal_voltage_coords = np.array(
-        [[2.2, 4.0], [1.9, 4.1732], [1.9, 3.8267]], dtype="float32"
+        [[0.4, 0.2], [-0.1999, 0.5464], [-0.2, -0.1464]], dtype="float32"
     )
     cal_pixel_coords = np.array(
-        [[100.563, 127.767], [121.693, 117.986], [119.673, 141.344]], dtype="float32"
+        [[135.141, 117.788], [97.234, 144.799], [92.568, 98.422]], dtype="float32"
     )
     # Compute the affine transformation matrix
     M = cv2.getAffineTransform(cal_voltage_coords, cal_pixel_coords)
@@ -1206,12 +1206,12 @@ def scan_equilateral_triangle(nv_sig, center_coord=(0, 0), radius=0.2):
         center_coord, r=radius
     )
     triangle_coords.append(center_coord)  # Return to center
-
+    print(triangle_coords)
     for sample_coord in triangle_coords:
-        z = estimate_z(*sample_coord)
+        # z = estimate_z(*sample_coord)
         nv_sig.coords[CoordsKey.SAMPLE] = sample_coord
-        nv_sig.coords[CoordsKey.Z] = z
-        print(f"Scanning SAMPLE: {sample_coord}, estimated Z: {z:.3f}")
+        # nv_sig.coords[CoordsKey.Z] = z
+        # print(f"Scanning SAMPLE: {sample_coord}, estimated Z: {z:.3f}")
         do_scanning_image_sample(nv_sig)
 
 
@@ -1224,14 +1224,15 @@ if __name__ == "__main__":
     sample_name = "rubin"
     # magnet_angle = 90
     date_str = "2025_02_26"
-    sample_coords = [2.0, 4.0]
-    z_coord = 0.4
+    sample_coords = [0.0, 0.0]
+    z_coord = 0.6
     # Load NV pixel coordinates1
     pixel_coords_list = load_nv_coords(
         # file_path="slmsuite/nv_blob_detection/nv_blob_rubin_shallow_154nvs_reordered.npz",
         file_path="slmsuite/nv_blob_detection/nv_blob_rubin_shallow_75nvs_reordered.npz",
     ).tolist()
     # pixel_coords_list = [
+    #     [122.027, 118.236],
     #     [113.173, 128.034],
     #     [27.44, 23.014],
     #     [108.384, 227.38],
@@ -1265,24 +1266,25 @@ if __name__ == "__main__":
     print(f"Reference NV:{pixel_coords_list[0]}")
     print(f"Green Laser Coordinates: {green_coords_list[0]}")
     print(f"Red Laser Coordinates: {red_coords_list[0]}")
-    # pixel_coords_list = [
-    #     [113.173, 128.034],
-    #     [27.44, 23.014],
-    #     [108.384, 227.38],
-    #     [227.438, 19.199],
-    # ]
-    # green_coords_list = [
-    #     [107.767, 107.757],
-    #     [118.127, 97.472],
-    #     [107.036, 118.416],
-    #     [96.822, 94.821],
-    # ]
-    # red_coords_list = [
-    #     [72.466, 73.251],
-    #     [80.703, 64.786],
-    #     [72.119, 81.942],
-    #     [63.276, 62.851],
-    # ]
+    pixel_coords_list = [
+        # [113.173, 128.034],
+        [126.55, 128.472],
+        [27.44, 23.014],
+        [108.384, 227.38],
+        [227.438, 19.199],
+    ]
+    green_coords_list = [
+        [108.628, 107.119],
+        [118.127, 97.472],
+        [107.036, 118.416],
+        [96.822, 94.821],
+    ]
+    red_coords_list = [
+        [72.466, 73.251],
+        [80.703, 64.786],
+        [72.119, 81.942],
+        [63.276, 62.851],
+    ]
 
     num_nvs = len(pixel_coords_list)
     threshold_list = [None] * num_nvs
@@ -1374,7 +1376,7 @@ if __name__ == "__main__":
     nv_sig = widefield.get_repr_nv_sig(nv_list)
     # print(f"Created NV: {nv_sig.name}, Coords: {nv_sig.coords}")
     # nv_sig.expected_counts = 900
-    nv_sig.expected_counts = 1160
+    # nv_sig.expected_counts = 1160
     # nv_sig.expected_counts = 1200
 
     # nv_list = nv_list[::-1]  # flipping the order of NVs
@@ -1387,6 +1389,9 @@ if __name__ == "__main__":
     email_recipient = "mccambria@berkeley.edu"
     do_email = False
     try:
+        # this is to create a flag that tell expt is runnig
+        with open("experiment_running.flag", "w") as f:
+            f.write("running")
         # pass
         kpl.init_kplotlib()
         # tb.init_safe_stop()
@@ -1399,12 +1404,13 @@ if __name__ == "__main__":
         # do_compensate_for_drift(nv_sig)
 
         # do_widefield_image_sample(nv_sig, 50)
-        # do_widefield_image_sample(nv_sig, 200)
+        # for _ in range(5):
+        #     do_widefield_image_sample(nv_sig, 600)
 
         # do_scanning_image_sample(nv_sig)
         # do_scanning_image_full_roi(nv_sig)
         # do_scanning_image_sample_zoom(nv_sig)
-        # scan_equilateral_triangle(nv_sig, center_coord=sample_coords, radius=0.2)
+        # scan_equilateral_triangle(nv_sig, center_coord=sample_coords, radius=0.4)
         # do_image_nv_list(nv_list)
         # do_image_single_nv(nv_sig)
         # z_range = np.linspace(0.0, 1.0, 6)
@@ -1508,6 +1514,9 @@ if __name__ == "__main__":
         raise exc
 
     finally:
+        if os.path.exists("experiment_running.flag"):
+            os.remove("experiment_running.flag")  # Clear flag
+
         if do_email:
             msg = "Experiment complete!"
             recipient = email_recipient
