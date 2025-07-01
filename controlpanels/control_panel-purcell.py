@@ -1014,12 +1014,12 @@ def do_opx_constant_ac():
     # opx.stream_start()
 
     # Yellow
-    opx.constant_ac(
-        [],  # Digital channels
-        [7],  # Analog channels
-        [0.20],  # Analog voltages
-        [0],  # Analog frequencies
-    )
+    # opx.constant_ac(
+    #     [],  # Digital channels
+    #     [7],  # Analog channels
+    #     [0.20],  # Analog voltages
+    #     [0],  # Analog frequencies
+    # )
 
     # opx.constant_ac([4])  # Just laser
     # Red
@@ -1059,10 +1059,8 @@ def do_opx_constant_ac():
     # opx.constant_ac(
     #     [4, 1],  # Digital channels
     #     [3, 4, 2, 6],  # Analog channels
-    #     [0.19, 0.19, 0.17, 0.17],  # Analog voltages;
-    #     # [109.409, 111.033, 73.0, 77.3],  # Analog frequencies
-    #     # [108.907, 112.362, 74.95, 78.65],  # Analog frequencies
-    #     [105.181, 105.867, 68.123, 75.932],
+    #     [0.11, 0.11, 0.15, 0.15],  # Analog voltages;
+    #     [96.295, 92.939, 63.383, 60.75],
     # )
     #   green_coords_list = [
     #     [107.336, 107.16],
@@ -1077,12 +1075,12 @@ def do_opx_constant_ac():
     # [67.923, 76.832],
     # ]
     # red
-    # opx.constant_ac(
-    #     [1],  # Digital channels
-    #     [2, 6],  # Analog channels
-    #     [0.17, 0.17],  # Analog voltages
-    #     [73.166, 72.941],  # Analog frequencies
-    # )
+    opx.constant_ac(
+        [1],  # Digital channels
+        [2, 6],  # Analog channels
+        [0.15, 0.15],  # Analog voltages
+        [73.166, 72.941],  # Analog frequencies
+    )
     # # Green + yellow
     # opx.constant_ac(
     #     [4],  # Digital channels
@@ -1091,12 +1089,12 @@ def do_opx_constant_ac():
     #     [107, 107, 0],  # Analog frequencies
     # )
     # # Red + green + Yellow
-    opx.constant_ac(
-        [4, 1],  # Digital channels1
-        [3, 4, 2, 6, 7],  # Analog channels
-        [0.19, 0.19, 0.17, 0.17, 0.25],  # Analog voltages
-        [107, 107, 72, 72, 0],  # Analog frequencies
-    )
+    # opx.constant_ac(
+    #     [4, 1],  # Digital channels1
+    #     [3, 4, 2, 6, 7],  # Analog channels
+    #     [0.19, 0.19, 0.17, 0.17, 0.25],  # Analog voltages
+    #     [107, 107, 72, 72, 0],  # Analog frequencies
+    # )
     input("Press enter to stop...")
     # sig_gen.uwave_off()
 
@@ -1225,7 +1223,7 @@ if __name__ == "__main__":
     # magnet_angle = 90
     date_str = "2025_02_26"
     sample_coords = [0.0, 0.0]
-    z_coord = 0.6
+    z_coord = 0.8
     # Load NV pixel coordinates1
     pixel_coords_list = load_nv_coords(
         # file_path="slmsuite/nv_blob_detection/nv_blob_rubin_shallow_154nvs_reordered.npz",
@@ -1273,16 +1271,16 @@ if __name__ == "__main__":
         [235.053, 225.856],
     ]
     green_coords_list = [
-        [107.774, 106.259],
-        [120.758, 95.485],
-        [104.354, 118.679],
-        [96.375, 92.867],
+        [107.606, 106.377],
+        [120.674, 95.506],
+        [104.329, 118.682],
+        [96.295, 92.939],
     ]
     red_coords_list = [
-        [72.372, 72.167],
-        [82.725, 63.223],
-        [69.958, 82.201],
-        [62.783, 61.35],
+        [72.272, 71.667],
+        [83.025, 63.123],
+        [69.858, 81.701],
+        [63.383, 60.75],
     ]
     num_nvs = len(pixel_coords_list)
     threshold_list = [None] * num_nvs

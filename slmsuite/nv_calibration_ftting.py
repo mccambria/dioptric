@@ -98,7 +98,7 @@ if __name__ == "__main__":
     kpl.init_kplotlib()
     # Load the image array (replace this with your own method for loading image data)
     data = dm.get_raw_data(
-        file_stem="2025_06_30-18_20_02-rubin-nv0_2025_02_26", load_npz=True
+        file_stem="2025_07_01-14_50_13-rubin-nv0_2025_02_26", load_npz=True
     )
 
     img_array = np.array(data["img_array"])
