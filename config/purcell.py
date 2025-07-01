@@ -34,19 +34,19 @@ red_laser_aod = "laser_COBO_638_aod"
 
 
 calibration_coords_pixel = [
-    [27.44, 23.014],
-    [108.384, 227.38],
-    [227.438, 19.199],
+    [20.731, 233.76],
+    [130.459, 13.724],
+    [235.053, 225.856],
 ]
 calibration_coords_green = [
-    [118.127, 97.472],
-    [107.036, 118.416],
-    [96.822, 94.821],
+    [120.657, 95.583],
+    [104.378, 118.701],
+    [96.267, 92.969],
 ]
 calibration_coords_red = [
-    [80.703, 64.786],
-    [72.119, 81.942],
-    [63.276, 62.851],
+    [82.725, 63.223],
+    [69.958, 82.201],
+    [62.783, 61.35],
 ]
 # Create the dictionaries using the provided lists
 calibration_coords_nv1 = {
@@ -165,9 +165,9 @@ config |= {
         "resolution": (512, 512),
         "spot_radius": 2.5,  # Radius for integrating NV counts in a camera image
         "bias_clamp": 300,  # (changing this won't actually change the value on the camera currently)
-        # "em_gain": 5000,
+        "em_gain": 5000,
         # "em_gain": 1000,
-        "em_gain": 10,
+        # "em_gain": 10,
         "temp": -60,
         # "temp": -55,
         "timeout": 60e3,  # ms
@@ -873,18 +873,11 @@ opx_config = {
         "red_aod_cw-scc": {"type": "constant", "sample": 0.15},
         # "red_aod_cw-scc": {"type": "constant", "sample": 0.12},  # rubin
         # Yellow AOM
-        "yellow_imaging": {"type": "constant", "sample": 0.45},  # 0.35
+        "yellow_imaging": {"type": "constant", "sample": 0.25},  # 0.35
         # "yellow_imaging": {"type": "constant", "sample": 0.50},  # 0.35
-        # "yellow_charge_readout": {"type": "constant", "sample": 0.396},  # 50ms 160NVs
-        # "yellow_charge_readout": {"type": "constant", "sample": 0.4129},  # 50ms 160NVs
-        # "yellow_charge_readout": {"type": "constant", "sample": 0.3472},  # 50ms 117NVs
         # "yellow_charge_readout": {"type": "constant", "sample": 0.3741},  # 50ms 117NVs
-        # "yellow_charge_readout": {"type": "constant", "sample": 0.325},  # 100ms 117NVs
-        # "yellow_charge_readout": {"type": "constant", "sample": 0.37240},  # 150NVs all
         # "yellow_charge_readout": {"type": "constant", "sample": 0.35736},  # 75NVs new
-        "yellow_charge_readout": {"type": "constant", "sample": 0.3600},  # 75NVs new
-        # "yellow_charge_readout": {"type": "constant", "sample": 0.32350},  # 35NV/185MHz
-        # "yellow_charge_readout": {"type": "constant", "sample": 0.32238},  # 48NV/68MHz
+        "yellow_charge_readout": {"type": "constant", "sample": 0.2500},  # 75NVs new
         "yellow_spin_pol": {"type": "constant", "sample": 0.44},  # 75 NVs
         # "yellow_spin_pol": {"type": "constant", "sample": 0.42},
         "yellow_shelving": {"type": "constant", "sample": 0.33},

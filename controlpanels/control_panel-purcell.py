@@ -104,7 +104,7 @@ def do_image_single_nv(nv_sig):
 def do_charge_state_histograms(nv_list):
     # 50 ms
     num_reps = 100
-    num_runs = 20
+    num_runs = 10
 
     # 100 ms
     # num_reps = 100
@@ -203,7 +203,7 @@ def optimize_readout_amp_and_duration(nv_list):
 def do_charge_state_histograms_images(nv_list, vary_pol_laser=False):
     aom_voltage_center = 1.0
     aom_voltage_range = 0.1
-    num_steps = 6
+    num_steps = 1
     # num_reps = 15
     # num_reps = 100
     # num_runs = 50
@@ -238,16 +238,16 @@ def do_optimize_green(nv_sig):
 
 def do_optimize_red(nv_sig, ref_nv_sig):
     opti_coords = []
-    # axes_list = [Axes.X, Axes.Y]
-    axes_list = [Axes.Y, Axes.X]
+    axes_list = [Axes.X, Axes.Y]
+    # axes_list = [Axes.Y, Axes.X]
     # shuffle(axes_list)
-    for ind in range(1):
+    for ind in range(2):
         axes = axes_list[ind]
         ret_vals = targeting.optimize(nv_sig, coords_key=red_laser_aod, axes=axes)
         opti_coords.append(ret_vals[0])
         # Compensate for drift after first optimization along X axis
-        # if ind == 0:
-        #     do_compensate_for_drift(ref_nv_sig)
+        if ind == 0:
+            do_compensate_for_drift(ref_nv_sig)
     return opti_coords
 
 
@@ -1230,7 +1230,7 @@ if __name__ == "__main__":
     pixel_coords_list = load_nv_coords(
         # file_path="slmsuite/nv_blob_detection/nv_blob_rubin_shallow_154nvs_reordered.npz",
         # file_path="slmsuite/nv_blob_detection/nv_blob_rubin_shallow_75nvs_reordered.npz",
-        file_path="slmsuite/nv_blob_detection/nv_blob_rubin_shallow_417nvs.npz",
+        file_path="slmsuite/nv_blob_detection/nv_blob_rubin_shallow_417nvs_reordered.npz",
     ).tolist()
     # pixel_coords_list = [
     #     [119.417, 124.59],
@@ -1259,8 +1259,8 @@ if __name__ == "__main__":
     ]
 
     # # Print first coordinate set for verification
-    print(f"Number of NVs: {green_coords_list}")
-    print(f"Number of NVs: {red_coords_list}")
+    # print(f"Number of NVs: {green_coords_list}")
+    # print(f"Number of NVs: {red_coords_list}")
     # sys.exit()
     print(f"Number of NVs: {len(pixel_coords_list)}")
     print(f"Reference NV:{pixel_coords_list[0]}")
@@ -1273,10 +1273,10 @@ if __name__ == "__main__":
         [235.053, 225.856],
     ]
     green_coords_list = [
-        [107.669, 106.41],
-        [120.657, 95.583],
-        [104.378, 118.701],
-        [96.267, 92.969],
+        [107.774, 106.259],
+        [120.758, 95.485],
+        [104.354, 118.679],
+        [96.375, 92.867],
     ]
     red_coords_list = [
         [72.372, 72.167],
@@ -1338,8 +1338,8 @@ if __name__ == "__main__":
     # sys.exit()
 
     # scc_amp_list = [1.0] * num_nvs
-    # scc_duration_list = [112] * num_nvs
-    # pol_duration_list = [200] * num_nvs
+    scc_duration_list = [112] * num_nvs
+    pol_duration_list = [200] * num_nvs
     # nv_list[i] will have the ith coordinates from the above lists
     nv_list: list[NVSig] = []
     for ind in range(num_nvs):
@@ -1402,11 +1402,10 @@ if __name__ == "__main__":
         do_compensate_for_drift(nv_sig)
 
         # do_widefield_image_sample(nv_sig, 50)
-        # for _ in range(5):
-        #     do_widefield_image_sample(nv_sig, 600)
+        # do_widefield_image_sample(nv_sig, 200)
 
         # do_scanning_image_sample(nv_sig)
-        do_scanning_image_full_roi(nv_sig)
+        # do_scanning_image_full_roi(nv_sig)
         # do_scanning_image_sample_zoom(nv_sig)
         # scan_equilateral_triangle(nv_sig, center_coord=sample_coords, radius=0.4)
         # do_image_nv_list(nv_list)
@@ -1448,8 +1447,8 @@ if __name__ == "__main__":
         # optimize.optimize_pixel_and_z(nv_sig, do_plot=True)
         # coords_key = None
         # coords_key = green_laser
-        # coords_key = red_laser
-        # do_optimize_loop(nv_list, coords_key)
+        coords_key = red_laser
+        do_optimize_loop(nv_list, coords_key)
 
         # do_charge_state_histograms(nv_list)
         # do_charge_state_conditional_init(nv_list)

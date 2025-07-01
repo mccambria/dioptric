@@ -341,14 +341,14 @@ def load_nv_coords(
 
 
 nuvu_pixel_coords, spot_weights = load_nv_coords()
-# nuvu_pixel_coords = np.array(
-#     [
-#         [119.417, 124.59],
-#         [20.731, 233.76],
-#         [130.459, 13.724],
-#         [235.053, 225.856],
-#     ]
-# )
+nuvu_pixel_coords = np.array(
+    [
+        [119.417, 124.59],
+        [20.731, 233.76],
+        [130.459, 13.724],
+        [235.053, 225.856],
+    ]
+)
 
 print(f"Total NV coordinates: {len(nuvu_pixel_coords)}")
 thorcam_coords = nuvu2thorcam_calibration(nuvu_pixel_coords).T
