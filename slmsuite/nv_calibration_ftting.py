@@ -98,12 +98,12 @@ if __name__ == "__main__":
     kpl.init_kplotlib()
     # Load the image array (replace this with your own method for loading image data)
     data = dm.get_raw_data(
-        file_stem="2025_05_13-09_36_30-rubin-nv0_2025_02_26", load_npz=True
+        file_stem="2025_06_30-18_20_02-rubin-nv0_2025_02_26", load_npz=True
     )
 
     img_array = np.array(data["img_array"])
     # List of initial peak coordinates
-    initial_peaks = np.array([[229.194, 11.588], [213.956, 240.886], [22.303, 111.997]])
+    initial_peaks = np.array([[231.898, 233.639], [199.645, 16.204], [27.939, 152.386]])
     # Fit Gaussian to each peak
     optimized_coords = []
     for peak in initial_peaks:

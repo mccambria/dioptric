@@ -284,7 +284,7 @@ def process_scan_file():
     # raw_data = dm.get_raw_data(file_id=1802697426409, load_npz=True)  # rubin
 
     ### Nas
-    file_stem = "2025_06_24-18_16_26-rubin-nv0_2025_02_26"
+    file_stem = "2025_06_30-18_58_14-rubin-nv0_2025_02_26"
     raw_data = dm.get_raw_data(
         file_stem=file_stem, load_npz=True, allow_pickle=True
     )  # rubin
@@ -330,12 +330,12 @@ def process_scan_file():
         print("No valid images found.")
 
     # **Save the results (uncomment if needed)**
-    # save_results(
-    #     blob_coords,
-    #     spot_weights,
-    #     path="slmsuite/nv_blob_detection",
-    #     filename=f"nv_blob_shallow_rubin_{len(blob_coords)}nvs.npz",
-    # )
+    save_results(
+        blob_coords,
+        spot_weights,
+        path="slmsuite/nv_blob_detection",
+        filename=f"nv_blob_shallow_rubin_{len(blob_coords)}nvs.npz",
+    )
 
     timestamp = dm.get_time_stamp()
     data = {
@@ -344,7 +344,7 @@ def process_scan_file():
     }
 
     file_path = dm.get_file_path(__file__, timestamp, "combined_image_array")
-    # dm.save_raw_data(data, file_path, keys_to_compress=["img_array"])
+    dm.save_raw_data(data, file_path, keys_to_compress=["img_array"])
     kpl.show(block=True)
 
 

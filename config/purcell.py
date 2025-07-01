@@ -168,8 +168,8 @@ config |= {
         # "em_gain": 5000,
         # "em_gain": 1000,
         "em_gain": 10,
-        # "temp": -60,
-        "temp": -55,
+        "temp": -60,
+        # "temp": -55,
         "timeout": 60e3,  # ms
         # "timeout": -1,  # No timeout
         # Readout mode specifies EM vs conventional, as well as vertical and horizontal readout frequencies.
@@ -291,7 +291,7 @@ config |= {
                 "control_mode": PosControlMode.SEQUENCE,
                 "delay": int(400e3),  # 400 us for galvo
                 "nm_per_unit": 1000,
-                "optimize_range": 2.4,
+                "optimize_range": 1.2,
                 "units": "MHz",
                 "opti_virtual_laser_key": VirtualLaserKey.IMAGING,
                 "aod": True,

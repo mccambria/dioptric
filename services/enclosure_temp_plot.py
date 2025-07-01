@@ -1,3 +1,10 @@
+# -*- coding: utf-8 -*-
+"""
+Created on June 16th, 2023
+
+@author: Saroj B Chand
+"""
+
 import datetime
 import os
 import time
@@ -21,12 +28,13 @@ channels = {
 # Live plot setup
 plt.ion()
 fig, ax = plt.subplots(figsize=(10, 5))
+hours = 72  # for plotting
 
 
 def update_plot():
     ax.clear()
     now = datetime.datetime.now()
-    past_24h = now - datetime.timedelta(hours=24)
+    past_hours = now - datetime.timedelta(hours=hours)
 
     for label, filename in channels.items():
         file_path = os.path.join(data_folder, filename)
@@ -43,8 +51,8 @@ def update_plot():
                 dtype={"Temperature": float},
             )
 
-            # Filter last 24 hours
-            df = df[df["Timestamp"] > past_24h]
+            # Filter past hours
+            df = df[df["Timestamp"] > past_hours]
 
             # Plot
             ax.plot(df["Timestamp"], df["Temperature"], label=f"Channel {label}")
@@ -52,7 +60,7 @@ def update_plot():
         except Exception as e:
             print(f"Error reading {filename}: {e}")
 
-    ax.set_title("Live Temperature Plot (Last 24h)")
+    ax.set_title(f"Temperature Plot (Last {hours}h)")
     ax.set_xlabel("Time")
     ax.set_ylabel("Temperature [°C]")
     ax.xaxis.set_major_formatter(mdates.DateFormatter("%H:%M"))
@@ -61,23 +69,6 @@ def update_plot():
     plt.pause(0.1)
 
 
-# def main():
-#     print(f"Live plotting from: {data_folder}")
-#     while True:
-#         update_plot()
-#         time.sleep(15 * 60)  # Refresh every minute
-#         input("press enter  ...")
-
-
-# def main():
-#     print(f"Live plotting from: {data_folder}")
-#     try:
-#         while True:
-#             update_plot()
-#             time.sleep(15 * 60)
-#     except KeyboardInterrupt:
-#         print("Live plotting stopped by user.")
-#         plt.close()
 def main():
     print(f"Live plotting from: {data_folder}")
     try:

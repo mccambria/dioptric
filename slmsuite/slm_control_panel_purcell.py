@@ -247,7 +247,8 @@ def calibration_triangle():
 
     # Define parameters for the equilateral triangle
     # center = (730, 570)  # Center of the triangle
-    center = (680, 630)  # Center of the triangle
+    # center = (680, 630)  # Center of the triangle
+    center = (710, 600)  # Center of the triangle
     side_length = 400  # Length of each side of the triangle\
 
     # Calculate the coordinates of the three vertices of the equilateral triangle
@@ -287,12 +288,13 @@ def nuvu2thorcam_calibration(coords):
     Calibrates and transforms coordinates from the Nuvu camera's coordinate system
     to the Thorlabs camera's coordinate system using an affine transformation.
     """
+
     cal_coords_thorcam = np.array(
-        [[1026.410, 830.0], [333.589, 830.0], [680.0, 230.0]], dtype="float32"
+        [[1056.410, 800.0], [363.589, 800.0], [710.0, 200.0]], dtype="float32"
     )
 
     cal_coords_nuvu = np.array(
-        [[229.343, 11.347], [214.213, 240.751], [22.536, 111.783]], dtype="float32"
+        [[231.898, 233.639], [199.645, 16.204], [27.939, 152.386]], dtype="float32"
     )
 
     # Compute the affine transformation matrix
@@ -312,7 +314,8 @@ def load_nv_coords(
     # file_path="slmsuite/nv_blob_detection/nv_blob_rubin_shallow_240nvs_reordered.npz",
     # file_path="slmsuite/nv_blob_detection/nv_blob_rubin_shallow_154nvs_reordered.npz",
     # file_path="slmsuite/nv_blob_detection/nv_blob_rubin_shallow_81nvs_reordered.npz",
-    file_path="slmsuite/nv_blob_detection/nv_blob_rubin_shallow_75nvs_reordered.npz",
+    # file_path="slmsuite/nv_blob_detection/nv_blob_rubin_shallow_75nvs_reordered.npz",
+    file_path="slmsuite/nv_blob_detection/nv_blob_rubin_shallow_417nvs_reordered.npz",
     # file_path="slmsuite/nv_blob_detection/nv_blob_rubin_shallow_40nvs_reordered.npz",
     # file_path="slmsuite/nv_blob_detection/nv_blob_rubin_shallow_35nvs_reordered.npz",
     # file_path="slmsuite/nv_blob_detection/nv_blob_shallow_148nvs_reordered_updated.npz",
@@ -338,6 +341,15 @@ def load_nv_coords(
 
 
 nuvu_pixel_coords, spot_weights = load_nv_coords()
+# nuvu_pixel_coords = np.array(
+#     [
+#         [119.417, 124.59],
+#         [20.731, 233.76],
+#         [130.459, 13.724],
+#         [235.053, 225.856],
+#     ]
+# )
+
 print(f"Total NV coordinates: {len(nuvu_pixel_coords)}")
 thorcam_coords = nuvu2thorcam_calibration(nuvu_pixel_coords).T
 # sys.exit()
@@ -348,13 +360,13 @@ def compute_and_write_nvs_phase():
         shape=(4096, 2048),
         spot_vectors=thorcam_coords,
         basis="ij",
-        spot_amp=spot_weights,
+        # spot_amp=spot_weights,
         cameraslm=fs,
     )
     # Precondition computationally
     hologram.optimize(
         "WGS-Kim",
-        maxiter=30,
+        maxiter=20,
         feedback="computational_spot",
         stat_groups=["computational_spot"],
     )
@@ -404,10 +416,10 @@ try:
     # test_wavefront_calibration()
     # wavefront_calibration()
     # load_wavefront_calibration()
-    # compute_and_write_nvs_phase()
+    compute_and_write_nvs_phase()
     # write_pre_computed_nvs_phase()
     # calibration_triangle()
-    circles()
+    # circles()
     # write_pre_computed_circles()
     # smiley()
     # cam_plot()

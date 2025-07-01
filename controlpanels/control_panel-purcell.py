@@ -5,7 +5,7 @@ Control panel for the PC Rabi
 Created on June 16th, 2023
 
 @author: mccambria
-@author: saroj chand
+@author: Saroj B Chand
 """
 
 ### Imports
@@ -85,7 +85,7 @@ def do_scanning_image_full_roi(nv_sig):
 
 
 def do_scanning_image_sample_zoom(nv_sig):
-    scan_range = 0.01
+    scan_range = 0.001
     num_steps = 5
     image_sample.scanning(nv_sig, scan_range, scan_range, num_steps)
 
@@ -1083,20 +1083,20 @@ def do_opx_constant_ac():
     #     [0.17, 0.17],  # Analog voltages
     #     [73.166, 72.941],  # Analog frequencies
     # )
-    # Green + yellow
-    opx.constant_ac(
-        [4],  # Digital channels
-        [3, 4, 7],  # Analog channels
-        [0.19, 0.19, 0.20],  # Analog voltages
-        [107, 107, 0],  # Analog frequencies
-    )
-    # # Red + green + Yellow
+    # # Green + yellow
     # opx.constant_ac(
-    #     [4, 1],  # Digital channels1
-    #     [3, 4, 2, 6, 7],  # Analog channels
-    #     [0.19, 0.19, 0.17, 0.17, 0.25],  # Analog voltages
-    #     [107, 107, 72, 72, 0],  # Analog frequencies
+    #     [4],  # Digital channels
+    #     [3, 4, 7],  # Analog channels
+    #     [0.19, 0.19, 0.20],  # Analog voltages
+    #     [107, 107, 0],  # Analog frequencies
     # )
+    # # Red + green + Yellow
+    opx.constant_ac(
+        [4, 1],  # Digital channels1
+        [3, 4, 2, 6, 7],  # Analog channels
+        [0.19, 0.19, 0.17, 0.17, 0.25],  # Analog voltages
+        [107, 107, 72, 72, 0],  # Analog frequencies
+    )
     input("Press enter to stop...")
     # sig_gen.uwave_off()
 
@@ -1229,14 +1229,14 @@ if __name__ == "__main__":
     # Load NV pixel coordinates1
     pixel_coords_list = load_nv_coords(
         # file_path="slmsuite/nv_blob_detection/nv_blob_rubin_shallow_154nvs_reordered.npz",
-        file_path="slmsuite/nv_blob_detection/nv_blob_rubin_shallow_75nvs_reordered.npz",
+        # file_path="slmsuite/nv_blob_detection/nv_blob_rubin_shallow_75nvs_reordered.npz",
+        file_path="slmsuite/nv_blob_detection/nv_blob_rubin_shallow_417nvs.npz",
     ).tolist()
     # pixel_coords_list = [
-    #     [122.027, 118.236],
-    #     [113.173, 128.034],
-    #     [27.44, 23.014],
-    #     [108.384, 227.38],
-    #     [227.438, 19.199],
+    #     [119.417, 124.59],
+    #     [20.731, 233.76],
+    #     [104.744, 118.685],
+    #     [235.053, 225.856],
     # ]
     green_coords_list = [
         [
@@ -1259,33 +1259,31 @@ if __name__ == "__main__":
     ]
 
     # # Print first coordinate set for verification
-    # print(f"Number of NVs: {green_coords_list}")
-    # print(f"Number of NVs: {red_coords_list}")
+    print(f"Number of NVs: {green_coords_list}")
+    print(f"Number of NVs: {red_coords_list}")
     # sys.exit()
     print(f"Number of NVs: {len(pixel_coords_list)}")
     print(f"Reference NV:{pixel_coords_list[0]}")
     print(f"Green Laser Coordinates: {green_coords_list[0]}")
     print(f"Red Laser Coordinates: {red_coords_list[0]}")
     pixel_coords_list = [
-        # [113.173, 128.034],
-        [126.55, 128.472],
-        [27.44, 23.014],
-        [108.384, 227.38],
-        [227.438, 19.199],
+        [119.417, 124.59],
+        [20.731, 233.76],
+        [130.459, 13.724],
+        [235.053, 225.856],
     ]
     green_coords_list = [
-        [108.628, 107.119],
-        [118.127, 97.472],
-        [107.036, 118.416],
-        [96.822, 94.821],
+        [107.669, 106.41],
+        [120.657, 95.583],
+        [104.378, 118.701],
+        [96.267, 92.969],
     ]
     red_coords_list = [
-        [72.466, 73.251],
-        [80.703, 64.786],
-        [72.119, 81.942],
-        [63.276, 62.851],
+        [72.372, 72.167],
+        [82.725, 63.223],
+        [69.958, 82.201],
+        [62.783, 61.35],
     ]
-
     num_nvs = len(pixel_coords_list)
     threshold_list = [None] * num_nvs
     # fmt: off
@@ -1377,7 +1375,7 @@ if __name__ == "__main__":
     # print(f"Created NV: {nv_sig.name}, Coords: {nv_sig.coords}")
     # nv_sig.expected_counts = 900
     # nv_sig.expected_counts = 1160
-    # nv_sig.expected_counts = 1200
+    nv_sig.expected_counts = 1250
 
     # nv_list = nv_list[::-1]  # flipping the order of NVs
     # nv_list = nv_list[:2]
@@ -1401,14 +1399,14 @@ if __name__ == "__main__":
         # pos.set_xyz_on_nv(nv_sig)
         # piezo_voltage_to_pixel_calibration()
 
-        # do_compensate_for_drift(nv_sig)
+        do_compensate_for_drift(nv_sig)
 
         # do_widefield_image_sample(nv_sig, 50)
         # for _ in range(5):
         #     do_widefield_image_sample(nv_sig, 600)
 
         # do_scanning_image_sample(nv_sig)
-        # do_scanning_image_full_roi(nv_sig)
+        do_scanning_image_full_roi(nv_sig)
         # do_scanning_image_sample_zoom(nv_sig)
         # scan_equilateral_triangle(nv_sig, center_coord=sample_coords, radius=0.4)
         # do_image_nv_list(nv_list)
