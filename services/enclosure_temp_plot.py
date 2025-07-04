@@ -15,7 +15,7 @@ import pandas as pd
 from dateutil.relativedelta import relativedelta
 
 # Base folder and current month-year folder
-base_folder = "G:\\Enclosure_Temp"
+base_folder = "G:\\NV_Widefield_RT_Setup_Enclosure_Temp_Logs"
 folder = datetime.datetime.now().strftime("%m%Y")
 data_folder = os.path.join(base_folder, folder)
 

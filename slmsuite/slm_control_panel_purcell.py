@@ -248,7 +248,7 @@ def calibration_triangle():
     # Define parameters for the equilateral triangle
     # center = (730, 570)  # Center of the triangle
     # center = (680, 630)  # Center of the triangle
-    center = (710, 600)  # Center of the triangle
+    center = (710, 560)  # Center of the triangle
     side_length = 400  # Length of each side of the triangle\
 
     # Calculate the coordinates of the three vertices of the equilateral triangle
@@ -315,7 +315,7 @@ def load_nv_coords(
     # file_path="slmsuite/nv_blob_detection/nv_blob_rubin_shallow_154nvs_reordered.npz",
     # file_path="slmsuite/nv_blob_detection/nv_blob_rubin_shallow_81nvs_reordered.npz",
     # file_path="slmsuite/nv_blob_detection/nv_blob_rubin_shallow_75nvs_reordered.npz",
-    file_path="slmsuite/nv_blob_detection/nv_blob_rubin_shallow_417nvs_reordered.npz",
+    file_path="slmsuite/nv_blob_detection/nv_blob_rubin_shallow_362nvs_reordered.npz",
     # file_path="slmsuite/nv_blob_detection/nv_blob_rubin_shallow_40nvs_reordered.npz",
     # file_path="slmsuite/nv_blob_detection/nv_blob_rubin_shallow_35nvs_reordered.npz",
     # file_path="slmsuite/nv_blob_detection/nv_blob_shallow_148nvs_reordered_updated.npz",
@@ -341,15 +341,15 @@ def load_nv_coords(
 
 
 nuvu_pixel_coords, spot_weights = load_nv_coords()
-nuvu_pixel_coords = np.array(
-    [
-        [119.184, 123.938],
-        [21.194, 233.629],
-        [132.591, 12.541],
-        [235.213, 225.341],
-    ]
-)
-spot_weights = np.array([0.5, 1.5, 1.0, 1.0])
+# nuvu_pixel_coords = np.array(
+#     [
+#         [119.672, 124.426],
+#         [6.568, 229.972],
+#         [117.722, 6.935],
+#         [239.844, 216.078],
+#     ]
+# )
+# spot_weights = np.array([0.8, 1.0, 1.0, 1.0])
 print(f"Total NV coordinates: {len(nuvu_pixel_coords)}")
 thorcam_coords = nuvu2thorcam_calibration(nuvu_pixel_coords).T
 # sys.exit()
@@ -416,10 +416,10 @@ try:
     # test_wavefront_calibration()
     # wavefront_calibration()
     # load_wavefront_calibration()
-    compute_and_write_nvs_phase()
+    # compute_and_write_nvs_phase()
     # write_pre_computed_nvs_phase()
     # calibration_triangle()
-    # circles()
+    circles()
     # write_pre_computed_circles()
     # smiley()
     # cam_plot()

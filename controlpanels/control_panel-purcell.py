@@ -104,7 +104,7 @@ def do_image_single_nv(nv_sig):
 def do_charge_state_histograms(nv_list):
     # 50 ms
     num_reps = 100
-    num_runs = 10
+    num_runs = 20
 
     # 100 ms
     # num_reps = 100
@@ -241,7 +241,7 @@ def do_optimize_red(nv_sig, ref_nv_sig):
     axes_list = [Axes.X, Axes.Y]
     # axes_list = [Axes.Y, Axes.X]
     # shuffle(axes_list)
-    for ind in range(2):
+    for ind in range(1):
         axes = axes_list[ind]
         ret_vals = targeting.optimize(nv_sig, coords_key=red_laser_aod, axes=axes)
         opti_coords.append(ret_vals[0])
@@ -892,7 +892,7 @@ def do_opx_square_wave():
     opx.square_wave(
         [],  # Digital channels
         [7],  # Analog channels
-        [0.4],  # Analog voltages
+        [0.45],  # Analog voltages
         10000,  # Period (ns)
     )
     # Camera trigger
@@ -1014,12 +1014,12 @@ def do_opx_constant_ac():
     # opx.stream_start()
 
     # Yellow
-    # opx.constant_ac(
-    #     [],  # Digital channels
-    #     [7],  # Analog channels
-    #     [0.20],  # Analog voltages
-    #     [0],  # Analog frequencies
-    # )
+    opx.constant_ac(
+        [],  # Digital channels
+        [7],  # Analog channels
+        [0.45],  # Analog voltages
+        [0],  # Analog frequencies
+    )
 
     # opx.constant_ac([4])  # Just laser
     # Red
@@ -1052,16 +1052,17 @@ def do_opx_constant_ac():
     # opx.constant_ac(
     #     [4],  # Digital channels
     #     [3, 4],  # Analog channels
-    #     [0.19, 0.19],  # Analog voltages
-    #     [105.0, 105.0],  # Analog frequencies
+    #     [0.15, 0.15],  # Analog voltages
+    #     [107.0, 107.0],  # Analog frequencies
     # )
     # Green + red
     # opx.constant_ac(
     #     [4, 1],  # Digital channels
     #     [3, 4, 2, 6],  # Analog channels
     #     [0.11, 0.11, 0.15, 0.15],  # Analog voltages;
-    #     [96.295, 92.939, 63.383, 60.75],
+    #     [107.509, 106.425, 71.40, 71.603],
     # )
+
     #   green_coords_list = [
     #     [107.336, 107.16],
     #     [106.36, 103.736],
@@ -1075,12 +1076,12 @@ def do_opx_constant_ac():
     # [67.923, 76.832],
     # ]
     # red
-    opx.constant_ac(
-        [1],  # Digital channels
-        [2, 6],  # Analog channels
-        [0.15, 0.15],  # Analog voltages
-        [73.166, 72.941],  # Analog frequencies
-    )
+    # opx.constant_ac(
+    #     [1],  # Digital channels
+    #     [2, 6],  # Analog channels
+    #     [0.15, 0.15],  # Analog voltages
+    #     [73.166, 72.941],  # Analog frequencies
+    # )
     # # Green + yellow
     # opx.constant_ac(
     #     [4],  # Digital channels
@@ -1088,7 +1089,7 @@ def do_opx_constant_ac():
     #     [0.19, 0.19, 0.20],  # Analog voltages
     #     [107, 107, 0],  # Analog frequencies
     # )
-    # # Red + green + Yellow
+    # Red + green + Yellow
     # opx.constant_ac(
     #     [4, 1],  # Digital channels1
     #     [3, 4, 2, 6, 7],  # Analog channels
@@ -1223,19 +1224,19 @@ if __name__ == "__main__":
     # magnet_angle = 90
     date_str = "2025_02_26"
     sample_coords = [0.0, 0.0]
-    z_coord = 0.8
+    z_coord = 1.0
     # Load NV pixel coordinates1
     pixel_coords_list = load_nv_coords(
         # file_path="slmsuite/nv_blob_detection/nv_blob_rubin_shallow_154nvs_reordered.npz",
         # file_path="slmsuite/nv_blob_detection/nv_blob_rubin_shallow_75nvs_reordered.npz",
-        file_path="slmsuite/nv_blob_detection/nv_blob_rubin_shallow_417nvs_reordered.npz",
+        file_path="slmsuite/nv_blob_detection/nv_blob_rubin_shallow_362nvs_reordered.npz",
     ).tolist()
-    # pixel_coords_list = [
-    #     [119.417, 124.59],
-    #     [20.731, 233.76],
-    #     [104.744, 118.685],
-    #     [235.053, 225.856],
-    # ]
+    pixel_coords_list = [
+        [119.672, 124.426],
+        [5.994, 230.216],
+        [117.391, 7.422],
+        [248.188, 193.653],
+    ]
     green_coords_list = [
         [
             round(coord, 3)
@@ -1265,22 +1266,22 @@ if __name__ == "__main__":
     print(f"Green Laser Coordinates: {green_coords_list[0]}")
     print(f"Red Laser Coordinates: {red_coords_list[0]}")
     pixel_coords_list = [
-        [119.417, 124.59],
-        [20.731, 233.76],
-        [130.459, 13.724],
-        [235.053, 225.856],
+        [119.672, 124.426],
+        [6.568, 229.972],
+        [117.722, 6.935],
+        [239.844, 216.078],
     ]
     green_coords_list = [
-        [107.606, 106.377],
-        [120.674, 95.506],
-        [104.329, 118.682],
-        [96.295, 92.939],
+        [107.0, 107.0],
+        [122.341, 97.895],
+        [105.637, 121.269],
+        [95.65, 95.495],
     ]
     red_coords_list = [
-        [72.272, 71.667],
-        [83.025, 63.123],
-        [69.858, 81.701],
-        [63.383, 60.75],
+        [71.848, 71.603],
+        [83.417, 63.661],
+        [69.808, 82.52],
+        [61.648, 60.88],
     ]
     num_nvs = len(pixel_coords_list)
     threshold_list = [None] * num_nvs
@@ -1373,7 +1374,7 @@ if __name__ == "__main__":
     # print(f"Created NV: {nv_sig.name}, Coords: {nv_sig.coords}")
     # nv_sig.expected_counts = 900
     # nv_sig.expected_counts = 1160
-    nv_sig.expected_counts = 1250
+    # nv_sig.expected_counts = 1250
 
     # nv_list = nv_list[::-1]  # flipping the order of NVs
     # nv_list = nv_list[:2]
@@ -1397,8 +1398,7 @@ if __name__ == "__main__":
         # pos.set_xyz_on_nv(nv_sig)
         # piezo_voltage_to_pixel_calibration()
 
-        do_compensate_for_drift(nv_sig)
-
+        # do_compensate_for_drift(nv_sig)
         # do_widefield_image_sample(nv_sig, 50)
         # do_widefield_image_sample(nv_sig, 200)
 
@@ -1434,7 +1434,7 @@ if __name__ == "__main__":
         #         print(f"Scanning SAMPLE: {sample_coord}, estimated Z: {z:.3f}")
         #         do_scanning_image_sample(nv_sig)
 
-        # do_opx_constant_ac()
+        do_opx_constant_ac()
         # do_opx_square_wave()
 
         # do_optimize_pixel(nv_sig)
@@ -1445,8 +1445,8 @@ if __name__ == "__main__":
         # optimize.optimize_pixel_and_z(nv_sig, do_plot=True)
         # coords_key = None
         # coords_key = green_laser
-        coords_key = red_laser
-        do_optimize_loop(nv_list, coords_key)
+        # coords_key = red_laser
+        # do_optimize_loop(np.array(nv_list), np.array(coords_key))
 
         # do_charge_state_histograms(nv_list)
         # do_charge_state_conditional_init(nv_list)

@@ -39,14 +39,14 @@ calibration_coords_pixel = [
     [235.053, 225.856],
 ]
 calibration_coords_green = [
-    [120.657, 95.583],
-    [104.378, 118.701],
-    [96.267, 92.969],
+    [120.674, 95.506],
+    [104.329, 118.682],
+    [96.295, 92.939],
 ]
 calibration_coords_red = [
-    [82.725, 63.223],
-    [69.958, 82.201],
-    [62.783, 61.35],
+    [83.025, 63.123],
+    [69.858, 81.701],
+    [63.383, 60.75],
 ]
 # Create the dictionaries using the provided lists
 calibration_coords_nv1 = {
@@ -165,9 +165,9 @@ config |= {
         "resolution": (512, 512),
         "spot_radius": 2.5,  # Radius for integrating NV counts in a camera image
         "bias_clamp": 300,  # (changing this won't actually change the value on the camera currently)
-        "em_gain": 5000,
+        # "em_gain": 5000,
         # "em_gain": 1000,
-        # "em_gain": 10,
+        "em_gain": 10,
         "temp": -60,
         # "temp": -55,
         "timeout": 60e3,  # ms
@@ -254,9 +254,9 @@ config |= {
             VirtualLaserKey.WIDEFIELD_CHARGE_READOUT: {
                 "physical_name": yellow_laser,
                 # "duration": 200e6,
-                "duration": 60e6,
+                # "duration": 60e6,
                 # "duration": 30e6,
-                # "duration": 24e6,  # for red calibration
+                "duration": 24e6,  # for red calibration
             },
             # LaserKey.WIDEFIELD_CHARGE_READOUT: {"physical_name": yellow_laser, "duration": 100e6},
         },
@@ -873,11 +873,11 @@ opx_config = {
         "red_aod_cw-scc": {"type": "constant", "sample": 0.15},
         # "red_aod_cw-scc": {"type": "constant", "sample": 0.12},  # rubin
         # Yellow AOM
-        "yellow_imaging": {"type": "constant", "sample": 0.25},  # 0.35
+        "yellow_imaging": {"type": "constant", "sample": 0.45},  # 0.35
         # "yellow_imaging": {"type": "constant", "sample": 0.50},  # 0.35
         # "yellow_charge_readout": {"type": "constant", "sample": 0.3741},  # 50ms 117NVs
         # "yellow_charge_readout": {"type": "constant", "sample": 0.35736},  # 75NVs new
-        "yellow_charge_readout": {"type": "constant", "sample": 0.2500},  # 75NVs new
+        "yellow_charge_readout": {"type": "constant", "sample": 0.3500},  # 75NVs new
         "yellow_spin_pol": {"type": "constant", "sample": 0.44},  # 75 NVs
         # "yellow_spin_pol": {"type": "constant", "sample": 0.42},
         "yellow_shelving": {"type": "constant", "sample": 0.33},

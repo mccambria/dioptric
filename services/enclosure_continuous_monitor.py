@@ -20,7 +20,7 @@ TEMP_CHANNELS = {
     "4C": b"4C?\n",
 }
 
-base_folder = "G:\\Enclosure_Temp"
+base_folder = "G:\\NV_Widefield_RT_Setup_Enclosure_Temp_Logs"
 
 cxn = common.labrad_connect()
 opx = cxn.temp_monitor_SRS_ptc10

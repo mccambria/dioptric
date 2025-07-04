@@ -400,17 +400,17 @@ if __name__ == "__main__":
     # data = dm.get_raw_data(file_id=1782616297820, load_npz=True)
     # data = dm.get_raw_data(file_id=1806410973406, load_npz=True)
     data = dm.get_raw_data(
-        file_stem="2025_06_30-19_07_11-combined_image_array", load_npz=True
+        file_stem="2025_06_30-19_42_14-rubin-nv0_2025_02_26", load_npz=True
     )
-    # img_array = np.array(data["ref_img_array"])
-    img_array = data["img_array"]
+    img_array = np.array(data["ref_img_array"])
+    # img_array = data["img_array"]
 
     # sys.exit()
     nv_coordinates, spot_weights = load_nv_coords(
         # file_path="slmsuite/nv_blob_detection/nv_blob_shallow_rubin_140nvs.npz"
         # file_path="slmsuite/nv_blob_detection/nv_blob_shallow_rubin_306nvs.npz"
         # file_path="slmsuite/nv_blob_detection/nv_blob_shallow_rubin_81nvs.npz"
-        file_path="slmsuite/nv_blob_detection/nv_blob_shallow_rubin_518nvs.npz"
+        file_path="slmsuite/nv_blob_detection/nv_blob_shallow_rubin_365nvs.npz"
         # file_path="slmsuite/nv_blob_detection/nv_blob_shallow_rubin_75nvs_reordered_.npz"
         # file_path="slmsuite/nv_blob_detection/nv_blob_rubin_shallow_303nvs_reordered.npz"
         # file_path="slmsuite/nv_blob_detection/nv_blob_rubin_shallow_154nvs_reordered.npz"
@@ -466,31 +466,31 @@ if __name__ == "__main__":
     # ]
 
     # Integration over disk region around each NV coordinate
-    filtered_reordered_counts = []
-    integration_radius = 3.0
-    for coord in filtered_reordered_coords:
-        x, y = coord[:2]  # Assuming `coord` contains at least two elements (y, x)
-        rr, cc = disk((y, x), integration_radius, shape=img_array.shape)
-        sum_value = np.sum(img_array[rr, cc])
-        filtered_reordered_counts.append(sum_value)
+    # filtered_reordered_counts = []
+    # integration_radius = 3.0
+    # for coord in filtered_reordered_coords:
+    #     x, y = coord[:2]  # Assuming `coord` contains at least two elements (y, x)
+    #     rr, cc = disk((y, x), integration_radius, shape=img_array.shape)
+    #     sum_value = np.sum(img_array[rr, cc])
+    #     filtered_reordered_counts.append(sum_value)
 
-    # calcualte spot weight  based on
-    calcualted_spot_weights = linear_weights(filtered_reordered_counts, alpha=0.3)
-    filtered_reordered_spot_weights = calcualted_spot_weights
+    # # calcualte spot weight  based on
+    # calcualted_spot_weights = linear_weights(filtered_reordered_counts, alpha=0.3)
+    # filtered_reordered_spot_weights = calcualted_spot_weights
     # Manually remove NVs with specified indices
-    indices_to_remove = []
-    filtered_reordered_coords_0 = [
-        coord
-        for i, coord in enumerate(filtered_reordered_coords)
-        if i not in indices_to_remove
-    ]
-    filtered_reordered_spot_weights_0 = [
-        count
-        for i, count in enumerate(filtered_reordered_spot_weights)
-        if i not in indices_to_remove
-    ]
-    filtered_reordered_coords = filtered_reordered_coords_0
-    filtered_reordered_spot_weights = filtered_reordered_spot_weights_0
+    # indices_to_remove = []
+    # filtered_reordered_coords_0 = [
+    #     coord
+    #     for i, coord in enumerate(filtered_reordered_coords)
+    #     if i not in indices_to_remove
+    # ]
+    # filtered_reordered_spot_weights_0 = [
+    #     count
+    #     for i, count in enumerate(filtered_reordered_spot_weights)
+    #     if i not in indices_to_remove
+    # ]
+    # filtered_reordered_coords = filtered_reordered_coords_0
+    # filtered_reordered_spot_weights = filtered_reordered_spot_weights_0
 
     # print(filtered_reordered_coords)
     # print("Filter:", filtered_reordered_counts)
@@ -600,16 +600,16 @@ if __name__ == "__main__":
     # updated_spot_weights = spot_weights
     # updated_spot_weights = curve_extreme_weights_simple(nv_powers)
     # updated_spot_weights = curve_inverse_counts(filtered_reordered_spot_weights)
-    drop_indices = [42, 49, 53, 62, 75, 79]
-    updated_spot_weights = [
-        val for ind, val in enumerate(updated_spot_weights) if ind not in drop_indices
-    ]
-    filtered_reordered_coords = [
-        filtered_reordered_coords[ind]
-        for ind in range(len(filtered_reordered_coords))
-        if ind not in drop_indices
-    ]
-    nv_powers = [val for ind, val in enumerate(nv_powers) if ind not in drop_indices]
+    # drop_indices = [42, 49, 53, 62, 75, 79]
+    # updated_spot_weights = [
+    #     val for ind, val in enumerate(updated_spot_weights) if ind not in drop_indices
+    # ]
+    # filtered_reordered_coords = [
+    #     filtered_reordered_coords[ind]
+    #     for ind in range(len(filtered_reordered_coords))
+    #     if ind not in drop_indices
+    # ]
+    # nv_powers = [val for ind, val in enumerate(nv_powers) if ind not in drop_indices]
 
     ### new weithgs for 75 NVs
     # fmt: off
@@ -687,11 +687,11 @@ if __name__ == "__main__":
 
     # Save the filtered results
 
-    save_results(
-        filtered_reordered_coords,
-        filtered_reordered_spot_weights,
-        filename="slmsuite/nv_blob_detection/nv_blob_rubin_shallow_417nvs_reordered.npz",
-    )
+    # save_results(
+    #     filtered_reordered_coords,
+    #     filtered_reordered_spot_weights,
+    #     filename="slmsuite/nv_blob_detection/nv_blob_rubin_shallow_362nvs_reordered.npz",
+    # )
     # save_results(
     #     nv_coordinates,
     #     filtered_reordered_counts,
