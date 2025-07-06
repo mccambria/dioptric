@@ -24,11 +24,11 @@ with nidaqmx.Task() as task:
     voltage = task.read()
     print(f"Measured voltage: {voltage:.6f} V")
 
-sys.exit()
+# sys.exit()
 
 
 # === USER SETTINGS ===
-LOG_INTERVAL = 15  # seconds between samples
+LOG_INTERVAL = 15 * 60  # seconds between samples
 DAQ_DEVICE = "Dev2"  # NI DAQ device name in NI MAX
 
 # Responsivity and gain settings for 589 nm
@@ -39,12 +39,13 @@ DAQ_DEVICE = "Dev2"  # NI DAQ device name in NI MAX
 # Analog input channels to monitor
 LASER_CHANNELS = {
     "589nm_fiber_out": "ai0",
-    # "405nm_probe": "ai1",
+    "589nm_laser_head_out": "ai3",
     # "638nm_back_reflection": "ai2",
 }
 
 CALIBRATION_FACTORS = {
     "589nm_fiber_out": 60.13,  # Empirical
+    "589nm_laser_head_out": 426.01,  # Empirical
     # "638nm_back_reflection": 45.2,
     # "405nm_probe": 71.8,
 }

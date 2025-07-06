@@ -18,12 +18,13 @@ from utils import kplotlib as kplt
 
 # === USER SETTINGS ===
 base_folder = "G:\\NV_Widefield_RT_Setup_Lasers_Power_Logs"
-hours = 48  # Number of hours to plot
+hours = 24  # Number of hours to plot
 plot_power = True  # True = plot power (mW), False = plot voltage (V)
 
 # Label → filename mapping (same as in logger)
 channels = {
     "589nm_fiber_out": "laser_589nm_fiber_out.csv",
+    "589nm_laser_head_out": "laser_589nm_laser_head_out.csv",
     # "638nm_back_reflection": "laser_638nm_back_reflection.csv",
 }
 
