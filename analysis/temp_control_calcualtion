@@ -1,0 +1,43 @@
+import numpy as np
+import matplotlib.pyplot as plt
+from utils import kplotlib as kpl
+
+kpl.init_kplotlib()
+# Constants
+V = 0.679  # m³, volume of enclosure
+T_initial = 24  # °C
+T_target = 20  # °C
+
+# Time simulation (minutes)
+time_minutes = np.linspace(0, 2, 200)
+
+# Fan speeds in CFM
+fan_speeds = [100, 200, 300, 402]  # You can add more values
+
+# Conversion: 1 CFM ≈ 0.000472 m³/s
+cfm_to_m3s = 0.000472
+
+
+def compute_acm(Q_cfm):
+    return (Q_cfm * cfm_to_m3s * 60) / V
+
+
+# Function to simulate temperature decay
+def temperature_decay(t, ACM):
+    return T_target + (T_initial - T_target) * np.exp(-ACM * t)
+
+
+# Plot
+plt.figure(figsize=(6, 5))
+for Q in fan_speeds:
+    ACM = compute_acm(Q)
+    T_profile = temperature_decay(time_minutes, ACM)
+    plt.plot(time_minutes, T_profile, label=f"{Q} CFM ({ACM:.1f} ACM)")
+
+plt.title("Temperature Decay vs Fan Speed")
+plt.xlabel("Time (minutes)")
+plt.ylabel("Enclosure Temperature (°C)")
+# plt.grid(True)
+plt.legend(title="Fan Speed")
+# plt.tight_layout()
+plt.show(block=True)
