@@ -14,6 +14,7 @@ import matplotlib.dates as mdates
 import matplotlib.pyplot as plt
 import pandas as pd
 from dateutil.relativedelta import relativedelta
+from utils import kplotlib as kplt
 
 # === USER SETTINGS ===
 base_folder = "G:\\NV_Widefield_RT_Setup_Lasers_Power_Logs"
@@ -36,8 +37,9 @@ data_folders = [
 ]
 
 # === Live Plot Setup
+kplt.init_kplotlib()
 plt.ion()
-fig, ax = plt.subplots(figsize=(12, 5))
+fig, ax = plt.subplots(figsize=(12, 6))
 
 
 def update_plot():
