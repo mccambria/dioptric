@@ -17,7 +17,7 @@ from dateutil.relativedelta import relativedelta
 
 # === USER SETTINGS ===
 base_folder = "G:\\NV_Widefield_RT_Setup_Lasers_Power_Logs"
-hours = 24  # Number of hours to plot
+hours = 72  # Number of hours to plot
 plot_power = True  # True = plot power (mW), False = plot voltage (V)
 
 # Label → filename mapping (same as in logger)
@@ -26,7 +26,11 @@ channels = {
     "589nm_laser_head_out": "laser_589nm_laser_head_out.csv",
     # "638nm_back_reflection": "laser_638nm_back_reflection.csv",
 }
-
+conversion_factors = {
+    "589nm_fiber_out": 14.5,
+    "589nm_laser_head_out": 15,
+    # "638nm_back_reflection": "laser_638nm_back_reflection.csv",
+}
 # === Determine folders for current and previous month
 now = datetime.datetime.now()
 folder_current = now.strftime("%m%Y")
@@ -47,7 +51,7 @@ def update_plot():
 
     for label, filename in channels.items():
         dfs = []
-
+        factor = conversion_factors[label]
         for folder in data_folders:
             file_path = os.path.join(folder, filename)
             if not os.path.exists(file_path):
@@ -74,7 +78,7 @@ def update_plot():
         y_col = "Power_mW" if plot_power else "Voltage"
         y_label = "Laser Power [mW]" if plot_power else "Voltage [V]"
 
-        ax.plot(df_all["Timestamp"], df_all[y_col], label=label)
+        ax.plot(df_all["Timestamp"], df_all[y_col] * factor, label=label)
 
     ax.set_title(f"Laser Power Monitor (Last {hours} h)")
     ax.set_xlabel("Time")

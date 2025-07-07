@@ -81,6 +81,17 @@ def update_plot():
     ax.xaxis.set_major_formatter(mdates.DateFormatter("%Y-%m-%d %H:%M"))
     ax.legend()
     fig.autofmt_xdate()
+
+    # fig.text()
+    fig.text(
+        0.36,
+        0.22,
+        "4A (near sample)\n4B (box corner)\n4C (air inside duct)\nwith chiller set to 15 °C",
+        ha="center",
+        va="bottom",
+        fontsize=11,
+    )
+
     plt.pause(0.1)
 
 
