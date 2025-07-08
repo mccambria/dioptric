@@ -281,10 +281,17 @@ def process_scan_file():
     # raw_data = dm.get_raw_data(file_id=1766305651080, load_npz=True)
     # raw_data = dm.get_raw_data(file_id=1764604364429, load_npz=True)
     # raw_data = dm.get_raw_data(file_id=1788823078836, load_npz=True)  # rubin
-    raw_data = dm.get_raw_data(file_id=1802697426409, load_npz=True)  # rubin
+    # raw_data = dm.get_raw_data(file_id=1802697426409, load_npz=True)  # rubin
+
+    ### Nas
+    file_stem = "2025_06_30-18_58_14-rubin-nv0_2025_02_26"
+    raw_data = dm.get_raw_data(
+        file_stem=file_stem, load_npz=True, allow_pickle=True
+    )  # rubin
 
     # Extract scanned data
-    scanned_data = raw_data["scanned_data"]["scanned_data"]
+    # scanned_data = raw_data["scanned_data"]["scanned_data"]
+    scanned_data = raw_data["scanned_data"]
     print(f"Type of scanned_data: {type(scanned_data)}")  # Expected: <class 'list'>
 
     # Preallocate a list for image processing
@@ -315,7 +322,7 @@ def process_scan_file():
         # Plot final image
         fig, ax = plt.subplots()
         kpl.imshow(
-            ax, combined_img, title="Combined_img_laser_INTI_520", cbar_label="Photons"
+            ax, combined_img, title="Max_Int_Proj_laser_INTI_520", cbar_label="Photons"
         )
         ax.axis("off")
         print(f"Final detected NV count: {len(blob_coords)}")
@@ -337,7 +344,7 @@ def process_scan_file():
     }
 
     file_path = dm.get_file_path(__file__, timestamp, "combined_image_array")
-    # dm.save_raw_data(data, file_path, keys_to_compress=["img_array"])
+    dm.save_raw_data(data, file_path, keys_to_compress=["img_array"])
     kpl.show(block=True)
 
 
@@ -383,7 +390,10 @@ if __name__ == "__main__":
     # data = dm.get_raw_data(file_id=1766620461342, load_npz=True)
     # data = dm.get_raw_data(file_id=1791296034768, load_npz=True)
     # data = dm.get_raw_data(file_id=1791776254933, load_npz=True)  # rubin green scan
-    data = dm.get_raw_data(file_id=1807103519645, load_npz=True)
+    # data = dm.get_raw_data(file_id=1807103519645, load_npz=True)
+    data = dm.get_raw_data(
+        file_stem="2025_07_01-21_36_39-rubin-nv0_2025_02_26", load_npz=True
+    )
     img_array = np.array(data["ref_img_array"])
     # img_array = np.array(data["ref_img_array"]["ref_img_array"])
     # img_array = np.array(data["img_array"])
@@ -391,7 +401,6 @@ if __name__ == "__main__":
     # img_array = np.array(data["diff_img_array"])
     # img_array = -img_array
     # print(type(img_array), img_array.dtype, img_array.shape)
-
     # # Parameters for detection and resolution
     wavelength = 0.7  # Wavelength in micrometers (650 nm)
     NA = 1.45  # Numerical Aperture of objective
@@ -402,7 +411,7 @@ if __name__ == "__main__":
 
     # Apply the blob detection and Gaussian fitting
     sigma = 2.0
-    lower_threshold = 0.09
+    lower_threshold = 0.06
     upper_threshold = None
     smoothing_sigma = 0.0
 
@@ -426,7 +435,7 @@ if __name__ == "__main__":
         for existing_coord in filtered_nv_coords:
             distance = np.linalg.norm(np.array(existing_coord) - np.array(coord))
 
-            if distance < 8:
+            if distance < 3:
                 keep_coord = False  # Mark it for exclusion if too close
                 break  # No need to check further distances
 
@@ -473,7 +482,7 @@ if __name__ == "__main__":
     #     filtered_nv_coords,
     #     filtered_counts,
     #     path="slmsuite/nv_blob_detection",
-    #     filename="nv_blob_shallow_rubin_81nvs.npz",
+    #     filename="nv_blob_shallow_rubin_365nvs.npz",
     # )
 
     # full ROI -- multiple images save in the same file
