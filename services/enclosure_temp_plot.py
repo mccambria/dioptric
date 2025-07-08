@@ -14,6 +14,9 @@ import matplotlib.pyplot as plt
 import pandas as pd
 from dateutil.relativedelta import relativedelta
 
+from utils import kplotlib as kplt
+
+kplt.init_kplotlib()
 # Base folder and current month-year folder
 base_folder = "G:\\NV_Widefield_RT_Setup_Enclosure_Temp_Logs"
 folder = datetime.datetime.now().strftime("%m%Y")
@@ -35,12 +38,13 @@ channels = {
     "4A": "temp_4A.csv",
     "4B": "temp_4B.csv",
     "4C": "temp_4C.csv",
+    "4D": "temp_4D.csv",
 }
 
 # Live plot setup
 plt.ion()
 fig, ax = plt.subplots(figsize=(10, 5))
-hours = 120  # for plotting
+hours = 36  # for plotting
 
 
 def update_plot():
@@ -74,13 +78,25 @@ def update_plot():
         # Plot
         ax.plot(df_all["Timestamp"], df_all["Temperature"], label=f"Channel {label}")
 
-    ax.set_title(f"Temperature Plot (Last {hours}h)")
-    ax.set_xlabel("Time")
-    ax.set_ylabel("Temperature [°C]")
+    ax.set_title(f"Temperature Plot (Last {hours}h)", fontsize=13)
+    ax.set_xlabel("Time", fontsize=13)
+    ax.set_ylabel("Temperature [°C]", fontsize=13)
     # ax.xaxis.set_major_formatter(mdates.DateFormatter("%Y-%m-%d %H:%M"))
     ax.xaxis.set_major_formatter(mdates.DateFormatter("%Y-%m-%d %H:%M"))
-    ax.legend()
+    ax.tick_params(axis="both", labelsize=11)
+    ax.legend(fontsize=11)
     fig.autofmt_xdate()
+
+    # fig.text()
+    fig.text(
+        0.24,
+        0.22,
+        "4A --> near sample \n4B --> box corner\n4C --> air inside duct \n4D --> heat exchanger surface\n(with chiller set to 15°C)",
+        ha="left",
+        va="bottom",
+        fontsize=11,
+    )
+
     plt.pause(0.1)
 
 

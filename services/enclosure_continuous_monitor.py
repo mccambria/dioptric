@@ -18,6 +18,7 @@ TEMP_CHANNELS = {
     "4A": b"4A?\n",
     "4B": b"4B?\n",
     "4C": b"4C?\n",
+    "4D": b"4D?\n",
 }
 
 base_folder = "G:\\NV_Widefield_RT_Setup_Enclosure_Temp_Logs"

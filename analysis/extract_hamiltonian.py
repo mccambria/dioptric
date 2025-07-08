@@ -3,13 +3,13 @@
 alignment, electric field magnitude and alignment) based on a list
 of resonances at varying B field magnitudes of the same orientation.
 
-Simple use case: determining B field alignment if you already know the 
+Simple use case: determining B field alignment if you already know the
 zero-field resonances. Eg we have the res_descs:
 res_descs = [
     [0.0, 2.87, None],
     [None, 2.8640, 2.8912],
 ]
-which tells you that the B field 1.46 rad off the NV axis and 
+which tells you that the B field 1.46 rad off the NV axis and
 the B field magnitude is 43 Gauss.
 
 Created on June 16th, 2019
@@ -20,18 +20,17 @@ Created on June 16th, 2019
 
 # region Imports and constants
 
-import numpy as np
-from numpy.linalg import eigvals
-from numpy import pi
-from scipy.optimize import minimize_scalar
-from scipy.optimize import minimize
-from scipy.optimize import brute
-from numpy import exp
-import matplotlib.pyplot as plt
-import utils.kplotlib as kpl
 import sys
 
-d_gs = 2.87  # ground state zfs in GHz
+import matplotlib.pyplot as plt
+import numpy as np
+from numpy import exp, pi
+from numpy.linalg import eigvals
+from scipy.optimize import brute, minimize, minimize_scalar
+
+import utils.kplotlib as kpl
+
+# d_gs = 2.87  # ground state zfs in GHz
 gmuB = 2.8  # gyromagnetic ratio in MHz / G
 gmuB_GHz = gmuB / 1000  # gyromagnetic ratio in GHz / G
 inv_sqrt_2 = 1 / np.sqrt(2)
@@ -41,7 +40,7 @@ im = 0 + 1j
 # region Functions
 
 
-def calc_single_hamiltonian(mag_B, theta_B, par_Pi, perp_Pi, phi_B, phi_Pi):
+def calc_single_hamiltonian(d_gs, mag_B, theta_B, par_Pi, perp_Pi, phi_B, phi_Pi):
     par_B = mag_B * np.cos(theta_B)
     perp_B = mag_B * np.sin(theta_B)
     hamiltonian = np.array(
@@ -296,38 +295,16 @@ def main(name, res_descs):
 
 if __name__ == "__main__":
     kpl.init_kplotlib()
-    zfss = []
-    angles = np.linspace(0, np.pi / 2, 100)
-    for angle in angles:
-        pair = calc_res_pair(0.5 * gmuB_GHz, angle, 0, 0.0, 0, 0)
-        zfss.append(np.mean(pair))
+    d_linspace = np.linspace(2.85, 2.89, 1000)
+    vals = [[], [], []]
+    for d_val in d_linspace:
+        hamiltonian = calc_single_hamiltonian(d_val, 0.1, 0, 0, 0.1, 0, 0)
+        single_vals = np.sort(eigvals(hamiltonian))
+        val_0 = single_vals[0]
+        for ind in range(2):
+            vals[ind].append(single_vals[ind + 1] - val_0)
     fig, ax = plt.subplots()
-    kpl.plot_line(ax, angles, zfss)
-    plt.show(block=True)
-
-    print(pair)
-    print(np.mean(pair))
-
-    # hamiltonian = calc_hamiltonian(0.05, 0.2, 0, 0.005, 0, 0)
-    # test = np.linalg.eig(hamiltonian)
-
-    sys.exit()
-
-    kpl.init_kplotlib()
-
-    plot_resonances_custom()
-
-    # # Name for the NV, sample, whatever
-    # name = "test"
-
-    # # Enter the resonance descriptions as a list of lists. Each sublist should
-    # # have the form (all units GHz):
-    # # [magnetic field if known, lower resonance, higher resonance]
-    # res_descs = [
-    #     [0.0, 2.87, None],
-    #     [None, 2.8549, 2.88687],
-    # ]
-
-    # main(name, res_descs)
+    for ind in range(2):
+        kpl.plot_line(ax, d_linspace, vals[ind])
 
     plt.show(block=True)
