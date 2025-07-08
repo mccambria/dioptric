@@ -92,7 +92,7 @@ def create_raw_data_figure(nv_list, taus, counts, counts_ste):
     return fig
 
 
-def create_fit_figure(nv_list, taus, counts, counts_ste, norms):
+def create_fit_figure(nv_list, taus, norm_counts, norm_counts_ste):
     ### Do the fitting
 
     taus = np.array(taus)
@@ -126,13 +126,6 @@ def create_fit_figure(nv_list, taus, counts, counts_ste, norms):
     # norm_counts = counts - norms_newaxis
     # norm_counts_ste = counts_ste
 
-    # Dual-valued norm
-    norms_ms0_newaxis = norms[0][:, np.newaxis]
-    norms_ms1_newaxis = norms[1][:, np.newaxis]
-    contrast = norms_ms1_newaxis - norms_ms0_newaxis
-    norm_counts = (counts - norms_ms0_newaxis) / contrast
-    norm_counts_ste = counts_ste / contrast
-
     fit_fns = []
     popts = []
     for nv_ind in range(num_nvs):
@@ -148,6 +141,7 @@ def create_fit_figure(nv_list, taus, counts, counts_ste, norms):
         angular_freq_guess = 2 * np.pi * freq_guess
         tau_phase_guess = -np.angle(transform[max_ind + 1]) / angular_freq_guess
         guess_params = [freq_guess, 1000, tau_phase_guess]
+        # guess_params = [0.5, freq_guess, 1000, 0]
         # guess_params = [ptp_amp_guess, freq_guess, 1000, 0]
         fit_fn = cos_decay
 
@@ -183,6 +177,17 @@ def create_fit_figure(nv_list, taus, counts, counts_ste, norms):
     print(f"tau_offsets: {tau_offsets}")
 
     ### Make the figure
+
+    # for nv_ind in range(40, 60):  # 33
+    nv_ind = 33
+    fig, ax = plt.subplots()
+    kpl.plot_points(ax, taus, norm_counts[nv_ind], norm_counts_ste[nv_ind])
+    tau_linspace = np.linspace(0, max(taus), 1000)
+    if popts[nv_ind] is not None:
+        kpl.plot_line(ax, tau_linspace, fit_fns[nv_ind](tau_linspace, *popts[nv_ind]))
+    ax.set_xlabel("Microwave pulse duration (ns)", usetex=True)
+    ax.set_ylabel(r"Normalized $m_{s}=\pm 1$ population", usetex=True)
+    kpl.show(block=True)
 
     layout = kpl.calc_mosaic_layout(num_nvs, num_rows=2)
     # layout = kpl.calc_mosaic_layout(num_nvs)
@@ -314,10 +319,13 @@ def main(nv_list, num_steps, num_reps, num_runs, min_tau, max_tau, uwave_ind_lis
 if __name__ == "__main__":
     kpl.init_kplotlib()
 
-    data = dm.get_raw_data(file_id=1772297872545, load_npz=False, use_cache=True)
-    create_mean_figure(data)
-    kpl.show(block=True)
-    sys.exit()
+    # file_id = 1772297872545
+    file_id = 1730774435450
+    # file_id = 1730519502046
+    data = dm.get_raw_data(file_id=file_id, load_npz=False, use_cache=True)
+    # create_mean_figure(data)
+    # kpl.show(block=True)
+    # sys.exit()
 
     nv_list = data["nv_list"]
     num_nvs = len(nv_list)
@@ -329,12 +337,12 @@ if __name__ == "__main__":
     sig_counts = counts[0]
     ref_counts = counts[1]
 
-    avg_counts, avg_counts_ste, norms = widefield.process_counts(
+    norm_counts, norm_counts_ste = widefield.process_counts(
         nv_list, sig_counts, ref_counts, threshold=True
     )
 
-    raw_fig = create_raw_data_figure(nv_list, taus, avg_counts, avg_counts_ste)
-    fit_fig = create_fit_figure(nv_list, taus, avg_counts, avg_counts_ste, norms)
+    # raw_fig = create_raw_data_figure(nv_list, taus, norm_counts, norm_counts_ste)
+    fit_fig = create_fit_figure(nv_list, taus, norm_counts, norm_counts_ste)
 
     kpl.show(block=True)
 
