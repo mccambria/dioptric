@@ -201,8 +201,8 @@ def main():
     double_figsize[0] *= 2
     fig, axes_pack = plt.subplots(1, 2, figsize=double_figsize)
     ax = axes_pack[0]
-    kpl.plot_line(ax, inte_times, data[:, 0, 0] * 1000, label="EMCCD")
-    kpl.plot_line(ax, inte_times, data[:, 1, 0] * 1000, label="QCMOS")
+    kpl.plot_line(ax, inte_times * 1000, data[:, 0, 0] * 1000, label="EMCCD")
+    kpl.plot_line(ax, inte_times * 1000, data[:, 1, 0] * 1000, label="QCMOS")
     ax.set_xlabel(r"Integration time $t_{\mathrm{i}}$ (ms)", usetex=True)
     ax.set_ylabel(r"Char. averaging time $T^{*}$ (ms)", usetex=True)
     ax.set_xscale("log")
@@ -212,8 +212,8 @@ def main():
 
     # fig, ax = plt.subplots(figsize=figsize)
     ax = axes_pack[1]
-    kpl.plot_line(ax, inte_times, data[:, 0, 1] * 1000, label="EMCCD")
-    kpl.plot_line(ax, inte_times, data[:, 1, 1] * 1000, label="QCMOS")
+    kpl.plot_line(ax, inte_times * 1000, data[:, 0, 1] * 1000, label="EMCCD")
+    kpl.plot_line(ax, inte_times * 1000, data[:, 1, 1] * 1000, label="QCMOS")
     ax.set_xlabel(r"Integration time $t_{\mathrm{i}}$ (ms)", usetex=True)
     ax.set_xscale("log")
     ax.set_ylabel(r"Optimal exposure time $t_{\mathrm{e}}$ (ms)", usetex=True)
