@@ -380,10 +380,12 @@ if __name__ == "__main__":
     widefield.replace_dead_pixel(img_array)
     fig, ax = plt.subplots()
     kpl.imshow(ax, img_array, cbar_label="Photons")
-    ax.axis("off")
+    # ax.axis("off")
+    ax.set_xlabel("X camera coordinate (pixels)")
+    ax.set_ylabel("Y camera coordinate (pixels)")
     num_microns = 5
     scale = num_microns * (2.3 / 0.29714285714)
-    kpl.scale_bar(ax, scale, f"{num_microns} µm", kpl.Loc.LOWER_RIGHT)
+    # kpl.scale_bar(ax, scale, f"{num_microns} µm", kpl.Loc.LOWER_RIGHT)
     img = ax.images[-1]
     img.set_clim(0.5, 3.5)
     kpl.show(block=True)
