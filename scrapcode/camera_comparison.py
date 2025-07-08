@@ -149,8 +149,7 @@ def calc_char_avg_time(inte_time, dist, qubit_rate_0, qubit_rate_1, exposure_tim
 
 
 def optimize(inte_time, dist, qubit_rate_0, qubit_rate_1):
-    # exposure_times = np.linspace(0.0001, 0.1, 1000)
-    exposure_times = np.logspace(-3, -1, 1000)
+    exposure_times = np.linspace(0.0001, 0.1, 1000)
     # exposure_times = np.linspace(0.015, 0.025, 1000)
     # char_avg_times = []
     # for exposure_time in exposure_times:
@@ -274,9 +273,6 @@ def plot_dists():
 if __name__ == "__main__":
     kpl.init_kplotlib()
     # main()
-    optimize(20e-6, emccd, 200, 1000)
-    optimize(20e-6, qcmos, 200, 1000)
-    ax = plt.gca()
-    ax.legend()
+    optimize(10e-6, emccd, qubit_rate_0, qubit_rate_1)
     # plot_dists()
     kpl.show(block=True)

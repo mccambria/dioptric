@@ -113,10 +113,24 @@
 # # save_path = f"G:/My Drive/Experiments/SLM_seup_data/image_{current_datetime}.png"
 # # plt.savefig(save_path)
 # plt.show()
-
-
 import sys
 
+# import numpy as np
+# # Step 1: Convert to numpy arrays
+# green_old = np.array([[118.127, 97.472], [107.036, 118.416], [96.822, 94.821]])
+# red_old = np.array([[80.703, 64.786], [72.119, 81.942], [63.276, 62.851]])
+# green_new = np.array([[120.667, 95.464], [104.513, 119.016], [96.313, 92.987]])
+# # Step 2: Add ones for affine transform (homogeneous coords)
+# G = np.hstack([green_old, np.ones((3, 1))])  # 3x3
+# R = red_old  # 3x2
+# # Solve for affine matrix: G @ M = R → M = (G^T G)^(-1) G^T R
+# M, _, _, _ = np.linalg.lstsq(G, R, rcond=None)  # M is 3x2
+# # Step 3: Apply same transform to new green coordinates
+# G_new = np.hstack([green_new, np.ones((green_new.shape[0], 1))])  # Nx3
+# red_new = G_new @ M  # Nx2
+# print("Estimated new red coordinates:")
+# print(red_new)
+# sys.exit()
 import cv2
 import matplotlib.pyplot as plt
 import numpy as np
@@ -147,10 +161,10 @@ if len(pixel_coords_list) >= 3:
     # New pixel coordinate for which we want to find the corresponding red coordinate
     new_pixel_coord = np.array(
         [
-            [107.748, 107.743],
-            [118.127, 97.472],
-            [107.036, 118.416],
-            [96.822, 94.821],
+            [107.669, 106.41],
+            [120.657, 95.583],
+            [104.378, 118.701],
+            [96.267, 92.969],
         ],
         dtype=np.float32,
     )

@@ -34,19 +34,19 @@ red_laser_aod = "laser_COBO_638_aod"
 
 
 calibration_coords_pixel = [
-    [27.44, 23.014],
-    [108.384, 227.38],
-    [227.438, 19.199],
+    [20.731, 233.76],
+    [130.459, 13.724],
+    [235.053, 225.856],
 ]
 calibration_coords_green = [
-    [118.127, 97.472],
-    [107.036, 118.416],
-    [96.822, 94.821],
+    [120.674, 95.506],
+    [104.329, 118.682],
+    [96.295, 92.939],
 ]
 calibration_coords_red = [
-    [80.703, 64.786],
-    [72.119, 81.942],
-    [63.276, 62.851],
+    [83.025, 63.123],
+    [69.858, 81.701],
+    [63.383, 60.75],
 ]
 # Create the dictionaries using the provided lists
 calibration_coords_nv1 = {
@@ -73,8 +73,8 @@ calibration_coords_nv3 = {
 # ]
 
 pixel_to_sample_affine_transformation_matrix = [
-    [-0.01478989, -0.00127903, 3.85073374],
-    [0.00138559, -0.01471450, 5.74068819],
+    [0.01476835, -0.00148369, -1.42104908],
+    [0.00140560, 0.01479702, -1.73286644],
 ]
 # endregion
 # region Base config
@@ -96,6 +96,7 @@ config |= {
         "uwave_buffer": 16,
         "iq_buffer": 0,
         "iq_delay": 136,  # SBC measured using NVs 4/18/2025
+        "temp_reading_interval": 15 * 60,  # for PID
         # "iq_delay": 140,  # SBC measured using NVs 4/18/2025
     },
     ###
@@ -167,8 +168,8 @@ config |= {
         # "em_gain": 5000,
         # "em_gain": 1000,
         "em_gain": 10,
-        # "temp": -60,
-        "temp": -55,
+        "temp": -60,
+        # "temp": -55,
         "timeout": 60e3,  # ms
         # "timeout": -1,  # No timeout
         # Readout mode specifies EM vs conventional, as well as vertical and horizontal readout frequencies.
@@ -253,9 +254,9 @@ config |= {
             VirtualLaserKey.WIDEFIELD_CHARGE_READOUT: {
                 "physical_name": yellow_laser,
                 # "duration": 200e6,
-                "duration": 60e6,
+                # "duration": 60e6,
                 # "duration": 30e6,
-                # "duration": 24e6,  # for red calibration
+                "duration": 24e6,  # for red calibration
             },
             # LaserKey.WIDEFIELD_CHARGE_READOUT: {"physical_name": yellow_laser, "duration": 100e6},
         },
@@ -290,7 +291,7 @@ config |= {
                 "control_mode": PosControlMode.SEQUENCE,
                 "delay": int(400e3),  # 400 us for galvo
                 "nm_per_unit": 1000,
-                "optimize_range": 2.4,
+                "optimize_range": 1.2,
                 "units": "MHz",
                 "opti_virtual_laser_key": VirtualLaserKey.IMAGING,
                 "aod": True,
@@ -874,16 +875,9 @@ opx_config = {
         # Yellow AOM
         "yellow_imaging": {"type": "constant", "sample": 0.45},  # 0.35
         # "yellow_imaging": {"type": "constant", "sample": 0.50},  # 0.35
-        # "yellow_charge_readout": {"type": "constant", "sample": 0.396},  # 50ms 160NVs
-        # "yellow_charge_readout": {"type": "constant", "sample": 0.4129},  # 50ms 160NVs
-        # "yellow_charge_readout": {"type": "constant", "sample": 0.3472},  # 50ms 117NVs
         # "yellow_charge_readout": {"type": "constant", "sample": 0.3741},  # 50ms 117NVs
-        # "yellow_charge_readout": {"type": "constant", "sample": 0.325},  # 100ms 117NVs
-        # "yellow_charge_readout": {"type": "constant", "sample": 0.37240},  # 150NVs all
         # "yellow_charge_readout": {"type": "constant", "sample": 0.35736},  # 75NVs new
-        "yellow_charge_readout": {"type": "constant", "sample": 0.3600},  # 75NVs new
-        # "yellow_charge_readout": {"type": "constant", "sample": 0.32350},  # 35NV/185MHz
-        # "yellow_charge_readout": {"type": "constant", "sample": 0.32238},  # 48NV/68MHz
+        "yellow_charge_readout": {"type": "constant", "sample": 0.3500},  # 75NVs new
         "yellow_spin_pol": {"type": "constant", "sample": 0.44},  # 75 NVs
         # "yellow_spin_pol": {"type": "constant", "sample": 0.42},
         "yellow_shelving": {"type": "constant", "sample": 0.33},
