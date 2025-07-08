@@ -31,9 +31,9 @@ from utils.tool_belt import bose
 inv_root_2_pi = 1 / np.sqrt(2 * np.pi)
 area = 5
 # area = 10
-emccd_readout_time = 12e-3
+emccd_readout_time = 6e-3 * np.sqrt(area / 5)
 # emccd_readout_time = 1e-3
-qcmos_readout_time = 1e-3
+qcmos_readout_time = 0.5e-3 * np.sqrt(area / 5)
 # qcmos_readout_time = 5e-3
 w_star = 1 / 2
 p0p = 0.1
@@ -170,10 +170,11 @@ def optimize(inte_time, dist, qubit_rate_0, qubit_rate_1):
     exposure_time = exposure_times[min_ind]
     char_avg_time = char_avg_times[min_ind]
 
+    # Plot characteristic averaging time as a function of exposure time
     ax = plt.gca()
     if ax is None:
         fig, ax = plt.subplots()
-    dist_name = "EMCCD" if dist is emccd else "QCMOS"
+    dist_name = "EMCCD" if dist is emccd else "qCMOS"
     kpl.plot_line(ax, exposure_times * 1000, char_avg_times * 1000, label=dist_name)
     ax.set_xlabel(r"Exposure time $t_{\mathrm{e}}$ (ms)", usetex=True)
     ax.set_ylabel(r"Char. averaging time $T^{*}$ (ms)", usetex=True)
@@ -200,8 +201,8 @@ def main():
     double_figsize[0] *= 2
     fig, axes_pack = plt.subplots(1, 2, figsize=double_figsize)
     ax = axes_pack[0]
-    kpl.plot_line(ax, inte_times, data[:, 0, 0] * 1000, label="EMCCD")
-    kpl.plot_line(ax, inte_times, data[:, 1, 0] * 1000, label="QCMOS")
+    kpl.plot_line(ax, inte_times * 1000, data[:, 0, 0] * 1000, label="EMCCD")
+    kpl.plot_line(ax, inte_times * 1000, data[:, 1, 0] * 1000, label="qCMOS")
     ax.set_xlabel(r"Integration time $t_{\mathrm{i}}$ (ms)", usetex=True)
     ax.set_ylabel(r"Char. averaging time $T^{*}$ (ms)", usetex=True)
     ax.set_xscale("log")
@@ -211,8 +212,8 @@ def main():
 
     # fig, ax = plt.subplots(figsize=figsize)
     ax = axes_pack[1]
-    kpl.plot_line(ax, inte_times, data[:, 0, 1] * 1000, label="EMCCD")
-    kpl.plot_line(ax, inte_times, data[:, 1, 1] * 1000, label="QCMOS")
+    kpl.plot_line(ax, inte_times * 1000, data[:, 0, 1] * 1000, label="EMCCD")
+    kpl.plot_line(ax, inte_times * 1000, data[:, 1, 1] * 1000, label="qCMOS")
     ax.set_xlabel(r"Integration time $t_{\mathrm{i}}$ (ms)", usetex=True)
     ax.set_xscale("log")
     ax.set_ylabel(r"Optimal exposure time $t_{\mathrm{e}}$ (ms)", usetex=True)
@@ -228,10 +229,10 @@ def plot_dists():
     fig, axes_pack = plt.subplots(1, 2, figsize=figsize)
 
     dists = [emccd, qcmos]
-    dist_names = ["EMCCD", "QCMOS"]
+    dist_names = ["EMCCD", "qCMOS"]
     state_names = [r"$\ket{0}$", r"$\ket{1}$"]
     qubit_rates = [qubit_rate_0, qubit_rate_1]
-    exp_times = [16.9, 17.4]  # ms
+    exp_times = [13.7, 16.4]  # ms
     # exp_times = [40, 40]  # ms
     # starts = [0, -14]
     starts = [0, -8]
@@ -247,7 +248,7 @@ def plot_dists():
             dist, qubit_rate_0, qubit_rate_1, exp_time, ret_thresh=True
         )
 
-        x_vals, step = np.linspace(start, 35, 1000, retstep=True)
+        x_vals, step = np.linspace(start, 30, 1000, retstep=True)
         # x_vals, step = np.linspace(start, 65, 1000, retstep=True)
         for jnd in range(2):
             qubit_rate = qubit_rates[jnd]
@@ -274,5 +275,8 @@ if __name__ == "__main__":
     kpl.init_kplotlib()
     # main()
     optimize(10e-6, emccd, qubit_rate_0, qubit_rate_1)
+    optimize(10e-6, qcmos, qubit_rate_0, qubit_rate_1)
+    ax = plt.gca()
+    ax.legend()
     # plot_dists()
     kpl.show(block=True)
