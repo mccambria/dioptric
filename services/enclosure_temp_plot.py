@@ -44,7 +44,7 @@ channels = {
 # Live plot setup
 plt.ion()
 fig, ax = plt.subplots(figsize=(10, 5))
-hours = 36  # for plotting
+hours = 60  # for plotting
 
 
 def update_plot():
@@ -81,7 +81,6 @@ def update_plot():
     ax.set_title(f"Temperature Plot (Last {hours}h)", fontsize=13)
     ax.set_xlabel("Time", fontsize=13)
     ax.set_ylabel("Temperature [°C]", fontsize=13)
-    # ax.xaxis.set_major_formatter(mdates.DateFormatter("%Y-%m-%d %H:%M"))
     ax.xaxis.set_major_formatter(mdates.DateFormatter("%Y-%m-%d %H:%M"))
     ax.tick_params(axis="both", labelsize=11)
     ax.legend(fontsize=11)

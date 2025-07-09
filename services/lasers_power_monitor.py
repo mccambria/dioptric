@@ -24,7 +24,7 @@ with nidaqmx.Task() as task:
     voltage = task.read()
     print(f"Measured voltage: {voltage:.6f} V")
 
-# sys.exit()
+sys.exit()
 
 # === USER SETTINGS ===
 LOG_INTERVAL = 15 * 60  # seconds between samples
