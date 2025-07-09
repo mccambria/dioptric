@@ -935,7 +935,7 @@ def optimize(
 # endregion
 
 if __name__ == "__main__":
-    file_name = "2023_09_21-21_07_51-widefield_calibration_nv1"
+    file_name = "2024_10_25-17_40_20-johnson-nv1_2024_03_12"
     data = dm.get_raw_data(file_name)
     positioner = "laser_INTE_520_aod"
     fig = _create_figure(positioner)
