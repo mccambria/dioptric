@@ -2,7 +2,7 @@
 """
 Created on July 3rd, 2025
 
-@author: Saroj B Chand
+@author: Saroj B Chand, Eric Gediman
 
 """
 
@@ -16,7 +16,7 @@ from nidaqmx.constants import TerminalConfiguration
 
 with nidaqmx.Task() as task:
     task.ai_channels.add_ai_voltage_chan(
-        "Dev2/ai1",  # your channel
+        "Dev2/ai0",  # your channel
         terminal_config=TerminalConfiguration.RSE,  # use RSE for BNC-2110
         min_val=-0.2,  #  Set low range
         max_val=0.2,
@@ -24,7 +24,7 @@ with nidaqmx.Task() as task:
     voltage = task.read()
     print(f"Measured voltage: {voltage:.6f} V")
 
-# sys.exit()
+sys.exit()
 
 # === USER SETTINGS ===
 LOG_INTERVAL = 15 * 60  # seconds between samples
@@ -61,41 +61,28 @@ def read_voltage(dev, channel):
         task.ai_channels.add_ai_voltage_chan(
             full_channel,
             terminal_config=TerminalConfiguration.RSE,
-            min_val=-1.0,
-            max_val=1.0,
+            min_val=-0.2,
+            max_val=0.2,
         )
         voltage = task.read()
     return voltage
 
 
 def main():
-    while True:
-        timestamp = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-        print(f"[{timestamp}] Logging laser power...")
 
-        # Organize by month folder
-        month_str = datetime.datetime.now().strftime("%m%Y")
-        folder_path = os.path.join(BASE_FOLDER, month_str)
-        os.makedirs(folder_path, exist_ok=True)
+    filepath = "SET HERE"
+    channel = "SET HERE"
+    label = "SET HERE"
+    with open(filepath, "a") as f:
+        while True:        
+            timestamp = time.time_NS()
+            voltage = read_voltage(DAQ_DEVICE, channel)
 
-        for label, channel in LASER_CHANNELS.items():
-            try:
-                voltage = read_voltage(DAQ_DEVICE, channel)
-                power_mW = CALIBRATION_FACTORS[label] * voltage
-
-                filename = f"laser_{label}.csv"
-                filepath = os.path.join(folder_path, filename)
-
-                with open(filepath, "a") as f:
-                    f.write(f"{timestamp},{voltage:.6f},{power_mW:.3f}\n")
-
-                print(f"  {label}: {voltage:.6f} V → {power_mW:.3f} mW")
+            try:   
+                f.write(f"{timestamp},{voltage:.6f},\n")
 
             except Exception as e:
                 print(f"  Error reading {label} ({channel}): {e}")
-
-        time.sleep(LOG_INTERVAL)
-
 
 if __name__ == "__main__":
     main()

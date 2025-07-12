@@ -11,6 +11,7 @@ import time
 
 import matplotlib.dates as mdates
 import matplotlib.pyplot as plt
+import numpy as np
 import pandas as pd
 from dateutil.relativedelta import relativedelta
 
@@ -44,7 +45,7 @@ channels = {
 # Live plot setup
 plt.ion()
 fig, ax = plt.subplots(figsize=(10, 5))
-hours = 60  # for plotting
+hours = 2  # for plotting
 
 
 def update_plot():
@@ -74,7 +75,19 @@ def update_plot():
             continue
 
         df_all = pd.concat(dfs)
-        df_all = df_all[df_all["Timestamp"] > (now - datetime.timedelta(hours=hours))]
+        # df_all = df_all[df_all["Timestamp"] > (now - datetime.timedelta(hours=hours))]
+        df_all = pd.concat(dfs)
+        median = np.median(df_all["Temperature"])
+        iqr = np.percentile(df_all["Temperature"], 75) - np.percentile(
+            df_all["Temperature"], 25
+        )
+        # print(f"iqr: {iqr}, median: {median}")
+        df_all = df_all[
+            (df_all["Timestamp"] > (now - datetime.timedelta(hours=hours)))
+            & (df_all["Temperature"] > 15)
+            & (df_all["Temperature"] < 25)
+        ]
+
         # Plot
         ax.plot(df_all["Timestamp"], df_all["Temperature"], label=f"Channel {label}")
 
@@ -95,7 +108,6 @@ def update_plot():
         va="bottom",
         fontsize=11,
     )
-
     plt.pause(0.1)
 
 
