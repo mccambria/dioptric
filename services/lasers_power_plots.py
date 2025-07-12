@@ -85,9 +85,10 @@ def update_plot():
 
         ax.plot(df_all["Timestamp"], df_all[y_col] * factor, label=label)
 
-    ax.set_title(f"Laser Power Monitor (Last {hours} h)")
-    ax.set_xlabel("Time")
-    ax.set_ylabel(y_label)
+    ax.set_title(f"Laser Power Monitor (Last {hours} h)", fontsize=15)
+    ax.set_xlabel("Time", fontsize=15)
+    ax.set_ylabel(y_label, fontsize=15)
+    ax.tick_params(axis="both", labelsize=13)
     ax.xaxis.set_major_formatter(mdates.DateFormatter("%Y-%m-%d %H:%M"))
     ax.legend()
     fig.autofmt_xdate()
