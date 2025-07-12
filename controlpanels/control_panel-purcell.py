@@ -894,6 +894,7 @@ def do_opx_square_wave():
         [7],  # Analog channels
         [0.45],  # Analog voltages
         10000,  # Period (ns)
+        # 1e9,  # Period (ns)
     )
     # Camera trigger
     # opx.square_wave(
@@ -1082,7 +1083,7 @@ def do_opx_constant_ac():
     #     [0.15, 0.15],  # Analog voltages
     #     [73.166, 72.941],  # Analog frequencies
     # )
-    # # Green + yellow
+    # Green + yellow
     # opx.constant_ac(
     #     [4],  # Digital channels
     #     [3, 4, 7],  # Analog channels
@@ -1224,7 +1225,7 @@ if __name__ == "__main__":
     # magnet_angle = 90
     date_str = "2025_02_26"
     sample_coords = [0.0, 0.0]
-    z_coord = 1.0
+    z_coord = 1.5
     # Load NV pixel coordinates1
     pixel_coords_list = load_nv_coords(
         # file_path="slmsuite/nv_blob_detection/nv_blob_rubin_shallow_154nvs_reordered.npz",

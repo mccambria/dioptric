@@ -16,7 +16,7 @@ from nidaqmx.constants import TerminalConfiguration
 
 with nidaqmx.Task() as task:
     task.ai_channels.add_ai_voltage_chan(
-        "Dev2/ai0",  # your channel
+        "Dev2/ai1",  # your channel
         terminal_config=TerminalConfiguration.RSE,  # use RSE for BNC-2110
         min_val=-0.2,  #  Set low range
         max_val=0.2,
@@ -24,7 +24,7 @@ with nidaqmx.Task() as task:
     voltage = task.read()
     print(f"Measured voltage: {voltage:.6f} V")
 
-sys.exit()
+# sys.exit()
 
 # === USER SETTINGS ===
 LOG_INTERVAL = 15 * 60  # seconds between samples
@@ -61,8 +61,8 @@ def read_voltage(dev, channel):
         task.ai_channels.add_ai_voltage_chan(
             full_channel,
             terminal_config=TerminalConfiguration.RSE,
-            min_val=-0.2,
-            max_val=0.2,
+            min_val=-1.0,
+            max_val=1.0,
         )
         voltage = task.read()
     return voltage
