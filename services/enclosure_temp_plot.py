@@ -45,7 +45,7 @@ channels = {
 # Live plot setup
 plt.ion()
 fig, ax = plt.subplots(figsize=(10, 5))
-hours = 2  # for plotting
+hours = 72  # for plotting
 
 
 def update_plot():
