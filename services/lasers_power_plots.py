@@ -45,7 +45,7 @@ data_folders = [
 ]
 
 # === Live Plot Setup
-kplt.init_kplotlib()
+kpl
 plt.ion()
 fig, ax = plt.subplots(figsize=(12, 6))
 
