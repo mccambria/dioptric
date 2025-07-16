@@ -23,7 +23,6 @@ base_folder = "G:\\NV_Widefield_RT_Setup_Enclosure_Temp_Logs"
 folder = datetime.datetime.now().strftime("%m%Y")
 data_folder = os.path.join(base_folder, folder)
 
-
 # Determine both current and previous month folders
 now = datetime.datetime.now()
 folder_current = now.strftime("%m%Y")
@@ -45,7 +44,7 @@ channels = {
 # Live plot setup
 plt.ion()
 fig, ax = plt.subplots(figsize=(10, 5))
-hours = 72  # for plotting
+hours = 110  # for plotting
 
 
 def update_plot():
@@ -77,10 +76,6 @@ def update_plot():
         df_all = pd.concat(dfs)
         # df_all = df_all[df_all["Timestamp"] > (now - datetime.timedelta(hours=hours))]
         df_all = pd.concat(dfs)
-        median = np.median(df_all["Temperature"])
-        iqr = np.percentile(df_all["Temperature"], 75) - np.percentile(
-            df_all["Temperature"], 25
-        )
         # print(f"iqr: {iqr}, median: {median}")
         df_all = df_all[
             (df_all["Timestamp"] > (now - datetime.timedelta(hours=hours)))
@@ -103,7 +98,7 @@ def update_plot():
     fig.text(
         0.24,
         0.22,
-        "4A --> near sample \n4B --> box corner\n4C --> air inside duct \n4D --> heat exchanger surface\n(with chiller set to 15°C)",
+        "4A --> near sample \n4B --> box corner\n4C --> air inside duct \n4D --> Outside of the enclosure",
         ha="left",
         va="bottom",
         fontsize=11,
