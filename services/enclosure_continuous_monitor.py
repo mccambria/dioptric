@@ -24,7 +24,7 @@ TEMP_CHANNELS = {
     "Stick": "None",
 }
 
-api_key = "fe1a910afabf803b2390784662a5f23d7fa593a9397c198e11"
+api_key = ""
 # determined from website/get request
 tempstick_id = "TS00NAHQ2A"
 tempstickurl = (
