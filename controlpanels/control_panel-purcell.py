@@ -1021,7 +1021,6 @@ def do_opx_constant_ac():
         [0.45],  # Analog voltages
         [0],  # Analog frequencies
     )
-
     # opx.constant_ac([4])  # Just laser
     # Red
     # freqs = [65, 75, 85]
@@ -1087,7 +1086,7 @@ def do_opx_constant_ac():
     # opx.constant_ac(
     #     [4],  # Digital channels
     #     [3, 4, 7],  # Analog channels
-    #     [0.19, 0.19, 0.20],  # Analog voltages
+    #     [0.15, 0.15, 0.45],  # Analog voltages
     #     [107, 107, 0],  # Analog frequencies
     # )
     # Red + green + Yellow
