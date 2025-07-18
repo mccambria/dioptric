@@ -40,8 +40,8 @@ base_folder = "G:\\NV_Widefield_RT_Setup_Enclosure_Temp_Logs"
 cxn = common.labrad_connect()
 opx = cxn.temp_monitor_SRS_ptc10
 
-LOG_INTERVAL = 15 * 60  # seconds between samples
-LOG_INTERVAL = 15  # seconds between samples
+# LOG_INTERVAL = 15 * 60  # seconds between samples
+LOG_INTERVAL = 5  # seconds between samples
 
 
 def get_common_duration(key):
