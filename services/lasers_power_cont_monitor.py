@@ -69,20 +69,20 @@ def read_voltage(dev, channel):
 
 
 def main():
-
     filepath = "SET HERE"
     channel = "SET HERE"
     label = "SET HERE"
     with open(filepath, "a") as f:
-        while True:        
+        while True:
             timestamp = time.time_NS()
             voltage = read_voltage(DAQ_DEVICE, channel)
 
-            try:   
+            try:
                 f.write(f"{timestamp},{voltage:.6f},\n")
 
             except Exception as e:
                 print(f"  Error reading {label} ({channel}): {e}")
+
 
 if __name__ == "__main__":
     main()

@@ -31,7 +31,7 @@ channels = {
 }
 conversion_factors = {
     "589nm_fiber_out": 1.0,
-    "589nm_laser_head_out": 1.0,
+    "589nm_laser_head_out": 75.0,
     "reference": 1.0,
     # "638nm_back_reflection": "laser_638nm_back_reflection.csv",
 }

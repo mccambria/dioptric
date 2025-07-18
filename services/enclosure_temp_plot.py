@@ -39,12 +39,12 @@ channels = {
     "4B": "temp_4B.csv",
     "4C": "temp_4C.csv",
     "4D": "temp_4D.csv",
+    # "temp_stick": "temp_stick.csv",
 }
-
 # Live plot setup
 plt.ion()
 fig, ax = plt.subplots(figsize=(10, 5))
-hours = 110  # for plotting
+hours = 1  # for plotting
 
 
 def update_plot():
@@ -52,7 +52,6 @@ def update_plot():
     now = datetime.datetime.now()
     for label, filename in channels.items():
         dfs = []
-
         for folder in data_folders:
             file_path = os.path.join(folder, filename)
             if not os.path.exists(file_path):

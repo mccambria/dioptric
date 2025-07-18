@@ -27,7 +27,8 @@ with nidaqmx.Task() as task:
 # sys.exit()
 
 # === USER SETTINGS ===
-LOG_INTERVAL = 15 * 60  # seconds between samples
+# LOG_INTERVAL = 15 * 60  # seconds between samples
+LOG_INTERVAL = 15  # seconds between samples
 DAQ_DEVICE = "Dev2"  # NI DAQ device name in NI MAX
 
 # Responsivity and gain settings for 589 nm
@@ -39,14 +40,14 @@ DAQ_DEVICE = "Dev2"  # NI DAQ device name in NI MAX
 LASER_CHANNELS = {
     "589nm_fiber_out": "ai0",
     "589nm_laser_head_out": "ai1",
-    "reference": "ai3",
+    # "reference": "ai3",
     # "638nm_back_reflection": "ai2",
 }
 
 CALIBRATION_FACTORS = {
     "589nm_fiber_out": 60.0,  # Empirical
-    "589nm_laser_head_out": 550.0,  # Empirical
-    "reference": 550.0,  # Empirical
+    "589nm_laser_head_out": 65.0,  # Empirical
+    # "reference": 550.0,  # Empirical
     # "405nm_probe": 71.8,
 }
 

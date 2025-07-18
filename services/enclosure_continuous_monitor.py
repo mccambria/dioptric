@@ -6,10 +6,12 @@ Created on June 30th, 2025
 @author: Saroj B Chand
 
 """
-import requests
+
 import datetime
 import os
 import time
+
+import requests
 
 from utils import common
 from utils import tool_belt as tb
@@ -19,15 +21,18 @@ TEMP_CHANNELS = {
     "4B": b"4B?\n",
     "4C": b"4C?\n",
     "4D": b"4D?\n",
-    "Stick": None,
+    "Stick": "None",
 }
 
 api_key = "fe1a910afabf803b2390784662a5f23d7fa593a9397c198e11"
-#determined from website/get request
+# determined from website/get request
 tempstick_id = "TS00NAHQ2A"
-tempstickurl = "https://tempstickapi.com/api/v1/sensor/" + tempstick_id + "/readings" + "?setting=today&offset=0"
-
-
+tempstickurl = (
+    "https://tempstickapi.com/api/v1/sensor/"
+    + tempstick_id
+    + "/readings"
+    + "?setting=today&offset=0"
+)
 
 
 base_folder = "G:\\NV_Widefield_RT_Setup_Enclosure_Temp_Logs"
@@ -36,7 +41,7 @@ cxn = common.labrad_connect()
 opx = cxn.temp_monitor_SRS_ptc10
 
 LOG_INTERVAL = 15 * 60  # seconds between samples
-LOG_INTERVAL = 5  # seconds between samples
+LOG_INTERVAL = 15  # seconds between samples
 
 
 def get_common_duration(key):
@@ -56,16 +61,18 @@ while True:
     for channel, cmd in TEMP_CHANNELS.items():
         try:
             if channel == "Stick":
-                #get from tempstick using the api
-                r = requests.get(url = tempstickurl, params = {'X-API-KEY',api_key})
+                # get from tempstick using the api
+                r = requests.get(url=tempstickurl, headers={"X-API-KEY": api_key})
+
                 tempstickdata = r.json()
-                temp = tempstickdata['temperature'][-1]
-                #process the timestamp into the standard format
-                timestamp = tempstickdata['sensor_time'][-1][-9:]
+                temp = tempstickdata["data"]["readings"][-1]["temperature"]
+
+                # process the timestamp into the standard format
+                timestamp = tempstickdata["data"]["readings"][-1]["sensor_time"][-9:]
                 timestamp = timestamp[:-1]
-                timestamp = datetime.datetime.now().strftime("%Y-%m-%d") + " " + timestamp
-
-
+                timestamp = (
+                    datetime.datetime.now().strftime("%Y-%m-%d") + " " + timestamp
+                )
 
             else:
                 temp = opx.get_temp(cmd)
