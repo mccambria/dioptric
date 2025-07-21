@@ -892,7 +892,7 @@ def do_opx_square_wave():
     opx.square_wave(
         [],  # Digital channels
         [7],  # Analog channels
-        [0.45],  # Analog voltages
+        [0.5],  # Analog voltages
         10000,  # Period (ns)
         # 1e9,  # Period (ns)
     )
@@ -1434,8 +1434,8 @@ if __name__ == "__main__":
         #         print(f"Scanning SAMPLE: {sample_coord}, estimated Z: {z:.3f}")
         #         do_scanning_image_sample(nv_sig)
 
-        do_opx_constant_ac()
-        # do_opx_square_wave()
+        # do_opx_constant_ac()
+        do_opx_square_wave()
 
         # do_optimize_pixel(nv_sig)
         # do_optimize_green(nv_sig)
