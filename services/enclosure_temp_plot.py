@@ -39,12 +39,12 @@ channels = {
     "4B": "temp_4B.csv",
     "4C": "temp_4C.csv",
     "4D": "temp_4D.csv",
-    # "temp_stick": "temp_stick.csv",
+    "temp_stick": "temp_stick.csv",
 }
 # Live plot setup
 plt.ion()
 fig, ax = plt.subplots(figsize=(10, 5))
-hours = 15  # for plotting
+hours = 4  # for plotting
 
 
 def update_plot():
@@ -97,7 +97,7 @@ def update_plot():
     fig.text(
         0.24,
         0.22,
-        "4A --> near sample \n4B --> box corner\n4C --> air inside duct \n4D --> Outside of the enclosure",
+        "4A --> near sample \n4B --> box corner\n4C --> air inside duct \n4D --> heat exchanger input \nNote: Chiller set to 13°C, but temp stays ≈13.3°C.",
         ha="left",
         va="bottom",
         fontsize=11,

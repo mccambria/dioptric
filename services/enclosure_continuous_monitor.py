@@ -12,6 +12,7 @@ import os
 import time
 
 import requests
+from dateutil import parser
 
 from utils import common
 from utils import tool_belt as tb
@@ -24,7 +25,7 @@ TEMP_CHANNELS = {
     "Stick": "None",
 }
 
-api_key = ""
+api_key = "fe1a910afabf803b2390784662a5f23d7fa593a9397c198e11"
 # determined from website/get request
 tempstick_id = "TS00NAHQ2A"
 tempstickurl = (
@@ -40,15 +41,8 @@ base_folder = "G:\\NV_Widefield_RT_Setup_Enclosure_Temp_Logs"
 cxn = common.labrad_connect()
 opx = cxn.temp_monitor_SRS_ptc10
 
-# LOG_INTERVAL = 5 * 60  # seconds between samples
-LOG_INTERVAL = 5  # seconds between samples
-
-
-def get_common_duration(key):
-    config = common.get_config_dict()
-    common_duration = config["CommonDurations"][key]
-    return common_duration
-
+# LOG_INTERVAL = 150  # seconds between samples
+LOG_INTERVAL = 15  # seconds between samples
 
 while True:
     interval = LOG_INTERVAL
@@ -61,18 +55,11 @@ while True:
     for channel, cmd in TEMP_CHANNELS.items():
         try:
             if channel == "Stick":
-                # get from tempstick using the api
+                # Get from TempStick using the API
                 r = requests.get(url=tempstickurl, headers={"X-API-KEY": api_key})
-
                 tempstickdata = r.json()
-                temp = tempstickdata["data"]["readings"][-1]["temperature"]
-
-                # process the timestamp into the standard format
-                timestamp = tempstickdata["data"]["readings"][-1]["sensor_time"][-9:]
-                timestamp = timestamp[:-1]
-                timestamp = (
-                    datetime.datetime.now().strftime("%Y-%m-%d") + " " + timestamp
-                )
+                latest_reading = tempstickdata["data"]["readings"][-1]
+                temp = latest_reading["temperature"]
 
             else:
                 temp = opx.get_temp(cmd)
