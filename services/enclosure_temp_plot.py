@@ -39,12 +39,12 @@ channels = {
     "4B": "temp_4B.csv",
     "4C": "temp_4C.csv",
     "4D": "temp_4D.csv",
-    # "temp_stick": "temp_stick.csv",
+    "temp_stick": "temp_stick.csv",
 }
 # Live plot setup
 plt.ion()
 fig, ax = plt.subplots(figsize=(10, 5))
-hours = 2.0  # for plotting
+hours = 1.0  # for plotting
 
 timestamp = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
 print(f"Current Time Stamp: {timestamp}")
@@ -101,8 +101,8 @@ def update_plot():
     # fig.text()
     fig.text(
         0.40,
-        0.50,
-        "4A --> near sample \n4B --> air inside duct of experiment enclosure.\n4C --> air inside duct of laser enclosure. \n4D --> air inside laser enclosure.",
+        0.66,
+        "4A --> near sample (feedback channel) \n4B --> air inside duct of experiment enclosure.\n4C --> air inside duct of laser enclosure. \n4D --> air inside laser enclosure.",
         ha="left",
         va="bottom",
         fontsize=11,
