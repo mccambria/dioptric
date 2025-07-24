@@ -49,6 +49,15 @@ class TempMonitorSrsPtc10(LabradServer):
         # Edit these as needed
         # On linux, you may have to give perms for this, use chmod 666
 
+    @setting(0, cmd="y", val="i")
+    def set_param(self, c, cmd, val):
+        self.ser.write(cmd + b"=" + bytes(str(val), 'ascii') + b'\n')
+        time.sleep(1)
+        while not data:
+            data = self.ser.readline()
+            if len(data) > 0:
+                return data
+
     @setting(0, cmd="y")
     def get_temp(self, c, cmd):
         self.ser.write(cmd)

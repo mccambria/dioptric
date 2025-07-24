@@ -15,6 +15,8 @@ import asyncio
 import csv
 import os
 
+from utils import common
+
 # ----------- USER SETTINGS -----------
 CHANNEL = "4A"
 OUTPUTCHANNEL = "Out 1"
@@ -29,9 +31,9 @@ D_vals = [10, 30, 60]
 # -------------------------------------
 
 
-async def tune_pid():
-    cxn = await connectAsync()
-    server = await cxn.temp_monitor_SRS_ptc10
+def tune_pid():
+    cxn = common.labrad_connect()
+    server = cxn.temp_monitor_SRS_ptc10
 
     os.makedirs(SAVE_DIR, exist_ok=True)
     results = []
@@ -40,9 +42,9 @@ async def tune_pid():
         for I in I_vals:
             for D in D_vals:
                 # 1. Set PID values
-                await server.set_param(OUTPUTCHANNEL + "PID.P", P)
-                await server.set_param(OUTPUTCHANNEL + "PID.I", I)
-                await server.set_param(OUTPUTCHANNEL + "PID.D", D)
+                server.set_param(OUTPUTCHANNEL + "PID.P", P)
+                server.set_param(OUTPUTCHANNEL + "PID.I", I)
+                server.set_param(OUTPUTCHANNEL + "PID.D", D)
                 print(f"\n>>> Tuning PID: P={P}, I={I}, D={D}")
 
                 time.sleep(SLEEP_BETWEEN)
@@ -53,7 +55,7 @@ async def tune_pid():
                 start_time = time.time()
                 while (time.time() - start_time) < DURATION:
                     try:
-                        temp = await server.get_temp(CHANNEL)
+                        temp = server.get_temp(CHANNEL)
                         temps.append(temp)
                         timestamps.append(datetime.datetime.now())
                         print(f"[{timestamps[-1]}] Temp: {temp:.3f} °C")
