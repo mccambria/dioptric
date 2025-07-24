@@ -44,7 +44,10 @@ channels = {
 # Live plot setup
 plt.ion()
 fig, ax = plt.subplots(figsize=(10, 5))
-hours = 1  # for plotting
+hours = 2.0  # for plotting
+
+timestamp = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+print(f"Current Time Stamp: {timestamp}")
 
 
 def update_plot():
@@ -81,7 +84,9 @@ def update_plot():
             & (df_all["Temperature"] > 15)
             & (df_all["Temperature"] < 25)
         ]
-
+        std = np.std(df_all["Temperature"])
+        # rang = np.max(df_all["Temperature"]) - np.min(df_all["Temperature"])
+        print(f"std {label}:{std}")
         # Plot
         ax.plot(df_all["Timestamp"], df_all["Temperature"], label=f"Channel {label}")
 
@@ -95,9 +100,9 @@ def update_plot():
 
     # fig.text()
     fig.text(
-        0.24,
-        0.22,
-        "4A --> near sample \n4B --> box corner\n4C --> air inside duct \n4D --> Outside of the enclosure",
+        0.40,
+        0.50,
+        "4A --> near sample \n4B --> air inside duct of experiment enclosure.\n4C --> air inside duct of laser enclosure. \n4D --> air inside laser enclosure.",
         ha="left",
         va="bottom",
         fontsize=11,

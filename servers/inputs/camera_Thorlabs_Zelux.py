@@ -4,7 +4,7 @@ Input server for the Thorlabs Zelux CMOS camera.
 
 Created on June 25th, 2024
 
-@author: Your Name
+@author: Saroj Chand
 
 ### BEGIN NODE INFO
 [info]
@@ -21,22 +21,25 @@ timeout = 5
 """
 
 import logging
+import os
 import socket
 import time
+
 import numpy as np
-import os
 from labrad.server import LabradServer, setting
 
 from slmsuite.hardware.cameras.camera import Camera
 from utils import tool_belt as tb
 
+
 def configure_path():
     absolute_path_to_dlls = "C:\\Users\\Saroj Chand\\Documents\\dioptric\\slmsuite\\hardware\\cameras\\dlls\\Native_64_lib"
-    os.environ['PATH'] = absolute_path_to_dlls + os.pathsep + os.environ['PATH']
+    os.environ["PATH"] = absolute_path_to_dlls + os.pathsep + os.environ["PATH"]
     try:
         os.add_dll_directory(absolute_path_to_dlls)
     except AttributeError:
         pass
+
 
 try:
     configure_path()
@@ -44,9 +47,12 @@ except ImportError:
     configure_path = None
 
 try:
-    from thorlabs_tsi_sdk.tl_camera import TLCameraSDK, ROI
+    from thorlabs_tsi_sdk.tl_camera import ROI, TLCameraSDK
 except ImportError:
-    print("thorlabs.py: thorlabs_tsi_sdk not installed. Install to use Thorlabs cameras.")
+    print(
+        "thorlabs.py: thorlabs_tsi_sdk not installed. Install to use Thorlabs cameras."
+    )
+
 
 class ThorCam(LabradServer):
     name = "camera_thorlabs_zelux"
@@ -65,15 +71,15 @@ class ThorCam(LabradServer):
                     "Are the .dlls in the directory added by configure_tlcam_dll_path? "
                     "Sometimes adding the .dlls to the working directory can help."
                 )
-        
+
         camera_list = ThorCam.sdk.discover_available_cameras()
         if len(camera_list) == 0:
             raise RuntimeError("No cameras found by TLCameraSDK.")
         serial = camera_list[0]
         self.cam = ThorCam.sdk.open_camera(serial)
         self.cam.is_led_on = False
-        print(f"Connected to camera with serial number: {serial }")
-        
+        print(f"Connected to camera with serial number: {serial}")
+
         self.width = self.cam.image_width_pixels
         self.height = self.cam.image_height_pixels
         self.bitdepth = self.cam.bit_depth
@@ -156,8 +162,10 @@ class ThorCam(LabradServer):
         self.cam.add_roi(offsetX, offsetY, width, height)
         self.cam.apply_roi()
 
+
 __server__ = ThorCam()
 
 if __name__ == "__main__":
     from labrad import util
+
     util.runServer(__server__)

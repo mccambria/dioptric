@@ -16,7 +16,7 @@ from nidaqmx.constants import TerminalConfiguration
 
 with nidaqmx.Task() as task:
     task.ai_channels.add_ai_voltage_chan(
-        "Dev2/ai0",  # your channel
+        "Dev2/ai1",  # your channel
         terminal_config=TerminalConfiguration.RSE,  # use RSE for BNC-2110
         min_val=-0.2,  #  Set low range
         max_val=0.2,
