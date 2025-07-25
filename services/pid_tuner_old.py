@@ -7,15 +7,14 @@ Created on July 3rd, 2025
 Live plot for laser power data from NI DAQ logger
 """
 
-import time
-import datetime
-import numpy as np
-from labrad.wrappers import connectAsync
 import asyncio
 import csv
+import datetime
 import os
+import time
 
-from utils import common
+import numpy as np
+from labrad.wrappers import connectAsync
 
 # ----------- USER SETTINGS -----------
 CHANNEL = "4A"
@@ -31,9 +30,9 @@ D_vals = [10, 30, 60]
 # -------------------------------------
 
 
-def tune_pid():
-    cxn = common.labrad_connect()
-    server = cxn.temp_monitor_SRS_ptc10
+async def tune_pid():
+    cxn = await connectAsync()
+    server = await cxn.temp_monitor_SRS_ptc10
 
     os.makedirs(SAVE_DIR, exist_ok=True)
     results = []
@@ -42,9 +41,9 @@ def tune_pid():
         for I in I_vals:
             for D in D_vals:
                 # 1. Set PID values
-                server.set_param(OUTPUTCHANNEL + "PID.P", P)
-                server.set_param(OUTPUTCHANNEL + "PID.I", I)
-                server.set_param(OUTPUTCHANNEL + "PID.D", D)
+                await server.set_param(OUTPUTCHANNEL + "PID.P", P)
+                await server.set_param(OUTPUTCHANNEL + "PID.I", I)
+                await server.set_param(OUTPUTCHANNEL + "PID.D", D)
                 print(f"\n>>> Tuning PID: P={P}, I={I}, D={D}")
 
                 time.sleep(SLEEP_BETWEEN)
@@ -55,7 +54,7 @@ def tune_pid():
                 start_time = time.time()
                 while (time.time() - start_time) < DURATION:
                     try:
-                        temp = server.get_temp(CHANNEL)
+                        temp = await server.get_temp(CHANNEL)
                         temps.append(temp)
                         timestamps.append(datetime.datetime.now())
                         print(f"[{timestamps[-1]}] Temp: {temp:.3f} °C")

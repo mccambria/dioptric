@@ -7,31 +7,38 @@ Created on July 3rd, 2025
 Live plot for laser power data from NI DAQ logger
 """
 
-import time
-import datetime
-import numpy as np
-from labrad.wrappers import connectAsync
-import asyncio
 import csv
+import datetime
 import os
+import time
+
+import numpy as np
+
+from utils import common
 
 # ----------- USER SETTINGS -----------
-CHANNEL = "4A"
-OUTPUTCHANNEL = "Out 1"
-DURATION = 60  # Seconds to record per PID setting
-SLEEP_BETWEEN = 3  # Seconds to wait between PID setting changes
+# TEMP_CHANNELS = {
+#     "4A": b"4A?\n",
+#     "4B": b"4B?\n",
+#     "4C": b"4C?\n",
+#     "4D": b"4D?\n",
+# }
+CMD = b"4A?\n"
+OUTPUTCHANNEL = b"OUT1"
+DURATION = 300  # Seconds to record per PID setting
+SLEEP_BETWEEN = 2  # Seconds to wait between PID setting changes
 SAVE_DIR = "G:/NV_Widefield_RT_Setup_Enclosure_Temp_Logs/pid_tuning"
 
 # Ranges to sweep
-P_vals = [100, 150, 200]
-I_vals = [10, 20, 40]
-D_vals = [10, 30, 60]
+P_vals = [50, 100, 150]
+I_vals = [1, 2, 3]
+D_vals = [40, 60, 80]
 # -------------------------------------
 
 
-async def tune_pid():
-    cxn = await connectAsync()
-    server = await cxn.temp_monitor_SRS_ptc10
+def tune_pid():
+    cxn = common.labrad_connect()
+    server = cxn.temp_monitor_SRS_ptc10
 
     os.makedirs(SAVE_DIR, exist_ok=True)
     results = []
@@ -40,11 +47,10 @@ async def tune_pid():
         for I in I_vals:
             for D in D_vals:
                 # 1. Set PID values
-                await server.set_param(OUTPUTCHANNEL + "PID.P", P)
-                await server.set_param(OUTPUTCHANNEL + "PID.I", I)
-                await server.set_param(OUTPUTCHANNEL + "PID.D", D)
+                server.set_param(OUTPUTCHANNEL + b".PID.P", P)
+                server.set_param(OUTPUTCHANNEL + b".PID.I", I)
+                server.set_param(OUTPUTCHANNEL + b".PID.D", D)
                 print(f"\n>>> Tuning PID: P={P}, I={I}, D={D}")
-
                 time.sleep(SLEEP_BETWEEN)
 
                 # 2. Collect data
@@ -53,7 +59,7 @@ async def tune_pid():
                 start_time = time.time()
                 while (time.time() - start_time) < DURATION:
                     try:
-                        temp = await server.get_temp(CHANNEL)
+                        temp = server.get_temp(CMD)
                         temps.append(temp)
                         timestamps.append(datetime.datetime.now())
                         print(f"[{timestamps[-1]}] Temp: {temp:.3f} °C")
@@ -79,7 +85,7 @@ async def tune_pid():
                     writer = csv.writer(f)
                     writer.writerow(["Timestamp", "Temperature"])
                     writer.writerows(zip(timestamps, temps))
-
+                # time.sleep(120)
     # 5. Save summary
     with open(os.path.join(SAVE_DIR, "summary.csv"), "w", newline="") as f:
         writer = csv.writer(f)
@@ -103,4 +109,4 @@ def calc_settling_time(data, threshold=0.02):
 
 
 if __name__ == "__main__":
-    asyncio.run(tune_pid())
+    tune_pid()
