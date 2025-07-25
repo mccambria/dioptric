@@ -136,7 +136,7 @@ def simple_allan_deviation(
     adev = {}
     for tau in taus_seconds:
         m = int(round(tau / dt_seconds))  # samples per tau
-        if m < 1 or 2 * m > N:
+        if m < 1 or m > N:
             adev[tau] = np.nan
             continue
         nblocks = N // m
