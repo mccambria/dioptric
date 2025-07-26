@@ -310,5 +310,5 @@ def tune_pid_sequential():
 
 
 if __name__ == "__main__":
-    tune_pid_sequential()
-    # set_pid()
+    # tune_pid_sequential()
+    set_pid()
