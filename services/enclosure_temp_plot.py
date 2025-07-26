@@ -1,7 +1,6 @@
 # -*- coding: utf-8 -*-
 """
 Created on June 16th, 2023
-Updated: adds SEM, peak-to-peak, drift, Allan deviation (dynamic taus) + plots.
 
 @author: Saroj B Chand
 """
@@ -136,7 +135,7 @@ def simple_allan_deviation(
     adev = {}
     for tau in taus_seconds:
         m = int(round(tau / dt_seconds))  # samples per tau
-        if m < 1 or m > N:
+        if m < 1 or m > 2 * N:
             adev[tau] = np.nan
             continue
         nblocks = N // m

@@ -47,7 +47,7 @@ class TempMonitorSrsPtc10(LabradServer):
         """
         self.ser = serial.Serial(self.port, baudrate=self.baudrate)
 
-    @setting(0, cmd="y", val="i")
+    @setting(0, cmd="y", val="v")
     def set_param(self, c, cmd, val):
         self.ser.write(cmd + b"=" + bytes(str(val), "ascii") + b"\n")
         time.sleep(1)

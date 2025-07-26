@@ -30,19 +30,19 @@ SAVE_DIR = "G:/NV_Widefield_RT_Setup_Enclosure_Temp_Logs/pid_tuning_seq"
 
 DURATION = 600  # seconds to record per candidate
 SAMPLE_PERIOD = 1.0  # seconds between samples
-SLEEP_BETWEEN = 2  # seconds after setting PID before sampling
-REST_AFTER = 5  # seconds rest after each candidate
+SLEEP_BETWEEN = 60  # seconds after setting PID before sampling
+REST_AFTER = 6  # seconds rest after each candidate
+
 
 # Sequential sweeps
-P_SWEEP = [50, 100, 150, 200]
-I_SWEEP = [1, 2, 3, 4]
-D_SWEEP = [20, 40, 60, 80]
+P_SWEEP = [115, 120, 125, 135, 140, 145, 150]
+I_SWEEP = [2, 2.5, 3, 3.5, 4.0, 4.5, 5]
+D_SWEEP = [100, 105, 110, 115, 120, 125, 130, 135, 140]
 
 # Starting (fixed) values while sweeping others
-P_INIT = 100
-I_INIT = 2
-D_INIT = 60
-
+# P_INIT = 125
+I_INIT = 3.5
+D_INIT = 120
 # Optimize using metrics from this channel (still record all)
 OPTIMIZE_ON_CHANNEL = "4A"
 
@@ -55,6 +55,17 @@ SETTLING_ABS_BAND = 0.02  # °C
 USE_REL_BAND = False
 SETTLING_REL_FRACTION = 0.001
 # ------------------------------------------------------
+
+
+def set_pid():
+    cxn = common.labrad_connect()
+    server = cxn.temp_monitor_SRS_ptc10
+    P = 135
+    I = 3.5
+    D = 120
+    server.set_param(OUTPUTCHANNEL + b".PID.P", P)
+    server.set_param(OUTPUTCHANNEL + b".PID.I", I)
+    server.set_param(OUTPUTCHANNEL + b".PID.D", D)
 
 
 def calc_settling_time(
@@ -259,7 +270,7 @@ def tune_pid_sequential():
                 "TraceCSV",
             ]
         )
-
+        fsum.flush()
         # ------------------ Sweep P ------------------
         print("\n== Sweep P (I,D fixed) ==")
         best_P, best_cost = None, np.inf
@@ -300,3 +311,4 @@ def tune_pid_sequential():
 
 if __name__ == "__main__":
     tune_pid_sequential()
+    # set_pid()
