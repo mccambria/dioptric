@@ -66,6 +66,7 @@ def set_pid():
     server.set_param(OUTPUTCHANNEL + b".PID.P", P)
     server.set_param(OUTPUTCHANNEL + b".PID.I", I)
     server.set_param(OUTPUTCHANNEL + b".PID.D", D)
+    print(f"set pid to p={P}, i={I}, d={D}")
 
 
 def calc_settling_time(

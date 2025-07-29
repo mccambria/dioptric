@@ -1,7 +1,6 @@
 # -*- coding: utf-8 -*-
 """
 Created on June 16th, 2023
-
 @author: Saroj B Chand
 """
 
@@ -23,7 +22,7 @@ kplt.init_kplotlib()
 # User-configurable parameters
 # ----------------------------
 base_folder = "G:\\NV_Widefield_RT_Setup_Enclosure_Temp_Logs"
-hours = 36.0  # window to analyze & plot
+hours = 90.0  # window to analyze & plot
 temp_low, temp_high = 15, 25  # sanity filter limits
 PLOT_ADEV = True  # set False if you don't want the Allan plot refreshing
 
@@ -42,7 +41,7 @@ channels = {
 # ----------------------------
 def build_allan_taus(hours: float) -> list:
     # From 60 s (1 min) to the full window, at least 8 points
-    n_pts = max(8, int(hours * 6))  # ~6 points/hour
+    n_pts = max(8, int(hours * 2))  # ~2 points/hour
     return list(np.linspace(60, hours * 3600, n_pts))
 
 
