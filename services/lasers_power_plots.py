@@ -19,20 +19,20 @@ from utils import kplotlib as kplt
 
 # === USER SETTINGS ===
 base_folder = "G:\\NV_Widefield_RT_Setup_Lasers_Power_Logs"
-hours = 60  # Number of hours to plot
+hours = 50  # Number of hours to plot
 plot_power = True  # True = plot power (mW), False = plot voltage (V)
 
 # Label → filename mapping (same as in logger)
 channels = {
     "589nm_fiber_out": "laser_589nm_fiber_out.csv",
     "589nm_laser_head_out": "laser_589nm_laser_head_out.csv",
-    "reference": "laser_reference.csv",
+    # "reference": "laser_reference.csv",
     # "638nm_back_reflection": "laser_638nm_back_reflection.csv",
 }
 conversion_factors = {
-    "589nm_fiber_out": 12.0,
-    "589nm_laser_head_out": 18.5,
-    "reference": 18.5,
+    "589nm_fiber_out": 1.0,
+    "589nm_laser_head_out": 75.0,
+    # "reference": 1.0,
     # "638nm_back_reflection": "laser_638nm_back_reflection.csv",
 }
 # === Determine folders for current and previous month
@@ -85,9 +85,10 @@ def update_plot():
 
         ax.plot(df_all["Timestamp"], df_all[y_col] * factor, label=label)
 
-    ax.set_title(f"Laser Power Monitor (Last {hours} h)")
-    ax.set_xlabel("Time")
-    ax.set_ylabel(y_label)
+    ax.set_title(f"Laser Power Monitor (Last {hours} h)", fontsize=15)
+    ax.set_xlabel("Time", fontsize=15)
+    ax.set_ylabel(y_label, fontsize=15)
+    ax.tick_params(axis="both", labelsize=13)
     ax.xaxis.set_major_formatter(mdates.DateFormatter("%Y-%m-%d %H:%M"))
     ax.legend()
     fig.autofmt_xdate()

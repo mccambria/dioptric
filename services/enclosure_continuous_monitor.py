@@ -11,6 +11,9 @@ import datetime
 import os
 import time
 
+import requests
+from dateutil import parser
+
 from utils import common
 from utils import tool_belt as tb
 
@@ -19,32 +22,47 @@ TEMP_CHANNELS = {
     "4B": b"4B?\n",
     "4C": b"4C?\n",
     "4D": b"4D?\n",
+    "Stick": "None",
 }
+
+api_key = "fe1a910afabf803b2390784662a5f23d7fa593a9397c198e11"
+# determined from website/get request
+tempstick_id = "TS00NAHQ2A"
+tempstickurl = (
+    "https://tempstickapi.com/api/v1/sensor/"
+    + tempstick_id
+    + "/readings"
+    + "?setting=today&offset=0"
+)
+
 
 base_folder = "G:\\NV_Widefield_RT_Setup_Enclosure_Temp_Logs"
 
 cxn = common.labrad_connect()
 opx = cxn.temp_monitor_SRS_ptc10
 
-
-def get_common_duration(key):
-    config = common.get_config_dict()
-    common_duration = config["CommonDurations"][key]
-    return common_duration
-
+# LOG_INTERVAL = 150  # seconds between samples
+LOG_INTERVAL = 2  # seconds between samples
 
 while True:
-    interval = get_common_duration("temp_reading_interval")
+    interval = LOG_INTERVAL
     month_str = datetime.datetime.now().strftime("%m%Y")
     folder_path = os.path.join(base_folder, month_str)
     os.makedirs(folder_path, exist_ok=True)
 
     timestamp = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-    timestamp = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
     print(f"Reading Temperature at {timestamp} ...")
     for channel, cmd in TEMP_CHANNELS.items():
         try:
-            temp = opx.get_temp(cmd)
+            if channel == "Stick":
+                # Get from TempStick using the API
+                r = requests.get(url=tempstickurl, headers={"X-API-KEY": api_key})
+                tempstickdata = r.json()
+                latest_reading = tempstickdata["data"]["readings"][-1]
+                temp = latest_reading["temperature"]
+
+            else:
+                temp = opx.get_temp(cmd)
             filename = f"temp_{channel}.csv"
             filepath = os.path.join(folder_path, filename)
 

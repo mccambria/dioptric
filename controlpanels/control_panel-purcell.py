@@ -892,8 +892,9 @@ def do_opx_square_wave():
     opx.square_wave(
         [],  # Digital channels
         [7],  # Analog channels
-        [0.45],  # Analog voltages
+        [0.5],  # Analog voltages
         10000,  # Period (ns)
+        # 1e9,  # Period (ns)
     )
     # Camera trigger
     # opx.square_wave(
@@ -1020,7 +1021,6 @@ def do_opx_constant_ac():
         [0.45],  # Analog voltages
         [0],  # Analog frequencies
     )
-
     # opx.constant_ac([4])  # Just laser
     # Red
     # freqs = [65, 75, 85]
@@ -1082,11 +1082,11 @@ def do_opx_constant_ac():
     #     [0.15, 0.15],  # Analog voltages
     #     [73.166, 72.941],  # Analog frequencies
     # )
-    # # Green + yellow
+    # Green + yellow
     # opx.constant_ac(
     #     [4],  # Digital channels
     #     [3, 4, 7],  # Analog channels
-    #     [0.19, 0.19, 0.20],  # Analog voltages
+    #     [0.15, 0.15, 0.45],  # Analog voltages
     #     [107, 107, 0],  # Analog frequencies
     # )
     # Red + green + Yellow
@@ -1224,7 +1224,7 @@ if __name__ == "__main__":
     # magnet_angle = 90
     date_str = "2025_02_26"
     sample_coords = [0.0, 0.0]
-    z_coord = 1.0
+    z_coord = 1.5
     # Load NV pixel coordinates1
     pixel_coords_list = load_nv_coords(
         # file_path="slmsuite/nv_blob_detection/nv_blob_rubin_shallow_154nvs_reordered.npz",
@@ -1434,8 +1434,8 @@ if __name__ == "__main__":
         #         print(f"Scanning SAMPLE: {sample_coord}, estimated Z: {z:.3f}")
         #         do_scanning_image_sample(nv_sig)
 
-        do_opx_constant_ac()
-        # do_opx_square_wave()
+        # do_opx_constant_ac()
+        do_opx_square_wave()
 
         # do_optimize_pixel(nv_sig)
         # do_optimize_green(nv_sig)
