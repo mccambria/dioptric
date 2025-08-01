@@ -80,8 +80,8 @@ def main():
     """Plot SNR as a function of green and NIR excitation rates."""
     num_vals = 100
     snrs = np.empty((num_vals, num_vals))
-    green_rate_vals = np.linspace(0.01, 0.1, num_vals)
-    nir_rate_vals = np.linspace(0.0, 0.1, num_vals)
+    green_rate_vals = np.linspace(0.001, 0.1, num_vals)
+    nir_rate_vals = np.linspace(0.0, 0.1e-3, num_vals)
 
     for green_ind in range(num_vals):
         for nir_ind in range(num_vals):
@@ -91,10 +91,16 @@ def main():
             snrs[green_ind, nir_ind] = snr_val
 
     fig, ax = plt.subplots()
-    mesh = ax.pcolormesh(green_rate_vals, nir_rate_vals, snrs.T)
-    ax.set_xlabel("Green excitation rate (GHz)")
-    ax.set_ylabel("NIR excitation rate (GHz)")
+    mesh = ax.pcolormesh(green_rate_vals * 1000, nir_rate_vals * 1000, snrs.T)
+    ax.set_xlabel("Green excitation rate (MHz)")
+    ax.set_ylabel("NIR excitation rate (MHz)")
     fig.colorbar(mesh, label="SNR")
+
+    fig, ax = plt.subplots()
+    kpl.plot_line(ax, nir_rate_vals * 1000, snrs[-1, :])
+    ax.set_xlabel("NIR excitation rate (MHz)")
+    ax.set_ylabel("SNR")
+    kpl.anchored_text(ax, "100 MHz green excitation rate", kpl.Loc.UPPER_LEFT)
 
 
 if __name__ == "__main__":
