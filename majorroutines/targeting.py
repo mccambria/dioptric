@@ -48,7 +48,7 @@ def _create_figure(positioner):
         xlabel = pos.get_positioner_units(positioner)
         ax.set_xlabel(xlabel)
         ax.set_ylabel("Counts")
-    return fig
+    return fig, axes_pack
 
 
 def _update_figure(fig, axis_ind, scan_vals, count_vals, text=None):
@@ -875,7 +875,7 @@ def optimize(
         axes = Axes.Z if coords_key == CoordsKey.Z else Axes.XY
     axes = axes.value
 
-    fig = _create_figure(coords_key)
+    fig, _ = _create_figure(coords_key)
     scan_vals = [None] * 3
     scan_counts = [None] * 3
     opti_coords = [None] * 3
@@ -935,20 +935,24 @@ def optimize(
 # endregion
 
 if __name__ == "__main__":
-    file_name = "2023_09_21-21_07_51-widefield_calibration_nv1"
+    file_name = "2024_10_25-17_40_20-johnson-nv1_2024_03_12"
+    # file_name = "2024_10_25-17_35_19-johnson-nv0_2024_03_12"
+    file_name = "2024_10_25-17_43_39-johnson-nv0_2024_03_12"
     data = dm.get_raw_data(file_name)
     positioner = "laser_INTE_520_aod"
-    fig = _create_figure(positioner)
+    fig, axes_pack = _create_figure(positioner)
     nv_sig = data["nv_sig"]
     keys = ["x", "y", "z"]
-    for axis_ind in range(3):
+    for axis_ind in range(2):
         scan_vals = data[f"{keys[axis_ind]}_scan_vals"]
         count_vals = data[f"{keys[axis_ind]}_counts"]
         _update_figure(fig, axis_ind, scan_vals, count_vals)
-        _fit_gaussian(scan_vals, count_vals, axis_ind, True, fig)
+        _fit_gaussian(scan_vals, count_vals, axis_ind, False, fig)
     r_popt = [1, 2, 3, 4]
     text = f"a={r_popt[0]}\n$\mu$={r_popt[1]}\n$\sigma$={r_popt[2]}\noffset={r_popt[3]}"
     ax = fig.gca()
-    kpl.anchored_text(ax, text, kpl.Loc.LOWER_RIGHT)
+    # kpl.anchored_text(ax, text, kpl.Loc.LOWER_RIGHT)
+    axes_pack[0].set_xlabel("X red AOD frequency (MHZ)")
+    axes_pack[1].set_xlabel("Y red AOD frequency (MHZ)")
 
     plt.show(block=True)
