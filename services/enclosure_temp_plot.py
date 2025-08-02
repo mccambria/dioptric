@@ -22,7 +22,7 @@ kplt.init_kplotlib()
 # User-configurable parameters
 # ----------------------------
 base_folder = "G:\\NV_Widefield_RT_Setup_Enclosure_Temp_Logs"
-hours = 12.0  # window to analyze & plot
+hours = 72  # window to analyze & plot
 temp_low, temp_high = 15, 25  # sanity filter limits
 PLOT_ADEV = True  # set False if you don't want the Allan plot refreshing
 
@@ -255,7 +255,7 @@ def update_plot():
 
     fig.text(
         0.40,
-        0.66,
+        0.36,
         "4A --> near sample (feedback channel)\n"
         "4B --> air inside duct of experiment enclosure\n"
         "4C --> air inside duct of laser enclosure\n"
