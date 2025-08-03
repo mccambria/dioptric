@@ -8,7 +8,6 @@ Created on April 9th, 2019
 @author: mccambria
 """
 
-
 import time
 from enum import Enum, auto
 

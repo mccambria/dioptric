@@ -5,7 +5,6 @@ Config file for the PC rabi
 Created July 20th, 2023
 
 @author: mccambria
-@author: sbchand
 """
 
 from pathlib import Path

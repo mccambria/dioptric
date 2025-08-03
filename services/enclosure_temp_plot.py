@@ -22,7 +22,7 @@ kplt.init_kplotlib()
 # User-configurable parameters
 # ----------------------------
 base_folder = "G:\\NV_Widefield_RT_Setup_Enclosure_Temp_Logs"
-hours = 72  # window to analyze & plot
+hours = 0.1  # window to analyze & plot
 temp_low, temp_high = 15, 25  # sanity filter limits
 PLOT_ADEV = True  # set False if you don't want the Allan plot refreshing
 

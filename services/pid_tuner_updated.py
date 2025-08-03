@@ -60,13 +60,19 @@ SETTLING_REL_FRACTION = 0.001
 def set_pid():
     cxn = common.labrad_connect()
     server = cxn.temp_monitor_SRS_ptc10
+
     P = 135
     I = 3.5
     D = 120
+
     server.set_param(OUTPUTCHANNEL + b".PID.P", P)
     server.set_param(OUTPUTCHANNEL + b".PID.I", I)
     server.set_param(OUTPUTCHANNEL + b".PID.D", D)
-    print(f"set pid to p={P}, i={I}, d={D}")
+
+    # Disable Time-Proportional Control (use analog output mode instead)
+    server.set_param(OUTPUTCHANNEL + b".TPC.ENABLE", 0)
+
+    print(f"set pid to p={P}, i={I}, d={D}, TPC disabled (analog output mode)")
 
 
 def calc_settling_time(
