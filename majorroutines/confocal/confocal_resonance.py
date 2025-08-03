@@ -1,0 +1,88 @@
+# -*- coding: utf-8 -*-
+"""
+Confocal ESR experiment using base routine.
+Sweeps microwave frequency, reads signal and reference counts via APD tagger.
+
+Created on Augu 2, 2025
+@author: Saroj Chand
+"""
+
+import numpy as np
+from utils import tool_belt as tb, data_manager as dm
+from confocal_base_routine import main as base_routine
+
+
+def main(
+    pulse_streamer,
+    tagger,
+    seq_file,
+    scan_coords,
+    freqs,
+    num_reps,
+    num_runs,
+    apd_ch,
+    apd_time,
+    run_nir_fn=None,
+    use_reference=True,
+    norm_style="contrast",
+):
+    """
+    Parameters:
+        pulse_streamer: PulseStreamer client
+        tagger: Tagger device
+        seq_file: QUA program path
+        scan_coords: [x, y, z] center
+        freqs: array of frequencies in GHz
+        num_reps: repetitions per point
+        num_runs: number of full sweeps
+        apd_ch: APD channel
+        apd_time: APD collection time in seconds
+        run_nir_fn: function(bool) to toggle NIR (optional)
+        use_reference: whether to use signal/reference gates
+        norm_style: normalization method ("contrast", etc.)
+    """
+
+    def seq_args_fn(step_idx):
+        return [float(freqs[step_idx])]
+
+    def apd_read_fn(tagger, apd_ch, apd_time):
+        if use_reference:
+            counts = tb.read_apd_2gates(tagger, apd_ch, apd_time)
+        else:
+            counts = tb.read_apd_counts(tagger, apd_ch, apd_time)
+        return counts
+
+    # Call the base routine
+    raw_data = base_routine(
+        pulse_streamer=pulse_streamer,
+        seq_file=seq_file,
+        seq_args_fn=seq_args_fn,
+        scan_coords=scan_coords,
+        num_steps=len(freqs),
+        num_reps=num_reps,
+        num_runs=num_runs,
+        apd_read_fn=apd_read_fn,
+        tagger=tagger,
+        apd_ch=apd_ch,
+        apd_time=apd_time,
+        run_nir_fn=run_nir_fn,
+    )
+
+    # Optional normalization
+    if use_reference:
+        raw_counts = np.array(raw_data["counts"])
+        norm, ste = tb.process_counts_array(
+            raw_counts, gate_mode="2gate", norm_style=norm_style
+        )
+        raw_data["norm"] = norm.tolist()
+        raw_data["norm_ste"] = ste.tolist()
+        raw_data["norm_style"] = norm_style
+
+    raw_data["freqs"] = freqs.tolist()
+    raw_data["use_reference"] = use_reference
+    dm.save_raw_data(raw_data, dm.get_file_path(__file__, raw_data["timestamp"]))
+    return raw_data
+
+
+if __name__ == "__main__":
+    main()
