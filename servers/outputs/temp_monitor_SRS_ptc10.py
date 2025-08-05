@@ -70,6 +70,22 @@ class TempMonitorSrsPtc10(LabradServer):
                 result = float(data.split(b"\r")[0])
                 return result
 
+    @setting(2, cmd="y")
+    def get_param(self, c, cmd):
+        """
+        General getter for arbitrary SRS PTC10 parameters (e.g., OUT1.VSET).
+        """
+        self.ser.write(cmd + b"\n")
+        time.sleep(0.2)
+        data = b""
+        while not data:
+            data = self.ser.readline()
+        print(f"Response to {cmd}: {data}")  # DEBUG: print raw response
+        try:
+            return float(data.split(b"\r")[0])
+        except Exception:
+            return float("nan")
+
     def stopServer(self):
         """Ensure all everything is closed."""
         self.ser.close()

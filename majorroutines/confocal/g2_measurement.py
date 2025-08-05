@@ -15,7 +15,6 @@ Created on Wed Apr 24 17:33:26 2019
 
 # %% Imports
 
-
 import json
 import time
 
@@ -236,7 +235,6 @@ def main_with_cxn(cxn, nv_sig, run_time, diff_window):
     tagger_server.start_tag_stream([apd_a_di_ind, apd_b_di_ind], [], False)
 
     # %% Collect the data
-
     start_time = time.time()
     print("Time remaining:")
     tool_belt.init_safe_stop()

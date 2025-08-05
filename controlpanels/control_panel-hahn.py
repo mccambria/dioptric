@@ -12,25 +12,24 @@ Created on November 25th, 2018
 
 # region Imports and constants
 
-
 import copy
 import time
 
 import labrad
 import numpy as np
 
-import majorroutines.determine_standard_readout_params as determine_standard_readout_params
-import majorroutines.g2_measurement as g2_measurement
-import majorroutines.image_sample as image_sample
-import majorroutines.optimize_magnet_angle as optimize_magnet_angle
-import majorroutines.pulsed_resonance as pulsed_resonance
-import majorroutines.rabi as rabi
-import majorroutines.ramsey as ramsey
-import majorroutines.resonance as resonance
-import majorroutines.spin_echo as spin_echo
-import majorroutines.stationary_count as stationary_count
-import majorroutines.t1_dq_main as t1_dq_main
-import majorroutines.targeting as targeting
+import majorroutines.confocal.determine_standard_readout_params as determine_standard_readout_params
+import majorroutines.confocal.g2_measurement as g2_measurement
+import majorroutines.confocal.image_sample as image_sample
+import majorroutines.confocal.optimize_magnet_angle as optimize_magnet_angle
+import majorroutines.confocal.pulsed_resonance as pulsed_resonance
+import majorroutines.confocal.rabi as rabi
+import majorroutines.confocal.ramsey as ramsey
+import majorroutines.confocal.resonance as resonance
+import majorroutines.confocal.spin_echo as spin_echo
+import majorroutines.confocal.stationary_count as stationary_count
+import majorroutines.confocal.t1_dq_main as t1_dq_main
+import majorroutines.confocal.targeting as targeting
 import utils.tool_belt as tool_belt
 from utils.tool_belt import States
 
