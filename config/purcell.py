@@ -81,6 +81,7 @@ pixel_to_sample_affine_transformation_matrix = [
 # Add on to the default config
 config |= {
     ###
+    "apd_indices": [0],  # APD indices for the tagger
     "count_format": CountFormat.RAW,
     "collection_mode": CollectionMode.CAMERA,
     # "charge_state_estimation_mode": ChargeStateEstimationMode.MLE,
@@ -110,7 +111,8 @@ config |= {
         "objective_piezo_serial": "0119008970",
         "piezo_controller_E727_model": "E727",
         "piezo_controller_E727_serial": "0121089079",
-        "pulse_gen_SWAB_82_ip": "192.168.0.111",
+        "pulse_gen_SWAB_82_ip_1": "192.168.0.111",
+        "pulse_gen_SWAB_82_ip_2": "192.168.0.160",
         "rotation_stage_THOR_ell18k_com": "COM8",
         "sig_gen_BERK_bnc835_visa": "TCPIP::128.104.ramp_to_zero_duration.114::inst0::INSTR",
         "sig_gen_STAN_sg394_visa": "TCPIP::192.168.0.120::inst0::INSTR",
@@ -319,9 +321,10 @@ config |= {
     },
     ###
     "Wiring": {
+        # https://docs-be.ni.com/bundle/ni-67xx-scb-68a-labels/raw/resource/enus/371806a.pdf
         "Daq": {
-            # "ao_galvo_x": "dev1/AO0",
-            # "ao_galvo_y": "dev1/AO1",
+            "ao_galvo_x": "dev1/AO31",
+            "ao_galvo_y": "dev1/AO22",
             "ao_piezo_stage_P616_3c_x": "dev1/AO25",
             "ao_piezo_stage_P616_3c_y": "dev1/AO27",
             "ao_piezo_stage_P616_3c_z": "dev1/AO29",

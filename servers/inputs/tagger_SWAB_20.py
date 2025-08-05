@@ -17,17 +17,17 @@ timeout = 5
 ### END NODE INFO
 """
 
-
-from labrad.server import LabradServer
-from labrad.server import setting
-from twisted.internet.defer import ensureDeferred
-from utils import common
-import TimeTagger
-import numpy as np
 import logging
 import re
 import socket
+
+import numpy as np
+import TimeTagger
+from labrad.server import LabradServer, setting
+from twisted.internet.defer import ensureDeferred
+
 from servers.inputs.interfaces.tagger import Tagger
+from utils import common
 
 
 class TaggerSwab20(Tagger, LabradServer):
@@ -36,17 +36,18 @@ class TaggerSwab20(Tagger, LabradServer):
 
     def initServer(self):
         ### Logging
-
-        filename = (
-            "E:/Shared drives/Kolkowitz Lab" " Group/nvdata/pc_{}/labrad_logging/{}.log"
-        )
-        filename = filename.format(self.pc_name, self.name)
-        logging.basicConfig(
-            level=logging.INFO,
-            format="%(asctime)s %(levelname)-8s %(message)s",
-            datefmt="%y-%m-%d_%H-%M-%S",
-            filename=filename,
-        )
+        # tb.configure_logging(self)
+        # config = common.get_config_dict()
+        # filename = (
+        #     "E:/Shared drives/Kolkowitz Lab Group/nvdata/pc_{}/labrad_logging/{}.log"
+        # )
+        # filename = filename.format(self.pc_name, self.name)
+        # logging.basicConfig(
+        #     level=logging.INFO,
+        #     format="%(asctime)s %(levelname)-8s %(message)s",
+        #     datefmt="%y-%m-%d_%H-%M-%S",
+        #     filename=filename,
+        # )
 
         ### Configure
 
