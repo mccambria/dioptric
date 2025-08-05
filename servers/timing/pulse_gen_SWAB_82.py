@@ -22,21 +22,20 @@ timeout = 5
 ### END NODE INFO
 """
 
-from labrad.server import LabradServer
-from labrad.server import setting
-from twisted.internet.defer import ensureDeferred
-from pulsestreamer import PulseStreamer
-from pulsestreamer import TriggerStart
-from pulsestreamer import OutputState
 import importlib
-import os
-import sys
-from utils import tool_belt as tb
 import logging
+import os
 import socket
+import sys
 from pathlib import Path
+
+from labrad.server import LabradServer, setting
+from pulsestreamer import OutputState, PulseStreamer, TriggerStart
+from twisted.internet.defer import ensureDeferred
+
 from servers.timing.interfaces.pulse_gen import PulseGen
 from utils import common
+from utils import tool_belt as tb
 
 
 class PulseGenSwab82(PulseGen, LabradServer):
@@ -47,7 +46,8 @@ class PulseGenSwab82(PulseGen, LabradServer):
         tb.configure_logging(self)
 
         config = common.get_config_dict()
-        device_id = config["DeviceIDs"][f"{self.name}_ip"]
+        device_id = config["DeviceIDs"][f"{self.name}_ip_2"]
+        # logging.info(f"Connecting to PulseStreamer at {device_id}")
         self.pulse_streamer = PulseStreamer(device_id)
         calibration = self.pulse_streamer.getAnalogCalibration()
         logging.info(calibration)
