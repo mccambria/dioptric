@@ -52,17 +52,15 @@ def snr(green_rate, nir_rate):
     # Stationary distribution is the eigenvector with eigenvalue 1.
     nir_on_ind = np.where(np.isclose(nir_on_vals, 1))[0][0]
     nir_on_vec = nir_on_vecs.T[nir_on_ind]
-    # Vectors are normalized up to factor of -1
-    if np.any(nir_on_vec < 0):
-        nir_on_vec *= -1
+    # Vector elements are probabilities so should sum to 1. Default norm is Euclidean distance=1
+    nir_on_vec = nir_on_vec / np.sum(nir_on_vec)
 
     # Reference experiment
     nir_off_matrix = calc_stochastic_matrix(green_rate, 0)
     nir_off_vals, nir_off_vecs = eig(nir_off_matrix.T)
     nir_off_ind = np.where(np.isclose(nir_off_vals, 1))[0][0]
     nir_off_vec = nir_off_vecs.T[nir_off_ind]
-    if np.any(nir_off_vec < 0):
-        nir_off_vec *= -1
+    nir_off_vec = nir_off_vec / np.sum(nir_off_vec)
 
     # The total number of photons scattered is the total amount of time spent in
     # the excited state times the radiative decay rate out of the excited state.
@@ -81,7 +79,7 @@ def main():
     num_vals = 100
     snrs = np.empty((num_vals, num_vals))
     green_rate_vals = np.linspace(0.001, 0.1, num_vals)
-    nir_rate_vals = np.linspace(0.0, 0.1e-3, num_vals)
+    nir_rate_vals = np.linspace(0.0, 0.1e-5, num_vals)
 
     for green_ind in range(num_vals):
         for nir_ind in range(num_vals):
@@ -91,14 +89,14 @@ def main():
             snrs[green_ind, nir_ind] = snr_val
 
     fig, ax = plt.subplots()
-    mesh = ax.pcolormesh(green_rate_vals * 1000, nir_rate_vals * 1000, snrs.T)
+    mesh = ax.pcolormesh(green_rate_vals * 1000, nir_rate_vals * 1e6, snrs.T)
     ax.set_xlabel("Green excitation rate (MHz)")
-    ax.set_ylabel("NIR excitation rate (MHz)")
+    ax.set_ylabel("NIR excitation rate (kHz)")
     fig.colorbar(mesh, label="SNR")
 
     fig, ax = plt.subplots()
-    kpl.plot_line(ax, nir_rate_vals * 1000, snrs[-1, :])
-    ax.set_xlabel("NIR excitation rate (MHz)")
+    kpl.plot_line(ax, nir_rate_vals * 1e6, snrs[-1, :])
+    ax.set_xlabel("NIR excitation rate (kHz)")
     ax.set_ylabel("SNR")
     kpl.anchored_text(ax, "100 MHz green excitation rate", kpl.Loc.UPPER_LEFT)
 
