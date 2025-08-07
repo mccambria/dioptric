@@ -29,7 +29,7 @@ def main(nv_sig, num_steps, num_reps, num_runs, min_tau, max_tau, uwave_ind_list
     ### Some initial setup
 
     pulse_streamer = tb.get_server_pulse_streamer()
-    seq_file = "rabi_seq.py"
+    seq_file = "rabi_seq"
     taus = np.linspace(min_tau, max_tau, num_steps)
 
     ### Collect the data
