@@ -65,7 +65,7 @@ class MultimeterKeitDaq6510(LabradServer):
     @setting(5, returns="v[]")
     def read(self, c):
         """Return the value from the main display."""
-        value = self.multimeter.query("MEAS1?")
+        value = self.multimeter.query(":MEASure:VOLTage:DC?")
         return value
 
     @setting(6)

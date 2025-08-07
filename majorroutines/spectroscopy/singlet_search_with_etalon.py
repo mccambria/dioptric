@@ -2,9 +2,9 @@
 """
 Search for NV triplet-to-singlet wavelength
 
-Created on August 5th, 2025
+Created on August 7th, 2025
 
-@author: mccambria
+@author: jchen-1
 """
 
 import time
@@ -40,7 +40,9 @@ def main(
     num_exps = 2
 
     etalon_settings = np.arange(
-        50 - etalon_range, 50 + (etalon_range + 1), etalon_spacing
+        50 - int(etalon_range / 2),
+        50 + (etalon_range - int(etalon_range / 2)) + 1,
+        etalon_spacing,
     )
     num_etalon = len(etalon_settings)
     voltages = np.empty((num_runs, num_steps, num_etalon, num_exps))
@@ -50,7 +52,7 @@ def main(
 
     shutter_channel = 1
     shutter = common.get_server_by_name("shutter_STAN_sr474")
-    multimeter = common.get_server_by_name("multimeter_MULT_mp730028")
+    multimeter = common.get_server_by_name("multimeter_KEIT_daq6510")
     tisapph = common.get_server_by_name("tisapph_M2_solstis")
 
     ### Collect the data
@@ -59,6 +61,8 @@ def main(
 
     # Row 0 - Voltage, Row 1 - Wavelength Bin
     data_to_save = np.empty((2, num_runs, num_steps, num_etalon, num_exps))
+
+    start_time = time.time()
 
     try:
         # Runs loop
@@ -81,11 +85,11 @@ def main(
                 data_to_save[1, run_ind, num_steps_completed, :, :] = wavelength
 
                 # Decrement etalon voltage from 50% sweep
-                for eind in range(int(num_etalon / 2) - 1, -1, -etalon_spacing):
+                for eind in range(int(num_etalon / 2) - 1, -1, -1):
                     # Get reference voltage
                     shutter.close(shutter_channel)
                     time.sleep(0.04)
-                    voltage = multimeter.measure()
+                    voltage = multimeter.read()
                     voltages[run_ind, step_ind, eind, 0] = voltage
                     # Save data
                     data_to_save[0, run_ind, num_steps_completed, eind, 0] = voltage
@@ -95,7 +99,7 @@ def main(
 
                     # Get signal voltage
                     time.sleep(0.05)
-                    voltage = multimeter.measure()
+                    voltage = multimeter.read()
                     voltages[run_ind, step_ind, eind, 1] = voltage
                     # Save data
                     data_to_save[0, run_ind, num_steps_completed, eind, 1] = voltage
@@ -103,17 +107,18 @@ def main(
                         np.save(
                             dm_folder / f"{timestamp}-singlet_search.npy", data_to_save
                         )
-                        print(f"Etalon at {etalon_settings[eind]}\%")
+                        print(f"Etalon at {etalon_settings[eind]}%")
+                        print(f"Time elapsed: {time.time() - start_time}")
 
                 # Set back to 50%
                 tisapph.tune_etalon_relative(50)
 
                 # Increment etalon voltage from 50% sweep
-                for eind in range(int(num_etalon / 2), num_etalon, etalon_spacing):
+                for eind in range(int(num_etalon / 2), num_etalon, 1):
                     # Get reference voltage
                     shutter.close(shutter_channel)
                     time.sleep(0.04)
-                    voltage = multimeter.measure()
+                    voltage = multimeter.read()
                     voltages[run_ind, step_ind, eind, 0] = voltage
                     # Save data
                     data_to_save[0, run_ind, num_steps_completed, eind, 0] = voltage
@@ -123,7 +128,7 @@ def main(
 
                     # Get signal voltage
                     time.sleep(0.05)
-                    voltage = multimeter.measure()
+                    voltage = multimeter.read()
                     voltages[run_ind, step_ind, eind, 1] = voltage
                     # Save data
                     data_to_save[0, run_ind, num_steps_completed, eind, 1] = voltage
@@ -131,7 +136,8 @@ def main(
                         np.save(
                             dm_folder / f"{timestamp}-singlet_search.npy", data_to_save
                         )
-                        print(f"Etalon at {etalon_settings[eind]}\%")
+                        print(f"Etalon at {etalon_settings[eind]}%")
+                        print(f"Time elapsed: {time.time() - start_time}")
 
                 num_steps_completed += 1
 
@@ -192,7 +198,7 @@ def main(
         "timestamp": timestamp,
     }
 
-    repr_nv_name = "implanted_chinese"
+    repr_nv_name = "test"  # implanted_chinese
     file_path = dm.get_file_path(__file__, timestamp, repr_nv_name)
     dm.save_raw_data(raw_data, file_path)
     # if raw_fig is not None:
