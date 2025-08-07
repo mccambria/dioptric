@@ -33,30 +33,29 @@ def create_fit_figure():
     pass
 
 
-def main(min_wavelength, max_wavelength, num_steps, num_runs):
+def main(
+    min_wavelength, max_wavelength, num_steps, num_runs, etalon_range, etalon_spacing=1
+):
     wavelengths = np.linspace(min_wavelength, max_wavelength, num_steps)
     num_exps = 2
 
-    etalon_range = 10
-    etalon_spacing = 1
-    # if range = 10, then the settings will be set to [45, 55] so 11 data points in total
     etalon_settings = np.arange(
         50 - etalon_range, 50 + (etalon_range + 1), etalon_spacing
     )
     num_etalon = len(etalon_settings)
-
     voltages = np.empty((num_runs, num_steps, num_etalon, num_exps))
 
     step_ind_list = list(range(0, num_steps))
     step_ind_master_list = [None for ind in range(num_runs)]
-    shutter_channel = 1
 
+    shutter_channel = 1
     shutter = common.get_server_by_name("shutter_STAN_sr474")
     multimeter = common.get_server_by_name("multimeter_MULT_mp730028")
     tisapph = common.get_server_by_name("tisapph_M2_solstis")
 
     ### Collect the data
     dm_folder = common.get_data_manager_folder()
+    timestamp = time.strftime("%Y%m%d-%H%M%S")
 
     # Row 0 - Voltage, Row 1 - Wavelength Bin
     data_to_save = np.empty((2, num_runs, num_steps, num_etalon, num_exps))
@@ -88,6 +87,8 @@ def main(min_wavelength, max_wavelength, num_steps, num_runs):
                     time.sleep(0.04)
                     voltage = multimeter.measure()
                     voltages[run_ind, step_ind, eind, 0] = voltage
+                    # Save data
+                    data_to_save[0, run_ind, num_steps_completed, eind, 0] = voltage
 
                     shutter.open(shutter_channel)
                     tisapph.tune_etalon_relative(etalon_settings[eind])
@@ -96,6 +97,13 @@ def main(min_wavelength, max_wavelength, num_steps, num_runs):
                     time.sleep(0.05)
                     voltage = multimeter.measure()
                     voltages[run_ind, step_ind, eind, 1] = voltage
+                    # Save data
+                    data_to_save[0, run_ind, num_steps_completed, eind, 1] = voltage
+                    if eind % 5 == 0:
+                        np.save(
+                            dm_folder / f"{timestamp}-singlet_search.npy", data_to_save
+                        )
+                        print(f"Etalon at {etalon_settings[eind]}\%")
 
                 # Set back to 50%
                 tisapph.tune_etalon_relative(50)
@@ -107,6 +115,8 @@ def main(min_wavelength, max_wavelength, num_steps, num_runs):
                     time.sleep(0.04)
                     voltage = multimeter.measure()
                     voltages[run_ind, step_ind, eind, 0] = voltage
+                    # Save data
+                    data_to_save[0, run_ind, num_steps_completed, eind, 0] = voltage
 
                     shutter.open(shutter_channel)
                     tisapph.tune_etalon_relative(etalon_settings[eind])
@@ -115,6 +125,13 @@ def main(min_wavelength, max_wavelength, num_steps, num_runs):
                     time.sleep(0.05)
                     voltage = multimeter.measure()
                     voltages[run_ind, step_ind, eind, 1] = voltage
+                    # Save data
+                    data_to_save[0, run_ind, num_steps_completed, eind, 1] = voltage
+                    if eind % 5 == 0:
+                        np.save(
+                            dm_folder / f"{timestamp}-singlet_search.npy", data_to_save
+                        )
+                        print(f"Etalon at {etalon_settings[eind]}\%")
 
                 num_steps_completed += 1
 
@@ -137,37 +154,38 @@ def main(min_wavelength, max_wavelength, num_steps, num_runs):
         "step_ind_master_list": step_ind_master_list,
         "voltages": voltages,
         "voltages-units": "photons",
+        "etalon_setts": etalon_settings,
     }
 
     ### Process and plot
 
-    try:
-        avg_voltages = np.mean(voltages, axis=1)
-        ste_voltages = np.std(voltages, axis=1) / np.sqrt(num_runs)
-        ref_voltages = avg_voltages[0]
-        sig_voltages = avg_voltages[1]
-        ref_voltages_ste = ste_voltages[0]
-        sig_voltages_ste = ste_voltages[1]
+    # try:
+    #     avg_voltages = np.mean(voltages, axis=1)
+    #     ste_voltages = np.std(voltages, axis=1) / np.sqrt(num_runs)
+    #     ref_voltages = avg_voltages[0]
+    #     sig_voltages = avg_voltages[1]
+    #     ref_voltages_ste = ste_voltages[0]
+    #     sig_voltages_ste = ste_voltages[1]
 
-        diff = ref_voltages - sig_voltages
-        relative_diff = (ref_voltages - sig_voltages) / ref_voltages
-        diff_err = np.sqrt(ref_voltages_ste**2 + sig_voltages_ste**2)
-        relative_diff_err = np.abs(relative_diff) * np.sqrt(
-            (diff_err / diff) ** 2 + (ref_voltages_ste / ref_voltages) ** 2
-        )
+    #     diff = ref_voltages - sig_voltages
+    #     relative_diff = (ref_voltages - sig_voltages) / ref_voltages
+    #     diff_err = np.sqrt(ref_voltages_ste**2 + sig_voltages_ste**2)
+    #     relative_diff_err = np.abs(relative_diff) * np.sqrt(
+    #         (diff_err / diff) ** 2 + (ref_voltages_ste / ref_voltages) ** 2
+    #     )
 
-        raw_fig = create_raw_figure(wavelengths, relative_diff, relative_diff_err)
-        # fit_fig = create_fit_figure(wavelengths, relative_diff)
-        fit_fig = None
-    except Exception:
-        print(traceback.format_exc())
-        raw_fig = None
-        fit_fig = None
+    #     raw_fig = create_raw_figure(wavelengths, relative_diff, relative_diff_err)
+    #     # fit_fig = create_fit_figure(wavelengths, relative_diff)
+    #     fit_fig = None
+    # except Exception:
+    #     print(traceback.format_exc())
+    #     raw_fig = None
+    #     fit_fig = None
 
-    ### Clean up and return
+    # ### Clean up and return
 
     tb.reset_cfm()
-    kpl.show()
+    # kpl.show()
 
     timestamp = dm.get_time_stamp()
     raw_data |= {
@@ -177,11 +195,11 @@ def main(min_wavelength, max_wavelength, num_steps, num_runs):
     repr_nv_name = "implanted_chinese"
     file_path = dm.get_file_path(__file__, timestamp, repr_nv_name)
     dm.save_raw_data(raw_data, file_path)
-    if raw_fig is not None:
-        dm.save_figure(raw_fig, file_path)
-    if fit_fig is not None:
-        file_path = dm.get_file_path(__file__, timestamp, repr_nv_name + "-fit")
-        dm.save_figure(fit_fig, file_path)
+    # if raw_fig is not None:
+    #     dm.save_figure(raw_fig, file_path)
+    # if fit_fig is not None:
+    #     file_path = dm.get_file_path(__file__, timestamp, repr_nv_name + "-fit")
+    #     dm.save_figure(fit_fig, file_path)
 
 
 if __name__ == "__main__":

@@ -18,7 +18,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 import websocket
 
-from majorroutines.spectroscopy import singlet_search
+from majorroutines.spectroscopy import singlet_search, singlet_search_with_etalon
 
 # from majorroutines import targeting
 from utils import common
@@ -37,6 +37,24 @@ def do_singlet_search():
     num_runs = 2
 
     singlet_search.main(min_wavelength, max_wavelength, num_steps, num_runs)
+
+
+def do_singlet_search_with_etalon():
+    min_wavelength = 800
+    max_wavelength = 810
+    etalon_range = 6
+    etalon_spacing = 2
+    num_steps = 5
+    num_runs = 2
+
+    singlet_search_with_etalon.main(
+        min_wavelength,
+        max_wavelength,
+        num_steps,
+        num_runs,
+        etalon_range,
+        etalon_spacing,
+    )
 
 
 def test_shutter():
@@ -152,9 +170,10 @@ if __name__ == "__main__":
         # print(time.time() - start)
         # test_tisapph()
         # test_tisapph_etalon()
-        test_meas_etalon_timing()
+        # test_meas_etalon_timing()
         # test_measure_shutter_timing()
         # do_singlet_search()
+        do_singlet_search_with_etalon()
 
     except Exception as exc:
         if do_email:
