@@ -49,6 +49,7 @@ config |= {
     "DeviceIDs": {
         "shutter_STAN_sr474_visa": "TCPIP::192.168.0.119::inst0::INSTR",
         "multimeter_MULT_mp730028_visa": "TCPIP0::192.168.0.174::3000::SOCKET",
+        "multimeter_KEIT_daq6510_visa": "TCPIP0::192.168.0.175::inst0::INSTR",
         "tisapph_M2_solstis_ip": "192.168.0.195",
     },
     ###
