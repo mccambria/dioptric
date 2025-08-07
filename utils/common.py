@@ -32,7 +32,7 @@ def get_nvdata_dir():
     """Returns an OS-dependent Path to the nvdata directory (configured above)"""
     os_name = platform.system().lower()
     config = get_config_dict()
-    nvdata_dir = config[f"{os_name}_nvdata_dir"]
+    nvdata_dir = config[f"{os_name}_nvdata_path"]
     return nvdata_dir
 
 
@@ -77,7 +77,8 @@ def get_data_manager_folder():
 
 @cache
 def get_labrad_logging_folder():
-    return get_repo_path() / "labrad_logging"
+    pc_name = socket.gethostname()
+    return get_nvdata_path() / f"pc_{pc_name}" / "labrad_logging"
 
 
 @cache
