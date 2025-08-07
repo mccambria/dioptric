@@ -1,102 +1,279 @@
 # -*- coding: utf-8 -*-
 """
-Confocal base routine for single-position pulse sequence experiments.
-Handles APD readout, optional NIR toggling, and drift correction.
+Base routine for widefield experiments with many spatially resolved NV centers.
 
-Created on August 2, 2025
-@author: Saroj Chand
+Created on December 6th, 2023
+
+@author: mccambria
 """
 
+import logging
 import time
+import traceback
+from random import shuffle
+
 import numpy as np
+
+from majorroutines import targeting
+from utils import common, widefield
+from utils import positioning as pos
 from utils import tool_belt as tb
-from utils import data_manager as dm
+from utils.constants import ChargeStateEstimationMode, CoordsKey
+
+
+def charge_prep_no_verification_skip_first_rep(
+    rep_ind, nv_list, initial_states_list=None
+):
+    if rep_ind > 0:
+        charge_prep_base(nv_list, initial_states_list)
+
+
+def charge_prep_no_verification(rep_ind, nv_list, initial_states_list=None):
+    charge_prep_base(nv_list, initial_states_list)
+
+
+# def charge_prep_first_rep_only(rep_ind, nv_list, initial_states_list=None):
+#     if rep_ind == 0:
+#         charge_prep_loop(nv_list, initial_states_list)
+
+
+def charge_prep_loop(rep_ind, nv_list, initial_states_list=None):
+    charge_prep_base(
+        nv_list,
+        initial_states_list,
+        targeted_polarization=True,
+        verify_charge_states=True,
+    )
+
+
+def charge_prep_base(
+    nv_list,
+    initial_states_list=None,
+    targeted_polarization=True,
+    verify_charge_states=False,
+):
+    # Initial setup
+    pulse_gen = tb.get_server_pulse_gen()
+    num_nvs = len(nv_list)
+    states_list = initial_states_list
+
+    # Inner function for determining which NVs to target
+    def assemble_charge_pol_target_list(states_list):
+        if states_list is not None:
+            charge_pol_target_list = [el is None or el == 0 for el in states_list]
+        else:
+            charge_pol_target_list = [True for ind in range(num_nvs)]
+        # charge_pol_target_list = [not (el) for el in charge_pol_target_list]
+        # charge_pol_target_list = [False for ind in range(num_nvs)]
+        return charge_pol_target_list
+
+    if verify_charge_states:
+        max_num_attempts = 10
+        # max_num_attempts = 1
+        out_of_attempts = False
+        attempt_ind = 0
+
+        # Loop until we have a reason to stop
+        while True:
+            out_of_attempts = attempt_ind == max_num_attempts
+            charge_pol_target_list = assemble_charge_pol_target_list(states_list)
+
+            # Reasons to stop
+            no_more_targets = True not in charge_pol_target_list
+            charge_pol_complete = no_more_targets or out_of_attempts
+            pulse_gen.insert_input_stream(
+                "_cache_charge_pol_incomplete", not charge_pol_complete
+            )
+            if charge_pol_complete:
+                break
+
+            pulse_gen.insert_input_stream("_cache_target_list", charge_pol_target_list)
+
+            _, _, states_list = read_and_process_image(nv_list)
+
+            # Move on to next attempt
+            attempt_ind += 1
+    elif targeted_polarization:
+        charge_pol_target_list = assemble_charge_pol_target_list(states_list)
+        # print(charge_pol_target_list)
+        pulse_gen.insert_input_stream("_cache_target_list", charge_pol_target_list)
+    else:
+        pass
+
+
+def read_and_process_image(nv_list):
+    camera = tb.get_server_camera()
+    img_str = camera.read()
+    img_array_adus, baseline = widefield.img_str_to_array(img_str)
+    # baseline = 300
+    img_array = widefield.adus_to_photons(img_array_adus, baseline=baseline)
+
+    def get_counts(nv_sig):
+        pixel_coords = pos.get_nv_coords(nv_sig, CoordsKey.PIXEL)
+        return widefield.integrate_counts(img_array, pixel_coords)
+
+    counts_list = [get_counts(nv) for nv in nv_list]
+
+    config = common.get_config_dict()
+    charge_state_estimation_mode = config["charge_state_estimation_mode"]
+    if charge_state_estimation_mode == ChargeStateEstimationMode.THRESHOLDING:
+        num_nvs = len(nv_list)
+        states_list = []
+        for nv_ind in range(num_nvs):
+            states_list.append(
+                tb.threshold(counts_list[nv_ind], nv_list[nv_ind].threshold)
+            )
+    elif charge_state_estimation_mode == ChargeStateEstimationMode.MLE:
+        # start = time.time()
+        states_list = widefield.charge_state_mle(nv_list, img_array)
+        # stop = time.time()
+        # print(stop - start)
+
+    counts_list = np.array(counts_list)
+    states_list = np.array(states_list)
+
+    return img_array, counts_list, states_list
+
+
+def dtype_clip(arr, dtype):
+    min_val = np.finfo(dtype).min
+    max_val = np.finfo(dtype).max
+    arr = np.where(arr >= min_val, arr, min_val)
+    arr = np.where(arr <= max_val, arr, max_val)
+    return arr
 
 
 def main(
-    pulse_streamer,
-    seq_file,
-    seq_args_fn,
-    scan_coords,
+    nv_sig,
     num_steps,
     num_reps,
     num_runs,
-    apd_read_fn,
-    tagger,
-    apd_ch,
-    apd_time,
-    use_reference=False,
-    norm_style="none",
-    run_nir_fn=None,
-):
+    run_fn=None,
+    step_fn=None,
+    uwave_ind_list=[0],
+    uwave_freq_list=None,
+    num_exps=2,
+    apd_indices=[0],
+    load_iq=False,
+    stream_load_in_run_fn=True,
+    charge_prep_fn=None,
+) -> dict:
     """
-    Generic base routine for confocal APD-based single-position experiments (e.g. ESR, Rabi, Ramsey).
-
-    Parameters:
-        pulse_streamer: object with .stream_load(seq_file, seq_args_str, num_reps)
-        seq_file: pulse sequence file to load
-        seq_args_fn: function to generate sequence arguments for each step
-        scan_coords: center coordinates [x, y, z] for scan
-        num_steps: number of parameter scan steps (e.g. frequency, tau)
-        num_reps: number of repetitions per step
-        num_runs: number of full runs to average
-        apd_read_fn: function to read APD counts using tagger
-        tagger: PicoQuant tagger or compatible hardware
-        apd_ch: APD channel index
-        apd_time: APD collection window (s)
-        use_reference: True if each point contains signal and reference gates
-        norm_style: normalization style for signal/reference ("none", "contrast", etc.)
-        run_nir_fn: optional function to toggle NIR (input: on/off bool)
-
-    Returns:
-        raw_data: dict with counts and metadata
+    Unified confocal base routine using Pulse Streamer + Swabian Time Tagger.
     """
-    tb.reset_cfm()
-
-    drift = tb.get_drift()
-    x_center, y_center, z_center = np.array(scan_coords) + np.array(drift)
-    tb.get_xy_server().write_xy(x_center, y_center)
-    tb.get_z_server().write_z(z_center)
-
-    counts_arr = np.zeros((num_runs, num_steps))
-    ref_arr = np.zeros_like(counts_arr) if use_reference else None
-
-    for run_ind in range(num_runs):
-        for step_ind in range(num_steps):
-            if run_nir_fn:
-                run_nir_fn(False)
-
-            seq_args = seq_args_fn(step_ind)
-            pulse_streamer.stream_load(seq_file, seq_args, num_reps)
-
-            if use_reference:
-                sig_counts, ref_counts = apd_read_fn(tagger, apd_ch, apd_time, gates=2)
-                counts_arr[run_ind, step_ind] = sig_counts
-                ref_arr[run_ind, step_ind] = ref_counts
-            else:
-                counts = apd_read_fn(tagger, apd_ch, apd_time)
-                counts_arr[run_ind, step_ind] = counts
-
-    if run_nir_fn:
-        run_nir_fn(False)
 
     tb.reset_cfm()
+    pos.set_xyz_on_nv(nv_sig)
 
-    timestamp = dm.get_time_stamp()
-    raw_data = {
-        "timestamp": timestamp,
-        "scan_coords": scan_coords,
+    pulsegen = tb.get_server_pulse_gen()  # pulse_gen_SWAB_82
+    tagger = tb.get_server_time_tagger()  # tagger_SWAB_20
+
+    # === Microwave signal generator setup ===
+    if isinstance(uwave_ind_list, int):
+        uwave_ind_list = [uwave_ind_list]
+
+    for uwave_ind in uwave_ind_list:
+        uwave_dict = tb.get_virtual_sig_gen_dict(uwave_ind)
+        uwave_power = uwave_dict["uwave_power"]
+        freq = (
+            uwave_freq_list[uwave_ind] if uwave_freq_list else uwave_dict["frequency"]
+        )
+        sig_gen = tb.get_server_sig_gen(uwave_ind)
+
+        if load_iq:
+            sig_gen.load_iq()
+        sig_gen.set_amp(uwave_power)
+        sig_gen.set_freq(freq)
+        print(f"MW [{uwave_ind}] - freq: {freq} GHz, power: {uwave_power} dBm")
+
+    # === Data containers ===
+    counts = np.zeros((num_exps, num_runs, num_steps, num_reps), dtype=np.int32)
+    step_ind_master_list = [None for _ in range(num_runs)]
+    crash_counter = [None] * num_runs
+    step_ind_list = list(range(num_steps))
+
+    try:
+        for run_ind in range(num_runs):
+            num_attempts = 15
+            attempt = 0
+
+            while True:
+                try:
+                    print(f"\n[Run {run_ind + 1}/{num_runs}]")
+
+                    # Turn MW on
+                    for uwave_ind in uwave_ind_list:
+                        tb.get_server_sig_gen(uwave_ind).uwave_on()
+
+                    # Shuffle and run_fn logic
+                    shuffle(step_ind_list)
+                    if run_fn:
+                        run_fn(step_ind_list)
+
+                    step_ind_master_list[run_ind] = step_ind_list.copy()
+
+                    # Load pulse sequence
+                    pulsegen.stream_start()
+
+                    # Start tagger stream
+                    tagger.start_tag_stream(
+                        apd_indices=apd_indices, apd_gate=True, clock=True
+                    )
+
+                    for step_ind in step_ind_list:
+                        if step_fn:
+                            step_fn(step_ind)
+
+                        if stream_load_in_run_fn:
+                            tagger.clear_buffer()
+                            pulsegen.stream_start()
+                        else:
+                            tagger.clear_buffer()
+                            pulsegen.stream_start()
+
+                        for rep_ind in range(num_reps):
+                            for exp_ind in range(num_exps):
+                                if charge_prep_fn:
+                                    charge_prep_fn(rep_ind, nv_sig)
+
+                                new_counts = tagger.read_counter_internal()
+                                counts[exp_ind, run_ind, step_ind, rep_ind] = (
+                                    new_counts[exp_ind]
+                                )
+
+                    # Turn off MW
+                    for uwave_ind in uwave_ind_list:
+                        tb.get_server_sig_gen(uwave_ind).uwave_off()
+
+                    tagger.stop_tag_stream()
+                    targeting.compensate_for_drift(nv_sig, no_crash=True)
+                    crash_counter[run_ind] = attempt
+                    break
+
+                except Exception:
+                    pulsegen.force_final()
+                    attempt += 1
+                    if attempt == num_attempts:
+                        raise RuntimeError("Too many failures during run")
+
+    except Exception:
+        print(traceback.format_exc())
+
+    return {
+        "nv_sig": nv_sig,
         "num_steps": num_steps,
-        "num_runs": num_runs,
         "num_reps": num_reps,
-        "counts": counts_arr.tolist(),
-        "ref_counts": ref_arr.tolist() if use_reference else None,
-        "drift": drift,
-        "apd_time": apd_time,
-        "apd_ch": apd_ch,
-        "nir_toggle": run_nir_fn is not None,
-        "use_reference": use_reference,
-        "norm_style": norm_style,
+        "num_runs": num_runs,
+        "num_exps_per_rep": num_exps,
+        "load_iq": load_iq,
+        "uwave_ind_list": uwave_ind_list,
+        "uwave_freq_list": uwave_freq_list,
+        "counts": counts,
+        "counts-units": "photons",
+        "step_ind_master_list": step_ind_master_list,
+        "crash_counter": crash_counter,
     }
 
-    return raw_data
+
+if __name__ == "__main__":
+    pass

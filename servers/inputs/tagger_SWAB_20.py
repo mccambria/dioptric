@@ -35,25 +35,10 @@ class TaggerSwab20(Tagger, LabradServer):
     pc_name = socket.gethostname()
 
     def initServer(self):
-        ### Logging
-        # tb.configure_logging(self)
-        # config = common.get_config_dict()
-        # filename = (
-        #     "E:/Shared drives/Kolkowitz Lab Group/nvdata/pc_{}/labrad_logging/{}.log"
-        # )
-        # filename = filename.format(self.pc_name, self.name)
-        # logging.basicConfig(
-        #     level=logging.INFO,
-        #     format="%(asctime)s %(levelname)-8s %(message)s",
-        #     datefmt="%y-%m-%d_%H-%M-%S",
-        #     filename=filename,
-        # )
-
         ### Configure
-
         config = common.get_config_dict()
         self.config_apd_indices = config["apd_indices"]
-        tagger_serial = config["DeviceIDs"][f"{self.name}_serial"]
+        tagger_serial = config["DeviceIDs"][f"{self.name}_2_serial"]
         try:
             self.tagger = TimeTagger.createTimeTagger(tagger_serial)
         except Exception as e:
@@ -76,7 +61,6 @@ class TaggerSwab20(Tagger, LabradServer):
                 self.tagger_di_apd[apd_index] = di_apd
 
         ### Wrap up
-
         self.reset_tag_stream_state()
         self.reset(None)
         logging.info("init complete")

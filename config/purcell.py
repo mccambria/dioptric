@@ -118,7 +118,8 @@ config |= {
         "sig_gen_STAN_sg394_visa": "TCPIP::192.168.0.120::inst0::INSTR",
         "sig_gen_STAN_sg394_2_visa": "TCPIP::192.168.0.121::inst0::INSTR",
         "sig_gen_TEKT_tsg4104a_visa": "TCPIP0::128.104.ramp_to_zero_duration.112::5025::SOCKET",
-        "tagger_SWAB_20_serial": "1740000JEH",
+        "tagger_SWAB_20_1_serial": "1740000JEH",
+        "tagger_SWAB_20_2_serial": "1948000SIP",
         "QM_opx_args": {
             "host": "192.168.0.117",
             "port": 9510,
@@ -318,13 +319,15 @@ config |= {
         "pulse_gen": "QM_opx",
         "camera": "camera_NUVU_hnu512gamma",
         "thorslm": "slm_THOR_exulus_hd2",
+        "pulse_streamer": "pulse_gen_SWAB_82",
+        "time_tagger": "tagger_SWAB_20",
     },
     ###
     "Wiring": {
-        # https://docs-be.ni.com/bundle/ni-67xx-scb-68a-labels/raw/resource/enus/371806a.pdf
         "Daq": {
-            "ao_galvo_x": "dev1/AO31",
-            "ao_galvo_y": "dev1/AO22",
+            # https://docs-be.ni.com/bundle/ni-67xx-scb-68a-labels/raw/resource/enus/371806a.pdf
+            "ao_galvo_x": "dev1/AO22",
+            "ao_galvo_y": "dev1/AO31",
             "ao_piezo_stage_P616_3c_x": "dev1/AO25",
             "ao_piezo_stage_P616_3c_y": "dev1/AO27",
             "ao_piezo_stage_P616_3c_z": "dev1/AO29",

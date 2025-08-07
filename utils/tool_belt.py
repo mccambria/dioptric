@@ -721,6 +721,16 @@ def get_server_pulse_gen():
     return common.get_server("pulse_gen")
 
 
+def get_server_pulse_streamer():
+    """Get the pulse gen server for this setup, e.g. opx or swabian"""
+    return common.get_server("pulse_streamer")
+
+
+def get_server_time_tagger():
+    """Get the pulse gen server for this setup, e.g. opx or swabian"""
+    return common.get_server("time_tagger")
+
+
 def get_server_charge_readout_laser():
     """Get the laser for charge readout"""
     return common.get_server("charge_readout_laser")
