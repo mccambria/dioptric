@@ -151,7 +151,7 @@ class MultimeterMultMp730028(LabradServer):
         self.multimeter.write("RATE F")
         while time.time() - start_time < duration_sec:
             voltages.append(self.multimeter.query("MEAS1?"))
-            time.sleep(0.01)
+            time.sleep(0.05)
 
         return voltages
 

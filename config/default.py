@@ -13,7 +13,7 @@ home = Path.home()
 
 config = {
     ###
-    "shared_email": "kolkowitznvlab@gmail.com",
+    "default_email": "kolkowitznvlab@gmail.com",
     "windows_repo_path": home / "Documents/GitHub/dioptric",
     "linux_repo_path": home / "Documents/GitHub/dioptric",
     "windows_nvdata_path": Path("G:\\nvdata"),
