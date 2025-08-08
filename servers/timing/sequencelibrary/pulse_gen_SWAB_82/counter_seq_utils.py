@@ -120,7 +120,6 @@ def macro_pause():
 # endregion
 
 
-# region Public QUA macros - laser and microwave pulses
 def macro_polarize(
     coord: list[float],
     duration: int = None,

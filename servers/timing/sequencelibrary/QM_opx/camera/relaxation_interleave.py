@@ -5,6 +5,7 @@ Widefield ESR
 Created on October 13th, 2023
 
 @author: mccambria
+@author: schand
 """
 
 import matplotlib.pyplot as plt
