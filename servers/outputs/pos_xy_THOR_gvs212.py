@@ -22,15 +22,16 @@ timeout = 5
 ### END NODE INFO
 """
 
-from labrad.server import LabradServer
-from labrad.server import setting
-from twisted.internet.defer import ensureDeferred
-import nidaqmx
-from nidaqmx.constants import AcquisitionType
-import nidaqmx.stream_writers as stream_writers
-import numpy as np
 import logging
 import socket
+
+import nidaqmx
+import nidaqmx.stream_writers as stream_writers
+import numpy as np
+from labrad.server import LabradServer, setting
+from nidaqmx.constants import AcquisitionType
+from twisted.internet.defer import ensureDeferred
+
 from servers.outputs.interfaces.pos_xy_stream import PosXyStream
 from utils import common
 from utils import tool_belt as tb
@@ -141,10 +142,11 @@ class PosXyThorGvs212(LabradServer, PosXyStream):
         if continuous:
             # Perfect loop for continuous
             stream_voltages = np.roll(voltages, -1, axis=1)
+            num_stream_voltages = num_voltages
         else:
             stream_voltages = voltages[:, 1:num_voltages]
+            num_stream_voltages = num_voltages - 1
         stream_voltages = np.ascontiguousarray(stream_voltages)
-        num_stream_voltages = num_voltages - 1
         # Create a new task
         task = nidaqmx.Task(f"{self.name}-load_stream_xy")
         self.task = task
