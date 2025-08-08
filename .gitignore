@@ -1,5 +1,5 @@
 # Ignore the local LabRAD manager script
-labrad_manager_local.bat
+# labrad_manager_local.bat
 
 # Ignore the entire data manager directory
 data_manager/
@@ -27,8 +27,6 @@ dist/
 downloads/
 eggs/
 .eggs/
-lib/
-lib64/
 parts/
 sdist/
 var/

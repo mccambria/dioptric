@@ -21,7 +21,7 @@
 @REM sbt-pack launch script
 @REM ----------------------------------------------------------------------------
 
-@ECHO off
+@echo off
 
 @REM set %HOME% to equivalent of $HOME
 if "%HOME%" == "" (set HOME=%HOMEDRIVE%%HOMEPATH%)
@@ -89,7 +89,7 @@ SET PSEP=;
 
 @REM Start Java program
 :runm2
-SET CMDLINE="%JAVA_EXE%" %JVM_OPT%  -cp "%PROG_HOME%\lib\*;" -Dprog.home="%PROG_HOME%" -Dprog.version="0.8.3" org.labrad.manager.Manager %CMD_LINE_ARGS%
+SET CMDLINE=%JAVA_EXE% %JVM_OPT%  -cp "%PROG_HOME%\lib\*;" -Dprog.home="%PROG_HOME%" -Dprog.version="0.8.3" org.labrad.manager.Manager %CMD_LINE_ARGS%
 %CMDLINE%
 if ERRORLEVEL 1 goto error
 goto end
