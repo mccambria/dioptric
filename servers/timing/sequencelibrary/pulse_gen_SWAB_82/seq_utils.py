@@ -12,12 +12,12 @@ import time
 from functools import cache
 
 import numpy as np
-from qm import qua
 
+# from qm import qua
 from utils import common
 from utils import positioning as pos
 from utils import tool_belt as tb
-from utils.constants import ModMode, VirtualLaserKey
+from utils.constants import Boltzmann, Digital, ModMode, NormMode, VirtualLaserKey
 
 # region Public QUA macros - sequence management
 
@@ -118,6 +118,34 @@ def macro_pause():
 
 
 # endregion
+
+
+def process_laser_seq(seq, laser_name, laser_power, train):
+    """
+    Automatically process simple laser sequences. Simple here means that the modulation
+    is digital or, if the modulation is analog, then only one power is used)
+    """
+
+    config = common.get_config_dict()
+    # print(config)
+    pulser_wiring = config["Wiring"]["PulseGen"]
+    mod_type = config["Optics"][laser_name]["mod_type"]
+
+    # Digital: do nothing
+    if mod_type is ModMode.DIGITAL:
+        pulser_laser_mod = pulser_wiring["do_{}_dm".format(laser_name)]
+        seq.setDigital(pulser_laser_mod, train)
+    # Analog:convert LOW / HIGH to 0.0 / analog voltage
+    elif mod_type is ModMode.ANALOG:
+        processed_train = []
+        power_dict = {Digital.LOW: 0.0, Digital.HIGH: laser_power}
+        for el in train:
+            dur = el[0]
+            val = el[1]
+            processed_train.append((dur, power_dict[val]))
+        pulser_laser_mod = pulser_wiring["ao_{}_am".format(laser_name)]
+        # print(processed_train)
+        seq.setAnalog(pulser_laser_mod, processed_train)
 
 
 def macro_polarize(

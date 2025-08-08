@@ -12,7 +12,7 @@ from pulsestreamer import OutputState, Sequence
 
 import utils.tool_belt as tb
 import utils.tool_belt as tool_belt
-from servers.timing.sequencelibrary.pulse_macros import microwave_pi_pulse
+from servers.timing.sequencelibrary.pulse_gen_SWAB_82 import 
 from utils.tool_belt import Digital, States
 
 

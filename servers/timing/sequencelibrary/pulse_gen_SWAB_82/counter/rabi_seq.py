@@ -16,106 +16,6 @@ from servers.timing.sequencelibrary.pulse_macros import microwave_pi_pulse
 from utils.tool_belt import Digital, States
 
 
-def macro(
-    taus,
-    pol_time,
-    readout_time,
-    max_tau,
-    state,
-    laser_name,
-    laser_power,
-    include_reference=True,
-):
-    """
-    Create a full pulse streamer sequence for multiple taus, one per step.
-    """
-    wiring = config["Wiring"]["PulseGen"]
-    apd_gate = wiring["do_apd_gate"]
-    sig_gen_name = config["Servers"][f"sig_gen_{States(state).name}"]
-    sig_gate = wiring[f"do_{sig_gen_name}_gate"]
-    sample_clock = wiring["do_sample_clock"]
-
-    laser_delay = config["Optics"][laser_name]["delay"]
-    uwave_delay = config["Microwaves"][sig_gen_name]["delay"]
-    uwave_buffer = config["CommonDurations"]["uwave_buffer"]
-    short_buffer = 10
-    final_readout_buffer = 500
-    common_delay = max(laser_delay, uwave_delay) + short_buffer
-    readout_pol_max = max(readout_time, pol_time) + short_buffer
-
-    master_seq = Sequence()
-
-    for tau in taus:
-        # === APD Gate ===
-        apd_train = [
-            (common_delay, Digital.LOW),
-            (pol_time, Digital.LOW),
-            (uwave_buffer, Digital.LOW),
-            (max_tau, Digital.LOW),
-            (uwave_buffer, Digital.LOW),
-            (readout_time, Digital.HIGH),
-            (readout_pol_max - readout_time, Digital.LOW),
-            (uwave_buffer, Digital.LOW),
-            (max_tau, Digital.LOW),
-            (uwave_buffer, Digital.LOW),
-            (readout_time, Digital.HIGH),
-            (final_readout_buffer + short_buffer, Digital.LOW),
-        ]
-        seq = Sequence()
-        seq.setDigital(apd_gate, apd_train)
-
-        # === Laser ===
-        laser_train = [
-            (common_delay - laser_delay, Digital.LOW),
-            (pol_time, Digital.HIGH),
-            (uwave_buffer, Digital.LOW),
-            (max_tau, Digital.LOW),
-            (uwave_buffer, Digital.LOW),
-            (readout_pol_max, Digital.HIGH),
-            (uwave_buffer, Digital.LOW),
-            (max_tau, Digital.LOW),
-            (uwave_buffer, Digital.LOW),
-            (readout_time + final_readout_buffer, Digital.HIGH),
-            (short_buffer, Digital.LOW),
-            (laser_delay, Digital.LOW),
-        ]
-        tb.process_laser_seq(seq, config, laser_name, laser_power, laser_train)
-
-        # === MW pulse ===
-        microwave_pi_pulse(
-            seq,
-            sig_gate,
-            tau,
-            max_tau,
-            pol_time,
-            readout_pol_max,
-            uwave_delay,
-            uwave_buffer,
-        )
-
-        master_seq.append(seq)
-
-        if include_reference:
-            master_seq.append(
-                build_reference_sequence(
-                    pulse_streamer,
-                    config,
-                    max_tau,
-                    pol_time,
-                    readout_time,
-                    state,
-                    laser_name,
-                    laser_power,
-                    sig_gate,
-                    apd_gate,
-                    sample_clock,
-                )
-            )
-
-    final = OutputState([sample_clock], 0.0, 0.0)
-    return master_seq, final, None
-
-
 def get_seq(pulse_streamer, config, args):
     # The first 9 args are ns durations and we need them as int64s
     durations = []
@@ -152,8 +52,6 @@ def get_seq(pulse_streamer, config, args):
     # Keep the laser on for only as long as we need
     readout_pol_max = max(readout, polarization_time) + short_buffer
     final_readout_buffer = 500
-
-    # %% Define the sequence
 
     seq = Sequence()
 

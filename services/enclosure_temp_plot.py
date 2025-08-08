@@ -45,7 +45,6 @@ def build_allan_taus(hours: float) -> list:
 
 
 ALLAN_TAUS = build_allan_taus(hours)
-
 # ----------------------------
 # Folder bookkeeping
 # ----------------------------
@@ -57,7 +56,6 @@ data_folders = [
     os.path.join(base_folder, folder_previous),
     os.path.join(base_folder, folder_current),
 ]
-
 # ----------------------------
 # Plot setup
 # ----------------------------
