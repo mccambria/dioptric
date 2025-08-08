@@ -42,23 +42,34 @@ def do_singlet_search():
 def do_singlet_search_with_etalon():
     # min_wavelength = 800
     # max_wavelength = 810
-    # etalon_range = 4
+    # etalon_range = 20
     # etalon_spacing = 2
     # num_steps = 2
     # num_runs = 1
+    # RF_on = True
 
-    min_wavelength = 805
-    max_wavelength = 825
-    etalon_range = 80
-    etalon_spacing = 4
-    num_steps = 50
+    # min_wavelength = 800
+    # max_wavelength = 850
+    # etalon_range = 90
+    # etalon_spacing = 1
+    # num_steps = 125
+    # num_runs = 1
+    # RF_on = False
+
+    min_wavelength = 853
+    max_wavelength = 855
+    etalon_range = 90
+    etalon_spacing = 1
+    num_steps = 5
     num_runs = 1
+    RF_on = False
 
     singlet_search_with_etalon.main(
         min_wavelength,
         max_wavelength,
         num_steps,
         num_runs,
+        RF_on,
         etalon_range,
         etalon_spacing,
     )
@@ -69,7 +80,10 @@ def test_shutter():
     shutter = common.get_server_by_name(server_name)
     # shutter.enable(1)
     # shutter.disable(1)
-    shutter.open(1)
+    start = time.time()
+    # shutter.open(1)
+    shutter.close(1)
+    print(time.time() - start)
     # shutter.close(1)
 
 
@@ -163,14 +177,38 @@ def test_measure_shutter_timing():
     shutter.open(1)
 
 
+def test_multimeter_avg():
+    server_name = "multimeter_KEIT_daq6510"
+    meter = common.get_server_by_name(server_name)
+    nplc = 1
+    num_meas_to_avg = 15
+    filter_type = "hybrid"
+    meter.set_averaging_params(nplc, num_meas_to_avg, filter_type)
+
+    start_time = time.time()
+    print(meter.read())
+    print(f"Time elapsed: {time.time() - start_time}")
+
+    start_time = time.time()
+    meter.set_avg_window_size(20)
+    print(meter.read())
+    print(f"Time elapsed: {time.time() - start_time}")
+
+    meter.turn_off_averaging()
+    start_time = time.time()
+    print(meter.read())
+    print(f"Time elapsed: {time.time() - start_time}")
+
+
 if __name__ == "__main__":
     kpl.init_kplotlib()
 
-    email_recipient = "mccambria@berkeley.edu"
+    email_recipient = ["mccambria@berkeley.edu", "jennychen42@berkeley.edu"]
     do_email = False
     try:
         # test_shutter()
         # test_multimeter()
+        # test_multimeter_avg()
         # test_multimeter_stats()
         # start = time.time()
         # test_multimeter_duration()
@@ -181,18 +219,17 @@ if __name__ == "__main__":
         # test_measure_shutter_timing()
         # do_singlet_search()
         do_singlet_search_with_etalon()
+        # pass
 
     except Exception as exc:
         if do_email:
-            recipient = email_recipient
-            tb.send_exception_email(email_to=recipient)
+            tb.send_exception_email(email_to=email_recipient)
         raise exc
 
     finally:
         if do_email:
             msg = "Experiment complete!"
-            recipient = email_recipient
-            tb.send_email(msg, email_to=recipient)
+            tb.send_email(msg, email_to=email_recipient)
 
         print()
         print("Routine complete")

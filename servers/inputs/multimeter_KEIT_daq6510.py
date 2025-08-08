@@ -25,6 +25,7 @@ timeout =
 import logging
 import socket
 import time
+from typing import Literal
 
 import numpy
 import pyvisa as visa
@@ -80,6 +81,44 @@ class MultimeterKeitDaq6510(LabradServer):
     def reset(self, c):
         """Fully reset to factory defaults"""
         self.multimeter.write("*RST")
+
+    @setting(8, nplc="v[]")
+    def set_nplc(self, c, nplc):
+        self.multimeter.write(f"VOLT:NPLC {nplc}")
+
+    @setting(9, num_meas_to_avg="i")
+    def set_avg_window_size(self, c, num_meas_to_avg):
+        self.multimeter.write(f"VOLT:AVER:COUNT {num_meas_to_avg}")
+
+    @setting(10, filter_type="s")
+    def set_filter_type(self, c, filter_type: Literal["repeating", "moving", "hybrid"]):
+        if filter_type == "repeating":
+            self.multimeter.write("VOLT:AVER:TCON REP")
+        elif filter_type == "moving":
+            self.multimeter.write("VOLT:AVER:TCON MOV")
+        elif filter_type == "hybrid":
+            self.multimeter.write("VOLT:AVER:TCON HYBR")
+
+    @setting(11, nplc="v[]", num_meas_to_avg="i", filter_type="s")
+    def set_averaging_params(
+        self,
+        c,
+        nplc,
+        num_meas_to_avg,
+        filter_type: Literal["repeating", "moving", "hybrid"],
+    ):
+        self.set_nplc(c, nplc)
+        self.set_avg_window_size(c, num_meas_to_avg)
+        self.set_filter_type(c, filter_type)
+        self.turn_on_averaging(c)
+
+    @setting(12)
+    def turn_on_averaging(self, c):
+        self.multimeter.write("VOLT:AVER ON")
+
+    @setting(13)
+    def turn_off_averaging(self, c):
+        self.multimeter.write("VOLT:AVER OFF")
 
 
 __server__ = MultimeterKeitDaq6510()

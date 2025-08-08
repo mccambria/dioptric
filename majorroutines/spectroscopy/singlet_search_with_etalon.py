@@ -13,6 +13,7 @@ from random import shuffle
 
 import numpy as np
 from matplotlib import pyplot as plt
+from tqdm import tqdm
 
 from utils import common
 from utils import data_manager as dm
@@ -34,7 +35,13 @@ def create_fit_figure():
 
 
 def main(
-    min_wavelength, max_wavelength, num_steps, num_runs, etalon_range, etalon_spacing=1
+    min_wavelength,
+    max_wavelength,
+    num_steps,
+    num_runs,
+    RF_on,
+    etalon_range,
+    etalon_spacing=1,
 ):
     wavelengths = np.linspace(min_wavelength, max_wavelength, num_steps)
     num_exps = 2
@@ -55,13 +62,19 @@ def main(
     multimeter = common.get_server_by_name("multimeter_KEIT_daq6510")
     tisapph = common.get_server_by_name("tisapph_M2_solstis")
 
+    # Set the multimeter parameters
+    nplc = 1
+    num_meas_to_avg = 20
+    filter_type = "hybrid"
+    multimeter.set_averaging_params(nplc, num_meas_to_avg, filter_type)
+
     ### Collect the data
     dm_folder = common.get_data_manager_folder()
-    timestamp = time.strftime("%Y%m%d-%H%M%S")
+    # timestamp = time.strftime("%Y%m%d-%H%M%S")
+    timestamp = dm.get_time_stamp()
 
     # Row 0 - Voltage, Row 1 - Wavelength Bin
     data_to_save = np.empty((2, num_runs, num_steps, num_etalon, num_exps))
-
     start_time = time.time()
 
     try:
@@ -73,8 +86,9 @@ def main(
             # Steps loop
             num_steps_completed = 0
 
-            for step_ind in step_ind_list:
-                print(f"Number steps completed {num_steps_completed}")
+            for ind in tqdm(range(len(step_ind_list)), desc="Steps", position=0):
+                step_ind = step_ind_list[ind]
+                # print(f"Number steps completed {num_steps_completed}")
 
                 # Set coarse wavelength
                 wavelength = wavelengths[step_ind]
@@ -85,66 +99,73 @@ def main(
                 data_to_save[1, run_ind, num_steps_completed, :, :] = wavelength
 
                 # Decrement etalon voltage from 50% sweep
-                for eind in range(int(num_etalon / 2) - 1, -1, -1):
+                for eind in tqdm(
+                    range(int(num_etalon / 2) - 1, -1, -1),
+                    desc="Etalon 1",
+                    position=1,
+                    leave=False,
+                ):
                     # Get reference voltage
                     shutter.close(shutter_channel)
-                    time.sleep(0.04)
+                    tisapph.tune_etalon_relative(etalon_settings[eind])
+
                     voltage = multimeter.read()
                     voltages[run_ind, step_ind, eind, 0] = voltage
                     # Save data
                     data_to_save[0, run_ind, num_steps_completed, eind, 0] = voltage
 
                     shutter.open(shutter_channel)
-                    tisapph.tune_etalon_relative(etalon_settings[eind])
 
                     # Get signal voltage
-                    time.sleep(0.05)
                     voltage = multimeter.read()
                     voltages[run_ind, step_ind, eind, 1] = voltage
                     # Save data
                     data_to_save[0, run_ind, num_steps_completed, eind, 1] = voltage
-                    if eind % 5 == 0:
+                    if eind % 10 == 0:
                         np.save(
                             dm_folder / f"{timestamp}-singlet_search.npy", data_to_save
                         )
-                        print(f"Etalon at {etalon_settings[eind]}%")
-                        print(f"Time elapsed: {time.time() - start_time}")
 
                 # Set back to 50%
                 tisapph.tune_etalon_relative(50)
 
                 # Increment etalon voltage from 50% sweep
-                for eind in range(int(num_etalon / 2), num_etalon, 1):
+                for eind in tqdm(
+                    range(int(num_etalon / 2), num_etalon, 1),
+                    desc="Etalon 2",
+                    position=1,
+                    leave=False,
+                ):
                     # Get reference voltage
                     shutter.close(shutter_channel)
-                    time.sleep(0.04)
+                    tisapph.tune_etalon_relative(etalon_settings[eind])
+
                     voltage = multimeter.read()
                     voltages[run_ind, step_ind, eind, 0] = voltage
                     # Save data
                     data_to_save[0, run_ind, num_steps_completed, eind, 0] = voltage
 
                     shutter.open(shutter_channel)
-                    tisapph.tune_etalon_relative(etalon_settings[eind])
 
                     # Get signal voltage
-                    time.sleep(0.05)
                     voltage = multimeter.read()
                     voltages[run_ind, step_ind, eind, 1] = voltage
                     # Save data
                     data_to_save[0, run_ind, num_steps_completed, eind, 1] = voltage
-                    if eind % 5 == 0:
+                    if eind % 10 == 0:
                         np.save(
                             dm_folder / f"{timestamp}-singlet_search.npy", data_to_save
                         )
-                        print(f"Etalon at {etalon_settings[eind]}%")
-                        print(f"Time elapsed: {time.time() - start_time}")
 
+                tisapph.tune_etalon_relative(50)
                 num_steps_completed += 1
 
             ### Move on to the next run
 
             # Record step order
             step_ind_master_list[run_ind] = step_ind_list.copy()
+
+        print(f"Total Time Elapsed = {time.time() - start_time} s")
 
     except Exception:
         print(traceback.format_exc())
@@ -161,8 +182,11 @@ def main(
         "voltages": voltages,
         "voltages-units": "photons",
         "etalon_setts": etalon_settings,
+        "nplc": nplc,
+        "num_meas_to_avg": num_meas_to_avg,
+        "filter_type": filter_type,
+        "RF_on": RF_on,
     }
-
     ### Process and plot
 
     # try:
@@ -193,7 +217,6 @@ def main(
     tb.reset_cfm()
     # kpl.show()
 
-    timestamp = dm.get_time_stamp()
     raw_data |= {
         "timestamp": timestamp,
     }

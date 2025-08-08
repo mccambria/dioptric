@@ -51,6 +51,7 @@ config |= {
         "multimeter_MULT_mp730028_visa": "TCPIP0::192.168.0.174::3000::SOCKET",
         "multimeter_KEIT_daq6510_visa": "TCPIP0::192.168.0.175::inst0::INSTR",
         "tisapph_M2_solstis_ip": "192.168.0.195",
+        "tisapph_pump_COHE_verdi_com": "COM6",
     },
     ###
     "Microwaves": {
