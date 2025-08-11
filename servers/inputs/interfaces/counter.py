@@ -7,11 +7,11 @@ Created on August 29th, 2022
 @author: mccambria
 """
 
-from abc import ABC, abstractmethod
 import logging
-from labrad.server import LabradServer
-from labrad.server import setting
+from abc import ABC, abstractmethod
+
 import numpy as np
+from labrad.server import LabradServer, setting
 
 
 class Counter(LabradServer, ABC):
@@ -42,7 +42,6 @@ class Counter(LabradServer, ABC):
 
     @setting(208, num_to_read="i", returns="*w")
     def read_counter_simple(self, c, num_to_read=None):
-
         complete_counts = self.read_counter_setting_internal(num_to_read)
 
         # To combine APDs we assume all the APDs have the same gate
@@ -58,7 +57,6 @@ class Counter(LabradServer, ABC):
 
     @setting(209, num_to_read="i", returns="*2w")
     def read_counter_separate_gates(self, c, num_to_read=None):
-
         complete_counts = self.read_counter_setting_internal(num_to_read)
         # logging.info(complete_counts)
 
@@ -77,7 +75,6 @@ class Counter(LabradServer, ABC):
 
     @setting(210, modulus="i", num_to_read="i", returns="*2w")
     def read_counter_modulo_gates(self, c, modulus, num_to_read=None):
-
         complete_counts = self.read_counter_setting_internal(num_to_read)
 
         # To combine APDs we assume all the APDs have the same gate
@@ -110,7 +107,6 @@ class Counter(LabradServer, ABC):
 
     @setting(211, num_to_read="i", returns="*2w")
     def read_counter_separate_apds(self, c, num_to_read=None):
-
         complete_counts = self.read_counter_setting_internal(num_to_read)
 
         # Just find the sum of the counts for each APD for each

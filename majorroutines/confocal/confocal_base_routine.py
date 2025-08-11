@@ -224,22 +224,23 @@ def main(
                         if step_fn:
                             step_fn(step_ind)
 
-                        if stream_load_in_run_fn:
-                            tagger.clear_buffer()
-                            pulsegen.stream_start()
-                        else:
-                            tagger.clear_buffer()
-                            pulsegen.stream_start()
+                        tagger.clear_buffer()
+                        pulsegen.stream_start(num_reps)
 
-                        for rep_ind in range(num_reps):
-                            for exp_ind in range(num_exps):
-                                if charge_prep_fn:
-                                    charge_prep_fn(rep_ind, nv_sig)
+                        new_counts = tagger.read_counter_complete()
+                        new_counts = new_counts[0]  # Just one sample
+                        new_counts = new_counts.sum(axis=0)  # Sum over APDs
+                        for exp_ind in range(num_exps):
+                            counts[exp_ind, run_ind, step_ind, :] = new_counts[
+                                exp_ind::num_exps
+                            ]
 
-                                new_counts = tagger.read_counter_internal()
-                                counts[exp_ind, run_ind, step_ind, rep_ind] = (
-                                    new_counts[exp_ind]
-                                )
+                        # if stream_load_in_run_fn:
+                        #     tagger.clear_buffer()
+                        #     pulsegen.stream_start()
+                        # else:
+                        #     tagger.clear_buffer()
+                        #     pulsegen.stream_start()
 
                     # Turn off MW
                     for uwave_ind in uwave_ind_list:

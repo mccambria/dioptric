@@ -26,62 +26,38 @@ def main(
     background_subtraction=False,
     background_coords=None,
 ):
-    with labrad.connect(username="", password="") as cxn:
-        average, st_dev = main_with_cxn(
-            cxn,
-            nv_sig,
-            run_time,
-            disable_opt,
-            nv_minus_init,
-            nv_zero_init,
-            background_subtraction,
-            background_coords,
-        )
-    return average, st_dev
-
-
-def main_with_cxn(
-    cxn,
-    nv_sig,
-    run_time,
-    disable_opt=None,
-    nv_minus_init=False,
-    nv_zero_init=False,
-    background_subtraction=False,
-    background_coords=None,
-):
     ### Initial setup
 
     if disable_opt is not None:
         nv_sig["disable_opt"] = disable_opt
-    tool_belt.reset_cfm(cxn)
+    tool_belt.reset_cfm()
     readout = nv_sig["imaging_readout_dur"]
     readout_sec = readout / 10**9
     charge_init = nv_minus_init or nv_zero_init
-    targeting.main_with_cxn(
-        cxn, nv_sig
-    )  # Is there something wrong with this line? Let me (Matt) know and let's fix it
-    pulsegen_server = tool_belt.get_server_pulse_gen(cxn)
-    counter_server = tool_belt.get_server_counter(cxn)
+    # targeting.main_with_cxn(
+    #     nv_sig
+    # )  # Is there something wrong with this line? Let me (Matt) know and let's fix it
+    pulsegen_server = tool_belt.get_server_pulse_streamer()
+    counter_server = tool_belt.get_server_counter()
 
     # Background subtraction setup
 
     if background_subtraction:
-        drift = np.array(positioning.get_drift(cxn))
+        drift = np.array(positioning.get_drift())
         adj_coords = np.array(nv_sig["coords"]) + drift
         adj_bg_coords = np.array(background_coords) + drift
         x_voltages, y_voltages = positioning.get_scan_two_point_2d(
             adj_coords[0], adj_coords[1], adj_bg_coords[0], adj_bg_coords[1]
         )
-        xy_server = positioning.get_server_pos_xy(cxn)
+        xy_server = positioning.get_server_pos_xy()
         xy_server.load_stream_xy(x_voltages, y_voltages, True)
 
     # Imaging laser
 
     laser_key = "imaging_laser"
     readout_laser = nv_sig[laser_key]
-    tool_belt.set_filter(cxn, nv_sig, laser_key)
-    readout_power = tool_belt.set_laser_power(cxn, nv_sig, laser_key)
+    tool_belt.set_filter(nv_sig, laser_key)
+    readout_power = tool_belt.set_laser_power(nv_sig, laser_key)
 
     # Charge init setup and sequence processing
     if charge_init:
@@ -89,10 +65,10 @@ def main_with_cxn(
             laser_key = "nv-_prep_laser"
         elif nv_zero_init:
             laser_key = "nv0_prep_laser"
-        tool_belt.set_filter(cxn, nv_sig, laser_key)
+        tool_belt.set_filter(nv_sig, laser_key)
         init = nv_sig["{}_dur".format(laser_key)]
         init_laser = nv_sig[laser_key]
-        init_power = tool_belt.set_laser_power(cxn, nv_sig, laser_key)
+        init_power = tool_belt.set_laser_power(nv_sig, laser_key)
         seq_args = [init, readout, init_laser, init_power, readout_laser, readout_power]
         seq_args_string = tool_belt.encode_seq_args(seq_args)
         seq_name = "charge_init-simple_readout_background_subtraction.py"
@@ -197,7 +173,7 @@ def main_with_cxn(
 
     ### Clean up and report average and standard deviation
 
-    tool_belt.reset_cfm(cxn)
+    tool_belt.reset_cfm()
     average = np.mean(samples[0:write_pos]) / (10**3 * readout_sec)
     print(f"Average: {average}")
     st_dev = np.std(samples[0:write_pos]) / (10**3 * readout_sec)

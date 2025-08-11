@@ -20,6 +20,27 @@ from email.mime.text import MIMEText
 from enum import Enum
 from functools import cache
 from inspect import signature
+
+# region Server utils
+# Utility functions to be used by LabRAD servers
+# def configure_logging(inst, level=logging.INFO):
+#     """Setup logging for a LabRAD server
+#     Parameters
+#     ----------
+#     inst : Class instance
+#         Pass self from the LabRAD server class
+#     level : logging level, optional
+#         by default logging.DEBUG
+#     """
+#     folder_path = common.get_labrad_logging_folder()
+#     filename = folder_path / f"{inst.name}.log"
+#     logging.basicConfig(
+#         level=level,
+#         format="%(asctime)s %(levelname)-8s %(message)s",
+#         datefmt="%y-%m-%d_%H-%M-%S",
+#         filename=filename,
+#     )
+from pathlib import Path
 from typing import Callable
 
 import keyring
@@ -32,27 +53,28 @@ from scipy.optimize import curve_fit as scipy_curve_fit
 from utils import common
 from utils.constants import Boltzmann, Digital, ModMode, NormMode
 
-# region Server utils
-# Utility functions to be used by LabRAD servers
+# import logging
 
 
 def configure_logging(inst, level=logging.INFO):
-    """Setup logging for a LabRAD server
-
-    Parameters
-    ----------
-    inst : Class instance
-        Pass self from the LabRAD server class
-    level : logging level, optional
-        by default logging.DEBUG
-    """
+    """Setup logging for a LabRAD server"""
     folder_path = common.get_labrad_logging_folder()
+
+    # Safety: if the folder doesn't exist, fall back to a local path
+    try:
+        folder_path.mkdir(parents=True, exist_ok=True)
+    except Exception as e:
+        fallback = Path(__file__).resolve().parents[2] / "labrad_logging"
+        fallback.mkdir(parents=True, exist_ok=True)
+        folder_path = fallback
+        print(f"Logging folder not found, using fallback: {folder_path} ({e})")
+
     filename = folder_path / f"{inst.name}.log"
     logging.basicConfig(
         level=level,
         format="%(asctime)s %(levelname)-8s %(message)s",
         datefmt="%y-%m-%d_%H-%M-%S",
-        filename=filename,
+        filename=str(filename),
     )
 
 

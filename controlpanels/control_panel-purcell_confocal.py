@@ -19,20 +19,22 @@ import time
 import labrad
 import numpy as np
 
-import majorroutines.confocal.determine_standard_readout_params as determine_standard_readout_params
-import majorroutines.confocal.g2_measurement as g2_measurement
-import majorroutines.confocal.image_sample as image_sample
-import majorroutines.confocal.optimize_magnet_angle as optimize_magnet_angle
-import majorroutines.confocal.pulsed_resonance as pulsed_resonance
-import majorroutines.confocal.rabi as rabi
-import majorroutines.confocal.ramsey as ramsey
-import majorroutines.confocal.resonance as resonance
-import majorroutines.confocal.spin_echo as spin_echo
-import majorroutines.confocal.stationary_count as stationary_count
-import majorroutines.confocal.t1_dq_main as t1_dq_main
-import majorroutines.confocal.targeting as targeting
+# import majorroutines.confocal.determine_standard_readout_params as determine_standard_readout_params
+# import majorroutines.confocal.g2_measurement as g2_measurement
+# import majorroutines.confocal.image_sample as image_sample
+# import majorroutines.confocal.optimize_magnet_angle as optimize_magnet_angle
+# import majorroutines.confocal.pulsed_resonance as pulsed_resonance
+# import majorroutines.confocal.rabi as rabi
+# import majorroutines.confocal.ramsey as ramsey
+# import majorroutines.confocal.resonance as resonance
+# import majorroutines.confocal.spin_echo as spin_echo
+import majorroutines.confocal.confocal_stationary_count as stationary_count
+
+# import majorroutines.confocal.t1_dq_main as t1_dq_main
+# import majorroutines.confocal.targeting as targeting
 import utils.tool_belt as tool_belt
-from utils.tool_belt import States
+
+# from utils.tool_belt import States
 
 # endregion
 # region Routines
@@ -86,8 +88,6 @@ def do_optimize(nv_sig):
 def do_stationary_count(
     nv_sig,
     disable_opt=None,
-    nv_minus_initialization=False,
-    nv_zero_initialization=False,
 ):
     run_time = 3 * 60 * 10**9  # ns
 
@@ -95,8 +95,8 @@ def do_stationary_count(
         nv_sig,
         run_time,
         disable_opt=disable_opt,
-        nv_minus_initialization=nv_minus_initialization,
-        nv_zero_initialization=nv_zero_initialization,
+        # nv_minus_initialization=nv_minus_initialization,
+        # nv_zero_initialization=nv_zero_initialization,
     )
 
 
@@ -420,14 +420,14 @@ if __name__ == "__main__":
         #     nv_sig["coords"][2] = int(z)
         # do_image_sample(nv_sig)
         # nv_sig["imaging_readout_dur"] = 5e7
-        do_image_sample(nv_sig)
+        # do_image_sample(nv_sig)
         # do_image_sample_zoom(nv_sig)
         # do_image_sample(nv_sig, nv_minus_initialization=True)
         # do_image_sample_zoom(nv_sig, nv_minus_initialization=True)
 
         # do_optimize(nv_sig)
         # nv_sig["imaging_readout_dur"] = 5e7
-        # do_stationary_count(nv_sig, disable_opt=True)
+        do_stationary_count(nv_sig, disable_opt=True)
         # do_stationary_count(nv_sig, disable_opt=True, nv_minus_initialization=True)
         # do_stationary_count(nv_sig, disable_opt=True, nv_zero_initialization=True)
 
@@ -451,7 +451,7 @@ if __name__ == "__main__":
 
     except Exception as exc:
         recipient = "cambria@wisc.edu"
-        tool_belt.send_exception_email(email_to=recipient)
+        # tool_belt.send_exception_email(email_to=recipient)
         raise exc
     finally:
         tool_belt.reset_cfm()

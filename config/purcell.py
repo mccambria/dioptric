@@ -344,16 +344,21 @@ config |= {
             "scaling_gain": 0.5,
         },
         "PulseGen": {
-            "do_apd_gate": 5,
             "do_laser_INTE_520_dm": 3,
             "do_laser_OPTO_589_dm": 3,
             "do_laser_COBO_638_dm": 7,
-            "do_sample_clock": 0,
             "do_sig_gen_BERK_bnc835_gate": 1,
             "do_sig_gen_STAN_sg394_gate": 10,
-            "do_camera_trigger": 5,
+            "do_apd_gate": 5,
+            "do_sample_clock": 0,
+            # "do_camera_trigger": 5,
         },
-        "Tagger": {"di_apd_0": 2, "di_apd_1": 4, "di_apd_gate": 3, "di_clock": 1},
+        "Tagger": {
+            "di_apd_0": 2,
+            "di_apd_1": 4,
+            "di_apd_gate": 3,
+            "di_clock": 1,
+        },
     },
 }
 
