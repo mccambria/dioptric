@@ -833,9 +833,9 @@ def _macro_pulse_series(
 
 
 def _macro_scc_no_shelving(
-    coords_list: list[list[float]],
-    duration_list: list[int] = None,
-    amp_list: list[float] = None,
+    coord: list[float],
+    duration: int = None,
+    amp: float = None,
     duration_override: int = None,
     amp_override: float = None,
     do_target_list: list[bool] = None,
@@ -875,9 +875,9 @@ def _macro_scc_no_shelving(
     _macro_pulse_series(
         scc_laser_name,
         scc_pulse_name,
-        coords_list,
-        duration_list,
-        amp_list,
+        coord,
+        duration,
+        amp,
         duration_override,
         amp_override,
         do_target_list,

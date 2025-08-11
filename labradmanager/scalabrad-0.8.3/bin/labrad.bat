@@ -21,7 +21,7 @@
 @REM sbt-pack launch script
 @REM ----------------------------------------------------------------------------
 
-@ECHO off
+@echo off
 
 @REM set %HOME% to equivalent of $HOME
 if "%HOME%" == "" (set HOME=%HOMEDRIVE%%HOMEPATH%)
@@ -34,8 +34,9 @@ if "%OS%"=="Windows_NT" @setlocal
 @REM ==== START VALIDATION ====
 if not "%JAVA_HOME%" == "" goto OkJHome
 
+
 for /f %%j in ("java.exe") do (
-  set JAVA_EXE=%%~$PATH:j
+  set JAVA_EXE="%%~$PATH:j"
   goto init
 )
 
@@ -89,7 +90,8 @@ SET PSEP=;
 
 @REM Start Java program
 :runm2
-SET CMDLINE="%JAVA_EXE%" %JVM_OPT%  -cp "%PROG_HOME%\lib\*;" -Dprog.home="%PROG_HOME%" -Dprog.version="0.8.3" org.labrad.manager.Manager %CMD_LINE_ARGS%
+SET CMDLINE=%JAVA_EXE% %JVM_OPT%  -cp "%PROG_HOME%\lib\*;" -Dprog.home="%PROG_HOME%" -Dprog.version="0.8.3" org.labrad.manager.Manager %CMD_LINE_ARGS%
+echo %CMDLINE%
 %CMDLINE%
 if ERRORLEVEL 1 goto error
 goto end
