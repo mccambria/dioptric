@@ -10,7 +10,8 @@ import numpy
 from pulsestreamer import OutputState, Sequence
 
 import utils.tool_belt as tool_belt
-from utils.tool_belt import Digital, States
+from utils import common
+from utils.tool_belt import Digital
 
 
 def get_seq(pulse_streamer, config, args):
@@ -24,7 +25,6 @@ def get_seq(pulse_streamer, config, args):
 
     # Signify which signal generator to use
     state = args[4]
-    state = States(state)
     sig_gen_name = config["Servers"][f"sig_gen_{state.name}"]
 
     # Laser specs
@@ -127,7 +127,7 @@ def get_seq(pulse_streamer, config, args):
 
 
 if __name__ == "__main__":
-    config = tool_belt.get_config_dict()
+    config = common.get_config_dict()
     tool_belt.set_delays_to_zero(config)
     args = [100, 1000.0, 300, 300, 3, "laserglow_532", None]
     # args = [1000, 10000.0, 300, 2000, 3, 'integrated_520', None]

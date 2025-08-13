@@ -25,7 +25,8 @@ import majorroutines.confocal.confocal_image_sample as image_sample
 
 # import majorroutines.confocal.optimize_magnet_angle as optimize_magnet_angle
 # import majorroutines.confocal.pulsed_resonance as pulsed_resonance
-# import majorroutines.confocal.rabi as rabi
+import majorroutines.confocal.confocal_rabi as rabi
+
 # import majorroutines.confocal.ramsey as ramsey
 # import majorroutines.confocal.resonance as resonance
 # import majorroutines.confocal.spin_echo as spin_echo
@@ -283,20 +284,24 @@ def do_optimize_magnet_angle(nv_sig):
     )
 
 
-def do_rabi(nv_sig, state, uwave_time_range=[0, 200]):
+def do_rabi(nv_sig):
     num_steps = 51
     num_reps = 2e4
     num_runs = 16
+    min_tau = 8
+    max_tau = 400
+    uwave_ind_list = [0, 1]
 
-    period = rabi.main(
+    rabi.main(
         nv_sig,
-        uwave_time_range,
-        state,
         num_steps,
         num_reps,
         num_runs,
+        min_tau,
+        max_tau,
+        uwave_ind_list,
     )
-    nv_sig["rabi_{}".format(state.name)] = period
+    # nv_sig["rabi_{}".format(state.name)] = period
 
 
 def do_t1_dq(nv_sig):
@@ -445,7 +450,7 @@ if __name__ == "__main__":
 
         # do_optimize(nv_sig)
         # nv_sig["imaging_readout_dur"] = 5e7
-        do_stationary_count(nv_sig, disable_opt=True)
+        # do_stationary_count(nv_sig, disable_opt=True)
         # do_stationary_count(nv_sig, disable_opt=True, nv_minus_initialization=True)
         # do_stationary_count(nv_sig, disable_opt=True, nv_zero_initialization=True)
 
@@ -455,7 +460,7 @@ if __name__ == "__main__":
         # do_pulsed_resonance(nv_sig, 2.87, 0.200)
         # do_pulsed_resonance_state(nv_sig, States.LOW)
         # do_pulsed_resonance_state(nv_sig, States.HIGH)
-        # do_rabi(nv_sig, States.LOW, uwave_time_range=[0, 400])
+        do_rabi(nv_sig)
         # do_rabi(nv_sig, States.HIGH, uwave_time_range=[0, 400])
         # do_spin_echo(nv_sig)
         # do_g2_measurement(nv_sig, 0, 1)

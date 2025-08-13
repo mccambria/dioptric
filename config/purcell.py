@@ -95,7 +95,7 @@ config |= {
         "default_pulse_duration": 1000,
         "aod_access_time": 11e3,  # access time in specs is 10us
         "widefield_operation_buffer": 1e3,
-        "uwave_buffer": 16,
+        "uwave_buffer": 0,
         "iq_buffer": 0,
         "iq_delay": 136,  # SBC measured using NVs 4/18/2025
         "temp_reading_interval": 15 * 60,  # for PID
@@ -345,20 +345,32 @@ config |= {
             "scaling_gain": 0.5,
         },
         "PulseGen": {
-            "do_laser_INTE_520_dm": 3,
-            "do_laser_OPTO_589_dm": 3,
-            "do_laser_COBO_638_dm": 7,
-            "do_sig_gen_BERK_bnc835_gate": 1,
-            "do_sig_gen_STAN_sg394_gate": 10,
-            "do_apd_gate": 5,
-            "do_sample_clock": 0,
-            "do_camera_trigger": 5,
+            # "do_laser_INTE_520_dm": 3,
+            # "do_laser_OPTO_589_dm": 3,
+            # "do_laser_COBO_638_dm": 7,
+            # "do_sig_gen_BERK_bnc835_gate": 1,
+            # "do_sig_gen_STAN_sg394_gate": 10,
+            # "do_apd_gate": 5,
+            # "do_sample_clock": 0,
+            # "do_camera_trigger": 5,
+            # clocks / gates
+            "do_sample_clock": 0,  # 125 MHz-compatible sample clock out to Tagger
+            "do_apd_gate": 1,  # gate line to Tagger
+            # "do_camera_trigger": 6,  # optional
+            "do_laser_INTE_520_dm": 2,  # green  TTL
+            "do_laser_COBO_638_dm": 3,  # red TTL
+            # microwaves (TTL gate to SGs)
+            # "do_sig_gen_BERK_bnc835_gate": 4,
+            "do_sig_gen_STAN_sg394_2_gate": 4,
+            "do_sig_gen_STAN_sg394_gate": 5,
+            # analog (for the yellow AOM amplitude)
+            "ao_laser_OPTO_589_am": 0,  # yellow analog modulation
         },
         "Tagger": {
-            "di_apd_0": 2,
-            "di_apd_1": 4,
-            "di_apd_gate": 3,
             "di_clock": 1,
+            "di_apd_gate": 2,
+            "di_apd_0": 3,
+            "di_apd_1": 4,
         },
     },
 }

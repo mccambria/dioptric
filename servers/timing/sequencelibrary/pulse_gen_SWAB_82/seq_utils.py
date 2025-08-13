@@ -21,85 +21,78 @@ from __future__ import annotations
 
 from dataclasses import dataclass, field
 from functools import cache
-from typing import Any, Dict, Iterable, List, Tuple
+from typing import Any, Dict, Iterable, List, Optional, Tuple
 
+import numpy as np
 from pulsestreamer import OutputState, Sequence
 
 from utils import common
-from utils import tool_belt as tb
 from utils.constants import Digital, ModMode, VirtualLaserKey
 
+LOW, HIGH = 0, 1
+
 # ---------------------------------------------------------------------
-# Config getters used by sequences
+# Cached config getters
 # ---------------------------------------------------------------------
 
 
 @cache
-def get_cfg() -> dict:
+def CFG() -> dict:
     return common.get_config_dict()
 
 
 @cache
 def W() -> dict:
-    """Pulse Streamer wiring (digital + analog channel numbers)."""
-    return get_cfg()["Wiring"]["PulseGen"]
+    return CFG()["Wiring"]["PulseGen"]
 
 
 @cache
-def get_virtual_laser_dict(vkey: VirtualLaserKey) -> dict:
-    return get_cfg()["Optics"]["VirtualLasers"][vkey]
+def vd_laser(vkey: VirtualLaserKey) -> dict:
+    return CFG()["Optics"]["VirtualLasers"][vkey]
 
 
 @cache
-def get_physical_laser_name(vkey: VirtualLaserKey) -> str:
-    return get_virtual_laser_dict(vkey)["physical_name"]
+def phys_laser_name(vkey: VirtualLaserKey) -> str:
+    return vd_laser(vkey)["physical_name"]
 
 
 @cache
-def get_physical_laser_dict(physical_laser_name: str) -> dict:
-    return get_cfg()["Optics"]["PhysicalLasers"][physical_laser_name]
+def phys_laser_dict(physical_name: str) -> dict:
+    return CFG()["Optics"]["PhysicalLasers"][physical_name]
 
 
 @cache
-def get_virtual_sig_gen_dict(uwave_ind: int) -> dict:
-    return get_cfg()["Microwaves"]["VirtualSigGens"][uwave_ind]
+def vsg(uwave_ind: int) -> dict:
+    return CFG()["Microwaves"]["VirtualSigGens"][uwave_ind]
 
 
 @cache
-def get_sig_gen_name(uwave_ind: int) -> str:
-    return get_virtual_sig_gen_dict(uwave_ind)["physical_name"]
+def sig_gen_name(uwave_ind: int) -> str:
+    return vsg(uwave_ind)["physical_name"]
 
 
 @cache
-def get_common_duration_ns(key: str) -> int:
-    return get_cfg()["CommonDurations"][key]
+def common_ns(key: str) -> int:
+    return int(CFG()["CommonDurations"][key])
 
 
 # ---------------------------------------------------------------------
-# Builder: accumulate per-channel trains then emit a Sequence
+# Builder: collect trains, auto-pad, emit Sequence
 # ---------------------------------------------------------------------
-
-
 @dataclass
 class _Train:
-    """Internal channel train."""
-
-    # list of (dur_ns, value) where value is Digital or float depending on type
     segs: List[Tuple[int, Any]] = field(default_factory=list)
     is_digital: bool = True
 
     def length(self) -> int:
         return int(sum(d for d, _ in self.segs))
 
-    def last_val(self) -> Any:
-        if not self.segs:
-            return Digital.LOW if self.is_digital else 0.0
-        return self.segs[-1][1]
-
     def pad_to(self, t_ns: int):
         cur = self.length()
         if t_ns > cur:
-            self.segs.append((t_ns - cur, self.last_val()))
+            # pad with baseline, not the last value!
+            baseline = Digital.LOW if self.is_digital else 0.0
+            self.segs.append((t_ns - cur, baseline))
 
     def add(self, start_ns: int, dur_ns: int, val: Any):
         self.pad_to(start_ns)
@@ -108,310 +101,255 @@ class _Train:
 
 
 class PSBuilder:
-    """
-    Helper that collects trains for named channels, then writes them to a
-    pulsestreamer.Sequence with consistent period/padding.
-    """
+    """Accumulates per-channel trains, then emits a padded Sequence."""
 
     def __init__(self):
-        self._trains: Dict[Tuple[str, int], _Train] = {}  # key=(kind, chan)
+        self._tr: Dict[Tuple[str, int], _Train] = {}
 
-    # ---- resolve channels
-    def _get_train(self, kind: str, chan: int) -> _Train:
+    def _get(self, kind: str, chan: int) -> _Train:
         key = (kind, chan)
-        if key not in self._trains:
-            self._trains[key] = _Train(is_digital=(kind == "do"))
-        return self._trains[key]
+        if key not in self._tr:
+            self._tr[key] = _Train(is_digital=(kind == "do"))
+        return self._tr[key]
 
+    # Channel resolvers
     def _do(self, name: str) -> int:
         return W()[f"do_{name}"]
 
     def _ao(self, name: str) -> int:
         return W()[f"ao_{name}"]
 
-    # ---- write primitives
-    def digital_window(self, do_name: str, start: int, dur: int, high: bool = True):
-        chan = self._do(do_name)
-        tr = self._get_train("do", chan)
-        tr.add(start, dur, Digital.HIGH if high else Digital.LOW)
+    # Primitives
+    def digital(self, do_name: str, start: int, dur: int, high: bool = True):
+        tr = self._get("do", self._do(do_name))
+        tr.add(start, dur, HIGH if high else LOW)
 
-    def analog_window(self, ao_name: str, start: int, dur: int, value: float):
-        chan = self._ao(ao_name)
-        tr = self._get_train("ao", chan)
+    def analog(self, ao_name: str, start: int, dur: int, value: float):
+        tr = self._get("ao", self._ao(ao_name))
         tr.add(start, dur, float(value))
 
-    # ---- canned patterns
-    def add_apd_gate(self, start: int, dur: int):
-        self.digital_window("apd_gate", start, dur, True)
+    # Convenience
+    def apd_gate(self, start: int, dur: int):
+        self.digital("apd_gate", start, dur, True)
 
-    def add_camera_trigger(self, start: int, dur: int):
-        self.digital_window("camera_trigger", start, dur, True)
+    def cam_trig(self, start: int, dur: int):
+        self.digital("camera_trigger", start, dur, True)
 
-    def add_daq_clock_once(self, period: int, high_ns: int = 100, low_ns: int = 100):
-        """
-        Emit one rising edge per period near the end (matches your legacy pattern):
-        (period - (high+low)) LOW, then high_ns HIGH, then low_ns LOW.
-        """
-        chan = self._do("sample_clock")
-        tr = self._get_train("do", chan)
-        total = tr.length()
-        # align this channel independently to 'period'
-        if total < period - (high_ns + low_ns):
-            tr.add(total, period - (high_ns + low_ns) - total, Digital.LOW)
-        tr.add(tr.length(), high_ns, Digital.HIGH)
-        tr.add(tr.length(), low_ns, Digital.LOW)
+    def daq_tick_near_end(self, period: int, hi: int = 100, lo: int = 100):
+        ch = self._do("sample_clock")
+        tr = self._get("do", ch)
+        pre = max(0, period - (hi + lo) - tr.length())
+        if pre:
+            tr.add(tr.length(), pre, LOW)
+        tr.add(tr.length(), hi, HIGH)
+        tr.add(tr.length(), lo, LOW)
 
-    def add_mw_gate(self, sig_gen_name: str, start: int, dur: int):
-        """Gate for a microwave source (digital)."""
-        self.digital_window(f"{sig_gen_name}_gate", start, dur, True)
-
-    def add_laser_window(
-        self, laser_name: str, start: int, dur: int, power: float | None
+    # Aligned pulses (respect per-path delays)
+    def laser_aligned(
+        self,
+        laser_name: str,
+        start: int,
+        dur: int,
+        power: Optional[float],
+        laser_delay: int,
+        t0: int,
     ):
-        """
-        Laser modulation by config: DIGITAL -> do_<laser>_dm, ANALOG -> ao_<laser>_am
-        """
-        mod_mode = get_physical_laser_dict(laser_name)["mod_mode"]
-        if mod_mode is ModMode.DIGITAL:
-            self.digital_window(f"{laser_name}_dm", start, dur, True)
+        # align epoch such that arrivals line up at t0
+        start_adj = start + (t0 - laser_delay)
+        mm = phys_laser_dict(laser_name)["mod_mode"]
+        if mm is ModMode.DIGITAL:
+            self.digital(f"{laser_name}_dm", start_adj, dur, True)
         else:
-            if power is None:
-                power = 0.0  # safe fallback
-            self.analog_window(f"{laser_name}_am", start, dur, power)
+            self.analog(
+                f"{laser_name}_am",
+                start_adj,
+                dur,
+                0.0 if power is None else float(power),
+            )
 
-    # ---- finalize
+    def mw_gate_aligned(
+        self, sig_name: str, start: int, dur: int, uwave_delay: int, t0: int
+    ):
+        start_adj = start + (t0 - uwave_delay)
+        self.digital(f"{sig_name}_gate", start_adj, dur, True)
+
     def emit(self, tail_pad: int = 0) -> Tuple[Sequence, OutputState, List[int]]:
-        # compute unified period
-        period = max((tr.length() for tr in self._trains.values()), default=0) + int(
+        period = max((tr.length() for tr in self._tr.values()), default=0) + int(
             tail_pad
         )
-        for tr in self._trains.values():
+        for tr in self._tr.values():
             tr.pad_to(period)
-
         seq = Sequence()
-        for (kind, chan), tr in self._trains.items():
+        for (kind, chan), tr in self._tr.items():
             if kind == "do":
                 seq.setDigital(chan, tr.segs)
             else:
                 seq.setAnalog(chan, tr.segs)
-
-        # nothing to force, leave outputs safe: sample clock low, etc.
-        final_dos = [W()["do_sample_clock"]]
-        final = OutputState(final_dos, 0.0, 0.0)
-        return seq, final, [period]
+        final = OutputState([W()["do_sample_clock"]], 0.0, 0.0)
+        return seq, final, [np.int64(period)]
 
 
 # ---------------------------------------------------------------------
-# Mid-level helpers (mirroring OPX-style macros)
+# Small utilities
 # ---------------------------------------------------------------------
+@cache
+def _pi_durations_ns(uwave_ind: int) -> tuple[int, int]:
+    """
+    Return (pi_ns, pi_over_2_ns) for this microwave chain.
+    Falls back to rabi_period/2 and rabi_period/4 if explicit values
+    aren't present in the config.
+    """
+    d = vsg(uwave_ind)
+    # Prefer explicit calibration if present
+    pi_ns = int(d.get("pi_pulse")) if "pi_pulse" in d else None
+    pi2_ns = int(d.get("pi_on_2_pulse")) if "pi_on_2_pulse" in d else None
+
+    if pi_ns is None or pi2_ns is None:
+        rabi = int(d.get("rabi_period", 0))
+        if rabi <= 0 and (pi_ns is None or pi2_ns is None):
+            raise KeyError(
+                f"VirtualSigGens[{uwave_ind}] needs either pi_pulse/pi_on_2_pulse "
+                f"or rabi_period in config."
+            )
+        if pi_ns is None:
+            pi_ns = max(1, rabi // 2)
+        if pi2_ns is None:
+            pi2_ns = max(1, rabi // 4)
+    return pi_ns, pi2_ns
 
 
-def macro_simple_readout(
-    delay: int,
-    readout_ns: int,
-    readout_laser: str,
-    readout_power: float | None,
-    tail_pad: int = 300,
-) -> Tuple[Sequence, OutputState, List[int]]:
-    """
-    DAQ clock + APD gate + readout laser only.
-    """
-    b = PSBuilder()
-    # APD gate during readout
-    b.add_apd_gate(start=delay, dur=readout_ns)
-    # Laser window
-    b.add_laser_window(
-        laser_name=readout_laser, start=delay, dur=readout_ns, power=readout_power
+def _delays(readout_laser: str, uwave_ind: int) -> Tuple[int, int, int, int, int]:
+    """laser_delay, uwave_delay, t0(common), uwave_buf, short_buf"""
+    laser_delay = int(phys_laser_dict(readout_laser)["delay"])
+    uwave_delay = int(
+        CFG()["Microwaves"]["PhysicalSigGens"][sig_gen_name(uwave_ind)]["delay"]
     )
-    # Compute period and clock
-    period = delay + readout_ns + tail_pad
-    b.add_daq_clock_once(period)
-    return b.emit(tail_pad=0)  # already included in 'period'
+    short_buf = 10
+    uwave_buf = int(CFG()["CommonDurations"]["uwave_buffer"])
+    t0 = max(laser_delay, uwave_delay) + short_buf
+    return laser_delay, uwave_delay, t0, uwave_buf, short_buf
 
 
-def macro_charge_init_simple_readout(
-    init_ns: int,
-    readout_ns: int,
-    init_laser: str,
-    init_power: float | None,
-    readout_laser: str,
-    readout_power: float | None,
-    uwave_buffer: int = 0,
-    tail_pad: int = 300,
-) -> Tuple[Sequence, OutputState, List[int]]:
-    """
-    Charge initialization window → (optional buffer) → readout gate+laser.
-    """
-    b = PSBuilder()
-    t = 0
-    # init
-    b.add_laser_window(init_laser, start=t, dur=init_ns, power=init_power)
-    t += init_ns + uwave_buffer
-    # APD + readout
-    b.add_apd_gate(start=t, dur=readout_ns)
-    b.add_laser_window(readout_laser, start=t, dur=readout_ns, power=readout_power)
-    period = t + readout_ns + tail_pad
-    b.add_daq_clock_once(period)
-    return b.emit(tail_pad=0)
+# ---------------------------------------------------------------------
+# Mid-level macros (single-NV; no AOD stepping here)
+# ---------------------------------------------------------------------
 
 
 def macro_polarize(
-    builder: PSBuilder,
-    pol_coords_unused: List[List[float]] | None = None,
-    duration_ns: int | None = None,
-    amp_unused: float | None = None,
-    duration_override: int | None = None,
-    vkey: VirtualLaserKey = VirtualLaserKey.CHARGE_POL,
-    start_ns: int = 0,
+    b: PSBuilder,
+    vkey: VirtualLaserKey,
+    start: int,
+    duration: Optional[int] = None,
+    power: Optional[float] = None,
+    readout_laser_for_align: Optional[str] = None,
+    uwave_ind: Optional[int] = None,
 ) -> int:
-    """
-    Simple polarization macro for single-NV confocal (no AOD stepping here).
-    Returns end time.
-    """
-    laser = get_physical_laser_name(vkey)
-    dur = (
-        duration_override
-        if duration_override is not None
-        else (
-            get_virtual_laser_dict(vkey)["duration"]
-            if duration_ns is None
-            else duration_ns
-        )
-    )
-    builder.add_laser_window(laser, start=start_ns, dur=dur, power=None)
-    return start_ns + dur
+    laser = phys_laser_name(vkey)
+    dur = int(vd_laser(vkey)["duration"] if duration is None else duration)
+    # align using same t0 as readout path (pass both when available)
+    if readout_laser_for_align is not None and uwave_ind is not None:
+        ldel, udel, t0, *_ = _delays(readout_laser_for_align, uwave_ind)
+        b.laser_aligned(laser, start, dur, power, ldel, t0)
+    else:
+        # fallback: no alignment offset
+        mm = phys_laser_dict(laser)["mod_mode"]
+        if mm is ModMode.DIGITAL:
+            b.digital(f"{laser}_dm", start, dur, True)
+        else:
+            b.analog(f"{laser}_am", start, dur, 0.0 if power is None else float(power))
+    return start + dur
 
 
-def macro_scc(
-    builder: PSBuilder,
-    duration_ns: int | None = None,
-    duration_override: int | None = None,
-    vkey: VirtualLaserKey = VirtualLaserKey.SCC,
-    start_ns: int = 0,
-    amp: float | None = None,
-) -> int:
-    """
-    SCC pulse macro for single-NV.
-    """
-    laser = get_physical_laser_name(vkey)
-    dur = (
-        duration_override
-        if duration_override is not None
-        else (
-            get_virtual_laser_dict(vkey)["duration"]
-            if duration_ns is None
-            else duration_ns
-        )
-    )
-    builder.add_laser_window(laser, start=start_ns, dur=dur, power=amp)
-    return start_ns + dur
-
-
-def macro_charge_state_readout(
-    builder: PSBuilder,
-    duration_ns: int | None = None,
-    amp: float | None = None,
-    start_ns: int = 0,
-) -> int:
-    """
-    Yellow charge readout (parallel in WF; here just a window) + APD gate.
-    """
-    vkey = VirtualLaserKey.WIDEFIELD_CHARGE_READOUT
-    laser = get_physical_laser_name(vkey)
-    dur = (
-        get_virtual_laser_dict(vkey)["duration"] if duration_ns is None else duration_ns
-    )
-    builder.add_laser_window(laser, start=start_ns, dur=dur, power=amp)
-    builder.add_apd_gate(start=start_ns, dur=dur)
-    return start_ns + dur
-
-
-def macro_pi_pulse(builder: PSBuilder, uwave_ind: int, start_ns: int, dur_ns: int):
-    """
-    Gate the microwave source for a duration (digital).
-    You can also add IQ analogs similarly if you wire them to AO channels.
-    """
-    sig = get_sig_gen_name(uwave_ind)
-    builder.add_mw_gate(sig_gen_name=sig, start=start_ns, dur=dur_ns)
-
-
-# ---------------------------------------------------------------------
-# Example: a "Rabi-like" base macro using the builder (signal + reference)
-# ---------------------------------------------------------------------
-
-
-def build_rabi_like_sequence(
-    tau_ns: int,
-    pol_ns: int,
-    readout_ns: int,
-    max_tau_ns: int,
-    uwave_ind: int,
+def macro_readout(
+    b: PSBuilder,
     readout_laser: str,
-    readout_power: float | None,
-) -> Tuple[Sequence, OutputState, List[int]]:
-    """
-    Structure: [pol] --buf--> [tau uwave] --buf--> [readout (signal)] --buf-->
-               [tau ref path] --buf--> [readout (reference)]
-    Buffers are pulled from CommonDurations where appropriate.
-    """
-    b = PSBuilder()
-    uwave_buf = get_common_duration_ns("uwave_buffer")
-    short_buf = 10  # to mirror OPX min waits
-    # --- Signal path
-    t = 0
-    # polarization
-    t = macro_polarize(b, duration_ns=pol_ns, start_ns=t)
-    t += uwave_buf
-    # wait so that total evolution between pol->readout is max_tau_ns
-    if max_tau_ns < tau_ns:
-        raise ValueError("max_tau_ns must be >= tau_ns")
-    t += max_tau_ns - tau_ns
-    # microwave window (tau)
-    macro_pi_pulse(b, uwave_ind=uwave_ind, start_ns=t, dur_ns=tau_ns)
-    t += tau_ns + uwave_buf
-    # signal readout
-    b.add_apd_gate(start=t, dur=readout_ns)
-    b.add_laser_window(readout_laser, start=t, dur=readout_ns, power=readout_power)
-    t += (
-        max(readout_ns, pol_ns) + short_buf + uwave_buf
-    )  # keep laser on long enough, mimic OPX
+    start: int,
+    readout_ns: int,
+    readout_power: Optional[float],
+    laser_delay: int,
+    t0: int,
+    gate_apd: bool = True,
+) -> int:
+    b.laser_aligned(readout_laser, start, readout_ns, readout_power, laser_delay, t0)
+    if gate_apd:
+        b.apd_gate(start + t0, readout_ns)  # open gate when arrivals occur
+    return start + readout_ns
 
-    # --- Reference path (no uwave)
-    # fixed delay to mirror the time budget
-    t += max_tau_ns + uwave_buf
-    # reference readout
-    b.add_apd_gate(start=t, dur=readout_ns)
-    b.add_laser_window(readout_laser, start=t, dur=readout_ns, power=readout_power)
-    t += readout_ns + short_buf
 
-    period = t + 500  # small trailer
-    b.add_daq_clock_once(period)
-    return b.emit(tail_pad=0)
+# --- one primitive, two wrappers --------------------------------------
+
+
+def macro_mw_pulse(
+    b: PSBuilder,
+    uwave_ind: int,
+    start_ns: int,
+    dur_ns: int,
+    uwave_delay_ns: int,
+    t0_ns: int,
+) -> int:
+    """
+    Low-level primitive: gate the microwave source for dur_ns with alignment.
+    Returns the time immediately after the pulse (start_ns + dur_ns).
+    """
+    # NOTE: use the *actual* getter name you have; in your snippet it was `sig_gen_name`,
+    # elsewhere it's `get_sig_gen_name`. Keep it consistent:
+    name = sig_gen_name(uwave_ind)
+    b.mw_gate_aligned(name, start_ns, int(dur_ns), int(uwave_delay_ns), int(t0_ns))
+    return start_ns + int(dur_ns)
+
+
+def macro_pi(
+    b: PSBuilder,
+    uwave_ind: int,
+    start_ns: int,
+    uwave_delay_ns: int,
+    t0_ns: int,
+    dur_override_ns: int | None = None,
+) -> int:
+    """
+    π pulse wrapper. If dur_override_ns is None, use config; otherwise use override.
+    """
+    pi_ns, _ = _pi_durations_ns(uwave_ind)
+    dur = int(pi_ns if dur_override_ns is None else dur_override_ns)
+    return macro_mw_pulse(b, uwave_ind, start_ns, dur, uwave_delay_ns, t0_ns)
+
+
+def macro_pi_on_2(
+    b: PSBuilder,
+    uwave_ind: int,
+    start_ns: int,
+    uwave_delay_ns: int,
+    t0_ns: int,
+    dur_override_ns: int | None = None,
+) -> int:
+    """
+    π/2 pulse wrapper. If dur_override_ns is None, use config; otherwise use override.
+    """
+    _, pi2_ns = _pi_durations_ns(uwave_ind)
+    dur = int(pi2_ns if dur_override_ns is None else dur_override_ns)
+    return macro_mw_pulse(b, uwave_ind, start_ns, dur, uwave_delay_ns, t0_ns)
 
 
 # ---------------------------------------------------------------------
-# Legacy helpers brought from tool_belt so sequences can import only this file
+# Back-compat helpers (if older seq files import these)
 # ---------------------------------------------------------------------
 
 
-def process_laser_seq(pulse_streamer, seq, config, laser_name, laser_power, train):
-    """
-    Kept for backwards-compatibility with older sequence files.
-    """
+def process_laser_seq(seq, config, laser_name, laser_power, train):
     if config is None:
-        config = get_cfg()
-    mod_mode = config["Optics"][laser_name]["mod_mode"]
-    if mod_mode is ModMode.DIGITAL:
+        config = CFG()
+    mm = config["Optics"][laser_name]["mod_mode"]
+    if mm is ModMode.DIGITAL:
         seq.setDigital(W()[f"do_{laser_name}_dm"], train)
     else:
         processed = []
-        for dur, level in train:
-            val = (
+        for dur, lvl in train:
+            v = (
                 0.0
-                if level is Digital.LOW
+                if lvl is LOW
                 else (0.0 if laser_power is None else float(laser_power))
             )
-            processed.append((int(dur), val))
+            processed.append((int(dur), v))
         seq.setAnalog(W()[f"ao_{laser_name}_am"], processed)
 
 
@@ -435,3 +373,34 @@ def seq_train_length_check(train: Iterable[Tuple[int, Any]]) -> int:
     total = int(sum(d for d, _ in train))
     print(total)
     return total
+
+
+# ---------------------------------------------------------------------
+# Quick self-test / preview: python seq_utils.py
+# ---------------------------------------------------------------------
+
+if __name__ == "__main__":
+    # Minimal sanity test & preview (requires matplotlib installed for ps.plot()).
+    args = dict(
+        tau=200,
+        pol=1000,
+        ro=300,
+        max_tau=1000,
+        uw=0,
+        ro_laser="laser_INTE_520",
+        ro_pow=None,
+    )
+    seq, _, [per] = build_spin_echo_sequence(
+        args["tau"],
+        args["pol"],
+        args["ro"],
+        args["max_tau"],
+        args["uw"],
+        args["ro_laser"],
+        args["ro_pow"],
+    )
+    try:
+        seq.plot()
+    except Exception as e:
+        print("Preview unavailable:", e)
+    print("Period (ns):", per)

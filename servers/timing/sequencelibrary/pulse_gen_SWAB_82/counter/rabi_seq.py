@@ -1,198 +1,134 @@
 # -*- coding: utf-8 -*-
 """
-Rabi sequence: two APD gates per period (signal, then reference).
-Keep the total period constant across all tau by padding with (max_tau - tau).
+Rabi sequence (Pulse Streamer): two APD gates per period (signal, then reference).
+Constant period per step by padding with (pad_budget_ns - tau_ns).
 
- Updated by @Saroj Chand on Aug 6, 2025 (hardened).
+Author: Saroj Chand
 """
 
-import matplotlib.pyplot as plt
+from typing import Callable, List, Tuple
 
-# If you placed seq_utils in a different package, adjust this import:
+from pulsestreamer import OutputState, Sequence
+
 from servers.timing.sequencelibrary.pulse_gen_SWAB_82 import seq_utils
-
-# Optional helpers to auto-pick a valid readout laser from your config
+from servers.timing.sequencelibrary.pulse_gen_SWAB_82.counter import base_sequence
 from utils import tool_belt as tb
 from utils.constants import VirtualLaserKey
 
+MWMacro = Callable[[seq_utils.PSBuilder, int, int], int]
 
-def get_seq(args):
+
+def _pick_align_index(uwave_inds: List[int], readout_laser: str) -> int:
+    """Use the chain with the largest MW delay for base_args alignment."""
+    best = uwave_inds[0]
+    _, best_udel, _, _, _ = seq_utils._delays(readout_laser, best)
+    for ind in uwave_inds[1:]:
+        _, udel, _, _, _ = seq_utils._delays(readout_laser, ind)
+        if udel > best_udel:
+            best, best_udel = ind, udel
+    return best
+
+
+def uwave_rabi(uwave_inds: List[int], readout_laser: str) -> MWMacro:
+    """Gate all MW chains in uwave_inds simultaneously for τ."""
+    # collect per-chain MW delays and get a shared t0
+    udel = {}
+    ldel_list = []
+    short = 10
+    for ind in uwave_inds:
+        ldel_i, udel_i, _t0, _uwbuf, short = seq_utils._delays(readout_laser, ind)
+        ldel_list.append(ldel_i)
+        udel[ind] = udel_i
+    # laser delay for readout path (same laser for both experiments)
+    # ldel = ldel_list[0]
+    ldel = 0
+    t0 = max([ldel] + list(udel.values())) + short
+
+    def _fn(b: seq_utils.PSBuilder, t: int, tau_ns: int) -> int:
+        for ind in uwave_inds:
+            seq_utils.macro_mw_pulse(
+                b,
+                uwave_ind=ind,
+                start_ns=t,
+                dur_ns=int(tau_ns),
+                uwave_delay_ns=udel[ind],
+                t0_ns=t0,
+            )
+        return t + int(tau_ns)
+
+    return _fn
+
+
+def uwave_ref() -> MWMacro:
+    def _fn(b: seq_utils.PSBuilder, t: int, _tau_ns: int) -> int:
+        return t
+
+    return _fn
+
+
+def get_seq(_server, _config, args) -> Tuple[Sequence, OutputState, List[int]]:
     """
-    Args (list/tuple):
-        0: tau_ns        (int)
-        1: pol_ns        (int)
-        2: readout_ns    (int)
-        3: max_tau_ns    (int)  # must be >= tau_ns
-        4: uwave_ind     (int)
-        5: ro_laser      (str)  # physical laser name (must exist in config)
-        6: ro_power      (float|None)  # analog volts if analog modulation; None if digital
-    Returns:
-        (Sequence, OutputState, [period_ns])
+    args:
+      0: base_args = [pol_ns, readout_ns, uwave_ind_align, readout_laser, readout_power, pad_budget_ns]
+      1: step_tau_ns (int)
+      2: num_reps_ignored (int)
+      3: uwave_inds (optional list[int])  # if omitted, falls back to [uwave_ind_align]
     """
-    tau, pol, readout, max_tau, uwave_ind, ro_laser, ro_power = args
-    return seq_utils.build_rabi_like_sequence(
-        tau_ns=tau,
-        pol_ns=pol,
-        readout_ns=readout,
-        max_tau_ns=max_tau,
-        uwave_ind=uwave_ind,
-        readout_laser=ro_laser,
-        readout_power=ro_power,
+    base_args, step_tau_ns, _num_reps = args[:3]
+    uwave_inds = args[3] if len(args) >= 4 else None
+
+    pol_ns, readout_ns, uwave_ind_align, ro_laser, ro_power, pad_budget_ns = base_args
+
+    # If caller didn't pass a list, use the align chain as the single source.
+    if uwave_inds is None:
+        uwave_inds = [int(uwave_ind_align)]
+    else:
+        uwave_inds = [int(i) for i in uwave_inds]
+
+    # Ensure base_args uses the chain with the largest delay for alignment
+    align_ind = _pick_align_index(uwave_inds, ro_laser)
+    base_args = [
+        int(pol_ns),
+        int(readout_ns),
+        int(align_ind),
+        str(ro_laser),
+        (None if ro_power is None else float(ro_power)),
+        int(pad_budget_ns),
+    ]
+
+    # Two experiments total: (signal with all chains) + (reference)
+    uwave_macros = [uwave_rabi(uwave_inds, ro_laser), uwave_ref()]
+
+    return base_sequence.macro(
+        base_args=base_args,
+        uwave_macros=uwave_macros,
+        step_val_ns=int(step_tau_ns),
+        num_reps_ignored=int(_num_reps),
+        include_reference=False,
     )
 
 
-def preview(
-    tau_ns: int = 200,
-    pol_ns: int = 1000,
-    readout_ns: int = 300,
-    max_tau_ns: int = 2000,
-    uwave_ind: int = 0,
-    ro_laser: str | None = None,
-    ro_power: float | None = None,
-):
-    """
-    Build and plot a single Rabi sequence for visual confirmation.
-    - ro_laser defaults to your configured widefield charge-readout laser.
-    """
-    if ro_laser is None:
-        # Choose a valid physical laser name from config to avoid KeyErrors
-        ro_laser = tb.get_physical_laser_name(VirtualLaserKey.WIDEFIELD_CHARGE_READOUT)
-
-    seq, final, (period_ns,) = get_seq(
-        [tau_ns, pol_ns, readout_ns, max_tau_ns, uwave_ind, ro_laser, ro_power]
-    )
-    print(f"[RABI PREVIEW] period = {period_ns} ns  (tau = {tau_ns} ns)")
-    # Pulse Streamer client has a built-in plotter for Sequence:
-    seq.plot()  # plots digital + analog channels in subplots
-    plt.show()
-    return seq, period_ns
-
-
+# Optional local preview
 if __name__ == "__main__":
-    # Tweak these to taste, then run this file directly to preview
-    # NOTE: If your readout laser is digitally modulated, keep ro_power=None
-    #       If analog, set a voltage (e.g. 0.6).
-    preview(
-        tau_ns=200,
-        pol_ns=1000,
-        readout_ns=300,
-        max_tau_ns=2000,
-        uwave_ind=0,
-        ro_laser=None,  # auto-pick from config
-        ro_power=None,
+    tau_ns = 200
+    pol_ns = 1000
+    readout_ns = 300
+    pad_budget_ns = 220  # constant-evolution padding budget per period
+    ro_laser = tb.get_physical_laser_name(VirtualLaserKey.WIDEFIELD_CHARGE_READOUT)
+    ro_power = None  # None if digital; float volts if analog
+    # use both chains:
+    uwave_inds = [0, 1]
+    align_ind = _pick_align_index(uwave_inds, ro_laser)
+
+    base_args = [pol_ns, readout_ns, align_ind, ro_laser, ro_power, pad_budget_ns]
+    args = [base_args, tau_ns, 1, uwave_inds]
+
+    seq, _final, (period_ns,) = get_seq(None, None, args)
+    print(
+        f"[RABI PREVIEW] period = {period_ns} ns  (tau = {tau_ns} ns, MW={uwave_inds})"
     )
+    # built-in plotter
+    import matplotlib.pyplot as plt
 
-# if __name__ == "__main__":
-
-# def get_seq(pulse_streamer, config, args):
-#     """
-#     args layout (must match confocal_utils.get_base_seq_args):
-#         0: tau                 (ns, int)
-#         1: polarization_time   (ns, int)
-#         2: readout             (ns, int)
-#         3: max_tau             (ns, int)  -- used to pad the first arm so the period is constant
-#         4: state               (int -> tool_belt.States enum) selects microwave source index
-#         5: laser_name          (str)      physical laser name for polarization/readout
-#         6: laser_power         (float or None) laser power setpoint (tool_belt handles None)
-#     """
-#     # Cast the first four durations to int64
-#     tau = np.int64(args[0])
-#     pol_time = np.int64(args[1])
-#     readout = np.int64(args[2])
-#     max_tau = np.int64(args[3])
-
-#     # MW source selector
-#     state = States(args[4])
-#     sig_gen_name = config["Servers"][f"sig_gen_{state.name}"]
-
-#     # Laser info
-#     laser_name = args[5]
-#     laser_power = args[6]
-
-#     # Wiring (digital channels)
-#     wiring = config["Wiring"]["PulseGen"]
-#     do_apd_gate = wiring["do_apd_gate"]
-#     do_sig_gate = wiring[f"do_{sig_gen_name}_gate"]
-#     do_sample_clk = wiring["do_sample_clock"]
-
-#     # Device-specific delays
-#     laser_delay = config["Optics"][laser_name]["delay"]
-#     uwave_delay = config["Microwaves"][sig_gen_name]["delay"]
-
-#     # Common timing buffers
-#     short_buffer = np.int64(10)  # avoid 0-length glitches
-#     uwave_buffer = np.int64(config["CommonDurations"]["uwave_buffer"])
-#     common_delay = np.int64(max(laser_delay, uwave_delay)) + short_buffer
-
-#     # Keep the laser on exactly as needed for the longer of polarization / first readout
-#     readout_pol_max = np.int64(max(readout, pol_time)) + short_buffer
-#     final_readout_buffer = np.int64(500)
-
-#     seq = Sequence()
-
-#     # -------------------- APD gate (signal, then reference) --------------------
-#     apd_train = [
-#         (common_delay, Digital.LOW),
-#         (pol_time, Digital.LOW),
-#         (uwave_buffer, Digital.LOW),
-#         (max_tau, Digital.LOW),
-#         (uwave_buffer, Digital.LOW),
-#         (readout, Digital.HIGH),  # Signal gate
-#         (readout_pol_max - readout, Digital.LOW),
-#         (uwave_buffer, Digital.LOW),
-#         (max_tau, Digital.LOW),
-#         (uwave_buffer, Digital.LOW),
-#         (readout, Digital.HIGH),  # Reference gate
-#         (final_readout_buffer + short_buffer, Digital.LOW),
-#     ]
-#     seq.setDigital(do_apd_gate, apd_train)
-#     period = np.int64(sum(d for d, _ in apd_train))
-
-#     # -------------------- Laser (pol + both readouts) --------------------
-#     laser_train = [
-#         (common_delay - np.int64(laser_delay), Digital.LOW),
-#         (pol_time, Digital.HIGH),  # Polarization
-#         (uwave_buffer, Digital.LOW),
-#         (max_tau, Digital.LOW),  # Wait through MW first arm (padded to max_tau)
-#         (uwave_buffer, Digital.LOW),
-#         (readout_pol_max, Digital.HIGH),  # First readout (covers readout duration)
-#         (uwave_buffer, Digital.LOW),
-#         (max_tau, Digital.LOW),  # Second arm (again max_tau for constant period)
-#         (uwave_buffer, Digital.LOW),
-#         (readout + final_readout_buffer, Digital.HIGH),  # Second readout & settle
-#         (short_buffer, Digital.LOW),
-#         (np.int64(laser_delay), Digital.LOW),
-#     ]
-#     tb.process_laser_seq(
-#         pulse_streamer, seq, config, laser_name, laser_power, laser_train
-#     )
-
-#     # -------------------- Microwave gate (only tau wide in the first arm) --------------------
-#     mw_train = [
-#         (common_delay - np.int64(uwave_delay), Digital.LOW),
-#         (pol_time, Digital.LOW),
-#         (uwave_buffer, Digital.LOW),
-#         (max_tau - tau, Digital.LOW),  # pad so the arm is fixed-length
-#         (tau, Digital.HIGH),  # actual Rabi pulse
-#         (uwave_buffer, Digital.LOW),
-#         (readout_pol_max, Digital.LOW),
-#         (uwave_buffer, Digital.LOW),
-#         (max_tau, Digital.LOW),  # second arm: no pulse, just wait (same length)
-#         (uwave_buffer, Digital.LOW),
-#         (readout + final_readout_buffer, Digital.LOW),
-#         (short_buffer, Digital.LOW),
-#         (np.int64(uwave_delay), Digital.LOW),
-#     ]
-#     seq.setDigital(do_sig_gate, mw_train)
-
-#     final_digital = [do_sample_clk]  # keep sample clock line low at the end
-#     final = OutputState(final_digital, 0.0, 0.0)
-#     return seq, final, [period]
-
-
-# if __name__ == "__main__":
-#     config = tb.get_config_dict()
-#     tb.set_delays_to_zero(config)  # helper for plotting sanity
-#     args = [100, 1000, 300, 300, 0, "laserglow_532", None]
-#     s, _, _ = get_seq(None, config, args)
-#     s.plot()
+    seq.plot()
+    plt.show()

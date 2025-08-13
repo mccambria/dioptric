@@ -783,35 +783,70 @@ def get_base_scc_seq_args(nv_list: list[NVSig], uwave_ind_list: list[int]):
     return seq_args
 
 
-def get_base_seq_args(nv_sig: NVSig, uwave_ind_list: list[int]):
-    """Return base seq_args for any SCC routine. The base sequence arguments
-    are the minimum info required for state preparation and SCC.
+from typing import Iterable, Optional
 
-    Parameters
-    ----------
-    nv_list : list[NVSig]
-        List of nv signatures to target
-    uwave_ind_list : list[int]
-        List of indices of the microwave chains to run for state prep
+import numpy as np
 
-    Returns
-    -------
-    list
-        Sequence arguments
+from utils import tool_belt as tb
+from utils.constants import VirtualLaserKey
+
+
+def get_base_seq_args(
+    nv_sig,
+    uwave_ind_list: list[int],
+    taus: Iterable[int] | np.ndarray,
+    *,
+    readout_ns: Optional[int] = None,
+    pol_ns: Optional[int] = None,
+    readout_laser: Optional[str] = None,
+    readout_power: Optional[float] = None,
+):
     """
+    Build the seq_args list for rabi_seq.py::get_seq.
 
-    pol_duration, pol_amp = get_pulse_parameter_lists(
-        nv_sig, VirtualLaserKey.CHARGE_POL
-    )
+    Returns a list shaped like:
+      [taus, pol_ns, readout_ns, max_tau_ns, uwave_ind, readout_laser, readout_power]
+    where `taus` is a list[int] (one per step) and the rest are scalars.
+    """
+    # --- normalize taus and compute max_tau ---
+    taus = [int(x) for x in list(taus)]
+    if len(taus) == 0:
+        raise ValueError("taus cannot be empty")
+    max_tau = int(max(taus))
 
-    # Create list of arguments
+    # --- polarization duration (default from NV/cal or config) ---
+    if pol_ns is None:
+        pol_list, _amp_list = get_pulse_parameter_lists(
+            nv_sig, VirtualLaserKey.CHARGE_POL
+        )
+        pol_ns = int(pol_list[0])
+
+    # --- readout ns & laser defaults (confocal: SPIN_READOUT) ---
+    if readout_ns is None:
+        readout_ns = int(
+            tb.get_virtual_laser_dict(VirtualLaserKey.SPIN_READOUT)["duration"]
+        )
+    if readout_laser is None:
+        readout_laser = tb.get_physical_laser_name(VirtualLaserKey.SPIN_READOUT)
+
+    # Analog-modulated AOM case: user can override power; otherwise None for digital
+    ro_power = readout_power  # pass through (can be None)
+
+    # For this rabi_seq.py we pick a single microwave chain (first in list)
+    if not uwave_ind_list:
+        raise ValueError("uwave_ind_list cannot be empty")
+    uwave_ind = int(uwave_ind_list[0])
+
+    # Final shape matches rabi_seq.get_seq signature
     seq_args = [
-        pol_duration,
-        pol_amp,
-        uwave_ind_list,
+        taus,
+        int(pol_ns),
+        int(readout_ns),
+        max_tau,
+        uwave_ind,
+        readout_laser,
+        ro_power,
     ]
-    # print(seq_args)
-
     return seq_args
 
 

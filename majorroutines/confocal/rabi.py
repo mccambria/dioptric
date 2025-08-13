@@ -10,7 +10,6 @@ Created on Tue Apr 23 11:49:23 2019
 
 # %% Imports
 
-
 import os
 import time
 from random import shuffle
