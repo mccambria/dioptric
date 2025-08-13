@@ -7,12 +7,14 @@ Created on August 29th, 2022
 @author: mccambria
 """
 
-from abc import ABC, abstractmethod
-from servers.inputs.interfaces.counter import Counter
 import logging
+from abc import ABC, abstractmethod
+
 import numpy as np
 from labrad.server import setting
 from numba import jit, njit
+
+from servers.inputs.interfaces.counter import Counter
 
 
 class Tagger(Counter, ABC):

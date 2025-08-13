@@ -426,7 +426,7 @@ if __name__ == "__main__":
 
         # do_optimize(nv_sig)
         # nv_sig["imaging_readout_dur"] = 5e7
-        # do_stationary_count(nv_sig, disable_opt=True)
+        do_stationary_count(nv_sig, disable_opt=True)
         # do_stationary_count(nv_sig, disable_opt=True, nv_minus_initialization=True)
         # do_stationary_count(nv_sig, disable_opt=True, nv_zero_initialization=True)
 

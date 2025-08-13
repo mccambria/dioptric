@@ -51,7 +51,9 @@ class PulseGenSwab82(PulseGen, LabradServer):
         self.pulse_streamer = PulseStreamer(device_id)
         calibration = self.pulse_streamer.getAnalogCalibration()
         logging.info(calibration)
-        collection_mode = config["collection_mode"]
+        collection_mode = config[
+            "collection_mode_counter"
+        ]  ## TODO: change to "collection_mode_counter" this line when set up in new computer
         collection_mode_str = collection_mode.name.lower()
 
         repo_path = common.get_repo_path()

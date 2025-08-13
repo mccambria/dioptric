@@ -42,7 +42,7 @@ cxn = common.labrad_connect()
 opx = cxn.temp_monitor_SRS_ptc10
 
 LOG_INTERVAL = 150  # seconds between samples
-# LOG_INTERVAL = 0.6  # seconds between samples
+# LOG_INTERVAL = 6  # seconds between samples
 
 while True:
     interval = LOG_INTERVAL

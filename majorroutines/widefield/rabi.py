@@ -5,6 +5,9 @@ Widefield Rabi experiment
 Created on November 29th, 2023
 
 @author: mccambria
+
+updated by @Saroj Chand on Jan 6, 2025
+@author: sbchand
 """
 
 import sys
@@ -267,8 +270,21 @@ def main(nv_sig, num_steps, num_reps, num_runs, min_tau, max_tau, uwave_ind_list
         load_iq=True,
     )
 
-    ### Process and plot
+    ### save the raw data
+    timestamp = dm.get_time_stamp()
+    raw_data |= {
+        "timestamp": timestamp,
+        "taus": taus,
+        "tau-units": "ns",
+        "min_tau": max_tau,
+        "max_tau": max_tau,
+    }
+    repr_nv_sig = widefield.get_repr_nv_sig(nv_list)
+    repr_nv_name = repr_nv_sig.name
+    file_path = dm.get_file_path(__file__, timestamp, repr_nv_name)
+    dm.save_raw_data(raw_data, file_path)
 
+    ### Process and plot
     try:
         raw_fig = None
         fit_fig = None
@@ -291,19 +307,6 @@ def main(nv_sig, num_steps, num_reps, num_runs, min_tau, max_tau, uwave_ind_list
     tb.reset_cfm()
     kpl.show()
 
-    timestamp = dm.get_time_stamp()
-    raw_data |= {
-        "timestamp": timestamp,
-        "taus": taus,
-        "tau-units": "ns",
-        "min_tau": max_tau,
-        "max_tau": max_tau,
-    }
-
-    repr_nv_sig = widefield.get_repr_nv_sig(nv_list)
-    repr_nv_name = repr_nv_sig.name
-    file_path = dm.get_file_path(__file__, timestamp, repr_nv_name)
-    dm.save_raw_data(raw_data, file_path)
     if raw_fig is not None:
         dm.save_figure(raw_fig, file_path)
     if fit_fig is not None:

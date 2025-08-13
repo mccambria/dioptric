@@ -19,20 +19,24 @@ import time
 import labrad
 import numpy as np
 
-import majorroutines.confocal.determine_standard_readout_params as determine_standard_readout_params
-import majorroutines.confocal.g2_measurement as g2_measurement
-import majorroutines.confocal.image_sample as image_sample
-import majorroutines.confocal.optimize_magnet_angle as optimize_magnet_angle
-import majorroutines.confocal.pulsed_resonance as pulsed_resonance
-import majorroutines.confocal.rabi as rabi
-import majorroutines.confocal.ramsey as ramsey
-import majorroutines.confocal.resonance as resonance
-import majorroutines.confocal.spin_echo as spin_echo
-import majorroutines.confocal.stationary_count as stationary_count
-import majorroutines.confocal.t1_dq_main as t1_dq_main
-import majorroutines.confocal.targeting as targeting
+# import majorroutines.confocal.determine_standard_readout_params as determine_standard_readout_params
+# import majorroutines.confocal.g2_measurement as g2_measurement
+import majorroutines.confocal.confocal_image_sample as image_sample
+
+# import majorroutines.confocal.optimize_magnet_angle as optimize_magnet_angle
+# import majorroutines.confocal.pulsed_resonance as pulsed_resonance
+# import majorroutines.confocal.rabi as rabi
+# import majorroutines.confocal.ramsey as ramsey
+# import majorroutines.confocal.resonance as resonance
+# import majorroutines.confocal.spin_echo as spin_echo
+import majorroutines.confocal.confocal_stationary_count as stationary_count
+
+# import majorroutines.confocal.t1_dq_main as t1_dq_main
+# import majorroutines.confocal.targeting as targeting
 import utils.tool_belt as tool_belt
-from utils.tool_belt import States
+from utils.constants import Axes, CoordsKey, NVSig, VirtualLaserKey
+
+# from utils.tool_belt import States
 
 # endregion
 # region Routines
@@ -40,9 +44,6 @@ from utils.tool_belt import States
 
 def do_image_sample(
     nv_sig,
-    nv_minus_initialization=False,
-    cbarmin=None,
-    cbarmax=None,
 ):
     # scan_range = 0.2
     # num_steps = 60
@@ -56,9 +57,6 @@ def do_image_sample(
         scan_range,
         scan_range,
         num_steps,
-        nv_minus_initialization=nv_minus_initialization,
-        cmin=cbarmin,
-        cmax=cbarmax,
     )
 
 
@@ -86,8 +84,6 @@ def do_optimize(nv_sig):
 def do_stationary_count(
     nv_sig,
     disable_opt=None,
-    nv_minus_initialization=False,
-    nv_zero_initialization=False,
 ):
     run_time = 3 * 60 * 10**9  # ns
 
@@ -95,8 +91,8 @@ def do_stationary_count(
         nv_sig,
         run_time,
         disable_opt=disable_opt,
-        nv_minus_initialization=nv_minus_initialization,
-        nv_zero_initialization=nv_zero_initialization,
+        # nv_minus_initialization=nv_minus_initialization,
+        # nv_zero_initialization=nv_zero_initialization,
     )
 
 
@@ -379,28 +375,50 @@ if __name__ == "__main__":
     red_laser = "cobolt_638"
 
     # fmt: off
-
     sample_name = "wu"
-    nv_sig = {
-        "coords": [0.240, -0.426, 1], "name": "{}-nv8_2022_11_14".format(sample_name),
-        "disable_opt": False, "disable_z_opt": True, "expected_count_rate": 13,
+    # nv_sig = {
+    #     "coords": [0.240, -0.426, 1], "name": "{}-nv8_2022_11_14".format(sample_name),
+    #     "disable_opt": False, "disable_z_opt": True, "expected_count_rate": 13,
 
-        "imaging_laser": green_laser, "imaging_laser_filter": "nd_0", "imaging_readout_dur": 1e7,
-        "spin_laser": green_laser, "spin_laser_filter": "nd_0", "spin_pol_dur": 2e3, "spin_readout_dur": 440,
+    #     "imaging_laser": green_laser, "imaging_laser_filter": "nd_0", "imaging_readout_dur": 1e7,
+    #     "spin_laser": green_laser, "spin_laser_filter": "nd_0", "spin_pol_dur": 2e3, "spin_readout_dur": 440,
 
-        "nv-_reionization_laser": green_laser, "nv-_reionization_dur": 1e6, "nv-_reionization_laser_filter": "nd_1.0",
-        "nv-_prep_laser": green_laser, "nv-_prep_laser_dur": 1e6, "nv-_prep_laser_filter": "nd_0",
-        "nv0_ionization_laser": red_laser, "nv0_ionization_dur": 75, "nv0_prep_laser": red_laser, "nv0_prep_laser_dur": 75,
-        "spin_shelf_laser": yellow_laser, "spin_shelf_dur": 0, "spin_shelf_laser_power": 1.0,
-        "initialize_laser": green_laser, "initialize_dur": 1e4,
-        "charge_readout_laser": yellow_laser, "charge_readout_dur": 100e6, "charge_readout_laser_power": 1.0,
+    #     "nv-_reionization_laser": green_laser, "nv-_reionization_dur": 1e6, "nv-_reionization_laser_filter": "nd_1.0",
+    #     "nv-_prep_laser": green_laser, "nv-_prep_laser_dur": 1e6, "nv-_prep_laser_filter": "nd_0",
+    #     "nv0_ionization_laser": red_laser, "nv0_ionization_dur": 75, "nv0_prep_laser": red_laser, "nv0_prep_laser_dur": 75,
+    #     "spin_shelf_laser": yellow_laser, "spin_shelf_dur": 0, "spin_shelf_laser_power": 1.0,
+    #     "initialize_laser": green_laser, "initialize_dur": 1e4,
+    #     "charge_readout_laser": yellow_laser, "charge_readout_dur": 100e6, "charge_readout_laser_power": 1.0,
 
-        "collection_filter": None, "magnet_angle": None,
-        "resonance_LOW": 2.878, "rabi_LOW": 400, "uwave_power_LOW": 16.5,
-        "resonance_HIGH": 2.882, "rabi_HIGH": 400, "uwave_power_HIGH": 16.5,
-        }
-
+    #     "collection_filter": None, "magnet_angle": None,
+    #     "resonance_LOW": 2.878, "rabi_LOW": 400, "uwave_power_LOW": 16.5,
+    #     "resonance_HIGH": 2.882, "rabi_HIGH": 400, "uwave_power_HIGH": 16.5,
+    #     }
     # fmt: on
+
+    # coords: SAMPLE (piezo) xyz; add GALVO/PIXEL later if you have them
+    # Build the NV (your snippet is fine)
+    sample_xyz = [0.240, -0.426]  # piezo XY
+    coord_z = 1.0  # Z
+    pixel_xy = [0.0, 0.0]  # galvo ref
+
+    nv_sig = NVSig(
+        name=f"{sample_name}-nv8_2022_11_14",
+        coords={
+            CoordsKey.SAMPLE: sample_xyz,
+            CoordsKey.Z: coord_z,
+            CoordsKey.PIXEL: pixel_xy,
+        },
+        disable_opt=False,
+        disable_z_opt=True,
+        expected_counts=13,
+        pulse_durations={
+            VirtualLaserKey.IMAGING: int(1e6),
+            VirtualLaserKey.CHARGE_POL: int(1e4),
+            VirtualLaserKey.SPIN_POL: 2000,
+            VirtualLaserKey.SPIN_READOUT: 440,
+        },
+    )
 
     ### Routines to execute
 
@@ -420,14 +438,14 @@ if __name__ == "__main__":
         #     nv_sig["coords"][2] = int(z)
         # do_image_sample(nv_sig)
         # nv_sig["imaging_readout_dur"] = 5e7
-        do_image_sample(nv_sig)
+        # do_image_sample(nv_sig)
         # do_image_sample_zoom(nv_sig)
         # do_image_sample(nv_sig, nv_minus_initialization=True)
         # do_image_sample_zoom(nv_sig, nv_minus_initialization=True)
 
         # do_optimize(nv_sig)
         # nv_sig["imaging_readout_dur"] = 5e7
-        # do_stationary_count(nv_sig, disable_opt=True)
+        do_stationary_count(nv_sig, disable_opt=True)
         # do_stationary_count(nv_sig, disable_opt=True, nv_minus_initialization=True)
         # do_stationary_count(nv_sig, disable_opt=True, nv_zero_initialization=True)
 
@@ -451,7 +469,7 @@ if __name__ == "__main__":
 
     except Exception as exc:
         recipient = "cambria@wisc.edu"
-        tool_belt.send_exception_email(email_to=recipient)
+        # tool_belt.send_exception_email(email_to=recipient)
         raise exc
     finally:
         tool_belt.reset_cfm()

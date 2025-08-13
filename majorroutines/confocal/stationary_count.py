@@ -7,7 +7,6 @@ Created on April 12th, 2019
 @author: mccambria
 """
 
-
 import labrad
 import matplotlib.pyplot as plt
 import numpy as np
