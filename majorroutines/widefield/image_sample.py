@@ -193,11 +193,6 @@ def scanning(nv_sig, x_range, y_range, num_steps):
     return main(nv_sig, "scanning", num_reps, x_coords, y_coords, save_dict)
 
 
-import copy
-
-import numpy as np
-
-
 def scanning_full_roi(nv_sig, total_range, scan_range, num_steps):
     """
     Perform a full ROI scan by scanning across a frequency grid while iterating over spatial positions.

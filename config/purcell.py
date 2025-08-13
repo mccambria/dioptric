@@ -84,6 +84,7 @@ config |= {
     "apd_indices": [0],  # APD indices for the tagger
     "count_format": CountFormat.RAW,
     "collection_mode": CollectionMode.CAMERA,
+    "collection_mode_counter": CollectionMode.COUNTER,  # TODO: remove this line when set up in new computer
     # "charge_state_estimation_mode": ChargeStateEstimationMode.MLE,
     "charge_state_estimation_mode": ChargeStateEstimationMode.THRESHOLDING,
     "windows_repo_path": home / "GitHub/dioptric",
@@ -320,7 +321,7 @@ config |= {
         "camera": "camera_NUVU_hnu512gamma",
         "thorslm": "slm_THOR_exulus_hd2",
         "pulse_streamer": "pulse_gen_SWAB_82",
-        "time_tagger": "tagger_SWAB_20",
+        "counter": "tagger_SWAB_20",
     },
     ###
     "Wiring": {
@@ -351,7 +352,7 @@ config |= {
             "do_sig_gen_STAN_sg394_gate": 10,
             "do_apd_gate": 5,
             "do_sample_clock": 0,
-            # "do_camera_trigger": 5,
+            "do_camera_trigger": 5,
         },
         "Tagger": {
             "di_apd_0": 2,

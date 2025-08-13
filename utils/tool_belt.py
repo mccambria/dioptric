@@ -20,26 +20,6 @@ from email.mime.text import MIMEText
 from enum import Enum
 from functools import cache
 from inspect import signature
-
-# region Server utils
-# Utility functions to be used by LabRAD servers
-# def configure_logging(inst, level=logging.INFO):
-#     """Setup logging for a LabRAD server
-#     Parameters
-#     ----------
-#     inst : Class instance
-#         Pass self from the LabRAD server class
-#     level : logging level, optional
-#         by default logging.DEBUG
-#     """
-#     folder_path = common.get_labrad_logging_folder()
-#     filename = folder_path / f"{inst.name}.log"
-#     logging.basicConfig(
-#         level=level,
-#         format="%(asctime)s %(levelname)-8s %(message)s",
-#         datefmt="%y-%m-%d_%H-%M-%S",
-#         filename=filename,
-#     )
 from pathlib import Path
 from typing import Callable
 
@@ -201,7 +181,10 @@ def process_laser_seq(seq, laser_name, laser_power, train):
     config = common.get_config_dict()
     # print(config)
     pulser_wiring = config["Wiring"]["PulseGen"]
-    mod_type = config["Optics"][laser_name]["mod_type"]
+    # mod_type = config["Optics"][laser_name]["mod_type"]
+    mod_type = (
+        ModMode.DIGITAL
+    )  # TODO: remove this line when all lasers are updated to used ModMode
 
     # Digital: do nothing
     if mod_type is ModMode.DIGITAL:
@@ -746,11 +729,6 @@ def get_server_pulse_gen():
 def get_server_pulse_streamer():
     """Get the pulse gen server for this setup, e.g. opx or swabian"""
     return common.get_server("pulse_streamer")
-
-
-def get_server_time_tagger():
-    """Get the pulse gen server for this setup, e.g. opx or swabian"""
-    return common.get_server("time_tagger")
 
 
 def get_server_charge_readout_laser():

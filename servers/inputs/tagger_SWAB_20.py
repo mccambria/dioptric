@@ -26,7 +26,7 @@ import TimeTagger
 from labrad.server import LabradServer, setting
 from twisted.internet.defer import ensureDeferred
 
-from servers.inputs.interfaces.tagger import Tagger
+from servers.inputs.interfaces.tagger import Tagger, tags_to_counts
 from utils import common
 
 
@@ -89,7 +89,7 @@ class TaggerSwab20(Tagger, LabradServer):
 
         # Do the hard work in the fast sub function
         apd_channels = [self.tagger_di_apd[val] for val in self.stream_apd_indices]
-        return_counts, leftover_channels = Tagger.tags_to_counts(
+        return_counts, leftover_channels = tags_to_counts(
             buffer_channels,
             self.tagger_di_clock,
             self.tagger_di_apd_gate,
