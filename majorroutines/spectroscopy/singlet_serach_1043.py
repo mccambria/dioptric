@@ -2,7 +2,7 @@
 """
 Search for NV triplet-to-singlet wavelength
 
-Created on August 7th, 2025
+Created on August 9th, 2025
 
 @author: jchen-1
 """
@@ -52,6 +52,11 @@ def main(
         etalon_spacing,
     )
     num_etalon = len(etalon_settings)
+    etalon_settings_rearr = np.copy(etalon_settings)
+    etalon_settings_rearr[: int(num_etalon / 2)] = np.flip(
+        etalon_settings_rearr[: int(num_etalon / 2)]
+    )
+
     voltages = np.empty((num_runs, num_steps, num_etalon, num_exps))
 
     step_ind_list = list(range(0, num_steps))
@@ -76,7 +81,7 @@ def main(
     timestamp = dm.get_time_stamp()
 
     # Row 0 - Voltage, Row 1 - Wavelength Bin
-    data_to_save = np.empty((2, num_runs, num_steps, num_etalon, num_exps))
+    data_to_save = np.empty((2, num_runs, num_steps, num_etalon))
     start_time = time.time()
 
     try:
@@ -95,112 +100,34 @@ def main(
                 # Set coarse wavelength
                 wavelength = wavelengths[step_ind]
                 tisapph.set_wavelength_nm(wavelength)
+                tisapph.tune_etalon_relative(50)
 
                 # Save wavelength data
-                data_to_save[1, run_ind, num_steps_completed, :, :] = wavelength
+                data_to_save[1, run_ind, num_steps_completed, :] = wavelength
 
-                # avg_step_time = 0
-                # avg_sig_after_ref_time = 0
-                # bef_ref_time = 0
-
-                # Makes sure the power settles sufficiently
+                # Decrement and then increment etalon voltage from 50%
                 for eind in tqdm(
-                    range(int(num_etalon / 2) - 1, int(num_etalon / 2) - 1 - 10, -1),
-                    desc="Etalon 0",
-                    position=1,
-                    leave=False,
-                ):
-                    # Get reference voltage
-                    shutter.close(shutter_channel)
-                    tisapph.tune_etalon_relative(etalon_settings[eind])
-                    time.sleep(integration_time)
-                    voltage = multimeter.read()
-                    shutter.open(shutter_channel)
-                    # Get signal voltage
-                    time.sleep(integration_time)
-                    voltage = multimeter.read()
-
-                # Decrement etalon voltage from 50% sweep
-                for eind in tqdm(
-                    range(int(num_etalon / 2) - 1, -1, -1),
+                    range(num_etalon),
                     desc="Etalon 1",
                     position=1,
                     leave=False,
                 ):
-                    # Get reference voltage
-                    shutter.close(shutter_channel)
-                    tisapph.tune_etalon_relative(etalon_settings[eind])
-
-                    time.sleep(integration_time)
-                    voltage = multimeter.read()
-
-                    # if eind != int(num_etalon / 2) - 1:
-                    #     avg_step_time += time.time() - bef_ref_time
-                    # bef_ref_time = time.time()
-
-                    voltages[run_ind, step_ind, eind, 0] = voltage
-                    # Save data
-                    data_to_save[0, run_ind, num_steps_completed, eind, 0] = voltage
-
-                    shutter.open(shutter_channel)
-
-                    # Get signal voltage
-                    time.sleep(integration_time)
-                    voltage = multimeter.read()
-
-                    # avg_sig_after_ref_time += time.time() - bef_ref_time
-
-                    voltages[run_ind, step_ind, eind, 1] = voltage
-                    # Save data
-                    data_to_save[0, run_ind, num_steps_completed, eind, 1] = voltage
-                    if eind % 10 == 0:
-                        np.save(
-                            dm_folder / f"{timestamp}-singlet_search.npy", data_to_save
-                        )
-
-                # avg_step_time /= int(num_etalon / 2)
-                # avg_sig_after_ref_time /= int(num_etalon / 2)
-
-                # print(f"Avg Step Time = {avg_step_time: .5f}")
-                # print(f"Avg signal time after ref = {avg_sig_after_ref_time: .5f} s")
+                    print(etalon_settings_rearr[eind])
+                    # tisapph.tune_etalon_relative(etalon_settings_rearr[eind])
+                    # time.sleep(integration_time)
+                    # voltage = multimeter.read()
+                    # voltages[run_ind, step_ind, eind] = voltage
+                    # # Save data
+                    # data_to_save[0, run_ind, num_steps_completed, eind] = voltage
+                    # if eind % 10 == 0:
+                    #     np.save(
+                    #         dm_folder / f"{timestamp}-singlet_search_1043.npy",
+                    #         data_to_save,
+                    #     )
 
                 # Set back to 50%
-                tisapph.tune_etalon_relative(50)
-
-                # Increment etalon voltage from 50% sweep
-                for eind in tqdm(
-                    range(int(num_etalon / 2), num_etalon, 1),
-                    desc="Etalon 2",
-                    position=1,
-                    leave=False,
-                ):
-                    # Get reference voltage
-                    shutter.close(shutter_channel)
-                    tisapph.tune_etalon_relative(etalon_settings[eind])
-
-                    time.sleep(integration_time)
-                    voltage = multimeter.read()
-                    voltages[run_ind, step_ind, eind, 0] = voltage
-                    # Save data
-                    data_to_save[0, run_ind, num_steps_completed, eind, 0] = voltage
-
-                    shutter.open(shutter_channel)
-
-                    # Get signal voltage
-                    time.sleep(integration_time)
-                    voltage = multimeter.read()
-
-                    voltages[run_ind, step_ind, eind, 1] = voltage
-                    # Save data
-                    data_to_save[0, run_ind, num_steps_completed, eind, 1] = voltage
-                    if eind % 10 == 0:
-                        np.save(
-                            dm_folder / f"{timestamp}-singlet_search.npy", data_to_save
-                        )
-
-                tisapph.tune_etalon_relative(50)
+                # tisapph.tune_etalon_relative(50)
                 num_steps_completed += 1
-                shutter.close(shutter_channel)
 
             ### Move on to the next run
 
@@ -211,6 +138,8 @@ def main(
 
     except Exception:
         print(traceback.format_exc())
+
+    return
 
     ### Return
 
