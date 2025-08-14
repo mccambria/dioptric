@@ -18,7 +18,11 @@ import matplotlib.pyplot as plt
 import numpy as np
 import websocket
 
-from majorroutines.spectroscopy import singlet_search, singlet_search_with_etalon
+from majorroutines.spectroscopy import (
+    singlet_search,
+    singlet_search_with_etalon,
+    singlet_serach_1043,
+)
 
 # from majorroutines import targeting
 from utils import common
@@ -29,11 +33,11 @@ from utils import tool_belt as tb
 def do_singlet_search():
     # min_wavelength = 750
     # max_wavelength = 850
-    min_wavelength = 800
-    max_wavelength = 810
+    min_wavelength = 734
+    max_wavelength = 740
     # num_steps = 1000
     # num_runs = 1
-    num_steps = 5
+    num_steps = 15
     num_runs = 2
 
     singlet_search.main(min_wavelength, max_wavelength, num_steps, num_runs)
@@ -48,23 +52,115 @@ def do_singlet_search_with_etalon():
     # num_runs = 1
     # RF_on = True
 
-    # min_wavelength = 800
-    # max_wavelength = 850
+    min_wavelength = 716
+    max_wavelength = 800
+    etalon_range = 90
+    etalon_spacing = 1
+    num_steps = 210
+    num_runs = 1
+    RF_on = False
+
+    # min_wavelength = 854
+    # max_wavelength = 855
     # etalon_range = 90
     # etalon_spacing = 1
-    # num_steps = 125
+    # num_steps = 2
     # num_runs = 1
     # RF_on = False
 
-    min_wavelength = 853
-    max_wavelength = 855
+    singlet_search_with_etalon.main(
+        min_wavelength,
+        max_wavelength,
+        num_steps,
+        num_runs,
+        RF_on,
+        etalon_range,
+        etalon_spacing,
+    )
+
+
+def do_singlet_search_with_etalon_1():
+    # min_wavelength = 800
+    # max_wavelength = 810
+    # etalon_range = 20
+    # etalon_spacing = 2
+    # num_steps = 2
+    # num_runs = 1
+    # RF_on = True
+
+    min_wavelength = 800
+    max_wavelength = 900
+    etalon_range = 90
+    etalon_spacing = 1
+    num_steps = 250
+    num_runs = 1
+    RF_on = False
+
+    # min_wavelength = 854
+    # max_wavelength = 855
+    # etalon_range = 90
+    # etalon_spacing = 1
+    # num_steps = 2
+    # num_runs = 1
+    # RF_on = False
+
+    singlet_search_with_etalon.main(
+        min_wavelength,
+        max_wavelength,
+        num_steps,
+        num_runs,
+        RF_on,
+        etalon_range,
+        etalon_spacing,
+    )
+
+
+def do_singlet_search_with_etalon_2():
+    # min_wavelength = 800
+    # max_wavelength = 810
+    # etalon_range = 20
+    # etalon_spacing = 2
+    # num_steps = 2
+    # num_runs = 1
+    # RF_on = True
+
+    min_wavelength = 800
+    max_wavelength = 805
     etalon_range = 90
     etalon_spacing = 1
     num_steps = 5
     num_runs = 1
     RF_on = False
 
+    # min_wavelength = 854
+    # max_wavelength = 855
+    # etalon_range = 90
+    # etalon_spacing = 1
+    # num_steps = 2
+    # num_runs = 1
+    # RF_on = False
+
     singlet_search_with_etalon.main(
+        min_wavelength,
+        max_wavelength,
+        num_steps,
+        num_runs,
+        RF_on,
+        etalon_range,
+        etalon_spacing,
+    )
+
+
+def do_singlet_search_1043():
+    min_wavelength = 850
+    max_wavelength = 900
+    etalon_range = 20
+    etalon_spacing = 0.5
+    num_steps = 1
+    num_runs = 1
+    RF_on = True
+
+    singlet_serach_1043.main(
         min_wavelength,
         max_wavelength,
         num_steps,
@@ -219,6 +315,9 @@ if __name__ == "__main__":
         # test_measure_shutter_timing()
         # do_singlet_search()
         do_singlet_search_with_etalon()
+        do_singlet_search_with_etalon_1()
+        # do_singlet_search_with_etalon_2()
+        # do_singlet_search_1043()
         # pass
 
     except Exception as exc:
