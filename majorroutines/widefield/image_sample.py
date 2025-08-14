@@ -371,19 +371,57 @@ def main(
 if __name__ == "__main__":
     kpl.init_kplotlib()
 
+    pixel = [
+        [16.945, 50.36],
+        [108.271, 225.447],
+        [228.808, 23.054],
+    ]
+    green = [
+        [118.922, 100.171],
+        [107.023, 117.93],
+        [96.786, 94.98],
+    ]
+    red = [
+        [81.439, 66.867],
+        [72.131, 81.384],
+        [63.228, 62.84],
+    ]
+
     # Tweezered NVs
     file_name = "2024_12_23-17_43_12-johnson-nv0_2024_03_12"
     # file_name = "2024_11_06-10_29_37-johnson-nv0_2024_03_12"
     # file_name = "2025_03_10-01_16_27-rubin-nv0_2025_02_26"
     data = dm.get_raw_data(file_name, load_npz=True)
-    img_array = data["ref_img_array"]
+    img_array = np.array(data["ref_img_array"])
     widefield.replace_dead_pixel(img_array)
     fig, ax = plt.subplots()
-    kpl.imshow(ax, img_array, cbar_label="Photons")
-    ax.axis("off")
+
+    color = green
+    x_slope = (color[1][0] - color[0][0]) / (pixel[1][0] - pixel[0][0])
+    y_slope = (color[1][1] - color[0][1]) / (pixel[1][1] - pixel[0][1])
+    x_offset = color[0][0] - pixel[0][0] * x_slope
+    y_offset = color[0][1] - pixel[0][1] * y_slope
+    size = img_array.shape[0]
+    extent = [x_offset, size * x_slope + x_offset, size * y_slope + y_offset, y_offset]
+    extent = [0, 1, 1, 0]
+    kpl.imshow(
+        ax,
+        img_array,
+        cbar_label="Photons",
+        extent=extent,
+        # aspect=np.abs(x_slope / y_slope),
+    )
+    # ax.axis("off")
+    ax.set_xlabel("X yellow blaze slope (arb. units)")
+    ax.set_ylabel("Y yellow blaze slope (arb. units)")
+    # ax.set_xticks([60, 65, 70, 75, 80])
+    # ax.set_xticks([90, 95, 100, 105, 110, 115, 120])
+    ax.set_xticks([0, 1])
+    ax.set_yticks([0, 1])
+
     num_microns = 5
     scale = num_microns * (2.3 / 0.29714285714)
-    kpl.scale_bar(ax, scale, f"{num_microns} µm", kpl.Loc.LOWER_RIGHT)
+    # kpl.scale_bar(ax, scale, f"{num_microns} µm", kpl.Loc.LOWER_RIGHT)
     img = ax.images[-1]
     img.set_clim(0.5, 3.5)
     kpl.show(block=True)
