@@ -136,7 +136,6 @@ def main(
                     # tagger.start_tag_stream(
                     #     apd_indices=apd_indices, apd_gate=True, clock=True
                     # )
-                    # tagger.start_tag_stream()
                     tagger.start_tag_stream(apd_indices, True, True)
 
                     for step_ind in step_ind_list:
@@ -148,7 +147,7 @@ def main(
                             num_reps
                         )  # play the preloaded sequence 'num_reps' times
 
-                        new_counts = tagger.read_counter_complete()[
+                        new_counts = tagger.read_counter_complete(1)[
                             0
                         ]  # shape: (num_apds, num_gates_total)
                         new_counts = new_counts.sum(

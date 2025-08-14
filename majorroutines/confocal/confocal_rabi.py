@@ -19,65 +19,121 @@ import utils.kplotlib as kpl
 from utils import tool_belt as tb
 from utils.constants import VirtualLaserKey
 
+from . import confocal_base_routine  # your existing base runner
 
-def main(nv_sig, num_steps, num_reps, num_runs, min_tau, max_tau, uwave_ind_list):
-    pulse_streamer = tb.get_server_pulse_streamer()
-    seq_file = "rabi_seq.py"
 
-    taus = np.linspace(min_tau, max_tau, int(num_steps)).astype(np.int64)
-    max_tau_ns = int(taus.max())
-    mw_ind = int(uwave_ind_list[0])
-
-    # Precompute scalars once
-    pol_list, _ = confocal_utils.get_pulse_parameter_lists(
-        nv_sig, VirtualLaserKey.CHARGE_POL
+def get_base_seq_args_ps(
+    nv_sig, uwave_ind, max_tau, readout_laser=None, readout_power=None
+):
+    # Fill defaults from config / nv_sig, but keep a stable list layout
+    cfg = tb.get_config_dict()
+    pol_ns = nv_sig.pulse_durations.get(VirtualLaserKey.CHARGE_POL) or int(
+        cfg["Optics"]["VirtualLasers"][VirtualLaserKey.CHARGE_POL]["duration"]
     )
-    pol_ns = int(pol_list[0])
     readout_ns = int(
-        tb.get_virtual_laser_dict(VirtualLaserKey.SPIN_READOUT)["duration"]
+        nv_sig.pulse_durations.get(VirtualLaserKey.SPIN_READOUT)
+        or cfg["Optics"]["VirtualLasers"][VirtualLaserKey.SPIN_READOUT]["duration"]
     )
-    readout_laser = tb.get_physical_laser_name(VirtualLaserKey.SPIN_READOUT)
-    readout_power = None  # set voltage if analog-modulated
 
-    # These will be filled per run with the shuffled order
-    step_args_map = {}
+    if readout_laser is None:
+        readout_laser = tb.get_physical_laser_name(
+            VirtualLaserKey.WIDEFIELD_CHARGE_READOUT
+        )
+    # If that laser is digital, leave readout_power=None; if analog, set a float
+    base_args = [
+        pol_ns,
+        readout_ns,
+        int(uwave_ind),
+        str(readout_laser),
+        readout_power,
+        int(max_tau),
+    ]
+    return base_args
 
-    def run_fn(shuffled_step_inds):
-        # Build a packet per step (in the shuffled order we’ll use)
-        step_args_map.clear()
-        for step_ind in shuffled_step_inds:
-            tau_ns = int(taus[step_ind])
-            args = [
-                tau_ns,
-                pol_ns,
-                readout_ns,
-                max_tau_ns,
-                mw_ind,
-                readout_laser,
-                readout_power,
-            ]
-            step_args_map[step_ind] = tb.encode_seq_args(args)
 
-    def step_fn(step_ind):
-        # Load the sequence for THIS step, then the base routine will call stream_start(num_reps)
-        seq_args_string = step_args_map[step_ind]
-        pulse_streamer.stream_load(seq_file, seq_args_string)
+def main(
+    nv_sig,
+    num_steps,
+    num_reps,
+    num_runs,
+    min_tau: int,
+    max_tau: int,
+    uwave_ind: int = 0,
+    readout_laser: str | None = None,
+    readout_power: float | None = None,
+):
+    pulsegen = tb.get_server_pulse_streamer()
 
-    raw = base.main(
-        nv_sig,
+    taus = np.linspace(min_tau, max_tau, num_steps).astype(int)
+    base_args = get_base_seq_args_ps(
+        nv_sig, uwave_ind, max_tau, readout_laser, readout_power
+    )
+
+    def step_fn(step_ind: int):
+        tau = int(taus[step_ind])
+        pad_budget = int(max_tau - tau)  # constant-evolution budget
+        base_args[5] = pad_budget  # update pad in-place for this step
+        seq_args = [base_args, tau, num_reps]  # matches rabi_seq.get_seq signature
+        pulsegen.stream_load("rabi_seq.py", tb.encode_seq_args(seq_args))
+
+    # Run with exactly 2 experiments (signal, reference) per repetition
+    return confocal_base_routine.main(
+        nv_sig=nv_sig,
         num_steps=int(num_steps),
         num_reps=int(num_reps),
         num_runs=int(num_runs),
-        run_fn=run_fn,
-        step_fn=step_fn,  # <<< stream_load happens here, per step
-        uwave_ind_list=[mw_ind],
-        num_exps=2,  # signal + reference (two APD gates)
+        run_fn=None,  # we load in step_fn (per step)
+        step_fn=step_fn,  # <— PS way to “for_each”
+        uwave_ind_list=[int(uwave_ind)],
+        num_exps=2,  # 2 APD gates per period
         apd_indices=[0],
         load_iq=False,
-        stream_load_in_run_fn=False,  # <<< we are NOT loading once per run
+        stream_load_in_run_fn=False,
         charge_prep_fn=None,
     )
-    return raw
+
+
+# def main(
+#     nv_sig,
+#     *,
+#     num_steps: int,
+#     num_reps: int,
+#     num_runs: int,
+#     min_tau: int,
+#     max_tau: int,
+#     uwave_ind: int = 0,
+#     readout_laser: str | None = None,
+#     readout_power: float | None = None,
+# ):
+#     pulsegen = tb.get_server_pulse_streamer()
+
+#     taus = np.linspace(min_tau, max_tau, num_steps).astype(int)
+#     base_args = get_base_seq_args_ps(
+#         nv_sig, uwave_ind, max_tau, readout_laser, readout_power
+#     )
+
+#     def step_fn(step_ind: int):
+#         tau = int(taus[step_ind])
+#         pad_budget = int(max_tau - tau)  # constant-evolution budget
+#         base_args[5] = pad_budget  # update pad in-place for this step
+#         seq_args = [base_args, tau, num_reps]  # matches rabi_seq.get_seq signature
+#         pulsegen.stream_load("rabi_seq.py", tb.encode_seq_args(seq_args))
+
+#     # Run with exactly 2 experiments (signal, reference) per repetition
+#     return confocal_base_routine.main(
+#         nv_sig=nv_sig,
+#         num_steps=int(num_steps),
+#         num_reps=int(num_reps),
+#         num_runs=int(num_runs),
+#         run_fn=None,  # we load in step_fn (per step)
+#         step_fn=step_fn,  # <— PS way to “for_each”
+#         uwave_ind_list=[int(uwave_ind)],
+#         num_exps=2,  # 2 APD gates per period
+#         apd_indices=[0],
+#         load_iq=False,
+#         stream_load_in_run_fn=False,
+#         charge_prep_fn=None,
+#     )
 
 
 # def main(nv_sig, num_steps, num_reps, num_runs, min_tau, max_tau, uwave_ind_list):

@@ -1435,7 +1435,7 @@ if __name__ == "__main__":
         #         do_scanning_image_sample(nv_sig)
 
         # do_opx_constant_ac()
-        do_opx_square_wave()
+        # do_opx_square_wave()
 
         # do_optimize_pixel(nv_sig)
         # do_optimize_green(nv_sig)

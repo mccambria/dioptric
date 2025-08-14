@@ -373,34 +373,3 @@ def seq_train_length_check(train: Iterable[Tuple[int, Any]]) -> int:
     total = int(sum(d for d, _ in train))
     print(total)
     return total
-
-
-# ---------------------------------------------------------------------
-# Quick self-test / preview: python seq_utils.py
-# ---------------------------------------------------------------------
-
-if __name__ == "__main__":
-    # Minimal sanity test & preview (requires matplotlib installed for ps.plot()).
-    args = dict(
-        tau=200,
-        pol=1000,
-        ro=300,
-        max_tau=1000,
-        uw=0,
-        ro_laser="laser_INTE_520",
-        ro_pow=None,
-    )
-    seq, _, [per] = build_spin_echo_sequence(
-        args["tau"],
-        args["pol"],
-        args["ro"],
-        args["max_tau"],
-        args["uw"],
-        args["ro_laser"],
-        args["ro_pow"],
-    )
-    try:
-        seq.plot()
-    except Exception as e:
-        print("Preview unavailable:", e)
-    print("Period (ns):", per)
