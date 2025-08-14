@@ -16,6 +16,7 @@ import majorroutines.confocal.confocal_base_routine as base
 import utils.confocal_utils as confocal_utils
 import utils.data_manager as dm
 import utils.kplotlib as kpl
+from utils import common
 from utils import tool_belt as tb
 from utils.constants import VirtualLaserKey
 
@@ -23,10 +24,10 @@ from . import confocal_base_routine  # your existing base runner
 
 
 def get_base_seq_args_ps(
-    nv_sig, uwave_ind, max_tau, readout_laser=None, readout_power=None
+    nv_sig, uwave_list, max_tau, readout_laser=None, readout_power=None
 ):
     # Fill defaults from config / nv_sig, but keep a stable list layout
-    cfg = tb.get_config_dict()
+    cfg = common.get_config_dict()
     pol_ns = nv_sig.pulse_durations.get(VirtualLaserKey.CHARGE_POL) or int(
         cfg["Optics"]["VirtualLasers"][VirtualLaserKey.CHARGE_POL]["duration"]
     )
@@ -43,7 +44,7 @@ def get_base_seq_args_ps(
     base_args = [
         pol_ns,
         readout_ns,
-        int(uwave_ind),
+        uwave_list,
         str(readout_laser),
         readout_power,
         int(max_tau),
@@ -56,17 +57,17 @@ def main(
     num_steps,
     num_reps,
     num_runs,
-    min_tau: int,
-    max_tau: int,
-    uwave_ind: int = 0,
-    readout_laser: str | None = None,
-    readout_power: float | None = None,
+    min_tau,
+    max_tau,
+    uwave_list,
+    readout_laser=None,
+    readout_power=None,
 ):
     pulsegen = tb.get_server_pulse_streamer()
 
     taus = np.linspace(min_tau, max_tau, num_steps).astype(int)
     base_args = get_base_seq_args_ps(
-        nv_sig, uwave_ind, max_tau, readout_laser, readout_power
+        nv_sig, uwave_list, max_tau, readout_laser, readout_power
     )
 
     def step_fn(step_ind: int):
@@ -84,7 +85,7 @@ def main(
         num_runs=int(num_runs),
         run_fn=None,  # we load in step_fn (per step)
         step_fn=step_fn,  # <— PS way to “for_each”
-        uwave_ind_list=[int(uwave_ind)],
+        uwave_ind_list=uwave_list,
         num_exps=2,  # 2 APD gates per period
         apd_indices=[0],
         load_iq=False,

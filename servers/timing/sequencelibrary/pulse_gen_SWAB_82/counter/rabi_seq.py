@@ -80,10 +80,10 @@ def get_seq(_server, _config, args) -> Tuple[Sequence, OutputState, List[int]]:
     pol_ns, readout_ns, uwave_ind_align, ro_laser, ro_power, pad_budget_ns = base_args
 
     # If caller didn't pass a list, use the align chain as the single source.
-    if uwave_inds is None:
-        uwave_inds = [int(uwave_ind_align)]
-    else:
-        uwave_inds = [int(i) for i in uwave_inds]
+    # if uwave_inds is None:
+    #     uwave_inds = uwave_ind_align
+    # else:
+    #     uwave_inds = [int(i) for i in uwave_inds]
 
     # Ensure base_args uses the chain with the largest delay for alignment
     align_ind = _pick_align_index(uwave_inds, ro_laser)

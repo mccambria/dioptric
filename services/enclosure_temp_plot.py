@@ -21,7 +21,7 @@ kplt.init_kplotlib()
 # User-configurable parameters
 # ----------------------------
 base_folder = "G:\\NV_Widefield_RT_Setup_Enclosure_Temp_Logs"
-hours = 48  # window to analyze & plot
+hours = 24  # window to analyze & plot
 temp_low, temp_high = 15, 35  # sanity filter limits
 PLOT_ADEV = True  # set False if you don't want the Allan plot refreshing
 
@@ -205,66 +205,133 @@ def pretty_print_metrics(label: str, m: dict):
     #             print(f"  tau = {tau:>6.0f} s :  {val:.6e}")
 
 
+# at top of file
+
+LOCAL_TZ = "America/Los_Angeles"
+
+
+def _coerce_temperature(series: pd.Series) -> pd.Series:
+    # handles floats or strings like "21.730 °C"
+    s = series.astype(str).str.extract(r"([-+]?\d*\.?\d+)")[0]
+    return pd.to_numeric(s, errors="coerce")
+
+
+def _normalize_timestamps(df: pd.DataFrame, col: str = "Timestamp") -> pd.DataFrame:
+    # Convert anything to timezone-naive local datetimes for easy comparisons
+    if np.issubdtype(df[col].dtype, np.datetime64):
+        s = df[col]
+        if getattr(s.dt, "tz", None) is not None:
+            s = s.dt.tz_convert(LOCAL_TZ).dt.tz_localize(None)
+    else:
+        # Parse strings/objects; assume input may be UTC and convert to local
+        s = pd.to_datetime(df[col], errors="coerce", utc=True)
+        s = s.dt.tz_convert(LOCAL_TZ).dt.tz_localize(None)
+    df[col] = s
+    df.dropna(subset=[col], inplace=True)
+    return df
+
+
+def normalize_df(df: pd.DataFrame) -> pd.DataFrame:
+    df = df.copy()
+    if "Timestamp" in df.columns:
+        df = _normalize_timestamps(df, "Timestamp")
+    if "Temperature" in df.columns:
+        df["Temperature"] = _coerce_temperature(df["Temperature"])
+        df.dropna(subset=["Temperature"], inplace=True)
+    return df
+
+
+# cache a single figure annotation so we don't add it repeatedly
+_fig_note = None
+
+
 def update_plot():
+    global _fig_note
+
+    # Clear axes, not the whole figure.
     ax.clear()
     if PLOT_ADEV:
         ax_adev.clear()
 
     for label, filename in channels.items():
-        df_all = load_channel_df(filename)
-        if df_all.empty:
-            print(f"No data found for Channel {label}")
-            continue
+        try:
+            df_all = load_channel_df(filename)
+            if df_all.empty:
+                print(f"No data found for Channel {label}")
+                continue
 
-        df_all = window_and_filter(df_all, hours, temp_low, temp_high)
-        if df_all.empty:
-            print(f"No recent/valid data for Channel {label}")
-            continue
+            # Be defensive: normalize once more here in case the loader changes later
+            df_all = normalize_df(df_all)
 
-        # Compute & print metrics
-        metrics = compute_metrics(df_all, ALLAN_TAUS)
-        pretty_print_metrics(label, metrics)
+            df_all = window_and_filter(df_all, hours, temp_low, temp_high)
+            if df_all.empty:
+                print(f"No recent/valid data for Channel {label}")
+                continue
 
-        # Plot temperature
-        ax.plot(df_all["Timestamp"], df_all["Temperature"], label=f"{label}")
+            # Compute & print metrics
+            metrics = compute_metrics(df_all, ALLAN_TAUS)
+            pretty_print_metrics(label, metrics)
 
-        # Plot Allan deviation
-        if PLOT_ADEV and metrics["allan_dev"]:
-            taus = np.array(
-                [
-                    t
-                    for t in metrics["allan_dev"].keys()
-                    if not np.isnan(metrics["allan_dev"][t])
-                ]
+            # Plot temperature (ensure sorted by time)
+            df_all = df_all.sort_values("Timestamp")
+            ax.plot(
+                df_all["Timestamp"].to_numpy(),
+                df_all["Temperature"].to_numpy(),
+                label=f"{label}",
             )
-            vals = np.array([metrics["allan_dev"][t] for t in taus])
-            if taus.size > 0:
-                ax_adev.loglog(taus, vals, marker="o", label=label)
 
-    # Decorate time plot
-    ax.set_title(f"Temperature Plot (Last {hours}h)", fontsize=13)
+            # Plot Allan deviation if available
+            if PLOT_ADEV and metrics.get("allan_dev"):
+                # ensure numeric + sorted taus, positive values only for loglog
+                taus = np.array(
+                    [float(t) for t in metrics["allan_dev"].keys()], dtype=float
+                )
+                vals = np.array(
+                    [metrics["allan_dev"][t] for t in metrics["allan_dev"].keys()],
+                    dtype=float,
+                )
+                # filter out NaNs and nonpositive
+                good = np.isfinite(taus) & np.isfinite(vals) & (taus > 0) & (vals > 0)
+                if np.any(good):
+                    order = np.argsort(taus[good])
+                    ax_adev.loglog(
+                        taus[good][order], vals[good][order], marker="o", label=label
+                    )
+        except Exception as e:
+            # Don't let one bad channel kill the loop
+            print(f"[WARN] Skipping channel {label} due to error: {e}")
+
+    # ----- Decorate time plot -----
+    ax.set_title(f"Temperature (Last {hours} h)", fontsize=13)
     ax.set_xlabel("Time", fontsize=13)
     ax.set_ylabel("Temperature [°C]", fontsize=13)
-    ax.xaxis.set_major_formatter(mdates.DateFormatter("%Y-%m-%d %H:%M"))
+
+    # Cleaner date axis
+    locator = mdates.AutoDateLocator()
+    formatter = mdates.ConciseDateFormatter(locator)
+    ax.xaxis.set_major_locator(locator)
+    ax.xaxis.set_major_formatter(formatter)
+
     ax.tick_params(axis="both", labelsize=11)
     ax.legend(fontsize=11)
     fig.autofmt_xdate()
 
-    fig.text(
-        0.40,
-        0.36,
-        "4A --> near sample (feedback channel)\n"
-        "4B --> experiment enclosure\n"
-        "4C --> air inside duct of laser enclosure\n"
-        "4D --> laser enclosure\n"
-        "temp_stick --> outside monitor",
-        ha="left",
-        va="bottom",
-        fontsize=11,
+    # Single persistent note on the figure (don’t add duplicates every refresh)
+    note = (
+        "4A - near sample (feedback)\n"
+        "4B - experiment enclosure\n"
+        "4C - air inside duct of laser enclosure\n"
+        "4D - laser enclosure\n"
+        "temp_stick → outside monitor"
     )
+    if _fig_note is None:
+        _fig_note = fig.text(0.40, 0.36, note, ha="left", va="bottom", fontsize=11)
+    else:
+        _fig_note.set_text(note)
 
+    # ----- Decorate ADEV plot -----
     if PLOT_ADEV:
-        ax_adev.set_title(f"Allan Deviation (Last {hours}h)", fontsize=13)
+        ax_adev.set_title(f"Allan Deviation (Last {hours} h)", fontsize=13)
         ax_adev.set_xlabel("Averaging Time τ [s]", fontsize=13)
         ax_adev.set_ylabel("Allan Deviation [°C]", fontsize=13)
         ax_adev.grid(True, which="both", ls="--", alpha=0.4)
@@ -278,10 +345,9 @@ def main():
     try:
         while True:
             update_plot()
-            if (
-                input("Press Enter to refresh or type 'q' to quit: ").strip().lower()
-                == "q"
-            ):
+            # Optional: comment out the input() for fully hands-free refresh
+            cmd = input("Press Enter to refresh or type 'q' to quit: ").strip().lower()
+            if cmd == "q":
                 break
     finally:
         print("Exiting and closing plots.")
