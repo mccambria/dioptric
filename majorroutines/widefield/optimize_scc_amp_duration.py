@@ -108,7 +108,7 @@ def process_and_plot(data):
                 opti_amp = amp_vals[amp_ind]
 
         # Plot
-        # if opti_dur == 32:
+        # # if opti_dur == 32:
         fig, ax = plt.subplots()
         for amp_ind in range(num_amp_steps):
             kpl.plot_points(ax, duration_vals, snrs_2d[amp_ind])
@@ -260,10 +260,10 @@ def optimize_scc_amp_and_duration(
 if __name__ == "__main__":
     kpl.init_kplotlib()
     # data = dm.get_raw_data(file_id=1737831146138)
-    # data = dm.get_raw_data(file_id=1781811582216)
+    data = dm.get_raw_data(file_id=1781811582216)
     # data = dm.get_raw_data(file_id=1797149751810)  # amps variation
     # data = dm.get_raw_data(file_id=1800806173978)  # durs variation
-    data = dm.get_raw_data(file_id=1722903695939)
+    # data = dm.get_raw_data(file_id=1722903695939)
     process_and_plot(data)
 
     plt.show(block=True)
