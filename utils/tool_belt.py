@@ -62,10 +62,10 @@ def configure_logging(inst, level=logging.INFO):
 # region Laser utils
 
 
-def get_mod_type(laser_name):
+def get_mod_mode(laser_name):
     config = common.get_config_dict()
-    mod_type = config["Optics"][laser_name]["mod_type"]
-    return mod_type.name
+    mod_mode = config["Optics"][laser_name]["mod_mode"]
+    return mod_mode.name
 
 
 def laser_off(laser_name):
@@ -78,14 +78,14 @@ def laser_on(laser_name, laser_power=None):
 
 def laser_switch_sub(turn_on, laser_name, laser_power=None):
     config = common.get_config_dict()
-    mod_type = config["Optics"][laser_name]["mod_type"]
+    mod_mode = config["Optics"][laser_name]["mod_mode"]
     pulse_gen = get_server_pulse_gen()
 
-    if mod_type is ModMode.DIGITAL:
+    if mod_mode is ModMode.DIGITAL:
         if turn_on:
             laser_chan = config["Wiring"]["PulseGen"][f"do_{laser_name}_dm"]
             pulse_gen.constant([laser_chan])
-    elif mod_type is ModMode.ANALOG:
+    elif mod_mode is ModMode.ANALOG:
         if turn_on:
             laser_chan = config["Wiring"]["PulseGen"][f"do_{laser_name}_dm"]
             if laser_chan == 0:
@@ -123,8 +123,8 @@ def set_laser_power(nv_sig=None, laser_key=None, laser_name=None, laser_power=No
     # If the power is controlled by analog modulation, we'll need to pass it
     # to the pulse streamer
     config = common.get_config_dict()
-    mod_type = config["Optics"][laser_name]["mod_mode"]
-    if mod_type == ModMode.ANALOG:
+    mod_mode = config["Optics"][laser_name]["mod_mode"]
+    if mod_mode == ModMode.ANALOG:
         return laser_power
     else:
         laser_server = get_filter_server(laser_name)
@@ -172,26 +172,30 @@ def get_laser_server(laser_name):
 # region Pulse generator utils
 
 
-def process_laser_seq(seq, laser_name, laser_power, train):
+def process_laser_seq(seq, virtual_laser_key, train):
     """
     Automatically process simple laser sequences. Simple here means that the modulation
     is digital or, if the modulation is analog, then only one power is used)
     """
 
+    laser_name = get_physical_laser_name(virtual_laser_key)
+    virtual_laser_dict = get_virtual_laser_dict(virtual_laser_key)
+    if "laser_power" not in virtual_laser_dict:
+        laser_power = None
+    else:
+        laser_power = virtual_laser_dict["laser_power"]
+
     config = common.get_config_dict()
     # print(config)
     pulser_wiring = config["Wiring"]["PulseGen"]
-    # mod_type = config["Optics"][laser_name]["mod_type"]
-    mod_type = (
-        ModMode.DIGITAL
-    )  # TODO: remove this line when all lasers are updated to used ModMode
+    mod_mode = config["Optics"]["PhysicalLasers"][laser_name]["mod_mode"]
 
     # Digital: do nothing
-    if mod_type is ModMode.DIGITAL:
+    if mod_mode is ModMode.DIGITAL:
         pulser_laser_mod = pulser_wiring["do_{}_dm".format(laser_name)]
         seq.setDigital(pulser_laser_mod, train)
     # Analog:convert LOW / HIGH to 0.0 / analog voltage
-    elif mod_type is ModMode.ANALOG:
+    elif mod_mode is ModMode.ANALOG:
         processed_train = []
         power_dict = {Digital.LOW: 0.0, Digital.HIGH: laser_power}
         for el in train:
