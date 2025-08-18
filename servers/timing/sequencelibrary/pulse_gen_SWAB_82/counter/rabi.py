@@ -6,96 +6,88 @@ Created on Tue Apr 23 17:39:27 2019
 modified by Saroj Chand on August 2, 2025
 """
 
-import numpy
+import numpy as np
 from pulsestreamer import OutputState, Sequence
 
-import utils.tool_belt as tool_belt
+import utils.tool_belt as tb
 from utils import common
+from utils.constants import VirtualLaserKey
 from utils.tool_belt import Digital
 
 
 def get_seq(pulse_streamer, config, args):
-    # The first 9 args are ns durations and we need them as int64s
-    durations = []
-    for ind in range(4):
-        durations.append(numpy.int64(args[ind]))
+    ### Unpack and get what we need from config
 
     # Unpack the durations
-    tau, polarization_time, readout, max_tau = durations
+    tau, max_tau, uwave_ind = args
+    # The pulse streamer expects 64 bit ints
+    tau = np.int64(tau)
+    max_tau = np.int64(max_tau)
 
     # Signify which signal generator to use
-    state = args[4]
-    # sig_gen_name = config["Servers"][f"sig_gen_{state.name}"]
+    virtual_sig_gen_dict = tb.get_virtual_sig_gen_dict(uwave_ind)
+    sig_gen_name = virtual_sig_gen_dict["physical_name"]
 
-    # Laser specs
-    laser_name = args[5]
-    laser_power = args[6]
+    # Get which laser to use. Same laser will also be used for readout and polarization
+    laser_name = tb.get_physical_laser_name(VirtualLaserKey.SPIN_READOUT)
+    readout_dur = tb.get_virtual_laser_dict(VirtualLaserKey.SPIN_READOUT)["duration"]
+    polarization_dur = tb.get_virtual_laser_dict(VirtualLaserKey.SPIN_POL)["duration"]
+    if readout_dur > polarization_dur:
+        raise ValueError("Readout duration must be shorter than polarization duration")
 
     # Get what we need out of the wiring dictionary
     pulser_wiring = config["Wiring"]["PulseGen"]
 
     pulser_do_apd_gate = pulser_wiring["do_apd_gate"]
-    # sig_gen_gate_chan_name = "do_{}_gate".format(sig_gen_name)
-    # pulser_do_sig_gen_gate = pulser_wiring[sig_gen_gate_chan_name]
-    pulser_do_sig_gen_gate = 7  # MCC testing
-    uwave_delay = 12
-    laser_delay = 50
+    pulser_do_sig_gen_dm = pulser_wiring[f"do_{sig_gen_name}_dm"]
 
     # Get the other durations we need
     # print(laser_name)
-    # laser_delay = config["Optics"][laser_name]["delay"]
-    # uwave_delay = config["Microwaves"][sig_gen_name]["delay"]
-    short_buffer = 10  # Helps avoid weird things that happen for ~0 ns pulses
-    common_delay = max(laser_delay, uwave_delay) + short_buffer
+    laser_delay = config["Optics"]["PhysicalLasers"][laser_name]["delay"]
+    uwave_delay = config["Microwaves"]["PhysicalSigGens"][sig_gen_name]["delay"]
+    common_delay = max(laser_delay, uwave_delay)
     uwave_buffer = config["CommonDurations"]["uwave_buffer"]
-    # uwave_buffer = 1000
-    # Keep the laser on for only as long as we need
-    readout_pol_max = max(readout, polarization_time) + short_buffer
-    final_readout_buffer = 500
 
-    # %% Define the sequence
+    ### Define the sequence
 
     seq = Sequence()
 
     # APD gating - first high is for signal, second high is for reference
     train = [
         (common_delay, Digital.LOW),
-        (polarization_time, Digital.LOW),
+        (polarization_dur - readout_dur, Digital.LOW),
         (uwave_buffer, Digital.LOW),
         (max_tau, Digital.LOW),
         (uwave_buffer, Digital.LOW),
-        (readout, Digital.HIGH),
-        (readout_pol_max - readout, Digital.LOW),
+        (readout_dur, Digital.HIGH),
+        (polarization_dur - readout_dur, Digital.LOW),
         (uwave_buffer, Digital.LOW),
         (max_tau, Digital.LOW),
         (uwave_buffer, Digital.LOW),
-        (readout, Digital.HIGH),
-        (final_readout_buffer + short_buffer, Digital.LOW),
+        (readout_dur, Digital.HIGH),
     ]
     seq.setDigital(pulser_do_apd_gate, train)
-    period = 0
+    # Track the total duration for one rep
+    total_dur = 0
     for el in train:
-        period += el[0]
-    print(period)
+        total_dur += el[0]
+    print(total_dur)
 
     # Laser for polarization and readout
     train = [
-        (common_delay - laser_delay, Digital.LOW),
-        (polarization_time, Digital.HIGH),
+        (common_delay - laser_delay, Digital.HIGH),
+        (polarization_dur - readout_dur, Digital.HIGH),
         (uwave_buffer, Digital.LOW),
         (max_tau, Digital.LOW),
         (uwave_buffer, Digital.LOW),
-        (readout_pol_max, Digital.HIGH),
+        (polarization_dur, Digital.HIGH),
         (uwave_buffer, Digital.LOW),
         (max_tau, Digital.LOW),
         (uwave_buffer, Digital.LOW),
-        (readout + final_readout_buffer, Digital.HIGH),
-        (short_buffer, Digital.LOW),
-        (laser_delay, Digital.LOW),
+        (readout_dur, Digital.HIGH),
+        (laser_delay, Digital.HIGH),
     ]
-    tool_belt.process_laser_seq(
-        pulse_streamer, seq, config, laser_name, laser_power, train
-    )
+    tb.process_laser_seq(seq, VirtualLaserKey.SPIN_READOUT, train)
     total_dur = 0
     for el in train:
         total_dur += el[0]
@@ -104,21 +96,19 @@ def get_seq(pulse_streamer, config, args):
     # Pulse the microwave for tau
     train = [
         (common_delay - uwave_delay, Digital.LOW),
-        (polarization_time, Digital.LOW),
+        (polarization_dur - readout_dur, Digital.LOW),
         (uwave_buffer, Digital.LOW),
-        (max_tau - tau, Digital.LOW),
         (tau, Digital.HIGH),
+        (max_tau - tau, Digital.LOW),
         (uwave_buffer, Digital.LOW),
-        (readout_pol_max, Digital.LOW),
+        (polarization_dur, Digital.LOW),
         (uwave_buffer, Digital.LOW),
         (max_tau, Digital.LOW),
         (uwave_buffer, Digital.LOW),
-        (readout + final_readout_buffer, Digital.LOW),
-        (short_buffer, Digital.LOW),
+        (readout_dur, Digital.LOW),
         (uwave_delay, Digital.LOW),
     ]
-    seq.setDigital(pulser_do_sig_gen_gate, train)
-    # print(train)
+    seq.setDigital(pulser_do_sig_gen_dm, train)
     total_dur = 0
     for el in train:
         total_dur += el[0]
@@ -126,13 +116,12 @@ def get_seq(pulse_streamer, config, args):
 
     final_digital = [pulser_wiring["do_sample_clock"]]
     final = OutputState(final_digital, 0.0, 0.0)
-    return seq, final, [period]
+    return seq, final, [total_dur]
 
 
 if __name__ == "__main__":
     config = common.get_config_dict()
-    tool_belt.set_delays_to_zero(config)
-    args = [100, 1000.0, 300, 300, 3, "laser_INTE_520", None]
-    # args = [1000, 10000.0, 300, 2000, 3, 'integrated_520', None]
+    # tb.set_delays_to_zero(config)
+    args = [100, 1000.0, 0]
     seq = get_seq(None, config, args)[0]
     seq.plot()

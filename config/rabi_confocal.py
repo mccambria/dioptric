@@ -7,10 +7,14 @@ Created July 20th, 2023
 @author: mccambria
 """
 
-from utils.constants import ModTypes, ControlStyle
 from pathlib import Path
 
+from utils.constants import ModMode, PosControlMode, VirtualLaserKey
+
 home = Path.home()
+green_laser = "laser_INTE_520"
+yellow_laser = "laser_OPTO_589"
+red_laser = "laser_COBO_638"
 
 # region Base config
 
@@ -29,7 +33,7 @@ config = {
         "cw_meas_buffer": 5000,
         "pol_to_uwave_wait_dur": 5000,
         "scc_ion_readout_buffer": 10000,
-        "uwave_buffer": 1000,
+        "uwave_buffer": 100,
         "uwave_to_readout_wait_dur": 5000,
     },
     ###
@@ -56,23 +60,117 @@ config = {
     },
     ###
     "Microwaves": {
-        "sig_gen_BERK_bnc835": {"delay": 151, "fm_mod_bandwidth": 100000.0},
-        "sig_gen_STAN_sg394": {"delay": 104, "fm_mod_bandwidth": 100000.0},
-        "sig_gen_TEKT_tsg4104a": {"delay": 57},
+        "PhysicalSigGens": {
+            "sig_gen_BERK_bnc835": {"delay": 151, "fm_mod_bandwidth": 100000.0},
+            "sig_gen_STAN_sg394": {"delay": 104, "fm_mod_bandwidth": 100000.0},
+            "sig_gen_TEKT_tsg4104a": {"delay": 57},
+        },
         "iq_comp_amp": 0.5,
         "iq_delay": 630,
-        "sig_gen_HIGH": "sig_gen_TEKT_tsg4104a",
-        "sig_gen_LOW": "sig_gen_TEKT_tsg4104a",
+        "VirtualSigGens": {
+            0: {
+                "physical_name": "sig_gen_STAN_sg394",
+                # "uwave_power": 2.3,
+                "uwave_power": 8.7,
+                # "frequency": 2.779138,  # rubin shallow NVs O1 ms=-1
+                # "frequency": 2.909381,  # rubin shallow NV O3 ms=+1
+                "frequency": 2.730700,
+                "rabi_period": 128,
+            },
+            # sig gen 1 is iq molulated
+            1: {
+                "physical_name": "sig_gen_STAN_sg394_2",
+                "uwave_power": 8.7,
+                # "uwave_power": 9.6,
+                # "frequency": 2.779138,   # rubin shallow NVs O1 ms=-1
+                # "frequency": 2.964545,  # rubin shallow NV O1 ms=+1
+                # "frequency": 2.842478,  # rubin shallow NV O3 ms=-1
+                "frequency": 2.730700,  # lower esr peak for both orientation
+                "rabi_period": 208,
+                "pi_pulse": 104,
+                "pi_on_2_pulse": 56,
+                # "rabi_period": 52,
+            },
+        },
     },
     ###
     "Optics": {
-        "cobolt_515": {
-            "delay": 120,
-            "mod_type": ModTypes.DIGITAL,
+        "PhysicalLasers": {
+            "laser_INTE_520": {
+                "delay": 250,
+                "mod_mode": ModMode.DIGITAL,
+            },
+            "laser_COBO_638": {
+                "delay": 250,
+                "mod_mode": ModMode.DIGITAL,
+            },
+            "laser_LGLO_589": {
+                "delay": 2500,
+                "mod_mode": ModMode.DIGITAL,
+                "filter_server": "filter_slider_ell9k",
+                "filter_mapping": {"nd_0": 0, "nd_0.5": 1, "nd_1.0": 2, "nd_1.5": 3},
+            },
         },
-        "cobolt_638": {
-            "delay": 80,
-            "mod_type": ModTypes.DIGITAL,
+        "VirtualLasers": {
+            # LaserKey.IMAGING: {"physical_name": green_laser, "duration": 50e6},
+            VirtualLaserKey.IMAGING: {
+                "physical_name": green_laser,
+                "duration": 12e6,
+            },
+            VirtualLaserKey.SPIN_READOUT: {
+                "physical_name": green_laser,
+                "duration": 200,
+            },
+            # LaserKey.CHARGE_POL: {"physical_name": green_laser, "duration": 10e3},
+            VirtualLaserKey.CHARGE_POL: {
+                "physical_name": green_laser,
+                "duration": 1e3,  # Works better for shallow NVs (Cannon)
+                # "duration": 500,  # Works better for shallow NVs (Cannon)
+                # "duration": 10e3, #Works better for Deep NVs (Johnson)
+            },
+            # LaserKey.CHARGE_POL: {"physical_name": green_laser, "duration": 60},
+            VirtualLaserKey.SPIN_POL: {
+                "physical_name": green_laser,
+                "duration": 1000,
+            },
+            VirtualLaserKey.SHELVING: {
+                "physical_name": green_laser,
+                "duration": 60,
+            },
+            VirtualLaserKey.ION: {
+                "physical_name": red_laser,
+                "duration": 1e3,
+            },
+            # SCC: 180 mW, 0.13 V, no shelving
+            # LaserKey.SCC: {"physical_name": red_laser, "duration": 248},
+            VirtualLaserKey.SCC: {
+                "physical_name": red_laser,
+                "duration": 124,
+            },
+            # LaserKey.SCC: {"physical_name": green_laser, "duration": 200},
+            VirtualLaserKey.WIDEFIELD_SHELVING: {
+                "physical_name": yellow_laser,
+                "duration": 60,
+            },
+            VirtualLaserKey.WIDEFIELD_IMAGING: {
+                "physical_name": yellow_laser,
+                "duration": 12e6,
+                # "duration": 24e6,
+            },
+            # LaserKey.WIDEFIELD_SPIN_POL: {"physical_name": yellow_laser, "duration": 10e3},
+            VirtualLaserKey.WIDEFIELD_SPIN_POL: {
+                "physical_name": yellow_laser,
+                "duration": 100e3,
+            },
+            # LaserKey.WIDEFIELD_SPIN_POL: {"physical_name": yellow_laser, "duration": 1e6},
+            VirtualLaserKey.WIDEFIELD_CHARGE_READOUT: {
+                "physical_name": yellow_laser,
+                # "duration": 200e6,
+                # "duration": 60e6,
+                # "duration": 30e6,
+                "duration": 24e6,  # for red calibration
+            },
+            # LaserKey.WIDEFIELD_CHARGE_READOUT: {"physical_name": yellow_laser, "duration": 100e6},
         },
         "collection": {
             "filter_server": "filter_slider_ell9k_3",
@@ -83,33 +181,17 @@ config = {
                 "no_filter": 3,
             },
         },
-        "laser_INTE_520": {
-            "delay": 250,
-            "mod_type": ModTypes.DIGITAL,
-        },
-        "laser_LGLO_589": {
-            "delay": 2500,
-            "mod_type": ModTypes.DIGITAL,
-            "filter_server": "filter_slider_ell9k",
-            "filter_mapping": {"nd_0": 0, "nd_0.5": 1, "nd_1.0": 2, "nd_1.5": 3},
-        },
-        "laserglow_532": {
-            "delay": 1030,
-            "mod_type": ModTypes.DIGITAL,
-            "filter_server": "filter_slider_ell9k_2",
-            "filter_mapping": {"nd_2.0": 0, "nd_1.0": 1, "nd_0.5": 2, "nd_0": 3},
-        },
     },
     ###
     "Positioning": {
-        "xy_control_style": ControlStyle.STREAM,
+        "xy_control_style": PosControlMode.STREAM,
         "xy_delay": 50000000,
         "xy_dtype": float,
         "xy_nm_per_unit": 1000,
         "xy_optimize_range": 0.95,
         "xy_small_response_delay": 800,
         "xy_units": "V",
-        "z_control_style": ControlStyle.STREAM,
+        "z_control_style": PosControlMode.STREAM,
         "z_delay": 50000000,
         "z_dtype": float,
         "z_nm_per_unit": 1000,
@@ -151,8 +233,8 @@ config = {
         },
         "Piezo_stage_E727": {"piezo_stage_channel_x": 4, "piezo_stage_channel_y": 5},
         "PulseGen": {
-            "ao_fm_sig_gen_BERK_bnc835": 1,
-            "ao_fm_sig_gen_STAN_sg394": 0,
+            "ao_sig_gen_BERK_bnc835_fm": 1,
+            "ao_sig_gen_STAN_sg394_fm": 0,
             "ao_laser_LGLO_589_am": 1,
             "do_apd_gate": 5,
             "do_arb_wave_trigger": 2,
@@ -160,8 +242,7 @@ config = {
             "do_laser_INTE_520_dm": 3,
             "do_laser_LGLO_589_am": 6,
             "do_sample_clock": 0,
-            "do_sig_gen_BERK_bnc835_gate": 1,
-            "do_sig_gen_STAN_sg394_gate": 4,
+            "do_sig_gen_STAN_sg394_dm": 4,
         },
         "Tagger": {"di_apd_0": 2, "di_apd_1": 4, "di_apd_gate": 3, "di_clock": 1},
     },
