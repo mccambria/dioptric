@@ -21,7 +21,7 @@ kplt.init_kplotlib()
 # User-configurable parameters
 # ----------------------------
 base_folder = "G:\\NV_Widefield_RT_Setup_Enclosure_Temp_Logs"
-hours = 24  # window to analyze & plot
+hours = 72  # window to analyze & plot
 temp_low, temp_high = 15, 35  # sanity filter limits
 PLOT_ADEV = True  # set False if you don't want the Allan plot refreshing
 
@@ -224,8 +224,9 @@ def _normalize_timestamps(df: pd.DataFrame, col: str = "Timestamp") -> pd.DataFr
             s = s.dt.tz_convert(LOCAL_TZ).dt.tz_localize(None)
     else:
         # Parse strings/objects; assume input may be UTC and convert to local
-        s = pd.to_datetime(df[col], errors="coerce", utc=True)
-        s = s.dt.tz_convert(LOCAL_TZ).dt.tz_localize(None)
+        s = pd.to_datetime(df[col], errors="coerce")
+        s = s.dt.tz_localize(None)
+
     df[col] = s
     df.dropna(subset=[col], inplace=True)
     return df
@@ -306,9 +307,8 @@ def update_plot():
     ax.set_xlabel("Time", fontsize=13)
     ax.set_ylabel("Temperature [°C]", fontsize=13)
 
-    # Cleaner date axis
     locator = mdates.AutoDateLocator()
-    formatter = mdates.ConciseDateFormatter(locator)
+    formatter = mdates.DateFormatter("%Y-%m-%d-%H-%M-%S")
     ax.xaxis.set_major_locator(locator)
     ax.xaxis.set_major_formatter(formatter)
 
@@ -322,10 +322,10 @@ def update_plot():
         "4B - experiment enclosure\n"
         "4C - air inside duct of laser enclosure\n"
         "4D - laser enclosure\n"
-        "temp_stick → outside monitor"
+        "temp_stick - outside monitor"
     )
     if _fig_note is None:
-        _fig_note = fig.text(0.40, 0.36, note, ha="left", va="bottom", fontsize=11)
+        _fig_note = fig.text(0.70, 0.56, note, ha="left", va="bottom", fontsize=11)
     else:
         _fig_note.set_text(note)
 

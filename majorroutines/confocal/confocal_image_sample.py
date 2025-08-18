@@ -247,7 +247,7 @@ def main(
     dm.save_figure(fig, file_path)
     dm.save_raw_data(raw_data, file_path)
 
-    kpl.show()
+    kpl.show(block=True)
     return img_array, coords_1_1d, coords_2_1d
 
 

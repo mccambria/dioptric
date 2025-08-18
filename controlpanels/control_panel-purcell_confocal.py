@@ -441,7 +441,7 @@ if __name__ == "__main__":
         #     if tool_belt.safe_stop():
         #         break
         #     nv_sig["coords"][2] = int(z)
-        # do_image_sample(nv_sig)
+        do_image_sample(nv_sig)
         # nv_sig["imaging_readout_dur"] = 5e7
         # do_image_sample(nv_sig)
         # do_image_sample_zoom(nv_sig)
@@ -460,7 +460,7 @@ if __name__ == "__main__":
         # do_pulsed_resonance(nv_sig, 2.87, 0.200)
         # do_pulsed_resonance_state(nv_sig, States.LOW)
         # do_pulsed_resonance_state(nv_sig, States.HIGH)
-        do_rabi(nv_sig)
+        # do_rabi(nv_sig)
         # do_rabi(nv_sig, States.HIGH, uwave_time_range=[0, 400])
         # do_spin_echo(nv_sig)
         # do_g2_measurement(nv_sig, 0, 1)

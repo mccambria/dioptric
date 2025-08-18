@@ -1399,7 +1399,7 @@ if __name__ == "__main__":
         # piezo_voltage_to_pixel_calibration()
 
         # do_compensate_for_drift(nv_sig)
-        # do_widefield_image_sample(nv_sig, 50)
+        do_widefield_image_sample(nv_sig, 50)
         # do_widefield_image_sample(nv_sig, 200)
 
         # do_scanning_image_sample(nv_sig)
