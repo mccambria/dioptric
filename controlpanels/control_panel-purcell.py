@@ -1015,12 +1015,12 @@ def do_opx_constant_ac():
     # opx.stream_start()
 
     # Yellow
-    opx.constant_ac(
-        [],  # Digital channels
-        [7],  # Analog channels
-        [0.45],  # Analog voltages
-        [0],  # Analog frequencies
-    )
+    # opx.constant_ac(
+    #     [],  # Digital channels
+    #     [7],  # Analog channels
+    #     [0.45],  # Analog voltages
+    #     [0],  # Analog frequencies
+    # )
     # opx.constant_ac([4])  # Just laser
     # Red
     # freqs = [65, 75, 85]
@@ -1090,12 +1090,12 @@ def do_opx_constant_ac():
     #     [107, 107, 0],  # Analog frequencies
     # )
     # Red + green + Yellow
-    # opx.constant_ac(
-    #     [4, 1],  # Digital channels1
-    #     [3, 4, 2, 6, 7],  # Analog channels
-    #     [0.19, 0.19, 0.17, 0.17, 0.25],  # Analog voltages
-    #     [107, 107, 72, 72, 0],  # Analog frequencies
-    # )
+    opx.constant_ac(
+        [4, 1],  # Digital channels1
+        [3, 4, 2, 6, 7],  # Analog channels
+        [0.19, 0.19, 0.17, 0.17, 0.25],  # Analog voltages
+        [107, 107, 72, 72, 0],  # Analog frequencies
+    )
     input("Press enter to stop...")
     # sig_gen.uwave_off()
 
@@ -1223,8 +1223,9 @@ if __name__ == "__main__":
     sample_name = "rubin"
     # magnet_angle = 90
     date_str = "2025_02_26"
-    sample_coords = [0.0, 0.0]
-    z_coord = 1.5
+    sample_coords = [2.00, 0.0]
+    z_coord = 0.7
+
     # Load NV pixel coordinates1
     pixel_coords_list = load_nv_coords(
         # file_path="slmsuite/nv_blob_detection/nv_blob_rubin_shallow_154nvs_reordered.npz",
@@ -1266,13 +1267,13 @@ if __name__ == "__main__":
     print(f"Green Laser Coordinates: {green_coords_list[0]}")
     print(f"Red Laser Coordinates: {red_coords_list[0]}")
     pixel_coords_list = [
-        [119.672, 124.426],
+        [128.049, 130.973],
         [6.568, 229.972],
         [117.722, 6.935],
         [239.844, 216.078],
     ]
     green_coords_list = [
-        [107.0, 107.0],
+        [107.669, 107.501],
         [122.341, 97.895],
         [105.637, 121.269],
         [95.65, 95.495],
@@ -1399,16 +1400,16 @@ if __name__ == "__main__":
         # piezo_voltage_to_pixel_calibration()
 
         # do_compensate_for_drift(nv_sig)
-        do_widefield_image_sample(nv_sig, 50)
+        # do_widefield_image_sample(nv_sig, 50)
         # do_widefield_image_sample(nv_sig, 200)
 
         # do_scanning_image_sample(nv_sig)
-        # do_scanning_image_full_roi(nv_sig)
+        do_scanning_image_full_roi(nv_sig)
         # do_scanning_image_sample_zoom(nv_sig)
         # scan_equilateral_triangle(nv_sig, center_coord=sample_coords, radius=0.4)
         # do_image_nv_list(nv_list)
         # do_image_single_nv(nv_sig)
-        # z_range = np.linspace(0.0, 1.0, 6)
+        # z_range = np.linspace(0.0, 4.0, 15)
         # for z in z_range:
         #     nv_sig.coords[CoordsKey.Z] = z
         #     do_scanning_image_sample(nv_sig)
@@ -1438,7 +1439,7 @@ if __name__ == "__main__":
         # do_opx_square_wave()
 
         # do_optimize_pixel(nv_sig)
-        # do_optimize_green(nv_sig)
+        do_optimize_green(nv_sig)
         # do_optimize_red(nv_sig, repr_nv_sig)
         # do_optimize_z(nv_sig)
         # do_optimize_sample(nv_sig)
