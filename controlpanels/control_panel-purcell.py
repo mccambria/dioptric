@@ -77,6 +77,20 @@ def do_scanning_image_sample(nv_sig):
     image_sample.scanning(nv_sig, scan_range, scan_range, num_steps)
 
 
+def do_red_calibration_image(nv_sig, coords_list):
+    arr = np.asarray(coords_list, dtype=float)
+    x_freqs_MHz = arr[:, 0].tolist()
+    y_freqs_MHz = arr[:, 1].tolist()
+    force_laser_key = VirtualLaserKey.RED_IMAGING
+    # force_laser_key = VirtualLaserKey.IMAGING
+    image_sample.red_widefield_calibration(
+        nv_sig,
+        x_freqs_MHz,
+        y_freqs_MHz,
+        force_laser_key=force_laser_key,
+    )
+
+
 def do_scanning_image_full_roi(nv_sig):
     total_range = 30
     scan_range = 10
@@ -241,7 +255,7 @@ def do_optimize_red(nv_sig, ref_nv_sig):
     axes_list = [Axes.X, Axes.Y]
     # axes_list = [Axes.Y, Axes.X]
     # shuffle(axes_list)
-    for ind in range(1):
+    for ind in range(2):
         axes = axes_list[ind]
         ret_vals = targeting.optimize(nv_sig, coords_key=red_laser_aod, axes=axes)
         opti_coords.append(ret_vals[0])
@@ -1060,7 +1074,7 @@ def do_opx_constant_ac():
         [4, 1],  # Digital channels
         [3, 4, 2, 6],  # Analog channels
         [0.11, 0.11, 0.15, 0.15],  # Analog voltages;
-        [108.36, 108.376, 72.0, 72.0],
+        [94.948, 117.905, 61.248, 80.18],
     )
 
     # green_coords_list = [
@@ -1070,10 +1084,10 @@ def do_opx_constant_ac():
     #     [94.948, 117.905],
     # ]
     # red_coords_list = [
-    #     [71.848, 71.603],
-    #     [83.417, 63.661],
-    #     [69.808, 82.52],
-    #     [61.648, 60.88],
+    #     [72.5, 73.0],
+    #     [80.117, 81.70],
+    #     [74.3, 63.32],
+    #     [61.248, 80.18],
     # ]
     # red
     # opx.constant_ac(
@@ -1268,21 +1282,21 @@ if __name__ == "__main__":
     print(f"Red Laser Coordinates: {red_coords_list[0]}")
     pixel_coords_list = [
         [120.443, 115.572],
-        [24.072, 37.988],
-        [118.495, 223.439],
-        [227.998, 20.985],
+        # [24.072, 37.988],
+        # [118.495, 223.439],
+        # [227.998, 20.985],
     ]
     green_coords_list = [
-        [108.36, 108.376],
-        [118.257, 118.345],
-        [110.014, 96.168],
-        [94.948, 117.905],
+        [108.375, 108.378],
+        # [118.326, 118.239],
+        # [110.017, 96.196],
+        # [94.953, 117.921],
     ]
     red_coords_list = [
-        [73.105, 73.401],
-        [81.08, 81.596],
-        [74.436, 63.531],
-        [62.3, 80.959],
+        # [72.0, 72.0],
+        # [80.117, 81.70],
+        [62.3, 64.32],
+        # [61.248, 80.18],
     ]
     num_nvs = len(pixel_coords_list)
     threshold_list = [None] * num_nvs
@@ -1399,9 +1413,16 @@ if __name__ == "__main__":
         # pos.set_xyz_on_nv(nv_sig)
         # piezo_voltage_to_pixel_calibration()
 
+        ### warning: this direclty iamge the laser spo, boftfor starign this makesure the red laser so set to 1mw on GUI
+        # TODO[WARNING]: DIRECT RED LASER IMAGING (NO SCAN)
+        # Set RED ≈ 1 mW • Exposure ≤ 1ms • Low em gain ≤ 10 / ND filter if needed
+        do_red_calibration_image(nv_sig, red_coords_list)
+
         # do_compensate_for_drift(nv_sig)
         # do_widefield_image_sample(nv_sig, 50)
+
         # do_widefield_image_sample(nv_sig, 200)
+
         # for nv in nv_list:
         # do_scanning_image_sample_zoom(nv)
         # do_scanning_image_sample(nv_sig)
