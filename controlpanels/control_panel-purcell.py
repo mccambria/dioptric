@@ -1015,12 +1015,12 @@ def do_opx_constant_ac():
     # opx.stream_start()
 
     # Yellow
-    # opx.constant_ac(
-    #     [],  # Digital channels
-    #     [7],  # Analog channels
-    #     [0.45],  # Analog voltages
-    #     [0],  # Analog frequencies
-    # )
+    opx.constant_ac(
+        [],  # Digital channels
+        [7],  # Analog channels
+        [0.45],  # Analog voltages
+        [0],  # Analog frequencies
+    )
     # opx.constant_ac([4])  # Just laser
     # Red
     # freqs = [65, 75, 85]
@@ -1056,24 +1056,24 @@ def do_opx_constant_ac():
     #     [107.0, 107.0],  # Analog frequencies
     # )
     # Green + red
-    # opx.constant_ac(
-    #     [4, 1],  # Digital channels
-    #     [3, 4, 2, 6],  # Analog channels
-    #     [0.11, 0.11, 0.15, 0.15],  # Analog voltages;
-    #     [107.509, 106.425, 71.40, 71.603],
-    # )
+    opx.constant_ac(
+        [4, 1],  # Digital channels
+        [3, 4, 2, 6],  # Analog channels
+        [0.11, 0.11, 0.15, 0.15],  # Analog voltages;
+        [108.36, 108.376, 72.0, 72.0],
+    )
 
-    #   green_coords_list = [
-    #     [107.336, 107.16],
-    #     [106.36, 103.736],
-    #     [111.622, 109.491],
-    #     [102.181, 111.867],
+    # green_coords_list = [
+    #     [108.36, 108.376],
+    #     [118.257, 118.345],
+    #     [110.014, 96.168],
+    #     [94.948, 117.905],
     # ]
     # red_coords_list = [
-    #     [72.917, 73.798],
-    #   71.352, 69.193,
-    # [75.818, 73.939],
-    # [67.923, 76.832],
+    #     [71.848, 71.603],
+    #     [83.417, 63.661],
+    #     [69.808, 82.52],
+    #     [61.648, 60.88],
     # ]
     # red
     # opx.constant_ac(
@@ -1090,12 +1090,12 @@ def do_opx_constant_ac():
     #     [107, 107, 0],  # Analog frequencies
     # )
     # Red + green + Yellow
-    opx.constant_ac(
-        [4, 1],  # Digital channels1
-        [3, 4, 2, 6, 7],  # Analog channels
-        [0.19, 0.19, 0.17, 0.17, 0.25],  # Analog voltages
-        [107, 107, 72, 72, 0],  # Analog frequencies
-    )
+    # opx.constant_ac(
+    #     [4, 1],  # Digital channels1
+    #     [3, 4, 2, 6, 7],  # Analog channels
+    #     [0.19, 0.19, 0.17, 0.17, 0.25],  # Analog voltages
+    #     [107, 107, 72, 72, 0],  # Analog frequencies
+    # )
     input("Press enter to stop...")
     # sig_gen.uwave_off()
 
@@ -1224,7 +1224,7 @@ if __name__ == "__main__":
     # magnet_angle = 90
     date_str = "2025_02_26"
     sample_coords = [2.00, 0.0]
-    z_coord = 0.7
+    z_coord = 0.0
 
     # Load NV pixel coordinates1
     pixel_coords_list = load_nv_coords(
@@ -1233,7 +1233,7 @@ if __name__ == "__main__":
         file_path="slmsuite/nv_blob_detection/nv_blob_rubin_shallow_362nvs_reordered.npz",
     ).tolist()
     pixel_coords_list = [
-        [119.672, 124.426],
+        [120.443, 115.572],
         [5.994, 230.216],
         [117.391, 7.422],
         [248.188, 193.653],
@@ -1267,22 +1267,22 @@ if __name__ == "__main__":
     print(f"Green Laser Coordinates: {green_coords_list[0]}")
     print(f"Red Laser Coordinates: {red_coords_list[0]}")
     pixel_coords_list = [
-        [128.049, 130.973],
-        [6.568, 229.972],
-        [117.722, 6.935],
-        [239.844, 216.078],
+        [120.443, 115.572],
+        [24.072, 37.988],
+        [118.495, 223.439],
+        [227.998, 20.985],
     ]
     green_coords_list = [
-        [107.669, 107.501],
-        [122.341, 97.895],
-        [105.637, 121.269],
-        [95.65, 95.495],
+        [108.36, 108.376],
+        [118.257, 118.345],
+        [110.014, 96.168],
+        [94.948, 117.905],
     ]
     red_coords_list = [
-        [71.848, 71.603],
-        [83.417, 63.661],
-        [69.808, 82.52],
-        [61.648, 60.88],
+        [73.105, 73.401],
+        [81.08, 81.596],
+        [74.436, 63.531],
+        [62.3, 80.959],
     ]
     num_nvs = len(pixel_coords_list)
     threshold_list = [None] * num_nvs
@@ -1402,9 +1402,10 @@ if __name__ == "__main__":
         # do_compensate_for_drift(nv_sig)
         # do_widefield_image_sample(nv_sig, 50)
         # do_widefield_image_sample(nv_sig, 200)
-
+        # for nv in nv_list:
+        # do_scanning_image_sample_zoom(nv)
         # do_scanning_image_sample(nv_sig)
-        do_scanning_image_full_roi(nv_sig)
+        # do_scanning_image_full_roi(nv_sig)
         # do_scanning_image_sample_zoom(nv_sig)
         # scan_equilateral_triangle(nv_sig, center_coord=sample_coords, radius=0.4)
         # do_image_nv_list(nv_list)
@@ -1439,7 +1440,7 @@ if __name__ == "__main__":
         # do_opx_square_wave()
 
         # do_optimize_pixel(nv_sig)
-        do_optimize_green(nv_sig)
+        # do_optimize_green(nv_sig)
         # do_optimize_red(nv_sig, repr_nv_sig)
         # do_optimize_z(nv_sig)
         # do_optimize_sample(nv_sig)

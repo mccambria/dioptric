@@ -125,9 +125,9 @@ DEVICE_NAME = "Dev1"
 X_CHANNEL = "ao22"
 Y_CHANNEL = "ao31"
 
-amp_x = 4.0  # amplitude (safe range)
-amp_y = 4.0
-freq_x = 4  # Hz
+amp_x = 6.0  # amplitude (safe range)
+amp_y = 6.0
+freq_x = 6  # Hz
 freq_y = 6
 rate = 1000  # update rate (Hz)
 
