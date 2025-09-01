@@ -298,7 +298,7 @@ def _read_counts_camera_sequence(
 def _find_center_coords(nv_sig: NVSig, positioner, axis_ind, fig=None):
     """Optimize on just one axis (0, 1, 2) for (x, y, z)."""
 
-    num_steps = 20
+    num_steps = 40
     scan_range = pos.get_positioner_optimize_range(positioner)
     if positioner is CoordsKey.Z:
         axis_center = pos.get_nv_coords(nv_sig, positioner)

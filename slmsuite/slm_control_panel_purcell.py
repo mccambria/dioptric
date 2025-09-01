@@ -294,7 +294,7 @@ def nuvu2thorcam_calibration(coords):
     )
 
     cal_coords_nuvu = np.array(
-        [[223.016, 237.004], [190.478, 17.965], [18.58, 155.931]], dtype="float32"
+        [[222.756, 237.764], [189.979, 18.219], [17.675, 155.592]], dtype="float32"
     )
 
     # Compute the affine transformation matrix
@@ -315,7 +315,7 @@ def load_nv_coords(
     # file_path="slmsuite/nv_blob_detection/nv_blob_rubin_shallow_154nvs_reordered.npz",
     # file_path="slmsuite/nv_blob_detection/nv_blob_rubin_shallow_81nvs_reordered.npz",
     # file_path="slmsuite/nv_blob_detection/nv_blob_rubin_shallow_75nvs_reordered.npz",
-    file_path="slmsuite/nv_blob_detection/nv_blob_rubin_shallow_362nvs_reordered.npz",
+    file_path="slmsuite/nv_blob_detection/nv_blob_rubin_shallow_227nvs_reordered.npz",
     # file_path="slmsuite/nv_blob_detection/nv_blob_rubin_shallow_40nvs_reordered.npz",
     # file_path="slmsuite/nv_blob_detection/nv_blob_rubin_shallow_35nvs_reordered.npz",
     # file_path="slmsuite/nv_blob_detection/nv_blob_shallow_148nvs_reordered_updated.npz",
@@ -341,14 +341,14 @@ def load_nv_coords(
 
 
 nuvu_pixel_coords, spot_weights = load_nv_coords()
-nuvu_pixel_coords = np.array(
-    [
-        [120.443, 115.572],
-        [24.072, 37.988],
-        [118.495, 223.439],
-        [227.998, 20.985],
-    ]
-)
+# nuvu_pixel_coords = np.array(
+#     [
+#         [120.443, 115.572],
+#         [24.072, 37.988],
+#         [118.495, 223.439],
+#         [227.998, 20.985],
+#     ]
+# )
 # spot_weights = np.array([0.8, 1.0, 1.0, 1.0])
 print(f"Total NV coordinates: {len(nuvu_pixel_coords)}")
 thorcam_coords = nuvu2thorcam_calibration(nuvu_pixel_coords).T
