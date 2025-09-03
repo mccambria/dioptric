@@ -356,6 +356,6 @@ if __name__ == "__main__":
     kpl.init_kplotlib()
     file_id = 1718839858832
     # file_id = 1716961021353
-    raw_data = dm.get_raw_data(file_id=file_id, load_npz=False)
+    raw_data = dm.get_raw_data(file_stem=file_id, load_npz=False)
     process_and_plot(raw_data)
     kpl.show(block=True)

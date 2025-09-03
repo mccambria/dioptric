@@ -366,7 +366,7 @@ def compute_and_write_nvs_phase():
     # Precondition computationally
     hologram.optimize(
         "WGS-Kim",
-        maxiter=20,
+        maxiter=30,
         feedback="computational_spot",
         stat_groups=["computational_spot"],
     )
