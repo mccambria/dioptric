@@ -34,19 +34,19 @@ red_laser_aod = "laser_COBO_638_aod"
 
 
 calibration_coords_pixel = [
-    [24.072, 37.988],
-    [118.495, 223.439],
-    [227.998, 20.985],
+    [8.733, 79.745],
+    [213.126, 21.113],
+    [138.133, 247.156],
 ]
 calibration_coords_green = [
-    [118.195, 118.339],
-    [109.954, 96.223],
-    [94.889, 117.974],
+    [120.285, 113.627],
+    [96.412, 117.933],
+    [107.67, 93.008],
 ]
 calibration_coords_red = [
-    [78.54, 80.126],
-    [71.762, 60.537],
-    [61.855, 73.367],
+    [79.847, 77.021],
+    [62.943, 73.758],
+    [70.0, 57.388],
 ]
 # Create the dictionaries using the provided lists
 calibration_coords_nv1 = {
@@ -264,8 +264,8 @@ config |= {
                 "physical_name": yellow_laser,
                 # "duration": 200e6,
                 # "duration": 60e6,
-                # "duration": 30e6,
-                "duration": 24e6,  # for red calibration
+                "duration": 50e6,
+                # "duration": 24e6,  # for red calibration
             },
             # LaserKey.WIDEFIELD_CHARGE_READOUT: {"physical_name": yellow_laser, "duration": 100e6},
         },
@@ -309,7 +309,7 @@ config |= {
                 "control_mode": PosControlMode.SEQUENCE,
                 "delay": int(400e3),  # 400 us for galvo
                 "nm_per_unit": 1000,
-                "optimize_range": 3.0,
+                "optimize_range": 4.0,
                 "units": "MHz",
                 "opti_virtual_laser_key": VirtualLaserKey.ION,
                 "aod": True,
@@ -903,7 +903,7 @@ opx_config = {
         # "red_aod_cw-scc": {"type": "constant", "sample": 0.12},  # rubin
         # Yellow AOM
         "yellow_imaging": {"type": "constant", "sample": 0.45},  # 0.35
-        "yellow_charge_readout": {"type": "constant", "sample": 0.45},  # 75NVs new
+        "yellow_charge_readout": {"type": "constant", "sample": 0.25},  # 75NVs new
         "yellow_spin_pol": {"type": "constant", "sample": 0.44},  # 75 NVs
         # "yellow_spin_pol": {"type": "constant", "sample": 0.42},
         "yellow_shelving": {"type": "constant", "sample": 0.33},
