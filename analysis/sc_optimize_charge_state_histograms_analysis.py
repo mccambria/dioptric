@@ -805,7 +805,7 @@ if __name__ == "__main__":
     # file_id = 1809414309242  # yellow ampl 60ms 81NVs
     # file_id = 1834021972039  # yellow ampl 60ms 75NVs
 
-    # file_id = 1794442033227  # yellow ampl 60ms 140NVs
+    file_id = "2025_03_05-05_04_57-rubin-nv0_2025_02_26"  # 1794442033227  # yellow ampl 60ms 140NVs
     # file_id = 1793116636570  # yellow ampl 24ms
     # file_id = 1792980892323  # yellow ampl 80ms
     # file_id = 1791756537192  # green durations
@@ -824,17 +824,19 @@ if __name__ == "__main__":
     # file_id = 1833010688783  # green durations 75NVs (4/13/2025)
     # file_id = 1834390490156  # green durations 75NVs (4/14/2025)
     # file_id = 1836625491633  # green durations 75NVs (4/16/2025)
-    file_id = (
-        "2025_04_29-00_04_37-rubin-nv0_2025_02_26"  # green amplitude 75NVs (4/16/2025)
-    )
-    file_id = (
-        "2025_05_12-21_22_21-rubin-nv0_2025_02_26"  # green amplitude 75NVs (4/16/2025)
-    )
+    # file_id = (
+    #     "2025_04_29-00_04_37-rubin-nv0_2025_02_26"  # green amplitude 75NVs (4/16/2025)
+    # )
+    # file_id = (
+    #     "2025_05_12-21_22_21-rubin-nv0_2025_02_26"  # green amplitude 75NVs (4/16/2025)
+    # )
+
+    file_stem = "2025_09_02-23_01_06-cannon-nv0_2025_08_31"
     # dm.USE_NEW_CLOUD = False
-    raw_data = dm.get_raw_data(file_stem=file_id, load_npz=True)
+    raw_data = dm.get_raw_data(file_stem=file_stem, load_npz=True)
     # file_name = dm.get_file_name(file_id=file_id)
     # print(f"{file_name}_{file_id}")
-    # process_and_plot(raw_data)
-    process_and_plot_green(raw_data)
+    process_and_plot(raw_data)
+    # process_and_plot_green(raw_data)
     # print(dm.get_file_name(1717056176426))
     plt.show(block=True)

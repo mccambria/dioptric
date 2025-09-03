@@ -1093,12 +1093,12 @@ def do_opx_constant_ac():
     # )
 
     # Green + yellow
-    # opx.constant_ac(
-    #     [4],  # Digital channels
-    #     [3, 4, 7],  # Analog channels
-    #     [0.15, 0.15, 0.45],  # Analog voltages
-    #     [107, 107, 0],  # Analog frequencies
-    # )
+    opx.constant_ac(
+        [4],  # Digital channels
+        [3, 4, 7],  # Analog channels
+        [0.15, 0.15, 0.45],  # Analog voltages
+        [107, 107, 0],  # Analog frequencies
+    )
     # Red + green + Yellow
     # opx.constant_ac(
     #     [4, 1],  # Digital channels1
@@ -1233,8 +1233,8 @@ if __name__ == "__main__":
     sample_name = "cannon"
     # magnet_angle = 90
     date_str = "2025_08_31"
-    sample_coords = [2.00, 0.0]
-    z_coord = 2.2
+    sample_coords = [2.00, -0.4]
+    z_coord = 1.8
 
     # Load NV pixel coordinates1
     pixel_coords_list = load_nv_coords(
@@ -1276,36 +1276,28 @@ if __name__ == "__main__":
     print(f"Reference NV:{pixel_coords_list[0]}")
     print(f"Green Laser Coordinates: {green_coords_list[0]}")
     print(f"Red Laser Coordinates: {red_coords_list[0]}")
-    # pixel_coords_list = [
-    #     [123.036, 128.873],
-    #     [8.733, 79.745],
-    #     [213.126, 21.113],
-    #     [138.133, 247.156],
-    # ]
-    # green_coords_list = [
-    #     [107.914, 106.676],
-    #     [120.285, 113.627],
-    #     [96.412, 117.933],
-    #     [107.67, 93.008],
-    # ]
-    # green_coords_list = [
-    #     [107.85, 106.702],
-    #     [111.572, 112.408],
-    #     [107.429, 97.149],
-    #     [99.118, 111.925],
-    # ]
-    # red_coords_list = [
-    #     [72.462, 71.596],
-    #     [75.262, 76.396],
-    #     [72.462, 63.80],
-    #     [65.162, 75.450],
-    # ]
-    # red_coords_list = [
-    #     [70.72, 68.147],
-    #     [79.847, 77.021],
-    #     [62.943, 73.758],
-    #     [70.0, 57.388],
-    # ]
+    pixel_coords_list = [
+        [120.96, 117.781],
+        # [123.036, 128.873],
+        # [8.733, 79.745],
+        # [213.126, 21.113],
+        # [138.133, 247.156],
+    ]
+    green_coords_list = [
+        [108.017, 107.93],
+        # [107.914, 106.676],
+        # [120.285, 113.627],
+        # [96.412, 117.933],
+        # [107.67, 93.008],
+    ]
+
+    red_coords_list = [
+        [72.462, 71.596],
+        # [72.462, 71.596],
+        # [75.262, 76.396],
+        # [72.462, 63.80],
+        # [65.162, 75.450],
+    ]
 
     num_nvs = len(pixel_coords_list)
     threshold_list = [None] * num_nvs
@@ -1398,7 +1390,7 @@ if __name__ == "__main__":
     # print(f"Created NV: {nv_sig.name}, Coords: {nv_sig.coords}")
     # nv_sig.expected_counts = 900
     # nv_sig.expected_counts = 1600
-    nv_sig.expected_counts = 2100
+    nv_sig.expected_counts = 3700
 
     # nv_list = nv_list[::-1]  # flipping the order of NVs
     # nv_list = nv_list[:2]
@@ -1449,7 +1441,7 @@ if __name__ == "__main__":
 
         # do_scanning_image_sample(nv_sig)
         # do_scanning_image_sample_zoom(nv_sig)
-        # do_scanning_image_full_roi(nv_sig)
+        do_scanning_image_full_roi(nv_sig)
 
         # scan_equilateral_triangle(nv_sig, center_coord=sample_coords, radius=0.4)
         # do_image_nv_list(nv_list)
@@ -1500,9 +1492,9 @@ if __name__ == "__main__":
 
         # do_optimize_pol_amp(nv_list)
         # do_optimize_pol_duration(nv_list)
-        do_optimize_readout_amp(nv_list)
+        # do_optimize_readout_amp(nv_list)
         # do_optimize_readout_duration(nv_list)
-        optimize_readout_amp_and_duration(nv_list)
+        # optimize_readout_amp_and_duration(nv_list)
         # do_optimize_spin_pol_amp(nv_list)
         # do_check_readout_fidelity(nv_list)
 
