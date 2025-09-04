@@ -264,8 +264,8 @@ config |= {
                 "physical_name": yellow_laser,
                 # "duration": 200e6,
                 # "duration": 60e6,
-                "duration": 50e6,
-                # "duration": 24e6,  # for red calibration
+                # "duration": 50e6,
+                "duration": 24e6,  # for red calibration
             },
             # LaserKey.WIDEFIELD_CHARGE_READOUT: {"physical_name": yellow_laser, "duration": 100e6},
         },
@@ -902,8 +902,8 @@ opx_config = {
         "red_aod_cw-scc": {"type": "constant", "sample": 0.15},
         # "red_aod_cw-scc": {"type": "constant", "sample": 0.12},  # rubin
         # Yellow AOM
-        "yellow_imaging": {"type": "constant", "sample": 0.45},  # 0.35
-        "yellow_charge_readout": {"type": "constant", "sample": 0.25},  # 75NVs new
+        "yellow_imaging": {"type": "constant", "sample": 0.4},  # 0.35
+        "yellow_charge_readout": {"type": "constant", "sample": 0.35},  # 75NVs new
         "yellow_spin_pol": {"type": "constant", "sample": 0.44},  # 75 NVs
         # "yellow_spin_pol": {"type": "constant", "sample": 0.42},
         "yellow_shelving": {"type": "constant", "sample": 0.33},

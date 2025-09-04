@@ -280,7 +280,7 @@ def process_scan_file():
     # raw_data = dm.get_raw_data(file_id=1802697426409, load_npz=True)  # rubin
 
     ### Nas
-    file_stem = "2025_09_02-17_11_54-cannon-nv0_2025_08_31"
+    file_stem = "2025_09_03-13_44_56-cannon-nv0_2025_08_31"
     raw_data = dm.get_raw_data(
         file_stem=file_stem, load_npz=True, allow_pickle=True
     )  # rubin
@@ -388,9 +388,10 @@ if __name__ == "__main__":
     # data = dm.get_raw_data(file_id=1791776254933, load_npz=True)  # rubin green scan
     # data = dm.get_raw_data(file_id=1807103519645, load_npz=True)
     data = dm.get_raw_data(
-        file_stem="2025_09_02-20_28_40-cannon-nv0_2025_08_31", load_npz=True
+        file_stem="2025_09_03-13_47_33-combined_image_array", load_npz=True
     )
-    img_array = np.array(data["ref_img_array"])
+    # img_array = np.array(data["ref_img_array"])
+    img_array = np.array(data["img_array"])
     # img_array = np.array(data["ref_img_array"]["ref_img_array"])
     # img_array = np.array(data["img_array"])
     # print(img_array)
@@ -478,7 +479,7 @@ if __name__ == "__main__":
         filtered_nv_coords,
         filtered_counts,
         path="slmsuite/nv_blob_detection",
-        filename="nv_blob_shallow_rubin_183nvs.npz",
+        filename="nv_blob_shallow_rubin_390nvs.npz",
     )
 
     # full ROI -- multiple images save in the same file

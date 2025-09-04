@@ -92,8 +92,8 @@ def do_red_calibration_image(nv_sig, coords_list, force_laser_key=None):
 
 def do_scanning_image_full_roi(nv_sig):
     total_range = 30
-    scan_range = 10
-    num_steps = 10
+    scan_range = 15
+    num_steps = 15
     image_sample.scanning_full_roi(nv_sig, total_range, scan_range, num_steps)
 
 
@@ -1089,14 +1089,14 @@ def do_opx_constant_ac():
     #     [1],  # Digital channels
     #     [2, 6],  # Analog channels
     #     [0.15, 0.15],  # Analog voltages
-    #     [72.523, 62.934],  # Analog frequencies
+    #     [72.0, 72.0],  # Analog frequencies
     # )
 
     # Green + yellow
     opx.constant_ac(
         [4],  # Digital channels
         [3, 4, 7],  # Analog channels
-        [0.15, 0.15, 0.45],  # Analog voltages
+        [0.15, 0.15, 0.30],  # Analog voltages
         [107, 107, 0],  # Analog frequencies
     )
     # Red + green + Yellow
@@ -1233,14 +1233,14 @@ if __name__ == "__main__":
     sample_name = "cannon"
     # magnet_angle = 90
     date_str = "2025_08_31"
-    sample_coords = [2.00, -0.4]
-    z_coord = 1.8
+    sample_coords = [2.0, 0.0]
+    z_coord = 2.7
 
     # Load NV pixel coordinates1
     pixel_coords_list = load_nv_coords(
         # file_path="slmsuite/nv_blob_detection/nv_blob_rubin_shallow_154nvs_reordered.npz",
         # file_path="slmsuite/nv_blob_detection/nv_blob_rubin_shallow_75nvs_reordered.npz",
-        file_path="slmsuite/nv_blob_detection/nv_blob_rubin_shallow_212nvs_reordered.npz",
+        file_path="slmsuite/nv_blob_detection/nv_blob_rubin_shallow_516nvs_reordered.npz",
     ).tolist()
     # pixel_coords_list = [
     #     [123.036, 128.873],
@@ -1277,27 +1277,27 @@ if __name__ == "__main__":
     print(f"Green Laser Coordinates: {green_coords_list[0]}")
     print(f"Red Laser Coordinates: {red_coords_list[0]}")
     pixel_coords_list = [
-        [120.96, 117.781],
+        [121.243, 124.562],
         # [123.036, 128.873],
         # [8.733, 79.745],
         # [213.126, 21.113],
         # [138.133, 247.156],
     ]
     green_coords_list = [
-        [108.017, 107.93],
-        # [107.914, 106.676],
-        # [120.285, 113.627],
-        # [96.412, 117.933],
-        # [107.67, 93.008],
+        [107.735, 107.675],
+        #     # [107.914, 106.676],
+        #     # [120.285, 113.627],
+        #     # [96.412, 117.933],
+        #     # [107.67, 93.008],
     ]
 
-    red_coords_list = [
-        [72.462, 71.596],
-        # [72.462, 71.596],
-        # [75.262, 76.396],
-        # [72.462, 63.80],
-        # [65.162, 75.450],
-    ]
+    # red_coords_list = [
+    #     [72.462, 71.596],
+    #     # [72.462, 71.596],
+    #     # [75.262, 76.396],
+    #     # [72.462, 63.80],
+    #     # [65.162, 75.450],
+    # ]
 
     num_nvs = len(pixel_coords_list)
     threshold_list = [None] * num_nvs
@@ -1390,7 +1390,7 @@ if __name__ == "__main__":
     # print(f"Created NV: {nv_sig.name}, Coords: {nv_sig.coords}")
     # nv_sig.expected_counts = 900
     # nv_sig.expected_counts = 1600
-    nv_sig.expected_counts = 3700
+    # nv_sig.expected_counts = 2100
 
     # nv_list = nv_list[::-1]  # flipping the order of NVs
     # nv_list = nv_list[:2]
@@ -1432,7 +1432,7 @@ if __name__ == "__main__":
         #     force_laser_key=VirtualLaserKey.IMAGING,
         # )
 
-        do_compensate_for_drift(nv_sig)
+        # do_compensate_for_drift(nv_sig)
         # do_widefield_image_sample(nv_sig, 50)
         # do_widefield_image_sample(nv_sig, 200)
 
@@ -1441,7 +1441,7 @@ if __name__ == "__main__":
 
         # do_scanning_image_sample(nv_sig)
         # do_scanning_image_sample_zoom(nv_sig)
-        do_scanning_image_full_roi(nv_sig)
+        # do_scanning_image_full_roi(nv_sig)
 
         # scan_equilateral_triangle(nv_sig, center_coord=sample_coords, radius=0.4)
         # do_image_nv_list(nv_list)
@@ -1472,7 +1472,7 @@ if __name__ == "__main__":
         #         print(f"Scanning SAMPLE: {sample_coord}, estimated Z: {z:.3f}")
         #         do_scanning_image_sample(nv_sig)
 
-        # do_opx_constant_ac()
+        do_opx_constant_ac()
         # do_opx_square_wave()
 
         # do_optimize_pixel(nv_sig)

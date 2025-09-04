@@ -400,17 +400,18 @@ if __name__ == "__main__":
     # data = dm.get_raw_data(file_id=1782616297820, load_npz=True)
     # data = dm.get_raw_data(file_id=1806410973406, load_npz=True)
     data = dm.get_raw_data(
-        file_stem="2025_09_02-20_28_40-cannon-nv0_2025_08_31", load_npz=True
+        file_stem="2025_09_03-13_47_33-combined_image_array",
+        load_npz=True,
     )
-    img_array = np.array(data["ref_img_array"])
-    # img_array = data["img_array"]
+    # img_array = np.array(data["ref_img_array"])
+    img_array = data["img_array"]
 
     # sys.exit()
     nv_coordinates, spot_weights = load_nv_coords(
         # file_path="slmsuite/nv_blob_detection/nv_blob_shallow_rubin_140nvs.npz"
         # file_path="slmsuite/nv_blob_detection/nv_blob_shallow_rubin_306nvs.npz"
         # file_path="slmsuite/nv_blob_detection/nv_blob_shallow_rubin_81nvs.npz"
-        file_path="slmsuite/nv_blob_detection/nv_blob_shallow_rubin_183nvs.npz"
+        file_path="slmsuite/nv_blob_detection/nv_blob_shallow_rubin_390nvs.npz"
         # file_path="slmsuite/nv_blob_detection/nv_blob_shallow_rubin_75nvs_reordered_.npz"
         # file_path="slmsuite/nv_blob_detection/nv_blob_rubin_shallow_303nvs_reordered.npz"
         # file_path="slmsuite/nv_blob_detection/nv_blob_rubin_shallow_154nvs_reordered.npz"
@@ -455,10 +456,10 @@ if __name__ == "__main__":
     sigma = 3
     # reference_nv = [109.077, 120.824]
     # reference_nv = [120.258, 124.709]
-    reference_nv = [123.036, 128.873]
+    reference_nv = [120.96, 117.781]
     filtered_reordered_coords, filtered_reordered_spot_weights, include_indices = (
         filter_and_reorder_nv_coords(
-            nv_coordinates, spot_weights, reference_nv, min_distance=8
+            nv_coordinates, spot_weights, reference_nv, min_distance=3
         )
     )
     # filtered_reordered_coords = [
@@ -687,11 +688,11 @@ if __name__ == "__main__":
 
     # Save the filtered results
 
-    save_results(
-        filtered_reordered_coords,
-        filtered_reordered_spot_weights,
-        filename="slmsuite/nv_blob_detection/nv_blob_rubin_shallow_183nvs_reordered.npz",
-    )
+    # save_results(
+    #     filtered_reordered_coords,
+    #     filtered_reordered_spot_weights,
+    #     filename="slmsuite/nv_blob_detection/nv_blob_cannon_shallow_378nvs_reordered.npz",
+    # )
     # save_results(
     #     nv_coordinates,
     #     filtered_reordered_counts,
@@ -704,21 +705,21 @@ if __name__ == "__main__":
     # # Plot the original image with circles around each NV
 
     fig, ax = plt.subplots()
-    title = "50ms, Ref"
+    title = "12ms, INTI_520_Combined_Image"
     kpl.imshow(ax, img_array, title=title, cbar_label="Photons")
     # Draw circles and index numbers
-    for idx, coord in enumerate(filtered_reordered_coords):
-        circ = plt.Circle(coord, sigma, color="lightblue", fill=False, linewidth=0.5)
-        ax.add_patch(circ)
-        # Place text just above the circle
-        ax.text(
-            coord[0],
-            coord[1] - sigma - 1,
-            str(idx),
-            color="white",
-            fontsize=8,
-            ha="center",
-        )
+    # for idx, coord in enumerate(filtered_reordered_coords):
+    #     circ = plt.Circle(coord, sigma, color="lightblue", fill=False, linewidth=0.5)
+    #     ax.add_patch(circ)
+    #     # Place text just above the circle
+    #     ax.text(
+    #         coord[0],
+    #         coord[1] - sigma - 1,
+    #         str(idx),
+    #         color="white",
+    #         fontsize=8,
+    #         ha="center",
+    #     )
 
     # fig, ax = plt.subplots()
     # title = "50ms, Ref"
