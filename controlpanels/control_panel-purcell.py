@@ -1261,7 +1261,7 @@ if __name__ == "__main__":
     print(f"Green Laser Coordinates: {green_coords_list[0]}")
     print(f"Red Laser Coordinates: {red_coords_list[0]}")
     # pixel_coords_list = [
-    #     [122.841, 120.598],
+    #     # [122.841, 120.598],
     #     [35.732, 32.285],
     #     [130.066, 231.679],
     #     [233.907, 34.235],
@@ -1269,13 +1269,13 @@ if __name__ == "__main__":
     # green_coords_list = [
     #     # [107.49, 107.522],
     #     [118.0, 118.0],
-    #     [108.0, 95.0],
-    #     [95.0, 119.0],
+    #     [108.0, 94.0],
+    #     [95.0, 118.0],
     # ]
 
     # red_coords_list = [
     #     [80.0, 80.0],
-    #     [72.0, 62.0],
+    #     [72.0, 61.0],
     #     [62.0, 79.0],
     # ]
 
@@ -1410,7 +1410,6 @@ if __name__ == "__main__":
         #     # force_laser_key=VirtualLaserKey.RED_IMAGING,
         #     green_coords_list,
         #     force_laser_key=VirtualLaserKey.IMAGING,
-        #     num_reps=100,
         # )
 
         # do_compensate_for_drift(nv_sig)
@@ -1420,7 +1419,7 @@ if __name__ == "__main__":
         # for nv in nv_list:
         #     do_scanning_image_sample_zoom(nv)
 
-        # do_scanning_image_sample(nv_sig)
+        do_scanning_image_sample(nv_sig)
         # do_scanning_image_sample_zoom(nv_sig)
         # do_scanning_image_full_roi(nv_sig)
 

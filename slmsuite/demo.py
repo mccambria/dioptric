@@ -136,8 +136,14 @@ import matplotlib.pyplot as plt
 import numpy as np
 
 # Given pixel coordinates and corresponding red coordinates
-pixel_coords_list = np.array([[14.873, 42.732], [131.422, 223.581], [208.989, 23.145]])
-red_coords_list = np.array([[80.0, 80.0], [72.0, 62.0], [62.0, 79.0]])
+pixel_coords_list = np.array([[21.107, 34.882], [138.355, 224.107], [214.686, 14.616]])
+red_coords_list = np.array(
+    [
+        [80.0, 80.0],
+        [72.0, 61.0],
+        [62.0, 79.0],
+    ]
+)
 
 ## greeen
 # pixel_coords_list = np.array([[21.655, 42.728], [131.366, 235.262], [221.092, 13.997]])
