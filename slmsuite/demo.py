@@ -136,20 +136,12 @@ import matplotlib.pyplot as plt
 import numpy as np
 
 # Given pixel coordinates and corresponding red coordinates
-pixel_coords_list = np.array(
-    [
-        [118.195, 118.339],
-        [109.954, 96.223],
-        [94.889, 117.974],
-    ]
-)
-red_coords_list = np.array(
-    [
-        [78.54, 80.126],
-        [71.762, 60.537],
-        [61.855, 73.367],
-    ]
-)
+pixel_coords_list = np.array([[14.873, 42.732], [131.422, 223.581], [208.989, 23.145]])
+red_coords_list = np.array([[80.0, 80.0], [72.0, 62.0], [62.0, 79.0]])
+
+## greeen
+# pixel_coords_list = np.array([[21.655, 42.728], [131.366, 235.262], [221.092, 13.997]])
+# red_coords_list = np.array([[118.0, 118.0], [108.0, 95.0], [95.0, 119.0]])
 
 # For two points, a simpler method is necessary, but let's try using cv2.estimateAffinePartial2D
 if len(pixel_coords_list) >= 3:
@@ -161,10 +153,9 @@ if len(pixel_coords_list) >= 3:
     # New pixel coordinate for which we want to find the corresponding red coordinate
     new_pixel_coord = np.array(
         [
-            [107.914, 106.676],
-            [120.285, 113.627],
-            [96.412, 117.933],
-            [107.67, 93.008],
+            [35.732, 32.285],
+            [130.066, 231.679],
+            [233.907, 34.235],
         ],
         dtype=np.float32,
     )

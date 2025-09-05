@@ -77,16 +77,13 @@ def do_scanning_image_sample(nv_sig):
     image_sample.scanning(nv_sig, scan_range, scan_range, num_steps)
 
 
-def do_red_calibration_image(nv_sig, coords_list, force_laser_key=None):
+def do_red_calibration_image(nv_sig, coords_list, force_laser_key=None, num_reps=1):
     arr = np.asarray(coords_list, dtype=float)
     x_freqs_MHz = arr[:, 0].tolist()
     y_freqs_MHz = arr[:, 1].tolist()
     # force_laser_key = VirtualLaserKey.IMAGING
     image_sample.red_widefield_calibration(
-        nv_sig,
-        x_freqs_MHz,
-        y_freqs_MHz,
-        force_laser_key,
+        nv_sig, x_freqs_MHz, y_freqs_MHz, force_laser_key, num_reps=1
     )
 
 
@@ -117,7 +114,7 @@ def do_image_single_nv(nv_sig):
 def do_charge_state_histograms(nv_list):
     # 50 ms
     num_reps = 200
-    num_runs = 10
+    num_runs = 6
 
     # 100 ms
     # num_reps = 100
@@ -1027,7 +1024,7 @@ def do_opx_constant_ac():
     opx.constant_ac(
         [],  # Digital channels
         [7],  # Analog channels
-        [0.24],  # Analog voltages
+        [0.34],  # Analog voltages
         [0],  # Analog frequencies
     )
     # opx.constant_ac([4])  # Just laser
@@ -1061,7 +1058,7 @@ def do_opx_constant_ac():
     # opx.constant_ac(
     #     [4],  # Digital channels
     #     [3, 4],  # Analog channels
-    #     [0.15, 0.15],  # Analog voltages
+    #     [0.14, 0.14],  # Analog voltages
     #     [107.0, 107.0],  # Analog frequencies
     # )
     # Green + red
@@ -1069,21 +1066,8 @@ def do_opx_constant_ac():
     #     [4, 1],  # Digital channels
     #     [3, 4, 2, 6],  # Analog channels
     #     [0.11, 0.11, 0.15, 0.15],  # Analog voltages;
-    #     [99.118, 111.925, 65.162, 75.450],
+    #     [107.0, 107.0, 72.0, 72.0],
     # )
-
-    # green_coords_list = [
-    #     [107.85, 106.702],
-    #     [111.572, 112.408],
-    #     [107.429, 97.149],
-    #     [99.118, 111.925],
-    # ]
-    # red_coords_list = [
-    #     [72.462, 71.596],
-    #     [75.262, 76.396],
-    #     [72.462, 63.80],
-    #     [ 65.162, 75.450],
-    # ]
     # red
     # opx.constant_ac(
     #     [1],  # Digital channels
@@ -1092,13 +1076,13 @@ def do_opx_constant_ac():
     #     [72.0, 72.0],  # Analog frequencies
     # )
 
-    # Green + yellow
-    opx.constant_ac(
-        [4],  # Digital channels
-        [3, 4, 7],  # Analog channels
-        [0.15, 0.15, 0.30],  # Analog voltages
-        [107, 107, 0],  # Analog frequencies
-    )
+    # # Green + yellow
+    # opx.constant_ac(
+    #     [4],  # Digital channels
+    #     [3, 4, 7],  # Analog channels
+    #     [0.15, 0.15, 0.30],  # Analog voltages
+    #     [107, 107, 0],  # Analog frequencies
+    # )
     # Red + green + Yellow
     # opx.constant_ac(
     #     [4, 1],  # Digital channels1
@@ -1233,17 +1217,17 @@ if __name__ == "__main__":
     sample_name = "cannon"
     # magnet_angle = 90
     date_str = "2025_08_31"
-    sample_coords = [2.0, 0.0]
-    z_coord = 2.7
+    sample_coords = [2.1, 1.7]
+    z_coord = 1.6
 
     # Load NV pixel coordinates1
     pixel_coords_list = load_nv_coords(
         # file_path="slmsuite/nv_blob_detection/nv_blob_rubin_shallow_154nvs_reordered.npz",
         # file_path="slmsuite/nv_blob_detection/nv_blob_rubin_shallow_75nvs_reordered.npz",
-        file_path="slmsuite/nv_blob_detection/nv_blob_rubin_shallow_516nvs_reordered.npz",
+        file_path="slmsuite/nv_blob_detection/nv_blob_cannon_shallow_269nvs_reordered.npz",
     ).tolist()
     # pixel_coords_list = [
-    #     [123.036, 128.873],
+    #     [123.658, 124.584],
     #     [85.416, 82.499],
     #     [137.093, 210.716],
     #     [194.376, 74.699],
@@ -1276,27 +1260,23 @@ if __name__ == "__main__":
     print(f"Reference NV:{pixel_coords_list[0]}")
     print(f"Green Laser Coordinates: {green_coords_list[0]}")
     print(f"Red Laser Coordinates: {red_coords_list[0]}")
-    pixel_coords_list = [
-        [121.243, 124.562],
-        # [123.036, 128.873],
-        # [8.733, 79.745],
-        # [213.126, 21.113],
-        # [138.133, 247.156],
-    ]
-    green_coords_list = [
-        [107.735, 107.675],
-        #     # [107.914, 106.676],
-        #     # [120.285, 113.627],
-        #     # [96.412, 117.933],
-        #     # [107.67, 93.008],
-    ]
+    # pixel_coords_list = [
+    #     [122.841, 120.598],
+    #     [35.732, 32.285],
+    #     [130.066, 231.679],
+    #     [233.907, 34.235],
+    # ]
+    # green_coords_list = [
+    #     # [107.49, 107.522],
+    #     [118.0, 118.0],
+    #     [108.0, 95.0],
+    #     [95.0, 119.0],
+    # ]
 
     # red_coords_list = [
-    #     [72.462, 71.596],
-    #     # [72.462, 71.596],
-    #     # [75.262, 76.396],
-    #     # [72.462, 63.80],
-    #     # [65.162, 75.450],
+    #     [80.0, 80.0],
+    #     [72.0, 62.0],
+    #     [62.0, 79.0],
     # ]
 
     num_nvs = len(pixel_coords_list)
@@ -1383,14 +1363,14 @@ if __name__ == "__main__":
         nv_list.append(nv_sig)
     # print(nv_sig)
     # Additional properties for the representative NV
-    nv_list[0].representative = True
+    nv_list[1].representative = True
     # nv_list[1].representative = True
     repr_nv_sig = widefield.get_repr_nv_sig(nv_list)
     nv_sig = widefield.get_repr_nv_sig(nv_list)
     # print(f"Created NV: {nv_sig.name}, Coords: {nv_sig.coords}")
     # nv_sig.expected_counts = 900
     # nv_sig.expected_counts = 1600
-    # nv_sig.expected_counts = 2100
+    # nv_sig.expected_counts = 2200
 
     # nv_list = nv_list[::-1]  # flipping the order of NVs
     # nv_list = nv_list[:2]
@@ -1430,6 +1410,7 @@ if __name__ == "__main__":
         #     # force_laser_key=VirtualLaserKey.RED_IMAGING,
         #     green_coords_list,
         #     force_laser_key=VirtualLaserKey.IMAGING,
+        #     num_reps=100,
         # )
 
         # do_compensate_for_drift(nv_sig)
@@ -1472,7 +1453,7 @@ if __name__ == "__main__":
         #         print(f"Scanning SAMPLE: {sample_coord}, estimated Z: {z:.3f}")
         #         do_scanning_image_sample(nv_sig)
 
-        do_opx_constant_ac()
+        # do_opx_constant_ac()
         # do_opx_square_wave()
 
         # do_optimize_pixel(nv_sig)
