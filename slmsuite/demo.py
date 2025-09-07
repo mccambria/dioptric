@@ -136,7 +136,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 
 # Given pixel coordinates and corresponding red coordinates
-pixel_coords_list = np.array([[21.107, 34.882], [138.355, 224.107], [214.686, 14.616]])
+pixel_coords_list = np.array([[21.25, 34.981], [138.479, 224.058], [214.854, 14.711]])
 red_coords_list = np.array(
     [
         [80.0, 80.0],
@@ -146,8 +146,14 @@ red_coords_list = np.array(
 )
 
 ## greeen
-# pixel_coords_list = np.array([[21.655, 42.728], [131.366, 235.262], [221.092, 13.997]])
-# red_coords_list = np.array([[118.0, 118.0], [108.0, 95.0], [95.0, 119.0]])
+# pixel_coords_list = np.array([[27.784, 31.481], [138.008, 235.02], [228.148, 13.243]])
+# red_coords_list = np.array(
+#     [
+#         [118.0, 118.5],
+#         [108.0, 94.0],
+#         [95.0, 118.0],
+#     ]
+# )
 
 # For two points, a simpler method is necessary, but let's try using cv2.estimateAffinePartial2D
 if len(pixel_coords_list) >= 3:

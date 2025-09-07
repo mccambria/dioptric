@@ -1046,7 +1046,7 @@ def do_opx_constant_ac():
     #     opx.halt()
     # opx.constant_ac(
     #     [1],  # Digital channels
-    #     # [2, 6],  # Analog channels
+    #     0# [2, 6],  # Analog channels
     #     # [0.19, 0.19],  # Analog voltages
     #     # [
     #     #     75,
@@ -1218,7 +1218,7 @@ if __name__ == "__main__":
     # magnet_angle = 90
     date_str = "2025_08_31"
     sample_coords = [2.1, 1.7]
-    z_coord = 1.6
+    z_coord = 1.7
 
     # Load NV pixel coordinates1
     pixel_coords_list = load_nv_coords(
@@ -1227,7 +1227,7 @@ if __name__ == "__main__":
         file_path="slmsuite/nv_blob_detection/nv_blob_cannon_shallow_269nvs_reordered.npz",
     ).tolist()
     # pixel_coords_list = [
-    #     [123.658, 124.584],
+    #     [124.935, 128.665],
     #     [85.416, 82.499],
     #     [137.093, 210.716],
     #     [194.376, 74.699],
@@ -1260,24 +1260,25 @@ if __name__ == "__main__":
     print(f"Reference NV:{pixel_coords_list[0]}")
     print(f"Green Laser Coordinates: {green_coords_list[0]}")
     print(f"Red Laser Coordinates: {red_coords_list[0]}")
-    # pixel_coords_list = [
-    #     # [122.841, 120.598],
-    #     [35.732, 32.285],
-    #     [130.066, 231.679],
-    #     [233.907, 34.235],
-    # ]
-    # green_coords_list = [
-    #     # [107.49, 107.522],
-    #     [118.0, 118.0],
-    #     [108.0, 94.0],
-    #     [95.0, 118.0],
-    # ]
+    pixel_coords_list = [
+        [123.658, 124.584],
+        [35.732, 32.285],
+        [130.066, 231.679],
+        [233.907, 34.235],
+    ]
+    green_coords_list = [
+        [108.259, 106.711],
+        [118.0, 118.5],
+        [108.0, 94.0],
+        [95.0, 118.0],
+    ]
 
-    # red_coords_list = [
-    #     [80.0, 80.0],
-    #     [72.0, 61.0],
-    #     [62.0, 79.0],
-    # ]
+    red_coords_list = [
+        [72.0, 72.0],
+        [80.0, 80.0],
+        [72.0, 61.0],
+        [62.0, 79.0],
+    ]
 
     num_nvs = len(pixel_coords_list)
     threshold_list = [None] * num_nvs
@@ -1363,7 +1364,7 @@ if __name__ == "__main__":
         nv_list.append(nv_sig)
     # print(nv_sig)
     # Additional properties for the representative NV
-    nv_list[1].representative = True
+    nv_list[0].representative = True
     # nv_list[1].representative = True
     repr_nv_sig = widefield.get_repr_nv_sig(nv_list)
     nv_sig = widefield.get_repr_nv_sig(nv_list)
@@ -1395,22 +1396,19 @@ if __name__ == "__main__":
         # piezo_voltage_to_pixel_calibration()
 
         ### warning: this direclty iamge the laser spo, boftfor starign this makesure the red laser so set to 1mw on GUI
-        ### TODO[WARNING]: DIRECT RED LASER IMAGING (NO SCAN)
-        ### Set RED ≈ 1 mW • Exposure ≤ 1ms • Low em gain ≤ 10 / ND filter if needed
+        #### ⚠️ Caution: direct laser imaging, check power
+        ### ⚠️ CAUTION ⚠️Set RED ≈ 0.1 mW • Exposure ≤ 0.1ms • Low em gain ≤ 10 / ND filter if needed
         # do_red_calibration_image(
         #     nv_sig,
         #     red_coords_list,
         #     force_laser_key=VirtualLaserKey.RED_IMAGING,
-        #     # green_coords_list,
-        #     # force_laser_key=VirtualLaserKey.IMAGING,
         # )
-        # do_red_calibration_image(
-        #     nv_sig,
-        #     # red_coords_list,
-        #     # force_laser_key=VirtualLaserKey.RED_IMAGING,
-        #     green_coords_list,
-        #     force_laser_key=VirtualLaserKey.IMAGING,
-        # )
+        do_red_calibration_image(
+            nv_sig,
+            green_coords_list,
+            force_laser_key=VirtualLaserKey.IMAGING,
+            num_reps=200,
+        )
 
         # do_compensate_for_drift(nv_sig)
         # do_widefield_image_sample(nv_sig, 50)
@@ -1419,7 +1417,7 @@ if __name__ == "__main__":
         # for nv in nv_list:
         #     do_scanning_image_sample_zoom(nv)
 
-        do_scanning_image_sample(nv_sig)
+        # do_scanning_image_sample(nv_sig)
         # do_scanning_image_sample_zoom(nv_sig)
         # do_scanning_image_full_roi(nv_sig)
 

@@ -400,18 +400,18 @@ if __name__ == "__main__":
     # data = dm.get_raw_data(file_id=1782616297820, load_npz=True)
     # data = dm.get_raw_data(file_id=1806410973406, load_npz=True)
     data = dm.get_raw_data(
-        file_stem="2025_09_04-22_05_20-cannon-nv0_2025_08_31",
+        file_stem="2025_09_07-16_01_28-combined_image_array",
         load_npz=True,
     )
-    img_array = np.array(data["ref_img_array"])
-    # img_array = data["img_array"]
+    # img_array = np.array(data["ref_img_array"])
+    img_array = data["img_array"]
 
     # sys.exit()
     nv_coordinates, spot_weights = load_nv_coords(
         # file_path="slmsuite/nv_blob_detection/nv_blob_shallow_rubin_140nvs.npz"
         # file_path="slmsuite/nv_blob_detection/nv_blob_shallow_rubin_306nvs.npz"
         # file_path="slmsuite/nv_blob_detection/nv_blob_shallow_rubin_81nvs.npz"
-        file_path="slmsuite/nv_blob_detection/nv_blob_shallow_rubin_264nvs.npz"
+        file_path="slmsuite/nv_blob_detection/nv_blob_298nvs.npz"
         # file_path="slmsuite/nv_blob_detection/nv_blob_shallow_rubin_75nvs_reordered_.npz"
         # file_path="slmsuite/nv_blob_detection/nv_blob_rubin_shallow_303nvs_reordered.npz"
         # file_path="slmsuite/nv_blob_detection/nv_blob_rubin_shallow_154nvs_reordered.npz"
@@ -691,7 +691,7 @@ if __name__ == "__main__":
     # save_results(
     #     filtered_reordered_coords,
     #     filtered_reordered_spot_weights,
-    #     filename="slmsuite/nv_blob_detection/nv_blob_cannon_shallow_211nvs_reordered.npz",
+    #     filename="slmsuite/nv_blob_detection/nv_blob_cannon_shallow_224nvs_reordered.npz",
     # )
     # save_results(
     #     nv_coordinates,
