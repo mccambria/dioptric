@@ -1260,25 +1260,25 @@ if __name__ == "__main__":
     print(f"Reference NV:{pixel_coords_list[0]}")
     print(f"Green Laser Coordinates: {green_coords_list[0]}")
     print(f"Red Laser Coordinates: {red_coords_list[0]}")
-    pixel_coords_list = [
-        [123.658, 124.584],
-        [35.732, 32.285],
-        [130.066, 231.679],
-        [233.907, 34.235],
-    ]
-    green_coords_list = [
-        [108.259, 106.711],
-        [118.0, 118.5],
-        [108.0, 94.0],
-        [95.0, 118.0],
-    ]
+    # pixel_coords_list = [
+    #     [123.658, 124.584],
+    #     [35.732, 32.285],
+    #     [130.066, 231.679],
+    #     [233.907, 34.235],
+    # ]
+    # green_coords_list = [
+    #     [108.259, 106.711],
+    #     [118.0, 118.5],
+    #     [108.0, 94.0],
+    #     [95.0, 118.0],
+    # ]
 
-    red_coords_list = [
-        [72.0, 72.0],
-        [80.0, 80.0],
-        [72.0, 61.0],
-        [62.0, 79.0],
-    ]
+    # red_coords_list = [
+    #     [72.0, 72.0],
+    #     [80.0, 80.0],
+    #     [72.0, 61.0],
+    #     [62.0, 79.0],
+    # ]
 
     num_nvs = len(pixel_coords_list)
     threshold_list = [None] * num_nvs
@@ -1353,8 +1353,8 @@ if __name__ == "__main__":
             coords=coords,
             threshold=threshold_list[ind],
             pulse_durations={
-                VirtualLaserKey.SCC: scc_duration_list[ind],
-                VirtualLaserKey.CHARGE_POL: pol_duration_list[ind],
+                # VirtualLaserKey.SCC: scc_duration_list[ind],
+                # VirtualLaserKey.CHARGE_POL: pol_duration_list[ind],
             },
             pulse_amps={
                 # VirtualLaserKey.SCC: scc_amp_list[ind],
@@ -1397,20 +1397,20 @@ if __name__ == "__main__":
 
         ### warning: this direclty iamge the laser spo, boftfor starign this makesure the red laser so set to 1mw on GUI
         #### ⚠️ Caution: direct laser imaging, check power
-        ### ⚠️ CAUTION ⚠️Set RED ≈ 0.1 mW • Exposure ≤ 0.1ms • Low em gain ≤ 10 / ND filter if needed
+        ### ⚠️ CAUTION Set RED ≈ 0.1 mW • Exposure ≤ 0.1ms • Low em gain ≤ 10 / ND filter if needed
         # do_red_calibration_image(
         #     nv_sig,
         #     red_coords_list,
         #     force_laser_key=VirtualLaserKey.RED_IMAGING,
         # )
-        do_red_calibration_image(
-            nv_sig,
-            green_coords_list,
-            force_laser_key=VirtualLaserKey.IMAGING,
-            num_reps=200,
-        )
+        # do_red_calibration_image(
+        #     nv_sig,
+        #     green_coords_list,
+        #     force_laser_key=VirtualLaserKey.IMAGING,
+        #     num_reps=200,
+        # )
 
-        # do_compensate_for_drift(nv_sig)
+        do_compensate_for_drift(nv_sig)
         # do_widefield_image_sample(nv_sig, 50)
         # do_widefield_image_sample(nv_sig, 200)
 
@@ -1464,7 +1464,7 @@ if __name__ == "__main__":
         # coords_key = red_laser
         # do_optimize_loop(np.array(nv_list), np.array(coords_key))
 
-        # do_charge_state_histograms(nv_list)
+        do_charge_state_histograms(nv_list)
         # do_charge_state_conditional_init(nv_list)
         # do_charge_state_histograms_images(nv_list, vary_pol_laser=True)
 

@@ -400,18 +400,18 @@ if __name__ == "__main__":
     # data = dm.get_raw_data(file_id=1782616297820, load_npz=True)
     # data = dm.get_raw_data(file_id=1806410973406, load_npz=True)
     data = dm.get_raw_data(
-        file_stem="2025_09_07-16_01_28-combined_image_array",
+        file_stem="2025_09_07-17_07_09-cannon-nv0_2025_08_31",
         load_npz=True,
     )
-    # img_array = np.array(data["ref_img_array"])
-    img_array = data["img_array"]
+    img_array = np.array(data["ref_img_array"])
+    # img_array = data["img_array"]
 
     # sys.exit()
     nv_coordinates, spot_weights = load_nv_coords(
         # file_path="slmsuite/nv_blob_detection/nv_blob_shallow_rubin_140nvs.npz"
         # file_path="slmsuite/nv_blob_detection/nv_blob_shallow_rubin_306nvs.npz"
         # file_path="slmsuite/nv_blob_detection/nv_blob_shallow_rubin_81nvs.npz"
-        file_path="slmsuite/nv_blob_detection/nv_blob_298nvs.npz"
+        file_path="slmsuite/nv_blob_detection/nv_blob_211nvs.npz"
         # file_path="slmsuite/nv_blob_detection/nv_blob_shallow_rubin_75nvs_reordered_.npz"
         # file_path="slmsuite/nv_blob_detection/nv_blob_rubin_shallow_303nvs_reordered.npz"
         # file_path="slmsuite/nv_blob_detection/nv_blob_rubin_shallow_154nvs_reordered.npz"
@@ -479,19 +479,19 @@ if __name__ == "__main__":
     # calcualted_spot_weights = linear_weights(filtered_reordered_counts, alpha=0.3)
     # filtered_reordered_spot_weights = calcualted_spot_weights
     # Manually remove NVs with specified indices
-    # indices_to_remove = []
-    # filtered_reordered_coords_0 = [
-    #     coord
-    #     for i, coord in enumerate(filtered_reordered_coords)
-    #     if i not in indices_to_remove
-    # ]
-    # filtered_reordered_spot_weights_0 = [
-    #     count
-    #     for i, count in enumerate(filtered_reordered_spot_weights)
-    #     if i not in indices_to_remove
-    # ]
-    # filtered_reordered_coords = filtered_reordered_coords_0
-    # filtered_reordered_spot_weights = filtered_reordered_spot_weights_0
+    indices_to_remove = []
+    filtered_reordered_coords_0 = [
+        coord
+        for i, coord in enumerate(filtered_reordered_coords)
+        if i not in indices_to_remove
+    ]
+    filtered_reordered_spot_weights_0 = [
+        count
+        for i, count in enumerate(filtered_reordered_spot_weights)
+        if i not in indices_to_remove
+    ]
+    filtered_reordered_coords = filtered_reordered_coords_0
+    filtered_reordered_spot_weights = filtered_reordered_spot_weights_0
 
     # print(filtered_reordered_coords)
     # print("Filter:", filtered_reordered_counts)
@@ -688,11 +688,11 @@ if __name__ == "__main__":
 
     # Save the filtered results
 
-    # save_results(
-    #     filtered_reordered_coords,
-    #     filtered_reordered_spot_weights,
-    #     filename="slmsuite/nv_blob_detection/nv_blob_cannon_shallow_224nvs_reordered.npz",
-    # )
+    save_results(
+        filtered_reordered_coords,
+        filtered_reordered_spot_weights,
+        filename="slmsuite/nv_blob_detection/nv_blob_cannon_shallow_209nvs_reordered.npz",
+    )
     # save_results(
     #     nv_coordinates,
     #     filtered_reordered_counts,
