@@ -408,7 +408,7 @@ if __name__ == "__main__":
 
     # Apply the blob detection and Gaussian fitting
     sigma = 2.0
-    lower_threshold = 0.11
+    lower_threshold = 0.08
     upper_threshold = 50
     smoothing_sigma = 0.0
 
@@ -477,7 +477,7 @@ if __name__ == "__main__":
         filtered_nv_coords,
         filtered_counts,
         path="slmsuite/nv_blob_detection",
-        filename="nv_blob_211nvs.npz",
+        filename="nv_blob_228nvs.npz",
     )
 
     # full ROI -- multiple images save in the same file

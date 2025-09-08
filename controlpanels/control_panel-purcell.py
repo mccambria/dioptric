@@ -172,7 +172,7 @@ def do_optimize_readout_amp(nv_list):
     # num_steps = 18
     # num_reps = 150
     # num_runs = 5
-    num_reps = 12
+    num_reps = 15
     # num_runs = 300
     num_runs = 200
     min_amp = 0.8
@@ -1224,7 +1224,7 @@ if __name__ == "__main__":
     pixel_coords_list = load_nv_coords(
         # file_path="slmsuite/nv_blob_detection/nv_blob_rubin_shallow_154nvs_reordered.npz",
         # file_path="slmsuite/nv_blob_detection/nv_blob_rubin_shallow_75nvs_reordered.npz",
-        file_path="slmsuite/nv_blob_detection/nv_blob_cannon_shallow_269nvs_reordered.npz",
+        file_path="slmsuite/nv_blob_detection/nv_blob_cannon_shallow_220nvs_reordered.npz",
     ).tolist()
     # pixel_coords_list = [
     #     [124.935, 128.665],
@@ -1371,7 +1371,7 @@ if __name__ == "__main__":
     # print(f"Created NV: {nv_sig.name}, Coords: {nv_sig.coords}")
     # nv_sig.expected_counts = 900
     # nv_sig.expected_counts = 1600
-    # nv_sig.expected_counts = 2200
+    nv_sig.expected_counts = 2100
 
     # nv_list = nv_list[::-1]  # flipping the order of NVs
     # nv_list = nv_list[:2]
@@ -1396,7 +1396,7 @@ if __name__ == "__main__":
         # piezo_voltage_to_pixel_calibration()
 
         ### warning: this direclty iamge the laser spo, boftfor starign this makesure the red laser so set to 1mw on GUI
-        #### ⚠️ Caution: direct laser imaging, check power
+        ### ⚠️ CAUTION: direct laser imaging, check power
         ### ⚠️ CAUTION Set RED ≈ 0.1 mW • Exposure ≤ 0.1ms • Low em gain ≤ 10 / ND filter if needed
         # do_red_calibration_image(
         #     nv_sig,
@@ -1464,13 +1464,13 @@ if __name__ == "__main__":
         # coords_key = red_laser
         # do_optimize_loop(np.array(nv_list), np.array(coords_key))
 
-        do_charge_state_histograms(nv_list)
+        # do_charge_state_histograms(nv_list)
         # do_charge_state_conditional_init(nv_list)
         # do_charge_state_histograms_images(nv_list, vary_pol_laser=True)
 
         # do_optimize_pol_amp(nv_list)
         # do_optimize_pol_duration(nv_list)
-        # do_optimize_readout_amp(nv_list)
+        do_optimize_readout_amp(nv_list)
         # do_optimize_readout_duration(nv_list)
         # optimize_readout_amp_and_duration(nv_list)
         # do_optimize_spin_pol_amp(nv_list)

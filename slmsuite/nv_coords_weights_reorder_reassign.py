@@ -400,7 +400,7 @@ if __name__ == "__main__":
     # data = dm.get_raw_data(file_id=1782616297820, load_npz=True)
     # data = dm.get_raw_data(file_id=1806410973406, load_npz=True)
     data = dm.get_raw_data(
-        file_stem="2025_09_07-17_07_09-cannon-nv0_2025_08_31",
+        file_stem="2025_09_07-17_27_17-cannon-nv0_2025_08_31",
         load_npz=True,
     )
     img_array = np.array(data["ref_img_array"])
@@ -411,7 +411,7 @@ if __name__ == "__main__":
         # file_path="slmsuite/nv_blob_detection/nv_blob_shallow_rubin_140nvs.npz"
         # file_path="slmsuite/nv_blob_detection/nv_blob_shallow_rubin_306nvs.npz"
         # file_path="slmsuite/nv_blob_detection/nv_blob_shallow_rubin_81nvs.npz"
-        file_path="slmsuite/nv_blob_detection/nv_blob_211nvs.npz"
+        file_path="slmsuite/nv_blob_detection/nv_blob_228nvs.npz"
         # file_path="slmsuite/nv_blob_detection/nv_blob_shallow_rubin_75nvs_reordered_.npz"
         # file_path="slmsuite/nv_blob_detection/nv_blob_rubin_shallow_303nvs_reordered.npz"
         # file_path="slmsuite/nv_blob_detection/nv_blob_rubin_shallow_154nvs_reordered.npz"
@@ -459,7 +459,7 @@ if __name__ == "__main__":
     reference_nv = [123.658, 124.584]
     filtered_reordered_coords, filtered_reordered_spot_weights, include_indices = (
         filter_and_reorder_nv_coords(
-            nv_coordinates, spot_weights, reference_nv, min_distance=8
+            nv_coordinates, spot_weights, reference_nv, min_distance=6
         )
     )
     # filtered_reordered_coords = [
@@ -479,7 +479,7 @@ if __name__ == "__main__":
     # calcualted_spot_weights = linear_weights(filtered_reordered_counts, alpha=0.3)
     # filtered_reordered_spot_weights = calcualted_spot_weights
     # Manually remove NVs with specified indices
-    indices_to_remove = []
+    indices_to_remove = [1, 4]
     filtered_reordered_coords_0 = [
         coord
         for i, coord in enumerate(filtered_reordered_coords)
@@ -691,7 +691,7 @@ if __name__ == "__main__":
     save_results(
         filtered_reordered_coords,
         filtered_reordered_spot_weights,
-        filename="slmsuite/nv_blob_detection/nv_blob_cannon_shallow_209nvs_reordered.npz",
+        filename="slmsuite/nv_blob_detection/nv_blob_cannon_shallow_220nvs_reordered.npz",
     )
     # save_results(
     #     nv_coordinates,
