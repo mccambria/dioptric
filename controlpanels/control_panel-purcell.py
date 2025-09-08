@@ -1371,7 +1371,7 @@ if __name__ == "__main__":
     # print(f"Created NV: {nv_sig.name}, Coords: {nv_sig.coords}")
     # nv_sig.expected_counts = 900
     # nv_sig.expected_counts = 1600
-    nv_sig.expected_counts = 2100
+    # nv_sig.expected_counts = 2100
 
     # nv_list = nv_list[::-1]  # flipping the order of NVs
     # nv_list = nv_list[:2]
@@ -1470,7 +1470,7 @@ if __name__ == "__main__":
 
         # do_optimize_pol_amp(nv_list)
         # do_optimize_pol_duration(nv_list)
-        do_optimize_readout_amp(nv_list)
+        # do_optimize_readout_amp(nv_list)
         # do_optimize_readout_duration(nv_list)
         # optimize_readout_amp_and_duration(nv_list)
         # do_optimize_spin_pol_amp(nv_list)
