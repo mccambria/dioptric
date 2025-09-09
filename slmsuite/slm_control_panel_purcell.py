@@ -315,7 +315,7 @@ def load_nv_coords(
     # file_path="slmsuite/nv_blob_detection/nv_blob_rubin_shallow_154nvs_reordered.npz",
     # file_path="slmsuite/nv_blob_detection/nv_blob_rubin_shallow_81nvs_reordered.npz",
     # file_path="slmsuite/nv_blob_detection/nv_blob_rubin_shallow_75nvs_reordered.npz",
-    file_path="slmsuite/nv_blob_detection/nv_blob_cannon_shallow_220nvs_reordered.npz",
+    file_path="slmsuite/nv_blob_detection/nv_blob_405nvs_reordered.npz",
     # file_path="slmsuite/nv_blob_detection/nv_blob_rubin_shallow_40nvs_reordered.npz",
     # file_path="slmsuite/nv_blob_detection/nv_blob_rubin_shallow_35nvs_reordered.npz",
     # file_path="slmsuite/nv_blob_detection/nv_blob_shallow_148nvs_reordered_updated.npz",
@@ -416,9 +416,9 @@ try:
     # test_wavefront_calibration()
     # wavefront_calibration()
     # load_wavefront_calibration()
-    compute_and_write_nvs_phase()
+    # compute_and_write_nvs_phase()
     # write_pre_computed_nvs_phase()
-    # calibration_triangle()
+    calibration_triangle()
     # circles()
     # write_pre_computed_circles()
     # smiley()

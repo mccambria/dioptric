@@ -89,8 +89,8 @@ def do_red_calibration_image(nv_sig, coords_list, force_laser_key=None, num_reps
 
 def do_scanning_image_full_roi(nv_sig):
     total_range = 30
-    scan_range = 15
-    num_steps = 15
+    scan_range = 10
+    num_steps = 10
     image_sample.scanning_full_roi(nv_sig, total_range, scan_range, num_steps)
 
 
@@ -1077,12 +1077,12 @@ def do_opx_constant_ac():
     # )
 
     # # Green + yellow
-    # opx.constant_ac(
-    #     [4],  # Digital channels
-    #     [3, 4, 7],  # Analog channels
-    #     [0.15, 0.15, 0.30],  # Analog voltages
-    #     [107, 107, 0],  # Analog frequencies
-    # )
+    opx.constant_ac(
+        [4],  # Digital channels
+        [3, 4, 7],  # Analog channels
+        [0.15, 0.15, 0.30],  # Analog voltages
+        [107, 107, 0],  # Analog frequencies
+    )
     # Red + green + Yellow
     # opx.constant_ac(
     #     [4, 1],  # Digital channels1
@@ -1214,17 +1214,17 @@ if __name__ == "__main__":
     green_coords_key = f"coords-{green_laser}"
     red_coords_key = f"coords-{red_laser}"
     pixel_coords_key = "pixel_coords"
-    sample_name = "cannon"
+    sample_name = "runin"
     # magnet_angle = 90
-    date_str = "2025_08_31"
-    sample_coords = [2.1, 1.7]
-    z_coord = 1.7
+    date_str = "2025_09_08"
+    sample_coords = [0.8, 0.2]
+    z_coord = 0.1
 
     # Load NV pixel coordinates1
     pixel_coords_list = load_nv_coords(
         # file_path="slmsuite/nv_blob_detection/nv_blob_rubin_shallow_154nvs_reordered.npz",
         # file_path="slmsuite/nv_blob_detection/nv_blob_rubin_shallow_75nvs_reordered.npz",
-        file_path="slmsuite/nv_blob_detection/nv_blob_cannon_shallow_220nvs_reordered.npz",
+        file_path="slmsuite/nv_blob_detection/nv_blob_405nvs_reordered.npz",
     ).tolist()
     # pixel_coords_list = [
     #     [124.935, 128.665],
@@ -1261,23 +1261,23 @@ if __name__ == "__main__":
     print(f"Green Laser Coordinates: {green_coords_list[0]}")
     print(f"Red Laser Coordinates: {red_coords_list[0]}")
     # pixel_coords_list = [
-    #     [123.658, 124.584],
-    #     [35.732, 32.285],
-    #     [130.066, 231.679],
-    #     [233.907, 34.235],
+    #     [124.195, 127.341],
+    #     [10.325, 241.185],
+    #     [239.878, 215.412],
+    #     [119.484, 13.272],
     # ]
     # green_coords_list = [
-    #     [108.259, 106.711],
-    #     [118.0, 118.5],
-    #     [108.0, 94.0],
-    #     [95.0, 118.0],
+    #     [108.283, 107.01],
+    #     [122.623, 95.375],
+    #     [96.357, 95.875],
+    #     [107.412, 120.082],
     # ]
 
     # red_coords_list = [
-    #     [72.0, 72.0],
-    #     [80.0, 80.0],
-    #     [72.0, 61.0],
-    #     [62.0, 79.0],
+    #     [71.947, 70.607],
+    #     [83.987, 61.815],
+    #     [62.642, 60.908],
+    #     [70.738, 81.106],
     # ]
 
     num_nvs = len(pixel_coords_list)
