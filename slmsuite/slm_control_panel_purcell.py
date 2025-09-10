@@ -294,7 +294,7 @@ def nuvu2thorcam_calibration(coords):
     )
 
     cal_coords_nuvu = np.array(
-        [[225.217, 233.623], [192.671, 13.797], [20.627, 150.726]], dtype="float32"
+        [[226.249, 239.417], [193.722, 19.95], [21.482, 156.838]], dtype="float32"
     )
 
     # Compute the affine transformation matrix
@@ -343,10 +343,10 @@ def load_nv_coords(
 nuvu_pixel_coords, spot_weights = load_nv_coords()
 # nuvu_pixel_coords = np.array(
 #     [
-#         [120.443, 115.572],
-#         [24.072, 37.988],
-#         [118.495, 223.439],
-#         [227.998, 20.985],
+#         [124.195, 127.341],
+#         [10.325, 241.185],
+#         [239.878, 215.412],
+#         [119.484, 13.272],
 #     ]
 # )
 # spot_weights = np.array([0.8, 1.0, 1.0, 1.0])
@@ -416,9 +416,9 @@ try:
     # test_wavefront_calibration()
     # wavefront_calibration()
     # load_wavefront_calibration()
-    # compute_and_write_nvs_phase()
+    compute_and_write_nvs_phase()
     # write_pre_computed_nvs_phase()
-    calibration_triangle()
+    # calibration_triangle()
     # circles()
     # write_pre_computed_circles()
     # smiley()

@@ -412,7 +412,7 @@ if __name__ == "__main__":
         # file_path="slmsuite/nv_blob_detection/nv_blob_shallow_rubin_140nvs.npz"
         # file_path="slmsuite/nv_blob_detection/nv_blob_shallow_rubin_306nvs.npz"
         # file_path="slmsuite/nv_blob_detection/nv_blob_shallow_rubin_81nvs.npz"
-        file_path="slmsuite/nv_blob_detection/nv_blob_535nvs.npz"
+        file_path="slmsuite/nv_blob_detection/nv_blob_376nvs.npz"
         # file_path="slmsuite/nv_blob_detection/nv_blob_shallow_rubin_75nvs_reordered_.npz"
         # file_path="slmsuite/nv_blob_detection/nv_blob_rubin_shallow_303nvs_reordered.npz"
         # file_path="slmsuite/nv_blob_detection/nv_blob_rubin_shallow_154nvs_reordered.npz"
@@ -689,11 +689,11 @@ if __name__ == "__main__":
 
     # Save the filtered results
 
-    # save_results(
-    #     filtered_reordered_coords,
-    #     filtered_reordered_spot_weights,
-    #     filename="slmsuite/nv_blob_detection/nv_blob_405nvs_reordered.npz",
-    # )
+    save_results(
+        filtered_reordered_coords,
+        filtered_reordered_spot_weights,
+        filename="slmsuite/nv_blob_detection/nv_blob_376nvs_reordered.npz",
+    )
     # save_results(
     #     nv_coordinates,
     #     filtered_reordered_counts,
@@ -709,18 +709,18 @@ if __name__ == "__main__":
     title = "12ms, INTI_520_Combined_Image"
     kpl.imshow(ax, img_array, title=title, cbar_label="Photons")
     # Draw circles and index numbers
-    for idx, coord in enumerate(filtered_reordered_coords):
-        circ = plt.Circle(coord, sigma, color="lightblue", fill=False, linewidth=0.5)
-        ax.add_patch(circ)
-        # Place text just above the circle
-        ax.text(
-            coord[0],
-            coord[1] - sigma - 1,
-            str(idx),
-            color="white",
-            fontsize=8,
-            ha="center",
-        )
+    # for idx, coord in enumerate(filtered_reordered_coords):
+    #     circ = plt.Circle(coord, sigma, color="lightblue", fill=False, linewidth=0.5)
+    #     ax.add_patch(circ)
+    #     # Place text just above the circle
+    #     ax.text(
+    #         coord[0],
+    #         coord[1] - sigma - 1,
+    #         str(idx),
+    #         color="white",
+    #         fontsize=8,
+    #         ha="center",
+    #     )
 
     # fig, ax = plt.subplots()
     # title = "50ms, Ref"

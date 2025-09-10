@@ -169,9 +169,9 @@ config |= {
         "resolution": (512, 512),
         "spot_radius": 2.5,  # Radius for integrating NV counts in a camera image
         "bias_clamp": 300,  # (changing this won't actually change the value on the camera currently)
-        "em_gain": 5000,
+        # "em_gain": 5000,
         # "em_gain": 1000,
-        # "em_gain": 10,
+        "em_gain": 10,
         "temp": -60,
         # "temp": -55,
         "timeout": 60e3,  # ms
@@ -221,9 +221,9 @@ config |= {
             # LaserKey.CHARGE_POL: {"physical_name": green_laser, "duration": 10e3},
             VirtualLaserKey.CHARGE_POL: {
                 "physical_name": green_laser,
-                "duration": 1e3,  # Works better for shallow NVs (Cannon)
+                # "duration": 1e3,  # Works better for shallow NVs (Cannon)
                 # "duration": 500,  # Works better for shallow NVs (Cannon)
-                # "duration": 10e3,  # Works better for Deep NVs (Johnson)
+                "duration": 10e3,  # Works better for Deep NVs (Johnson)
             },
             # LaserKey.CHARGE_POL: {"physical_name": green_laser, "duration": 60},
             VirtualLaserKey.SPIN_POL: {
@@ -903,7 +903,7 @@ opx_config = {
         # "red_aod_cw-scc": {"type": "constant", "sample": 0.12},  # rubin
         # Yellow AOM
         "yellow_imaging": {"type": "constant", "sample": 0.4},  # 0.35
-        "yellow_charge_readout": {"type": "constant", "sample": 0.25},  # 75NVs new
+        "yellow_charge_readout": {"type": "constant", "sample": 0.35},  # 75NVs new
         "yellow_spin_pol": {"type": "constant", "sample": 0.44},  # 75 NVs
         # "yellow_spin_pol": {"type": "constant", "sample": 0.42},
         "yellow_shelving": {"type": "constant", "sample": 0.33},

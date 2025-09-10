@@ -1214,11 +1214,11 @@ if __name__ == "__main__":
     green_coords_key = f"coords-{green_laser}"
     red_coords_key = f"coords-{red_laser}"
     pixel_coords_key = "pixel_coords"
-    sample_name = "runin"
+    sample_name = "rubin"
     # magnet_angle = 90
     date_str = "2025_09_08"
     sample_coords = [0.8, 0.2]
-    z_coord = 0.1
+    z_coord = 0.2
 
     # Load NV pixel coordinates1
     pixel_coords_list = load_nv_coords(
@@ -1226,12 +1226,6 @@ if __name__ == "__main__":
         # file_path="slmsuite/nv_blob_detection/nv_blob_rubin_shallow_75nvs_reordered.npz",
         file_path="slmsuite/nv_blob_detection/nv_blob_405nvs_reordered.npz",
     ).tolist()
-    # pixel_coords_list = [
-    #     [124.935, 128.665],
-    #     [85.416, 82.499],
-    #     [137.093, 210.716],
-    #     [194.376, 74.699],
-    # ]
     green_coords_list = [
         [
             round(coord, 3)
@@ -1370,7 +1364,7 @@ if __name__ == "__main__":
     nv_sig = widefield.get_repr_nv_sig(nv_list)
     # print(f"Created NV: {nv_sig.name}, Coords: {nv_sig.coords}")
     # nv_sig.expected_counts = 900
-    # nv_sig.expected_counts = 1600
+    # nv_sig.expected_counts = 1450
     # nv_sig.expected_counts = 2100
 
     # nv_list = nv_list[::-1]  # flipping the order of NVs
