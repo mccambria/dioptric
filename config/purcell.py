@@ -34,19 +34,19 @@ red_laser_aod = "laser_COBO_638_aod"
 
 
 calibration_coords_pixel = [
-    [10.325, 241.185],
-    [239.878, 215.412],
-    [119.484, 13.272],
+    [6.768, 210.203],
+    [239.681, 215.048],
+    [123.376, 19.656],
 ]
 calibration_coords_green = [
-    [122.623, 95.375],
-    [96.357, 95.875],
-    [107.412, 120.082],
+    [122.766, 99.249],
+    [96.418, 96.169],
+    [107.075, 119.55],
 ]
 calibration_coords_red = [
-    [83.987, 61.815],
-    [62.642, 60.908],
-    [70.738, 81.106],
+    [84.438, 65.115],
+    [63.373, 61.286],
+    [71.164, 80.63],
 ]
 # Create the dictionaries using the provided lists
 calibration_coords_nv1 = {
@@ -66,11 +66,6 @@ calibration_coords_nv3 = {
     green_laser_aod: calibration_coords_green[2],
     red_laser_aod: calibration_coords_red[2],
 }
-
-# pixel_to_sample_affine_transformation_matrix = [
-#     [-0.01472387, 0.00052569, 1.28717911],
-#     [0.00040197, -0.01455135, 1.73876545],
-# ]
 
 pixel_to_sample_affine_transformation_matrix = [
     [0.01476835, -0.00148369, -1.42104908],
@@ -169,11 +164,10 @@ config |= {
         "resolution": (512, 512),
         "spot_radius": 2.5,  # Radius for integrating NV counts in a camera image
         "bias_clamp": 300,  # (changing this won't actually change the value on the camera currently)
-        # "em_gain": 5000,
+        "em_gain": 5000,
         # "em_gain": 1000,
-        "em_gain": 10,
+        # "em_gain": 10,
         "temp": -60,
-        # "temp": -55,
         "timeout": 60e3,  # ms
         # "timeout": -1,  # No timeout
         # Readout mode specifies EM vs conventional, as well as vertical and horizontal readout frequencies.
@@ -212,7 +206,7 @@ config |= {
             # SBC: created for calibration only
             VirtualLaserKey.RED_IMAGING: {
                 "physical_name": red_laser,
-                "duration": 0.5e6,
+                "duration": 1e6,
             },
             VirtualLaserKey.SPIN_READOUT: {
                 "physical_name": green_laser,
@@ -221,9 +215,9 @@ config |= {
             # LaserKey.CHARGE_POL: {"physical_name": green_laser, "duration": 10e3},
             VirtualLaserKey.CHARGE_POL: {
                 "physical_name": green_laser,
-                # "duration": 1e3,  # Works better for shallow NVs (Cannon)
+                "duration": 1e3,  # Works better for shallow NVs (Cannon)
                 # "duration": 500,  # Works better for shallow NVs (Cannon)
-                "duration": 10e3,  # Works better for Deep NVs (Johnson)
+                # "duration": 1e3,  # Works better for Deep NVs (Johnson)
             },
             # LaserKey.CHARGE_POL: {"physical_name": green_laser, "duration": 60},
             VirtualLaserKey.SPIN_POL: {
@@ -264,8 +258,8 @@ config |= {
                 "physical_name": yellow_laser,
                 # "duration": 200e6,
                 # "duration": 60e6,
-                # "duration": 50e6,
-                "duration": 50e6,  # for red calibration
+                "duration": 50e6,
+                # "duration": 24e6,  # for red calibration
             },
             # LaserKey.WIDEFIELD_CHARGE_READOUT: {"physical_name": yellow_laser, "duration": 100e6},
         },
@@ -309,7 +303,7 @@ config |= {
                 "control_mode": PosControlMode.SEQUENCE,
                 "delay": int(400e3),  # 400 us for galvo
                 "nm_per_unit": 1000,
-                "optimize_range": 4.0,
+                "optimize_range": 2.4,
                 "units": "MHz",
                 "opti_virtual_laser_key": VirtualLaserKey.ION,
                 "aod": True,
@@ -889,7 +883,7 @@ opx_config = {
         "green_aod_cw-opti": {"type": "constant", "sample": 0.11},
         # "green_aod_cw-opti": {"type": "constant", "sample": 0.07},
         # "green_aod_cw-charge_pol": {"type": "constant", "sample": 0.06},  # Negative
-        "green_aod_cw-charge_pol": {"type": "constant", "sample": 0.139},  # median
+        "green_aod_cw-charge_pol": {"type": "constant", "sample": 0.15},  # median
         # "green_aod_cw-charge_pol": {"type": "constant", "sample": 0.15},  # median
         "green_aod_cw-spin_pol": {"type": "constant", "sample": 0.05},
         "green_aod_cw-shelving": {"type": "constant", "sample": 0.05},
@@ -901,7 +895,6 @@ opx_config = {
         "red_aod_cw-ion": {"type": "constant", "sample": 0.15},
         "red_aod_cw-scc": {"type": "constant", "sample": 0.15},
         # "red_aod_cw-scc": {"type": "constant", "sample": 0.12},  # rubin
-        # Yellow AOM
         "yellow_imaging": {"type": "constant", "sample": 0.4},  # 0.35
         "yellow_charge_readout": {"type": "constant", "sample": 0.35},  # 75NVs new
         "yellow_spin_pol": {"type": "constant", "sample": 0.44},  # 75 NVs

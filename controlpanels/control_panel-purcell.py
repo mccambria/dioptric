@@ -1065,9 +1065,21 @@ def do_opx_constant_ac():
     # opx.constant_ac(
     #     [4, 1],  # Digital channels
     #     [3, 4, 2, 6],  # Analog channels
-    #     [0.11, 0.11, 0.15, 0.15],  # Analog voltages;
-    #     [107.0, 107.0, 72.0, 72.0],
+    #     [0.15, 0.15, 0.15, 0.15],  # Analog voltages;
+    #     [107, 107, 72, 72],
     # )
+    # green_coords_list = [
+    #     [108.302, 107.046],
+    #     [122.658, 98.967],
+    #     [96.376, 95.86],
+    #     [106.999, 119.23],
+    # ]
+    # red_coords_list = [
+    #     [72.722, 71.926],
+    #     [84.601, 66.136],
+    #     [63.555, 62.304],
+    #     [71.244, 81.727],
+    # ]
     # red
     # opx.constant_ac(
     #     [1],  # Digital channels
@@ -1077,12 +1089,12 @@ def do_opx_constant_ac():
     # )
 
     # # Green + yellow
-    opx.constant_ac(
-        [4],  # Digital channels
-        [3, 4, 7],  # Analog channels
-        [0.15, 0.15, 0.30],  # Analog voltages
-        [107, 107, 0],  # Analog frequencies
-    )
+    # opx.constant_ac(
+    #     [4],  # Digital channels
+    #     [3, 4, 7],  # Analog channels
+    #     [0.15, 0.15, 0.30],  # Analog voltages
+    #     [107, 107, 0],  # Analog frequencies
+    # )
     # Red + green + Yellow
     # opx.constant_ac(
     #     [4, 1],  # Digital channels1
@@ -1224,8 +1236,9 @@ if __name__ == "__main__":
     pixel_coords_list = load_nv_coords(
         # file_path="slmsuite/nv_blob_detection/nv_blob_rubin_shallow_154nvs_reordered.npz",
         # file_path="slmsuite/nv_blob_detection/nv_blob_rubin_shallow_75nvs_reordered.npz",
-        file_path="slmsuite/nv_blob_detection/nv_blob_405nvs_reordered.npz",
+        file_path="slmsuite/nv_blob_detection/nv_blob_370nvs_reordered.npz",
     ).tolist()
+
     green_coords_list = [
         [
             round(coord, 3)
@@ -1256,22 +1269,21 @@ if __name__ == "__main__":
     print(f"Red Laser Coordinates: {red_coords_list[0]}")
     # pixel_coords_list = [
     #     [124.195, 127.341],
-    #     [10.325, 241.185],
-    #     [239.878, 215.412],
-    #     [119.484, 13.272],
+    #     [6.768, 210.203],
+    #     [239.681, 215.048],
+    #     [123.376, 19.656],
     # ]
     # green_coords_list = [
-    #     [108.283, 107.01],
-    #     [122.623, 95.375],
-    #     [96.357, 95.875],
-    #     [107.412, 120.082],
+    #     [108.338, 107.377],
+    #     [122.766, 99.249],
+    #     [96.418, 96.169],
+    #     [107.075, 119.55],
     # ]
-
     # red_coords_list = [
-    #     [71.947, 70.607],
-    #     [83.987, 61.815],
-    #     [62.642, 60.908],
-    #     [70.738, 81.106],
+    #     [72.612, 70.89],
+    #     [84.438, 65.115],
+    #     [63.373, 61.286],
+    #     [71.164, 80.63],
     # ]
 
     num_nvs = len(pixel_coords_list)
@@ -1364,7 +1376,7 @@ if __name__ == "__main__":
     nv_sig = widefield.get_repr_nv_sig(nv_list)
     # print(f"Created NV: {nv_sig.name}, Coords: {nv_sig.coords}")
     # nv_sig.expected_counts = 900
-    # nv_sig.expected_counts = 1450
+    nv_sig.expected_counts = 1300
     # nv_sig.expected_counts = 2100
 
     # nv_list = nv_list[::-1]  # flipping the order of NVs
@@ -1390,8 +1402,8 @@ if __name__ == "__main__":
         # piezo_voltage_to_pixel_calibration()
 
         ### warning: this direclty iamge the laser spo, boftfor starign this makesure the red laser so set to 1mw on GUI
-        ### ⚠️ CAUTION: direct laser imaging, check power
-        ### ⚠️ CAUTION Set RED ≈ 0.1 mW • Exposure ≤ 0.1ms • Low em gain ≤ 10 / ND filter if needed
+        ## ⚠️ CAUTION: direct laser imaging, check power
+        ## ⚠️ CAUTION Set RED ≈ 0.1 mW • Exposure ≤ 0.1ms • Low em gain ≤ 10 / ND filter if needed
         # do_red_calibration_image(
         #     nv_sig,
         #     red_coords_list,
@@ -1464,7 +1476,7 @@ if __name__ == "__main__":
 
         # do_optimize_pol_amp(nv_list)
         # do_optimize_pol_duration(nv_list)
-        # do_optimize_readout_amp(nv_list)
+        do_optimize_readout_amp(nv_list)
         # do_optimize_readout_duration(nv_list)
         # optimize_readout_amp_and_duration(nv_list)
         # do_optimize_spin_pol_amp(nv_list)
