@@ -831,7 +831,7 @@ if __name__ == "__main__":
     #     "2025_05_12-21_22_21-rubin-nv0_2025_02_26"  # green amplitude 75NVs (4/16/2025)
     # )
 
-    file_stem = "2025_09_07-23_21_01-cannon-nv0_2025_08_31"
+    file_stem = "2025_09_11-01_45_11-rubin-nv0_2025_09_08"
     # dm.USE_NEW_CLOUD = False
     raw_data = dm.get_raw_data(file_stem=file_stem, load_npz=True)
     # file_name = dm.get_file_name(file_id=file_id)

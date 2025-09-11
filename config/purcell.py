@@ -39,9 +39,9 @@ calibration_coords_pixel = [
     [123.376, 19.656],
 ]
 calibration_coords_green = [
-    [122.766, 99.249],
-    [96.418, 96.169],
-    [107.075, 119.55],
+    [122.759, 99.269],
+    [96.428, 96.172],
+    [106.997, 119.628],
 ]
 calibration_coords_red = [
     [84.438, 65.115],
@@ -896,7 +896,7 @@ opx_config = {
         "red_aod_cw-scc": {"type": "constant", "sample": 0.15},
         # "red_aod_cw-scc": {"type": "constant", "sample": 0.12},  # rubin
         "yellow_imaging": {"type": "constant", "sample": 0.4},  # 0.35
-        "yellow_charge_readout": {"type": "constant", "sample": 0.35},  # 75NVs new
+        "yellow_charge_readout": {"type": "constant", "sample": 0.28},  # 75NVs new
         "yellow_spin_pol": {"type": "constant", "sample": 0.44},  # 75 NVs
         # "yellow_spin_pol": {"type": "constant", "sample": 0.42},
         "yellow_shelving": {"type": "constant", "sample": 0.33},
