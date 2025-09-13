@@ -883,7 +883,7 @@ opx_config = {
         "green_aod_cw-opti": {"type": "constant", "sample": 0.11},
         # "green_aod_cw-opti": {"type": "constant", "sample": 0.07},
         # "green_aod_cw-charge_pol": {"type": "constant", "sample": 0.06},  # Negative
-        "green_aod_cw-charge_pol": {"type": "constant", "sample": 0.15},  # median
+        "green_aod_cw-charge_pol": {"type": "constant", "sample": 0.08},  # median
         # "green_aod_cw-charge_pol": {"type": "constant", "sample": 0.15},  # median
         "green_aod_cw-spin_pol": {"type": "constant", "sample": 0.05},
         "green_aod_cw-shelving": {"type": "constant", "sample": 0.05},
@@ -896,7 +896,7 @@ opx_config = {
         "red_aod_cw-scc": {"type": "constant", "sample": 0.15},
         # "red_aod_cw-scc": {"type": "constant", "sample": 0.12},  # rubin
         "yellow_imaging": {"type": "constant", "sample": 0.4},  # 0.35
-        "yellow_charge_readout": {"type": "constant", "sample": 0.28},  # 75NVs new
+        "yellow_charge_readout": {"type": "constant", "sample": 0.25},  # 75NVs new
         "yellow_spin_pol": {"type": "constant", "sample": 0.44},  # 75 NVs
         # "yellow_spin_pol": {"type": "constant", "sample": 0.42},
         "yellow_shelving": {"type": "constant", "sample": 0.33},

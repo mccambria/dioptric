@@ -187,7 +187,7 @@ def process_and_plot(raw_data):
         else:
             step_vals *= yellow_charge_readout_amp
             # x_label = "Readout amplitude"
-            step_vals = a * (step_vals**b) + c
+            # step_vals = a * (step_vals**b) + c
             x_label = "Readout amplitude (uW)"
     print(step_vals)
     # return
@@ -295,7 +295,7 @@ def process_and_plot(raw_data):
         ax1.legend(lines + lines2, labels + labels2, loc="upper left", fontsize=11)
         ax1.set_title(f"NV{nv_ind} - Optimal Step Val: {optimal_step_val:.3f}")
         plt.tight_layout()
-        plt.show(block=True)
+        # plt.show(block=True)
 
     # save opimal step values
     total_power = np.sum(optimal_step_vals) / len(optimal_step_vals)
@@ -487,7 +487,7 @@ def process_and_plot(raw_data):
     # Title and layout
     ax1.set_title(f"Median Metrics Across All NVs ({file_id})", fontsize=16)
     fig.tight_layout()
-    plt.show()
+    plt.show(block=False)
 
 
 def fit_fn(tau, delay, slope, decay, transition):
@@ -706,7 +706,7 @@ def process_and_plot_green(raw_data):
             plt.ylabel("Preparation Fidelity")
             plt.title(f"NV Num: {nv_ind}")
             plt.legend()
-            plt.show(block=True)
+            # plt.show(block=True)
 
             print(
                 f"NV {nv_ind} - Optimal Duration: {opti_dur:.1f} ns, Optimal Fidelity: {opti_fidelity}"
@@ -830,10 +830,18 @@ if __name__ == "__main__":
     # file_id = (
     #     "2025_05_12-21_22_21-rubin-nv0_2025_02_26"  # green amplitude 75NVs (4/16/2025)
     # )
+    ### readout amp
+    # file_stem = "2025_09_11-01_45_11-rubin-nv0_2025_09_08"  #
+    # file_stem = "2025_09_11-20_15_28-rubin-nv0_2025_09_08"
+    # file_stem = "2025_09_11-23_23_30-rubin-nv0_2025_09_08"
 
-    file_stem = "2025_09_11-01_45_11-rubin-nv0_2025_09_08"
+    ### pol amp var
+    file_id = "2025_09_12-16_53_34-rubin-nv0_2025_09_08"
+    ### pol dur var
+    # file_id = "2025_09_12-04_47_45-rubin-nv0_2025_09_08"
+
     # dm.USE_NEW_CLOUD = False
-    raw_data = dm.get_raw_data(file_stem=file_stem, load_npz=True)
+    raw_data = dm.get_raw_data(file_stem=file_id, load_npz=True)
     # file_name = dm.get_file_name(file_id=file_id)
     # print(f"{file_name}_{file_id}")
     process_and_plot(raw_data)
