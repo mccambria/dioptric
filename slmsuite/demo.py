@@ -264,9 +264,9 @@ def generate_divisible_by_4(min_val, max_val, num_steps):
 
 
 # Example Usage
-min_duration = 20
-max_duration = 292
-num_steps = 18
+min_duration = 100
+max_duration = 2000
+num_steps = 25
 
 step_values = generate_divisible_by_4(min_duration, max_duration, num_steps)
 print(step_values)
