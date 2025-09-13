@@ -837,6 +837,7 @@ if __name__ == "__main__":
 
     ### pol amp var
     file_id = "2025_09_12-16_53_34-rubin-nv0_2025_09_08"
+    file_id = "2025_09_12-18_30_09-rubin-nv0_2025_09_08"
     ### pol dur var
     # file_id = "2025_09_12-04_47_45-rubin-nv0_2025_09_08"
 
