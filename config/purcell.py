@@ -215,9 +215,9 @@ config |= {
             # LaserKey.CHARGE_POL: {"physical_name": green_laser, "duration": 10e3},
             VirtualLaserKey.CHARGE_POL: {
                 "physical_name": green_laser,
-                "duration": 1e3,  # Works better for shallow NVs (Cannon)
+                # "duration": 10e3,  # Works better for shallow NVs (Cannon)
                 # "duration": 500,  # Works better for shallow NVs (Cannon)
-                # "duration": 1e3,  # Works better for Deep NVs (Johnson)
+                "duration": 1e3,  # Works better for Deep NVs (Johnson)
             },
             # LaserKey.CHARGE_POL: {"physical_name": green_laser, "duration": 60},
             VirtualLaserKey.SPIN_POL: {

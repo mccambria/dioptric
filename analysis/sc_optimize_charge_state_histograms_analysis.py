@@ -543,7 +543,8 @@ def fit_fn(tau, delay, slope, decay, transition):
     tau = np.maximum(tau, 0)  # Ensure no negative time values
 
     # Enforce a minimum transition duration (e.g., 90 ns)
-    transition = max(transition, 48)
+    # transition = max(transition, 48)
+    transition = 400
 
     # Smooth transition function using tanh
     smooth_transition = 0.5 * (1 + np.tanh((tau - transition) / (0.6 * transition)))
@@ -662,7 +663,8 @@ def process_and_plot_green(raw_data):
             )
 
             peak_guess = filtered_step_vals[np.argmax(filtered_prep_fidelity)]
-            guess_params = [32, slope_guess, peak_guess, 100]
+            # guess_params = [100, slope_guess, peak_guess, 1000]
+            guess_params = [100, slope_guess, np.max(filtered_prep_fidelity), 1000]
 
             # Use Poisson-based sigma if data comes from counting
             sigma = np.sqrt(np.maximum(filtered_prep_fidelity, 1e-6))
@@ -746,8 +748,6 @@ def process_and_plot_green(raw_data):
 
     return
 
-
-# endregion
 
 if __name__ == "__main__":
     kpl.init_kplotlib()
@@ -837,9 +837,12 @@ if __name__ == "__main__":
 
     ### pol amp var
     file_id = "2025_09_12-16_53_34-rubin-nv0_2025_09_08"
-    file_stem = "2025_09_12-18_30_09-rubin-nv0_2025_09_08"
+    file_id = "2025_09_12-18_30_09-rubin-nv0_2025_09_08"
+    file_id = "2025_09_12-20_43_54-rubin-nv0_2025_09_08"
     ### pol dur var
     # file_id = "2025_09_12-04_47_45-rubin-nv0_2025_09_08"
+    file_id = "2025_09_13-00_31_26-rubin-nv0_2025_09_08"
+    file_id = "2025_09_13-02_58_29-rubin-nv0_2025_09_08"
 
     # dm.USE_NEW_CLOUD = False
     raw_data = dm.get_raw_data(file_stem, load_npz=True)

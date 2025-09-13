@@ -129,13 +129,15 @@ def do_charge_state_histograms(nv_list):
 
 
 def do_optimize_pol_duration(nv_list):
-    num_steps = 22
+    num_steps = 24
     num_reps = 10
     num_runs = 200
     # num_reps = 5
     # num_runs = 2
-    min_duration = 20
-    max_duration = 608
+    # min_duration = 20
+    min_duration = 100
+    # min_duration = 20
+    max_duration = 1940
     return optimize_charge_state_histograms_mcc.optimize_pol_duration(
         nv_list, num_steps, num_reps, num_runs, min_duration, max_duration
     )
@@ -1472,8 +1474,8 @@ if __name__ == "__main__":
         # do_charge_state_histograms_images(nv_list, vary_pol_laser=True)
 
         # do_optimize_pol_amp(nv_list)
-        do_optimize_pol_duration(nv_list)
-        # do_optimize_readout_amp(nv_list)
+        # do_optimize_pol_duration(nv_list)
+        do_optimize_readout_amp(nv_list)
         # do_optimize_readout_duration(nv_list)
         # optimize_readout_amp_and_duration(nv_list)
         # do_optimize_spin_pol_amp(nv_list)
