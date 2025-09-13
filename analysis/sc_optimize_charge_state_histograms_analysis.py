@@ -837,12 +837,12 @@ if __name__ == "__main__":
 
     ### pol amp var
     file_id = "2025_09_12-16_53_34-rubin-nv0_2025_09_08"
-    file_id = "2025_09_12-18_30_09-rubin-nv0_2025_09_08"
+    file_stem = "2025_09_12-18_30_09-rubin-nv0_2025_09_08"
     ### pol dur var
     # file_id = "2025_09_12-04_47_45-rubin-nv0_2025_09_08"
 
     # dm.USE_NEW_CLOUD = False
-    raw_data = dm.get_raw_data(file_stem=file_id, load_npz=True)
+    raw_data = dm.get_raw_data(file_stem, load_npz=True)
     # file_name = dm.get_file_name(file_id=file_id)
     # print(f"{file_name}_{file_id}")
     process_and_plot(raw_data)
