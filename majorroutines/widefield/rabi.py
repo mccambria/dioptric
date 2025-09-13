@@ -5,6 +5,9 @@ Widefield Rabi experiment
 Created on November 29th, 2023
 
 @author: mccambria
+
+updated by @Saroj Chand on Jan 6, 2025
+@author: sbchand
 """
 
 import sys
@@ -238,7 +241,7 @@ def create_correlation_figure(nv_list, taus, counts):
     return fig
 
 
-def main(nv_list, num_steps, num_reps, num_runs, min_tau, max_tau, uwave_ind_list):
+def main(nv_sig, num_steps, num_reps, num_runs, min_tau, max_tau, uwave_ind_list):
     ### Some initial setup
 
     pulse_gen = tb.get_server_pulse_gen()
@@ -252,6 +255,7 @@ def main(nv_list, num_steps, num_reps, num_runs, min_tau, max_tau, uwave_ind_lis
             widefield.get_base_scc_seq_args(nv_list, uwave_ind_list),
             shuffled_taus,
         ]
+
         # print(seq_args)
         seq_args_string = tb.encode_seq_args(seq_args)
         pulse_gen.stream_load(seq_file, seq_args_string, num_reps)
@@ -266,8 +270,21 @@ def main(nv_list, num_steps, num_reps, num_runs, min_tau, max_tau, uwave_ind_lis
         load_iq=True,
     )
 
-    ### Process and plot
+    ### save the raw data
+    timestamp = dm.get_time_stamp()
+    raw_data |= {
+        "timestamp": timestamp,
+        "taus": taus,
+        "tau-units": "ns",
+        "min_tau": max_tau,
+        "max_tau": max_tau,
+    }
+    repr_nv_sig = widefield.get_repr_nv_sig(nv_list)
+    repr_nv_name = repr_nv_sig.name
+    file_path = dm.get_file_path(__file__, timestamp, repr_nv_name)
+    dm.save_raw_data(raw_data, file_path)
 
+    ### Process and plot
     try:
         raw_fig = None
         fit_fig = None
@@ -290,19 +307,6 @@ def main(nv_list, num_steps, num_reps, num_runs, min_tau, max_tau, uwave_ind_lis
     tb.reset_cfm()
     kpl.show()
 
-    timestamp = dm.get_time_stamp()
-    raw_data |= {
-        "timestamp": timestamp,
-        "taus": taus,
-        "tau-units": "ns",
-        "min_tau": max_tau,
-        "max_tau": max_tau,
-    }
-
-    repr_nv_sig = widefield.get_repr_nv_sig(nv_list)
-    repr_nv_name = repr_nv_sig.name
-    file_path = dm.get_file_path(__file__, timestamp, repr_nv_name)
-    dm.save_raw_data(raw_data, file_path)
     if raw_fig is not None:
         dm.save_figure(raw_fig, file_path)
     if fit_fig is not None:

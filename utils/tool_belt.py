@@ -20,6 +20,7 @@ from email.mime.text import MIMEText
 from enum import Enum
 from functools import cache
 from inspect import signature
+from pathlib import Path
 from typing import Callable
 
 import keyring
@@ -32,27 +33,28 @@ from scipy.optimize import curve_fit as scipy_curve_fit
 from utils import common
 from utils.constants import Boltzmann, Digital, ModMode, NormMode
 
-# region Server utils
-# Utility functions to be used by LabRAD servers
+# import logging
 
 
 def configure_logging(inst, level=logging.INFO):
-    """Setup logging for a LabRAD server
-
-    Parameters
-    ----------
-    inst : Class instance
-        Pass self from the LabRAD server class
-    level : logging level, optional
-        by default logging.DEBUG
-    """
+    """Setup logging for a LabRAD server"""
     folder_path = common.get_labrad_logging_folder()
+
+    # Safety: if the folder doesn't exist, fall back to a local path
+    try:
+        folder_path.mkdir(parents=True, exist_ok=True)
+    except Exception as e:
+        fallback = Path(__file__).resolve().parents[2] / "labrad_logging"
+        fallback.mkdir(parents=True, exist_ok=True)
+        folder_path = fallback
+        print(f"Logging folder not found, using fallback: {folder_path} ({e})")
+
     filename = folder_path / f"{inst.name}.log"
     logging.basicConfig(
         level=level,
         format="%(asctime)s %(levelname)-8s %(message)s",
         datefmt="%y-%m-%d_%H-%M-%S",
-        filename=filename,
+        filename=str(filename),
     )
 
 
@@ -60,10 +62,10 @@ def configure_logging(inst, level=logging.INFO):
 # region Laser utils
 
 
-def get_mod_type(laser_name):
+def get_mod_mode(laser_name):
     config = common.get_config_dict()
-    mod_type = config["Optics"][laser_name]["mod_type"]
-    return mod_type.name
+    mod_mode = config["Optics"][laser_name]["mod_mode"]
+    return mod_mode.name
 
 
 def laser_off(laser_name):
@@ -76,14 +78,14 @@ def laser_on(laser_name, laser_power=None):
 
 def laser_switch_sub(turn_on, laser_name, laser_power=None):
     config = common.get_config_dict()
-    mod_type = config["Optics"][laser_name]["mod_type"]
+    mod_mode = config["Optics"][laser_name]["mod_mode"]
     pulse_gen = get_server_pulse_gen()
 
-    if mod_type is ModMode.DIGITAL:
+    if mod_mode is ModMode.DIGITAL:
         if turn_on:
             laser_chan = config["Wiring"]["PulseGen"][f"do_{laser_name}_dm"]
             pulse_gen.constant([laser_chan])
-    elif mod_type is ModMode.ANALOG:
+    elif mod_mode is ModMode.ANALOG:
         if turn_on:
             laser_chan = config["Wiring"]["PulseGen"][f"do_{laser_name}_dm"]
             if laser_chan == 0:
@@ -121,8 +123,8 @@ def set_laser_power(nv_sig=None, laser_key=None, laser_name=None, laser_power=No
     # If the power is controlled by analog modulation, we'll need to pass it
     # to the pulse streamer
     config = common.get_config_dict()
-    mod_type = config["Optics"][laser_name]["mod_mode"]
-    if mod_type == ModMode.ANALOG:
+    mod_mode = config["Optics"][laser_name]["mod_mode"]
+    if mod_mode == ModMode.ANALOG:
         return laser_power
     else:
         laser_server = get_filter_server(laser_name)
@@ -170,23 +172,30 @@ def get_laser_server(laser_name):
 # region Pulse generator utils
 
 
-def process_laser_seq(seq, laser_name, laser_power, train):
+def process_laser_seq(seq, virtual_laser_key, train):
     """
     Automatically process simple laser sequences. Simple here means that the modulation
     is digital or, if the modulation is analog, then only one power is used)
     """
 
+    laser_name = get_physical_laser_name(virtual_laser_key)
+    virtual_laser_dict = get_virtual_laser_dict(virtual_laser_key)
+    if "laser_power" not in virtual_laser_dict:
+        laser_power = None
+    else:
+        laser_power = virtual_laser_dict["laser_power"]
+
     config = common.get_config_dict()
     # print(config)
     pulser_wiring = config["Wiring"]["PulseGen"]
-    mod_type = config["Optics"][laser_name]["mod_type"]
+    mod_mode = config["Optics"]["PhysicalLasers"][laser_name]["mod_mode"]
 
     # Digital: do nothing
-    if mod_type is ModMode.DIGITAL:
+    if mod_mode is ModMode.DIGITAL:
         pulser_laser_mod = pulser_wiring["do_{}_dm".format(laser_name)]
         seq.setDigital(pulser_laser_mod, train)
     # Analog:convert LOW / HIGH to 0.0 / analog voltage
-    elif mod_type is ModMode.ANALOG:
+    elif mod_mode is ModMode.ANALOG:
         processed_train = []
         power_dict = {Digital.LOW: 0.0, Digital.HIGH: laser_power}
         for el in train:
@@ -719,6 +728,11 @@ def get_uwave_dict(uwave_ind):
 def get_server_pulse_gen():
     """Get the pulse gen server for this setup, e.g. opx or swabian"""
     return common.get_server("pulse_gen")
+
+
+def get_server_pulse_streamer():
+    """Get the pulse gen server for this setup, e.g. opx or swabian"""
+    return common.get_server("pulse_streamer")
 
 
 def get_server_charge_readout_laser():

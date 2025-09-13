@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 """
-Output server for the attodry800 cryostat. 
+Output server for the attodry800 cryostat.
 
 Created on Tue Dec 29 2020
 
@@ -18,17 +18,17 @@ timeout = 20
 
 [shutdown]
 message = 987654321
-timeout = 
+timeout =
 ### END NODE INFO
 """
 
-
-from labrad.server import LabradServer
-from labrad.server import setting
-from twisted.internet.defer import ensureDeferred
-import socket
 import logging
+import socket
+
 import cryostat_dll.attoDRYLib as attoDRYLib
+from labrad.server import LabradServer, setting
+from twisted.internet.defer import ensureDeferred
+
 from utils import common
 
 
@@ -38,7 +38,7 @@ class CryostatAtto800(LabradServer):
 
     def initServer(self):
         filename = (
-            "E:/Shared drives/Kolkowitz Lab" " Group/nvdata/pc_{}/labrad_logging/{}.log"
+            "E:/Shared drives/Kolkowitz Lab Group/nvdata/pc_{}/labrad_logging/{}.log"
         )
         filename = filename.format(self.pc_name, self.name)
         logging.basicConfig(

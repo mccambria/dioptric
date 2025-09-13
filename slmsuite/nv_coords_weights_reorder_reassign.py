@@ -400,7 +400,9 @@ if __name__ == "__main__":
     # data = dm.get_raw_data(file_id=1782616297820, load_npz=True)
     # data = dm.get_raw_data(file_id=1806410973406, load_npz=True)
     data = dm.get_raw_data(
-        file_stem="2025_06_30-19_42_14-rubin-nv0_2025_02_26", load_npz=True
+        file_stem="2025_09_10-15_37_01-rubin-nv0_2025_09_08",
+        # file_stem="2025_09_09-13_57_19-combined_image_array",
+        load_npz=True,
     )
     img_array = np.array(data["ref_img_array"])
     # img_array = data["img_array"]
@@ -410,7 +412,7 @@ if __name__ == "__main__":
         # file_path="slmsuite/nv_blob_detection/nv_blob_shallow_rubin_140nvs.npz"
         # file_path="slmsuite/nv_blob_detection/nv_blob_shallow_rubin_306nvs.npz"
         # file_path="slmsuite/nv_blob_detection/nv_blob_shallow_rubin_81nvs.npz"
-        file_path="slmsuite/nv_blob_detection/nv_blob_shallow_rubin_365nvs.npz"
+        file_path="slmsuite/nv_blob_detection/nv_blob_376nvs.npz"
         # file_path="slmsuite/nv_blob_detection/nv_blob_shallow_rubin_75nvs_reordered_.npz"
         # file_path="slmsuite/nv_blob_detection/nv_blob_rubin_shallow_303nvs_reordered.npz"
         # file_path="slmsuite/nv_blob_detection/nv_blob_rubin_shallow_154nvs_reordered.npz"
@@ -455,10 +457,10 @@ if __name__ == "__main__":
     sigma = 3
     # reference_nv = [109.077, 120.824]
     # reference_nv = [120.258, 124.709]
-    reference_nv = [119.417, 124.59]
+    reference_nv = [124.195, 127.341]
     filtered_reordered_coords, filtered_reordered_spot_weights, include_indices = (
         filter_and_reorder_nv_coords(
-            nv_coordinates, spot_weights, reference_nv, min_distance=2
+            nv_coordinates, spot_weights, reference_nv, min_distance=3
         )
     )
     # filtered_reordered_coords = [
@@ -478,19 +480,19 @@ if __name__ == "__main__":
     # calcualted_spot_weights = linear_weights(filtered_reordered_counts, alpha=0.3)
     # filtered_reordered_spot_weights = calcualted_spot_weights
     # Manually remove NVs with specified indices
-    # indices_to_remove = []
-    # filtered_reordered_coords_0 = [
-    #     coord
-    #     for i, coord in enumerate(filtered_reordered_coords)
-    #     if i not in indices_to_remove
-    # ]
-    # filtered_reordered_spot_weights_0 = [
-    #     count
-    #     for i, count in enumerate(filtered_reordered_spot_weights)
-    #     if i not in indices_to_remove
-    # ]
-    # filtered_reordered_coords = filtered_reordered_coords_0
-    # filtered_reordered_spot_weights = filtered_reordered_spot_weights_0
+    indices_to_remove = [1, 4]
+    filtered_reordered_coords_0 = [
+        coord
+        for i, coord in enumerate(filtered_reordered_coords)
+        if i not in indices_to_remove
+    ]
+    filtered_reordered_spot_weights_0 = [
+        count
+        for i, count in enumerate(filtered_reordered_spot_weights)
+        if i not in indices_to_remove
+    ]
+    filtered_reordered_coords = filtered_reordered_coords_0
+    filtered_reordered_spot_weights = filtered_reordered_spot_weights_0
 
     # print(filtered_reordered_coords)
     # print("Filter:", filtered_reordered_counts)
@@ -690,7 +692,7 @@ if __name__ == "__main__":
     # save_results(
     #     filtered_reordered_coords,
     #     filtered_reordered_spot_weights,
-    #     filename="slmsuite/nv_blob_detection/nv_blob_rubin_shallow_362nvs_reordered.npz",
+    #     filename="slmsuite/nv_blob_detection/nv_blob_370nvs_reordered.npz",
     # )
     # save_results(
     #     nv_coordinates,
@@ -704,7 +706,7 @@ if __name__ == "__main__":
     # # Plot the original image with circles around each NV
 
     fig, ax = plt.subplots()
-    title = "50ms, Ref"
+    title = "12ms, INTI_520_Combined_Image"
     kpl.imshow(ax, img_array, title=title, cbar_label="Photons")
     # Draw circles and index numbers
     for idx, coord in enumerate(filtered_reordered_coords):

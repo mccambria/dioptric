@@ -193,11 +193,6 @@ def scanning(nv_sig, x_range, y_range, num_steps):
     return main(nv_sig, "scanning", num_reps, x_coords, y_coords, save_dict)
 
 
-import copy
-
-import numpy as np
-
-
 def scanning_full_roi(nv_sig, total_range, scan_range, num_steps):
     """
     Perform a full ROI scan by scanning across a frequency grid while iterating over spatial positions.
@@ -257,6 +252,35 @@ def scanning_full_roi(nv_sig, total_range, scan_range, num_steps):
     return file_path
 
 
+def red_widefield_calibration(
+    nv_sig,
+    x_freqs_MHz,
+    y_freqs_MHz,
+    force_laser_key=None,
+    num_reps=1,
+):
+    """
+    Single camera exposure while stepping exactly 3 AOD (x,y) frequency pairs.
+    Reuses simple_readout-scanning.py so the camera stays ON across the loop.
+    """
+
+    save_dict = {
+        "mode": "calibration",
+        "x_freqs_MHz": list(x_freqs_MHz),
+        "y_freqs_MHz": list(y_freqs_MHz),
+    }
+
+    return main(
+        nv_sig,
+        caller_fn_name="calibration",
+        num_reps=num_reps,
+        x_coords=list(x_freqs_MHz),
+        y_coords=list(y_freqs_MHz),
+        save_dict=save_dict,
+        force_laser_key=force_laser_key,
+    )
+
+
 def main(
     nv_sig: NVSig,
     caller_fn_name,
@@ -266,15 +290,20 @@ def main(
     save_dict=None,
     do_polarize=False,
     do_ionize=False,
+    force_laser_key=None,  # SBC <— NEW for red calibration
 ):
     ### Some initial setup
 
     tb.reset_cfm()
-    laser_key = (
-        VirtualLaserKey.WIDEFIELD_IMAGING
-        if caller_fn_name == "widefield"
-        else VirtualLaserKey.IMAGING
-    )
+    # Choose virtual laser: widefield vs imaging, unless overridden
+    if force_laser_key is not None:
+        laser_key = force_laser_key
+    else:
+        laser_key = (
+            VirtualLaserKey.WIDEFIELD_IMAGING
+            if caller_fn_name == "widefield"
+            else VirtualLaserKey.IMAGING
+        )
     # targeting.pos.set_xyz_on_nv(nv_sig)
     camera = tb.get_server_camera()
     pulse_gen = tb.get_server_pulse_gen()
@@ -308,6 +337,12 @@ def main(
         )
         seq_args.extend([do_polarize, do_ionize])
         seq_file = "simple_readout-charge_state_prep.py"
+
+    elif caller_fn_name == "calibration":
+        # Uses the scanning sequence, but with exactly the 3 tones you pass in.
+        # Camera stays high the whole time; each tone gets the standard readout duration.
+        seq_args = [readout, readout_laser, list(x_coords), list(y_coords)]
+        seq_file = "simple_readout-scanning.py"
 
     # print(seq_args)
     # print(seq_file)

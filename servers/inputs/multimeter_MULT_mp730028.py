@@ -19,20 +19,21 @@ timeout = 20
 
 [shutdown]
 message = 987654321
-timeout = 
+timeout =
 ### END NODE INFO
 """
 
-
-from labrad.server import LabradServer
-from labrad.server import setting
-from twisted.internet.defer import ensureDeferred
 import logging
 import socket
-import pyvisa as visa
 import time
+
 import numpy
+import pyvisa as visa
+from labrad.server import LabradServer, setting
+from twisted.internet.defer import ensureDeferred
+
 from utils import common
+from utils import tool_belt as tb
 
 
 class MultimeterMultMp730028(LabradServer):
@@ -40,26 +41,13 @@ class MultimeterMultMp730028(LabradServer):
     pc_name = socket.gethostname()
 
     def initServer(self):
-        ### Logging
-
-        filename = (
-            "E:/Shared drives/Kolkowitz Lab Group/nvdata/pc_{}/labrad_logging/{}.log"
-        )
-        filename = filename.format(self.pc_name, self.name)
-        logging.basicConfig(
-            level=logging.INFO,
-            format="%(asctime)s %(levelname)-8s %(message)s",
-            datefmt="%y-%m-%d_%H-%M-%S",
-            filename=filename,
-        )
-
-        ### Configure
-
+        tb.configure_logging(self)
         self.measuring_temp = False
         config = common.get_config_dict()
 
         resource_manager = visa.ResourceManager()
-        visa_address = config["DeviceIDs"][f"{self.name}_visa_address"]
+        visa_address = config["DeviceIDs"][f"{self.name}_visa"]
+        logging.info(visa_address)
         self.multimeter = resource_manager.open_resource(visa_address)
         self.multimeter.baud_rate = 115200
         self.multimeter.read_termination = "\n"
@@ -145,6 +133,27 @@ class MultimeterMultMp730028(LabradServer):
     def reset(self, c):
         """Fully reset to factory defaults"""
         self.multimeter.write("*RST")
+
+    # TODO: Review validity
+    @setting(8, returns="s")
+    def get_stats(self, c):
+        """Gets all statistics and return"""
+        self.multimeter.query("CALCulate:STATe {OFF}")
+        # self.multimeter.query("CALCulate:STATe {ON}")
+        stats_list = self.multimeter.query("CALCulate:AVERage:ALL?")
+
+        return stats_list
+
+    @setting(9, returns="*v[]")
+    def meas_for_duration(self, c, duration_sec):
+        voltages = []
+        start_time = time.time()
+        self.multimeter.write("RATE F")
+        while time.time() - start_time < duration_sec:
+            voltages.append(self.multimeter.query("MEAS1?"))
+            time.sleep(0.05)
+
+        return voltages
 
 
 __server__ = MultimeterMultMp730028()

@@ -19,7 +19,7 @@ from utils import kplotlib as kplt
 
 # === USER SETTINGS ===
 base_folder = "G:\\NV_Widefield_RT_Setup_Lasers_Power_Logs"
-hours = 50  # Number of hours to plot
+hours = 5  # Number of hours to plot
 plot_power = True  # True = plot power (mW), False = plot voltage (V)
 
 # Label → filename mapping (same as in logger)

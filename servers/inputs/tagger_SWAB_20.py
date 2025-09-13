@@ -17,17 +17,17 @@ timeout = 5
 ### END NODE INFO
 """
 
-
-from labrad.server import LabradServer
-from labrad.server import setting
-from twisted.internet.defer import ensureDeferred
-from utils import common
-import TimeTagger
-import numpy as np
 import logging
 import re
 import socket
-from servers.inputs.interfaces.tagger import Tagger
+
+import numpy as np
+import TimeTagger
+from labrad.server import LabradServer, setting
+from twisted.internet.defer import ensureDeferred
+
+from servers.inputs.interfaces.tagger import Tagger, tags_to_counts
+from utils import common
 
 
 class TaggerSwab20(Tagger, LabradServer):
@@ -35,24 +35,10 @@ class TaggerSwab20(Tagger, LabradServer):
     pc_name = socket.gethostname()
 
     def initServer(self):
-        ### Logging
-
-        filename = (
-            "E:/Shared drives/Kolkowitz Lab" " Group/nvdata/pc_{}/labrad_logging/{}.log"
-        )
-        filename = filename.format(self.pc_name, self.name)
-        logging.basicConfig(
-            level=logging.INFO,
-            format="%(asctime)s %(levelname)-8s %(message)s",
-            datefmt="%y-%m-%d_%H-%M-%S",
-            filename=filename,
-        )
-
         ### Configure
-
         config = common.get_config_dict()
         self.config_apd_indices = config["apd_indices"]
-        tagger_serial = config["DeviceIDs"][f"{self.name}_serial"]
+        tagger_serial = config["DeviceIDs"][f"{self.name}_2_serial"]
         try:
             self.tagger = TimeTagger.createTimeTagger(tagger_serial)
         except Exception as e:
@@ -75,7 +61,6 @@ class TaggerSwab20(Tagger, LabradServer):
                 self.tagger_di_apd[apd_index] = di_apd
 
         ### Wrap up
-
         self.reset_tag_stream_state()
         self.reset(None)
         logging.info("init complete")
@@ -104,7 +89,7 @@ class TaggerSwab20(Tagger, LabradServer):
 
         # Do the hard work in the fast sub function
         apd_channels = [self.tagger_di_apd[val] for val in self.stream_apd_indices]
-        return_counts, leftover_channels = Tagger.tags_to_counts(
+        return_counts, leftover_channels = tags_to_counts(
             buffer_channels,
             self.tagger_di_clock,
             self.tagger_di_apd_gate,

@@ -504,11 +504,14 @@ def _main(
 if __name__ == "__main__":
     kpl.init_kplotlib()
     # raw_data = dm.get_raw_data(file_id=1714802805037, load_npz=False)  # Messed up duration variation
-    raw_data = dm.get_raw_data(file_id=1720970373150, load_npz=False)
-    process_and_plot_mcc(raw_data)
+    # raw_data = dm.get_raw_data(file_id=1720970373150, load_npz=False)
+    # process_and_plot_mcc(raw_data)
     # sys.exit()
     # # raw_data = dm.get_raw_data(file_id=1709868774004, load_npz=False) #yellow ampl var
     # raw_data = dm.get_raw_data(file_id=1710843759806, load_npz=False)  # yellow amp var
-    # # raw_data = dm.get_raw_data(file_id=1711618252292, load_npz=False) #green ampl var
-    # process_and_plot(raw_data)
+    # raw_data = dm.get_raw_data(file_id=1711618252292, load_npz=False) #green ampl var
+    data = dm.get_raw_data(
+        file_stem="2025_09_02-20_28_40-cannon-nv0_2025_08_31", load_npz=True
+    )
+    process_and_plot(data)
     kpl.show(block=True)

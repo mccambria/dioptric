@@ -41,8 +41,9 @@ base_folder = "G:\\NV_Widefield_RT_Setup_Enclosure_Temp_Logs"
 cxn = common.labrad_connect()
 opx = cxn.temp_monitor_SRS_ptc10
 
-# LOG_INTERVAL = 150  # seconds between samples
-LOG_INTERVAL = 2  # seconds between samples
+LOG_INTERVAL = 150  # seconds between samples
+# LOG_INTERVAL = 6  # seconds between samples
+
 
 while True:
     interval = LOG_INTERVAL

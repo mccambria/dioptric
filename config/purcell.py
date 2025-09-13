@@ -34,19 +34,19 @@ red_laser_aod = "laser_COBO_638_aod"
 
 
 calibration_coords_pixel = [
-    [20.731, 233.76],
-    [130.459, 13.724],
-    [235.053, 225.856],
+    [6.768, 210.203],
+    [239.681, 215.048],
+    [123.376, 19.656],
 ]
 calibration_coords_green = [
-    [120.674, 95.506],
-    [104.329, 118.682],
-    [96.295, 92.939],
+    [122.759, 99.269],
+    [96.428, 96.172],
+    [106.997, 119.628],
 ]
 calibration_coords_red = [
-    [83.025, 63.123],
-    [69.858, 81.701],
-    [63.383, 60.75],
+    [84.438, 65.115],
+    [63.373, 61.286],
+    [71.164, 80.63],
 ]
 # Create the dictionaries using the provided lists
 calibration_coords_nv1 = {
@@ -67,11 +67,6 @@ calibration_coords_nv3 = {
     red_laser_aod: calibration_coords_red[2],
 }
 
-# pixel_to_sample_affine_transformation_matrix = [
-#     [-0.01472387, 0.00052569, 1.28717911],
-#     [0.00040197, -0.01455135, 1.73876545],
-# ]
-
 pixel_to_sample_affine_transformation_matrix = [
     [0.01476835, -0.00148369, -1.42104908],
     [0.00140560, 0.01479702, -1.73286644],
@@ -81,8 +76,10 @@ pixel_to_sample_affine_transformation_matrix = [
 # Add on to the default config
 config |= {
     ###
+    "apd_indices": [0],  # APD indices for the tagger
     "count_format": CountFormat.RAW,
     "collection_mode": CollectionMode.CAMERA,
+    "collection_mode_counter": CollectionMode.COUNTER,  # TODO: remove this line when set up in new computer
     # "charge_state_estimation_mode": ChargeStateEstimationMode.MLE,
     "charge_state_estimation_mode": ChargeStateEstimationMode.THRESHOLDING,
     "windows_repo_path": home / "GitHub/dioptric",
@@ -93,7 +90,7 @@ config |= {
         "default_pulse_duration": 1000,
         "aod_access_time": 11e3,  # access time in specs is 10us
         "widefield_operation_buffer": 1e3,
-        "uwave_buffer": 16,
+        "uwave_buffer": 0,
         "iq_buffer": 0,
         "iq_delay": 136,  # SBC measured using NVs 4/18/2025
         "temp_reading_interval": 15 * 60,  # for PID
@@ -110,13 +107,15 @@ config |= {
         "objective_piezo_serial": "0119008970",
         "piezo_controller_E727_model": "E727",
         "piezo_controller_E727_serial": "0121089079",
-        "pulse_gen_SWAB_82_ip": "192.168.0.111",
+        "pulse_gen_SWAB_82_ip_1": "192.168.0.111",
+        "pulse_gen_SWAB_82_ip_2": "192.168.0.160",
         "rotation_stage_THOR_ell18k_com": "COM8",
         "sig_gen_BERK_bnc835_visa": "TCPIP::128.104.ramp_to_zero_duration.114::inst0::INSTR",
         "sig_gen_STAN_sg394_visa": "TCPIP::192.168.0.120::inst0::INSTR",
         "sig_gen_STAN_sg394_2_visa": "TCPIP::192.168.0.121::inst0::INSTR",
         "sig_gen_TEKT_tsg4104a_visa": "TCPIP0::128.104.ramp_to_zero_duration.112::5025::SOCKET",
-        "tagger_SWAB_20_serial": "1740000JEH",
+        "tagger_SWAB_20_1_serial": "1740000JEH",
+        "tagger_SWAB_20_2_serial": "1948000SIP",
         "QM_opx_args": {
             "host": "192.168.0.117",
             "port": 9510,
@@ -165,18 +164,17 @@ config |= {
         "resolution": (512, 512),
         "spot_radius": 2.5,  # Radius for integrating NV counts in a camera image
         "bias_clamp": 300,  # (changing this won't actually change the value on the camera currently)
-        # "em_gain": 5000,
+        "em_gain": 5000,
         # "em_gain": 1000,
-        "em_gain": 10,
+        # "em_gain": 10,
         "temp": -60,
-        # "temp": -55,
         "timeout": 60e3,  # ms
         # "timeout": -1,  # No timeout
         # Readout mode specifies EM vs conventional, as well as vertical and horizontal readout frequencies.
         # See camera server file for details
         "readout_mode": 1,  # 16 for double horizontal readout rate (em mode)
         # "readout_mode": 6,  # Fast conventional
-        "roi": (134, 105, 250, 250),  # offsetX, offsetY, width, height
+        "roi": (122, 126, 250, 250),  # offsetX, offsetY, width, height
         # "roi": None,  # offsetX, offsetY, width, height
         "scale": 5 / 0.6,  # pixels / micron
         # "scale": 1 / 0.072,  # pixels / micron
@@ -205,6 +203,11 @@ config |= {
                 "physical_name": green_laser,
                 "duration": 12e6,
             },
+            # SBC: created for calibration only
+            VirtualLaserKey.RED_IMAGING: {
+                "physical_name": red_laser,
+                "duration": 1e6,
+            },
             VirtualLaserKey.SPIN_READOUT: {
                 "physical_name": green_laser,
                 "duration": 300,
@@ -214,7 +217,7 @@ config |= {
                 "physical_name": green_laser,
                 "duration": 1e3,  # Works better for shallow NVs (Cannon)
                 # "duration": 500,  # Works better for shallow NVs (Cannon)
-                # "duration": 10e3, #Works better for Deep NVs (Johnson)
+                # "duration": 1e3,  # Works better for Deep NVs (Johnson)
             },
             # LaserKey.CHARGE_POL: {"physical_name": green_laser, "duration": 60},
             VirtualLaserKey.SPIN_POL: {
@@ -255,8 +258,8 @@ config |= {
                 "physical_name": yellow_laser,
                 # "duration": 200e6,
                 # "duration": 60e6,
-                # "duration": 30e6,
-                "duration": 24e6,  # for red calibration
+                "duration": 50e6,
+                # "duration": 24e6,  # for red calibration
             },
             # LaserKey.WIDEFIELD_CHARGE_READOUT: {"physical_name": yellow_laser, "duration": 100e6},
         },
@@ -316,12 +319,15 @@ config |= {
         "pulse_gen": "QM_opx",
         "camera": "camera_NUVU_hnu512gamma",
         "thorslm": "slm_THOR_exulus_hd2",
+        "pulse_streamer": "pulse_gen_SWAB_82",
+        "counter": "tagger_SWAB_20",
     },
     ###
     "Wiring": {
         "Daq": {
-            # "ao_galvo_x": "dev1/AO0",
-            # "ao_galvo_y": "dev1/AO1",
+            # https://docs-be.ni.com/bundle/ni-67xx-scb-68a-labels/raw/resource/enus/371806a.pdf
+            "ao_galvo_x": "dev1/AO22",
+            "ao_galvo_y": "dev1/AO31",
             "ao_piezo_stage_P616_3c_x": "dev1/AO25",
             "ao_piezo_stage_P616_3c_y": "dev1/AO27",
             "ao_piezo_stage_P616_3c_z": "dev1/AO29",
@@ -338,16 +344,33 @@ config |= {
             "scaling_gain": 0.5,
         },
         "PulseGen": {
-            "do_apd_gate": 5,
-            "do_laser_INTE_520_dm": 3,
-            "do_laser_OPTO_589_dm": 3,
-            "do_laser_COBO_638_dm": 7,
-            "do_sample_clock": 0,
-            "do_sig_gen_BERK_bnc835_gate": 1,
-            "do_sig_gen_STAN_sg394_gate": 10,
-            "do_camera_trigger": 5,
+            # "do_laser_INTE_520_dm": 3,
+            # "do_laser_OPTO_589_dm": 3,
+            # "do_laser_COBO_638_dm": 7,
+            # "do_sig_gen_BERK_bnc835_gate": 1,
+            # "do_sig_gen_STAN_sg394_gate": 10,
+            # "do_apd_gate": 5,
+            # "do_sample_clock": 0,
+            # "do_camera_trigger": 5,
+            # clocks / gates
+            "do_sample_clock": 0,  # 125 MHz-compatible sample clock out to Tagger
+            "do_apd_gate": 1,  # gate line to Tagger
+            # "do_camera_trigger": 6,  # optional
+            "do_laser_INTE_520_dm": 2,  # green  TTL
+            "do_laser_COBO_638_dm": 3,  # red TTL
+            # microwaves (TTL gate to SGs)
+            # "do_sig_gen_BERK_bnc835_gate": 4,
+            "do_sig_gen_STAN_sg394_2_gate": 4,
+            "do_sig_gen_STAN_sg394_gate": 5,
+            # analog (for the yellow AOM amplitude)
+            "ao_laser_OPTO_589_am": 0,  # yellow analog modulation
         },
-        "Tagger": {"di_apd_0": 2, "di_apd_1": 4, "di_apd_gate": 3, "di_clock": 1},
+        "Tagger": {
+            "di_clock": 1,
+            "di_apd_gate": 2,
+            "di_apd_0": 3,
+            "di_apd_1": 4,
+        },
     },
 }
 
@@ -859,8 +882,8 @@ opx_config = {
         # Green AOD
         "green_aod_cw-opti": {"type": "constant", "sample": 0.11},
         # "green_aod_cw-opti": {"type": "constant", "sample": 0.07},
-        # "green_aod_cw-charge_pol": {"type": "constant", "sample": 0.06},  # Negative
-        "green_aod_cw-charge_pol": {"type": "constant", "sample": 0.139},  # median
+        "green_aod_cw-charge_pol": {"type": "constant", "sample": 0.06},  # Negative
+        # "green_aod_cw-charge_pol": {"type": "constant", "sample": 0.139},  # median
         # "green_aod_cw-charge_pol": {"type": "constant", "sample": 0.15},  # median
         "green_aod_cw-spin_pol": {"type": "constant", "sample": 0.05},
         "green_aod_cw-shelving": {"type": "constant", "sample": 0.05},
@@ -872,12 +895,8 @@ opx_config = {
         "red_aod_cw-ion": {"type": "constant", "sample": 0.15},
         "red_aod_cw-scc": {"type": "constant", "sample": 0.15},
         # "red_aod_cw-scc": {"type": "constant", "sample": 0.12},  # rubin
-        # Yellow AOM
-        "yellow_imaging": {"type": "constant", "sample": 0.45},  # 0.35
-        # "yellow_imaging": {"type": "constant", "sample": 0.50},  # 0.35
-        # "yellow_charge_readout": {"type": "constant", "sample": 0.3741},  # 50ms 117NVs
-        # "yellow_charge_readout": {"type": "constant", "sample": 0.35736},  # 75NVs new
-        "yellow_charge_readout": {"type": "constant", "sample": 0.3500},  # 75NVs new
+        "yellow_imaging": {"type": "constant", "sample": 0.4},  # 0.35
+        "yellow_charge_readout": {"type": "constant", "sample": 0.25},  # 75NVs new
         "yellow_spin_pol": {"type": "constant", "sample": 0.44},  # 75 NVs
         # "yellow_spin_pol": {"type": "constant", "sample": 0.42},
         "yellow_shelving": {"type": "constant", "sample": 0.33},

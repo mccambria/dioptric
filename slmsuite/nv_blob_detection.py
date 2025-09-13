@@ -269,10 +269,6 @@ def reorder_coords(nv_coords):
 #     return np.array(optimized_coords), np.array(spot_sizes)
 
 
-import matplotlib.pyplot as plt
-import numpy as np
-
-
 def process_scan_file():
     """Processes a saved scan file, extracts NV coordinates from each scan entry,
     and creates a combined image using max projection.
@@ -284,7 +280,7 @@ def process_scan_file():
     # raw_data = dm.get_raw_data(file_id=1802697426409, load_npz=True)  # rubin
 
     ### Nas
-    file_stem = "2025_06_30-18_58_14-rubin-nv0_2025_02_26"
+    file_stem = "2025_09_09-13_51_39-runin-nv0_2025_09_08"
     raw_data = dm.get_raw_data(
         file_stem=file_stem, load_npz=True, allow_pickle=True
     )  # rubin
@@ -334,7 +330,7 @@ def process_scan_file():
         blob_coords,
         spot_weights,
         path="slmsuite/nv_blob_detection",
-        filename=f"nv_blob_shallow_rubin_{len(blob_coords)}nvs.npz",
+        filename=f"nv_blob_{len(blob_coords)}nvs.npz",
     )
 
     timestamp = dm.get_time_stamp()
@@ -392,9 +388,10 @@ if __name__ == "__main__":
     # data = dm.get_raw_data(file_id=1791776254933, load_npz=True)  # rubin green scan
     # data = dm.get_raw_data(file_id=1807103519645, load_npz=True)
     data = dm.get_raw_data(
-        file_stem="2025_07_01-21_36_39-rubin-nv0_2025_02_26", load_npz=True
+        file_stem="2025_09_10-20_06_48-rubin-nv0_2025_09_08", load_npz=True
     )
     img_array = np.array(data["ref_img_array"])
+    # img_array = np.array(data["img_array"])
     # img_array = np.array(data["ref_img_array"]["ref_img_array"])
     # img_array = np.array(data["img_array"])
     # print(img_array)
@@ -411,8 +408,8 @@ if __name__ == "__main__":
 
     # Apply the blob detection and Gaussian fitting
     sigma = 2.0
-    lower_threshold = 0.06
-    upper_threshold = None
+    lower_threshold = 0.04
+    upper_threshold = 50
     smoothing_sigma = 0.0
 
     nv_coordinates, integrated_counts, spot_sizes = detect_nv_coordinates_blob(
@@ -459,9 +456,7 @@ if __name__ == "__main__":
     ax.axis("off")
 
     for idx, (x, y) in enumerate(filtered_nv_coords, start=1):  # Swapped y, x to x, y
-        circ = plt.Circle(
-            (x, y), default_radius, color="white", linewidth=1, fill=False
-        )
+        circ = plt.Circle((x, y), default_radius, color="red", linewidth=1, fill=False)
         ax.add_patch(circ)
         ax.text(
             x,
@@ -482,7 +477,7 @@ if __name__ == "__main__":
     #     filtered_nv_coords,
     #     filtered_counts,
     #     path="slmsuite/nv_blob_detection",
-    #     filename="nv_blob_shallow_rubin_365nvs.npz",
+    #     filename="nv_blob_376nvs.npz",
     # )
 
     # full ROI -- multiple images save in the same file

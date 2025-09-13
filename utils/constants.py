@@ -20,6 +20,7 @@ number = int | float
 class VirtualLaserKey(Enum):
     # Scanning virtual lasers
     IMAGING = auto()
+    RED_IMAGING = auto()  # SBC - crreatf for red widefield calibration
     ION = auto()
     SCC = auto()
     CHARGE_POL = auto()

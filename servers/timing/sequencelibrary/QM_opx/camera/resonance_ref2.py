@@ -5,6 +5,8 @@ Widefield ESR
 Created on October 13th, 2023
 
 @author: mccambria
+Updated on January 13th, 2025
+@author: schand
 """
 
 import time

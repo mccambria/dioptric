@@ -37,7 +37,6 @@ def get_seq(base_scc_seq_args, step_vals, num_reps=1):
                 step_val,
                 num_reps,
             )
-
     seq_ret_vals = []
     return seq, seq_ret_vals
 

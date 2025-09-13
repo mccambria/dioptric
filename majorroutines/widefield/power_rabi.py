@@ -6,6 +6,8 @@ conversion readout imaged onto a camera
 Created on November 19th, 2023
 
 @author: mccambria
+updated by @schand on February 6th, 2025
+@author: sbchand
 """
 
 import os

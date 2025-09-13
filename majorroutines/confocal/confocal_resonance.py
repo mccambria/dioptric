@@ -8,29 +8,25 @@ Created on Augu 2, 2025
 """
 
 import numpy as np
-from utils import tool_belt as tb, data_manager as dm
 from confocal_base_routine import main as base_routine
+
+from utils import data_manager as dm
+from utils import tool_belt as tb
 
 
 def main(
-    pulse_streamer,
-    tagger,
-    seq_file,
-    scan_coords,
+    coords,
     freqs,
     num_reps,
     num_runs,
     apd_ch,
     apd_time,
-    run_nir_fn=None,
     use_reference=True,
     norm_style="contrast",
 ):
     """
     Parameters:
-        pulse_streamer: PulseStreamer client
-        tagger: Tagger device
-        seq_file: QUA program path
+        seq_file: seq program path
         scan_coords: [x, y, z] center
         freqs: array of frequencies in GHz
         num_reps: repetitions per point
@@ -39,11 +35,11 @@ def main(
         apd_time: APD collection time in seconds
         run_nir_fn: function(bool) to toggle NIR (optional)
         use_reference: whether to use signal/reference gates
-        norm_style: normalization method ("contrast", etc.)
     """
+    pulse_streamer = tb.get_server_pulse_streamer()
+    tagger = tb.get_server_time_tagger()
 
-    def seq_args_fn(step_idx):
-        return [float(freqs[step_idx])]
+    seq_file = "resonance.py"
 
     def apd_read_fn(tagger, apd_ch, apd_time):
         if use_reference:
@@ -54,18 +50,15 @@ def main(
 
     # Call the base routine
     raw_data = base_routine(
-        pulse_streamer=pulse_streamer,
-        seq_file=seq_file,
-        seq_args_fn=seq_args_fn,
-        scan_coords=scan_coords,
+        scan_coords=coords,
         num_steps=len(freqs),
         num_reps=num_reps,
         num_runs=num_runs,
+        seq_args_fn=seq_args_fn,
         apd_read_fn=apd_read_fn,
         tagger=tagger,
         apd_ch=apd_ch,
         apd_time=apd_time,
-        run_nir_fn=run_nir_fn,
     )
 
     # Optional normalization

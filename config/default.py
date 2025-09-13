@@ -13,10 +13,10 @@ home = Path.home()
 
 config = {
     ###
-    "shared_email": "kolkowitznvlab@gmail.com",
+    "default_email": "kolkowitznvlab@gmail.com",
     "windows_repo_path": home / "Documents/GitHub/dioptric",
     "linux_repo_path": home / "Documents/GitHub/dioptric",
-    "windows_nvdata_dir": Path("G:\\nvdata"),
-    "linux_nvdata_dir": Path("/mnt/G/nvdata"),
+    "windows_nvdata_path": Path("G:\\nvdata"),
+    "linux_nvdata_path": Path("/mnt/G/nvdata"),
     "nv_sig_units": "{'coords': 'V', 'expected_count_rate': 'kcps', 'durations': 'ns', 'magnet_angle': 'deg', 'resonance': 'GHz', 'rabi': 'ns', 'uwave_power': 'dBm'}",
 }

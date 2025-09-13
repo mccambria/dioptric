@@ -1,102 +1,206 @@
 # -*- coding: utf-8 -*-
 """
-Confocal base routine for single-position pulse sequence experiments.
-Handles APD readout, optional NIR toggling, and drift correction.
+Base routine for widefield experiments with many spatially resolved NV centers.
 
-Created on August 2, 2025
-@author: Saroj Chand
+Created on December 6th, 2023
+
+@author: mccambria
 """
 
+import logging
 import time
+import traceback
+from math import isclose
+from random import shuffle
+
 import numpy as np
+
+from majorroutines import targeting
+from utils import common, widefield
+from utils import positioning as pos
 from utils import tool_belt as tb
-from utils import data_manager as dm
+from utils.constants import ChargeStateEstimationMode, CoordsKey
+
+
+def start_tagger_stream(apd_indices, apd_gate=True, clock=True):
+    tagger = tb.get_server_counter()
+    # LabRAD requires positional args; cast to plain types
+    apd_indices = list(int(i) for i in apd_indices)
+    tagger.start_tag_stream(apd_indices, bool(apd_gate), bool(clock))
+
+
+def dtype_clip(arr, dtype):
+    min_val = np.finfo(dtype).min
+    max_val = np.finfo(dtype).max
+    arr = np.where(arr >= min_val, arr, min_val)
+    arr = np.where(arr <= max_val, arr, max_val)
+    return arr
+
+
+def _as_pos_int(name, val):
+    # Accepts Python ints, numpy ints, floats that are whole numbers.
+    try:
+        iv = int(val)
+    except Exception:
+        raise TypeError(f"{name} must be an integer, got {type(val).__name__}: {val!r}")
+    if iv < 0:
+        raise ValueError(f"{name} must be >= 0, got {iv}")
+    # If original was float, make sure it was a whole number (e.g. 2.0 is ok, 2.3 is not)
+    if isinstance(val, float) and not isclose(val, iv, rel_tol=0.0, abs_tol=1e-9):
+        raise TypeError(f"{name} must be an integer, got non-integer float: {val!r}")
+    return iv
 
 
 def main(
-    pulse_streamer,
-    seq_file,
-    seq_args_fn,
-    scan_coords,
+    nv_sig,
     num_steps,
     num_reps,
     num_runs,
-    apd_read_fn,
-    tagger,
-    apd_ch,
-    apd_time,
-    use_reference=False,
-    norm_style="none",
-    run_nir_fn=None,
-):
-    """
-    Generic base routine for confocal APD-based single-position experiments (e.g. ESR, Rabi, Ramsey).
+    run_fn=None,
+    step_fn=None,
+    uwave_ind_list=[0],
+    uwave_freq_list=None,
+    num_exps=2,
+    apd_indices=[0],
+    load_iq=False,
+    stream_load_in_run_fn=True,
+    charge_prep_fn=None,
+) -> dict:
+    # ---------- sanitize/validate integers ----------
+    num_steps = _as_pos_int("num_steps", num_steps)
+    num_reps = _as_pos_int("num_reps", num_reps)
+    num_runs = _as_pos_int("num_runs", num_runs)
+    num_exps = _as_pos_int("num_exps", num_exps)
 
-    Parameters:
-        pulse_streamer: object with .stream_load(seq_file, seq_args_str, num_reps)
-        seq_file: pulse sequence file to load
-        seq_args_fn: function to generate sequence arguments for each step
-        scan_coords: center coordinates [x, y, z] for scan
-        num_steps: number of parameter scan steps (e.g. frequency, tau)
-        num_reps: number of repetitions per step
-        num_runs: number of full runs to average
-        apd_read_fn: function to read APD counts using tagger
-        tagger: PicoQuant tagger or compatible hardware
-        apd_ch: APD channel index
-        apd_time: APD collection window (s)
-        use_reference: True if each point contains signal and reference gates
-        norm_style: normalization style for signal/reference ("none", "contrast", etc.)
-        run_nir_fn: optional function to toggle NIR (input: on/off bool)
+    # (Optional) also sanitize list-y ints:
+    uwave_ind_list = [
+        _as_pos_int("uwave_ind", i)
+        for i in (
+            uwave_ind_list
+            if isinstance(uwave_ind_list, (list, tuple))
+            else [uwave_ind_list]
+        )
+    ]
+    apd_indices = [
+        _as_pos_int("apd_index", i)
+        for i in (
+            apd_indices if isinstance(apd_indices, (list, tuple)) else [apd_indices]
+        )
+    ]
 
-    Returns:
-        raw_data: dict with counts and metadata
-    """
+    # ---------- NV positioning ----------
     tb.reset_cfm()
+    pos.set_xyz_on_nv(nv_sig, CoordsKey.SAMPLE)
 
-    drift = tb.get_drift()
-    x_center, y_center, z_center = np.array(scan_coords) + np.array(drift)
-    tb.get_xy_server().write_xy(x_center, y_center)
-    tb.get_z_server().write_z(z_center)
+    pulsegen = tb.get_server_pulse_streamer()
+    tagger = tb.get_server_counter()
 
-    counts_arr = np.zeros((num_runs, num_steps))
-    ref_arr = np.zeros_like(counts_arr) if use_reference else None
+    # ---------- Microwave setup ----------
+    for uwave_ind in uwave_ind_list:
+        uwave_dict = tb.get_virtual_sig_gen_dict(uwave_ind)
+        uwave_power = uwave_dict["uwave_power"]
+        freq = (
+            uwave_freq_list[uwave_ind] if uwave_freq_list else uwave_dict["frequency"]
+        )
+        sig_gen = tb.get_server_sig_gen(uwave_ind)
+        if load_iq:
+            sig_gen.load_iq()
+        sig_gen.set_amp(uwave_power)
+        sig_gen.set_freq(freq)
+        print(f"MW[{uwave_ind}]  freq: {freq} GHz,  power: {uwave_power} dBm")
 
-    for run_ind in range(num_runs):
-        for step_ind in range(num_steps):
-            if run_nir_fn:
-                run_nir_fn(False)
+    # ---------- Containers ----------
+    counts = np.zeros((num_exps, num_runs, num_steps, num_reps), dtype=np.int32)
+    step_ind_master_list = [None] * num_runs
+    crash_counter = [None] * num_runs
+    step_ind_list = list(range(num_steps))
 
-            seq_args = seq_args_fn(step_ind)
-            pulse_streamer.stream_load(seq_file, seq_args, num_reps)
+    try:
+        for run_ind in range(num_runs):
+            num_attempts = 15
+            attempt = 0
+            while True:
+                try:
+                    print(f"\n[Run {run_ind + 1}/{num_runs}]")
+                    if charge_prep_fn:
+                        charge_prep_fn(nv_sig)
 
-            if use_reference:
-                sig_counts, ref_counts = apd_read_fn(tagger, apd_ch, apd_time, gates=2)
-                counts_arr[run_ind, step_ind] = sig_counts
-                ref_arr[run_ind, step_ind] = ref_counts
-            else:
-                counts = apd_read_fn(tagger, apd_ch, apd_time)
-                counts_arr[run_ind, step_ind] = counts
+                    for uwave_ind in uwave_ind_list:
+                        tb.get_server_sig_gen(uwave_ind).uwave_on()
 
-    if run_nir_fn:
-        run_nir_fn(False)
+                    shuffle(step_ind_list)
+                    if run_fn:
+                        run_fn(step_ind_list)
+                    step_ind_master_list[run_ind] = step_ind_list.copy()
 
-    tb.reset_cfm()
+                    # tagger.start_tag_stream(
+                    #     apd_indices=apd_indices, apd_gate=True, clock=True
+                    # )
+                    tagger.start_tag_stream(apd_indices, True, True)
 
-    timestamp = dm.get_time_stamp()
-    raw_data = {
-        "timestamp": timestamp,
-        "scan_coords": scan_coords,
+                    for step_ind in step_ind_list:
+                        if step_fn:
+                            step_fn(step_ind)
+
+                        tagger.clear_buffer()
+                        pulsegen.stream_start(
+                            num_reps
+                        )  # play the preloaded sequence 'num_reps' times
+
+                        new_counts = tagger.read_counter_complete(1)[
+                            0
+                        ]  # shape: (num_apds, num_gates_total)
+                        new_counts = new_counts.sum(
+                            axis=0
+                        )  # sum APDs -> (num_gates_total,)
+
+                        # sanity check the number of gates
+                        expected = num_exps * num_reps
+                        if new_counts.size != expected:
+                            raise RuntimeError(
+                                f"Got {new_counts.size} gated counts; expected {expected} "
+                                f"(num_exps={num_exps} × num_reps={num_reps}). "
+                                f"Make sure your sequence has exactly {num_exps} APD gates per repetition."
+                            )
+
+                        # de-interleave by experiment
+                        # layout: [exp0_rep0, exp1_rep0, exp0_rep1, exp1_rep1, ...]
+                        for exp_ind in range(num_exps):
+                            counts[exp_ind, run_ind, step_ind, :] = new_counts[
+                                exp_ind::num_exps
+                            ]
+
+                    for uwave_ind in uwave_ind_list:
+                        tb.get_server_sig_gen(uwave_ind).uwave_off()
+
+                    tagger.stop_tag_stream()
+                    targeting.compensate_for_drift(nv_sig, no_crash=True)
+                    crash_counter[run_ind] = attempt
+                    break
+
+                except Exception:
+                    # pulsegen.force_final()
+                    attempt += 1
+                    if attempt >= num_attempts:
+                        raise RuntimeError("Too many failures during run")
+    except Exception:
+        print(traceback.format_exc())
+
+    return {
+        "nv_sig": nv_sig,
         "num_steps": num_steps,
-        "num_runs": num_runs,
         "num_reps": num_reps,
-        "counts": counts_arr.tolist(),
-        "ref_counts": ref_arr.tolist() if use_reference else None,
-        "drift": drift,
-        "apd_time": apd_time,
-        "apd_ch": apd_ch,
-        "nir_toggle": run_nir_fn is not None,
-        "use_reference": use_reference,
-        "norm_style": norm_style,
+        "num_runs": num_runs,
+        "num_exps_per_rep": num_exps,
+        "load_iq": load_iq,
+        "uwave_ind_list": uwave_ind_list,
+        "uwave_freq_list": uwave_freq_list,
+        "counts": counts,
+        "counts-units": "photons",
+        "step_ind_master_list": step_ind_master_list,
+        "crash_counter": crash_counter,
     }
 
-    return raw_data
+
+if __name__ == "__main__":
+    pass

@@ -28,16 +28,54 @@ OUTPUTCHANNEL = b"OUT1"
 
 SAVE_DIR = "G:/NV_Widefield_RT_Setup_Enclosure_Temp_Logs/pid_tuning_seq"
 
-DURATION = 600  # seconds to record per candidate
-SAMPLE_PERIOD = 1.0  # seconds between samples
+DURATION = 120  # seconds to record per candidate
+SAMPLE_PERIOD = 0.6  # seconds between samples
 SLEEP_BETWEEN = 60  # seconds after setting PID before sampling
 REST_AFTER = 6  # seconds rest after each candidate
 
 
 # Sequential sweeps
-P_SWEEP = [115, 120, 125, 135, 140, 145, 150]
-I_SWEEP = [2, 2.5, 3, 3.5, 4.0, 4.5, 5]
-D_SWEEP = [100, 105, 110, 115, 120, 125, 130, 135, 140]
+P_SWEEP = [
+    80,
+    90,
+    95,
+    110,
+    115,
+    120,
+    125,
+    135,
+    140,
+    145,
+    150,
+    155,
+    160,
+    165,
+    170,
+    175,
+    180,
+    185,
+    190,
+    200,
+]
+I_SWEEP = [1.0, 1.5, 2, 2.5, 3, 3.5, 4.0, 4.5, 5, 5.5, 6.5]
+D_SWEEP = [
+    100,
+    105,
+    110,
+    115,
+    120,
+    125,
+    130,
+    135,
+    140,
+    145,
+    150,
+    160,
+    170,
+    180,
+    190,
+    200,
+]
 
 # Starting (fixed) values while sweeping others
 # P_INIT = 125
@@ -68,10 +106,14 @@ def set_pid():
     server.set_param(OUTPUTCHANNEL + b".PID.P", P)
     server.set_param(OUTPUTCHANNEL + b".PID.I", I)
     server.set_param(OUTPUTCHANNEL + b".PID.D", D)
-
+    server.set_param(b"OUT1.TPC.ENABLE", 0)
+    server.set_param(b"OUT1.VSET", 5.0)
+    vset = server.get_param(b"OUT1.VSET")
+    vout = server.get_param(b"OUT1.VOUT?")
+    print(f"Set VSET to {vout:.3f} V")
     # Disable Time-Proportional Control (use analog output mode instead)
-    server.set_param(OUTPUTCHANNEL + b".TPC.ENABLE", 0)
-
+    # server.set_param(OUTPUTCHANNEL + b".TPC.ENABLE", 0)
+    # TCP = server.get_param(OUTPUTCHANNEL + b".TPC.ENABLE")
     print(f"set pid to p={P}, i={I}, d={D}, TPC disabled (analog output mode)")
 
 
@@ -317,5 +359,6 @@ def tune_pid_sequential():
 
 
 if __name__ == "__main__":
-    # tune_pid_sequential()
-    set_pid()
+    tune_pid_sequential()
+    # set_pid()
+    # setup_pid_voltage_mode(target_temp=22.0, P=135, I=3.5, D=120)
