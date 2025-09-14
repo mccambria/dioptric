@@ -261,8 +261,8 @@ def main(
     num_reps,
     num_runs,
     freqs,
-    # uwave_ind_list=[0, 1],
-    uwave_ind_list=[1],
+    uwave_ind_list=[0, 1],
+    # uwave_ind_list=[0],
 ):
     ### Some initial setup
     pulse_gen = tb.get_server_pulse_gen()
@@ -320,7 +320,7 @@ def main(
         save_images=False,
         num_exps=1,
         ref_by_rep_parity=False,
-        load_iq=True,
+        # load_iq=True,
     )
 
     ### Process and plot

@@ -500,10 +500,10 @@ def do_calibrate_iq_delay(nv_list):
 
 
 def do_resonance(nv_list):
-    # freq_center = 2.87
-    # freq_range = 0.240
+    freq_center = 2.87
+    freq_range = 0.240
     # freq_range = 0.36
-    # num_steps = 60
+    num_steps = 40
     # num_steps = 72
     # Single ref
     # num_reps = 8
@@ -512,13 +512,14 @@ def do_resonance(nv_list):
     # Both refs
     num_reps = 3
     num_runs = 400
-    freqs = []
-    centers = [2.730700, 3.022277]
-    range_each = 0.1
-    lower_freqs = calculate_freqs(centers[0], range_each, 20)
-    freqs.extend(lower_freqs)
-    upper_freqs = calculate_freqs(centers[1], range_each, 20)
-    freqs.extend(upper_freqs)
+    freqs = calculate_freqs(freq_center, freq_range, num_steps)
+    # freqs = []
+    # centers = [2.730700, 3.022277]
+    # range_each = 0.1
+    # lower_freqs = calculate_freqs(centers[0], range_each, 20)
+    # freqs.extend(lower_freqs)
+    # upper_freqs = calculate_freqs(centers[1], range_each, 20)
+    # freqs.extend(upper_freqs)
     ##
     # Remove duplicates and sort
     freqs = sorted(set(freqs))
@@ -1026,7 +1027,7 @@ def do_opx_constant_ac():
     opx.constant_ac(
         [],  # Digital channels
         [7],  # Analog channels
-        [0.34],  # Analog voltages
+        [0.35],  # Analog voltages
         [0],  # Analog frequencies
     )
     # opx.constant_ac([4])  # Just laser
@@ -1468,7 +1469,7 @@ if __name__ == "__main__":
         # coords_key = red_laser
         # do_optimize_loop(np.array(nv_list), np.array(coords_key))
 
-        do_charge_state_histograms(nv_list)
+        # do_charge_state_histograms(nv_list)
         # do_charge_state_conditional_init(nv_list)
         # do_charge_state_histograms_images(nv_list, vary_pol_laser=True)
 
@@ -1494,7 +1495,7 @@ if __name__ == "__main__":
 
         # do_rabi(nv_list)
         # do_power_rabi(nv_list)
-        # do_resonance(nv_list)
+        do_resonance(nv_list)
         # do_resonance_zoom(nv_list)
         # do_spin_echo(nv_list)
         # do_spin_echo_1(nv_list)
