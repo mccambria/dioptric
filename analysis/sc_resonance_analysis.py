@@ -431,19 +431,19 @@ def plot_nv_resonance_fits_and_residuals(
     filtered_fitted_data = [fit_fns[idx] for idx in filtered_indices]
 
     # return
-    # # Set plot style
-    # for nv_ind in range(num_nvs):
-    #     fig, ax = plt.subplots(1, 1, figsize=(8, 5))
-    #     ax.plot(freqs, avg_counts[nv_ind], "o", color="steelblue")
-    #     ax.plot(freqs_dense, fit_fns[nv_ind], "-", color="red")
-    #     ax.set_xlabel("Frequency (GHz)")
-    #     ax.set_ylabel("Norm. NV- Population")
-    #     ax.set_title(f"NV Index: {nv_ind}")
-    #     ax.grid(True, linestyle="--", alpha=0.6)
-    #     plt.tight_layout()
-    #     # plt.show()
-    #     plt.show(block=True)
-    # return
+    # Set plot style
+    for nv_ind in range(num_nvs):
+        fig, ax = plt.subplots(1, 1, figsize=(8, 5))
+        ax.plot(freqs, avg_counts[nv_ind], "o", color="steelblue")
+        ax.plot(freqs_dense, fit_fns[nv_ind], "-", color="red")
+        ax.set_xlabel("Frequency (GHz)")
+        ax.set_ylabel("Norm. NV- Population")
+        ax.set_title(f"NV Index: {nv_ind}")
+        ax.grid(True, linestyle="--", alpha=0.6)
+        plt.tight_layout()
+        # plt.show()
+        plt.show(block=True)
+    return
 
     # Plot histograms and scatter plots
     plots_data = [
@@ -1104,12 +1104,16 @@ if __name__ == "__main__":
     file_ids = [1832069584608]
     file_ids = [1836425531438]
 
+    file_ids = ["2025_09_14-04_13_53-rubin-nv0_2025_09_08"]
+
     # fmt: off
     # fmt: on
     # print(len(reference_pixel_coords))
     # sys.exit()
     # Load the first dataset as a base
-    combined_data = dm.get_raw_data(file_id=file_ids[0], load_npz=False, use_cache=True)
+    combined_data = dm.get_raw_data(
+        file_stem=file_ids[0], load_npz=True, use_cache=True
+    )
     combined_sig_counts = None
     combined_ref_counts = None
 

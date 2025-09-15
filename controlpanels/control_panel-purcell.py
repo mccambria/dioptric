@@ -1087,7 +1087,7 @@ def do_opx_constant_ac():
     # opx.constant_ac(
     #     [1],  # Digital channels
     #     [2, 6],  # Analog channels
-    #     [0.15, 0.15],  # Analog voltages
+    #     [0.14, 0.14],  # Analog voltages
     #     [72.0, 72.0],  # Analog frequencies
     # )
 
@@ -1241,7 +1241,12 @@ if __name__ == "__main__":
         # file_path="slmsuite/nv_blob_detection/nv_blob_rubin_shallow_75nvs_reordered.npz",
         file_path="slmsuite/nv_blob_detection/nv_blob_370nvs_reordered.npz",
     ).tolist()
-
+    pixel_coords_list = [
+        [124.195, 127.341],
+        [14.885, 152.48],
+        [244.791, 189.637],
+        [154.222, 14.885],
+    ]
     green_coords_list = [
         [
             round(coord, 3)
@@ -1276,18 +1281,18 @@ if __name__ == "__main__":
     #     [239.681, 215.048],
     #     [123.376, 19.656],
     # ]
-    # green_coords_list = [
-    #     [108.356, 107.388],
-    #     [122.759, 99.269],
-    #     [96.428, 96.172],
-    #     [106.997, 119.628],
-    # ]
-    # red_coords_list = [
-    #     [72.612, 70.89],
-    #     [84.438, 65.115],
-    #     [63.373, 61.286],
-    #     [71.164, 80.63],
-    # ]
+    green_coords_list = [
+        [108.344, 107.393],
+        [121.068, 105.734],
+        [95.509, 99.001],
+        [103.437, 119.832],
+    ]
+    red_coords_list = [
+        [73.639, 70.809],
+        [83.477, 71.2],
+        [63.558, 63.356],
+        [68.69, 80.894],
+    ]
 
     num_nvs = len(pixel_coords_list)
     threshold_list = [None] * num_nvs
@@ -1340,7 +1345,8 @@ if __name__ == "__main__":
 
     # scc_amp_list = [1.0] * num_nvs
     # scc_duration_list = [112] * num_nvs
-    # pol_duration_list = [200] * num_nvs
+    pol_duration_list = [1000] * num_nvs
+    ion_duration_list = [1000] * num_nvs
     # nv_list[i] will have the ith coordinates from the above lists
     nv_list: list[NVSig] = []
     for ind in range(num_nvs):
@@ -1360,6 +1366,7 @@ if __name__ == "__main__":
             pulse_durations={
                 # VirtualLaserKey.SCC: scc_duration_list[ind],
                 VirtualLaserKey.CHARGE_POL: pol_duration_list[ind],
+                VirtualLaserKey.ION: ion_duration_list[ind],
             },
             pulse_amps={
                 # VirtualLaserKey.SCC: scc_amp_list[ind],
@@ -1466,8 +1473,8 @@ if __name__ == "__main__":
         # optimize.optimize_pixel_and_z(nv_sig, do_plot=True)
         # coords_key = None
         # coords_key = green_laser
-        # coords_key = red_laser
-        # do_optimize_loop(np.array(nv_list), np.array(coords_key))
+        coords_key = red_laser
+        do_optimize_loop(np.array(nv_list), np.array(coords_key))
 
         # do_charge_state_histograms(nv_list)
         # do_charge_state_conditional_init(nv_list)
@@ -1495,7 +1502,7 @@ if __name__ == "__main__":
 
         # do_rabi(nv_list)
         # do_power_rabi(nv_list)
-        do_resonance(nv_list)
+        # do_resonance(nv_list)
         # do_resonance_zoom(nv_list)
         # do_spin_echo(nv_list)
         # do_spin_echo_1(nv_list)
