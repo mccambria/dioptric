@@ -242,59 +242,59 @@ def process_and_plot(raw_data):
             optimal_values.append((nv_ind, np.nan, np.nan))
             continue
 
-        # Plotting
-        fig, ax1 = plt.subplots(figsize=(7, 5))
-        # Plot readout fidelity
-        ax1.plot(
-            step_vals,
-            readout_fidelity_arr[nv_ind],
-            label="Readout Fidelity",
-            color="orange",
-        )
-        ax1.plot(
-            step_vals,
-            prep_fidelity_arr[nv_ind],
-            label="Prep Fidelity",
-            linestyle="--",
-            color="green",
-        )
-        ax1.set_xlabel(x_label)
-        ax1.set_ylabel("Fidelity")
-        ax1.tick_params(axis="y", labelcolor="blue")
-        ax1.grid(True, linestyle="--", alpha=0.6)
+        # # Plotting
+        # fig, ax1 = plt.subplots(figsize=(7, 5))
+        # # Plot readout fidelity
+        # ax1.plot(
+        #     step_vals,
+        #     readout_fidelity_arr[nv_ind],
+        #     label="Readout Fidelity",
+        #     color="orange",
+        # )
+        # ax1.plot(
+        #     step_vals,
+        #     prep_fidelity_arr[nv_ind],
+        #     label="Prep Fidelity",
+        #     linestyle="--",
+        #     color="green",
+        # )
+        # ax1.set_xlabel(x_label)
+        # ax1.set_ylabel("Fidelity")
+        # ax1.tick_params(axis="y", labelcolor="blue")
+        # ax1.grid(True, linestyle="--", alpha=0.6)
 
-        # Plot Goodness of Fit ()
-        ax2 = ax1.twinx()
-        ax2.plot(
-            step_vals,
-            goodness_of_fit_arr[nv_ind],
-            color="gray",
-            linestyle="--",
-            label=r"Goodness of Fit ($\chi^2_{\text{reduced}}$)",
-            alpha=0.7,
-        )
-        ax2.set_ylabel(r"Goodness of Fit ($\chi^2_{\text{reduced}}$)", color="gray")
-        ax2.tick_params(axis="y", labelcolor="gray")
+        # # Plot Goodness of Fit ()
+        # ax2 = ax1.twinx()
+        # ax2.plot(
+        #     step_vals,
+        #     goodness_of_fit_arr[nv_ind],
+        #     color="gray",
+        #     linestyle="--",
+        #     label=r"Goodness of Fit ($\chi^2_{\text{reduced}}$)",
+        #     alpha=0.7,
+        # )
+        # ax2.set_ylabel(r"Goodness of Fit ($\chi^2_{\text{reduced}}$)", color="gray")
+        # ax2.tick_params(axis="y", labelcolor="gray")
 
-        # Highlight optimal step value
-        ax1.axvline(
-            optimal_step_val,
-            color="red",
-            linestyle="--",
-            label=f"Optimal Step Val: {optimal_step_val:.3f}",
-        )
-        ax2.axvline(
-            optimal_step_val,
-            color="red",
-            linestyle="--",
-        )
+        # # Highlight optimal step value
+        # ax1.axvline(
+        #     optimal_step_val,
+        #     color="red",
+        #     linestyle="--",
+        #     label=f"Optimal Step Val: {optimal_step_val:.3f}",
+        # )
+        # ax2.axvline(
+        #     optimal_step_val,
+        #     color="red",
+        #     linestyle="--",
+        # )
 
-        # Combine legends
-        lines, labels = ax1.get_legend_handles_labels()
-        lines2, labels2 = ax2.get_legend_handles_labels()
-        ax1.legend(lines + lines2, labels + labels2, loc="upper left", fontsize=11)
-        ax1.set_title(f"NV{nv_ind} - Optimal Step Val: {optimal_step_val:.3f}")
-        plt.tight_layout()
+        # # Combine legends
+        # lines, labels = ax1.get_legend_handles_labels()
+        # lines2, labels2 = ax2.get_legend_handles_labels()
+        # ax1.legend(lines + lines2, labels + labels2, loc="upper left", fontsize=11)
+        # ax1.set_title(f"NV{nv_ind} - Optimal Step Val: {optimal_step_val:.3f}")
+        # plt.tight_layout()
         # plt.show(block=True)
 
     # save opimal step values
@@ -749,6 +749,184 @@ def process_and_plot_green(raw_data):
     return
 
 
+def fit_fn(tau, delay, slope, decay, transition):
+    """
+    Fit function modeling the preparation fidelity as a function of polarization duration.
+    Ensures an initial steep increase followed by an exponential decay.
+    """
+    tau = np.array(tau) - delay
+    tau = np.maximum(tau, 0)  # Ensure no negative time values
+
+    # Smooth transition function using tanh
+    smooth_transition = 0.5 * (1 + np.tanh((tau - transition) / (0.6 * transition)))
+
+    # Enforce an initial steep rise
+    linear_part = slope * tau
+
+    # Exponential decay component
+    # exp_part = slope * transition * np.exp(-(tau - transition) / decay)
+    exp_part = slope * transition * np.exp(-(tau - transition) / (2 * decay))
+
+    # Combine both components smoothly
+    return (1 - smooth_transition) * linear_part + smooth_transition * exp_part
+
+
+def process_and_plot_charge(raw_data):
+    nv_list = raw_data["nv_list"]
+    num_nvs = len(nv_list)
+    min_step_val = raw_data["min_step_val"]
+    max_step_val = raw_data["max_step_val"]
+    num_steps = raw_data["num_steps"]
+    step_vals = np.linspace(min_step_val, max_step_val, num_steps)
+
+    counts = np.array(raw_data["counts"])
+    ref_exp_ind = 1
+    condensed_counts = np.array(
+        [
+            [
+                counts[ref_exp_ind, nv_ind, :, step_ind, :].flatten()
+                for step_ind in range(num_steps)
+            ]
+            for nv_ind in range(num_nvs)
+        ]
+    )
+
+    # Process each NV-step pair in parallel
+    results = Parallel(n_jobs=-1)(
+        delayed(process_nv_step)(nv_ind, step_ind, condensed_counts)
+        for nv_ind in range(num_nvs)
+        for step_ind in range(num_steps)
+    )
+
+    try:
+        results = np.array(results, dtype=float).reshape(num_nvs, num_steps, 3)
+    except ValueError as e:
+        print(f"Error reshaping results: {e}")
+        return
+
+    prep_fidelity = results[:, :, 1]
+
+    ### **Perform Fitting**
+    duration_linspace = np.linspace(min_step_val, max_step_val, 400)
+    opti_durs, opti_fidelities = [], []
+
+    def sat_decay_fit_fn(t, F0, A, t0, tau_r, tau_d):
+        t = np.asarray(t, dtype=float)
+        x = np.maximum(t - t0, 0.0)  # gate before t0
+        return F0 + A * (1.0 - np.exp(-x / tau_r)) * np.exp(-x / tau_d)
+
+    for nv_ind in range(num_nvs):
+        y = prep_fidelity[nv_ind].astype(float)
+        x = step_vals.astype(float)
+
+        # Clean
+        m = np.isfinite(x) & np.isfinite(y)
+        x_fit, y_fit = x[m], y[m]
+        if x_fit.size < 4:
+            opti_durs.append(None)
+            opti_fidelities.append(None)
+            continue
+
+        # Robust initial guesses
+        F0_guess = float(np.nanpercentile(y_fit, 5))
+        ymax = float(np.nanpercentile(y_fit, 95))
+        A_guess = max(1e-3, min(1.0, ymax - F0_guess))
+        t0_guess = max(min_step_val - 0.1 * (max_step_val - min_step_val), 0.0)
+        tau_r_guess = 0.2 * (max_step_val - min_step_val)  # ~20% of span
+        tau_d_guess = 10.0 * (max_step_val - min_step_val)  # very slow decay by default
+
+        # Sigma: if these are fidelities in [0,1], use small uniform weights
+        sigma = None
+
+        # Try sat_decay first; if it fails, fall back to sat_only
+        try:
+            popt, _ = curve_fit(
+                sat_decay_fit_fn,
+                x_fit,
+                y_fit,
+                p0=[F0_guess, A_guess, t0_guess, tau_r_guess, tau_d_guess],
+                bounds=(
+                    [0.0, 0.0, min_step_val - 5e3, 1.0, 1.0],
+                    [1.0, 1.0, max_step_val + 5e3, 1e6, 1e9],
+                ),
+                sigma=sigma,
+                maxfev=200000,
+            )
+            fitted_curve = sat_decay_fit_fn(duration_linspace, *popt)
+
+            # Find optimal duration based on the fitted curve
+            # opti_dur = duration_linspace[np.nanargmax(fitted_curve)]
+            # opti_fidelity = np.nanmax(fitted_curve)
+            # opti_durs.append(round(opti_dur / 4) * 4)
+            # opti_fidelities.append(round(opti_fidelity, 3))
+            # Choose optimal duration as the argmax of fitted curve within sweep
+            opt_i = int(np.nanargmax(fitted_curve))
+            opti_dur = float(duration_linspace[opt_i])
+            opti_fid = float(fitted_curve[opt_i])
+
+            # Snap to nearest 4 ns if you like hardware granularity
+            opti_durs.append(round(opti_dur / 4) * 4)
+            opti_fidelities.append(round(opti_fid, 3))
+
+            # # # Plot results
+            # plt.figure()
+            # plt.scatter(
+            #     x_fit,
+            #     y_fit,
+            #     label="Measured Fidelity",
+            #     color="blue",
+            # )
+            # plt.plot(duration_linspace, fitted_curve, label="Fitted Curve", color="red")
+            # plt.axvline(
+            #     opti_dur,
+            #     color="green",
+            #     linestyle="--",
+            #     label=f"Opt. Duration: {opti_dur:.1f} ns",
+            # )
+            # plt.xlabel("Polarization Duration (ns)")
+            # plt.ylabel("Preparation Fidelity")
+            # plt.title(f"NV Num: {nv_ind}")
+            # plt.legend()
+            # plt.show(block=True)
+
+            # print(
+            #     f"NV {nv_ind} - Optimal Duration: {opti_dur:.1f} ns, Optimal Fidelity: {opti_fidelity}"
+            # )
+
+        except RuntimeError:
+            print(f"Skipping NV {nv_ind}: Curve fitting failed.")
+            opti_durs.append(None)
+            opti_fidelities.append(None)
+
+    if opti_durs:
+        print("Optimal Polarization Durations:", opti_durs)
+
+        # Filter out None values to compute median
+        numeric_durations = [d for d in opti_durs if d is not None]
+        median_duration = int(np.nanmedian(numeric_durations))
+        # Replace None or out-of-range values with median
+        opti_durs = [
+            median_duration if (d is None or (60 <= d <= 400)) else d for d in opti_durs
+        ]
+        #         # Filter out None values to compute median
+        #         numeric_durations = [d for d in opti_durs if d is not None]
+        #         median_duration = int(np.nanmedian(numeric_durations))
+        #         # Replace None or out-of-range values with median
+        #         opti_durs = [
+        #             median_duration + 100 if (d is None or not (48 <= d <= 400)) else d
+        #             for d in opti_durs
+        #         ]
+        # opti_durs = round(opti_durs / 4) * 4
+        # print("Updated Optimal Durations:", opti_durs)
+        print("Optimal Preparation Fidelities:", opti_fidelities)
+        print(f"Median Optimal Duration: {np.median(opti_durs)} ns")
+        print(f"Median Optimal Fidelity: {np.median(opti_fidelities)}")
+        print(f"Max Optimal Duration: {np.max(opti_durs)} ns")
+        print(f"Min Optimal Duration: {np.min(opti_durs)} ns")
+
+    return
+
+
 if __name__ == "__main__":
     kpl.init_kplotlib()
     # file_id = 1710843759806
@@ -805,7 +983,7 @@ if __name__ == "__main__":
     # file_id = 1809414309242  # yellow ampl 60ms 81NVs
     # file_id = 1834021972039  # yellow ampl 60ms 75NVs
 
-    file_id = "2025_03_05-05_04_57-rubin-nv0_2025_02_26"  # 1794442033227  # yellow ampl 60ms 140NVs
+    # file_id = "2025_03_05-05_04_57-rubin-nv0_2025_02_26"  # 1794442033227  # yellow ampl 60ms 140NVs
     # file_id = 1793116636570  # yellow ampl 24ms
     # file_id = 1792980892323  # yellow ampl 80ms
     # file_id = 1791756537192  # green durations
@@ -832,7 +1010,6 @@ if __name__ == "__main__":
     # )
     ### readout amp
     # file_stem = "2025_09_11-01_45_11-rubin-nv0_2025_09_08"  #
-    # file_stem = "2025_09_11-20_15_28-rubin-nv0_2025_09_08"
     # file_stem = "2025_09_11-23_23_30-rubin-nv0_2025_09_08"
     file_stem = "2025_09_13-20_27_20-rubin-nv0_2025_09_08"
 
@@ -848,10 +1025,11 @@ if __name__ == "__main__":
     file_id = "2025_09_14-21_59_00-rubin-nv0_2025_09_08"
 
     # dm.USE_NEW_CLOUD = False
-    raw_data = dm.get_raw_data(file_stem, load_npz=True)
+    raw_data = dm.get_raw_data(file_stem=file_id, load_npz=True)
     # file_name = dm.get_file_name(file_id=file_id)
     # print(f"{file_name}_{file_id}")
     process_and_plot(raw_data)
     # process_and_plot_green(raw_data)
+    # process_and_plot_charge(raw_data)
     # print(dm.get_file_name(1717056176426))
     plt.show(block=True)
