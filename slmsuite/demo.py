@@ -136,12 +136,12 @@ import matplotlib.pyplot as plt
 import numpy as np
 
 # Given pixel coordinates and corresponding red coordinates
-pixel_coords_list = np.array([[29.437, 41.77], [147.414, 233.083], [224.636, 21.373]])
+pixel_coords_list = np.array([[123.499, 9.085], [17.458, 242.413], [237.243, 239.989]])
 red_coords_list = np.array(
     [
-        [80.0, 80.0],
-        [72.0, 61.0],
-        [62.0, 79.0],
+        [71.0, 81.5],
+        [84.0, 62.0],
+        [64.0, 59.0],
     ]
 )
 
@@ -227,6 +227,7 @@ else:
     #     [42.749, 125.763], pixel_coords_list, red_coords_list
     # )
     # print("Corresponding red coordinates:", new_red_coord)
+# sys.exit()
 
 min_tau = 200  # ns
 max_tau = 100e3  # fallback if no revival_period given
@@ -265,14 +266,44 @@ def generate_divisible_by_4(min_val, max_val, num_steps):
 
 # Example Usage
 min_duration = 100
-max_duration = 2000
+max_duration = 10000
 num_steps = 25
 
 step_values = generate_divisible_by_4(min_duration, max_duration, num_steps)
 print(step_values)
 print(len(step_values))
 
-# sys.exit()
+
+def logspace_div4(min_val, max_val, num_steps, base=10.0):
+    if not (min_val > 0 and max_val > min_val and num_steps >= 2):
+        raise ValueError("Bad inputs.")
+    m_lo, m_hi = int(np.ceil(min_val / 4)), int(np.floor(max_val / 4))
+    if m_lo > m_hi:
+        raise ValueError("Range too narrow for multiples of 4.")
+    k = 8
+    while True:
+        xs = np.logspace(
+            np.log(m_lo) / np.log(base),
+            np.log(m_hi) / np.log(base),
+            k * num_steps,
+            base=base,
+        )
+        m = np.unique(np.clip(np.rint(xs).astype(int), m_lo, m_hi))
+        if m[0] != m_lo:
+            m[0] = m_lo
+        if m[-1] != m_hi:
+            m[-1] = m_hi
+        if len(m) >= num_steps:
+            break
+        k *= 2
+    idx = np.linspace(0, len(m) - 1, num_steps).round().astype(int)
+    return (m[idx] * 4).tolist()
+
+
+# Example
+print(logspace_div4(100, 10000, 25))
+
+sys.exit()
 # Updating plot with center frequencies in the legend
 # # Given data
 # green_aod_freq_MHz = np.array([90, 95, 100, 105, 110, 115, 120, 125])

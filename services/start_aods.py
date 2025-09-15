@@ -12,14 +12,14 @@ import time
 from utils import common
 
 FLAG_PATH = r"C:\Users\matth\GitHub\dioptric\experiment_running.flag"
-CHECK_INTERVAL = 15  # seconds
+CHECK_INTERVAL = 5  # seconds
 
 
 def run_aods():
     cxn = common.labrad_connect()
     opx = cxn.QM_opx
     analog_chans = [3, 4, 2, 6]  # Green x/y, Red x/y
-    analog_volts = [0.11, 0.11, 0.15, 0.15]
+    analog_volts = [0.11, 0.11, 0.11, 0.11]
     analog_freqs = [107.0, 107.0, 72.0, 72.0]
     last_status = None
 

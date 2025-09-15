@@ -39,15 +39,17 @@ calibration_coords_pixel = [
     [123.376, 19.656],
 ]
 calibration_coords_green = [
-    [122.759, 99.269],
-    [96.428, 96.172],
-    [106.997, 119.628],
+    [122.785, 99.205],
+    [96.436, 96.099],
+    [107.039, 119.549],
 ]
 calibration_coords_red = [
-    [84.438, 65.115],
-    [63.373, 61.286],
-    [71.164, 80.63],
+    [84.506, 65.063],
+    [63.419, 61.215],
+    [71.164, 80.548],
 ]
+
+
 # Create the dictionaries using the provided lists
 calibration_coords_nv1 = {
     CoordsKey.PIXEL: calibration_coords_pixel[0],
@@ -890,14 +892,14 @@ opx_config = {
         "green_aod_cw-scc": {"type": "constant", "sample": 0.15},
         # Red AOD
         # "red_aod_cw-opti": {"type": "constant", "sample": 0.10},
-        "red_aod_cw-opti": {"type": "constant", "sample": 0.13},
-        # "red_aod_cw-ion": {"type": "constant", "sample": 0.09},
-        "red_aod_cw-ion": {"type": "constant", "sample": 0.13},
-        "red_aod_cw-scc": {"type": "constant", "sample": 0.13},
+        "red_aod_cw-opti": {"type": "constant", "sample": 0.11},
+        "red_aod_cw-ion": {"type": "constant", "sample": 0.11},
+        "red_aod_cw-scc": {"type": "constant", "sample": 0.11},
         # "red_aod_cw-scc": {"type": "constant", "sample": 0.12},  # rubin
         "yellow_imaging": {"type": "constant", "sample": 0.4},  # 0.35
-        "yellow_charge_readout": {"type": "constant", "sample": 0.2722},  # 370NVs
-        "yellow_spin_pol": {"type": "constant", "sample": 0.44},  # 75 NVs
+        # "yellow_charge_readout": {"type": "constant", "sample": 0.2722},  # 370NVs
+        "yellow_charge_readout": {"type": "constant", "sample": 0.2622},  # 370NVs
+        "yellow_spin_pol": {"type": "constant", "sample": 0.27},  # 75 NVs
         # "yellow_spin_pol": {"type": "constant", "sample": 0.42},
         "yellow_shelving": {"type": "constant", "sample": 0.33},
         # Other

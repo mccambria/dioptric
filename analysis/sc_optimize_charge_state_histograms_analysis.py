@@ -845,6 +845,7 @@ if __name__ == "__main__":
     # file_id = "2025_09_12-04_47_45-rubin-nv0_2025_09_08"
     # file_id = "2025_09_13-00_31_26-rubin-nv0_2025_09_08"
     # file_id = "2025_09_13-02_58_29-rubin-nv0_2025_09_08"
+    file_id = "2025_09_14-21_59_00-rubin-nv0_2025_09_08"
 
     # dm.USE_NEW_CLOUD = False
     raw_data = dm.get_raw_data(file_stem, load_npz=True)
