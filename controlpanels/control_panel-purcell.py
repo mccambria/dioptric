@@ -177,8 +177,8 @@ def do_optimize_readout_amp(nv_list):
     num_reps = 15
     # num_runs = 300
     num_runs = 200
-    min_amp = 0.8
-    max_amp = 1.2
+    min_amp = 0.7
+    max_amp = 1.3
     return optimize_charge_state_histograms_mcc.optimize_readout_amp(
         nv_list, num_steps, num_reps, num_runs, min_amp, max_amp
     )
@@ -500,10 +500,10 @@ def do_calibrate_iq_delay(nv_list):
 
 
 def do_resonance(nv_list):
-    # freq_center = 2.87
-    # freq_range = 0.240
+    freq_center = 2.87
+    freq_range = 0.240
     # freq_range = 0.36
-    # num_steps = 60
+    num_steps = 40
     # num_steps = 72
     # Single ref
     # num_reps = 8
@@ -512,13 +512,14 @@ def do_resonance(nv_list):
     # Both refs
     num_reps = 3
     num_runs = 400
-    freqs = []
-    centers = [2.730700, 3.022277]
-    range_each = 0.1
-    lower_freqs = calculate_freqs(centers[0], range_each, 20)
-    freqs.extend(lower_freqs)
-    upper_freqs = calculate_freqs(centers[1], range_each, 20)
-    freqs.extend(upper_freqs)
+    freqs = calculate_freqs(freq_center, freq_range, num_steps)
+    # freqs = []
+    # centers = [2.730700, 3.022277]
+    # range_each = 0.1
+    # lower_freqs = calculate_freqs(centers[0], range_each, 20)
+    # freqs.extend(lower_freqs)
+    # upper_freqs = calculate_freqs(centers[1], range_each, 20)
+    # freqs.extend(upper_freqs)
     ##
     # Remove duplicates and sort
     freqs = sorted(set(freqs))
@@ -1026,7 +1027,7 @@ def do_opx_constant_ac():
     opx.constant_ac(
         [],  # Digital channels
         [7],  # Analog channels
-        [0.34],  # Analog voltages
+        [0.35],  # Analog voltages
         [0],  # Analog frequencies
     )
     # opx.constant_ac([4])  # Just laser
@@ -1086,7 +1087,7 @@ def do_opx_constant_ac():
     # opx.constant_ac(
     #     [1],  # Digital channels
     #     [2, 6],  # Analog channels
-    #     [0.15, 0.15],  # Analog voltages
+    #     [0.14, 0.14],  # Analog voltages
     #     [72.0, 72.0],  # Analog frequencies
     # )
 
@@ -1240,7 +1241,12 @@ if __name__ == "__main__":
         # file_path="slmsuite/nv_blob_detection/nv_blob_rubin_shallow_75nvs_reordered.npz",
         file_path="slmsuite/nv_blob_detection/nv_blob_370nvs_reordered.npz",
     ).tolist()
-
+    pixel_coords_list = [
+        [124.195, 127.341],
+        [14.885, 152.48],
+        [244.791, 189.637],
+        [154.222, 14.885],
+    ]
     green_coords_list = [
         [
             round(coord, 3)
@@ -1275,18 +1281,18 @@ if __name__ == "__main__":
     #     [239.681, 215.048],
     #     [123.376, 19.656],
     # ]
-    # green_coords_list = [
-    #     [108.356, 107.388],
-    #     [122.759, 99.269],
-    #     [96.428, 96.172],
-    #     [106.997, 119.628],
-    # ]
-    # red_coords_list = [
-    #     [72.612, 70.89],
-    #     [84.438, 65.115],
-    #     [63.373, 61.286],
-    #     [71.164, 80.63],
-    # ]
+    green_coords_list = [
+        [108.344, 107.393],
+        [121.068, 105.734],
+        [95.509, 99.001],
+        [103.437, 119.832],
+    ]
+    red_coords_list = [
+        [73.639, 70.809],
+        [83.477, 71.2],
+        [63.558, 63.356],
+        [68.69, 80.894],
+    ]
 
     num_nvs = len(pixel_coords_list)
     threshold_list = [None] * num_nvs
@@ -1308,8 +1314,7 @@ if __name__ == "__main__":
     # pol_duration_list = [96, 152, 156, 92, 108, 192, 120, 144, 216, 212, 120, 152, 220, 128, 244, 104, 212, 120, 132, 132, 104, 204, 192, 144, 300, 128, 152, 220, 312, 128, 188, 192, 396, 132, 80, 264, 108, 232, 156, 120, 424, 476, 104, 128, 440, 132, 156, 416, 252, 180, 144, 128, 292, 116, 256, 216, 128, 348, 232, 96, 428, 352, 176, 324, 376, 152, 216, 180, 104, 176, 460, 180, 120, 268, 188]
     #new set 75NVs optimized
     # pol_duration_list = [132, 132, 144, 176, 104, 164, 116, 128, 168, 204, 116, 156, 180, 104, 220, 96, 132, 104, 120, 120, 104, 192, 132, 128, 228, 120, 132, 200, 276, 96, 204, 192, 376, 120, 84, 244, 104, 232, 116, 108, 340, 436, 96, 116, 340, 116, 104, 416, 168, 120, 108, 104, 300, 104, 192, 188, 116, 336, 220, 92, 372, 328, 156, 300, 384, 120, 144, 140, 120, 132, 472, 132, 96, 192, 168]
-    pol_duration_list =[144, 128, 132, 312, 108, 128, 96, 152, 156, 144, 96, 120, 132, 108, 168, 108, 132, 116, 108, 96, 72, 140, 140, 104, 192, 108, 120, 144, 212, 84, 128, 108, 268, 104, 168, 376, 92, 140, 132, 116, 268, 352, 116, 128, 276, 116, 140, 304, 152, 132, 104, 96, 168, 84, 176, 144, 96, 232, 156, 72, 288, 216, 128, 192, 228, 96, 104, 128, 92, 180, 340, 132, 96, 176, 108]
-    # scc_duration_list = [92, 88, 96, 92, 72, 88, 56, 84, 92, 108, 80, 80, 88, 72, 108, 64, 92, 72, 72, 64, 76, 128, 84, 76, 100, 76, 64, 104, 104, 64, 112, 116, 124, 80, 72, 100, 56, 136, 84, 64, 104, 124, 92, 64, 120, 80, 120, 116, 100, 100, 76, 56, 120, 64, 132, 84, 72, 144, 100, 44, 92, 136, 92, 176, 128, 76, 116, 88, 68, 96, 144, 120, 68, 92, 160] 
+    pol_duration_list = [616, 676, 1044, 1368, 892, 796, 432, 676, 1940, 768, 944, 744, 1940, 1940, 108, 672, 1940, 148, 768, 1228, 1740, 188, 256, 348, 1116, 604, 196, 696, 1396, 192, 1940, 1940, 844, 1188, 1252, 800, 1940, 1544, 200, 756, 652, 220, 1940, 644, 1940, 1340, 892, 856, 884, 1156, 744, 1644, 648, 1940, 1216, 592, 692, 1116, 1936, 244, 364, 228, 1940, 1096, 268, 472, 100, 1104, 920, 548, 1416, 1028, 944, 1940, 1408, 1676, 1088, 184, 460, 1940, 560, 100, 996, 844, 836, 776, 1124, 1940, 1300, 1184, 1264, 1180, 1220, 1032, 1940, 1940, 1248, 560, 352, 856, 1180, 1324, 1104, 792, 1344, 1368, 272, 692, 1580, 860, 1284, 428, 800, 932, 184, 888, 1068, 964, 1940, 100, 936, 912, 104, 1088, 1940, 744, 372, 1940, 1608, 1940, 1940, 1072, 944, 1628, 1088, 760, 1104, 1104, 772, 1284, 1940, 1884, 1016, 1940, 1068, 1940, 1676, 1940, 1940, 1100, 844, 1940, 1940, 132, 1400, 1156, 1940, 360, 696, 1940, 1240, 1340, 100, 884, 1940, 1940, 1940, 272, 792, 1120, 1256, 936, 1940, 1940, 1072, 1940, 1940, 1940, 956, 1940, 540, 1940, 164, 712, 1940, 1940, 1064, 824, 272, 1940, 844, 380, 704, 1400, 124, 800, 120, 1940, 1364, 1720, 1940, 1940, 1184, 1368, 864, 956, 1940, 100, 1236, 1940, 872, 1940, 1940, 1672, 1276, 1028, 100, 1940, 1076, 788, 1940, 864, 784, 564, 1940, 1604, 1940, 1940, 1416, 1940, 880, 1940, 112, 1904, 1940, 1756, 1228, 1252, 1700, 1940, 848, 1940, 1068, 1940, 1392, 1940, 1940, 104, 1940, 756, 584, 1304, 1940, 1336, 704, 1940, 1940, 1940, 1940, 1372, 1940, 1940, 1940, 1824, 1048, 1152, 1940, 1860, 1404, 1760, 1312, 128, 1264, 1940, 1216, 1940, 1940, 1940, 1732, 1940, 996, 1732, 1940, 224, 1060, 852, 1940, 1940, 1224, 1860, 1348, 1752, 1940, 824, 1940, 1940, 1940, 1940, 1940, 1060, 1072, 1940, 1940, 912, 1332, 1940, 1940, 1940, 1940, 1940, 1576, 1940, 1120, 1480, 1940, 1228, 1520, 1940, 1940, 1940, 1940, 1940, 1940, 1940, 1940, 1940, 1636, 1940, 136, 1940, 1544, 1940, 1940, 1936, 100, 1940, 1056, 940, 1372, 1336, 1940, 1940, 1940, 984, 1028, 1940, 1940, 1312, 1940, 100, 1940, 1940, 792, 1552, 1384, 1940, 1940, 1940, 1940, 1940, 1940, 1248, 1940, 1940, 1468, 1788, 1212, 1436, 1940, 1940]
     scc_duration_list = [48, 84, 84, 68, 76, 92, 72, 92, 116, 84, 72, 76, 64, 60, 88, 60, 84, 56, 68, 56, 56, 80, 80, 72, 88, 72, 72, 92, 96, 72, 96, 84, 100, 72, 72, 64, 68, 124, 80, 56, 100, 116, 72, 48, 96, 60, 80, 120, 92, 80, 60, 60, 108, 56, 124, 160, 64, 116, 108, 64, 128, 108, 92, 136, 120, 72, 80, 76, 64, 72, 124, 112, 72, 92, 80]
     # selected_indices_68MHz = [0, 7, 8, 9, 11, 14, 18, 22, 24, 25, 26, 27, 28, 30, 31, 32, 33, 35, 38, 44, 45, 46, 47, 48, 49, 53, 55, 57, 58, 60, 62, 64, 66, 67, 68, 69, 70, 71, 72, 73]
     # selected_indices_185MHz  =[0, 1, 2, 3, 4, 5, 6, 10, 12, 13, 15, 16, 17, 19, 20, 21, 23, 29, 34, 36, 39, 40, 41, 42, 43, 50, 51, 52, 54, 56, 59, 61, 63, 65, 74]
@@ -1339,8 +1344,9 @@ if __name__ == "__main__":
     # sys.exit()
 
     # scc_amp_list = [1.0] * num_nvs
-    scc_duration_list = [112] * num_nvs
-    pol_duration_list = [200] * num_nvs
+    # scc_duration_list = [112] * num_nvs
+    pol_duration_list = [1000] * num_nvs
+    ion_duration_list = [1000] * num_nvs
     # nv_list[i] will have the ith coordinates from the above lists
     nv_list: list[NVSig] = []
     for ind in range(num_nvs):
@@ -1359,7 +1365,8 @@ if __name__ == "__main__":
             threshold=threshold_list[ind],
             pulse_durations={
                 # VirtualLaserKey.SCC: scc_duration_list[ind],
-                # VirtualLaserKey.CHARGE_POL: pol_duration_list[ind],
+                VirtualLaserKey.CHARGE_POL: pol_duration_list[ind],
+                VirtualLaserKey.ION: ion_duration_list[ind],
             },
             pulse_amps={
                 # VirtualLaserKey.SCC: scc_amp_list[ind],
@@ -1466,8 +1473,8 @@ if __name__ == "__main__":
         # optimize.optimize_pixel_and_z(nv_sig, do_plot=True)
         # coords_key = None
         # coords_key = green_laser
-        # coords_key = red_laser
-        # do_optimize_loop(np.array(nv_list), np.array(coords_key))
+        coords_key = red_laser
+        do_optimize_loop(np.array(nv_list), np.array(coords_key))
 
         # do_charge_state_histograms(nv_list)
         # do_charge_state_conditional_init(nv_list)
@@ -1475,7 +1482,7 @@ if __name__ == "__main__":
 
         # do_optimize_pol_amp(nv_list)
         # do_optimize_pol_duration(nv_list)
-        do_optimize_readout_amp(nv_list)
+        # do_optimize_readout_amp(nv_list)
         # do_optimize_readout_duration(nv_list)
         # optimize_readout_amp_and_duration(nv_list)
         # do_optimize_spin_pol_amp(nv_list)

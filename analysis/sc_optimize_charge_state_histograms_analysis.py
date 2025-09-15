@@ -99,8 +99,8 @@ def process_and_plot(raw_data):
     optimize_pol_or_readout = raw_data["optimize_pol_or_readout"]
     optimize_duration_or_amp = raw_data["optimize_duration_or_amp"]
     # a, b, c = 3.7e5, 6.97, 8e-14 # old para
-    a, b, c = 161266.751, 6.617, -19.492  # new para
-
+    # a, b, c = 161266.751, 6.617, -19.492  # new para
+    a, b, c = 1.16306103e04, 2.81008145e00, -2.50774288e01  # UPDATED 2025-09-14
     # get yellow amplitude
     yellow_charge_readout_amp = raw_data["opx_config"]["waveforms"][
         "yellow_charge_readout"
@@ -187,7 +187,7 @@ def process_and_plot(raw_data):
         else:
             step_vals *= yellow_charge_readout_amp
             # x_label = "Readout amplitude"
-            # step_vals = a * (step_vals**b) + c
+            step_vals = a * (step_vals**b) + c
             x_label = "Readout amplitude (uW)"
     print(step_vals)
     # return
@@ -213,7 +213,7 @@ def process_and_plot(raw_data):
                 readout_fidelity_arr[nv_ind],
                 prep_fidelity_arr[nv_ind],
                 goodness_of_fit_arr[nv_ind],
-                weights=(1.0, 1.0, 2.0),
+                weights=(2.0, 1.0, 1.5),
             )
             # Manually override for the first NV
             # if nv_ind == 0:
@@ -1011,19 +1011,17 @@ if __name__ == "__main__":
     ### readout amp
     # file_stem = "2025_09_11-01_45_11-rubin-nv0_2025_09_08"  #
     # file_stem = "2025_09_11-23_23_30-rubin-nv0_2025_09_08"
-    file_id = "2025_09_13-16_13_16-rubin-nv0_2025_09_08"
+    file_stem = "2025_09_13-20_27_20-rubin-nv0_2025_09_08"
 
     ### pol amp var
-    # file_id = (
-    #     "2025_09_12-18_30_09-rubin-nv0_2025_09_08"  # amp centered at 0.08 with 1us
-    # )
-    # file_id = "2025_09_13-02_58_29-rubin-nv0_2025_09_08" # amp centered at 0.06 with 10us
+    # file_id = "2025_09_12-16_53_34-rubin-nv0_2025_09_08"
+    # file_id = "2025_09_12-18_30_09-rubin-nv0_2025_09_08"
+    # file_id = "2025_09_12-20_43_54-rubin-nv0_2025_09_08"
 
     ### pol dur var
-    # file_id = (
-    #     "2025_09_12-20_43_54-rubin-nv0_2025_09_08"  # from 32ns to 600ns @ 0.06 amp
-    # )
-    # file_id = "2025_09_13-00_31_26-rubin-nv0_2025_09_08"  # 100 ns to 2000ns @ 0.06 amp
+    # file_id = "2025_09_12-04_47_45-rubin-nv0_2025_09_08"
+    # file_id = "2025_09_13-00_31_26-rubin-nv0_2025_09_08"
+    # file_id = "2025_09_13-02_58_29-rubin-nv0_2025_09_08"
 
     # dm.USE_NEW_CLOUD = False
     raw_data = dm.get_raw_data(file_stem=file_id, load_npz=True)
