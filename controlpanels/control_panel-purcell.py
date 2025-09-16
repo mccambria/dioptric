@@ -501,19 +501,19 @@ def do_calibrate_iq_delay(nv_list):
 
 def do_resonance(nv_list):
     freq_center = 2.87
-    # freq_range = 0.240
-    freq_range = 0.180
+    freq_range = 0.240
+    # freq_range = 0.180
     # freq_range = 0.36
-    # num_steps = 40
-    num_steps = 24
+    num_steps = 60
+    # num_steps = 24
     # num_steps = 72
     # Single ref
     # num_reps = 8
     # num_runs = 1100
     # num_runs = 200
     # Both refs
-    num_reps = 4
-    num_runs = 200
+    num_reps = 2
+    num_runs = 600
     # num_runs = 4
     freqs = calculate_freqs(freq_center, freq_range, num_steps)
     # freqs = []
