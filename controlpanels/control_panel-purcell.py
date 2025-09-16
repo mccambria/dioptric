@@ -415,7 +415,7 @@ def do_optimize_spin_pol_amp(nv_list):
 
 def do_scc_snr_check(nv_list):
     num_reps = 200
-    num_runs = 60
+    num_runs = 40
     # num_runs = 200
     # num_runs = 160 * 4
     # num_runs = 3
@@ -501,9 +501,9 @@ def do_calibrate_iq_delay(nv_list):
 
 def do_resonance(nv_list):
     freq_center = 2.87
-    freq_range = 0.240
+    # freq_range = 0.240
     # freq_range = 0.180
-    # freq_range = 0.36
+    freq_range = 0.36
     num_steps = 60
     # num_steps = 24
     # num_steps = 72
@@ -513,7 +513,7 @@ def do_resonance(nv_list):
     # num_runs = 200
     # Both refs
     num_reps = 2
-    num_runs = 600
+    num_runs = 200
     # num_runs = 4
     freqs = calculate_freqs(freq_center, freq_range, num_steps)
     # freqs = []
@@ -528,9 +528,9 @@ def do_resonance(nv_list):
     freqs = sorted(set(freqs))
     num_steps = len(freqs)
     # sys.exit()
-    resonance.main(nv_list, num_steps, num_reps, num_runs, freqs=freqs)
-    # for _ in range(2):
-    #     resonance.main(nv_list, num_steps, num_reps, num_runs, freqs=freqs)
+    # resonance.main(nv_list, num_steps, num_reps, num_runs, freqs=freqs)
+    for _ in range(2):
+        resonance.main(nv_list, num_steps, num_reps, num_runs, freqs=freqs)
 
 
 def do_resonance_zoom(nv_list):
@@ -1010,13 +1010,13 @@ def do_opx_constant_ac():
     # if True:
     #     sig_gen = cxn.sig_gen_STAN_sg394
     #     amp = 10
-    #     chan = 10
+    #     chan = 9
     # else:
     #     sig_gen = cxn.sig_gen_STAN_sg394_2
     #     amp = 10
-    #     chan = 9
+    #     chan = 10
     # sig_gen.set_amp(amp)  # 12
-    # sig_gen.set_freq(0.1)
+    # sig_gen.set_freq(0.2)
     # sig_gen.uwave_on()
     # opx.constant_ac([chan])
 
@@ -1027,12 +1027,12 @@ def do_opx_constant_ac():
     # opx.stream_start()
 
     # Yellow
-    opx.constant_ac(
-        [],  # Digital channels
-        [7],  # Analog channels
-        [0.35],  # Analog voltages
-        [0],  # Analog frequencies
-    )
+    # opx.constant_ac(
+    #     [],  # Digital channels
+    #     [7],  # Analog channels
+    #     [0.35],  # Analog voltages
+    #     [0],  # Analog frequencies
+    # )
     # opx.constant_ac([4])  # Just laser
     # Red
     # freqs = [65, 75, 85]
@@ -1281,10 +1281,10 @@ if __name__ == "__main__":
     #     [123.376, 19.656],
     # ]
     # green_coords_list = [
-    #     [108.396, 107.304],
-    #     [122.795, 99.206],
-    #     [96.459, 96.059],
-    #     [107.083, 119.496],
+    #     [108.372, 107.28],
+    #     [122.786, 99.193],
+    #     [96.44, 96.069],
+    #     [107.073, 119.493],
     # ]
     # red_coords_list = [
     #     [73.634, 71.68],
@@ -1380,7 +1380,7 @@ if __name__ == "__main__":
     nv_sig = widefield.get_repr_nv_sig(nv_list)
     # print(f"Created NV: {nv_sig.name}, Coords: {nv_sig.coords}")
     # nv_sig.expected_counts = 900
-    nv_sig.expected_counts = 1300
+    nv_sig.expected_counts = 1250
     # nv_sig.expected_counts = 1600
 
     # nv_list = nv_list[::-1]  # flipping the order of NVs

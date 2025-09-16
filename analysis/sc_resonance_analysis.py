@@ -1104,7 +1104,7 @@ if __name__ == "__main__":
     file_ids = [1832069584608]
     file_ids = [1836425531438]
 
-    file_ids = ["2025_09_15-21_31_51-rubin-nv0_2025_09_08"]
+    file_ids = ["2025_09_16-07_53_02-rubin-nv0_2025_09_08"]
 
     # fmt: off
     # fmt: on
@@ -1130,6 +1130,7 @@ if __name__ == "__main__":
         # # Compute the index mapping by finding closest matches in pixel coordinates
         # ordered_indices = []
         # for ref_coord in reference_pixel_coords:
+
         #     # Find the index of the closest match
         #     distances = np.linalg.norm(nv_pixel_coords - ref_coord, axis=1)
         #     closest_index = np.argmin(distances)
