@@ -695,9 +695,8 @@ def process_and_plot_green(raw_data):
                 filtered_step_vals,
                 filtered_prep_fidelity,
                 label="Measured Fidelity",
-                color="blue",
             )
-            plt.plot(duration_linspace, fitted_curve, label="Fitted Curve", color="red")
+            plt.plot(duration_linspace, fitted_curve, label="Fitted Curve")
             plt.axvline(
                 opti_dur,
                 color="green",
@@ -805,54 +804,87 @@ def process_and_plot_charge(raw_data):
         return
 
     prep_fidelity = results[:, :, 1]
-
+    readout_fidelity = results[:, :, 0]
     ### **Perform Fitting**
     duration_linspace = np.linspace(min_step_val, max_step_val, 400)
     opti_durs, opti_fidelities = [], []
 
-    def sat_decay_fit_fn(t, F0, A, t0, tau_r, tau_d):
+    def sat_decay_fit_fn(t, A, t0, tau_r, tau_d):
         t = np.asarray(t, dtype=float)
         x = np.maximum(t - t0, 0.0)  # gate before t0
-        return F0 + A * (1.0 - np.exp(-x / tau_r)) * np.exp(-x / tau_d)
+        return A * (1.0 - np.exp(-x / tau_r)) * np.exp(-x / tau_d)
+
+    def diffexp(t, A, t0, tau_r, dtau):
+        """
+        y = A * [exp(-x/τd) - exp(-x/τr)], x = max(t - t0, 0)
+        τd = τr + dtau > τr enforces a unimodal peak at x>0 if A>0.
+        """
+        t = np.asarray(t, float)
+        x = np.maximum(t - t0, 0.0)
+        tau_r = np.maximum(tau_r, 1e-12)
+        tau_d = tau_r + np.maximum(dtau, 1e-12)
+        return A * (np.exp(-x / tau_d) - np.exp(-x / tau_r))
+
+    def gamma_pulse(t, A, t0, n, tau):
+        """
+        y = A * x^n * exp(-x/τ), x = max(t - t0, 0)
+        Peak at x = n*τ (robust unimodal shape).
+        """
+        t = np.asarray(t, float)
+        x = np.maximum(t - t0, 0.0)
+        n = np.maximum(n, 1e-9)
+        tau = np.maximum(tau, 1e-12)
+        return A * (x**n) * np.exp(-x / tau)
 
     for nv_ind in range(num_nvs):
+        r = readout_fidelity[nv_ind].astype(float)
         y = prep_fidelity[nv_ind].astype(float)
         x = step_vals.astype(float)
-
         # Clean
-        m = np.isfinite(x) & np.isfinite(y)
-        x_fit, y_fit = x[m], y[m]
+        m = np.isfinite(x) & np.isfinite(y) & np.isfinite(r)
+        x_fit, y_fit, r = x[m], y[m], r[m]
         if x_fit.size < 4:
             opti_durs.append(None)
             opti_fidelities.append(None)
             continue
 
         # Robust initial guesses
-        F0_guess = float(np.nanpercentile(y_fit, 5))
-        ymax = float(np.nanpercentile(y_fit, 95))
-        A_guess = max(1e-3, min(1.0, ymax - F0_guess))
-        t0_guess = max(min_step_val - 0.1 * (max_step_val - min_step_val), 0.0)
-        tau_r_guess = 0.2 * (max_step_val - min_step_val)  # ~20% of span
-        tau_d_guess = 10.0 * (max_step_val - min_step_val)  # very slow decay by default
+        # ymax = float(np.nanpercentile(y_fit, 95))
+        # A_guess = max(1e-3, min(1.0, ymax))
+        # t0_guess = max(min_step_val - 0.1 * (max_step_val - min_step_val), 0.0)
+        # tau_r_guess = 0.4 * (max_step_val - min_step_val)  # ~20% of span
+        # tau_d_guess = 1.0 * (max_step_val - min_step_val)  # very slow decay by default
 
+        # --- Seeds ---
+        dt = np.median(np.diff(x_fit))
+        # t0 near where slope first increases most
+        dy = np.diff(y_fit, prepend=y_fit[0])
+        i_rise = int(np.clip(np.argmax(dy), 0, len(x_fit) - 1))
+        t0_0 = float(max(x_fit[0], x_fit[i_rise] - 0.5 * dt))
+        A0 = float(max(y_fit))  # positive amplitude
+        span = float(x_fit[-1] - x_fit[0]) if x_fit[-1] > x_fit[0] else 1.0
+        # Place peak roughly at observed max
+        tpk = float(x_fit[np.argmax(y_fit)])
+        tau0 = max(dt, 0.1 * span)
+        n0 = max(1.0, (tpk - t0_0) / max(tau0, 1e-9))
+        p0 = [A0, t0_0, n0, tau0]  # A, t0, n, tau
+        lo = [0.0, x_fit[0] - 2 * span, 0.0, 1e-9]
+        hi = [1.5 * max(y_fit), x_fit[-1] + 2 * span, 10.0, 10 * span]
         # Sigma: if these are fidelities in [0,1], use small uniform weights
         sigma = None
 
         # Try sat_decay first; if it fails, fall back to sat_only
         try:
             popt, _ = curve_fit(
-                sat_decay_fit_fn,
+                gamma_pulse,
                 x_fit,
                 y_fit,
-                p0=[F0_guess, A_guess, t0_guess, tau_r_guess, tau_d_guess],
-                bounds=(
-                    [0.0, 0.0, min_step_val - 5e3, 1.0, 1.0],
-                    [1.0, 1.0, max_step_val + 5e3, 1e6, 1e9],
-                ),
+                p0=p0,
+                bounds=(lo, hi),
                 sigma=sigma,
                 maxfev=200000,
             )
-            fitted_curve = sat_decay_fit_fn(duration_linspace, *popt)
+            fitted_curve = gamma_pulse(duration_linspace, *popt)
 
             # Find optimal duration based on the fitted curve
             # opti_dur = duration_linspace[np.nanargmax(fitted_curve)]
@@ -872,11 +904,15 @@ def process_and_plot_charge(raw_data):
             # plt.figure()
             # plt.scatter(
             #     x_fit,
+            #     r,
+            #     label="Measured Fidelity",
+            # )
+            # plt.scatter(
+            #     x_fit,
             #     y_fit,
             #     label="Measured Fidelity",
-            #     color="blue",
             # )
-            # plt.plot(duration_linspace, fitted_curve, label="Fitted Curve", color="red")
+            # plt.plot(duration_linspace, fitted_curve, label="Fitted Curve")
             # plt.axvline(
             #     opti_dur,
             #     color="green",
@@ -923,6 +959,14 @@ def process_and_plot_charge(raw_data):
         print(f"Median Optimal Fidelity: {np.median(opti_fidelities)}")
         print(f"Max Optimal Duration: {np.max(opti_durs)} ns")
         print(f"Min Optimal Duration: {np.min(opti_durs)} ns")
+        ###
+        plt.figure()
+        plt.scatter(opti_fidelities, opti_durs)
+        plt.xlabel("Polarization Duration (ns)")
+        plt.ylabel("Preparation Fidelity")
+        plt.title(f"NV Num: {nv_ind}")
+        plt.legend()
+        plt.show(block=True)
 
     return
 
@@ -1028,8 +1072,8 @@ if __name__ == "__main__":
     raw_data = dm.get_raw_data(file_stem=file_id, load_npz=True)
     # file_name = dm.get_file_name(file_id=file_id)
     # print(f"{file_name}_{file_id}")
-    process_and_plot(raw_data)
+    # process_and_plot(raw_data)
     # process_and_plot_green(raw_data)
-    # process_and_plot_charge(raw_data)
+    process_and_plot_charge(raw_data)
     # print(dm.get_file_name(1717056176426))
     plt.show(block=True)

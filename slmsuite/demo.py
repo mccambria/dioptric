@@ -135,13 +135,32 @@ import cv2
 import matplotlib.pyplot as plt
 import numpy as np
 
+### green and red calibaton at RT setup 2025-09-15
+# green_coords_list = [
+#         [108.396, 107.304],
+#         [107.332, 118.492],
+#         [119.672, 105.768],
+#         [98.339, 98.864],
+#     ]
+# red_coords_list = [
+#         [73.586, 71.625],
+#         [72.293, 80.694],
+#         [82.931, 71.034],
+#         [65.725, 64.346],
+#     ]
 # Given pixel coordinates and corresponding red coordinates
-pixel_coords_list = np.array([[123.499, 9.085], [17.458, 242.413], [237.243, 239.989]])
+pixel_coords_list = np.array(
+    [
+        [122.217, 28.629],
+        [27.396, 150.264],
+        [220.452, 192.19],
+    ]
+)
 red_coords_list = np.array(
     [
-        [71.0, 81.5],
-        [84.0, 62.0],
-        [64.0, 59.0],
+        [72.293, 80.694],
+        [82.931, 71.034],
+        [65.743, 64.346],
     ]
 )
 
@@ -249,7 +268,7 @@ taus_x = np.linspace(1, len(taus), len(taus))
 plt.figure()
 plt.scatter(taus_x, taus)
 plt.show(block=True)
-# sys.exit()
+sys.exit()
 
 
 def generate_divisible_by_4(min_val, max_val, num_steps):
@@ -303,7 +322,7 @@ def logspace_div4(min_val, max_val, num_steps, base=10.0):
 # Example
 print(logspace_div4(100, 10000, 25))
 
-sys.exit()
+# sys.exit()
 # Updating plot with center frequencies in the legend
 # # Given data
 # green_aod_freq_MHz = np.array([90, 95, 100, 105, 110, 115, 120, 125])
