@@ -39,14 +39,14 @@ calibration_coords_pixel = [
     [123.376, 19.656],
 ]
 calibration_coords_green = [
-    [122.795, 99.206],
-    [96.459, 96.059],
-    [107.083, 119.496],
+    [122.788, 99.12],
+    [96.428, 96.021],
+    [107.051, 119.429],
 ]
 calibration_coords_red = [
-    [85.762, 65.886],
-    [64.319, 61.98],
-    [72.047, 81.493],
+    [85.758, 65.815],
+    [64.275, 61.947],
+    [72.024, 81.438],
 ]
 
 
@@ -140,7 +140,7 @@ config |= {
                 # "uwave_power": 2.3,
                 "uwave_power": 8.7,
                 # "frequency": 2.779138,  # rubin shallow NVs O1 ms=-1
-                "frequency": 2.87,
+                "frequency": 2.83,
                 # "frequency": 2.730700,
                 "rabi_period": 128,
             },
@@ -151,7 +151,7 @@ config |= {
                 # "uwave_power": 9.6,
                 # "frequency": 2.779138,   # rubin shallow NVs O1 ms=-1
                 # "frequency": 2.964545,  # rubin shallow NV O1 ms=+1
-                "frequency": 2.87,
+                "frequency": 2.83,
                 # "frequency": 2.730700,  # lower esr peak for both orientation
                 "rabi_period": 128,
                 "pi_pulse": 64,
@@ -884,9 +884,8 @@ opx_config = {
         # Green AOD
         "green_aod_cw-opti": {"type": "constant", "sample": 0.08},
         # "green_aod_cw-opti": {"type": "constant", "sample": 0.07},
-        "green_aod_cw-charge_pol": {"type": "constant", "sample": 0.06},  # Negative
-        # "green_aod_cw-charge_pol": {"type": "constant", "sample": 0.139},  # median
-        # "green_aod_cw-charge_pol": {"type": "constant", "sample": 0.15},  # median
+        "green_aod_cw-charge_pol": {"type": "constant", "sample": 0.06},
+        # "green_aod_cw-charge_pol": {"type": "constant", "sample": 0.139},# median
         "green_aod_cw-spin_pol": {"type": "constant", "sample": 0.05},
         "green_aod_cw-shelving": {"type": "constant", "sample": 0.05},
         "green_aod_cw-scc": {"type": "constant", "sample": 0.15},

@@ -513,7 +513,7 @@ def do_resonance(nv_list):
     # num_runs = 200
     # Both refs
     num_reps = 2
-    num_runs = 200
+    num_runs = 400
     # num_runs = 4
     freqs = calculate_freqs(freq_center, freq_range, num_steps)
     # freqs = []
@@ -528,9 +528,9 @@ def do_resonance(nv_list):
     freqs = sorted(set(freqs))
     num_steps = len(freqs)
     # sys.exit()
-    # resonance.main(nv_list, num_steps, num_reps, num_runs, freqs=freqs)
-    for _ in range(2):
-        resonance.main(nv_list, num_steps, num_reps, num_runs, freqs=freqs)
+    resonance.main(nv_list, num_steps, num_reps, num_runs, freqs=freqs)
+    # for _ in range(2):
+    #     resonance.main(nv_list, num_steps, num_reps, num_runs, freqs=freqs)
 
 
 def do_resonance_zoom(nv_list):
@@ -550,10 +550,10 @@ def do_rabi(nv_list):
     # max_tau = 480 + min_tau
     num_steps = 31
     num_reps = 10
-    # num_runs = 400
+    num_runs = 400
     # num_runs = 100
     # num_runs = 20
-    num_runs = 5
+    # num_runs = 5
     uwave_ind_list = [1]  # only one
     # uwave_ind_list = [0, 1]
     rabi.main(nv_list, num_steps, num_reps, num_runs, min_tau, max_tau, uwave_ind_list)
@@ -1027,12 +1027,12 @@ def do_opx_constant_ac():
     # opx.stream_start()
 
     # Yellow
-    # opx.constant_ac(
-    #     [],  # Digital channels
-    #     [7],  # Analog channels
-    #     [0.35],  # Analog voltages
-    #     [0],  # Analog frequencies
-    # )
+    opx.constant_ac(
+        [],  # Digital channels
+        [7],  # Analog channels
+        [0.35],  # Analog voltages
+        [0],  # Analog frequencies
+    )
     # opx.constant_ac([4])  # Just laser
     # Red
     # freqs = [65, 75, 85]
@@ -1064,7 +1064,7 @@ def do_opx_constant_ac():
     # opx.constant_ac(
     #     [4],  # Digital channels
     #     [3, 4],  # Analog channels
-    #     [0.14, 0.14],  # Analog voltages
+    #     [0.02, 0.02],  # Analog voltages
     #     [107.0, 107.0],  # Analog frequencies
     # )
     # Green + red
@@ -1090,17 +1090,17 @@ def do_opx_constant_ac():
     # opx.constant_ac(
     #     [1],  # Digital channels
     #     [2, 6],  # Analog channels
-    #     [0.14, 0.14],  # Analog voltages
+    #     [0.16, 0.16],  # Analog voltages
     #     [72.0, 72.0],  # Analog frequencies
     # )
 
     # # Green + yellow
-    # opx.constant_ac(
-    #     [4],  # Digital channels
-    #     [3, 4, 7],  # Analog channels
-    #     [0.15, 0.15, 0.30],  # Analog voltages
-    #     [107, 107, 0],  # Analog frequencies
-    # )
+    opx.constant_ac(
+        [4],  # Digital channels
+        [3, 4, 7],  # Analog channels
+        [0.11, 0.11, 0.30],  # Analog voltages
+        [107, 107, 0],  # Analog frequencies
+    )
     # Red + green + Yellow
     # opx.constant_ac(
     #     [4, 1],  # Digital channels1
@@ -1236,7 +1236,7 @@ if __name__ == "__main__":
     # magnet_angle = 90
     date_str = "2025_09_08"
     sample_coords = [0.8, 0.2]
-    z_coord = 0.2
+    z_coord = 0.4
 
     # Load NV pixel coordinates1
     pixel_coords_list = load_nv_coords(
@@ -1281,16 +1281,16 @@ if __name__ == "__main__":
     #     [123.376, 19.656],
     # ]
     # green_coords_list = [
-    #     [108.372, 107.28],
-    #     [122.786, 99.193],
-    #     [96.44, 96.069],
-    #     [107.073, 119.493],
+    #     [108.338, 107.235],
+    #     [122.788, 99.12],
+    #     [96.428, 96.021],
+    #     [107.051, 119.429],
     # ]
     # red_coords_list = [
-    #     [73.634, 71.68],
-    #     [85.762, 65.886],
-    #     [64.319, 61.98],
-    #     [72.047, 81.493],
+    #     [73.579, 71.636],
+    #     [85.758, 65.815],
+    #     [64.275, 61.947],
+    #     [72.024, 81.438],
     # ]
     num_nvs = len(pixel_coords_list)
     threshold_list = [None] * num_nvs
@@ -1343,7 +1343,7 @@ if __name__ == "__main__":
     # sys.exit()
 
     # scc_amp_list = [1.0] * num_nvs
-    scc_duration_list = [96] * num_nvs
+    # scc_duration_list = [96] * num_nvs
     # pol_duration_list = [1000] * num_nvs
     # pol_duration_list = [1000] * num_nvs
     # nv_list[i] will have the ith coordinates from the above lists
@@ -1363,7 +1363,7 @@ if __name__ == "__main__":
             coords=coords,
             threshold=threshold_list[ind],
             pulse_durations={
-                VirtualLaserKey.SCC: scc_duration_list[ind],
+                # VirtualLaserKey.SCC: scc_duration_list[ind],
                 VirtualLaserKey.CHARGE_POL: pol_duration_list[ind],
             },
             pulse_amps={
@@ -1501,7 +1501,7 @@ if __name__ == "__main__":
 
         # do_rabi(nv_list)
         # do_power_rabi(nv_list)
-        do_resonance(nv_list)
+        # do_resonance(nv_list)
         # do_resonance_zoom(nv_list)
         # do_spin_echo(nv_list)
         # do_spin_echo_1(nv_list)

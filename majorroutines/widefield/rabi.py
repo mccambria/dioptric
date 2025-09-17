@@ -241,7 +241,7 @@ def create_correlation_figure(nv_list, taus, counts):
     return fig
 
 
-def main(nv_sig, num_steps, num_reps, num_runs, min_tau, max_tau, uwave_ind_list):
+def main(nv_list, num_steps, num_reps, num_runs, min_tau, max_tau, uwave_ind_list):
     ### Some initial setup
 
     pulse_gen = tb.get_server_pulse_gen()

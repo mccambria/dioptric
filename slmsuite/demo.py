@@ -136,33 +136,31 @@ import matplotlib.pyplot as plt
 import numpy as np
 
 ### green and red calibaton at RT setup 2025-09-15
-# green_coords_list = [
-#         [108.396, 107.304],
-#         [107.332, 118.492],
-#         [119.672, 105.768],
-#         [98.339, 98.864],
+pixel_coords_list = [
+    [107.332, 118.492],
+    [119.672, 105.768],
+    [98.339, 98.864],
+]
+red_coords_list = [
+    [72.293, 80.694],
+    [82.931, 71.034],
+    [65.725, 64.346],
+]
+# Given pixel coordinates and corresponding red coordinates
+# pixel_coords_list = np.array(
+#     [
+#         [122.217, 28.629],
+#         [27.396, 150.264],
+#         [220.452, 192.19],
 #     ]
-# red_coords_list = [
-#         [73.586, 71.625],
+# )
+# red_coords_list = np.array(
+#     [
 #         [72.293, 80.694],
 #         [82.931, 71.034],
-#         [65.725, 64.346],
+#         [65.743, 64.346],
 #     ]
-# Given pixel coordinates and corresponding red coordinates
-pixel_coords_list = np.array(
-    [
-        [122.217, 28.629],
-        [27.396, 150.264],
-        [220.452, 192.19],
-    ]
-)
-red_coords_list = np.array(
-    [
-        [72.293, 80.694],
-        [82.931, 71.034],
-        [65.743, 64.346],
-    ]
-)
+# )
 
 ## greeen
 # pixel_coords_list = np.array([[27.805, 30.303], [138.235, 235.17], [228.671, 15.343]])
@@ -178,10 +176,10 @@ if len(pixel_coords_list) >= 3:
     # New pixel coordinate for which we want to find the corresponding red coordinate
     new_pixel_coord = np.array(
         [
-            [124.195, 127.341],
-            [6.768, 210.203],
-            [239.681, 215.048],
-            [123.376, 19.656],
+            [108.338, 107.235],
+            [122.788, 99.12],
+            [96.428, 96.021],
+            [107.051, 119.429],
         ],
         dtype=np.float32,
     )
