@@ -170,15 +170,15 @@ def do_optimize_readout_duration(nv_list):
 
 
 def do_optimize_readout_amp(nv_list):
-    num_steps = 21
-    # num_steps = 18
+    # num_steps = 21
+    num_steps = 18
     # num_reps = 150
     # num_runs = 5
     num_reps = 15
     # num_runs = 300
     num_runs = 200
-    min_amp = 0.7
-    max_amp = 1.3
+    min_amp = 0.8
+    max_amp = 1.2
     return optimize_charge_state_histograms_mcc.optimize_readout_amp(
         nv_list, num_steps, num_reps, num_runs, min_amp, max_amp
     )
@@ -1350,7 +1350,7 @@ if __name__ == "__main__":
 
     # scc_amp_list = [1.0] * num_nvs
     # scc_duration_list = [96] * num_nvs
-    pol_duration_list = [1000] * num_nvs
+    pol_duration_list = [2000] * num_nvs
     # pol_duration_list = [1000] * num_nvs
     # nv_list[i] will have the ith coordinates from the above lists
     nv_list: list[NVSig] = []

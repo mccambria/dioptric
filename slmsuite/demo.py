@@ -176,10 +176,10 @@ if len(pixel_coords_list) >= 3:
     # New pixel coordinate for which we want to find the corresponding red coordinate
     new_pixel_coord = np.array(
         [
-            [108.353, 107.313],
-            [119.815, 120.239],
-            [113.419, 94.453],
-            [94.207, 119.759],
+            [108.338, 107.235],
+            [122.788, 99.12],
+            [96.428, 96.021],
+            [107.051, 119.429],
         ],
         dtype=np.float32,
     )
@@ -432,8 +432,9 @@ import matplotlib.pyplot as plt
 import numpy as np
 from scipy.optimize import brentq, curve_fit
 
+# fmt: off
 # -----------------------------
-# Data
+# Data 2025_09_14
 # -----------------------------
 green_x = np.array([0.02, 0.04, 0.06, 0.08, 0.10, 0.12, 0.14], dtype=float)
 green_y = np.array([11, 147, 683, 1960, 4220, 7330, 10740], dtype=float)
@@ -446,6 +447,23 @@ yellow_x = np.array(
     [0.15, 0.17, 0.19, 0.21, 0.23, 0.25, 0.27, 0.29, 0.31, 0.33, 0.35], dtype=float
 )
 yellow_y = np.array([34, 54, 81, 118, 162, 214, 272, 334, 404, 490, 585], dtype=float)
+
+# -----------------------------
+# Data 2025_09_17
+# -----------------------------
+green_x = np.array([0.02, 0.04, 0.06, 0.08, 0.10, 0.12, 0.14, 0.16], dtype=float)
+green_y = np.array([12, 162, 752, 2170, 4520, 7660, 11500, 15400], dtype=float)
+
+red_x = np.array([0.02, 0.04, 0.06, 0.08, 0.10, 0.12, 0.14, 0.16], dtype=float)
+red_y = np.array([24, 303, 1430, 4160, 9000, 16200, 25000, 34200], dtype=float)
+
+
+yellow_x = np.array(
+    [0.11, 0.13, 0.15, 0.17, 0.19, 0.21, 0.23, 0.25, 0.27, 0.29, 0.31, 0.33, 0.35, 0.37, 0.39], dtype=float
+)
+yellow_y = np.array([15, 29, 51, 81, 121, 175, 242, 322, 410, 504, 602, 725, 865, 1002, 1140], dtype=float)
+
+# fmt: on
 
 
 # -----------------------------
@@ -559,11 +577,11 @@ print("Yellow  power at x=0.11:", float(predict_power(x_query, red_params)))
 
 # Invert: which amplitude gives 10 mW (10000 µW)?
 target_power = 1000.0
-gx = invert_amp_for_power(target_power, green_params, green_x.min(), green_x.max())
-rx = invert_amp_for_power(target_power, red_params, red_x.min(), red_x.max())
+# gx = invert_amp_for_power(target_power, green_params, green_x.min(), green_x.max())
+# rx = invert_amp_for_power(target_power, red_params, red_x.min(), red_x.max())
 # yx = invert_amp_for_power(target_power, yellow_params, yellow_x.min(), yellow_x.max())
-print(f"Green amplitude for {target_power:.0f} µW:", gx)
-print(f"Red   amplitude for {target_power:.0f} µW:", rx)
+# print(f"Green amplitude for {target_power:.0f} µW:", gx)
+# print(f"Red   amplitude for {target_power:.0f} µW:", rx)
 # print(f"Yellow   amplitude for {target_power:.0f} µW:", yx)
 
 

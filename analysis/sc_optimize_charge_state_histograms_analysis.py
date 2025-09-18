@@ -213,7 +213,7 @@ def process_and_plot(raw_data):
                 readout_fidelity_arr[nv_ind],
                 prep_fidelity_arr[nv_ind],
                 goodness_of_fit_arr[nv_ind],
-                weights=(2.0, 1.0, 1.5),
+                weights=(0.0, 1.0, 1.0),
             )
             # Manually override for the first NV
             # if nv_ind == 0:
@@ -242,60 +242,60 @@ def process_and_plot(raw_data):
             optimal_values.append((nv_ind, np.nan, np.nan))
             continue
 
-        # # Plotting
-        # fig, ax1 = plt.subplots(figsize=(7, 5))
-        # # Plot readout fidelity
-        # ax1.plot(
-        #     step_vals,
-        #     readout_fidelity_arr[nv_ind],
-        #     label="Readout Fidelity",
-        #     color="orange",
-        # )
-        # ax1.plot(
-        #     step_vals,
-        #     prep_fidelity_arr[nv_ind],
-        #     label="Prep Fidelity",
-        #     linestyle="--",
-        #     color="green",
-        # )
-        # ax1.set_xlabel(x_label)
-        # ax1.set_ylabel("Fidelity")
-        # ax1.tick_params(axis="y", labelcolor="blue")
-        # ax1.grid(True, linestyle="--", alpha=0.6)
+        # Plotting
+        fig, ax1 = plt.subplots(figsize=(7, 5))
+        # Plot readout fidelity
+        ax1.plot(
+            step_vals,
+            readout_fidelity_arr[nv_ind],
+            label="Readout Fidelity",
+            color="orange",
+        )
+        ax1.plot(
+            step_vals,
+            prep_fidelity_arr[nv_ind],
+            label="Prep Fidelity",
+            linestyle="--",
+            color="green",
+        )
+        ax1.set_xlabel(x_label)
+        ax1.set_ylabel("Fidelity")
+        ax1.tick_params(axis="y", labelcolor="blue")
+        ax1.grid(True, linestyle="--", alpha=0.6)
 
-        # # Plot Goodness of Fit ()
-        # ax2 = ax1.twinx()
-        # ax2.plot(
-        #     step_vals,
-        #     goodness_of_fit_arr[nv_ind],
-        #     color="gray",
-        #     linestyle="--",
-        #     label=r"Goodness of Fit ($\chi^2_{\text{reduced}}$)",
-        #     alpha=0.7,
-        # )
-        # ax2.set_ylabel(r"Goodness of Fit ($\chi^2_{\text{reduced}}$)", color="gray")
-        # ax2.tick_params(axis="y", labelcolor="gray")
+        # Plot Goodness of Fit ()
+        ax2 = ax1.twinx()
+        ax2.plot(
+            step_vals,
+            goodness_of_fit_arr[nv_ind],
+            color="gray",
+            linestyle="--",
+            label=r"Goodness of Fit ($\chi^2_{\text{reduced}}$)",
+            alpha=0.7,
+        )
+        ax2.set_ylabel(r"Goodness of Fit ($\chi^2_{\text{reduced}}$)", color="gray")
+        ax2.tick_params(axis="y", labelcolor="gray")
 
-        # # Highlight optimal step value
-        # ax1.axvline(
-        #     optimal_step_val,
-        #     color="red",
-        #     linestyle="--",
-        #     label=f"Optimal Step Val: {optimal_step_val:.3f}",
-        # )
-        # ax2.axvline(
-        #     optimal_step_val,
-        #     color="red",
-        #     linestyle="--",
-        # )
+        # Highlight optimal step value
+        ax1.axvline(
+            optimal_step_val,
+            color="red",
+            linestyle="--",
+            label=f"Optimal Step Val: {optimal_step_val:.3f}",
+        )
+        ax2.axvline(
+            optimal_step_val,
+            color="red",
+            linestyle="--",
+        )
 
-        # # Combine legends
-        # lines, labels = ax1.get_legend_handles_labels()
-        # lines2, labels2 = ax2.get_legend_handles_labels()
-        # ax1.legend(lines + lines2, labels + labels2, loc="upper left", fontsize=11)
-        # ax1.set_title(f"NV{nv_ind} - Optimal Step Val: {optimal_step_val:.3f}")
-        # plt.tight_layout()
-        # plt.show(block=True)
+        # Combine legends
+        lines, labels = ax1.get_legend_handles_labels()
+        lines2, labels2 = ax2.get_legend_handles_labels()
+        ax1.legend(lines + lines2, labels + labels2, loc="upper left", fontsize=11)
+        ax1.set_title(f"NV{nv_ind} - Optimal Step Val: {optimal_step_val:.3f}")
+        plt.tight_layout()
+        plt.show(block=True)
 
     # save opimal step values
     total_power = np.sum(optimal_step_vals) / len(optimal_step_vals)
@@ -809,10 +809,10 @@ def process_and_plot_charge(raw_data):
     duration_linspace = np.linspace(min_step_val, max_step_val, 400)
     opti_durs, opti_fidelities = [], []
 
-    def sat_decay_fit_fn(t, A, t0, tau_r, tau_d):
+    def sat_decay_fit_fn(t, F0, A, t0, tau_r, tau_d):
         t = np.asarray(t, dtype=float)
         x = np.maximum(t - t0, 0.0)  # gate before t0
-        return A * (1.0 - np.exp(-x / tau_r)) * np.exp(-x / tau_d)
+        return F0 + A * (1.0 - np.exp(-x / tau_r)) * np.exp(-x / tau_d)
 
     def diffexp(t, A, t0, tau_r, dtau):
         """
@@ -836,6 +836,57 @@ def process_and_plot_charge(raw_data):
         tau = np.maximum(tau, 1e-12)
         return A * (x**n) * np.exp(-x / tau)
 
+    # --- Saturation models (with offset) ---
+    # --- Your model (unchanged) ---
+    def sat_decay_fit_fn(t, F0, A, t0, tau_r, tau_d):
+        t = np.asarray(t, dtype=float)
+        x = np.maximum(t - t0, 0.0)  # gate before t0
+        tau_r = np.maximum(tau_r, 1e-12)
+        tau_d = np.maximum(tau_d, 1e-12)
+        return F0 + A * (1.0 - np.exp(-x / tau_r)) * np.exp(-x / tau_d)
+
+    # --- Analytic peak location for the model (x>=0) ---
+    # For f(x) = (1 - e^{-x/τr}) e^{-x/τd}, peak at:
+    #   x_peak = τr * ln(1 + τd/τr)
+    def sat_decay_x_peak(tau_r, tau_d):
+        tau_r = max(float(tau_r), 1e-12)
+        tau_d = max(float(tau_d), 1e-12)
+        return tau_r * np.log(1.0 + tau_d / tau_r)
+
+    # --- Robust initial guesses + bounds ---
+    def sat_decay_initial_guess(x, y):
+        x = np.asarray(x, float)
+        y = np.asarray(y, float)
+        span = float(x[-1] - x[0]) if x[-1] > x[0] else 1.0
+        dt = np.median(np.diff(x))
+
+        # Baseline & amplitude
+        F0_0 = float(np.nanpercentile(y, 5))
+        ymax = float(np.nanpercentile(y, 95))
+        A_0 = float(max(1e-4, ymax - F0_0))  # if fidelity, cap elsewhere if you want
+
+        # Onset t0 near strongest rise
+        dy = np.diff(y, prepend=y[0])
+        i_rise = int(np.clip(np.argmax(dy), 0, len(x) - 1))
+        t0_0 = float(max(x[0], x[i_rise] - 0.5 * dt))
+
+        # Time constants: start with τd >> τr so peak isn't too early
+        tau_r0 = max(dt, 0.15 * span)
+        tau_d0 = max(5 * tau_r0, 1.0 * span)
+
+        p0 = [F0_0, A_0, t0_0, tau_r0, tau_d0]
+
+        # Bounds (adjust if your y is guaranteed in [0,1])
+        F0_lo, F0_hi = min(y) - 0.2 * abs(y).max(), max(y) + 0.2 * abs(y).max()
+        A_lo, A_hi = 0.0, max(1.5 * (ymax - F0_0), 1e-3)
+        t0_lo, t0_hi = x[0] - 2 * span, x[-1] + 2 * span
+        tr_lo, tr_hi = dt / 10, 2 * span
+        td_lo, td_hi = dt / 10, 10 * span
+
+        lo = [F0_lo, A_lo, t0_lo, tr_lo, td_lo]
+        hi = [F0_hi, A_hi, t0_hi, tr_hi, td_hi]
+        return p0, (lo, hi)
+
     for nv_ind in range(num_nvs):
         r = readout_fidelity[nv_ind].astype(float)
         y = prep_fidelity[nv_ind].astype(float)
@@ -848,91 +899,149 @@ def process_and_plot_charge(raw_data):
             opti_fidelities.append(None)
             continue
 
-        # Robust initial guesses
-        # ymax = float(np.nanpercentile(y_fit, 95))
-        # A_guess = max(1e-3, min(1.0, ymax))
-        # t0_guess = max(min_step_val - 0.1 * (max_step_val - min_step_val), 0.0)
-        # tau_r_guess = 0.4 * (max_step_val - min_step_val)  # ~20% of span
-        # tau_d_guess = 1.0 * (max_step_val - min_step_val)  # very slow decay by default
+            # # --- Seeds ---
+            # dt = np.median(np.diff(x_fit))
+            # # t0 near where slope first increases most
+            # dy = np.diff(y_fit, prepend=y_fit[0])
+            # i_rise = int(np.clip(np.argmax(dy), 0, len(x_fit) - 1))
+            # t0_0 = float(max(x_fit[0], x_fit[i_rise] - 0.5 * dt))
+            # A0 = float(max(y_fit))  # positive amplitude
+            # span = float(x_fit[-1] - x_fit[0]) if x_fit[-1] > x_fit[0] else 1.0
+            # # Place peak roughly at observed max
+            # tpk = float(x_fit[np.argmax(y_fit)])
+            # tau0 = max(dt, 0.1 * span)
+            # n0 = max(1.0, (tpk - t0_0) / max(tau0, 1e-9))
+            # p0 = [A0, t0_0, n0, tau0]  # A, t0, n, tau
+            # lo = [0.0, x_fit[0] - 2 * span, 0.0, 1e-9]
+            # hi = [1.5 * max(y_fit), x_fit[-1] + 2 * span, 10.0, 10 * span]
+            # # Sigma: if these are fidelities in [0,1], use small uniform weights
+            # sigma = None
 
-        # --- Seeds ---
-        dt = np.median(np.diff(x_fit))
-        # t0 near where slope first increases most
-        dy = np.diff(y_fit, prepend=y_fit[0])
-        i_rise = int(np.clip(np.argmax(dy), 0, len(x_fit) - 1))
-        t0_0 = float(max(x_fit[0], x_fit[i_rise] - 0.5 * dt))
-        A0 = float(max(y_fit))  # positive amplitude
-        span = float(x_fit[-1] - x_fit[0]) if x_fit[-1] > x_fit[0] else 1.0
-        # Place peak roughly at observed max
-        tpk = float(x_fit[np.argmax(y_fit)])
-        tau0 = max(dt, 0.1 * span)
-        n0 = max(1.0, (tpk - t0_0) / max(tau0, 1e-9))
-        p0 = [A0, t0_0, n0, tau0]  # A, t0, n, tau
-        lo = [0.0, x_fit[0] - 2 * span, 0.0, 1e-9]
-        hi = [1.5 * max(y_fit), x_fit[-1] + 2 * span, 10.0, 10 * span]
-        # Sigma: if these are fidelities in [0,1], use small uniform weights
-        sigma = None
+            # # Try sat_decay first; if it fails, fall back to sat_only
+            # try:
+            #     popt, _ = curve_fit(
+            #         gamma_pulse,
+            #         x_fit,
+            #         y_fit,
+            #         p0=p0,
+            #         bounds=(lo, hi),
+            #         sigma=sigma,
+            #         maxfev=200000,
+            #     )
+            #     fitted_curve = gamma_pulse(duration_linspace, *popt)
 
-        # Try sat_decay first; if it fails, fall back to sat_only
-        try:
-            popt, _ = curve_fit(
-                gamma_pulse,
-                x_fit,
-                y_fit,
-                p0=p0,
-                bounds=(lo, hi),
-                sigma=sigma,
-                maxfev=200000,
-            )
-            fitted_curve = gamma_pulse(duration_linspace, *popt)
+            #     # Choose optimal duration as the argmax of fitted curve within sweep
+            #     opt_i = int(np.nanargmax(fitted_curve))
+            #     opti_dur = float(duration_linspace[opt_i])
+            #     opti_fid = float(fitted_curve[opt_i])
 
-            # Find optimal duration based on the fitted curve
-            # opti_dur = duration_linspace[np.nanargmax(fitted_curve)]
-            # opti_fidelity = np.nanmax(fitted_curve)
-            # opti_durs.append(round(opti_dur / 4) * 4)
-            # opti_fidelities.append(round(opti_fidelity, 3))
-            # Choose optimal duration as the argmax of fitted curve within sweep
-            opt_i = int(np.nanargmax(fitted_curve))
-            opti_dur = float(duration_linspace[opt_i])
-            opti_fid = float(fitted_curve[opt_i])
+            #     # Snap to nearest 4 ns if you like hardware granularity
+            #     opti_durs.append(round(opti_dur / 4) * 4)
+            #     opti_fidelities.append(round(opti_fid, 3))
 
-            # Snap to nearest 4 ns if you like hardware granularity
-            opti_durs.append(round(opti_dur / 4) * 4)
-            opti_fidelities.append(round(opti_fid, 3))
+            #     # # Plot results
+            #     plt.figure()
+            #     plt.scatter(
+            #         x_fit,
+            #         r,
+            #         label="Readout Fidelity",
+            #     )
+            #     plt.scatter(
+            #         x_fit,
+            #         y_fit,
+            #         label="Prep Fidelity",
+            #     )
+            #     plt.plot(duration_linspace, fitted_curve, label="Fitted Curve")
+            #     plt.axvline(
+            #         opti_dur,
+            #         color="green",
+            #         linestyle="--",
+            #         label=f"Opt. Duration: {opti_dur:.1f} ns",
+            #     )
+            #     plt.xlabel("Polarization Duration (ns)")
+            #     plt.ylabel("Preparation Fidelity")
+            #     plt.title(f"NV Num: {nv_ind}")
+            #     plt.legend()
+            #     plt.show(block=True)
 
-            # # # Plot results
-            # plt.figure()
-            # plt.scatter(
-            #     x_fit,
-            #     r,
-            #     label="Measured Fidelity",
-            # )
-            # plt.scatter(
-            #     x_fit,
-            #     y_fit,
-            #     label="Measured Fidelity",
-            # )
-            # plt.plot(duration_linspace, fitted_curve, label="Fitted Curve")
-            # plt.axvline(
-            #     opti_dur,
-            #     color="green",
-            #     linestyle="--",
-            #     label=f"Opt. Duration: {opti_dur:.1f} ns",
-            # )
-            # plt.xlabel("Polarization Duration (ns)")
-            # plt.ylabel("Preparation Fidelity")
-            # plt.title(f"NV Num: {nv_ind}")
-            # plt.legend()
-            # plt.show(block=True)
+            #     # print(
+            #     #     f"NV {nv_ind} - Optimal Duration: {opti_dur:.1f} ns, Optimal Fidelity: {opti_fidelity}"
+            #     # )
 
-            # print(
-            #     f"NV {nv_ind} - Optimal Duration: {opti_dur:.1f} ns, Optimal Fidelity: {opti_fidelity}"
-            # )
+            # except RuntimeError:
+            #     print(f"Skipping NV {nv_ind}: Curve fitting failed.")
+            #     opti_durs.append(None)
+            #     opti_fidelities.append(None)
+            # Clean
+        x = np.asarray(x, float)
+        y = np.asarray(y, float)
+        m = np.isfinite(x) & np.isfinite(y)
+        x_f, y_f = x[m], y[m]
+        if x_f.size < 4:
+            raise RuntimeError("Not enough points for fit.")
 
-        except RuntimeError:
-            print(f"Skipping NV {nv_ind}: Curve fitting failed.")
-            opti_durs.append(None)
-            opti_fidelities.append(None)
+        p0, bounds = sat_decay_initial_guess(x_f, y_f)
+        popt, pcov = curve_fit(
+            sat_decay_fit_fn, x_f, y_f, p0=p0, bounds=bounds, maxfev=200000
+        )
+        F0, A, t0, tau_r, tau_d = popt
+
+        # analytic peak
+        x_pk_rel = sat_decay_x_peak(tau_r, tau_d)
+        t_peak = float(t0 + x_pk_rel)
+        y_peak = float(sat_decay_fit_fn(t_peak, *popt))
+
+        results = {"params": popt, "cov": pcov, "t_peak": t_peak, "y_peak": y_peak}
+
+        return_curve = True
+        grid = None
+        if return_curve:
+            if grid is None:
+                grid = np.linspace(x_f.min(), x_f.max(), 1000)
+            y_model = sat_decay_fit_fn(grid, *popt)
+            results.update({"grid_t": grid, "grid_y": y_model})
+
+        F0, A, t0, tau_r, tau_d = results["params"]
+        opti_dur = float(np.clip(results["t_peak"], min_step_val, max_step_val))
+        opti_fid = float(results["y_peak"])
+        opti_durs.append(round(opti_dur / 4) * 4)
+        opti_fidelities.append(round(opti_fid, 3))
+
+        # Snap to hardware grid
+        opti_durs.append(round(opti_dur / 4) * 4)
+        opti_fidelities.append(round(opti_fid, 3))
+
+        # --- Plot ---
+        plt.figure(figsize=(6, 5))
+        plt.scatter(x_fit, y_fit, label="Measured")
+        plt.plot(results["grid_t"], results["grid_y"], label="Sat-Decay Fit")
+        plt.axvline(
+            opti_dur, color="green", linestyle="--", label=f"Peak ≈ {opti_dur:.0f} ns"
+        )
+        plt.scatter([opti_dur], [opti_fid], color="green", zorder=5)
+        plt.xlabel("Duration (ns)")
+        plt.ylabel("Fidelity")
+        plt.ylim(0, 1)
+        plt.grid(True, alpha=0.3)
+        plt.legend()
+        plt.tight_layout()
+        plt.show(block=True)
+        # plt.figure(figsize=(6, 5))
+        # plt.scatter(x_fit, r_fit, label="Readout Fidelity", alpha=0.6)
+        # plt.scatter(x_fit, y_fit, label="Prep Fidelity", alpha=0.8)
+        # plt.plot(duration_linspace, y_curve, label=f"Fit ({model_used})")
+        # plt.axvline(
+        #     opti_dur, color="green", linestyle="--", label=f"t₉₅ ≈ {opti_dur:.0f} ns"
+        # )
+        # plt.scatter([opti_dur], [opti_fid], color="green", zorder=5)
+        # plt.xlabel("Polarization Duration (ns)")
+        # plt.ylabel("Fidelity")
+        # plt.title(f"NV #{nv_ind}")
+        # plt.ylim(0, 1)
+        # plt.grid(True, alpha=0.3)
+        # plt.legend()
+        # plt.tight_layout()
+        # plt.show(block=True)
 
     if opti_durs:
         print("Optimal Polarization Durations:", opti_durs)
@@ -1055,7 +1164,8 @@ if __name__ == "__main__":
     ### readout amp
     # file_stem = "2025_09_11-01_45_11-rubin-nv0_2025_09_08"  #
     # file_stem = "2025_09_11-23_23_30-rubin-nv0_2025_09_08"
-    file_stem = "2025_09_13-20_27_20-rubin-nv0_2025_09_08"
+    # file_id = "2025_09_13-20_27_20-rubin-nv0_2025_09_08"
+    file_id = "2025_09_18-01_02_17-rubin-nv0_2025_09_08"
 
     ### pol amp var
     # file_id = "2025_09_12-16_53_34-rubin-nv0_2025_09_08"
@@ -1066,14 +1176,15 @@ if __name__ == "__main__":
     # file_id = "2025_09_12-04_47_45-rubin-nv0_2025_09_08"
     # file_id = "2025_09_13-00_31_26-rubin-nv0_2025_09_08"
     # file_id = "2025_09_13-02_58_29-rubin-nv0_2025_09_08"
-    file_id = "2025_09_14-21_59_00-rubin-nv0_2025_09_08"
+    # file_id = "2025_09_14-21_59_00-rubin-nv0_2025_09_08"
+    # file_id = "2025_09_18-12_06_11-rubin-nv0_2025_09_08"
 
     # dm.USE_NEW_CLOUD = False
     raw_data = dm.get_raw_data(file_stem=file_id, load_npz=True)
     # file_name = dm.get_file_name(file_id=file_id)
     # print(f"{file_name}_{file_id}")
-    # process_and_plot(raw_data)
+    process_and_plot(raw_data)
     # process_and_plot_green(raw_data)
-    process_and_plot_charge(raw_data)
+    # process_and_plot_charge(raw_data)
     # print(dm.get_file_name(1717056176426))
     plt.show(block=True)
