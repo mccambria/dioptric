@@ -1242,9 +1242,15 @@ if __name__ == "__main__":
     pixel_coords_list = load_nv_coords(
         # file_path="slmsuite/nv_blob_detection/nv_blob_rubin_shallow_154nvs_reordered.npz",
         # file_path="slmsuite/nv_blob_detection/nv_blob_rubin_shallow_75nvs_reordered.npz",
-        file_path="slmsuite/nv_blob_detection/nv_blob_370nvs_reordered.npz",
-        # file_path="slmsuite/nv_blob_detection/nv_blob_340nvs_reordered.npz",
+        # file_path="slmsuite/nv_blob_detection/nv_blob_370nvs_reordered.npz",
+        file_path="slmsuite/nv_blob_detection/nv_blob_455nvs_reordered.npz",
     ).tolist()
+    # pixel_coords_list = [
+    #     [124.195, 127.341],
+    #     [12.181, 23.754],
+    #     [92.977, 244.106],
+    #     [236.127, 5.996],
+    # ]
     green_coords_list = [
         [
             round(coord, 3)
@@ -1276,21 +1282,21 @@ if __name__ == "__main__":
 
     # pixel_coords_list = [
     #     [124.195, 127.341],
-    #     [6.768, 210.203],
-    #     [239.681, 215.048],
-    #     [123.376, 19.656],
+    #     [12.181, 23.754],
+    #     [92.977, 244.106],
+    #     [236.127, 5.996],
     # ]
     # green_coords_list = [
-    #     [108.338, 107.235],
-    #     [122.788, 99.12],
-    #     [96.428, 96.021],
-    #     [107.051, 119.429],
+    #     [108.353, 107.313],
+    #     [119.815, 120.239],
+    #     [113.419, 94.453],
+    #     [94.207, 119.759],
     # ]
     # red_coords_list = [
-    #     [73.579, 71.636],
-    #     [85.758, 65.815],
-    #     [64.275, 61.947],
-    #     [72.024, 81.438],
+    #     [73.588, 71.7],
+    #     [82.455, 82.752],
+    #     [78.269, 61.555],
+    #     [61.481, 81.042],
     # ]
     num_nvs = len(pixel_coords_list)
     threshold_list = [None] * num_nvs
@@ -1344,7 +1350,7 @@ if __name__ == "__main__":
 
     # scc_amp_list = [1.0] * num_nvs
     # scc_duration_list = [96] * num_nvs
-    # pol_duration_list = [1000] * num_nvs
+    pol_duration_list = [1000] * num_nvs
     # pol_duration_list = [1000] * num_nvs
     # nv_list[i] will have the ith coordinates from the above lists
     nv_list: list[NVSig] = []
@@ -1380,7 +1386,7 @@ if __name__ == "__main__":
     nv_sig = widefield.get_repr_nv_sig(nv_list)
     # print(f"Created NV: {nv_sig.name}, Coords: {nv_sig.coords}")
     # nv_sig.expected_counts = 900
-    # nv_sig.expected_counts = 1250
+    nv_sig.expected_counts = 1300
     # nv_sig.expected_counts = 1600
 
     # nv_list = nv_list[::-1]  # flipping the order of NVs
@@ -1429,7 +1435,7 @@ if __name__ == "__main__":
 
         # do_scanning_image_sample(nv_sig)
         # do_scanning_image_sample_zoom(nv_sig)
-        do_scanning_image_full_roi(nv_sig)
+        # do_scanning_image_full_roi(nv_sig)
 
         # scan_equilateral_triangle(nv_sig, center_coord=sample_coords, radius=0.4)
         # do_image_nv_list(nv_list)
@@ -1475,7 +1481,7 @@ if __name__ == "__main__":
         # coords_key = red_laser
         # do_optimize_loop(np.array(nv_list), np.array(coords_key))
 
-        # do_charge_state_histograms(nv_list)
+        do_charge_state_histograms(nv_list)
         # do_charge_state_conditional_init(nv_list)
         # do_charge_state_histograms_images(nv_list, vary_pol_laser=True)
 

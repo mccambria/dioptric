@@ -400,11 +400,11 @@ if __name__ == "__main__":
     # data = dm.get_raw_data(file_id=1782616297820, load_npz=True)
     # data = dm.get_raw_data(file_id=1806410973406, load_npz=True)
     data = dm.get_raw_data(
-        file_stem="2025_09_15-14_08_28-rubin-nv0_2025_09_08",
+        file_stem="2025_09_17-21_13_14-rubin-nv0_2025_09_08",
         # file_stem="2025_09_09-13_57_19-combined_image_array",
         load_npz=True,
     )
-    img_array = np.array(data["diff_img_array"])
+    img_array = np.array(data["ref_img_array"])
     # img_array = data["img_array"]
 
     # sys.exit()
@@ -412,7 +412,7 @@ if __name__ == "__main__":
         # file_path="slmsuite/nv_blob_detection/nv_blob_shallow_rubin_140nvs.npz"
         # file_path="slmsuite/nv_blob_detection/nv_blob_shallow_rubin_306nvs.npz"
         # file_path="slmsuite/nv_blob_detection/nv_blob_shallow_rubin_81nvs.npz"
-        file_path="slmsuite/nv_blob_detection/nv_blob_522nvs.npz"
+        file_path="slmsuite/nv_blob_detection/nv_blob_460nvs.npz"
         # file_path="slmsuite/nv_blob_detection/nv_blob_shallow_rubin_75nvs_reordered_.npz"
         # file_path="slmsuite/nv_blob_detection/nv_blob_rubin_shallow_303nvs_reordered.npz"
         # file_path="slmsuite/nv_blob_detection/nv_blob_rubin_shallow_154nvs_reordered.npz"
@@ -538,13 +538,13 @@ if __name__ == "__main__":
     # include_indices = [i for i, (val1, val2) in enumerate(zip(readout_fidelity_list, prep_fidelity_list))
     #                    if val1 >= 0.74 and val2 >= 0.4]
     # include_indices = [i for i, val in enumerate(prep_fidelity_list) if val >= 0.4 or val is None]
-    import math
-    include_indices = [
-        i for i, val in enumerate(prep_fidelity_list)
-        if (val is None) or (isinstance(val, (int, float)) and not math.isnan(val) and val >= 0.5)
-    ]
+    # import math
+    # include_indices = [
+    #     i for i, val in enumerate(prep_fidelity_list)
+    #     if (val is None) or (isinstance(val, (int, float)) and not math.isnan(val) and val >= 0.5)
+    # ]
 
-    print(np.sort(list(include_indices)))
+    # print(np.sort(list(include_indices)))
     # print("[" + ", ".join(map(str, np.sort(list(include_indices)))) + "]")
 
     #rubin
@@ -565,17 +565,17 @@ if __name__ == "__main__":
     # print(include_indices)
     # print(len(include_indices))
     # fmt: on
-    filtered_reordered_coords = [filtered_reordered_coords[i] for i in include_indices]
-    print(f"len filtered_reordered_coords: {len(filtered_reordered_coords)}")
-    # select_half_left_side_nvs_and_plot(nv_coordinates_filtered)
-    spot_weights_filtered = np.array(
-        [weight for i, weight in enumerate(spot_weights) if i in include_indices]
-    )
-    filtered_pol_durs = np.array(
-        [weight for i, weight in enumerate(pol_durs) if i in include_indices]
-    )
-    print(filtered_pol_durs.tolist())
-    print(len(spot_weights_filtered))
+    # filtered_reordered_coords = [filtered_reordered_coords[i] for i in include_indices]
+    # print(f"len filtered_reordered_coords: {len(filtered_reordered_coords)}")
+    # # select_half_left_side_nvs_and_plot(nv_coordinates_filtered)
+    # spot_weights_filtered = np.array(
+    #     [weight for i, weight in enumerate(spot_weights) if i in include_indices]
+    # )
+    # filtered_pol_durs = np.array(
+    #     [weight for i, weight in enumerate(pol_durs) if i in include_indices]
+    # )
+    # print(filtered_pol_durs.tolist())
+    # print(len(spot_weights_filtered))
 
     aom_voltage = 0.2622
     # a, b, c = [3.7e5, 6.97, 8e-14]
@@ -660,7 +660,7 @@ if __name__ == "__main__":
     #     for ind, val in enumerate(updated_spot_weights)
     # ]
 
-    filtered_reordered_spot_weights = updated_spot_weights
+    # filtered_reordered_spot_weights = updated_spot_weights
 
     # filtered_reordered_coords, filtered_reordered_spot_weights, include_indices = (
     #     filter_and_reorder_nv_coords(
@@ -704,7 +704,7 @@ if __name__ == "__main__":
     # save_results(
     #     filtered_reordered_coords,
     #     filtered_reordered_spot_weights,
-    #     filename="slmsuite/nv_blob_detection/nv_blob_340nvs_reordered.npz",
+    #     filename="slmsuite/nv_blob_detection/nv_blob_455nvs_reordered.npz",
     # )
     # save_results(
     #     nv_coordinates,

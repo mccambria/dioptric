@@ -34,19 +34,19 @@ red_laser_aod = "laser_COBO_638_aod"
 
 
 calibration_coords_pixel = [
-    [6.768, 210.203],
-    [239.681, 215.048],
-    [123.376, 19.656],
+    [12.181, 23.754],
+    [92.977, 244.106],
+    [236.127, 5.996],
 ]
 calibration_coords_green = [
-    [122.788, 99.12],
-    [96.428, 96.021],
-    [107.051, 119.429],
+    [119.815, 120.239],
+    [113.419, 94.453],
+    [94.207, 119.759],
 ]
 calibration_coords_red = [
-    [85.758, 65.815],
-    [64.275, 61.947],
-    [72.024, 81.438],
+    [82.455, 82.752],
+    [78.269, 61.555],
+    [61.481, 81.042],
 ]
 
 # Create the dictionaries using the provided lists
@@ -165,9 +165,9 @@ config |= {
         "resolution": (512, 512),
         "spot_radius": 2.5,  # Radius for integrating NV counts in a camera image
         "bias_clamp": 300,  # (changing this won't actually change the value on the camera currently)
-        # "em_gain": 5000,
+        "em_gain": 5000,
         # "em_gain": 1000,
-        "em_gain": 10,
+        # "em_gain": 10,
         "temp": -60,
         "timeout": 60e3,  # ms
         # "timeout": -1,  # No timeout
@@ -881,7 +881,7 @@ opx_config = {
     ### Analog
     "waveforms": {
         # Green AOD
-        "green_aod_cw-opti": {"type": "constant", "sample": 0.11},
+        "green_aod_cw-opti": {"type": "constant", "sample": 0.09},
         # "green_aod_cw-opti": {"type": "constant", "sample": 0.07},
         "green_aod_cw-charge_pol": {"type": "constant", "sample": 0.06},
         # "green_aod_cw-charge_pol": {"type": "constant", "sample": 0.139},# median
@@ -897,7 +897,8 @@ opx_config = {
         "yellow_imaging": {"type": "constant", "sample": 0.4},  # 0.35
         # "yellow_charge_readout": {"type": "constant", "sample": 0.2722},  # 370NVs
         # "yellow_charge_readout": {"type": "constant", "sample": 0.2622}, # 370NVs
-        "yellow_charge_readout": {"type": "constant", "sample": 0.2549},  # 340NVs
+        # "yellow_charge_readout": {"type": "constant", "sample": 0.2549},  # 340NVs
+        "yellow_charge_readout": {"type": "constant", "sample": 0.2749},  # 340NVs
         "yellow_spin_pol": {"type": "constant", "sample": 0.27},  # 75 NVs
         # "yellow_spin_pol": {"type": "constant", "sample": 0.42},
         "yellow_shelving": {"type": "constant", "sample": 0.33},
