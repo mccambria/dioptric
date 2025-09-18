@@ -412,7 +412,7 @@ if __name__ == "__main__":
         # file_path="slmsuite/nv_blob_detection/nv_blob_shallow_rubin_140nvs.npz"
         # file_path="slmsuite/nv_blob_detection/nv_blob_shallow_rubin_306nvs.npz"
         # file_path="slmsuite/nv_blob_detection/nv_blob_shallow_rubin_81nvs.npz"
-        file_path="slmsuite/nv_blob_detection/nv_blob_376nvs.npz"
+        file_path="slmsuite/nv_blob_detection/nv_blob_522nvs.npz"
         # file_path="slmsuite/nv_blob_detection/nv_blob_shallow_rubin_75nvs_reordered_.npz"
         # file_path="slmsuite/nv_blob_detection/nv_blob_rubin_shallow_303nvs_reordered.npz"
         # file_path="slmsuite/nv_blob_detection/nv_blob_rubin_shallow_154nvs_reordered.npz"

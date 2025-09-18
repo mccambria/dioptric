@@ -89,8 +89,8 @@ def do_red_calibration_image(nv_sig, coords_list, force_laser_key=None, num_reps
 
 def do_scanning_image_full_roi(nv_sig):
     total_range = 30
-    scan_range = 10
-    num_steps = 10
+    scan_range = 15
+    num_steps = 15
     image_sample.scanning_full_roi(nv_sig, total_range, scan_range, num_steps)
 
 
@@ -1236,7 +1236,7 @@ if __name__ == "__main__":
     # magnet_angle = 90
     date_str = "2025_09_08"
     sample_coords = [0.8, 0.2]
-    z_coord = 0.4
+    z_coord = 0.5
 
     # Load NV pixel coordinates1
     pixel_coords_list = load_nv_coords(
@@ -1380,7 +1380,7 @@ if __name__ == "__main__":
     nv_sig = widefield.get_repr_nv_sig(nv_list)
     # print(f"Created NV: {nv_sig.name}, Coords: {nv_sig.coords}")
     # nv_sig.expected_counts = 900
-    nv_sig.expected_counts = 1250
+    # nv_sig.expected_counts = 1250
     # nv_sig.expected_counts = 1600
 
     # nv_list = nv_list[::-1]  # flipping the order of NVs
@@ -1429,7 +1429,7 @@ if __name__ == "__main__":
 
         # do_scanning_image_sample(nv_sig)
         # do_scanning_image_sample_zoom(nv_sig)
-        # do_scanning_image_full_roi(nv_sig)
+        do_scanning_image_full_roi(nv_sig)
 
         # scan_equilateral_triangle(nv_sig, center_coord=sample_coords, radius=0.4)
         # do_image_nv_list(nv_list)
@@ -1480,7 +1480,7 @@ if __name__ == "__main__":
         # do_charge_state_histograms_images(nv_list, vary_pol_laser=True)
 
         # do_optimize_pol_amp(nv_list)
-        do_optimize_pol_duration(nv_list)
+        # do_optimize_pol_duration(nv_list)
         # do_optimize_readout_amp(nv_list)
         # do_optimize_readout_duration(nv_list)
         # optimize_readout_amp_and_duration(nv_list)

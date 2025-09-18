@@ -280,7 +280,7 @@ def process_scan_file():
     # raw_data = dm.get_raw_data(file_id=1802697426409, load_npz=True)  # rubin
 
     ### Nas
-    file_stem = "2025_09_09-13_51_39-runin-nv0_2025_09_08"
+    file_stem = "2025_09_17-20_43_23-rubin-nv0_2025_09_08"
     raw_data = dm.get_raw_data(
         file_stem=file_stem, load_npz=True, allow_pickle=True
     )  # rubin
@@ -388,10 +388,10 @@ if __name__ == "__main__":
     # data = dm.get_raw_data(file_id=1791776254933, load_npz=True)  # rubin green scan
     # data = dm.get_raw_data(file_id=1807103519645, load_npz=True)
     data = dm.get_raw_data(
-        file_stem="2025_09_10-20_06_48-rubin-nv0_2025_09_08", load_npz=True
+        file_stem="2025_09_17-20_44_27-combined_image_array", load_npz=True
     )
-    img_array = np.array(data["ref_img_array"])
-    # img_array = np.array(data["img_array"])
+    # img_array = np.array(data["ref_img_array"])
+    img_array = np.array(data["img_array"])
     # img_array = np.array(data["ref_img_array"]["ref_img_array"])
     # img_array = np.array(data["img_array"])
     # print(img_array)
@@ -473,12 +473,12 @@ if __name__ == "__main__":
     print(f"Detected NV coordinates (optimized): {len(filtered_nv_coords)}")
 
     # Save the results
-    # save_results(
-    #     filtered_nv_coords,
-    #     filtered_counts,
-    #     path="slmsuite/nv_blob_detection",
-    #     filename="nv_blob_376nvs.npz",
-    # )
+    save_results(
+        filtered_nv_coords,
+        filtered_counts,
+        path="slmsuite/nv_blob_detection",
+        filename="nv_blob_522nvs.npz",
+    )
 
     # full ROI -- multiple images save in the same file
     # process_scan_file()
