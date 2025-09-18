@@ -316,7 +316,7 @@ def load_nv_coords(
     # file_path="slmsuite/nv_blob_detection/nv_blob_rubin_shallow_81nvs_reordered.npz",
     # file_path="slmsuite/nv_blob_detection/nv_blob_rubin_shallow_75nvs_reordered.npz",
     # file_path="slmsuite/nv_blob_detection/nv_blob_340nvs_reordered.npz",
-    file_path="slmsuite/nv_blob_detection/nv_blob_455nvs_reordered.npz",
+    file_path="slmsuite/nv_blob_detection/nv_blob_385nvs_reordered.npz",
     # file_path="slmsuite/nv_blob_detection/nv_blob_rubin_shallow_40nvs_reordered.npz",
     # file_path="slmsuite/nv_blob_detection/nv_blob_rubin_shallow_35nvs_reordered.npz",
     # file_path="slmsuite/nv_blob_detection/nv_blob_shallow_148nvs_reordered_updated.npz",

@@ -393,7 +393,7 @@ if __name__ == "__main__":
     data = dm.get_raw_data(
         # file_stem="2025_09_17-21_55_38-combined_image_array",
         # load_npz=True,
-        file_stem="2025_09_17-21_13_14-rubin-nv0_2025_09_08",
+        file_stem="2025_09_18-09_44_45-rubin-nv0_2025_09_08",
         load_npz=True,
     )
     img_array = np.array(data["ref_img_array"])
@@ -479,12 +479,12 @@ if __name__ == "__main__":
     print(f"Detected NV coordinates (optimized): {len(filtered_nv_coords)}")
 
     # Save the results
-    # save_results(
-    #     filtered_nv_coords,
-    #     filtered_counts,
-    #     path="slmsuite/nv_blob_detection",
-    #     filename="nv_blob_460nvs.npz",
-    # )
+    save_results(
+        filtered_nv_coords,
+        filtered_counts,
+        path="slmsuite/nv_blob_detection",
+        filename="nv_blob_385nvs.npz",
+    )
 
     # full ROI -- multiple images save in the same file
     # process_scan_file()

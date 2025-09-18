@@ -400,7 +400,7 @@ if __name__ == "__main__":
     # data = dm.get_raw_data(file_id=1782616297820, load_npz=True)
     # data = dm.get_raw_data(file_id=1806410973406, load_npz=True)
     data = dm.get_raw_data(
-        file_stem="2025_09_17-21_13_14-rubin-nv0_2025_09_08",
+        file_stem="2025_09_18-09_44_45-rubin-nv0_2025_09_08",
         # file_stem="2025_09_09-13_57_19-combined_image_array",
         load_npz=True,
     )
@@ -412,7 +412,7 @@ if __name__ == "__main__":
         # file_path="slmsuite/nv_blob_detection/nv_blob_shallow_rubin_140nvs.npz"
         # file_path="slmsuite/nv_blob_detection/nv_blob_shallow_rubin_306nvs.npz"
         # file_path="slmsuite/nv_blob_detection/nv_blob_shallow_rubin_81nvs.npz"
-        file_path="slmsuite/nv_blob_detection/nv_blob_460nvs.npz"
+        file_path="slmsuite/nv_blob_detection/nv_blob_420nvs.npz"
         # file_path="slmsuite/nv_blob_detection/nv_blob_shallow_rubin_75nvs_reordered_.npz"
         # file_path="slmsuite/nv_blob_detection/nv_blob_rubin_shallow_303nvs_reordered.npz"
         # file_path="slmsuite/nv_blob_detection/nv_blob_rubin_shallow_154nvs_reordered.npz"
@@ -460,7 +460,7 @@ if __name__ == "__main__":
     reference_nv = [124.195, 127.341]
     filtered_reordered_coords, filtered_reordered_spot_weights, include_indices = (
         filter_and_reorder_nv_coords(
-            nv_coordinates, spot_weights, reference_nv, min_distance=3
+            nv_coordinates, spot_weights, reference_nv, min_distance=6
         )
     )
     # filtered_reordered_coords = [
@@ -701,11 +701,11 @@ if __name__ == "__main__":
 
     # Save the filtered results
 
-    # save_results(
-    #     filtered_reordered_coords,
-    #     filtered_reordered_spot_weights,
-    #     filename="slmsuite/nv_blob_detection/nv_blob_455nvs_reordered.npz",
-    # )
+    save_results(
+        filtered_reordered_coords,
+        filtered_reordered_spot_weights,
+        filename="slmsuite/nv_blob_detection/nv_blob_385nvs_reordered.npz",
+    )
     # save_results(
     #     nv_coordinates,
     #     filtered_reordered_counts,
