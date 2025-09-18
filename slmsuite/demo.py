@@ -266,7 +266,7 @@ taus_x = np.linspace(1, len(taus), len(taus))
 plt.figure()
 plt.scatter(taus_x, taus)
 plt.show(block=True)
-sys.exit()
+# sys.exit()
 
 
 def generate_divisible_by_4(min_val, max_val, num_steps):
@@ -283,7 +283,7 @@ def generate_divisible_by_4(min_val, max_val, num_steps):
 
 # Example Usage
 min_duration = 100
-max_duration = 10000
+max_duration = 2000
 num_steps = 25
 
 step_values = generate_divisible_by_4(min_duration, max_duration, num_steps)

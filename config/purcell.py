@@ -49,7 +49,6 @@ calibration_coords_red = [
     [72.024, 81.438],
 ]
 
-
 # Create the dictionaries using the provided lists
 calibration_coords_nv1 = {
     CoordsKey.PIXEL: calibration_coords_pixel[0],
