@@ -135,15 +135,32 @@ import cv2
 import matplotlib.pyplot as plt
 import numpy as np
 
+### green and red calibaton at RT setup 2025-09-15
+pixel_coords_list = [
+    [107.332, 118.492],
+    [119.672, 105.768],
+    [98.339, 98.864],
+]
+red_coords_list = [
+    [72.293, 80.694],
+    [82.931, 71.034],
+    [65.725, 64.346],
+]
 # Given pixel coordinates and corresponding red coordinates
-pixel_coords_list = np.array([[123.499, 9.085], [17.458, 242.413], [237.243, 239.989]])
-red_coords_list = np.array(
-    [
-        [71.0, 81.5],
-        [84.0, 62.0],
-        [64.0, 59.0],
-    ]
-)
+# pixel_coords_list = np.array(
+#     [
+#         [122.217, 28.629],
+#         [27.396, 150.264],
+#         [220.452, 192.19],
+#     ]
+# )
+# red_coords_list = np.array(
+#     [
+#         [72.293, 80.694],
+#         [82.931, 71.034],
+#         [65.743, 64.346],
+#     ]
+# )
 
 ## greeen
 # pixel_coords_list = np.array([[27.805, 30.303], [138.235, 235.17], [228.671, 15.343]])
@@ -159,10 +176,10 @@ if len(pixel_coords_list) >= 3:
     # New pixel coordinate for which we want to find the corresponding red coordinate
     new_pixel_coord = np.array(
         [
-            [124.195, 127.341],
-            [6.768, 210.203],
-            [239.681, 215.048],
-            [123.376, 19.656],
+            [108.338, 107.235],
+            [122.788, 99.12],
+            [96.428, 96.021],
+            [107.051, 119.429],
         ],
         dtype=np.float32,
     )
@@ -265,7 +282,7 @@ def generate_divisible_by_4(min_val, max_val, num_steps):
 
 
 # Example Usage
-min_duration = 100
+min_duration = 200
 max_duration = 10000
 num_steps = 25
 
@@ -303,7 +320,7 @@ def logspace_div4(min_val, max_val, num_steps, base=10.0):
 # Example
 print(logspace_div4(100, 10000, 25))
 
-sys.exit()
+# sys.exit()
 # Updating plot with center frequencies in the legend
 # # Given data
 # green_aod_freq_MHz = np.array([90, 95, 100, 105, 110, 115, 120, 125])
@@ -415,8 +432,9 @@ import matplotlib.pyplot as plt
 import numpy as np
 from scipy.optimize import brentq, curve_fit
 
+# fmt: off
 # -----------------------------
-# Data
+# Data 2025_09_14
 # -----------------------------
 green_x = np.array([0.02, 0.04, 0.06, 0.08, 0.10, 0.12, 0.14], dtype=float)
 green_y = np.array([11, 147, 683, 1960, 4220, 7330, 10740], dtype=float)
@@ -429,6 +447,23 @@ yellow_x = np.array(
     [0.15, 0.17, 0.19, 0.21, 0.23, 0.25, 0.27, 0.29, 0.31, 0.33, 0.35], dtype=float
 )
 yellow_y = np.array([34, 54, 81, 118, 162, 214, 272, 334, 404, 490, 585], dtype=float)
+
+# -----------------------------
+# Data 2025_09_17
+# -----------------------------
+green_x = np.array([0.02, 0.04, 0.06, 0.08, 0.10, 0.12, 0.14, 0.16], dtype=float)
+green_y = np.array([12, 162, 752, 2170, 4520, 7660, 11500, 15400], dtype=float)
+
+red_x = np.array([0.02, 0.04, 0.06, 0.08, 0.10, 0.12, 0.14, 0.16], dtype=float)
+red_y = np.array([24, 303, 1430, 4160, 9000, 16200, 25000, 34200], dtype=float)
+
+
+yellow_x = np.array(
+    [0.11, 0.13, 0.15, 0.17, 0.19, 0.21, 0.23, 0.25, 0.27, 0.29, 0.31, 0.33, 0.35, 0.37, 0.39], dtype=float
+)
+yellow_y = np.array([15, 29, 51, 81, 121, 175, 242, 322, 410, 504, 602, 725, 865, 1002, 1140], dtype=float)
+
+# fmt: on
 
 
 # -----------------------------
@@ -542,11 +577,11 @@ print("Yellow  power at x=0.11:", float(predict_power(x_query, red_params)))
 
 # Invert: which amplitude gives 10 mW (10000 µW)?
 target_power = 1000.0
-gx = invert_amp_for_power(target_power, green_params, green_x.min(), green_x.max())
-rx = invert_amp_for_power(target_power, red_params, red_x.min(), red_x.max())
+# gx = invert_amp_for_power(target_power, green_params, green_x.min(), green_x.max())
+# rx = invert_amp_for_power(target_power, red_params, red_x.min(), red_x.max())
 # yx = invert_amp_for_power(target_power, yellow_params, yellow_x.min(), yellow_x.max())
-print(f"Green amplitude for {target_power:.0f} µW:", gx)
-print(f"Red   amplitude for {target_power:.0f} µW:", rx)
+# print(f"Green amplitude for {target_power:.0f} µW:", gx)
+# print(f"Red   amplitude for {target_power:.0f} µW:", rx)
 # print(f"Yellow   amplitude for {target_power:.0f} µW:", yx)
 
 

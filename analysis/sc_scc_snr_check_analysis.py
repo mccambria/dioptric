@@ -421,8 +421,12 @@ if __name__ == "__main__":
     file_id = 1840156737057
 
     # nas data
-    file_stem = "2025_05_01-15_02_45-rubin-nv0_2025_02_26"
-    data = dm.get_raw_data(file_stem=file_stem)
+    # file_stem = "2025_05_01-15_02_45-rubin-nv0_2025_02_26"
+    # data = dm.get_raw_data(file_stem=file_stem)
+
+    data = dm.get_raw_data(
+        file_stem="2025_09_16-14_56_18-rubin-nv0_2025_09_08", load_npz=True
+    )
     # file_name = dm.get_file_name(file_id=file_id)
     # print(f"{file_name}_{file_id}")
     # Process and visualize

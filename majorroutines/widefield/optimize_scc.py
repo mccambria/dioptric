@@ -232,7 +232,10 @@ if __name__ == "__main__":
     kpl.init_kplotlib()
 
     # data = dm.get_raw_data(file_id=1564881159891)
-    data = dm.get_raw_data(file_id=1720799193270)
+    # data = dm.get_raw_data(file_id=1720799193270)
+    data = dm.get_raw_data(
+        file_stem="2025_09_16-14_56_18-rubin-nv0_2025_09_08", load_npz=True
+    )
 
     nv_list = data["nv_list"]
     taus = data["taus"]

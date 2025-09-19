@@ -34,21 +34,20 @@ red_laser_aod = "laser_COBO_638_aod"
 
 
 calibration_coords_pixel = [
-    [6.768, 210.203],
-    [239.681, 215.048],
-    [123.376, 19.656],
+    [12.181, 23.754],
+    [92.977, 244.106],
+    [236.127, 5.996],
 ]
 calibration_coords_green = [
-    [122.785, 99.205],
-    [96.436, 96.099],
-    [107.039, 119.549],
+    [119.815, 120.239],
+    [113.419, 94.453],
+    [94.207, 119.759],
 ]
 calibration_coords_red = [
-    [84.506, 65.063],
-    [63.419, 61.215],
-    [71.164, 80.548],
+    [82.455, 82.752],
+    [78.269, 61.555],
+    [61.481, 81.042],
 ]
-
 
 # Create the dictionaries using the provided lists
 calibration_coords_nv1 = {
@@ -140,8 +139,8 @@ config |= {
                 # "uwave_power": 2.3,
                 "uwave_power": 8.7,
                 # "frequency": 2.779138,  # rubin shallow NVs O1 ms=-1
-                # "frequency": 2.909381,  # rubin shallow NV O3 ms=+1
-                "frequency": 2.730700,
+                "frequency": 2.83,
+                # "frequency": 2.730700,
                 "rabi_period": 128,
             },
             # sig gen 1 is iq molulated
@@ -151,11 +150,11 @@ config |= {
                 # "uwave_power": 9.6,
                 # "frequency": 2.779138,   # rubin shallow NVs O1 ms=-1
                 # "frequency": 2.964545,  # rubin shallow NV O1 ms=+1
-                # "frequency": 2.842478,  # rubin shallow NV O3 ms=-1
-                "frequency": 2.730700,  # lower esr peak for both orientation
-                "rabi_period": 208,
-                "pi_pulse": 104,
-                "pi_on_2_pulse": 56,
+                "frequency": 2.83,
+                # "frequency": 2.730700,  # lower esr peak for both orientation
+                "rabi_period": 128,
+                "pi_pulse": 64,
+                "pi_on_2_pulse": 32,
                 # "rabi_period": 52,
             },
         },
@@ -566,7 +565,7 @@ opx_config = {
             },
         },
         "do_sig_gen_STAN_sg394_dm": {
-            "digitalInputs": {"chan": {"port": ("con1", 10), "delay": 0, "buffer": 0}},
+            "digitalInputs": {"chan": {"port": ("con1", 9), "delay": 0, "buffer": 0}},
             "operations": {
                 "on": "do_on",
                 "off": "do_off",
@@ -577,8 +576,8 @@ opx_config = {
         "do_sig_gen_STAN_sg394_2_dm": {
             # 230 ns I channel latency measured 3/26/25 MCC and Saroj using oscilloscope
             "digitalInputs": {
-                # "chan": {"port": ("con1", 9), "delay": 230, "buffer": 0}
-                "chan": {"port": ("con1", 9), "delay": iq_delay, "buffer": 0}
+                "chan": {"port": ("con1", 10), "delay": 0, "buffer": 0}
+                # "chan": {"port": ("con1", 10), "delay": iq_delay, "buffer": 0}
             },
             "operations": {
                 "iq_test": "do_iq_test",
@@ -882,23 +881,23 @@ opx_config = {
     ### Analog
     "waveforms": {
         # Green AOD
-        "green_aod_cw-opti": {"type": "constant", "sample": 0.08},
+        "green_aod_cw-opti": {"type": "constant", "sample": 0.09},
         # "green_aod_cw-opti": {"type": "constant", "sample": 0.07},
-        "green_aod_cw-charge_pol": {"type": "constant", "sample": 0.06},  # Negative
-        # "green_aod_cw-charge_pol": {"type": "constant", "sample": 0.139},  # median
-        # "green_aod_cw-charge_pol": {"type": "constant", "sample": 0.15},  # median
+        "green_aod_cw-charge_pol": {"type": "constant", "sample": 0.06},
+        # "green_aod_cw-charge_pol": {"type": "constant", "sample": 0.139},# median
         "green_aod_cw-spin_pol": {"type": "constant", "sample": 0.05},
         "green_aod_cw-shelving": {"type": "constant", "sample": 0.05},
         "green_aod_cw-scc": {"type": "constant", "sample": 0.15},
         # Red AOD
         # "red_aod_cw-opti": {"type": "constant", "sample": 0.10},
         "red_aod_cw-opti": {"type": "constant", "sample": 0.11},
-        "red_aod_cw-ion": {"type": "constant", "sample": 0.11},
+        "red_aod_cw-ion": {"type": "constant", "sample": 0.15},
         "red_aod_cw-scc": {"type": "constant", "sample": 0.11},
         # "red_aod_cw-scc": {"type": "constant", "sample": 0.12},  # rubin
         "yellow_imaging": {"type": "constant", "sample": 0.4},  # 0.35
         # "yellow_charge_readout": {"type": "constant", "sample": 0.2722},  # 370NVs
-        "yellow_charge_readout": {"type": "constant", "sample": 0.2622},  # 370NVs
+        # "yellow_charge_readout": {"type": "constant", "sample": 0.2549},  # 340NVs
+        "yellow_charge_readout": {"type": "constant", "sample": 0.24},  # 340NVs
         "yellow_spin_pol": {"type": "constant", "sample": 0.27},  # 75 NVs
         # "yellow_spin_pol": {"type": "constant", "sample": 0.42},
         "yellow_shelving": {"type": "constant", "sample": 0.33},

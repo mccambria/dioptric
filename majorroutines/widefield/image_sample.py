@@ -193,6 +193,65 @@ def scanning(nv_sig, x_range, y_range, num_steps):
     return main(nv_sig, "scanning", num_reps, x_coords, y_coords, save_dict)
 
 
+# def scanning_full_roi(nv_sig, total_range, scan_range, num_steps):
+#     """
+#     Perform a full ROI scan by scanning across a frequency grid while iterating over spatial positions.
+
+#     Parameters:
+#         nv_sig: The NV signature to scan.
+#         total_range: The full frequency range to scan (e.g., ±15 MHz).
+#         scan_range: The scan window per step.
+#         num_steps: Number of spatial steps per scan.
+#     """
+#     # Get center coordinates
+#     laser_key = VirtualLaserKey.IMAGING
+#     positioner = pos.get_laser_positioner(laser_key)
+#     center_coords = pos.get_nv_coords(nv_sig, positioner)
+#     print(f"Center coordinates: {center_coords}")
+
+#     half_total_range = total_range / 2
+#     scan_frequencies = np.linspace(-half_total_range, half_total_range, num_steps)
+
+#     all_scan_data = []
+#     save_dict = {
+#         "scan_frequencies": scan_frequencies.tolist(),
+#         "total_range": total_range,
+#         "scan_range": scan_range,
+#         "num_steps": num_steps,
+#     }
+
+#     # Define scan grid
+#     steps = int(np.ceil(total_range / scan_range))
+#     x_offsets = np.linspace(-half_total_range, half_total_range, steps + 1)
+#     y_offsets = np.linspace(-half_total_range, half_total_range, steps + 1)
+
+#     for x_offset in x_offsets:
+#         for y_offset in y_offsets:
+#             # Create a deep copy of nv_sig to prevent overwriting original data
+#             updated_nv_sig = copy.deepcopy(nv_sig)
+
+#             # Update green laser coordinates (ensure correct key usage)
+#             updated_nv_sig.coords["laser_INTE_520_aod"] = [
+#                 center_coords[0] + x_offset,
+#                 center_coords[1] + y_offset,
+#             ]
+
+#             # Perform scanning at this position
+#             scan_data = scanning(updated_nv_sig, scan_range, scan_range, num_steps)
+#             all_scan_data.append(
+#                 {"x_offset": x_offset, "y_offset": y_offset, "scan_data": scan_data}
+#             )
+
+#     # Save scan data
+#     save_dict["scanned_data"] = all_scan_data
+#     timestamp = dm.get_time_stamp()
+#     nv_name = nv_sig.name
+#     file_path = dm.get_file_path(__file__, timestamp, nv_name)
+#     dm.save_raw_data(save_dict, file_path, keys_to_compress=["scanned_data"])
+
+#     return file_path
+
+
 def scanning_full_roi(nv_sig, total_range, scan_range, num_steps):
     """
     Perform a full ROI scan by scanning across a frequency grid while iterating over spatial positions.
@@ -220,27 +279,42 @@ def scanning_full_roi(nv_sig, total_range, scan_range, num_steps):
         "num_steps": num_steps,
     }
 
-    # Define scan grid
+    # Define scan grid (unchanged)
     steps = int(np.ceil(total_range / scan_range))
     x_offsets = np.linspace(-half_total_range, half_total_range, steps + 1)
     y_offsets = np.linspace(-half_total_range, half_total_range, steps + 1)
 
-    for x_offset in x_offsets:
-        for y_offset in y_offsets:
-            # Create a deep copy of nv_sig to prevent overwriting original data
-            updated_nv_sig = copy.deepcopy(nv_sig)
+    # --- NEW: two passes — original, then shifted by 0.8*scan_range ---
+    shift = 0.8 * scan_range
+    offset_sets = [
+        (x_offsets, y_offsets),  # original
+        (
+            np.clip(x_offsets + shift, -half_total_range, half_total_range),
+            np.clip(y_offsets + shift, -half_total_range, half_total_range),
+        ),  # shifted
+    ]
 
-            # Update green laser coordinates (ensure correct key usage)
-            updated_nv_sig.coords["laser_INTE_520_aod"] = [
-                center_coords[0] + x_offset,
-                center_coords[1] + y_offset,
-            ]
+    for xo, yo in offset_sets:
+        for x_offset in xo:
+            for y_offset in yo:
+                # Create a deep copy of nv_sig to prevent overwriting original data
+                updated_nv_sig = copy.deepcopy(nv_sig)
 
-            # Perform scanning at this position
-            scan_data = scanning(updated_nv_sig, scan_range, scan_range, num_steps)
-            all_scan_data.append(
-                {"x_offset": x_offset, "y_offset": y_offset, "scan_data": scan_data}
-            )
+                # Update green laser coordinates (ensure correct key usage)
+                updated_nv_sig.coords["laser_INTE_520_aod"] = [
+                    center_coords[0] + x_offset,
+                    center_coords[1] + y_offset,
+                ]
+
+                # Perform scanning at this position
+                scan_data = scanning(updated_nv_sig, scan_range, scan_range, num_steps)
+                all_scan_data.append(
+                    {
+                        "x_offset": float(x_offset),
+                        "y_offset": float(y_offset),
+                        "scan_data": scan_data,
+                    }
+                )
 
     # Save scan data
     save_dict["scanned_data"] = all_scan_data

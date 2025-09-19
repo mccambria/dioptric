@@ -89,8 +89,8 @@ def do_red_calibration_image(nv_sig, coords_list, force_laser_key=None, num_reps
 
 def do_scanning_image_full_roi(nv_sig):
     total_range = 30
-    scan_range = 10
-    num_steps = 10
+    scan_range = 15
+    num_steps = 15
     image_sample.scanning_full_roi(nv_sig, total_range, scan_range, num_steps)
 
 
@@ -114,7 +114,7 @@ def do_image_single_nv(nv_sig):
 def do_charge_state_histograms(nv_list):
     # 50 ms
     num_reps = 200
-    num_runs = 6
+    num_runs = 10
 
     # 100 ms
     # num_reps = 100
@@ -129,15 +129,14 @@ def do_charge_state_histograms(nv_list):
 
 
 def do_optimize_pol_duration(nv_list):
+    # num_steps = 24
+    # min_duration = 100
+    # max_duration = 1940
     num_steps = 25
+    min_duration = 200
+    max_duration = 9992
     num_reps = 10
     num_runs = 200
-    # num_reps = 5
-    # num_runs = 2
-    min_duration = 100
-    max_duration = 10000
-    # min_duration = 20
-    # max_duration = 1940
     return optimize_charge_state_histograms_mcc.optimize_pol_duration(
         nv_list, num_steps, num_reps, num_runs, min_duration, max_duration
     )
@@ -170,15 +169,15 @@ def do_optimize_readout_duration(nv_list):
 
 
 def do_optimize_readout_amp(nv_list):
-    num_steps = 21
-    # num_steps = 18
+    # num_steps = 21
+    num_steps = 18
     # num_reps = 150
     # num_runs = 5
     num_reps = 15
     # num_runs = 300
     num_runs = 200
-    min_amp = 0.7
-    max_amp = 1.3
+    min_amp = 0.8
+    max_amp = 1.2
     return optimize_charge_state_histograms_mcc.optimize_readout_amp(
         nv_list, num_steps, num_reps, num_runs, min_amp, max_amp
     )
@@ -249,7 +248,7 @@ def do_optimize_red(nv_sig, ref_nv_sig):
     axes_list = [Axes.X, Axes.Y]
     # axes_list = [Axes.Y, Axes.X]
     # shuffle(axes_list)
-    for ind in range(2):
+    for ind in range(1):
         axes = axes_list[ind]
         ret_vals = targeting.optimize(nv_sig, coords_key=red_laser_aod, axes=axes)
         opti_coords.append(ret_vals[0])
@@ -415,11 +414,11 @@ def do_optimize_spin_pol_amp(nv_list):
 
 def do_scc_snr_check(nv_list):
     num_reps = 200
-    num_runs = 60
+    num_runs = 40
     # num_runs = 200
     # num_runs = 160 * 4
     # num_runs = 3
-    scc_snr_check.main(nv_list, num_reps, num_runs, uwave_ind_list=[1])
+    scc_snr_check.main(nv_list, num_reps, num_runs, uwave_ind_list=[0, 1])
 
 
 def do_bootstrapped_pulse_error_tomography(nv_list):
@@ -501,17 +500,20 @@ def do_calibrate_iq_delay(nv_list):
 
 def do_resonance(nv_list):
     freq_center = 2.87
-    freq_range = 0.240
-    # freq_range = 0.36
-    num_steps = 40
+    # freq_range = 0.240
+    # freq_range = 0.180
+    freq_range = 0.36
+    num_steps = 60
+    # num_steps = 24
     # num_steps = 72
     # Single ref
     # num_reps = 8
     # num_runs = 1100
     # num_runs = 200
     # Both refs
-    num_reps = 3
+    num_reps = 2
     num_runs = 400
+    # num_runs = 4
     freqs = calculate_freqs(freq_center, freq_range, num_steps)
     # freqs = []
     # centers = [2.730700, 3.022277]
@@ -1007,13 +1009,13 @@ def do_opx_constant_ac():
     # if True:
     #     sig_gen = cxn.sig_gen_STAN_sg394
     #     amp = 10
-    #     chan = 10
+    #     chan = 9
     # else:
     #     sig_gen = cxn.sig_gen_STAN_sg394_2
     #     amp = 10
-    #     chan = 9
+    #     chan = 10
     # sig_gen.set_amp(amp)  # 12
-    # sig_gen.set_freq(0.1)
+    # sig_gen.set_freq(0.2)
     # sig_gen.uwave_on()
     # opx.constant_ac([chan])
 
@@ -1061,7 +1063,7 @@ def do_opx_constant_ac():
     # opx.constant_ac(
     #     [4],  # Digital channels
     #     [3, 4],  # Analog channels
-    #     [0.14, 0.14],  # Analog voltages
+    #     [0.02, 0.02],  # Analog voltages
     #     [107.0, 107.0],  # Analog frequencies
     # )
     # Green + red
@@ -1087,17 +1089,17 @@ def do_opx_constant_ac():
     # opx.constant_ac(
     #     [1],  # Digital channels
     #     [2, 6],  # Analog channels
-    #     [0.14, 0.14],  # Analog voltages
+    #     [0.16, 0.16],  # Analog voltages
     #     [72.0, 72.0],  # Analog frequencies
     # )
 
     # # Green + yellow
-    # opx.constant_ac(
-    #     [4],  # Digital channels
-    #     [3, 4, 7],  # Analog channels
-    #     [0.15, 0.15, 0.30],  # Analog voltages
-    #     [107, 107, 0],  # Analog frequencies
-    # )
+    opx.constant_ac(
+        [4],  # Digital channels
+        [3, 4, 7],  # Analog channels
+        [0.11, 0.11, 0.30],  # Analog voltages
+        [107, 107, 0],  # Analog frequencies
+    )
     # Red + green + Yellow
     # opx.constant_ac(
     #     [4, 1],  # Digital channels1
@@ -1233,19 +1235,20 @@ if __name__ == "__main__":
     # magnet_angle = 90
     date_str = "2025_09_08"
     sample_coords = [0.8, 0.2]
-    z_coord = 0.2
+    z_coord = 0.5
 
     # Load NV pixel coordinates1
     pixel_coords_list = load_nv_coords(
         # file_path="slmsuite/nv_blob_detection/nv_blob_rubin_shallow_154nvs_reordered.npz",
         # file_path="slmsuite/nv_blob_detection/nv_blob_rubin_shallow_75nvs_reordered.npz",
-        file_path="slmsuite/nv_blob_detection/nv_blob_370nvs_reordered.npz",
+        # file_path="slmsuite/nv_blob_detection/nv_blob_370nvs_reordered.npz",
+        file_path="slmsuite/nv_blob_detection/nv_blob_455nvs_reordered.npz",
     ).tolist()
     # pixel_coords_list = [
     #     [124.195, 127.341],
-    #     [14.885, 152.48],
-    #     [244.791, 189.637],
-    #     [154.222, 14.885],
+    #     [12.181, 23.754],
+    #     [92.977, 244.106],
+    #     [236.127, 5.996],
     # ]
     green_coords_list = [
         [
@@ -1275,29 +1278,24 @@ if __name__ == "__main__":
     print(f"Reference NV:{pixel_coords_list[0]}")
     print(f"Green Laser Coordinates: {green_coords_list[0]}")
     print(f"Red Laser Coordinates: {red_coords_list[0]}")
+
     # pixel_coords_list = [
     #     [124.195, 127.341],
-    #     [6.768, 210.203],
-    #     [239.681, 215.048],
-    #     [123.376, 19.656],
+    #     [12.181, 23.754],
+    #     [92.977, 244.106],
+    #     [236.127, 5.996],
     # ]
     # green_coords_list = [
-    #     [108.394, 107.306],
-    #     [122.785, 99.205],
-    #     [96.436, 96.099],
-    #     [107.039, 119.549],
+    #     [108.353, 107.313],
+    #     [119.815, 120.239],
+    #     [113.419, 94.453],
+    #     [94.207, 119.759],
     # ]
     # red_coords_list = [
-    #     [72.643, 70.82],
-    #     [84.506, 65.063],
-    #     [63.419, 61.215],
-    #     [71.164, 80.548],
-    # ]
-    # red_coords_list = [
-    #     [72.0, 72.0],
-    #     [71.0, 81.5],
-    #     [84.0, 62.0],
-    #     [64.0, 59.0],
+    #     [73.588, 71.7],
+    #     [82.455, 82.752],
+    #     [78.269, 61.555],
+    #     [61.481, 81.042],
     # ]
     num_nvs = len(pixel_coords_list)
     threshold_list = [None] * num_nvs
@@ -1320,7 +1318,8 @@ if __name__ == "__main__":
     #new set 75NVs optimized
     # pol_duration_list = [132, 132, 144, 176, 104, 164, 116, 128, 168, 204, 116, 156, 180, 104, 220, 96, 132, 104, 120, 120, 104, 192, 132, 128, 228, 120, 132, 200, 276, 96, 204, 192, 376, 120, 84, 244, 104, 232, 116, 108, 340, 436, 96, 116, 340, 116, 104, 416, 168, 120, 108, 104, 300, 104, 192, 188, 116, 336, 220, 92, 372, 328, 156, 300, 384, 120, 144, 140, 120, 132, 472, 132, 96, 192, 168]
     pol_duration_list = [616, 676, 1044, 1368, 892, 796, 432, 676, 1940, 768, 944, 744, 1940, 1940, 108, 672, 1940, 148, 768, 1228, 1740, 188, 256, 348, 1116, 604, 196, 696, 1396, 192, 1940, 1940, 844, 1188, 1252, 800, 1940, 1544, 200, 756, 652, 220, 1940, 644, 1940, 1340, 892, 856, 884, 1156, 744, 1644, 648, 1940, 1216, 592, 692, 1116, 1936, 244, 364, 228, 1940, 1096, 268, 472, 100, 1104, 920, 548, 1416, 1028, 944, 1940, 1408, 1676, 1088, 184, 460, 1940, 560, 100, 996, 844, 836, 776, 1124, 1940, 1300, 1184, 1264, 1180, 1220, 1032, 1940, 1940, 1248, 560, 352, 856, 1180, 1324, 1104, 792, 1344, 1368, 272, 692, 1580, 860, 1284, 428, 800, 932, 184, 888, 1068, 964, 1940, 100, 936, 912, 104, 1088, 1940, 744, 372, 1940, 1608, 1940, 1940, 1072, 944, 1628, 1088, 760, 1104, 1104, 772, 1284, 1940, 1884, 1016, 1940, 1068, 1940, 1676, 1940, 1940, 1100, 844, 1940, 1940, 132, 1400, 1156, 1940, 360, 696, 1940, 1240, 1340, 100, 884, 1940, 1940, 1940, 272, 792, 1120, 1256, 936, 1940, 1940, 1072, 1940, 1940, 1940, 956, 1940, 540, 1940, 164, 712, 1940, 1940, 1064, 824, 272, 1940, 844, 380, 704, 1400, 124, 800, 120, 1940, 1364, 1720, 1940, 1940, 1184, 1368, 864, 956, 1940, 100, 1236, 1940, 872, 1940, 1940, 1672, 1276, 1028, 100, 1940, 1076, 788, 1940, 864, 784, 564, 1940, 1604, 1940, 1940, 1416, 1940, 880, 1940, 112, 1904, 1940, 1756, 1228, 1252, 1700, 1940, 848, 1940, 1068, 1940, 1392, 1940, 1940, 104, 1940, 756, 584, 1304, 1940, 1336, 704, 1940, 1940, 1940, 1940, 1372, 1940, 1940, 1940, 1824, 1048, 1152, 1940, 1860, 1404, 1760, 1312, 128, 1264, 1940, 1216, 1940, 1940, 1940, 1732, 1940, 996, 1732, 1940, 224, 1060, 852, 1940, 1940, 1224, 1860, 1348, 1752, 1940, 824, 1940, 1940, 1940, 1940, 1940, 1060, 1072, 1940, 1940, 912, 1332, 1940, 1940, 1940, 1940, 1940, 1576, 1940, 1120, 1480, 1940, 1228, 1520, 1940, 1940, 1940, 1940, 1940, 1940, 1940, 1940, 1940, 1636, 1940, 136, 1940, 1544, 1940, 1940, 1936, 100, 1940, 1056, 940, 1372, 1336, 1940, 1940, 1940, 984, 1028, 1940, 1940, 1312, 1940, 100, 1940, 1940, 792, 1552, 1384, 1940, 1940, 1940, 1940, 1940, 1940, 1248, 1940, 1940, 1468, 1788, 1212, 1436, 1940, 1940]
-    scc_duration_list = [48, 84, 84, 68, 76, 92, 72, 92, 116, 84, 72, 76, 64, 60, 88, 60, 84, 56, 68, 56, 56, 80, 80, 72, 88, 72, 72, 92, 96, 72, 96, 84, 100, 72, 72, 64, 68, 124, 80, 56, 100, 116, 72, 48, 96, 60, 80, 120, 92, 80, 60, 60, 108, 56, 124, 160, 64, 116, 108, 64, 128, 108, 92, 136, 120, 72, 80, 76, 64, 72, 124, 112, 72, 92, 80]
+    # pol_duration_list = [5212, 4168, 5036, 7220, 5532, 3748, 4044, 3772, 6500, 7368, 7148, 5684, 4268, 4268, 8364, 3996, 8212, 10000, 2656, 4864, 4740, 8388, 5064, 4888, 4988, 4220, 100, 10000, 7716, 4664, 10000, 6376, 6056, 5656, 4468, 4392, 5436, 4540, 4940, None, 7568, 100, 3748, 6652, 5980, 7592, 4392, 4220, 4692, 3896, 6452, 4912, 6404, 3724, 3896, 4096, 5160, 3920, 9356, 7816, 4816, 9404, 4168, 7716, 7544, 5508, 4044, 5584, 4568, 4344, 7244, 4816, 4292, 4368, 8164, 4468, 3796, 3996, 7420, 4592, 4068, 5012, 3996, 4740, 6304, 6404, 4692, 6128, 4864, 4912, 5632, 100, 5336, 5908, 4292, 4964, 4516, 4568, 5632, 4764, 4616, 10000, 5064, 3820, 3920, 4120, 8016, 4716, 4292, 4640, 5584, 6700, 4020, 4244, 6800, 5360, 6404, 5460, 4840, 8040, 4616, 8016, 5756, 6280, 5160, 4640, 5088, 7048, 4788, 4192, 4468, 5908, 6004, 4788, 7816, 4640, 5188, 6228, None, 5408, 5684, 6824, 6724, 6080, 9628, 4988, 3724, 10000, 5532, 4840, 5532, 6948, 6032, 8984, 9304, 5732, 2260, 8860, 5632, 8240, 5856, 7692, 6476, 5608, 4912, 5212, 10000, 6576, 4664, 4516, 5360, 6800, 4540, 4044, 8436, 4516, 100, 6056, 4788, 100, 6848, 8512, 6676, 3944, 10000, 6848, 5932, 5136, 8956, 7792, 5188, 8760, 8088, 5064, 6156, 5088, 5756, 10000, 6848, 4320, 7692, 10000, 7048, 6676, 4192, 4192, 4244, 6748, 4940, 5808, 8016, 10000, 7892, 4468, 10000, 6056, 7716, 5136, 5808, 4616, 6900, 4540, 5932, 4664, 8612, 5508, 7272, 10000, 100, 7396, 9056, 6280, 6128, 4912, 4788, 5656, 6404, 5112, 5756, 5064, 5832, 5908, 3772, 5360, 10000, 4664, 4344, 6900, 5484, 4964, 10000, 8760, 6104, 4492, 6080, 6848, 6180, 6676, 6996, 6552, 4692, 5236, 7196, 6776, 10000, 7148, 5832, 10000, 6872, 3624, 6280, 7220, 6204, 6972, 4740, 6824, 7568, 6972, 5460, 5656, 10000, 8784, 9356, 10000, 2456, 7916, 8488, 5756, 7644, 4964, 6032, 5312, 6948, 9704, 5160, 10000, 4840, 7296, 5684, 5832, 4192, 6004, 7768, 7072, 7668, 7816, 4344, 10000, 4940, 4912, 5560, 10000, 6848, 6748, 10000, 9080, 6080, 7096, None, 10000, 100, 10000, 7520, 4888, 7444, 7816, 6996, 10000, 7964, 100, 5932, 7244, 7468, 6004, 5880, 7172, 8312, 10000, 5484, 7272]
+    # scc_duration_list = [48, 84, 84, 68, 76, 92, 72, 92, 116, 84, 72, 76, 64, 60, 88, 60, 84, 56, 68, 56, 56, 80, 80, 72, 88, 72, 72, 92, 96, 72, 96, 84, 100, 72, 72, 64, 68, 124, 80, 56, 100, 116, 72, 48, 96, 60, 80, 120, 92, 80, 60, 60, 108, 56, 124, 160, 64, 116, 108, 64, 128, 108, 92, 136, 120, 72, 80, 76, 64, 72, 124, 112, 72, 92, 80]
     # selected_indices_68MHz = [0, 7, 8, 9, 11, 14, 18, 22, 24, 25, 26, 27, 28, 30, 31, 32, 33, 35, 38, 44, 45, 46, 47, 48, 49, 53, 55, 57, 58, 60, 62, 64, 66, 67, 68, 69, 70, 71, 72, 73]
     # selected_indices_185MHz  =[0, 1, 2, 3, 4, 5, 6, 10, 12, 13, 15, 16, 17, 19, 20, 21, 23, 29, 34, 36, 39, 40, 41, 42, 43, 50, 51, 52, 54, 56, 59, 61, 63, 65, 74]
     # fmt: on
@@ -1337,20 +1336,20 @@ if __name__ == "__main__":
     # pol_duration_list = arranged_pol_duration_list
     # scc_amp_list = arranged_scc_amp_list
 
-    scc_duration_list = [
-        4 * round(el / 4) if el is not None else None for el in scc_duration_list
-    ]
-    pol_duration_list = [
-        4 * round(el / 4) if el is not None else None for el in pol_duration_list
-    ]
+    # scc_duration_list = [
+    #     4 * round(el / 4) if el is not None else None for el in scc_duration_list
+    # ]
+    # pol_duration_list = [
+    #     4 * round(el / 4) if el is not None else None for el in pol_duration_list
+    # ]
     # print(f"Length of pol_duration_list: {len(pol_duration_list)}")
     # print(f"First 10 SCC durations: {scc_duration_list[:10]}")
     # print(f"First 10 POL durations: {pol_duration_list[:10]}")
     # sys.exit()
 
     # scc_amp_list = [1.0] * num_nvs
-    # scc_duration_list = [1000] * num_nvs
-    # pol_duration_list = [1000] * num_nvs
+    # scc_duration_list = [96] * num_nvs
+    pol_duration_list = [1000] * num_nvs
     # pol_duration_list = [1000] * num_nvs
     # nv_list[i] will have the ith coordinates from the above lists
     nv_list: list[NVSig] = []
@@ -1470,7 +1469,8 @@ if __name__ == "__main__":
         # do_opx_square_wave()
 
         # do_optimize_pixel(nv_sig)
-        # do_optimize_green(nv_sig)
+        # do_optimize_green(nv_sig
+        # repr_nv_sig = widefield.get_repr_nv_sig(nv_list)
         # do_optimize_red(nv_sig, repr_nv_sig)
         # do_optimize_z(nv_sig)
         # do_optimize_sample(nv_sig)
@@ -1484,7 +1484,7 @@ if __name__ == "__main__":
         # do_charge_state_conditional_init(nv_list)
         # do_charge_state_histograms_images(nv_list, vary_pol_laser=True)
 
-        # do_optimize_pol_amp(nv_list)
+        do_optimize_pol_amp(nv_list)
         # do_optimize_pol_duration(nv_list)
         # do_optimize_readout_amp(nv_list)
         # do_optimize_readout_duration(nv_list)

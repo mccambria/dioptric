@@ -294,7 +294,7 @@ def nuvu2thorcam_calibration(coords):
     )
 
     cal_coords_nuvu = np.array(
-        [[225.282, 239.961], [192.81, 20.333], [20.794, 157.163]], dtype="float32"
+        [[225.268, 239.607], [192.754, 20.079], [20.842, 156.847]], dtype="float32"
     )
     # [[225.217, 233.623], [192.671, 13.797], [20.627, 150.726]]
     # Compute the affine transformation matrix
@@ -315,7 +315,8 @@ def load_nv_coords(
     # file_path="slmsuite/nv_blob_detection/nv_blob_rubin_shallow_154nvs_reordered.npz",
     # file_path="slmsuite/nv_blob_detection/nv_blob_rubin_shallow_81nvs_reordered.npz",
     # file_path="slmsuite/nv_blob_detection/nv_blob_rubin_shallow_75nvs_reordered.npz",
-    file_path="slmsuite/nv_blob_detection/nv_blob_370nvs_reordered.npz",
+    # file_path="slmsuite/nv_blob_detection/nv_blob_340nvs_reordered.npz",
+    file_path="slmsuite/nv_blob_detection/nv_blob_385nvs_reordered.npz",
     # file_path="slmsuite/nv_blob_detection/nv_blob_rubin_shallow_40nvs_reordered.npz",
     # file_path="slmsuite/nv_blob_detection/nv_blob_rubin_shallow_35nvs_reordered.npz",
     # file_path="slmsuite/nv_blob_detection/nv_blob_shallow_148nvs_reordered_updated.npz",
@@ -334,8 +335,8 @@ def load_nv_coords(
     # spot_weights = data["spot_weights"]
     spot_weights = data["updated_spot_weights"]
     # spot_weights = data["integrated_counts"]
-    # print(len(spot_weights))
     print(f"spot_weights: {spot_weights}")
+    print(len(spot_weights))
     # spot_weights = data["integrated_counts"]
     return nv_coordinates, spot_weights
 
@@ -360,7 +361,7 @@ def compute_and_write_nvs_phase():
         shape=(4096, 2048),
         spot_vectors=thorcam_coords,
         basis="ij",
-        spot_amp=spot_weights,
+        # spot_amp=spot_weights,
         cameraslm=fs,
     )
     # Precondition computationally
