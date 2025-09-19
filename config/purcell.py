@@ -896,7 +896,6 @@ opx_config = {
         # "red_aod_cw-scc": {"type": "constant", "sample": 0.12},  # rubin
         "yellow_imaging": {"type": "constant", "sample": 0.4},  # 0.35
         # "yellow_charge_readout": {"type": "constant", "sample": 0.2722},  # 370NVs
-        # "yellow_charge_readout": {"type": "constant", "sample": 0.2622}, # 370NVs
         # "yellow_charge_readout": {"type": "constant", "sample": 0.2549},  # 340NVs
         "yellow_charge_readout": {"type": "constant", "sample": 0.24},  # 340NVs
         "yellow_spin_pol": {"type": "constant", "sample": 0.27},  # 75 NVs
