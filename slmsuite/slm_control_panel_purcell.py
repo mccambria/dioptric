@@ -294,7 +294,7 @@ def nuvu2thorcam_calibration(coords):
     )
 
     cal_coords_nuvu = np.array(
-        [[225.268, 239.607], [192.754, 20.079], [20.842, 156.847]], dtype="float32"
+        [[225.614, 239.567], [193.072, 20.132], [21.125, 156.938]], dtype="float32"
     )
     # [[225.217, 233.623], [192.671, 13.797], [20.627, 150.726]]
     # Compute the affine transformation matrix
@@ -361,7 +361,7 @@ def compute_and_write_nvs_phase():
         shape=(4096, 2048),
         spot_vectors=thorcam_coords,
         basis="ij",
-        # spot_amp=spot_weights,
+        spot_amp=spot_weights,
         cameraslm=fs,
     )
     # Precondition computationally

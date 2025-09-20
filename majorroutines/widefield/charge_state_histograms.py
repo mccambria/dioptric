@@ -431,9 +431,9 @@ if __name__ == "__main__":
     # data = dm.get_raw_data(file_id=1806227898070, load_npz=False)
     # data = dm.get_raw_data(file_id=1806410973406, load_npz=False)
     data = dm.get_raw_data(
-        file_stem="2025_09_18-09_44_45-rubin-nv0_2025_09_08", load_npz=True
+        file_stem="2025_09_18-13_10_24-rubin-nv0_2025_09_08", load_npz=True
     )
-    process_and_plot(data, do_plot_histograms=True)
+    process_and_plot(data, do_plot_histograms=False)
     # data = dm.get_raw_data(file_id=1803617430430, load_npz=False)
     # process_and_plot(data, do_plot_histograms=True)
     kpl.show(block=True)

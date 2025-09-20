@@ -433,15 +433,7 @@ def _main(
     ### Initial setup
     print("Main Function Started")
     seq_file = "optimize_charge_state_histograms.py"
-    # step_vals = np.linspace(min_step_val, max_step_val, num_steps)
-
-    def generate_log_spaced_taus(min_tau, max_tau, num_steps, base=4):
-        taus = np.logspace(np.log10(min_tau), np.log10(max_tau), num_steps)
-        taus = np.floor(taus / base) * base
-        return taus
-
-    step_vals = generate_log_spaced_taus(min_step_val, max_step_val, num_steps, base=4)
-
+    step_vals = np.linspace(min_step_val, max_step_val, num_steps)
     if optimize_duration_or_amp:
         step_vals = step_vals.astype(int)
     # print(f"Step Values: {step_vals}")

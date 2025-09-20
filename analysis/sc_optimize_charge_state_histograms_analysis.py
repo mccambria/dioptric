@@ -100,7 +100,8 @@ def process_and_plot(raw_data):
     optimize_duration_or_amp = raw_data["optimize_duration_or_amp"]
     # a, b, c = 3.7e5, 6.97, 8e-14 # old para
     # a, b, c = 161266.751, 6.617, -19.492  # new para
-    a, b, c = 1.16306103e04, 2.81008145e00, -2.50774288e01  # UPDATED 2025-09-14
+    # a, b, c = 1.16306103e04, 2.81008145e00, -2.50774288e01  # UPDATED 2025-09-14
+    a, b, c = 1.5133e04, 2.6976, -38.63
     # get yellow amplitude
     yellow_charge_readout_amp = raw_data["opx_config"]["waveforms"][
         "yellow_charge_readout"
@@ -213,7 +214,7 @@ def process_and_plot(raw_data):
                 readout_fidelity_arr[nv_ind],
                 prep_fidelity_arr[nv_ind],
                 goodness_of_fit_arr[nv_ind],
-                weights=(0.0, 1.0, 1.0),
+                weights=(1.5, 1.0, 2.0),
             )
             # Manually override for the first NV
             # if nv_ind == 0:
@@ -242,60 +243,60 @@ def process_and_plot(raw_data):
             optimal_values.append((nv_ind, np.nan, np.nan))
             continue
 
-        # Plotting
-        fig, ax1 = plt.subplots(figsize=(7, 5))
-        # Plot readout fidelity
-        ax1.plot(
-            step_vals,
-            readout_fidelity_arr[nv_ind],
-            label="Readout Fidelity",
-            color="orange",
-        )
-        ax1.plot(
-            step_vals,
-            prep_fidelity_arr[nv_ind],
-            label="Prep Fidelity",
-            linestyle="--",
-            color="green",
-        )
-        ax1.set_xlabel(x_label)
-        ax1.set_ylabel("Fidelity")
-        ax1.tick_params(axis="y", labelcolor="blue")
-        ax1.grid(True, linestyle="--", alpha=0.6)
+        # # Plotting
+        # fig, ax1 = plt.subplots(figsize=(7, 5))
+        # # Plot readout fidelity
+        # ax1.plot(
+        #     step_vals,
+        #     readout_fidelity_arr[nv_ind],
+        #     label="Readout Fidelity",
+        #     color="orange",
+        # )
+        # ax1.plot(
+        #     step_vals,
+        #     prep_fidelity_arr[nv_ind],
+        #     label="Prep Fidelity",
+        #     linestyle="--",
+        #     color="green",
+        # )
+        # ax1.set_xlabel(x_label)
+        # ax1.set_ylabel("Fidelity")
+        # ax1.tick_params(axis="y", labelcolor="blue")
+        # ax1.grid(True, linestyle="--", alpha=0.6)
 
-        # Plot Goodness of Fit ()
-        ax2 = ax1.twinx()
-        ax2.plot(
-            step_vals,
-            goodness_of_fit_arr[nv_ind],
-            color="gray",
-            linestyle="--",
-            label=r"Goodness of Fit ($\chi^2_{\text{reduced}}$)",
-            alpha=0.7,
-        )
-        ax2.set_ylabel(r"Goodness of Fit ($\chi^2_{\text{reduced}}$)", color="gray")
-        ax2.tick_params(axis="y", labelcolor="gray")
+        # # Plot Goodness of Fit ()
+        # ax2 = ax1.twinx()
+        # ax2.plot(
+        #     step_vals,
+        #     goodness_of_fit_arr[nv_ind],
+        #     color="gray",
+        #     linestyle="--",
+        #     label=r"Goodness of Fit ($\chi^2_{\text{reduced}}$)",
+        #     alpha=0.7,
+        # )
+        # ax2.set_ylabel(r"Goodness of Fit ($\chi^2_{\text{reduced}}$)", color="gray")
+        # ax2.tick_params(axis="y", labelcolor="gray")
 
-        # Highlight optimal step value
-        ax1.axvline(
-            optimal_step_val,
-            color="red",
-            linestyle="--",
-            label=f"Optimal Step Val: {optimal_step_val:.3f}",
-        )
-        ax2.axvline(
-            optimal_step_val,
-            color="red",
-            linestyle="--",
-        )
+        # # Highlight optimal step value
+        # ax1.axvline(
+        #     optimal_step_val,
+        #     color="red",
+        #     linestyle="--",
+        #     label=f"Optimal Step Val: {optimal_step_val:.3f}",
+        # )
+        # ax2.axvline(
+        #     optimal_step_val,
+        #     color="red",
+        #     linestyle="--",
+        # )
 
-        # Combine legends
-        lines, labels = ax1.get_legend_handles_labels()
-        lines2, labels2 = ax2.get_legend_handles_labels()
-        ax1.legend(lines + lines2, labels + labels2, loc="upper left", fontsize=11)
-        ax1.set_title(f"NV{nv_ind} - Optimal Step Val: {optimal_step_val:.3f}")
-        plt.tight_layout()
-        plt.show(block=True)
+        # # Combine legends
+        # lines, labels = ax1.get_legend_handles_labels()
+        # lines2, labels2 = ax2.get_legend_handles_labels()
+        # ax1.legend(lines + lines2, labels + labels2, loc="upper left", fontsize=11)
+        # ax1.set_title(f"NV{nv_ind} - Optimal Step Val: {optimal_step_val:.3f}")
+        # plt.tight_layout()
+        # plt.show(block=True)
 
     # save opimal step values
     total_power = np.sum(optimal_step_vals) / len(optimal_step_vals)
@@ -424,7 +425,7 @@ def process_and_plot(raw_data):
         median_readout_fidelity,
         median_prep_fidelity,
         median_goodness_of_fit,
-        weights=(1, 1, 1),
+        weights=(1, 1, 2),
     )
 
     # Plot average and median readout and prep fidelity
@@ -1012,20 +1013,20 @@ def process_and_plot_charge(raw_data):
         opti_fidelities.append(round(opti_fid, 3))
 
         # --- Plot ---
-        plt.figure(figsize=(6, 5))
-        plt.scatter(x_fit, y_fit, label="Measured")
-        plt.plot(results["grid_t"], results["grid_y"], label="Sat-Decay Fit")
-        plt.axvline(
-            opti_dur, color="green", linestyle="--", label=f"Peak ≈ {opti_dur:.0f} ns"
-        )
-        plt.scatter([opti_dur], [opti_fid], color="green", zorder=5)
-        plt.xlabel("Duration (ns)")
-        plt.ylabel("Fidelity")
-        plt.ylim(0, 1)
-        plt.grid(True, alpha=0.3)
-        plt.legend()
-        plt.tight_layout()
-        plt.show(block=True)
+        # plt.figure(figsize=(6, 5))
+        # plt.scatter(x_fit, y_fit, label="Measured")
+        # plt.plot(results["grid_t"], results["grid_y"], label="Sat-Decay Fit")
+        # plt.axvline(
+        #     opti_dur, color="green", linestyle="--", label=f"Peak ≈ {opti_dur:.0f} ns"
+        # )
+        # plt.scatter([opti_dur], [opti_fid], color="green", zorder=5)
+        # plt.xlabel("Duration (ns)")
+        # plt.ylabel("Fidelity")
+        # plt.ylim(0, 1)
+        # plt.grid(True, alpha=0.3)
+        # plt.legend()
+        # plt.tight_layout()
+        # plt.show(block=True)
         # plt.figure(figsize=(6, 5))
         # plt.scatter(x_fit, r_fit, label="Readout Fidelity", alpha=0.6)
         # plt.scatter(x_fit, y_fit, label="Prep Fidelity", alpha=0.8)
@@ -1051,7 +1052,10 @@ def process_and_plot_charge(raw_data):
         median_duration = int(np.nanmedian(numeric_durations))
         # Replace None or out-of-range values with median
         opti_durs = [
-            median_duration if (d is None or (60 <= d <= 400)) else d for d in opti_durs
+            median_duration
+            if (d is None or (100 <= d <= 300) or (1800 <= d <= 2000))
+            else d
+            for d in opti_durs
         ]
         #         # Filter out None values to compute median
         #         numeric_durations = [d for d in opti_durs if d is not None]
@@ -1062,7 +1066,7 @@ def process_and_plot_charge(raw_data):
         #             for d in opti_durs
         #         ]
         # opti_durs = round(opti_durs / 4) * 4
-        # print("Updated Optimal Durations:", opti_durs)
+        print("Updated Optimal Durations:", opti_durs)
         print("Optimal Preparation Fidelities:", opti_fidelities)
         print(f"Median Optimal Duration: {np.median(opti_durs)} ns")
         print(f"Median Optimal Fidelity: {np.median(opti_fidelities)}")
@@ -1165,12 +1169,15 @@ if __name__ == "__main__":
     # file_stem = "2025_09_11-01_45_11-rubin-nv0_2025_09_08"  #
     # file_stem = "2025_09_11-23_23_30-rubin-nv0_2025_09_08"
     # file_id = "2025_09_13-20_27_20-rubin-nv0_2025_09_08"
-    file_id = "2025_09_18-01_02_17-rubin-nv0_2025_09_08"
+    # file_id = "2025_09_119-06_48_20-rubin-nv0_2025_09_08"
+    file_id = "2025_09_19-22_37_11-rubin-nv0_2025_09_08"
 
     ### pol amp var
     # file_id = "2025_09_12-16_53_34-rubin-nv0_2025_09_08"
     # file_id = "2025_09_12-18_30_09-rubin-nv0_2025_09_08"
     # file_id = "2025_09_12-20_43_54-rubin-nv0_2025_09_08"
+    # file_id = "2025_09_19-03_41_13-rubin-nv0_2025_09_08"
+    file_id = "2025_09_20-03_38_25-rubin-nv0_2025_09_08"  # 10us
 
     ### pol dur var
     # file_id = "2025_09_12-04_47_45-rubin-nv0_2025_09_08"
@@ -1178,7 +1185,10 @@ if __name__ == "__main__":
     # file_id = "2025_09_13-02_58_29-rubin-nv0_2025_09_08"
     # file_id = "2025_09_14-21_59_00-rubin-nv0_2025_09_08"
     # file_id = "2025_09_18-12_06_11-rubin-nv0_2025_09_08"
-    file_id = "2025_09_18-16_19_05-rubin-nv0_2025_09_08"
+    # file_id = "2025_09_18-16_19_05-rubin-nv0_2025_09_08"
+    # file_id = "2025_09_19-11_56_40-rubin-nv0_2025_09_08"
+    # file_id = "2025_09_20-05_59_31-rubin-nv0_2025_09_08"
+
     # dm.USE_NEW_CLOUD = False
     raw_data = dm.get_raw_data(file_stem=file_id, load_npz=True)
     # file_name = dm.get_file_name(file_id=file_id)

@@ -279,7 +279,7 @@ def process_scan_file():
     # raw_data = dm.get_raw_data(file_id=1788823078836, load_npz=True)  # rubin
     # raw_data = dm.get_raw_data(file_id=1802697426409, load_npz=True)  # rubin
 
-    ### Nas
+    ### NAS
     file_stem = "2025_09_17-21_47_22-rubin-nv0_2025_09_08"
     raw_data = dm.get_raw_data(
         file_stem=file_stem, load_npz=True, allow_pickle=True
