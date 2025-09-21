@@ -509,27 +509,19 @@ def do_resonance(nv_list):
     # Single ref
     # num_reps = 8
     # num_runs = 1100
-    # num_runs = 200
     # Both refs
     num_reps = 2
-    num_runs = 400
-    # num_runs = 4
+    # num_runs = 400
+    num_runs = 300
     freqs = calculate_freqs(freq_center, freq_range, num_steps)
-    # freqs = []
-    # centers = [2.730700, 3.022277]
-    # range_each = 0.1
-    # lower_freqs = calculate_freqs(centers[0], range_each, 20)
-    # freqs.extend(lower_freqs)
-    # upper_freqs = calculate_freqs(centers[1], range_each, 20)
-    # freqs.extend(upper_freqs)
     ##
     # Remove duplicates and sort
     freqs = sorted(set(freqs))
     num_steps = len(freqs)
     # sys.exit()
-    resonance.main(nv_list, num_steps, num_reps, num_runs, freqs=freqs)
-    # for _ in range(2):
-    #     resonance.main(nv_list, num_steps, num_reps, num_runs, freqs=freqs)
+    # resonance.main(nv_list, num_steps, num_reps, num_runs, freqs=freqs)
+    for _ in range(2):
+        resonance.main(nv_list, num_steps, num_reps, num_runs, freqs=freqs)
 
 
 def do_resonance_zoom(nv_list):
@@ -553,8 +545,8 @@ def do_rabi(nv_list):
     # num_runs = 100
     # num_runs = 20
     # num_runs = 5
-    uwave_ind_list = [1]  # only one
-    # uwave_ind_list = [0, 1]
+    # uwave_ind_list = [1]  # only one
+    uwave_ind_list = [0, 1]
     rabi.main(nv_list, num_steps, num_reps, num_runs, min_tau, max_tau, uwave_ind_list)
     # for _ in range(2):
     #     rabi.main(
@@ -1350,7 +1342,7 @@ if __name__ == "__main__":
 
     # scc_amp_list = [1.0] * num_nvs
     # scc_duration_list = [96] * num_nvs
-    pol_duration_list = [1000] * num_nvs
+    pol_duration_list = [600] * num_nvs
     # pol_duration_list = [10000] * num_nvs
     # nv_list[i] will have the ith coordinates from the above lists
     nv_list: list[NVSig] = []
@@ -1427,7 +1419,7 @@ if __name__ == "__main__":
         # )
 
         do_compensate_for_drift(nv_sig)
-        do_widefield_image_sample(nv_sig, 50)
+        # do_widefield_image_sample(nv_sig, 50)
         # do_widefield_image_sample(nv_sig, 200)
 
         # for nv in nv_list:
@@ -1485,7 +1477,7 @@ if __name__ == "__main__":
         # do_charge_state_conditional_init(nv_list)
         # do_charge_state_histograms_images(nv_list, vary_pol_laser=True)
 
-        do_optimize_pol_amp(nv_list)
+        # do_optimize_pol_amp(nv_list)
         # do_optimize_pol_duration(nv_list)
         # do_optimize_readout_amp(nv_list)
         # do_optimize_readout_duration(nv_list)
@@ -1505,7 +1497,7 @@ if __name__ == "__main__":
         # do_bootstrapped_pulse_error_tomography(nv_list)
         # do_calibrate_iq_delay(nv_list)
 
-        # do_rabi(nv_list)
+        do_rabi(nv_list)
         # do_power_rabi(nv_list)
         # do_resonance(nv_list)
         # do_resonance_zoom(nv_list)
