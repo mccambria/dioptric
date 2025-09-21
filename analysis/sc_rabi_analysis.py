@@ -5,23 +5,24 @@ Widefield Rabi experiment - Enhanced
 Created on Fall, 2024
 @auhtor : Saroj Chand
 """
+
 import sys
 import traceback
 import warnings
 from datetime import datetime
 
-import numpy as np
-from numpy.linalg import lstsq
 import matplotlib.pyplot as plt
+import numpy as np
 import seaborn as sns
 from joblib import Parallel, delayed
-from scipy.stats import pearsonr
+from numpy.linalg import lstsq
 from scipy.optimize import curve_fit, least_squares
+from scipy.stats import pearsonr
 
+from utils import _cloud_box as box_cloud
 from utils import data_manager as dm
 from utils import kplotlib as kpl
 from utils import widefield as widefield
-from utils import _cloud_box as box_cloud
 
 
 def fit_rabi_data(nv_list, taus, avg_counts, avg_counts_ste, epsilon=1e-10):
@@ -146,7 +147,7 @@ def fit_rabi_data(nv_list, taus, avg_counts, avg_counts_ste, epsilon=1e-10):
                 maxfev=20000,
             )
             median_fit_fn = lambda tau: cos_decay(tau, *median_popt)
-            print(f"Median Rabi Period = {1/median_popt[1]:.3f} µs")
+            print(f"Median Rabi Period = {1 / median_popt[1]:.3f} µs")
         except RuntimeError as e:
             print(f"Median fitting failed: {e}")
             median_fit_fn = None
@@ -228,31 +229,31 @@ def plot_rabi_fits(
     ax.grid(True)
 
     # plt.show()
-    # for nv_ind in range(num_nvs):
-    #     fig, ax = plt.subplots()
-    #     # Scatter plot with error bars
-    #     ax.errorbar(
-    #         taus,
-    #         avg_counts[nv_ind],
-    #         yerr=np.abs(avg_counts_ste[nv_ind]),
-    #         fmt="o",
-    #     )
-    #     # Plot the fitted curve if available
-    #     tau_dense = np.linspace(0, taus.max(), 300)
-    #     if fit_fns[nv_ind] is not None:
-    #         ax.plot(tau_dense, fit_fns[nv_ind](tau_dense), "-")
-    #     rabi_freq = popts[nv_ind][1]
-    #     if rabi_freq is not None:
-    #         rabi_period = round((1 / rabi_freq) / 4) * 4
-    #         title = f"NV {nv_ind} (Rabi Period: {rabi_period}ns)"
-    #     else:
-    #         title = f"NV {nv_ind} (Rabi Period: N/A)"
-    #     ax.set_title(title)
-    #     ax.set_xlabel("Pulse Duration (ns)")
-    #     ax.set_ylabel("Norm. NV- Population")
-    #     ax.grid(True)
-    #     fig.tight_layout()
-    #     plt.show(block=True)
+    for nv_ind in range(num_nvs):
+        fig, ax = plt.subplots()
+        # Scatter plot with error bars
+        ax.errorbar(
+            taus,
+            avg_counts[nv_ind],
+            yerr=np.abs(avg_counts_ste[nv_ind]),
+            fmt="o",
+        )
+        # Plot the fitted curve if available
+        tau_dense = np.linspace(0, taus.max(), 300)
+        if fit_fns[nv_ind] is not None:
+            ax.plot(tau_dense, fit_fns[nv_ind](tau_dense), "-")
+        rabi_freq = popts[nv_ind][1]
+        if rabi_freq is not None:
+            rabi_period = round((1 / rabi_freq) / 4) * 4
+            title = f"NV {nv_ind} (Rabi Period: {rabi_period}ns)"
+        else:
+            title = f"NV {nv_ind} (Rabi Period: N/A)"
+        ax.set_title(title)
+        ax.set_xlabel("Pulse Duration (ns)")
+        ax.set_ylabel("Norm. NV- Population")
+        ax.grid(True)
+        fig.tight_layout()
+        plt.show(block=True)
 
     # plotting median acroos all NVs
 
@@ -420,8 +421,9 @@ if __name__ == "__main__":
     # file_id = 1842383067959  # i channel
     # file_stem = box_cloud.get_file_stem_from_file_id(file_id)
     # data = dm.get_raw_data(file_id=file_id, load_npz=False, use_cache=False)
-    file_stem = "2025_04_30-07_09_33-rubin-nv0_2025_02_26"
-    data = dm.get_raw_data(file_stem=file_stem, load_npz=False, use_cache=False)
+    # file_stem = "2025_04_30-07_09_33-rubin-nv0_2025_02_26"
+    file_stem = "2025_09_21-04_35_06-rubin-nv0_2025_09_08"
+    data = dm.get_raw_data(file_stem=file_stem, load_npz=True, use_cache=False)
     nv_list = data["nv_list"]
     taus = data["taus"]
     counts = np.array(data["counts"])
@@ -450,16 +452,17 @@ sys.exit()
 
 
 # plot rabi periods for i and q channels
-file_ids = [1832587019842, 1842383067959]  # [Q, I]
+# file_ids = [1832587019842, 1842383067959]  # [Q, I]
 # file_ids = [1832587019842]  # [Q, I]
+file_ids = ["2025_09_21-04_35_06-rubin-nv0_2025_09_08"]
 rabi_periods_all = []
 pi_pulses_all = []
 pi_half_pulses_all = []
 # Loop over both channels
 for file_id in file_ids:
-    file_stem = box_cloud.get_file_stem_from_file_id(file_id)
+    # file_stem = box_cloud.get_file_stem_from_file_id(file_id)
     # file_stem = "2025_04_30-07_09_33-rubin-nv0_2025_02_26"
-    data = dm.get_raw_data(file_stem=file_stem, load_npz=False, use_cache=False)
+    data = dm.get_raw_data(file_stem=file_id, load_npz=False, use_cache=False)
     nv_list = data["nv_list"]
     taus = data["taus"]
     counts = np.array(data["counts"])
