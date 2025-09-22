@@ -178,7 +178,6 @@ config |= {
         "roi": (122, 126, 250, 250),  # offsetX, offsetY, width, height
         # "roi": None,  # offsetX, offsetY, width, height
         "scale": 5 / 0.6,  # pixels / micron
-        # "scale": 1 / 0.072,  # pixels / micron
     },
     ###
     "Optics": {
@@ -899,7 +898,7 @@ opx_config = {
         # "yellow_charge_readout": {"type": "constant", "sample": 0.2549},  # 340NVs
         # "yellow_charge_readout": {"type": "constant", "sample": 0.2114},  # 340NVs
         "yellow_charge_readout": {"type": "constant", "sample": 0.2166},  # 340NVs
-        "yellow_spin_pol": {"type": "constant", "sample": 0.27},  # 75 NVs
+        "yellow_spin_pol": {"type": "constant", "sample": 0.22},  # 75 NVs
         # "yellow_spin_pol": {"type": "constant", "sample": 0.42},
         "yellow_shelving": {"type": "constant", "sample": 0.33},
         # Other
