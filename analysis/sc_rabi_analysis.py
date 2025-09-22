@@ -423,6 +423,7 @@ if __name__ == "__main__":
     # data = dm.get_raw_data(file_id=file_id, load_npz=False, use_cache=False)
     # file_stem = "2025_04_30-07_09_33-rubin-nv0_2025_02_26"
     file_stem = "2025_09_21-04_35_06-rubin-nv0_2025_09_08"
+    file_stem = "2025_09_21-04_35_06-rubin-nv0_2025_09_08"
     data = dm.get_raw_data(file_stem=file_stem, load_npz=True, use_cache=False)
     nv_list = data["nv_list"]
     taus = data["taus"]

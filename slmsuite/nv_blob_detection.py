@@ -393,7 +393,7 @@ if __name__ == "__main__":
     data = dm.get_raw_data(
         # file_stem="2025_09_17-21_55_38-combined_image_array",
         # load_npz=True,
-        file_stem="2025_09_18-09_44_45-rubin-nv0_2025_09_08",
+        file_stem="2025_09_21-19_22_39-rubin-nv0_2025_09_08",
         load_npz=True,
     )
     img_array = np.array(data["ref_img_array"])
@@ -414,7 +414,7 @@ if __name__ == "__main__":
 
     # Apply the blob detection and Gaussian fitting
     sigma = 2.0
-    lower_threshold = 0.02
+    lower_threshold = 0.04
     upper_threshold = 50
     smoothing_sigma = 0.0
 
@@ -438,7 +438,7 @@ if __name__ == "__main__":
         for existing_coord in filtered_nv_coords:
             distance = np.linalg.norm(np.array(existing_coord) - np.array(coord))
 
-            if distance < 3:
+            if distance < 6:
                 keep_coord = False  # Mark it for exclusion if too close
                 break  # No need to check further distances
 
@@ -483,7 +483,7 @@ if __name__ == "__main__":
         filtered_nv_coords,
         filtered_counts,
         path="slmsuite/nv_blob_detection",
-        filename="nv_blob_385nvs.npz",
+        filename="nv_blob_339nvs.npz",
     )
 
     # full ROI -- multiple images save in the same file

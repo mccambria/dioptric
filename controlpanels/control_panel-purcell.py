@@ -1234,7 +1234,7 @@ if __name__ == "__main__":
         # file_path="slmsuite/nv_blob_detection/nv_blob_rubin_shallow_154nvs_reordered.npz",
         # file_path="slmsuite/nv_blob_detection/nv_blob_rubin_shallow_75nvs_reordered.npz",
         # file_path="slmsuite/nv_blob_detection/nv_blob_370nvs_reordered.npz",
-        file_path="slmsuite/nv_blob_detection/nv_blob_385nvs_reordered.npz",
+        file_path="slmsuite/nv_blob_detection/nv_blob_337nvs_reordered.npz",
     ).tolist()
     # pixel_coords_list = [
     #     [124.195, 127.341],
@@ -1362,7 +1362,7 @@ if __name__ == "__main__":
             threshold=threshold_list[ind],
             pulse_durations={
                 # VirtualLaserKey.SCC: scc_duration_list[ind],
-                VirtualLaserKey.CHARGE_POL: pol_duration_list[ind],
+                # VirtualLaserKey.CHARGE_POL: pol_duration_list[ind],
             },
             pulse_amps={
                 # VirtualLaserKey.SCC: scc_amp_list[ind],
@@ -1478,7 +1478,7 @@ if __name__ == "__main__":
         # do_charge_state_histograms_images(nv_list, vary_pol_laser=True)
 
         # do_optimize_pol_amp(nv_list)
-        # do_optimize_pol_duration(nv_list)
+        do_optimize_pol_duration(nv_list)
         # do_optimize_readout_amp(nv_list)
         # do_optimize_readout_duration(nv_list)
         # optimize_readout_amp_and_duration(nv_list)
@@ -1497,7 +1497,7 @@ if __name__ == "__main__":
         # do_bootstrapped_pulse_error_tomography(nv_list)
         # do_calibrate_iq_delay(nv_list)
 
-        do_rabi(nv_list)
+        # do_rabi(nv_list)
         # do_power_rabi(nv_list)
         # do_resonance(nv_list)
         # do_resonance_zoom(nv_list)
