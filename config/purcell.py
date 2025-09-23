@@ -139,7 +139,7 @@ config |= {
                 # "uwave_power": 2.3,
                 "uwave_power": 11,
                 # "frequency": 2.779138,  # rubin shallow NVs O1 ms=-1
-                "frequency": 2.83,
+                "frequency": 2.8290,
                 # "frequency": 2.730700,
                 "rabi_period": 176,
             },
@@ -150,7 +150,7 @@ config |= {
                 # "uwave_power": 9.6,
                 # "frequency": 2.779138,   # rubin shallow NVs O1 ms=-1
                 # "frequency": 2.964545,  # rubin shallow NV O1 ms=+1
-                "frequency": 2.777,
+                "frequency": 2.7721,
                 # "frequency": 2.730700,  # lower esr peak for both orientation
                 "rabi_period": 128,
                 "pi_pulse": 84,
@@ -889,9 +889,9 @@ opx_config = {
         "green_aod_cw-scc": {"type": "constant", "sample": 0.15},
         # Red AOD
         # "red_aod_cw-opti": {"type": "constant", "sample": 0.10},
-        "red_aod_cw-opti": {"type": "constant", "sample": 0.11},
-        "red_aod_cw-ion": {"type": "constant", "sample": 0.11},
-        "red_aod_cw-scc": {"type": "constant", "sample": 0.11},
+        "red_aod_cw-opti": {"type": "constant", "sample": 0.15},
+        "red_aod_cw-ion": {"type": "constant", "sample": 0.15},
+        "red_aod_cw-scc": {"type": "constant", "sample": 0.15},
         # "red_aod_cw-scc": {"type": "constant", "sample": 0.12},  # rubin
         "yellow_imaging": {"type": "constant", "sample": 0.4},  # 0.35
         # "yellow_charge_readout": {"type": "constant", "sample": 0.2722},  # 370NVs

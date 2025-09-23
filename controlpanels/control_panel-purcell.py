@@ -1382,7 +1382,7 @@ if __name__ == "__main__":
     # nv_sig.expected_counts = 1600
 
     # nv_list = nv_list[::-1]  # flipping the order of NVs
-    # nv_list = nv_list[:2]
+    nv_list = nv_list[:2]
     print(f"length of NVs list:{len(nv_list)}")
     # sys.exit()
     # endregion
@@ -1485,8 +1485,8 @@ if __name__ == "__main__":
         # do_optimize_spin_pol_amp(nv_list)
         # do_check_readout_fidelity(nv_list)
 
-        # do_scc_snr_check(nv_list)
-        # do_optimize_scc_duration(nv_list)
+        do_scc_snr_check(nv_list)
+        do_optimize_scc_duration(nv_list)
         # do_optimize_scc_amp(nv_list)
         # optimize_scc_amp_and_duration(nv_list)
         # do_crosstalk_check(nv_sig)
@@ -1499,7 +1499,7 @@ if __name__ == "__main__":
 
         # do_rabi(nv_list)
         # do_power_rabi(nv_list)
-        do_resonance(nv_list)
+        # do_resonance(nv_list)
         # do_resonance_zoom(nv_list)
         # do_spin_echo(nv_list)
         # do_spin_echo_1(nv_list)

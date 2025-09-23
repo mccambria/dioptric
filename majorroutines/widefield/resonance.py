@@ -261,8 +261,8 @@ def main(
     num_reps,
     num_runs,
     freqs,
-    uwave_ind_list=[0, 1],
-    # uwave_ind_list=[0],
+    # uwave_ind_list=[0, 1],
+    uwave_ind_list=[0],
 ):
     ### Some initial setup
     pulse_gen = tb.get_server_pulse_gen()
@@ -277,6 +277,7 @@ def main(
         seq_args = [widefield.get_base_scc_seq_args(nv_list, uwave_ind_list), step_inds]
         seq_args_string = tb.encode_seq_args(seq_args)
         pulse_gen.stream_load(seq_file, seq_args_string, num_reps)
+        print(seq_args)
 
     # def step_fn(step_ind):
     #     freq = freqs[step_ind]
