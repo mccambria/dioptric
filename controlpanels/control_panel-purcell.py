@@ -1382,7 +1382,7 @@ if __name__ == "__main__":
     # nv_sig.expected_counts = 1600
 
     # nv_list = nv_list[::-1]  # flipping the order of NVs
-    nv_list = nv_list[:2]
+    # nv_list = nv_list[:2]
     print(f"length of NVs list:{len(nv_list)}")
     # sys.exit()
     # endregion

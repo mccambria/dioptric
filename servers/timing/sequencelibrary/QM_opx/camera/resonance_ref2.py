@@ -27,6 +27,7 @@ def get_seq(
     num_reps=1,
 ):
     reference = False  # References for this sequence are handled routine-side
+    buffer = seq_utils.get_widefield_operation_buffer()
 
     # MCC
     # total_num_steps = len(step_inds)
@@ -49,6 +50,7 @@ def get_seq(
         def uwave_macro(uwave_ind_list, step_ind):
             # seq_utils.macro_pi_pulse(uwave_ind_list, phase=0)
             seq_utils.macro_pi_pulse(uwave_ind_list)
+            qua.wait(buffer)
 
         with qua.for_each_(step_ind, step_inds):
             base_scc_sequence.macro(
