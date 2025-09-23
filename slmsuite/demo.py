@@ -137,14 +137,14 @@ import numpy as np
 
 ### green and red calibaton at RT setup 2025-09-15
 pixel_coords_list = [
-    [107.332, 118.492],
-    [119.672, 105.768],
-    [98.339, 98.864],
+    [119.74, 120.062],
+    [110.243, 94.852],
+    [93.324, 119.189],
 ]
 red_coords_list = [
-    [72.293, 80.694],
-    [82.931, 71.034],
-    [65.725, 64.346],
+    [82.297, 82.572],
+    [75.395, 61.691],
+    [60.836, 80.554],
 ]
 # Given pixel coordinates and corresponding red coordinates
 # pixel_coords_list = np.array(
@@ -176,10 +176,10 @@ if len(pixel_coords_list) >= 3:
     # New pixel coordinate for which we want to find the corresponding red coordinate
     new_pixel_coord = np.array(
         [
-            [108.338, 107.235],
-            [122.788, 99.12],
-            [96.428, 96.021],
-            [107.051, 119.429],
+            [108.449, 107.293],
+            [119.776, 120.075],
+            [110.215, 94.893],
+            [93.376, 119.18],
         ],
         dtype=np.float32,
     )
@@ -266,7 +266,7 @@ taus_x = np.linspace(1, len(taus), len(taus))
 plt.figure()
 plt.scatter(taus_x, taus)
 plt.show(block=True)
-# sys.exit()
+sys.exit()
 
 
 def generate_divisible_by_4(min_val, max_val, num_steps):

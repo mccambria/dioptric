@@ -44,9 +44,9 @@ calibration_coords_green = [
     [93.324, 119.189],
 ]
 calibration_coords_red = [
-    [82.297, 82.572],
-    [75.395, 61.691],
-    [60.836, 80.554],
+    [82.326, 82.584],
+    [75.371, 61.723],
+    [60.879, 80.549],
 ]
 
 # Create the dictionaries using the provided lists
@@ -889,15 +889,15 @@ opx_config = {
         "green_aod_cw-scc": {"type": "constant", "sample": 0.15},
         # Red AOD
         # "red_aod_cw-opti": {"type": "constant", "sample": 0.10},
-        "red_aod_cw-opti": {"type": "constant", "sample": 0.15},
-        "red_aod_cw-ion": {"type": "constant", "sample": 0.15},
+        "red_aod_cw-opti": {"type": "constant", "sample": 0.11},
+        "red_aod_cw-ion": {"type": "constant", "sample": 0.11},
         "red_aod_cw-scc": {"type": "constant", "sample": 0.11},
         # "red_aod_cw-scc": {"type": "constant", "sample": 0.12},  # rubin
         "yellow_imaging": {"type": "constant", "sample": 0.4},  # 0.35
         # "yellow_charge_readout": {"type": "constant", "sample": 0.2722},  # 370NVs
         # "yellow_charge_readout": {"type": "constant", "sample": 0.2549},  # 340NVs
         # "yellow_charge_readout": {"type": "constant", "sample": 0.2114},  # 340NVs
-        "yellow_charge_readout": {"type": "constant", "sample": 0.22},  # 340NVs
+        "yellow_charge_readout": {"type": "constant", "sample": 0.207479},  # 340NVs
         "yellow_spin_pol": {"type": "constant", "sample": 0.22},  # 75 NVs
         # "yellow_spin_pol": {"type": "constant", "sample": 0.42},
         "yellow_shelving": {"type": "constant", "sample": 0.33},

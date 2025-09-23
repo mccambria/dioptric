@@ -214,7 +214,7 @@ def process_and_plot(raw_data):
                 readout_fidelity_arr[nv_ind],
                 prep_fidelity_arr[nv_ind],
                 goodness_of_fit_arr[nv_ind],
-                weights=(1.5, 1.0, 2.0),
+                weights=(1.0, 1.0, 2.0),
             )
             # Manually override for the first NV
             # if nv_ind == 0:
@@ -946,7 +946,9 @@ def process_and_plot_charge(raw_data):
         median_duration = int(np.nanmedian(numeric_durations))
         # Replace None or out-of-range values with median
         opti_durs = [
-            median_duration if (d is None or (100 <= d <= 200)) else d
+            median_duration
+            if (d is None or (100 <= d <= 200) or (1500 <= d <= 2000))
+            else d
             for d in opti_durs
         ]
 
@@ -1054,15 +1056,15 @@ if __name__ == "__main__":
     # file_stem = "2025_09_11-23_23_30-rubin-nv0_2025_09_08"
     # file_id = "2025_09_13-20_27_20-rubin-nv0_2025_09_08"
     # file_id = "2025_09_119-06_48_20-rubin-nv0_2025_09_08"
-    file_id = "2025_09_19-22_37_11-rubin-nv0_2025_09_08"
-
+    # file_id = "2025_09_19-22_37_11-rubin-nv0_2025_09_08"
+    file_id = "2025_09_22-16_18_01-rubin-nv0_2025_09_08"
     ### pol amp var
     # file_id = "2025_09_12-16_53_34-rubin-nv0_2025_09_08"
     # file_id = "2025_09_12-18_30_09-rubin-nv0_2025_09_08"
     # file_id = "2025_09_12-20_43_54-rubin-nv0_2025_09_08"
     # file_id = "2025_09_19-03_41_13-rubin-nv0_2025_09_08"
     # file_id = "2025_09_20-03_38_25-rubin-nv0_2025_09_08"  # 10us
-    file_id = "2025_09_20-14_18_23-rubin-nv0_2025_09_08"  # 1us
+    # file_id = "2025_09_20-14_18_23-rubin-nv0_2025_09_08"  # 1us
 
     ### pol dur var
     # file_id = "2025_09_12-04_47_45-rubin-nv0_2025_09_08"
@@ -1072,7 +1074,7 @@ if __name__ == "__main__":
     # file_id = "2025_09_18-12_06_11-rubin-nv0_2025_09_08"
     # file_id = "2025_09_18-16_19_05-rubin-nv0_2025_09_08"
     # file_id = "2025_09_19-11_56_40-rubin-nv0_2025_09_08"
-    file_id = "2025_09_20-05_59_31-rubin-nv0_2025_09_08"
+    # file_id = "2025_09_21-22_20_08-rubin-nv0_2025_09_08"
 
     # dm.USE_NEW_CLOUD = False
     raw_data = dm.get_raw_data(file_stem=file_id, load_npz=True)

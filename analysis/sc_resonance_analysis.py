@@ -1116,6 +1116,7 @@ if __name__ == "__main__":
     combined_data = dm.get_raw_data(
         file_stem=file_ids[0], load_npz=True, use_cache=True
     )
+
     combined_sig_counts = None
     combined_ref_counts = None
 
