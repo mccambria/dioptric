@@ -502,8 +502,8 @@ def do_resonance(nv_list):
     freq_center = 2.87
     # freq_range = 0.240
     # freq_range = 0.180
-    freq_range = 0.42
-    num_steps = 80
+    freq_range = 0.36
+    num_steps = 60
     # num_steps = 24
     # num_steps = 72
     # Single ref
@@ -1341,7 +1341,7 @@ if __name__ == "__main__":
     # sys.exit()
 
     # scc_amp_list = [1.0] * num_nvs
-    scc_duration_list = [124] * num_nvs
+    scc_duration_list = [300] * num_nvs
     # pol_duration_list = [600] * num_nvs
     # pol_duration_list = [10000] * num_nvs
     # nv_list[i] will have the ith coordinates from the above lists
@@ -1485,8 +1485,8 @@ if __name__ == "__main__":
         # do_optimize_spin_pol_amp(nv_list)
         # do_check_readout_fidelity(nv_list)
 
-        do_scc_snr_check(nv_list)
-        do_optimize_scc_duration(nv_list)
+        # do_scc_snr_check(nv_list)
+        # do_optimize_scc_duration(nv_list)
         # do_optimize_scc_amp(nv_list)
         # optimize_scc_amp_and_duration(nv_list)
         # do_crosstalk_check(nv_sig)
@@ -1499,7 +1499,7 @@ if __name__ == "__main__":
 
         # do_rabi(nv_list)
         # do_power_rabi(nv_list)
-        # do_resonance(nv_list)
+        do_resonance(nv_list)
         # do_resonance_zoom(nv_list)
         # do_spin_echo(nv_list)
         # do_spin_echo_1(nv_list)
