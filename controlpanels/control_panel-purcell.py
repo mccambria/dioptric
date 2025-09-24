@@ -415,7 +415,7 @@ def do_optimize_spin_pol_amp(nv_list):
 def do_scc_snr_check(nv_list):
     num_reps = 200
     num_runs = 40
-    # num_runs = 200
+    # num_runs = 20
     # num_runs = 160 * 4
     # num_runs = 3
     scc_snr_check.main(nv_list, num_reps, num_runs, uwave_ind_list=[0, 1])
@@ -501,18 +501,18 @@ def do_calibrate_iq_delay(nv_list):
 def do_resonance(nv_list):
     freq_center = 2.87
     # freq_range = 0.240
-    # freq_range = 0.180
-    freq_range = 0.36
-    num_steps = 60
-    # num_steps = 24
+    freq_range = 0.120
+    # freq_range = 0.36
+    # num_steps = 60
+    num_steps = 24
     # num_steps = 72
     # Single ref
     # num_reps = 8
     # num_runs = 1100
     # Both refs
-    num_reps = 2
-    # num_runs = 400
-    num_runs = 300
+    num_reps = 4
+    num_runs = 400
+    # num_runs = 300
     freqs = calculate_freqs(freq_center, freq_range, num_steps)
     ##
     # Remove duplicates and sort
@@ -1272,24 +1272,24 @@ if __name__ == "__main__":
     print(f"Green Laser Coordinates: {green_coords_list[0]}")
     print(f"Red Laser Coordinates: {red_coords_list[0]}")
 
-    # pixel_coords_list = [
-    #     [124.195, 127.341],
-    #     [13.563, 25.46],
-    #     [121.018, 237.097],
-    #     [244.469, 10.905],
-    # ]
-    # green_coords_list = [
-    #     [108.449, 107.293],
-    #     [119.776, 120.075],
-    #     [110.215, 94.893],
-    #     [93.376, 119.18],
-    # ]
-    # red_coords_list = [
-    #     [73.529, 71.674],
-    #     [82.326, 82.584],
-    #     [75.371, 61.723],
-    #     [60.879, 80.549],
-    # ]
+    pixel_coords_list = [
+        [124.195, 127.341],
+        [13.563, 25.46],
+        [121.018, 237.097],
+        [244.469, 10.905],
+    ]
+    green_coords_list = [
+        [108.473, 107.303],
+        [119.795, 120.08],
+        [110.233, 94.887],
+        [93.382, 119.203],
+    ]
+    red_coords_list = [
+        [73.529, 71.674],
+        [82.326, 82.584],
+        [75.371, 61.723],
+        [60.879, 80.549],
+    ]
     num_nvs = len(pixel_coords_list)
     threshold_list = [None] * num_nvs
     # fmt: off
@@ -1490,8 +1490,8 @@ if __name__ == "__main__":
         # do_optimize_spin_pol_amp(nv_list)
         # do_check_readout_fidelity(nv_list)
 
-        # do_scc_snr_check(nv_list)
-        do_optimize_scc_duration(nv_list)
+        do_scc_snr_check(nv_list)
+        # do_optimize_scc_duration(nv_list)
         # do_optimize_scc_amp(nv_list)
         # optimize_scc_amp_and_duration(nv_list)
         # do_crosstalk_check(nv_sig)

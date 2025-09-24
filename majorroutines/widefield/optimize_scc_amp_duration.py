@@ -103,19 +103,19 @@ def process_and_plot(data):
                 opti_dur = duration_linspace[np.argmax(line)]
                 opti_amp = amp_vals[amp_ind]
         # Plot
-        # # if opti_dur == 32:
-        # fig, ax = plt.subplots()
-        # for amp_ind in range(num_amp_steps):
-        #     kpl.plot_points(ax, duration_vals, snrs_2d[amp_ind])
-        #     # kpl.plot_points(ax, amp_vals, snrs_2d[amp_ind])
-        #     line = lines[amp_ind]
-        #     if line is not None:
-        #         kpl.plot_line(ax, duration_linspace, line, label=amp_vals[amp_ind])
-        # ax.set_xlabel("Duration (ns)")
-        # ax.set_ylabel("SNR")
-        # ax.set_title(f"NV num: {widefield.get_nv_num(nv_list[nv_ind])}")
-        # ax.legend()
-        # kpl.show(block=True)
+        # if opti_dur == 32:
+        fig, ax = plt.subplots()
+        for amp_ind in range(num_amp_steps):
+            kpl.plot_points(ax, duration_vals, snrs_2d[amp_ind])
+            # kpl.plot_points(ax, amp_vals, snrs_2d[amp_ind])
+            line = lines[amp_ind]
+            if line is not None:
+                kpl.plot_line(ax, duration_linspace, line, label=amp_vals[amp_ind])
+        ax.set_xlabel("Duration (ns)")
+        ax.set_ylabel("SNR")
+        ax.set_title(f"NV num: {widefield.get_nv_num(nv_list[nv_ind])}")
+        ax.legend()
+        kpl.show(block=True)
         print(opti_snr)
         print(opti_amp)
         print(opti_dur)
@@ -332,8 +332,8 @@ def optimize_scc_amp_and_duration(
     step_vals = np.array(list(itertools.product(duration_vals, amp_vals)))
     # step_vals = np.array(np.meshgrid(duration_vals, amp_vals)).T.reshape(-1, 2)
     num_steps = num_amp_steps * num_dur_steps
-    # uwave_ind_list = [0, 1]
-    uwave_ind_list = [1]  # iq modulated
+    uwave_ind_list = [0, 1]
+    # uwave_ind_list = [1]  # iq modulated
     pulse_gen = tb.get_server_pulse_gen()
 
     ### Define run function
@@ -402,6 +402,8 @@ if __name__ == "__main__":
     # data = dm.get_raw_data(file_id=1737831146138)
     # data = dm.get_raw_data(file_id=1781811582216)
     # data = dm.get_raw_data(file_id=1797149751810)  # amps variation
-    data = dm.get_raw_data(file_id=1800806173978)  # durs variation
+    # data = dm.get_raw_data(file_id=1800806173978)  # durs variation
+    file_stem = "2025_09_24-11_56_41-rubin-nv0_2025_09_08"
+    data = dm.get_raw_data(file_stem=file_stem, load_npz=True)  # durs variation
     process_and_plot(data)
     plt.show(block=True)

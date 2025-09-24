@@ -181,16 +181,34 @@ def plot_rabi_fits(
     epsilon = 1e-10
     rabi_periods = []
     amps = []
-    for nv_ind in range(num_nvs):
-        popt = popts[nv_ind]
-        amp = popt[0]  # FIXED: Use actual amplitude
-        rabi_freq = popt[1]
+    # for nv_ind in range(num_nvs):
+    #     popt = popts[nv_ind]
+    #     amp = popt[0]  # FIXED: Use actual amplitude
+    #     rabi_freq = popt[1]
 
-        if rabi_freq > epsilon:
-            rabi_period = 1 / rabi_freq
-            rabi_period = round(rabi_period / 4) * 4  # Keep nearest multiple of 4
-            rabi_periods.append(rabi_period)
-            amps.append(amp)
+    #     if rabi_freq is not None and > epsilon:
+    #         rabi_period = 1 / rabi_freq
+    #         rabi_period = round(rabi_period / 4) * 4  # Keep nearest multiple of 4
+    #         rabi_periods.append(rabi_period)
+    #         amps.append(amp)
+
+    for nv_ind in range(num_nvs):
+        # popts[nv_ind] is expected like [amp, rabi_freq, ...]
+        try:
+            popt = popts[nv_ind]
+            amp = float(popt[0])
+            rabi_freq = float(popt[1])
+        except (IndexError, TypeError, ValueError):
+            # skip NVs with missing/bad fit params
+            continue
+
+    # FIX: the condition needs the variable; also guard NaN/inf and non-positive values
+    if np.isfinite(rabi_freq) and (rabi_freq > epsilon):
+        rabi_period = 1.0 / rabi_freq
+        # nearest multiple of 4 (same units as rabi_period)
+        rabi_period = int(np.round(rabi_period / 4.0)) * 4
+        rabi_periods.append(rabi_period)
+        amps.append(amp)
 
     # print(f"Raw Rabi Periods: {rabi_periods}")
 
@@ -422,8 +440,8 @@ if __name__ == "__main__":
     # file_stem = box_cloud.get_file_stem_from_file_id(file_id)
     # data = dm.get_raw_data(file_id=file_id, load_npz=False, use_cache=False)
     # file_stem = "2025_04_30-07_09_33-rubin-nv0_2025_02_26"
-    file_stem = "2025_09_21-04_35_06-rubin-nv0_2025_09_08"
-    file_stem = "2025_09_21-04_35_06-rubin-nv0_2025_09_08"
+    # file_stem = "2025_09_21-04_35_06-rubin-nv0_2025_09_08"
+    file_stem = "2025_09_24-05_35_57-rubin-nv0_2025_09_08"
     data = dm.get_raw_data(file_stem=file_stem, load_npz=True, use_cache=False)
     nv_list = data["nv_list"]
     taus = data["taus"]
@@ -455,7 +473,7 @@ sys.exit()
 # plot rabi periods for i and q channels
 # file_ids = [1832587019842, 1842383067959]  # [Q, I]
 # file_ids = [1832587019842]  # [Q, I]
-file_ids = ["2025_09_21-04_35_06-rubin-nv0_2025_09_08"]
+file_ids = ["2025_09_24-05_35_57-rubin-nv0_2025_09_08"]
 rabi_periods_all = []
 pi_pulses_all = []
 pi_half_pulses_all = []
