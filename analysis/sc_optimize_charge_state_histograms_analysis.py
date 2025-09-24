@@ -1075,13 +1075,13 @@ if __name__ == "__main__":
     # file_id = "2025_09_18-16_19_05-rubin-nv0_2025_09_08"
     # file_id = "2025_09_19-11_56_40-rubin-nv0_2025_09_08"
     # file_id = "2025_09_21-22_20_08-rubin-nv0_2025_09_08"
-
+    file_id = "2025_09_23-19_06_00-rubin-nv0_2025_09_08"
     # dm.USE_NEW_CLOUD = False
     raw_data = dm.get_raw_data(file_stem=file_id, load_npz=True)
     # file_name = dm.get_file_name(file_id=file_id)
     # print(f"{file_name}_{file_id}")
-    process_and_plot(raw_data)
+    # process_and_plot(raw_data)
     # process_and_plot_green(raw_data)
-    # process_and_plot_charge(raw_data)
+    process_and_plot_charge(raw_data)
     # print(dm.get_file_name(1717056176426))
     plt.show(block=True)

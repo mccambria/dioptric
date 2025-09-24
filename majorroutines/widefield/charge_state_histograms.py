@@ -64,7 +64,9 @@ def plot_histograms(
         ax.set_ylabel("Number of occurrences")
 
     for ind in range(2):
-        if ind == 0:
+        # if ind == 0:
+        #     continue
+        if counts_lists is None or len(counts_lists) == 0:
             continue
         counts_list = counts_lists[ind]
         label = labels[ind]
@@ -431,7 +433,7 @@ if __name__ == "__main__":
     # data = dm.get_raw_data(file_id=1806227898070, load_npz=False)
     # data = dm.get_raw_data(file_id=1806410973406, load_npz=False)
     data = dm.get_raw_data(
-        file_stem="2025_09_22-16_49_06-rubin-nv0_2025_09_08", load_npz=True
+        file_stem="2025_09_23-19_32_31-rubin-nv0_2025_09_08", load_npz=True
     )
     process_and_plot(data, do_plot_histograms=True)
     # data = dm.get_raw_data(file_id=1803617430430, load_npz=False)

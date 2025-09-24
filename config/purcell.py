@@ -136,24 +136,22 @@ config |= {
         "VirtualSigGens": {
             0: {
                 "physical_name": "sig_gen_STAN_sg394",
-                # "uwave_power": 2.3,
-                "uwave_power": 11,
-                # "frequency": 2.779138,  # rubin shallow NVs O1 ms=-1
-                "frequency": 2.8290,
+                "uwave_power": 9.6,
+                "frequency": 2.87,
+                # "frequency": 2.8290,
                 # "frequency": 2.730700,
                 "rabi_period": 176,
             },
             # sig gen 1 is iq molulated
             1: {
                 "physical_name": "sig_gen_STAN_sg394_2",
-                "uwave_power": 11,
+                "uwave_power": 9.6,
                 # "uwave_power": 9.6,
-                # "frequency": 2.779138,   # rubin shallow NVs O1 ms=-1
-                # "frequency": 2.964545,  # rubin shallow NV O1 ms=+1
-                "frequency": 2.7721,
+                "frequency": 2.87,
+                # "frequency": 2.7121,
                 # "frequency": 2.730700,  # lower esr peak for both orientation
                 "rabi_period": 176,
-                "pi_pulse": 84,
+                "pi_pulse": 88,
                 "pi_on_2_pulse": 44,
                 # "rabi_period": 52,
             },
@@ -893,12 +891,10 @@ opx_config = {
         "red_aod_cw-ion": {"type": "constant", "sample": 0.15},
         "red_aod_cw-scc": {"type": "constant", "sample": 0.15},
         # "red_aod_cw-scc": {"type": "constant", "sample": 0.12},  # rubin
-        "yellow_imaging": {"type": "constant", "sample": 0.4},  # 0.35
-        # "yellow_charge_readout": {"type": "constant", "sample": 0.2722},  # 370NVs
-        # "yellow_charge_readout": {"type": "constant", "sample": 0.2549},  # 340NVs
+        "yellow_imaging": {"type": "constant", "sample": 0.35},  # 0.35
         # "yellow_charge_readout": {"type": "constant", "sample": 0.2114},  # 340NVs
-        "yellow_charge_readout": {"type": "constant", "sample": 0.207479},  # 340NVs
-        "yellow_spin_pol": {"type": "constant", "sample": 0.22},  # 75 NVs
+        "yellow_charge_readout": {"type": "constant", "sample": 0.18},  # 340NVs
+        "yellow_spin_pol": {"type": "constant", "sample": 0.18},  # 75 NVs
         # "yellow_spin_pol": {"type": "constant", "sample": 0.42},
         "yellow_shelving": {"type": "constant", "sample": 0.33},
         # Other

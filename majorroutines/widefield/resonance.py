@@ -431,7 +431,7 @@ if __name__ == "__main__":
     # fmt: on
 
     file_id = 1732403187814
-    file_id = "2025_09_22-22_56_46-rubin-nv0_2025_09_08"
+    file_id = "2025_09_23-12_36_13-rubin-nv0_2025_09_08"
 
     data = dm.get_raw_data(file_stem=file_id, load_npz=True, use_cache=True)
     # data = dm.get_raw_data(file_id=file_id, load_npz=True, use_cache=False)
