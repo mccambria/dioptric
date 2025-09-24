@@ -266,7 +266,7 @@ taus_x = np.linspace(1, len(taus), len(taus))
 plt.figure()
 plt.scatter(taus_x, taus)
 plt.show(block=True)
-sys.exit()
+# sys.exit()
 
 
 def generate_divisible_by_4(min_val, max_val, num_steps):
@@ -570,10 +570,10 @@ make_plots("Yellow", yellow_x, yellow_y, yellow_params)
 # Examples: prediction and inversion
 # -----------------------------
 # Predict power at x = 0.11
-x_query = 0.15
+x_query = 0.18
 print("Green power at x=0.11:", float(predict_power(x_query, green_params)))
 print("Red   power at x=0.11:", float(predict_power(x_query, red_params)))
-print("Yellow  power at x=0.11:", float(predict_power(x_query, red_params)))
+print("Yellow  power at x=0.11:", float(predict_power(x_query, yellow_params)))
 
 # Invert: which amplitude gives 10 mW (10000 µW)?
 target_power = 1000.0

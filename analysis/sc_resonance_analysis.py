@@ -985,141 +985,6 @@ def create_movie(data, output_filename="movie.gif", nv_index=0, fps=5):
     print(f"Movie successfully saved to {output_filename}")
 
 
-def reformat_counts(counts):
-    """
-    Split pulsed-resonance counts acquired as 4 contiguous blocks per sweep:
-      [ signal(half A), signal(half B), ms0_ref, ms±1_ref ]
-
-    Expected input axis order: (exp, nv, runs, steps, reps).
-
-    Returns:
-      sig_counts: (nv, runs, steps/4, 2*reps)
-      ref_counts: (nv, runs, steps/4, 2*reps)  # even=ms0, odd=ms±1 if INTERLEAVE_REFS
-               or (ms0_counts, ms1_counts) if INTERLEAVE_REFS=False
-    """
-    counts = np.asarray(counts)
-    assert counts.ndim == 5, f"Expected (exp,nv,runs,steps,reps), got {counts.shape}"
-    E, N, R, S, P = counts.shape
-    assert S % 4 == 0, f"num_steps must be multiple of 4, got {S}"
-    adj = S // 4
-
-    # For resonance, all blocks live under the same exp index (use 0)
-    block = counts[0]  # (nv, runs, steps, reps)
-
-    sig0 = block[:, :, 0:adj, :]  # (N, R, adj, P)
-    sig1 = block[:, :, adj : 2 * adj, :]  # (N, R, adj, P)
-    ms0 = block[:, :, 2 * adj : 3 * adj, :]  # (N, R, adj, P)
-    ms1 = block[:, :, 3 * adj : 4 * adj, :]  # (N, R, adj, P)
-
-    # Signal halves stitched along reps
-    sig_counts = np.concatenate([sig0, sig1], axis=3)  # (N,R,adj,2P)
-
-    if INTERLEAVE_REFS:
-        ref_counts = np.empty((N, R, adj, 2 * P), dtype=block.dtype)
-        ref_counts[..., 0::2] = ms0
-        ref_counts[..., 1::2] = ms1
-        return sig_counts, ref_counts
-    else:
-        return sig_counts, ms0, ms1
-
-
-def sanity_check(nv_list, freqs, sig_counts, ref_counts):
-    """Basic, fast invariants to catch silent bugs early."""
-    N = len(nv_list)
-    assert sig_counts.ndim == 4, f"sig_counts rank must be 4, got {sig_counts.shape}"
-    if INTERLEAVE_REFS:
-        assert ref_counts.shape == sig_counts.shape, (
-            f"sig/ref shape mismatch: {sig_counts.shape} vs {ref_counts.shape}"
-        )
-    else:
-        ms0, ms1 = ref_counts
-        assert ms0.shape == ms1.shape == sig_counts.shape, "sig/ms0/ms1 shape mismatch"
-    nN, runs, steps, reps = sig_counts.shape
-    assert nN == N, f"NV count mismatch: {nN} vs {N}"
-    assert steps == len(freqs), f"steps({steps}) != len(freqs)({len(freqs)})"
-    # assert np.all(sig_counts >= 0), "Negative signal counts?"
-    # if INTERLEAVE_REFS:
-    #     assert np.all(ref_counts >= 0), "Negative ref counts?"
-    # else:
-    #     assert np.all(ref_counts[0] >= 0) and np.all(ref_counts[1] >= 0), (
-    #         "Negative ref counts?"
-    #     )
-
-
-def load_and_split_file(file_id_or_stem, *, first=False):
-    """
-    Load a raw data file and return:
-      nv_list, freqs, (sig_counts, ref_counts or (ms0,ms1)), runs, reps, steps
-    `first=True` uses file_stem+load_npz to match your existing first-load path.
-    """
-    if first:
-        data = dm.get_raw_data(file_stem=file_id_or_stem, load_npz=True, use_cache=True)
-    else:
-        data = dm.get_raw_data(file_id=file_id_or_stem, load_npz=False, use_cache=True)
-
-    if not data:
-        return None
-
-    nv_list = data["nv_list"]
-    freqs = np.asarray(data["freqs"])
-    counts = np.asarray(data["counts"])
-    # Some files may store a singleton exp dim at axis 0; keep our splitter general.
-    # Our splitter asserts 5D; if counts is already 5D we're good, else try to expand.
-    if counts.ndim == 4:
-        # assume missing exp dimension -> prepend singleton
-        counts = counts[None, ...]
-    elif counts.ndim == 5:
-        pass
-    else:
-        raise ValueError(f"Unsupported counts ndim {counts.ndim}: shape {counts.shape}")
-
-    # Split via the single source-of-truth
-    split = reformat_counts(counts)
-
-    # Derive shape meta
-    if INTERLEAVE_REFS:
-        sig = split[0]
-    else:
-        sig = split[0]
-    _, runs, steps_div4, reps2 = sig.shape
-    steps = steps_div4  # this is the #freqs (adj_num_steps)
-    reps = reps2  # total reps per freq after stitching/interleaving
-
-    return {
-        "nv_list": nv_list,
-        "freqs": freqs,
-        "split": split,  # (sig, ref) or (sig, ms0, ms1)
-        "runs": runs,
-        "reps": reps,
-        "steps": steps,
-        "raw_meta": data,
-    }
-
-
-def concat_along_runs(accum, new):
-    """
-    Concatenate (nv, runs, steps, reps) tensors along runs axis=1.
-    Supports either (sig, ref) or (sig, ms0, ms1) depending on INTERLEAVE_REFS.
-    """
-    if accum is None:
-        return new
-    if INTERLEAVE_REFS:
-        sigA, refA = accum
-        sigB, refB = new
-        return (
-            np.concatenate([sigA, sigB], axis=1),
-            np.concatenate([refA, refB], axis=1),
-        )
-    else:
-        sigA, ms0A, ms1A = accum
-        sigB, ms0B, ms1B = new
-        return (
-            np.concatenate([sigA, sigB], axis=1),
-            np.concatenate([ms0A, ms0B], axis=1),
-            np.concatenate([ms1A, ms1B], axis=1),
-        )
-
-
 if __name__ == "__main__":
     kpl.init_kplotlib()
     # file_id = 1663484946120
@@ -1248,209 +1113,99 @@ if __name__ == "__main__":
     # print(len(reference_pixel_coords))
     # sys.exit()
     # Load the first dataset as a base
-    # combined_data = dm.get_raw_data(
-    #     file_stem=file_ids[0], load_npz=True, use_cache=True
-    # )
-
-    # # sys.exit()
-
-    # combined_sig_counts = None
-    # combined_ref_counts = None
-
-    # if combined_data:
-    #     nv_list = combined_data["nv_list"]
-    #     freqs = combined_data["freqs"]
-    #     num_steps = combined_data["num_steps"]
-    #     num_reps = combined_data["num_reps"]
-    #     num_runs = combined_data["num_runs"]
-    #     counts = np.array(combined_data["counts"])[0]
-
-    #     # # Extract pixel coordinates from nv_list
-    #     # nv_pixel_coords = np.array([nv.coords["pixel"][:2] for nv in nv_list])
-    #     # # Compute the index mapping by finding closest matches in pixel coordinates
-    #     # ordered_indices = []
-    #     # for ref_coord in reference_pixel_coords:
-
-    #     #     # Find the index of the closest match
-    #     #     distances = np.linalg.norm(nv_pixel_coords - ref_coord, axis=1)
-    #     #     closest_index = np.argmin(distances)
-    #     #     ordered_indices.append(closest_index)
-
-    #     # # Reorder nv_list based on ordered indices
-    #     # print(ordered_indices)
-    #     # nv_list = [nv_list[i] for i in ordered_indices]
-    #     # counts = counts[ordered_indices]
-
-    #     adj_num_steps = num_steps // 4
-    #     sig_counts_0 = counts[:, :, 0:adj_num_steps, :]
-    #     sig_counts_1 = counts[:, :, adj_num_steps : 2 * adj_num_steps, :]
-    #     combined_sig_counts = np.append(sig_counts_0, sig_counts_1, axis=3)
-
-    #     ref_counts_0 = counts[:, :, 2 * adj_num_steps : 3 * adj_num_steps, :]
-    #     ref_counts_1 = counts[:, :, 3 * adj_num_steps :, :]
-    #     combined_ref_counts = np.empty(
-    #         (len(nv_list), num_runs, adj_num_steps, 2 * num_reps)
-    #     )
-    #     combined_ref_counts[:, :, :, 0::2] = ref_counts_0
-    #     combined_ref_counts[:, :, :, 1::2] = ref_counts_1
-
-    #     # Process remaining files
-    #     for file_id in file_ids[1:]:
-    #         try:
-    #             print(f"Processing file: {file_id}")
-    #             new_data = dm.get_raw_data(
-    #                 file_id=file_id, load_npz=False, use_cache=True
-    #             )
-    #             if not new_data:
-    #                 print(f"Skipping file {file_id}: Data not found.")
-    #                 continue
-
-    #             new_counts = np.array(new_data["counts"])[0]
-
-    #             new_sig_counts_0 = new_counts[:, :, 0:adj_num_steps, :]
-    #             new_sig_counts_1 = new_counts[
-    #                 :, :, adj_num_steps : 2 * adj_num_steps, :
-    #             ]
-    #             new_sig_counts = np.append(new_sig_counts_0, new_sig_counts_1, axis=3)
-
-    #             new_ref_counts_0 = new_counts[
-    #                 :, :, 2 * adj_num_steps : 3 * adj_num_steps, :
-    #             ]
-    #             new_ref_counts_1 = new_counts[:, :, 3 * adj_num_steps :, :]
-    #             new_ref_counts = np.empty(
-    #                 (len(nv_list), num_runs, adj_num_steps, 2 * num_reps)
-    #             )
-    #             new_ref_counts[:, :, :, 0::2] = new_ref_counts_0
-    #             new_ref_counts[:, :, :, 1::2] = new_ref_counts_1
-
-    #             # Append new data
-    #             combined_sig_counts = np.append(
-    #                 combined_sig_counts, new_sig_counts, axis=1
-    #             )
-    #             combined_ref_counts = np.append(
-    #                 combined_ref_counts, new_ref_counts, axis=1
-    #             )
-    #             combined_data["num_runs"] += new_data["num_runs"]
-
-    #         except Exception as e:
-    #             print(f"Error processing file {file_id}: {e}")
-
-    #     # Generate unique filename
-    #     now = datetime.now()
-    #     date_time_str = now.strftime("%Y%m%d_%H%M%S")
-    #     combined_file_id = "_".join(map(str, file_ids))
-    #     file_name = f"combined_{combined_file_id}_{date_time_str}.png"
-    #     file_path = dm.get_file_path(__file__, "combined_plot", file_name)
-    #     print(f"Combined plot saved to {file_path}")
-    #     # Plot combined data
-    #     plot_nv_resonance_fits_and_residuals(
-    #         nv_list,
-    #         freqs,
-    #         combined_sig_counts,
-    #         combined_ref_counts,
-    #         file_id=combined_file_id,
-    #         num_cols=7,
-    #     )
-    # else:
-    #     print("No valid data available for plotting.")
-
-    # kpl.show(block=True)
-
-    INTERLEAVE_REFS = (
-        True  # if False, return ms0/ms±1 separately instead of even/odd interleave
+    combined_data = dm.get_raw_data(
+        file_stem=file_ids[0], load_npz=True, use_cache=True
     )
 
-    # -------------------------
-    # Main combining routine
-    # -------------------------
+    combined_sig_counts = None
+    combined_ref_counts = None
 
-    file_ids = [
-        # "2025_04_06-22_27_56-rubin-nv0_2025_02_26",
-        "2025_09_23-12_36_13-rubin-nv0_2025_09_08",
-    ]
-
-    combined_data = load_and_split_file(file_ids[0], first=True)
-
-    combined_sig_ref = None
     if combined_data:
         nv_list = combined_data["nv_list"]
         freqs = combined_data["freqs"]
+        num_steps = combined_data["num_steps"]
+        num_reps = combined_data["num_reps"]
+        num_runs = combined_data["num_runs"]
+        counts = np.array(combined_data["counts"])[0]
 
-        # Initialize accumulator
-        combined_sig_ref = combined_data["split"]
+        # # Extract pixel coordinates from nv_list
+        # nv_pixel_coords = np.array([nv.coords["pixel"][:2] for nv in nv_list])
+        # # Compute the index mapping by finding closest matches in pixel coordinates
+        # ordered_indices = []
+        # for ref_coord in reference_pixel_coords:
 
-        # Sanity on the first file
-        if INTERLEAVE_REFS:
-            sanity_check(nv_list, freqs, combined_sig_ref[0], combined_sig_ref[1])
-        else:
-            sanity_check(
-                nv_list,
-                freqs,
-                combined_sig_ref[0],
-                (combined_sig_ref[1], combined_sig_ref[2]),
-            )
+        #     # Find the index of the closest match
+        #     distances = np.linalg.norm(nv_pixel_coords - ref_coord, axis=1)
+        #     closest_index = np.argmin(distances)
+        #     ordered_indices.append(closest_index)
+
+        # # Reorder nv_list based on ordered indices
+        # print(ordered_indices)
+        # nv_list = [nv_list[i] for i in ordered_indices]
+        # counts = counts[ordered_indices]
+
+        adj_num_steps = num_steps // 4
+        sig_counts_0 = counts[:, :, 0:adj_num_steps, :]
+        sig_counts_1 = counts[:, :, adj_num_steps : 2 * adj_num_steps, :]
+        combined_sig_counts = np.append(sig_counts_0, sig_counts_1, axis=3)
+
+        ref_counts_0 = counts[:, :, 2 * adj_num_steps : 3 * adj_num_steps, :]
+        ref_counts_1 = counts[:, :, 3 * adj_num_steps :, :]
+        combined_ref_counts = np.empty(
+            (len(nv_list), num_runs, adj_num_steps, 2 * num_reps)
+        )
+        combined_ref_counts[:, :, :, 0::2] = ref_counts_0
+        combined_ref_counts[:, :, :, 1::2] = ref_counts_1
 
         # Process remaining files
         for file_id in file_ids[1:]:
             try:
                 print(f"Processing file: {file_id}")
-                new = load_and_split_file(file_id, first=False)
-                if not new:
+                new_data = dm.get_raw_data(
+                    file_id=file_id, load_npz=False, use_cache=True
+                )
+                if not new_data:
                     print(f"Skipping file {file_id}: Data not found.")
                     continue
 
-                # Verify frequency grid matches exactly
-                if not np.array_equal(new["freqs"], freqs):
-                    raise ValueError(
-                        "Frequency grids differ across files. "
-                        "Resample or keep files with identical grids."
-                    )
+                new_counts = np.array(new_data["counts"])[0]
 
-                # (Optional) verify NV order matches
-                if len(new["nv_list"]) != len(nv_list):
-                    raise ValueError(
-                        "NV list lengths differ; reorder or align before combining."
-                    )
+                new_sig_counts_0 = new_counts[:, :, 0:adj_num_steps, :]
+                new_sig_counts_1 = new_counts[
+                    :, :, adj_num_steps : 2 * adj_num_steps, :
+                ]
+                new_sig_counts = np.append(new_sig_counts_0, new_sig_counts_1, axis=3)
 
-                # Sanity on the new file
-                if INTERLEAVE_REFS:
-                    sanity_check(nv_list, freqs, new["split"][0], new["split"][1])
-                else:
-                    sanity_check(
-                        nv_list,
-                        freqs,
-                        new["split"][0],
-                        (new["split"][1], new["split"][2]),
-                    )
+                new_ref_counts_0 = new_counts[
+                    :, :, 2 * adj_num_steps : 3 * adj_num_steps, :
+                ]
+                new_ref_counts_1 = new_counts[:, :, 3 * adj_num_steps :, :]
+                new_ref_counts = np.empty(
+                    (len(nv_list), num_runs, adj_num_steps, 2 * num_reps)
+                )
+                new_ref_counts[:, :, :, 0::2] = new_ref_counts_0
+                new_ref_counts[:, :, :, 1::2] = new_ref_counts_1
 
-                # Concat along runs
-                combined_sig_ref = concat_along_runs(combined_sig_ref, new["split"])
+                # Append new data
+                combined_sig_counts = np.append(
+                    combined_sig_counts, new_sig_counts, axis=1
+                )
+                combined_ref_counts = np.append(
+                    combined_ref_counts, new_ref_counts, axis=1
+                )
+                combined_data["num_runs"] += new_data["num_runs"]
 
             except Exception as e:
                 print(f"Error processing file {file_id}: {e}")
 
-        # Unpack for plotting
-        if INTERLEAVE_REFS:
-            combined_sig_counts, combined_ref_counts = combined_sig_ref
-        else:
-            combined_sig_counts, ms0_counts, ms1_counts = combined_sig_ref
-            # if your downstream expects interleaved refs, pack them here:
-            ref_counts = np.empty_like(np.concatenate([ms0_counts, ms1_counts], axis=3))
-            ref_counts[..., 0::2] = ms0_counts
-            ref_counts[..., 1::2] = ms1_counts
-            combined_ref_counts = ref_counts
-
-        # (final) sanity before plotting
-        sanity_check(nv_list, freqs, combined_sig_counts, combined_ref_counts)
-
-        # Save + plot
+        # Generate unique filename
         now = datetime.now()
         date_time_str = now.strftime("%Y%m%d_%H%M%S")
         combined_file_id = "_".join(map(str, file_ids))
         file_name = f"combined_{combined_file_id}_{date_time_str}.png"
         file_path = dm.get_file_path(__file__, "combined_plot", file_name)
         print(f"Combined plot saved to {file_path}")
-
+        # Plot combined data
         plot_nv_resonance_fits_and_residuals(
             nv_list,
             freqs,
