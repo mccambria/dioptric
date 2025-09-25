@@ -473,7 +473,7 @@ sys.exit()
 # plot rabi periods for i and q channels
 # file_ids = [1832587019842, 1842383067959]  # [Q, I]
 # file_ids = [1832587019842]  # [Q, I]
-file_ids = ["2025_09_24-05_35_57-rubin-nv0_2025_09_08"]
+file_ids = ["2025_09_25-03_46_57-rubin-nv0_2025_09_08"]
 rabi_periods_all = []
 pi_pulses_all = []
 pi_half_pulses_all = []

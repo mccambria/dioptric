@@ -294,7 +294,7 @@ def nuvu2thorcam_calibration(coords):
     )
 
     cal_coords_nuvu = np.array(
-        [[225.862, 239.703], [193.233, 20.088], [21.195, 156.911]], dtype="float32"
+        [[226.11, 239.189], [193.712, 19.588], [21.611, 156.493]], dtype="float32"
     )
     # [[225.217, 233.623], [192.671, 13.797], [20.627, 150.726]]
     # Compute the affine transformation matrix
@@ -308,16 +308,15 @@ def nuvu2thorcam_calibration(coords):
 
 
 def load_nv_coords(
-    # file_path="slmsuite/nv_blob_detection/nv_blob_filtered_437nvs_reordered.npz",
-    # file_path="slmsuite/nv_blob_detection/nv_blob_shallow_161nvs_reordered.npz",
     # file_path="slmsuite/nv_blob_detection/nv_blob_shallow_148nvs_reordered.npz",
     # file_path="slmsuite/nv_blob_detection/nv_blob_rubin_shallow_240nvs_reordered.npz",
     # file_path="slmsuite/nv_blob_detection/nv_blob_rubin_shallow_154nvs_reordered.npz",
     # file_path="slmsuite/nv_blob_detection/nv_blob_rubin_shallow_81nvs_reordered.npz",
     # file_path="slmsuite/nv_blob_detection/nv_blob_rubin_shallow_75nvs_reordered.npz",
     # file_path="slmsuite/nv_blob_detection/nv_blob_340nvs_reordered.npz",
-    file_path="slmsuite/nv_blob_detection/nv_blob_337nvs_reordered.npz",
+    # file_path="slmsuite/nv_blob_detection/nv_blob_337nvs_reordered.npz",
     # file_path="slmsuite/nv_blob_detection/nv_blob_189nvs_reordered.npz",
+    file_path="slmsuite/nv_blob_detection/nv_blob_284nvs_reordered.npz",
     # file_path="slmsuite/nv_blob_detection/nv_blob_rubin_shallow_40nvs_reordered.npz",
     # file_path="slmsuite/nv_blob_detection/nv_blob_rubin_shallow_35nvs_reordered.npz",
     # file_path="slmsuite/nv_blob_detection/nv_blob_shallow_148nvs_reordered_updated.npz",
@@ -362,7 +361,7 @@ def compute_and_write_nvs_phase():
         shape=(4096, 2048),
         spot_vectors=thorcam_coords,
         basis="ij",
-        spot_amp=spot_weights,
+        # spot_amp=spot_weights,
         cameraslm=fs,
     )
     # Precondition computationally

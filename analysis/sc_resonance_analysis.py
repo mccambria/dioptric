@@ -346,8 +346,8 @@ def plot_nv_resonance_fits_and_residuals(
     plt.tight_layout()
     # return
 
-    filter_nvs = True
-    # filter_nvs = False
+    # filter_nvs = True
+    filter_nvs = False
     if filter_nvs:
         # target_peak_values = [0.025, 0.068, 0.146, 0.185]
         target_peak_values = [0.068, 0.185]
@@ -441,7 +441,6 @@ def plot_nv_resonance_fits_and_residuals(
         ax.set_title(f"NV Index: {nv_ind}")
         ax.grid(True, linestyle="--", alpha=0.6)
         plt.tight_layout()
-        # plt.show()
         plt.show(block=True)
     return
 
@@ -1104,8 +1103,11 @@ if __name__ == "__main__":
     file_ids = [1832069584608]
     file_ids = [1836425531438]
 
+    # file_ids = [
+    #     "2025_09_24-09_33_36-rubin-nv0_2025_09_08",
+    # ]
     file_ids = [
-        "2025_09_24-09_33_36-rubin-nv0_2025_09_08",
+        "2025_09_24-20_47_43-rubin-nv0_2025_09_08",
     ]
 
     # fmt: off

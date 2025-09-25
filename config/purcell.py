@@ -136,24 +136,19 @@ config |= {
         "VirtualSigGens": {
             0: {
                 "physical_name": "sig_gen_STAN_sg394",
-                "uwave_power": 9.6,
-                "frequency": 2.87,
-                # "frequency": 2.8290,
-                # "frequency": 2.730700,
-                "rabi_period": 176,
+                "uwave_power": 13,
+                "frequency": 2.7990,
+                # "frequency": 2.8490,
+                "rabi_period": 128,
             },
             # sig gen 1 is iq molulated
             1: {
                 "physical_name": "sig_gen_STAN_sg394_2",
-                "uwave_power": 9.6,
-                # "uwave_power": 9.6,
-                "frequency": 2.87,
-                # "frequency": 2.7121,
-                # "frequency": 2.730700,  # lower esr peak for both orientation
-                "rabi_period": 176,
-                "pi_pulse": 88,
+                "uwave_power": 11,
+                "frequency": 2.8366,
+                "rabi_period": 128,
+                "pi_pulse": 64,
                 "pi_on_2_pulse": 44,
-                # "rabi_period": 52,
             },
         },
     },
@@ -892,7 +887,7 @@ opx_config = {
         "red_aod_cw-scc": {"type": "constant", "sample": 0.15},
         # "red_aod_cw-scc": {"type": "constant", "sample": 0.12},  # rubin
         "yellow_imaging": {"type": "constant", "sample": 0.35},  # 0.35
-        "yellow_charge_readout": {"type": "constant", "sample": 0.2114},  # 340NVs
+        "yellow_charge_readout": {"type": "constant", "sample": 0.2014},  # 340NVs
         # "yellow_charge_readout": {"type": "constant", "sample": 0.18},  # 340NVs
         "yellow_spin_pol": {"type": "constant", "sample": 0.21},  # 75 NVs
         # "yellow_spin_pol": {"type": "constant", "sample": 0.42},
