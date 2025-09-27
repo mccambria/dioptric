@@ -34,19 +34,19 @@ red_laser_aod = "laser_COBO_638_aod"
 
 
 calibration_coords_pixel = [
-    [13.563, 25.46],
-    [121.018, 237.097],
-    [244.469, 10.905],
+    [9.319, 12.433],
+    [117.047, 244.854],
+    [232.221, 23.04],
 ]
 calibration_coords_green = [
-    [119.74, 120.062],
-    [110.243, 94.852],
-    [93.324, 119.189],
+    [120.088, 121.418],
+    [110.834, 93.83],
+    [94.769, 117.715],
 ]
 calibration_coords_red = [
-    [82.326, 82.584],
-    [75.371, 61.723],
-    [60.879, 80.549],
+    [82.536, 83.687],
+    [75.909, 60.893],
+    [62.06, 79.432],
 ]
 
 # Create the dictionaries using the provided lists
@@ -873,8 +873,8 @@ opx_config = {
     ### Analog
     "waveforms": {
         # Green AOD
-        "green_aod_cw-opti": {"type": "constant", "sample": 0.09},
-        # "green_aod_cw-opti": {"type": "constant", "sample": 0.07},
+        # "green_aod_cw-opti": {"type": "constant", "sample": 0.09},
+        "green_aod_cw-opti": {"type": "constant", "sample": 0.11},
         "green_aod_cw-charge_pol": {"type": "constant", "sample": 0.07},
         # "green_aod_cw-charge_pol": {"type": "constant", "sample": 0.139},# median
         "green_aod_cw-spin_pol": {"type": "constant", "sample": 0.05},
@@ -887,9 +887,9 @@ opx_config = {
         "red_aod_cw-scc": {"type": "constant", "sample": 0.15},
         # "red_aod_cw-scc": {"type": "constant", "sample": 0.12},  # rubin
         "yellow_imaging": {"type": "constant", "sample": 0.35},  # 0.35
-        "yellow_charge_readout": {"type": "constant", "sample": 0.2014},  # 340NVs
+        "yellow_charge_readout": {"type": "constant", "sample": 0.20},  # 340NVs
         # "yellow_charge_readout": {"type": "constant", "sample": 0.18},  # 340NVs
-        "yellow_spin_pol": {"type": "constant", "sample": 0.21},  # 75 NVs
+        "yellow_spin_pol": {"type": "constant", "sample": 0.20},  # 75 NVs
         # "yellow_spin_pol": {"type": "constant", "sample": 0.42},
         "yellow_shelving": {"type": "constant", "sample": 0.33},
         # Other

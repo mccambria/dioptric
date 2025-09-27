@@ -280,7 +280,7 @@ def process_scan_file():
     # raw_data = dm.get_raw_data(file_id=1802697426409, load_npz=True)  # rubin
 
     ### NAS
-    file_stem = "2025_09_17-21_47_22-rubin-nv0_2025_09_08"
+    file_stem = "2025_09_26-20_17_46-rubin-nv0_2025_09_08"
     raw_data = dm.get_raw_data(
         file_stem=file_stem, load_npz=True, allow_pickle=True
     )  # rubin
@@ -391,10 +391,10 @@ if __name__ == "__main__":
     # data = dm.get_raw_data(file_id=1791776254933, load_npz=True)  # rubin green scan
     # data = dm.get_raw_data(file_id=1807103519645, load_npz=True)
     data = dm.get_raw_data(
-        # file_stem="2025_09_17-21_55_38-combined_image_array",
-        # load_npz=True,
-        file_stem="2025_09_21-19_22_39-rubin-nv0_2025_09_08",
+        file_stem="2025_09_26-20_52_28-rubin-nv0_2025_09_08",
         load_npz=True,
+        #     file_stem="2025_09_21-19_22_39-rubin-nv0_2025_09_08",
+        #     load_npz=True,
     )
     img_array = np.array(data["ref_img_array"])
     # img_array = np.array(data["img_array"])
@@ -438,7 +438,7 @@ if __name__ == "__main__":
         for existing_coord in filtered_nv_coords:
             distance = np.linalg.norm(np.array(existing_coord) - np.array(coord))
 
-            if distance < 6:
+            if distance < 3:
                 keep_coord = False  # Mark it for exclusion if too close
                 break  # No need to check further distances
 
@@ -483,7 +483,7 @@ if __name__ == "__main__":
         filtered_nv_coords,
         filtered_counts,
         path="slmsuite/nv_blob_detection",
-        filename="nv_blob_339nvs.npz",
+        filename="nv_blob_331nvs.npz",
     )
 
     # full ROI -- multiple images save in the same file
