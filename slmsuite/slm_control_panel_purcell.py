@@ -294,9 +294,8 @@ def nuvu2thorcam_calibration(coords):
     )
 
     cal_coords_nuvu = np.array(
-        [[226.113, 237.214], [193.395, 17.88], [21.223, 154.638]], dtype="float32"
+        [[226.057, 237.289], [193.294, 17.842], [20.941, 154.834]], dtype="float32"
     )
-    # [[225.217, 233.623], [192.671, 13.797], [20.627, 150.726]]
     # Compute the affine transformation matrix
     M = cv2.getAffineTransform(cal_coords_nuvu, cal_coords_thorcam)
     # Append a column of ones to the input coordinates to facilitate affine transformation
@@ -308,36 +307,13 @@ def nuvu2thorcam_calibration(coords):
 
 
 def load_nv_coords(
-    # file_path="slmsuite/nv_blob_detection/nv_blob_shallow_148nvs_reordered.npz",
-    # file_path="slmsuite/nv_blob_detection/nv_blob_rubin_shallow_240nvs_reordered.npz",
-    # file_path="slmsuite/nv_blob_detection/nv_blob_rubin_shallow_154nvs_reordered.npz",
-    # file_path="slmsuite/nv_blob_detection/nv_blob_rubin_shallow_81nvs_reordered.npz",
-    # file_path="slmsuite/nv_blob_detection/nv_blob_rubin_shallow_75nvs_reordered.npz",
-    # file_path="slmsuite/nv_blob_detection/nv_blob_340nvs_reordered.npz",
-    # file_path="slmsuite/nv_blob_detection/nv_blob_337nvs_reordered.npz",
-    # file_path="slmsuite/nv_blob_detection/nv_blob_189nvs_reordered.npz",
-    file_path="slmsuite/nv_blob_detection/nv_blob_329nvs_reordered.npz",
-    # file_path="slmsuite/nv_blob_detection/nv_blob_rubin_shallow_40nvs_reordered.npz",
-    # file_path="slmsuite/nv_blob_detection/nv_blob_rubin_shallow_35nvs_reordered.npz",
-    # file_path="slmsuite/nv_blob_detection/nv_blob_shallow_148nvs_reordered_updated.npz",
-    # file_path="slmsuite/nv_blob_detection/nv_blob_rubin_shallow_107nvs_reordered_updated.npz",
-    # file_path="slmsuite/nv_blob_detection/nv_blob_rubin_shallow_140nvs_reordered_updated.npz",
-    # file_path="slmsuite/nv_blob_detection/nv_blob_shallow_89nvs_reordered.npz",
-    # file_path="slmsuite/nv_blob_detection/nv_blob_shallow_52nvs_reordered.npz",
-    # file_path="slmsuite/nv_blob_detection/nv_blob_filtered_160nvs_reordered.npz",
-    # file_path="slmsuite/nv_blob_detection/nv_blob_filtered_160nvs_reordered_updated.npz",  # after shutdownb
-    # file_path="slmsuite/nv_blob_detection/nv_blob_filtered_160nvs_reordered_selected_117nvs.npz",
-    # file_path="slmsuite/nv_blob_detection/nv_blob_filtered_160nvs_reordered_selected_117nvs_updated.npz",
-    # file_path="slmsuite/nv_blob_detection/nv_blob_filtered_160nvs_reordered_selected_106nvs.npz",
+    file_path="slmsuite/nv_blob_detection/nv_blob_308nvs_reordered.npz",
 ):
     data = np.load(file_path, allow_pickle=True)
     nv_coordinates = data["nv_coordinates"]
-    # spot_weights = data["spot_weights"]
     spot_weights = data["updated_spot_weights"]
-    # spot_weights = data["integrated_counts"]
     print(f"spot_weights: {spot_weights}")
     print(len(spot_weights))
-    # spot_weights = data["integrated_counts"]
     return nv_coordinates, spot_weights
 
 

@@ -887,9 +887,9 @@ opx_config = {
         "red_aod_cw-scc": {"type": "constant", "sample": 0.15},
         # "red_aod_cw-scc": {"type": "constant", "sample": 0.12},  # rubin
         "yellow_imaging": {"type": "constant", "sample": 0.35},  # 0.35
-        "yellow_charge_readout": {"type": "constant", "sample": 0.20},  # 340NVs
+        "yellow_charge_readout": {"type": "constant", "sample": 0.22},  # 340NVs
         # "yellow_charge_readout": {"type": "constant", "sample": 0.18},  # 340NVs
-        "yellow_spin_pol": {"type": "constant", "sample": 0.20},  # 75 NVs
+        "yellow_spin_pol": {"type": "constant", "sample": 0.22},  # 75 NVs
         # "yellow_spin_pol": {"type": "constant", "sample": 0.42},
         "yellow_shelving": {"type": "constant", "sample": 0.33},
         # Other

@@ -1382,7 +1382,7 @@ if __name__ == "__main__":
         # )
 
         do_compensate_for_drift(nv_sig)
-        # do_widefield_image_sample(nv_sig, 50)
+        do_widefield_image_sample(nv_sig, 50)
         # do_widefield_image_sample(nv_sig, 200)
 
         # for nv in nv_list:
@@ -1442,7 +1442,7 @@ if __name__ == "__main__":
 
         # do_optimize_pol_amp(nv_list)
         # do_optimize_pol_duration(nv_list)
-        do_optimize_readout_amp(nv_list)
+        # do_optimize_readout_amp(nv_list)
         # do_optimize_readout_duration(nv_list)
         # optimize_readout_amp_and_duration(nv_list)
         # do_optimize_spin_pol_amp(nv_list)
