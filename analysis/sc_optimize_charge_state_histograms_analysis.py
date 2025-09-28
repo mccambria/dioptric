@@ -953,19 +953,19 @@ def process_and_plot_charge(raw_data):
         ]
 
         print("Updated Optimal Durations:", opti_durs)
-        print("Optimal Preparation Fidelities:", opti_fidelities)
+        # print("Optimal Preparation Fidelities:", opti_fidelities)
         print(f"Median Optimal Duration: {np.median(opti_durs)} ns")
         print(f"Median Optimal Fidelity: {np.median(opti_fidelities)}")
         print(f"Max Optimal Duration: {np.max(opti_durs)} ns")
         print(f"Min Optimal Duration: {np.min(opti_durs)} ns")
         ###
-        plt.figure()
-        plt.scatter(opti_fidelities, opti_durs)
-        plt.xlabel("Polarization Duration (ns)")
-        plt.ylabel("Preparation Fidelity")
-        plt.title(f"NV Num: {nv_ind}")
-        plt.legend()
-        plt.show(block=True)
+        # plt.figure()
+        # plt.scatter(opti_durs, opti_fidelities)
+        # plt.xlabel("Polarization Duration (ns)")
+        # plt.ylabel("Preparation Fidelity")
+        # plt.title(f"NV Num: {nv_ind}")
+        # plt.legend()
+        # plt.show(block=True)
 
     return
 
@@ -1057,7 +1057,7 @@ if __name__ == "__main__":
     # file_id = "2025_09_13-20_27_20-rubin-nv0_2025_09_08"
     # file_id = "2025_09_119-06_48_20-rubin-nv0_2025_09_08"
     # file_id = "2025_09_19-22_37_11-rubin-nv0_2025_09_08"
-    file_id = "2025_09_26-23_16_10-rubin-nv0_2025_09_08"
+    # file_id = "2025_09_26-23_16_10-rubin-nv0_2025_09_08"
     ### pol amp var
     # file_id = "2025_09_12-16_53_34-rubin-nv0_2025_09_08"
     # file_id = "2025_09_12-18_30_09-rubin-nv0_2025_09_08"
@@ -1076,12 +1076,14 @@ if __name__ == "__main__":
     # file_id = "2025_09_19-11_56_40-rubin-nv0_2025_09_08"
     # file_id = "2025_09_21-22_20_08-rubin-nv0_2025_09_08"
     # file_id = "2025_09_23-19_06_00-rubin-nv0_2025_09_08"
+    file_id = "2025_09_27-21_30_58-rubin-nv0_2025_09_08"
+
     # dm.USE_NEW_CLOUD = False
     raw_data = dm.get_raw_data(file_stem=file_id, load_npz=True)
     # file_name = dm.get_file_name(file_id=file_id)
     # print(f"{file_name}_{file_id}")
-    process_and_plot(raw_data)
+    # process_and_plot(raw_data)
     # process_and_plot_green(raw_data)
-    # process_and_plot_charge(raw_data)
+    process_and_plot_charge(raw_data)
     # print(dm.get_file_name(1717056176426))
     plt.show(block=True)

@@ -1232,8 +1232,15 @@ if __name__ == "__main__":
     # Load NV pixel coordinates1
     pixel_coords_list = load_nv_coords(
         # file_path="slmsuite/nv_blob_detection/nv_blob_189nvs_reordered.npz",
-        file_path="slmsuite/nv_blob_detection/nv_blob_329nvs_reordered.npz",
+        file_path="slmsuite/nv_blob_detection/nv_blob_308nvs_reordered.npz",
     ).tolist()
+    # pixel_coords_list = [
+    #     [124.195, 127.341],
+    #     [13.905, 11.931],
+    #     [124.563, 242.424],
+    #     [240.501, 17.871],
+    # ]
+
     green_coords_list = [
         [
             round(coord, 3)
@@ -1254,7 +1261,7 @@ if __name__ == "__main__":
         for nv_pixel_coords in pixel_coords_list
     ]
 
-    # # Print first coordinate set for verification
+    # Print first coordinate set for verification
     # print(f"Number of NVs: {green_coords_list}")
     # print(f"Number of NVs: {red_coords_list}")
     # sys.exit()
@@ -1265,21 +1272,21 @@ if __name__ == "__main__":
 
     # pixel_coords_list = [
     #     [124.195, 127.341],
-    #     [9.319, 12.433],
-    #     [117.047, 244.854],
-    #     [232.221, 23.04],
+    #     [13.905, 11.931],
+    #     [124.563, 242.424],
+    #     [240.501, 17.871],
     # ]
     # green_coords_list = [
-    #     [108.426, 107.117],
-    #     [120.088, 121.418],
-    #     [110.834, 93.83],
-    #     [94.769, 117.715],
+    #     [108.46, 107.124],
+    #     [119.544, 121.479],
+    #     [109.954, 94.151],
+    #     [93.888, 118.226],
     # ]
     # red_coords_list = [
-    #     [73.558, 71.509],
-    #     [82.536, 83.687],
-    #     [75.909, 60.893],
-    #     [62.06, 79.432],
+    #     [73.543, 71.538],
+    #     [82.091, 83.709],
+    #     [75.183, 61.109],
+    #     [61.326, 79.802],
     # ]
     num_nvs = len(pixel_coords_list)
     threshold_list = [None] * num_nvs
@@ -1382,7 +1389,7 @@ if __name__ == "__main__":
         # )
 
         do_compensate_for_drift(nv_sig)
-        do_widefield_image_sample(nv_sig, 50)
+        # do_widefield_image_sample(nv_sig, 50)
         # do_widefield_image_sample(nv_sig, 200)
 
         # for nv in nv_list:
@@ -1441,7 +1448,7 @@ if __name__ == "__main__":
         # do_charge_state_histograms_images(nv_list, vary_pol_laser=True)
 
         # do_optimize_pol_amp(nv_list)
-        # do_optimize_pol_duration(nv_list)
+        do_optimize_pol_duration(nv_list)
         # do_optimize_readout_amp(nv_list)
         # do_optimize_readout_duration(nv_list)
         # optimize_readout_amp_and_duration(nv_list)
