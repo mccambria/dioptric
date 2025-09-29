@@ -149,7 +149,7 @@ def do_optimize_pol_amp(nv_list):
     num_reps = 10
     num_runs = 300
     min_amp = 0.7
-    max_amp = 2.0
+    max_amp = 1.2
     return optimize_charge_state_histograms_mcc.optimize_pol_amp(
         nv_list, num_steps, num_reps, num_runs, min_amp, max_amp
     )
@@ -1320,7 +1320,7 @@ if __name__ == "__main__":
     # scc_amp_list = [1.0] * num_nvs
     scc_duration_list = [140] * num_nvs
     # pol_duration_list = [600] * num_nvs
-    # pol_duration_list = [1000] * num_nvs
+    pol_duration_list = [1000] * num_nvs
     # nv_list[i] will have the ith coordinates from the above lists
     nv_list: list[NVSig] = []
     for ind in range(num_nvs):
@@ -1448,9 +1448,9 @@ if __name__ == "__main__":
         # do_charge_state_conditional_init(nv_list)
         # do_charge_state_histograms_images(nv_list, vary_pol_laser=True)
 
-        # do_optimize_pol_amp(nv_list)
+        do_optimize_pol_amp(nv_list)
         # do_optimize_pol_duration(nv_list)
-        do_optimize_readout_amp(nv_list)
+        # do_optimize_readout_amp(nv_list)
         # do_optimize_readout_duration(nv_list)
         # optimize_readout_amp_and_duration(nv_list)
         # do_optimize_spin_pol_amp(nv_list)

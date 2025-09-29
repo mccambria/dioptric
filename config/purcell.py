@@ -872,7 +872,7 @@ opx_config = {
     "waveforms": {
         # Green AOD
         "green_aod_cw-opti": {"type": "constant", "sample": 0.09},
-        "green_aod_cw-charge_pol": {"type": "constant", "sample": 0.07},
+        "green_aod_cw-charge_pol": {"type": "constant", "sample": 0.06},
         "green_aod_cw-spin_pol": {"type": "constant", "sample": 0.05},
         "green_aod_cw-shelving": {"type": "constant", "sample": 0.05},
         "green_aod_cw-scc": {"type": "constant", "sample": 0.15},
@@ -882,8 +882,8 @@ opx_config = {
         "red_aod_cw-scc": {"type": "constant", "sample": 0.15},
         # Yellow AOM
         "yellow_imaging": {"type": "constant", "sample": 0.35},
-        "yellow_charge_readout": {"type": "constant", "sample": 0.24},
-        "yellow_spin_pol": {"type": "constant", "sample": 0.24},
+        "yellow_charge_readout": {"type": "constant", "sample": 0.27},
+        "yellow_spin_pol": {"type": "constant", "sample": 0.27},
         "yellow_shelving": {"type": "constant", "sample": 0.33},
         # Other
         "aod_cw": {"type": "constant", "sample": 0.35},
