@@ -39,14 +39,14 @@ calibration_coords_pixel = [
     [240.501, 17.871],
 ]
 calibration_coords_green = [
-    [119.544, 121.479],
-    [109.954, 94.151],
-    [93.888, 118.226],
+    [119.638, 121.438],
+    [110.027, 94.005],
+    [93.937, 118.143],
 ]
 calibration_coords_red = [
-    [82.091, 83.709],
-    [75.183, 61.109],
-    [61.326, 79.802],
+    [82.169, 83.681],
+    [75.247, 60.995],
+    [61.369, 79.738],
 ]
 
 # Create the dictionaries using the provided lists
@@ -132,23 +132,23 @@ config |= {
             "sig_gen_TEKT_tsg4104a": {"delay": 57},
         },
         "iq_comp_amp": 0.5,
-        "iq_delay": 140,  # SBC measured using NVs 4/18/2025
+        "iq_delay": 140,
         "VirtualSigGens": {
             0: {
                 "physical_name": "sig_gen_STAN_sg394",
-                "uwave_power": 13,
-                "frequency": 2.7990,
+                "uwave_power": 9.6,
+                "frequency": 2.800,
                 # "frequency": 2.8490,
-                "rabi_period": 128,
+                "rabi_period": 96,
             },
             # sig gen 1 is iq molulated
             1: {
                 "physical_name": "sig_gen_STAN_sg394_2",
-                "uwave_power": 11,
-                "frequency": 2.8366,
-                "rabi_period": 128,
-                "pi_pulse": 64,
-                "pi_on_2_pulse": 44,
+                "uwave_power": 9.6,
+                "frequency": 2.8520,
+                "rabi_period": 96,
+                "pi_pulse": 48,
+                "pi_on_2_pulse": 24,
             },
         },
     },
@@ -877,9 +877,9 @@ opx_config = {
         "green_aod_cw-shelving": {"type": "constant", "sample": 0.05},
         "green_aod_cw-scc": {"type": "constant", "sample": 0.15},
         # Red AOD
-        "red_aod_cw-opti": {"type": "constant", "sample": 0.15},
-        "red_aod_cw-ion": {"type": "constant", "sample": 0.15},
-        "red_aod_cw-scc": {"type": "constant", "sample": 0.15},
+        "red_aod_cw-opti": {"type": "constant", "sample": 0.11},
+        "red_aod_cw-ion": {"type": "constant", "sample": 0.11},
+        "red_aod_cw-scc": {"type": "constant", "sample": 0.11},
         # Yellow AOM
         "yellow_imaging": {"type": "constant", "sample": 0.35},
         "yellow_charge_readout": {"type": "constant", "sample": 0.27},

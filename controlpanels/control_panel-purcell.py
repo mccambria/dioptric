@@ -1277,16 +1277,16 @@ if __name__ == "__main__":
     #     [240.501, 17.871],
     # ]
     # green_coords_list = [
-    #     [108.46, 107.124],
-    #     [119.544, 121.479],
-    #     [109.954, 94.151],
-    #     [93.888, 118.226],
+    #     [108.547, 107.004],
+    #     [119.638, 121.438],
+    #     [110.027, 94.005],
+    #     [93.937, 118.143],
     # ]
     # red_coords_list = [
-    #     [73.543, 71.538],
-    #     [82.091, 83.709],
-    #     [75.183, 61.109],
-    #     [61.326, 79.802],
+    #     [73.618, 71.445],
+    #     [82.169, 83.681],
+    #     [75.247, 60.995],
+    #     [61.369, 79.738],
     # ]
     num_nvs = len(pixel_coords_list)
     threshold_list = [None] * num_nvs
@@ -1445,7 +1445,7 @@ if __name__ == "__main__":
         # coords_key = red_laser
         # do_optimize_loop(np.array(nv_list), np.array(coords_key))
 
-        # do_charge_state_histograms(nv_list)
+        do_charge_state_histograms(nv_list)
         # do_charge_state_conditional_init(nv_list)
         # do_charge_state_histograms_images(nv_list, vary_pol_laser=True)
 
@@ -1471,7 +1471,7 @@ if __name__ == "__main__":
 
         # do_rabi(nv_list)
         # do_power_rabi(nv_list)
-        do_resonance(nv_list)
+        # do_resonance(nv_list)
         # do_resonance_zoom(nv_list)
         # do_spin_echo(nv_list)
         # do_spin_echo_1(nv_list)

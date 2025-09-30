@@ -749,28 +749,6 @@ def process_and_plot_green(raw_data):
     return
 
 
-def fit_fn(tau, delay, slope, decay, transition):
-    """
-    Fit function modeling the preparation fidelity as a function of polarization duration.
-    Ensures an initial steep increase followed by an exponential decay.
-    """
-    tau = np.array(tau) - delay
-    tau = np.maximum(tau, 0)  # Ensure no negative time values
-
-    # Smooth transition function using tanh
-    smooth_transition = 0.5 * (1 + np.tanh((tau - transition) / (0.6 * transition)))
-
-    # Enforce an initial steep rise
-    linear_part = slope * tau
-
-    # Exponential decay component
-    # exp_part = slope * transition * np.exp(-(tau - transition) / decay)
-    exp_part = slope * transition * np.exp(-(tau - transition) / (2 * decay))
-
-    # Combine both components smoothly
-    return (1 - smooth_transition) * linear_part + smooth_transition * exp_part
-
-
 def process_and_plot_charge(raw_data):
     nv_list = raw_data["nv_list"]
     num_nvs = len(nv_list)
@@ -809,36 +787,14 @@ def process_and_plot_charge(raw_data):
     ### **Perform Fitting**
     opti_durs, opti_fidelities = [], []
 
-    # def diffexp(t, A, t0, tau_r, dtau):
-    #     """
-    #     y = A * [exp(-x/τd) - exp(-x/τr)], x = max(t - t0, 0)
-    #     τd = τr + dtau > τr enforces a unimodal peak at x>0 if A>0.
-    #     """
-    #     t = np.asarray(t, float)
-    #     x = np.maximum(t - t0, 0.0)
-    #     tau_r = np.maximum(tau_r, 1e-12)
-    #     tau_d = tau_r + np.maximum(dtau, 1e-12)
-    #     return A * (np.exp(-x / tau_d) - np.exp(-x / tau_r))
-
-    # def gamma_pulse(t, A, t0, n, tau):
-    #     """
-    #     y = A * x^n * exp(-x/τ), x = max(t - t0, 0)
-    #     Peak at x = n*τ (robust unimodal shape).
-    #     """
-    #     t = np.asarray(t, float)
-    #     x = np.maximum(t - t0, 0.0)
-    #     n = np.maximum(n, 1e-9)
-    #     tau = np.maximum(tau, 1e-12)
-    #     return A * (x**n) * np.exp(-x / tau)
-
     # --- Saturation models (with offset) ---
-    # --- Your model (unchanged) ---
     def sat_decay_fit_fn(t, F0, A, t0, tau_r, tau_d):
         t = np.asarray(t, dtype=float)
         x = np.maximum(t - t0, 0.0)  # gate before t0
         tau_r = np.maximum(tau_r, 1e-12)
         tau_d = np.maximum(tau_d, 1e-12)
-        return F0 + A * (1.0 - np.exp(-x / tau_r)) * np.exp(-x / tau_d)
+        # return F0 + A * (1.0 - np.exp(-x / tau_r)) * np.exp(-x / tau_d)
+        return A * (1.0 - np.exp(-x / tau_r)) * np.exp(-x / tau_d)
 
     def sat_decay_x_peak(tau_r, tau_d):
         tau_r = max(float(tau_r), 1e-12)
@@ -923,20 +879,20 @@ def process_and_plot_charge(raw_data):
         opti_fidelities.append(round(opti_fid, 3))
 
         # --- Plot ---
-        # plt.figure(figsize=(6, 5))
-        # plt.scatter(x_f, y_f, label="Measured")
-        # plt.plot(results["grid_t"], results["grid_y"], label="Sat-Decay Fit")
-        # plt.axvline(
-        #     opti_dur, color="green", linestyle="--", label=f"Peak ≈ {opti_dur:.0f} ns"
-        # )
-        # plt.scatter([opti_dur], [opti_fid], color="green", zorder=5)
-        # plt.xlabel("Duration (ns)")
-        # plt.ylabel("Fidelity")
-        # plt.ylim(0, 1)
-        # plt.grid(True, alpha=0.3)
-        # plt.legend()
-        # plt.tight_layout()
-        # plt.show(block=True)
+        plt.figure(figsize=(6, 5))
+        plt.scatter(x_f, y_f, label="Measured")
+        plt.plot(results["grid_t"], results["grid_y"], label="Sat-Decay Fit")
+        plt.axvline(
+            opti_dur, color="green", linestyle="--", label=f"Peak ≈ {opti_dur:.0f} ns"
+        )
+        plt.scatter([opti_dur], [opti_fid], color="green", zorder=5)
+        plt.xlabel("Duration (ns)")
+        plt.ylabel("Fidelity")
+        plt.ylim(0, 1)
+        plt.grid(True, alpha=0.3)
+        plt.legend()
+        plt.tight_layout()
+        plt.show(block=True)
 
     if opti_durs:
         print("Optimal Polarization Durations:", opti_durs)
