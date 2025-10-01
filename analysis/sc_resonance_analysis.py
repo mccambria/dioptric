@@ -666,9 +666,9 @@ def create_movie(data, output_filename="movie.gif", nv_index=0, fps=5):
     ani = FuncAnimation(fig, update, frames=num_steps, interval=1000 // fps, blit=True)
 
     # Save the animation as a GIF
-    writer = PillowWriter(fps=fps)
-    ani.save(output_filename, writer=writer)
-    print(f"Movie successfully saved to {output_filename}")
+    # writer = PillowWriter(fps=fps)
+    # ani.save(output_filename, writer=writer)
+    # print(f"Movie successfully saved to {output_filename}")
 
 
 if __name__ == "__main__":

@@ -39,14 +39,14 @@ calibration_coords_pixel = [
     [240.501, 17.871],
 ]
 calibration_coords_green = [
-    [119.638, 121.438],
-    [110.027, 94.005],
-    [93.937, 118.143],
+    [119.667, 121.4278],
+    [110.009, 94.025],
+    [93.925, 118.151],
 ]
 calibration_coords_red = [
-    [82.169, 83.681],
-    [75.247, 60.995],
-    [61.369, 79.738],
+    [82.193, 83.674],
+    [75.232, 61.01],
+    [61.359, 79.743],
 ]
 
 # Create the dictionaries using the provided lists
@@ -138,17 +138,18 @@ config |= {
                 "physical_name": "sig_gen_STAN_sg394",
                 "uwave_power": 9.6,
                 "frequency": 2.800,
-                # "frequency": 2.8490,
-                "rabi_period": 96,
+                "rabi_period": 144,
+                "pi_pulse": 72,
+                "pi_on_2_pulse": 36,
             },
             # sig gen 1 is iq molulated
             1: {
                 "physical_name": "sig_gen_STAN_sg394_2",
                 "uwave_power": 9.6,
                 "frequency": 2.8520,
-                "rabi_period": 96,
-                "pi_pulse": 48,
-                "pi_on_2_pulse": 24,
+                "rabi_period": 144,
+                "pi_pulse": 72,
+                "pi_on_2_pulse": 36,
             },
         },
     },
@@ -375,6 +376,8 @@ default_int_freq = 75e6
 virtual_sig_gens_dict = config["Microwaves"]["VirtualSigGens"]
 num_sig_gens = len(virtual_sig_gens_dict)
 rabi_period_0 = virtual_sig_gens_dict[0]["rabi_period"]
+pi_pulse_0 = virtual_sig_gens_dict[0]["pi_pulse"]
+pi_on_2_pulse_0 = virtual_sig_gens_dict[0]["pi_on_2_pulse"]
 rabi_period_1 = virtual_sig_gens_dict[1]["rabi_period"]
 pi_pulse_1 = virtual_sig_gens_dict[1]["pi_pulse"]
 pi_on_2_pulse_1 = virtual_sig_gens_dict[1]["pi_on_2_pulse"]
@@ -775,12 +778,12 @@ opx_config = {
         },
         "ao_iq_pi_pulse_0": {
             "operation": "control",
-            "length": int(rabi_period_0 / 2) + 2 * iq_buffer,
+            "length": int(pi_pulse_0) + 2 * iq_buffer,
             "waveforms": {"single": "cw"},
         },
         "ao_iq_pi_on_2_pulse_0": {
             "operation": "control",
-            "length": int(rabi_period_0 / 4) + 2 * iq_buffer,
+            "length": int(pi_on_2_pulse_0) + 2 * iq_buffer,
             "waveforms": {"single": "cw"},
         },
         "ao_iq_pi_pulse_1": {
@@ -846,12 +849,12 @@ opx_config = {
         },
         "do_pi_pulse_0": {
             "operation": "control",
-            "length": int(rabi_period_0 / 2),
+            "length": int(pi_pulse_0),
             "digital_marker": "on",
         },
         "do_pi_on_2_pulse_0": {
             "operation": "control",
-            "length": int(rabi_period_0 / 4),
+            "length": int(pi_on_2_pulse_0),
             "digital_marker": "on",
         },
         "do_pi_pulse_1": {
@@ -877,9 +880,9 @@ opx_config = {
         "green_aod_cw-shelving": {"type": "constant", "sample": 0.05},
         "green_aod_cw-scc": {"type": "constant", "sample": 0.15},
         # Red AOD
-        "red_aod_cw-opti": {"type": "constant", "sample": 0.11},
-        "red_aod_cw-ion": {"type": "constant", "sample": 0.11},
-        "red_aod_cw-scc": {"type": "constant", "sample": 0.11},
+        "red_aod_cw-opti": {"type": "constant", "sample": 0.13},
+        "red_aod_cw-ion": {"type": "constant", "sample": 0.13},
+        "red_aod_cw-scc": {"type": "constant", "sample": 0.13},
         # Yellow AOM
         "yellow_imaging": {"type": "constant", "sample": 0.35},
         "yellow_charge_readout": {"type": "constant", "sample": 0.27},
