@@ -146,7 +146,7 @@ config |= {
             1: {
                 "physical_name": "sig_gen_STAN_sg394_2",
                 "uwave_power": 9.6,
-                "frequency": 2.8520,
+                "frequency": 2.8360,
                 "rabi_period": 144,
                 "pi_pulse": 72,
                 "pi_on_2_pulse": 36,

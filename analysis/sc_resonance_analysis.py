@@ -73,59 +73,6 @@ def residuals_fn(params, freq, nv_counts, nv_counts_ste):
     return (nv_counts - fit_vals) / nv_counts_ste  # Weighted residuals
 
 
-def create_esr_blink_movie(
-    freqs, avg_counts, fitted_data, nv_positions, nv_images, output_file="esr_movie.mp4"
-):
-    """
-    Creates a movie showing ESR resonance fits and blinking NVs.
-
-    Parameters:
-    - freqs: Array of frequency steps.
-    - avg_counts: 2D array of average counts [NV index, frequency step].
-    - fitted_data: 2D array of fitted ESR data [NV index, frequency step].
-    - nv_positions: List of (x, y) positions for NVs in the image.
-    - nv_images: 3D array of NV images [time step, height, width].
-    - output_file: Path to save the output movie.
-    """
-    fig, axes = plt.subplots(1, 2, figsize=(12, 6))
-    # Axes for resonance data and NV blinking
-    ax_esr, ax_nv = axes
-    # Initialize ESR plot
-    (esr_line,) = ax_esr.plot([], [], "o-", label="ESR Data", color="blue")
-    (esr_fit,) = ax_esr.plot([], [], "-", label="Fit", color="red")
-    ax_esr.set_xlim(min(freqs), max(freqs))
-    ax_esr.set_ylim(0, np.max(avg_counts) * 1.2)
-    ax_esr.set_xlabel("Frequency (GHz)")
-    ax_esr.set_ylabel("Counts")
-    ax_esr.legend()
-    ax_esr.grid()
-
-    # Initialize NV blinking image
-    nv_image = ax_nv.imshow(
-        nv_images[0], cmap="gray", aspect="auto", interpolation="nearest"
-    )
-    ax_nv.set_title("NV Blinking")
-    ax_nv.axis("off")
-
-    # Update function for animation
-    def update(frame):
-        # Update ESR data
-        nv_idx = frame % len(avg_counts)  # Loop through NV indices
-        esr_line.set_data(freqs, avg_counts[nv_idx])
-        esr_fit.set_data(freqs, fitted_data[nv_idx])
-        ax_esr.set_title(f"ESR Resonance (NV Index: {nv_idx + 1})")
-
-        # Update NV image
-        nv_image.set_data(nv_images[frame])
-        return esr_line, esr_fit, nv_image
-
-    # Create animation
-    anim = FuncAnimation(fig, update, frames=len(nv_images), blit=True, repeat=True)
-    # Save the movie
-    anim.save(output_file, fps=6, writer="ffmpeg")
-    plt.close(fig)
-
-
 def plot_nv_resonance_fits_and_residuals(
     nv_list,
     freqs,
@@ -150,10 +97,10 @@ def plot_nv_resonance_fits_and_residuals(
         nv_counts = avg_counts[nv_idx]
         nv_counts_ste = avg_counts_ste[nv_idx]
         # Normalize counts between 0 and 1
-        # min_count = np.min(nv_counts)
-        # max_count = np.max(nv_counts)
-        # nv_counts = (nv_counts - min_count) / (max_count - min_count)
-        # nv_counts_ste = nv_counts_ste / (max_count - min_count)
+        min_count = np.min(nv_counts)
+        max_count = np.max(nv_counts)
+        nv_counts = (nv_counts - min_count) / (max_count - min_count)
+        nv_counts_ste = nv_counts_ste / (max_count - min_count)
 
         low_freq_guess = freqs[np.argmax(nv_counts[: len(freqs) // 2])]
         high_freq_guess = freqs[
@@ -205,7 +152,6 @@ def plot_nv_resonance_fits_and_residuals(
             freq_diff,
             width,
             contrast,
-            snr,
         )
 
     # Run in parallel
@@ -222,7 +168,6 @@ def plot_nv_resonance_fits_and_residuals(
         center_freq_differences,
         avg_peak_widths,
         avg_peak_amplitudes,
-        snrs,
     ) = zip(*fit_results)
 
     # Convert results to lists (since zip returns tuples)
@@ -232,24 +177,30 @@ def plot_nv_resonance_fits_and_residuals(
     center_freq_differences = list(center_freq_differences)
     avg_peak_widths = list(avg_peak_widths)
     avg_peak_amplitudes = list(avg_peak_amplitudes)
-    snrs = list(snrs)
+    # snrs = list(snrs)
 
     # Plot SNR vs frequency for all NVs
-    fig_snr, ax_snr = plt.subplots(figsize=(6.5, 5))
+    fig_snr, ax_snr = plt.subplots(figsize=(7, 5))
+
     for nv_idx in range(num_nvs):
         snrs = np.reshape(avg_snr[nv_idx], len(freqs))
-        ax_snr.plot(freqs, snrs, linewidth=0.5)
+        # Replace NaNs/infs with 0 so the plot still shows
+        snrs = np.nan_to_num(snrs, nan=0.0, posinf=0.0, neginf=0.0)
+
+        ax_snr.plot(freqs, snrs, linewidth=1, label=f"NV{nv_idx}")
 
     ax_snr.set_xlabel("Microwave Frequency (MHz)", fontsize=15)
     ax_snr.set_ylabel("Signal-to-Noise Ratio (SNR)", fontsize=15)
     ax_snr.set_title("SNR vs Frequency for All NVs", fontsize=15)
+
     ax_snr.legend(fontsize="small", ncol=2)
-    ax_snr.grid(True)
+    ax_snr.grid(True, linestyle="--", alpha=0.6)
     ax_snr.tick_params(axis="both", labelsize=14)
+
     plt.tight_layout()
-    # plt.show(block=True)
-    # sys.exit()'
-    # return
+    plt.show(block=True)
+
+    return
     ### snrs
     median_snr = np.median(snrs)
     print(f"median snr:{median_snr:.2f}")
@@ -794,7 +745,7 @@ if __name__ == "__main__":
     #     "2025_09_24-09_33_36-rubin-nv0_2025_09_08",
     # ]
     file_ids = [
-        "2025_09_29-08_21_38-rubin-nv0_2025_09_08",
+        "2025_10_01-08_12_08-rubin-nv0_2025_09_08",
     ]
 
     # fmt: off
