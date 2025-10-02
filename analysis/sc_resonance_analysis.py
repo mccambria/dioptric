@@ -200,7 +200,7 @@ def plot_nv_resonance_fits_and_residuals(
     plt.tight_layout()
     plt.show(block=True)
 
-    return
+    # return
     ### snrs
     median_snr = np.median(snrs)
     print(f"median snr:{median_snr:.2f}")

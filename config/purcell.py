@@ -138,18 +138,18 @@ config |= {
                 "physical_name": "sig_gen_STAN_sg394",
                 "uwave_power": 9.6,
                 "frequency": 2.800,
-                "rabi_period": 144,
-                "pi_pulse": 72,
-                "pi_on_2_pulse": 36,
+                "rabi_period": 200,
+                "pi_pulse": 100,
+                "pi_on_2_pulse": 52,
             },
             # sig gen 1 is iq molulated
             1: {
                 "physical_name": "sig_gen_STAN_sg394_2",
                 "uwave_power": 9.6,
                 "frequency": 2.8360,
-                "rabi_period": 144,
-                "pi_pulse": 72,
-                "pi_on_2_pulse": 36,
+                "rabi_period": 120,
+                "pi_pulse": 60,
+                "pi_on_2_pulse": 32,
             },
         },
     },
@@ -885,7 +885,7 @@ opx_config = {
         "red_aod_cw-scc": {"type": "constant", "sample": 0.13},
         # Yellow AOM
         "yellow_imaging": {"type": "constant", "sample": 0.35},
-        "yellow_charge_readout": {"type": "constant", "sample": 0.27},
+        "yellow_charge_readout": {"type": "constant", "sample": 0.2861},
         "yellow_spin_pol": {"type": "constant", "sample": 0.27},
         "yellow_shelving": {"type": "constant", "sample": 0.33},
         # Other
