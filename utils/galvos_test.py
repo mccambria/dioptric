@@ -122,11 +122,11 @@ import numpy as np
 
 # === Configurable parameters ===
 DEVICE_NAME = "Dev1"
-X_CHANNEL = "ao22"
-Y_CHANNEL = "ao31"
+X_CHANNEL = "ao11"
+Y_CHANNEL = "ao4"
 
-amp_x = 4.0  # amplitude (safe range)
-amp_y = 4.0
+amp_x = 0.4  # amplitude (safe range)
+amp_y = 0.4
 freq_x = 4  # Hz
 freq_y = 6
 rate = 1000  # update rate (Hz)
@@ -160,7 +160,7 @@ thread = threading.Thread(target=lissajous_scan, args=(stop_event,))
 thread.start()
 
 # Let it run for 10 seconds (or remove this to run indefinitely)
-time.sleep(60)
+time.sleep(600)
 
 # Stop
 stop_event.set()
