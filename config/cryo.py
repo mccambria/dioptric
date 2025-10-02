@@ -32,6 +32,11 @@ red_laser = "laser_COBO_638"
 green_laser_aod = "laser_INTE_520_aod"
 red_laser_aod = "laser_COBO_638_aod"
 
+## cryo
+thor_galvos = "pos_xy_THOR_gvs212"
+cryo_green_laser = "laser_COBO_520"
+
+
 
 calibration_coords_pixel = [
     [13.905, 11.931],
@@ -190,11 +195,17 @@ config |= {
                 "delay": 0,
                 "mod_mode": ModMode.ANALOG,
             },
+            cryo_green_laser: {
+                "delay": 0,
+                "mod_mode": ModMode.DIGITAL,
+                "positioner": thor_galvos,
+            },
         },
         "VirtualLasers": {
             # LaserKey.IMAGING: {"physical_name": green_laser, "duration": 50e6},
             VirtualLaserKey.IMAGING: {
-                "physical_name": green_laser,
+                # "physical_name": green_laser,
+                "physical_name": cryo_green_laser,
                 "duration": 12e6,
             },
             # SBC: created for calibration only
@@ -299,6 +310,15 @@ config |= {
                 "units": "MHz",
                 "opti_virtual_laser_key": VirtualLaserKey.ION,
                 "aod": True,
+            },
+            thor_galvos: {
+                "physical_name": "pos_xy_THOR_gvs212",
+                "control_mode": PosControlMode.STREAM,
+                "delay": int(400e3),  # 400 us for galvo
+                "nm_per_unit": 1000,
+                "optimize_range": 0.1,
+                "units": "Voltage (V)",
+                "opti_virtual_laser_key": VirtualLaserKey.IMAGING,
             },
         },
         "calibration_coords_nv1": calibration_coords_nv1,

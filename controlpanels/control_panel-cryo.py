@@ -22,6 +22,7 @@ import numpy as np
 # import majorroutines.confocal.determine_standard_readout_params as determine_standard_readout_params
 # import majorroutines.confocal.g2_measurement as g2_measurement
 import majorroutines.confocal.confocal_image_sample as image_sample
+# import majorroutines.confocal.image_sample as image_sample
 
 # import majorroutines.confocal.optimize_magnet_angle as optimize_magnet_angle
 # import majorroutines.confocal.pulsed_resonance as pulsed_resonance
@@ -53,7 +54,7 @@ def do_image_sample(
     num_steps = 90
 
     # For now we only support square scans so pass scan_range twice
-    image_sample.main(
+    image_sample.confocal_scan(
         nv_sig,
         scan_range,
         scan_range,
