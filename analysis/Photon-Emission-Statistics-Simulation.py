@@ -1,253 +1,197 @@
 import numpy as np
 import matplotlib.pyplot as plt
-import sys
+from scipy.special import wofz, factorial
+from matplotlib.colors import LinearSegmentedColormap
 
-# Parameters
-wavelengths = np.linspace(500, 700, 150)
-num_peaks = 4
-lambda_poisson = 3
-sigma_emi = 4
-max_wavelength_emi = 640
-n_frames = 30  # Number of time steps
-
-# Initialize storage
-spectra_over_time = []
-
-# Time loop
-for frame in range(n_frames):
-    emission_spectrum = np.zeros_like(wavelengths)
-
-    # Generate Poisson-distributed intensities for this frame
-    poisson_emi = np.random.poisson(lambda_poisson, num_peaks)
-
-    # Add each peak
-    for i, intensity in enumerate(poisson_emi):
-        # Slight jitter: random shift within ±2 nm
-        jitter = np.random.normal(loc=0, scale=2)
-        peak_position = max_wavelength_emi - i * 15 + jitter
-        # Inside the frame loop
-        jitter = 4.0 * np.sin(2 * np.pi * frame / 40 + i)  # smooth oscillation
-        jitter += np.random.normal(0, 0.2)  # small noise
-        peak_position = max_wavelength_emi - i * 15 + jitter
-
-        # Gaussian peak
-        gaussian = intensity * np.exp(
-            -0.5 * ((wavelengths - peak_position) / sigma_emi) ** 2
-        )
-        emission_spectrum += gaussian
-
-    # Add noise
-    noise = np.random.normal(0, 0.3, size=emission_spectrum.shape)
-    emission_spectrum += noise
-    emission_spectrum = np.clip(emission_spectrum, 0, None)
-
-    # Normalize (optional, per-frame)
-    emission_spectrum /= emission_spectrum.max() + 1e-9
-
-    # Store
-    spectra_over_time.append(emission_spectrum)
-
-# Convert to 2D array
-spectra_image = np.array(spectra_over_time)
-
-# Plot 2D heatmap (time vs. wavelength)
-plt.figure(figsize=(10, 5), dpi=200)
-extent = [wavelengths.min(), wavelengths.max(), 0, n_frames]
-plt.imshow(spectra_image, aspect="auto", extent=extent, origin="lower", cmap="inferno")
-plt.xlabel("Wavelength (nm)")
-plt.ylabel("Time (frames)")
-plt.title("Time-Dependent Emission Spectrum")
-plt.colorbar(label="Normalized Intensity")
-plt.tight_layout()
-plt.show()
-
-
-sys.exit()
-
-import numpy as np
-import matplotlib.pyplot as plt
-from scipy.stats import poisson
-
-# Parameters for spectra
-wavelengths = np.linspace(300, 800, 1000)  # Wavelength range from 300 nm to 800 nm
-absorption_spectrum = np.zeros_like(wavelengths)
-emission_spectrum = np.zeros_like(wavelengths)
-
-# Parameters for Gaussian broadening
-sigma_abs = 5  # Standard deviation for absorption spectrum (in nm)
-sigma_emi = 4  # Standard deviation for emission spectrum (in nm)
-max_wavelength_abs = 400  # Peak wavelength for absorption
-max_wavelength_emi = 600  # Peak wavelength for emission
-
-# Poisson distribution parameters
-lambda_poisson = 5  # Mean of the Poisson distribution
-num_peaks = 6  # Number of peaks to simulate
-
-# # Generate Poisson-distributed intensities for absorption and emission
-poisson_abs = np.random.poisson(lambda_poisson, num_peaks)
-poisson_emi = np.random.poisson(lambda_poisson, num_peaks)
-# poisson_abs = poisson.pmf(np.arange(num_peaks), lambda_poisson) * num_peaks
-# poisson_emi = poisson.pmf(np.arange(num_peaks), lambda_poisson) * num_peaks
-
-# # Generate absorption spectrum
-# for i, intensity in enumerate(poisson_abs):
-#     peak_position = max_wavelength_abs + i * 15  # Shift each peak by 15 nm
-#     absorption_spectrum += intensity * np.exp(-0.5 * ((wavelengths - peak_position) / sigma_abs)**2)
-
-# Generate emission spectrum
-for i, intensity in enumerate(poisson_emi):
-    peak_position = max_wavelength_emi - i * 15  # Shift each peak by 15 nm
-    emission_spectrum += intensity * np.exp(
-        -0.5 * ((wavelengths - peak_position) / sigma_emi) ** 2
-    )
-
-# Normalize spectra
-absorption_spectrum /= absorption_spectrum.max()
-emission_spectrum /= emission_spectrum.max()
-
-# Plot the spectra
-plt.figure(figsize=(10, 6))
-plt.plot(wavelengths, absorption_spectrum, label="Absorption Spectrum", color="purple")
-plt.plot(wavelengths, emission_spectrum, label="Emission Spectrum", color="orange")
-plt.fill_between(wavelengths, absorption_spectrum, color="purple", alpha=0.3)
-plt.fill_between(wavelengths, emission_spectrum, color="orange", alpha=0.3)
-
-# Labeling
-plt.xlabel("Wavelength (nm)", fontsize=14)
-plt.ylabel("Intensity (a.u.)", fontsize=14)
-plt.title(
-    "Absorption and Emission Spectra with Poisson-Distributed Intensities", fontsize=16
-)
-plt.legend(fontsize=12)
-plt.grid(True)
-
-# Show the plot
-plt.show()
-
-
-# import numpy as np
-# import matplotlib.pyplot as plt
-# from matplotlib.animation import FuncAnimation
-
-# # Setup
-# wavelengths = np.linspace(400, 700, 1000)
-# sigma_emi = 4
-# max_wavelength_emi = 600
-# num_peaks = 6
-# lambda_poisson = 5
-
-# # Prepare figure
-# fig, ax = plt.subplots(figsize=(6, 5), dpi=200)
-# (line,) = ax.plot([], [], lw=2, color="orange", label="Emission Spectrum")
-# fill = ax.fill_between(wavelengths, 0, 0, color="orange", alpha=0.3)
-# ax.set_xlim(400, 700)
-# ax.set_ylim(0, 1.1)
-# ax.set_xlabel("Wavelength (nm)", fontsize=14)
-# ax.set_ylabel("Intensity (a.u.)", fontsize=14)
-# ax.set_title("Time-Dependent Emission Spectrum (Poisson Random Peaks)", fontsize=13)
-# ax.grid(True)
-# ax.legend(fontsize=12)
-
-
-# # Animation function
-# def update(frame):
-#     emission_spectrum = np.zeros_like(wavelengths)
-#     poisson_emi = np.random.poisson(lambda_poisson, num_peaks)
-#     for i, intensity in enumerate(poisson_emi):
-#         peak_position = max_wavelength_emi - i * 15
-#         emission_spectrum += intensity * np.exp(
-#             -0.5 * ((wavelengths - peak_position) / sigma_emi) ** 2
-#         )
-#     emission_spectrum /= emission_spectrum.max()  # Normalize
-#     line.set_data(wavelengths, emission_spectrum)
-#     for coll in reversed(ax.collections):
-#         coll.remove()
-#     ax.fill_between(wavelengths, emission_spectrum, color="orange", alpha=0.3)
-#     return (line,)
-
-
-# Create animation
-# ani = FuncAnimation(fig, update, frames=100, interval=600, blit=False)
-
-# Save or show
-# ani.save("emission_spectrum_movie.mp4", writer="ffmpeg", fps=5)  # Optional saving
-# ani.save("emission_spectrum_movie.gif", writer="pillow", fps=2, dpi=200)
-
-
-import numpy as np
-import matplotlib.pyplot as plt
-from scipy.special import wofz  # For Voigt profile
-
-
-# Voigt profile function
-def voigt_profile(x, center, sigma, gamma):
-    z = ((x - center) + 1j * gamma) / (sigma * np.sqrt(2))
-    return np.real(wofz(z)) / (sigma * np.sqrt(2 * np.pi))
-
-
-# Parameters
-wavelengths = np.linspace(400, 700, 300)
-num_peaks = 6
-lambda_poisson = 5
+# -------------------- main knobs --------------------
+E0 = 1.95  # eV, ZPL center
+S = 4.0  # Huang–Rhys factor (sets mean of Poisson ladder)
+dE_meV = 7.0  # meV spacing between phonon replicas
+Nmax = 4  # max phonon order included (>= ~S + 4*sqrt(S))
 n_frames = 30
+n_E = 80
+E_span_meV_low, E_span_meV_up = 50, 20
 
-# Thermal parameters
-T0 = 5  # reference temperature in K
-T_max = 7  # final temperature (simulate heating)
+# Shot-noise / randomness control for per-frame amplitudes
+counts_per_frame = 1200  # larger -> lower relative shot noise
+intensity_scale = 1.0  # global scale (unitless)
 
-# Base peak properties
-base_peak_positions = 600 - np.arange(num_peaks) * 15
-sigma_G0 = np.random.uniform(1, 3, size=num_peaks)  # Gaussian width at T0
-gamma_L0 = np.random.uniform(1, 3, size=num_peaks)  # Lorentzian width at T0
-decay_constants = np.random.uniform(10, 25, size=num_peaks)
+# Jitter (energy drift of each order over time)
+jitter_sin_meV = 1.5
+jitter_walk_meV = 0.2
+jitter_white_meV = 0.6
 
-# Coefficients
-alpha = 0.02  # linear increase in Lorentzian width with T
-beta = 0.02  # redshift coefficient in nm/K
+# Voigt widths (meV) and broadening growth with time/order
+sigma0_meV, gamma0_meV = 1.1, 0.4  # base Gaussian/Lorentzian at n=0, frame 0
+alpha_T, beta_T = 0.30, 0.40  # time growth (0->1 across frames)
+alpha_n, beta_n = 0.12, 0.15  # order growth per phonon number
 
-spectra_over_time = []
+# Background
+white_noise_std = 1.5
+drift_amp = 0.0
+# ----------------------------------------------------
 
-for frame in range(n_frames):
-    emission_spectrum = np.zeros_like(wavelengths)
+rng = np.random.default_rng(123)
 
-    # Temperature at this frame
-    T = T0 + (T_max - T0) * frame / n_frames
+# Units/axes
+to_eV = 1e-3
+dE_eV = dE_meV * to_eV
+E = np.linspace(E0 - E_span_meV_low * to_eV, E0 + E_span_meV_up * to_eV, n_E)
 
-    poisson_emi = np.random.poisson(lambda_poisson, num_peaks)
+# Phonon orders and *deterministic* Huang–Rhys weights
+n = np.arange(Nmax + 1)
+w = np.exp(-S) * (S**n) / factorial(n)  # sums to ~1 if Nmax large enough
 
-    for i in range(num_peaks):
-        # Temperature-dependent linewidths
-        sigma_G = sigma_G0[i] * np.sqrt(T / T0)
-        gamma_L = gamma_L0[i] * (1 + alpha * (T - T0))
+# Base peak positions: Stokes ladder (red side), n=0 is ZPL at E0
+base_positions = E0 - n * dE_eV
 
-        # Temperature-induced redshift
-        thermal_shift = beta * (T - T0)
-        peak_position = base_peak_positions[i] + thermal_shift
+# --- Emphasize specific phonon orders (3rd–4th from high-energy side: n≈2–3)
+target_centers = [2]  # peaks between n=2 and n=3
+order_width = 0.9  # tightness around target orders (0.5 tight ←→ 1.5 broad)
 
-        # Voigt peak
-        peak = intensity * voigt_profile(wavelengths, peak_position, sigma_G, gamma_L)
-        emission_spectrum += peak
+order_gain = np.array(
+    [
+        max(np.exp(-((i - c) ** 2) / (2 * order_width**2)) for c in target_centers)
+        for i in n
+    ]
+)  # 0..1 per order; highest at n≈2–3
 
-    # Add noise
-    noise = np.random.normal(0, 0.1, size=emission_spectrum.shape)
-    emission_spectrum += noise
+# Random-walk state for each order (in meV)
+rw_state_meV = np.zeros_like(n, dtype=float)
 
-    # Normalize
-    emission_spectrum = np.clip(emission_spectrum, 0, None)
-    emission_spectrum /= emission_spectrum.max() + 1e-9
 
-    spectra_over_time.append(emission_spectrum)
+def voigt(E, center, sigma_eV, gamma_eV):
+    z = ((E - center) + 1j * gamma_eV) / (sigma_eV * np.sqrt(2))
+    return np.real(wofz(z)) / (sigma_eV * np.sqrt(2 * np.pi))
 
-# Convert to 2D array
-spectra_image = np.array(spectra_over_time)
 
-# Plot
-plt.figure(figsize=(8, 5), dpi=200)
-extent = [wavelengths.min(), wavelengths.max(), 0, n_frames]
-plt.imshow(spectra_image, aspect="auto", extent=extent, origin="lower", cmap="inferno")
-plt.xlabel("Wavelength (nm)", fontsize=14)
-plt.ylabel("Time (frames)", fontsize=14)
-plt.title("Voigt-Shaped Spectra with Temperature Effects", fontsize=13)
-plt.colorbar(label="Normalized Intensity")
+spectra = []
+
+for f in range(n_frames):
+    spec = np.zeros_like(E)
+    tfrac = f / (n_frames - 1 + 1e-12)
+    phase = 2 * np.pi * f / 40.0
+
+    # --- Random Poisson amplitudes per order from Huang–Rhys weights
+    # # Expected counts proportional to w_n
+    # lam = counts_per_frame * w
+    # A = rng.poisson(lam) * intensity_scale  # random per frame
+    # --- Frame-dependent intensity (photobleaching / power decay)
+    # tfrac is already defined above
+    # --- Put this inside the frame loop, before sampling A ---
+    # Rise-then-decay envelope: peaks at early frames (~4), then rolls off
+    tau_rise = 2.0  # frames to rise
+    tau_decay = 10.0  # frames to decay
+    floor_frac = 0.25  # late-time floor (0..1 of initial max)
+
+    # Use f (0..n_frames-1), not tfrac, so the peak sits at small integer frames
+    rise = 1.0 - np.exp(-f / tau_rise)
+    decay = np.exp(-f / tau_decay)
+    frame_gain = floor_frac + (1.0 - floor_frac) * (rise * decay)
+
+    # small frame-to-frame fluctuation (keep tiny)
+    frame_gain *= max(0.0, 1 + rng.normal(0, 0.01))
+
+    lam = counts_per_frame * frame_gain * w
+    A = rng.poisson(lam) * intensity_scale
+
+    # Order-local amplitude mixing (bleed to neighbors), strongest at n≈2–3
+    mix_base = 0.15  # 0=no mix; 0.1–0.3 is modest
+    A_mixed = A.copy()
+    for i_ord in range(1, len(A) - 1):
+        eps_i = mix_base * (0.5 + 0.5 * order_gain[i_ord])  # 0.5..1 × mix_base
+        leak = eps_i * A[i_ord]
+        A_mixed[i_ord] -= leak
+        A_mixed[i_ord - 1] += 0.5 * leak
+        A_mixed[i_ord + 1] += 0.5 * leak
+    A = A_mixed
+
+    for i, (center0, Ai) in enumerate(zip(base_positions, A)):
+
+        # # energy jitter (meV): sinusoid + white + random walk
+        # sin_term = jitter_sin_meV * np.sin(phase + i * 0.9)
+        # rw_state_meV[i] += rng.normal(0, jitter_walk_meV)
+        # white_term = rng.normal(0, jitter_white_meV)
+        # jitter_eV = (sin_term + rw_state_meV[i] + white_term) * to_eV
+
+        # center = center0 + jitter_eV
+
+        # # order- and time-dependent Voigt widths
+        # sigma_meV = sigma0_meV * (1 + alpha_T * tfrac) * (1 + alpha_n * i)
+        # gamma_meV = gamma0_meV * (1 + beta_T * tfrac) * (1 + beta_n * i)
+        # sigma_eV = sigma_meV * to_eV
+        # gamma_eV = gamma_meV * to_eV
+        # Emphasis for this order (0..1, peaks at n≈2–3)
+        og = order_gain[i]
+
+        # --- Jitter (energy wander) scaled by order emphasis
+        k_jitter = 1.2  # increase to make n≈2–3 wobblier
+        sin_term = (jitter_sin_meV * (1 + k_jitter * og)) * np.sin(phase + i * 0.9)
+        rw_state_meV[i] += rng.normal(0, jitter_walk_meV * (1 + k_jitter * og))
+        white_term = rng.normal(0, jitter_white_meV * (1 + k_jitter * og))
+        jitter_eV = (sin_term + rw_state_meV[i] + white_term) * to_eV
+        center = center0 + jitter_eV
+
+        # --- Voigt widths: keep mild time growth, add order-peaked growth
+        alpha_T_eff, beta_T_eff = 0.05, 0.06  # smaller time growth than before
+        k_sigma, k_gamma = 0.8, 0.8  # how much broader at target orders
+
+        sigma_meV = (
+            sigma0_meV
+            * (1 + alpha_T_eff * tfrac)
+            * (1 + alpha_n * i)
+            * (1 + k_sigma * og)
+        )
+        gamma_meV = (
+            gamma0_meV
+            * (1 + beta_T_eff * tfrac)
+            * (1 + beta_n * i)
+            * (1 + k_gamma * og)
+        )
+        sigma_eV = sigma_meV * to_eV
+        gamma_eV = gamma_meV * to_eV
+
+        # add this order's contribution
+        spec += Ai * voigt(E, center, sigma_eV, gamma_eV)
+
+    # frame-level multiplicative jitter (laser power drift)
+    spec *= max(0.0, 1 + rng.normal(0, 0.08))
+
+    # additive noise + slow baseline drift
+    spec += rng.normal(0, white_noise_std, size=spec.shape)
+    drift = drift_amp * np.sin(
+        2 * np.pi * (E - E.min()) / (E.max() - E.min()) * rng.uniform(0.6, 1.5)
+    )
+    spec += drift
+
+    # clip & normalize per frame
+    spec = np.clip(spec, 0, None)
+    # spec /= spec.max() + 1e-12
+    spectra.append(spec)
+
+spectra = np.array(spectra)
+spectra /= spectra.max() + 1e-12
+
+
+# Define colors: black → red → white
+colors = ["black", "red", "white"]
+# Create the colormap
+cmap_name = "BlackWhiteRed"
+custom_cmap = LinearSegmentedColormap.from_list(cmap_name, colors)
+# ---------- plots ----------
+plt.figure(figsize=(4, 5), dpi=150)
+extent = [E.min(), E.max(), 0, n_frames]
+plt.imshow(spectra, aspect="auto", origin="lower", extent=extent, cmap=custom_cmap)
+plt.xlabel("Energy (eV)", fontsize=13)
+# plt.ylabel("Time (frames)", fontsize=13)
+# plt.title(
+#     f"Phonon ladder (Huang–Rhys S={S:.1f}, Poisson per-frame)",
+#     fontsize=9,
+# )
+plt.xticks(fontsize=13)
+plt.yticks(fontsize=13)
+plt.yticks([])
+cbar = plt.colorbar()
+cbar.set_label("Normalized intensity", fontsize=13)
 plt.tight_layout()
 plt.show()

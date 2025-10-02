@@ -116,22 +116,22 @@ def process_and_plot(nv_list, taus, sig_counts, ref_counts, duration_or_amp):
             color=color,
             label=str(nv_num),
         )
-        # kpl.plot_points(
-        #     fit_ax,
-        #     taus,
-        #     avg_snr_nv,
-        #     yerr=avg_snr_ste_nv,
-        #     color=color,
-        #     label=str(nv_num),
-        # )
-        # fit_ax.legend()
-        # fit_ax.set_xlabel("SCC pulse duration (ns)")
-        # fit_ax.set_ylabel("SNR")
-        # fit_fig, fit_ax = plt.subplots()
+        kpl.plot_points(
+            fit_ax,
+            taus,
+            avg_snr_nv,
+            yerr=avg_snr_ste_nv,
+            color=color,
+            label=str(nv_num),
+        )
+        fit_ax.legend()
+        fit_ax.set_xlabel("SCC pulse duration (ns)")
+        fit_ax.set_ylabel("SNR")
+        fit_fig, fit_ax = plt.subplots()
 
-        # ind = -3
-        # opti_snr = round(avg_snr[nv_ind, ind], 3)
-        # opti_duration = round(taus[ind])
+        ind = -3
+        opti_snr = round(avg_snr[nv_ind, ind], 3)
+        opti_duration = round(taus[ind])
         opti_snrs.append(opti_snr)
         opti_durations.append(opti_duration)
     print("Optimum SNRs")
@@ -232,7 +232,10 @@ if __name__ == "__main__":
     kpl.init_kplotlib()
 
     # data = dm.get_raw_data(file_id=1564881159891)
-    data = dm.get_raw_data(file_id=1720799193270)
+    # data = dm.get_raw_data(file_id=1720799193270)
+    data = dm.get_raw_data(
+        file_stem="2025_09_30-19_26_09-rubin-nv0_2025_09_08", load_npz=True
+    )
 
     nv_list = data["nv_list"]
     taus = data["taus"]

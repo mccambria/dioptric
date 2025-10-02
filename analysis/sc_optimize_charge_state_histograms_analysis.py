@@ -99,8 +99,9 @@ def process_and_plot(raw_data):
     optimize_pol_or_readout = raw_data["optimize_pol_or_readout"]
     optimize_duration_or_amp = raw_data["optimize_duration_or_amp"]
     # a, b, c = 3.7e5, 6.97, 8e-14 # old para
-    a, b, c = 161266.751, 6.617, -19.492  # new para
-
+    # a, b, c = 161266.751, 6.617, -19.492  # new para
+    # a, b, c = 1.16306103e04, 2.81008145e00, -2.50774288e01  # UPDATED 2025-09-14
+    a, b, c = 1.5133e04, 2.6976, -38.63
     # get yellow amplitude
     yellow_charge_readout_amp = raw_data["opx_config"]["waveforms"][
         "yellow_charge_readout"
@@ -213,7 +214,7 @@ def process_and_plot(raw_data):
                 readout_fidelity_arr[nv_ind],
                 prep_fidelity_arr[nv_ind],
                 goodness_of_fit_arr[nv_ind],
-                weights=(1.0, 1.0, 2.0),
+                weights=(2.0, 1.0, 2.0),
             )
             # Manually override for the first NV
             # if nv_ind == 0:
@@ -242,60 +243,60 @@ def process_and_plot(raw_data):
             optimal_values.append((nv_ind, np.nan, np.nan))
             continue
 
-        # Plotting
-        fig, ax1 = plt.subplots(figsize=(7, 5))
-        # Plot readout fidelity
-        ax1.plot(
-            step_vals,
-            readout_fidelity_arr[nv_ind],
-            label="Readout Fidelity",
-            color="orange",
-        )
-        ax1.plot(
-            step_vals,
-            prep_fidelity_arr[nv_ind],
-            label="Prep Fidelity",
-            linestyle="--",
-            color="green",
-        )
-        ax1.set_xlabel(x_label)
-        ax1.set_ylabel("Fidelity")
-        ax1.tick_params(axis="y", labelcolor="blue")
-        ax1.grid(True, linestyle="--", alpha=0.6)
+        # # Plotting
+        # fig, ax1 = plt.subplots(figsize=(7, 5))
+        # # Plot readout fidelity
+        # ax1.plot(
+        #     step_vals,
+        #     readout_fidelity_arr[nv_ind],
+        #     label="Readout Fidelity",
+        #     color="orange",
+        # )
+        # ax1.plot(
+        #     step_vals,
+        #     prep_fidelity_arr[nv_ind],
+        #     label="Prep Fidelity",
+        #     linestyle="--",
+        #     color="green",
+        # )
+        # ax1.set_xlabel(x_label)
+        # ax1.set_ylabel("Fidelity")
+        # ax1.tick_params(axis="y", labelcolor="blue")
+        # ax1.grid(True, linestyle="--", alpha=0.6)
 
-        # Plot Goodness of Fit ()
-        ax2 = ax1.twinx()
-        ax2.plot(
-            step_vals,
-            goodness_of_fit_arr[nv_ind],
-            color="gray",
-            linestyle="--",
-            label=r"Goodness of Fit ($\chi^2_{\text{reduced}}$)",
-            alpha=0.7,
-        )
-        ax2.set_ylabel(r"Goodness of Fit ($\chi^2_{\text{reduced}}$)", color="gray")
-        ax2.tick_params(axis="y", labelcolor="gray")
+        # # Plot Goodness of Fit ()
+        # ax2 = ax1.twinx()
+        # ax2.plot(
+        #     step_vals,
+        #     goodness_of_fit_arr[nv_ind],
+        #     color="gray",
+        #     linestyle="--",
+        #     label=r"Goodness of Fit ($\chi^2_{\text{reduced}}$)",
+        #     alpha=0.7,
+        # )
+        # ax2.set_ylabel(r"Goodness of Fit ($\chi^2_{\text{reduced}}$)", color="gray")
+        # ax2.tick_params(axis="y", labelcolor="gray")
 
-        # Highlight optimal step value
-        ax1.axvline(
-            optimal_step_val,
-            color="red",
-            linestyle="--",
-            label=f"Optimal Step Val: {optimal_step_val:.3f}",
-        )
-        ax2.axvline(
-            optimal_step_val,
-            color="red",
-            linestyle="--",
-        )
+        # # Highlight optimal step value
+        # ax1.axvline(
+        #     optimal_step_val,
+        #     color="red",
+        #     linestyle="--",
+        #     label=f"Optimal Step Val: {optimal_step_val:.3f}",
+        # )
+        # ax2.axvline(
+        #     optimal_step_val,
+        #     color="red",
+        #     linestyle="--",
+        # )
 
-        # Combine legends
-        lines, labels = ax1.get_legend_handles_labels()
-        lines2, labels2 = ax2.get_legend_handles_labels()
-        ax1.legend(lines + lines2, labels + labels2, loc="upper left", fontsize=11)
-        ax1.set_title(f"NV{nv_ind} - Optimal Step Val: {optimal_step_val:.3f}")
-        plt.tight_layout()
-        plt.show(block=True)
+        # # Combine legends
+        # lines, labels = ax1.get_legend_handles_labels()
+        # lines2, labels2 = ax2.get_legend_handles_labels()
+        # ax1.legend(lines + lines2, labels + labels2, loc="upper left", fontsize=11)
+        # ax1.set_title(f"NV{nv_ind} - Optimal Step Val: {optimal_step_val:.3f}")
+        # plt.tight_layout()
+        # plt.show(block=True)
 
     # save opimal step values
     total_power = np.sum(optimal_step_vals) / len(optimal_step_vals)
@@ -424,7 +425,7 @@ def process_and_plot(raw_data):
         median_readout_fidelity,
         median_prep_fidelity,
         median_goodness_of_fit,
-        weights=(1, 1, 1),
+        weights=(1, 1, 2),
     )
 
     # Plot average and median readout and prep fidelity
@@ -487,7 +488,7 @@ def process_and_plot(raw_data):
     # Title and layout
     ax1.set_title(f"Median Metrics Across All NVs ({file_id})", fontsize=16)
     fig.tight_layout()
-    plt.show()
+    plt.show(block=False)
 
 
 def fit_fn(tau, delay, slope, decay, transition):
@@ -543,7 +544,8 @@ def fit_fn(tau, delay, slope, decay, transition):
     tau = np.maximum(tau, 0)  # Ensure no negative time values
 
     # Enforce a minimum transition duration (e.g., 90 ns)
-    transition = max(transition, 48)
+    # transition = max(transition, 48)
+    transition = 400
 
     # Smooth transition function using tanh
     smooth_transition = 0.5 * (1 + np.tanh((tau - transition) / (0.6 * transition)))
@@ -662,7 +664,8 @@ def process_and_plot_green(raw_data):
             )
 
             peak_guess = filtered_step_vals[np.argmax(filtered_prep_fidelity)]
-            guess_params = [32, slope_guess, peak_guess, 100]
+            # guess_params = [100, slope_guess, peak_guess, 1000]
+            guess_params = [100, slope_guess, np.max(filtered_prep_fidelity), 1000]
 
             # Use Poisson-based sigma if data comes from counting
             sigma = np.sqrt(np.maximum(filtered_prep_fidelity, 1e-6))
@@ -693,9 +696,8 @@ def process_and_plot_green(raw_data):
                 filtered_step_vals,
                 filtered_prep_fidelity,
                 label="Measured Fidelity",
-                color="blue",
             )
-            plt.plot(duration_linspace, fitted_curve, label="Fitted Curve", color="red")
+            plt.plot(duration_linspace, fitted_curve, label="Fitted Curve")
             plt.axvline(
                 opti_dur,
                 color="green",
@@ -706,7 +708,7 @@ def process_and_plot_green(raw_data):
             plt.ylabel("Preparation Fidelity")
             plt.title(f"NV Num: {nv_ind}")
             plt.legend()
-            plt.show(block=True)
+            # plt.show(block=True)
 
             print(
                 f"NV {nv_ind} - Optimal Duration: {opti_dur:.1f} ns, Optimal Fidelity: {opti_fidelity}"
@@ -747,7 +749,182 @@ def process_and_plot_green(raw_data):
     return
 
 
-# endregion
+def process_and_plot_charge(raw_data):
+    nv_list = raw_data["nv_list"]
+    num_nvs = len(nv_list)
+    min_step_val = raw_data["min_step_val"]
+    max_step_val = raw_data["max_step_val"]
+    num_steps = raw_data["num_steps"]
+    step_vals = np.linspace(min_step_val, max_step_val, num_steps)
+
+    counts = np.array(raw_data["counts"])
+    ref_exp_ind = 1
+    condensed_counts = np.array(
+        [
+            [
+                counts[ref_exp_ind, nv_ind, :, step_ind, :].flatten()
+                for step_ind in range(num_steps)
+            ]
+            for nv_ind in range(num_nvs)
+        ]
+    )
+
+    # Process each NV-step pair in parallel
+    results = Parallel(n_jobs=-1)(
+        delayed(process_nv_step)(nv_ind, step_ind, condensed_counts)
+        for nv_ind in range(num_nvs)
+        for step_ind in range(num_steps)
+    )
+
+    try:
+        results = np.array(results, dtype=float).reshape(num_nvs, num_steps, 3)
+    except ValueError as e:
+        print(f"Error reshaping results: {e}")
+        return
+
+    prep_fidelity = results[:, :, 1]
+    readout_fidelity = results[:, :, 0]
+    ### **Perform Fitting**
+    opti_durs, opti_fidelities = [], []
+
+    # --- Saturation models (with offset) ---
+    def sat_decay_fit_fn(t, F0, A, t0, tau_r, tau_d):
+        t = np.asarray(t, dtype=float)
+        x = np.maximum(t - t0, 0.0)  # gate before t0
+        tau_r = np.maximum(tau_r, 1e-12)
+        tau_d = np.maximum(tau_d, 1e-12)
+        # return F0 + A * (1.0 - np.exp(-x / tau_r)) * np.exp(-x / tau_d)
+        return A * (1.0 - np.exp(-x / tau_r)) * np.exp(-x / tau_d)
+
+    def sat_decay_x_peak(tau_r, tau_d):
+        tau_r = max(float(tau_r), 1e-12)
+        tau_d = max(float(tau_d), 1e-12)
+        return tau_r * np.log(1.0 + tau_d / tau_r)
+
+    # --- Robust initial guesses + bounds ---
+    def sat_decay_initial_guess(x, y):
+        x = np.asarray(x, float)
+        y = np.asarray(y, float)
+        span = float(x[-1] - x[0]) if x[-1] > x[0] else 1.0
+        dt = np.median(np.diff(x))
+
+        # Baseline & amplitude
+        F0_0 = float(np.nanpercentile(y, 5))
+        ymax = float(np.nanpercentile(y, 95))
+        A_0 = float(max(1e-4, ymax - F0_0))  # if fidelity, cap elsewhere if you want
+
+        # Onset t0 near strongest rise
+        dy = np.diff(y, prepend=y[0])
+        i_rise = int(np.clip(np.argmax(dy), 0, len(x) - 1))
+        t0_0 = float(max(x[0], x[i_rise] - 0.5 * dt))
+
+        # Time constants: start with τd >> τr so peak isn't too early
+        tau_r0 = max(dt, 0.15 * span)
+        tau_d0 = max(5 * tau_r0, 1.0 * span)
+
+        p0 = [F0_0, A_0, t0_0, tau_r0, tau_d0]
+
+        # Bounds (adjust if your y is guaranteed in [0,1])
+        F0_lo, F0_hi = min(y) - 0.2 * abs(y).max(), max(y) + 0.2 * abs(y).max()
+        A_lo, A_hi = 0.0, max(1.5 * (ymax - F0_0), 1e-3)
+        t0_lo, t0_hi = x[0] - 2 * span, x[-1] + 2 * span
+        tr_lo, tr_hi = dt / 10, 2 * span
+        td_lo, td_hi = dt / 10, 10 * span
+
+        lo = [F0_lo, A_lo, t0_lo, tr_lo, td_lo]
+        hi = [F0_hi, A_hi, t0_hi, tr_hi, td_hi]
+        return p0, (lo, hi)
+
+    for nv_ind in range(num_nvs):
+        r = readout_fidelity[nv_ind].astype(float)
+        y = prep_fidelity[nv_ind].astype(float)
+        x = step_vals.astype(float)
+        # Clean
+        x = np.asarray(x, float)
+        y = np.asarray(y, float)
+        m = np.isfinite(x) & np.isfinite(y)
+        x_f, y_f = x[m], y[m]
+        if x_f.size < 4:
+            raise RuntimeError("Not enough points for fit.")
+
+        p0, bounds = sat_decay_initial_guess(x_f, y_f)
+        popt, pcov = curve_fit(
+            sat_decay_fit_fn, x_f, y_f, p0=p0, bounds=bounds, maxfev=200000
+        )
+        F0, A, t0, tau_r, tau_d = popt
+
+        # analytic peak
+        x_pk_rel = sat_decay_x_peak(tau_r, tau_d)
+        t_peak = float(t0 + x_pk_rel)
+        y_peak = float(sat_decay_fit_fn(t_peak, *popt))
+
+        results = {"params": popt, "cov": pcov, "t_peak": t_peak, "y_peak": y_peak}
+
+        return_curve = True
+        grid = None
+        if return_curve:
+            if grid is None:
+                grid = np.linspace(x_f.min(), x_f.max(), 1000)
+            y_model = sat_decay_fit_fn(grid, *popt)
+            results.update({"grid_t": grid, "grid_y": y_model})
+
+        F0, A, t0, tau_r, tau_d = results["params"]
+        opti_dur = float(np.clip(results["t_peak"], min_step_val, max_step_val))
+        opti_fid = float(results["y_peak"])
+        opti_durs.append(round(opti_dur / 4) * 4)
+        opti_fidelities.append(round(opti_fid, 3))
+
+        # Snap to hardware grid
+        opti_durs.append(round(opti_dur / 4) * 4)
+        opti_fidelities.append(round(opti_fid, 3))
+
+        # --- Plot ---
+        plt.figure(figsize=(6, 5))
+        plt.scatter(x_f, y_f, label="Measured")
+        plt.plot(results["grid_t"], results["grid_y"], label="Sat-Decay Fit")
+        plt.axvline(
+            opti_dur, color="green", linestyle="--", label=f"Peak ≈ {opti_dur:.0f} ns"
+        )
+        plt.scatter([opti_dur], [opti_fid], color="green", zorder=5)
+        plt.xlabel("Duration (ns)")
+        plt.ylabel("Fidelity")
+        plt.ylim(0, 1)
+        plt.grid(True, alpha=0.3)
+        plt.legend()
+        plt.tight_layout()
+        plt.show(block=True)
+
+    if opti_durs:
+        print("Optimal Polarization Durations:", opti_durs)
+
+        # Filter out None values to compute median
+        numeric_durations = [d for d in opti_durs if d is not None]
+        median_duration = int(np.nanmedian(numeric_durations))
+        # Replace None or out-of-range values with median
+        opti_durs = [
+            median_duration
+            if (d is None or (100 <= d <= 200) or (1500 <= d <= 2000))
+            else d
+            for d in opti_durs
+        ]
+
+        print("Updated Optimal Durations:", opti_durs)
+        # print("Optimal Preparation Fidelities:", opti_fidelities)
+        print(f"Median Optimal Duration: {np.median(opti_durs)} ns")
+        print(f"Median Optimal Fidelity: {np.median(opti_fidelities)}")
+        print(f"Max Optimal Duration: {np.max(opti_durs)} ns")
+        print(f"Min Optimal Duration: {np.min(opti_durs)} ns")
+        ###
+        plt.figure()
+        plt.scatter(opti_durs, opti_fidelities)
+        plt.xlabel("Polarization Duration (ns)")
+        plt.ylabel("Preparation Fidelity")
+        plt.title(f"NV Num: {nv_ind}")
+        plt.legend()
+        plt.show(block=True)
+
+    return
+
 
 if __name__ == "__main__":
     kpl.init_kplotlib()
@@ -805,7 +982,7 @@ if __name__ == "__main__":
     # file_id = 1809414309242  # yellow ampl 60ms 81NVs
     # file_id = 1834021972039  # yellow ampl 60ms 75NVs
 
-    # file_id = 1794442033227  # yellow ampl 60ms 140NVs
+    # file_id = "2025_03_05-05_04_57-rubin-nv0_2025_02_26"  # 1794442033227  # yellow ampl 60ms 140NVs
     # file_id = 1793116636570  # yellow ampl 24ms
     # file_id = 1792980892323  # yellow ampl 80ms
     # file_id = 1791756537192  # green durations
@@ -824,17 +1001,49 @@ if __name__ == "__main__":
     # file_id = 1833010688783  # green durations 75NVs (4/13/2025)
     # file_id = 1834390490156  # green durations 75NVs (4/14/2025)
     # file_id = 1836625491633  # green durations 75NVs (4/16/2025)
-    file_id = (
-        "2025_04_29-00_04_37-rubin-nv0_2025_02_26"  # green amplitude 75NVs (4/16/2025)
-    )
-    file_id = (
-        "2025_05_12-21_22_21-rubin-nv0_2025_02_26"  # green amplitude 75NVs (4/16/2025)
-    )
+    # file_id = (
+    #     "2025_04_29-00_04_37-rubin-nv0_2025_02_26"  # green amplitude 75NVs (4/16/2025)
+    # )
+    # file_id = (
+    #     "2025_05_12-21_22_21-rubin-nv0_2025_02_26"  # green amplitude 75NVs (4/16/2025)
+    # )
+    ### readout amp
+    # file_stem = "2025_09_11-01_45_11-rubin-nv0_2025_09_08"  #
+    # file_stem = "2025_09_11-23_23_30-rubin-nv0_2025_09_08"
+    # file_id = "2025_09_13-20_27_20-rubin-nv0_2025_09_08"
+    # file_id = "2025_09_119-06_48_20-rubin-nv0_2025_09_08"
+    # file_id = "2025_09_19-22_37_11-rubin-nv0_2025_09_08"
+    # file_id = "2025_09_28-04_31_09-rubin-nv0_2025_09_08"
+    # file_id = "2025_09_28-22_59_27-rubin-nv0_2025_09_08"
+
+    ### pol amp var
+    # file_id = "2025_09_12-16_53_34-rubin-nv0_2025_09_08"
+    # file_id = "2025_09_12-18_30_09-rubin-nv0_2025_09_08"
+    # file_id = "2025_09_12-20_43_54-rubin-nv0_2025_09_08"
+    # file_id = "2025_09_19-03_41_13-rubin-nv0_2025_09_08"
+    # file_id = "2025_09_20-03_38_25-rubin-nv0_2025_09_08"  # 10us
+    # file_id = "2025_09_20-14_18_23-rubin-nv0_2025_09_08"  # 1us
+    # file_id = "2025_09_28-20_18_06-rubin-nv0_2025_09_08"  # 1us
+
+    ### pol dur var
+    # file_id = "2025_09_12-04_47_45-rubin-nv0_2025_09_08"
+    # file_id = "2025_09_13-00_31_26-rubin-nv0_2025_09_08"
+    # file_id = "2025_09_13-02_58_29-rubin-nv0_2025_09_08"
+    # file_id = "2025_09_14-21_59_00-rubin-nv0_2025_09_08"
+    # file_id = "2025_09_18-12_06_11-rubin-nv0_2025_09_08"
+    # file_id = "2025_09_18-16_19_05-rubin-nv0_2025_09_08"
+    # file_id = "2025_09_19-11_56_40-rubin-nv0_2025_09_08"
+    # file_id = "2025_09_21-22_20_08-rubin-nv0_2025_09_08"
+    # file_id = "2025_09_23-19_06_00-rubin-nv0_2025_09_08"
+    # file_id = "2025_09_28-00_14_24-rubin-nv0_2025_09_08"
+    file_id = "2025_09_28-22_59_27-rubin-nv0_2025_09_08"
+
     # dm.USE_NEW_CLOUD = False
     raw_data = dm.get_raw_data(file_stem=file_id, load_npz=True)
     # file_name = dm.get_file_name(file_id=file_id)
     # print(f"{file_name}_{file_id}")
     # process_and_plot(raw_data)
-    process_and_plot_green(raw_data)
+    # process_and_plot_green(raw_data)
+    process_and_plot_charge(raw_data)
     # print(dm.get_file_name(1717056176426))
     plt.show(block=True)

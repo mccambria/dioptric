@@ -17,7 +17,7 @@ config = {
     "shared_email": "kolkowitznvlab@gmail.com",
     "windows_repo_path": home / "Documents/dioptric",
     "linux_repo_path": home / "Documents/dioptric",
-    "windows_nvdata_dir": Path("G:/nvdata"),  # <-- Add this line
+    "windows_nvdata_path": Path("G:/nvdata"),  # <- rename from _dir to _path
     "Servers": {
         "thorslm": "slm_THOR_exulus_hd2",
     },

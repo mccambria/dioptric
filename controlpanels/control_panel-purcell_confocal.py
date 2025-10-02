@@ -380,7 +380,7 @@ if __name__ == "__main__":
     red_laser = "cobolt_638"
 
     # fmt: off
-    sample_name = "wu"
+    sample_name = "test"
     # nv_sig = {
     #     "coords": [0.240, -0.426, 1], "name": "{}-nv8_2022_11_14".format(sample_name),
     #     "disable_opt": False, "disable_z_opt": True, "expected_count_rate": 13,
@@ -441,7 +441,7 @@ if __name__ == "__main__":
         #     if tool_belt.safe_stop():
         #         break
         #     nv_sig["coords"][2] = int(z)
-        do_image_sample(nv_sig)
+        # do_image_sample(nv_sig)
         # nv_sig["imaging_readout_dur"] = 5e7
         # do_image_sample(nv_sig)
         # do_image_sample_zoom(nv_sig)

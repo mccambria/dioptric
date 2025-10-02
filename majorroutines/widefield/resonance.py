@@ -261,8 +261,8 @@ def main(
     num_reps,
     num_runs,
     freqs,
-    # uwave_ind_list=[0, 1],
-    uwave_ind_list=[1],
+    uwave_ind_list=[0, 1],
+    # uwave_ind_list=[1],
 ):
     ### Some initial setup
     pulse_gen = tb.get_server_pulse_gen()
@@ -277,6 +277,7 @@ def main(
         seq_args = [widefield.get_base_scc_seq_args(nv_list, uwave_ind_list), step_inds]
         seq_args_string = tb.encode_seq_args(seq_args)
         pulse_gen.stream_load(seq_file, seq_args_string, num_reps)
+        # print(seq_args)
 
     # def step_fn(step_ind):
     #     freq = freqs[step_ind]
@@ -320,7 +321,7 @@ def main(
         save_images=False,
         num_exps=1,
         ref_by_rep_parity=False,
-        load_iq=True,
+        # load_iq=True,
     )
 
     ### Process and plot
@@ -430,8 +431,9 @@ if __name__ == "__main__":
     # fmt: on
 
     file_id = 1732403187814
+    file_id = "2025_09_23-12_36_13-rubin-nv0_2025_09_08"
 
-    data = dm.get_raw_data(file_id=file_id, load_npz=False, use_cache=True)
+    data = dm.get_raw_data(file_stem=file_id, load_npz=True, use_cache=True)
     # data = dm.get_raw_data(file_id=file_id, load_npz=True, use_cache=False)
     # img_arrays = np.array(data.pop("img_arrays"))
 

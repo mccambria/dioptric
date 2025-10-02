@@ -609,21 +609,18 @@ def process_and_plot_amplitudes(nv_list, amp_file_id):
     plt.show()
 
 
-def process_and_plot_durations(nv_list, duration_file_id):
+def process_and_plot_durations(data):
     """Process NV data for duration optimization."""
+    nv_list = data["nv_list"]
     total_nvs = len(nv_list)
     optimal_durations = {nv: None for nv in range(total_nvs)}
     optimal_snrs = {nv: None for nv in range(total_nvs)}
 
     selected_indices = range(total_nvs)
 
-    def optimize_durations(file_id, fit_function, valid_range):
-        data = dm.get_raw_data(file_id=file_id)
+    def optimize_durations(data, fit_function, valid_range):
         taus, counts = data["taus"], np.array(data["counts"])
-        sig_counts, ref_counts = (
-            counts[0][selected_indices],
-            counts[1][selected_indices],
-        )
+        sig_counts, ref_counts = counts[0], counts[1]
         avg_snr, avg_snr_ste = widefield.calc_snr(sig_counts, ref_counts)
 
         optimal_values = {}
@@ -651,7 +648,7 @@ def process_and_plot_durations(nv_list, duration_file_id):
     # Optimize durations
     duration_valid_range = (0, 400)
     optimal_durations, optimal_snrs, avg_snr, avg_snr_ste, taus = optimize_durations(
-        duration_file_id, fit_duration, duration_valid_range
+        data, fit_duration, duration_valid_range
     )
 
     # Replace unprocessed NVs with medians
@@ -728,7 +725,7 @@ def process_and_plot_durations(nv_list, duration_file_id):
         "optimal_durations": sorted_optimal_durations,
         "optimal_snrs": sorted_optimal_snrs,
     }
-    # return results
+    return results
 
 
 if __name__ == "__main__":
@@ -741,16 +738,20 @@ if __name__ == "__main__":
     # amp_file_id = 1771055850280
     # duration_file_id = 1732098676751  # duration
     # duration_file_id = 1732098676751  # duration
-    duration_file_id = 1800578617426  # duration
+    # duration_file_id = 1800578617426  # duration
 
     # amp_file_id = 1786527980407
-    data = dm.get_raw_data(file_id=duration_file_id)  # Load NV list
-    file_name = dm.get_file_name(file_id=duration_file_id)
-    nv_list = data["nv_list"]
-
+    data = dm.get_raw_data(
+        file_stem="2025_09_30-19_26_09-rubin-nv0_2025_09_08", load_npz=True
+    )
     # results = process_and_plot(nv_list, duration_file_id, amp_file_id)
     # results = process_and_plot_amplitudes(nv_list, amp_file_id)
-    results = process_and_plot_durations(nv_list, duration_file_id)
+    taus, counts = data["taus"], np.array(data["counts"])
+    # print(counts.shape)
+    # sig_counts, ref_counts = counts[0], counts[1]
+    # print(sig_counts.shape, ref_counts.shape)
+    results = process_and_plot_durations(data)
+
     print("Results:", results)
-    print(f"{file_name}_{duration_file_id}")
+    # print(f"{file_name}_{duration_file_id}")
     kpl.show(block=True)

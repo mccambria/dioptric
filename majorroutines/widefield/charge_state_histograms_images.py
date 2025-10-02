@@ -298,9 +298,7 @@ def main(
         """Runs the experiment for a given step index."""
         # print(f"Step Index: {step_ind}")
         pol_coords_list = widefield.get_coords_list(nv_list, VirtualLaserKey.CHARGE_POL)
-        ion_coords_list = widefield.get_coords_list(
-            nv_list, VirtualLaserKey.ION, include_inds=ion_include_inds
-        )
+        ion_coords_list = widefield.get_coords_list(nv_list, VirtualLaserKey.IO)
         pol_laser_power, readout_laser_power = configure_laser_powers(step_ind)
         seq_args = [
             pol_coords_list,

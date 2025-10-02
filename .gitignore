@@ -12,6 +12,8 @@ labrad_logging/utils/__pycache__/*.pyc
 
 # Additional common entries
 slmsuite/computed_phase/
+slmsuite/circles/
+slmsuite/nv_blob_detection
 
 # Byte-compiled / optimized / DLL files
 __pycache__/

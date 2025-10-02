@@ -34,20 +34,21 @@ red_laser_aod = "laser_COBO_638_aod"
 
 
 calibration_coords_pixel = [
-    [20.731, 233.76],
-    [130.459, 13.724],
-    [235.053, 225.856],
+    [13.905, 11.931],
+    [124.563, 242.424],
+    [240.501, 17.871],
 ]
 calibration_coords_green = [
-    [120.674, 95.506],
-    [104.329, 118.682],
-    [96.295, 92.939],
+    [119.616, 121.469],
+    [109.97, 94.057],
+    [93.88, 118.204],
 ]
 calibration_coords_red = [
-    [83.025, 63.123],
-    [69.858, 81.701],
-    [63.383, 60.75],
+    [82.15, 83.705],
+    [75.199, 61.034],
+    [61.32, 79.784],
 ]
+
 # Create the dictionaries using the provided lists
 calibration_coords_nv1 = {
     CoordsKey.PIXEL: calibration_coords_pixel[0],
@@ -66,11 +67,6 @@ calibration_coords_nv3 = {
     green_laser_aod: calibration_coords_green[2],
     red_laser_aod: calibration_coords_red[2],
 }
-
-# pixel_to_sample_affine_transformation_matrix = [
-#     [-0.01472387, 0.00052569, 1.28717911],
-#     [0.00040197, -0.01455135, 1.73876545],
-# ]
 
 pixel_to_sample_affine_transformation_matrix = [
     [0.01476835, -0.00148369, -1.42104908],
@@ -136,30 +132,24 @@ config |= {
             "sig_gen_TEKT_tsg4104a": {"delay": 57},
         },
         "iq_comp_amp": 0.5,
-        "iq_delay": 140,  # SBC measured using NVs 4/18/2025
+        "iq_delay": 140,
         "VirtualSigGens": {
             0: {
                 "physical_name": "sig_gen_STAN_sg394",
-                # "uwave_power": 2.3,
-                "uwave_power": 8.7,
-                # "frequency": 2.779138,  # rubin shallow NVs O1 ms=-1
-                # "frequency": 2.909381,  # rubin shallow NV O3 ms=+1
-                "frequency": 2.730700,
-                "rabi_period": 128,
+                "uwave_power": 9.6,
+                "frequency": 2.800,
+                "rabi_period": 144,
+                "pi_pulse": 72,
+                "pi_on_2_pulse": 36,
             },
             # sig gen 1 is iq molulated
             1: {
                 "physical_name": "sig_gen_STAN_sg394_2",
-                "uwave_power": 8.7,
-                # "uwave_power": 9.6,
-                # "frequency": 2.779138,   # rubin shallow NVs O1 ms=-1
-                # "frequency": 2.964545,  # rubin shallow NV O1 ms=+1
-                # "frequency": 2.842478,  # rubin shallow NV O3 ms=-1
-                "frequency": 2.730700,  # lower esr peak for both orientation
-                "rabi_period": 208,
-                "pi_pulse": 104,
-                "pi_on_2_pulse": 56,
-                # "rabi_period": 52,
+                "uwave_power": 9.6,
+                "frequency": 2.8360,
+                "rabi_period": 144,
+                "pi_pulse": 72,
+                "pi_on_2_pulse": 36,
             },
         },
     },
@@ -169,11 +159,10 @@ config |= {
         "resolution": (512, 512),
         "spot_radius": 2.5,  # Radius for integrating NV counts in a camera image
         "bias_clamp": 300,  # (changing this won't actually change the value on the camera currently)
-        # "em_gain": 5000,
+        "em_gain": 5000,
         # "em_gain": 1000,
-        "em_gain": 10,
+        # "em_gain": 10,
         "temp": -60,
-        # "temp": -55,
         "timeout": 60e3,  # ms
         # "timeout": -1,  # No timeout
         # Readout mode specifies EM vs conventional, as well as vertical and horizontal readout frequencies.
@@ -183,7 +172,6 @@ config |= {
         "roi": (122, 126, 250, 250),  # offsetX, offsetY, width, height
         # "roi": None,  # offsetX, offsetY, width, height
         "scale": 5 / 0.6,  # pixels / micron
-        # "scale": 1 / 0.072,  # pixels / micron
     },
     ###
     "Optics": {
@@ -209,6 +197,11 @@ config |= {
                 "physical_name": green_laser,
                 "duration": 12e6,
             },
+            # SBC: created for calibration only
+            VirtualLaserKey.RED_IMAGING: {
+                "physical_name": red_laser,
+                "duration": 1e6,
+            },
             VirtualLaserKey.SPIN_READOUT: {
                 "physical_name": green_laser,
                 "duration": 300,
@@ -216,9 +209,7 @@ config |= {
             # LaserKey.CHARGE_POL: {"physical_name": green_laser, "duration": 10e3},
             VirtualLaserKey.CHARGE_POL: {
                 "physical_name": green_laser,
-                "duration": 1e3,  # Works better for shallow NVs (Cannon)
-                # "duration": 500,  # Works better for shallow NVs (Cannon)
-                # "duration": 10e3, #Works better for Deep NVs (Johnson)
+                "duration": 1e3,  # Works better for Deep NVs (Johnson)
             },
             # LaserKey.CHARGE_POL: {"physical_name": green_laser, "duration": 60},
             VirtualLaserKey.SPIN_POL: {
@@ -259,8 +250,8 @@ config |= {
                 "physical_name": yellow_laser,
                 # "duration": 200e6,
                 # "duration": 60e6,
-                # "duration": 30e6,
-                "duration": 24e6,  # for red calibration
+                "duration": 50e6,
+                # "duration": 24e6,  # for red calibration
             },
             # LaserKey.WIDEFIELD_CHARGE_READOUT: {"physical_name": yellow_laser, "duration": 100e6},
         },
@@ -385,6 +376,8 @@ default_int_freq = 75e6
 virtual_sig_gens_dict = config["Microwaves"]["VirtualSigGens"]
 num_sig_gens = len(virtual_sig_gens_dict)
 rabi_period_0 = virtual_sig_gens_dict[0]["rabi_period"]
+pi_pulse_0 = virtual_sig_gens_dict[0]["pi_pulse"]
+pi_on_2_pulse_0 = virtual_sig_gens_dict[0]["pi_on_2_pulse"]
 rabi_period_1 = virtual_sig_gens_dict[1]["rabi_period"]
 pi_pulse_1 = virtual_sig_gens_dict[1]["pi_pulse"]
 pi_on_2_pulse_1 = virtual_sig_gens_dict[1]["pi_on_2_pulse"]
@@ -565,7 +558,7 @@ opx_config = {
             },
         },
         "do_sig_gen_STAN_sg394_dm": {
-            "digitalInputs": {"chan": {"port": ("con1", 10), "delay": 0, "buffer": 0}},
+            "digitalInputs": {"chan": {"port": ("con1", 9), "delay": 0, "buffer": 0}},
             "operations": {
                 "on": "do_on",
                 "off": "do_off",
@@ -576,8 +569,8 @@ opx_config = {
         "do_sig_gen_STAN_sg394_2_dm": {
             # 230 ns I channel latency measured 3/26/25 MCC and Saroj using oscilloscope
             "digitalInputs": {
-                # "chan": {"port": ("con1", 9), "delay": 230, "buffer": 0}
-                "chan": {"port": ("con1", 9), "delay": iq_delay, "buffer": 0}
+                "chan": {"port": ("con1", 10), "delay": 0, "buffer": 0}
+                # "chan": {"port": ("con1", 10), "delay": iq_delay, "buffer": 0}
             },
             "operations": {
                 "iq_test": "do_iq_test",
@@ -785,12 +778,12 @@ opx_config = {
         },
         "ao_iq_pi_pulse_0": {
             "operation": "control",
-            "length": int(rabi_period_0 / 2) + 2 * iq_buffer,
+            "length": int(pi_pulse_0) + 2 * iq_buffer,
             "waveforms": {"single": "cw"},
         },
         "ao_iq_pi_on_2_pulse_0": {
             "operation": "control",
-            "length": int(rabi_period_0 / 4) + 2 * iq_buffer,
+            "length": int(pi_on_2_pulse_0) + 2 * iq_buffer,
             "waveforms": {"single": "cw"},
         },
         "ao_iq_pi_pulse_1": {
@@ -856,12 +849,12 @@ opx_config = {
         },
         "do_pi_pulse_0": {
             "operation": "control",
-            "length": int(rabi_period_0 / 2),
+            "length": int(pi_pulse_0),
             "digital_marker": "on",
         },
         "do_pi_on_2_pulse_0": {
             "operation": "control",
-            "length": int(rabi_period_0 / 4),
+            "length": int(pi_on_2_pulse_0),
             "digital_marker": "on",
         },
         "do_pi_pulse_1": {
@@ -881,29 +874,19 @@ opx_config = {
     ### Analog
     "waveforms": {
         # Green AOD
-        "green_aod_cw-opti": {"type": "constant", "sample": 0.11},
-        # "green_aod_cw-opti": {"type": "constant", "sample": 0.07},
-        # "green_aod_cw-charge_pol": {"type": "constant", "sample": 0.06},  # Negative
-        "green_aod_cw-charge_pol": {"type": "constant", "sample": 0.139},  # median
-        # "green_aod_cw-charge_pol": {"type": "constant", "sample": 0.15},  # median
+        "green_aod_cw-opti": {"type": "constant", "sample": 0.09},
+        "green_aod_cw-charge_pol": {"type": "constant", "sample": 0.07},
         "green_aod_cw-spin_pol": {"type": "constant", "sample": 0.05},
         "green_aod_cw-shelving": {"type": "constant", "sample": 0.05},
         "green_aod_cw-scc": {"type": "constant", "sample": 0.15},
         # Red AOD
-        # "red_aod_cw-opti": {"type": "constant", "sample": 0.10},
-        "red_aod_cw-opti": {"type": "constant", "sample": 0.15},
-        # "red_aod_cw-ion": {"type": "constant", "sample": 0.09},
-        "red_aod_cw-ion": {"type": "constant", "sample": 0.15},
-        "red_aod_cw-scc": {"type": "constant", "sample": 0.15},
-        # "red_aod_cw-scc": {"type": "constant", "sample": 0.12},  # rubin
+        "red_aod_cw-opti": {"type": "constant", "sample": 0.13},
+        "red_aod_cw-ion": {"type": "constant", "sample": 0.13},
+        "red_aod_cw-scc": {"type": "constant", "sample": 0.13},
         # Yellow AOM
-        "yellow_imaging": {"type": "constant", "sample": 0.45},  # 0.35
-        # "yellow_imaging": {"type": "constant", "sample": 0.50},  # 0.35
-        # "yellow_charge_readout": {"type": "constant", "sample": 0.3741},  # 50ms 117NVs
-        # "yellow_charge_readout": {"type": "constant", "sample": 0.35736},  # 75NVs new
-        "yellow_charge_readout": {"type": "constant", "sample": 0.3500},  # 75NVs new
-        "yellow_spin_pol": {"type": "constant", "sample": 0.44},  # 75 NVs
-        # "yellow_spin_pol": {"type": "constant", "sample": 0.42},
+        "yellow_imaging": {"type": "constant", "sample": 0.35},
+        "yellow_charge_readout": {"type": "constant", "sample": 0.27},
+        "yellow_spin_pol": {"type": "constant", "sample": 0.27},
         "yellow_shelving": {"type": "constant", "sample": 0.33},
         # Other
         "aod_cw": {"type": "constant", "sample": 0.35},

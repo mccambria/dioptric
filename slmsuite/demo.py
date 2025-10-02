@@ -135,21 +135,36 @@ import cv2
 import matplotlib.pyplot as plt
 import numpy as np
 
+### green and red calibaton at RT setup 2025-09-15
+pixel_coords_list = [
+    [119.74, 120.062],
+    [110.243, 94.852],
+    [93.324, 119.189],
+]
+red_coords_list = [
+    [82.297, 82.572],
+    [75.395, 61.691],
+    [60.836, 80.554],
+]
 # Given pixel coordinates and corresponding red coordinates
-pixel_coords_list = np.array(
-    [
-        [95.439, 94.799],
-        [119.117, 100.388],
-        [109.423, 118.248],
-    ]
-)
-red_coords_list = np.array(
-    [
-        [62.148, 62.848],
-        [81.574, 67.148],
-        [74.061, 81.78],
-    ]
-)
+# pixel_coords_list = np.array(
+#     [
+#         [122.217, 28.629],
+#         [27.396, 150.264],
+#         [220.452, 192.19],
+#     ]
+# )
+# red_coords_list = np.array(
+#     [
+#         [72.293, 80.694],
+#         [82.931, 71.034],
+#         [65.743, 64.346],
+#     ]
+# )
+
+## greeen
+# pixel_coords_list = np.array([[27.805, 30.303], [138.235, 235.17], [228.671, 15.343]])
+# red_coords_list = np.array([[[29.437, 41.77], [147.414, 233.083], [224.636, 21.373]]])
 
 # For two points, a simpler method is necessary, but let's try using cv2.estimateAffinePartial2D
 if len(pixel_coords_list) >= 3:
@@ -161,10 +176,10 @@ if len(pixel_coords_list) >= 3:
     # New pixel coordinate for which we want to find the corresponding red coordinate
     new_pixel_coord = np.array(
         [
-            [107.669, 106.41],
-            [120.657, 95.583],
-            [104.378, 118.701],
-            [96.267, 92.969],
+            [108.522, 107.054],
+            [119.616, 121.469],
+            [109.97, 94.057],
+            [93.88, 118.204],
         ],
         dtype=np.float32,
     )
@@ -229,6 +244,7 @@ else:
     #     [42.749, 125.763], pixel_coords_list, red_coords_list
     # )
     # print("Corresponding red coordinates:", new_red_coord)
+# sys.exit()
 
 min_tau = 200  # ns
 max_tau = 100e3  # fallback if no revival_period given
@@ -266,15 +282,45 @@ def generate_divisible_by_4(min_val, max_val, num_steps):
 
 
 # Example Usage
-min_duration = 20
-max_duration = 292
-num_steps = 18
+min_duration = 200
+max_duration = 10000
+num_steps = 25
 
 step_values = generate_divisible_by_4(min_duration, max_duration, num_steps)
 print(step_values)
 print(len(step_values))
 
-sys.exit()
+
+def logspace_div4(min_val, max_val, num_steps, base=10.0):
+    if not (min_val > 0 and max_val > min_val and num_steps >= 2):
+        raise ValueError("Bad inputs.")
+    m_lo, m_hi = int(np.ceil(min_val / 4)), int(np.floor(max_val / 4))
+    if m_lo > m_hi:
+        raise ValueError("Range too narrow for multiples of 4.")
+    k = 8
+    while True:
+        xs = np.logspace(
+            np.log(m_lo) / np.log(base),
+            np.log(m_hi) / np.log(base),
+            k * num_steps,
+            base=base,
+        )
+        m = np.unique(np.clip(np.rint(xs).astype(int), m_lo, m_hi))
+        if m[0] != m_lo:
+            m[0] = m_lo
+        if m[-1] != m_hi:
+            m[-1] = m_hi
+        if len(m) >= num_steps:
+            break
+        k *= 2
+    idx = np.linspace(0, len(m) - 1, num_steps).round().astype(int)
+    return (m[idx] * 4).tolist()
+
+
+# Example
+print(logspace_div4(100, 10000, 25))
+
+# sys.exit()
 # Updating plot with center frequencies in the legend
 # # Given data
 # green_aod_freq_MHz = np.array([90, 95, 100, 105, 110, 115, 120, 125])
@@ -310,204 +356,233 @@ sys.exit()
 # plt.grid(True)
 # plt.show()
 # Try a logarithmic function instead, which might better capture the relationship
-import matplotlib.pyplot as plt
+
+import matplotlib.pyplot as ply
 import numpy as np
 from scipy.optimize import curve_fit
 
-# Data points
+from utils import kplotlib as kpl
+
+kpl.init_kplotlib()
+
 aom_voltages = np.array(
-    [0.25, 0.27, 0.29, 0.31, 0.33, 0.35, 0.37, 0.39, 0.41, 0.43, 0.45]
+    [0.15, 0.17, 0.19, 0.21, 0.23, 0.25, 0.27, 0.29, 0.31, 0.33, 0.35], dtype=float
 )
-yellow_power = np.array([12, 25, 48, 86, 146, 236, 363, 540, 766, 1050, 1400])
+yellow_power = np.array(
+    [34, 54, 81, 118, 162, 214, 272, 334, 404, 490, 585], dtype=float
+)
 
 
-# Define the exponential model
-def exponential_model(x, a, b, c):
-    return a * np.exp(b * x) + c
-
-
-# Define models
 def power_law_model(x, a, b, c):
     return a * x**b + c
 
 
-# Fit the curve
-params, covariance = curve_fit(power_law_model, aom_voltages, yellow_power)
-# params, covariance = curve_fit(ower_law_model, aom_voltages, yellow_power)
+# --- Step 1: log–log fit (no offset) to seed a, b
+# Guard against zeros/negatives
+mask = (aom_voltages > 0) & (yellow_power > 0)
+x_pos = aom_voltages[mask]
+y_pos = yellow_power[mask]
 
-# Extract parameters
+B = np.polyfit(np.log(x_pos), np.log(y_pos), 1)  # log(y)= b*log(x) + log(a)
+b0 = B[0]
+a0 = np.exp(B[1])
+c0 = 0.0  # start with no offset; curve_fit will adjust
+
+p0 = [a0, b0, c0]
+
+# Optional: constrain c to be >= 0 (or near min power); keeps optimizer sane
+lower_bounds = (
+    0.0,
+    -10.0,
+    -0.2 * yellow_power.max(),
+)  # allow small negative c if you want
+upper_bounds = (np.inf, 10.0, 0.5 * yellow_power.max())
+
+# --- Step 2: fit with better initials + more iterations
+params, covariance = curve_fit(
+    power_law_model,
+    aom_voltages,
+    yellow_power,
+    p0=p0,
+    bounds=(lower_bounds, upper_bounds),
+    maxfev=100000,
+)
 a, b, c = params
 
-# Generate fitted data for plotting
+# --- Generate smooth curve
 voltage_fit = np.linspace(aom_voltages.min(), aom_voltages.max(), 500)
-# power_fit = exponential_model(voltage_fit, a, b, c)
 power_fit = power_law_model(voltage_fit, a, b, c)
+print(f"Fitted power-law: y = {a:.6g} * x^{b:.6g} + {c:.6g}")
 
-# Plot the data and the fit
-plt.figure(figsize=(8, 6))
-plt.scatter(aom_voltages, yellow_power, color="blue", label="Data Points")
+# --- Plot in linear scale
+plt.figure(figsize=(7, 5))
+plt.scatter(aom_voltages, yellow_power, label="Data")
 plt.plot(
-    voltage_fit,
-    power_fit,
-    color="red",
-    label=f"Fit: $y = {a:.2f} \\cdot e^{{{b:.2f} \\cdot x}} + {c:.2f}$",
+    voltage_fit, power_fit, label=f"Power-law fit: y = {a:.3g}·x^{b:.3g} + {c:.3g}"
 )
 plt.title("AOM Voltage vs Yellow Laser Power")
 plt.xlabel("AOM Voltage (V)")
 plt.ylabel("Yellow Laser Power (µW)")
+plt.grid(True, alpha=0.3)
 plt.legend()
-plt.grid(True)
-plt.show()
-
-# Print the function
-print(f"Fitted Function: y = {a:.3f} * exp({b:.3f} * x) + {c:.3f}")
-
-
-# Define models
+# plt.tight_layout()
 
 
 import matplotlib.pyplot as plt
 import numpy as np
-from scipy.optimize import curve_fit
+from scipy.optimize import brentq, curve_fit
 
-# Data
-aom_voltages = np.array(
-    [0.25, 0.27, 0.29, 0.31, 0.33, 0.35, 0.37, 0.39, 0.41, 0.43, 0.45]
+# fmt: off
+# -----------------------------
+# Data 2025_09_14
+# -----------------------------
+green_x = np.array([0.02, 0.04, 0.06, 0.08, 0.10, 0.12, 0.14], dtype=float)
+green_y = np.array([11, 147, 683, 1960, 4220, 7330, 10740], dtype=float)
+
+red_x = np.array([0.02, 0.04, 0.06, 0.08, 0.10, 0.12, 0.14], dtype=float)
+red_y = np.array([28, 356, 1490, 4320, 9400, 16900, 26000], dtype=float)
+
+
+yellow_x = np.array(
+    [0.15, 0.17, 0.19, 0.21, 0.23, 0.25, 0.27, 0.29, 0.31, 0.33, 0.35], dtype=float
 )
-yellow_power = np.array([12, 25, 48, 86, 146, 236, 363, 540, 766, 1050, 1400])
+yellow_y = np.array([34, 54, 81, 118, 162, 214, 272, 334, 404, 490, 585], dtype=float)
+
+# -----------------------------
+# Data 2025_09_17
+# -----------------------------
+green_x = np.array([0.02, 0.04, 0.06, 0.08, 0.10, 0.12, 0.14, 0.16], dtype=float)
+green_y = np.array([12, 162, 752, 2170, 4520, 7660, 11500, 15400], dtype=float)
+
+red_x = np.array([0.02, 0.04, 0.06, 0.08, 0.10, 0.12, 0.14, 0.16], dtype=float)
+red_y = np.array([24, 303, 1430, 4160, 9000, 16200, 25000, 34200], dtype=float)
 
 
-# Goodness of fit (R^2 and RMSE)
-def goodness_of_fit(y, y_fit):
-    residuals = y - y_fit
-    ss_res = np.sum(residuals**2)
-    ss_tot = np.sum((y - np.mean(y)) ** 2)
-    r2 = 1 - (ss_res / ss_tot)
-    rmse = np.sqrt(np.mean(residuals**2))
-    return r2, rmse
+yellow_x = np.array(
+    [0.11, 0.13, 0.15, 0.17, 0.19, 0.21, 0.23, 0.25, 0.27, 0.29, 0.31, 0.33, 0.35, 0.37, 0.39], dtype=float
+)
+yellow_y = np.array([15, 29, 51, 81, 121, 175, 242, 322, 410, 504, 602, 725, 865, 1002, 1140], dtype=float)
+
+# fmt: on
 
 
-# Fit both models
-models = {"Power-Law": power_law_model, "Exponential": exponential_model}
+# -----------------------------
+# Model and utilities
+# -----------------------------
+def power_law_model(x, a, b, c):
+    """y = a * x^b + c"""
+    return a * np.power(x, b) + c
 
-voltage_fit = np.linspace(aom_voltages.min(), aom_voltages.max(), 500)
 
-plt.figure(figsize=(10, 6))
-results = {}
+def seed_from_loglog(x, y):
+    """Initial guess (a, b) from log–log fit, ignore offset c."""
+    m = (x > 0) & (y > 0)
+    B = np.polyfit(np.log(x[m]), np.log(y[m]), 1)  # log y = b log x + log a
+    b0 = float(B[0])
+    a0 = float(np.exp(B[1]))
+    return a0, b0
 
-for name, model in models.items():
-    # Fit the model
-    params, _ = curve_fit(
-        model, aom_voltages, yellow_power, maxfev=10000, bounds=(0, np.inf)
+
+def fit_power_law_with_offset(x, y, allow_negative_c_frac=0.2, c_upper_frac=0.5):
+    a0, b0 = seed_from_loglog(x, y)
+    c0 = 0.0
+    p0 = [a0, b0, c0]
+
+    lb = (0.0, -10.0, -allow_negative_c_frac * np.max(y))
+    ub = (np.inf, 10.0, c_upper_frac * np.max(y))
+
+    params, cov = curve_fit(
+        power_law_model, x, y, p0=p0, bounds=(lb, ub), maxfev=100000
     )
-    power_fit = model(voltage_fit, *params)
-
-    # Calculate goodness of fit
-    y_fit = model(aom_voltages, *params)
-    r2, rmse = goodness_of_fit(yellow_power, y_fit)
-    results[name] = {"params": params, "R^2": r2, "RMSE": rmse}
-
-    # Plot
-    plt.plot(
-        voltage_fit, power_fit, label=f"{name} Fit (R^2: {r2:.3f}, RMSE: {rmse:.2f})"
-    )
-    print(f"{name} Parameters: {params}, R^2: {r2:.3f}, RMSE: {rmse:.2f}")
-
-# Plot data
-plt.scatter(aom_voltages, yellow_power, color="black", label="Data Points")
-plt.title("AOM Voltage vs Yellow Laser Power - Model Comparison")
-plt.xlabel("AOM Voltage (V)")
-plt.ylabel("Yellow Laser Power (µW)")
-plt.legend()
-plt.grid(True)
-plt.show()
-
-# Display results for better understanding
-print("\nFitting Results:")
-for model_name, res in results.items():
-    print(f"{model_name}:")
-    print(f"  Parameters: {res['params']}")
-    print(f"  R^2: {res['R^2']:.3f}")
-    print(f"  RMSE: {res['RMSE']:.2f}")
+    return params, cov
 
 
-# import matplotlib.pyplot as plt
-# import numpy as np
-# from scipy.optimize import minimize
-
-# # Data
-# aom_voltages = np.array(
-#     [0.25, 0.27, 0.29, 0.31, 0.33, 0.35, 0.37, 0.39, 0.41, 0.43, 0.45]
-# )
-# yellow_power = np.array([12, 25, 48, 86, 146, 236, 363, 540, 766, 1050, 1400])
+def r2_score(y_true, y_pred):
+    ss_res = np.sum((y_true - y_pred) ** 2)
+    ss_tot = np.sum((y_true - np.mean(y_true)) ** 2)
+    return 1 - ss_res / ss_tot
 
 
-# # Define models
-# def power_law_model(x, a, b, c):
-#     return a * x**b + c
+def predict_power(x, params):
+    """Predict power for amplitude x."""
+    a, b, c = params
+    return power_law_model(np.asarray(x, float), a, b, c)
 
 
-# def exponential_model(x, a, b, c):
-#     return a * np.exp(b * x) + c
+def invert_amp_for_power(target_power, params, x_min, x_max):
+    """Solve for amplitude x that gives target_power within [x_min, x_max]."""
+    a, b, c = params
+    f = lambda x: power_law_model(x, a, b, c) - target_power
+    # Ensure the bracket contains a root; expand a bit if needed
+    xa, xb = float(x_min), float(x_max)
+    fa, fb = f(xa), f(xb)
+    if fa * fb > 0:
+        # try expanding slightly
+        xa = max(1e-6, 0.9 * x_min)
+        xb = 1.1 * x_max
+        fa, fb = f(xa), f(xb)
+        if fa * fb > 0:
+            raise ValueError(
+                "Bracket does not contain a root for the given target power."
+            )
+    return brentq(f, xa, xb)
 
 
-# # Cost function for least squares
-# def cost_function(params, x, y, model):
-#     y_pred = model(x, *params)
-#     residuals = y - y_pred
-#     return np.sum(residuals**2)
+def make_plots(label, x, y, params):
+    a, b, c = params
+    x_fit = np.linspace(min(x), max(x), 500)
+    y_fit = power_law_model(x_fit, a, b, c)
+
+    # Linear plot
+    plt.figure(figsize=(7, 5))
+    plt.scatter(x, y, label=f"{label} data")
+    plt.plot(x_fit, y_fit, label=f"Fit: y = {a:.3g}·x^{b:.3g} + {c:.3g}")
+    plt.title(f"{label}: AOD Amplitude vs Laser Power")
+    plt.xlabel("AOD Amplitude (arb. V)")
+    plt.ylabel("Laser Power (µW)")
+    plt.grid(True, alpha=0.3)
+    plt.legend()
 
 
-# # Perform least squares fitting
-# def fit_model_least_squares(x, y, model, initial_guess):
-#     result = minimize(
-#         cost_function,
-#         initial_guess,
-#         args=(x, y, model),
-#         method="L-BFGS-B",
-#         bounds=[(0, None)] * len(initial_guess),
-#     )
-#     return result.x, result.fun  # Optimized parameters and cost
+# -----------------------------
+# Fit and report
+# -----------------------------
+green_params, green_cov = fit_power_law_with_offset(green_x, green_y)
+red_params, red_cov = fit_power_law_with_offset(red_x, red_y)
+yellow_params, yellow_cov = fit_power_law_with_offset(yellow_x, yellow_y)
+
+print("Green params [a, b, c]:", green_params)
+print("Red   params [a, b, c]:", red_params)
+print("Yellow   params [a, b, c]:", yellow_params)
+
+print("Green R^2:", r2_score(green_y, predict_power(green_x, green_params)))
+print("Red   R^2:", r2_score(red_y, predict_power(red_x, red_params)))
+print("Yellow  R^2:", r2_score(yellow_y, predict_power(yellow_x, red_params)))
+
+# -----------------------------
+# Plots
+# -----------------------------
+make_plots("Green", green_x, green_y, green_params)
+make_plots("Red", red_x, red_y, red_params)
+make_plots("Yellow", yellow_x, yellow_y, yellow_params)
+
+# -----------------------------
+# Examples: prediction and inversion
+# -----------------------------
+# Predict power at x = 0.11
+x_query = 0.22
+print("Green power at x=0.11:", float(predict_power(x_query, green_params)))
+print("Red   power at x=0.11:", float(predict_power(x_query, red_params)))
+print("Yellow  power at x=0.11:", float(predict_power(x_query, yellow_params)))
+
+# Invert: which amplitude gives 10 mW (10000 µW)?
+target_power = 184.0
+gx = invert_amp_for_power(target_power, green_params, green_x.min(), green_x.max())
+rx = invert_amp_for_power(target_power, red_params, red_x.min(), red_x.max())
+yx = invert_amp_for_power(target_power, yellow_params, yellow_x.min(), yellow_x.max())
+print(f"Green amplitude for {target_power:.0f} µW:", round(gx, 4))
+print(f"Red   amplitude for {target_power:.0f} µW:", round(rx, 4))
+print(f"Yellow   amplitude for {target_power:.0f} µW:", round(yx))
 
 
-# # Fit both models
-# initial_guess = [1, 1, 1]  # Initial guesses for [a, b, c]
-# power_params, power_cost = fit_model_least_squares(
-#     aom_voltages, yellow_power, power_law_model, initial_guess
-# )
-# exp_params, exp_cost = fit_model_least_squares(
-#     aom_voltages, yellow_power, exponential_model, initial_guess
-# )
-
-# # Generate fitted curves
-# voltage_fit = np.linspace(aom_voltages.min(), aom_voltages.max(), 500)
-# power_fit = power_law_model(voltage_fit, *power_params)
-# exp_fit = exponential_model(voltage_fit, *exp_params)
-
-# # Plot
-# plt.figure(figsize=(10, 6))
-# plt.scatter(aom_voltages, yellow_power, color="black", label="Data Points")
-# plt.plot(
-#     voltage_fit,
-#     power_fit,
-#     label=f"Power-Law Fit (Cost: {power_cost:.2f})",
-#     color="blue",
-# )
-# plt.plot(
-#     voltage_fit, exp_fit, label=f"Exponential Fit (Cost: {exp_cost:.2f})", color="red"
-# )
-# plt.title("Least Squares Fit - AOM Voltage vs Yellow Laser Power")
-# plt.xlabel("AOM Voltage (V)")
-# plt.ylabel("Yellow Laser Power (µW)")
-# plt.legend()
-# plt.grid(True)
-# plt.show()
-
-# # Display results
-# print("Fitting Results:")
-# print(
-#     f"Power-Law Model: a={power_params[0]:.3f}, b={power_params[1]:.3f}, c={power_params[2]:.3f}, Cost={power_cost:.2f}"
-# )
-# print(
-#     f"Exponential Model: a={exp_params[0]:.3f}, b={exp_params[1]:.3f}, c={exp_params[2]:.3f}, Cost={exp_cost:.2f}"
-# )
+plt.show(block=True)

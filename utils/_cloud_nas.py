@@ -21,7 +21,7 @@ import orjson
 from utils import common, search_index
 
 nvdata_dir = common.get_nvdata_dir()
-
+print(f"nvdata_dir: {nvdata_dir}")
 # region Required public functions
 
 

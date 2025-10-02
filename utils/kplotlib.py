@@ -23,6 +23,8 @@ from colorutils import Color
 from matplotlib.offsetbox import AnchoredText
 from mpl_toolkits.axes_grid1.anchored_artists import AnchoredSizeBar
 from strenum import StrEnum
+from matplotlib import font_manager as _fm
+from pathlib import Path as _Path
 
 import utils.common as common
 
@@ -284,12 +286,21 @@ def _set_shared_ax_axis_label(x_or_y, lower_left_ax, label, **kwargs):
         label_ax.set_ylabel(label, **kwargs)
 
 
+def _register_local_roboto():
+    base = _Path(__file__).resolve().parent / "assets/fonts/roboto"
+    if base.exists():
+        for ttf in base.glob("*.ttf"):
+            _fm.fontManager.addfont(str(ttf))
+        _fm._rebuild()  # refresh in-memory font cache
+
+
 def init_kplotlib(
     font_size=Size.NORMAL,
     data_size=Size.NORMAL,
     font=Font.ROBOTO,
     constrained_layout=True,
     latex=False,
+    force=False,  # <-- added by SC
 ):
     """Runs the initialization for kplotlib, our default configuration
     of matplotlib. Plotting will be faster if latex is False - only set to True
@@ -299,7 +310,9 @@ def init_kplotlib(
     ### Misc setup
 
     global kplotlib_initialized
-    if kplotlib_initialized:
+    # if kplotlib_initialized:
+    #     return
+    if kplotlib_initialized and not force:  # <-- use force
         return
     kplotlib_initialized = True
 
@@ -343,11 +356,30 @@ def init_kplotlib(
 
     ### Other rcparams
     # plt.rcParams["legend.handlelength"] = 0.5
+    # plt.rcParams["font.family"] = "sans-serif"
+    # if font == Font.ROBOTO:
+    #     plt.rcParams["font.sans-serif"] = "Roboto"
+    # if font == Font.HELVETICA:
+    #     plt.rcParams["font.sans-serif"] = "Helvetica"
     plt.rcParams["font.family"] = "sans-serif"
     if font == Font.ROBOTO:
-        plt.rcParams["font.sans-serif"] = "Roboto"
-    if font == Font.HELVETICA:
-        plt.rcParams["font.sans-serif"] = "Helvetica"
+        _register_local_roboto()
+        plt.rcParams["font.sans-serif"] = [
+            "Roboto",
+            "DejaVu Sans",
+            "Arial",
+            "Liberation Sans",
+        ]
+    elif font == Font.HELVETICA:
+        plt.rcParams["font.sans-serif"] = [
+            "Helvetica",
+            "Arial",
+            "DejaVu Sans",
+            "Liberation Sans",
+        ]
+    else:
+        plt.rcParams["font.sans-serif"] = ["DejaVu Sans", "Arial", "Liberation Sans"]
+
     plt.rcParams["font.size"] = FontSize[default_font_size.value]
     plt.rcParams["figure.figsize"] = figsize
     plt.rcParams["savefig.dpi"] = 300
