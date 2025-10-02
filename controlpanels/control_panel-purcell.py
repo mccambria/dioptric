@@ -505,7 +505,7 @@ def do_resonance(nv_list):
     freq_range = 0.36
     # num_steps = 60
     # num_steps = 24
-    num_steps = 72
+    num_steps = 60
     # Single ref
     # num_reps = 8
     # num_runs = 1100
