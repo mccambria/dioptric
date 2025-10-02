@@ -1278,15 +1278,15 @@ if __name__ == "__main__":
     # ]
     # green_coords_list = [
     #     [108.522, 107.054],
-    #     [119.667, 121.4278],
-    #     [110.009, 94.025],
-    #     [93.925, 118.151],
+    #     [119.616, 121.469],
+    #     [109.97, 94.057],
+    #     [93.88, 118.204],
     # ]
     # red_coords_list = [
     #     [73.596, 71.484],
-    #     [82.193, 83.674],
-    #     [75.232, 61.01],
-    #     [61.359, 79.743],
+    #     [82.15, 83.705],
+    #     [75.199, 61.034],
+    #     [61.32, 79.784],
     # ]
     num_nvs = len(pixel_coords_list)
     threshold_list = [None] * num_nvs
@@ -1450,13 +1450,13 @@ if __name__ == "__main__":
 
         # do_optimize_pol_amp(nv_list)
         # do_optimize_pol_duration(nv_list)
-        # do_optimize_readout_amp(nv_list)
+        do_optimize_readout_amp(nv_list)
         # do_optimize_readout_duration(nv_list)
         # optimize_readout_amp_and_duration(nv_list)
         # do_optimize_spin_pol_amp(nv_list)
         # do_check_readout_fidelity(nv_list)
 
-        do_scc_snr_check(nv_list)
+        # do_scc_snr_check(nv_list)
         # do_optimize_scc_duration(nv_list)
         # do_optimize_scc_amp(nv_list)
         # optimize_scc_amp_and_duration(nv_list)
