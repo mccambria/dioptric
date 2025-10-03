@@ -40,6 +40,20 @@ from utils import common
 from utils.constants import (
     VirtualLaserKey, CoordsKey, CountFormat, PosControlMode, NVSig
 )
+
+from time import sleep
+
+srv = pos.get_positioner_server("pos_xy_THOR_gvs212")
+x0, y0 = srv.read_xy()
+
+dx, dy = 0.01, -0.01   # small, safe jog
+print("Jog →", (x0+dx, y0+dy))
+srv.write_xy(x0+dx, y0+dy)
+sleep(0.2)
+print("Return →", (x0, y0))
+srv.write_xy(x0, y0)
+sys.exit()
+
 SEQ_FILE_SEQUENCE_SCAN = "simple_readout_laser_free_test.py"  # expects [0, readout_ns, x[], y[]]
 SEQ_FILE_PIXEL_READOUT  = "simple_readout.py"                 # per-pixel readout when we move in Python
 
