@@ -519,7 +519,14 @@ def do_resonance(nv_list):
     freqs = sorted(set(freqs))
     num_steps = len(freqs)
     # sys.exit()
-    resonance.main(nv_list, num_steps, num_reps, num_runs, freqs=freqs)
+    resonance.main(
+        nv_list,
+        num_steps,
+        num_reps,
+        num_runs,
+        freqs=freqs,
+        uwave_ind_list=[1],
+    )
     # for _ in range(2):
     #     resonance.main(nv_list, num_steps, num_reps, num_runs, freqs=freqs)
 
@@ -1390,7 +1397,7 @@ if __name__ == "__main__":
         # )
 
         do_compensate_for_drift(nv_sig)
-        # do_widefield_image_sample(nv_sig, 50)
+        do_widefield_image_sample(nv_sig, 50)
         # do_widefield_image_sample(nv_sig, 200)
 
         # for nv in nv_list:
@@ -1444,7 +1451,7 @@ if __name__ == "__main__":
         # coords_key = red_laser
         # do_optimize_loop(np.array(nv_list), np.array(coords_key))
 
-        do_charge_state_histograms(nv_list)
+        # do_charge_state_histograms(nv_list)
         # do_charge_state_conditional_init(nv_list)
         # do_charge_state_histograms_images(nv_list, vary_pol_laser=True)
 

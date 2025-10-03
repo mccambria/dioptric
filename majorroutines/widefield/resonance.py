@@ -262,7 +262,6 @@ def main(
     num_runs,
     freqs,
     uwave_ind_list=[0, 1],
-    # uwave_ind_list=[1],
 ):
     ### Some initial setup
     pulse_gen = tb.get_server_pulse_gen()
