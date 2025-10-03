@@ -31,7 +31,7 @@ from utils.constants import (
 import time
 import numpy as np
 import matplotlib.pyplot as plt
-
+import sys
 from utils import tool_belt as tb
 from utils import positioning as pos
 from utils import kplotlib as kpl
@@ -40,7 +40,6 @@ from utils import common
 from utils.constants import (
     VirtualLaserKey, CoordsKey, CountFormat, PosControlMode, NVSig
 )
-
 SEQ_FILE_SEQUENCE_SCAN = "simple_readout_laser_free_test.py"  # expects [0, readout_ns, x[], y[]]
 SEQ_FILE_PIXEL_READOUT  = "simple_readout.py"                 # per-pixel readout when we move in Python
 
@@ -68,12 +67,15 @@ def confocal_scan(nv_sig: NVSig, x_range, y_range, num_steps, nv_minus_init=Fals
     # 1) Resolve the imaging positioner from config (abstract)
     positioner = pos.get_laser_positioner(VirtualLaserKey.IMAGING)
     mode = pos.get_positioner_control_mode(positioner)
-
+    print("[DBG] VirtualLaserKey.IMAGING ->",
+        "physical:", tb.get_virtual_laser_dict(VirtualLaserKey.IMAGING)["physical_name"],
+        "| positioner key:", positioner,
+        "| control mode:", mode.name)
+    
     # 2) Build grid in the space that matches the imaging coordinate system
     x0, y0 = pos.get_nv_coords(nv_sig, coords_key=CoordsKey.PIXEL)
     X, Y, x1d, y1d, extent = pos.get_scan_grid_2d(x0, y0, x_range, y_range, num_steps, num_steps)
     total = len(X)
-
     # Readout timing/laser from virtual laser
     vld = tb.get_virtual_laser_dict(VirtualLaserKey.IMAGING)
     readout_ns = int(nv_sig.pulse_durations.get(VirtualLaserKey.IMAGING, int(vld["duration"])))
@@ -145,7 +147,7 @@ def confocal_scan(nv_sig: NVSig, x_range, y_range, num_steps, nv_minus_init=Fals
             idx = 0
             while idx < total and not tb.safe_stop():
                 # Move to target imaging coordinates (abstract call; routes to configured positioner)
-                pos.set_xy((X[idx], Y[idx]), positioner=positioner)
+                pos.set_xyz((X[idx], Y[idx]), positioner=positioner)
                 if settle_s > 0:
                     tb.sleep_seconds_safely(settle_s)
 

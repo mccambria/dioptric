@@ -442,7 +442,7 @@ if __name__ == "__main__":
         #     if tool_belt.safe_stop():
         #         break
         #     nv_sig["coords"][2] = int(z)
-        do_image_sample(nv_sig)
+        # do_image_sample(nv_sig)
         # nv_sig["imaging_readout_dur"] = 5e7
         # do_image_sample(nv_sig)
         # do_image_sample_zoom(nv_sig)
@@ -451,7 +451,7 @@ if __name__ == "__main__":
 
         # do_optimize(nv_sig)
         # nv_sig["imaging_readout_dur"] = 5e7
-        # do_stationary_count(nv_sig, disable_opt=True)
+        do_stationary_count(nv_sig, disable_opt=True)
         # do_stationary_count(nv_sig, disable_opt=True, nv_minus_initialization=True)
         # do_stationary_count(nv_sig, disable_opt=True, nv_zero_initialization=True)
 
