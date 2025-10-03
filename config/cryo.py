@@ -338,8 +338,8 @@ config |= {
     "Wiring": {
         "Daq": {
             # https://docs-be.ni.com/bundle/ni-67xx-scb-68a-labels/raw/resource/enus/371806a.pdf
-            "ao_galvo_x": "dev1/AO22",
-            "ao_galvo_y": "dev1/AO31",
+            "ao_galvo_x": "dev1/ao11",
+            "ao_galvo_y": "dev1/ao4",
             "ao_piezo_stage_P616_3c_x": "dev1/AO25",
             "ao_piezo_stage_P616_3c_y": "dev1/AO27",
             "ao_piezo_stage_P616_3c_z": "dev1/AO29",
