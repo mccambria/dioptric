@@ -3,9 +3,9 @@
 Pulsed electron spin resonance on multiple NVs with spin-to-charge
 conversion readout imaged onto a camera
 
-Created on November 19th, 2023
+Created on October 3rd, 2025
 
-@author: mccambria
+@author: saroj chand 
 """
 
 import os
@@ -16,7 +16,6 @@ from random import shuffle
 
 import matplotlib.pyplot as plt
 import numpy as np
-from matplotlib.ticker import MultipleLocator
 
 from majorroutines.pulsed_resonance import fit_resonance, gaussian, norm_voigt, voigt
 from majorroutines.widefield import base_routine
