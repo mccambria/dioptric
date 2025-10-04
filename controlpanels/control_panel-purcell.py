@@ -41,6 +41,7 @@ from majorroutines.widefield import (
     ramsey,
     relaxation_interleave,
     resonance,
+    resonance_dualgen,
     scc_snr_check,
     simple_correlation_test,
     spin_echo,
@@ -511,7 +512,7 @@ def do_resonance(nv_list):
     # num_runs = 1100
     # Both refs
     num_reps = 2
-    num_runs = 500
+    num_runs = 400
     # num_runs = 300
     freqs = calculate_freqs(freq_center, freq_range, num_steps)
     ##
@@ -539,6 +540,34 @@ def do_resonance_zoom(nv_list):
         num_reps = 15
         num_runs = 60
         resonance.main(nv_list, num_steps, num_reps, num_runs, freq_center, freq_range)
+
+def do_resonance_dualgen(nv_list, uwave_ind_list=[0, 1]):
+    freq_center = 2.87
+    freq_range  = 0.36
+    num_steps   = 60
+
+    # outer reps = drift tracking cadence
+    num_reps = 2      
+    num_runs = 400
+
+    # inner reps for averaging
+    avg_reps_sig = 8   # signal quarters
+    avg_reps_ref = 2   # reference quarters
+
+    freqs = calculate_freqs(freq_center, freq_range, num_steps)
+    freqs = sorted(set(freqs))
+    num_steps = len(freqs)
+
+    resonance_dualgen.main(
+        nv_list,
+        num_steps=num_steps,
+        num_reps=num_reps,   # keep this for drift tracking
+        num_runs=num_runs,
+        freqs=freqs,
+        uwave_ind_list=uwave_ind_list,
+        num_reps_sig=avg_reps_sig,   # optional if you expose it in main()
+        num_reps_ref=avg_reps_ref,   # optional if you expose it in main()
+    )
 
 
 def do_rabi(nv_list):
