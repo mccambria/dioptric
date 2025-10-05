@@ -507,10 +507,7 @@ def do_resonance(nv_list):
     # num_steps = 60
     # num_steps = 24
     num_steps = 50
-    # Single ref
-    # num_reps = 8
-    # num_runs = 1100
-    # Both refs
+
     num_reps = 2
     num_runs = 400
     # num_runs = 300
@@ -519,7 +516,6 @@ def do_resonance(nv_list):
     # Remove duplicates and sort
     freqs = sorted(set(freqs))
     num_steps = len(freqs)
-    # sys.exit()
     resonance.main(
         nv_list,
         num_steps,
@@ -578,10 +574,7 @@ def do_rabi(nv_list):
     num_steps = 31
     num_reps = 10
     num_runs = 400
-    # num_runs = 100
-    # num_runs = 20
     # num_runs = 5
-    # uwave_ind_list = [1]  # only one
     uwave_ind_list = [0, 1]
     rabi.main(nv_list, num_steps, num_reps, num_runs, min_tau, max_tau, uwave_ind_list)
     # for _ in range(2):
@@ -1504,7 +1497,7 @@ if __name__ == "__main__":
         # do_bootstrapped_pulse_error_tomography(nv_list)
         # do_calibrate_iq_delay(nv_list)
 
-        # do_rabi(nv_list)
+        do_rabi(nv_list)
         # do_power_rabi(nv_list)
         # do_resonance(nv_list)
         # do_resonance_zoom(nv_list)

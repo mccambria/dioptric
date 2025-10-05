@@ -98,7 +98,7 @@ if __name__ == "__main__":
     kpl.init_kplotlib()
     # Load the image array (replace this with your own method for loading image data)
     data = dm.get_raw_data(
-        file_stem="2025_10_04-12_02_00-rubin-nv0_2025_09_08", load_npz=True
+        file_stem="2025_10_05-13_33_57-rubin-nv0_2025_09_08", load_npz=True
     )
 
     img_array = np.array(data["img_array"])
@@ -106,7 +106,7 @@ if __name__ == "__main__":
     img_plot = kpl.imshow(ax, img_array, cbar_label="Photons")
     plt.show(block=True)
     # List of initial peak yellow coordinates
-    initial_peaks = np.array([[225.898, 236.992], [193.597, 17.576], [21.303, 154.377]]  )
+    initial_peaks = np.array([[225.913, 237.235], [193.126, 17.866], [21.146, 154.553]]  )
     # red calibration
     # initial_peaks = np.array([[123.486, 9.115], [16.951, 242.751], [237.556, 240.186]])
     # gree calibration
