@@ -503,10 +503,10 @@ def do_resonance(nv_list):
     freq_center = 2.87
     # freq_range = 0.240
     # freq_range = 0.120
-    freq_range = 0.36
+    freq_range = 0.30
     # num_steps = 60
     # num_steps = 24
-    num_steps = 60
+    num_steps = 50
     # Single ref
     # num_reps = 8
     # num_runs = 1100
@@ -1506,7 +1506,7 @@ if __name__ == "__main__":
 
         # do_rabi(nv_list)
         # do_power_rabi(nv_list)
-        do_resonance(nv_list)
+        # do_resonance(nv_list)
         # do_resonance_zoom(nv_list)
         # do_spin_echo(nv_list)
         # do_spin_echo_1(nv_list)

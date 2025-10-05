@@ -195,8 +195,8 @@ def plot_nv_resonance(
         ax.set_title(f"NV Index: {nv_ind}")
         ax.grid(True, linestyle="--", alpha=0.6)
         ax.legend()
-        plt.show(block=True)
-    return
+        # plt.show(block=True)
+    # return
     # return
     ### snrs
     median_snr = np.median(snrs)
@@ -418,6 +418,8 @@ def plot_nv_resonance(
         kpl.show()
         # dm.save_figure(fig, file_path)
         # plt.close(fig)
+
+    return
     # Plot filtered resonance fits
     sns.set(style="whitegrid", palette="muted")
     num_filtered_nvs = len(filtered_nv_list)
@@ -550,7 +552,7 @@ if __name__ == "__main__":
     #     "2025_10_03-06_59_37-rubin-nv0_2025_09_08",
     # ]
     file_ids = [
-        "2025_10_04-05_56_35-rubin-nv0_2025_09_08",
+        "2025_10_04-23_59_18-rubin-nv0_2025_09_08",
     ]
 
     # Load the first dataset as a base
