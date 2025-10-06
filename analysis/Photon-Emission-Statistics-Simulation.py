@@ -1,3 +1,4 @@
+import os
 import numpy as np
 import matplotlib.pyplot as plt
 from scipy.special import wofz, factorial
@@ -172,6 +173,29 @@ for f in range(n_frames):
 spectra = np.array(spectra)
 spectra /= spectra.max() + 1e-12
 
+# ----- save outputs -----
+out_dir = "C:\\Users\\Saroj Chand\\OneDrive - CUNY\\EXPERIMENTS\\20220329_WSe2_dark_exciton_strain_pockets\\Figure_for_papers\\sim_spectra_txt"
+os.makedirs(out_dir, exist_ok=True)
+
+# 1) Save the common energy axis (once)
+np.savetxt(
+    os.path.join(out_dir, "energy_eV.txt"),
+    E,
+    fmt="%.9f",
+    delimiter="\t",
+    header="Energy (eV)",
+)
+
+# 2) Save each frame's spectrum as its own file
+#    (uses zero-padded indices: spectrum_000.txt, spectrum_001.txt, ...)
+for f_idx, spec in enumerate(spectra):
+    np.savetxt(
+        os.path.join(out_dir, f"spectrum_{f_idx:03d}.txt"),
+        spec,
+        fmt="%.9f",
+        delimiter="\t",
+        header=f"Normalized intensity (frame {f_idx})",
+    )
 
 # Define colors: black → red → white
 colors = ["black", "red", "white"]

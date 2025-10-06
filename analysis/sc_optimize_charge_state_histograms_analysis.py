@@ -1042,35 +1042,35 @@ def process_and_plot_charge(raw_data):
         # plt.legend()
         # plt.tight_layout()
         # plt.show(block=True)
-            # # Plot results
-            plt.figure()
-            plt.scatter(
-                x_fit,
-                y_fit,
-                label="Measured Fidelity",
-                color="blue",
-            )
-            plt.plot(duration_linspace, fitted_curve, label="Fitted Curve", color="red")
-            plt.axvline(
-                opti_dur,
-                color="green",
-                linestyle="--",
-                label=f"Opt. Duration: {opti_dur:.1f} ns",
-            )
-            plt.xlabel("Polarization Duration (ns)")
-            plt.ylabel("Preparation Fidelity")
-            plt.title(f"NV Num: {nv_ind}")
-            plt.legend()
-            plt.show(block=True)
+        # # Plot results
+        # plt.figure()
+        # plt.scatter(
+        #     x_fit,
+        #     y_fit,
+        #     label="Measured Fidelity",
+        #     color="blue",
+        # )
+        # plt.plot(duration_linspace, fitted_curve, label="Fitted Curve", color="red")
+        # plt.axvline(
+        #     opti_dur,
+        #     color="green",
+        #     linestyle="--",
+        #     label=f"Opt. Duration: {opti_dur:.1f} ns",
+        # )
+        # plt.xlabel("Polarization Duration (ns)")
+        # plt.ylabel("Preparation Fidelity")
+        # plt.title(f"NV Num: {nv_ind}")
+        # plt.legend()
+        # plt.show(block=True)
 
-            print(
-                f"NV {nv_ind} - Optimal Duration: {opti_dur:.1f} ns, Optimal Fidelity: {opti_fidelity}"
-            )
+        # print(
+        #     f"NV {nv_ind} - Optimal Duration: {opti_dur:.1f} ns, Optimal Fidelity: {opti_fidelity}"
+        # )
 
-        except RuntimeError:
-            print(f"Skipping NV {nv_ind}: Curve fitting failed.")
-            opti_durs.append(None)
-            opti_fidelities.append(None)
+        # except RuntimeError:
+        #     print(f"Skipping NV {nv_ind}: Curve fitting failed.")
+        #     opti_durs.append(None)
+        #     opti_fidelities.append(None)
 
     if opti_durs:
         print("Optimal Polarization Durations:", opti_durs)
@@ -1212,8 +1212,9 @@ if __name__ == "__main__":
     raw_data = dm.get_raw_data(file_stem=file_id, load_npz=True)
     # file_name = dm.get_file_name(file_id=file_id)
     # print(f"{file_name}_{file_id}")
-    # process_and_plot(raw_data)
+    process_and_plot(raw_data)
     # process_and_plot_green(raw_data)
-    process_and_plot_charge(raw_data)
+    # process_and_plot_charge(raw_data)
     # print(dm.get_file_name(1717056176426))
     plt.show(block=True)
+ 
