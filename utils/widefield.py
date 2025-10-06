@@ -329,36 +329,152 @@ def img_str_to_array(img_str):
     return img_array, baseline
 
 
+def _validate_counts_structure(counts):
+    """Validate counts with structure [nv_ind, run_ind, step_ind, rep_ind]."""
+    if counts is None:
+        return
+    if not isinstance(counts, np.ndarray):
+        raise RuntimeError("Passed counts object is not a numpy array.")
+    if counts.ndim != 4:
+        raise RuntimeError("Passed counts object has the wrong number of dimensions.")
+    
+# Axes constants
 run_ax = 1
 rep_ax = 3
 run_rep_axes = (run_ax, rep_ax)
 
-
 def average_counts(sig_counts, ref_counts=None):
-    """Gets average and standard error for counts data structure.
-    Counts arrays must have the structure [nv_ind, run_ind, steq_ind, rep_ind].
-    Returns the structure [nv_ind, freq_ind] for avg_counts and avg_counts_ste.
-    Returns the [nv_ind] for norms.
+    """
+    Gets average and standard error for counts data structure.
+    Counts arrays must have structure [nv_ind, run_ind, step_ind, rep_ind].
+    Returns arrays shaped [nv_ind, step_ind] for avg_counts and avg_counts_ste.
+    Returns norms = [ms0_mean_per_nv, ms1_mean_per_nv] if ref_counts provided.
     """
     _validate_counts_structure(sig_counts)
     _validate_counts_structure(ref_counts)
 
-    avg_counts = np.mean(sig_counts, axis=run_rep_axes)
-    num_shots = sig_counts.shape[rep_ax] * sig_counts.shape[run_ax]
-    avg_counts_std = np.std(sig_counts, axis=run_rep_axes, ddof=1)
-    avg_counts_ste = avg_counts_std / np.sqrt(num_shots)
+    sig_counts = _safe_to_f64(sig_counts)
 
-    if ref_counts is None:
-        norms = None
-    else:
+    # Mean across (run, rep) -> keeps [nv_ind, step_ind]
+    avg_counts = _mean_nan(sig_counts, axis=run_rep_axes)
+
+    # STD across (run, rep) with ddof guard
+    avg_counts_std = _std_ddof_guard(sig_counts, run_rep_axes)
+
+    # Number of shots across run & rep; if it's 0, fall back to 1 to avoid division by zero
+    num_shots = int(sig_counts.shape[rep_ax]) * int(sig_counts.shape[run_ax])
+    denom = np.sqrt(max(num_shots, 1))
+    avg_counts_ste = _nan0(avg_counts_std / denom)
+
+    norms = None
+    if ref_counts is not None:
+        ref_counts = _safe_to_f64(ref_counts)
+
+        # Even indices -> ms=0, odd indices -> ms=±1 (your original convention)
         ms0_ref_counts = ref_counts[:, :, :, 0::2]
         ms1_ref_counts = ref_counts[:, :, :, 1::2]
-        norms = [
-            np.mean(ms0_ref_counts, axis=(1, 2, 3)),
-            np.mean(ms1_ref_counts, axis=(1, 2, 3)),
-        ]
 
-    return avg_counts, avg_counts_ste, norms
+        # Means per NV across all other axes
+        ms0_mean = _mean_nan(ms0_ref_counts, axis=(1, 2, 3))
+        ms1_mean = _mean_nan(ms1_ref_counts, axis=(1, 2, 3))
+        norms = [ _nan0(ms0_mean), _nan0(ms1_mean) ]
+
+    return _nan0(avg_counts), _nan0(avg_counts_ste), norms
+
+
+_SAFE_EPS = 1e-12
+
+def _safe_to_f64(x):
+    return np.asarray(x, dtype=np.float64)
+
+def _nan0(x):
+    # Replace NaN/Inf with 0 to avoid propagation
+    return np.nan_to_num(x, nan=0.0, posinf=0.0, neginf=0.0)
+
+def _std_ddof_guard(x, axes):
+    """
+    nanstd with ddof=1 when we have >=2 samples total on (run, rep),
+    else ddof=0 to avoid NaNs from Bessel correction.
+    """
+    x = _safe_to_f64(x)
+    # Estimate shots across the axes we reduce (assumes axes are run & rep)
+    # If axes can be in any order, this still multiplies correct counts.
+    n = 1
+    for ax in axes:
+        n *= x.shape[ax]
+    ddof = 1 if n >= 2 else 0
+    with np.errstate(all='ignore'):
+        return np.nanstd(x, axis=axes, ddof=ddof)
+
+def _mean_nan(x, axis=None):
+    x = _safe_to_f64(x)
+    with np.errstate(all='ignore'):
+        return np.nanmean(x, axis=axis)
+
+def _safe_div(num, den):
+    num = _safe_to_f64(num)
+    den = _safe_to_f64(den)
+    # Regularize denominator and avoid divide-by-zero/NaN
+    den = np.hypot(den, _SAFE_EPS)
+    out = np.zeros_like(num, dtype=np.float64)
+    valid = np.isfinite(num) & np.isfinite(den) & (den > 0.0)
+    np.divide(num, den, out=out, where=valid)
+    return _nan0(out)
+
+def calc_snr(sig_counts, ref_counts):
+    """Calculate SNR for a single shot"""
+    avg_contrast, avg_contrast_ste = calc_contrast(sig_counts, ref_counts)
+
+    # Noise is quadrature sum of sig/ref standard deviations over (run, rep)
+    std_sig = _std_ddof_guard(sig_counts, run_rep_axes)
+    std_ref = _std_ddof_guard(ref_counts, run_rep_axes)
+    noise = np.hypot(std_sig, std_ref)                    # sqrt(sig^2 + ref^2)
+
+    avg_snr     = _safe_div(avg_contrast,     noise)
+    avg_snr_ste = _safe_div(avg_contrast_ste, noise)
+    return avg_snr, avg_snr_ste
+
+def calc_contrast(sig_counts, ref_counts):
+    """Calculate contrast for a single shot"""
+    _validate_counts_structure(sig_counts)
+    _validate_counts_structure(ref_counts)
+
+    avg_sig_counts, avg_sig_counts_ste, _ = average_counts(sig_counts)
+    avg_ref_counts, avg_ref_counts_ste, _ = average_counts(ref_counts)
+
+    avg_contrast = _safe_to_f64(avg_sig_counts) - _safe_to_f64(avg_ref_counts)
+    # STEs add in quadrature
+    avg_contrast_ste = np.hypot(_safe_to_f64(avg_sig_counts_ste),
+                                _safe_to_f64(avg_ref_counts_ste))
+    return _nan0(avg_contrast), _nan0(avg_contrast_ste)
+
+
+
+# def average_counts(sig_counts, ref_counts=None):
+#     """Gets average and standard error for counts data structure.
+#     Counts arrays must have the structure [nv_ind, run_ind, steq_ind, rep_ind].
+#     Returns the structure [nv_ind, freq_ind] for avg_counts and avg_counts_ste.
+#     Returns the [nv_ind] for norms.
+#     """
+#     _validate_counts_structure(sig_counts)
+#     _validate_counts_structure(ref_counts)
+
+#     avg_counts = np.mean(sig_counts, axis=run_rep_axes)
+#     num_shots = sig_counts.shape[rep_ax] * sig_counts.shape[run_ax]
+#     avg_counts_std = np.std(sig_counts, axis=run_rep_axes, ddof=1)
+#     avg_counts_ste = avg_counts_std / np.sqrt(num_shots)
+
+#     if ref_counts is None:
+#         norms = None
+#     else:
+#         ms0_ref_counts = ref_counts[:, :, :, 0::2]
+#         ms1_ref_counts = ref_counts[:, :, :, 1::2]
+#         norms = [
+#             np.mean(ms0_ref_counts, axis=(1, 2, 3)),
+#             np.mean(ms1_ref_counts, axis=(1, 2, 3)),
+#         ]
+
+#     return avg_counts, avg_counts_ste, norms
 
 
 def threshold_counts(nv_list, sig_counts, ref_counts=None, dynamic_thresh=False):
@@ -812,38 +928,39 @@ def charge_state_mle(nv_list, img_array):
     return states
 
 
-def calc_snr(sig_counts, ref_counts):
-    """Calculate SNR for a single shot"""
-    avg_contrast, avg_contrast_ste = calc_contrast(sig_counts, ref_counts)
-    noise = np.sqrt(
-        np.std(sig_counts, axis=run_rep_axes, ddof=1) ** 2
-        + np.std(ref_counts, axis=run_rep_axes, ddof=1) ** 2
-    )
-    avg_snr = avg_contrast / noise
-    avg_snr_ste = avg_contrast_ste / noise
-    return avg_snr, avg_snr_ste
+# def calc_snr(sig_counts, ref_counts):
+#     """Calculate SNR for a single shot"""
+#     avg_contrast, avg_contrast_ste = calc_contrast(sig_counts, ref_counts)
+#     eps = 1e-12
+#     noise = np.sqrt(
+#         np.std(sig_counts, axis=run_rep_axes, ddof=1) ** 2
+#         + np.std(ref_counts, axis=run_rep_axes, ddof=1) ** 2
+#     )
+#     avg_snr = avg_contrast / noise
+#     avg_snr_ste = avg_contrast_ste / noise
+#     return avg_snr, avg_snr_ste
 
 
-def calc_contrast(sig_counts, ref_counts):
-    """Calculate contrast for a single shot"""
-    _validate_counts_structure(sig_counts)
-    _validate_counts_structure(ref_counts)
-    avg_sig_counts, avg_sig_counts_ste, _ = average_counts(sig_counts)
-    avg_ref_counts, avg_ref_counts_ste, _ = average_counts(ref_counts)
-    avg_contrast = avg_sig_counts - avg_ref_counts
-    avg_contrast_ste = np.sqrt((avg_sig_counts_ste**2 + avg_ref_counts_ste**2))
-    return avg_contrast, avg_contrast_ste
+# def calc_contrast(sig_counts, ref_counts):
+#     """Calculate contrast for a single shot"""
+#     _validate_counts_structure(sig_counts)
+#     _validate_counts_structure(ref_counts)
+#     avg_sig_counts, avg_sig_counts_ste, _ = average_counts(sig_counts)
+#     avg_ref_counts, avg_ref_counts_ste, _ = average_counts(ref_counts)
+#     avg_contrast = avg_sig_counts - avg_ref_counts
+#     avg_contrast_ste = np.sqrt((avg_sig_counts_ste**2 + avg_ref_counts_ste**2))
+#     return avg_contrast, avg_contrast_ste
 
 
-def _validate_counts_structure(counts):
-    """Make sure the structure of the counts object for a single experiment is valid
-    for further processing. The structure is [nv_ind, run_ind, step_ind, rep_ind]."""
-    if counts is None:
-        return
-    if not isinstance(counts, np.ndarray):
-        raise RuntimeError("Passed counts object is not a numpy array.")
-    if counts.ndim != 4:
-        raise RuntimeError("Passed counts object has the wrong number of dimensions.")
+# def _validate_counts_structure(counts):
+#     """Make sure the structure of the counts object for a single experiment is valid
+#     for further processing. The structure is [nv_ind, run_ind, step_ind, rep_ind]."""
+#     if counts is None:
+#         return
+#     if not isinstance(counts, np.ndarray):
+#         raise RuntimeError("Passed counts object is not a numpy array.")
+#     if counts.ndim != 4:
+#         raise RuntimeError("Passed counts object has the wrong number of dimensions.")
 
 
 # endregion

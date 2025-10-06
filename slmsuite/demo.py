@@ -137,14 +137,14 @@ import numpy as np
 
 ### green and red calibaton at RT setup 2025-09-15
 pixel_coords_list = [
-    [107.332, 118.492],
-    [119.672, 105.768],
-    [98.339, 98.864],
+    [119.74, 120.062],
+    [110.243, 94.852],
+    [93.324, 119.189],
 ]
 red_coords_list = [
-    [72.293, 80.694],
-    [82.931, 71.034],
-    [65.725, 64.346],
+    [82.297, 82.572],
+    [75.395, 61.691],
+    [60.836, 80.554],
 ]
 # Given pixel coordinates and corresponding red coordinates
 # pixel_coords_list = np.array(
@@ -176,10 +176,10 @@ if len(pixel_coords_list) >= 3:
     # New pixel coordinate for which we want to find the corresponding red coordinate
     new_pixel_coord = np.array(
         [
-            [108.338, 107.235],
-            [122.788, 99.12],
-            [96.428, 96.021],
-            [107.051, 119.429],
+            [108.522, 107.054],
+            [119.616, 121.469],
+            [109.97, 94.057],
+            [93.88, 118.204],
         ],
         dtype=np.float32,
     )
@@ -570,19 +570,19 @@ make_plots("Yellow", yellow_x, yellow_y, yellow_params)
 # Examples: prediction and inversion
 # -----------------------------
 # Predict power at x = 0.11
-x_query = 0.15
+x_query = 0.22
 print("Green power at x=0.11:", float(predict_power(x_query, green_params)))
 print("Red   power at x=0.11:", float(predict_power(x_query, red_params)))
-print("Yellow  power at x=0.11:", float(predict_power(x_query, red_params)))
+print("Yellow  power at x=0.11:", float(predict_power(x_query, yellow_params)))
 
 # Invert: which amplitude gives 10 mW (10000 µW)?
-target_power = 1000.0
-# gx = invert_amp_for_power(target_power, green_params, green_x.min(), green_x.max())
-# rx = invert_amp_for_power(target_power, red_params, red_x.min(), red_x.max())
-# yx = invert_amp_for_power(target_power, yellow_params, yellow_x.min(), yellow_x.max())
-# print(f"Green amplitude for {target_power:.0f} µW:", gx)
-# print(f"Red   amplitude for {target_power:.0f} µW:", rx)
-# print(f"Yellow   amplitude for {target_power:.0f} µW:", yx)
+target_power = 184.0
+gx = invert_amp_for_power(target_power, green_params, green_x.min(), green_x.max())
+rx = invert_amp_for_power(target_power, red_params, red_x.min(), red_x.max())
+yx = invert_amp_for_power(target_power, yellow_params, yellow_x.min(), yellow_x.max())
+print(f"Green amplitude for {target_power:.0f} µW:", round(gx, 4))
+print(f"Red   amplitude for {target_power:.0f} µW:", round(rx, 4))
+print(f"Yellow   amplitude for {target_power:.0f} µW:", round(yx))
 
 
 plt.show(block=True)

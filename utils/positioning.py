@@ -216,57 +216,6 @@ def get_nv_coords(
     return coords
 
 
-# def get_nv_coords(
-#     nv_sig: NVSig, coords_key=CoordsKey.SAMPLE, drift_adjust=None, drift=None
-# ):
-#     if drift_adjust is None:
-#         drift_adjust = should_drift_adjust(coords_key)
-
-#     coords_val = nv_sig.coords
-
-#     # Flat-list NVs: treat as SAMPLE
-#     if not isinstance(coords_val, dict):
-#         coords = coords_val
-#     else:
-#         if coords_key in coords_val:
-#             coords = coords_val[coords_key]
-#         else:
-#             # Try to derive from PIXEL/galvo coords first
-#             derived = None
-#             if CoordsKey.PIXEL in coords_val:
-#                 try:
-#                     derived = transform_coords(
-#                         coords_val[CoordsKey.PIXEL], CoordsKey.PIXEL, coords_key
-#                     )
-#                 except Exception:
-#                     derived = None
-#             # Fallback: derive from SAMPLE
-#             if derived is None and CoordsKey.SAMPLE in coords_val:
-#                 src = coords_val[CoordsKey.SAMPLE]
-#                 src_xy = src[:2] if hasattr(src, "__len__") and len(src) >= 2 else src
-#                 try:
-#                     derived = transform_coords(src_xy, CoordsKey.SAMPLE, coords_key)
-#                 except Exception:
-#                     derived = None
-#             if derived is None:
-#                 raise KeyError(
-#                     f"{coords_key!r} not found in nv_sig.coords and could not be derived"
-#                 )
-
-#             # Cache the derived coords to avoid repeated transforms
-#             try:
-#                 nv_sig.coords[coords_key] = list(derived)
-#             except Exception:
-#                 pass
-#             coords = derived
-
-#     if drift_adjust:
-#         coords = adjust_coords_for_drift(
-#             coords=coords, drift=drift, coords_key=coords_key
-#         )
-#     return coords
-
-
 def should_drift_adjust(coords_key):
     """Check whether or not we should adjust the coordinates associated with the
     passed coords_key for drift. Assume that we compensate for drift by adjusting

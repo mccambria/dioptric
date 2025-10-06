@@ -2,10 +2,8 @@
 """
 Widefield ESR
 
-Created on October 13th, 2023
+Created on October 3th, 2025
 
-@author: mccambria
-Updated on January 13th, 2025
 @author: schand
 """
 
@@ -27,6 +25,7 @@ def get_seq(
     num_reps=1,
 ):
     reference = False  # References for this sequence are handled routine-side
+    buffer = seq_utils.get_widefield_operation_buffer()
 
     # MCC
     # total_num_steps = len(step_inds)
@@ -49,6 +48,7 @@ def get_seq(
         def uwave_macro(uwave_ind_list, step_ind):
             # seq_utils.macro_pi_pulse(uwave_ind_list, phase=0)
             seq_utils.macro_pi_pulse(uwave_ind_list)
+            qua.wait(buffer)
 
         with qua.for_each_(step_ind, step_inds):
             base_scc_sequence.macro(
@@ -67,6 +67,7 @@ if __name__ == "__main__":
     config_module = common.get_config_module()
     config = config_module.config
     opx_config = config_module.opx_config
+    opx_config["pulses"]["yellow_spin_pol"]["length"] = 10e3
 
     qm_opx_args = config["DeviceIDs"]["QM_opx_args"]
     qmm = QuantumMachinesManager(**qm_opx_args)
@@ -75,21 +76,17 @@ if __name__ == "__main__":
     try:
         seq, seq_ret_vals = get_seq(
             [
-                [
-                    [110.31633152241405, 109.89129171060787],
-                    [109.78333152241404, 109.92829171060788],
-                ],
-                [
-                    [74.96497948092767, 75.05933281333888],
-                    [74.41497948092767, 75.28333281333887],
-                ],
-                [140, 140],
-                [1, 1],
-                [],
-                [0, 1],
+                [[108.477, 107.282], [109.356, 108.789]],
+                [220, 220],
+                [1.0, 1.0],
+                [[73.558, 71.684], [74.227, 72.947]],
+                [124, 124],
+                [1.0, 1.0],
+                [False, False],
+                [0],
             ],
-            [0, 1, 2],
-            2,
+            [70, 219],
+            1,
         )
 
         sim_config = SimulationConfig(duration=int(300e3 / 4))

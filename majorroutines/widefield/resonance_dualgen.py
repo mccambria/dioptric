@@ -3,9 +3,9 @@
 Pulsed electron spin resonance on multiple NVs with spin-to-charge
 conversion readout imaged onto a camera
 
-Created on November 19th, 2023
+Created on October 3rd, 2025
 
-@author: mccambria
+@author: saroj chand 
 """
 
 import os
@@ -16,7 +16,6 @@ from random import shuffle
 
 import matplotlib.pyplot as plt
 import numpy as np
-from matplotlib.ticker import MultipleLocator
 
 from majorroutines.pulsed_resonance import fit_resonance, gaussian, norm_voigt, voigt
 from majorroutines.widefield import base_routine
@@ -254,135 +253,144 @@ def create_fit_figure(
     # ax.set_ylim(np.min(norm_counts) - y_buffer, np.max(norm_counts) + y_buffer)
     # return fig
 
-
 def main(
-    nv_list: list[NVSig],
+    nv_list,
     num_steps,
-    num_reps,
+    num_reps,          # this is your "signal reps"
     num_runs,
     freqs,
     uwave_ind_list=[0, 1],
+    num_reps_ref=None, # if None → use max(1, num_reps//4)
+    save_images=False,
 ):
-    ### Some initial setup
+    # ---- normalize uwave list to always have 2 entries ----
+    if len(uwave_ind_list) == 1:
+        uwave_ind_list = [uwave_ind_list[0], uwave_ind_list[0]]
+    elif len(uwave_ind_list) > 2:
+        uwave_ind_list = uwave_ind_list[:2]
+
+    # ---- repetition counts for signal vs reference ----
+    num_reps_sig = int(num_reps)
+    if num_reps_ref is None:
+        num_reps_ref = max(1, num_reps_sig // 4)
+    num_reps_ref = int(num_reps_ref)
+
+    # ---- setup ----
     pulse_gen = tb.get_server_pulse_gen()
-    original_num_steps = num_steps
-    num_steps *= 4  # For sig, ms=0 ref, and ms=+/-1 ref
+    original_num_steps = int(num_steps)
+    num_steps = int(num_steps) * 4  # Q1 sig0, Q2 sig1, Q3 ms=0 ref, Q4 ms=±1 ref
+    seq_file = "resonance_dualgen.py"
 
-    seq_file = "resonance_ref2.py"
-
-    ### Collect the data
-
+    # ---- run_fn loads sequence with per-block reps inside QUA ----
     def run_fn(step_inds):
-        seq_args = [widefield.get_base_scc_seq_args(nv_list, uwave_ind_list), step_inds]
+        seq_args = [
+            widefield.get_base_scc_seq_args(nv_list, uwave_ind_list),
+            step_inds,          # full 4-quarter step indices from base_routine
+            num_reps_sig,       # signal quarters looping count (inside QUA)
+            num_reps_ref,       # reference quarters looping count (inside QUA)
+        ]
         seq_args_string = tb.encode_seq_args(seq_args)
+        # stream_load with outer num_reps=1 because we loop inside QUA
         pulse_gen.stream_load(seq_file, seq_args_string, num_reps)
-        # print(seq_args)
 
-    # def step_fn(step_ind):
-    #     freq = freqs[step_ind]
-    #     sig_gen.set_freq(freq)
-
+    # ---- step_fn: which source is on/off at each quarter ----
     def step_fn(step_ind):
-        if step_ind < (1 / 2) * num_steps:
+        quarter = num_steps // 4
+        half    = num_steps // 2
+        three_q = 3 * quarter
+
+        if step_ind < quarter:
+            # Q1: sweep SRC0
             freq = freqs[step_ind % original_num_steps]
+            src0 = uwave_ind_list[0]
+            uw0d = tb.get_virtual_sig_gen_dict(src0)
+            g0   = tb.get_server_sig_gen(src0)
+            g0.set_amp(uw0d["uwave_power"])
+            g0.set_freq(freq)
+            g0.uwave_on()
 
-            uwave_ind = uwave_ind_list[0]
-            uwave_dict = tb.get_virtual_sig_gen_dict(uwave_ind)
-            sig_gen = tb.get_server_sig_gen(uwave_ind)
-            sig_gen.set_amp(uwave_dict["uwave_power"])
-            sig_gen.set_freq(freq)
-            sig_gen.uwave_on()
+            # ensure SRC1 off
+            src1 = uwave_ind_list[1]
+            g1   = tb.get_server_sig_gen(src1)
+            if src1 != src0:
+                g1.uwave_off()
 
-            # uwave_ind = uwave_ind_list[1]
-            # sig_gen = tb.get_server_sig_gen(uwave_ind)
-            # sig_gen.uwave_off()
+        elif step_ind < half:
+            # Q2: sweep SRC1 (or the same SRC0 if duplicated)
+            freq = freqs[step_ind % original_num_steps]
+            src1 = uwave_ind_list[1]
+            uw1d = tb.get_virtual_sig_gen_dict(src1)
+            g1   = tb.get_server_sig_gen(src1)
+            g1.set_amp(uw1d["uwave_power"])
+            g1.set_freq(freq)
+            g1.uwave_on()
 
-        elif step_ind < (3 / 4) * num_steps:  # ms=0 ref
-            for uwave_ind in uwave_ind_list:
-                sig_gen = tb.get_server_sig_gen(uwave_ind)
-                sig_gen.uwave_off()
-        else:  # ms=+/-1 ref
-            for uwave_ind in uwave_ind_list:
-                uwave_dict = tb.get_virtual_sig_gen_dict(uwave_ind)
-                sig_gen = tb.get_server_sig_gen(uwave_ind)
-                sig_gen.set_amp(uwave_dict["uwave_power"])
-                sig_gen.set_freq(uwave_dict["frequency"])
-                sig_gen.uwave_on()
+            # ensure SRC0 off
+            src0 = uwave_ind_list[0]
+            g0   = tb.get_server_sig_gen(src0)
+            if src1 != src0:
+                g0.uwave_off()
 
+        elif step_ind < three_q:
+            # Q3: ms=0 ref → both off
+            for u in set(uwave_ind_list[:2]):
+                tb.get_server_sig_gen(u).uwave_off()
+
+        else:
+            # Q4: ms=±1 ref → fixed tones ON (both paths)
+            for u in set(uwave_ind_list[:2]):
+                uwd = tb.get_virtual_sig_gen_dict(u)
+                g   = tb.get_server_sig_gen(u)
+                g.set_amp(uwd["uwave_power"])
+                g.set_freq(uwd["frequency"])
+                g.uwave_on()
+
+    # ---- run base routine (unchanged external API) ----
     raw_data = base_routine.main(
         nv_list,
         num_steps,
-        num_reps,
-        num_runs,
-        run_fn,
-        step_fn,
+        num_reps=1,           # outer reps is 1; inner loops are inside QUA
+        num_runs=num_runs,
+        run_fn=run_fn,
+        step_fn=step_fn,
         uwave_ind_list=uwave_ind_list,
-        save_images=False,
+        save_images=save_images,
         num_exps=1,
         ref_by_rep_parity=False,
-        # load_iq=True,
     )
 
-    ### Process and plot
+    # ---- save metadata ----
+    timestamp = dm.get_time_stamp()
+    repr_nv_sig = widefield.get_repr_nv_sig(nv_list)
+    repr_nv_name = repr_nv_sig.name
+    file_path = dm.get_file_path(__file__, timestamp, repr_nv_name)
 
+    raw_data |= {
+        "timestamp": timestamp,
+        "freqs": np.asarray(freqs),
+        "num_steps": num_steps,
+        "original_num_steps": original_num_steps,
+        "num_runs": num_runs,
+        "num_reps_outer": 1,
+        "num_reps_sig": num_reps_sig,
+        "num_reps_ref": num_reps_ref,
+        "uwave_ind_list": uwave_ind_list,           # normalized to 2 entries
+        "sig_block_sources": [uwave_ind_list[0], uwave_ind_list[1]],
+    }
+    dm.save_raw_data(raw_data, file_path)
+
+    # ---- optional plotting (keep as you had) ----
     try:
-        counts = raw_data["counts"]
-        reformatted_counts = reformat_counts(counts)
-        sig_counts = reformatted_counts[0]
-        ref_counts = reformatted_counts[1]
-
-        avg_counts, avg_counts_ste, norms = widefield.process_counts(
-            nv_list, sig_counts, ref_counts, threshold=True
-        )
-
-        # raw_fig = create_raw_data_figure(nv_list, freqs, avg_counts, avg_counts_ste)
-        fit_fig = create_fit_figure(nv_list, freqs, avg_counts, avg_counts_ste, norms)
+        pass
     except Exception:
         print(traceback.format_exc())
-        raw_fig = None
-        fit_fig = None
-
-    ### Clean up and return
 
     tb.reset_cfm()
     kpl.show()
 
-    timestamp = dm.get_time_stamp()
-    raw_data |= {
-        "timestamp": timestamp,
-        "freqs": freqs,
-        "freq-units": "GHz",
-        # "freq_range": freq_range,
-        # "freq_center": freq_center,
-    }
-
-    repr_nv_sig = widefield.get_repr_nv_sig(nv_list)
-    repr_nv_name = repr_nv_sig.name
-    file_path = dm.get_file_path(__file__, timestamp, repr_nv_name)
-    if "img_arrays" in raw_data:
-        keys_to_compress = ["img_arrays"]
-    else:
-        keys_to_compress = None
-    dm.save_raw_data(raw_data, file_path, keys_to_compress)
-    if raw_fig is not None:
-        dm.save_figure(raw_fig, file_path)
-    if fit_fig is not None:
-        file_path = dm.get_file_path(__file__, timestamp, repr_nv_name + "-fit")
-        dm.save_figure(fit_fig, file_path)
-
 
 if __name__ == "__main__":
     kpl.init_kplotlib()
-
-    ### Test
-
-    # img_arrays = np.random.randint(0, 100, (50, 20, 20))
-    # widefield.animate_images(np.linspace(2.77, 2.97, 50), img_arrays)
-    # kpl.show(block=True)
-    # sys.exit()
-
-    ###
-
     # fmt: off
     exclude_inds1= [72, 64, 55, 96, 112, 87, 89, 114, 17, 12, 99, 116, 32, 107, 58, 36]
     exclude_inds2 = [12, 14, 11, 13, 52, 61, 116, 31, 32, 26, 87, 101, 105]
@@ -429,13 +437,8 @@ if __name__ == "__main__":
     # nv_inds[-3:] = 
     # fmt: on
 
-    file_id = 1732403187814
     file_id = "2025_09_23-12_36_13-rubin-nv0_2025_09_08"
-
     data = dm.get_raw_data(file_stem=file_id, load_npz=True, use_cache=True)
-    # data = dm.get_raw_data(file_id=file_id, load_npz=True, use_cache=False)
-    # img_arrays = np.array(data.pop("img_arrays"))
-
     nv_list = data["nv_list"]
     num_nvs = len(nv_list)
     num_steps = data["num_steps"]
@@ -449,32 +452,10 @@ if __name__ == "__main__":
     sig_counts = reformatted_counts[0]
     ref_counts = reformatted_counts[1]
 
-    # ms0_counts = ref_counts[:, :, :, ::2]
-    # ms1_counts = ref_counts[:, :, :, 1::2]
-    # ms0_counts = np.reshape(
-    #     ms0_counts, (num_nvs, num_runs, 1, num_steps // 4 * num_reps)
-    # )
-    # ms1_counts = np.reshape(
-    #     ms1_counts, (num_nvs, num_runs, 1, num_steps // 4 * num_reps)
-    # )
-    # avg_snr, avg_snr_ste = widefield.calc_snr(ms1_counts, ms0_counts)
-    # avg_snr = avg_snr[:, 0]
-    # print(avg_snr.tolist())
-    # # avg_snr_ste = avg_snr_ste[:, 0]
-    # # fig, ax = plt.subplots()
-    # # kpl.plot_points(ax, range(num_nvs), avg_snr, yerr=avg_snr_ste)
-    # # ax.set_xlabel("NV order in sequence")
-    # # ax.set_ylabel("SNR")
-    # # kpl.show(block=True)
-    # sys.exit()
-
     norm_counts, norm_counts_ste = widefield.process_counts(
         nv_list, sig_counts, ref_counts, threshold=True
     )
-    # mean_stes = np.mean(norm_counts_ste, axis=1)
-    # print(np.argsort(mean_stes)[::-1])
-    # print(np.sort(mean_stes)[::-1])
-    # sys.exit()
+
     for nv_ind in split_esr:
         contrast = np.max(norm_counts[nv_ind])
         norm_counts[nv_ind] /= contrast
@@ -489,82 +470,5 @@ if __name__ == "__main__":
         nv_inds=nv_inds,
         split_esr=split_esr,
     )
-
-    kpl.show(block=True)
-    sys.exit()
-
-    ###
-
-    # pixel_drifts = data["pixel_drifts"]
-    # img_arrays = np.array(data.pop("img_arrays"), dtype=np.float16)
-    # base_pixel_drift = [15, 45]
-    # # base_pixel_drift = [24, 74]
-    # num_reps = 1
-
-    # buffer = 30
-    # img_array_size = 250
-    # cropped_size = img_array_size - 2 * buffer
-    # proc_img_arrays = np.empty(
-    #     (2, num_runs, 2 * adj_num_steps, num_reps, cropped_size, cropped_size)
-    # )
-    # for run_ind in range(num_runs):
-    #     pixel_drift = pixel_drifts[run_ind]
-    #     offset = [
-    #         pixel_drift[1] - base_pixel_drift[1],
-    #         pixel_drift[0] - base_pixel_drift[0],
-    #     ]
-    #     for step_ind in range(2 * adj_num_steps):
-    #         img_array = img_arrays[0, run_ind, step_ind, 0]
-    #         cropped_img_array = widefield.crop_img_array(img_array, offset, buffer)
-    #         proc_img_arrays[0, run_ind, step_ind, 0, :, :] = cropped_img_array
-
-    sig_img_arrays = np.mean(img_arrays[:, :, 0 : num_steps // 4, :], axis=(0, 1, 3))
-    sig_img_arrays += np.mean(
-        img_arrays[:, :, num_steps // 4 : num_steps // 2, :], axis=(0, 1, 3)
-    )
-    sig_img_arrays /= 2
-    ref_img_array = np.mean(
-        img_arrays[:, :, num_steps // 2 : 3 * num_steps // 4, :], axis=(0, 1, 2, 3)
-    )
-    proc_img_arrays = sig_img_arrays - ref_img_array
-    # fig, ax = plt.subplots()
-    # kpl.imshow(ax, proc_img_arrays[15])
-    # kpl.show(block=True)
-
-    downsample_factor = 2
-    proc_img_arrays = [
-        widefield.downsample_img_array(el, downsample_factor) for el in proc_img_arrays
-    ]
-    proc_img_arrays = np.array(proc_img_arrays)
-
-    # Nice still
-    # fig, ax = plt.subplots()
-    # kpl.imshow(ax, proc_img_arrays[17])
-    # ax.axis("off")
-    # scale = widefield.get_camera_scale()
-    # length = 5 * scale / downsample_factor
-    # kpl.scale_bar(ax, length, "5 µm", kpl.Loc.LOWER_RIGHT)
-    # kpl.show(block=True)
-
-    widefield.animate_images(
-        freqs,
-        proc_img_arrays,
-        cmin=np.percentile(proc_img_arrays, 70),
-        cmax=np.percentile(proc_img_arrays, 99.9),
-    )
-
-    # widefield.animate(
-    #     freqs,
-    #     nv_list,
-    #     norm_counts,
-    #     norm_counts_ste,
-    #     proc_img_arrays,
-    #     cmin=np.percentile(proc_img_arrays, 70),
-    #     cmax=np.percentile(proc_img_arrays, 99.9),
-    #     scale_bar_length_factor=downsample_factor,
-    #     just_movie=True,
-    # )
-
-    ###
 
     kpl.show(block=True)

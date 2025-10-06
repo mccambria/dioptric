@@ -137,7 +137,7 @@ def macro(
         # Signal experiment
         if not ref_exp:
             if spin_flip_do_target_list is None or True not in spin_flip_do_target_list:
-                # macro_scc_sub() # do scc alwayd in the order of NVs
+                # macro_scc_sub()  # do scc alwayd in the order of NVs
                 # SBC randomize the order of the scc by alterntively reversing the order
                 with qua.if_(random_order == 1):
                     macro_scc_sub()

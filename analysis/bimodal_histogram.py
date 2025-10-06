@@ -120,6 +120,19 @@ def _calc_cdf(prob_dist, x, *params):
     return val
 
 
+def _safe_upper_lim(rate, nsig=5, min_lim=10, max_lim=50_000):
+    """Pick an inclusive integer upper bound for k-sums based on rate."""
+    r = np.asarray(rate, dtype=float)
+    if not np.isfinite(r).any():
+        raise ValueError("rate has no finite values")
+    rmax = np.nanmax(r)
+    if rmax < 0:
+        raise ValueError(f"rate must be >= 0; got max={rmax}")
+    upper_cont = rmax + nsig * np.sqrt(max(rmax, 0.0))
+    # inclusive integer bound with a reasonable floor/ceiling
+    return int(min(max(int(np.ceil(upper_cont)), min_lim), max_lim))
+
+
 def compound_poisson_pdf(z, rate):
     if isinstance(z, list):
         z = np.array(z)
@@ -131,7 +144,8 @@ def compound_poisson_pdf(z, rate):
     z = z[np.newaxis, :]
 
     lower_lim = 0
-    upper_lim = round(rate + 5 * np.sqrt(rate))
+    # upper_lim = round(rate + 5 * np.sqrt(rate))
+    upper_lim = _safe_upper_lim(rate)  # <<< fixed upper limit
     integral_points = np.arange(lower_lim, upper_lim, 1, dtype=np.float64)
     integral_points = integral_points[:, np.newaxis]
 

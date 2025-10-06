@@ -22,6 +22,7 @@ import numpy as np
 # import majorroutines.confocal.determine_standard_readout_params as determine_standard_readout_params
 # import majorroutines.confocal.g2_measurement as g2_measurement
 import majorroutines.confocal.confocal_image_sample as image_sample
+# import majorroutines.confocal.image_sample as image_sample
 
 # import majorroutines.confocal.optimize_magnet_angle as optimize_magnet_angle
 # import majorroutines.confocal.pulsed_resonance as pulsed_resonance
@@ -53,7 +54,7 @@ def do_image_sample(
     num_steps = 90
 
     # For now we only support square scans so pass scan_range twice
-    image_sample.main(
+    image_sample.confocal_scan(
         nv_sig,
         scan_range,
         scan_range,
@@ -65,7 +66,7 @@ def do_image_sample_zoom(nv_sig):
     scan_range = 0.05
     num_steps = 30
 
-    image_sample.main(
+    image_sample.confocal_scan(
         nv_sig,
         scan_range,
         scan_range,
@@ -408,7 +409,7 @@ if __name__ == "__main__":
     pixel_xy = [0.0, 0.0]  # galvo ref
 
     nv_sig = NVSig(
-        name=f"{sample_name}-nv8_2022_11_14",
+        name=f"{sample_name}-2022_11_14",
         coords={
             CoordsKey.SAMPLE: sample_xyz,
             CoordsKey.Z: coord_z,
@@ -443,7 +444,7 @@ if __name__ == "__main__":
         #     nv_sig["coords"][2] = int(z)
         # do_image_sample(nv_sig)
         # nv_sig["imaging_readout_dur"] = 5e7
-        # do_image_sample(nv_sig)
+        do_image_sample(nv_sig)
         # do_image_sample_zoom(nv_sig)
         # do_image_sample(nv_sig, nv_minus_initialization=True)
         # do_image_sample_zoom(nv_sig, nv_minus_initialization=True)
@@ -473,7 +474,7 @@ if __name__ == "__main__":
     ### Error handling and wrap-up
 
     except Exception as exc:
-        recipient = "cambria@wisc.edu"
+        recipient = "schand@berkeley.edu"
         # tool_belt.send_exception_email(email_to=recipient)
         raise exc
     finally:
