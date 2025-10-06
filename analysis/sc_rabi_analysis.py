@@ -474,6 +474,8 @@ sys.exit()
 # file_ids = [1832587019842, 1842383067959]  # [Q, I]
 # file_ids = [1832587019842]  # [Q, I]
 file_ids = ["2025_09_29-15_24_26-rubin-nv0_2025_09_08"]
+file_ids = ["2025_10_05-20_06_59-rubin-nv0_2025_09_08"]
+
 rabi_periods_all = []
 pi_pulses_all = []
 pi_half_pulses_all = []

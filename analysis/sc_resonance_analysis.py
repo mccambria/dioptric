@@ -195,8 +195,8 @@ def plot_nv_resonance(
         ax.set_title(f"NV Index: {nv_ind}")
         ax.grid(True, linestyle="--", alpha=0.6)
         ax.legend()
-        # plt.show(block=True)
-    # return
+        plt.show(block=True)
+    return
     # return
     ### snrs
     median_snr = np.median(snrs)
