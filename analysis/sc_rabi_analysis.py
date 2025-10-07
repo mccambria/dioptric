@@ -160,6 +160,9 @@ def fit_rabi_data(nv_list, taus, avg_counts, avg_counts_ste, epsilon=1e-10):
     return fit_fns, popts, median_fit_fn, median_popt
 
 
+import math
+
+
 def plot_rabi_fits(
     nv_list,
     taus,
@@ -167,112 +170,166 @@ def plot_rabi_fits(
     avg_counts_ste,
     fit_fns,
     popts,
-    median_fit_fn,
-    median_popt,
+    median_fit_fn=None,
+    median_popt=None,
     num_cols=9,
+    period_bin_width=8,  # ns, choose a multiple of 4 if you want
+    period_round_to=4,  # ns
+    period_keep_range=(100, 200),  # ns, set to None to disable range filter
 ):
     """
-    Plot the fitted Rabi oscillation data for each NV center separately.
+    Plot fitted Rabi oscillations for each NV and summarize Rabi periods.
 
+    Assumes popts[nv] has popts[nv][1] = rabi_freq in 1/ns (or Hz if taus in s).
     """
+
+    taus = np.asarray(taus, dtype=float)
     num_nvs = len(nv_list)
-    taus = np.array(taus)
-    # scatter rabi period
+
     epsilon = 1e-10
     rabi_periods = []
     amps = []
-    # for nv_ind in range(num_nvs):
-    #     popt = popts[nv_ind]
-    #     amp = popt[0]  # FIXED: Use actual amplitude
-    #     rabi_freq = popt[1]
+    kept_indices = []
 
-    #     if rabi_freq is not None and > epsilon:
-    #         rabi_period = 1 / rabi_freq
-    #         rabi_period = round(rabi_period / 4) * 4  # Keep nearest multiple of 4
-    #         rabi_periods.append(rabi_period)
-    #         amps.append(amp)
-
+    # --- Collect period/amp per NV (with guards) ---
     for nv_ind in range(num_nvs):
-        # popts[nv_ind] is expected like [amp, rabi_freq, ...]
         try:
             popt = popts[nv_ind]
             amp = float(popt[0])
-            rabi_freq = float(popt[1])
-        except (IndexError, TypeError, ValueError):
-            # skip NVs with missing/bad fit params
+            rabi_freq = abs(float(popt[1]))
+        except (TypeError, ValueError, IndexError):
             continue
 
-    # FIX: the condition needs the variable; also guard NaN/inf and non-positive values
-    if np.isfinite(rabi_freq) and (rabi_freq > epsilon):
-        rabi_period = 1.0 / rabi_freq
-        # nearest multiple of 4 (same units as rabi_period)
-        rabi_period = int(np.round(rabi_period / 4.0)) * 4
+        if not np.isfinite(rabi_freq) or rabi_freq <= epsilon:
+            continue
+
+        rabi_period = 1.0 / rabi_freq  # units consistent with taus
+        if not np.isfinite(rabi_period) or rabi_period <= 0:
+            continue
+
+        # round to nearest multiple (optional aesthetic)
+        if period_round_to is not None and period_round_to > 0:
+            rabi_period = int(np.round(rabi_period / period_round_to)) * period_round_to
+
         rabi_periods.append(rabi_period)
-        amps.append(amp)
+        amps.append(float(amp))
+        kept_indices.append(nv_ind)
 
-    # print(f"Raw Rabi Periods: {rabi_periods}")
+    print(f"Raw Rabi Periods (ns): {rabi_periods}")
 
-    # Remove outliers using IQR method
-    def remove_outliers(data):
-        Q1 = np.percentile(data, 25)
-        Q3 = np.percentile(data, 75)
+    if len(rabi_periods) == 0:
+        print("No valid Rabi periods; skipping histogram.")
+    else:
+        # --- Paired outlier removal via IQR on periods ---
+        p = np.asarray(rabi_periods, dtype=float)
+        a = np.asarray(amps, dtype=float)
+        idx = np.asarray(kept_indices, dtype=int)
+
+        Q1, Q3 = np.percentile(p, [25, 75])
         IQR = Q3 - Q1
-        lower_bound = Q1 - 1.5 * IQR
-        upper_bound = Q3 + 1.5 * IQR
-        return [val for val in data if lower_bound <= val <= upper_bound]
+        lower = Q1 - 1.5 * IQR
+        upper = Q3 + 1.5 * IQR
+        print(f"Rabi Period IQR filter: {Q1=}, {Q3=}, {IQR=}, {lower=}, {upper=}")
+        mask = (p >= lower) & (p <= upper)
 
-    filtered_rabi_periods = remove_outliers(rabi_periods)
-    filtered_amps = remove_outliers(amps)
+        # Optional range filter (e.g., 100–200 ns)
+        if period_keep_range is not None:
+            lo, hi = period_keep_range
+            mask &= (p >= lo) & (p <= hi)
 
-    print(f"Filtered Rabi Periods: {filtered_rabi_periods}")
-    print(f"Median Rabi Periods: {np.median(filtered_rabi_periods)}")
-    # print(f"Filtered Amplitudes: {filtered_amps}")
-    # Ensure lists remain the same length after filtering
-    filtered_data = [
-        (rabi, amp)
-        for rabi, amp in zip(rabi_periods, amps)
-        if rabi in filtered_rabi_periods and amp in filtered_amps
-    ]
-    filtered_rabi_periods, filtered_amps = (
-        zip(*filtered_data) if filtered_data else ([], [])
-    )
+        p_f = p[mask]
+        a_f = a[mask]
+        
+        idx_f = idx[mask]
 
-    # histogam Plotting
-    fig, ax = plt.subplots(figsize=(6, 5))
-    ax.hist(filtered_rabi_periods, bins=10)
-    ax.set_title("Median Rabi Periods (I-Channel)", fontsize=15)
-    ax.set_xlabel("Rabi Period (ns)", fontsize=15)
-    ax.set_ylabel("Number of Occurance", fontsize=15)
-    ax.tick_params(axis="both", labelsize=14)
-    ax.grid(True)
-
-    # plt.show()
-    for nv_ind in range(num_nvs):
-        fig, ax = plt.subplots()
-        # Scatter plot with error bars
-        ax.errorbar(
-            taus,
-            avg_counts[nv_ind],
-            yerr=np.abs(avg_counts_ste[nv_ind]),
-            fmt="o",
-        )
-        # Plot the fitted curve if available
-        tau_dense = np.linspace(0, taus.max(), 300)
-        if fit_fns[nv_ind] is not None:
-            ax.plot(tau_dense, fit_fns[nv_ind](tau_dense), "-")
-        rabi_freq = popts[nv_ind][1]
-        if rabi_freq is not None:
-            rabi_period = round((1 / rabi_freq) / 4) * 4
-            title = f"NV {nv_ind} (Rabi Period: {rabi_period}ns)"
+        print(f"Filtered Rabi Periods (ns): {p_f.tolist()}")
+        print(f"Filtered idx: {idx_f.tolist()}")
+        print(f"len before/after filtering: {len(p)}/{len(p_f)}")
+        if p_f.size > 0:
+            print(f"Median Rabi Period (ns): {float(np.median(p_f)):.3f}")
         else:
-            title = f"NV {nv_ind} (Rabi Period: N/A)"
-        ax.set_title(title)
-        ax.set_xlabel("Pulse Duration (ns)")
-        ax.set_ylabel("Norm. NV- Population")
-        ax.grid(True)
-        fig.tight_layout()
-        plt.show(block=True)
+            print("No periods remain after filtering.")
 
+        # --- Histogram ---
+        if p_f.size > 0:
+            nbins = max(
+                5, int(np.ceil((p_f.max() - p_f.min()) / max(1, period_bin_width)))
+            )
+            fig_h, ax_h = plt.subplots(figsize=(6, 5))
+            ax_h.hist(p_f, bins=nbins)
+            ax_h.set_title("Rabi Periods", fontsize=15)
+            ax_h.set_xlabel("Rabi Period (ns)", fontsize=15)
+            ax_h.set_ylabel("Number of Occurrence", fontsize=15)
+            ax_h.tick_params(axis="both", labelsize=12)
+            ax_h.grid(True)
+            plt.show(block=True)
+    return
+    # --- Grid of per-NV plots ---
+    if num_cols is None or num_cols < 1:
+        num_cols = 9
+    num_rows = math.ceil(num_nvs / num_cols)
+
+    # If many NVs, consider smaller figsize per panel
+    fig_g, axes = plt.subplots(
+        num_rows, num_cols, figsize=(3.6 * num_cols, 2.8 * num_rows), squeeze=False
+    )
+    tau_dense = np.linspace(0, float(taus.max()), 300)
+
+    for nv_ind in range(num_nvs):
+        r = nv_ind // num_cols
+        c = nv_ind % num_cols
+        ax = axes[r, c]
+
+        # data + errors
+        y = np.asarray(avg_counts[nv_ind], dtype=float)
+        yerr = np.asarray(avg_counts_ste[nv_ind], dtype=float)
+        ax.errorbar(taus, y, yerr=np.abs(yerr), fmt="o", ms=3)
+
+        # fit curve
+        if fit_fns[nv_ind] is not None:
+            try:
+                ax.plot(tau_dense, fit_fns[nv_ind](tau_dense), "-")
+            except Exception:
+                pass
+
+        # title with period if valid
+        period_str = "N/A"
+        try:
+            rf = float(popts[nv_ind][1])
+            if np.isfinite(rf) and rf > epsilon:
+                rp = 1.0 / rf
+                if (
+                    period_round_to is not None
+                    and period_round_to > 0
+                    and np.isfinite(rp)
+                    and rp > 0
+                ):
+                    rp = int(np.round(rp / period_round_to)) * period_round_to
+                period_str = f"{rp:.0f} ns"
+        except Exception:
+            pass
+
+        ax.set_title(f"NV {nv_ind} (Rabi: {period_str})", fontsize=10)
+        ax.set_xlabel("Pulse Duration (ns)", fontsize=9)
+        ax.set_ylabel("Norm. NV- Population", fontsize=9)
+        ax.grid(True, alpha=0.4)
+
+        # Optional: median fit overlay if provided
+        if callable(median_fit_fn) and (median_popt is not None):
+            try:
+                ax.plot(tau_dense, median_fit_fn(tau_dense, *median_popt), "--")
+            except Exception:
+                pass
+
+    # Hide any empty subplots
+    total_panels = num_rows * num_cols
+    for k in range(num_nvs, total_panels):
+        r = k // num_cols
+        c = k % num_cols
+        axes[r, c].axis("off")
+
+    fig_g.tight_layout()
+    plt.show(block=True)
     # plotting median acroos all NVs
 
     fig, ax = plt.subplots()
@@ -442,8 +499,8 @@ if __name__ == "__main__":
     # file_stem = "2025_04_30-07_09_33-rubin-nv0_2025_02_26"
     # file_stem = "2025_09_21-04_35_06-rubin-nv0_2025_09_08"
     # file_stem = "2025_10_02-05_57_27-rubin-nv0_2025_09_08"
-    file_stem = ["2025_10_05-20_06_59-rubin-nv0_2025_09_08"]
-    # file_stem = ["2025_10_06-03_26_08-rubin-nv0_2025_09_08"]
+    # file_stem = ["2025_10_05-20_06_59-rubin-nv0_2025_09_08"]
+    file_stem = ["2025_10_06-03_26_08-rubin-nv0_2025_09_08"]
     data = dm.get_raw_data(file_stem=file_stem, load_npz=True, use_cache=False)
     nv_list = data["nv_list"]
     taus = data["taus"]
