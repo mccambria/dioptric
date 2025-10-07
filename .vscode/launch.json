@@ -10,7 +10,7 @@
             "request": "launch",
             "program": "${file}",
             "console": "internalConsole",
-            "redirectOutput": true,
+            // "redirectOutput": true,
             "suppressMultipleSessionWarning": true,
             "justMyCode": false,
         },
@@ -20,7 +20,7 @@
             "request": "launch",
             "program": "${file}",
             "console": "integratedTerminal",
-            "redirectOutput": true,
+            // "redirectOutput": true,
             "suppressMultipleSessionWarning": true,
             "justMyCode": false,
         }

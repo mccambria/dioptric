@@ -441,7 +441,9 @@ if __name__ == "__main__":
     # data = dm.get_raw_data(file_id=file_id, load_npz=False, use_cache=False)
     # file_stem = "2025_04_30-07_09_33-rubin-nv0_2025_02_26"
     # file_stem = "2025_09_21-04_35_06-rubin-nv0_2025_09_08"
-    file_stem = "2025_10_02-05_57_27-rubin-nv0_2025_09_08"
+    # file_stem = "2025_10_02-05_57_27-rubin-nv0_2025_09_08"
+    file_stem = ["2025_10_05-20_06_59-rubin-nv0_2025_09_08"]
+    # file_stem = ["2025_10_06-03_26_08-rubin-nv0_2025_09_08"]
     data = dm.get_raw_data(file_stem=file_stem, load_npz=True, use_cache=False)
     nv_list = data["nv_list"]
     taus = data["taus"]
@@ -467,123 +469,5 @@ if __name__ == "__main__":
         median_fit_fn,
         median_popt,
     )
-sys.exit()
-
-
-# plot rabi periods for i and q channels
-# file_ids = [1832587019842, 1842383067959]  # [Q, I]
-# file_ids = [1832587019842]  # [Q, I]
-file_ids = ["2025_09_29-15_24_26-rubin-nv0_2025_09_08"]
-rabi_periods_all = []
-pi_pulses_all = []
-pi_half_pulses_all = []
-# Loop over both channels
-for file_id in file_ids:
-    # file_stem = box_cloud.get_file_stem_from_file_id(file_id)
-    # file_stem = "2025_04_30-07_09_33-rubin-nv0_2025_02_26"
-    data = dm.get_raw_data(file_stem=file_id, load_npz=False, use_cache=False)
-    nv_list = data["nv_list"]
-    taus = data["taus"]
-    counts = np.array(data["counts"])
-    sig_counts, ref_counts = counts[0], counts[1]
-
-    avg_counts, avg_counts_ste = widefield.process_counts(
-        nv_list, sig_counts, ref_counts, threshold=True
-    )
-
-    # Fit the Rabi data
-    fit_fns, popts, median_fit_fn, median_popt = fit_rabi_data(
-        nv_list, taus, avg_counts, avg_counts_ste
-    )
-
-    # Compute Rabi periods from frequency: T = 1 / f
-    # rabi_periods = np.array(
-    #     [1.0 / p[1] if p is not None and p[1] > 0 else np.nan for p in popts]
-    # )
-    # rabi_periods_all.append(rabi_periods)
-
-    rabi_periods = []
-    pi_pulses = []
-    pi_half_pulses = []
-
-    for p in popts:
-        # if p is not None and p[1] > 0:
-        freq = p[1]
-        tau_phase = p[3]
-        rabi_period = 1.0 / freq
-        rabi_periods.append(rabi_period)
-        pi_pulses.append(tau_phase + 0.5 * rabi_period)
-        pi_half_pulses.append(tau_phase + 0.25 * rabi_period)
-        # else:
-        # rabi_periods.append(np.nan)
-        # pi_pulses.append(np.nan)
-        # pi_half_pulses.append(np.nan)
-    print("median rabi period", np.median(rabi_periods))
-    print("median pi pulse", np.median(pi_pulses))
-    print("median pi/2 pulse", np.median(pi_half_pulses))
-    rabi_periods_all.append(np.array(rabi_periods))
-    pi_pulses_all.append(np.array(pi_pulses))
-    pi_half_pulses_all.append(np.array(pi_half_pulses))
-
-
-# Extract Q and I
-rabi_q, rabi_i = rabi_periods_all
-mask = ~np.isnan(rabi_q) & ~np.isnan(rabi_i)
-
-# Apply outlier mask to both
-combined = np.vstack([rabi_q[mask], rabi_i[mask]])
-outlier_mask_q = remove_outliers(combined[0])
-outlier_mask_i = remove_outliers(combined[1])
-final_mask = outlier_mask_q & outlier_mask_i
-
-rabi_q_filtered = combined[0][final_mask]
-rabi_i_filtered = combined[1][final_mask]
-
-# Fit line through origin: y = a * x
-# a_fit, _, _, _ = lstsq(rabi_q_filtered.reshape(-1, 1), rabi_i_filtered, rcond=None)
-
-
-def model(x, a):
-    return a * x
-
-
-a_fit, _ = curve_fit(model, rabi_q_filtered, rabi_i_filtered)
-
-# Plot
-plt.figure()
-plt.scatter(rabi_q_filtered, rabi_i_filtered, alpha=0.7, label="Data")
-plt.plot(
-    rabi_q_filtered,
-    # a_fit[0] * rabi_q_filtered,
-    1.0 * rabi_q_filtered,
-    "r--",
-    # label=f"Fit: y = {a_fit[0]:.3f}x",
-    label=f"Fit: y = {1.0}x",
-)
-plt.xlabel("Rabi Period (Q channel) [ns]")
-plt.ylabel("Rabi Period (I channel) [ns]")
-plt.title("Rabi Period Correlation (Outliers Removed)")
-plt.grid(True)
-plt.axis("equal")
-plt.legend()
-plt.show()
-
-# Pearson correlation
-r, p = pearsonr(rabi_q_filtered, rabi_i_filtered)
-print(f"Pearson r = {r:.3f}, p = {p:.2e}")
-print(f"Fitted slope (through origin): {a_fit[0]:.4f}")
-
-# pi_q, pi_i = pi_pulses_all
-# mask = ~np.isnan(pi_q) & ~np.isnan(pi_i)
-# pi_q, pi_i = pi_q[mask], pi_i[mask]
-
-# plt.figure()
-# plt.scatter(pi_q, pi_i, alpha=0.7)
-# plt.xlabel("π Pulse Time (Q Channel) [ns]")
-# plt.ylabel("π Pulse Time (I Channel) [ns]")
-# plt.title("π Pulse Time Correlation")
-# plt.grid(True)
-# plt.axis("equal")
-# plt.show()
 
 kpl.show(block=True)

@@ -893,6 +893,52 @@ def process_and_plot_charge(raw_data):
         plt.legend()
         plt.tight_layout()
         plt.show(block=True)
+        # plt.figure(figsize=(6, 5))
+        # plt.scatter(x_fit, r_fit, label="Readout Fidelity", alpha=0.6)
+        # plt.scatter(x_fit, y_fit, label="Prep Fidelity", alpha=0.8)
+        # plt.plot(duration_linspace, y_curve, label=f"Fit ({model_used})")
+        # plt.axvline(
+        #     opti_dur, color="green", linestyle="--", label=f"t₉₅ ≈ {opti_dur:.0f} ns"
+        # )
+        # plt.scatter([opti_dur], [opti_fid], color="green", zorder=5)
+        # plt.xlabel("Polarization Duration (ns)")
+        # plt.ylabel("Fidelity")
+        # plt.title(f"NV #{nv_ind}")
+        # plt.ylim(0, 1)
+        # plt.grid(True, alpha=0.3)
+        # plt.legend()
+        # plt.tight_layout()
+        # plt.show(block=True)
+        # # Plot results
+        # plt.figure()
+        # plt.scatter(
+        #     x_fit,
+        #     y_fit,
+        #     label="Measured Fidelity",
+        #     color="blue",
+        # )
+        # plt.plot(duration_linspace, fitted_curve, label="Fitted Curve", color="red")
+        # plt.axvline(
+        #     opti_dur,
+        #     color="green",
+        #     linestyle="--",
+        #     label=f"Opt. Duration: {opti_dur:.1f} ns",
+        # )
+        # plt.xlabel("Polarization Duration (ns)")
+        # plt.ylabel("Preparation Fidelity")
+        # plt.title(f"NV Num: {nv_ind}")
+        # plt.legend()
+        # plt.show(block=True)
+        plt.show(block=True)
+
+        # print(
+        #     f"NV {nv_ind} - Optimal Duration: {opti_dur:.1f} ns, Optimal Fidelity: {opti_fidelity}"
+        # )
+
+        # except RuntimeError:
+        #     print(f"Skipping NV {nv_ind}: Curve fitting failed.")
+        #     opti_durs.append(None)
+        #     opti_fidelities.append(None)
 
     if opti_durs:
         print("Optimal Polarization Durations:", opti_durs)
@@ -1044,7 +1090,9 @@ if __name__ == "__main__":
     # file_name = dm.get_file_name(file_id=file_id)
     # print(f"{file_name}_{file_id}")
     process_and_plot(raw_data)
+    process_and_plot(raw_data)
     # process_and_plot_green(raw_data)
+    # process_and_plot_charge(raw_data)
     # process_and_plot_charge(raw_data)
     # print(dm.get_file_name(1717056176426))
     plt.show(block=True)

@@ -41,6 +41,7 @@ from majorroutines.widefield import (
     ramsey,
     relaxation_interleave,
     resonance,
+    resonance_dualgen,
     scc_snr_check,
     simple_correlation_test,
     spin_echo,
@@ -502,24 +503,27 @@ def do_resonance(nv_list):
     freq_center = 2.87
     # freq_range = 0.240
     # freq_range = 0.120
-    freq_range = 0.36
+    freq_range = 0.30
     # num_steps = 60
     # num_steps = 24
-    num_steps = 60
-    # Single ref
-    # num_reps = 8
-    # num_runs = 1100
-    # Both refs
+    num_steps = 50
+
     num_reps = 2
-    num_runs = 500
+    num_runs = 400
     # num_runs = 300
     freqs = calculate_freqs(freq_center, freq_range, num_steps)
     ##
     # Remove duplicates and sort
     freqs = sorted(set(freqs))
     num_steps = len(freqs)
-    # sys.exit()
-    resonance.main(nv_list, num_steps, num_reps, num_runs, freqs=freqs)
+    resonance.main(
+        nv_list,
+        num_steps,
+        num_reps,
+        num_runs,
+        freqs=freqs,
+        uwave_ind_list=[1],
+    )
     # for _ in range(2):
     #     resonance.main(nv_list, num_steps, num_reps, num_runs, freqs=freqs)
 
@@ -533,6 +537,34 @@ def do_resonance_zoom(nv_list):
         num_runs = 60
         resonance.main(nv_list, num_steps, num_reps, num_runs, freq_center, freq_range)
 
+def do_resonance_dualgen(nv_list, uwave_ind_list=[0, 1]):
+    freq_center = 2.87
+    freq_range  = 0.36
+    num_steps   = 60
+
+    # outer reps = drift tracking cadence
+    num_reps = 2      
+    num_runs = 400
+
+    # inner reps for averaging
+    avg_reps_sig = 8   # signal quarters
+    avg_reps_ref = 2   # reference quarters
+
+    freqs = calculate_freqs(freq_center, freq_range, num_steps)
+    freqs = sorted(set(freqs))
+    num_steps = len(freqs)
+
+    resonance_dualgen.main(
+        nv_list,
+        num_steps=num_steps,
+        num_reps=num_reps,   # keep this for drift tracking
+        num_runs=num_runs,
+        freqs=freqs,
+        uwave_ind_list=uwave_ind_list,
+        num_reps_sig=avg_reps_sig,   # optional if you expose it in main()
+        num_reps_ref=avg_reps_ref,   # optional if you expose it in main()
+    )
+
 
 def do_rabi(nv_list):
     min_tau = 16
@@ -542,10 +574,7 @@ def do_rabi(nv_list):
     num_steps = 31
     num_reps = 10
     num_runs = 400
-    # num_runs = 100
-    # num_runs = 20
     # num_runs = 5
-    # uwave_ind_list = [1]  # only one
     uwave_ind_list = [0, 1]
     rabi.main(nv_list, num_steps, num_reps, num_runs, min_tau, max_tau, uwave_ind_list)
     # for _ in range(2):
@@ -1390,7 +1419,7 @@ if __name__ == "__main__":
         # )
 
         do_compensate_for_drift(nv_sig)
-        # do_widefield_image_sample(nv_sig, 50)
+        do_widefield_image_sample(nv_sig, 50)
         # do_widefield_image_sample(nv_sig, 200)
 
         # for nv in nv_list:
@@ -1444,7 +1473,7 @@ if __name__ == "__main__":
         # coords_key = red_laser
         # do_optimize_loop(np.array(nv_list), np.array(coords_key))
 
-        do_charge_state_histograms(nv_list)
+        # do_charge_state_histograms(nv_list)
         # do_charge_state_conditional_init(nv_list)
         # do_charge_state_histograms_images(nv_list, vary_pol_laser=True)
 
@@ -1468,7 +1497,7 @@ if __name__ == "__main__":
         # do_bootstrapped_pulse_error_tomography(nv_list)
         # do_calibrate_iq_delay(nv_list)
 
-        # do_rabi(nv_list)
+        do_rabi(nv_list)
         # do_power_rabi(nv_list)
         # do_resonance(nv_list)
         # do_resonance_zoom(nv_list)

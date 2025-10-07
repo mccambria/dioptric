@@ -2,10 +2,8 @@
 """
 Widefield ESR
 
-Created on October 13th, 2023
+Created on October 3th, 2025
 
-@author: mccambria
-Updated on January 13th, 2025
 @author: schand
 """
 

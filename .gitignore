@@ -130,3 +130,6 @@ dmypy.json
 
 # Pytype type checker
 .pytype/
+
+#mac stuff
+.DS_Store
