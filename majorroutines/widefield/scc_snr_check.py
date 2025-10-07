@@ -145,24 +145,29 @@ def main(nv_list, num_reps, num_runs, uwave_ind_list=[0, 1]):
 
     ### Report results and cleanup
 
-    try:
-        figs = process_and_plot(data)
-    except Exception:
-        print(traceback.format_exc())
-        figs = None
+
 
     timestamp = dm.get_time_stamp()
 
     repr_nv_name = widefield.get_repr_nv_sig(nv_list).name
     file_path = dm.get_file_path(__file__, timestamp, repr_nv_name)
     dm.save_raw_data(data, file_path)
+
+    try:
+        figs = process_and_plot(data)
+    except Exception:
+        print(traceback.format_exc())
+        figs = None
     if figs is not None:
         num_figs = len(figs)
         for ind in range(num_figs):
             file_path = dm.get_file_path(__file__, timestamp, repr_nv_name + f"-{ind}")
             dm.save_figure(figs[ind], file_path)
-
+    
+    ### Clean up and return
     tb.reset_cfm()
+    kpl.show()
+
 
 
 if __name__ == "__main__":

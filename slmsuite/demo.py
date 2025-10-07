@@ -176,10 +176,10 @@ if len(pixel_coords_list) >= 3:
     # New pixel coordinate for which we want to find the corresponding red coordinate
     new_pixel_coord = np.array(
         [
-        [108.407, 107.089],
-        [119.523, 121.521],
-        [109.87, 94.089],
-        [93.79, 118.231],
+        [108.423, 107.089],
+        [119.578, 121.461],
+        [109.909, 94.062],
+        [93.814, 118.209],
         ],
         dtype=np.float32,
     )
@@ -244,7 +244,7 @@ else:
     #     [42.749, 125.763], pixel_coords_list, red_coords_list
     # )
     # print("Corresponding red coordinates:", new_red_coord)
-# sys.exit()
+sys.exit()
 
 min_tau = 200  # ns
 max_tau = 100e3  # fallback if no revival_period given

@@ -77,7 +77,7 @@ def plot_nv_resonance(
 
     avg_snr, avg_snr_ste = widefield.calc_snr(sig_counts, ref_counts)
     num_nvs = len(nv_list)
-    freqs_dense = np.linspace(min(freqs), max(freqs), 200)
+    freqs_dense = np.linspace(min(freqs), max(freqs), 60)
 
     def process_nv(nv_idx):
         nv_counts = avg_counts[nv_idx]
@@ -166,11 +166,11 @@ def plot_nv_resonance(
 
     ax_snr.set_xlabel("Microwave Frequency (MHz)", fontsize=15)
     ax_snr.set_ylabel("Signal-to-Noise Ratio (SNR)", fontsize=15)
-    ax_snr.set_title("SNR vs Frequency for All NVs", fontsize=15)
+    ax_snr.set_title(f"SNR vs Frequency for {num_nvs} NVs", fontsize=15)
 
     ax_snr.grid(True, linestyle="--", alpha=0.6)
     ax_snr.tick_params(axis="both", labelsize=14)
-    # plt.show(block=True)
+    plt.show(block=True)
     # Set plot style
     # for nv_ind in range(num_nvs):
     #     fig, ax = plt.subplots(figsize=(8, 5))
@@ -208,14 +208,12 @@ def plot_nv_resonance(
     orientation_bins = out['bins']          # dict: {2.76: [nv_idx,...], 2.78: [...], ...}
     no_match = out['no_match']              # NVs with neither peak near any target
     multi_match = out['multi_match']        # ambiguous
-    assigned_target_per_nv = out['assignments']  # array of target GHz or nan
-    which_peak_was_used = out['which_peak']      # 'f1' or 'f2'
     print("Bin counts:", {k: len(v) for k, v in orientation_bins.items()})
     print("No match:", no_match, "Multi-match:", multi_match)
     # Print the NV indices per orientation bin
     for t, idx_list in out['bins'].items():
         print(f"Target {t:.2f} GHz -> NV indices {idx_list}")
-    return
+    # return
     ### snrs
     median_snr = np.median(snrs)
     print(f"median snr:{median_snr:.2f}")
@@ -356,6 +354,7 @@ def plot_nv_resonance(
 
     else:
         filtered_indices = list(range(num_nvs))
+    filtered_indices =  [0, 1, 2, 4, 9, 10, 12, 14, 15, 17, 18, 20, 22, 23, 24, 27, 28, 29, 30, 33, 34, 37, 40, 41, 42, 45, 46, 49, 50, 51, 54, 55, 57, 58, 59, 60, 62, 65, 67, 68, 69, 72, 73, 75, 78, 79, 80, 81, 82, 85, 86, 87, 88, 90, 94, 95, 98, 99, 101, 102, 104, 106, 107, 111, 113, 114, 116, 117, 119, 122, 123, 125, 126, 127, 128, 130, 131, 133, 134, 135, 136, 137, 142, 143, 144, 145, 146, 148, 149, 151, 153, 155, 158, 161, 163, 164, 165, 166, 167, 170, 172, 173, 174, 175, 178, 181, 183, 185, 186, 187, 191, 192, 193, 195, 196, 197, 199, 200, 201, 203, 205, 207, 210, 211, 212, 214, 216, 218, 220, 221, 223, 225, 226, 227, 228, 229, 230, 233, 235, 237, 238, 239, 242, 244, 245, 246, 247, 249, 250, 252, 253]
 
     # mannual removal of indices
     # indices_to_remove_manually = []
@@ -437,7 +436,7 @@ def plot_nv_resonance(
         # dm.save_figure(fig, file_path)
         # plt.close(fig)
 
-    return
+    # return
     # Plot filtered resonance fits
     sns.set(style="whitegrid", palette="muted")
     num_filtered_nvs = len(filtered_nv_list)
@@ -449,7 +448,8 @@ def plot_nv_resonance(
         figsize=(num_cols * 2, num_rows * 1),
         sharex=True,
         sharey=False,
-        constrained_layout=True,
+        # constrained_layout=True,
+        gridspec_kw={'wspace': 0.0, 'hspace': 0.0},
     )
     axes_fitting = axes_fitting.flatten()
 
@@ -513,9 +513,8 @@ def plot_nv_resonance(
             ax.grid(True, which="both", linestyle="--", linewidth=0.5)
         else:
             ax.axis("off")
-    plt.subplots_adjust(
-        left=0.1, right=0.95, top=0.95, bottom=0.1, hspace=0.001, wspace=0.001
-    )
+    
+    fig_fitting.tight_layout(pad=0.1, w_pad=0.0, h_pad=0.0)
     fig_fitting.text(
         -0.005,
         0.5,
@@ -524,18 +523,19 @@ def plot_nv_resonance(
         rotation="vertical",
         fontsize=12,
     )
+    # Optional outer labels/title (won't add gaps between subplots)
     # file_name = dm.get_file_name(file_id=file_id)
-    fig_fitting.suptitle(f"ESR {file_id}", fontsize=16)
+    plt.subplots_adjust(top=0.98, wspace=0.0, hspace=0.0)
+    fig_fitting.suptitle(f"ESR {file_id}", y=0.995,fontsize=11)
     # plt.tight_layout()
     # now = datetime.now()
     # date_time_str = now.strftime("%Y%m%d_%H%M%S")
     # # file_path = dm.get_file_path(__file__, file_name, f"{file_id}_{date_time_str}")
+    # plt.subplots_adjust(left=0.1, right=0.95, top=0.95, bottom=0.1, hspace=0.0, wspace=0.0)
     plt.show()
     # dm.save_figure(fig_fitting, file_path)
     # plt.close(fig_fitting)
     # return
-import numpy as np
-from collections import defaultdict
 
 def classify_nv_by_ms_minus_targets(center_freqs,
                                     targets_ghz=(2.76, 2.78, 2.82, 2.84),
@@ -698,9 +698,12 @@ if __name__ == "__main__":
     # file_ids = [
     #     "2025_10_03-06_59_37-rubin-nv0_2025_09_08",
     # ]
-    file_ids = [
-        "2025_10_04-23_59_18-rubin-nv0_2025_09_08",
-    ]
+    ### 308NVs
+    # file_ids = [
+    #     "2025_10_04-23_59_18-rubin-nv0_2025_09_08",
+    # ]
+
+    # ### 254NVs
     file_ids = [
         "2025_10_07-07_19_37-rubin-nv0_2025_09_08",
     ]
@@ -788,7 +791,7 @@ if __name__ == "__main__":
             combined_sig_counts,
             combined_ref_counts,
             file_id=combined_file_id,
-            num_cols=7,
+            num_cols=8,
         )
     else:
         print("No valid data available for plotting.")

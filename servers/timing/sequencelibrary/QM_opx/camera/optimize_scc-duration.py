@@ -25,10 +25,10 @@ def get_seq(base_scc_seq_args, scc_duration_steps, num_reps):
 
         duration_override = qua.declare(int)
 
-        def uwave_macro_sig(uwave_ind_list, step_val):
+        def uwave_macro_sig(uwave_ind_list):
             seq_utils.macro_pi_pulse(uwave_ind_list)
 
-        def uwave_macro_ref(uwave_ind_list, step_val):
+        def uwave_macro_ref(uwave_ind_list):
             pass
 
         def one_step():

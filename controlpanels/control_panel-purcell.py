@@ -308,7 +308,7 @@ def do_optimize_loop(nv_list, coords_key):
 
     # Report back
     for opti_coords in opti_coords_list:
-        r_opti_coords = [round(el, 3) for el in opti_coords]
+        r_opti_coords = [round(el, 3) for el in opti_coords[:2]]
         print(f"{r_opti_coords},")
 
 
@@ -1306,13 +1306,13 @@ if __name__ == "__main__":
     #     [240.501, 17.871],
     # ]
     # green_coords_list = [
-    #     [108.407, 107.089],
-    #     [119.523, 121.521],
-    #     [109.87, 94.089],
-    #     [93.79, 118.231],
+    #     [108.423, 107.089],
+    #     [119.578, 121.461],
+    #     [109.909, 94.062],
+    #     [93.814, 118.209],
     # ]
     # red_coords_list = [
-    #      [73.502, 71.507],
+    #     [73.502, 71.507],
     #     [82.073, 83.742],
     #     [75.116, 61.055],
     #     [61.246, 79.802],
@@ -1426,7 +1426,7 @@ if __name__ == "__main__":
         # )
 
         do_compensate_for_drift(nv_sig)
-        do_widefield_image_sample(nv_sig, 50)
+        # do_widefield_image_sample(nv_sig, 50)
         # do_widefield_image_sample(nv_sig, 200)
 
         # for nv in nv_list:
@@ -1495,7 +1495,7 @@ if __name__ == "__main__":
         # do_scc_snr_check(nv_list)
         # do_optimize_scc_duration(nv_list)
         # do_optimize_scc_amp(nv_list)
-        optimize_scc_amp_and_duration(nv_list)
+        # optimize_scc_amp_and_duration(nv_list)
         # do_crosstalk_check(nv_sig)
         # do_spin_pol_check(nv_sig)
 

@@ -426,7 +426,7 @@ if __name__ == "__main__":
     # data = dm.get_raw_data(file_stem=file_stem)
 
     data = dm.get_raw_data(
-        file_stem="2025_09_30-11_04_32-rubin-nv0_2025_09_08", load_npz=True
+        file_stem="2025_10_07-13_28_41-rubin-nv0_2025_09_08", load_npz=True
     )
     # file_name = dm.get_file_name(file_id=file_id)
     # print(f"{file_name}_{file_id}")
