@@ -64,7 +64,7 @@ class PowerSupplyRnsNgc103(LabradServer, RsInstrument):
         self.open = False
         self.instr = None
             
-    def _write_command(self, cmd : str) -> None:
+    def _write_command(self, c, cmd : str) -> None:
         """
         Write buffered command to the instrument.
 
@@ -73,7 +73,7 @@ class PowerSupplyRnsNgc103(LabradServer, RsInstrument):
         # try:
         self.instr.write_str(cmd + "; *WAI")
         # except
-    
+        
     def _query_command(self, cmd : str) -> any:
         """
         Query buffered command.
@@ -82,7 +82,8 @@ class PowerSupplyRnsNgc103(LabradServer, RsInstrument):
         """
         return self.instr.query_str(cmd + "; *WAI")
 
-    def open_connection(self, IP : str = None, direction_channels : dict[str, int] = {"x": 1, "y": 2, "z": 3}) -> None:
+    @setting(0, IP="s", direction_channels="?")
+    def open_connection(self, c, IP : str = None, direction_channels : dict[str, int] = {"x": 1, "y": 2, "z": 3}) -> None:
         """
         Open connection with the device. Ensure to call this before attempting to use the device.
 
@@ -101,7 +102,8 @@ class PowerSupplyRnsNgc103(LabradServer, RsInstrument):
             self.instr = Rs.RsInstrument(f'TCPIP::{IP}::INSTR', True, False, "Simulate=False")
             print("the power supply " + self._query_command('*IDN?') + " was connected at " + str(datetime.now()))
 
-    def close_connection(self) -> None:
+    @setting(1)
+    def close_connection(self, c) -> None:
         """
         Close connection with the device. Ensure to call this when you're done using the device.
 
@@ -113,7 +115,8 @@ class PowerSupplyRnsNgc103(LabradServer, RsInstrument):
         self.open = False
         self.instr.close()
         
-    def set_voltage(self, which : Union[int, str], voltage : float) -> None:
+    @setting(2, which="?", voltage="v")
+    def set_voltage(self, c, which : Union[int, str], voltage : float) -> None:
         """
         Set voltage of a specific channel. 
         
@@ -127,7 +130,8 @@ class PowerSupplyRnsNgc103(LabradServer, RsInstrument):
         self._write_command(f"INST OUT{which}")
         self._write_command(f"VOLT {voltage}")
         
-    def get_voltage(self, which : Union[int, str]) -> None:
+    @setting(3, which="?", returns="v")
+    def get_voltage(self, c, which : Union[int, str]) -> None:
         """
         Get voltage of a specific channel. 
         
@@ -144,7 +148,8 @@ class PowerSupplyRnsNgc103(LabradServer, RsInstrument):
         str_out = self.instr.query("VOLT?")
         return float(str_out)
         
-    def measure_voltage(self, which : Union[int, str]) -> None:
+    @setting(4, which="?", returns="v")
+    def measure_voltage(self, c, which : Union[int, str]) -> None:
         """
         Measure the voltage currently being applied on the circuit
         
@@ -162,7 +167,8 @@ class PowerSupplyRnsNgc103(LabradServer, RsInstrument):
         str_out = self.instr.query("MEAS:VOLT?")
         return float(str_out)
         
-    def set_current(self, which : Union[int, str], current : float) -> None:
+    @setting(5, which="?", voltage="v")
+    def set_current(self, c, which : Union[int, str], current : float) -> None:
         """
         Set current of a specific channel. 
         
@@ -176,7 +182,8 @@ class PowerSupplyRnsNgc103(LabradServer, RsInstrument):
         self._write_command(f"INST OUT{which}")
         self._write_command(f"CURR {current}")
         
-    def get_current(self, which : Union[int, str]) -> float:
+    @setting(6, which="?", returns="v")
+    def get_current(self, c, which : Union[int, str]) -> float:
         """
         Get current of a specific channel. Note: This is not the current being currently pushed into the circuit, this is just the value which the current is set at. If you want a measurement, use RS_NGC103.measure_current().
 
@@ -191,7 +198,8 @@ class PowerSupplyRnsNgc103(LabradServer, RsInstrument):
         str_out = self.instr.query("CURR?")
         return float(str_out)
     
-    def measure_current(self, which : Union[int, str]) -> None:
+    @setting(7, which="?", returns="v")
+    def measure_current(self, c, which : Union[int, str]) -> None:
         """
         Measure the current currently being applied on the circuit
         
@@ -209,7 +217,8 @@ class PowerSupplyRnsNgc103(LabradServer, RsInstrument):
         str_out = self.instr.query("MEAS:CURR?")
         return float(str_out)
 
-    def activateChannel(self, which : Union[int, str]) -> None:
+    @setting(8, which="?")
+    def activateChannel(self, c, which : Union[int, str]) -> None:
         """
         Activate a specific channel.
 
@@ -222,7 +231,8 @@ class PowerSupplyRnsNgc103(LabradServer, RsInstrument):
         self._write_command(f"INST OUT{which}")
         self._write_command("OUTP:CHAN ON")
     
-    def deactivateChannel(self, which : Union[int, str]) -> None:
+    @setting(9, which="?")
+    def deactivateChannel(self, c, which : Union[int, str]) -> None:
         """
         Deactivate a specific channel.
 
@@ -239,7 +249,8 @@ class PowerSupplyRnsNgc103(LabradServer, RsInstrument):
         self._write_command(f"INST OUT{which}")
         self._write_command("OUTP:CHAN OFF")
     
-    def activateAll(self) -> None:
+    @setting(10)
+    def activateAll(self, c) -> None:
         """
         Activates all channels.
 
@@ -248,7 +259,8 @@ class PowerSupplyRnsNgc103(LabradServer, RsInstrument):
         for n in self.direction_channels.values():
             self.activateChannel(n)
     
-    def deactivateAll(self) -> None:
+    @setting(11)
+    def deactivateAll(self, c) -> None:
         """
         Deactivates all channels.
         
@@ -257,7 +269,8 @@ class PowerSupplyRnsNgc103(LabradServer, RsInstrument):
         for n in self.direction_channels.values():
             self.deactivateChannel(n)
 
-    def activateMaster(self) -> None:
+    @setting(12)
+    def activateMaster(self, c) -> None:
         """
         Activates master control of the device..
         
@@ -265,7 +278,8 @@ class PowerSupplyRnsNgc103(LabradServer, RsInstrument):
         """
         self._write_command("OUTP:MAST ON")
 
-    def deactivateMaster(self) -> None:
+    @setting(13)
+    def deactivateMaster(self, c) -> None:
         """
         Deactivates master control of the device.
         
