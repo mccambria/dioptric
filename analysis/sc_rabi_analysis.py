@@ -263,6 +263,46 @@ def plot_rabi_fits(
             ax_h.tick_params(axis="both", labelsize=12)
             ax_h.grid(True)
             plt.show(block=True)
+        
+        # --- Individual per-NV figures as well ---
+        make_individual = True  # set False to skip
+
+        if make_individual:
+            tau_dense = np.linspace(0, float(taus.max()), 300)
+            epsilon = 1e-10
+
+            for nv_ind in range(num_nvs):
+                fig, ax = plt.subplots(figsize=(6, 4))
+                y = np.asarray(avg_counts[nv_ind], dtype=float)
+                yerr = np.asarray(avg_counts_ste[nv_ind], dtype=float)
+
+                # data + errors
+                ax.errorbar(taus, y, yerr=np.abs(yerr), fmt="o")
+
+                # fit curve
+                if fit_fns[nv_ind] is not None:
+                    try:
+                        ax.plot(tau_dense, fit_fns[nv_ind](tau_dense), "-")
+                    except Exception:
+                        pass
+
+                # title with Rabi period (rounded to nearest 4 ns)
+                period_str = "N/A"
+                try:
+                    rabi_freq = float(popts[nv_ind][1])
+                    if np.isfinite(rabi_freq) and rabi_freq > epsilon:
+                        rabi_period = 1.0 / rabi_freq
+                        rabi_period = int(np.round(rabi_period / 4.0)) * 4
+                        period_str = f"{rabi_period:.0f} ns"
+                except Exception:
+                    pass
+
+                ax.set_title(f"NV {nv_ind} (Rabi: {period_str})")
+                ax.set_xlabel("Pulse Duration (ns)")
+                ax.set_ylabel("Norm. NV- Population")
+                ax.grid(True)
+                fig.tight_layout()
+                plt.show(block=True)
     return
     # --- Grid of per-NV plots ---
     if num_cols is None or num_cols < 1:
@@ -472,6 +512,16 @@ def remove_outliers(data):
 
 if __name__ == "__main__":
     kpl.init_kplotlib()
+    ### combine
+    # Combine, remove duplicates, sort
+    list1 = [0, 1, 2, 3, 10, 14, 17, 18, 19, 26, 31, 32, 36, 37, 38, 41, 43, 46, 47, 50, 53, 54, 55, 56, 59, 62, 63, 65, 72, 73, 76, 77, 78, 80, 81, 82, 83, 85, 89, 92, 94, 98, 101, 102, 104, 105, 106, 107, 108, 109, 110, 112, 113, 115, 116, 124, 125, 126, 128, 136, 137, 140, 142, 143, 145, 146, 147, 148, 149, 150, 152, 154, 155, 156, 157, 159, 164, 166, 170, 171, 177, 179, 180, 181, 182, 186, 188, 189, 191, 193, 194, 198, 200, 202, 203, 204, 205, 206, 207, 208, 212, 214, 216, 218, 219, 222, 223, 227, 228, 230, 231, 232, 233, 236, 237, 239, 241, 242, 243, 246, 248, 249, 250, 252, 253, 254, 255, 258, 261, 262, 264, 265, 266, 270, 274, 275, 276, 277, 280, 281, 283, 286, 288, 289, 291, 293, 294, 295, 296, 299, 301, 303, 305, 306, 307]
+    list2 = [2, 3, 4, 5, 6, 12, 15, 21, 23, 24, 28, 29, 31, 33, 34, 39, 40, 42, 43, 48, 49, 51, 52, 54, 57, 60, 63, 64, 66, 68, 69, 70, 72, 74, 79, 82, 84, 85, 87, 88, 89, 90, 94, 95, 96, 97, 100, 102, 103, 111, 117, 118, 121, 127, 129, 130, 131, 132, 133, 134, 135, 138, 139, 141, 151, 158, 160, 162, 163, 165, 167, 169, 173, 174, 180, 181, 184, 189, 190, 192, 201, 210, 211, 213, 215, 217, 220, 221, 223, 225, 226, 229, 231, 234, 235, 238, 240, 243, 244, 245, 251, 254, 256, 257, 259, 260, 261, 264, 265, 266, 267, 270, 271, 275, 282, 285, 287, 288, 290, 292, 296, 297, 298, 300, 302, 304, 306, 307]
+    combined_sorted = sorted(set(list1 + list2))
+    print(combined_sorted)
+    print(len(combined_sorted))
+    sys.exit()
+
+    
     # file_id = 1772297872545  # two orientations with freqsa round 2.79
     # file_id = 1772755741220  # two orientations with freqs aroud 2.84
     # file_id = 1774582403511  # all four orientation measured with two frequency tone per sig gen
@@ -500,7 +550,8 @@ if __name__ == "__main__":
     # file_stem = "2025_09_21-04_35_06-rubin-nv0_2025_09_08"
     # file_stem = "2025_10_02-05_57_27-rubin-nv0_2025_09_08"
     # file_stem = ["2025_10_05-20_06_59-rubin-nv0_2025_09_08"]
-    file_stem = ["2025_10_06-03_26_08-rubin-nv0_2025_09_08"]
+    file_stem = ["2025_10_06-03_26_08-rubin-nv0_2025_09_08"] ## 2.76, 2.84
+    # file_stem = ["2025_10_06-21_18_40-rubin-nv0_2025_09_08"]
     data = dm.get_raw_data(file_stem=file_stem, load_npz=True, use_cache=False)
     nv_list = data["nv_list"]
     taus = data["taus"]
@@ -526,5 +577,6 @@ if __name__ == "__main__":
         median_fit_fn,
         median_popt,
     )
+
 
 kpl.show(block=True)
