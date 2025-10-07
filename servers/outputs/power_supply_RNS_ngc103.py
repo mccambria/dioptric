@@ -4,7 +4,8 @@ Output server for the R&S NGC103 desktop power supply.
 
 Created on Wed Feb 26 09:19:48 2025
 
-@author: rcantuv
+@author: rcantuv, sean, quinn, 
+LabRad wrapper of '/dioptric/nv-field-control/actual-field-control/fieldcontrol.py'
 
 ### BEGIN NODE INFO
 [info]
@@ -34,6 +35,8 @@ from twisted.internet.defer import ensureDeferred
 from utils import common
 from utils import tool_belt as tb
 
+import numpy as np
+from datetime import datetime
 
 class PowerSupplyRnsNgc103(LabradServer, RsInstrument):
     name = "power_supply_RNS_ngc103"
@@ -57,188 +60,218 @@ class PowerSupplyRnsNgc103(LabradServer, RsInstrument):
         self.reset(None)
         # self._set_freq(2.87)
         logging.info("Init complete")
+        
+        self.open = False
+        self.instr = None
+            
+    def _write_command(self, cmd : str) -> None:
+        """
+        Write buffered command to the instrument.
 
-    # @setting(0)
-    # def uwave_on(self, c):
-    #     """Turn on the signal. This is like opening an internal gate on
-    #     the signal generator.
-    #     """
+        :return None:
+        """
+        # try:
+        self.instr.write_str(cmd + "; *WAI")
+        # except
+    
+    def _query_command(self, cmd : str) -> any:
+        """
+        Query buffered command.
 
-    #     self.pwr_sup.write("ENBR 1")
+        :return any:
+        """
+        return self.instr.query_str(cmd + "; *WAI")
 
-    # @setting(1)
-    # def uwave_off(self, c):
-    #     """Turn off the signal. This is like closing an internal gate on
-    #     the signal generator.
-    #     """
+    def open_connection(self, IP : str = None, direction_channels : dict[str, int] = {"x": 1, "y": 2, "z": 3}) -> None:
+        """
+        Open connection with the device. Ensure to call this before attempting to use the device.
 
-    #     self.pwr_sup.write("ENBR 0")
+        :return None:
+        """
+        self.IP = IP
+        self.direction_channels = direction_channels
+            
+        self.open = True
+        Rs.RsInstrument.assert_minimum_version('1.50.0')
+    
+        if IP == None:
+            self.instr = Rs.RsInstrument('TCPIP::192.168.56.101::hislip0', True, False, "Simulate=True")
+            print("the power supply " + self._query_command('*IDN?') + " was connected at " + str(datetime.now()))
+        else:
+            self.instr = Rs.RsInstrument(f'TCPIP::{IP}::INSTR', True, False, "Simulate=False")
+            print("the power supply " + self._query_command('*IDN?') + " was connected at " + str(datetime.now()))
 
-    # @setting(2, freq="v[]")
-    # def set_freq(self, c, freq):
-    #     """Set the frequency of the signal.
+    def close_connection(self) -> None:
+        """
+        Close connection with the device. Ensure to call this when you're done using the device.
 
-    #     Params
-    #         freq: float
-    #             The frequency of the signal in GHz
-    #     """
-    #     self._set_freq(freq)
+        :return None:
+        """
+        print("the power supply " + self._query_command('*IDN?') + " was disconnected at " + str(datetime.now()))
+        
+        # Close connection to device
+        self.open = False
+        self.instr.close()
+        
+    def set_voltage(self, which : Union[int, str], voltage : float) -> None:
+        """
+        Set voltage of a specific channel. 
+        
+        :param int | str which: The channel to activate, either the channel number or axis name.
+        :param float voltage: The amount of voltage to set, in volts.
+        :return None:
+        """
+        if isinstance(which, str):
+            which = self.direction_channels[which]
+        
+        self._write_command(f"INST OUT{which}")
+        self._write_command(f"VOLT {voltage}")
+        
+    def get_voltage(self, which : Union[int, str]) -> None:
+        """
+        Get voltage of a specific channel. 
+        
+        Note: This is not the voltage being currently pushed into the circuit, this is just the value which the voltage is set at. If you want a measurement, use RS_NGC103.measure_voltage().
 
-    # def _set_freq(self, freq):
-    #     # Determine how many decimal places we need
-    #     precision = len(str(freq).split(".")[1])
-    #     self.pwr_sup.write("FREQ {0:.{1}f} GHZ".format(freq, precision))
-    #     time.sleep(0.01)
+        :param int | str which: The channel to read, either the channel number or axis name.
+        :return voltage: The voltage active on the selected channel
+        """
+        if isinstance(which, str):
+            which = self.direction_channels[which]
+        
+        self._write_command(f"INST OUT{which}")
 
-    # @setting(3, amp="v[]")
-    # def set_amp(self, c, amp):
-    #     """Set the amplitude of the signal.
+        str_out = self.instr.query("VOLT?")
+        return float(str_out)
+        
+    def measure_voltage(self, which : Union[int, str]) -> None:
+        """
+        Measure the voltage currently being applied on the circuit
+        
+        Note: This is the voltage being currently pushed into the circuit. If you want this channel's set value, use RS_NGC103.get_voltage().
 
-    #     Params
-    #         amp: float
-    #             The amplitude of the signal in dBm
-    #     """
-
-    #     # Determine how many decimal places we need
-    #     precision = len(str(amp).split(".")[1])
-    #     cmd = "AMPR {0:.{1}f} DBM".format(amp, precision)
-    #     # logging.info(cmd)
-    #     self.pwr_sup.write(cmd)
-
-    # @setting(5)
-    # def mod_off(self, c):
-    #     """Turn off the modulation."""
-
-    #     self.pwr_sup.write("MODL 0")
-    #     task = self.task
-    #     if task is not None:
-    #         task.close()
-
-    # @setting(7)
-    # def load_iq(self, c):
-    #     """
-    #     Set up external IQ modulation
-    #     """
-
-    #     # The sg394 only supports up to 10 dBm of power output with IQ modulation
-    #     # Let's check what the amplitude is set as, and if it's over 10 dBm,
-    #     # we'll quit out and save a note in the labrad logging
-    #     if float(self.sig_gen.query("AMPR?")) > 10:
-    #         msg = (
-    #             "IQ modulation on sg394 supports up to 10 dBm. The power was"
-    #             " set to {} dBm and the operation was stopped.".format(
-    #                 self.sig_gen.query("AMPR?")
-    #             )
-    #         )
-    #         raise Exception(msg)
-    #         return
-
-    #     # QAM is type 7
-    #     self.sig_gen.write("TYPE 7")
-    #     # STYP 1 is vector modulation
-    #     # self.sig_gen.write('STYP 1')
-    #     # External mode is modulation function 5
-    #     self.sig_gen.write("QFNC 5")
-    #     # Turn on modulation
-    #     cmd = "MODL 1"
-    #     self.sig_gen.write(cmd)
-    #     # logging.info(cmd)
-
-    # @setting(7, carrier_freq="v[]", offset_I="v[]", offset_Q="v[]")
-    # def load_iq(self, c, carrier_freq, offset_I, offset_Q):
-    #     """
-    #     Set up internal IQ modulation.
-
-    #     Parameters:
-    #         carrier_freq: float
-    #             Carrier frequency in GHz.
-    #         freq_I: float
-    #             Frequency for the I-channel modulation (MHz).
-    #         freq_Q: float
-    #             Frequency for the Q-channel modulation (MHz).
-    #     """
-    #     # Ensure that the signal generator does not exceed 10 dBm with IQ modulation
-    #     if float(self.pwr_sup.query("AMPR?")) > 10:
-    #         msg = (
-    #             "IQ modulation on SG394 supports up to 10 dBm. The power was"
-    #             " set to {} dBm and the operation was stopped.".format(
-    #                 self.pwr_sup.query("AMPR?")
-    #             )
-    #         )
-    #         raise Exception(msg)
-    #     # Enable IQ modulation
-    #     self.pwr_sup.write("MODL 1")
-    #     # Set carrier frequency (GHz)
-    #     self.pwr_sup.write(f"FREQ {carrier_freq} GHz")
-    #     # Use internal IQ modulation mode
-    #     self.pwr_sup.write("QFNC 7")  # INTERNAL Cosine/Sine
-    #     # Apply optional I/Q offsets (-5% to +5%)
-    #     self.pwr_sup.write(f"OFSI {offset_I}")  # in %
-    #     self.pwr_sup.write(f"OFSQ {offset_Q}")  # in %
-    #     # Enable RF output for IQ modulation
-
-    # @setting(8, carrier_freq="v[]", deviation="v[]")
-    # def load_fm(self, c, carrier_freq, deviation):
-    #     """
-    #     Set up frequency modulation using a nexternal analog source
-    #     Parameters
-    #     ----------
-    #     deviation : float
-    #         The deviation ofthe frequency, in MHz. Max value is 6 MHz.
-
-    #     Returns
-    #     -------
-    #     None.
-
-    #     """
-    #     # logging.info("test")
-
-    #     # FM is type 1
-    #     self.pwr_sup.write("TYPE 1")
-    #     # STYP 1 is analog modulation
-    #     self.pwr_sup.write("STYP 0")
-    #     # # external is 5
-    #     # self.sig_gen.write("MFNC 5")
-    #     # Interanl sine is 0
-    #     self.pwr_sup.write("MFNC 0")
-    #     # # set the rate? For external this is 100 kHz
-    #     # self.sig_gen.write("RATE 100 kHz")
-    #     # set the rate? For external this is 100 kHz
-    #     self.pwr_sup.write("RATE 10 kHz")
-    #     self.pwr_sup.write(f"FREQ {carrier_freq} GHz")
-    #     # set the deviation
-    #     cmd = "FDEV {} MHz".format(deviation)
-    #     self.pwr_sup.write(cmd)
-    #     # Turn on modulation
-    #     cmd = "MODL 1"
-    #     self.pwr_sup.write(cmd)
-
-    # @setting(6)
-    # def reset(self, c):
-    #     self.pwr_sup.write("FDEV 0")
-    #     cmd = "MODL 0"
-    #     self.pwr_sup.write(cmd)
-    #     self.uwave_off(c)
-    #     self.mod_off(c)
-
-    @setting(0)
-    def set_current(self, c, current, channel, output):
-        """Set the current of the power supply.
-
-        Params
-            current: float
-                The current in Amps
+        :param int | str which: The channel to read, either the channel number or axis name.
+        :return voltage: The voltage active on the selected channel
         """
 
-        self.pwr_sup.write(f"INST {channel}")
-        self.pwr_sup.write(f"CURR {current:.2f} A")
-        if output:
-            self.pwr_sup.write("OUTP ON")
-        else:
-            self.pwr_sup.write("OUTP OFF")
-        time.sleep(0.01)
-        return self.pwr_sup.query("CURR?")
+        if isinstance(which, str):
+            which = self.direction_channels[which]
 
+        self._write_command(f"INST OUT{which}")
+
+        str_out = self.instr.query("MEAS:VOLT?")
+        return float(str_out)
+        
+    def set_current(self, which : Union[int, str], current : float) -> None:
+        """
+        Set current of a specific channel. 
+        
+        :param int | str which: The channel to activate, either the channel number or axis name.
+        :param float current: The amount of current to set, in amps.
+        :return None:
+        """
+        if isinstance(which, str):
+            which = self.direction_channels[which]
+        
+        self._write_command(f"INST OUT{which}")
+        self._write_command(f"CURR {current}")
+        
+    def get_current(self, which : Union[int, str]) -> float:
+        """
+        Get current of a specific channel. Note: This is not the current being currently pushed into the circuit, this is just the value which the current is set at. If you want a measurement, use RS_NGC103.measure_current().
+
+        :param int | str which: The channel to read, either the channel number or axis name.
+        :return current: The current active on the selected channel
+        """
+        if isinstance(which, str):
+            which = self.direction_channels[which]
+        
+        self._write_command(f"INST OUT{which}")
+
+        str_out = self.instr.query("CURR?")
+        return float(str_out)
+    
+    def measure_current(self, which : Union[int, str]) -> None:
+        """
+        Measure the current currently being applied on the circuit
+        
+        Note: This is the current being currently pushed into the circuit. If you want this channel's set value, use RS_NGC103.get_current().
+
+        :param int | str which: The channel to read, either the channel number or axis name.
+        :return current: The current active on the selected channel
+        """
+
+        if isinstance(which, str):
+            which = self.direction_channels[which]
+
+        self._write_command(f"INST OUT{which}")
+
+        str_out = self.instr.query("MEAS:CURR?")
+        return float(str_out)
+
+    def activateChannel(self, which : Union[int, str]) -> None:
+        """
+        Activate a specific channel.
+
+        :param int | str which: The channel to activate, either the channel number or axis name. 
+        :return None:
+        """
+        if isinstance(which, str):
+            which = self.direction_channels[which]
+
+        self._write_command(f"INST OUT{which}")
+        self._write_command("OUTP:CHAN ON")
+    
+    def deactivateChannel(self, which : Union[int, str]) -> None:
+        """
+        Deactivate a specific channel.
+
+        :param int | str which: The channel to activate, either the channel number or axis name. 
+        :return None:
+        """
+        if isinstance(which, str):
+            which = self.direction_channels[which]
+        
+        if self.maintaining[which]:
+            self.release_current(which)
+            time.sleep(1)
+
+        self._write_command(f"INST OUT{which}")
+        self._write_command("OUTP:CHAN OFF")
+    
+    def activateAll(self) -> None:
+        """
+        Activates all channels.
+
+        :return None:
+        """
+        for n in self.direction_channels.values():
+            self.activateChannel(n)
+    
+    def deactivateAll(self) -> None:
+        """
+        Deactivates all channels.
+        
+        :return None:
+        """
+        for n in self.direction_channels.values():
+            self.deactivateChannel(n)
+
+    def activateMaster(self) -> None:
+        """
+        Activates master control of the device..
+        
+        :return None:
+        """
+        self._write_command("OUTP:MAST ON")
+
+    def deactivateMaster(self) -> None:
+        """
+        Deactivates master control of the device.
+        
+        :return None:
+        """
+        self._write_command("OUTP:MAST OFF")
 
 __server__ = PwrSuppNGC103()
 
@@ -252,4 +285,3 @@ if __name__ == "__main__":
     pwr_sup = rm.open_resource(addr)
 
     PwrSuppNGC103.initServer(__server__)
-    PwrSuppNGC103.set_current(__server__, 0.1, 1, True)
