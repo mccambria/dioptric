@@ -172,32 +172,50 @@ def plot_nv_resonance(
     ax_snr.tick_params(axis="both", labelsize=14)
     # plt.show(block=True)
     # Set plot style
-    for nv_ind in range(num_nvs):
-        fig, ax = plt.subplots(figsize=(8, 5))
-        # Data points with error bars
-        ax.errorbar(
-            freqs,
-            avg_counts[nv_ind],
-            yerr=avg_counts_ste[nv_ind],
-            fmt="o",
-            color="steelblue",
-            ecolor="gray",
-            elinewidth=1,
-            capsize=3,
-            markersize=5,
-            label="Data"
-        )
-        # Fit curve
-        ax.plot(freqs_dense, fit_fns[nv_ind], "-", color="red", label="Fit")
-        # Labels and style
-        ax.set_xlabel("Frequency (GHz)")
-        ax.set_ylabel("Normalized NV Population")
-        ax.set_title(f"NV Index: {nv_ind}")
-        ax.grid(True, linestyle="--", alpha=0.6)
-        ax.legend()
-        plt.show(block=True)
-    return
+    # for nv_ind in range(num_nvs):
+    #     fig, ax = plt.subplots(figsize=(8, 5))
+    #     # Data points with error bars
+    #     ax.errorbar(
+    #         freqs,
+    #         avg_counts[nv_ind],
+    #         yerr=avg_counts_ste[nv_ind],
+    #         fmt="o",
+    #         color="steelblue",
+    #         ecolor="gray",
+    #         elinewidth=1,
+    #         capsize=3,
+    #         markersize=5,
+    #         label="Data"
+    #     )
+    #     # Fit curve
+    #     ax.plot(freqs_dense, fit_fns[nv_ind], "-", color="red", label="Fit")
+    #     # Labels and style
+    #     ax.set_xlabel("Frequency (GHz)")
+    #     ax.set_ylabel("Normalized NV Population")
+    #     ax.set_title(f"NV Index: {nv_ind}")
+    #     ax.grid(True, linestyle="--", alpha=0.6)
+    #     ax.legend()
+    #     plt.show(block=True)
     # return
+
+    # ----------------- Example of use in your pipeline -----------------
+    # center_freqs is your list of (f1, f2) from the fit_results
+    # If you can also return (amp1, amp2) per NV from the fit, pass as peak_amps=...
+    targets = (2.766, 2.783, 2.82, 2.84)  # GHz
+    out = classify_nv_by_ms_minus_targets(center_freqs, targets_ghz=targets, tol_mhz=60.0)
+
+    # Access results:
+    orientation_bins = out['bins']          # dict: {2.76: [nv_idx,...], 2.78: [...], ...}
+    no_match = out['no_match']              # NVs with neither peak near any target
+    multi_match = out['multi_match']        # ambiguous
+    assigned_target_per_nv = out['assignments']  # array of target GHz or nan
+    which_peak_was_used = out['which_peak']      # 'f1' or 'f2'
+    print("Bin counts:", {k: len(v) for k, v in orientation_bins.items()})
+    print("No match:", no_match, "Multi-match:", multi_match)
+    # Print the NV indices per orientation bin
+    for t, idx_list in out['bins'].items():
+        print(f"Target {t:.2f} GHz -> NV indices {idx_list}")
+    return
     ### snrs
     median_snr = np.median(snrs)
     print(f"median snr:{median_snr:.2f}")
@@ -282,9 +300,9 @@ def plot_nv_resonance(
     # filter_nvs = True
     filter_nvs = False
     if filter_nvs:
-        # target_peak_values = [0.025, 0.068, 0.146, 0.185]
-        target_peak_values = [0.068, 0.185]
-        target_peak_values = [0.290]
+        target_peak_values = [0.025, 0.068, 0.146, 0.185]
+        # target_peak_values = [0.068, 0.185]
+        # target_peak_values = [0.290]
         tolerance = 0.01
         # Filter indices based on proximity to target peak differences
         filtered_indices = [
@@ -516,6 +534,135 @@ def plot_nv_resonance(
     # dm.save_figure(fig_fitting, file_path)
     # plt.close(fig_fitting)
     # return
+import numpy as np
+from collections import defaultdict
+
+def classify_nv_by_ms_minus_targets(center_freqs,
+                                    targets_ghz=(2.76, 2.78, 2.82, 2.84),
+                                    tol_mhz=6.0,
+                                    peak_amps=None):
+    """
+    Classify NV indices into 4 orientation bins based on which ms=-1 target line
+    (2.76, 2.78, 2.82, 2.84 GHz) their *clear* peak is closest to.
+
+    Args
+    ----
+    center_freqs : list of (f1, f2) per NV (floats). Can be in MHz (e.g., 2760) or GHz (2.76).
+    targets_ghz : iterable of target ms=-1 frequencies in GHz.
+    tol_mhz     : matching tolerance in MHz.
+    peak_amps   : optional list of (amp1, amp2) per NV (higher is "clearer").
+                  If None, proximity decides; if provided, proximity is tie-broken by amplitude.
+
+    Returns
+    -------
+    result : dict with keys:
+        - 'bins': {target_ghz: [nv_idx, ...]}
+        - 'assignments': array of length N with the assigned target (GHz) or np.nan
+        - 'which_peak': array of 'f1'/'f2'/None showing which peak matched
+        - 'no_match': [nv_idx, ...]   # neither peak within tolerance
+        - 'multi_match': [nv_idx, ...] # both peaks matched different targets (rare)
+        - 'units': 'GHz' or 'MHz' indicating normalization used internally
+    """
+    # Normalize units: infer MHz vs GHz
+    cf = np.array(center_freqs, dtype=float)
+    # guard shape
+    if cf.ndim != 2 or cf.shape[1] != 2:
+        raise ValueError("center_freqs must be list/array of (f1, f2) pairs")
+
+    # If values are like 2700–2900 => MHz; if ~2.7–2.9 => GHz
+    units = "GHz"
+    cf_max = np.nanmax(cf)
+    if cf_max > 100:  # likely MHz
+        cf = cf / 1000.0
+        units = "MHz->GHz"
+
+    targets = np.array(targets_ghz, dtype=float)
+    tol_ghz = tol_mhz / 1000.0
+
+    N = cf.shape[0]
+    assignments = np.full(N, np.nan, dtype=float)  # target GHz or nan
+    which_peak  = np.array([None]*N, dtype=object)
+
+    # If amplitudes provided, use them to prefer the "clearer" peak on ties
+    has_amps = peak_amps is not None
+    if has_amps:
+        pa = np.array(peak_amps, dtype=float)
+        if pa.shape != cf.shape:
+            raise ValueError("peak_amps must be same shape as center_freqs (N x 2)")
+    else:
+        pa = np.zeros_like(cf)
+
+    bins = {float(t): [] for t in targets}
+    no_match = []
+    multi_match = []
+
+    for i in range(N):
+        f1, f2 = cf[i, 0], cf[i, 1]
+        if not (np.isfinite(f1) and np.isfinite(f2)):
+            no_match.append(i)
+            continue
+
+        # distances to targets
+        d1 = np.abs(targets - f1)
+        d2 = np.abs(targets - f2)
+        # candidates within tolerance
+        cand1 = np.where(d1 <= tol_ghz)[0]
+        cand2 = np.where(d2 <= tol_ghz)[0]
+
+        # Decide which peak is the ms=-1 representative for this NV
+        picked = None
+        picked_peak = None
+
+        if len(cand1) == 0 and len(cand2) == 0:
+            # neither peak close to any target
+            no_match.append(i)
+        elif len(cand1) > 0 and len(cand2) == 0:
+            # only f1 matches: choose closest target
+            j = cand1[np.argmin(d1[cand1])]
+            picked = targets[j]
+            picked_peak = 'f1'
+        elif len(cand2) > 0 and len(cand1) == 0:
+            # only f2 matches
+            j = cand2[np.argmin(d2[cand2])]
+            picked = targets[j]
+            picked_peak = 'f2'
+        else:
+            # both peaks have matches (rare). Prefer the closest-in-frequency;
+            # on tie, prefer higher amplitude if provided.
+            j1 = cand1[np.argmin(d1[cand1])]
+            j2 = cand2[np.argmin(d2[cand2])]
+            if d1[j1] < d2[j2]:
+                picked, picked_peak = targets[j1], 'f1'
+            elif d2[j2] < d1[j1]:
+                picked, picked_peak = targets[j2], 'f2'
+            else:
+                # tie in proximity; use amplitude if available
+                if has_amps and pa[i, 0] != pa[i, 1]:
+                    if pa[i, 0] > pa[i, 1]:
+                        picked, picked_peak = targets[j1], 'f1'
+                    else:
+                        picked, picked_peak = targets[j2], 'f2'
+                else:
+                    # still tied → mark multi and pick arbitrarily the lower-frequency peak
+                    multi_match.append(i)
+                    if f1 <= f2:
+                        picked, picked_peak = targets[j1], 'f1'
+                    else:
+                        picked, picked_peak = targets[j2], 'f2'
+
+        if picked is not None:
+            assignments[i] = float(picked)
+            which_peak[i] = picked_peak
+            bins[float(picked)].append(i)
+
+    return {
+        'bins': bins,
+        'assignments': assignments,   # in GHz
+        'which_peak': which_peak,     # 'f1'/'f2'/None
+        'no_match': no_match,
+        'multi_match': multi_match,
+        'units': units,
+    }
 
 
 if __name__ == "__main__":
@@ -553,6 +700,9 @@ if __name__ == "__main__":
     # ]
     file_ids = [
         "2025_10_04-23_59_18-rubin-nv0_2025_09_08",
+    ]
+    file_ids = [
+        "2025_10_07-07_19_37-rubin-nv0_2025_09_08",
     ]
 
     # Load the first dataset as a base

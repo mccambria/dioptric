@@ -306,7 +306,8 @@ def nuvu2thorcam_calibration(coords):
 
 def load_nv_coords(
     # file_path="slmsuite/nv_blob_detection/nv_blob_308nvs_reordered.npz",
-    file_path="slmsuite/nv_blob_detection/nv_blob_254nvs_reordered.npz",
+    # file_path="slmsuite/nv_blob_detection/nv_blob_254nvs_reordered.npz",
+    file_path="slmsuite/nv_blob_detection/nv_blob_151nvs_reordered.npz",
 ):
     data = np.load(file_path, allow_pickle=True)
     nv_coordinates = data["nv_coordinates"]
