@@ -44,7 +44,32 @@ class PosXyThorGvs212(LabradServer, PosXyStream):
     def initServer(self):
         tb.configure_logging(self)
         self.task = None
+        self._last_x = 0.0
+        self._last_y = 0.0
         self.sub_init_server_xy()
+        # --- add file logging just for this server ---
+        from pathlib import Path
+        try:
+            log_dir = Path(common.get_repo_path()) / "labrad_logging"
+        except Exception:
+            # fallback if common.get_repo_path() not available
+            log_dir = Path.home() / "GitHub" / "dioptric" / "labrad_logging"
+        log_dir.mkdir(parents=True, exist_ok=True)
+        logfile = log_dir / f"{self.name}.log"
+
+        logger = logging.getLogger(self.name)         # server-named logger
+        logger.setLevel(logging.DEBUG)                # capture everything
+        fh = logging.FileHandler(str(logfile), encoding="utf-8")
+        fh.setLevel(logging.DEBUG)
+        fmt = logging.Formatter("%(asctime)s %(levelname)-8s %(name)s: %(message)s")
+        fh.setFormatter(fmt)
+        # Avoid duplicate handlers if server restarts in same process
+        if not any(isinstance(h, logging.FileHandler) and getattr(h, 'baseFilename', '') == str(logfile) 
+                for h in logger.handlers):
+            logger.addHandler(fh)
+        # ------------------------------------------------
+        self.sub_init_server_xy()
+        logging.getLogger(self.name).info("Init complete; logging to %s", logfile)
 
     def sub_init_server_xy(self):
         """Sub-routine to be called by xyz server"""
@@ -90,6 +115,10 @@ class PosXyThorGvs212(LabradServer, PosXyStream):
                 self.daq_ao_galvo_y, min_val=-10.0, max_val=10.0
             )
             task.write([xVoltage, yVoltage])
+            self._last_x = float(xVoltage)
+            self._last_y = float(yVoltage)
+            logging.info(f"write_xy: x={float(xVoltage):.4f}, y={float(yVoltage):.4f}")
+
 
     def _write_single_ax(self, voltage, chan):
         if self.task is not None:
@@ -107,26 +136,30 @@ class PosXyThorGvs212(LabradServer, PosXyStream):
     def write_y(self, c, yVoltage):
         return self._write_single_ax(yVoltage, self.daq_ao_galvo_y)
 
+    # @setting(1, returns="*v[]")
+    # def read_xy(self, c):
+    #     """Return the current voltages on the x and y channels.
+
+    #     Returns
+    #         list(float)
+    #             Current voltages on the x and y channels
+
+    #     """
+    #     with nidaqmx.Task() as task:
+    #         # Set up the internal channels - to do: actual parsing...
+    #         if self.daq_ao_galvo_x == "dev1/AO0":
+    #             chan_name = "dev1/_ao0_vs_aognd"
+    #         task.ai_channels.add_ai_voltage_chan(chan_name, min_val=-10.0, max_val=10.0)
+    #         if self.daq_ao_galvo_y == "dev1/AO1":
+    #             chan_name = "dev1/_ao1_vs_aognd"
+    #         task.ai_channels.add_ai_voltage_chan(chan_name, min_val=-10.0, max_val=10.0)
+    #         voltages = task.read()
+
+    #     return voltages[0], voltages[1]
     @setting(1, returns="*v[]")
     def read_xy(self, c):
-        """Return the current voltages on the x and y channels.
-
-        Returns
-            list(float)
-                Current voltages on the x and y channels
-
-        """
-        with nidaqmx.Task() as task:
-            # Set up the internal channels - to do: actual parsing...
-            if self.daq_ao_galvo_x == "dev1/AO0":
-                chan_name = "dev1/_ao0_vs_aognd"
-            task.ai_channels.add_ai_voltage_chan(chan_name, min_val=-10.0, max_val=10.0)
-            if self.daq_ao_galvo_y == "dev1/AO1":
-                chan_name = "dev1/_ao1_vs_aognd"
-            task.ai_channels.add_ai_voltage_chan(chan_name, min_val=-10.0, max_val=10.0)
-            voltages = task.read()
-
-        return voltages[0], voltages[1]
+        """Return last commanded XY (no AI readback)."""
+        return [self._last_x, self._last_y]
 
     @setting(2, coords_x="*v[]", coords_y="*v[]", continuous="b")
     def load_stream_xy(self, c, coords_x, coords_y, continuous=False):
