@@ -5,260 +5,108 @@ Created on March 23th, 2025
 @author: Saroj Chand
 """
 
-import matplotlib.pyplot as plt
 import numpy as np
+from itertools import product
 
-splittings = [68, 186]  # in MHz
-gamma_e = 2.8  # MHz/Gauss
+def nv_axes():
+    """Four NV <111> unit vectors in the cubic {x,y,z} basis."""
+    axes = np.array([
+        [ 1,  1,  1],
+        [-1,  1,  1],
+        [ 1, -1,  1],
+        [ 1,  1, -1],
+    ], dtype=float)
+    axes /= np.linalg.norm(axes, axis=1, keepdims=True)
+    return axes
 
-B_parallel_1 = 68 / (2 * gamma_e)  # = 68 / 5.6
-B_parallel_2 = 185 / (2 * gamma_e)  # = 186 / 5.6
-
-print(f"B_parallel 1: {B_parallel_1:.2f} G")
-print(f"B_parallel 2: {B_parallel_2:.2f} G")
-
-
-B1 = 68 / 5.6  # = 12.14 G
-B2 = 186 / 5.6  # = 33.21 G
-cos_theta = -1 / 3
-
-B_est = np.sqrt(B1**2 + B2**2 - 2 * B1 * B2 * cos_theta)
-print(f"Estimated |B| ≈ {B_est:.2f} G")
-
-# Magnetic Field vs. Distance
-B_current = 41.6  # Gauss
-B_target = 80.0  # Gauss
-scaling_factor = (B_current / B_target) ** (1 / 3)
-print(f"r₂ / r₁ = {scaling_factor:.3f}")
-
-
-#######
-def estimate_magnetic_field(splittings_MHz):
-    gamma_e = 2.8  # MHz/G
-    # Normalize tetrahedral NV orientation unit vectors
-    nv_axes = np.array(
-        [
-            [1, 1, 1],
-            [1, -1, -1],
-            [-1, 1, -1],
-            [-1, -1, 1],
-        ]
-    ) / np.sqrt(3)
-    # Convert ESR splittings to B projections (in Gauss)
-    b_parallel = np.array(splittings_MHz) / (2 * gamma_e)
-    # Solve A·B = b in least-squares sense
-    B_vec_full, residuals_full, *_ = np.linalg.lstsq(nv_axes, b_parallel, rcond=None)
-    B_mag_full = np.linalg.norm(B_vec_full)
-    # Full 4-NV fit
-    print(
-        f"Full 4-NV fit → B = {np.round(B_vec_full, 2)}, |B| = {B_mag_full:.2f} G , residual = {np.round(residuals_full, 2)}"
-    )
-    # Try all 3-NV combinations
-    print("\nAll 3-NV combinations:")
-    B_mags = []
-    for indices in combinations(range(4), 3):
-        A_3 = nv_axes[list(indices)]
-        b_3 = b_parallel[list(indices)]
-        B_vec_3 = np.linalg.solve(A_3, b_3)
-        B_mag_3 = np.linalg.norm(B_vec_3)
-        B_mags.append(B_mag_3)
-        print(f" NVs {indices} → B = {np.round(B_vec_3, 2)}, |B| = {B_mag_3:.2f} G")
-    print(f"average B magnitude from 3-NVs fit: {np.mean(B_mags):.2f} G")
-    # residuals = []
-    # for i in range(4):
-    #     n_i = nv_axes[i]
-    #     pred_split = 2 * gamma_e * np.dot(B_vec_full, n_i)
-    #     actual_split = splittings[i]
-    #     res = np.abs(pred_split - actual_split)
-    #     residuals.append(res)
-    #     print(f"Residual for NV {i}: {res:.2f} MHz")
-
-
-# Your 4 ESR splittings in MHz
-splittings = [186, 145, 68, 25]  # old spliting
-# splittings = [214, 162, 90, 45]  # new spliting
-estimate_magnetic_field(splittings)
-
-
-def estimate_revival_time(B_gauss):
-    gamma_nuc_on_2pi = 1.071  # KHz/G
-    omega = gamma_nuc_on_2pi * B_gauss  # Larmor frequency in KHz
-    omega = omega / 1e3  # Larmor frequency in MHz
-    T_rev = 1 / (omega)  # Revival time in microseconds
-    return T_rev, omega  # Return revival time in nanoseconds
-
-
-# Example: 80 Gauss
-rev_time_us, larmor_freq_MHz = estimate_revival_time(44)
-# rev_time_us, larmor_freq_MHz = estimate_revival_time(84)
-
-print(f"Larmor frequency: {larmor_freq_MHz:.2f} Khz")
-print(f"Revival time: {rev_time_us:.2f} us")
-
-
-# def get_collapse_and_revival_times(B_gauss, num_revivals=1):
-#     """
-#     Calculate collapse and revival times in spin echo / XY8 experiments due to
-#     Larmor precession of 13C nuclear spins.
-
-#     Parameters:
-#     - B_gauss: Magnetic field in Gauss
-#     - num_revivals: Number of revival times to compute
-
-#     Returns:
-#     - dict with Larmor frequency (kHz), collapse time (µs), and revival times (µs)
-#     """
-#     gamma_c13_kHz_per_G = 1.071  # kHz/G
-#     omega_nuc_kHz = gamma_c13_kHz_per_G * B_gauss
-
-#     t_collapse_us = np.pi / omega_nuc_kHz
-#     t_revivals_us = [2 * n * np.pi / omega_nuc_kHz for n in range(1, num_revivals + 1)]
-
-#     return {
-#         "B_field_G": B_gauss,
-#         "omega_nuc_kHz": omega_nuc_kHz,
-#         "collapse_time_us": t_collapse_us,
-#         "revival_times_us": t_revivals_us,
-#     }
-
-
-# def print_revival_table(B_fields, num_revivals=1):
-#     print(
-#         f"{'B (G)':>6} | {'ω_nuc (kHz)':>12} | {'Collapse Time (µs)':>20} | Revival Times (µs)"
-#     )
-#     print("-" * 70)
-#     for B in B_fields:
-#         info = get_collapse_and_revival_times(B, num_revivals)
-#         revivals_str = ", ".join([f"{t:.2f}" for t in info["revival_times_us"]])
-#         print(
-#             f"{B:6.1f} | {info['omega_nuc_kHz']:12.2f} | {info['collapse_time_us']:20.2f} | {revivals_str}"
-#         )
-
-
-# # Example usage
-# B_fields = [37, 50, 84, 150]  # Magnetic fields in Gauss
-# print_revival_table(B_fields, num_revivals=1)
-
-
-# Optional plot
-# def plot_revival_times(B_fields):
-#     T_revs = [2 * np.pi / (1.071 * B) for B in B_fields]  # µs
-#     plt.plot(B_fields, T_revs, "o-", label="13C revival period")
-#     plt.xlabel("Magnetic Field (G)")
-#     plt.ylabel("Revival Period (µs)")
-#     plt.title("13C Revival Period vs Magnetic Field")
-#     plt.grid(True)
-#     plt.legend()
-#     plt.show()
-
-
-# plot_revival_times(np.linspace(10, 100, 50))
-
-
-# Spin-1 matrices
-Sx = (1 / np.sqrt(2)) * np.array([[0, 1, 0], [1, 0, 1], [0, 1, 0]])
-
-Sy = (1 / np.sqrt(2)) * np.array([[0, -1j, 0], [1j, 0, -1j], [0, 1j, 0]])
-
-Sz = np.diag([1, 0, -1])
-
-
-def get_rotation_to_NV_frame(nv_axis):
+def solve_B_from_odmr(f_ms_minus_GHz, D_GHz=2.870, gamma_e_MHz_per_G=2.8025):
     """
-    Constructs a rotation matrix that aligns lab-frame Z with NV axis.
+    Given four m_s=-1 ODMR lines (GHz) for the four NV orientations,
+    recover the 3D magnetic field vector B (in Gauss), its magnitude, unit vector,
+    and the per-axis projections and signs that best fit.
+
+    Parameters
+    ----------
+    f_ms_minus_GHz : iterable of length 4
+        Observed |0>→|-1> transition frequencies in GHz (one per NV axis).
+        Order must correspond to nv_axes() order.
+    D_GHz : float
+        Zero-field splitting (GHz).
+    gamma_e_MHz_per_G : float
+        Electron gyromagnetic ratio (MHz/G).
+
+    Returns
+    -------
+    result : dict
+        Keys: B, B_mag, B_hat, projections, signs, residual, D_eff_list
     """
-    z_lab = np.array([0, 0, 1])
-    v = np.cross(z_lab, nv_axis)
-    s = np.linalg.norm(v)
-    c = np.dot(z_lab, nv_axis)
+    f = np.asarray(f_ms_minus_GHz, dtype=float)
+    assert f.shape == (4,), "Need exactly 4 frequencies (one per NV axis)."
 
-    if s == 0:
-        return np.eye(3) if c > 0 else -np.eye(3)
+    # Step 1–2: frequency shifts and projection magnitudes
+    # b_i = (D - f_i)/gamma_e  (Gauss)
+    shifts_MHz = (D_GHz - f) * 1000.0
+    b_mag = shifts_MHz / gamma_e_MHz_per_G  # positive magnitudes
+    n = nv_axes()                            # 4x3
 
-    vx = np.array([[0, -v[2], v[1]], [v[2], 0, -v[0]], [-v[1], v[0], 0]])
+    # We must determine signs s_i ∈ {+1,-1} so that  n_i · B = s_i * b_mag_i
+    # With a chosen sign pattern s, solve least-squares:  N B ≈ s ∘ b_mag
+    # (N is 4x3, B is 3x1, right-hand side is 4x1).  Try all 2^4 patterns.
 
-    R = np.eye(3) + vx + (vx @ vx) * ((1 - c) / (s**2))
-    return R
+    best = None
+    for s in product([-1, +1], repeat=4):               # all sign assignments
+        s = np.array(s, dtype=float)                    # shape (4,)
+        rhs = s * b_mag                                 # shape (4,)
 
+        # Least-squares solution of N B = rhs
+        B, residuals, _, _ = np.linalg.lstsq(n, rhs, rcond=None)
 
-def hamiltonian(B_lab, nv_axis, D=2870, gamma=2.8):
-    """
-    Constructs the full spin-1 Hamiltonian for a given magnetic field in lab frame,
-    with the Hamiltonian defined in the NV frame.
-    """
-    # Project B_lab into the NV frame
-    R = get_rotation_to_NV_frame(nv_axis)  # rotation matrix
-    B_nv = R @ B_lab  # rotate B into the NV frame
+        # Compute consistency: dot products and residual norm
+        proj = n @ B                                    # predicted projections
+        # residual vector (not just sum-of-squares that lstsq reports)
+        rvec = proj - rhs
+        res_norm = np.linalg.norm(rvec)
 
-    Bx, By, Bz = B_nv
-    H = D * Sz @ Sz + gamma * (Bx * Sx + By * Sy + Bz * Sz)
-    return H
+        # Optional: sanity—ensure signs of proj match s (within small tolerance)
+        sign_ok = np.all(np.sign(proj + 1e-12) == np.sign(rhs + 1e-12))
 
+        score = res_norm + (0.0 if sign_ok else 1e3)    # heavily penalize sign flips
 
-def get_esr_splittings(B_vec, nv_axes):
-    splittings = []
-    for nv in nv_axes:
-        H = hamiltonian(B_vec, nv)
-        eigvals = np.linalg.eigvalsh(H)
-        # transitions = np.sort(np.abs(np.diff(np.sort(eigvals))))
-        # splitting = transitions[-1]  # |+1> - |-1> gap
-        # splittings.append(splitting)
-        splitting = eigvals[2] - eigvals[0]  # E_{+1} - E_{-1}
-        splittings.append(splitting)
-    return np.array(splittings)
+        if (best is None) or (score < best["score"]):
+            best = dict(
+                B=B,
+                projections=proj,
+                signs=s,
+                rhs=rhs,
+                res_norm=res_norm,
+                sign_ok=sign_ok,
+                score=score,
+            )
 
+    # Final nice-to-haves
+    B = best["B"]
+    B_mag = float(np.linalg.norm(B))
+    B_hat = B / B_mag if B_mag > 0 else np.zeros_like(B)
 
-def objective(B_vec, nv_axes, splittings_exp):
-    splittings_calc = get_esr_splittings(B_vec, nv_axes)
-    print("calcualted splttings", splittings_calc)
-    return np.sum((splittings_calc - splittings_exp) ** 2)
+    return {
+        "B": B,                                # (Gx, Gy, Gz) in Gauss
+        "B_mag": B_mag,                        # |B| in Gauss
+        "B_hat": B_hat,                        # unit vector
+        "projections": best["projections"],    # n_i · B (Gauss)
+        "signs": best["signs"],                # chosen sign pattern
+        "b_magnitudes": b_mag,                 # |n_i · B| (Gauss) from data
+        "residual_norm": best["res_norm"],     # ||N B - s*b||_2
+        "sign_consistent": best["sign_ok"],
+    }
 
+# ---------------- Example with your numbers ----------------
+f_ms_minus = [2.76, 2.78, 2.82, 2.84]  # GHz, ordered as nv_axes()
+out = solve_B_from_odmr(f_ms_minus, D_GHz=2.870, gamma_e_MHz_per_G=2.8025)
 
-def estimate_field_exact_H(splittings_MHz, nv_axes):
-    nv_axes = np.array(
-        [
-            [1, 1, 1],
-            [1, -1, -1],
-            [-1, 1, -1],
-            [-1, -1, 1],
-        ]
-    ) / np.sqrt(3)
-
-    # Initial guess: high field approx
-    b_parallel = np.array(splittings_MHz) / (2 * 2.8)
-    # B_init, _, _, _ = np.linalg.lstsq(nv_axes, b_parallel, rcond=None)
-
-    # Solve the linear system: A·B = b
-    for ind in range(4):
-        test = [b[jnd] for jnd in range(4) if jnd != ind]
-        B_vec, _, _, _ = np.linalg.lstsq(nv_axes, test, rcond=None)
-        B_mag = np.linalg.norm(B_vec)
-        print(B_mag)
-        # print(np.matmul(nv_axes, B_vec) * (2 * gamma_e))
-
-    return B_vec, B_mag
-
-
-# nv_axes = np.array(
-#     [
-#         [1, 1, 1],
-#         [1, -1, -1],
-#         [-1, 1, -1],
-#         [-1, -1, 1],
-#     ]
-# ) / np.sqrt(3)
-
-# splittings = [214, 162, 89, 55]  # MHz
-# B_vec, B_mag, residual = estimate_field_exact_H(splittings, nv_axes)
-# print("Estimated B vector (G):", np.round(B_vec, 2))
-# print("B magnitude (G):", round(B_mag, 2))
-# print("Residual:", residual)
-
-# simulated = get_esr_splittings(B_vec, nv_axes)
-# print("Measured splittings (MHz):", splittings)
-# print("Simulated splittings (MHz):", np.round(simulated, 2))
-
-# for nv_axis in nv_axes:
-#     H = hamiltonian(B_vec, nv_axis)
-#     eigvals = np.sort(np.linalg.eigvalsh(H))
-#     print(f"Eigenvalues (MHz): {np.round(eigvals, 2)}")
+print("B (G):", out["B"])
+print("|B| (G):", out["B_mag"])
+print("B_hat:", out["B_hat"])
+print("Projections n·B (G):", out["projections"])
+print("Chosen signs:", out["signs"])
+print("Abs projections from data (G):", out["b_magnitudes"])
+print("Residual norm:", out["residual_norm"], "| sign-consistent:", out["sign_consistent"])

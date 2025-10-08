@@ -236,6 +236,20 @@ def set_nv_coords(nv_sig, coords, coords_key=CoordsKey.SAMPLE):
         nv_sig.coords[coords_key] = coords
 
 
+def get_nv_pulse_duration(nv_sig: NVSig, vkey: VirtualLaserKey) -> int:
+    """
+    Return per-NV pulse duration (ns) for a virtual laser, mirroring get_nv_coords style.
+    Resilient to Enum/string key mismatches; falls back to config default.
+    """
+    pulse_dur_val = nv_sig.pulse_durations
+    print(pulse_dur_val.keys())
+    if isinstance(pulse_dur_val, dict):
+        
+        pulse_duraions = pulse_dur_val[vkey]
+    else:
+        pulse_duraions = pulse_dur_val
+    
+    return pulse_duraions
 # endregion
 
 

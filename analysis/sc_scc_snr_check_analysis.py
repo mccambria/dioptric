@@ -13,7 +13,13 @@ import traceback
 import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
-
+from utils.constants import (
+    CollectionMode,
+    CoordsKey,
+    NVSig,
+    PosControlMode,
+    VirtualLaserKey,
+)
 # import seaborn as sns
 # import pandas as pd
 # def process_and_plot(data, error_threshold=0.2):
@@ -251,14 +257,19 @@ def process_and_plot(data):
     avg_contrast_ste = avg_contrast_ste[:, step_ind]
 
     # Get NV coordinates and Compute distances
-    coords_key = "laser_COBO_638_aod"
     nv_coords = []
     distances = []
+    distances = []
+    scc_durations = []
+    nv_sig: NVSig
     for nv in nv_list:
-        coords = pos.get_nv_coords(nv, coords_key, drift_adjust=False)
+        coords = pos.get_nv_coords(nv, coords_key= CoordsKey.PIXEL, drift_adjust=False)
         nv_coords.append(coords)
-        dist = round(np.sqrt((72.017 - coords[0]) ** 2 + (73.008 - coords[1]) ** 2), 3)
+        dist = round(np.sqrt((125 - coords[0]) ** 2 + (125 - coords[1]) ** 2), 3)
         distances.append(dist)
+        # try enum key, then string fallback
+        scc_dur = pos.get_nv_pulse_duration(nv, VirtualLaserKey.SCC)
+        scc_durations.append(scc_dur)
 
     # Prepare DataFrame for analysis
     # Prepare DataFrame for analysis
@@ -274,6 +285,7 @@ def process_and_plot(data):
             "Contrast": avg_contrast,
             "Contrast STE": avg_contrast_ste,
             "Distance": distances,
+            "scc_durations": scc_durations,
             "Y Coord": [coord[0] for coord in nv_coords],
             "X Coord": [coord[1] for coord in nv_coords],
         }
@@ -343,21 +355,23 @@ def process_and_plot(data):
 
     # Plot: SNR vs. Distance with error bars
     distance = df["Distance"]
+    scc_durations = df["scc_durations"]
     snr = df["SNR"]
     yerr = df["SNR STE"]
-
+    print(scc_durations)
     # indices_to_remove = [ind for ind in range(len(snr)) if snr[ind] < 0.05]
     indices_to_remove = []
     print(indices_to_remove)
     selected_indices = [ind for ind in range(num_nvs) if ind not in indices_to_remove]
     distance = [distance[ind] for ind in selected_indices]
+    scc_durations = [scc_durations[ind] for ind in selected_indices]
     snr = [round(snr[ind], 3) for ind in selected_indices]
     yerr = [yerr[ind] for ind in selected_indices]
     median = round(np.median(snr), 3)
     print(f"scc_snrs:{snr}")
     plt.figure(figsize=(6, 5))
     plt.errorbar(
-        distance,
+        scc_durations,
         snr,
         yerr,
         fmt="o",
@@ -365,8 +379,8 @@ def process_and_plot(data):
         capsize=3,
         label=f"SNR (Median: {median})",
     )
-    plt.title("SNR vs. Distance", fontsize=15)
-    plt.xlabel("Distance from Center Red AOD Freq (MHz)", fontsize=15)
+    plt.title("SNR vs. Pixel Distance", fontsize=15)
+    plt.xlabel("Pixel Distance from Center", fontsize=15)
     plt.ylabel("SNR", fontsize=15)
     plt.xticks(fontsize=15)
     plt.yticks(fontsize=15)
@@ -426,7 +440,7 @@ if __name__ == "__main__":
     # data = dm.get_raw_data(file_stem=file_stem)
 
     data = dm.get_raw_data(
-        file_stem="2025_10_07-13_28_41-rubin-nv0_2025_09_08", load_npz=True
+        file_stem="2025_10_08-13_33_00-rubin-nv0_2025_09_08", load_npz=True
     )
     # file_name = dm.get_file_name(file_id=file_id)
     # print(f"{file_name}_{file_id}")

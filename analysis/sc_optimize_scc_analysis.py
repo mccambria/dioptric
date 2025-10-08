@@ -741,16 +741,13 @@ if __name__ == "__main__":
     # duration_file_id = 1800578617426  # duration
 
     # amp_file_id = 1786527980407
-    # data = dm.get_raw_data(
-    #     file_stem="2025_10_07-19_22_19-rubin-nv0_2025_09_08", load_npz=True
-    # )
-    # results = process_and_plot(nv_list, duration_file_id, amp_file_id)
-    # results = process_and_plot_amplitudes(nv_list, amp_file_id)
-    # taus, counts = data["taus"], np.array(data["counts"])
-    # print(counts.shape)
-    # sig_counts, ref_counts = counts[0], counts[1]
-    # print(sig_counts.shape, ref_counts.shape)
-    # results = process_and_plot_durations(data)
+
+    #duration
+    data = dm.get_raw_data(
+        file_stem="2025_10_07-22_42_14-rubin-nv0_2025_09_08", load_npz=True
+    )
+
+    results = process_and_plot_durations(data)
 
     #amp_file id
     data = dm.get_raw_data(

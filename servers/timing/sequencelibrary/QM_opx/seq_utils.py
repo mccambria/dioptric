@@ -238,10 +238,10 @@ def macro_spin_polarize(duration: int = None, amp: float = None):
     buffer = get_widefield_operation_buffer()
 
     qua.align()
-    if amp is not None:
-        qua.play("spin_pol" * qua.amp(amp), spin_pol_laser_el)
+    if amp is None:
+        qua.play("spin_pol", spin_pol_laser_el, duration=duration)
     else:
-        qua.play("spin_pol", spin_pol_laser_el)
+        qua.play("spin_pol" * qua.amp(amp), spin_pol_laser_el, duration=duration)
 
     qua.wait(buffer, spin_pol_laser_el)
 
