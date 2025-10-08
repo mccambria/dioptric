@@ -371,10 +371,7 @@ def do_optimize_scc_duration(nv_list):
     max_tau = 304
     num_steps = 18
     num_reps = 15
-
-    # num_runs = 20 * 25
     num_runs = 200
-    # num_runs = 50
     # num_runs = 2
 
     optimize_scc.optimize_scc_duration(
@@ -1478,8 +1475,8 @@ if __name__ == "__main__":
         # do_check_readout_fidelity(nv_list)
 
         # do_scc_snr_check(nv_list)
-        # do_optimize_scc_duration(nv_list)
-        do_optimize_scc_amp(nv_list)
+        do_optimize_scc_duration(nv_list)
+        # do_optimize_scc_amp(nv_list)
         # optimize_scc_amp_and_duration(nv_list)
         # do_crosstalk_check(nv_sig)
         # do_spin_pol_check(nv_sig)

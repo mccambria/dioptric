@@ -477,17 +477,17 @@ def process_and_plot(nv_list, duration_file_id, amp_file_id):
 # }
 
 
-def process_and_plot_amplitudes(nv_list, amp_file_id):
+def process_and_plot_amplitudes(data):
     """Process NV data for amplitude optimization."""
+    nv_list = data["nv_list"]
+    taus, counts = data["taus"], np.array(data["counts"])
     total_nvs = len(nv_list)
     optimal_amplitudes = {nv: None for nv in range(total_nvs)}
     optimal_snrs = {nv: None for nv in range(total_nvs)}
 
     selected_indices = range(total_nvs)
 
-    def optimize_amplitudes(file_id, fit_function, valid_range):
-        data = dm.get_raw_data(file_id=file_id)
-        taus, counts = data["taus"], np.array(data["counts"])
+    def optimize_amplitudes(fit_function, valid_range):
         sig_counts, ref_counts = (
             counts[0][selected_indices],
             counts[1][selected_indices],
@@ -516,9 +516,9 @@ def process_and_plot_amplitudes(nv_list, amp_file_id):
         return optimal_values, snr_values, avg_snr, avg_snr_ste, taus
 
     # Optimize amplitudes
-    amp_valid_range = (0, 400)
+    amp_valid_range = (0.5, 1.5)
     optimal_amplitudes, optimal_snrs, avg_snr, avg_snr_ste, taus = optimize_amplitudes(
-        amp_file_id, fit_duration, amp_valid_range
+     fit_duration, amp_valid_range
     )
 
     # Replace unprocessed NVs with medians
@@ -741,16 +741,22 @@ if __name__ == "__main__":
     # duration_file_id = 1800578617426  # duration
 
     # amp_file_id = 1786527980407
-    data = dm.get_raw_data(
-        file_stem="2025_09_30-19_26_09-rubin-nv0_2025_09_08", load_npz=True
-    )
+    # data = dm.get_raw_data(
+    #     file_stem="2025_10_07-19_22_19-rubin-nv0_2025_09_08", load_npz=True
+    # )
     # results = process_and_plot(nv_list, duration_file_id, amp_file_id)
     # results = process_and_plot_amplitudes(nv_list, amp_file_id)
-    taus, counts = data["taus"], np.array(data["counts"])
+    # taus, counts = data["taus"], np.array(data["counts"])
     # print(counts.shape)
     # sig_counts, ref_counts = counts[0], counts[1]
     # print(sig_counts.shape, ref_counts.shape)
-    results = process_and_plot_durations(data)
+    # results = process_and_plot_durations(data)
+
+    #amp_file id
+    data = dm.get_raw_data(
+        file_stem="2025_10_07-19_22_19-rubin-nv0_2025_09_08", load_npz=True
+    )
+    results = process_and_plot_amplitudes(data)
 
     print("Results:", results)
     # print(f"{file_name}_{duration_file_id}")
