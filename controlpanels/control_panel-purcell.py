@@ -1266,7 +1266,7 @@ if __name__ == "__main__":
     # pixel_coords_list = [
     #     [124.195, 127.341],
     #     [13.905, 11.931],
-    #     [124.563, 242.424],
+    #     [151.679, 245.068],
     #     [240.501, 17.871],
     # ]
 
@@ -1299,24 +1299,9 @@ if __name__ == "__main__":
     print(f"Green Laser Coordinates: {green_coords_list[0]}")
     print(f"Red Laser Coordinates: {red_coords_list[0]}")
 
-    # pixel_coords_list = [
-    #     [124.195, 127.341],
-    #     [13.905, 11.931],
-    #     [124.563, 242.424],
-    #     [240.501, 17.871],
-    # ]
-    # green_coords_list = [
-    #     [108.423, 107.089],
-    #     [119.578, 121.461],
-    #     [109.909, 94.062],
-    #     [93.814, 118.209],
-    # ]
-    # red_coords_list = [
-    #     [73.502, 71.507],
-    #     [82.073, 83.742],
-    #     [75.116, 61.055],
-    #     [61.246, 79.802],
-    # ]
+    # pixel_coords_list = [[124.195, 127.341],[13.905, 11.931],[151.679, 245.068],[240.501, 17.871]]
+    # green_coords_list = [[108.478, 107.118], [119.578, 121.461], [106.851, 93.454], [93.814, 118.209]]
+    # red_coords_list = [[73.558, 71.534], [82.119, 83.697], [72.681, 60.391], [61.267, 79.785]]
     num_nvs = len(pixel_coords_list)
     threshold_list = [None] * num_nvs
     # fmt: off
@@ -1494,7 +1479,7 @@ if __name__ == "__main__":
 
         # do_scc_snr_check(nv_list)
         # do_optimize_scc_duration(nv_list)
-        # do_optimize_scc_amp(nv_list)
+        do_optimize_scc_amp(nv_list)
         # optimize_scc_amp_and_duration(nv_list)
         # do_crosstalk_check(nv_sig)
         # do_spin_pol_check(nv_sig)

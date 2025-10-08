@@ -394,14 +394,15 @@ if __name__ == "__main__":
     remove_outliers_flag = False  # Set this flag to enable/disable outlier removal
     reorder_coords_flag = True  # Set this flag to enable/disable reordering of NVs
     data = dm.get_raw_data(
-        file_stem="2025_09_27-18_21_57-rubin-nv0_2025_09_08", load_npz=True
+        file_stem="2025_10_07-15_16_25-rubin-nv0_2025_09_08", load_npz=True
     )
     img_array = np.array(data["ref_img_array"])
     # img_array = data["img_array"]
     nv_coordinates, spot_weights = load_nv_coords(
         # file_path="slmsuite/nv_blob_detection/nv_blob_327nvs.npz"
         # file_path="slmsuite/nv_blob_detection/nv_blob_308nvs_reordered.npz"
-        file_path="slmsuite/nv_blob_detection/nv_blob_254nvs_reordered.npz"
+        # file_path="slmsuite/nv_blob_detection/nv_blob_254nvs_reordered.npz"
+        file_path="slmsuite/nv_blob_detection/nv_blob_151nvs_reordered.npz"
     )
     # Convert coordinates to a standard format (lists of lists)
     # nv_coordinates = [[coord[0] - 3, coord[1] + 3] for coord in nv_coordinates]
@@ -505,7 +506,7 @@ if __name__ == "__main__":
     ]
     # include_indices = [0, 1, 2, 3, 4, 5, 6, 10, 12, 14, 15, 17, 18, 19, 21, 23, 24, 26, 28, 29, 31, 32, 33, 34, 36, 37, 38, 39, 40, 41, 42, 43, 46, 47, 48, 49, 50, 51, 52, 53, 54, 55, 56, 57, 59, 60, 62, 63, 64, 65, 66, 68, 69, 70, 72, 73, 74, 76, 77, 78, 79, 80, 81, 82, 83, 84, 85, 87, 88, 89, 90, 92, 94, 95, 96, 97, 98, 100, 101, 102, 103, 104, 105, 106, 107, 108, 109, 110, 111, 112, 113, 115, 116, 117, 118, 121, 124, 125, 126, 127, 128, 129, 130, 131, 132, 133, 134, 135, 136, 137, 138, 139, 140, 141, 142, 143, 145, 146, 147, 148, 149, 150, 151, 152, 154, 155, 156, 157, 158, 159, 160, 162, 163, 164, 165, 166, 167, 169, 170, 171, 173, 174, 177, 179, 180, 181, 182, 184, 186, 188, 189, 190, 191, 192, 193, 194, 198, 200, 201, 202, 203, 204, 205, 206, 207, 208, 210, 211, 212, 213, 214, 215, 216, 217, 218, 219, 220, 221, 222, 223, 225, 226, 227, 228, 229, 230, 231, 232, 233, 234, 235, 236, 237, 238, 239, 240, 241, 242, 243, 244, 245, 246, 248, 249, 250, 251, 252, 253, 254, 255, 256, 257, 258, 259, 260, 261, 262, 264, 265, 266, 267, 270, 271, 274, 275, 276, 277, 280, 281, 282, 283, 285, 286, 287, 288, 289, 290, 291, 292, 293, 294, 295, 296, 297, 298, 299, 300, 301, 302, 303, 304, 305, 306, 307]
     ## 2 oruen
-    include_indices = [0, 1, 2, 4, 9, 10, 12, 14, 15, 17, 18, 20, 22, 23, 24, 27, 28, 29, 30, 33, 34, 37, 40, 41, 42, 45, 46, 49, 50, 51, 54, 55, 57, 58, 59, 60, 62, 65, 67, 68, 69, 72, 73, 75, 78, 79, 80, 81, 82, 85, 86, 87, 88, 90, 94, 95, 98, 99, 101, 102, 104, 106, 107, 111, 113, 114, 116, 117, 119, 122, 123, 125, 126, 127, 128, 130, 131, 133, 134, 135, 136, 137, 142, 143, 144, 145, 146, 148, 149, 151, 153, 155, 158, 161, 163, 164, 165, 166, 167, 170, 172, 173, 174, 175, 178, 181, 183, 185, 186, 187, 191, 192, 193, 195, 196, 197, 199, 200, 201, 203, 205, 207, 210, 211, 212, 214, 216, 218, 220, 221, 223, 225, 226, 227, 228, 229, 230, 233, 235, 237, 238, 239, 242, 244, 245, 246, 247, 249, 250, 252, 253]
+    # include_indices = [0, 1, 2, 4, 9, 10, 12, 14, 15, 17, 18, 20, 22, 23, 24, 27, 28, 29, 30, 33, 34, 37, 40, 41, 42, 45, 46, 49, 50, 51, 54, 55, 57, 58, 59, 60, 62, 65, 67, 68, 69, 72, 73, 75, 78, 79, 80, 81, 82, 85, 86, 87, 88, 90, 94, 95, 98, 99, 101, 102, 104, 106, 107, 111, 113, 114, 116, 117, 119, 122, 123, 125, 126, 127, 128, 130, 131, 133, 134, 135, 136, 137, 142, 143, 144, 145, 146, 148, 149, 151, 153, 155, 158, 161, 163, 164, 165, 166, 167, 170, 172, 173, 174, 175, 178, 181, 183, 185, 186, 187, 191, 192, 193, 195, 196, 197, 199, 200, 201, 203, 205, 207, 210, 211, 212, 214, 216, 218, 220, 221, 223, 225, 226, 227, 228, 229, 230, 233, 235, 237, 238, 239, 242, 244, 245, 246, 247, 249, 250, 252, 253]
     # include_indices = [i for i, val in enumerate(prep_fidelity_list) if val >= 0.4 or val is None]
     # import math
     # include_indices = [
@@ -523,16 +524,16 @@ if __name__ == "__main__":
     # nv_powers = [val for ind, val in enumerate(nv_powers) if ind not in drop_indices]
     # print(len(include_indices))
     # fmt: on
-    filtered_reordered_coords = [filtered_reordered_coords[i] for i in include_indices]
-    print(f"len filtered_reordered_coords: {len(filtered_reordered_coords)}")
+    # filtered_reordered_coords = [filtered_reordered_coords[i] for i in include_indices]
+    # print(f"len filtered_reordered_coords: {len(filtered_reordered_coords)}")
     # # # select_half_left_side_nvs_and_plot(nv_coordinates_filtered)
-    spot_weights_filtered = np.array(
-        [weight for i, weight in enumerate(spot_weights) if i in include_indices]
-    )
-    filtered_pol_durs = [pol_duration_list[i] for i in include_indices]
-    filtered_scc_durs = [scc_duration_list[i] for i in include_indices]
-    print(filtered_pol_durs)
-    print(filtered_scc_durs)
+    # spot_weights_filtered = np.array(
+    #     [weight for i, weight in enumerate(spot_weights) if i in include_indices]
+    # )
+    # filtered_pol_durs = [pol_duration_list[i] for i in include_indices]
+    # filtered_scc_durs = [scc_duration_list[i] for i in include_indices]
+    # print(filtered_pol_durs)
+    # print(filtered_scc_durs)
     # sys.exit()
     # print(len(spot_weights_filtered))
     # # sys.exit()
