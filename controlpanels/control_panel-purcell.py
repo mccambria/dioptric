@@ -43,7 +43,7 @@ from majorroutines.widefield import (
     relaxation_interleave,
     resonance,
     resonance_dualgen,
-    deer
+    deer_hahn, 
     scc_snr_check,
     simple_correlation_test,
     spin_echo,

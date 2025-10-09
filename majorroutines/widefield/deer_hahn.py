@@ -1,11 +1,11 @@
 # -*- coding: utf-8 -*-
 """
-Pulsed electron spin resonance on multiple NVs with spin-to-charge
+Pulsed deer haha on multiple NVs with spin-to-charge
 conversion readout imaged onto a camera
 
-Created on November 19th, 2023
+Created on Coct 9th, 2025
 
-@author: mccambria
+@author: schand
 """
 
 import os
