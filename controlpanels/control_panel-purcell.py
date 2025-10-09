@@ -34,6 +34,7 @@ from majorroutines.widefield import (
     optimize_amp_duration_charge_state_histograms,
     optimize_charge_state_histograms_mcc,
     optimize_scc,
+    optimize_scc_readout,
     optimize_scc_amp_duration,
     optimize_spin_pol,
     power_rabi,
@@ -42,6 +43,7 @@ from majorroutines.widefield import (
     relaxation_interleave,
     resonance,
     resonance_dualgen,
+    deer
     scc_snr_check,
     simple_correlation_test,
     spin_echo,
@@ -185,11 +187,11 @@ def do_optimize_readout_amp(nv_list):
 
 def do_optimize_scc_readout_amp(nv_list):
     num_steps = 18
-    num_reps = 12
-    num_runs = 200
+    num_reps = 16
+    num_runs = 500
     min_amp = 0.8
     max_amp = 1.2
-    return optimize_charge_.optimize_readout_amp(
+    return optimize_scc_readout.optimize_readout_amp(
         nv_list, num_steps, num_reps, num_runs, min_amp, max_amp
     )
 
@@ -516,7 +518,6 @@ def do_resonance(nv_list):
     num_steps = 45
     num_reps = 3
     num_runs = 500
-    # num_runs = 300
     freqs = calculate_freqs(freq_center, freq_range, num_steps)
     ##
     # Remove duplicates and sort
@@ -534,7 +535,7 @@ def do_resonance(nv_list):
     #     resonance.main(nv_list, num_steps, num_reps, num_runs, freqs=freqs)
 
 
-def do_deer(nv_list):
+def do_deer_hahn(nv_list):
     freq_center = 0.133
     freq_range = 0.26
     num_steps = 45
@@ -1499,7 +1500,7 @@ if __name__ == "__main__":
 
         # do_optimize_pol_amp(nv_list)
         # do_optimize_pol_duration(nv_list)
-        do_optimize_readout_amp(nv_list)
+        # do_optimize_readout_amp(nv_list)
         # do_optimize_readout_duration(nv_list)
         # optimize_readout_amp_and_duration(nv_list)
         # do_optimize_spin_pol_amp(nv_list)
@@ -1519,9 +1520,9 @@ if __name__ == "__main__":
 
         # do_rabi(nv_list)
         # do_power_rabi(nv_list)
-        # do_resonance(nv_list)
+        do_resonance(nv_list)
         # do_resonance_zoom(nv_list)
-        do_spin_echo(nv_list)
+        # do_spin_echo(nv_list)
         # do_spin_echo_1(nv_list)
         # do_ramsey(nv_list)
 
