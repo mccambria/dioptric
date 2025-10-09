@@ -524,6 +524,30 @@ def do_resonance(nv_list):
     #     resonance.main(nv_list, num_steps, num_reps, num_runs, freqs=freqs)
 
 
+def do_deer(nv_list):
+    freq_center = 0.133
+    freq_range = 0.26
+    num_steps = 45
+    num_reps = 3
+    num_runs = 400
+    # num_runs = 300
+    freqs = calculate_freqs(freq_center, freq_range, num_steps)
+    ##
+    # Remove duplicates and sort
+    freqs = sorted(set(freqs))
+    num_steps = len(freqs)
+    resonance.main(
+        nv_list,
+        num_steps,
+        num_reps,
+        num_runs,
+        freqs=freqs,
+        uwave_ind_list=[0,1],
+    )
+    # for _ in range(2):
+    #     resonance.main(nv_list, num_steps, num_reps, num_runs, freqs=freqs)
+
+
 def do_resonance_zoom(nv_list):
     # for freq_center in (2.85761751, 2.812251747511455):
     for freq_center in (2.87 + (2.87 - 2.85856), 2.87 + (2.87 - 2.81245)):
@@ -666,7 +690,7 @@ def do_ac_stark(nv_list):
 #         spin_echo.main(nv_list, num_steps, num_reps, num_runs, taus=taus)
 
 
-def do_spin_echo(nv_lis):
+def do_spin_echo(nv_list):
     min_tau = 200  # ns
     # max_tau = 20e3  # fallback
     # revival_period = int(15e3)
@@ -1487,7 +1511,7 @@ if __name__ == "__main__":
 
         # do_rabi(nv_list)
         # do_power_rabi(nv_list)
-        # do_resonance(nv_list)
+        do_resonance(nv_list)
         # do_resonance_zoom(nv_list)
         # do_spin_echo(nv_list)
         # do_spin_echo_1(nv_list)

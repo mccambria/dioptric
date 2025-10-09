@@ -394,7 +394,7 @@ if __name__ == "__main__":
     remove_outliers_flag = False  # Set this flag to enable/disable outlier removal
     reorder_coords_flag = True  # Set this flag to enable/disable reordering of NVs
     data = dm.get_raw_data(
-        file_stem="2025_10_07-15_16_25-rubin-nv0_2025_09_08", load_npz=True
+        file_stem="2025_10_08-19_59_24-rubin-nv0_2025_09_08", load_npz=True
     )
     img_array = np.array(data["ref_img_array"])
     # img_array = data["img_array"]
@@ -602,7 +602,7 @@ if __name__ == "__main__":
     updated_spot_weights = curve_extreme_weights_simple(
     spot_weights, scaling_factor=1.0
     )
-    updated_spot_weights = spot_weights
+    # updated_spot_weights = spot_weights
     # Update weights for the specified indices using the calculated weights
     # fmt: off
     # selected_indices_68MHz = [0, 7, 8, 9, 11, 14, 18, 22, 24, 25, 26, 27, 28, 30, 31, 32, 33, 35, 38, 44, 45, 46, 47, 48, 49, 53, 55, 57, 58, 60, 62, 64, 66, 67, 68, 69, 70, 71, 72, 73]
@@ -657,11 +657,11 @@ if __name__ == "__main__":
     # spot_weights = non_linear_weights(filtered_intensities, alpha=0.9)
 
     # Save the filtered results
-    # save_results(
-    #     filtered_reordered_coords,
-    #     filtered_reordered_spot_weights,
-    #     filename="slmsuite/nv_blob_detection/nv_blob_136nvs_reordered.npz",
-    # )
+    save_results(
+        filtered_reordered_coords,
+        filtered_reordered_spot_weights,
+        filename="slmsuite/nv_blob_detection/nv_blob_136nvs_reordered.npz",
+    )
 
     # # Plot the original image with circles around each NV
 
