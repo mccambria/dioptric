@@ -308,7 +308,8 @@ def load_nv_coords(
     # file_path="slmsuite/nv_blob_detection/nv_blob_308nvs_reordered.npz",
     # file_path="slmsuite/nv_blob_detection/nv_blob_254nvs_reordered.npz",
     # file_path="slmsuite/nv_blob_detection/nv_blob_151nvs_reordered.npz",
-    file_path="slmsuite/nv_blob_detection/nv_blob_136nvs_reordered.npz",
+    # file_path="slmsuite/nv_blob_detection/nv_blob_136nvs_reordered.npz",
+    file_path="slmsuite/nv_blob_detection/nv_blob_118nvs_reordered.npz",
 ):
     data = np.load(file_path, allow_pickle=True)
     nv_coordinates = data["nv_coordinates"]
@@ -394,8 +395,8 @@ try:
     # test_wavefront_calibration()
     # wavefront_calibration()
     # load_wavefront_calibration()
-    compute_and_write_nvs_phase()
-    # write_pre_computed_nvs_phase()
+    # compute_and_write_nvs_phase()
+    write_pre_computed_nvs_phase()
     # calibration_triangle()
     # circles()
     # write_pre_computed_circles()

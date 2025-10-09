@@ -273,7 +273,7 @@ def main(
 
     ### Collect the data
     # Assume freqs is a 1D array (GHz) for RF sweep (e.g., 0.120–0.150 GHz)
-    delta = 0.020  # 10 MHz detuning for OFF
+    delta = 0.060  # 60 MHz detuning for OFF
     freqs_on = np.asarray(freqs, float)
     freqs_off = freqs_on + delta
 

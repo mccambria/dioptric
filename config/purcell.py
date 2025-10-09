@@ -136,7 +136,8 @@ config |= {
             1: {
                 "physical_name": "sig_gen_STAN_sg394_2",
                 "uwave_power": 9.6,
-                "frequency": 2.8200,
+                # "frequency": 2.8200,
+                "frequency": 0.133, # rf sweeepin
                 # "frequency": 2.8420,
                 "rabi_period": 112,
                 "pi_pulse": 56,
@@ -877,7 +878,8 @@ opx_config = {
         # Yellow AOM
         "yellow_imaging": {"type": "constant", "sample": 0.35},
         # "yellow_charge_readout": {"type": "constant", "sample": 0.2675},
-        "yellow_charge_readout": {"type": "constant", "sample": 0.2367},
+        # "yellow_charge_readout": {"type": "constant", "sample": 0.2367}, #136NVs
+        "yellow_charge_readout": {"type": "constant", "sample": 0.2267}, #118NVs
         "yellow_spin_pol": {"type": "constant", "sample": 0.24},
         "yellow_shelving": {"type": "constant", "sample": 0.20},
         # Other

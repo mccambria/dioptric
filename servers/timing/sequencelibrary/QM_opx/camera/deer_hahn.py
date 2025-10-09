@@ -40,8 +40,8 @@ def get_seq(
         step_ind = qua.declare(int)
 
         def uwave_macro(uwave_ind_list, step_ind):
-            MW_NV = uwave_ind_list[0]  # NV microwave chain (~2.87 GHz)
-            RF = uwave_ind_list[1]  # RF chain (~133 MHz)
+            MW_NV = [uwave_ind_list[0]]  # NV microwave chain (~2.87 GHz)
+            RF = [uwave_ind_list[1]]  # RF chain (~133 MHz)
             qua.align()
             seq_utils.macro_pi_on_2_pulse(MW_NV)
             qua.wait(pre_rf)
