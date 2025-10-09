@@ -544,8 +544,6 @@ def do_deer(nv_list):
         freqs=freqs,
         uwave_ind_list=[0,1],
     )
-    # for _ in range(2):
-    #     resonance.main(nv_list, num_steps, num_reps, num_runs, freqs=freqs)
 
 
 def do_resonance_zoom(nv_list):
@@ -694,7 +692,7 @@ def do_spin_echo(nv_list):
     min_tau = 200  # ns
     # max_tau = 20e3  # fallback
     # revival_period = int(15e3)
-    revival_period = int(13e3)
+    revival_period = int(20e3) ##20 gauss
     taus = []
     revival_width = 6e3
     decay = np.linspace(min_tau, min_tau + revival_width, 6)
@@ -1321,9 +1319,9 @@ if __name__ == "__main__":
     print(f"Green Laser Coordinates: {green_coords_list[0]}")
     print(f"Red Laser Coordinates: {red_coords_list[0]}")
 
-    # pixel_coords_list = [[124.195, 127.341],[13.905, 11.931],[151.679, 245.068],[240.501, 17.871]]
-    # green_coords_list = [[108.478, 107.118], [119.578, 121.461], [106.851, 93.454], [93.814, 118.209]]
-    # red_coords_list = [[73.558, 71.534], [82.119, 83.697], [72.681, 60.391], [61.267, 79.785]]
+    pixel_coords_list = [[124.195, 127.341],[13.905, 11.931],[151.679, 245.068],[240.501, 17.871]]
+    green_coords_list = [[108.478, 107.118], [119.578, 121.461], [106.851, 93.454], [93.814, 118.209]]
+    red_coords_list = [[73.558, 71.534], [82.119, 83.697], [72.681, 60.391], [61.267, 79.785]]
     num_nvs = len(pixel_coords_list)
     threshold_list = [None] * num_nvs
     # fmt: off
@@ -1490,14 +1488,14 @@ if __name__ == "__main__":
         # do_charge_state_histograms_images(nv_list, vary_pol_laser=True)
 
         # do_optimize_pol_amp(nv_list)
-        # do_optimize_pol_duration(nv_list)
+        do_optimize_pol_duration(nv_list)
         # do_optimize_readout_amp(nv_list)
         # do_optimize_readout_duration(nv_list)
         # optimize_readout_amp_and_duration(nv_list)
         # do_optimize_spin_pol_amp(nv_list)
         # do_check_readout_fidelity(nv_list)
 
-        do_scc_snr_check(nv_list)
+        # do_scc_snr_check(nv_list)
         # do_optimize_scc_duration(nv_list)
         # do_optimize_scc_amp(nv_list)
         # optimize_scc_amp_and_duration(nv_list)1
@@ -1511,9 +1509,9 @@ if __name__ == "__main__":
 
         # do_rabi(nv_list)
         # do_power_rabi(nv_list)
-        do_resonance(nv_list)
+        # do_resonance(nv_list)
         # do_resonance_zoom(nv_list)
-        # do_spin_echo(nv_list)
+        do_spin_echo(nv_list)
         # do_spin_echo_1(nv_list)
         # do_ramsey(nv_list)
 
