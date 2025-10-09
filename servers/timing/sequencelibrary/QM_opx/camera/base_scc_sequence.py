@@ -23,6 +23,8 @@ def macro(
     scc_amp_override=None,
     spin_pol_duration_override=None,
     spin_pol_amp_override=None,
+    readout_duration_override=None,
+    readout_amp_override=None,
     reference=True,
 ):
     """Base spin sequence as a QUA macro for widefield experiments with many
@@ -173,7 +175,9 @@ def macro(
             with qua.else_():
                 macro_scc_sub_reversed()
 
-        seq_utils.macro_charge_state_readout()
+        seq_utils.macro_charge_state_readout(
+            readout_duration_override, readout_amp_override
+        )
         seq_utils.macro_wait_for_trigger()
 
     def one_rep(rep_ind=0):
