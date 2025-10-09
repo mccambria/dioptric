@@ -26,21 +26,31 @@ def get_seq(
 ):
     reference = False  # References for this sequence are handled routine-side
     buffer = seq_utils.get_widefield_operation_buffer()
-    revival_time = 2e7 #20us
+    revival_period = 20000  # in ns
+    step_val = seq_utils.convert_ns_to_cc(revival_period)
+    t_rf_ns = 100  # RF π pulse duration in ns
+    t_rf_cc = seq_utils.convert_ns_to_cc(t_rf_ns)
+    # First free evolution: split so RF π sits exactly at midpoint of the FULL echo
+    # [ (τ/2 - t_rf/2) ] -- RF π (t_rf) -- [ (τ/2 - t_rf/2) ] -- π_NV
+    pre_rf = int((step_val // 2) - (t_rf_cc // 2))
+    post_rf = int(step_val - (step_val // 2) - (t_rf_cc // 2))  # handles odd cc totals
     with qua.program() as seq:
         seq_utils.init()
         seq_utils.macro_run_aods()
-
         step_ind = qua.declare(int)
 
         def uwave_macro(uwave_ind_list, step_ind):
-            # seq_utils.macro_pi_pulse(uwave_ind_list, phase=0)
+            MW_NV = uwave_ind_list[0]  # NV microwave chain (~2.87 GHz)
+            RF = uwave_ind_list[1]  # RF chain (~133 MHz)
             qua.align()
-            seq_utils.macro_pi_on_2_pulse(uwave_ind_list)
-            qua.wait(revival_time)
-            seq_utils.macro_pi_pulse(uwave_ind_list)
-            qua.wait(revival_time)
-            seq_utils.macro_pi_on_2_pulse(uwave_ind_list)
+            seq_utils.macro_pi_on_2_pulse(MW_NV)
+            qua.wait(pre_rf)
+            seq_utils.macro_pi_pulse(RF)
+            qua.wait(post_rf)
+            seq_utils.macro_pi_pulse(MW_NV)
+            qua.wait(buffer)
+            qua.wait(step_val)
+            seq_utils.macro_pi_on_2_pulse(MW_NV)
             qua.wait(buffer)
 
         with qua.for_each_(step_ind, step_inds):
