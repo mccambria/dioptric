@@ -5,6 +5,8 @@ Config file for the PC purcell
 Created July 20th, 2023
 @author: mccambria
 @author: sbchand
+@author: chemistatcode
+@author: ericvin
 """
 
 from pathlib import Path
@@ -26,29 +28,19 @@ home = Path.home()
 
 # region Widefield calibration coords
 
-green_laser = "laser_INTE_520"
-yellow_laser = "laser_OPTO_589"
-red_laser = "laser_COBO_638"
-green_laser_aod = "laser_INTE_520_aod"
-red_laser_aod = "laser_COBO_638_aod"
-
-## cryo
+green_laser = "laser_COBO_520" # make labrad server for COBOLT green laser
+tisapph_laser = "" #fill this in later (labrad server for Tisapph)
 thor_galvos = "pos_xy_THOR_gvs212"
-cryo_green_laser = "laser_COBO_520"
+cryo_piezo = "pos_xyz_ATTO_piezos"
 
 
-
+# NOT updated for cryo yet set-up for galvo
 calibration_coords_pixel = [
     [13.905, 11.931],
     [124.563, 242.424],
     [240.501, 17.871],
 ]
-calibration_coords_green = [
-    [119.616, 121.469],
-    [109.97, 94.057],
-    [93.88, 118.204],
-]
-calibration_coords_red = [
+calibration_coords_galvo = [
     [82.15, 83.705],
     [75.199, 61.034],
     [61.32, 79.784],
@@ -57,20 +49,17 @@ calibration_coords_red = [
 # Create the dictionaries using the provided lists
 calibration_coords_nv1 = {
     CoordsKey.PIXEL: calibration_coords_pixel[0],
-    green_laser_aod: calibration_coords_green[0],
-    red_laser_aod: calibration_coords_red[0],
+    thor_galvos: calibration_coords_galvo[0],
 }
 
 calibration_coords_nv2 = {
     CoordsKey.PIXEL: calibration_coords_pixel[1],
-    green_laser_aod: calibration_coords_green[1],
-    red_laser_aod: calibration_coords_red[1],
+    thor_galvos: calibration_coords_galvo[1],
 }
 
 calibration_coords_nv3 = {
     CoordsKey.PIXEL: calibration_coords_pixel[2],
-    green_laser_aod: calibration_coords_green[2],
-    red_laser_aod: calibration_coords_red[2],
+    thor_galvos: calibration_coords_galvo[2],
 }
 
 pixel_to_sample_affine_transformation_matrix = [
@@ -85,7 +74,7 @@ config |= {
     "apd_indices": [0],  # APD indices for the tagger
     "count_format": CountFormat.RAW,
     "collection_mode": CollectionMode.CAMERA,
-    "collection_mode_counter": CollectionMode.COUNTER,  # TODO: remove this line when set up in new computer
+    "collection_mode_counter": CollectionMode.COUNTER,  # remove this line when set up in new computer
     # "charge_state_estimation_mode": ChargeStateEstimationMode.MLE,
     "charge_state_estimation_mode": ChargeStateEstimationMode.THRESHOLDING,
     "windows_repo_path": home / "GitHub/dioptric",
@@ -127,6 +116,8 @@ config |= {
             "port": 9510,
             "cluster_name": "kolkowitz_nv_lab",
         },
+        "power_supply_RNS_ngc103_visa": "TCPIP::192.168.0.130::INSTR",
+        "pos_xyz_ATTO_piezos_ip": "192.168.0.199",
     },
     ###
     "Microwaves": {
@@ -162,7 +153,8 @@ config |= {
     "Camera": {
         "server_name": "camera_NUVU_hnu512gamma",
         "resolution": (512, 512),
-        "spot_radius": 2.5,  # Radius for integrating NV counts in a camera image
+        "spot_radius": 2.5,
+          # Radius for integrating NV counts in a camera image
         "bias_clamp": 300,  # (changing this won't actually change the value on the camera currently)
         "em_gain": 5000,
         # "em_gain": 1000,
@@ -181,21 +173,13 @@ config |= {
     ###
     "Optics": {
         "PhysicalLasers": {
+
             green_laser: {
                 "delay": 0,
                 "mod_mode": ModMode.DIGITAL,
-                "positioner": green_laser_aod,
+                "positioner": thor_galvos,
             },
-            red_laser: {
-                "delay": 0,
-                "mod_mode": ModMode.DIGITAL,
-                "positioner": red_laser_aod,
-            },
-            yellow_laser: {
-                "delay": 0,
-                "mod_mode": ModMode.ANALOG,
-            },
-            cryo_green_laser: {
+            tisapph_laser: {
                 "delay": 0,
                 "mod_mode": ModMode.DIGITAL,
                 "positioner": thor_galvos,
@@ -205,14 +189,16 @@ config |= {
             # LaserKey.IMAGING: {"physical_name": green_laser, "duration": 50e6},
             VirtualLaserKey.IMAGING: {
                 # "physical_name": green_laser,
-                "physical_name": cryo_green_laser,
+                "physical_name": green_laser,
                 "duration": 12e6,
             },
-            # SBC: created for calibration only
-            VirtualLaserKey.RED_IMAGING: {
-                "physical_name": red_laser,
-                "duration": 1e6,
+
+            VirtualLaserKey.SINGLET_DRIVE: {
+                "physical_name": tisapph_laser,
+                "duration": 300, #this is a placeholder
             },
+            
+
             VirtualLaserKey.SPIN_READOUT: {
                 "physical_name": green_laser,
                 "duration": 300,
@@ -231,40 +217,8 @@ config |= {
                 "physical_name": green_laser,
                 "duration": 60,
             },
-            VirtualLaserKey.ION: {
-                "physical_name": red_laser,
-                "duration": 1e3,
-            },
-            # SCC: 180 mW, 0.13 V, no shelving
-            # LaserKey.SCC: {"physical_name": red_laser, "duration": 248},
-            VirtualLaserKey.SCC: {
-                "physical_name": red_laser,
-                "duration": 124,
-            },
-            # LaserKey.SCC: {"physical_name": green_laser, "duration": 200},
-            VirtualLaserKey.WIDEFIELD_SHELVING: {
-                "physical_name": yellow_laser,
-                "duration": 60,
-            },
-            VirtualLaserKey.WIDEFIELD_IMAGING: {
-                "physical_name": yellow_laser,
-                "duration": 12e6,
-                # "duration": 24e6,
-            },
-            # LaserKey.WIDEFIELD_SPIN_POL: {"physical_name": yellow_laser, "duration": 10e3},
-            VirtualLaserKey.WIDEFIELD_SPIN_POL: {
-                "physical_name": yellow_laser,
-                "duration": 100e3,
-            },
-            # LaserKey.WIDEFIELD_SPIN_POL: {"physical_name": yellow_laser, "duration": 1e6},
-            VirtualLaserKey.WIDEFIELD_CHARGE_READOUT: {
-                "physical_name": yellow_laser,
-                # "duration": 200e6,
-                # "duration": 60e6,
-                "duration": 50e6,
-                # "duration": 24e6,  # for red calibration
-            },
-            # LaserKey.WIDEFIELD_CHARGE_READOUT: {"physical_name": yellow_laser, "duration": 100e6},
+            
+
         },
         #
         "PulseSettings": {
@@ -274,8 +228,28 @@ config |= {
     ###
     "Positioning": {
         "Positioners": {
+            #update with correct piezos for cryo
+            # CoordsKey.SAMPLE: {
+            #     "physical_name": "pos_xyz_PI_p616_3c",
+            #     "control_mode": PosControlMode.STREAM,
+            #     "delay": int(1e6),  # 5 ms for PIFOC xyz
+            #     "nm_per_unit": 1000,
+            #     "optimize_range": 0.09,
+            #     "units": "Voltage (V)",
+            #     "opti_virtual_laser_key": VirtualLaserKey.IMAGING,
+            # },
+            # CoordsKey.Z: {
+            #     "physical_name": "pos_xyz_PI_p616_3c",
+            #     "control_mode": PosControlMode.STREAM,
+            #     "delay": int(1e6),  # 5 ms for PIFOC xyz
+            #     "nm_per_unit": 1000,
+            #     # "optimize_range": 0.09,
+            #     "optimize_range": 0.24,
+            #     "units": "Voltage (V)",
+            #     "opti_virtual_laser_key": VirtualLaserKey.IMAGING,
+            # },
             CoordsKey.SAMPLE: {
-                "physical_name": "pos_xyz_PI_p616_3c",
+                "physical_name": "pos_xyz_ATTO_piezos",
                 "control_mode": PosControlMode.STREAM,
                 "delay": int(1e6),  # 5 ms for PIFOC xyz
                 "nm_per_unit": 1000,
@@ -284,7 +258,7 @@ config |= {
                 "opti_virtual_laser_key": VirtualLaserKey.IMAGING,
             },
             CoordsKey.Z: {
-                "physical_name": "pos_xyz_PI_p616_3c",
+                "physical_name": "pos_xyz_ATTO_piezos",
                 "control_mode": PosControlMode.STREAM,
                 "delay": int(1e6),  # 5 ms for PIFOC xyz
                 "nm_per_unit": 1000,
@@ -292,24 +266,6 @@ config |= {
                 "optimize_range": 0.24,
                 "units": "Voltage (V)",
                 "opti_virtual_laser_key": VirtualLaserKey.IMAGING,
-            },
-            green_laser_aod: {
-                "control_mode": PosControlMode.SEQUENCE,
-                "delay": int(400e3),  # 400 us for galvo
-                "nm_per_unit": 1000,
-                "optimize_range": 1.2,
-                "units": "MHz",
-                "opti_virtual_laser_key": VirtualLaserKey.IMAGING,
-                "aod": True,
-            },
-            red_laser_aod: {
-                "control_mode": PosControlMode.SEQUENCE,
-                "delay": int(400e3),  # 400 us for galvo
-                "nm_per_unit": 1000,
-                "optimize_range": 2.4,
-                "units": "MHz",
-                "opti_virtual_laser_key": VirtualLaserKey.ION,
-                "aod": True,
             },
             thor_galvos: {
                 "physical_name": "pos_xy_THOR_gvs212",
@@ -325,6 +281,8 @@ config |= {
         "calibration_coords_nv2": calibration_coords_nv2,
         "calibration_coords_nv3": calibration_coords_nv3,
         "pixel_to_sample_affine_transformation_matrix": pixel_to_sample_affine_transformation_matrix,
+        # "cryo_piezos_voltage": ???,
+        # "z_bias_adjust": ???
     },
     ###
     "Servers": {  # Bucket for miscellaneous servers not otherwise listed above

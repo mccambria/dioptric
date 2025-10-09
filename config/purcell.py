@@ -110,6 +110,7 @@ config |= {
             "port": 9510,
             "cluster_name": "kolkowitz_nv_lab",
         },
+        "power_supply_RNS_ngc103_visa": "TCPIP::192.168.000.130::INSTR",
     },
     ###
     "Microwaves": {

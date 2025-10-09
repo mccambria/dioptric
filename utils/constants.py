@@ -32,7 +32,8 @@ class VirtualLaserKey(Enum):
     WIDEFIELD_IMAGING = auto()
     WIDEFIELD_CHARGE_READOUT = auto()
     WIDEFIELD_SPIN_POL = auto()
-
+    #Cryo Singlet Drive
+    SINGLET_DRIVE = auto()
 
 # Coords keys are the names associated with the various physical coordinates
 # for each NV. Each positioner name is a coords key. CoordsKey.PIXEL is associated
