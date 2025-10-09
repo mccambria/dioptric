@@ -242,10 +242,9 @@ def get_nv_pulse_duration(nv_sig: NVSig, vkey: VirtualLaserKey) -> int:
     Resilient to Enum/string key mismatches; falls back to config default.
     """
     pulse_dur_val = nv_sig.pulse_durations
-    print(pulse_dur_val.keys())
     if isinstance(pulse_dur_val, dict):
         
-        pulse_duraions = pulse_dur_val[vkey]
+        pulse_duraions = pulse_dur_val['4']
     else:
         pulse_duraions = pulse_dur_val
     

@@ -1061,7 +1061,9 @@ if __name__ == "__main__":
     # file_id = "2025_09_19-22_37_11-rubin-nv0_2025_09_08"
     # file_id = "2025_09_28-04_31_09-rubin-nv0_2025_09_08"
     # file_id = "2025_09_28-22_59_27-rubin-nv0_2025_09_08"
-    file_id = "2025_10_01-17_07_50-rubin-nv0_2025_09_08"
+    # file_id = "2025_10_01-17_07_50-rubin-nv0_2025_09_08"
+    file_id = "2025_10_08-16_29_56-rubin-nv0_2025_09_08"
+    
 
     ### pol amp var
     # file_id = "2025_09_12-16_53_34-rubin-nv0_2025_09_08"
@@ -1090,7 +1092,7 @@ if __name__ == "__main__":
     # file_name = dm.get_file_name(file_id=file_id)
     # print(f"{file_name}_{file_id}")
     process_and_plot(raw_data)
-    process_and_plot(raw_data)
+    # process_and_plot(raw_data)
     # process_and_plot_green(raw_data)
     # process_and_plot_charge(raw_data)
     # process_and_plot_charge(raw_data)

@@ -261,7 +261,6 @@ def process_and_plot(data):
     distances = []
     distances = []
     scc_durations = []
-    nv_sig: NVSig
     for nv in nv_list:
         coords = pos.get_nv_coords(nv, coords_key= CoordsKey.PIXEL, drift_adjust=False)
         nv_coords.append(coords)
@@ -271,7 +270,11 @@ def process_and_plot(data):
         scc_dur = pos.get_nv_pulse_duration(nv, VirtualLaserKey.SCC)
         scc_durations.append(scc_dur)
 
-    # Prepare DataFrame for analysis
+    yellow_charge_readout_amp = data["opx_config"]["waveforms"]["yellow_charge_readout"]["sample"]
+    yellow_spin_pol_amp = data["opx_config"]["waveforms"]["yellow_spin_pol"]["sample"]
+    a, b, c = 1.5133e04, 2.6976, -38.63
+    yellow_charge_readout_amp = int(a * (yellow_charge_readout_amp**b) + c)
+    yellow_spin_pol_amp = int(a * (yellow_spin_pol_amp**b) + c)
     # Prepare DataFrame for analysis
     df = pd.DataFrame(
         {
@@ -358,7 +361,6 @@ def process_and_plot(data):
     scc_durations = df["scc_durations"]
     snr = df["SNR"]
     yerr = df["SNR STE"]
-    print(scc_durations)
     # indices_to_remove = [ind for ind in range(len(snr)) if snr[ind] < 0.05]
     indices_to_remove = []
     print(indices_to_remove)
@@ -379,8 +381,8 @@ def process_and_plot(data):
         capsize=3,
         label=f"SNR (Median: {median})",
     )
-    plt.title("SNR vs. Pixel Distance", fontsize=15)
-    plt.xlabel("Pixel Distance from Center", fontsize=15)
+    plt.title(f"SNRs of {num_nvs}NVs(readout amp:{yellow_charge_readout_amp}uW, spin pol amp:{yellow_spin_pol_amp}uW)", fontsize=13)
+    plt.xlabel("SCC Durations (ns)", fontsize=15)
     plt.ylabel("SNR", fontsize=15)
     plt.xticks(fontsize=15)
     plt.yticks(fontsize=15)
@@ -440,7 +442,7 @@ if __name__ == "__main__":
     # data = dm.get_raw_data(file_stem=file_stem)
 
     data = dm.get_raw_data(
-        file_stem="2025_10_08-13_33_00-rubin-nv0_2025_09_08", load_npz=True
+        file_stem="2025_10_08-17_21_50-rubin-nv0_2025_09_08", load_npz=True
     )
     # file_name = dm.get_file_name(file_id=file_id)
     # print(f"{file_name}_{file_id}")
