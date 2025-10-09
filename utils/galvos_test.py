@@ -66,6 +66,7 @@ import time
 
 import nidaqmx
 import numpy as np
+from utils import common
 
 # # === Configurable parameters ===
 # DEVICE_NAME = "Dev1"
@@ -121,10 +122,12 @@ import numpy as np
 
 
 # === Configurable parameters ===
-DEVICE_NAME = "Dev1"
-X_CHANNEL = "ao11"
-Y_CHANNEL = "ao4"
+#DEVICE_NAME = "Dev1"
+#X_CHANNEL = "ao11"
+#Y_CHANNEL = "ao4"
 
+cxn = common.labrad_connect()
+opx = cxn.pos_xy_THOR_gvs212
 amp_x = 0.4  # amplitude (safe range)
 amp_y = 0.4 
 freq_x = 4  # Hz
@@ -134,9 +137,9 @@ rate = 1000  # update rate (Hz)
 
 # === Continuous Lissajous pattern ===
 def lissajous_scan(stop_event):
-    task = nidaqmx.Task()
-    task.ao_channels.add_ao_voltage_chan(f"{DEVICE_NAME}/{X_CHANNEL}")
-    task.ao_channels.add_ao_voltage_chan(f"{DEVICE_NAME}/{Y_CHANNEL}")
+    #task = nidaqmx.Task()
+    #task.ao_channels.add_ao_voltage_chan(f"{DEVICE_NAME}/{X_CHANNEL}")
+    #task.ao_channels.add_ao_voltage_chan(f"{DEVICE_NAME}/{Y_CHANNEL}")
 
     t = 0
     dt = 1 / rate
@@ -145,13 +148,12 @@ def lissajous_scan(stop_event):
         while not stop_event.is_set():
             x = amp_x * np.sin(2 * np.pi * freq_x * t)
             y = amp_y * np.sin(2 * np.pi * freq_y * t)
-            task.write([x, y])
+            opx.write_xy(x, y)
             time.sleep(dt)
             t += dt
     finally:
         print("Stopping scan and parking galvos at center.")
-        task.write([0.0, 0.0])  # Park galvos at center
-        task.close()
+        opx.write_xy(0.0, 0.0)  # Park galvos at center
 
 
 # Start Lissajous pattern

@@ -22,7 +22,9 @@ message = 987654321
 timeout = 5
 ### END NODE INFO
 """
+import sys
 
+sys.path.append(r"C:\Users\kolko\Downloads\rsinstrument-1.102.0\rsinstrument-1.102.0")
 import logging
 import socket
 import time
@@ -30,6 +32,7 @@ import time
 import pyvisa as visa  # Docs here: https://pyvisa.readthedocs.io/en/master/
 from labrad.server import LabradServer, setting
 from RsInstrument import RsInstrument
+import RsInstrument as Rs
 from twisted.internet.defer import ensureDeferred
 
 from utils import common
@@ -37,34 +40,36 @@ from utils import tool_belt as tb
 
 import numpy as np
 from datetime import datetime
-
+from typing import Union
 class PowerSupplyRnsNgc103(LabradServer, RsInstrument):
     name = "power_supply_RNS_ngc103"
     pc_name = socket.gethostname()
 
-    def initServer(self):
+    def initServer(self, startOpen=False):
         tb.configure_logging(self)
         config = common.get_config_dict()
-        device_id = config["DeviceIDs"][f"{self.name}_visa"]
+        self.device_id = config["DeviceIDs"][f"{self.name}_visa"]
         # di_clock = config["Wiring"]["Daq"]["di_clock"]
-        resource_manager = visa.ResourceManager()
-        self.pwr_sup = resource_manager.open_resource(device_id)
+        # resource_manager = visa.ResourceManager()
+        # self.pwr_sup = resource_manager.open_resource(device_id)
         # Set the VISA read and write termination. This is specific to the
         # instrument - you can find it in the instrument's programming manual
-        self.pwr_sup.read_termination = "\n"
-        self.pwr_sup.write_termination = "\n"
+        # self.pwr_sup.read_termination = "\n"
+        # self.pwr_sup.write_termination = "\n"
         # Set our channels for FM
         # self.daq_di_pulser_clock = di_clock
         # self.daq_ao_sig_gen_mod = config[2]
-        self.task = None  # Initialize state variable
-        self.reset(None)
+        # self.task = None  # Initialize state variable
+        # self.reset(None)
         # self._set_freq(2.87)
         logging.info("Init complete")
         
         self.open = False
         self.instr = None
+        if startOpen:
+            self.open_connection()
             
-    def _write_command(self, c, cmd : str) -> None:
+    def _write_command(self, cmd : str) -> None:
         """
         Write buffered command to the instrument.
 
@@ -82,24 +87,28 @@ class PowerSupplyRnsNgc103(LabradServer, RsInstrument):
         """
         return self.instr.query_str(cmd + "; *WAI")
 
-    @setting(0, IP="s", direction_channels="?")
-    def open_connection(self, c, IP : str = None, direction_channels : dict[str, int] = {"x": 1, "y": 2, "z": 3}) -> None:
+    @setting(0)
+    # def open_connection(self, c, IP : str = None, direction_channels : dict[str, int] = {"x": 1, "y": 2, "z": 3}) -> None:
+    def open_connection(self) -> None:
         """
         Open connection with the device. Ensure to call this before attempting to use the device.
 
         :return None:
         """
+        IP = self.device_id
+        direction_channels = {"x": 1, "y": 2, "z": 3}
+
         self.IP = IP
         self.direction_channels = direction_channels
             
         self.open = True
         Rs.RsInstrument.assert_minimum_version('1.50.0')
-    
+        IP=None
         if IP == None:
             self.instr = Rs.RsInstrument('TCPIP::192.168.56.101::hislip0', True, False, "Simulate=True")
             print("the power supply " + self._query_command('*IDN?') + " was connected at " + str(datetime.now()))
         else:
-            self.instr = Rs.RsInstrument(f'TCPIP::{IP}::INSTR', True, False, "Simulate=False")
+            self.instr = Rs.RsInstrument(f'{IP}', True, False, "Simulate=False")
             print("the power supply " + self._query_command('*IDN?') + " was connected at " + str(datetime.now()))
 
     @setting(1)
@@ -167,7 +176,7 @@ class PowerSupplyRnsNgc103(LabradServer, RsInstrument):
         str_out = self.instr.query("MEAS:VOLT?")
         return float(str_out)
         
-    @setting(5, which="?", voltage="v")
+    @setting(5, which="?", current="v")
     def set_current(self, c, which : Union[int, str], current : float) -> None:
         """
         Set current of a specific channel. 
@@ -287,15 +296,15 @@ class PowerSupplyRnsNgc103(LabradServer, RsInstrument):
         """
         self._write_command("OUTP:MAST OFF")
 
-__server__ = PwrSuppNGC103()
+__server__ = PowerSupplyRnsNgc103()
 
 if __name__ == "__main__":
     from labrad import util
 
     util.runServer(__server__)
 
-    rm = visa.ResourceManager()
-    addr = "TCPIP::192.168.0.130::INSTR"
-    pwr_sup = rm.open_resource(addr)
+    # rm = visa.ResourceManager()
+    # addr = "TCPIP::192.168.0.130::INSTR"
+    # pwr_sup = rm.open_resource(addr)
 
-    PwrSuppNGC103.initServer(__server__)
+    PowerSupplyRnsNgc103.initServer(__server__, startOpen=True)

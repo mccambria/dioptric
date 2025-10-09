@@ -8,6 +8,7 @@ Created on August 2th, 2025
 
 @author: mccambria
 @author: Saroj B Chand
+@author: chemistatcode
 """
 
 
@@ -50,8 +51,8 @@ def do_image_sample(
     # scan_range = 0.2
     # num_steps = 60
 
-    scan_range = 0.5
-    num_steps = 90
+    scan_range = 0.4 #voltage
+    num_steps = 120
 
     # For now we only support square scans so pass scan_range twice
     image_sample.confocal_scan(
@@ -404,7 +405,7 @@ if __name__ == "__main__":
 
     # coords: SAMPLE (piezo) xyz; add GALVO/PIXEL later if you have them
     # Build the NV (your snippet is fine)
-    sample_xyz = [0.240, -0.426]  # piezo XY
+    sample_xyz = [0.4, -0.426] #[0.240, -0.426]  # piezo XY
     coord_z = 1.0  # Z
     pixel_xy = [0.0, 0.0]  # galvo ref
 
@@ -419,10 +420,10 @@ if __name__ == "__main__":
         disable_z_opt=True,
         expected_counts=13,
         pulse_durations={
-            VirtualLaserKey.IMAGING: int(1e6),
+            VirtualLaserKey.IMAGING: int(5e6),
             VirtualLaserKey.CHARGE_POL: int(1e4),
             VirtualLaserKey.SPIN_POL: 2000,
-            VirtualLaserKey.SPIN_READOUT: 440,
+            VirtualLaserKey.SINGLET_DRIVE: 300,  # placeholder
         },
     )
 

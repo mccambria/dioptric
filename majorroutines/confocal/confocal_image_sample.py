@@ -146,9 +146,8 @@ def confocal_scan(nv_sig: NVSig, x_range, y_range, num_steps, nv_minus_init=Fals
             idx = 0
             while idx < total and not tb.safe_stop():
                 # Move to target imaging coordinates (abstract call; routes to configured positioner)
-                # pos.set_xyz((X[idx], Y[idx]), positioner=positioner)
-                positioner.load_stream_xy([X[idx]], [Y[idx]], False)
-                # .set_xyz((X[idx], Y[idx]), positioner=positioner)
+                pos.set_xyz((X[idx], Y[idx]), positioner=positioner)
+       
                 if settle_s > 0:
                     tb.sleep_seconds_safely(settle_s)
 
