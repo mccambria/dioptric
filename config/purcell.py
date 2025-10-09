@@ -33,21 +33,9 @@ green_laser_aod = "laser_INTE_520_aod"
 red_laser_aod = "laser_COBO_638_aod"
 
 
-calibration_coords_pixel = [
-    [13.905, 11.931],
-    [124.563, 242.424],
-    [240.501, 17.871],
-]
-calibration_coords_green = [
-    [119.616, 121.469],
-    [109.97, 94.057],
-    [93.88, 118.204],
-]
-calibration_coords_red = [
-    [82.15, 83.705],
-    [75.199, 61.034],
-    [61.32, 79.784],
-]
+calibration_coords_pixel = [[13.905, 11.931], [151.679, 245.068],[240.501, 17.871]]
+calibration_coords_green = [[119.578, 121.461], [106.851, 93.454], [93.814, 118.209]]
+calibration_coords_red = [[82.119, 83.697], [72.681, 60.391], [61.267, 79.785]]
 
 # Create the dictionaries using the provided lists
 calibration_coords_nv1 = {
@@ -138,21 +126,21 @@ config |= {
             0: {
                 "physical_name": "sig_gen_STAN_sg394",
                 "uwave_power": 9.6,
-                "frequency": 2.7805,
-                # "frequency": 2.7663,
-                "rabi_period": 200,
-                "pi_pulse": 100,
-                "pi_on_2_pulse": 52,
+                # "frequency": 2.7805,
+                "frequency": 2.7663,
+                "rabi_period": 176,
+                "pi_pulse": 88,
+                "pi_on_2_pulse": 44,
             },
             # sig gen 1 is iq molulated
             1: {
                 "physical_name": "sig_gen_STAN_sg394_2",
                 "uwave_power": 9.6,
-                "frequency": 2.8220,
+                "frequency": 2.8200,
                 # "frequency": 2.8420,
-                "rabi_period": 120,
-                "pi_pulse": 60,
-                "pi_on_2_pulse": 32,
+                "rabi_period": 112,
+                "pi_pulse": 56,
+                "pi_on_2_pulse": 28,
             },
         },
     },
@@ -883,14 +871,16 @@ opx_config = {
         "green_aod_cw-shelving": {"type": "constant", "sample": 0.05},
         "green_aod_cw-scc": {"type": "constant", "sample": 0.15},
         # Red AOD
-        "red_aod_cw-opti": {"type": "constant", "sample": 0.13},
-        "red_aod_cw-ion": {"type": "constant", "sample": 0.13},
-        "red_aod_cw-scc": {"type": "constant", "sample": 0.13},
+        "red_aod_cw-opti": {"type": "constant", "sample": 0.15},
+        "red_aod_cw-ion": {"type": "constant", "sample": 0.15},
+        "red_aod_cw-scc": {"type": "constant", "sample": 0.15},
         # Yellow AOM
         "yellow_imaging": {"type": "constant", "sample": 0.35},
-        "yellow_charge_readout": {"type": "constant", "sample": 0.2861},
-        "yellow_spin_pol": {"type": "constant", "sample": 0.27},
-        "yellow_shelving": {"type": "constant", "sample": 0.33},
+        # "yellow_charge_readout": {"type": "constant", "sample": 0.2675},
+        "yellow_charge_readout": {"type": "constant", "sample": 0.24},
+        # "yellow_charge_readout": {"type": "constant", "sample": 0.2358},
+        "yellow_spin_pol": {"type": "constant", "sample": 0.24},
+        "yellow_shelving": {"type": "constant", "sample": 0.20},
         # Other
         "aod_cw": {"type": "constant", "sample": 0.35},
         "cw": {"type": "constant", "sample": 0.5},
