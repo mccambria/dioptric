@@ -301,7 +301,7 @@ def plot_nv_resonance(
         target_peak_values = [0.113, 0.217]
         # target_peak_values = [0.068, 0.185]
         # target_peak_values = [0.290]
-        tolerance = 0.01
+        tolerance = 0.008
         # Filter indices based on proximity to target peak differences
         filtered_indices = [
             idx
@@ -379,7 +379,22 @@ def plot_nv_resonance(
     filtered_chi_squared_list = [chi_squared_list[idx] for idx in filtered_indices]
     # filtered_fitted_data = [fit_data[idx] for idx in filtered_indices]
     filtered_fitted_data = [fit_fns[idx] for idx in filtered_indices]
+    filtered_avg_snr = [avg_snr[idx] for idx in filtered_indices]
     
+    fig_snr, ax_snr = plt.subplots(figsize=(7, 5))
+    for nv_idx in range(num_nvs):
+        snrs = np.reshape(filtered_avg_snr[nv_idx], len(freqs))
+        # Replace NaNs/infs with 0 so the plot still shows
+        snrs = np.nan_to_num(snrs, nan=0.0, posinf=0.0, neginf=0.0)
+
+        ax_snr.plot(freqs, snrs, linewidth=1, label=f"NV{nv_idx}")
+
+    ax_snr.set_xlabel("Microwave Frequency (MHz)", fontsize=15)
+    ax_snr.set_ylabel("Signal-to-Noise Ratio (SNR)", fontsize=15)
+    ax_snr.set_title(f"SNR vs Frequency for {num_nvs} NVs", fontsize=15)
+
+    ax_snr.grid(True, linestyle="--", alpha=0.6)
+    ax_snr.tick_params(axis="both", labelsize=14)
 
     # Plot histograms and scatter plots
     plots_data = [

@@ -538,8 +538,8 @@ def do_resonance(nv_list):
 def do_deer_hahn(nv_list):
     freq_center = 0.133
     freq_range = 0.026
-    num_steps = 45
-    num_reps = 5
+    num_steps = 25
+    num_reps = 6
     # num_reps = 3
     num_runs = 400
     # num_runs = 300
@@ -1371,7 +1371,7 @@ if __name__ == "__main__":
     # nv_list[i] will have the ith coordinates from the above lists
     nv_list: list[NVSig] = []
     for ind in range(num_nvs):
-        if ind not in indices_217_MHz:
+        if ind not in indices_113_MHz:
             continue
         coords = {
             CoordsKey.SAMPLE: sample_coords,
@@ -1437,7 +1437,7 @@ if __name__ == "__main__":
         # )
 
         do_compensate_for_drift(nv_sig)
-        do_widefield_image_sample(nv_sig, 50)
+        # do_widefield_image_sample(nv_sig, 50)
         # do_widefield_image_sample(nv_sig, 200)
 
         # for nv in nv_list:
@@ -1503,7 +1503,7 @@ if __name__ == "__main__":
         # do_optimize_spin_pol_amp(nv_list)
         # do_check_readout_fidelity(nv_list)
 
-        do_scc_snr_check(nv_list)
+        # do_scc_snr_check(nv_list)
         # do_optimize_scc_duration(nv_list)
         # do_optimize_scc_amp(nv_list)
         # optimize_scc_amp_and_duration(nv_list)1
@@ -1518,7 +1518,7 @@ if __name__ == "__main__":
         # do_rabi(nv_list)
         # do_power_rabi(nv_list)
         # do_resonance(nv_list)
-        # do_deer_hahn(nv_list)
+        do_deer_hahn(nv_list)
         # do_resonance_zoom(nv_list)
         # do_spin_echo(nv_list)
         # do_spin_echo_1(nv_list)
