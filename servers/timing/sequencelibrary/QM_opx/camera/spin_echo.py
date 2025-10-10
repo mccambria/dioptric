@@ -19,14 +19,14 @@ from servers.timing.sequencelibrary.QM_opx.camera import base_scc_sequence
 
 def get_seq(base_scc_seq_args, step_vals, num_reps=1):
     buffer = seq_utils.get_widefield_operation_buffer()
-    uwave_ind_list = base_scc_seq_args[-1]
-    macro_pi_pulse_duration = seq_utils.get_macro_pi_pulse_duration(uwave_ind_list)
-    macro_pi_on_2_pulse_duration = seq_utils.get_macro_pi_on_2_pulse_duration(
-        uwave_ind_list
-    )
+    # uwave_ind_list = base_scc_seq_args[-1]
+    # macro_pi_pulse_duration = seq_utils.get_macro_pi_pulse_duration(uwave_ind_list)
+    # macro_pi_on_2_pulse_duration = seq_utils.get_macro_pi_on_2_pulse_duration(
+    #     uwave_ind_list
+    # )
 
     step_vals = [
-        seq_utils.convert_ns_to_cc(el) - macro_pi_pulse_duration for el in step_vals
+        seq_utils.convert_ns_to_cc(el) for el in step_vals
     ]
     if np.any(np.less(step_vals, 4)):
         raise RuntimeError("Negative wait duration")
@@ -38,11 +38,11 @@ def get_seq(base_scc_seq_args, step_vals, num_reps=1):
 
         def uwave_macro_sig(uwave_ind_list, step_val):
             qua.align()
-            seq_utils.macro_pi_on_2_pulse(uwave_ind_list, phase=0)
+            seq_utils.macro_pi_on_2_pulse(uwave_ind_list)
             qua.wait(step_val)
-            seq_utils.macro_pi_pulse(uwave_ind_list, phase=0)
+            seq_utils.macro_pi_pulse(uwave_ind_list)
             qua.wait(step_val)
-            seq_utils.macro_pi_on_2_pulse(uwave_ind_list, phase=0)
+            seq_utils.macro_pi_on_2_pulse(uwave_ind_list)
             qua.wait(buffer)
 
         with qua.for_each_(step_val, step_vals):
@@ -58,6 +58,7 @@ if __name__ == "__main__":
     config_module = common.get_config_module()
     config = config_module.config
     opx_config = config_module.opx_config
+    opx_config["pulses"]["yellow_spin_pol"]["length"] = 2e3
 
     qm_opx_args = config["DeviceIDs"]["QM_opx_args"]
     qmm = QuantumMachinesManager(**qm_opx_args)
@@ -87,7 +88,7 @@ if __name__ == "__main__":
             10,
         )
 
-        sim_config = SimulationConfig(duration=int(300e3 / 4))
+        sim_config = SimulationConfig(duration=int(100e3 / 4))
         sim = opx.simulate(seq, sim_config)
         samples = sim.get_simulated_samples()
         samples.con1.plot()

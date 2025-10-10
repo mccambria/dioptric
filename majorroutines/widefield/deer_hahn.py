@@ -30,230 +30,194 @@ from utils.constants import NVSig, NVSpinState
 from utils.positioning import get_scan_1d as calculate_freqs
 
 
-def create_raw_data_figure(nv_list, freqs, counts, counts_errs):
-    fig, ax = plt.subplots()
-    widefield.plot_raw_data(ax, nv_list, freqs, counts, counts_errs)
-    ax.set_xlabel("Frequency (GHz)")
-    ax.set_ylabel("Fraction in NV$^{-}$")
-    return fig
+import numpy as np
+import matplotlib.pyplot as plt
+from dataclasses import dataclass
+from typing import Tuple, Dict, Any, Optional
+from scipy.optimize import curve_fit
 
+@dataclass
+class DeerResult:
+    nv_index: int
+    f0: float              # fitted center (GHz)
+    amp: float             # fitted amplitude (contrast units)
+    width: float           # fitted width (GHz); sigma for Gaussian
+    chi2_red: float        # reduced chi^2
+    peak_contrast: float   # max |contrast| in data (not fit)
+    peak_freq: float       # freq at max |contrast|
 
-def reformat_counts(counts):
-    counts = np.array(counts)
-    num_nvs = counts.shape[1]
-    num_steps = counts.shape[3]
-    adj_num_steps = num_steps // 4
-    exp_ind = 0  # Everything, signal and ref, are under the same exp_rep for resonance
+def _mean_ste(a, axis=-1):
+    """Return mean and standard error along an axis; keeps dims collapsed."""
+    a = np.asarray(a, float)
+    m = np.mean(a, axis=axis)
+    # avoid division by zero for reps=1
+    n = a.shape[axis]
+    if n <= 1:
+        return m, np.zeros_like(m)
+    s = np.std(a, axis=axis, ddof=1) / np.sqrt(n)
+    return m, s
 
-    sig_counts_0 = counts[exp_ind, :, :, 0:adj_num_steps, :]
-    sig_counts_1 = counts[exp_ind, :, :, adj_num_steps : 2 * adj_num_steps, :]
-    sig_counts = np.append(sig_counts_0, sig_counts_1, axis=3)
-    ref_counts_0 = counts[exp_ind, :, :, 2 * adj_num_steps : 3 * adj_num_steps, :]
-    ref_counts_1 = counts[exp_ind, :, :, 3 * adj_num_steps :, :]
-    ref_counts = np.empty((num_nvs, num_runs, adj_num_steps, 2 * num_reps))
-    ref_counts[:, :, :, 0::2] = ref_counts_0
-    ref_counts[:, :, :, 1::2] = ref_counts_1
+def _gauss(x, A, sigma, x0, y0):
+    return y0 + A * np.exp(-0.5 * ((x - x0) / sigma) ** 2)
 
-    reformatted_counts = np.stack((sig_counts, ref_counts))
-    return reformatted_counts
+def _lorentz(x, A, gamma, x0, y0):
+    return y0 + A * (gamma**2) / ((x - x0) ** 2 + gamma**2)
 
+def _fit_1d(x, y, yerr, model="gauss", x0_guess=None) -> Tuple[np.ndarray, np.ndarray, float]:
+    """Weighted fit; returns (popt, pcov, chi2_red)."""
+    x = np.asarray(x, float)
+    y = np.asarray(y, float)
+    yerr = np.asarray(yerr, float)
+    yerr = np.where(yerr <= 0, np.median(yerr[yerr>0]) if np.any(yerr>0) else 1.0, yerr)
 
-def create_fit_figure(
-    nv_list,
-    freqs,
-    norm_counts,
-    norm_counts_ste,
-    axes_pack=None,
-    layout=None,
-    no_legend=True,
-    nv_inds=None,
-    split_esr=None,
-):
-    ### Do the fitting
-
-    num_nvs = len(nv_list)
-    num_freqs = len(freqs)
-    half_num_freqs = num_freqs // 2
-    if nv_inds is None:
-        nv_inds = list(range(num_nvs))
-    num_nvs = len(nv_inds)
-
-    def constant(freq):
-        norm = 1
-        if isinstance(freq, list):
-            return [norm] * len(freq)
-        if isinstance(freq, np.ndarray):
-            return np.array([norm] * len(freq))
-        else:
-            return norm
-
-    fit_fns = []
-    pcovs = []
-    popts = []
-    center_freqs = []
-    center_freq_errs = []
-
-    do_fit = True
-    if do_fit:
-        for nv_ind in nv_inds:
-            nv_counts = norm_counts[nv_ind]
-            nv_counts_ste = norm_counts_ste[nv_ind]
-
-            # Pre-processing
-
-            guess_params = [1, 6, None, 1, 6, None]
-
-            if nv_ind in split_esr:
-                guess_params.append(0.002)
-
-                def fit_fn(freq, *args):
-                    half_splitting = args[-1] / 2
-                    split_line_1 = gaussian(
-                        freq, args[0], args[1], args[2] - half_splitting
-                    ) + gaussian(freq, args[0], args[1], args[2] + half_splitting)
-                    split_line_2 = gaussian(
-                        freq, args[3], args[4], args[5] - half_splitting
-                    ) + gaussian(freq, args[3], args[4], args[5] + half_splitting)
-                    return split_line_1 + split_line_2
-
-            else:
-
-                def fit_fn(freq, *args):
-                    return gaussian(freq, *args[0:3]) + gaussian(freq, *args[3:6])
-
-            low_freq_guess = freqs[np.argmax(nv_counts[:half_num_freqs])]
-            high_freq_guess = 2 * 2.87 - low_freq_guess
-            guess_params[2] = low_freq_guess
-            guess_params[5] = high_freq_guess
-            num_params = len(guess_params)
-            bounds = [[0] * num_params, [np.inf] * num_params]
-            # Linewidth limits
-            for ind in [1, 4]:
-                bounds[0][ind] = 3
-                bounds[1][ind] = 30
-            if nv_ind in split_esr:
-                bounds[1][-1] = 0.03
-
-            # Do the fit
-
-            # if num_resonances == 0:
-            #     fit_fns.append(constant)
-            #     popts.append([])
-            # else:
-            _, popt, pcov = fit_resonance(
-                freqs,
-                nv_counts,
-                nv_counts_ste,
-                fit_func=fit_fn,
-                guess_params=guess_params,
-                bounds=bounds,
-            )
-
-            # Tracking for plotting
-            fit_fns.append(fit_fn)
-            popts.append(popt)
-            pcovs.append(pcov)
-
-            # if num_resonances == 1:
-            #     center_freqs.append(popt[2])
-            #     center_freq_errs.append(np.sqrt(pcov[2, 2]))
-            # elif num_resonances == 2:
-            #     center_freqs.append((popt[2], popt[5]))
-            center_freqs.append((popt[2], popt[5]))
+    if model == "gauss":
+        fn = _gauss
+        # crude guesses
+        y0 = np.median(y)
+        A = np.min(y) - y0 if np.abs(np.min(y) - y0) > np.abs(np.max(y) - y0) else np.max(y) - y0
+        if x0_guess is None:
+            x0_guess = x[np.argmax(np.abs(y - y0))]
+        sigma = (np.max(x) - np.min(x)) / 10.0
+        p0 = [A, sigma, x0_guess, y0]
+        bounds = ([-np.inf, 0.0, np.min(x), -np.inf], [np.inf, (np.max(x)-np.min(x)), np.max(x), np.inf])
     else:
-        fit_fns = None
-        popts = None
+        fn = _lorentz
+        y0 = np.median(y)
+        A = (np.min(y) - y0) if np.abs(np.min(y) - y0) > np.abs(np.max(y) - y0) else (np.max(y) - y0)
+        if x0_guess is None:
+            x0_guess = x[np.argmax(np.abs(y - y0))]
+        gamma = (np.max(x) - np.min(x)) / 20.0
+        p0 = [A, gamma, x0_guess, y0]
+        bounds = ([-np.inf, 0.0, np.min(x), -np.inf], [np.inf, (np.max(x)-np.min(x)), np.max(x), np.inf])
 
-    # print(center_freqs)
-    # print(center_freq_errs)
-    nvb_freqs = []
-    nva_freqs = []
-    for ind in range(num_nvs):
-        center_freq_pair = center_freqs[ind]
-        if center_freq_pair[0] > 2.82:
-            nvb_freqs.append(center_freqs[ind])
-        else:
-            nva_freqs.append(center_freqs[ind])
-    nvb_mean_freqs = np.mean(nvb_freqs, axis=0)
-    nva_mean_freqs = np.mean(nva_freqs, axis=0)
-    # print(nvb_mean_freqs)
-    # print(nva_mean_freqs)
+    popt, pcov = curve_fit(fn, x, y, p0=p0, sigma=yerr, absolute_sigma=True, bounds=bounds, maxfev=10000)
+    yfit = fn(x, *popt)
+    dof = max(1, len(x) - len(popt))
+    chi2_red = np.sum(((y - yfit) / yerr) ** 2) / dof
+    return popt, pcov, chi2_red
 
-    ### Make the figure
+def split_on_off_interleaved(freqs_interleaved: np.ndarray, counts: np.ndarray):
+    """
+    Interleaved scheme: [on0, off0, on1, off1, ...]
+    counts shape expected: (num_exps, num_nvs, num_runs, num_steps, num_reps)
+    Returns:
+        freqs_on (Nf), freqs_off (Nf),
+        counts_on, counts_off with shape (num_nvs, num_runs, Nf, num_reps)
+    """
+    freqs_interleaved = np.asarray(freqs_interleaved, float)
+    assert freqs_interleaved.ndim == 1 and freqs_interleaved.size % 2 == 0, "Interleaved freqs must be 1D and even length"
+    # indices
+    on_idx  = np.arange(0, freqs_interleaved.size, 2)
+    off_idx = np.arange(1, freqs_interleaved.size, 2)
+    freqs_on  = freqs_interleaved[on_idx]
+    freqs_off = freqs_interleaved[off_idx]
 
-    if axes_pack is None:
-        figsize = kpl.double_figsize
-        figsize[1] = 7
-        # figsize = [6.5, 4.0]
-        # layout = kpl.calc_mosaic_layout(num_nvs, num_cols=6)
-        layout = kpl.calc_mosaic_layout(6 * 19, num_cols=6, num_rows=19)
-        layout[0] = [".", ".", ".", layout[0][3], layout[0][4], "."]
-        layout[1] = [layout[1][0], ".", ".", *layout[1][3:]]
-        fig, axes_pack = plt.subplot_mosaic(
-            layout,
-            figsize=figsize,
-            sharex=True,
-            sharey=True,
-            gridspec_kw={"hspace": 0.015},
-        )
-    axes_pack_flat = list(axes_pack.values())
+    # collapse exp dimension (assume exp_ind=0), then gather steps
+    # counts: (E, NV, R, S, rep) → use E=0
+    E0 = counts[0] if counts.ndim == 5 else counts  # tolerate (NV,R,S,rep)
+    # E0 shape now (NV, R, S, rep)
+    counts_on  = E0[:, :, on_idx,  :]
+    counts_off = E0[:, :, off_idx, :]
+    return freqs_on, freqs_off, counts_on, counts_off
 
-    widefield.plot_fit(
-        axes_pack_flat,
-        [nv_list[ind] for ind in nv_inds],
-        freqs,
-        norm_counts[nv_inds],
-        norm_counts_ste[nv_inds],
-        fit_fns,
-        popts,
-        no_legend=no_legend,
-        # linestyle="solid",
-        nv_inds=nv_inds,
-    )
+def deer_contrast(counts_on, counts_off, mode="frac_off"):
+    """
+    Compute contrast per NV, run, freq with STE across reps.
+    counts_on/off shape: (NV, run, Nf, rep)
+    Returns:
+        mean_contrast (NV, Nf), ste_contrast (NV, Nf)
+    """
+    # average across reps first
+    on_mean,  on_ste  = _mean_ste(counts_on,  axis=-1)   # (NV, run, Nf)
+    off_mean, off_ste = _mean_ste(counts_off, axis=-1)
 
-    ax = axes_pack[layout[-1, 0]]
-    # ax = axes_pack[layout[-1, 3]]
-    kpl.set_shared_ax_xlabel(ax, "Frequency (GHz)")
-    # ax = axes_pack[layout[10, 0]]
-    kpl.set_shared_ax_ylabel(ax, "NV$^{-}$ population (arb. units)")
-    # ax = axes_pack[layout[-1, 0]]
-    ax.set_xticks([2.80, 2.94])
-    ax.set_xticks([2.87], minor=True)
-    ax.set_yticks([0, 1], [None, None])
-    gap = 0.008
-    ax.set_xlim([np.min(freqs) - gap, np.max(freqs) + gap])
-    ax.set_ylim([-0.2, 1.2])
-    # ax.set_ylim([-0.3, 2])
+    if mode == "frac_off":
+        # C = (ON - OFF)/OFF
+        with np.errstate(divide='ignore', invalid='ignore'):
+            C = (on_mean - off_mean) / off_mean
+            # error propagation: var(C) ≈ (σ_on^2 + (ON/OFF)^2 σ_off^2)/OFF^2
+            term_on  = (on_ste / off_mean)**2
+            term_off = ((on_mean / (off_mean**2)) * off_ste)**2
+            C_ste = np.sqrt(term_on + term_off)
+            # handle zeros
+            C = np.where(np.isfinite(C), C, 0.0)
+            C_ste = np.where(np.isfinite(C_ste), C_ste, np.nan)
+    elif mode == "diff":
+        C = on_mean - off_mean
+        C_ste = np.sqrt(on_ste**2 + off_ste**2)
+    else:
+        raise ValueError("mode must be 'frac_off' or 'diff'")
 
-    for ax in axes_pack_flat:
-        # ax.tick_params(labelsize=kpl.FontSize.SMALL.value)
-        # ax.tick_params(which="both", direction="in", labelsize=kpl.FontSize.SMALL.value)
-        ax.tick_params(which="both", direction="in")
+    # average across runs
+    C_mean, C_ste_runs = _mean_ste(C, axis=1)
+    # combine STE across runs and reps (conservative): sqrt(ste_runs^2 + mean(ste)^2)
+    C_ste_mean = np.sqrt(C_ste_runs**2 + np.nanmean(C_ste, axis=1)**2)
+    return C_mean, C_ste_mean  # (NV, Nf)
+def postprocess_deer(raw_data: Dict[str, Any],
+                     freqs_interleaved: np.ndarray,
+                     fit_model: str = "gauss",
+                     do_fit: bool = True) -> Tuple[np.ndarray, np.ndarray, np.ndarray, list, Optional[plt.Figure]]:
+    """
+    Args:
+        raw_data: dict returned by base_routine.main (must contain 'counts')
+        freqs_interleaved: 1D array used in acquisition (ON/OFF interleaved)
+        fit_model: 'gauss' or 'lorentz'
+        do_fit: if True, fit each NV's contrast spectrum
 
-    for key in axes_pack.keys():
-        ax = axes_pack[key]
-        if key[1] in ["a", "b", "c"]:
-            ax.axvline(nvb_mean_freqs[0], color=kpl.KplColors.LIGHT_GRAY, zorder=-50)
-            ax.axvline(nvb_mean_freqs[1], color=kpl.KplColors.LIGHT_GRAY, zorder=-50)
-        else:
-            ax.axvline(nva_mean_freqs[0], color=kpl.KplColors.LIGHT_GRAY, zorder=-50)
-            ax.axvline(nva_mean_freqs[1], color=kpl.KplColors.LIGHT_GRAY, zorder=-50)
+    Returns:
+        freqs_on: (Nf,)
+        C_mean: (NV, Nf) mean contrast
+        C_ste:  (NV, Nf) STE of contrast
+        fit_results: list[DeerResult] (possibly empty if do_fit=False)
+        fig: overview matplotlib Figure (or None)
+    """
+    counts = np.asarray(raw_data["counts"])
+    # Split ON/OFF along step dimension
+    freqs_on, freqs_off, counts_on, counts_off = split_on_off_interleaved(freqs_interleaved, counts)
 
-    # ax = axes_pack[layout[-1, 0]]
-    # ax.set_xlabel(" ")
-    # fig.text(0.55, 0.01, "Frequency (GHz)", ha="center")
-    # ax.set_ylabel(" ")
-    # # label = "Normalized fraction in NV$^{-}$"
-    # label = "Change in NV$^{-}$ fraction"
-    # fig.text(0.005, 0.55, label, va="center", rotation="vertical")
-    # # ax.set_ylim([0.945, 1.19])
-    # # ax.set_yticks([1.0, 1.1, 1.2])
-    # # ax.set_xticks([2.83, 2.87, 2.91])
-    # x_buffer = 0.05 * (np.max(freqs) - np.min(freqs))
-    # ax.set_xlim(np.min(freqs) - x_buffer, np.max(freqs) + x_buffer)
-    # y_buffer = 0.05 * (np.max(norm_counts) - np.min(norm_counts))
-    # ax.set_ylim(np.min(norm_counts) - y_buffer, np.max(norm_counts) + y_buffer)
-    # return fig
+    # Sanity: ON/OFF freq sets should be identical up to constant delta
+    if not np.allclose(freqs_off - freqs_on, freqs_off[0] - freqs_on[0], atol=1e-9):
+        print("[warn] OFF detuning may be non-constant")
+
+    # Build contrast vs the OFF reference
+    C_mean, C_ste = deer_contrast(counts_on, counts_off, mode="frac_off")  # shapes (NV, Nf)
+    NV, Nf = C_mean.shape
+
+    # Optional: fit each NV's curve
+    fit_results = []
+    if do_fit:
+        for nv_i in range(NV):
+            y   = C_mean[nv_i]
+            ye  = np.where(C_ste[nv_i] <= 0, np.nanmedian(C_ste[nv_i][C_ste[nv_i]>0]) if np.any(C_ste[nv_i]>0) else 1.0, C_ste[nv_i])
+            # use the strongest excursion as initial x0
+            x0_guess = freqs_on[np.nanargmax(np.abs(y))]
+            popt, pcov, chi2 = _fit_1d(freqs_on, y, ye, model=fit_model, x0_guess=x0_guess)
+            # unpack
+            if fit_model == "gauss":
+                A, sigma, x0, y0 = popt
+                width = sigma
+            else:
+                A, gamma, x0, y0 = popt
+                width = gamma
+            # data peak
+            idx = np.nanargmax(np.abs(y))
+            fit_results.append(DeerResult(
+                nv_index=nv_i, f0=float(x0), amp=float(A), width=float(width),
+                chi2_red=float(chi2), peak_contrast=float(y[idx]), peak_freq=float(freqs_on[idx])
+            ))
+
+    # Quick overview figure
+    fig = plt.figure(figsize=(7.5, 4.5))
+    ax = fig.add_subplot(111)
+    # plot a few NVs to avoid clutter
+    show = min(12, NV)
+    for i in range(show):
+        ax.errorbar(freqs_on, C_mean[i], C_ste[i], marker='o', lw=1, ms=3, alpha=0.8)
+    ax.set_xlabel("RF frequency (GHz)")
+    ax.set_ylabel("DEER contrast  (ON−OFF)/OFF")
+    ax.axhline(0, ls="--", alpha=0.4)
+    ax.set_title(f"DEER spectra (first {show} NVs of {NV})")
+    return freqs_on, C_mean, C_ste, fit_results, fig
 
 
 def main(
@@ -335,7 +299,6 @@ def main(
         )
 
         # raw_fig = create_raw_data_figure(nv_list, freqs, avg_counts, avg_counts_ste)
-        fit_fig = create_fit_figure(nv_list, freqs, avg_counts, avg_counts_ste, norms)
     except Exception:
         print(traceback.format_exc())
         raw_fig = None
@@ -373,197 +336,64 @@ def main(
 if __name__ == "__main__":
     kpl.init_kplotlib()
 
-    ### Test
-
-    # img_arrays = np.random.randint(0, 100, (50, 20, 20))
-    # widefield.animate_images(np.linspace(2.77, 2.97, 50), img_arrays)
-    # kpl.show(block=True)
-    # sys.exit()
-
-    ###
-
-    # fmt: off
-    exclude_inds1= [72, 64, 55, 96, 112, 87, 89, 114, 17, 12, 99, 116, 32, 107, 58, 36]
-    exclude_inds2 = [12, 14, 11, 13, 52, 61, 116, 31, 32, 26, 87, 101, 105]
-    # exclude_inds = exclude_inds1[:5] + exclude_inds2[:7]
-    exclude_inds = exclude_inds1[:5]
-    exclude_inds = list(set(exclude_inds))
-    nv_inds = [ind for ind in range(117) if ind not in exclude_inds]
-    nv_inds = None
-    nva_inds = [0,1,2,6,8,9,10, 13, 19,20,23,25,28,31,32,33,35,36,38,39,42,43,44,46,48,50,56,57,61,62,63,64, 67,68,69,75,77,80,81,82, 85,86,87,88,90,91,92,95, 99,100,101,102,103,106,107,108,112, 113,114,116]  # Larger splitting
-    nvb_inds = [3, 4, 5, 7, 11, 12, 14, 15, 16, 17, 18, 21, 22, 24, 26, 27, 29, 30, 34, 37, 40, 41, 45, 47, 49, 51, 52, 53, 54, 55, 58, 59, 60, 65, 66, 70, 71, 72, 73, 74, 76, 78, 79, 83, 84, 89, 93, 94, 96, 97, 98, 104, 105, 109, 110, 111, 115]  # Smaller splitting
-    split_esr = [12, 13, 14, 61, 116]
-    broad_esr = [52, 11]
-    # weak_esr = [72, 64, 55, 96, 112, 87, 89, 114, 17, 12, 99, 116, 32, 107, 58, 36]
-    # weak_esr = weak_esr[:6]
-    weak_esr = [72, 64, 55, 96, 112, 87, 12, 58, 36]
-    # weak_esr = [72, 64, 55, 96, 112, 87]
-    # weak_esr = []
-    # split_esr = []
-    # nv_inds = nva_inds
-    for ind in weak_esr:
-        for nv_list in [nva_inds, nvb_inds]:
-            if ind in nv_list:
-                nv_list.remove(ind)
-    for issue_list in [broad_esr, split_esr]:
-        for ind in issue_list:
-            for nv_list in [nva_inds, nvb_inds]:
-                if ind in nv_list:
-                    nv_list.remove(ind)
-                    nv_list.append(ind)
-    # nv_inds = nva_inds + nvb_inds
-    chunk_size = 3
-    nv_inds = []
-    max_length = max(len(nva_inds), len(nvb_inds))
-    # Handle jagged
-    for ind in range(2):
-        nv_inds.append(nva_inds.pop(0))
-    nv_inds.append(nvb_inds.pop(0))
-    for ind in range(3):
-        nv_inds.append(nva_inds.pop(0))
-    nv_inds
-    for ind in range(0, max_length, chunk_size):
-        nv_inds.extend(nvb_inds[ind:ind + chunk_size])
-        nv_inds.extend(nva_inds[ind:ind + chunk_size])
-    # nv_inds[-3:] =
-    # fmt: on
-
-    file_id = 1732403187814
-    file_id = "2025_09_23-12_36_13-rubin-nv0_2025_09_08"
-
+    # --- Load saved raw ---
+    file_id = "2025_10_09-19_03_56-rubin-nv0_2025_09_08"
     data = dm.get_raw_data(file_stem=file_id, load_npz=True, use_cache=True)
-    # data = dm.get_raw_data(file_id=file_id, load_npz=True, use_cache=False)
-    # img_arrays = np.array(data.pop("img_arrays"))
 
-    nv_list = data["nv_list"]
-    num_nvs = len(nv_list)
+    nv_list  = data["nv_list"]
+    num_nvs  = len(nv_list)
     num_steps = data["num_steps"]
-    num_runs = data["num_runs"]
-    num_reps = data["num_reps"]
-    freqs = data["freqs"]
+    num_runs  = data["num_runs"]
+    num_reps  = data["num_reps"]
+    freqs     = np.asarray(data["freqs"], float)  # ON frequencies you scanned
+    counts    = np.asarray(data["counts"])
 
-    # Manipulate the counts into the format expected for normalization
-    counts = np.array(data.pop("counts"))
-    reformatted_counts = reformat_counts(counts)
-    sig_counts = reformatted_counts[0]
-    ref_counts = reformatted_counts[1]
+    # --- Build the same interleaved vector used during acquisition ---
+    delta = 0.060 
+    freqs_on  = freqs
+    freqs_on  = np.asarray(freqs_on, float)
+    freqs_off = freqs_on + float(delta)
+    Nf = freqs_on.size
 
-    # ms0_counts = ref_counts[:, :, :, ::2]
-    # ms1_counts = ref_counts[:, :, :, 1::2]
-    # ms0_counts = np.reshape(
-    #     ms0_counts, (num_nvs, num_runs, 1, num_steps // 4 * num_reps)
-    # )
-    # ms1_counts = np.reshape(
-    #     ms1_counts, (num_nvs, num_runs, 1, num_steps // 4 * num_reps)
-    # )
-    # avg_snr, avg_snr_ste = widefield.calc_snr(ms1_counts, ms0_counts)
-    # avg_snr = avg_snr[:, 0]
-    # print(avg_snr.tolist())
-    # # avg_snr_ste = avg_snr_ste[:, 0]
-    # # fig, ax = plt.subplots()
-    # # kpl.plot_points(ax, range(num_nvs), avg_snr, yerr=avg_snr_ste)
-    # # ax.set_xlabel("NV order in sequence")
-    # # ax.set_ylabel("SNR")
-    # # kpl.show(block=True)
-    # sys.exit()
+    on_idx  = np.arange(0, 2*Nf, 2)
+    off_idx = np.arange(1, 2*Nf, 2)
 
-    norm_counts, norm_counts_ste = widefield.process_counts(
-        nv_list, sig_counts, ref_counts, threshold=True
-    )
-    # mean_stes = np.mean(norm_counts_ste, axis=1)
-    # print(np.argsort(mean_stes)[::-1])
-    # print(np.sort(mean_stes)[::-1])
-    # sys.exit()
-    for nv_ind in split_esr:
-        contrast = np.max(norm_counts[nv_ind])
-        norm_counts[nv_ind] /= contrast
-        norm_counts_ste[nv_ind] /= contrast
+    E0 = np.asarray(counts)[0]              # (NV, runs, steps=2*Nf, reps)
+    sig_counts = E0[:, :, on_idx, :]        # (NV, runs, Nf, reps)
+    ref_counts = E0[:, :, off_idx, :]       # (NV, runs, Nf, reps)
+    sig_counts, ref_counts = widefield.threshold_counts(
+            nv_list, sig_counts, ref_counts, dynamic_thresh=True
+        )
+    ### Report the results
 
-    # raw_fig = create_raw_data_figure(nv_list, freqs, avg_counts, avg_counts_ste)
-    fit_fig = create_fit_figure(
-        nv_list,
-        freqs,
-        norm_counts,
-        norm_counts_ste,
-        nv_inds=nv_inds,
-        split_esr=split_esr,
-    )
+    avg_sig_counts, avg_sig_counts_ste, _ = widefield.average_counts(sig_counts)
+    avg_ref_counts, avg_ref_counts_ste, _ = widefield.average_counts(ref_counts)
 
-    kpl.show(block=True)
+    avg_snr, avg_snr_ste = widefield.calc_snr(sig_counts, ref_counts)
+    avg_contrast, avg_contrast_ste = widefield.calc_contrast(sig_counts, ref_counts)
+
+    
+    # Loop through NVs one by one
+    for nv_i in range(num_nvs):
+        fig, ax = plt.subplots()
+        ax.errorbar(freqs_on,
+                    avg_snr[nv_i],
+                    yerr=avg_snr_ste[nv_i],
+                    marker='o', ms=4, lw=1, color="C0")
+
+        ax.set_title(f"NV {nv_i} DEER Contrast")
+        ax.set_xlabel("RF frequency (GHz)")
+        ax.set_ylabel("Contrast (ON−OFF)/OFF")
+
+        # plt.show(block=True)   # wait until you close the figure before next one
     sys.exit()
-
-    ###
-
-    # pixel_drifts = data["pixel_drifts"]
-    # img_arrays = np.array(data.pop("img_arrays"), dtype=np.float16)
-    # base_pixel_drift = [15, 45]
-    # # base_pixel_drift = [24, 74]
-    # num_reps = 1
-
-    # buffer = 30
-    # img_array_size = 250
-    # cropped_size = img_array_size - 2 * buffer
-    # proc_img_arrays = np.empty(
-    #     (2, num_runs, 2 * adj_num_steps, num_reps, cropped_size, cropped_size)
-    # )
-    # for run_ind in range(num_runs):
-    #     pixel_drift = pixel_drifts[run_ind]
-    #     offset = [
-    #         pixel_drift[1] - base_pixel_drift[1],
-    #         pixel_drift[0] - base_pixel_drift[0],
-    #     ]
-    #     for step_ind in range(2 * adj_num_steps):
-    #         img_array = img_arrays[0, run_ind, step_ind, 0]
-    #         cropped_img_array = widefield.crop_img_array(img_array, offset, buffer)
-    #         proc_img_arrays[0, run_ind, step_ind, 0, :, :] = cropped_img_array
-
-    sig_img_arrays = np.mean(img_arrays[:, :, 0 : num_steps // 4, :], axis=(0, 1, 3))
-    sig_img_arrays += np.mean(
-        img_arrays[:, :, num_steps // 4 : num_steps // 2, :], axis=(0, 1, 3)
-    )
-    sig_img_arrays /= 2
-    ref_img_array = np.mean(
-        img_arrays[:, :, num_steps // 2 : 3 * num_steps // 4, :], axis=(0, 1, 2, 3)
-    )
-    proc_img_arrays = sig_img_arrays - ref_img_array
-    # fig, ax = plt.subplots()
-    # kpl.imshow(ax, proc_img_arrays[15])
-    # kpl.show(block=True)
-
-    downsample_factor = 2
-    proc_img_arrays = [
-        widefield.downsample_img_array(el, downsample_factor) for el in proc_img_arrays
-    ]
-    proc_img_arrays = np.array(proc_img_arrays)
-
-    # Nice still
-    # fig, ax = plt.subplots()
-    # kpl.imshow(ax, proc_img_arrays[17])
-    # ax.axis("off")
-    # scale = widefield.get_camera_scale()
-    # length = 5 * scale / downsample_factor
-    # kpl.scale_bar(ax, length, "5 µm", kpl.Loc.LOWER_RIGHT)
-    # kpl.show(block=True)
-
-    widefield.animate_images(
-        freqs,
-        proc_img_arrays,
-        cmin=np.percentile(proc_img_arrays, 70),
-        cmax=np.percentile(proc_img_arrays, 99.9),
-    )
-
-    # widefield.animate(
-    #     freqs,
-    #     nv_list,
-    #     norm_counts,
-    #     norm_counts_ste,
-    #     proc_img_arrays,
-    #     cmin=np.percentile(proc_img_arrays, 70),
-    #     cmax=np.percentile(proc_img_arrays, 99.9),
-    #     scale_bar_length_factor=downsample_factor,
-    #     just_movie=True,
-    # )
-
-    ###
+    # --- Process & fit (DEER: ON/OFF interleaved) ---
+    try:
+        freqs_on_out, C_mean, C_ste, fit_results, deer_fig = postprocess_deer(
+            {"counts": counts}, freqs_interleaved, fit_model="gauss", do_fit=True
+        )
+    except Exception:
+        print(traceback.format_exc())
+        freqs_on_out, C_mean, C_ste, fit_results, deer_fig = None, None, None, [], None
 
     kpl.show(block=True)

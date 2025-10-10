@@ -655,80 +655,78 @@ def do_ac_stark(nv_list):
     )
 
 
-# def do_spin_echo(nv_list):
-#     # revival_period = int(51.5e3 / 2)
-#     revival_period = int(30e3 / 2)
-#     min_tau = 200
-#     taus = []
-#     # revival_width = 5e3
-#     revival_width = 4e3
-#     decay = np.linspace(min_tau, min_tau + revival_width, 6)
-#     taus.extend(decay.tolist())
-#     gap = np.linspace(min_tau + revival_width, revival_period - revival_width, 7)
-#     taus.extend(gap[1:-1].tolist())
-#     first_revival = np.linspace(
-#         revival_period - revival_width, revival_period + revival_width, 61
-#     )
-#     taus.extend(first_revival.tolist())
-#     gap = np.linspace(
-#         revival_period + revival_width, 2 * revival_period - revival_width, 7
-#     )
-#     taus.extend(gap[1:-1].tolist())
-#     second_revival = np.linspace(
-#         2 * revival_period - revival_width, 2 * revival_period + revival_width, 11
-#     )
-#     taus.extend(second_revival.tolist())
-#     taus = [round(el / 4) * 4 for el in taus]
-
-#     # Remove duplicates and sort
-#     taus = sorted(set(taus))
-
-#     # Experiment settings
-#     num_steps = len(taus)
-
-#     # Automatic taus setup, linear spacing
-#     # min_tau = 200
-#     # max_tau = 84e3 + min_tau
-#     # num_steps = 29
-
-#     num_reps = 3
-#     num_runs = 200
-#     # num_runs = 2
-#     # spin_echo.main(nv_list, num_steps, num_reps, num_runs, min_tau, max_tau)
-#     # spin_echo.main(nv_list, num_steps, num_reps, num_runs, taus=taus)
-#     for ind in range(6):
-#         spin_echo.main(nv_list, num_steps, num_reps, num_runs, taus=taus)
-
-
 def do_spin_echo(nv_list):
-    min_tau = 200  # ns
-    # max_tau = 20e3  # fallback
-    # revival_period = int(15e3)
-    revival_period = int(20e3) ##20 gauss
+    # revival_period = int(51.5e3 / 2)
+    revival_period = int(39.2e3 / 2)
+    min_tau = 200
     taus = []
     revival_width = 6e3
+    # revival_width = 4e3
     decay = np.linspace(min_tau, min_tau + revival_width, 6)
     taus.extend(decay.tolist())
-    gap = np.linspace(min_tau + revival_width, revival_period - revival_width, 6)
+    gap = np.linspace(min_tau + revival_width, revival_period - revival_width, 7)
     taus.extend(gap[1:-1].tolist())
     first_revival = np.linspace(
         revival_period - revival_width, revival_period + revival_width, 61
     )
     taus.extend(first_revival.tolist())
-    # Round to clock-cycle-compatible units
+    gap = np.linspace(
+        revival_period + revival_width, 2 * revival_period - revival_width, 7
+    )
+    taus.extend(gap[1:-1].tolist())
+    second_revival = np.linspace(
+        2 * revival_period - revival_width, 2 * revival_period + revival_width, 11
+    )
+    taus.extend(second_revival.tolist())
     taus = [round(el / 4) * 4 for el in taus]
+
     # Remove duplicates and sort
     taus = sorted(set(taus))
+
+    # Experiment settings
     num_steps = len(taus)
+
+    # Automatic taus setup, linear spacing
+    # min_tau = 200
+    # max_tau = 84e3 + min_tau
+    # num_steps = 29
+
     num_reps = 3
-    num_runs = 600
-
-    print(
-        f"[Spin Echo] Running with {num_steps} τ values, revival_period={revival_period}"
-    )
-
-    for _ in range(1):
+    num_runs = 200
+    # num_runs = 2
+    # spin_echo.main(nv_list, num_steps, num_reps, num_runs, min_tau, max_tau)
+    # spin_echo.main(nv_list, num_steps, num_reps, num_runs, taus=taus)
+    for ind in range(6):
         spin_echo.main(nv_list, num_steps, num_reps, num_runs, taus=taus)
+
+
+# def do_spin_echo(nv_list):
+#     min_tau = 200  # ns
+#     revival_period = int(20e3) ##20 gauss
+#     taus = []
+#     revival_width = 6e3
+#     decay = np.linspace(min_tau, min_tau + revival_width, 6)
+#     taus.extend(decay.tolist())
+#     gap = np.linspace(min_tau + revival_width, revival_period - revival_width, 6)
+#     taus.extend(gap[1:-1].tolist())
+#     first_revival = np.linspace(
+#         revival_period - revival_width, revival_period + revival_width, 61
+#     )
+#     taus.extend(first_revival.tolist())
+#     # Round to clock-cycle-compatible units
+#     taus = [round(el / 4) * 4 for el in taus]
+#     # Remove duplicates and sort
+#     taus = sorted(set(taus))
+#     num_steps = len(taus)
+#     num_reps = 3
+#     num_runs = 600
+
+#     print(
+#         f"[Spin Echo] Running with {num_steps} τ values, revival_period={revival_period}"
+#     )
+
+#     for _ in range(1):
+#         spin_echo.main(nv_list, num_steps, num_reps, num_runs, taus=taus)
 
 
 def do_spin_echo_1(nv_lis):
@@ -1371,8 +1369,8 @@ if __name__ == "__main__":
     # nv_list[i] will have the ith coordinates from the above lists
     nv_list: list[NVSig] = []
     for ind in range(num_nvs):
-        if ind not in indices_113_MHz:
-            continue
+        # if ind not in indices_113_MHz:
+        #     continue
         coords = {
             CoordsKey.SAMPLE: sample_coords,
             CoordsKey.Z: z_coord,
@@ -1518,9 +1516,9 @@ if __name__ == "__main__":
         # do_rabi(nv_list)
         # do_power_rabi(nv_list)
         # do_resonance(nv_list)
-        do_deer_hahn(nv_list)
+        # do_deer_hahn(nv_list)
         # do_resonance_zoom(nv_list)
-        # do_spin_echo(nv_list)
+        do_spin_echo(nv_list)
         # do_spin_echo_1(nv_list)
         # do_ramsey(nv_list)
 
