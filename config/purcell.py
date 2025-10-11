@@ -81,8 +81,8 @@ config |= {
         "widefield_operation_buffer": 1e3,
         "uwave_buffer": 0,
         "iq_buffer": 0,
-        "iq_delay": 136,  # SBC measured using NVs 4/18/2025
         "temp_reading_interval": 15 * 60,  # for PID
+        "iq_delay": 136,  # SBC measured using NVs 4/18/2025
         # "iq_delay": 140,  # SBC measured using NVs 4/18/2025
     },
     ###
@@ -554,7 +554,8 @@ opx_config = {
             },
         },
         "do_sig_gen_STAN_sg394_dm": {
-            "digitalInputs": {"chan": {"port": ("con1", 9), "delay": 0, "buffer": 0}},
+            # "digitalInputs": {"chan": {"port": ("con1", 9), "delay": 0, "buffer": 0}},
+            "digitalInputs": {"chan": {"port": ("con1", 9), "delay": iq_delay, "buffer": 0}},
             "operations": {
                 "on": "do_on",
                 "off": "do_off",
@@ -565,8 +566,8 @@ opx_config = {
         "do_sig_gen_STAN_sg394_2_dm": {
             # 230 ns I channel latency measured 3/26/25 MCC and Saroj using oscilloscope
             "digitalInputs": {
-                "chan": {"port": ("con1", 10), "delay": 0, "buffer": 0}
-                # "chan": {"port": ("con1", 10), "delay": iq_delay, "buffer": 0}
+                # "chan": {"port": ("con1", 10), "delay": 0, "buffer": 0}
+                "chan": {"port": ("con1", 10), "delay": iq_delay, "buffer": 0}
             },
             "operations": {
                 "iq_test": "do_iq_test",
