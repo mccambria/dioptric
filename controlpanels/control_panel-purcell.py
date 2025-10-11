@@ -46,6 +46,7 @@ from majorroutines.widefield import (
     deer_hahn, 
     scc_snr_check,
     simple_correlation_test,
+    T2_correlation,
     spin_echo,
     spin_echo_phase_scan_test,
     spin_pol_check,
@@ -494,6 +495,13 @@ def do_simple_correlation_test(nv_list):
     for _ in range(5):
         simple_correlation_test.main(nv_list, num_reps, num_runs)
 
+def do_T2_correlation_test(nv_list):
+    num_reps = 200
+    num_runs = 1000
+    # num_runs = 2
+    tau = 2e4 # gap
+    for _ in range(2):
+        T2_correlation.main(nv_list, num_reps, num_runs, tau)
 
 def do_calibrate_iq_delay(nv_list):
     min_tau = 20
@@ -1512,7 +1520,7 @@ if __name__ == "__main__":
         # do_spin_pol_check(nv_sig)
 
         # do_calibrate_green_red_delay()
-        do_spin_echo_phase_scan_test(nv_list)  # for iq mod test
+        # do_spin_echo_phase_scan_test(nv_list)  # for iq mod test
         # do_bootstrapped_pulse_error_tomography(nv_list)
         # do_calibrate_iq_delay(nv_list)
 
@@ -1526,6 +1534,7 @@ if __name__ == "__main__":
         # do_ramsey(nv_list)
 
         # do_simple_correlation_test(nv_list)
+        do_T2_correlation_test(nv_list)
 
         # do_sq_relaxation(nv_list)
         # do_dq_relaxation(nv_list)

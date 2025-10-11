@@ -336,8 +336,9 @@ if __name__ == "__main__":
         # file_stem="2025_04_04-17_38_13-rubin-nv0_2025_02_26", #spin echo old
         # file_stem="2025_04_29-21_46_40-rubin-nv0_2025_02_26",  # spin echo
         # file_stem="2025_04_30-00_36_54-rubin-nv0_2025_02_26",  # ramsey
-        file_stem="2025_04_30-12_43_15-rubin-nv0_2025_02_26",  # xy8
+        # file_stem="2025_04_30-12_43_15-rubin-nv0_2025_02_26",  # xy8
         # file_stem="2025_10_10-21_51_14-rubin-nv0_2025_09_08",  # xy8
+        file_stem="2025_10_11-00_03_47-rubin-nv0_2025_09_08",  # spin echo
         load_npz=True,
         use_cache=True,
     )
@@ -353,13 +354,10 @@ if __name__ == "__main__":
     ref_counts = counts[1]
 
     norm_counts, norm_counts_ste = widefield.process_counts(
-        nv_list, sig_counts, ref_counts, threshold=False
+        nv_list, sig_counts, ref_counts, threshold=True
     )
-    # file_name = dm.get_file_name(file_id=file_id)
-    # print(f"{file_name}_{file_id}")
     num_nvs = len(nv_list)
     phi_step = phis[1] - phis[0]
     num_steps = len(phis)
     fit_fig = create_fit_figure(nv_list, phis, norm_counts, norm_counts_ste)
-
     kpl.show(block=True)
