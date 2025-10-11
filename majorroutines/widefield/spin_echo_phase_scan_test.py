@@ -93,7 +93,8 @@ def create_fit_figure(nv_list, phis, norm_counts, norm_counts_ste):
 
     ax_all.set_xlabel("Phase (degrees)")
     ax_all.set_ylabel("Normalized Counts")
-    ax_all.set_title(r"Cosine Fits ($\frac{\pi}{2}_x$ - xy8 – $\frac{\pi}{2}_\phi$)")
+    # ax_all.set_title(r"Cosine Fits ($\frac{\pi}{2}_x$ - xy8 – $\frac{\pi}{2}_\phi$)")
+    ax_all.set_title(r"Cosine Fits")
     ax_all.grid(True)
     ax_all.spines["right"].set_visible(False)
     ax_all.spines["top"].set_visible(False)
