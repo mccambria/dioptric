@@ -242,8 +242,9 @@ def simulate_pulse_errors():
 
 if __name__ == "__main__":
     kpl.init_kplotlib()
-    file_id = 1817334208399
-    data = dm.get_raw_data_box(file_id=file_id, load_npz=False, use_cache=True)
+    # file_id = 1817334208399
+    file_id = "2025_03_28-12_53_58-rubin-nv0_2025_02_26"
+    data = dm.get_raw_data(file_stem=file_id, load_npz=True, use_cache=True)
     nv_list = data["nv_list"]
     num_nvs = len(nv_list)
     num_steps = data["num_steps"]
@@ -257,8 +258,8 @@ if __name__ == "__main__":
     norm_counts, norm_counts_ste = widefield.process_counts(
         nv_list, sig_counts, ref_counts, threshold=True
     )
-    file_name = dm.get_file_name(file_id=file_id)
-    print(f"{file_name}_{file_id}")
+    # file_name = dm.get_file_name(file_id=file_id)
+    # print(f"{file_name}_{file_id}")
     num_nvs = len(nv_list)
     phi_step = phis[1] - phis[0]
     num_steps = len(phis)
