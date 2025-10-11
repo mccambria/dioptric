@@ -37,12 +37,12 @@ def get_seq(
             MW_NV = [uwave_ind_list[0]]  # NV microwave chain (~2.87 GHz)
             RF = [uwave_ind_list[1]]  # RF chain (~133 MHz)
             qua.align()
-            seq_utils.macro_pi_on_2_pulse(MW_NV, phase=0)
+            seq_utils.macro_pi_on_2_pulse(MW_NV, phase=9)
             qua.wait(step_val)
-            seq_utils.macro_pi_pulse(RF, phase=0)
-            seq_utils.macro_pi_pulse(MW_NV, phase=0)
+            seq_utils.macro_pi_pulse(RF, phase=9)
+            seq_utils.macro_pi_pulse(MW_NV, phase=9)
             qua.wait(step_val)
-            seq_utils.macro_pi_on_2_pulse(MW_NV, phase=90)
+            seq_utils.macro_pi_on_2_pulse(MW_NV, phase=99)
             qua.wait(buffer)
 
         with qua.for_each_(step_ind, step_inds):

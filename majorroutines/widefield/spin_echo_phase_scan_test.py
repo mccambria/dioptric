@@ -123,10 +123,10 @@ def create_fit_figure(nv_list, phis, norm_counts, norm_counts_ste):
         phi_fit = np.linspace(min(phis), max(phis), 200)
         ax_median.plot(phi_fit, cos_func(phi_fit, *popt_median), label="Fit")
         # ax_median.set_title(f"Median Fit  : phase offset ≈ {popt_median[1]:.1f}°")
-        # ax_median.set_title(f"Median Fit Pi/2x-pix-pi/2 (phi)")
-        ax_median.set_title(
-            r"Median Fit: $\frac{\pi}{2}_x$ - xy8 – $\frac{\pi}{2}_\phi$"
-        )
+        ax_median.set_title(r"Median Fit: $\frac{\pi}{2}_x$ - $\pi_x$ – $\frac{\pi}{2}_\phi$")
+        # ax_median.set_title(
+        #     r"Median Fit: $\frac{\pi}{2}_x$ - xy8 – $\frac{\pi}{2}_\phi$"
+        # )
 
     ax_median.set_xlabel("Phase, $\phi$ (degrees)")
     ax_median.set_ylabel("Median Normalized Counts")
@@ -153,14 +153,10 @@ def create_fit_figure(nv_list, phis, norm_counts, norm_counts_ste):
         ax.grid(True)
         ax.spines["right"].set_visible(False)
         ax.spines["top"].set_visible(False)
-    fig_params.suptitle(
-        r"Fitted Parameters: $\frac{\pi}{2}_x$ - xy8 – $\frac{\pi}{2}_\phi$"
-    )
+    # fig_params.suptitle(
+    #     r"Fitted Parameters: $\frac{\pi}{2}_x$ - xy8 – $\frac{\pi}{2}_\phi$"
+    # )
     plt.tight_layout()
-    # import ace_tools as tools
-
-    # tools.display_dataframe_to_user(name="Fitted NV Parameters", dataframe=fit_df)
-
     plt.show()
 
 

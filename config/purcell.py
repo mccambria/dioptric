@@ -1002,15 +1002,22 @@ def generate_iq_pulses(pulse_names, phases):
                         f"{pulse_name}_{phase}"
                     ] = full_pulse_name
 
+def build_phase_sweep(min_deg=-360, max_deg=360, step_deg=9):
+    phases_unwrapped = np.arange(min_deg, max_deg + 1e-9, step_deg, dtype=int)  # -360..360
+    phases_cmd = (phases_unwrapped % 360)  # wrap to [0,360)
+    return phases_unwrapped.tolist(), phases_cmd.tolist()
+
+
 
 # ref_img_array = np.array([])
 # generate_iq_pulses(["pi_pulse", "pi_on_2_pulse"], [0, 90, 180, 270])
 # fmt: off
 # phases =[0, 45, 90, 135, 180, 225, 270, 315]
-phases = [0, 9, 18, 27, 36, 45, 54, 63, 72, 81, 90, 
-          99, 108, 117, 126, 135, 144, 153, 162, 171, 180,
-          189, 198, 207, 216, 225, 234, 243, 252, 261, 270,
-          279, 288, 297, 306, 315, 324, 333, 342, 351, 360]
+# phases = [0, 9, 18, 27, 36, 45, 54, 63, 72, 81, 90, 
+#           99, 108, 117, 126, 135, 144, 153, 162, 171, 180,
+#           189, 198, 207, 216, 225, 234, 243, 252, 261, 270,
+#           279, 288, 297, 306, 315, 324, 333, 342, 351, 360]
+phases = [-360, -351, -342, -333, -324, -315, -306, -297, -288, -279, -270, -261, -252, -243, -234, -225, -216, -207, -198, -189, -180, -171, -162, -153, -144, -135, -126, -117, -108, -99, -90, -81, -72, -63, -54, -45, -36, -27, -18, -9, 0, 9, 18, 27, 36, 45, 54, 63, 72, 81, 90, 99, 108, 117, 126, 135, 144, 153, 162, 171, 180, 189, 198, 207, 216, 225, 234, 243, 252, 261, 270, 279, 288, 297, 306, 315, 324, 333, 342, 351, 360]
 # fmt:on
 generate_iq_pulses(["pi_pulse", "pi_on_2_pulse"], phases)
 
@@ -1020,4 +1027,7 @@ if __name__ == "__main__":
     mat = np.array(config["Positioning"][key])
     mat[:, 2] = [0, 0]
     print(mat)
+    # Exactly what you want:
+    phases_unwrapped, phases_cmd = build_phase_sweep(-360, 360, 9)
+    print(phases_unwrapped)
     # generate_iq_pulses(["pi_pulse", "pi_on_2_pulse"], [0, 90])

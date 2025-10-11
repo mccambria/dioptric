@@ -337,7 +337,8 @@ if __name__ == "__main__":
     kpl.init_kplotlib()
 
     # --- Load saved raw ---
-    file_id = "2025_10_09-19_03_56-rubin-nv0_2025_09_08"
+    # file_id = "2025_10_09-19_03_56-rubin-nv0_2025_09_08"
+    file_id = "2025_10_11-11_48_55-rubin-nv0_2025_09_08"
     data = dm.get_raw_data(file_stem=file_id, load_npz=True, use_cache=True)
 
     nv_list  = data["nv_list"]
@@ -349,7 +350,7 @@ if __name__ == "__main__":
     counts    = np.asarray(data["counts"])
 
     # --- Build the same interleaved vector used during acquisition ---
-    delta = 0.060 
+    delta = 0.60 
     freqs_on  = freqs
     freqs_on  = np.asarray(freqs_on, float)
     freqs_off = freqs_on + float(delta)
@@ -385,7 +386,7 @@ if __name__ == "__main__":
         ax.set_xlabel("RF frequency (GHz)")
         ax.set_ylabel("Contrast (ON−OFF)/OFF")
 
-        # plt.show(block=True)   # wait until you close the figure before next one
+        plt.show(block=True)   # wait until you close the figure before next one
     sys.exit()
     # --- Process & fit (DEER: ON/OFF interleaved) ---
     try:
