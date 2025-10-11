@@ -545,10 +545,10 @@ def do_resonance(nv_list):
 
 def do_deer_hahn(nv_list):
     freq_center = 0.133
-    freq_range = 0.026
-    num_steps = 25
-    num_reps = 6
-    # num_reps = 3
+    freq_range = 0.12
+    num_steps = 45
+    # num_reps = 6
+    num_reps = 3
     num_runs = 400
     # num_runs = 300
     freqs = calculate_freqs(freq_center, freq_range, num_steps)
@@ -1527,14 +1527,14 @@ if __name__ == "__main__":
         # do_rabi(nv_list)
         # do_power_rabi(nv_list)
         # do_resonance(nv_list)
-        # do_deer_hahn(nv_list)
+        do_deer_hahn(nv_list)
         # do_resonance_zoom(nv_list)
         # do_spin_echo(nv_list)
         # do_spin_echo_1(nv_list)
         # do_ramsey(nv_list)
 
         # do_simple_correlation_test(nv_list)
-        do_T2_correlation_test(nv_list)
+        # do_T2_correlation_test(nv_list)
 
         # do_sq_relaxation(nv_list)
         # do_dq_relaxation(nv_list)

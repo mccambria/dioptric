@@ -230,14 +230,14 @@ def main(
 ):
     ### Some initial setup
     pulse_gen = tb.get_server_pulse_gen()
-    original_num_steps = num_steps
-    num_steps *= 4  # For sig, ms=0 ref, and ms=+/-1 ref
+    # original_num_steps = num_steps
+    # num_steps *= 4  # For sig, ms=0 ref, and ms=+/-1 ref
 
     seq_file = "deer_hahn.py"
 
     ### Collect the data
     # Assume freqs is a 1D array (GHz) for RF sweep (e.g., 0.120–0.150 GHz)
-    delta = 0.060  # 60 MHz detuning for OFF
+    delta = 0.60  # 60 MHz detuning for OFF
     freqs_on = np.asarray(freqs, float)
     freqs_off = freqs_on + delta
 
@@ -283,16 +283,16 @@ def main(
         save_images=False,
         num_exps=1,
         ref_by_rep_parity=False,
-        # load_iq=True,
+        load_iq=True,
     )
 
     ### Process and plot
 
     try:
         counts = raw_data["counts"]
-        reformatted_counts = reformat_counts(counts)
-        sig_counts = reformatted_counts[0]
-        ref_counts = reformatted_counts[1]
+        # # reformatted_counts = reformat_counts(counts)
+        # sig_counts = reformatted_counts[0]
+        # ref_counts = reformatted_counts[1]
 
         avg_counts, avg_counts_ste, norms = widefield.process_counts(
             nv_list, sig_counts, ref_counts, threshold=True
