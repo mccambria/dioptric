@@ -80,10 +80,9 @@ config |= {
         "aod_access_time": 11e3,  # access time in specs is 10us
         "widefield_operation_buffer": 1e3,
         "uwave_buffer": 0,
-        "iq_buffer": 0,
-        "temp_reading_interval": 15 * 60,  # for PID
-        "iq_delay": 136,  # SBC measured using NVs 4/18/2025
-        # "iq_delay": 140,  # SBC measured using NVs 4/18/2025
+        "iq_buffer": 16,
+        # "iq_delay": 136,  # SBC measured using NVs 4/18/2025
+        "iq_delay": 140,  # 
     },
     ###
     "DeviceIDs": {
@@ -990,7 +989,7 @@ def generate_iq_pulses(pulse_names, phases):
                     # Define the pulse
                     full_pulse_name = f"ao_{comp}_{pulse_name}_{phase}_{chan}"
                     # print(full_pulse_name)
-                    length = opx_config["pulses"][f"do_{pulse_name}_{chan}"]["length"]
+                    length = opx_config["pulses"][f"do_{pulse_name}_{chan}"]["length"] + 2*iq_buffer
                     # print(length)
                     opx_config["pulses"][full_pulse_name] = {
                         "operation": "control",
@@ -1007,7 +1006,11 @@ def generate_iq_pulses(pulse_names, phases):
 # ref_img_array = np.array([])
 # generate_iq_pulses(["pi_pulse", "pi_on_2_pulse"], [0, 90, 180, 270])
 # fmt: off
-phases =[0, 18, 36, 54, 72, 90, 108, 126, 144, 162, 180, 198, 216, 234, 252, 270, 288, 306, 324, 342, 360]
+# phases =[0, 45, 90, 135, 180, 225, 270, 315]
+phases = [0, 9, 18, 27, 36, 45, 54, 63, 72, 81, 90, 
+          99, 108, 117, 126, 135, 144, 153, 162, 171, 180,
+          189, 198, 207, 216, 225, 234, 243, 252, 261, 270,
+          279, 288, 297, 306, 315, 324, 333, 342, 351, 360]
 # fmt:on
 generate_iq_pulses(["pi_pulse", "pi_on_2_pulse"], phases)
 

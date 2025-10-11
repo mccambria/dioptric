@@ -428,7 +428,7 @@ def do_scc_snr_check(nv_list):
     # num_runs = 20
     # num_runs = 160 * 4
     # num_runs = 3
-    scc_snr_check.main(nv_list, num_reps, num_runs, uwave_ind_list=[0])
+    scc_snr_check.main(nv_list, num_reps, num_runs, uwave_ind_list=[0, 1])
 
 
 def do_bootstrapped_pulse_error_tomography(nv_list):
@@ -626,7 +626,7 @@ def do_spin_echo_phase_scan_test(nv_list):
     # fmt: off
     phi_list = [0, 18, 36, 54, 72, 90, 108, 126, 144, 162, 180, 198, 216, 234, 252, 270, 288, 306, 324, 342, 360]
     # fmt: on
-    uwave_ind_list = [1]  # only one has iq modulation
+    uwave_ind_list = [0, 1]  # both are has iq modulation
     spin_echo_phase_scan_test.main(
         nv_list, num_steps, num_reps, num_runs, phi_list, uwave_ind_list
     )
@@ -776,7 +776,7 @@ def do_xy(nv_list, xy_seq="xy8"):
     max_tau = 1e6 + min_tau
     num_steps = 24
     num_reps = 10
-    uwave_ind_list = [1]  # iq modulated
+    uwave_ind_list = [0, 1]  # iq modulated
     num_runs = 400
     # taus calculation
     taus = widefield.generate_log_spaced_taus(min_tau, max_tau, num_steps, base=4)
@@ -797,30 +797,33 @@ def do_xy(nv_list, xy_seq="xy8"):
 
 
 def do_xy_uniform_revival_scan(nv_list, xy_seq="xy8-1"):
-    T_min = 2e3  # ns, total evolution time (1 μs)
-    T_max = 42e3  # ns, total evolution time (20 μs)
-    N = 8  # XY8 has 8 π pulses
-    factor = 2 * N  # total time T = 2Nτ = 16τ
-
-    num_steps = 100
-    taus = np.linspace(T_min, T_max, num_steps)
-    # Convert total evolution time to τ
-    # taus = [T / factor for T in total_times]
-
+    min_tau = 1e3
+    dip = 19.6/2 # us
+    dip_width = 2e3
+    gap = np.linspace(min_tau, dip - dip_width, 11)
+    taus.extend(gap.tolist())
+    first_dip = np.linspace(dip - dip_width, dip + dip_width, 31)
+    taus.extend(first_dip[1:-1].tolist())
+    gap = np.linspace(
+        dip + dip_width, 3*dip - dip_width, 11
+    )
+    taus.extend(gap[1:-1].tolist())
+    second_dip = np.linspace(3*dip - dip_width, 3*dip + dip_width, 21)
+    taus.extend(second_dip[1:-1].tolist())
+    second_dip = np.linspace(3*dip + dip_width, 5*dip + dip_width, 21)
     # Round τ to 4 ns resolution
     taus = [round(tau / 4) * 4 for tau in taus]
     taus = sorted(set(taus))  # remove duplicates
-
     num_reps = 2
     num_runs = 600
     num_steps = len(taus)
-    uwave_ind_list = [1]  # IQ-modulated channel index
+    uwave_ind_list = [0, 1]
 
     print(
         f"[XY8 Uniform] Scanning {num_steps} τ values from {taus[0]} to {taus[-1]} ns"
     )
 
-    for ind in range(4):
+    for _ in range(4):
         xy.main(
             nv_list,
             num_steps,
@@ -1435,7 +1438,7 @@ if __name__ == "__main__":
         # )
 
         do_compensate_for_drift(nv_sig)
-        do_widefield_image_sample(nv_sig, 50)
+        # do_widefield_image_sample(nv_sig, 50)
         # do_widefield_image_sample(nv_sig, 200)
 
         # for nv in nv_list:
@@ -1509,7 +1512,7 @@ if __name__ == "__main__":
         # do_spin_pol_check(nv_sig)
 
         # do_calibrate_green_red_delay()
-        # do_spin_echo_phase_scan_test(nv_list)  # for iq mod test
+        do_spin_echo_phase_scan_test(nv_list)  # for iq mod test
         # do_bootstrapped_pulse_error_tomography(nv_list)
         # do_calibrate_iq_delay(nv_list)
 
@@ -1532,8 +1535,8 @@ if __name__ == "__main__":
         # do_ac_stark(nv_list)
 
         # AVAILABLE_XY = ["hahn-n", "xy2-n", "xy4-n", "xy8-n", "xy16-n"]
-        # do_xy(nv_list, xy_seq="xy16-1")
-        # do_xy_uniform_revival_scan(nv_list, xy_seq="xy4-1")
+        # do_xy(nv_list, xy_seq="xy8-1")
+        do_xy_uniform_revival_scan(nv_list, xy_seq="xy4-1")
         # do_xy_revival_scan(nv_list, xy_seq="xy4-1")
 
         # for nv in nv_list:
