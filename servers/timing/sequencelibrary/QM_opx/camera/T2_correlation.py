@@ -31,7 +31,7 @@ def get_seq(base_scc_seq_args, tau, num_reps=1):
             qua.wait(tau_cc)
             seq_utils.macro_pi_pulse(uwave_ind_list, phase=0)
             qua.wait(tau_cc)
-            seq_utils.macro_pi_on_2_pulse(uwave_ind_list, phase=90)
+            seq_utils.macro_pi_on_2_pulse(uwave_ind_list, phase=99)
 
         def uwave_macro_ref(uwave_ind_list, step_val):
             return True
@@ -71,10 +71,10 @@ if __name__ == "__main__":
                 [False, False],
                 [0, 1],
             ],
-            2e4,
+            19.6e3,
             5,
         )
-        sim_config = SimulationConfig(duration=int(300e3 / 4))
+        sim_config = SimulationConfig(duration=int(200e3 / 4))
         sim = opx.simulate(seq, sim_config)
         samples = sim.get_simulated_samples()
         samples.con1.plot()

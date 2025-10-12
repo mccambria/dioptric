@@ -501,7 +501,7 @@ def main(nv_list, num_reps, num_runs, tau, uwave_ind_list = [0, 1]):
     timestamp = dm.get_time_stamp()
     raw_data |= {
         "timestamp": timestamp,
-        # "random_seeds": random_seeds,
+        "tau": tau,
     }
 
     repr_nv_sig = widefield.get_repr_nv_sig(nv_list)

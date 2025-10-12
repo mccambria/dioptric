@@ -338,7 +338,7 @@ if __name__ == "__main__":
 
     # --- Load saved raw ---
     # file_id = "2025_10_09-19_03_56-rubin-nv0_2025_09_08"
-    file_id = "2025_10_11-11_48_55-rubin-nv0_2025_09_08"
+    file_id = "2025_10_11-20_03_11-rubin-nv0_2025_09_08"
     data = dm.get_raw_data(file_stem=file_id, load_npz=True, use_cache=True)
 
     nv_list  = data["nv_list"]
@@ -375,16 +375,17 @@ if __name__ == "__main__":
 
     
     # Loop through NVs one by one
-    for nv_i in range(num_nvs):
+    indices_113_MHz = [0, 1, 3, 6, 10, 14, 16, 17, 19, 23, 24, 25, 26, 27, 32, 33, 34, 35, 37, 38, 41, 49, 50, 51, 53, 54, 55, 60, 62, 63, 64, 66, 67, 68, 70, 72, 73, 74, 75, 76, 78, 80, 81, 82, 83, 84, 86, 88, 90, 92, 93, 95, 96, 99, 100, 101, 102, 103, 105, 108, 109, 111, 113, 114]
+    for nv_i in indices_113_MHz:
         fig, ax = plt.subplots()
         ax.errorbar(freqs_on,
-                    avg_snr[nv_i],
-                    yerr=avg_snr_ste[nv_i],
+                    avg_sig_counts[nv_i],
+                    yerr=avg_sig_counts_ste[nv_i],
                     marker='o', ms=4, lw=1, color="C0")
 
         ax.set_title(f"NV {nv_i} DEER Contrast")
         ax.set_xlabel("RF frequency (GHz)")
-        ax.set_ylabel("Contrast (ON−OFF)/OFF")
+        ax.set_ylabel("Contrast")
 
         plt.show(block=True)   # wait until you close the figure before next one
     sys.exit()

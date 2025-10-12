@@ -499,7 +499,7 @@ def do_T2_correlation_test(nv_list):
     num_reps = 200
     num_runs = 1000
     # num_runs = 2
-    tau = 2e4 # gap
+    tau = 19.6e3 # gap
     for _ in range(2):
         T2_correlation.main(nv_list, num_reps, num_runs, tau)
 
@@ -1448,7 +1448,7 @@ if __name__ == "__main__":
         # )
 
         do_compensate_for_drift(nv_sig)
-        # do_widefield_image_sample(nv_sig, 50)
+        do_widefield_image_sample(nv_sig, 50)
         # do_widefield_image_sample(nv_sig, 200)
 
         # for nv in nv_list:
@@ -1529,14 +1529,14 @@ if __name__ == "__main__":
         # do_rabi(nv_list)
         # do_power_rabi(nv_list)
         # do_resonance(nv_list)
-        do_deer_hahn(nv_list)
+        # do_deer_hahn(nv_list)
         # do_resonance_zoom(nv_list)
         # do_spin_echo(nv_list)
         # do_spin_echo_1(nv_list)
         # do_ramsey(nv_list)
 
         # do_simple_correlation_test(nv_list)
-        # do_T2_correlation_test(nv_list)
+        do_T2_correlation_test(nv_list)
 
         # do_sq_relaxation(nv_list)
         # do_dq_relaxation(nv_list)
