@@ -257,7 +257,7 @@ def main(
 
     def step_fn(step_ind):
         # MW (NV) chain: fixed at NV transition; ON for pulses
-        mw_ind = uwave_ind_list[0]
+        mw_ind = uwave_ind_list[1]
         mw_dict = tb.get_virtual_sig_gen_dict(mw_ind)
         mw = tb.get_server_sig_gen(mw_ind)
         mw.set_amp(mw_dict["uwave_power"])
@@ -265,7 +265,7 @@ def main(
         mw.uwave_on()
 
         # RF chain: set frequency per step (interleaved on/off)
-        rf_ind = uwave_ind_list[1]
+        rf_ind = uwave_ind_list[0]
         rf = tb.get_server_sig_gen(rf_ind)
         rf_dict = tb.get_virtual_sig_gen_dict(rf_ind)
         rf.set_amp(rf_dict["uwave_power"])  # RF power (dBm) for π_RF

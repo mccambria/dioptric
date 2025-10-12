@@ -545,8 +545,8 @@ def do_resonance(nv_list):
 
 def do_deer_hahn(nv_list):
     freq_center = 0.133
-    freq_range = 0.24
-    num_steps =  56
+    freq_range = 0.024
+    num_steps =  48
     # num_reps = 6
     num_reps = 3
     num_runs = 400
@@ -1522,14 +1522,14 @@ if __name__ == "__main__":
         # do_spin_pol_check(nv_sig)
 
         # do_calibrate_green_red_delay()
-        do_spin_echo_phase_scan_test(nv_list)  # for iq mod test
+        # do_spin_echo_phase_scan_test(nv_list)  # for iq mod test
         # do_bootstrapped_pulse_error_tomography(nv_list)
         # do_calibrate_iq_delay(nv_list)
 
         # do_rabi(nv_list)
         # do_power_rabi(nv_list)
         # do_resonance(nv_list)
-        # do_deer_hahn(nv_list)
+        do_deer_hahn(nv_list)
         # do_resonance_zoom(nv_list)
         # do_spin_echo(nv_list)
         # do_spin_echo_1(nv_list)

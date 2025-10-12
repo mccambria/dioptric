@@ -431,7 +431,7 @@ def plot_spin_echo_all(nv_list, taus, norm_counts, norm_counts_ste):
     fig, axes = plt.subplots(
         num_rows,
         num_cols,
-        figsize=(num_cols * 2.5, num_rows * 3),
+        figsize=(num_cols * 2, num_rows * 3),
         sharex=True,
         sharey=False,
         constrained_layout=True,
