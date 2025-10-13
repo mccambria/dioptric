@@ -375,11 +375,13 @@ def process_and_plot(
     # ]
     len_vals = len(vals)
     # figsize[0] *= 2.5 * num_plots / 4
-    figsize[1] = 2 * figsize[0]
+    figsize[1] = 2 * figsize[0] 
     # figsize[1] *= 0.85
+    figsize[0] = 2 * figsize[1] 
 
     if passed_ax is None:
-        fig, axes_pack = plt.subplots(nrows=len_vals, figsize=figsize)
+        # fig, axes_pack = plt.subplots(nrows=len_vals, figsize=figsize)
+        fig, axes_pack = plt.subplots(ncols=len_vals, figsize=figsize)
 
     # Replace diagonals (Cii=1) with nan so they don't show
     for val in vals:
@@ -527,7 +529,9 @@ if __name__ == "__main__":
     kpl.init_kplotlib()
 
     ### Data
-    raw_data = dm.get_raw_data(file_stem="2025_10_12-10_27_20-rubin-nv0_2025_09_08", load_npz=True)
+    file_ids = ["2025_10_12-22_39_46-rubin-nv0_2025_09_08", "2025_10_13-08_46_51-rubin-nv0_2025_09_08"]
+    # raw_data = dm.get_raw_data(file_stem="2025_10_12-10_27_20-rubin-nv0_2025_09_08", load_npz=True)
+    raw_data = widefield.process_multiple_files(file_ids=file_ids,load_npz=True)
     process_and_plot(raw_data)
     kpl.show(block=True)
     sys.exit()
@@ -539,7 +543,6 @@ if __name__ == "__main__":
     file_ids = file_ids[1:]
     data = dm.get_raw_data(file_id=file_ids)
     process_and_plot(data)
-
     plt.show(block=True)
     sys.exit()
 

@@ -23,6 +23,7 @@ from matplotlib.ticker import ScalarFormatter
 import matplotlib.ticker as mticker
 
 from utils import data_manager as dm
+from utils import widefield as dm
 
 # from utils.tool_belt import nan_corr_coef
 from utils.widefield import threshold_counts
@@ -1245,9 +1246,8 @@ if __name__ == "__main__":
     # data = dm.get_raw_data(file_id=file_id)
 
     # final data set after randomizing the scc order between two groups
-    file_ids = ["2025_10_12-10_27_20-rubin-nv0_2025_09_08"]
-
-    data = process_multiple_files(file_ids)
+    file_ids = ["2025_10_12-10_27_20-rubin-nv0_2025_09_08","2025_10_12-10_27_20-rubin-nv0_2025_09_08"]
+    data = widefield.process_multiple_files(file_ids)
     # process_and_plot(data, rearrangement="block")
     plot_nv_network(data)
     # plot_thresholded_counts(data)

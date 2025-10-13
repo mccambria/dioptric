@@ -13,6 +13,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 from qm import QuantumMachinesManager, qua
 from qm.simulate import SimulationConfig
+import utils.tool_belt as tb
 
 import utils.common as common
 from servers.timing.sequencelibrary.QM_opx import seq_utils
@@ -47,6 +48,7 @@ if __name__ == "__main__":
     config = config_module.config
     opx_config = config_module.opx_config
     opx_config["pulses"]["yellow_spin_pol"]["length"] = 10e3
+    tb.set_delays_to_zero(opx_config)
 
     qm_opx_args = config["DeviceIDs"]["QM_opx_args"]
     qmm = QuantumMachinesManager(**qm_opx_args)

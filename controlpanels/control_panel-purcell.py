@@ -44,6 +44,7 @@ from majorroutines.widefield import (
     resonance,
     resonance_dualgen,
     deer_hahn, 
+    deer_hahn_rabi,
     scc_snr_check,
     simple_correlation_test,
     T2_correlation,
@@ -497,7 +498,7 @@ def do_simple_correlation_test(nv_list):
 
 def do_T2_correlation_test(nv_list):
     num_reps = 200
-    num_runs = 800
+    num_runs = 1000
     # num_runs = 2
     tau = 19.6e3 # gap
     T2_correlation.main(nv_list, num_reps, num_runs, tau)
@@ -566,6 +567,26 @@ def do_deer_hahn(nv_list):
             freqs=freqs,
             uwave_ind_list=[0,1],
         )
+
+def do_deer_hahn_rabi(nv_list):
+    min_tau = 16
+    max_tau = 240 + min_tau
+    # max_tau = 360 + min_tau
+    # max_tau = 480 + min_tau
+    num_steps = 31
+    num_reps = 10
+    num_runs = 400
+    # num_runs = 5
+    uwave_ind_list = [0, 1]
+    deer_hahn_rabi.main(nv_list, num_steps, num_reps, num_runs, min_tau, max_tau, uwave_ind_list)
+    # for _ in range(2):
+    #     rabi.main(
+    #         nv_list, num_steps, num_reps, num_runs, min_tau, max_tau, uwave_ind_list
+    #     )
+    # uwave_ind_list = [0]
+    # rabi.main(nv_list, num_steps, num_reps, num_runs, min_tau, max_tau, uwave_ind_list)
+    # uwave_ind_list = [1]
+    # rabi.main(nv_list, num_steps, num_reps, num_runs, min_tau, max_tau, uwave_ind_list)
 
 
 def do_resonance_zoom(nv_list):
@@ -1449,7 +1470,7 @@ if __name__ == "__main__":
         # )
 
         do_compensate_for_drift(nv_sig)
-        # do_widefield_image_sample(nv_sig, 50)
+        do_widefield_image_sample(nv_sig, 50)
         # do_widefield_image_sample(nv_sig, 200)
 
         # for nv in nv_list:
@@ -1527,19 +1548,19 @@ if __name__ == "__main__":
         # do_bootstrapped_pulse_error_tomography(nv_list)
         # do_calibrate_iq_delay(nv_list)
 
-        do_rabi(nv_list)
+        # do_rabi(nv_list)
         # do_power_rabi(nv_list)
         # do_resonance(nv_list)
         # do_deer_hahn(nv_list)
-        # do_deer_hahn(nv_list)
+        do_deer_hahn_rabi(nv_list)
         # do_resonance_zoom(nv_list)
         # do_spin_echo(nv_list)
         # do_spin_echo_1(nv_list)
         # do_ramsey(nv_list)
 
         # do_simple_correlation_test(nv_list)
-        do_T2_correlation_test(nv_list)
-
+        # do_T2_correlation_test(nv_list)
+        # do_resonance(nv_list)
         # do_sq_relaxation(nv_list)
         # do_dq_relaxation(nv_list)
         # do_detect_cosmic_rays(nv_list)
