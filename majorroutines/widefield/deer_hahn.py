@@ -337,8 +337,9 @@ if __name__ == "__main__":
     kpl.init_kplotlib()
 
     # --- Load saved raw ---
-    # file_id = "2025_10_09-19_03_56-rubin-nv0_2025_09_08"
-    file_id = "2025_10_11-20_03_11-rubin-nv0_2025_09_08"
+    # file_id = ["2025_10_09-19_03_56-rubin-nv0_2025_09_08"]
+    file_id = ["2025_10_11-20_03_11-rubin-nv0_2025_09_08", "2025_10_11-23_49_23-rubin-nv0_2025_09_08"]
+    data = widefield.process_multiple_files
     data = dm.get_raw_data(file_stem=file_id, load_npz=True, use_cache=True)
 
     nv_list  = data["nv_list"]
@@ -376,18 +377,81 @@ if __name__ == "__main__":
     
     # Loop through NVs one by one
     indices_113_MHz = [0, 1, 3, 6, 10, 14, 16, 17, 19, 23, 24, 25, 26, 27, 32, 33, 34, 35, 37, 38, 41, 49, 50, 51, 53, 54, 55, 60, 62, 63, 64, 66, 67, 68, 70, 72, 73, 74, 75, 76, 78, 80, 81, 82, 83, 84, 86, 88, 90, 92, 93, 95, 96, 99, 100, 101, 102, 103, 105, 108, 109, 111, 113, 114]
-    for nv_i in indices_113_MHz:
+    # for nv_i in indices_113_MHz:
+    #     fig, ax = plt.subplots()
+    #     ax.errorbar(freqs_on,
+    #                 avg_contrast[nv_i],
+    #                 yerr=avg_contrast_ste[nv_i],
+    #                 marker='o', ms=4, lw=1, color="C0")
+
+    #     ax.set_title(f"NV {nv_i} DEER Contrast")
+    #     ax.set_xlabel("RF frequency (GHz)")
+    #     ax.set_ylabel("Contrast")
+
+        # plt.show(block=True)
+
+    # ----- Aggregate + plot for multiple metrics in a loop -----
+
+    metrics = {
+        "contrast":   avg_contrast,        # (NV, Nf)
+        # "sig_counts": avg_sig_counts,      # (NV, Nf)
+        # "ref_counts": avg_ref_counts,      # (NV, Nf)
+        # "snr":        avg_snr              # (NV, Nf)
+    }
+
+    def robust_stack(arr_2d, idx_list):
+        """Return (M, Nf) array from arr_2d[(NV, Nf)] selecting rows in idx_list."""
+        curves = [arr_2d[i] for i in idx_list if i < arr_2d.shape[0]]
+        A = np.stack(curves, axis=0) if len(curves) else np.empty((0, arr_2d.shape[1]))
+        A = np.where(np.isfinite(A), A, np.nan)
+        return A
+
+    for name, arr in metrics.items():
+        A = robust_stack(arr, indices_113_MHz)   # shape (M, Nf)
+
+        if A.size == 0:
+            print(f"[WARN] No data for metric '{name}' with provided indices.")
+            continue
+
+        median_curve = np.nanmedian(A, axis=0)
+        p25_curve    = np.nanpercentile(A, 25, axis=0)
+        p75_curve    = np.nanpercentile(A, 75, axis=0)
+        # Optional wider band:
+        p16_curve    = np.nanpercentile(A, 16, axis=0)
+        p84_curve    = np.nanpercentile(A, 84, axis=0)
+
+        
+        freqs_on*=1000 ## MH
         fig, ax = plt.subplots()
-        ax.errorbar(freqs_on,
-                    avg_sig_counts[nv_i],
-                    yerr=avg_sig_counts_ste[nv_i],
-                    marker='o', ms=4, lw=1, color="C0")
+        # Interquartile band
+        ax.fill_between(freqs_on, p25_curve, p75_curve, alpha=0.3, linewidth=0)
+        # Median
+        ax.plot(freqs_on, median_curve, marker="o", ms=3, lw=1)
 
-        ax.set_title(f"NV {nv_i} DEER Contrast")
-        ax.set_xlabel("RF frequency (GHz)")
-        ax.set_ylabel("Contrast")
+        # Nice labels
+        ylabels = {
+            "contrast": "Contrast",
+            # "sig_counts": "Signal counts",
+            # "ref_counts": "Reference counts",
+            # "snr": "SNR",
+        }
+        titles = {
+            "contrast":   "Median DEER Contrast",
+            # "sig_counts": "Median Signal counts",
+            # "ref_counts": "MedianReference counts",
+            # "snr":        "Median SNR",
+        }
+        ax.set_title(f"{titles[name]} ({len(indices_113_MHz)}NVs)")
+        ax.set_xlabel("RF frequency (MHz)")
+        ax.set_ylabel(f"{ylabels[name]}")
+        ax.grid(True, linestyle="--", alpha=0.4)
 
-        plt.show(block=True)   # wait until you close the figure before next one
+        # Optional: overlay faint per-NV curves for context
+        # for row in A:
+        #     ax.plot(freqs_on, row, alpha=0.08, lw=0.7)
+
+
+    kpl.show(block=True)
     sys.exit()
     # --- Process & fit (DEER: ON/OFF interleaved) ---
     try:
@@ -398,4 +462,3 @@ if __name__ == "__main__":
         print(traceback.format_exc())
         freqs_on_out, C_mean, C_ste, fit_results, deer_fig = None, None, None, [], None
 
-    kpl.show(block=True)

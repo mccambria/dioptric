@@ -749,16 +749,16 @@ def plot_nv_network(data):
     counts = np.array(data.get("counts", []))
 
     # # indices_to_remove = [18, 35, 56]
-    indices_to_remove = [64, 108, 75, 100, 103, 55, 77, 89, 17, 82, 38]
-    print(counts.shape)
-    nv_list = [
-        nv_list[ind] for ind in range(len(nv_list)) if ind not in indices_to_remove
-    ]
+    # indices_to_remove = [64, 108, 75, 100, 103, 55, 77, 89, 17, 82, 38]
+    # print(counts.shape)
+    # nv_list = [
+    #     nv_list[ind] for ind in range(len(nv_list)) if ind not in indices_to_remove
+    # ]
     # Use NumPy boolean masking to filter counts
-    mask = np.ones(counts.shape[1], dtype=bool)  # Create a mask for NV indices
-    mask[list(indices_to_remove)] = False  # Set unwanted indices to False
-    counts = counts[:, mask, :, :, :]  # Apply mask along the NV axis (second dimension)
-    print(counts.shape)
+    # mask = np.ones(counts.shape[1], dtype=bool)  # Create a mask for NV indices
+    # mask[list(indices_to_remove)] = False  # Set unwanted indices to False
+    # counts = counts[:, mask, :, :, :]  # Apply mask along the NV axis (second dimension)
+    # print(counts.shape)
     # # high spurious correlation
     # more_indices_to_remove = [16, 20, 28, 47, 50, 56]
     # more_indices_to_remove = [6, 13, 34, 47, 42, 49, 58, 71, 69, 75, 83, 93, 103, 102]
@@ -806,16 +806,16 @@ def plot_nv_network(data):
 
     spurious_pairs = []
     nv_occurrences = Counter()
-
+    spurious_threshold = 0.01
     for i in range(num_nvs):
         for j in range(i + 1, num_nvs):  # Upper triangle only
-            if abs(sig_corr_coeffs[i, j]) > 0.02:
+            if abs(sig_corr_coeffs[i, j]) > spurious_threshold:
                 spurious_pairs.append((i, j))
                 nv_occurrences[i] += 1
                 nv_occurrences[j] += 1
 
     # Print NV pairs with high correlation
-    print("\nSpurious Correlation NV Pairs (Corr > 0.024):")
+    print(f"\nSpurious Correlation NV Pairs (Corr > {spurious_threshold}):")
     for pair in spurious_pairs:
         print(f"NV {pair[0]} - NV {pair[1]}")
 
@@ -826,8 +826,7 @@ def plot_nv_network(data):
     )
     print("nv_occurrences:", nv_occurrences)
     for nv, count in sorted_occurrences:
-        print(f"NV {nv}: {count} times")
-        print("\nNo spurious correlations detected above 0.02.")
+        print(f"NV {nv}: {count} times spurious corr > {spurious_threshold}.")
     # Extract NV positions
     nv_positions = np.array([nv.coords["pixel"][:2] for nv in nv_list])
     # Compute pairwise distances
@@ -852,16 +851,16 @@ def plot_nv_network(data):
         s=20,
         color="blue",
         edgecolors=None,
-        alpha=0.8,
+        alpha=0.6,
         label="Reference Corr.",
     )
     plt.xlabel("Pair-Wise Distance between NV centers (pixels)", fontsize=15)
     plt.ylabel("Correlation Coefficient", fontsize=15)
-    plt.title("Pair-Wise Coefficient vs Distance (66 shallow NVs)", fontsize=15)
+    plt.title(f"Pair-Wise Coefficient vs Distance ({num_nvs}NVs)", fontsize=15)
     plt.xticks(fontsize=15)
     plt.yticks(fontsize=15)
     # plt.xlim([0, 60])
-    plt.grid(True)
+    # plt.grid(True)
     plt.legend(fontsize=12)
     plt.show()
     # return
@@ -1249,8 +1248,8 @@ if __name__ == "__main__":
     file_ids = ["2025_10_12-10_27_20-rubin-nv0_2025_09_08"]
 
     data = process_multiple_files(file_ids)
-    process_and_plot(data, rearrangement="block")
-    # plot_nv_network(data)
+    # process_and_plot(data, rearrangement="block")
+    plot_nv_network(data)
     # plot_thresholded_counts(data)
     # try:
     #     # print(data.shape)
