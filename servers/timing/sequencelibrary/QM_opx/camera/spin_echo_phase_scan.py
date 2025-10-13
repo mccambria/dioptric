@@ -25,6 +25,9 @@ def emit_phase_switch(uwave_ind_list, phi_var, allowed_phases):
         for ph in allowed_phases:
             with qua.case_(int(ph)):
                 seq_utils.macro_pi_on_2_pulse(uwave_ind_list, phase=int(ph))
+tau = 16 ## ns
+tau_ticks = seq_utils.convert_ns_to_cc(tau)
+two_tau_ticks = 2 * tau_ticks 
 
 def get_seq(base_scc_seq_args, step_vals, num_reps=1):
     buffer = seq_utils.get_widefield_operation_buffer()
@@ -35,13 +38,39 @@ def get_seq(base_scc_seq_args, step_vals, num_reps=1):
         seq_utils.macro_run_aods()
         step_val = qua.declare(int)
         
+        # def uwave_macro_sig(uwave_ind_list, phi):
+        #     qua.align()
+        #     seq_utils.macro_pi_on_2_pulse(uwave_ind_list, phase=0)
+        #     qua.wait(tau_ticks)
+        #     seq_utils.macro_pi_pulse(uwave_ind_list, phase=0)
+        #     qua.wait(tau_ticks)
+        #     emit_phase_switch(uwave_ind_list, phi, allowed_cases)
+        #     qua.wait(buffer)
+
+
         def uwave_macro_sig(uwave_ind_list, phi):
             qua.align()
             seq_utils.macro_pi_on_2_pulse(uwave_ind_list, phase=0)
+            qua.wait(tau_ticks)
             seq_utils.macro_pi_pulse(uwave_ind_list, phase=0)
-            # Final π/2 with phase = phi (wrapped via switch)
+            qua.wait(two_tau_ticks)
+            seq_utils.macro_pi_pulse(uwave_ind_list, phase=90)
+            qua.wait(two_tau_ticks)
+            seq_utils.macro_pi_pulse(uwave_ind_list, phase=0)
+            qua.wait(two_tau_ticks)
+            seq_utils.macro_pi_pulse(uwave_ind_list, phase=90)
+            qua.wait(two_tau_ticks)
+            seq_utils.macro_pi_pulse(uwave_ind_list, phase=90)
+            qua.wait(two_tau_ticks)
+            seq_utils.macro_pi_pulse(uwave_ind_list, phase=0)
+            qua.wait(two_tau_ticks)
+            seq_utils.macro_pi_pulse(uwave_ind_list, phase=90)
+            qua.wait(two_tau_ticks)
+            seq_utils.macro_pi_pulse(uwave_ind_list, phase=0)
+            qua.wait(tau_ticks)
             emit_phase_switch(uwave_ind_list, phi, allowed_cases)
             qua.wait(buffer)
+        
         
         
         # def uwave_macro_sig(uwave_ind_list, phi):

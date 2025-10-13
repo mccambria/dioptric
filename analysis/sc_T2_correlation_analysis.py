@@ -70,7 +70,7 @@ def process_multiple_files(file_ids):
     """
     Load and combine data from multiple file IDs.
     """
-    combined_data = dm.get_raw_data(file_id=file_ids[0])
+    combined_data = dm.get_raw_data(file_stem=file_ids[0], load_npz=True)
     for file_id in file_ids[1:]:
         new_data = dm.get_raw_data(file_id=file_id)
         combined_data["num_runs"] += new_data["num_runs"]
@@ -155,19 +155,19 @@ def process_and_plot(data, rearrangement="spin_flip", file_path=None):
     sns.set(style="whitegrid", context="talk", font_scale=1.2)
 
     # Unpack data
-    nv_list = data.get("nv_list", [])
-    counts = np.array(data.get("counts", []))
+    nv_list = data["nv_list"]
+    counts = np.array(data["counts"])
     # indices_to_remove = [64, 108, 75, 100, 103, 55, 77, 89, 17, 82]
-    indices_to_remove = [64, 108, 75, 100, 103, 55, 77, 89, 17, 82, 38]
+    # indices_to_remove = [64, 108, 75, 100, 103, 55, 77, 89, 17, 82, 38]
     print(counts.shape)
-    nv_list = [
-        nv_list[ind] for ind in range(len(nv_list)) if ind not in indices_to_remove
-    ]
-    # Use NumPy boolean masking to filter counts
-    mask = np.ones(counts.shape[1], dtype=bool)  # Create a mask for NV indices
-    mask[list(indices_to_remove)] = False  # Set unwanted indices to False
-    counts = counts[:, mask, :, :, :]  # Apply mask along the NV axis (second dimension)
-    print(counts.shape)
+    # nv_list = [
+    #     nv_list[ind] for ind in range(len(nv_list)) if ind not in indices_to_remove
+    # ]
+    # # Use NumPy boolean masking to filter counts
+    # mask = np.ones(counts.shape[1], dtype=bool)  # Create a mask for NV indices
+    # mask[list(indices_to_remove)] = False  # Set unwanted indices to False
+    # counts = counts[:, mask, :, :, :]  # Apply mask along the NV axis (second dimension)
+    # print(counts.shape)
 
     # return
     if len(nv_list) == 0 or counts.size == 0:
@@ -194,7 +194,7 @@ def process_and_plot(data, rearrangement="spin_flip", file_path=None):
     sig_corr_coeffs = nan_corr_coef(flattened_sig_counts)
     ref_corr_coeffs = nan_corr_coef(flattened_ref_counts)
     diff_corr_coeffs = sig_corr_coeffs - ref_corr_coeffs
-
+    
     # bins = int(np.ceil(np.log2(len(sig_corr_coeffs)) + 1))
     # bin_width = 3.5 * np.nanstd(sig_corr_coeffs) / len(sig_corr_coeffs) ** (1 / 3)
     # bins = int(
@@ -301,86 +301,91 @@ def process_and_plot(data, rearrangement="spin_flip", file_path=None):
     ideal_vmax = 1
 
     # Plotting setup
-    titles = ["Ideal Signal", "Signal", "Reference", "Difference"]
-    # titles = ["Signal", "Reference"]
+    # titles = ["Ideal Signal", "Signal", "Reference", "Difference"]
+    titles = ["Signal", "Reference"]
     # titles = ["Ideal Signal", "Signal After Reference Subtraction"]
-    num_cols = len(titles)
-    figsize = [num_cols * 5, 5]
-    fig, axes_pack = plt.subplots(ncols=num_cols, figsize=figsize)
-    vals = [ideal_sig_corr_coeffs, sig_corr_coeffs, ref_corr_coeffs, diff_corr_coeffs]
-    # vals = [sig_corr_coeffs, ref_corr_coeffs]
+    # vals = [ideal_sig_corr_coeffs, sig_corr_coeffs, ref_corr_coeffs, diff_corr_coeffs]
+    vals = [sig_corr_coeffs, ref_corr_coeffs]
     # vals = [ideal_sig_corr_coeffs, sig_corr_coeffs]
-
-    # Use Seaborn heatmap for visualization
+    n = len(vals)
+    fig, axes_pack = plt.subplots(1, n, figsize=(6*n, 6))
+    axes_pack = np.atleast_1d(axes_pack).ravel()
     for ind, (val, title) in enumerate(zip(vals, titles)):
-        np.fill_diagonal(val, np.nan)  # Set diagonal to NaN for cleaner visualization
+        mat = np.array(val, dtype=float, copy=True)
+
+        # --- 1) Guard against all-NaN after masking the diagonal ---
+        side = mat.shape[0]
+        # Only mask the diagonal if there are finite off-diagonal entries
+        mat_no_diag = mat.copy()
+        np.fill_diagonal(mat_no_diag, np.nan)
+        if np.isfinite(mat_no_diag).any():
+            mat = mat_no_diag
+        else:
+            # If everything would become NaN, keep the original (don’t mask)
+            pass
+
         ax = axes_pack[ind]
 
-        # Set vmin and vmax depending on whether it's the ideal or actual data
+        # --- your vmin/vmax selection unchanged ---
         if title == "Ideal Signal":
             vmin, vmax = ideal_vmin, ideal_vmax
-        elif title == "Signal":
-            vmin, vmax = sig_vmin, sig_vmax
-        elif title == "Reference":
+        elif title in ("Signal", "Reference"):
             vmin, vmax = sig_vmin, sig_vmax
         else:
             vmin, vmax = diff_vmin, diff_vmax
 
+        # --- normalization unchanged ---
+        if vmin < 0 < vmax:
+            norm = plt.matplotlib.colors.TwoSlopeNorm(vmin=vmin, vcenter=0.0, vmax=vmax)
+        else:
+            norm = plt.matplotlib.colors.Normalize(vmin=vmin, vmax=vmax)
+
+        # --- colormap unchanged ---
+        cmap = plt.get_cmap("coolwarm").copy()
+        cmap.set_bad(color="#f0f0f0")
+
         heatmap = sns.heatmap(
-            val,
+            mat,
             ax=ax,
-            cmap="coolwarm",
+            cmap=cmap,
+            norm=norm,
             cbar=True,
-            vmin=vmin,
-            vmax=vmax,
-            square=True,
-            mask=np.isnan(val),
+            square=True,                # keeps cells square
+            mask=np.isnan(mat),
             annot=False,
-            cbar_kws={"pad": 0.01, "shrink": 0.5},
+            cbar_kws={"pad": 0.00, "shrink": 0.7, "aspect": 20},
+            rasterized=True,
+            linewidths=0.0,
         )
 
-        # Add a colorbar label
+        # --- 2) Force axes to the full data extent (prevents corner shrinking) ---
+        ax.set_xlim(0, side)
+        ax.set_ylim(side, 0)  # heatmap uses inverted y
+
+        # --- colorbar formatting (unchanged) ---
         cbar = heatmap.collections[0].colorbar
         cbar.set_label("Correlation coefficient", fontsize=16)
-        # cbar.ax.tick_params(labelsize=16)
-
-        # Set scientific notation for the colorbar ticks
-        cbar.ax.tick_params(labelsize=15)  # Set tick label size
+        cbar.ax.tick_params(labelsize=13)
         cbar.formatter = ScalarFormatter(useMathText=True)
         cbar.formatter.set_scientific(True)
         cbar.formatter.set_powerlimits((-2, 2))
         cbar.update_ticks()
-        # Adjust the position of the scientific notation
-        cbar.ax.yaxis.offsetText.set(size=15)
-        cbar.ax.yaxis.offsetText.set_position((4.0, 1.05))
 
-        # Parameters
-        max_ticks = 5  # Maximum number of ticks to display
-        tick_interval = max(1, num_nvs // max_ticks)  # Ensure interval is at least 1
+        # --- 3) Ticks: compute from actual matrix size ---
+        max_ticks = 6
+        step = max(1, side // (max_ticks - 1))
+        ticks = np.arange(0, side, step)
 
-        # Set ticks and labels for NV indices
-        ax.set_xticks(np.arange(0, num_nvs, tick_interval))
-        ax.set_yticks(np.arange(0, num_nvs, tick_interval))
-        ax.set_xticklabels(
-            np.arange(0, num_nvs, tick_interval), rotation=0, fontsize=15
-        )
-        ax.set_yticklabels(
-            np.arange(0, num_nvs, tick_interval), rotation=0, fontsize=15
-        )
-
+        ax.set_xticks(ticks + 0.5)
+        ax.set_yticks(ticks + 0.5)
+        ax.set_xticklabels(ticks, rotation=0, fontsize=12)
+        ax.set_yticklabels(ticks, rotation=0, fontsize=12)
         ax.tick_params(axis="x", which="both", pad=0)
         ax.tick_params(axis="y", which="both", pad=0)
-        # ax.tick_params(axis="both", which="both", direction="out", length=5, width=1)
 
-        ax.set_title(title, fontsize=16, pad=10)
-        ax.set_xlabel("NV index", fontsize=15)
-        ax.set_ylabel("NV index", fontsize=15, labelpad=-1)
-
-    # Adjust subplots for proper spacing
-    fig.subplots_adjust(left=0.05, right=0.95, bottom=0.05, top=0.95, wspace=0.2)
-    # if fig is not None:
-    #     dm.save_figure(fig, file_path)
-    plt.show()
+        ax.set_title(title, fontsize=16, pad=8)
+        ax.set_xlabel("NV index", fontsize=14)
+        ax.set_ylabel("NV index", fontsize=14, labelpad=0)
 
 
 # end region heatmaps
@@ -1241,43 +1246,7 @@ if __name__ == "__main__":
     # data = dm.get_raw_data(file_id=file_id)
 
     # final data set after randomizing the scc order between two groups
-    file_ids = [
-        1739979522556,
-        1740062954135,
-        1740252380664,
-        1740377262591,
-        1740494528636,
-    ]
-
-    # # shallow 66 nvs
-    # file_ids = [
-    #     1783769660936,
-    #     1783988286193,
-    #     1784201493337,
-    #     1784384193378,
-    #     1784571011973,
-    # ]
-
-    # file_ids = [
-    #     1785959891378,
-    #     1786097958722,
-    #     1786236616251,
-    # ]
-
-    # file_ids = [1788384251424, 1788228402712]
-    # data = dm.get_raw_data(file_id=file_ids[0])
-    # Create a string of all file IDs, separated by underscores
-    all_file_ids_str = "_".join(map(str, file_ids))
-
-    now = datetime.now()
-    date_time_str = now.strftime("%Y%m%d_%H%M%S")
-    file_name = dm.get_file_name(file_id=file_ids[0])
-    timestamp = dm.get_time_stamp()
-    file_path = dm.get_file_path(
-        __file__, file_name, f"{all_file_ids_str}_{date_time_str}"
-    )
-
-    print(f"File path: {file_path}")
+    file_ids = ["2025_10_12-10_27_20-rubin-nv0_2025_09_08"]
 
     data = process_multiple_files(file_ids)
     process_and_plot(data, rearrangement="block")

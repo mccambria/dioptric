@@ -333,8 +333,8 @@ if __name__ == "__main__":
         # file_stem="2025_04_29-21_46_40-rubin-nv0_2025_02_26",  # spin echo
         # file_stem="2025_04_30-00_36_54-rubin-nv0_2025_02_26",  # ramsey
         # file_stem="2025_04_30-12_43_15-rubin-nv0_2025_02_26",  # xy8
-        # file_stem="2025_10_10-21_51_14-rubin-nv0_2025_09_08",  # xy8
-        file_stem="2025_10_11-00_03_47-rubin-nv0_2025_09_08",  # spin echo
+        file_stem="2025_10_10-21_51_14-rubin-nv0_2025_09_08",  # xy8
+        # file_stem="2025_10_11-00_03_47-rubin-nv0_2025_09_08",  # spin echo
         load_npz=True,
         use_cache=True,
     )

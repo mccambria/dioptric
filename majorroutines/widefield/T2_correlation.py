@@ -146,7 +146,7 @@ def process_and_plot_experimental(data):
         np.fill_diagonal(val, np.nan)
 
     print(np.nanmean(ref_corr_coeffs) / np.nanmean(np.abs(sig_corr_coeffs)))
-
+    print(np.nanmean(ref_corr_coeffs), np.nanmean(np.abs(sig_corr_coeffs)))
     # MCC
     # fig, ax = plt.subplots()
     # mean_diff_corr_coeffs = [
@@ -273,14 +273,14 @@ def process_and_plot(
     ### Unpack
 
     nv_list = data["nv_list"]
-    weak_esr = [72, 64, 55, 96, 112, 87, 89, 114, 17, 12, 99, 116, 32, 107, 58, 36]
-    weak_esr = [72, 64, 55, 96, 112, 87, 17, 12, 116]  # , 36, 114]
-    weak_esr = [72, 64, 55, 96, 112, 87, 12, 58, 36]
+    # weak_esr = [72, 64, 55, 96, 112, 87, 89, 114, 17, 12, 99, 116, 32, 107, 58, 36]
+    # weak_esr = [72, 64, 55, 96, 112, 87, 17, 12, 116]  # , 36, 114]
+    # weak_esr = [72, 64, 55, 96, 112, 87, 12, 58, 36]
     # weak_esr = []
-    nice_esr = [ind for ind in range(117) if ind not in weak_esr]
-    nv_list = [nv_list[ind] for ind in nice_esr]
+    # # nice_esr = [ind for ind in range(117) if ind not in weak_esr]
+    # nv_list = [nv_list[ind] for ind in nice_esr]
     counts = np.array(data["counts"])
-    counts = counts[:, nice_esr]
+    # counts = counts[:, nice_esr]
     num_nvs = len(nv_list)
 
     passed_cbar_max = cbar_max
@@ -322,7 +322,9 @@ def process_and_plot(
     #     spin_flips[1] = -1
     #     spin_flips[4] = -1
     #     spin_flips[6] = -1
-    ideal_sig_corr_coeffs = np.outer(spin_flips, spin_flips)
+    # ideal_sig_corr_coeffs = np.outer(spin_flips, spin_flips)
+    ideal_sig_corr_coeffs = np.outer([0] * num_nvs, [0] * num_nvs)
+
     ideal_sig_corr_coeffs = ideal_sig_corr_coeffs.astype(float)
 
     flattened_sig_counts = [sig_counts[ind].flatten() for ind in pattern_inds]
@@ -337,6 +339,7 @@ def process_and_plot(
     sig_corr_coeffs = tb.nan_corr_coef(flattened_sig_counts)
     ref_corr_coeffs = tb.nan_corr_coef(flattened_ref_counts)
     print(np.mean(ref_corr_coeffs[np.triu_indices_from(ref_corr_coeffs, 1)]))
+    print(np.mean(sig_corr_coeffs[np.triu_indices_from(sig_corr_coeffs, 1)]))
     # diff_corr_coeffs = sig_corr_coeffs - ref_corr_coeffs
     # ref_corr_coeffs_even = tb.nan_corr_coef(flattened_ref_counts_even)
     # ref_corr_coeffs_odd = tb.nan_corr_coef(flattened_ref_counts_odd)
@@ -349,13 +352,17 @@ def process_and_plot(
 
     figsize = kpl.figsize.copy()
 
+    # titles = [
+    #     # "Ideal signal",
+    #     "Reference (ms=0, No microwave)",
+    #     "Signal(pi/2(x)-pi(x)-pi/2(y)",
+    #     # "Reference (ms=-1)",
+    #     # "Difference",
+    # ]
     titles = [
-        # "Ideal signal",
-        "Reference (ms=0)",
-        "Signal",
-        # "Reference (ms=-1)",
-        # "Difference",
-    ]
+    r"Reference ($m_s=0$, No microwave)",
+    r"Signal ($\pi/2(x) \rightarrow \pi(x) \rightarrow \pi/2(y)$)"]
+    
     vals = [plot_ref, plot_sig]
     # vals = [ideal_sig_corr_coeffs, sig_corr_coeffs, ref_corr_coeffs, diff_corr_coeffs]
     # vals = [
@@ -520,7 +527,10 @@ if __name__ == "__main__":
     kpl.init_kplotlib()
 
     ### Data
-
+    raw_data = dm.get_raw_data(file_stem="2025_10_12-10_27_20-rubin-nv0_2025_09_08", load_npz=True)
+    process_and_plot(raw_data)
+    kpl.show(block=True)
+    sys.exit()
     # fmt: off
     # file_ids = [1737922643755, 1737998031775, 1738069552465, 1738136166264, 1738220449762, ]
     # file_ids = [1739598841877, 1739660864956, 1739725006836, 1739855966253 ]

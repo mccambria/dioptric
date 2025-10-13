@@ -497,11 +497,12 @@ def do_simple_correlation_test(nv_list):
 
 def do_T2_correlation_test(nv_list):
     num_reps = 200
-    num_runs = 1000
+    num_runs = 800
     # num_runs = 2
     tau = 19.6e3 # gap
-    for _ in range(2):
-        T2_correlation.main(nv_list, num_reps, num_runs, tau)
+    T2_correlation.main(nv_list, num_reps, num_runs, tau)
+    # for _ in range(1):
+    #     T2_correlation.main(nv_list, num_reps, num_runs, tau)
 
 def do_calibrate_iq_delay(nv_list):
     min_tau = 20
@@ -632,8 +633,8 @@ def do_spin_echo_phase_scan_test(nv_list):
     # num_runs = 2
     # phi_list = np.linspace(0, 360, num_steps)
     # fmt: off
-    # phi_list = [0, 18, 36, 54, 72, 90, 108, 126, 144, 162, 180, 198, 216, 234, 252, 270, 288, 306, 324, 342, 360]
-    phi_list = [-351, -333, -315, -297, -279, -261, -243, -225, -207, -189, -171, -153, -135, -117, -99, -81, -63, -45, -27, -9, 9, 27, 45, 63, 81, 99, 117, 135, 153, 171, 189, 207, 225, 243, 261, 279, 297, 315, 333, 351]
+    phi_list = [0, 18, 36, 54, 72, 90, 108, 126, 144, 162, 180, 198, 216, 234, 252, 270, 288, 306, 324, 342, 360]
+    # phi_list = [-351, -333, -315, -297, -279, -261, -243, -225, -207, -189, -171, -153, -135, -117, -99, -81, -63, -45, -27, -9, 9, 27, 45, 63, 81, 99, 117, 135, 153, 171, 189, 207, 225, 243, 261, 279, 297, 315, 333, 351]
     # fmt: on
     num_steps = len(phi_list)
     uwave_ind_list = [0, 1]  # both are has iq modulation
@@ -1344,8 +1345,8 @@ if __name__ == "__main__":
     print(f"Red Laser Coordinates: {red_coords_list[0]}")
 
     # pixel_coords_list = [[124.195, 127.341],[13.905, 11.931],[151.679, 245.068],[240.501, 17.871]]
-    # green_coords_list = [[108.478, 107.118], [119.578, 121.461], [106.851, 93.454], [93.814, 118.209]]
-    # red_coords_list = [[73.558, 71.534], [82.119, 83.697], [72.681, 60.391], [61.267, 79.785]]
+    # green_coords_list = [[108.368, 107.114],[119.483, 121.535],[106.762, 93.524],[93.748, 118.277]]
+    # red_coords_list = [[73.469, 71.525],[82.04, 83.752],[72.607, 60.443],[61.211, 79.837]]
     num_nvs = len(pixel_coords_list)
     threshold_list = [None] * num_nvs
     # fmt: off
@@ -1448,7 +1449,7 @@ if __name__ == "__main__":
         # )
 
         do_compensate_for_drift(nv_sig)
-        do_widefield_image_sample(nv_sig, 50)
+        # do_widefield_image_sample(nv_sig, 50)
         # do_widefield_image_sample(nv_sig, 200)
 
         # for nv in nv_list:
@@ -1522,7 +1523,7 @@ if __name__ == "__main__":
         # do_spin_pol_check(nv_sig)
 
         # do_calibrate_green_red_delay()
-        # do_spin_echo_phase_scan_test(nv_list)  # for iq mod test
+        do_spin_echo_phase_scan_test(nv_list)  # for iq mod test
         # do_bootstrapped_pulse_error_tomography(nv_list)
         # do_calibrate_iq_delay(nv_list)
 
