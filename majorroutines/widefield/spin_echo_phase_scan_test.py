@@ -123,9 +123,11 @@ def create_fit_figure(nv_list, phis, norm_counts, norm_counts_ste):
         phi_fit = np.linspace(min(phis), max(phis), 200)
         ax_median.plot(phi_fit, cos_func(phi_fit, *popt_median), label="Fit")
         # ax_median.set_title(f"Median Fit  : phase offset ≈ {popt_median[1]:.1f}°")
-        ax_median.set_title(r"Median Fit: $\frac{\pi}{2}_x$ - $\pi_x$ – $\frac{\pi}{2}_\phi$")
+        ax_median.set_title(
+            r"Median Fringe: $\pi/2_x$ – $\pi_x$ – $\pi/2_\phi$"
+        )
         # ax_median.set_title(
-        #     r"Median Fit: $\frac{\pi}{2}_x$ - xy8 – $\frac{\pi}{2}_\phi$"
+        #     r"Median Fringe: $\pi/2_x$ – XY8 – $\pi/2_\phi$"
         # )
 
     ax_median.set_xlabel("Phase, $\phi$ (degrees)")
@@ -333,8 +335,9 @@ if __name__ == "__main__":
         # file_stem="2025_04_29-21_46_40-rubin-nv0_2025_02_26",  # spin echo
         # file_stem="2025_04_30-00_36_54-rubin-nv0_2025_02_26",  # ramsey
         # file_stem="2025_04_30-12_43_15-rubin-nv0_2025_02_26",  # xy8
-        file_stem="2025_10_10-21_51_14-rubin-nv0_2025_09_08",  # xy8
-        # file_stem="2025_10_11-00_03_47-rubin-nv0_2025_09_08",  # spin echo
+        # file_stem="2025_10_10-21_51_14-rubin-nv0_2025_09_08",  # xy8
+        file_stem="2025_10_11-00_03_47-rubin-nv0_2025_09_08",  # spin echo
+        # file_stem="2025_10_13-14_00_31-rubin-nv0_2025_09_08",  # xy8
         load_npz=True,
         use_cache=True,
     )
@@ -356,4 +359,7 @@ if __name__ == "__main__":
     phi_step = phis[1] - phis[0]
     num_steps = len(phis)
     fit_fig = create_fit_figure(nv_list, phis, norm_counts, norm_counts_ste)
+
+
+    
     kpl.show(block=True)

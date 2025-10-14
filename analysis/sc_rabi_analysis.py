@@ -265,7 +265,7 @@ def plot_rabi_fits(
             plt.show(block=True)
         
         # --- Individual per-NV figures as well ---
-        make_individual = True  # set False to skip
+        make_individual = False  # set False to skip
 
         if make_individual:
             tau_dense = np.linspace(0, float(taus.max()), 300)
@@ -303,7 +303,7 @@ def plot_rabi_fits(
                 ax.grid(True)
                 fig.tight_layout()
                 plt.show(block=True)
-    return
+    # return
     # --- Grid of per-NV plots ---
     if num_cols is None or num_cols < 1:
         num_cols = 9
@@ -571,7 +571,13 @@ if __name__ == "__main__":
     # file_stem = "2025_10_02-05_57_27-rubin-nv0_2025_09_08"
     # file_stem = ["2025_10_05-20_06_59-rubin-nv0_2025_09_08"]
     # file_stem = ["2025_10_06-03_26_08-rubin-nv0_2025_09_08"] ## 2.76, 2.84
-    file_stem = ["2025_10_06-21_18_40-rubin-nv0_2025_09_08"] ## 2.78, 2.82
+    # file_stem = ["2025_10_06-21_18_40-rubin-nv0_2025_09_08"] ## 2.78, 2.82
+
+
+    ##133 MHz deer
+    file_stem = ["2025_10_13-20_49_30-rubin-nv0_2025_09_08"] ## deer
+    indices_113_MHz = [0, 1, 3, 6, 10, 14, 16, 17, 19, 23, 24, 25, 26, 27, 32, 33, 34, 35, 37, 38, 41, 49, 50, 51, 53, 54, 55, 60, 62, 63, 64, 66, 67, 68, 70, 72, 73, 74, 75, 76, 78, 80, 81, 82, 83, 84, 86, 88, 90, 92, 93, 95, 96, 99, 100, 101, 102, 103, 105, 108, 109, 111, 113, 114]
+
     data = dm.get_raw_data(file_stem=file_stem, load_npz=True, use_cache=False)
     nv_list = data["nv_list"]
     taus = data["taus"]
@@ -580,6 +586,11 @@ if __name__ == "__main__":
     avg_counts, avg_counts_ste = widefield.process_counts(
         nv_list, sig_counts, ref_counts, threshold=True
     )
+    # Select only NVs in indices_113_MHz
+    nv_list   = [nv_list[i] for i in indices_113_MHz]
+    avg_count    = avg_counts[indices_113_MHz]
+    avg_counts_ste = avg_counts_ste[indices_113_MHz]
+        
     # file_name = dm.get_file_name(file_id=file_id)
     # print(f"{file_name}_{file_id}")
     # Call to process Rabi data without normalization (can still perform fitting)

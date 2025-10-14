@@ -239,18 +239,75 @@ def simulate_pulse_errors():
     plt.tight_layout()
     plt.show()
 
+import numpy as np
+import pandas as pd
+import matplotlib.pyplot as plt
+from scipy.optimize import curve_fit
 
-if __name__ == "__main__":
-    kpl.init_kplotlib()
-    # file_id = 1817334208399
-    file_id = "2025_03_28-12_53_58-rubin-nv0_2025_02_26"
-    data = dm.get_raw_data(file_stem=file_id, load_npz=True, use_cache=True)
+def cos_func(phi_deg, amp, phase_offset_deg, offset):
+    return amp * np.cos(np.radians(phi_deg) - np.radians(phase_offset_deg)) + offset
+
+def fit_phase_fringe(phis_deg, norm_counts, norm_counts_ste):
+    """
+    Fit all NV phase fringes to cos_func and return a DataFrame with per-NV params.
+    Returns:
+      fit_df: DataFrame with columns [amplitude, phase_offset, offset, chi_sq, contrast]
+      median_fit: dict with popt, phis_fit, vals_fit for the median NV trace
+      med_counts, med_counts_ste: median normalized counts (+ STE) over NVs
+    """
+    num_nvs = norm_counts.shape[0]
+    results = {"amplitude": [], "phase_offset": [], "offset": [], "chi_sq": []}
+
+    for i in range(num_nvs):
+        y = norm_counts[i]
+        yerr = np.asarray(norm_counts_ste[i])
+        # Safe uncertainties (avoid zeros)
+        yerr = np.where(np.asarray(yerr) <= 0, np.nanmedian(np.abs(y - np.nanmedian(y))) or 1.0, yerr)
+
+        try:
+            popt, pcov = curve_fit(
+                cos_func, phis_deg, y, p0=[0.25, 0.0, 0.5], sigma=yerr, absolute_sigma=True, maxfev=20000
+            )
+            residuals = cos_func(phis_deg, *popt) - y
+            dof = max(len(y) - len(popt), 1)
+            chi_sq_red = np.nansum((residuals / yerr) ** 2) / dof
+        except Exception:
+            popt = [np.nan, np.nan, np.nan]
+            chi_sq_red = np.nan
+
+        results["amplitude"].append(popt[0])
+        results["phase_offset"].append(popt[1])
+        results["offset"].append(popt[2])
+        results["chi_sq"].append(chi_sq_red)
+
+    fit_df = pd.DataFrame(results)
+    fit_df["contrast"] = 2.0 * fit_df["amplitude"]  # peak-to-trough
+
+    # Median trace across NVs
+    med_counts = np.nanmedian(norm_counts, axis=0)
+    med_counts_ste = np.nanmedian(norm_counts_ste, axis=0)
+
+    try:
+        popt_med, _ = curve_fit(
+            cos_func, phis_deg, med_counts, p0=[0.25, 0.0, 0.5],
+            sigma=np.where(med_counts_ste<=0, np.nanmedian(np.abs(med_counts - np.nanmedian(med_counts))) or 1.0, med_counts_ste),
+            absolute_sigma=True, maxfev=20000
+        )
+        phi_fit = np.linspace(np.min(phis_deg), np.max(phis_deg), 300)
+        vals_fit = cos_func(phi_fit, *popt_med)
+        median_fit = {"popt": popt_med, "phi_fit": phi_fit, "vals_fit": vals_fit}
+    except Exception:
+        median_fit = {"popt": [np.nan, np.nan, np.nan], "phi_fit": None, "vals_fit": None}
+
+    return fit_df, median_fit, med_counts, med_counts_ste
+
+def load_and_process(file_stem):
+    """
+    Uses your dm.get_raw_data + widefield.process_counts to produce phis (deg),
+    norm_counts [n_nv x n_phi], and norm_counts_ste with thresholding.
+    """
+    data = dm.get_raw_data(file_stem=file_stem, load_npz=True, use_cache=True)
     nv_list = data["nv_list"]
-    num_nvs = len(nv_list)
-    num_steps = data["num_steps"]
-    num_runs = data["num_runs"]
-    phis = data["phis"]
-
     counts = np.array(data["counts"])
     sig_counts = counts[0]
     ref_counts = counts[1]
@@ -258,12 +315,158 @@ if __name__ == "__main__":
     norm_counts, norm_counts_ste = widefield.process_counts(
         nv_list, sig_counts, ref_counts, threshold=True
     )
-    # file_name = dm.get_file_name(file_id=file_id)
-    # print(f"{file_name}_{file_id}")
-    num_nvs = len(nv_list)
-    phi_step = phis[1] - phis[0]
-    num_steps = len(phis)
-    fit_fig = create_fit_figure(nv_list, phis, norm_counts, norm_counts_ste)
-    # simulate_plot()
-    # simulate_pulse_errors()
+    phis = np.array(data["phis"])
+    # Your fitting uses degrees:
+    phis_deg = phis  # if already in degrees; otherwise: np.degrees(phis)
+    return phis_deg, np.array(norm_counts), np.array(norm_counts_ste)
+
+def compare_two_runs(file_stem_A, label_A, file_stem_B, label_B, show_individual=False):
+    # Load
+    phis_A, norm_A, ste_A = load_and_process(file_stem_A)
+    phis_B, norm_B, ste_B = load_and_process(file_stem_B)
+
+    # Fit
+    fit_A, med_A, medc_A, medste_A = fit_phase_fringe(phis_A, norm_A, ste_A)
+    fit_B, med_B, medc_B, medste_B = fit_phase_fringe(phis_B, norm_B, ste_B)
+
+    # --- Print summary stats ---
+    def stats(name, df):
+        c = df["contrast"].dropna()
+        if len(c) == 0:
+            print(f"{name}: no valid fits")
+            return
+        print(f"{name}  (N={len(c)} NVs)")
+        print(f"  median contrast: {np.nanmedian(c):.3f}")
+        print(f"  mean ± std:      {np.nanmean(c):.3f} ± {np.nanstd(c):.3f}")
+        q10, q90 = np.nanpercentile(c, [10, 90])
+        print(f"  10–90% range:    [{q10:.3f}, {q90:.3f}]")
+        print()
+
+    print("\n=== Per-NV fringe contrast (peak–to–trough = 2*amp) ===")
+    stats(label_A, fit_A)
+    stats(label_B, fit_B)
+
+    # Median contrast from fitted medians (2*amp_med)
+    def median_contrast_from_fit(med):
+        amp_med = med["popt"][0] if med["popt"] is not None else np.nan
+        return 2.0 * amp_med
+
+    Cmed_A = median_contrast_from_fit(med_A)
+    Cmed_B = median_contrast_from_fit(med_B)
+    print(f"Median-fit contrast: {label_A}: {Cmed_A:.3f} | {label_B}: {Cmed_B:.3f}")
+    print(f"Δ contrast ({label_A} − {label_B}): {Cmed_A - Cmed_B:.3f}\n")
+
+    # --- Plots ---
+    # (1) Overlay median fringes
+    fig1, ax1 = plt.subplots(figsize=(6, 5))
+    ax1.errorbar(phis_A, medc_A, yerr=medste_A, fmt="o", alpha=0.6, label=f"{label_A} median")
+    if med_A["phi_fit"] is not None:
+        ax1.plot(med_A["phi_fit"], med_A["vals_fit"], "--", alpha=0.9)
+
+    ax1.errorbar(phis_B, medc_B, yerr=medste_B, fmt="s", alpha=0.6, label=f"{label_B} median")
+    if med_B["phi_fit"] is not None:
+        ax1.plot(med_B["phi_fit"], med_B["vals_fit"], "-.", alpha=0.9)
+
+    ax1.set_xlabel("Phase, φ (degrees)")
+    ax1.set_ylabel("Median normalized counts")
+    ax1.set_title("Median fringes: overlay")
+    ax1.grid(True); ax1.spines["right"].set_visible(False); ax1.spines["top"].set_visible(False)
+    ax1.legend()
+
+    # (2) Side-by-side contrast distributions
+    fig2, ax2 = plt.subplots(figsize=(6, 5))
+    data_to_plot = [fit_A["contrast"].dropna().values, fit_B["contrast"].dropna().values]
+    ax2.violinplot(data_to_plot, showmeans=True, showextrema=True)
+    ax2.set_xticks([1, 2]); ax2.set_xticklabels([label_A, label_B])
+    ax2.set_ylabel("Per-NV fringe contrast (peak–to–trough)")
+    ax2.set_title("Per-NV contrast distributions")
+    ax2.grid(True); ax2.spines["right"].set_visible(False); ax2.spines["top"].set_visible(False)
+
+    # (3) Optional: plot individual NV fits for each run
+    if show_individual:
+        def plot_individual(phis, norm, ste, label):
+            fig, ax = plt.subplots(figsize=(6, 5))
+            for i in range(norm.shape[0]):
+                ax.errorbar(phis, norm[i], yerr=np.abs(ste[i]), fmt="o", alpha=0.25)
+            ax.set_xlabel("Phase (deg)"); ax.set_ylabel("Normalized counts")
+            ax.set_title(f"All NVs: {label}"); ax.grid(True)
+            ax.spines["right"].set_visible(False); ax.spines["top"].set_visible(False)
+        plot_individual(phis_A, norm_A, ste_A, label_A)
+        plot_individual(phis_B, norm_B, ste_B, label_B)
+
+    plt.show()
+
+    return fit_A, fit_B, Cmed_A, Cmed_B
+
+def plot_contrast_scatter(fit_A, label_A, fit_B=None, label_B=None):
+    """
+    Scatter plot of per-NV contrast magnitudes (|2*amp|).
+    If fit_B is provided, overlays both runs.
+    """
+    C_A = np.abs(np.array(fit_A["amplitude"], dtype=float))
+    x_A = np.arange(len(C_A))
+
+    fig, ax = plt.subplots(figsize=(7, 4.5))
+    ax.scatter(x_A, C_A, marker="o", alpha=0.8, label=label_A)
+
+    if fit_B is not None:
+        C_B = np.abs(np.array(fit_B["amplitude"], dtype=float))
+        # Align x by index; if lengths differ, trim to min length
+        n = min(len(C_A), len(C_B))
+        x_B = np.arange(n) + 0.15  # tiny offset so points don’t fully overlap
+        ax.scatter(x_B, C_B[:n], marker="s", alpha=0.8, label=label_B)
+
+    ax.set_xlabel("NV index")
+    ax.set_ylabel("Per-NV contrast")
+    ax.set_title("Per-NV Fringe Contrast")
+    ax.grid(True)
+    ax.spines["right"].set_visible(False)
+    ax.spines["top"].set_visible(False)
+    ax.legend()
+    plt.tight_layout()
+    plt.show()
+# ------------------ EXAMPLE CALL ------------------
+if __name__ == "__main__":
+    kpl.init_kplotlib()
+
+    fit_spin, fit_xy8, Cmed_spin, Cmed_xy8 = compare_two_runs(
+        file_stem_A="2025_10_11-00_03_47-rubin-nv0_2025_09_08",  # spin echo
+        label_A="Spin Echo",
+        file_stem_B="2025_10_13-14_00_31-rubin-nv0_2025_09_08",   # XY8
+        label_B="XY8",
+        show_individual=False,  # set True if you want the per-NV scatter panels
+    )
+    plot_contrast_scatter(fit_spin, "Spin Echo", fit_xy8, "XY8")
     kpl.show(block=True)
+
+    # If you want CSVs of per-NV contrasts:
+    # fit_spin.to_csv("spin_echo_perNV_contrast.csv", index=False)
+    # fit_xy8.to_csv("xy8_perNV_contrast.csv", index=False)
+
+# if __name__ == "__main__":
+#     kpl.init_kplotlib()
+#     # file_id = 1817334208399
+#     file_id = "2025_03_28-12_53_58-rubin-nv0_2025_02_26"
+#     data = dm.get_raw_data(file_stem=file_id, load_npz=True, use_cache=True)
+#     nv_list = data["nv_list"]
+#     num_nvs = len(nv_list)
+#     num_steps = data["num_steps"]
+#     num_runs = data["num_runs"]
+#     phis = data["phis"]
+
+#     counts = np.array(data["counts"])
+#     sig_counts = counts[0]
+#     ref_counts = counts[1]
+
+#     norm_counts, norm_counts_ste = widefield.process_counts(
+#         nv_list, sig_counts, ref_counts, threshold=True
+#     )
+#     # file_name = dm.get_file_name(file_id=file_id)
+#     # print(f"{file_name}_{file_id}")
+#     num_nvs = len(nv_list)
+#     phi_step = phis[1] - phis[0]
+#     num_steps = len(phis)
+#     fit_fig = create_fit_figure(nv_list, phis, norm_counts, norm_counts_ste)
+#     # simulate_plot()
+#     # simulate_pulse_errors()
+#     kpl.show(block=True)

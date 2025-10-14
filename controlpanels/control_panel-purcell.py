@@ -1470,7 +1470,7 @@ if __name__ == "__main__":
         # )
 
         do_compensate_for_drift(nv_sig)
-        do_widefield_image_sample(nv_sig, 50)
+        # do_widefield_image_sample(nv_sig, 50)
         # do_widefield_image_sample(nv_sig, 200)
 
         # for nv in nv_list:
@@ -1544,7 +1544,7 @@ if __name__ == "__main__":
         # do_spin_pol_check(nv_sig)
 
         # do_calibrate_green_red_delay()
-        # do_spin_echo_phase_scan_test(nv_list)  # for iq mod test
+        do_spin_echo_phase_scan_test(nv_list)  # for iq mod test
         # do_bootstrapped_pulse_error_tomography(nv_list)
         # do_calibrate_iq_delay(nv_list)
 
@@ -1552,7 +1552,7 @@ if __name__ == "__main__":
         # do_power_rabi(nv_list)
         # do_resonance(nv_list)
         # do_deer_hahn(nv_list)
-        do_deer_hahn_rabi(nv_list)
+        # do_deer_hahn_rabi(nv_list)
         # do_resonance_zoom(nv_list)
         # do_spin_echo(nv_list)
         # do_spin_echo_1(nv_list)
