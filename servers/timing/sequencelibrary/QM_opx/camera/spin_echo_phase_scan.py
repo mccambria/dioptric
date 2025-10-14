@@ -25,15 +25,15 @@ def emit_phase_switch(uwave_ind_list, phi_var, allowed_phases):
         for ph in allowed_phases:
             with qua.case_(int(ph)):
                 seq_utils.macro_pi_on_2_pulse(uwave_ind_list, phase=int(ph))
-tau = 16 ## ns
+# tau = 16 ## ns
 # tau = 19.6e3 ## revival
-tau_ticks = seq_utils.convert_ns_to_cc(tau)
+# tau_ticks = seq_utils.convert_ns_to_cc(tau)
 # two_tau_ticks = 2 * tau_ticks 
 
-def get_seq(base_scc_seq_args, step_vals, num_reps=1):
+def get_seq(base_scc_seq_args, step_vals, evol_time, num_reps=1):
     buffer = seq_utils.get_widefield_operation_buffer()
     allowed_cases = sorted({int(x % 360) for x in step_vals if int(x % 360) != 360})
-
+    tau_ticks = seq_utils.convert_ns_to_cc(evol_time)
     with qua.program() as seq:
         seq_utils.init()
         seq_utils.macro_run_aods()

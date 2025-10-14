@@ -648,19 +648,21 @@ def do_rabi(nv_list):
     # rabi.main(nv_list, num_steps, num_reps, num_runs, min_tau, max_tau, uwave_ind_list)
 
 
-def do_spin_echo_phase_scan_test(nv_list):
-    num_reps = 11
+def do_spin_echo_phase_scan_test(nv_list, evol_time):
+    # num_reps = 11
+    num_reps = 15
     num_runs = 150
     # num_runs = 2
     # phi_list = np.linspace(0, 360, num_steps)
     # fmt: off
-    phi_list = [0, 18, 36, 54, 72, 90, 108, 126, 144, 162, 180, 198, 216, 234, 252, 270, 288, 306, 324, 342, 360]
+    phi_list = [0, 45, 90, 135, 180, 225, 270, 315, 360]
+    # phi_list = [0, 18, 36, 54, 72, 90, 108, 126, 144, 162, 180, 198, 216, 234, 252, 270, 288, 306, 324, 342, 360]
     # phi_list = [-351, -333, -315, -297, -279, -261, -243, -225, -207, -189, -171, -153, -135, -117, -99, -81, -63, -45, -27, -9, 9, 27, 45, 63, 81, 99, 117, 135, 153, 171, 189, 207, 225, 243, 261, 279, 297, 315, 333, 351]
     # fmt: on
     num_steps = len(phi_list)
     uwave_ind_list = [0, 1]  # both are has iq modulation
     spin_echo_phase_scan_test.main(
-        nv_list, num_steps, num_reps, num_runs, phi_list, uwave_ind_list
+        nv_list, num_steps, num_reps, num_runs, phi_list, evol_time, uwave_ind_list
     )
     # for _ in range(2):
     #     spin_echo_phase_scan_test.main(
@@ -1470,7 +1472,7 @@ if __name__ == "__main__":
         # )
 
         do_compensate_for_drift(nv_sig)
-        # do_widefield_image_sample(nv_sig, 50)
+        do_widefield_image_sample(nv_sig, 50)
         # do_widefield_image_sample(nv_sig, 200)
 
         # for nv in nv_list:
@@ -1544,7 +1546,11 @@ if __name__ == "__main__":
         # do_spin_pol_check(nv_sig)
 
         # do_calibrate_green_red_delay()
-        do_spin_echo_phase_scan_test(nv_list)  # for iq mod test
+        # do_spin_echo_phase_scan_test(nv_list)  # for iq mod test
+        evol_time_list = [16, 100, 500, 2000, 6000, 8000, 10000, 14000, 18000, 19600, 24000, 30000, 40000]
+        for val in evol_time_list:
+            do_spin_echo_phase_scan_test(nv_list, val)  # for iq mod test
+
         # do_bootstrapped_pulse_error_tomography(nv_list)
         # do_calibrate_iq_delay(nv_list)
 

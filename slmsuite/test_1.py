@@ -35,11 +35,6 @@ def xy8_tau_grid(B_gauss=47.5,   # sets T_L
     taus_us = sorted(set([t/1e3 for t in taus_ns]))  # back to µs, unique & sorted
     return taus_us, TL_us
 
-taus_us, TL_us = xy8_tau_grid(B_gauss=47.5, center_harmonics=(1,), win_us=0.8, fine_step_us=0.1)
-print(f"T_L ≈ {TL_us:.2f} µs; first-dip center ≈ {TL_us/2:.2f} µs")
-print(taus_us)
-# -> feed 'taus_us' into your XY8 measurement loop (instead of spin echo taus)
-
 sys.exit()
 def xy8_tau_grid(B_gauss=47.5,   # sets T_L
                  center_harmonics=(1,),  # (1,) or (1,3) to include 3rd

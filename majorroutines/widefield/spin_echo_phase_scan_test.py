@@ -254,11 +254,11 @@ def create_fit_figure(nv_list, phis, norm_counts, norm_counts_ste):
 #     # plt.show()
 
 
-def main(nv_list, num_steps, num_reps, num_runs, phi_list, uwave_ind_list):
+def main(nv_list, num_steps, num_reps, num_runs, phi_list, evol_time, uwave_ind_list):
     ### Some initial setup
     pulse_gen = tb.get_server_pulse_gen()
     seq_file = "spin_echo_phase_scan.py"
-
+    
     ### Collect the data
 
     def run_fn(shuffled_step_inds):
@@ -266,6 +266,7 @@ def main(nv_list, num_steps, num_reps, num_runs, phi_list, uwave_ind_list):
         seq_args = [
             widefield.get_base_scc_seq_args(nv_list, uwave_ind_list),
             step_vals,
+            evol_time,
         ]
         # print(seq_args)
         seq_args_string = tb.encode_seq_args(seq_args)
@@ -288,6 +289,8 @@ def main(nv_list, num_steps, num_reps, num_runs, phi_list, uwave_ind_list):
         "timestamp": timestamp,
         "phis": phi_list,
         "phi-units": "radian",
+        "evol_time": evol_time,
+        "evol_time-unit": "ns",
     }
 
     repr_nv_sig = widefield.get_repr_nv_sig(nv_list)

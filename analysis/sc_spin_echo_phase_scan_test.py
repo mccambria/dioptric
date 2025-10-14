@@ -11,6 +11,7 @@ Created on November 29th, 2023
 import sys
 import time
 import traceback
+import matplotlib.cm as cm
 
 import matplotlib.pyplot as plt
 import numpy as np
@@ -256,7 +257,7 @@ def fit_phase_fringe(phis_deg, norm_counts, norm_counts_ste):
       med_counts, med_counts_ste: median normalized counts (+ STE) over NVs
     """
     num_nvs = norm_counts.shape[0]
-    results = {"amplitude": [], "phase_offset": [], "offset": [], "chi_sq": []}
+    results = {"nv_index": [], "amplitude": [], "phase_offset": [], "offset": [], "chi_sq": []}
 
     for i in range(num_nvs):
         y = norm_counts[i]
@@ -279,6 +280,7 @@ def fit_phase_fringe(phis_deg, norm_counts, norm_counts_ste):
         results["phase_offset"].append(popt[1])
         results["offset"].append(popt[2])
         results["chi_sq"].append(chi_sq_red)
+        results["nv_index"].append(i) 
 
     fit_df = pd.DataFrame(results)
     fit_df["contrast"] = 2.0 * fit_df["amplitude"]  # peak-to-trough
@@ -403,14 +405,14 @@ def plot_contrast_scatter(fit_A, label_A, fit_B=None, label_B=None):
     Scatter plot of per-NV contrast magnitudes (|2*amp|).
     If fit_B is provided, overlays both runs.
     """
-    C_A = np.abs(np.array(fit_A["amplitude"], dtype=float))
+    C_A = np.abs(2*np.array(fit_A["amplitude"], dtype=float))
     x_A = np.arange(len(C_A))
 
     fig, ax = plt.subplots(figsize=(7, 4.5))
     ax.scatter(x_A, C_A, marker="o", alpha=0.8, label=label_A)
 
     if fit_B is not None:
-        C_B = np.abs(np.array(fit_B["amplitude"], dtype=float))
+        C_B = np.abs(2*np.array(fit_B["amplitude"], dtype=float))
         # Align x by index; if lengths differ, trim to min length
         n = min(len(C_A), len(C_B))
         x_B = np.arange(n) + 0.15  # tiny offset so points don’t fully overlap
@@ -425,18 +427,225 @@ def plot_contrast_scatter(fit_A, label_A, fit_B=None, label_B=None):
     ax.legend()
     plt.tight_layout()
     plt.show()
+
+# ---------- NEW HELPERS (append to your file) ----------
+def process_one_file_degrees(file_stem):
+    """
+    Uses your load_and_process(...) + fit_phase_fringe(...) to get per-NV contrast,
+    and attaches the evolution time from raw_data.
+    Returns (evol_time_ns, fit_df) where fit_df has columns from fit_phase_fringe
+    plus 'evol_time_ns' and 'file_stem'.
+    """
+    # Load raw to get evol_time
+    raw = dm.get_raw_data(file_stem=file_stem, load_npz=True, use_cache=True)
+    evol_time_ns = int(raw.get("evol_time", -1))
+
+    # Reuse your pipeline for phis/normalized counts
+    phis_deg, norm_counts, norm_counts_ste = load_and_process(file_stem)
+    fit_df, _, _, _ = fit_phase_fringe(phis_deg, norm_counts, norm_counts_ste)
+    
+    fit_df["evol_time_ns"] = evol_time_ns
+    fit_df["file_stem"] = file_stem
+    # Ensure contrast is positive peak-to-trough
+    fit_df["contrast"] = 2.0 * np.abs(fit_df["amplitude"])
+    return evol_time_ns, fit_df
+
+def gather_contrast_across_files(file_stems):
+    """
+    Loops over file stems and concatenates per-NV results into one tidy DataFrame.
+    """
+    all_dfs = []
+    for fs in file_stems:
+        _, df = process_one_file_degrees(fs)
+        all_dfs.append(df)
+    big = pd.concat(all_dfs, ignore_index=True)
+    return big.sort_values("evol_time_ns")
+
+def plot_per_nv_contrast_vs_tau(df_all, nv_indices=None, title="Per-NV Contrast vs Evolution Time"):
+    """
+    Light spaghetti plot: contrast vs τ for each NV (or a chosen subset).
+    """
+    taus = np.sort(df_all["evol_time_ns"].unique())
+    if nv_indices is None:
+        nv_indices = sorted(df_all["nv_index"].unique())
+
+    plt.figure(figsize=(7,5))
+    for nv in nv_indices:
+        sub = df_all[df_all["nv_index"] == nv].set_index("evol_time_ns").reindex(taus)
+        plt.plot(taus, sub["contrast"].values, "-o", alpha=0.35, linewidth=1)
+
+    plt.xlabel("Evolution time τ (ns)")
+    plt.ylabel("Per-NV contrast (peak-to-trough)")
+    plt.title(title)
+    plt.grid(True)
+    ax = plt.gca(); ax.spines["right"].set_visible(False); ax.spines["top"].set_visible(False)
+    plt.tight_layout()
+    plt.show()
+
+# def plot_median_contrast_vs_tau(df_all, title="Median Contrast vs Evolution Time"):
+#     """
+#     Median envelope with IQR band across NVs.
+#     """
+#     taus = np.sort(df_all["evol_time_ns"].unique())
+#     med, q1, q3 = [], [], []
+#     for t in taus:
+#         vals = df_all[df_all["evol_time_ns"] == t]["contrast"].to_numpy()
+#         vals = vals[~np.isnan(vals)]
+#         med.append(np.nan if len(vals)==0 else np.median(vals))
+#         q1.append(np.nan if len(vals)==0 else np.percentile(vals, 25))
+#         q3.append(np.nan if len(vals)==0 else np.percentile(vals, 75))
+
+#     med, q1, q3 = np.array(med), np.array(q1), np.array(q3)
+
+#     plt.figure(figsize=(7,5))
+#     plt.plot(taus, med, "-o", linewidth=2, label="Median")
+#     plt.fill_between(taus, q1, q3, alpha=0.25, label="IQR (25–75%)")
+#     plt.xlabel("Evolution time τ (ns)")
+#     plt.ylabel("Contrast (peak-to-trough)")
+#     plt.xscale("log")
+#     plt.title(title)
+#     plt.grid(True)
+#     ax = plt.gca(); ax.spines["right"].set_visible(False); ax.spines["top"].set_visible(False)
+#     plt.legend()
+#     plt.tight_layout()
+#     plt.show()
+
+
+def plot_median_contrast_vs_tau(df_all, revival_tau_us=19.6, title="Median NV Contrast vs Evolution Time"):
+    # Clean bad values
+    df = df_all.replace([np.inf, -np.inf], np.nan).dropna(subset=["contrast", "evol_time_ns"])
+
+    taus_ns = np.sort(df_all["evol_time_ns"].unique())
+    taus_us = taus_ns / 1000.0
+
+    med, q1, q3 = [], [], []
+    for t_ns in taus_ns:
+        vals = df.loc[df["evol_time_ns"] == t_ns, "contrast"].to_numpy()
+        vals = vals[np.isfinite(vals)]
+        med.append(np.median(vals) if len(vals) else np.nan)
+        q1.append(np.percentile(vals, 25) if len(vals) else np.nan)
+        q3.append(np.percentile(vals, 75) if len(vals) else np.nan)
+
+    med = np.array(med); q1 = np.array(q1); q3 = np.array(q3)
+
+    plt.figure(figsize=(7,5))
+    plt.plot(taus_us, med, "-o", linewidth=2, label="Median")
+    plt.fill_between(taus_us, q1, q3, alpha=0.25, label="IQR (25–75%)")
+
+    # Mark the revival (input given in µs); pick the closest τ
+    if len(taus_us):
+        idx = int(np.argmin(np.abs(taus_us - revival_tau_us)))
+        plt.scatter([taus_us[idx]], [med[idx]], color="red", s=20, zorder=5, label=f"Revival ≈ {taus_us[idx]:.3g} µs")
+
+    plt.xlabel("Evolution time τ (µs)")
+    plt.ylabel("Contrast (peak-to-trough)")
+    plt.title(title)
+    plt.grid(True)
+    ax = plt.gca()
+    ax.spines["right"].set_visible(False); ax.spines["top"].set_visible(False)
+    plt.legend()
+    plt.tight_layout()
+    plt.show()
+
+
+def plot_contrast_vs_nv_for_all_taus(df_all, title="Per-NV Contrast vs NV Index at Different τ"):
+    # Clean bad values
+    df = df_all.replace([np.inf, -np.inf], np.nan).dropna(subset=["contrast", "evol_time_ns", "nv_index"])
+
+    taus_ns = np.sort(df["evol_time_ns"].unique())
+    taus_us = taus_ns / 1000.0
+    colors = cm.viridis(np.linspace(0, 1, len(taus_ns)))
+
+    plt.figure(figsize=(9,6))
+    for t_ns, t_us, color in zip(taus_ns, taus_us, colors):
+        sub = df[df["evol_time_ns"] == t_ns].sort_values("nv_index")
+        sub = sub[np.isfinite(sub["contrast"])]
+        if not sub.empty:
+            plt.scatter(sub["nv_index"], sub["contrast"], alpha=0.7, s=35,
+                        color=color, label=f"τ={t_us:g} µs")
+
+    plt.xlabel("NV index")
+    plt.ylabel("Contrast (peak-to-trough)")
+    plt.title(title)
+    plt.grid(True)
+    ax = plt.gca()
+    ax.spines["right"].set_visible(False); ax.spines["top"].set_visible(False)
+    plt.legend(bbox_to_anchor=(1.02,1), loc="upper left", title="Evolution time")
+    plt.tight_layout()
+    plt.show()
+
+def contrast_ratio_rev_vs_min(df_all, revival_tau_ns=19600, base_tau_ns=16):
+    """
+    Compute ratio and difference of median contrast:
+      contrast(revival_tau) vs contrast(base_tau == 16 ns).
+    """
+    df = df_all.replace([np.inf, -np.inf], np.nan).dropna(subset=["contrast", "evol_time_ns"])
+    taus = df["evol_time_ns"].unique()
+    if revival_tau_ns not in taus:
+        print(f"Revival τ={revival_tau_ns} ns not found in data.")
+        return None
+    if base_tau_ns not in taus:
+        print(f"Base τ=16 ns not found in data.")
+        return None
+
+    med_rev = np.median(df.loc[df["evol_time_ns"] == revival_tau_ns, "contrast"].to_numpy())
+    med_base = np.median(df.loc[df["evol_time_ns"] == base_tau_ns, "contrast"].to_numpy())
+
+    ratio = med_rev / med_base if med_base != 0 else np.nan
+    diff = med_rev - med_base
+
+    print(f"Median contrast @ revival (τ={revival_tau_ns} ns): {med_rev:.4f}")
+    print(f"Median contrast @ 16 ns: {med_base:.4f}")
+    print(f"Contrast ratio (revival / 16 ns): {ratio:.3f}")
+    print(f"Contrast difference (revival − 16 ns): {diff:.4f}")
+
+    return {
+        "med_rev": med_rev,
+        "med_base": med_base,
+        "ratio": ratio,
+        "difference": diff
+    }
+
 # ------------------ EXAMPLE CALL ------------------
 if __name__ == "__main__":
     kpl.init_kplotlib()
 
-    fit_spin, fit_xy8, Cmed_spin, Cmed_xy8 = compare_two_runs(
-        file_stem_A="2025_10_11-00_03_47-rubin-nv0_2025_09_08",  # spin echo
-        label_A="Spin Echo",
-        file_stem_B="2025_10_13-14_00_31-rubin-nv0_2025_09_08",   # XY8
-        label_B="XY8",
-        show_individual=False,  # set True if you want the per-NV scatter panels
-    )
-    plot_contrast_scatter(fit_spin, "Spin Echo", fit_xy8, "XY8")
+    # fit_spin, fit_xy8, Cmed_spin, Cmed_xy8 = compare_two_runs(
+    #     file_stem_A="2025_10_11-00_03_47-rubin-nv0_2025_09_08",  # spin echo
+    #     label_A="Spin Echo",
+    #     file_stem_B="2025_10_13-14_00_31-rubin-nv0_2025_09_08",   # XY8
+    #     label_B="XY8",
+    #     show_individual=False,  # set True if you want the per-NV scatter panels
+    # )
+    # plot_contrast_scatter(fit_spin, "Spin Echo", fit_xy8, "XY8")
+
+    file_list = [
+    "2025_10_14-02_12_16-rubin-nv0_2025_09_08",
+    "2025_10_14-03_18_45-rubin-nv0_2025_09_08",
+    "2025_10_14-04_23_11-rubin-nv0_2025_09_08",
+    "2025_10_14-05_27_14-rubin-nv0_2025_09_08",
+    "2025_10_14-06_31_04-rubin-nv0_2025_09_08",
+    "2025_10_14-07_35_17-rubin-nv0_2025_09_08",
+    "2025_10_14-08_40_25-rubin-nv0_2025_09_08",
+    "2025_10_14-09_44_20-rubin-nv0_2025_09_08",
+    "2025_10_14-10_48_49-rubin-nv0_2025_09_08",
+    "2025_10_14-11_55_38-rubin-nv0_2025_09_08",
+    "2025_10_14-13_02_58-rubin-nv0_2025_09_08",
+    "2025_10_14-14_10_50-rubin-nv0_2025_09_08",
+    # ... add all your files
+    ]
+
+    df_all = gather_contrast_across_files(file_list)
+
+    # Median envelope + IQR band:
+    plot_median_contrast_vs_tau(df_all)
+    plot_contrast_vs_nv_for_all_taus(df_all)
+    # Suppose your revival is at τ = 2000 ns
+    res = contrast_ratio_rev_vs_min(df_all, revival_tau_ns=19600, base_tau_ns=16)
+
+    # Per-NV curves (all NVs lightly; or pass a subset like [0,1,2,3]):
+    # plot_per_nv_contrast_vs_tau(df_all)  # or plot_per_nv_contrast_vs_tau(df_all, nv_indices=[0,1,2,3])
+
     kpl.show(block=True)
 
     # If you want CSVs of per-NV contrasts:
