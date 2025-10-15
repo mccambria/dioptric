@@ -81,7 +81,8 @@ if __name__ == "__main__":
                 [False, False],
                 [0, 1],
             ],
-            19.6e3,
+            200,
+            [1000, 1500],
             5,
         )
         sim_config = SimulationConfig(duration=int(200e3 / 4))

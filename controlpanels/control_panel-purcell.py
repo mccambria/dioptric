@@ -50,6 +50,7 @@ from majorroutines.widefield import (
     T2_correlation,
     spin_echo,
     spin_echo_phase_scan_test,
+    two_block_hahn_correlation,
     spin_pol_check,
     xy,
 )
@@ -762,6 +763,14 @@ def do_spin_echo(nv_list):
 #     for _ in range(1):
 #         spin_echo.main(nv_list, num_steps, num_reps, num_runs, taus=taus)
 
+def do_two_block_hahn_correlation(nv_list):
+    tau = 200
+    # lag_taus = [16, 24, 40, 64, 100, 160, 250, 400, 640, 1000, 1500, 2000]
+    lag_taus = [16, 40, 64, 88, 108, 132, 156, 180, 208, 236, 272, 316, 364, 424, 488, 568, 640, 740, 856, 988, 1144, 1292, 1496, 1728, 2000] 
+    num_steps = len(lag_taus)
+    num_reps = 4
+    num_runs = 300
+    two_block_hahn_correlation.main(nv_list, num_steps, num_reps, num_runs, tau, lag_taus)
 
 def do_spin_echo_1(nv_lis):
     min_tau = 200  # ns
@@ -1369,8 +1378,8 @@ if __name__ == "__main__":
     print(f"Red Laser Coordinates: {red_coords_list[0]}")
 
     # pixel_coords_list = [[124.195, 127.341],[13.905, 11.931],[151.679, 245.068],[240.501, 17.871]]
-    # green_coords_list = [[108.368, 107.114],[119.483, 121.535],[106.762, 93.524],[93.748, 118.277]]
-    # red_coords_list = [[73.469, 71.525],[82.04, 83.752],[72.607, 60.443],[61.211, 79.837]]
+    # green_coords_list = [[108.36, 107.18],[119.481, 121.552],[106.758, 93.568],[93.728, 118.329]]
+    # red_coords_list = [    [73.46, 71.578],[82.038, 83.765],[72.602, 60.479],[61.193, 79.878]]
     num_nvs = len(pixel_coords_list)
     threshold_list = [None] * num_nvs
     # fmt: off
@@ -1558,7 +1567,7 @@ if __name__ == "__main__":
         # do_rabi(nv_list)
         # do_power_rabi(nv_list)
         # do_resonance(nv_list)
-        do_deer_hahn(nv_list)
+        # do_deer_hahn(nv_list)
         # do_deer_hahn_rabi(nv_list)
         # do_resonance_zoom(nv_list)
         # do_spin_echo(nv_list)
@@ -1567,6 +1576,7 @@ if __name__ == "__main__":
 
         # do_simple_correlation_test(nv_list)
         # do_T2_correlation_test(nv_list)
+        do_two_block_hahn_correlation(nv_list)
         # do_resonance(nv_list)
         # do_sq_relaxation(nv_list)
         # do_dq_relaxation(nv_list)

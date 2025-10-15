@@ -35,7 +35,7 @@ red_laser_aod = "laser_COBO_638_aod"
 
 calibration_coords_pixel = [[13.905, 11.931], [151.679, 245.068],[240.501, 17.871]]
 calibration_coords_green = [[119.483, 121.535],[106.762, 93.524],[93.748, 118.277]]
-calibration_coords_red = [[82.04, 83.752],[72.607, 60.443],[61.211, 79.837]]
+calibration_coords_red = [[82.038, 83.765],[72.602, 60.479],[61.193, 79.878]]
 
 # Create the dictionaries using the provided lists
 calibration_coords_nv1 = {
