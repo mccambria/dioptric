@@ -950,16 +950,17 @@ def do_correlation_test(nv_list):
 
 
 def do_sq_relaxation(nv_list):
-    min_tau = 1e3
-    max_tau = 20e6 + min_tau
+    # min_tau = 1e3
+    min_tau = 5e2
+    max_tau = 10e6 + min_tau
     num_steps = 21
     num_reps = 10
-    num_runs = 200
+    num_runs = 400
     # num_runs = 2
     # relaxation_interleave.sq_relaxation(
     #     nv_list, num_steps, num_reps, num_runs, min_tau, max_tau
     # )
-    for _ in range(4):
+    for _ in range(2):
         relaxation_interleave.sq_relaxation(
             nv_list, num_steps, num_reps, num_runs, min_tau, max_tau
         )
@@ -1472,7 +1473,7 @@ if __name__ == "__main__":
         # )
 
         do_compensate_for_drift(nv_sig)
-        do_widefield_image_sample(nv_sig, 50)
+        # do_widefield_image_sample(nv_sig, 50)
         # do_widefield_image_sample(nv_sig, 200)
 
         # for nv in nv_list:
@@ -1547,9 +1548,9 @@ if __name__ == "__main__":
 
         # do_calibrate_green_red_delay()
         # do_spin_echo_phase_scan_test(nv_list)  # for iq mod test
-        evol_time_list = [16, 100, 500, 2000, 6000, 8000, 10000, 14000, 18000, 19600, 24000, 30000, 40000]
-        for val in evol_time_list:
-            do_spin_echo_phase_scan_test(nv_list, val)  # for iq mod test
+        # evol_time_list = [18000, 19600, 21000]
+        # for val in evol_time_list:
+        #     do_spin_echo_phase_scan_test(nv_list, val)  # for iq mod test
 
         # do_bootstrapped_pulse_error_tomography(nv_list)
         # do_calibrate_iq_delay(nv_list)
@@ -1567,7 +1568,7 @@ if __name__ == "__main__":
         # do_simple_correlation_test(nv_list)
         # do_T2_correlation_test(nv_list)
         # do_resonance(nv_list)
-        # do_sq_relaxation(nv_list)
+        do_sq_relaxation(nv_list)
         # do_dq_relaxation(nv_list)
         # do_detect_cosmic_rays(nv_list)
         # do_check_readout_fidelity(nv_list)
