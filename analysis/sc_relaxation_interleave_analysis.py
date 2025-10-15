@@ -93,9 +93,10 @@ def process_and_fit_data(data, use_double_fit=False, selected_indices=None):
     norm_counts_ste = np.sqrt(sig_avg_counts_ste**2 + ref_avg_counts_ste**2)
 
     num_nvs = len(nv_list)
-    nv_list = [nv_list[ind] for ind in selected_indices]
-    norm_counts = [norm_counts[ind] for ind in selected_indices]
-    norm_counts_ste = [norm_counts_ste[ind] for ind in selected_indices]
+    if selected_indices is not None:
+        nv_list = [nv_list[ind] for ind in selected_indices]
+        norm_counts = [norm_counts[ind] for ind in selected_indices]
+        norm_counts_ste = [norm_counts_ste[ind] for ind in selected_indices]
 
     fit_params, fit_functions, residuals, param_errors, contrasts = [], [], [], [], []
 
@@ -177,7 +178,7 @@ def plot_fitted_data(
         figsize=(num_cols * 1.5, num_rows * 3),
         sharex=True,
         sharey=False,
-        constrained_layout=True,
+        # constrained_layout=True,
         gridspec_kw={"wspace": 0.0, "hspace": 0.0},
     )
     axes = axes.flatten()
@@ -274,7 +275,7 @@ def plot_fitted_data(
         rotation="vertical",
         fontsize=12,
     )
-    fig.suptitle(f"T1 Relaxation {all_file_ids_str}", fontsize=16)
+    # fig.suptitle(f"T1 Relaxation", fontsize=16)
     fig.tight_layout(pad=0.4, rect=[0.01, 0.01, 0.99, 0.99])
     plt.show(block=True)
 
@@ -298,7 +299,7 @@ def plot_fitted_data_separately(
     T1_err = rate_errors / (rates**2)
     T1, T1_err = list(T1), list(T1_err)
     for nv_idx in range(len(nv_list)):
-        fig, ax = plt.subplots(figsize=(6, 5))
+        fig, ax = plt.subplots(figsize=(5, 5))
         # Plot data with Seaborn's lineplot for a cleaner look
         sns.scatterplot(
             x=taus,
@@ -748,11 +749,12 @@ if __name__ == "__main__":
     selected_indices= selected_indices_185MHz + selected_indices_68MHz
     # selected_indices= selected_indices_185MHz
     # selected_indices= selected_indices_68MHz
-    print(selected_indices)
+    # print(selected_indices)
     #fmt: off
-    file_path, all_file_ids_str = widefield.combined_filename(file_ids)
-    print(f"File path: {file_path}")
-    data = widefield.process_multiple_files(file_ids)
+    # file_path, all_file_ids_str = widefield.combined_filename(file_ids)
+    # print(f"File path: {file_path}")\
+    file_ids = ["2025_10_14-21_08_23-rubin-nv0_2025_09_08"]
+    data = widefield.process_multiple_files(file_ids, load_npz=True)
     # data = dm.get_raw_data(file_id=1550610460299)  # Example file ID
     (
         fit_params,
@@ -763,21 +765,21 @@ if __name__ == "__main__":
         norm_counts_ste,
         nv_list,
         fit_errors,
-    ) = process_and_fit_data(data, use_double_fit=False, selected_indices=selected_indices)
+    ) = process_and_fit_data(data, use_double_fit=False, selected_indices=None)
     offset_list = fit_params[:, 2]
-    print(f"contrst_list = {list(offset_list)}")
+    # print(f"contrst_list = {list(offset_list)}")
     # plot_contrast(nv_list, fit_params)
-    # plot_fitted_data(
-    #     nv_list,
-    #     taus,
-    #     norm_counts,
-    #     norm_counts_ste,
-    #     fit_functions,
-    #     fit_params,
-    #     fit_errors,
-    #     num_cols=10,
-    #     selected_indices=selected_indices,
-    # )
+    plot_fitted_data(
+        nv_list,
+        taus,
+        norm_counts,
+        norm_counts_ste,
+        fit_functions,
+        fit_params,
+        fit_errors,
+        num_cols=10,
+        selected_indices=None,
+    )
     # scatter_fitted_parameters(fit_params, nv_list)
     # plot_T1_with_errorbars(fit_params, fit_errors, nv_list)
     # plot_fitted_data_separately(
