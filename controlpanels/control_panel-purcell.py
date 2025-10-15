@@ -1378,8 +1378,8 @@ if __name__ == "__main__":
     print(f"Red Laser Coordinates: {red_coords_list[0]}")
 
     # pixel_coords_list = [[124.195, 127.341],[13.905, 11.931],[151.679, 245.068],[240.501, 17.871]]
-    # green_coords_list = [[108.36, 107.18],[119.481, 121.552],[106.758, 93.568],[93.728, 118.329]]
-    # red_coords_list = [    [73.46, 71.578],[82.038, 83.765],[72.602, 60.479],[61.193, 79.878]]
+    # green_coords_list = [[108.326, 107.2],[119.451, 121.595],[106.759, 93.57],[93.74, 118.298]]
+    # red_coords_list = [[73.432, 71.593],[82.012, 83.799],[72.603, 60.48],[61.204, 79.853]]
     num_nvs = len(pixel_coords_list)
     threshold_list = [None] * num_nvs
     # fmt: off
@@ -1447,8 +1447,8 @@ if __name__ == "__main__":
     nv_sig = widefield.get_repr_nv_sig(nv_list)
     # print(f"Created NV: {nv_sig.name}, Coords: {nv_sig.coords}")
     # nv_sig.expected_counts = 900
-    # nv_sig.expected_counts = 1300
-    nv_sig.expected_counts = 1500
+    nv_sig.expected_counts = 1400
+    # nv_sig.expected_counts = 1500
 
     # nv_list = nv_list[::-1]  # flipping the order of NVs
     # nv_list = nv_list[:2]
@@ -1567,7 +1567,7 @@ if __name__ == "__main__":
         # do_rabi(nv_list)
         # do_power_rabi(nv_list)
         # do_resonance(nv_list)
-        # do_deer_hahn(nv_list)
+        do_deer_hahn(nv_list)
         # do_deer_hahn_rabi(nv_list)
         # do_resonance_zoom(nv_list)
         # do_spin_echo(nv_list)
@@ -1576,7 +1576,7 @@ if __name__ == "__main__":
 
         # do_simple_correlation_test(nv_list)
         # do_T2_correlation_test(nv_list)
-        do_two_block_hahn_correlation(nv_list)
+        # do_two_block_hahn_correlation(nv_list)
         # do_resonance(nv_list)
         # do_sq_relaxation(nv_list)
         # do_dq_relaxation(nv_list)

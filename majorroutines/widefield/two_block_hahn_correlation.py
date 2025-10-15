@@ -408,7 +408,7 @@ def main(nv_list, num_steps, num_reps, num_runs, tau, lag_taus=None):
         num_runs,
         run_fn,
         uwave_ind_list=uwave_ind_list,
-        load_iq=True,
+        # load_iq=True,
     )
 
     ### Process and plot
