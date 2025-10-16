@@ -12,8 +12,7 @@ import utils.kplotlib as kpl
 import utils.positioning as pos
 import utils.tool_belt as tool_belt
 from utils import common
-from utils.constants import CoordsKey, VirtualLaserKey
-
+from utils.constants import CoordsKey, VirtualLaserKey, CountFormat
 
 def main(
     nv_sig,
@@ -121,7 +120,13 @@ def main(
     kpl.plot_line(ax, x_vals, samples)
     ax.set_xlim(-0.05 * run_time_s, 1.05 * run_time_s)
     ax.set_xlabel("Time (s)")
-    ax.set_ylabel("Count rate (kcps)")
+
+    cfg = common.get_config_dict()
+    count_fmt: CountFormat = cfg["count_format"] # CountFormat.KCPS or CountFormat.RAW
+    count_fmt = CountFormat.RAW
+    ax.set_ylabel("Raw counts")
+    # ax.set_ylabel("Kcps" if count_fmt == CountFormat.KCPS is not None else "Counts")
+    #ax.set_ylabel("Count rate (kcps)")
     try:
         plt.get_current_fig_manager().window.showMaximized()
     except Exception:
@@ -201,9 +206,10 @@ def main(
             samples[write_pos : write_pos + n_new] = new
             write_pos += n_new
 
-        # Update plot in kcps
-        samples_kcps = samples / (1e3 * readout_sec)
-        kpl.plot_line_update(ax, x=x_vals, y=samples_kcps, relim_x=False)
+        # # Update plot in kcps
+        # samples_kcps = samples / (1e3 * readout_sec)
+        # kpl.plot_line_update(ax, x=x_vals, y=samples_kcps, relim_x=False)
+        kpl.plot_line_update(ax, x=x_vals, y=samples, relim_x=False)
 
     # -------------------- Cleanup + stats --------------------
     tool_belt.reset_cfm()
