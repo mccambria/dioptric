@@ -528,7 +528,7 @@ def do_resonance(nv_list):
     # num_steps = 24
     num_steps = 45
     num_reps = 3
-    num_runs = 500
+    num_runs = 400
     freqs = calculate_freqs(freq_center, freq_range, num_steps)
     ##
     # Remove duplicates and sort
@@ -1570,7 +1570,7 @@ if __name__ == "__main__":
 
         # do_rabi(nv_list)
         # do_power_rabi(nv_list)
-        # do_resonance(nv_list)
+        do_resonance(nv_list)
         # do_deer_hahn(nv_list)
         # do_deer_hahn_rabi(nv_list)
         # do_resonance_zoom(nv_list)
@@ -1580,7 +1580,7 @@ if __name__ == "__main__":
 
         # do_simple_correlation_test(nv_list)
         # do_T2_correlation_test(nv_list)
-        do_two_block_hahn_correlation(nv_list)
+        # do_two_block_hahn_correlation(nv_list)
         # do_resonance(nv_list)
         # do_sq_relaxation(nv_list)
         # do_dq_relaxation(nv_list)
