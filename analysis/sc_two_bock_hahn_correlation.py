@@ -18,236 +18,269 @@ import seaborn as sns
 from joblib import Parallel, delayed
 from matplotlib.ticker import FormatStrFormatter
 from scipy.optimize import curve_fit
+from numpy.linalg import lstsq
+from scipy.optimize import least_squares
 
 from utils import data_manager as dm
 from utils import kplotlib as kpl
 from utils import widefield as widefield
 
-import numpy as np
-from scipy.optimize import curve_fit
-# =========================
-# Two-block correlation: frequency guess via periodogram
-# Uses Lomb–Scargle for uneven T; FFT if uniform.
-# =========================
 
-import numpy as np
-import matplotlib.pyplot as plt
-import seaborn as sns
-from matplotlib.ticker import FormatStrFormatter
-from dataclasses import dataclass
-
-try:
-    from scipy.signal import lombscargle
-except ImportError:
-    lombscargle = None  # will raise a helpful error later
-
-# ---------- helpers ----------
-def to_seconds(T_axis, time_unit="auto"):
-    T = np.asarray(T_axis, dtype=float)
-    if time_unit == "s":
-        return T, "s"
-    if time_unit == "us":
-        return T * 1e-6, "µs"
-    if time_unit == "ns":
-        return T * 1e-9, "ns"
-    # auto guess ...
-    if np.nanmax(T) > 1.0:
-        return T, "s"
-    return T, "s"
+# -----------------------------
+# Models & helpers
+# -----------------------------
+def c2_block_model(T_us, C0_i, s_i, A_i, f0_kHz, Tc_us, phi0_rad):
+    """
+    Single-NV two-block Hahn correlation model:
+        C_i(T) = C0_i + s_i * A_i * exp(-T/Tc) * cos(2π f0 T + phi0)
+    Units:
+      - T_us: microseconds
+      - f0_kHz: kHz  (so f0_kHz * 1e-3 gives µs^-1)
+      - Tc_us: microseconds
+      - phi0_rad: radians
+    """
+    omega_us = 2 * np.pi * (f0_kHz * 1e-3)  # convert kHz -> µs^-1
+    return C0_i + s_i * A_i * np.exp(-T_us / Tc_us) * np.cos(omega_us * T_us + phi0_rad)
 
 
-def is_uniform_grid(Ts, tol=0.05):
-    Ts = np.asarray(Ts)
-    d = np.diff(np.sort(Ts))
-    if len(d) == 0:
-        return True
-    return (np.std(d) / np.mean(d)) < tol
+def estimate_phi_per_nv(T_ns, Ci):
+    """
+    Quick per-NV phase estimate using FFT freq guess (ns/MHz version).
+    Returns (f0_MHz, phi_i).
+    """
+    x = Ci - np.mean(Ci)
+    dt_s = (T_ns[1] - T_ns[0]) * 1e-9
+    freqs_Hz = np.fft.rfftfreq(len(T_ns), d=dt_s)
+    amp = np.abs(np.fft.rfft(x))
+    if len(amp) <= 1:
+        f0_Hz = 1e6  # fallback 1 MHz
+    else:
+        f0_Hz = freqs_Hz[np.argmax(amp[1:]) + 1]
+    f0_MHz = f0_Hz / 1e6
 
-def next_pow2(n):
-    return 1 << (int(np.ceil(np.log2(max(n,1)))))
+    # Linear LS on cos/sin at that frequency
+    w_ns = 2 * np.pi * (f0_MHz * 1e-3)  # rad per ns
+    X = np.column_stack([np.cos(w_ns * T_ns), np.sin(w_ns * T_ns), np.ones_like(T_ns)])
+    a, b, _ = lstsq(X, Ci, rcond=None)[0]
+    phi = np.arctan2(-b, a)  # a cos + b sin = R cos(wT + phi)
+    return f0_MHz, phi
 
-def detrend(y, w=None):
-    y = np.asarray(y, dtype=float)
-    if w is None:
-        return y - np.nanmean(y)
-    w = np.asarray(w, dtype=float)
-    m = np.isfinite(y) & np.isfinite(w) & (w>0)
-    if not np.any(m):
-        return y - np.nanmean(y)
-    yw = y[m]; ww = w[m]
-    mu = np.sum(yw*ww) / np.sum(ww)
-    out = y.copy()
-    out[m] = y[m] - mu
+
+def phase_cluster_signs(T_ns, C):
+    """
+    Returns:
+      s (N,) in {+1,-1}, f0_guess_MHz (median of per-NV), phis (per-NV)
+    """
+    f0s, phis = [], []
+    for i in range(C.shape[0]):
+        f0_i, phi_i = estimate_phi_per_nv(T_ns, C[i])
+        f0s.append(f0_i)
+        phis.append(phi_i)
+    f0_guess = float(np.median(f0s))
+    phis = np.unwrap(np.array(phis))
+    s = np.sign(np.cos(phis))
+    s[s == 0] = 1
+    return s.astype(int), f0_guess, phis
+
+
+def pack_params(C0, A, f0_MHz, Tc_ns, phi0_rad):
+    return np.concatenate([C0, A, np.array([f0_MHz, Tc_ns, phi0_rad])])
+
+
+def unpack_params(p, N):
+    C0 = p[:N]
+    A = p[N : 2 * N]
+    f0_MHz, Tc_ns, phi0_rad = p[-3:]
+    return C0, A, f0_MHz, Tc_ns, phi0_rad
+
+
+def residuals_joint_nsMHz(p, T_ns, C, s):
+    N, M = C.shape
+    C0, A, f0_MHz, Tc_ns, phi0_rad = unpack_params(p, N)
+
+    # Guard rails inside iterations
+    Tc_ns = max(Tc_ns, 1e-3)
+    f0_MHz = max(f0_MHz, 0.01)
+
+    exp_env = np.exp(-T_ns / Tc_ns)  # (M,)
+    cos_term = np.cos(2 * np.pi * (f0_MHz * 1e-3) * T_ns + phi0_rad)  # (M,)
+
+    model = (
+        C0[:, None] + (s[:, None] * A[:, None]) * exp_env[None, :] * cos_term[None, :]
+    )
+    return (model - C).ravel()
+
+
+def joint_fit_two_block(T_ns, C, s, f0_guess_MHz=None, Tc_guess_ns=None):
+    N, M = C.shape
+
+    C0_0 = C.mean(axis=1)
+    A_0 = 0.6 * np.maximum(1e-12, (C.max(axis=1) - C.min(axis=1)))
+
+    if f0_guess_MHz is None:
+        # global FFT on median-detrended
+        X = C - C.mean(axis=1, keepdims=True)
+        x_med = np.median(X, axis=0)
+        dt_s = (T_ns[1] - T_ns[0]) * 1e-9
+        freqs_Hz = np.fft.rfftfreq(M, d=dt_s)
+        amp = np.abs(np.fft.rfft(x_med))
+        f0_guess_MHz = (freqs_Hz[np.argmax(amp[1:]) + 1] / 1e6) if len(amp) > 1 else 1.0
+
+    if Tc_guess_ns is None:
+        Tc_guess_ns = max(0.5 * (T_ns.max() - T_ns.min()), 1.0)
+
+    phi0_guess = 0.0
+    p0 = pack_params(C0_0, A_0, f0_guess_MHz, Tc_guess_ns, phi0_guess)
+
+    lb = np.concatenate(
+        [
+            C.min(axis=1) - 0.2 * np.ptp(C, axis=1),  # C0_i lower
+            0.0 * np.ones(N),  # A_i >= 0
+            np.array([0.01, 1.0, -2 * np.pi]),  # f0>=0.01 MHz, Tc>=1 ns
+        ]
+    )
+    ub = np.concatenate(
+        [
+            C.max(axis=1) + 0.2 * np.ptp(C, axis=1),  # C0_i upper
+            10.0 * np.ptp(C, axis=1),  # generous A_i
+            np.array([500.0, 1e9, 2 * np.pi]),  # f0<=500 MHz, Tc up to 1e9 ns
+        ]
+    )
+
+    res = least_squares(
+        residuals_joint_nsMHz,
+        p0,
+        bounds=(lb, ub),
+        args=(T_ns, C, s),
+        max_nfev=20000,
+        verbose=0,
+    )
+
+    C0, A, f0_MHz, Tc_ns, phi0_rad = unpack_params(res.x, N)
+    out = {
+        "success": res.success,
+        "cost": res.cost,
+        "C0": C0,
+        "A": A,
+        "s": s,
+        "f0_MHz": f0_MHz,
+        "Tc_ns": Tc_ns,
+        "phi0_rad": (phi0_rad + np.pi) % (2 * np.pi) - np.pi,
+        "residual_rms": float(np.sqrt(np.mean(res.fun**2))),
+        "nfev": res.nfev,
+    }
     return out
 
-@dataclass
-class PeakSpec:
-    nv_index: int
-    f_peak: float | None   # Hz
-    P_peak: float | None
-    f_top: list            # top-k freqs (Hz)
-    P_top: list            # top-k powers
-    method: str            # 'LS' or 'FFT'
 
-# ---------- core spectrum per NV ----------
-def spectrum_for_nv(T_s, C, C_err=None, fmin=None, fmax=None, oversample=5, topk=3):
-    """
-    T_s: seconds (1D)
-    C: contrast array (1D)
-    C_err: optional errors (used only to weight detrend)
-    returns: freqs (Hz), power, peak info (PeakSpec)
-    """
-    m = np.isfinite(T_s) & np.isfinite(C)
-    T = np.asarray(T_s)[m]; y = np.asarray(C)[m]
-    if C_err is not None:
-        w = 1.0 / (np.asarray(C_err)[m]**2 + 1e-30)
-    else:
-        w = None
+def fit_two_block_pipeline(T_ns, C):
+    s, f0_guess_MHz, phis = phase_cluster_signs(T_ns, C)
+    fit = joint_fit_two_block(T_ns, C, s, f0_guess_MHz, Tc_guess_ns=None)
+    fit["phi_i_est_rad"] = phis
+    return fit
 
-    if T.size < 3:
-        return np.array([]), np.array([]), PeakSpec(-1, None, None, [], [], "NA")
 
-    # detrend/center
-    y0 = detrend(y, w=w)
+# -----------------------------
+# Minimal plotting/QA
+# -----------------------------
 
-    # frequency grid bounds
-    Tspan = T.max() - T.min()
-    if Tspan <= 0:
-        return np.array([]), np.array([]), PeakSpec(-1, None, None, [], [], "NA")
 
-    # min dt for Nyquist-ish limit
-    dT_min = np.min(np.diff(np.sort(T)))
-    # defaults if not provided
-    fmin = 0.0 if fmin is None else max(0.0, float(fmin))
-    # slight guard band below Nyquist
-    fmax_default = 0.5 / dT_min if dT_min > 0 else 1.0 / Tspan
-    fmax = float(fmax_default if fmax is None else fmax)
+def plot_two_block_overlays(T_us, C, fit):
+    C0, A, s = fit["C0"], fit["A"], fit["s"]
+    f0, Tc, phi0 = fit["f0_kHz"], fit["Tc_us"], fit["phi0_rad"]
 
-    # at least a few cycles across span
-    Nf = int(max(256, oversample * len(T)))
-
-    if is_uniform_grid(T):
-        # --- FFT route ---
-        method = "FFT"
-        # sort by time; uniform assumed
-        order = np.argsort(T); T = T[order]; y0 = y0[order]
-        dt = np.median(np.diff(T))
-        # window
-        win = np.hanning(len(y0))
-        y_win = y0 * win
-        nfft = next_pow2(len(y_win) * 4)
-        Y = np.fft.rfft(y_win, n=nfft)
-        freqs = np.fft.rfftfreq(nfft, d=dt)
-        P = (np.abs(Y)**2) / np.sum(win**2)
-        # clip to requested band
-        mband = (freqs >= fmin) & (freqs <= fmax)
-        freqs = freqs[mband]; P = P[mband]
-    else:
-        # --- Lomb–Scargle for uneven T ---
-        if lombscargle is None:
-            raise ImportError("scipy.signal.lombscargle not available. Please install SciPy.")
-        method = "LS"
-        freqs = np.linspace(max(fmin, 1.0/Tspan), fmax, Nf)
-        # scipy’s lombscargle takes angular frequency (rad/s)
-        omega = 2*np.pi*freqs
-        # normalize by variance to make power comparable
-        yvar = np.var(y0) if np.var(y0) > 0 else 1.0
-        P = lombscargle(T, y0, omega, precenter=True, normalize=True) * yvar
-
-    # pick peaks
-    if len(P) == 0:
-        return freqs, P, PeakSpec(-1, None, None, [], [], method)
-
-    # top-k indices
-    idx_sorted = np.argsort(P)[::-1][:max(topk,1)]
-    f_top = freqs[idx_sorted].tolist()
-    P_top = P[idx_sorted].tolist()
-    fpk = f_top[0]; Ppk = P_top[0]
-    return freqs, P, PeakSpec(-1, fpk, Ppk, f_top, P_top, method)
-
-# ---------- batch & plotting ----------
-def run_two_block_spectrum(nv_list, T_axis, norm_counts, norm_counts_ste=None,
-                           time_unit="us", fmin=None, fmax=None,
-                           logx=True, ncols=7, figsize_scale=(2.0,3.0), topk=3):
-    """
-    Computes per-NV spectra and plots a grid of power vs frequency.
-    Returns (peaks_df, all_freqs, all_powers).
-    """
-    T_s, tlabel = to_seconds(T_axis, time_unit=time_unit)
-    nNV = len(nv_list)
-    sns.set(style="whitegrid", palette="deep")
-
-    # collect spectra/peaks
-    all_freqs, all_P, peaks = [], [], []
-    for i in range(nv_list if isinstance(nv_list, int) else len(nv_list)):
-        freqs, P, pk = spectrum_for_nv(T_s, norm_counts[i],
-                                       None if norm_counts_ste is None else norm_counts_ste[i],
-                                       fmin=fmin, fmax=fmax, topk=topk)
-        peaks.append(pk)
-        all_freqs.append(freqs)
-        all_P.append(P)
-
-    # grid plot
-    ncols = int(ncols)
-    nrows = int(np.ceil(nNV / ncols))
-    fig, axes = plt.subplots(
-        nrows, ncols,
-        figsize=(ncols*figsize_scale[0], nrows*figsize_scale[1]),
-        sharex=False, sharey=False, constrained_layout=True,
-        gridspec_kw={"wspace": 0.05, "hspace": 0.05}
+    fig, ax = plt.subplots(figsize=(6, 5))
+    ax.plot(T_us, np.median(C, axis=0), "o", ms=3, label="Median data")
+    model_med = np.median(
+        [
+            c2_block_model(T_us, C0[i], s[i], A[i], f0, Tc, phi0)
+            for i in range(C.shape[0])
+        ],
+        axis=0,
     )
-    axes = axes.flatten() if nrows*ncols>1 else [axes]
-    colors = sns.color_palette("deep", nNV)
+    ax.plot(T_us, model_med, "-", lw=2, label="Median model")
+    ax.set_xlabel("T (µs)")
+    ax.set_ylabel("Correlation C(T)")
+    ax.set_title(f"Joint fit: f0={f0:.2f} kHz, Tc={Tc:.1f} µs, φ0={phi0:.2f} rad")
+    ax.grid(True)
+    ax.legend()
+    plt.tight_layout()
 
-    for i, ax in enumerate(axes):
-        if i >= nNV:
-            ax.axis("off"); continue
-        f = all_freqs[i]; P = all_P[i]
-        if len(f) == 0:
-            ax.text(0.5,0.5,"no data", ha="center", va="center"); continue
-        ax.plot(f/1e6, P, lw=1.2, color=colors[i % len(colors)])
-        if peaks[i].f_peak is not None:
-            ax.axvline(peaks[i].f_peak/1e6, linestyle="--", alpha=0.5, color=colors[i % len(colors)])
-        if logx:
-            ax.set_xscale("log")
-        ax.grid(True, which="both", ls="--", lw=0.5, alpha=0.6)
-        ax.set_title(f"NV {i}", fontsize=9)
-        ax.yaxis.set_major_formatter(FormatStrFormatter("%.2g"))
-        # label bottom row x-axis in MHz
-        row = i // ncols
-        if row == (nrows - 1):
-            ax.set_xlabel("Frequency (MHz)", fontsize=9)
-        ax.tick_params(axis="x", labelsize=8)
-        ax.tick_params(axis="y", labelsize=8)
 
-    fig.text(0.005, 0.5, "Power (arb.)", va="center", rotation="vertical", fontsize=12)
-    fig.suptitle("Two-block correlation spectrum (per NV)", y=1.02)
-    plt.show()
+def plot_phase_hist(phis):
+    phis = (np.array(phis) + np.pi) % (2 * np.pi) - np.pi
+    plt.figure(figsize=(6, 5))
+    plt.hist(phis, bins=24)
+    plt.xlabel("φ_i (rad)")
+    plt.ylabel("count")
+    plt.title("Quick per-NV phase (two peaks near 0 and π)")
+    plt.tight_layout()
 
-    # summary table
-    import pandas as pd
-    rows = []
-    for i, pk in enumerate(peaks):
-        rows.append({
-            "NV": i,
-            "Method": pk.method,
-            "f_peak (Hz)": pk.f_peak,
-            "f_peak (MHz)": None if pk.f_peak is None else pk.f_peak/1e6,
-            "P_peak": pk.P_peak,
-            "Top_k_freqs_MHz": [x/1e6 for x in pk.f_top],
-            "Top_k_powers": pk.P_top
-        })
-    df = pd.DataFrame(rows).sort_values("NV").reset_index(drop=True)
-    with pd.option_context("display.max_columns", None, "display.width", 120):
-        print(df)
-    return df, all_freqs, all_P
 
+def plot_each_nv_fit(T_ns, C, C_ste, fit, pause=0.0, save_dir=None):
+    """
+    Loop over NVs and show a fit overlay per plot with dense tau.
+    """
+    C0, A, s = fit["C0"], fit["A"], fit["s"]
+    f0, Tc, phi0 = fit["f0_MHz"], fit["Tc_ns"], fit["phi0_rad"]
+
+    for i in range(C.shape[0]):
+        Ci = C[i]
+
+        # Make tau dense for smooth curve
+        tau_dense = np.linspace(T_ns.min(), T_ns.max(), 500)  # e.g. 500 points
+        model_i = c2_block_model(tau_dense, C0[i], s[i], A[i], f0, Tc, phi0)
+
+        fig, ax = plt.subplots(figsize=(7, 5))
+
+        # Plot experimental data
+        if C_ste is not None:
+            ax.errorbar(
+                T_ns,
+                Ci,
+                yerr=np.abs(C_ste[i]),
+                fmt="o",
+                ms=4,
+                lw=1,
+                label=f"NV {i} data",
+            )
+        else:
+            ax.plot(T_ns, Ci, "o", ms=4, label=f"NV {i} data")
+
+        # Plot smooth fit curve
+        ax.plot(tau_dense, model_i, "-", lw=2, label="Fit model")
+
+        ax.set_xlabel("T (ns)")
+        ax.set_ylabel("Correlation C(T)")
+        ax.set_title(
+            f"NV {i} | f0={f0:.3f} MHz, Tc={Tc:.1f} ns, φ0={phi0:.2f} rad, s={s[i]:+d}",
+            fontsize=15,
+        )
+        ax.grid(True)
+        ax.legend()
+
+        plt.show(block=True)  # or pause if you want interactive stepping
+
+
+# -----------------------------
+# Main
+# -----------------------------
+
+
+def _auto_to_us(T_axis):
+    """
+    Convert provided time axis to microseconds.
+    Heuristic: if max(T) > 1e4 assume ns; if < 1e3 likely already µs.
+    """
+    T_axis = np.asarray(T_axis, dtype=float)
+    if T_axis.max() > 1e4:  # looks like ns
+        return T_axis / 1e3  # ns -> µs
+    return T_axis  # assume already µs
 
 
 def plot_spin_echo_all(nv_list, taus, norm_counts, norm_counts_ste):
     fig, ax = plt.subplots()
     # Scatter plot with error bars
-    print(norm_counts.shape)
+    # print(norm_counts.shape)
     median_counts = np.median(norm_counts, axis=0)
     median_counts_ste = np.median(norm_counts_ste, axis=0)
     ax.errorbar(
@@ -262,8 +295,27 @@ def plot_spin_echo_all(nv_list, taus, norm_counts, norm_counts_ste):
     ax.set_xlabel("Total Evolution time (us)")
     ax.set_ylabel("Norm. NV- Population")
     ax.grid(True)
-    fig.tight_layout()
     # plt.show(block=True)
+    ### Indivudual NV plots
+    # for nv_idx in range(len(nv_list)):
+    #     nv_tau = taus  # Convert to µs
+    #     nv_counts = norm_counts[nv_idx]
+    #     nv_counts_ste = norm_counts_ste[nv_idx]
+    #     # Plot data and fit on full plot
+    #     fig, ax = plt.subplots()
+    #     ax.errorbar(
+    #         taus,
+    #         median_counts,
+    #         yerr=np.abs(nv_counts_ste),
+    #         fmt="o",
+    #     )
+    #     title = f"NV {nv_idx}"
+    #     ax.set_title(title)
+    #     ax.set_xlabel("Total Evolution time (us)")
+    #     ax.set_ylabel("Norm. NV- Population")
+    #     ax.grid(True)
+    #     plt.show(block=True)
+    # return
 
     sns.set(style="whitegrid", palette="muted")
     num_nvs = len(nv_list)
@@ -349,68 +401,59 @@ if __name__ == "__main__":
     kpl.init_kplotlib()
 
     # Process and analyze data from multiple files
-    file_stems = ["2025_10_15-11_06_09-rubin-nv0_2025_09_08",
-                  "2025_10_15-05_35_19-rubin-nv0_2025_09_08",
-                  ]
+    file_stems = [
+        "2025_10_15-11_06_09-rubin-nv0_2025_09_08",
+        "2025_10_15-05_35_19-rubin-nv0_2025_09_08",
+    ]
+
     try:
         data = widefield.process_multiple_files(file_stems, load_npz=True)
-        # data = dm.get_raw_data(file_stem=file_stem, load_npz=False, use_cache=False)
-        # nv_list = data["nv_list"]
-        # taus = data["lag_taus"]
-        # rabi_feq = data["config"]["Microwaves"]["VirtualSigGens"][str(1)]["uwave_power"]
-        # rabi_period = data["config"]["Microwaves"]["VirtualSigGens"][str(1)][
-        #     "rabi_period"
-        # ]
-        # print(f"rabi freq:{rabi_feq}, rabi period: {rabi_period}")
-        # counts = np.array(data["counts"])
-        # sig_counts, ref_counts = counts[0], counts[1]
-        # norm_counts, norm_counts_ste = widefield.process_counts(
-        #     nv_list, sig_counts, ref_counts, threshold=True
-        # )
-        # norm_counts, norm_counts_ste = widefield.process_counts(
-        #     nv_list, sig_counts, ref_counts, threshold=True
-        # )
-        # fit_fns, popts = fit_spin_echo(
-        #     nv_list, total_evolution_times, norm_counts, norm_counts_ste
-        # )
-        # plot_spin_echo_fits(
-        #     nv_list, total_evolution_times, norm_counts, norm_counts_ste
-        # )
-        # Assuming your loaded structures from widefield.*:
+
         nv_list = data["nv_list"]
-        taus = data["lag_taus"]             # if these are µs, pass time_unit='us' below
+        taus_raw = data["lag_taus"]  # could be ns or µs
+        T_us = _auto_to_us(taus_raw)  # ensure µs for the model
+
         counts = np.array(data["counts"])
         sig_counts, ref_counts = counts[0], counts[1]
 
         norm_counts, norm_counts_ste = widefield.process_counts(
             nv_list, sig_counts, ref_counts, threshold=True
         )
+        norm_counts = np.asarray(norm_counts)  # shape (N, M)
+        norm_counts_ste = np.asarray(norm_counts_ste)  # shape (N, M)
 
-        # Run end-to-end (set time_unit='us' if taus are in microseconds)
-        # df, fit_results = run_two_block_hahn_analysis(
-        #     nv_list=nv_list,
-        #     T_axis=taus,
-        #     norm_counts=norm_counts,
-        #     norm_counts_ste=norm_counts_ste,
-        #     time_unit='us',          # <-- change to 's' if your taus are already in seconds
-        #     logx=False,
-        #     ncols=7,
-        #     title="Two-block Hahn correlation per NV",
-        #     n_jobs=-1,               # parallel
-        # )
+        # --- Optional: select a subset of NVs (ensure indices exist) ---
+        # fmt:off
+        # indices_113_MHz = [1, 3, 6, 10, 14, 16, 17, 19, 23, 24, 25, 26, 27, 32, 33, 34, 35, 37, 38, 41, 49, 50, 51, 53, 54, 55, 60, 62, 63, 64, 66, 67, 68, 70, 72, 73, 74, 75, 76, 78, 80, 81, 82, 83, 84, 86, 88, 90, 92, 93, 95, 96, 99, 100, 101, 102, 103, 105, 108, 109, 111, 113, 114]
+        # indices_217_MHz = [2, 4, 5, 7, 8, 9, 11, 12, 13, 15, 18, 20, 21, 22, 28, 29, 30, 31, 36, 39, 40, 42, 43, 44, 45, 46, 47, 48, 52, 56, 57, 58, 59, 61, 65, 69, 71, 77, 79, 85, 87, 89, 91, 94, 97, 98, 104, 106, 107, 110, 112, 115, 116, 117]
+        # fmt:on
 
-        # after you build nv_list, taus (T), norm_counts, norm_counts_ste:
-        df_spec, freqs_all, P_all = run_two_block_spectrum(
-            nv_list=nv_list,
-            T_axis=taus,
-            norm_counts=norm_counts,
-            norm_counts_ste=norm_counts_ste,
-            time_unit='ns', 
-            fmin=1e5, fmax=2e7,
-            logx=False,
-            ncols=7,
-            topk=3
+        # Keep only in-range indices
+        # N_all = len(nv_list)
+        # sel = [i for i in indices_217_MHz if 0 <= i < N_all]
+        # if len(sel) > 0:
+        #     nv_list = [nv_list[i] for i in sel]
+        #     norm_counts = norm_counts[sel, :]
+        #     norm_counts_ste = norm_counts_ste[sel, :]
+
+        # --- Two-block joint fit ---
+
+        fit = fit_two_block_pipeline(T_us, norm_counts)
+        print(
+            f"[Two-block fit ns/MHz] success={fit['success']}, "
+            f"f0={fit['f0_MHz']:.3f} MHz, Tc={fit['Tc_ns']:.1f} ns, "
+            f"φ0={fit['phi0_rad']:.2f} rad, RMS={fit['residual_rms']:.4g}"
         )
+
+        # Per-NV plots (step through one by one)
+        plot_each_nv_fit(
+            T_us, norm_counts, norm_counts_ste, fit, pause=0.0, save_dir=None
+        )
+
+        # --- Plots ---
+        plot_phase_hist(fit["phi_i_est_rad"])
+        # plot_each_nv_fit(T_us, norm_counts, norm_counts_ste, fit)
+        # plot_two_block_overlays(T_us, C, fit)
         # plot_spin_echo_all(nv_list, taus, norm_counts, norm_counts_ste)
     except Exception as e:
         print(f"Error occurred: {e}")
