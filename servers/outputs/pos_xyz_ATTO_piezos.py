@@ -45,17 +45,18 @@ class PosXyzAttoPiezos(LabradServer):
     def initServer(self):
         tb.configure_logging(self)
         self.task = None
-        config = ensureDeferred(self.get_config())
-        config.addCallback(self.on_get_config)
+        # config = ensureDeferred(self.get_config())
+        # config.addCallback(self.on_get_config)
+        self.get_config()
 
-    async def get_config(self):
-        p = self.client.registry.packet()
-        p.cd(["", "Config", "DeviceIDs"])
-        p.get(f"{self.name}_ip")
-        p.cd(["", "Config", "Positioning"])
-        p.get("cryo_piezos_voltage")
-        p.get("z_bias_adjust")
-
+    def get_config(self):
+        # p = self.client.registry.packet()
+        # p.cd(["", "Config", "DeviceIDs"])
+        # p.get(f"{self.name}_ip")
+        # p.cd(["", "Config", "Positioning"])
+        # p.get("cryo_piezos_voltage")
+        # p.get("z_bias_adjust")
+        
         config = common.get_config_dict()
         ip_address = config["DeviceIDs"][f"{self.name}_ip"]
         cryo_piezos_voltage = config["Positioning"]["cryo_piezos_voltage"]
@@ -148,7 +149,7 @@ class PosXyzAttoPiezos(LabradServer):
         for axis in [1, 2, 3]:
             self.send_cmd(cmd, axis, arg)
 
-    @setting(2, pos_in_steps="i")
+    @setting(2, pos_in_steps="v")
     def write_z(self, c, pos_in_steps):
         """
         Specify the absolute position in steps relative to 0. There will be
@@ -156,9 +157,9 @@ class PosXyzAttoPiezos(LabradServer):
         common and important routines (eg optimize)
         """
 
-        self.write_ax(pos_in_steps, 3)
+        self.write_ax(int(pos_in_steps), 3)
 
-    @setting(3, x_pos_in_steps="i", y_pos_in_steps="i")
+    @setting(3, x_pos_in_steps="v", y_pos_in_steps="v")
     def write_xy(self, c, x_pos_in_steps, y_pos_in_steps):
         """
         Specify the absolute position in steps relative to 0. There will be
@@ -166,8 +167,8 @@ class PosXyzAttoPiezos(LabradServer):
         common and important routines (eg optimize)
         """
 
-        self.write_ax(x_pos_in_steps, 1)
-        self.write_ax(y_pos_in_steps, 2)
+        self.write_ax(int(x_pos_in_steps), 1)
+        self.write_ax(int(y_pos_in_steps), 2)
 
     @setting(4, voltage="i", axes="*i")
     def set_voltage(self, c, voltage, axes=[1, 2, 3]):

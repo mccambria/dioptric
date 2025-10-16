@@ -1230,6 +1230,17 @@ def generate_log_spaced_taus(min_tau, max_tau, num_steps, base=4):
     taus = np.floor(taus / base) * base
     return taus
 
+def generate_divisible_by_4(min_val, max_val, num_steps):
+    step_size = (max_val - min_val) / (num_steps - 1)
+    step_size = round(step_size / 4) * 4  # Ensure step size is divisible by 4
+
+    values = [min_val + i * step_size for i in range(num_steps)]
+
+    # Ensure values stay within bounds
+    values = [x for x in values if x <= max_val]
+
+    return values
+
 
 # Power equation constants for yellow aom
 a, b, c = 161266.751, 6.617, -19.492

@@ -1,11 +1,10 @@
-# -*- coding: utf-8 -*-
+# -*- coding: utf-8 -*-s
 """
-Config file for the PC purcell
+Config file for the PC cryo
 
-Created July 20th, 2023
-@author: mccambria
-@author: sbchand
+Created Oct 7th, 2025
 @author: chemistatcode
+@author: sbchand
 @author: ericvin
 """
 
@@ -34,33 +33,33 @@ thor_galvos = "pos_xy_THOR_gvs212"
 cryo_piezo = "pos_xyz_ATTO_piezos"
 
 
-# NOT updated for cryo yet set-up for galvo
-calibration_coords_pixel = [
-    [13.905, 11.931],
-    [124.563, 242.424],
-    [240.501, 17.871],
-]
-calibration_coords_galvo = [
-    [82.15, 83.705],
-    [75.199, 61.034],
-    [61.32, 79.784],
-]
+# # NOT updated for cryo yet set-up for galvo
+# calibration_coords_pixel = [
+#     [13.905, 11.931],
+#     [124.563, 242.424],
+#     [240.501, 17.871],
+# ]
+# calibration_coords_galvo = [
+#     [82.15, 83.705],
+#     [75.199, 61.034],
+#     [61.32, 79.784],
+# ]
 
 # Create the dictionaries using the provided lists
-calibration_coords_nv1 = {
-    CoordsKey.PIXEL: calibration_coords_pixel[0],
-    thor_galvos: calibration_coords_galvo[0],
-}
+# calibration_coords_nv1 = {
+#     CoordsKey.PIXEL: calibration_coords_pixel[0],
+#     thor_galvos: calibration_coords_galvo[0],
+# }
 
-calibration_coords_nv2 = {
-    CoordsKey.PIXEL: calibration_coords_pixel[1],
-    thor_galvos: calibration_coords_galvo[1],
-}
+# calibration_coords_nv2 = {
+#     CoordsKey.PIXEL: calibration_coords_pixel[1],
+#     thor_galvos: calibration_coords_galvo[1],
+# }
 
-calibration_coords_nv3 = {
-    CoordsKey.PIXEL: calibration_coords_pixel[2],
-    thor_galvos: calibration_coords_galvo[2],
-}
+# calibration_coords_nv3 = {
+#     CoordsKey.PIXEL: calibration_coords_pixel[2],
+#     thor_galvos: calibration_coords_galvo[2],
+# }
 
 pixel_to_sample_affine_transformation_matrix = [
     [0.01476835, -0.00148369, -1.42104908],
@@ -173,7 +172,6 @@ config |= {
     ###
     "Optics": {
         "PhysicalLasers": {
-
             green_laser: {
                 "delay": 0,
                 "mod_mode": ModMode.DIGITAL,
@@ -189,8 +187,8 @@ config |= {
             # LaserKey.IMAGING: {"physical_name": green_laser, "duration": 50e6},
             VirtualLaserKey.IMAGING: {
                 # "physical_name": green_laser,
-                "physical_name": green_laser,
-                "duration": 12e6,
+                "physical_name": green_laser, #this is the laser that appears on the imaging APD scan
+                "duration": 12e6, #this duration appears on the imaging APD scan
             },
 
             VirtualLaserKey.SINGLET_DRIVE: {
@@ -229,25 +227,6 @@ config |= {
     "Positioning": {
         "Positioners": {
             #update with correct piezos for cryo
-            # CoordsKey.SAMPLE: {
-            #     "physical_name": "pos_xyz_PI_p616_3c",
-            #     "control_mode": PosControlMode.STREAM,
-            #     "delay": int(1e6),  # 5 ms for PIFOC xyz
-            #     "nm_per_unit": 1000,
-            #     "optimize_range": 0.09,
-            #     "units": "Voltage (V)",
-            #     "opti_virtual_laser_key": VirtualLaserKey.IMAGING,
-            # },
-            # CoordsKey.Z: {
-            #     "physical_name": "pos_xyz_PI_p616_3c",
-            #     "control_mode": PosControlMode.STREAM,
-            #     "delay": int(1e6),  # 5 ms for PIFOC xyz
-            #     "nm_per_unit": 1000,
-            #     # "optimize_range": 0.09,
-            #     "optimize_range": 0.24,
-            #     "units": "Voltage (V)",
-            #     "opti_virtual_laser_key": VirtualLaserKey.IMAGING,
-            # },
             CoordsKey.SAMPLE: {
                 "physical_name": "pos_xyz_ATTO_piezos",
                 "control_mode": PosControlMode.STREAM,
@@ -262,12 +241,11 @@ config |= {
                 "control_mode": PosControlMode.STREAM,
                 "delay": int(1e6),  # 5 ms for PIFOC xyz
                 "nm_per_unit": 1000,
-                # "optimize_range": 0.09,
-                "optimize_range": 0.24,
+                "optimize_range": 0.09,
                 "units": "Voltage (V)",
                 "opti_virtual_laser_key": VirtualLaserKey.IMAGING,
             },
-            thor_galvos: {
+            CoordsKey.PIXEL: {
                 "physical_name": "pos_xy_THOR_gvs212",
                 "control_mode": PosControlMode.STREAM,
                 "delay": int(400e3),  # 400 us for galvo
@@ -277,12 +255,12 @@ config |= {
                 "opti_virtual_laser_key": VirtualLaserKey.IMAGING,
             },
         },
-        "calibration_coords_nv1": calibration_coords_nv1,
-        "calibration_coords_nv2": calibration_coords_nv2,
-        "calibration_coords_nv3": calibration_coords_nv3,
+        # "calibration_coords_nv1": calibration_coords_nv1,
+        # "calibration_coords_nv2": calibration_coords_nv2,
+        # "calibration_coords_nv3": calibration_coords_nv3,
         "pixel_to_sample_affine_transformation_matrix": pixel_to_sample_affine_transformation_matrix,
-        # "cryo_piezos_voltage": ???,
-        # "z_bias_adjust": ???
+        "cryo_piezos_voltage": 30,
+        "z_bias_adjust": 0.0
     },
     ###
     "Servers": {  # Bucket for miscellaneous servers not otherwise listed above
