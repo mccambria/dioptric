@@ -380,20 +380,21 @@ def calc_T2_times(
         print(f"{round(popt[0])} +/- {round(pste[0])}")
 
 
-def main(nv_list, num_steps, num_reps, num_runs, min_tau=None, max_tau=None, taus=None):
+def main(nv_list, num_steps, num_reps, num_runs, tau, lag_taus=None):
     ### Some initial setup
 
     pulse_gen = tb.get_server_pulse_gen()
-    seq_file = "spin_echo.py"
+    seq_file = "two_block_hahn_correlation.py"
 
     uwave_ind_list = [0, 1]
     # uwave_ind_list = [1]  # iq modulated
 
     ### Collect the data
     def run_fn(shuffled_step_inds):
-        shuffled_taus = [taus[ind] for ind in shuffled_step_inds]
+        shuffled_taus = [lag_taus[ind] for ind in shuffled_step_inds]
         seq_args = [
             widefield.get_base_scc_seq_args(nv_list, uwave_ind_list),
+            tau,
             shuffled_taus,
         ]
         # print(seq_args)
@@ -416,9 +417,8 @@ def main(nv_list, num_steps, num_reps, num_runs, min_tau=None, max_tau=None, tau
     raw_data |= {
         "timestamp": timestamp,
         "tau-units": "ns",
-        "taus": taus,
-        "min_tau": min_tau,
-        "max_tau": max_tau,
+        "lag_taus": lag_taus,
+        "tau": tau,
     }
 
     # save data

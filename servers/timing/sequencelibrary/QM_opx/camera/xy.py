@@ -25,7 +25,7 @@ def get_seq(base_scc_seq_args, step_vals, xy_seq, num_reps=1):
     buffer = seq_utils.get_widefield_operation_buffer()
     uwave_ind_list = base_scc_seq_args[-1]
     # macro_pi_pulse_duration = seq_utils.get_macro_pi_pulse_duration(uwave_ind_list)
-    macro_pi_pulse_duration = seq_utils.convert_ns_to_cc(104)
+    macro_pi_pulse_duration = seq_utils.convert_ns_to_cc(88)
     # Adjust step values to compensate for internal delays
     step_vals = [
         seq_utils.convert_ns_to_cc(el) - macro_pi_pulse_duration for el in step_vals
@@ -83,7 +83,7 @@ if __name__ == "__main__":
     config = config_module.config
     opx_config = config_module.opx_config
     tb.set_delays_to_zero(opx_config)
-    opx_config["pulses"]["yellow_spin_pol"]["length"] = 10e3
+    opx_config["pulses"]["yellow_spin_pol"]["length"] = 2e3
 
     qm_opx_args = config["DeviceIDs"]["QM_opx_args"]
     qmm = QuantumMachinesManager(**qm_opx_args)
@@ -99,7 +99,7 @@ if __name__ == "__main__":
                 [88, 80],
                 [1.0, 1.0],
                 [False, False],
-                [1],
+                [0, 1],
             ],
             [
                 200,

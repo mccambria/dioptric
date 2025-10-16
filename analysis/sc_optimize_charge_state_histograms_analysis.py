@@ -786,15 +786,14 @@ def process_and_plot_charge(raw_data):
     readout_fidelity = results[:, :, 0]
     ### **Perform Fitting**
     opti_durs, opti_fidelities = [], []
-
     # --- Saturation models (with offset) ---
     def sat_decay_fit_fn(t, F0, A, t0, tau_r, tau_d):
         t = np.asarray(t, dtype=float)
         x = np.maximum(t - t0, 0.0)  # gate before t0
         tau_r = np.maximum(tau_r, 1e-12)
         tau_d = np.maximum(tau_d, 1e-12)
-        # return F0 + A * (1.0 - np.exp(-x / tau_r)) * np.exp(-x / tau_d)
-        return A * (1.0 - np.exp(-x / tau_r)) * np.exp(-x / tau_d)
+        return F0 + A * (1.0 - np.exp(-x / tau_r)) * np.exp(-x / tau_d)
+        # return A * (1.0 - np.exp(-x / tau_r)) * np.exp(-x / tau_d)
 
     def sat_decay_x_peak(tau_r, tau_d):
         tau_r = max(float(tau_r), 1e-12)
@@ -891,54 +890,7 @@ def process_and_plot_charge(raw_data):
         plt.ylim(0, 1)
         plt.grid(True, alpha=0.3)
         plt.legend()
-        plt.tight_layout()
-        plt.show(block=True)
-        # plt.figure(figsize=(6, 5))
-        # plt.scatter(x_fit, r_fit, label="Readout Fidelity", alpha=0.6)
-        # plt.scatter(x_fit, y_fit, label="Prep Fidelity", alpha=0.8)
-        # plt.plot(duration_linspace, y_curve, label=f"Fit ({model_used})")
-        # plt.axvline(
-        #     opti_dur, color="green", linestyle="--", label=f"t₉₅ ≈ {opti_dur:.0f} ns"
-        # )
-        # plt.scatter([opti_dur], [opti_fid], color="green", zorder=5)
-        # plt.xlabel("Polarization Duration (ns)")
-        # plt.ylabel("Fidelity")
-        # plt.title(f"NV #{nv_ind}")
-        # plt.ylim(0, 1)
-        # plt.grid(True, alpha=0.3)
-        # plt.legend()
-        # plt.tight_layout()
         # plt.show(block=True)
-        # # Plot results
-        # plt.figure()
-        # plt.scatter(
-        #     x_fit,
-        #     y_fit,
-        #     label="Measured Fidelity",
-        #     color="blue",
-        # )
-        # plt.plot(duration_linspace, fitted_curve, label="Fitted Curve", color="red")
-        # plt.axvline(
-        #     opti_dur,
-        #     color="green",
-        #     linestyle="--",
-        #     label=f"Opt. Duration: {opti_dur:.1f} ns",
-        # )
-        # plt.xlabel("Polarization Duration (ns)")
-        # plt.ylabel("Preparation Fidelity")
-        # plt.title(f"NV Num: {nv_ind}")
-        # plt.legend()
-        # plt.show(block=True)
-        plt.show(block=True)
-
-        # print(
-        #     f"NV {nv_ind} - Optimal Duration: {opti_dur:.1f} ns, Optimal Fidelity: {opti_fidelity}"
-        # )
-
-        # except RuntimeError:
-        #     print(f"Skipping NV {nv_ind}: Curve fitting failed.")
-        #     opti_durs.append(None)
-        #     opti_fidelities.append(None)
 
     if opti_durs:
         print("Optimal Polarization Durations:", opti_durs)
@@ -949,7 +901,7 @@ def process_and_plot_charge(raw_data):
         # Replace None or out-of-range values with median
         opti_durs = [
             median_duration
-            if (d is None or (100 <= d <= 200) or (1500 <= d <= 2000))
+            if (d is None or (100 <= d <= 200) or (1930 <= d <= 2000))
             else d
             for d in opti_durs
         ]
@@ -1062,7 +1014,7 @@ if __name__ == "__main__":
     # file_id = "2025_09_28-04_31_09-rubin-nv0_2025_09_08"
     # file_id = "2025_09_28-22_59_27-rubin-nv0_2025_09_08"
     # file_id = "2025_10_01-17_07_50-rubin-nv0_2025_09_08"
-    file_id = "2025_10_08-16_29_56-rubin-nv0_2025_09_08"
+    # file_id = "2025_10_08-19_20_50-rubin-nv0_2025_09_08"
     
 
     ### pol amp var
@@ -1086,15 +1038,16 @@ if __name__ == "__main__":
     # file_id = "2025_09_23-19_06_00-rubin-nv0_2025_09_08"
     # file_id = "2025_09_28-00_14_24-rubin-nv0_2025_09_08"
     # file_id = "2025_09_28-22_59_27-rubin-nv0_2025_09_08"
+    file_id = "2025_10_09-01_46_34-rubin-nv0_2025_09_08"
+    
 
     # dm.USE_NEW_CLOUD = False
     raw_data = dm.get_raw_data(file_stem=file_id, load_npz=True)
     # file_name = dm.get_file_name(file_id=file_id)
     # print(f"{file_name}_{file_id}")
-    process_and_plot(raw_data)
+    # process_and_plot(raw_data)
     # process_and_plot(raw_data)
     # process_and_plot_green(raw_data)
-    # process_and_plot_charge(raw_data)
-    # process_and_plot_charge(raw_data)
+    process_and_plot_charge(raw_data)
     # print(dm.get_file_name(1717056176426))
     plt.show(block=True)

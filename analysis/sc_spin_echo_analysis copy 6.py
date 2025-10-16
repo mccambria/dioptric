@@ -431,7 +431,7 @@ def plot_spin_echo_all(nv_list, taus, norm_counts, norm_counts_ste):
     fig, axes = plt.subplots(
         num_rows,
         num_cols,
-        figsize=(num_cols * 1.5, num_rows * 3),
+        figsize=(num_cols * 2, num_rows * 3),
         sharex=True,
         sharey=False,
         constrained_layout=True,
@@ -454,7 +454,7 @@ def plot_spin_echo_all(nv_list, taus, norm_counts, norm_counts_ste):
             color=colors[nv_idx % len(colors)],
             lw=0,
             marker="o",
-            markersize=4,
+            markersize=3,
             # label=f"NV {nv_idx}",
         )
         ax.errorbar(
@@ -462,6 +462,7 @@ def plot_spin_echo_all(nv_list, taus, norm_counts, norm_counts_ste):
             norm_counts[nv_idx],
             yerr=abs(norm_counts_ste[nv_idx]),
             fmt="none",
+            lw=1.5,
             ecolor=colors[nv_idx % len(colors)],
             alpha=0.9,
         )
@@ -554,8 +555,16 @@ if __name__ == "__main__":
     # )
     # print(f"File path: {file_path}")
     # Process and analyze data from multiple files
+    file_stems = ["2025_10_10-11_29_40-rubin-nv0_2025_09_08",
+                  "2025_10_10-08_55_59-rubin-nv0_2025_09_08",
+                  "2025_10_10-06_28_12-rubin-nv0_2025_09_08",
+                  "2025_10_10-03_59_48-rubin-nv0_2025_09_08",
+                  "2025_10_10-01_31_59-rubin-nv0_2025_09_08",
+                  "2025_10_09-23_03_41-rubin-nv0_2025_09_08",
+                  "2025_10_10-14_23_58-rubin-nv0_2025_09_08",
+                  "2025_10_10-17_04_27-rubin-nv0_2025_09_08"]
     try:
-        data = widefield.process_multiple_files(file_ids)
+        data = widefield.process_multiple_files(file_stems, load_npz=True)
         # data = widefield.process_multiple_files(file_stems)
         # data = dm.get_raw_data(file_stem=file_stem, load_npz=False, use_cache=False)
 
@@ -566,7 +575,7 @@ if __name__ == "__main__":
             "rabi_period"
         ]
         print(f"rabi freq:{rabi_feq}, rabi period: {rabi_period}")
-        total_evolution_times = 2 * 4 * np.array(taus) / 1e3
+        total_evolution_times = 2 * np.array(taus) / 1e3
         counts = np.array(data["counts"])
         sig_counts, ref_counts = counts[0], counts[1]
         norm_counts, norm_counts_ste = widefield.process_counts(

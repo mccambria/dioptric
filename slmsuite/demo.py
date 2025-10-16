@@ -176,10 +176,11 @@ if len(pixel_coords_list) >= 3:
     # New pixel coordinate for which we want to find the corresponding red coordinate
     new_pixel_coord = np.array(
         [
-        [108.423, 107.089],
-        [119.578, 121.461],
-        [109.909, 94.062],
-        [93.814, 118.209],
+            [108.326, 107.2],
+            [119.451, 121.595],
+            [106.759, 93.57],
+            [93.74, 118.298],
+
         ],
         dtype=np.float32,
     )
@@ -218,10 +219,10 @@ else:
     # New pixel coordinates to transform
     new_pixel_coord = np.array(
         [
-            [120.137, 121.811],
-            [133.937, 91.407],
-            [76.778, 140.585],
-            [160.878, 169.528],
+            [108.368, 107.114],
+            [119.483, 121.535],
+            [106.762, 93.524],
+            [93.748, 118.277],
         ],
         dtype=np.float32,
     )
@@ -244,7 +245,7 @@ else:
     #     [42.749, 125.763], pixel_coords_list, red_coords_list
     # )
     # print("Corresponding red coordinates:", new_red_coord)
-sys.exit()
+# sys.exit()
 
 min_tau = 200  # ns
 max_tau = 100e3  # fallback if no revival_period given
@@ -282,14 +283,13 @@ def generate_divisible_by_4(min_val, max_val, num_steps):
 
 
 # Example Usage
-min_duration = 200
-max_duration = 10000
+min_duration = 16
+max_duration = 2000
 num_steps = 25
 
 step_values = generate_divisible_by_4(min_duration, max_duration, num_steps)
 print(step_values)
 print(len(step_values))
-
 
 def logspace_div4(min_val, max_val, num_steps, base=10.0):
     if not (min_val > 0 and max_val > min_val and num_steps >= 2):
@@ -318,7 +318,8 @@ def logspace_div4(min_val, max_val, num_steps, base=10.0):
 
 
 # Example
-print(logspace_div4(100, 10000, 25))
+print(logspace_div4(16, 2000, 25))
+sys.exit()
 
 # sys.exit()
 # Updating plot with center frequencies in the legend

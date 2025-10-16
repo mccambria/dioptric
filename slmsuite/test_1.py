@@ -1,7 +1,137 @@
+import sys
 import numpy as np
 from matplotlib import pyplot as plt
 
 from utils import kplotlib as kpl
+
+def xy8_tau_grid(B_gauss=47.5,   # sets T_L
+                 center_harmonics=(1,),  # (1,) or (1,3) to include 3rd
+                 win_us=0.8,     # half-window for dense scan around each center
+                 fine_step_us=0.1,
+                 coarse_extra=False, coarse_margin_us=3.0, coarse_step_us=0.5,
+                 clock_ns=4):    # snap to your OPX clock (4 ns typical)
+    # 13C Larmor and period
+    gamma_c13_MHz_per_T = 10.705
+    TL_us = 1.0 / (gamma_c13_MHz_per_T * (B_gauss*1e-4)) * 1e6  # µs
+
+    centers = []
+    for k in center_harmonics:
+        centers.append((2*k-1)*TL_us/2.0)  # τ centers at (2k-1) TL/2
+
+    taus = []
+    for c in centers:
+        # dense window around each center
+        dense = np.arange(c - win_us, c + win_us + 1e-9, fine_step_us)
+        taus.extend(dense.tolist())
+
+        # optional coarse flanks to see baseline shape
+        if coarse_extra:
+            left  = np.arange(max(0.2, c - coarse_margin_us - win_us), c - win_us,  coarse_step_us)
+            right = np.arange(c + win_us, c + win_us + coarse_margin_us + 1e-9, coarse_step_us)
+            taus.extend(left.tolist()); taus.extend(right.tolist())
+
+    # snap to clock and clean up
+    taus_ns = [round(tau_us*1e3/clock_ns)*clock_ns for tau_us in taus]  # to ns, snap
+    taus_us = sorted(set([t/1e3 for t in taus_ns]))  # back to µs, unique & sorted
+    return taus_us, TL_us
+
+sys.exit()
+def xy8_tau_grid(B_gauss=47.5,   # sets T_L
+                 center_harmonics=(1,),  # (1,) or (1,3) to include 3rd
+                 win_us=0.8,     # half-window for dense scan around each center
+                 fine_step_us=0.1,
+                 coarse_extra=False, coarse_margin_us=3.0, coarse_step_us=0.5,
+                 clock_ns=4):    # snap to your OPX clock (4 ns typical)
+    # 13C Larmor and period
+    gamma_c13_MHz_per_T = 10.705
+    TL_us = 1.0 / (gamma_c13_MHz_per_T * (B_gauss*1e-4)) * 1e6  # µs
+
+    centers = []
+    for k in center_harmonics:
+        centers.append((2*k-1)*TL_us/2.0)  # τ centers at (2k-1) TL/2
+
+    taus = []
+    for c in centers:
+        # dense window around each center
+        dense = np.arange(c - win_us, c + win_us + 1e-9, fine_step_us)
+        taus.extend(dense.tolist())
+
+        # optional coarse flanks to see baseline shape
+        if coarse_extra:
+            left  = np.arange(max(0.2, c - coarse_margin_us - win_us), c - win_us,  coarse_step_us)
+            right = np.arange(c + win_us, c + win_us + coarse_margin_us + 1e-9, coarse_step_us)
+            taus.extend(left.tolist()); taus.extend(right.tolist())
+
+    # snap to clock and clean up
+    taus_ns = [round(tau_us*1e3/clock_ns)*clock_ns for tau_us in taus]  # to ns, snap
+    taus_us = sorted(set([t/1e3 for t in taus_ns]))  # back to µs, unique & sorted
+    return taus_us, TL_us
+
+taus_us, TL_us = xy8_tau_grid(B_gauss=47.5, center_harmonics=(1,), win_us=0.8, fine_step_us=0.1)
+plt.figure(figsize=(10,4))
+plt.plot(taus_us, np.zeros_like(taus_us), 'o', label='First pass')
+# plt.plot(taus_refine, np.ones_like(taus_refine)*0.2, 's', label='Refine')
+# for k, c in centers.items():
+#     plt.axvline(c, linestyle='--', color='r', alpha=0.6,
+#                 label=f'Dip center (harmonic {k})')
+plt.xlabel(r'$\tau$ (µs)')
+plt.yticks([])
+plt.legend(frameon=False)
+# plt.title(f'Tau grids for XY8 around {list(centers.values())[0]:.2f} µs at 47.5 G')
+plt.tight_layout()
+plt.show()
+
+print(f"T_L ≈ {TL_us:.2f} µs; first-dip center ≈ {TL_us/2:.2f} µs")
+# -> feed 'taus_us' into your XY8 measurement loop (instead of spin echo taus)
+
+import numpy as np
+import matplotlib.pyplot as plt
+
+# Reuse the function from earlier but inline for plotting taus
+def xy8_tau_grids(B_gauss=47.5,
+                  first_pass_halfwin_us=3.0, first_pass_step_us=0.2,
+                  refine_halfwin_us=0.4, refine_step_us=0.05,
+                  center_harmonics=(1,), clock_ns=4):
+    gamma_c13_MHz_per_T = 10.705
+    TL_us = 1.0 / (gamma_c13_MHz_per_T * (B_gauss * 1e-4)) * 1e6
+    centers_us = {k: (2*k - 1) * TL_us / 2.0 for k in center_harmonics}
+    def _snap_list(us_list):
+        ns_list = [round(us * 1e3 / clock_ns) * clock_ns for us in us_list]
+        return sorted(set([ns/1e3 for ns in ns_list]))
+    taus_first, taus_refine = [], []
+    for k, c in centers_us.items():
+        taus_first.extend(np.arange(c-first_pass_halfwin_us,
+                                    c+first_pass_halfwin_us+1e-12,
+                                    first_pass_step_us).tolist())
+        taus_refine.extend(np.arange(c-refine_halfwin_us,
+                                     c+refine_halfwin_us+1e-12,
+                                     refine_step_us).tolist())
+    return centers_us, _snap_list(taus_first), _snap_list(taus_refine)
+
+# Example for 47.5 G, first dip
+centers, taus_first, taus_refine = xy8_tau_grids(B_gauss=47.5)
+
+print(taus_first, taus_refine)
+plt.figure(figsize=(10,4))
+plt.plot(taus_first, np.zeros_like(taus_first), 'o', label='First pass')
+plt.plot(taus_refine, np.ones_like(taus_refine)*0.2, 's', label='Refine')
+for k, c in centers.items():
+    plt.axvline(c, linestyle='--', color='r', alpha=0.6,
+                label=f'Dip center (harmonic {k})')
+plt.xlabel(r'$\tau$ (µs)')
+plt.yticks([])
+plt.legend(frameon=False)
+plt.title(f'Tau grids for XY8 around {list(centers.values())[0]:.2f} µs at 47.5 G')
+plt.tight_layout()
+plt.show()
+
+sys.exit()
+
+
+
+
+
+
 
 # fmt: off
 snr_list_1_string = ['0.321', '0.037', '0.030', '0.158', '0.081', '0.014', '0.129', '0.158', '0.092', '0.007', '0.053', '0.025', '0.022', '0.057', '0.102', '0.006', '0.048', '0.030', '0.078', '0.086', '0.053', '0.019', '0.070', '0.010', '0.019', '0.085', '0.105', '0.055', '0.028', '0.026', '0.071', '0.068', '0.023', '0.041', '0.014', '0.007', '0.083', '0.016', '0.118', '-0.005', '-0.001', '-0.002', '0.073', '0.104', '0.004', '-0.009', '0.027', '0.036', '0.020', '0.012', '0.045', '0.088', '0.084', '0.037', '0.018', '0.011', '0.064', '0.005', '0.019', '0.018', '0.004', '0.069', '0.096', '0.072', '0.069', '0.122', '0.012', '0.014', '0.015', '0.009', '0.013', '0.011', '0.004', '0.065', '0.086', '0.056', '0.054', '0.077', '0.021', '0.110', '0.015', '0.038', '0.013', '0.068', '0.114', '0.007', '0.065', '0.010', '0.068', '0.019', '0.026', '0.088', '0.023', '0.035', '0.028', '0.083', '0.092', '0.018', '0.022', '0.089', '-0.002', '0.089', '0.091', '0.010', '0.021', '0.082', '-0.006', '0.081', '0.004', '0.070', '0.096', '0.015', '0.070', '0.015', '0.017', '-0.007', '0.021', '0.068', '0.060', '0.067', '0.010', '0.060', '0.017', '0.014', '0.013', '0.008', '0.015', '0.083', '0.088', '0.012', '0.024', '0.007', '0.028', '0.021', '0.016', '0.010', '0.117', '-0.010', '0.019', '0.079', '0.071', '0.107', '0.016', '0.062', '0.009', '0.084', '0.106', '0.040']

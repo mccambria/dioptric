@@ -108,6 +108,7 @@ if __name__ == "__main__":
     config_module = common.get_config_module()
     config = config_module.config
     opx_config = config_module.opx_config
+    opx_config["pulses"]["yellow_spin_pol"]["length"] = 10e3
 
     qm_opx_args = config["DeviceIDs"]["QM_opx_args"]
     qmm = QuantumMachinesManager(**qm_opx_args)
@@ -128,7 +129,7 @@ if __name__ == "__main__":
             5,
         )
 
-        sim_config = SimulationConfig(duration=int(300e3 / 4))
+        sim_config = SimulationConfig(duration=int(200e3 / 4))
         sim = opx.simulate(seq, sim_config)
         samples = sim.get_simulated_samples()
         samples.con1.plot()

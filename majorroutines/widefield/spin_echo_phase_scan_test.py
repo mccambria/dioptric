@@ -93,7 +93,8 @@ def create_fit_figure(nv_list, phis, norm_counts, norm_counts_ste):
 
     ax_all.set_xlabel("Phase (degrees)")
     ax_all.set_ylabel("Normalized Counts")
-    ax_all.set_title(r"Cosine Fits ($\frac{\pi}{2}_x$ - xy8 – $\frac{\pi}{2}_\phi$)")
+    # ax_all.set_title(r"Cosine Fits ($\frac{\pi}{2}_x$ - xy8 – $\frac{\pi}{2}_\phi$)")
+    ax_all.set_title(r"Cosine Fits")
     ax_all.grid(True)
     ax_all.spines["right"].set_visible(False)
     ax_all.spines["top"].set_visible(False)
@@ -122,10 +123,12 @@ def create_fit_figure(nv_list, phis, norm_counts, norm_counts_ste):
         phi_fit = np.linspace(min(phis), max(phis), 200)
         ax_median.plot(phi_fit, cos_func(phi_fit, *popt_median), label="Fit")
         # ax_median.set_title(f"Median Fit  : phase offset ≈ {popt_median[1]:.1f}°")
-        # ax_median.set_title(f"Median Fit Pi/2x-pix-pi/2 (phi)")
         ax_median.set_title(
-            r"Median Fit: $\frac{\pi}{2}_x$ - xy8 – $\frac{\pi}{2}_\phi$"
+            r"Median Fringe: $\pi/2_x$ – $\pi_x$ – $\pi/2_\phi$"
         )
+        # ax_median.set_title(
+        #     r"Median Fringe: $\pi/2_x$ – XY8 – $\pi/2_\phi$"
+        # )
 
     ax_median.set_xlabel("Phase, $\phi$ (degrees)")
     ax_median.set_ylabel("Median Normalized Counts")
@@ -152,14 +155,10 @@ def create_fit_figure(nv_list, phis, norm_counts, norm_counts_ste):
         ax.grid(True)
         ax.spines["right"].set_visible(False)
         ax.spines["top"].set_visible(False)
-    fig_params.suptitle(
-        r"Fitted Parameters: $\frac{\pi}{2}_x$ - xy8 – $\frac{\pi}{2}_\phi$"
-    )
+    # fig_params.suptitle(
+    #     r"Fitted Parameters: $\frac{\pi}{2}_x$ - xy8 – $\frac{\pi}{2}_\phi$"
+    # )
     plt.tight_layout()
-    # import ace_tools as tools
-
-    # tools.display_dataframe_to_user(name="Fitted NV Parameters", dataframe=fit_df)
-
     plt.show()
 
 
@@ -255,18 +254,19 @@ def create_fit_figure(nv_list, phis, norm_counts, norm_counts_ste):
 #     # plt.show()
 
 
-def main(nv_list, num_steps, num_reps, num_runs, phi_list, uwave_ind_list):
+def main(nv_list, num_steps, num_reps, num_runs, phi_list, evol_time, uwave_ind_list):
     ### Some initial setup
     pulse_gen = tb.get_server_pulse_gen()
     seq_file = "spin_echo_phase_scan.py"
-
+    
     ### Collect the data
 
     def run_fn(shuffled_step_inds):
-        shuffled_taus = [phi_list[ind] for ind in shuffled_step_inds]
+        step_vals = [phi_list[ind] for ind in shuffled_step_inds]
         seq_args = [
             widefield.get_base_scc_seq_args(nv_list, uwave_ind_list),
-            shuffled_taus,
+            step_vals,
+            evol_time,
         ]
         # print(seq_args)
         seq_args_string = tb.encode_seq_args(seq_args)
@@ -289,6 +289,8 @@ def main(nv_list, num_steps, num_reps, num_runs, phi_list, uwave_ind_list):
         "timestamp": timestamp,
         "phis": phi_list,
         "phi-units": "radian",
+        "evol_time": evol_time,
+        "evol_time-unit": "ns",
     }
 
     repr_nv_sig = widefield.get_repr_nv_sig(nv_list)
@@ -335,8 +337,11 @@ if __name__ == "__main__":
         # file_stem="2025_04_04-17_38_13-rubin-nv0_2025_02_26", #spin echo old
         # file_stem="2025_04_29-21_46_40-rubin-nv0_2025_02_26",  # spin echo
         # file_stem="2025_04_30-00_36_54-rubin-nv0_2025_02_26",  # ramsey
-        file_stem="2025_04_30-12_43_15-rubin-nv0_2025_02_26",  # xy8
-        load_npz=False,
+        # file_stem="2025_04_30-12_43_15-rubin-nv0_2025_02_26",  # xy8
+        # file_stem="2025_10_10-21_51_14-rubin-nv0_2025_09_08",  # xy8
+        file_stem="2025_10_11-00_03_47-rubin-nv0_2025_09_08",  # spin echo
+        # file_stem="2025_10_13-14_00_31-rubin-nv0_2025_09_08",  # xy8
+        load_npz=True,
         use_cache=True,
     )
     nv_list = data["nv_list"]
@@ -351,13 +356,13 @@ if __name__ == "__main__":
     ref_counts = counts[1]
 
     norm_counts, norm_counts_ste = widefield.process_counts(
-        nv_list, sig_counts, ref_counts, threshold=False
+        nv_list, sig_counts, ref_counts, threshold=True
     )
-    # file_name = dm.get_file_name(file_id=file_id)
-    # print(f"{file_name}_{file_id}")
     num_nvs = len(nv_list)
     phi_step = phis[1] - phis[0]
     num_steps = len(phis)
     fit_fig = create_fit_figure(nv_list, phis, norm_counts, norm_counts_ste)
 
+
+    
     kpl.show(block=True)

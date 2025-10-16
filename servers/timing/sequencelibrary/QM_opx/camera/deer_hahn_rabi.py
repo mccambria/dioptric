@@ -1,10 +1,10 @@
+# -*- coding: utf-8 -*-
 """
 Widefield ESR
 
-Created on October 13th, 2023
+Created on October 3th, 2025
 
-@author: mccambria
-@author: sbchand
+@author: schand
 """
 
 import time
@@ -20,25 +20,39 @@ from servers.timing.sequencelibrary.QM_opx import seq_utils
 from servers.timing.sequencelibrary.QM_opx.camera import base_scc_sequence
 
 
-def get_seq(base_scc_seq_args, step_vals, num_reps=1):
+def get_seq(
+    base_scc_seq_args,
+    step_vals,
+    num_reps=1,
+):
+    buffer = seq_utils.get_widefield_operation_buffer()
     step_vals = [seq_utils.convert_ns_to_cc(el) for el in step_vals]
-
+    revival = 19.6e3 # in ns
+    revival_val = seq_utils.convert_ns_to_cc(revival)
     with qua.program() as seq:
         seq_utils.init()
         seq_utils.macro_run_aods()
         step_val = qua.declare(int)
-
-        def uwave_macro_sig(uwave_ind_list, step_val):
-            # seq_utils.macro_pi_pulse(uwave_ind_list, duration_cc=step_val, phase=0)
-            seq_utils.macro_pi_pulse(uwave_ind_list, duration_cc=step_val)
+        def uwave_macro(uwave_ind_list, step_val):
+            MW_NV = [uwave_ind_list[1]]  # NV microwave chain (~2.87 GHz)
+            RF = [uwave_ind_list[0]]  # RF chain (~133 MHz)
+            qua.align()
+            seq_utils.macro_pi_on_2_pulse(MW_NV, phase=0)
+            qua.wait(revival_val)
+            seq_utils.macro_pi_pulse(RF,  duration_cc=step_val, phase=0)
+            seq_utils.macro_pi_pulse(MW_NV, phase=0)
+            qua.wait(revival_val)
+            seq_utils.macro_pi_on_2_pulse(MW_NV, phase=0)
+            qua.wait(buffer)
 
         with qua.for_each_(step_val, step_vals):
             base_scc_sequence.macro(
                 base_scc_seq_args,
-                [uwave_macro_sig],
+                uwave_macro,
                 step_val,
-                num_reps,
+                num_reps=num_reps,
             )
+
     seq_ret_vals = []
     return seq, seq_ret_vals
 
@@ -47,7 +61,7 @@ if __name__ == "__main__":
     config_module = common.get_config_module()
     config = config_module.config
     opx_config = config_module.opx_config
-    opx_config["pulses"]["yellow_spin_pol"]["length"] = 10e3
+    opx_config["pulses"]["yellow_spin_pol"]["length"] = 1e3
     tb.set_delays_to_zero(opx_config)
 
     qm_opx_args = config["DeviceIDs"]["QM_opx_args"]
@@ -79,7 +93,7 @@ if __name__ == "__main__":
             1,
         )
 
-        sim_config = SimulationConfig(duration=int(100e3 / 4))
+        sim_config = SimulationConfig(duration=int(200e3/4))
         sim = opx.simulate(seq, sim_config)
         samples = sim.get_simulated_samples()
         samples.con1.plot()
