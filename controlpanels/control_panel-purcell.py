@@ -766,11 +766,15 @@ def do_spin_echo(nv_list):
 def do_two_block_hahn_correlation(nv_list):
     tau = 200
     # lag_taus = [16, 24, 40, 64, 100, 160, 250, 400, 640, 1000, 1500, 2000]
-    lag_taus = [16, 40, 64, 88, 108, 132, 156, 180, 208, 236, 272, 316, 364, 424, 488, 568, 640, 740, 856, 988, 1144, 1292, 1496, 1728, 2000] 
+    # lag_taus = [16, 40, 64, 88, 108, 132, 156, 180, 208, 236, 272, 316, 364, 424, 488, 568, 640, 740, 856, 988, 1144, 1292, 1496, 1728, 2000] 
+    lag_taus = widefield.generate_divisible_by_4(16, 1500, 45)
+    # print(lag_taus)
+    # sys.exit()
     num_steps = len(lag_taus)
     num_reps = 4
-    num_runs = 300
-    two_block_hahn_correlation.main(nv_list, num_steps, num_reps, num_runs, tau, lag_taus)
+    num_runs = 600
+    for _ in range(2):
+        two_block_hahn_correlation.main(nv_list, num_steps, num_reps, num_runs, tau, lag_taus)
 
 def do_spin_echo_1(nv_lis):
     min_tau = 200  # ns
@@ -1567,7 +1571,7 @@ if __name__ == "__main__":
         # do_rabi(nv_list)
         # do_power_rabi(nv_list)
         # do_resonance(nv_list)
-        do_deer_hahn(nv_list)
+        # do_deer_hahn(nv_list)
         # do_deer_hahn_rabi(nv_list)
         # do_resonance_zoom(nv_list)
         # do_spin_echo(nv_list)
@@ -1576,7 +1580,7 @@ if __name__ == "__main__":
 
         # do_simple_correlation_test(nv_list)
         # do_T2_correlation_test(nv_list)
-        # do_two_block_hahn_correlation(nv_list)
+        do_two_block_hahn_correlation(nv_list)
         # do_resonance(nv_list)
         # do_sq_relaxation(nv_list)
         # do_dq_relaxation(nv_list)
