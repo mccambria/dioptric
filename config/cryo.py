@@ -245,7 +245,7 @@ config |= {
                 "units": "Voltage (V)",
                 "opti_virtual_laser_key": VirtualLaserKey.IMAGING,
             },
-            thor_galvos: {
+            CoordsKey.PIXEL: {
                 "physical_name": "pos_xy_THOR_gvs212",
                 "control_mode": PosControlMode.STREAM,
                 "delay": int(400e3),  # 400 us for galvo
