@@ -405,15 +405,14 @@ if __name__ == "__main__":
     # fmt: on
 
     # coords: SAMPLE (piezo) xyz; add GALVO/PIXEL later if you have them
-    # Build the NV (your snippet is fine)
-    sample_xyz = [0.0, 0.0] # piezo XY
+    sample_xy = [0.0, 0.0] # piezo XY
     coord_z = 0.0  # piezo z
     pixel_xy = [0.0, 0.0]  # galvo ref
 
     nv_sig = NVSig(
         name=f"{sample_name}-2025_10_09",
         coords={
-            CoordsKey.SAMPLE: sample_xyz,
+            CoordsKey.SAMPLE: sample_xy,
             CoordsKey.Z: coord_z,
             CoordsKey.PIXEL: pixel_xy,
         },
