@@ -1423,7 +1423,7 @@ if __name__ == "__main__":
         # z_range = np.linspace(2.0, 3.0, 15)
         # for z in z_range:
         #     nv_sig.coords[CoordsKey.Z] = z
-        #     do_scanning_image_sample(nv_sig)
+            do_scanning_image_sample(nv_sig)
         # x_range = np.linspace(-2.0, 6.0, 6)
         # y_range = np.linspace(-2.0, 6.0, 6)
         # # --- Step 1: Start at (0, 0) ---

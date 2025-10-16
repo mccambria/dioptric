@@ -41,7 +41,6 @@ from utils.constants import (
     VirtualLaserKey, CoordsKey, CountFormat, PosControlMode, NVSig
 )
 
-
 SEQ_FILE_SEQUENCE_SCAN = "simple_readout_laser_free_test.py"  # expects [0, readout_ns, x[], y[]]
 SEQ_FILE_PIXEL_READOUT  = "simple_readout.py"                 # per-pixel readout when we move in Python
 
@@ -86,13 +85,15 @@ def confocal_scan(nv_sig: NVSig, x_range, y_range, num_steps, nv_minus_init=Fals
     ctr   = tb.get_server_counter()
 
     # Buffers/plot
+    pos.set_xyz_on_nv(nv_sig)
     img = np.full((num_steps, num_steps), np.nan, float)
     img_kcps = np.copy(img) if count_fmt == CountFormat.KCPS else None
     cursor = []
     kpl.init_kplotlib()
     fig, ax = plt.subplots()
     kpl.imshow(ax, img if img_kcps is None else img_kcps,
-               title=f"Confocal scan, {readout_laser}, {readout_ns/1e3:.1f} μs",
+               title=f"Confocal scan, {readout_laser}, {time.ctime()}",
+               #title=f"Confocal scan, {readout_laser}, {readout_ns/1e3:.1f} μs",
                cbar_label=("Kcps" if img_kcps is not None else "Counts"),
                extent=extent)
 
@@ -147,7 +148,8 @@ def confocal_scan(nv_sig: NVSig, x_range, y_range, num_steps, nv_minus_init=Fals
             while idx < total and not tb.safe_stop():
                 # Move to target imaging coordinates (abstract call; routes to configured positioner)
                 pos.set_xyz((X[idx], Y[idx]), positioner=positioner)
-       
+                # positioner.load_stream_xy([X[idx]], [Y[idx]], False)
+                # .set_xyz((X[idx], Y[idx]), positioner=positioner)
                 if settle_s > 0:
                     tb.sleep_seconds_safely(settle_s)
 

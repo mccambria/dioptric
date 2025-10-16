@@ -45,16 +45,16 @@ class PosXyzAttoPiezos(LabradServer):
     def initServer(self):
         tb.configure_logging(self)
         self.task = None
-        config = ensureDeferred(self.get_config())
-        config.addCallback(self.on_get_config)
+        # config = ensureDeferred(self.get_config())
+        # config.addCallback(self.on_get_config)
 
-    async def get_config(self):
-        p = self.client.registry.packet()
-        p.cd(["", "Config", "DeviceIDs"])
-        p.get(f"{self.name}_ip")
-        p.cd(["", "Config", "Positioning"])
-        p.get("cryo_piezos_voltage")
-        p.get("z_bias_adjust")
+    def get_config(self):
+        # p = self.client.registry.packet()
+        # p.cd(["", "Config", "DeviceIDs"])
+        # p.get(f"{self.name}_ip")
+        # p.cd(["", "Config", "Positioning"])
+        # p.get("cryo_piezos_voltage")
+        # p.get("z_bias_adjust")
 
         config = common.get_config_dict()
         ip_address = config["DeviceIDs"][f"{self.name}_ip"]

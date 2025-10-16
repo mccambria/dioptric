@@ -51,6 +51,7 @@ def set_xyz(coords, positioner=CoordsKey.SAMPLE, drift_adjust=None, ramp=None):
         return _set_xyz_ramp(coords, positioner)
 
     else:
+        print(f"Setting {positioner} to {coords}")
         return _set_xyz(coords, positioner)
 
 
