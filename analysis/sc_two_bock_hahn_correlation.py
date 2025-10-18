@@ -383,7 +383,7 @@ def plot_spin_echo_all(nv_list, taus, norm_counts, norm_counts_ste):
             ax.set_xticklabels(
                 [f"{tick:.2f}" for tick in tick_positions], rotation=45, fontsize=9
             )
-            ax.set_xlabel("Time (µs)")
+            ax.set_xlabel("Time (ns)")
 
     fig.text(
         0.000,
@@ -393,19 +393,38 @@ def plot_spin_echo_all(nv_list, taus, norm_counts, norm_counts_ste):
         rotation="vertical",
         fontsize=12,
     )
+    seq_name = "Two-block Hahn Correlation"
+    pulse_seq = "π/2 – τ – π – τ – π/2 – T_lag – π/2 – τ – π – τ – π/2"
+    seq_variant = "Quadrature readout"
+    orientation = "217 MHz NV class"
+    params = "τ = 44ns, T_lag ~ [16 ns – 2 µs]"
+
+    fig.suptitle(
+        f"{seq_name}({pulse_seq})\n"
+        f"{seq_variant} – {orientation}({params})",
+        fontsize=14,
+        y=0.995
+    )
     # fig.suptitle(f"XY8 {all_file_ids_str}", fontsize=12, y=0.99)
     fig.tight_layout(pad=0.2, rect=[0.02, 0.01, 0.99, 0.99])
 
 
 if __name__ == "__main__":
     kpl.init_kplotlib()
-
     # Process and analyze data from multiple files
-    file_stems = [
-        "2025_10_15-11_06_09-rubin-nv0_2025_09_08",
-        "2025_10_15-05_35_19-rubin-nv0_2025_09_08",
-    ]
+    # file_stems = [
+    #     "2025_10_15-11_06_09-rubin-nv0_2025_09_08",
+    #     "2025_10_15-05_35_19-rubin-nv0_2025_09_08",
+    # ]
 
+    # file_stems = [
+    #     "2025_10_16-00_40_47-rubin-nv0_2025_09_08",
+    #     "2025_10_16-05_56_38-rubin-nv0_2025_09_08",
+    # ]
+    file_stems = [
+        "2025_10_17-06_30_22-rubin-nv0_2025_09_08",
+        "2025_10_17-01_15_46-rubin-nv0_2025_09_08",
+    ]
     try:
         data = widefield.process_multiple_files(file_stems, load_npz=True)
 
@@ -425,36 +444,36 @@ if __name__ == "__main__":
         # --- Optional: select a subset of NVs (ensure indices exist) ---
         # fmt:off
         # indices_113_MHz = [1, 3, 6, 10, 14, 16, 17, 19, 23, 24, 25, 26, 27, 32, 33, 34, 35, 37, 38, 41, 49, 50, 51, 53, 54, 55, 60, 62, 63, 64, 66, 67, 68, 70, 72, 73, 74, 75, 76, 78, 80, 81, 82, 83, 84, 86, 88, 90, 92, 93, 95, 96, 99, 100, 101, 102, 103, 105, 108, 109, 111, 113, 114]
-        # indices_217_MHz = [2, 4, 5, 7, 8, 9, 11, 12, 13, 15, 18, 20, 21, 22, 28, 29, 30, 31, 36, 39, 40, 42, 43, 44, 45, 46, 47, 48, 52, 56, 57, 58, 59, 61, 65, 69, 71, 77, 79, 85, 87, 89, 91, 94, 97, 98, 104, 106, 107, 110, 112, 115, 116, 117]
+        indices_217_MHz = [2, 4, 5, 7, 8, 9, 11, 12, 13, 15, 18, 20, 21, 22, 28, 29, 30, 31, 36, 39, 40, 42, 43, 44, 45, 46, 47, 48, 52, 56, 57, 58, 59, 61, 65, 69, 71, 77, 79, 85, 87, 89, 91, 94, 97, 98, 104, 106, 107, 110, 112, 115, 116, 117]
         # fmt:on
 
         # Keep only in-range indices
-        # N_all = len(nv_list)
-        # sel = [i for i in indices_217_MHz if 0 <= i < N_all]
-        # if len(sel) > 0:
-        #     nv_list = [nv_list[i] for i in sel]
-        #     norm_counts = norm_counts[sel, :]
-        #     norm_counts_ste = norm_counts_ste[sel, :]
+        N_all = len(nv_list)
+        sel = [i for i in indices_217_MHz if 0 <= i < N_all]
+        if len(sel) > 0:
+            nv_list = [nv_list[i] for i in sel]
+            norm_counts = norm_counts[sel, :]
+            norm_counts_ste = norm_counts_ste[sel, :]
 
         # --- Two-block joint fit ---
 
-        fit = fit_two_block_pipeline(T_us, norm_counts)
-        print(
-            f"[Two-block fit ns/MHz] success={fit['success']}, "
-            f"f0={fit['f0_MHz']:.3f} MHz, Tc={fit['Tc_ns']:.1f} ns, "
-            f"φ0={fit['phi0_rad']:.2f} rad, RMS={fit['residual_rms']:.4g}"
-        )
+        # fit = fit_two_block_pipeline(T_us, norm_counts)
+        # print(
+        #     f"[Two-block fit ns/MHz] success={fit['success']}, "
+        #     f"f0={fit['f0_MHz']:.3f} MHz, Tc={fit['Tc_ns']:.1f} ns, "
+        #     f"φ0={fit['phi0_rad']:.2f} rad, RMS={fit['residual_rms']:.4g}"
+        # )
 
         # Per-NV plots (step through one by one)
-        plot_each_nv_fit(
-            T_us, norm_counts, norm_counts_ste, fit, pause=0.0, save_dir=None
-        )
+        # plot_each_nv_fit(
+        #     T_us, norm_counts, norm_counts_ste, fit
+        # )
 
         # --- Plots ---
-        plot_phase_hist(fit["phi_i_est_rad"])
+        # plot_phase_hist(fit["phi_i_est_rad"])
         # plot_each_nv_fit(T_us, norm_counts, norm_counts_ste, fit)
         # plot_two_block_overlays(T_us, C, fit)
-        # plot_spin_echo_all(nv_list, taus, norm_counts, norm_counts_ste)
+        plot_spin_echo_all(nv_list, T_us, norm_counts, norm_counts_ste)
     except Exception as e:
         print(f"Error occurred: {e}")
         print(traceback.format_exc())

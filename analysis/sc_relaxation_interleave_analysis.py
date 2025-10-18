@@ -13,6 +13,7 @@ from datetime import datetime
 from scipy.optimize import curve_fit, least_squares
 from scipy.ndimage import gaussian_filter1d
 from utils import widefield as widefield
+from matplotlib.ticker import FormatStrFormatter
 
 
 def exp_decay(tau, norm, rate, offset=0):
@@ -74,7 +75,88 @@ def T1_fit(tau, y, yerr=None, model="single"):
     return result.x, result.success, param_errors
 
 
-def process_and_fit_data(data, use_double_fit=False, selected_indices=None):
+# def process_and_fit_data(data, use_double_fit=False, selected_indices=None):
+#     """Processes and fits NV relaxation data with robust fitting."""
+#     nv_list = data["nv_list"]
+#     taus = np.array(data["taus"]) / 1e6  # Convert ns to ms
+#     counts = np.array(data["counts"])
+#     sig_counts, ref_counts = counts[0], counts[1]
+
+#     # Process counts using widefield's process_counts function
+#     sig_avg_counts, sig_avg_counts_ste = widefield.process_counts(
+#         nv_list, sig_counts, threshold=False
+#     )
+#     ref_avg_counts, ref_avg_counts_ste = widefield.process_counts(
+#         nv_list, ref_counts, threshold=False
+#     )
+#     # Compute the difference between the states
+#     norm_counts = sig_avg_counts - ref_avg_counts
+#     norm_counts_ste = np.sqrt(sig_avg_counts_ste**2 + ref_avg_counts_ste**2)
+
+#     num_nvs = len(nv_list)
+#     if selected_indices is not None:
+#         nv_list = [nv_list[ind] for ind in selected_indices]
+#         norm_counts = [norm_counts[ind] for ind in selected_indices]
+#         norm_counts_ste = [norm_counts_ste[ind] for ind in selected_indices]
+
+#     fit_params, fit_functions, residuals, param_errors, contrasts = [], [], [], [], []
+
+#     for nv_idx in range(len(nv_list)):
+#         nv_counts = gaussian_filter1d(
+#             norm_counts[nv_idx], sigma=1
+#         )  # Smoothing for stability
+#         nv_counts_ste = norm_counts_ste[nv_idx]
+
+#         # Try single exponential first
+#         params, success, errors = T1_fit(
+#             taus, nv_counts, yerr=nv_counts_ste, model="single"
+#         )
+#         if not success and use_double_fit:
+#             params, success = T1_fit(
+#                 taus, nv_counts, yerr=nv_counts_ste, model="double"
+#             )
+
+#         fit_curve = (
+#             exp_decay(taus, *params)
+#             if len(params) == 3
+#             else double_exp_decay(taus, *params)
+#         )
+#         fit_params.append(params)
+#         param_errors.append(errors)
+#         fit_functions.append(
+#             lambda t, p=params: (
+#                 exp_decay(t, *p[:3]) if len(p) == 3 else double_exp_decay(t, *p)
+#             )
+#         )
+#         residuals.append(nv_counts - fit_curve)
+
+#     # print(f"rate_3Omega = {list(fit_params[:, 1])}")
+#     # print(f"rate_3Omega_error = {list(param_errors[:, 1])}")
+#     fit_params = np.array(fit_params)
+#     param_errors = np.array(param_errors)
+
+#     print(f"rate_3Omega = {list(fit_params[:, 1])}")
+#     print(f"rate_3Omega_error = {list(param_errors[:, 1])}")
+#     return (
+#         fit_params,
+#         fit_functions,
+#         residuals,
+#         taus,
+#         norm_counts,
+#         norm_counts_ste,
+#         nv_list,
+#         param_errors,
+#     )
+
+def process_and_fit_data(
+    data,
+    use_double_fit=False,
+    selected_indices=None,
+    *,
+    error_method="cov",   # "cov" or "bootstrap"
+    n_boot=300,           # used if error_method == "bootstrap"
+    smooth_sigma=1.0      # Gaussian smoothing sigma for stability
+):
     """Processes and fits NV relaxation data with robust fitting."""
     nv_list = data["nv_list"]
     taus = np.array(data["taus"]) / 1e6  # Convert ns to ms
@@ -88,54 +170,76 @@ def process_and_fit_data(data, use_double_fit=False, selected_indices=None):
     ref_avg_counts, ref_avg_counts_ste = widefield.process_counts(
         nv_list, ref_counts, threshold=False
     )
+
     # Compute the difference between the states
     norm_counts = sig_avg_counts - ref_avg_counts
     norm_counts_ste = np.sqrt(sig_avg_counts_ste**2 + ref_avg_counts_ste**2)
 
-    num_nvs = len(nv_list)
     if selected_indices is not None:
         nv_list = [nv_list[ind] for ind in selected_indices]
         norm_counts = [norm_counts[ind] for ind in selected_indices]
         norm_counts_ste = [norm_counts_ste[ind] for ind in selected_indices]
 
-    fit_params, fit_functions, residuals, param_errors, contrasts = [], [], [], [], []
+    fit_params, fit_functions, residuals, param_errors = [], [], [], []
 
     for nv_idx in range(len(nv_list)):
-        nv_counts = gaussian_filter1d(
-            norm_counts[nv_idx], sigma=1
-        )  # Smoothing for stability
+        # Smoothing for stability
+        nv_counts = gaussian_filter1d(norm_counts[nv_idx], sigma=smooth_sigma) if smooth_sigma and smooth_sigma > 0 else norm_counts[nv_idx]
         nv_counts_ste = norm_counts_ste[nv_idx]
 
-        # Try single exponential first
-        params, success, errors = T1_fit(
-            taus, nv_counts, yerr=nv_counts_ste, model="single"
-        )
-        if not success and use_double_fit:
-            params, success = T1_fit(
-                taus, nv_counts, yerr=nv_counts_ste, model="double"
-            )
+        # Primary fit (single exp first; optionally double)
+        params, success, errors_cov = T1_fit(taus, nv_counts, yerr=nv_counts_ste, model="single")
+        used_model = "single"
+        if (not success) and use_double_fit:
+            params, success2, errors_cov2 = T1_fit(taus, nv_counts, yerr=nv_counts_ste, model="double")
+            if success2:
+                params, errors_cov, used_model = params, errors_cov2, "double"
 
-        fit_curve = (
-            exp_decay(taus, *params)
-            if len(params) == 3
-            else double_exp_decay(taus, *params)
-        )
+        # Build fit curve & callable
+        if used_model == "single" or len(params) == 3:
+            fit_curve = exp_decay(taus, *params[:3])
+            fit_fn = lambda t, p=params: exp_decay(t, *p[:3])
+        else:
+            fit_curve = double_exp_decay(taus, *params)
+            fit_fn = lambda t, p=params: double_exp_decay(t, *p)
+
+        # Choose error method
+        if error_method == "cov":
+            # Use covariance-based errors from T1_fit
+            param_err = errors_cov
+        elif error_method == "bootstrap":
+            # Residual bootstrap around fitted curve
+            resid = nv_counts - fit_curve
+            boot_params = []
+            for _ in range(n_boot):
+                resampled = np.random.choice(resid, size=resid.size, replace=True)
+                y_boot = fit_curve + resampled
+                p_b, ok_b, _ = T1_fit(taus, y_boot, yerr=nv_counts_ste, model=used_model)
+                if ok_b and len(p_b) == len(params):
+                    boot_params.append(p_b)
+            if len(boot_params) >= 2:
+                bp = np.array(boot_params, dtype=float)
+                param_err = np.std(bp, axis=0, ddof=1)
+            else:
+                # Fallback to covariance if bootstrap failed to collect enough
+                param_err = errors_cov
+        else:
+            raise ValueError("error_method must be 'cov' or 'bootstrap'")
+
+        # Collect
         fit_params.append(params)
-        param_errors.append(errors)
-        fit_functions.append(
-            lambda t, p=params: (
-                exp_decay(t, *p[:3]) if len(p) == 3 else double_exp_decay(t, *p)
-            )
-        )
+        param_errors.append(param_err)
+        fit_functions.append(fit_fn)
         residuals.append(nv_counts - fit_curve)
 
-    # print(f"rate_3Omega = {list(fit_params[:, 1])}")
-    # print(f"rate_3Omega_error = {list(param_errors[:, 1])}")
-    fit_params = np.array(fit_params)
-    param_errors = np.array(param_errors)
+    fit_params = np.array(fit_params, dtype=float)
+    param_errors = np.array(param_errors, dtype=float)
 
-    print(f"rate_3Omega = {list(fit_params[:, 1])}")
-    print(f"rate_3Omega_error = {list(param_errors[:, 1])}")
+    # For your logging; your "rate_3Omega" name suggested older scaling.
+    # Here we just report the fitted rate (which you confirmed is Ω).
+    print(f"omega_rate = {list(fit_params[:, 1])}")
+    print(f"omega_rate_error = {list(param_errors[:, 1])}")
+
     return (
         fit_params,
         fit_functions,
@@ -146,7 +250,6 @@ def process_and_fit_data(data, use_double_fit=False, selected_indices=None):
         nv_list,
         param_errors,
     )
-
 
 def plot_fitted_data(
     nv_list,
@@ -225,28 +328,15 @@ def plot_fitted_data(
             )
         ax.legend(fontsize="xx-small")
         ax.grid(True, which="both", linestyle="--", linewidth=0.5)
-        ax.tick_params(labelleft=False)
-        ax.set_xscale("log")
-        # # Add NV index within the plot at the center
-        # for col in range(num_cols):
-        #     bottom_row_idx = num_rows * num_cols - num_cols + col
-        #     if bottom_row_idx < len(axes):
-        #         ax = axes[bottom_row_idx]
-        #         # tick_positions = np.linspace(min(taus), max(taus), 5)
-        #         tick_positions = np.logspace(np.log10(taus[0]), np.log10(taus[-1]), 6)
-        #         ax.set_xticks(tick_positions)
-        #         ax.set_xticklabels(
-        #             [f"{tick:.2f}" for tick in tick_positions],
-        #             rotation=45,
-        #             fontsize=9,
-        #         )
-        #         ax.set_xlabel("Time (ms)")
-        #     else:
-        #         ax.set_xticklabels([])
-
-        # num_axes = len(axes)
         axes_grid = np.array(axes).reshape((num_rows, num_cols))
-
+        
+        ax.yaxis.set_major_formatter(FormatStrFormatter("%.1f"))
+        ax.tick_params(axis="y", labelsize=8, direction="in", pad=-10)
+        for label in ax.get_yticklabels():
+            label.set_horizontalalignment("right")
+            label.set_x(0.02)  # Fine-tune this as needed
+            label.set_zorder(100)
+        # ax.tick_params(labelleft=False)
         # Loop over each column
         for col in range(num_cols):
             # Go from bottom row upwards
@@ -264,6 +354,7 @@ def plot_fitted_data(
                         rotation=45,
                         fontsize=9,
                     )
+                    ax.set_xscale("log")
                     ax.set_xlabel("Time (ms)")
                     break  # Done for this column
 
@@ -723,6 +814,223 @@ def plot_contrast(nv_list, fit_params):
     plt.tight_layout()
     plt.show()
 
+def plot_fit_parameters_scatter(
+    fit_params, 
+    fit_errors=None, 
+    nv_list=None, 
+    x="omega", 
+    y="norm", 
+    annotate=False, 
+    logx=False, 
+    logy=False
+):
+    """
+    Scatter plot of chosen fit parameters (default Ω vs contrast).
+    
+    fit_params: array (N,3) with [norm, rate, offset]
+    fit_errors: same shape, optional
+    nv_list: optional list of NV indices for labeling
+    x, y: which parameters to plot {"norm", "rate", "omega", "T1", "offset"}
+    annotate: if True, annotate each point with NV index and params
+    """
+
+    fp = np.asarray(fit_params, float)
+    fe = np.asarray(fit_errors, float) if fit_errors is not None else None
+
+    def extract(field):
+        if field == "norm":
+            return fp[:,0], fe[:,0] if fe is not None else None, "Contrast (norm)"
+        elif field == "rate":
+            return fp[:,1], fe[:,1] if fe is not None else None, r"Rate $\Gamma$ (1/ms)"
+        elif field == "omega":
+            return fp[:,1], fe[:,1] if fe is not None else None, r"$\Omega$ (1/ms)"  # your fit rate is Ω
+        elif field == "T1":
+            rates = fp[:,1]
+            vals = 1.0 / rates
+            errs = fe[:,1] / (rates**2) if fe is not None else None
+            return vals, errs, r"$T_1$ (ms)"
+        elif field == "offset":
+            return fp[:,2], fe[:,2] if fe is not None else None, "Offset"
+        else:
+            raise ValueError("Unknown field")
+
+    xvals, xerr, xlabel = extract(x)
+    yvals, yerr, ylabel = extract(y)
+
+    plt.figure(figsize=(6,5))
+    plt.errorbar(
+        xvals, yvals,
+        xerr=xerr, yerr=yerr,
+        fmt="o", capsize=3, elinewidth=1, ecolor="gray",
+        markersize=5, alpha=0.8
+    )
+
+    if annotate and nv_list is not None:
+        for i, (xv, yv) in enumerate(zip(xvals, yvals)):
+            label = f"NV{nv_list[i]}: {x}={xv:.2f}, {y}={yv:.2f}"
+            plt.annotate(label, (xv, yv), textcoords="offset points", xytext=(5,5), fontsize=8)
+
+    plt.xlabel(xlabel)
+    plt.ylabel(ylabel)
+    plt.title(f"{ylabel} vs {xlabel}")
+    if logx: plt.xscale("log")
+    if logy: plt.yscale("log")
+    plt.grid(True, linestyle="--", alpha=0.5)
+    plt.tight_layout()
+#     plt.show()
+
+# import numpy as np
+# import matplotlib.pyplot as plt
+
+# def iqr_outlier_mask(values, k=1.5):
+#     v = np.asarray(values, float)
+#     finite = np.isfinite(v)
+#     if not np.any(finite):
+#         return np.zeros_like(v, dtype=bool)
+#     q1, q3 = np.percentile(v[finite], [25, 75])
+#     iqr = q3 - q1
+#     lower, upper = q1 - k*iqr, q3 + k*iqr
+#     mask = (v >= lower) & (v <= upper) & finite
+#     return mask
+
+# def plot_fit_parameters_scatter(
+#     fit_params,
+#     fit_errors=None,
+#     nv_list=None,
+#     x="omega",              # {"norm","rate","omega","T1","offset"}
+#     y="norm",
+#     annotate=False,
+#     logx=False,
+#     logy=False,
+#     drop_x_outliers=False,  # IQR filter on x
+#     iqr_k=1.5,
+# ):
+#     """
+#     Scatter of chosen fit parameters with optional error bars & IQR outlier removal.
+#     Expects single-exp params: fit_params[:,0]=norm, [:,1]=rate(=Ω), [:,2]=offset
+#     """
+
+#     # ---- Validate/shape ----
+#     fp = np.asarray(fit_params, dtype=float)
+#     if fp.ndim != 2 or fp.shape[1] < 3:
+#         print(f"Warning: fit_params has shape {fp.shape}. Expected (N,3) float. "
+#               "This often happens if some NVs used double-exp -> ragged array.")
+#         # Try to coerce by keeping only first 3 cols if possible
+#         if fp.ndim == 2 and fp.shape[1] >= 3:
+#             fp = fp[:, :3].astype(float)
+#         else:
+#             return
+
+#     fe = None
+#     if fit_errors is not None:
+#         try:
+#             fe = np.asarray(fit_errors, dtype=float)
+#             if fe.shape != fp.shape:
+#                 print(f"Warning: fit_errors shape {fe.shape} != fit_params shape {fp.shape}. Disabling error bars.")
+#                 fe = None
+#         except Exception:
+#             print("Warning: could not convert fit_errors to float. Disabling error bars.")
+#             fe = None
+
+#     # ---- Extract fields ----
+#     def extract(field):
+#         if field == "norm":
+#             vals = fp[:, 0]; errs = (fe[:, 0] if fe is not None else None); label = "Contrast (norm)"
+#         elif field == "rate":
+#             vals = fp[:, 1]; errs = (fe[:, 1] if fe is not None else None); label = r"Rate $\Gamma$ (1/ms)"
+#         elif field == "omega":
+#             # you said the fitted rate already equals Ω
+#             vals = fp[:, 1]; errs = (fe[:, 1] if fe is not None else None); label = r"$\Omega$ (1/ms)"
+#         elif field == "T1":
+#             rates = fp[:, 1]
+#             vals = 1.0 / rates
+#             errs = (fe[:, 1] / (rates**2)) if fe is not None else None
+#             label = r"$T_1$ (ms)"
+#         elif field == "offset":
+#             vals = fp[:, 2]; errs = (fe[:, 2] if fe is not None else None); label = "Offset"
+#         else:
+#             raise ValueError("Unknown field (use one of {'norm','rate','omega','T1','offset'})")
+#         return np.asarray(vals, float), (np.asarray(errs, float) if errs is not None else None), label
+
+#     xvals, xerr, xlabel = extract(x)
+#     yvals, yerr, ylabel = extract(y)
+
+#     # ---- Finite mask ----
+#     finite = np.isfinite(xvals) & np.isfinite(yvals)
+#     if xerr is not None: finite &= np.isfinite(xerr)
+#     if yerr is not None: finite &= np.isfinite(yerr)
+#     if not np.any(finite):
+#         print("Nothing to plot: all points are non-finite (NaN/Inf) after extraction.")
+#         return
+
+#     # ---- Optional IQR outlier removal on x ----
+#     if drop_x_outliers:
+#         keep_iqr = iqr_outlier_mask(xvals[finite], k=iqr_k)
+#         full_mask = finite.copy()
+#         full_mask[np.where(finite)[0][~keep_iqr]] = False
+#         finite = full_mask
+
+#     # Apply mask
+#     xvals, yvals = xvals[finite], yvals[finite]
+#     xerr = (xerr[finite] if xerr is not None else None)
+#     yerr = (yerr[finite] if yerr is not None else None)
+#     kept_idx = np.where(finite)[0]
+
+#     if xvals.size == 0:
+#         print("Nothing to plot: zero points after masking/outlier removal.")
+#         return
+
+#     # ---- Plot ----
+#     plt.figure(figsize=(6, 5))
+#     plt.errorbar(
+#         xvals, yvals,
+#         xerr=xerr, yerr=yerr,
+#         fmt="o", capsize=3, elinewidth=1, ecolor="gray",
+#         markersize=5, alpha=0.85
+#     )
+
+#     # Annotations (respect masked indices)
+#     if annotate and nv_list is not None:
+#         nv_arr = np.asarray(nv_list)
+#         for i, (xv, yv, idx) in enumerate(zip(xvals, yvals, kept_idx)):
+#             nv_label = nv_arr[idx] if idx < len(nv_arr) else idx
+#             plt.annotate(f"NV{nv_label}", (xv, yv),
+#                          textcoords="offset points", xytext=(5, 5), fontsize=8)
+
+#     # Medians/correlation for quick sanity (on kept points)
+#     medx, medy = np.median(xvals), np.median(yvals)
+#     plt.gca().text(0.97, 0.97, f"Median {x}: {medx:.3g}\nMedian {y}: {medy:.3g}",
+#                    transform=plt.gca().transAxes, fontsize=10,
+#                    va="top", ha="right", bbox=dict(boxstyle="round", facecolor="white", alpha=0.8))
+#     if xvals.size > 1:
+#         r = np.corrcoef(xvals, yvals)[0, 1]
+#         plt.gca().text(0.03, 0.97, f"Pearson r = {r:.3f}",
+#                        transform=plt.gca().transAxes, fontsize=10,
+#                        va="top", ha="left", bbox=dict(boxstyle="round", facecolor="white", alpha=0.8))
+
+#     plt.xlabel(xlabel, fontsize=14)
+#     plt.ylabel(ylabel, fontsize=14)
+#     if logx: plt.xscale("log")
+#     if logy: plt.yscale("log")
+#     plt.title(f"{ylabel} vs {xlabel}", fontsize=15)
+#     plt.grid(True, linestyle="--", alpha=0.5)
+#     plt.tight_layout()
+#     plt.show()
+
+def iqr_outlier_mask(values, k=1.5):
+    """
+    Returns a boolean mask of INLIERS (True = keep) using IQR rule.
+    values: array-like
+    k: multiplier (1.5 for mild outliers, 3 for extreme)
+    """
+    v = np.asarray(values, dtype=float)
+    finite = np.isfinite(v)
+    q1, q3 = np.percentile(v[finite], [25, 75])
+    iqr = q3 - q1
+    lower = q1 - k * iqr
+    upper = q3 + k * iqr
+    mask = (v >= lower) & (v <= upper) & finite
+    return mask
 
 # Usage Example
 if __name__ == "__main__":
@@ -753,7 +1061,7 @@ if __name__ == "__main__":
     #fmt: off
     # file_path, all_file_ids_str = widefield.combined_filename(file_ids)
     # print(f"File path: {file_path}")\
-    file_ids = ["2025_10_14-21_08_23-rubin-nv0_2025_09_08"]
+    file_ids = ["2025_10_14-21_08_23-rubin-nv0_2025_09_08", "2025_10_15-01_27_23-rubin-nv0_2025_09_08"]
     data = widefield.process_multiple_files(file_ids, load_npz=True)
     # data = dm.get_raw_data(file_id=1550610460299)  # Example file ID
     (
@@ -766,21 +1074,31 @@ if __name__ == "__main__":
         nv_list,
         fit_errors,
     ) = process_and_fit_data(data, use_double_fit=False, selected_indices=None)
-    offset_list = fit_params[:, 2]
+
     # print(f"contrst_list = {list(offset_list)}")
     # plot_contrast(nv_list, fit_params)
-    plot_fitted_data(
-        nv_list,
-        taus,
-        norm_counts,
-        norm_counts_ste,
-        fit_functions,
-        fit_params,
-        fit_errors,
-        num_cols=10,
-        selected_indices=None,
-    )
+    # plot_fitted_data(
+    #     nv_list,
+    #     taus,
+    #     norm_counts,
+    #     norm_counts_ste,
+    #     fit_functions,
+    #     fit_params,
+    #     fit_errors,
+    #     num_cols=10,
+    #     selected_indices=None,
+    # )
     # scatter_fitted_parameters(fit_params, nv_list)
+    omega = fit_params[:, 1] / 3.0   # rate → Ω
+    mask = iqr_outlier_mask(omega, k=2)  # or k=3.0 for stricter
+    fit_params = fit_params[mask]
+    fit_errors = fit_errors[mask] if fit_errors is not None else None
+    nv_list = [nv for i, nv in enumerate(nv_list) if mask[i]]
+
+    # Optional: quick log of how many were removed
+    print(f"IQR filter kept {mask.sum()}/{len(mask)} NVs.")
+    plot_fit_parameters_scatter(fit_params, fit_errors=fit_errors, nv_list=nv_list)
+
     # plot_T1_with_errorbars(fit_params, fit_errors, nv_list)
     # plot_fitted_data_separately(
     #     nv_list,

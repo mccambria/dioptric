@@ -764,10 +764,10 @@ def do_spin_echo(nv_list):
 #         spin_echo.main(nv_list, num_steps, num_reps, num_runs, taus=taus)
 
 def do_two_block_hahn_correlation(nv_list):
-    tau = 200
+    tau = 44
     # lag_taus = [16, 24, 40, 64, 100, 160, 250, 400, 640, 1000, 1500, 2000]
     # lag_taus = [16, 40, 64, 88, 108, 132, 156, 180, 208, 236, 272, 316, 364, 424, 488, 568, 640, 740, 856, 988, 1144, 1292, 1496, 1728, 2000] 
-    lag_taus = widefield.generate_divisible_by_4(16, 1500, 45)
+    lag_taus = widefield.generate_divisible_by_4(16, 2000, 45)
     # print(lag_taus)
     # sys.exit()
     num_steps = len(lag_taus)
@@ -980,16 +980,16 @@ def do_sq_relaxation(nv_list):
 
 
 def do_dq_relaxation(nv_list):
-    min_tau = 1e3
-    max_tau = 15e6 + min_tau
+    min_tau = 5e2
+    max_tau = 10e6 + min_tau
     num_steps = 21
     num_reps = 10
-    num_runs = 200
+    num_runs = 400
 
     # relaxation_interleave.dq_relaxation(
     #     nv_list, num_steps, num_reps, num_runs, min_tau, max_tau
     # )
-    for _ in range(4):
+    for _ in range(2):
         relaxation_interleave.dq_relaxation(
             nv_list, num_steps, num_reps, num_runs, min_tau, max_tau
         )
@@ -1486,7 +1486,7 @@ if __name__ == "__main__":
         # )
 
         do_compensate_for_drift(nv_sig)
-        # do_widefield_image_sample(nv_sig, 50)
+        do_widefield_image_sample(nv_sig, 50)
         # do_widefield_image_sample(nv_sig, 200)
 
         # for nv in nv_list:
@@ -1552,7 +1552,7 @@ if __name__ == "__main__":
         # do_optimize_spin_pol_amp(nv_list)
         # do_check_readout_fidelity(nv_list)
 
-        # do_scc_snr_check(nv_list)
+        do_scc_snr_check(nv_list)
         # do_optimize_scc_duration(nv_list)
         # do_optimize_scc_amp(nv_list)
         # optimize_scc_amp_and_duration(nv_list)1
@@ -1570,7 +1570,7 @@ if __name__ == "__main__":
 
         # do_rabi(nv_list)
         # do_power_rabi(nv_list)
-        do_resonance(nv_list)
+        # do_resonance(nv_list)
         # do_deer_hahn(nv_list)
         # do_deer_hahn_rabi(nv_list)
         # do_resonance_zoom(nv_list)

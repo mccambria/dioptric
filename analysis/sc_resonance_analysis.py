@@ -726,6 +726,10 @@ if __name__ == "__main__":
     file_ids = [
         "2025_10_09-09_29_58-rubin-nv0_2025_09_08",
     ]
+    ## 118 nVs
+    # file_ids = [
+    #     "2025_10_16-15_59_07-rubin-nv0_2025_09_08",
+    # ]
     # Load the first dataset as a base
     combined_data = dm.get_raw_data(
         file_stem=file_ids[0], load_npz=True, use_cache=True
