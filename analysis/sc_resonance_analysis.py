@@ -363,7 +363,7 @@ def plot_nv_resonance(
     #     for idx in range(num_nvs)
     #     if idx not in indices_to_remove_manually
     # ]
-    # return
+    return
     filtered_nv_list = [nv_list[idx] for idx in filtered_indices]
     filtered_avg_counts = [avg_counts[idx] for idx in filtered_indices]
     filtered_avg_counts_ste = [avg_counts_ste[idx] for idx in filtered_indices]
@@ -741,6 +741,7 @@ if __name__ == "__main__":
     if combined_data:
         nv_list = combined_data["nv_list"]
         freqs = combined_data["freqs"]
+        print(len(freqs))
         num_steps = combined_data["num_steps"]
         num_reps = combined_data["num_reps"]
         num_runs = combined_data["num_runs"]
