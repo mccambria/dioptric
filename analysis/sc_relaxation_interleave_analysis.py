@@ -1061,7 +1061,12 @@ if __name__ == "__main__":
     #fmt: off
     # file_path, all_file_ids_str = widefield.combined_filename(file_ids)
     # print(f"File path: {file_path}")\
-    file_ids = ["2025_10_14-21_08_23-rubin-nv0_2025_09_08", "2025_10_15-01_27_23-rubin-nv0_2025_09_08"]
+    #omega
+    # file_ids = ["2025_10_14-21_08_23-rubin-nv0_2025_09_08", "2025_10_15-01_27_23-rubin-nv0_2025_09_08"]
+    # gamma
+    file_ids = ["2025_10_18-07_23_48-rubin-nv0_2025_09_08", "2025_10_18-03_24_11-rubin-nv0_2025_09_08"]
+
+    indices_113_MHz = [1, 3, 6, 10, 14, 16, 17, 19, 23, 24, 25, 26, 27, 32, 33, 34, 35, 37, 38, 41, 49, 50, 51, 53, 54, 55, 60, 62, 63, 64, 66, 67, 68, 70, 72, 73, 74, 75, 76, 78, 80, 81, 82, 83, 84, 86, 88, 90, 92, 93, 95, 96, 99, 100, 101, 102, 103, 105, 108, 109, 111, 113, 114]
     data = widefield.process_multiple_files(file_ids, load_npz=True)
     # data = dm.get_raw_data(file_id=1550610460299)  # Example file ID
     (
@@ -1073,7 +1078,7 @@ if __name__ == "__main__":
         norm_counts_ste,
         nv_list,
         fit_errors,
-    ) = process_and_fit_data(data, use_double_fit=False, selected_indices=None)
+    ) = process_and_fit_data(data, use_double_fit=False, selected_indices=indices_113_MHz)
 
     # print(f"contrst_list = {list(offset_list)}")
     # plot_contrast(nv_list, fit_params)
@@ -1089,11 +1094,35 @@ if __name__ == "__main__":
     #     selected_indices=None,
     # )
     # scatter_fitted_parameters(fit_params, nv_list)
+    # omega = fit_params[:, 1] / 3.0   # rate → Ω
+    # mask = iqr_outlier_mask(omega, k=1.5)  # or k=3.0 for stricter
+    # fit_params = fit_params[mask]
+    # fit_errors = fit_errors[mask] if fit_errors is not None else None
+    # nv_list = [nv for i, nv in enumerate(nv_list) if mask[i]]
+
+    # scatter_fitted_parameters(fit_params, nv_list)
+
+    # 1. Filter by omega outliers
     omega = fit_params[:, 1] / 3.0   # rate → Ω
-    mask = iqr_outlier_mask(omega, k=2)  # or k=3.0 for stricter
+    mask1 = iqr_outlier_mask(omega, k=1.5)  # keep "normal" Ω values
+
+    # 2. Filter by error threshold
+    if fit_errors is not None:
+        # e.g. reject if relative error > 50% or absolute error too large
+        error_threshold = 0.5   # 50% relative error
+        rel_err = fit_errors[:, 1] / fit_params[:, 1]
+        mask2 = rel_err < error_threshold
+    else:
+        mask2 = np.ones_like(mask1, dtype=bool)
+
+    # 3. Combine both masks
+    mask = mask1 & mask2
+
+    # 4. Apply mask consistently
     fit_params = fit_params[mask]
     fit_errors = fit_errors[mask] if fit_errors is not None else None
-    nv_list = [nv for i, nv in enumerate(nv_list) if mask[i]]
+    nv_list   = [nv for i, nv in enumerate(nv_list) if mask[i]]
+
 
     # Optional: quick log of how many were removed
     print(f"IQR filter kept {mask.sum()}/{len(mask)} NVs.")
