@@ -502,7 +502,8 @@ def do_T2_correlation_test(nv_list):
     num_reps = 200
     num_runs = 1000
     # num_runs = 2
-    tau = 19.6e3 # gap
+    # tau = 19.6e3 # gap
+    tau = 228 # gap between pulses
     T2_correlation.main(nv_list, num_reps, num_runs, tau)
     # for _ in range(1):
     #     T2_correlation.main(nv_list, num_reps, num_runs, tau)
@@ -1591,7 +1592,7 @@ if __name__ == "__main__":
         # do_ramsey(nv_list)
 
         # do_simple_correlation_test(nv_list)
-        # do_T2_correlation_test(nv_list)
+        do_T2_correlation_test(nv_list)
         # do_two_block_hahn_spatial_correlation(nv_list)
         # do_two_block_hahn_correlation(nv_list)
         # do_resonance(nv_list)
