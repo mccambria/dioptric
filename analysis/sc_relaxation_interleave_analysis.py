@@ -818,7 +818,7 @@ def plot_fit_parameters_scatter(
     fit_params, 
     fit_errors=None, 
     nv_list=None, 
-    x="omega", 
+    x="Omega", 
     y="norm", 
     annotate=False, 
     logx=False, 
@@ -840,11 +840,10 @@ def plot_fit_parameters_scatter(
     def extract(field):
         if field == "norm":
             return fp[:,0], fe[:,0] if fe is not None else None, "Contrast (norm)"
-        elif field == "rate":
-            return fp[:,1], fe[:,1] if fe is not None else None, r"Rate $\Gamma$ (1/ms)"
-        elif field == "omega":
-            return fp[:,1], fe[:,1] if fe is not None else None, r"$\Omega$ (1/ms)"  # your fit rate is Ω
-        elif field == "T1":
+        elif field == "gamma":
+            return fp[:,1], fe[:,1] if fe is not None else None, r"$\gamma$ (1/ms)"
+        elif field == "Omega":
+            return fp[:,1], fe[:,1] if fe is not None else None, r"$\Omega$ (1/ms)"
             rates = fp[:,1]
             vals = 1.0 / rates
             errs = fe[:,1] / (rates**2) if fe is not None else None
@@ -856,8 +855,8 @@ def plot_fit_parameters_scatter(
 
     xvals, xerr, xlabel = extract(x)
     yvals, yerr, ylabel = extract(y)
-
-    plt.figure(figsize=(6,5))
+    
+    plt.figure(figsize=(6.5,5.5))
     plt.errorbar(
         xvals, yvals,
         xerr=xerr, yerr=yerr,
@@ -869,6 +868,13 @@ def plot_fit_parameters_scatter(
         for i, (xv, yv) in enumerate(zip(xvals, yvals)):
             label = f"NV{nv_list[i]}: {x}={xv:.2f}, {y}={yv:.2f}"
             plt.annotate(label, (xv, yv), textcoords="offset points", xytext=(5,5), fontsize=8)
+    
+    # --- Compute and add statistics for the y-axis values ---
+    x_med = np.median(xvals)
+    x_q1  = np.percentile(xvals, 25)
+    x_q3  = np.percentile(xvals, 75)
+    stats_label = f"$\{x}$: median={x_med:.3g}, Q1={x_q1:.3g}, Q3={x_q3:.3g}"
+    plt.plot([], [], ' ', label=stats_label)  # invisible handle for legend
 
     plt.xlabel(xlabel)
     plt.ylabel(ylabel)
@@ -876,6 +882,7 @@ def plot_fit_parameters_scatter(
     if logx: plt.xscale("log")
     if logy: plt.yscale("log")
     plt.grid(True, linestyle="--", alpha=0.5)
+    plt.legend(loc="best", fontsize=14, frameon=True)
     plt.tight_layout()
 #     plt.show()
 
@@ -1063,10 +1070,13 @@ if __name__ == "__main__":
     # print(f"File path: {file_path}")\
     #omega
     # file_ids = ["2025_10_14-21_08_23-rubin-nv0_2025_09_08", "2025_10_15-01_27_23-rubin-nv0_2025_09_08"]
-    # gamma
-    file_ids = ["2025_10_18-07_23_48-rubin-nv0_2025_09_08", "2025_10_18-03_24_11-rubin-nv0_2025_09_08"]
+    # gamma 113MHz orientaion
+    # file_ids = ["2025_10_18-07_23_48-rubin-nv0_2025_09_08", "2025_10_18-03_24_11-rubin-nv0_2025_09_08"]
+    # indices_113_MHz = [0, 1, 3, 6, 10, 14, 16, 17, 19, 23, 24, 25, 26, 27, 32, 33, 34, 35, 37, 38, 41, 49, 50, 51, 53, 54, 55, 60, 62, 63, 64, 66, 67, 68, 70, 72, 73, 74, 75, 76, 78, 80, 81, 82, 83, 84, 86, 88, 90, 92, 93, 95, 96, 99, 100, 101, 102, 103, 105, 108, 109, 111, 113, 114]
+    # gamm 217Mhz orientation
+    file_ids = ["2025_10_18-21_17_09-rubin-nv0_2025_09_08", "2025_10_18-17_10_51-rubin-nv0_2025_09_08"]
+    indices_217_MHz = [2, 4, 5, 7, 8, 9, 11, 12, 13, 15, 18, 20, 21, 22, 28, 29, 30, 31, 36, 39, 40, 42, 43, 44, 45, 46, 47, 48, 52, 56, 57, 58, 59, 61, 65, 69, 71, 77, 79, 85, 87, 89, 91, 94, 97, 98, 104, 106, 107, 110, 112, 115, 116, 117]
 
-    indices_113_MHz = [1, 3, 6, 10, 14, 16, 17, 19, 23, 24, 25, 26, 27, 32, 33, 34, 35, 37, 38, 41, 49, 50, 51, 53, 54, 55, 60, 62, 63, 64, 66, 67, 68, 70, 72, 73, 74, 75, 76, 78, 80, 81, 82, 83, 84, 86, 88, 90, 92, 93, 95, 96, 99, 100, 101, 102, 103, 105, 108, 109, 111, 113, 114]
     data = widefield.process_multiple_files(file_ids, load_npz=True)
     # data = dm.get_raw_data(file_id=1550610460299)  # Example file ID
     (
@@ -1078,7 +1088,7 @@ if __name__ == "__main__":
         norm_counts_ste,
         nv_list,
         fit_errors,
-    ) = process_and_fit_data(data, use_double_fit=False, selected_indices=indices_113_MHz)
+    ) = process_and_fit_data(data, use_double_fit=False, selected_indices=indices_217_MHz)
 
     # print(f"contrst_list = {list(offset_list)}")
     # plot_contrast(nv_list, fit_params)
@@ -1104,12 +1114,12 @@ if __name__ == "__main__":
 
     # 1. Filter by omega outliers
     omega = fit_params[:, 1] / 3.0   # rate → Ω
-    mask1 = iqr_outlier_mask(omega, k=1.5)  # keep "normal" Ω values
+    mask1 = iqr_outlier_mask(omega, k=6)  # keep "normal" Ω values
 
     # 2. Filter by error threshold
     if fit_errors is not None:
         # e.g. reject if relative error > 50% or absolute error too large
-        error_threshold = 0.5   # 50% relative error
+        error_threshold = 10.0   # 50% relative error
         rel_err = fit_errors[:, 1] / fit_params[:, 1]
         mask2 = rel_err < error_threshold
     else:
@@ -1126,7 +1136,7 @@ if __name__ == "__main__":
 
     # Optional: quick log of how many were removed
     print(f"IQR filter kept {mask.sum()}/{len(mask)} NVs.")
-    plot_fit_parameters_scatter(fit_params, fit_errors=fit_errors, nv_list=nv_list)
+    plot_fit_parameters_scatter(fit_params, fit_errors=fit_errors, nv_list=nv_list, x= "gamma")
 
     # plot_T1_with_errorbars(fit_params, fit_errors, nv_list)
     # plot_fitted_data_separately(
