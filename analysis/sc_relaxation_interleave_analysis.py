@@ -4,6 +4,7 @@ Created on Fall, 2024
 
 @author: saroj chand
 """
+import sys
 from utils import data_manager as dm
 from utils import kplotlib as kpl
 import matplotlib.pyplot as plt
@@ -843,7 +844,7 @@ def plot_fit_parameters_scatter(
         elif field == "gamma":
             return fp[:,1], fe[:,1] if fe is not None else None, r"$\gamma$ (1/ms)"
         elif field == "Omega":
-            return fp[:,1], fe[:,1] if fe is not None else None, r"$\Omega$ (1/ms)"
+            return fp[:,1]/3, fe[:,1]/3 if fe is not None else None, r"$\Omega$ (1/ms)"
             rates = fp[:,1]
             vals = 1.0 / rates
             errs = fe[:,1] / (rates**2) if fe is not None else None
@@ -885,6 +886,153 @@ def plot_fit_parameters_scatter(
     plt.legend(loc="best", fontsize=14, frameon=True)
     plt.tight_layout()
 #     plt.show()
+
+
+import numpy as np
+import matplotlib.pyplot as plt
+
+def _nv_key(nv, fallback_index):
+    """Stable NV key for matching Ω and γ across datasets."""
+    for attr in ("index", "nv_id", "id"):
+        v = getattr(nv, attr, None)
+        if v is not None:
+            return int(v)
+    return int(fallback_index)
+
+def plot_combined_omega_gamma(res_omega, res_g113, res_g217, show_medians=True):
+    """
+    No outlier filtering here.
+    Uses:
+      Ω = rate/3  from the Ω dataset
+      γ = (rate - Ω)/2  for each γ point, using matched Ω per NV if available; else median Ω.
+    Plots contrast (norm) vs Ω and vs γ (combined 113+217).
+    """
+
+    # ---------- Ω dataset ----------
+    fp_o = np.asarray(res_omega["fit_params"], float)                         # [norm, rate, offset]
+    fe_o = (np.asarray(res_omega["fit_errors"], float)
+            if res_omega.get("fit_errors") is not None else None)
+    nv_o = res_omega.get("nv_list") or []
+
+    omega_vals = fp_o[:, 1] / 3.0
+    omega_errs = (fe_o[:, 1] / 3.0) if fe_o is not None else None
+    norm_o      = fp_o[:, 0]
+    norm_o_errs = (fe_o[:, 0]      ) if fe_o is not None else None
+
+    # Map Ω (and its error) by NV key for exact pairing
+    omega_map = {}
+    sigma_omega_map = {}
+    for i, nv in enumerate(nv_o):
+        key = _nv_key(nv, i)
+        omega_map[key] = omega_vals[i]
+        if fe_o is not None:
+            sigma_omega_map[key] = fe_o[i, 1] / 3.0
+
+    omega_med = float(np.nanmedian(omega_vals)) if omega_vals.size else np.nan
+
+    # ---------- γ datasets (combine 113 + 217) ----------
+    # Stack fit_params / fit_errors / nv lists safely
+    fp_g = np.vstack([res_g113["fit_params"], res_g217["fit_params"]])
+    nv_g = (res_g113.get("nv_list") or []) + (res_g217.get("nv_list") or [])
+
+    fe_g = None
+    if (res_g113.get("fit_errors") is not None) and (res_g217.get("fit_errors") is not None):
+        fe_g = np.vstack([res_g113["fit_errors"], res_g217["fit_errors"]])
+
+    rate_g   = fp_g[:, 1]
+    norm_g   = fp_g[:, 0]
+    rate_g_e = fe_g[:, 1] if fe_g is not None else None
+    norm_g_e = fe_g[:, 0] if fe_g is not None else None
+
+    # Compute γ = (rate_g - Ω_match)/2, prefer matched Ω; fallback to median Ω
+    gamma_vals = np.empty_like(rate_g, dtype=float)
+    for i in range(rate_g.shape[0]):
+        key = _nv_key(nv_g[i], i) if i < len(nv_g) else i
+        omega_here = omega_map.get(key, omega_med)
+        gamma_vals[i] = 0.5 * (rate_g[i] - omega_here)
+
+    # Error propagation for γ if both sides have errors
+    gamma_errs = None
+    if (rate_g_e is not None) or (sigma_omega_map):
+        gamma_errs = np.zeros_like(rate_g, dtype=float)
+        for i in range(rate_g.shape[0]):
+            key = _nv_key(nv_g[i], i) if i < len(nv_g) else i
+            sigma_rate  = rate_g_e[i] if rate_g_e is not None else 0.0
+            sigma_omega = sigma_omega_map.get(key, 0.0)
+            gamma_errs[i] = 0.5 * np.sqrt(sigma_rate**2 + sigma_omega**2)
+
+
+
+    # --- build individual masks ---
+    k = 15
+    mask_omega_val  = iqr_outlier_mask(omega_vals, k)
+    mask_gamma_val  = iqr_outlier_mask(gamma_vals, k)
+    mask_norm_o     = iqr_outlier_mask(norm_o, k)
+    mask_norm_g     = iqr_outlier_mask(norm_g, k)
+
+    mask_omega_err  = np.ones_like(omega_vals, dtype=bool)
+    if omega_errs is not None:
+        rel_err_omega = omega_errs / np.maximum(np.abs(omega_vals), 1e-20)
+        mask_omega_err = rel_err_omega < 100.0 # example: <50% relative error
+
+    mask_gamma_err  = np.ones_like(gamma_vals, dtype=bool)
+    if gamma_errs is not None:
+        rel_err_gamma = gamma_errs / np.maximum(np.abs(gamma_vals), 1e-20)
+        mask_gamma_err = rel_err_gamma < 100.0
+
+    #remove negative values ---
+    # mask_nonneg = (omega_vals > 0) & (gamma_vals > 0)
+    # --- combine into a single mask ---
+    mask_all = mask_omega_val & mask_gamma_val & mask_norm_o & mask_norm_g & mask_omega_err & mask_gamma_err
+
+    # --- apply to all arrays ---
+    omega_vals  = omega_vals[mask_all]
+    omega_errs  = omega_errs[mask_all]   if omega_errs  is not None else None
+    norm_o      = norm_o[mask_all]
+    norm_o_errs = norm_o_errs[mask_all] if norm_o_errs is not None else None
+
+    gamma_vals  = gamma_vals[mask_all]
+    gamma_errs  = gamma_errs[mask_all]   if gamma_errs  is not None else None
+    norm_g      = norm_g[mask_all]
+    norm_g_errs = norm_g_e[mask_all] if norm_g_e is not None else None
+
+    gamma_med = float(np.nanmedian(gamma_vals)) if gamma_vals.size else np.nan
+
+    print(len(omega_vals), len(gamma_vals))
+    # ---------- Plot (no filtering) ----------
+    plt.figure(figsize=(7, 6))
+    # Ω points
+    plt.errorbar(
+        omega_vals, norm_o,
+        xerr=omega_errs, yerr=norm_o_errs,
+        fmt="o", markersize=5, capsize=3, elinewidth=1, alpha=0.85, label="Ω "
+    )
+
+    # γ points (combined)
+    plt.errorbar(
+        gamma_vals, norm_g,
+        xerr=gamma_errs, yerr=norm_g_errs,
+        fmt="s", markersize=5, capsize=3, elinewidth=1, alpha=0.85, label="γ"
+    )
+
+    if show_medians:
+        if np.isfinite(omega_med):
+            plt.axvline(omega_med, linestyle="--", alpha=0.6, label=f"Ω median = {omega_med:.3g}")
+        if np.isfinite(gamma_med):
+            plt.axvline(gamma_med, linestyle=":",  alpha=0.6, label=f"γ median = {gamma_med:.3g}")
+
+    plt.xlabel(r"Parameter value ($\Omega$ or $\gamma$)")
+    # plt.xlabel(r"Parameter value ($\gamma$)")
+    plt.ylabel("Contrast (norm)")
+    plt.title("Contrast vs Ω and γ")
+    # plt.title("Contrast vs γ")
+    plt.grid(True, linestyle="--", alpha=0.5)
+    # plt.xscale("log")
+    # plt.yscale("log")
+    plt.legend(frameon=True)
+    plt.tight_layout()
+    plt.show()
+
 
 # import numpy as np
 # import matplotlib.pyplot as plt
@@ -1039,6 +1187,19 @@ def iqr_outlier_mask(values, k=1.5):
     mask = (v >= lower) & (v <= upper) & finite
     return mask
 
+# ----- WHICH COLUMNS HOLD WHICH PARAMS -----
+
+def run_fit_batch(file_ids, selected_indices, use_double_fit=False):
+    data = widefield.process_multiple_files(file_ids, load_npz=True)
+    (fit_params, fit_functions, residuals, taus,
+     norm_counts, norm_counts_ste, nv_list, fit_errors) = process_and_fit_data(
+        data, use_double_fit=use_double_fit, selected_indices=selected_indices
+    )
+    return {
+        "fit_params": fit_params,
+        "fit_errors": fit_errors,
+        "nv_list": nv_list,
+    }
 # Usage Example
 if __name__ == "__main__":
     kpl.init_kplotlib()
@@ -1068,14 +1229,15 @@ if __name__ == "__main__":
     #fmt: off
     # file_path, all_file_ids_str = widefield.combined_filename(file_ids)
     # print(f"File path: {file_path}")\
-    #omega
-    # file_ids = ["2025_10_14-21_08_23-rubin-nv0_2025_09_08", "2025_10_15-01_27_23-rubin-nv0_2025_09_08"]
-    # gamma 113MHz orientaion
+    
+    ### omega all nv
+    file_ids = ["2025_10_14-21_08_23-rubin-nv0_2025_09_08", "2025_10_15-01_27_23-rubin-nv0_2025_09_08"]
+    ### gamma 113MHz orientaion
     # file_ids = ["2025_10_18-07_23_48-rubin-nv0_2025_09_08", "2025_10_18-03_24_11-rubin-nv0_2025_09_08"]
     # indices_113_MHz = [0, 1, 3, 6, 10, 14, 16, 17, 19, 23, 24, 25, 26, 27, 32, 33, 34, 35, 37, 38, 41, 49, 50, 51, 53, 54, 55, 60, 62, 63, 64, 66, 67, 68, 70, 72, 73, 74, 75, 76, 78, 80, 81, 82, 83, 84, 86, 88, 90, 92, 93, 95, 96, 99, 100, 101, 102, 103, 105, 108, 109, 111, 113, 114]
-    # gamm 217Mhz orientation
-    file_ids = ["2025_10_18-21_17_09-rubin-nv0_2025_09_08", "2025_10_18-17_10_51-rubin-nv0_2025_09_08"]
-    indices_217_MHz = [2, 4, 5, 7, 8, 9, 11, 12, 13, 15, 18, 20, 21, 22, 28, 29, 30, 31, 36, 39, 40, 42, 43, 44, 45, 46, 47, 48, 52, 56, 57, 58, 59, 61, 65, 69, 71, 77, 79, 85, 87, 89, 91, 94, 97, 98, 104, 106, 107, 110, 112, 115, 116, 117]
+    # gamma 217Mhz orientation
+    # file_ids = ["2025_10_18-21_17_09-rubin-nv0_2025_09_08", "2025_10_18-17_10_51-rubin-nv0_2025_09_08"]
+    # indices_217_MHz = [2, 4, 5, 7, 8, 9, 11, 12, 13, 15, 18, 20, 21, 22, 28, 29, 30, 31, 36, 39, 40, 42, 43, 44, 45, 46, 47, 48, 52, 56, 57, 58, 59, 61, 65, 69, 71, 77, 79, 85, 87, 89, 91, 94, 97, 98, 104, 106, 107, 110, 112, 115, 116, 117]
 
     data = widefield.process_multiple_files(file_ids, load_npz=True)
     # data = dm.get_raw_data(file_id=1550610460299)  # Example file ID
@@ -1088,7 +1250,7 @@ if __name__ == "__main__":
         norm_counts_ste,
         nv_list,
         fit_errors,
-    ) = process_and_fit_data(data, use_double_fit=False, selected_indices=indices_217_MHz)
+    ) = process_and_fit_data(data, use_double_fit=False, selected_indices=None)
 
     # print(f"contrst_list = {list(offset_list)}")
     # plot_contrast(nv_list, fit_params)
@@ -1114,7 +1276,7 @@ if __name__ == "__main__":
 
     # 1. Filter by omega outliers
     omega = fit_params[:, 1] / 3.0   # rate → Ω
-    mask1 = iqr_outlier_mask(omega, k=6)  # keep "normal" Ω values
+    mask1 = iqr_outlier_mask(omega, k=10)  # keep "normal" Ω values
 
     # 2. Filter by error threshold
     if fit_errors is not None:
@@ -1136,8 +1298,9 @@ if __name__ == "__main__":
 
     # Optional: quick log of how many were removed
     print(f"IQR filter kept {mask.sum()}/{len(mask)} NVs.")
-    plot_fit_parameters_scatter(fit_params, fit_errors=fit_errors, nv_list=nv_list, x= "gamma")
-
+    plot_fit_parameters_scatter(fit_params, fit_errors=fit_errors, nv_list=nv_list, x= "Omega")
+    plt.show(block = True)
+    # sys.exit()
     # plot_T1_with_errorbars(fit_params, fit_errors, nv_list)
     # plot_fitted_data_separately(
     #     nv_list,
@@ -1149,4 +1312,44 @@ if __name__ == "__main__":
     #     fit_errors,
     # )
     # plots_rates_omega_gamma()
+
+    ############
+    # Ω: all NVs
+    omega_files = [
+        "2025_10_14-21_08_23-rubin-nv0_2025_09_08",
+        "2025_10_15-01_27_23-rubin-nv0_2025_09_08",
+    ]
+
+    # γ: 113 MHz orientation
+    gamma_113_files = [
+        "2025_10_18-07_23_48-rubin-nv0_2025_09_08",
+        "2025_10_18-03_24_11-rubin-nv0_2025_09_08",
+    ]
+    indices_113_MHz = [0, 1, 3, 6, 10, 14, 16, 17, 19, 23, 24, 25, 26, 27, 32, 33, 34, 35,
+                    37, 38, 41, 49, 50, 51, 53, 54, 55, 60, 62, 63, 64, 66, 67, 68, 70,
+                    72, 73, 74, 75, 76, 78, 80, 81, 82, 83, 84, 86, 88, 90, 92, 93, 95,
+                    96, 99, 100, 101, 102, 103, 105, 108, 109, 111, 113, 114]
+
+    # γ: 217 MHz orientation
+    gamma_217_files = [
+        "2025_10_18-21_17_09-rubin-nv0_2025_09_08",
+        "2025_10_18-17_10_51-rubin-nv0_2025_09_08",
+        "2025_10_19-01_34_07-rubin-nv0_2025_09_08"
+    ]
+    indices_217_MHz = [2, 4, 5, 7, 8, 9, 11, 12, 13, 15, 18, 20, 21, 22, 28, 29, 30, 31, 36,
+                    39, 40, 42, 43, 44, 45, 46, 47, 48, 52, 56, 57, 58, 59, 61, 65, 69,
+                    71, 77, 79, 85, 87, 89, 91, 94, 97, 98, 104, 106, 107, 110, 112, 115,
+                    116, 117]
+
+    # ======== RUN ALL THREE ========
+
+    # Ω (looser IQR like your example; error cutoff optional)
+    res_omega = run_fit_batch(omega_files, None)
+    # γ @ 113 MHz
+    res_g113 = run_fit_batch(gamma_113_files, indices_113_MHz)
+    # γ @ 217 MHz
+    res_g217 = run_fit_batch(gamma_217_files, indices_217_MHz)
+    
+    plot_combined_omega_gamma(res_omega, res_g113, res_g217)
+
     kpl.show(block=True)

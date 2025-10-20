@@ -23,8 +23,8 @@ from matplotlib.ticker import ScalarFormatter
 import matplotlib.ticker as mticker
 
 from utils import data_manager as dm
-from utils import widefield as dm
-
+from utils import widefield 
+from utils import tool_belt as tb
 # from utils.tool_belt import nan_corr_coef
 from utils.widefield import threshold_counts
 
@@ -1237,6 +1237,163 @@ def plot_thresholded_counts(data):
 
 
 # end region
+def combine_symmetric_matrices(upper, lower):
+    combined = np.zeros_like(upper)
+    upper_indices = np.triu_indices_from(upper)
+    lower_indices = np.tril_indices_from(lower)
+    combined[upper_indices] = upper[upper_indices]
+    combined[lower_indices] = lower[lower_indices]
+    return combined
+
+def create_spatial_correlation(
+    data,
+    ax=None,
+    sig_or_ref=True,
+    no_cbar=False,
+    cbar_max=None,
+    no_labels=False,
+    indices_113_MHz=None,
+    indices_217_MHz=None,
+    draw_separator=True,
+):
+    """
+    Reorders NVs into orientation blocks and plots correlation matrices.
+    - indices_113_MHz / indices_217_MHz: lists of NV indices in the ORIGINAL ordering
+    - Returns (fig, new_order) when ax is None; otherwise returns the plotted matrix for the requested panel.
+    """
+    # --- Unpack & shapes ---
+    nv_list = data["nv_list"]
+    counts = np.array(data["counts"])   # [experiment, nv, run, step, rep]
+    num_nvs = len(nv_list)
+
+    passed_cbar_max = cbar_max
+    passed_ax = ax
+
+    # --- Build orientation-based ordering ---
+    if indices_113_MHz is None or indices_217_MHz is None:
+        # fallback: keep original order
+        new_order = list(range(num_nvs))
+        sep_at = None
+    else:
+        # keep only valid and unique indices, preserve your ordering
+        seen = set()
+        filt_113 = [i for i in indices_113_MHz if 0 <= i < num_nvs and (i not in seen and not seen.add(i))]
+        seen = set(filt_113)
+        filt_217 = [i for i in indices_217_MHz if 0 <= i < num_nvs and (i not in seen and not seen.add(i))]
+        new_order = filt_113 + filt_217
+        # if anything missing, append remaining NVs in original order (rare but safe)
+        remaining = [i for i in range(num_nvs) if i not in seen and i not in filt_217]
+        if remaining:
+            new_order.extend(remaining)
+        sep_at = len(filt_113) if draw_separator else None
+
+    # --- Reindex nv_list and counts along NV axis ---
+    nv_list = [nv_list[i] for i in new_order]
+    sig_counts = np.array(counts[0])[new_order, ...]
+    ref_counts = np.array(counts[1])[new_order, ...]
+    num_nvs = len(nv_list)
+
+    # --- Threshold counts (same as your code) ---
+    sig_counts, ref_counts = widefield.threshold_counts(
+        nv_list, sig_counts, ref_counts, dynamic_thresh=True
+    )
+
+    # --- Correlations ---
+    ideal_ref_corr_coeffs = np.zeros((num_nvs, num_nvs), dtype=float)
+    ideal_sig_corr_coeffs = np.zeros((num_nvs, num_nvs), dtype=float)
+
+    # NO shuffling—keep block structure!
+    pattern_inds = list(range(num_nvs))
+    flattened_sig_counts = [sig_counts[ind].flatten() for ind in pattern_inds]
+    flattened_ref_counts = [ref_counts[ind].flatten() for ind in pattern_inds]
+
+    sig_corr_coeffs = tb.nan_corr_coef(flattened_sig_counts)
+    ref_corr_coeffs = tb.nan_corr_coef(flattened_ref_counts)
+
+    plot_sig = combine_symmetric_matrices(ideal_sig_corr_coeffs, sig_corr_coeffs)
+    plot_ref = combine_symmetric_matrices(ideal_ref_corr_coeffs, ref_corr_coeffs)
+
+    # --- Plot layout and style (same look as yours) ---
+    titles = [
+        r"Reference ($m_s=0$, No microwave)",
+        # r"Signal ($\pi/2(x) \rightarrow \pi(x) \rightarrow \pi/2(y)$)"
+        r"Signal (two-block Hahn, $\tau = 228$ ns, $T_{\mathrm{lag}} = 364$ ns)"
+    ]
+    vals = [plot_ref, plot_sig]
+    len_vals = len(vals)
+    scale = 0.8
+    figsize = kpl.figsize.copy()
+    figsize[1] = 2 * figsize[0] * scale
+    figsize[0] = 2 * figsize[1] * scale
+    # scale = 2.0
+    # figsize = (kpl.figsize[0] * scale, kpl.figsize[1] * scale)
+
+    if passed_ax is None:
+        fig, axes_pack = plt.subplots(ncols=len_vals, figsize=figsize)
+    else:
+        fig = plt.gcf()
+        axes_pack = [passed_ax] * len_vals
+
+    # Hide diagonals
+    for val in vals:
+        np.fill_diagonal(val, np.nan)
+
+    # Color scale
+    cbar_max = np.nanmax(vals[1:]) / 2 if passed_cbar_max is None else passed_cbar_max
+    cbar_max = 0.03 if passed_cbar_max is None else passed_cbar_max
+
+    for ind in range(len_vals):
+        if passed_ax is not None:
+            if sig_or_ref and ind != 1:
+                continue
+            if not sig_or_ref and ind != 0:
+                continue
+            ax = passed_ax
+            ret_val = vals[ind]
+        else:
+            ax = axes_pack[ind]
+
+        kpl.imshow(
+            ax,
+            vals[ind],
+            title=titles[ind],
+            cbar_label="Correlation coefficient",
+            cmap="RdBu_r",
+            vmin=-cbar_max,
+            vmax=cbar_max,
+            nan_color=kpl.KplColors.GRAY,
+            no_cbar=True,
+        )
+
+        # Labels
+        if not no_labels:
+            ax.set_ylabel("NV index")
+            if ind == len_vals - 1:
+                ax.set_xlabel("NV index")
+
+        # Thin grid for readability
+        kwargs = {"color": kpl.KplColors.BLACK, "linewidths": 0.15}
+        ax.hlines(y=np.arange(0, num_nvs - 1) + 0.5, xmin=-0.5, xmax=num_nvs - 0.5, **kwargs)
+        ax.vlines(x=np.arange(0, num_nvs - 1) + 0.5, ymin=-0.5, ymax=num_nvs - 0.5, **kwargs)
+
+        # Draw a separator line between orientation blocks
+        if sep_at is not None and 0 < sep_at < num_nvs:
+            ax.axhline(sep_at - 0.5, color="k", linewidth=1.2)
+            ax.axvline(sep_at - 0.5, color="k", linewidth=1.2)
+
+        # Shared colorbar on last
+        if passed_ax is None and ind == len_vals - 1:
+            img = ax.get_images()[0]
+            cbar = fig.colorbar(img, ax=axes_pack, shrink=0.5, aspect=20, extend="both")
+            cbar.ax.set_title("Corr.\ncoeff.")
+            cbar.ax.set_yticks([-cbar_max, 0, cbar_max])
+            cbar.ax.tick_params(labelrotation=90)
+
+    if passed_ax is not None:
+        return ret_val
+
+    return fig, new_order
+
 
 if __name__ == "__main__":
     kpl.init_kplotlib()
@@ -1249,7 +1406,7 @@ if __name__ == "__main__":
     file_ids = ["2025_10_12-10_27_20-rubin-nv0_2025_09_08","2025_10_12-10_27_20-rubin-nv0_2025_09_08"]
     data = widefield.process_multiple_files(file_ids)
     # process_and_plot(data, rearrangement="block")
-    plot_nv_network(data)
+    # plot_nv_network(data)
     # plot_thresholded_counts(data)
     # try:
     #     # print(data.shape)
@@ -1261,9 +1418,7 @@ if __name__ == "__main__":
     #     # plot_nv_network(data)
     #     # plot_nv_network_3d(data)
     # except Exception as e:
-    #     print(f"Error occurred: {e}")
-
-    plt.show(block=True)
+    #     print(f"Error occurred: {e}")\
 
     # analyses = process_files_incrementally(file_ids)
     # # Generate example averaging times for each step
@@ -1282,5 +1437,19 @@ if __name__ == "__main__":
 
     # # except Exception as e:
     # #     print(f"Error occurred: {e}")
+
+    #### spatial correlation sorted by indices
+    file_ids = ["2025_10_19-11_43_54-rubin-nv0_2025_09_08"]
+    data = widefield.process_multiple_files(file_ids, load_npz=True)
+    indices_113_MHz = [0, 1, 3, 6, 10, 14, 16, 17, 19, 23, 24, 25, 26, 27, 32, 33, 34, 35, 37, 38, 41, 49, 50, 51, 53, 54, 55, 60, 62, 63, 64, 66, 67, 68, 70, 72, 73, 74, 75, 76, 78, 80, 81, 82, 83, 84, 86, 88, 90, 92, 93, 95, 96, 99, 100, 101, 102, 103, 105, 108, 109, 111, 113, 114]
+    indices_217_MHz = [2, 4, 5, 7, 8, 9, 11, 12, 13, 15, 18, 20, 21, 22, 28, 29, 30, 31, 36, 39, 40, 42, 43, 44, 45, 46, 47, 48, 52, 56, 57, 58, 59, 61, 65, 69, 71, 77, 79, 85, 87, 89, 91, 94, 97, 98, 104, 106, 107, 110, 112, 115, 116, 117]
+    
+    fig, new_order = create_spatial_correlation(
+    data,
+    indices_113_MHz=indices_113_MHz,
+    indices_217_MHz=indices_217_MHz,
+    )
+
+    plt.show(block=True)
 
     # plt.show(block=True)
