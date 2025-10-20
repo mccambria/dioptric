@@ -513,7 +513,8 @@ def do_two_block_hahn_spatial_correlation(nv_list):
     num_runs = 1000
     # num_runs = 2
     tau = 228 # gap between pulses
-    T_lag = 364 # gap between two blocks
+    # T_lag = 364 # gap between two blocks for trough
+    T_lag = 264 # gap between two blocks for zero crodding
     two_block_hahn_spatial_correlation.main(nv_list, num_reps, num_runs, tau, T_lag)
     # for _ in range(1):
     #     T2_correlation.main(nv_list, num_reps, num_runs, tau)
@@ -1395,8 +1396,8 @@ if __name__ == "__main__":
     print(f"Red Laser Coordinates: {red_coords_list[0]}")
 
     # pixel_coords_list = [[124.195, 127.341],[13.905, 11.931],[151.679, 245.068],[240.501, 17.871]]
-    # green_coords_list = [[108.326, 107.2],[119.451, 121.595],[106.759, 93.57],[93.74, 118.298]]
-    # red_coords_list = [[73.432, 71.593],[82.012, 83.799],[72.603, 60.48],[61.204, 79.853]]
+    # green_coords_list = [[108.376, 107.152],[119.531, 121.539],[106.795, 93.544],[93.749, 118.305]]
+    # red_coords_list = [[73.474, 71.556],[82.079, 83.757],[72.633, 60.461],[61.211, 79.859]]
     num_nvs = len(pixel_coords_list)
     threshold_list = [None] * num_nvs
     # fmt: off
@@ -1499,7 +1500,7 @@ if __name__ == "__main__":
         # )
 
         do_compensate_for_drift(nv_sig)
-        do_widefield_image_sample(nv_sig, 50)
+        # do_widefield_image_sample(nv_sig, 50)
         # do_widefield_image_sample(nv_sig, 200)
 
         # for nv in nv_list:
@@ -1593,8 +1594,8 @@ if __name__ == "__main__":
 
         # do_simple_correlation_test(nv_list)
         # do_two_block_hahn_spatial_correlation(nv_list)
-        do_T2_correlation_test(nv_list)
-        do_two_block_hahn_correlation(nv_list)
+        # do_T2_correlation_test(nv_list)
+        # do_two_block_hahn_correlation(nv_list)
         # do_resonance(nv_list)
         # do_sq_relaxation(nv_list)
         # do_dq_relaxation(nv_list)
@@ -1603,7 +1604,7 @@ if __name__ == "__main__":
         # do_charge_quantum_jump(nv_list)
         # do_ac_stark(nv_list)
 
-        # do_two_block_hahn_spatial_correlation(nv_list)
+        do_two_block_hahn_spatial_correlation(nv_list)
 
         # AVAILABLE_XY = ["hahn-n", "xy2-n", "xy4-n", "xy8-n", "xy16-n"]
         # do_xy(nv_list, xy_seq="xy8-1")
