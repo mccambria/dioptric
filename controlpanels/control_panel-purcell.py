@@ -183,7 +183,7 @@ def do_optimize_readout_amp(nv_list):
     num_reps = 12
     num_runs = 200
     # num_runs = 400
-    min_amp = 0.8
+    min_amp = 0.8 
     max_amp = 1.2
     return optimize_charge_state_histograms_mcc.optimize_readout_amp(
         nv_list, num_steps, num_reps, num_runs, min_amp, max_amp
@@ -1345,9 +1345,9 @@ if __name__ == "__main__":
     green_coords_key = f"coords-{green_laser}"
     red_coords_key = f"coords-{red_laser}"
     pixel_coords_key = "pixel_coords"
-    sample_name = "rubin"
+    sample_name = "johnson"
     # magnet_angle = 90
-    date_str = "2025_09_08"
+    date_str = "2025_10_21"
     sample_coords = [0.4, 0.8]
     z_coord = 1.4
     # Load NV pixel coordinates1
@@ -1396,8 +1396,8 @@ if __name__ == "__main__":
     print(f"Red Laser Coordinates: {red_coords_list[0]}")
 
     # pixel_coords_list = [[124.195, 127.341],[13.905, 11.931],[151.679, 245.068],[240.501, 17.871]]
-    # green_coords_list = [[108.243, 107.334],[119.531, 121.539],[106.795, 93.544],[93.749, 118.305]]
-    # red_coords_list = [[73.474, 71.556],[82.079, 83.757],[72.633, 60.461],[61.211, 79.859]]
+    # green_coords_list = [[108.316, 107.379],[119.471, 121.766],[106.735, 93.771],[93.689, 118.532]]
+    # red_coords_list = [[73.418, 71.737],[82.022, 83.938], [72.577, 60.642],[61.154, 80.04]]
     num_nvs = len(pixel_coords_list)
     threshold_list = [None] * num_nvs
     # fmt: off
