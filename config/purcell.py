@@ -34,8 +34,8 @@ red_laser_aod = "laser_COBO_638_aod"
 
 
 calibration_coords_pixel = [[13.905, 11.931], [151.679, 245.068],[240.501, 17.871]]
-calibration_coords_green = [[119.531, 121.539],[106.795, 93.544],[93.749, 118.305]]
-calibration_coords_red = [[82.079, 83.757],[72.633, 60.461],[61.211, 79.859]]
+calibration_coords_green = [[119.331, 121.741],[106.595, 93.746],[93.549, 118.507]]
+calibration_coords_red = [[81.909, 83.911], [72.463, 60.615], [61.041, 80.013]]
 
 # Create the dictionaries using the provided lists
 calibration_coords_nv1 = {
@@ -194,6 +194,7 @@ config |= {
             # LaserKey.IMAGING: {"physical_name": green_laser, "duration": 50e6},
             VirtualLaserKey.IMAGING: {
                 "physical_name": green_laser,
+                # "duration": 12e6,
                 "duration": 12e6,
             },
             # SBC: created for calibration only
@@ -874,7 +875,7 @@ opx_config = {
     ### Analog
     "waveforms": {
         # Green AOD
-        "green_aod_cw-opti": {"type": "constant", "sample": 0.09},
+        "green_aod_cw-opti": {"type": "constant", "sample": 0.11},
         "green_aod_cw-charge_pol": {"type": "constant", "sample": 0.07},
         "green_aod_cw-spin_pol": {"type": "constant", "sample": 0.05},
         "green_aod_cw-shelving": {"type": "constant", "sample": 0.05},
@@ -887,7 +888,8 @@ opx_config = {
         "yellow_imaging": {"type": "constant", "sample": 0.35},
         # "yellow_charge_readout": {"type": "constant", "sample": 0.2675},
         # "yellow_charge_readout": {"type": "constant", "sample": 0.2367}, #136NVs
-        "yellow_charge_readout": {"type": "constant", "sample": 0.2267}, #118NVs
+        # "yellow_charge_readout": {"type": "constant", "sample": 0.2267}, #118NVs
+        "yellow_charge_readout": {"type": "constant", "sample": 0.2267},
         "yellow_spin_pol": {"type": "constant", "sample": 0.24},
         "yellow_shelving": {"type": "constant", "sample": 0.20},
         # Other
