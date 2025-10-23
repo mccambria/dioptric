@@ -1389,9 +1389,9 @@ if __name__ == "__main__":
     print(f"Green Laser Coordinates: {green_coords_list[0]}")
     print(f"Red Laser Coordinates: {red_coords_list[0]}")
 
-    pixel_coords_list = [[124.195, 127.341],[14.043, 37.334],[106.538, 237.374],[230.347, 30.026]]
-    green_coords_list = [[108.32, 107.362], [119.715, 118.886],[111.743, 95.075], [95.042, 117.296]]
-    red_coords_list = [[73.464, 71.63], [82.287, 81.487], [76.669, 61.833], [62.324, 79.011]]
+    # pixel_coords_list = [[124.195, 127.341],[14.043, 37.334],[106.538, 237.374],[230.347, 30.026]]
+    # green_coords_list = [[108.32, 107.362], [119.715, 118.886],[111.743, 95.075], [95.042, 117.296]]
+    # red_coords_list = [[73.464, 71.63], [82.287, 81.487], [76.669, 61.833], [62.324, 79.011]]
     num_nvs = len(pixel_coords_list)
     threshold_list = [None] * num_nvs
     # fmt: off
@@ -1547,15 +1547,15 @@ if __name__ == "__main__":
         # optimize.optimize_pixel_and_z(nv_sig, do_plot=True)
         # coords_key = None
         # coords_key = green_laser
-        coords_key = red_laser
-        do_optimize_loop(np.array(nv_list), np.array(coords_key))
+        # coords_key = red_laser
+        # do_optimize_loop(np.array(nv_list), np.array(coords_key))
 
         # do_charge_state_histograms(nv_list)
         # do_charge_state_conditional_init(nv_list)
         # do_charge_state_histograms_images(nv_list, vary_pol_laser=True)
 
         # do_optimize_pol_amp(nv_list)
-        # do_optimize_pol_duration(nv_list)
+        do_optimize_pol_duration(nv_list)
         # do_optimize_readout_amp(nv_list)
         # do_optimize_readout_duration(nv_list)
         # optimize_readout_amp_and_duration(nv_list)

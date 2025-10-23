@@ -172,30 +172,30 @@ def plot_nv_resonance(
     ax_snr.tick_params(axis="both", labelsize=14)
     plt.show(block=True)
     # Set plot style
-    # for nv_ind in range(num_nvs):
-    #     fig, ax = plt.subplots(figsize=(8, 5))
-    #     # Data points with error bars
-    #     ax.errorbar(
-    #         freqs,
-    #         avg_counts[nv_ind],
-    #         yerr=avg_counts_ste[nv_ind],
-    #         fmt="o",
-    #         color="steelblue",
-    #         ecolor="gray",
-    #         elinewidth=1,
-    #         capsize=3,
-    #         markersize=5,
-    #         label="Data"
-    #     )
-    #     # Fit curve
-    #     ax.plot(freqs_dense, fit_fns[nv_ind], "-", color="red", label="Fit")
-    #     # Labels and style
-    #     ax.set_xlabel("Frequency (GHz)")
-    #     ax.set_ylabel("Normalized NV Population")
-    #     ax.set_title(f"NV Index: {nv_ind}")
-    #     ax.grid(True, linestyle="--", alpha=0.6)
-    #     ax.legend()
-    #     plt.show(block=True)
+    for nv_ind in range(num_nvs):
+        fig, ax = plt.subplots(figsize=(8, 5))
+        # Data points with error bars
+        ax.errorbar(
+            freqs,
+            avg_counts[nv_ind],
+            yerr=avg_counts_ste[nv_ind],
+            fmt="o",
+            color="steelblue",
+            ecolor="gray",
+            elinewidth=1,
+            capsize=3,
+            markersize=5,
+            label="Data"
+        )
+        # Fit curve
+        ax.plot(freqs_dense, fit_fns[nv_ind], "-", color="red", label="Fit")
+        # Labels and style
+        ax.set_xlabel("Frequency (GHz)")
+        ax.set_ylabel("Normalized NV Population")
+        ax.set_title(f"NV Index: {nv_ind}")
+        ax.grid(True, linestyle="--", alpha=0.6)
+        ax.legend()
+        plt.show(block=True)
     # return
 
     # ----------------- Example of use in your pipeline -----------------
