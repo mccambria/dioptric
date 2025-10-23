@@ -394,7 +394,7 @@ if __name__ == "__main__":
     remove_outliers_flag = False  # Set this flag to enable/disable outlier removal
     reorder_coords_flag = True  # Set this flag to enable/disable reordering of NVs
     data = dm.get_raw_data(
-        file_stem="2025_10_22-02_26_08-rubin-nv0_2025_09_08", load_npz=True
+        file_stem="2025_10_22-15_15_23-johnson-nv0_2025_10_21", load_npz=True
     )
     img_array = np.array(data["ref_img_array"])
     # img_array = data["img_array"]

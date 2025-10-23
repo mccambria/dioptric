@@ -143,7 +143,7 @@ def do_optimize_pol_duration(nv_list):
     # min_duration = 200
     # max_duration = 9992
     num_reps = 10
-    num_runs = 200
+    num_runs = 220
     return optimize_charge_state_histograms_mcc.optimize_pol_duration(
         nv_list, num_steps, num_reps, num_runs, min_duration, max_duration
     )
@@ -154,7 +154,7 @@ def do_optimize_pol_amp(nv_list):
     # num_reps = 150
     # num_runs = 5
     num_reps = 10
-    num_runs = 300
+    num_runs = 220
     min_amp = 0.7
     max_amp = 1.2
     return optimize_charge_state_histograms_mcc.optimize_pol_amp(
@@ -1359,12 +1359,7 @@ if __name__ == "__main__":
         # file_path="slmsuite/nv_blob_detection/nv_blob_118nvs_reordered.npz",
         file_path="slmsuite/nv_blob_detection/nv_blob_467nvs_reordered.npz",
     ).tolist()
-    # pixel_coords_list = [
-    #     [124.195, 127.341],
-    #     [13.905, 11.931],
-    #     [151.679, 245.068],
-    #     [240.501, 17.871],
-    # ]
+    # pixel_coords_list = [[124.195, 127.341],[14.043, 37.334],[106.538, 237.374],[230.347, 30.026]]
 
     green_coords_list = [
         [
@@ -1395,9 +1390,9 @@ if __name__ == "__main__":
     print(f"Green Laser Coordinates: {green_coords_list[0]}")
     print(f"Red Laser Coordinates: {red_coords_list[0]}")
 
-    # pixel_coords_list = [[124.195, 127.341],[13.905, 11.931],[151.679, 245.068],[240.501, 17.871]]
-    # green_coords_list = [[108.316, 107.379],[119.471, 121.766],[106.735, 93.771],[93.689, 118.532]]
-    # red_coords_list = [[73.418, 71.737],[82.022, 83.938], [72.577, 60.642],[61.154, 80.04]]
+    # pixel_coords_list = [[124.195, 127.341],[14.043, 37.334],[106.538, 237.374],[230.347, 30.026]]
+    # green_coords_list = [[108.335, 107.415], [119.703, 118.936],[111.733, 95.146], [94.975, 117.323]]
+    # red_coords_list = [[73.432, 71.767], [82.304, 81.659],[76.598, 62.003],[62.24, 79.125]]
     num_nvs = len(pixel_coords_list)
     threshold_list = [None] * num_nvs
     # fmt: off
@@ -1429,8 +1424,8 @@ if __name__ == "__main__":
     
     # scc_amp_list = [1.0] * num_nvs
     scc_duration_list = [124] * num_nvs
-    pol_duration_list = [600] * num_nvs
-    # pol_duration_list = [1000] * num_nvs
+    # pol_duration_list = [600] * num_nvs
+    pol_duration_list = [1000] * num_nvs
     # nv_list[i] will have the ith coordinates from the above lists
     nv_list: list[NVSig] = []
     for ind in range(num_nvs):
@@ -1500,7 +1495,7 @@ if __name__ == "__main__":
         # )
 
         do_compensate_for_drift(nv_sig)
-        # do_widefield_image_sample(nv_sig, 50)
+        do_widefield_image_sample(nv_sig, 50)
         # do_widefield_image_sample(nv_sig, 200)
 
         # for nv in nv_list:
@@ -1554,7 +1549,7 @@ if __name__ == "__main__":
         # coords_key = red_laser
         # do_optimize_loop(np.array(nv_list), np.array(coords_key))
 
-        do_charge_state_histograms(nv_list)
+        # do_charge_state_histograms(nv_list)
         # do_charge_state_conditional_init(nv_list)
         # do_charge_state_histograms_images(nv_list, vary_pol_laser=True)
 
