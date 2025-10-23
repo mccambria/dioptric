@@ -20,7 +20,7 @@ import time
 import labrad
 import numpy as np
 from utils import positioning as pos
-
+from utils import kplotlib as kpl
 # import majorroutines.confocal.determine_standard_readout_params as determine_standard_readout_params
 # import majorroutines.confocal.g2_measurement as g2_measurement
 import majorroutines.confocal.confocal_image_sample as image_sample
@@ -52,7 +52,7 @@ def do_image_sample(
     # scan_range = 0.2
     # num_steps = 60
 
-    scan_range = 0.4 #voltage
+    scan_range = 0.2 #voltage 
     num_steps = 100
 
     # For now we only support square scans so pass scan_range twice
@@ -65,7 +65,7 @@ def do_image_sample(
 
 
 def do_image_sample_zoom(nv_sig):
-    scan_range = 0.05
+    scan_range = 0.05 #cryo iimage conversion: 37um/V; step size: x,y,z=30,30,40V
     num_steps = 30
 
     image_sample.confocal_scan(
@@ -374,6 +374,9 @@ def do_stationary_count(
 
 # endregion
 
+def get_sample_name() -> str:
+    sample = "rubin" #lovelace
+    return sample
 
 if __name__ == "__main__":
     ### Shared parameters
@@ -383,7 +386,7 @@ if __name__ == "__main__":
     red_laser = "cobolt_638"
 
     # fmt: off
-    sample_name = "lovelace"
+     #lovelace"
     # nv_sig = {
     #     "coords": [0.240, -0.426, 1], "name": "{}-nv8_2022_11_14".format(sample_name),
     #     "disable_opt": False, "disable_z_opt": True, "expected_count_rate": 13,
@@ -404,13 +407,15 @@ if __name__ == "__main__":
     #     }
     # fmt: on
 
-    # coords: SAMPLE (piezo) xyz; add GALVO/PIXEL later if you have them
-    sample_xy = [0.0, 0.0] # piezo XY
-    coord_z = 0.0  # piezo z
+    # coords: SAMPLE (piezo) xyz 
+    # current step rate: 30.0V XY
+    # current step rate: 40.0V Z
+    sample_xy = [0.0,0.0] # piezo XY voltage input (1.0=1V) (not coordinates, relative)
+    coord_z = 50  # piezo z voltage (0 is the set midpoint, absolute) (negative is closer to smaple, move unit steps in sample; 37 is good surface focus with bs for Lovelace; 20 is good for dye)
     pixel_xy = [0.0, 0.0]  # galvo ref
 
     nv_sig = NVSig(
-        name=f"{sample_name}-2025_10_09",
+        name=f"({get_sample_name()})",
         coords={
             CoordsKey.SAMPLE: sample_xy,
             CoordsKey.Z: coord_z,
@@ -447,12 +452,14 @@ if __name__ == "__main__":
         # nv_sig["imaging_readout_dur"] = 5e7
 
         # region Image sample
-        pos.set_xyz_on_nv(nv_sig)
+        # pos.set_xyz_on_nv(nv_sig)
         # do_image_sample(nv_sig)
-        # z_range = np.linspace(0.0, 1.0, 11)
-        # for z in z_range:
-        #     nv_sig.coords[CoordsKey.Z] = z
-        #     do_image_sample(nv_sig)
+        # ## Z AXIS PIEZO SCAN
+        z_range = np.linspace(-150, 300, 31) # 37 is roughly the surface of Lovelace
+        for z in z_range:
+            nv_sig.coords[CoordsKey.Z] = z
+            pos.set_xyz_on_nv(nv_sig)
+            do_image_sample(nv_sig)
         # do_image_sample_zoom(nv_sig)
         # do_image_sample(nv_sig, nv_minus_initialization=True)
         # do_image_sample_zoom(nv_sig, nv_minus_initialization=True)
@@ -460,8 +467,9 @@ if __name__ == "__main__":
 
         # do_optimize(nv_sig)
         # nv_sig["imaging_readout_dur"] = 5e7
+
         # region Stationary count
-        # do_stationary_count(nv_sig, disable_opt=True)
+        # do_stationary_count(nv_sig, disable_opt=True) #Note there is a slow response time w/ the APD
         # do_stationary_count(nv_sig, disable_opt=True, nv_minus_initialization=True)
         # do_stationary_count(nv_sig, disable_opt=True, nv_zero_initialization=True)
         # endregion Stationary count
@@ -491,3 +499,4 @@ if __name__ == "__main__":
     finally:
         tool_belt.reset_cfm()
         tool_belt.reset_safe_stop()
+        kpl.show(block=True)

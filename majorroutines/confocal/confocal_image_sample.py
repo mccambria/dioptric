@@ -26,11 +26,10 @@ from utils.constants import (
     VirtualLaserKey,
 )
 
+from controlpanels import control_panel_cryo as ccryo
 
 # Confocal scan (abstract; device picked by config)
-import time
-import numpy as np
-import matplotlib.pyplot as plt
+from datetime import datetime
 import sys
 from utils import tool_belt as tb
 from utils import positioning as pos
@@ -68,7 +67,6 @@ def confocal_scan(nv_sig: NVSig, x_range, y_range, num_steps, nv_minus_init=Fals
     # 1) Resolve the imaging positioner from config (abstract)
     positioner = pos.get_laser_positioner(VirtualLaserKey.IMAGING)
     mode = pos.get_positioner_control_mode(positioner)
-
     # 2) Build grid in the space that matches the imaging coordinate system
     x0, y0 = pos.get_nv_coords(nv_sig, coords_key=CoordsKey.PIXEL)
     X, Y, x1d, y1d, extent = pos.get_scan_grid_2d(x0, y0, x_range, y_range, num_steps, num_steps)
@@ -79,22 +77,26 @@ def confocal_scan(nv_sig: NVSig, x_range, y_range, num_steps, nv_minus_init=Fals
     readout_ns = int(nv_sig.pulse_durations.get(VirtualLaserKey.IMAGING, int(vld["duration"])))
     readout_s = readout_ns / 1e9
     readout_laser = vld["physical_name"]
-
+    coord_z = nv_sig.coords[CoordsKey.Z] 
+    sample_xy = nv_sig.coords[CoordsKey.SAMPLE]
+    sample_name= ccryo.get_sample_name()
     # Servers
     pulse = tb.get_server_pulse_streamer()   # or tb.get_server_pulse_gen(), per your tb
     ctr   = tb.get_server_counter()
 
     # Buffers/plot
-    pos.set_xyz_on_nv(nv_sig)
+    # pos.set_xyz_on_nv(nv_sig)
     img = np.full((num_steps, num_steps), np.nan, float)
     img_kcps = np.copy(img) if count_fmt == CountFormat.KCPS else None
     cursor = []
     kpl.init_kplotlib()
     fig, ax = plt.subplots()
+    ax.set_xlabel("Voltage (V)")
+    ax.set_ylabel("Voltage (V)")
     kpl.imshow(ax, img if img_kcps is None else img_kcps,
-               title=f"Confocal scan, {readout_laser}, {time.ctime()}",
+               title=f"XY={sample_xy},Z={coord_z},{sample_name}",
                #title=f"Confocal scan, {readout_laser}, {readout_ns/1e3:.1f} μs",
-               cbar_label=("Kcps" if img_kcps is not None else "Counts"),
+               cbar_label=("Kcps" if img_kcps is not None else "Raw Counts"),
                extent=extent)
 
     tb.reset_cfm()
@@ -130,6 +132,7 @@ def confocal_scan(nv_sig: NVSig, x_range, y_range, num_steps, nv_minus_init=Fals
                 if img_kcps is not None:
                     img_kcps[:] = (img/1000.0)/readout_s
                     kpl.imshow_update(ax, img_kcps)
+                    print("kcps")
                 else:
                     kpl.imshow_update(ax, img)
 
@@ -150,9 +153,9 @@ def confocal_scan(nv_sig: NVSig, x_range, y_range, num_steps, nv_minus_init=Fals
                 pos.set_xyz((X[idx], Y[idx]), positioner=positioner)
                 # positioner.load_stream_xy([X[idx]], [Y[idx]], False)
                 # .set_xyz((X[idx], Y[idx]), positioner=positioner)
-                if settle_s > 0:
-                    tb.sleep_seconds_safely(settle_s)
-
+                # if settle_s > 0:
+                    # tb.sleep_seconds_safely(settle_s)
+                time.sleep(0.01)
                 # Read one or more samples for this pixel
                 if nv_minus_init:
                     raw = ctr.read_counter_modulo_gates(2)
@@ -187,13 +190,13 @@ def confocal_scan(nv_sig: NVSig, x_range, y_range, num_steps, nv_minus_init=Fals
         x_center=x0, y_center=y0,
         extent=extent,
         readout_ns=readout_ns, readout_units="ns",
-        img_array=img.astype(int), img_array_units="counts",
+        img_array=img.astype(int), img_array_units="kcps",
         x_coords_1d=x1d, y_coords_1d=y1d,
     )
     path = dm.get_file_path(__file__, ts, getattr(nv_sig, "name", "nv"))
     dm.save_figure(fig, path)
     dm.save_raw_data(raw, path)
-    kpl.show(block=True)
+    kpl.show()
     return img, x1d, y1d
 
 
