@@ -123,10 +123,10 @@ def main(
 
     cfg = common.get_config_dict()
     count_fmt: CountFormat = cfg["count_format"] # CountFormat.KCPS or CountFormat.RAW
-    count_fmt = CountFormat.RAW
+    # count_fmt = CountFormat.RAW
     ax.set_ylabel("Raw counts")
     # ax.set_ylabel("Kcps" if count_fmt == CountFormat.KCPS is not None else "Counts")
-    #ax.set_ylabel("Count rate (kcps)")
+    # ax.set_ylabel("Count rateS (kcps)")
     try:
         plt.get_current_fig_manager().window.showMaximized()
     except Exception:

@@ -24,14 +24,12 @@ timeout = 5
 """
 import sys
 
-sys.path.append(r"C:\Users\kolko\Downloads\rsinstrument-1.102.0\rsinstrument-1.102.0")
 import logging
 import socket
 import time
 
 import pyvisa as visa  # Docs here: https://pyvisa.readthedocs.io/en/master/
 from labrad.server import LabradServer, setting
-from RsInstrument import RsInstrument
 import RsInstrument as Rs
 from twisted.internet.defer import ensureDeferred
 
@@ -41,7 +39,7 @@ from utils import tool_belt as tb
 import numpy as np
 from datetime import datetime
 from typing import Union
-class PowerSupplyRnsNgc103(LabradServer, RsInstrument):
+class PowerSupplyRnsNgc103(LabradServer, Rs.RsInstrument):
     name = "power_supply_RNS_ngc103"
     pc_name = socket.gethostname()
 
