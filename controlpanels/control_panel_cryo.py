@@ -52,8 +52,8 @@ def do_image_sample(
     # scan_range = 0.2
     # num_steps = 60
 
-    scan_range = 0.2 #voltage 
-    num_steps = 100
+    scan_range = 1.0 #voltage 
+    num_steps = 200
 
     # For now we only support square scans so pass scan_range twice
     image_sample.confocal_scan(
@@ -425,7 +425,7 @@ if __name__ == "__main__":
         disable_z_opt=True,
         expected_counts=13,
         pulse_durations={
-            VirtualLaserKey.IMAGING: int(5e6),
+            VirtualLaserKey.IMAGING: int(10e6),
             VirtualLaserKey.CHARGE_POL: int(1e4),
             VirtualLaserKey.SPIN_POL: 2000,
             VirtualLaserKey.SINGLET_DRIVE: 300,  # placeholder
@@ -452,14 +452,14 @@ if __name__ == "__main__":
         # nv_sig["imaging_readout_dur"] = 5e7
 
         # region Image sample
-        # pos.set_xyz_on_nv(nv_sig)
-        # do_image_sample(nv_sig)
+        pos.set_xyz_on_nv(nv_sig)
+        do_image_sample(nv_sig)
         # ## Z AXIS PIEZO SCAN
-        z_range = np.linspace(-150, 300, 31) # 37 is roughly the surface of Lovelace
-        for z in z_range:
-            nv_sig.coords[CoordsKey.Z] = z
-            pos.set_xyz_on_nv(nv_sig)
-            do_image_sample(nv_sig)
+        # z_range = np.linspace(-150, 300, 31) # 37 is roughly the surface of Lovelace
+        # for z in z_range:
+        #     nv_sig.coords[CoordsKey.Z] = z
+        #     pos.set_xyz_on_nv(nv_sig)
+        #     do_image_sample(nv_sig)
         # do_image_sample_zoom(nv_sig)
         # do_image_sample(nv_sig, nv_minus_initialization=True)
         # do_image_sample_zoom(nv_sig, nv_minus_initialization=True)

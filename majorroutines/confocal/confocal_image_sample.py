@@ -139,8 +139,15 @@ def confocal_scan(nv_sig: NVSig, x_range, y_range, num_steps, nv_minus_init=Fals
         else:
             # 3B) Step/stream-driven scan: move per pixel, read per pixel
             # Load a simple per-pixel readout sequence (no XY arrays)
-            period_ns = pulse.stream_load(SEQ_FILE_PIXEL_READOUT,
-                                          tb.encode_seq_args([0, readout_ns]))[0]
+            pos_key = CoordsKey.PIXEL  # IMAGING uses PIXEL coords in your code
+            delay_ns = int(cfg["Positioning"]["Positioners"][pos_key]["delay"])  # 400e3 ns in your config
+            period_ns = pulse.stream_load(
+                SEQ_FILE_PIXEL_READOUT,
+                tb.encode_seq_args([delay_ns, readout_ns, readout_laser, 1.0])  # laser args ignored by your seq
+            )[0]
+
+            # period_ns = pulse.stream_load(SEQ_FILE_PIXEL_READOUT,
+            #                               tb.encode_seq_args([0, readout_ns]))[0]
 
             # Optional: small settle from config if present
             settle_s = float(cfg.get("piezo_settle_s", 0.0))
@@ -161,7 +168,7 @@ def confocal_scan(nv_sig: NVSig, x_range, y_range, num_steps, nv_minus_init=Fals
                     raw = ctr.read_counter_modulo_gates(2)
                     vals = [max(int(a)-int(b), 0) for (a,b) in raw]
                 else:
-                    raw = ctr.read_counter_simple()
+                    raw = ctr.read_counter_simple(1)
                     vals = [int(v) for v in raw]
 
                 if not vals:
