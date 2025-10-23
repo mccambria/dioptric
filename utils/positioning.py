@@ -35,7 +35,6 @@ coords (nv_sig key "coords"). Otherwise we'll use the laser specific coords
 (nv_sig key f"coords-{positioner}")
 """
 
-
 def set_xyz(coords, positioner=CoordsKey.SAMPLE, drift_adjust=None, ramp=None):
     if drift_adjust is None:
         drift_adjust = should_drift_adjust(positioner)
@@ -52,20 +51,6 @@ def set_xyz(coords, positioner=CoordsKey.SAMPLE, drift_adjust=None, ramp=None):
 
     else:
         return _set_xyz(coords, positioner)
-
-
-# def _set_xyz(coords, positioner):
-#     # dtype version
-#     xy_dtype = get_xy_dtype(positioner=positioner)
-#     z_dtype = get_z_dtype(positioner=positioner)
-
-#     pos_xy_server = get_server_pos_xy(positioner=positioner)
-#     pos_z_server = get_server_pos_z(positioner=positioner)
-
-#     if pos_xy_server:
-#         pos_xy_server.write_xy(xy_dtype(coords[0]), xy_dtype(coords[1]))
-#     if pos_z_server:
-#         pos_z_server.write_z(z_dtype(coords[2]))
 
 
 def _set_xyz(coords, positioner):

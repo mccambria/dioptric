@@ -222,8 +222,8 @@ def scanning_full_roi(nv_sig, total_range, scan_range, num_steps):
 
     # Define scan grid
     steps = int(np.ceil(total_range / scan_range))
-    x_offsets = np.linspace(-half_total_range, half_total_range, steps + 1)
-    y_offsets = np.linspace(-half_total_range, half_total_range, steps + 1)
+    x_offsets = np.linspace(-half_total_range, half_total_range, steps + 3)
+    y_offsets = np.linspace(-half_total_range, half_total_range, steps + 3)
 
     for x_offset in x_offsets:
         for y_offset in y_offsets:

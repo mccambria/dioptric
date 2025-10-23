@@ -295,8 +295,8 @@ def plot_nv_resonance(
     plt.grid(True, linestyle="--", alpha=0.5)
     # return
 
-    filter_nvs = True
-    # filter_nvs = False
+    # filter_nvs = True
+    filter_nvs = False
     if filter_nvs:
         target_peak_values = [0.113, 0.217]
         # target_peak_values = [0.068, 0.185]
@@ -726,6 +726,10 @@ if __name__ == "__main__":
     file_ids = [
         "2025_10_09-09_29_58-rubin-nv0_2025_09_08",
     ]
+    ## 118 nVs
+    file_ids = [
+        "2025_10_17-23_28_58-rubin-nv0_2025_09_08",
+    ]
     # Load the first dataset as a base
     combined_data = dm.get_raw_data(
         file_stem=file_ids[0], load_npz=True, use_cache=True
@@ -737,6 +741,7 @@ if __name__ == "__main__":
     if combined_data:
         nv_list = combined_data["nv_list"]
         freqs = combined_data["freqs"]
+        print(len(freqs))
         num_steps = combined_data["num_steps"]
         num_reps = combined_data["num_reps"]
         num_runs = combined_data["num_runs"]

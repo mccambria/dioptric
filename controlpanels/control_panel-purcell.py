@@ -48,6 +48,7 @@ from majorroutines.widefield import (
     scc_snr_check,
     simple_correlation_test,
     T2_correlation,
+    two_block_hahn_spatial_correlation,
     spin_echo,
     spin_echo_phase_scan_test,
     two_block_hahn_correlation,
@@ -78,8 +79,8 @@ def do_widefield_image_sample(nv_sig, num_reps=1):
 
 
 def do_scanning_image_sample(nv_sig):
-    scan_range = 15
-    num_steps = 15
+    scan_range = 10
+    num_steps = 10
     image_sample.scanning(nv_sig, scan_range, scan_range, num_steps)
 
 
@@ -182,7 +183,7 @@ def do_optimize_readout_amp(nv_list):
     num_reps = 12
     num_runs = 200
     # num_runs = 400
-    min_amp = 0.8
+    min_amp = 0.8 
     max_amp = 1.2
     return optimize_charge_state_histograms_mcc.optimize_readout_amp(
         nv_list, num_steps, num_reps, num_runs, min_amp, max_amp
@@ -501,8 +502,20 @@ def do_T2_correlation_test(nv_list):
     num_reps = 200
     num_runs = 1000
     # num_runs = 2
-    tau = 19.6e3 # gap
+    # tau = 19.6e3 # gap
+    tau = 228 # gap between pulses
     T2_correlation.main(nv_list, num_reps, num_runs, tau)
+    # for _ in range(1):
+    #     T2_correlation.main(nv_list, num_reps, num_runs, tau)
+
+def do_two_block_hahn_spatial_correlation(nv_list):
+    num_reps = 200
+    num_runs = 1000
+    # num_runs = 2
+    tau = 228 # gap between pulses
+    # T_lag = 364 # gap between two blocks for trough
+    T_lag = 264 # gap between two blocks for zero crodding
+    two_block_hahn_spatial_correlation.main(nv_list, num_reps, num_runs, tau, T_lag)
     # for _ in range(1):
     #     T2_correlation.main(nv_list, num_reps, num_runs, tau)
 
@@ -528,7 +541,8 @@ def do_resonance(nv_list):
     # num_steps = 24
     num_steps = 45
     num_reps = 3
-    num_runs = 500
+    num_runs = 400
+    # num_runs = 1
     freqs = calculate_freqs(freq_center, freq_range, num_steps)
     ##
     # Remove duplicates and sort
@@ -764,10 +778,10 @@ def do_spin_echo(nv_list):
 #         spin_echo.main(nv_list, num_steps, num_reps, num_runs, taus=taus)
 
 def do_two_block_hahn_correlation(nv_list):
-    tau = 200
+    tau = 44
     # lag_taus = [16, 24, 40, 64, 100, 160, 250, 400, 640, 1000, 1500, 2000]
     # lag_taus = [16, 40, 64, 88, 108, 132, 156, 180, 208, 236, 272, 316, 364, 424, 488, 568, 640, 740, 856, 988, 1144, 1292, 1496, 1728, 2000] 
-    lag_taus = widefield.generate_divisible_by_4(16, 1500, 45)
+    lag_taus = widefield.generate_divisible_by_4(16, 2000, 45)
     # print(lag_taus)
     # sys.exit()
     num_steps = len(lag_taus)
@@ -980,16 +994,16 @@ def do_sq_relaxation(nv_list):
 
 
 def do_dq_relaxation(nv_list):
-    min_tau = 1e3
-    max_tau = 15e6 + min_tau
+    min_tau = 5e2
+    max_tau = 10e6 + min_tau
     num_steps = 21
     num_reps = 10
-    num_runs = 200
+    num_runs = 300
 
     # relaxation_interleave.dq_relaxation(
     #     nv_list, num_steps, num_reps, num_runs, min_tau, max_tau
     # )
-    for _ in range(4):
+    for _ in range(1):
         relaxation_interleave.dq_relaxation(
             nv_list, num_steps, num_reps, num_runs, min_tau, max_tau
         )
@@ -1201,12 +1215,12 @@ def do_opx_constant_ac():
         [107, 107, 0],  # Analog frequencies
     )
     # Red + green + Yellow
-    opx.constant_ac(
-        [4, 1],  # Digital channels1
-        [3, 4, 2, 6, 7],  # Analog channels
-        [0.19, 0.19, 0.17, 0.17, 0.25],  # Analog voltages
-        [107, 107, 72, 72, 0],  # Analog frequencies
-    )
+    # opx.constant_ac(
+    #     [4, 1],  # Digital channels1
+    #     [3, 4, 2, 6, 7],  # Analog channels
+    #     [0.19, 0.19, 0.17, 0.17, 0.25],  # Analog voltages
+    #     [107, 107, 72, 72, 0],  # Analog frequencies
+    # )
     input("Press enter to stop...")
     # sig_gen.uwave_off()
 
@@ -1331,19 +1345,19 @@ if __name__ == "__main__":
     green_coords_key = f"coords-{green_laser}"
     red_coords_key = f"coords-{red_laser}"
     pixel_coords_key = "pixel_coords"
-    sample_name = "rubin"
+    sample_name = "johnson"
     # magnet_angle = 90
-    date_str = "2025_09_08"
-    sample_coords = [0.8, 0.2]
-    z_coord = 0.8
-
+    date_str = "2025_10_21"
+    sample_coords = [0.4, 0.8]
+    z_coord = 1.4
     # Load NV pixel coordinates1
     pixel_coords_list = load_nv_coords(
         # file_path="slmsuite/nv_blob_detection/nv_blob_308nvs_reordered.npz",
         # file_path="slmsuite/nv_blob_detection/nv_blob_254nvs_reordered.npz",
         # file_path="slmsuite/nv_blob_detection/nv_blob_151nvs_reordered.npz",
         # file_path="slmsuite/nv_blob_detection/nv_blob_136nvs_reordered.npz",
-        file_path="slmsuite/nv_blob_detection/nv_blob_118nvs_reordered.npz",
+        # file_path="slmsuite/nv_blob_detection/nv_blob_118nvs_reordered.npz",
+        file_path="slmsuite/nv_blob_detection/nv_blob_467nvs_reordered.npz",
     ).tolist()
     # pixel_coords_list = [
     #     [124.195, 127.341],
@@ -1382,8 +1396,8 @@ if __name__ == "__main__":
     print(f"Red Laser Coordinates: {red_coords_list[0]}")
 
     # pixel_coords_list = [[124.195, 127.341],[13.905, 11.931],[151.679, 245.068],[240.501, 17.871]]
-    # green_coords_list = [[108.326, 107.2],[119.451, 121.595],[106.759, 93.57],[93.74, 118.298]]
-    # red_coords_list = [[73.432, 71.593],[82.012, 83.799],[72.603, 60.48],[61.204, 79.853]]
+    # green_coords_list = [[108.316, 107.379],[119.471, 121.766],[106.735, 93.771],[93.689, 118.532]]
+    # red_coords_list = [[73.418, 71.737],[82.022, 83.938], [72.577, 60.642],[61.154, 80.04]]
     num_nvs = len(pixel_coords_list)
     threshold_list = [None] * num_nvs
     # fmt: off
@@ -1414,8 +1428,8 @@ if __name__ == "__main__":
     indices_217_MHz = [0, 2, 4, 5, 7, 8, 9, 11, 12, 13, 15, 18, 20, 21, 22, 28, 29, 30, 31, 36, 39, 40, 42, 43, 44, 45, 46, 47, 48, 52, 56, 57, 58, 59, 61, 65, 69, 71, 77, 79, 85, 87, 89, 91, 94, 97, 98, 104, 106, 107, 110, 112, 115, 116, 117]
     
     # scc_amp_list = [1.0] * num_nvs
-    # scc_duration_list = [124] * num_nvs
-    # pol_duration_list = [600] * num_nvs
+    scc_duration_list = [124] * num_nvs
+    pol_duration_list = [600] * num_nvs
     # pol_duration_list = [1000] * num_nvs
     # nv_list[i] will have the ith coordinates from the above lists
     nv_list: list[NVSig] = []
@@ -1455,7 +1469,7 @@ if __name__ == "__main__":
     # nv_sig.expected_counts = 1500
 
     # nv_list = nv_list[::-1]  # flipping the order of NVs
-    # nv_list = nv_list[:2]
+    # nv_list = nv_list[:1]
     print(f"length of NVs list:{len(nv_list)}")
     # sys.exit()
     # endregion
@@ -1499,7 +1513,7 @@ if __name__ == "__main__":
         # scan_equilateral_triangle(nv_sig, center_coord=sample_coords, radius=0.4)
         # do_image_nv_list(nv_list)
         # do_image_single_nv(nv_sig)
-        # z_range = np.linspace(2.0, 3.0, 15)
+        # z_range = np.linspace(1.5, 1.9, 11)
         # for z in z_range:
         #     nv_sig.coords[CoordsKey.Z] = z
         #     do_scanning_image_sample(nv_sig)
@@ -1540,7 +1554,7 @@ if __name__ == "__main__":
         # coords_key = red_laser
         # do_optimize_loop(np.array(nv_list), np.array(coords_key))
 
-        # do_charge_state_histograms(nv_list)
+        do_charge_state_histograms(nv_list)
         # do_charge_state_conditional_init(nv_list)
         # do_charge_state_histograms_images(nv_list, vary_pol_laser=True)
 
@@ -1579,8 +1593,9 @@ if __name__ == "__main__":
         # do_ramsey(nv_list)
 
         # do_simple_correlation_test(nv_list)
+        # do_two_block_hahn_spatial_correlation(nv_list)
         # do_T2_correlation_test(nv_list)
-        do_two_block_hahn_correlation(nv_list)
+        # do_two_block_hahn_correlation(nv_list)
         # do_resonance(nv_list)
         # do_sq_relaxation(nv_list)
         # do_dq_relaxation(nv_list)
@@ -1588,6 +1603,8 @@ if __name__ == "__main__":
         # do_check_readout_fidelity(nv_list)
         # do_charge_quantum_jump(nv_list)
         # do_ac_stark(nv_list)
+
+        # do_two_block_hahn_spatial_correlation(nv_list)
 
         # AVAILABLE_XY = ["hahn-n", "xy2-n", "xy4-n", "xy8-n", "xy16-n"]
         # do_xy(nv_list, xy_seq="xy8-1")

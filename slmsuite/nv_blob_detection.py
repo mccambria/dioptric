@@ -277,12 +277,12 @@ def process_scan_file(file_stem):
         print("No valid images found.")
 
     # **Save the results (uncomment if needed)**
-    save_results(
-        blob_coords,
-        spot_weights,
-        path="slmsuite/nv_blob_detection",
-        filename=f"nv_blob_{len(blob_coords)}nvs.npz",
-    )
+    # save_results(
+    #     blob_coords,
+    #     spot_weights,
+    #     path="slmsuite/nv_blob_detection",
+    #     filename=f"nv_blob_{len(blob_coords)}nvs.npz",
+    # )
 
     timestamp = dm.get_time_stamp()
     data = {
@@ -313,17 +313,16 @@ if __name__ == "__main__":
     kpl.init_kplotlib()
     # Load the image data
     data = dm.get_raw_data(
-        file_stem="2025_09_27-17_42_14-rubin-nv0_2025_09_08", load_npz=True
+        file_stem="2025_10_22-02_26_08-rubin-nv0_2025_09_08", load_npz=True
     )
     img_array = np.array(data["ref_img_array"])
     # img_array = np.array(data["img_array"])
 
     # Apply the blob detection and Gaussian fitting
     sigma = 2.0
-    lower_threshold = 0.06
-    upper_threshold = 50
+    lower_threshold = 0.04
+    upper_threshold = 500
     smoothing_sigma = 0.0
-
     nv_coordinates, integrated_counts, spot_sizes = detect_nv_coordinates_blob(
         img_array,
         sigma=sigma,
@@ -385,12 +384,12 @@ if __name__ == "__main__":
     print(f"Detected NV coordinates (optimized): {len(filtered_nv_coords)}")
 
     # Save the results
-    # save_results(
-    #     filtered_nv_coords,
-    #     filtered_counts,
-    #     path="slmsuite/nv_blob_detection",
-    #     filename="nv_blob_327nvs.npz",
-    # )
+    save_results(
+        filtered_nv_coords,
+        filtered_counts,
+        path="slmsuite/nv_blob_detection",
+        filename="nv_blob_313nvs.npz",
+    )
 
     # full ROI -- multiple images save in the same file
-    # process_scan_file(file_stem="2025_09_26-20_17_46-rubin-nv0_2025_09_08")
+    # process_scan_file(file_stem="2025_10_22-01_29_02-rubin-nv0_2025_09_08")

@@ -543,7 +543,7 @@ def process_counts(nv_list, sig_counts, ref_counts=None, threshold=True):
 
 
 # Combine data from multiple file IDs
-def process_multiple_files(file_ids, load_npz=False):
+def process_multiple_files(file_ids, load_npz=True):
     """
     Load and combine data from multiple file IDs.
 
