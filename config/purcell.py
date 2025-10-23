@@ -34,8 +34,8 @@ red_laser_aod = "laser_COBO_638_aod"
 
 
 calibration_coords_pixel = [[14.043, 37.334],[106.538, 237.374],[230.347, 30.026]]
-calibration_coords_green = [[119.703, 118.936],[111.733, 95.146], [94.975, 117.323]]
-calibration_coords_red = [[82.304, 81.659],[76.598, 62.003],[62.24, 79.125]]
+calibration_coords_green = [[119.715, 118.886],[111.743, 95.075], [95.042, 117.296]]
+calibration_coords_red = [[82.315, 81.619], [76.608, 61.946], [62.295, 79.107]]
 
 # Create the dictionaries using the provided lists
 calibration_coords_nv1 = {
@@ -889,7 +889,7 @@ opx_config = {
         # "yellow_charge_readout": {"type": "constant", "sample": 0.2675},
         # "yellow_charge_readout": {"type": "constant", "sample": 0.2367}, #136NVs
         # "yellow_charge_readout": {"type": "constant", "sample": 0.2267}, #118NVs
-        "yellow_charge_readout": {"type": "constant", "sample": 0.314497},
+        "yellow_charge_readout": {"type": "constant", "sample": 0.34947},
         "yellow_spin_pol": {"type": "constant", "sample": 0.24},
         "yellow_shelving": {"type": "constant", "sample": 0.20},
         # Other
