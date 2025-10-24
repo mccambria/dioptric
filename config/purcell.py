@@ -125,8 +125,8 @@ config |= {
             0: {
                 "physical_name": "sig_gen_STAN_sg394",
                 "uwave_power": 9.6,
-                # "frequency": 2.7805,
-                "frequency": 2.766091,
+                "frequency": 2.7851,
+                # "frequency": 2.766091,
                 # "frequency": 0.1331,
                 "rabi_period": 176,
                 "pi_pulse": 88,
@@ -140,15 +140,15 @@ config |= {
             1: {
                 "physical_name": "sig_gen_STAN_sg394_2",
                 "uwave_power": 9.6,
-                "frequency": 2.822728,
-                # "frequency": 2.8420,
-                "rabi_period": 112,
-                "pi_pulse": 56,
-                "pi_on_2_pulse": 28,
+                # "frequency": 2.822728,
+                "frequency": 2.8405,
+                # "rabi_period": 112,
+                # "pi_pulse": 56,
+                # "pi_on_2_pulse": 28,
                 # "frequency": 2.982049,
-                # "rabi_period": 176,
-                # "pi_pulse": 88,
-                # "pi_on_2_pulse": 44,
+                "rabi_period": 176,
+                "pi_pulse": 88,
+                "pi_on_2_pulse": 44,
             },
         },
     },
@@ -352,6 +352,7 @@ config |= {
             "do_laser_COBO_638_dm": 3,  # red TTL
             # microwaves (TTL gate to SGs)
             # "do_sig_gen_BERK_bnc835_gate": 4,
+            "do_sig_gen_STAN_sg394_3_gate": 3,
             "do_sig_gen_STAN_sg394_2_gate": 4,
             "do_sig_gen_STAN_sg394_gate": 5,
             # analog (for the yellow AOM amplitude)

@@ -878,19 +878,19 @@ def process_and_plot_charge(raw_data):
         opti_fidelities.append(round(opti_fid, 3))
 
         # --- Plot ---
-        # plt.figure(figsize=(6, 5))
-        # plt.scatter(x_f, y_f, label="Measured")
-        # plt.plot(results["grid_t"], results["grid_y"], label="Sat-Decay Fit")
-        # plt.axvline(
-        #     opti_dur, color="green", linestyle="--", label=f"Peak ≈ {opti_dur:.0f} ns"
-        # )
-        # plt.scatter([opti_dur], [opti_fid], color="green", zorder=5)
-        # plt.xlabel("Duration (ns)")
-        # plt.ylabel("Fidelity")
-        # plt.ylim(0, 1)
-        # plt.grid(True, alpha=0.3)
-        # plt.legend()
-        # plt.show(block=True)
+        plt.figure(figsize=(6, 5))
+        plt.scatter(x_f, y_f, label="Measured")
+        plt.plot(results["grid_t"], results["grid_y"], label="Sat-Decay Fit")
+        plt.axvline(
+            opti_dur, color="green", linestyle="--", label=f"Peak ≈ {opti_dur:.0f} ns"
+        )
+        plt.scatter([opti_dur], [opti_fid], color="green", zorder=5)
+        plt.xlabel("Duration (ns)")
+        plt.ylabel("Fidelity")
+        plt.ylim(0, 1)
+        plt.grid(True, alpha=0.3)
+        plt.legend()
+        plt.show(block=True)
 
     if opti_durs:
         print("Optimal Polarization Durations:", opti_durs)
@@ -1019,7 +1019,7 @@ if __name__ == "__main__":
     # file_id = "2025_10_22-07_09_20-rubin-nv0_2025_09_08"
     # file_id = "2025_10_22-09_46_22-johnson-nv0_2025_10_21"
     # file_id = "2025_10_22-13_38_22-johnson-nv0_2025_10_21"
-    file_id = "2025_10_23-02_24_51-johnson-nv0_2025_10_21"
+    # file_id = "2025_10_23-02_24_51-johnson-nv0_2025_10_21"
         
 
     ### pol amp var
@@ -1044,15 +1044,15 @@ if __name__ == "__main__":
     # file_id = "2025_09_23-19_06_00-rubin-nv0_2025_09_08"
     # file_id = "2025_09_28-00_14_24-rubin-nv0_2025_09_08"
     # file_id = "2025_09_28-22_59_27-rubin-nv0_2025_09_08"
-    # file_id = "2025_10_22-22_15_39-johnson-nv0_2025_10_21"
+    file_id = "2025_10_23-15_48_46-johnson-nv0_2025_10_21"
     
 
     # dm.USE_NEW_CLOUD = False
     raw_data = dm.get_raw_data(file_stem=file_id, load_npz=True)
     # file_name = dm.get_file_name(file_id=file_id)
     # print(f"{file_name}_{file_id}")
-    process_and_plot(raw_data)
+    # process_and_plot(raw_data)
     # process_and_plot_green(raw_data)
-    # process_and_plot_charge(raw_data)
+    process_and_plot_charge(raw_data)
     # print(dm.get_file_name(1717056176426))
     plt.show(block=True)
