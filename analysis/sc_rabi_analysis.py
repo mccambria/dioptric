@@ -265,7 +265,7 @@ def plot_rabi_fits(
             plt.show(block=True)
         
         # --- Individual per-NV figures as well ---
-        make_individual = False  # set False to skip
+        make_individual = True  # set False to skip
 
         if make_individual:
             tau_dense = np.linspace(0, float(taus.max()), 300)
@@ -303,7 +303,35 @@ def plot_rabi_fits(
                 ax.grid(True)
                 fig.tight_layout()
                 plt.show(block=True)
-    # return
+
+
+    # fig, ax = plt.subplots()
+    # # Scatter plot with error bars
+    # median_counts = np.median(avg_counts, axis=0)
+    # median_counts_ste = np.median(avg_counts_ste, axis=0)
+    # # median_counts_ste = np.sqrt(np.sum(avg_counts_ste**2, axis=0)) / len(nv_list)
+
+    # ax.errorbar(
+    #     taus,
+    #     median_counts,
+    #     yerr=np.abs(median_counts_ste),
+    #     fmt="o",
+    # )
+    # # Plot the fitted curve if available
+    # tau_dense = np.linspace(0, taus.max(), 300)
+    # if fit_fns[nv_ind] is not None:
+    #     # fit_fns_median = median_fit_fn(tau_dense)
+    #     ax.plot(tau_dense, median_fit_fn(tau_dense), "-")
+    # title = f"Median across {len(nv_list)} NVs"
+    # ax.set_title(title)
+    # ax.set_xlabel("Pulse Duration (ns)")
+    # ax.set_ylabel("Norm. NV- Population")
+    # ax.grid(True)
+    # fig.tight_layout()
+    # plt.show(block=True)
+
+    # Save or show the plot
+    return
     # --- Grid of per-NV plots ---
     if num_cols is None or num_cols < 1:
         num_cols = 9
@@ -372,32 +400,7 @@ def plot_rabi_fits(
     plt.show(block=True)
     # plotting median acroos all NVs
 
-    fig, ax = plt.subplots()
-    # Scatter plot with error bars
-    median_counts = np.median(avg_counts, axis=0)
-    median_counts_ste = np.median(avg_counts_ste, axis=0)
-    # median_counts_ste = np.sqrt(np.sum(avg_counts_ste**2, axis=0)) / len(nv_list)
 
-    ax.errorbar(
-        taus,
-        median_counts,
-        yerr=np.abs(median_counts_ste),
-        fmt="o",
-    )
-    # Plot the fitted curve if available
-    tau_dense = np.linspace(0, taus.max(), 300)
-    if fit_fns[nv_ind] is not None:
-        # fit_fns_median = median_fit_fn(tau_dense)
-        ax.plot(tau_dense, median_fit_fn(tau_dense), "-")
-    title = f"Median across {len(nv_list)} NVs"
-    ax.set_title(title)
-    ax.set_xlabel("Pulse Duration (ns)")
-    ax.set_ylabel("Norm. NV- Population")
-    ax.grid(True)
-    fig.tight_layout()
-    plt.show(block=True)
-
-    # Save or show the plot
     # Print Rabi periods for each NV center
     # for i, popt in enumerate(popts):
     #     rabi_freq = popt[1]
@@ -577,7 +580,8 @@ if __name__ == "__main__":
     ##133 MHz deer
     file_stem = ["2025_10_13-20_49_30-rubin-nv0_2025_09_08"] ## deer
     indices_113_MHz = [0, 1, 3, 6, 10, 14, 16, 17, 19, 23, 24, 25, 26, 27, 32, 33, 34, 35, 37, 38, 41, 49, 50, 51, 53, 54, 55, 60, 62, 63, 64, 66, 67, 68, 70, 72, 73, 74, 75, 76, 78, 80, 81, 82, 83, 84, 86, 88, 90, 92, 93, 95, 96, 99, 100, 101, 102, 103, 105, 108, 109, 111, 113, 114]
-
+    ### johnson
+    file_stem = ["2025_10_24-03_41_53-johnson-nv0_2025_10_21"] ## 2.78, 2.84
     data = dm.get_raw_data(file_stem=file_stem, load_npz=True, use_cache=False)
     nv_list = data["nv_list"]
     taus = data["taus"]
@@ -587,9 +591,9 @@ if __name__ == "__main__":
         nv_list, sig_counts, ref_counts, threshold=True
     )
     # Select only NVs in indices_113_MHz
-    nv_list   = [nv_list[i] for i in indices_113_MHz]
-    avg_count    = avg_counts[indices_113_MHz]
-    avg_counts_ste = avg_counts_ste[indices_113_MHz]
+    # nv_list   = [nv_list[i] for i in indices_113_MHz]
+    # avg_count    = avg_counts[indices_113_MHz]
+    # avg_counts_ste = avg_counts_ste[indices_113_MHz]
         
     # file_name = dm.get_file_name(file_id=file_id)
     # print(f"{file_name}_{file_id}")
