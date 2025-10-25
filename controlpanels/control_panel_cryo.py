@@ -53,7 +53,7 @@ def do_image_sample(
     # num_steps = 60
 
     scan_range = 1.0 #voltage 
-    num_steps = 200
+    num_steps = 90
 
     # For now we only support square scans so pass scan_range twice
     image_sample.confocal_scan(
@@ -375,7 +375,7 @@ def do_stationary_count(
 # endregion
 
 def get_sample_name() -> str:
-    sample = "rubin" #lovelace
+    sample = "lovelace" #lovelace
     return sample
 
 if __name__ == "__main__":
@@ -411,7 +411,7 @@ if __name__ == "__main__":
     # current step rate: 30.0V XY
     # current step rate: 40.0V Z
     sample_xy = [0.0,0.0] # piezo XY voltage input (1.0=1V) (not coordinates, relative)
-    coord_z = 50  # piezo z voltage (0 is the set midpoint, absolute) (negative is closer to smaple, move unit steps in sample; 37 is good surface focus with bs for Lovelace; 20 is good for dye)
+    coord_z = 0  # piezo z voltage (0 is the set midpoint, absolute) (negative is closer to smaple, move unit steps in sample; 37 is good surface focus with bs for Lovelace; 20 is good for dye)
     pixel_xy = [0.0, 0.0]  # galvo ref
 
     nv_sig = NVSig(
@@ -425,7 +425,7 @@ if __name__ == "__main__":
         disable_z_opt=True,
         expected_counts=13,
         pulse_durations={
-            VirtualLaserKey.IMAGING: int(10e6),
+            VirtualLaserKey.IMAGING: int(5e6),
             VirtualLaserKey.CHARGE_POL: int(1e4),
             VirtualLaserKey.SPIN_POL: 2000,
             VirtualLaserKey.SINGLET_DRIVE: 300,  # placeholder
@@ -436,11 +436,11 @@ if __name__ == "__main__":
 
     try:
         tool_belt.init_safe_stop()
-
         # tool_belt.set_drift([0.0, 0.0, 0.0])  # Totally reset
         # drift = tool_belt.get_drift()
         # tool_belt.set_drift([0.0, 0.0, drift[2]])  # Keep z
         # tool_belt.set_drift([drift[0], drift[1], 0.0])  # Keep xy
+        # pos.set_xyz_on_nv(nv_sig)
 
         # for z in np.arange(-24, 20, 4):
         # for z in np.arange(0, -100, -5):
@@ -452,14 +452,13 @@ if __name__ == "__main__":
         # nv_sig["imaging_readout_dur"] = 5e7
 
         # region Image sample
-        pos.set_xyz_on_nv(nv_sig)
-        do_image_sample(nv_sig)
+        # do_image_sample(nv_sig)
         # ## Z AXIS PIEZO SCAN
-        # z_range = np.linspace(-150, 300, 31) # 37 is roughly the surface of Lovelace
-        # for z in z_range:
-        #     nv_sig.coords[CoordsKey.Z] = z
-        #     pos.set_xyz_on_nv(nv_sig)
-        #     do_image_sample(nv_sig)
+        z_range = np.linspace(0, -400, 61) # 37 is roughly the surface of Lovelace
+        for z in z_range:
+            nv_sig.coords[CoordsKey.Z] = z
+            pos.set_xyz_on_nv(nv_sig)
+            do_image_sample(nv_sig)
         # do_image_sample_zoom(nv_sig)
         # do_image_sample(nv_sig, nv_minus_initialization=True)
         # do_image_sample_zoom(nv_sig, nv_minus_initialization=True)
