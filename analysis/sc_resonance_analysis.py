@@ -201,7 +201,7 @@ def plot_nv_resonance(
     # ----------------- Example of use in your pipeline -----------------
     # center_freqs is your list of (f1, f2) from the fit_results
     # If you can also return (amp1, amp2) per NV from the fit, pass as peak_amps=...
-    targets = (2.766, 2.783, 2.82, 2.84)  # GHz
+    targets = (2.766, 2.786, 2.82, 2.840)  # GHz
     out = classify_nv_by_ms_minus_targets(center_freqs, targets_ghz=targets, tol_mhz=60.0)
 
     # Access results:
@@ -298,8 +298,8 @@ def plot_nv_resonance(
     # filter_nvs = True
     filter_nvs = False
     if filter_nvs:
-        target_peak_values = [0.113, 0.217]
-        # target_peak_values = [0.068, 0.185]
+        # target_peak_values = [0.113, 0.217]
+        target_peak_values = [0.77, 0.181]
         # target_peak_values = [0.290]
         tolerance = 0.008
         # Filter indices based on proximity to target peak differences
@@ -730,6 +730,15 @@ if __name__ == "__main__":
     file_ids = [
         "2025_10_17-23_28_58-rubin-nv0_2025_09_08",
     ]
+
+    ## 312 nVs
+    file_ids = [
+        "2025_10_23-08_33_06-johnson-nv0_2025_10_21",
+    ]
+    file_ids = [
+        "2025_10_24-09_48_53-johnson-nv0_2025_10_21",
+    ]
+    
     # Load the first dataset as a base
     combined_data = dm.get_raw_data(
         file_stem=file_ids[0], load_npz=True, use_cache=True

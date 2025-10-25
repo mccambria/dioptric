@@ -1033,6 +1033,215 @@ def plot_combined_omega_gamma(res_omega, res_g113, res_g217, show_medians=True):
     plt.tight_layout()
     plt.show()
 
+def plot_omega_vs_gamma(res_omega, res_g113, res_g217, show_medians=True):
+    """
+    No outlier filtering here.
+    Uses:
+      Ω = rate/3  from the Ω dataset
+      γ = (rate - Ω)/2  for each γ point, using matched Ω per NV if available; else median Ω.
+    Plots contrast (norm) vs Ω and vs γ (combined 113+217).
+    """
+
+    # ---------- Ω dataset ----------
+    fp_o = np.asarray(res_omega["fit_params"], float)                         # [norm, rate, offset]
+    fe_o = (np.asarray(res_omega["fit_errors"], float)
+            if res_omega.get("fit_errors") is not None else None)
+    nv_o = res_omega.get("nv_list") or []
+
+    omega_vals = fp_o[:, 1] / 3.0
+    omega_errs = (fe_o[:, 1] / 3.0) if fe_o is not None else None
+    norm_o      = fp_o[:, 0]
+    norm_o_errs = (fe_o[:, 0]      ) if fe_o is not None else None
+
+    # Map Ω (and its error) by NV key for exact pairing
+    omega_map = {}
+    sigma_omega_map = {}
+    for i, nv in enumerate(nv_o):
+        key = _nv_key(nv, i)
+        omega_map[key] = omega_vals[i]
+        if fe_o is not None:
+            sigma_omega_map[key] = fe_o[i, 1] / 3.0
+
+    omega_med = float(np.nanmedian(omega_vals)) if omega_vals.size else np.nan
+
+    # ---------- γ datasets (combine 113 + 217) ----------
+    # Stack fit_params / fit_errors / nv lists safely
+    fp_g = np.vstack([res_g113["fit_params"], res_g217["fit_params"]])
+    nv_g = (res_g113.get("nv_list") or []) + (res_g217.get("nv_list") or [])
+
+    fe_g = None
+    if (res_g113.get("fit_errors") is not None) and (res_g217.get("fit_errors") is not None):
+        fe_g = np.vstack([res_g113["fit_errors"], res_g217["fit_errors"]])
+
+    rate_g   = fp_g[:, 1]
+    norm_g   = fp_g[:, 0]
+    rate_g_e = fe_g[:, 1] if fe_g is not None else None
+    norm_g_e = fe_g[:, 0] if fe_g is not None else None
+
+    # --- Compute γ with per-point Ω and remember the Ω used ---
+    gamma_vals = np.empty_like(rate_g, dtype=float)
+    omega_for_gamma = np.empty_like(rate_g, dtype=float)  # NEW
+
+    matched_flag = np.zeros_like(rate_g, dtype=bool)      # mark true matches (not median fallback)
+
+    for i in range(rate_g.shape[0]):
+        key = _nv_key(nv_g[i], i) if i < len(nv_g) else i
+        if key in omega_map:
+            omega_here = omega_map[key]
+            matched_flag[i] = True
+        else:
+            omega_here = omega_med  # fallback
+        omega_for_gamma[i] = omega_here
+        gamma_vals[i] = 0.5 * (rate_g[i] - omega_here)
+
+    # --- Error propagation for γ unchanged, but also compute omega errors for γ points ---
+    gamma_errs = None
+    omega_for_gamma_errs = None  # NEW
+    if (rate_g_e is not None) or (sigma_omega_map):
+        gamma_errs = np.zeros_like(rate_g, dtype=float)
+        omega_for_gamma_errs = np.zeros_like(rate_g, dtype=float)
+        for i in range(rate_g.shape[0]):
+            key = _nv_key(nv_g[i], i) if i < len(nv_g) else i
+            sigma_rate  = rate_g_e[i] if rate_g_e is not None else 0.0
+            sigma_omega = sigma_omega_map.get(key, 0.0)
+            gamma_errs[i] = 0.5 * np.sqrt(sigma_rate**2 + sigma_omega**2)
+            omega_for_gamma_errs[i] = sigma_omega
+
+    # ----------------------
+    # MASKS: build them per-plot (do NOT combine Ω- and γ-length masks)
+    # ----------------------
+
+    # 1) Ω vs norm (use only Ω arrays)
+    k = 15
+    mask_o_val  = iqr_outlier_mask(omega_vals, k)
+    mask_o_norm = iqr_outlier_mask(norm_o, k)
+    mask_o_err  = np.ones_like(omega_vals, dtype=bool)
+    if omega_errs is not None:
+        rel = omega_errs / np.maximum(np.abs(omega_vals), 1e-20)
+        mask_o_err = rel < 10.0  # e.g., <100% rel error
+    mask_o = mask_o_val & mask_o_norm & mask_o_err
+
+    # 2) γ vs norm (use only γ arrays)
+    mask_g_val  = iqr_outlier_mask(gamma_vals, k)
+    mask_g_norm = iqr_outlier_mask(norm_g, k)
+    mask_g_err  = np.ones_like(gamma_vals, dtype=bool)
+    if gamma_errs is not None:
+        rel = gamma_errs / np.maximum(np.abs(gamma_vals), 1e-20)
+        mask_g_err = rel < 10.0
+    mask_g = mask_g_val & mask_g_norm & mask_g_err
+
+    # 3) γ vs Ω correlation (use the Ω that was used for each γ)
+    mask_c_val_x = iqr_outlier_mask(omega_for_gamma, k)
+    mask_c_val_y = iqr_outlier_mask(gamma_vals, k)
+    mask_c_err   = np.ones_like(gamma_vals, dtype=bool)
+    if (gamma_errs is not None) and (omega_for_gamma_errs is not None):
+        relx = omega_for_gamma_errs / np.maximum(np.abs(omega_for_gamma), 1e-20)
+        rely = gamma_errs / np.maximum(np.abs(gamma_vals), 1e-20)
+        mask_c_err = (relx < 10.0) & (rely < 10.0)
+
+    # OPTIONAL: only keep points with true Ω–γ matches (no median fallback)
+    strict_pairs_only = True
+    mask_matched = matched_flag if strict_pairs_only else np.ones_like(matched_flag, dtype=bool)
+
+    mask_c = mask_c_val_x & mask_c_val_y & mask_c_err & mask_matched
+
+    print(len(mask_c))
+    # ------------- plotting -------------
+    # Ω vs norm
+    plt.figure(figsize=(7,6))
+    plt.errorbar(
+        omega_vals[mask_o], norm_o[mask_o],
+        xerr=(omega_errs[mask_o] if omega_errs is not None else None),
+        yerr=(norm_o_errs[mask_o] if norm_o_errs is not None else None),
+        fmt="o", markersize=5, capsize=3, elinewidth=1, alpha=0.85, label="Ω"
+    )
+    if show_medians and np.isfinite(omega_med):
+        plt.axvline(omega_med, ls="--", alpha=0.6, label=f"Ω median = {omega_med:.3g}")
+    plt.xlabel(r"$\Omega$ (1/ms)")
+    plt.ylabel("Contrast (norm)")
+    plt.title("Contrast vs Ω")
+    plt.grid(True, ls="--", alpha=0.5)
+    plt.legend(frameon=True)
+    plt.tight_layout()
+
+    # γ vs norm
+    plt.figure(figsize=(7,6))
+    plt.errorbar(
+        gamma_vals[mask_g], norm_g[mask_g],
+        xerr=(gamma_errs[mask_g] if gamma_errs is not None else None),
+        yerr=(norm_g_e[mask_g] if norm_g_e is not None else None),
+        fmt="s", markersize=5, capsize=3, elinewidth=1, alpha=0.85, label="γ"
+    )
+    gamma_med = float(np.nanmedian(gamma_vals[mask_g])) if np.any(mask_g) else np.nan
+    if show_medians and np.isfinite(gamma_med):
+        plt.axhline(gamma_med, ls=":", alpha=0.6, label=f"γ median = {gamma_med:.3g}")
+
+    plt.xlabel(r"$\gamma$ (1/ms)")
+    plt.ylabel("Contrast (norm)")
+    plt.title("Contrast vs γ")
+    plt.grid(True, ls="--", alpha=0.5)
+    plt.legend(frameon=True)
+    plt.tight_layout()
+
+    # γ vs Ω (per-point Ω used for that γ)
+    plt.figure(figsize=(7,6))
+    plt.errorbar(
+        omega_for_gamma[mask_c], gamma_vals[mask_c],
+        xerr=(omega_for_gamma_errs[mask_c] if omega_for_gamma_errs is not None else None),
+        yerr=(gamma_errs[mask_c] if gamma_errs is not None else None),
+        fmt="o", markersize=5, capsize=3, elinewidth=1, ecolor="gray", alpha=0.8
+    )
+    if show_medians and np.isfinite(gamma_med):
+        plt.axhline(gamma_med, ls=":", alpha=0.6, label=f"γ median = {gamma_med:.3g}")
+    if show_medians and np.isfinite(omega_med):
+        plt.axvline(omega_med, ls="--", alpha=0.6, label=f"Ω median = {omega_med:.3g}") 
+    plt.xlabel(r"$\Omega$ (1/ms)")
+    plt.ylabel(r"$\gamma$ (1/ms)")
+    plt.title(fr"$\gamma$ vs $\Omega$ ({len(omega_for_gamma[mask_c])}NVs)")
+    plt.grid(True, ls="--", alpha=0.5)
+    plt.legend(frameon=True)
+    plt.tight_layout()
+
+
+    # Compute ratio (per γ point, using the Ω used for that γ)
+    ratio_vals = gamma_vals / np.maximum(omega_for_gamma, 1e-20)  # avoid divide by 0
+
+    # Error propagation: σ(ratio) ≈ ratio * sqrt[(σγ/γ)^2 + (σΩ/Ω)^2]
+    ratio_errs = None
+    if (gamma_errs is not None) and (omega_for_gamma_errs is not None):
+        rel_γ = gamma_errs / np.maximum(np.abs(gamma_vals), 1e-20)
+        rel_Ω = omega_for_gamma_errs / np.maximum(np.abs(omega_for_gamma), 1e-20)
+        ratio_errs = np.abs(ratio_vals) * np.sqrt(rel_γ**2 + rel_Ω**2)
+
+    # Mask outliers for ratio
+    mask_ratio_val = iqr_outlier_mask(ratio_vals, k=15)
+    mask_ratio_err = np.ones_like(ratio_vals, dtype=bool)
+    if ratio_errs is not None:
+        rel_err = ratio_errs / np.maximum(np.abs(ratio_vals), 1e-20)
+        mask_ratio_err = rel_err < 1.0  # keep <100% rel error
+
+    mask_ratio = mask_ratio_val & mask_ratio_err & mask_matched
+
+    # -------- Plot --------
+    ratio_med = np.nanmedian(ratio_vals[mask_ratio])
+
+    plt.figure(figsize=(7,6))
+    plt.errorbar(
+        np.arange(np.sum(mask_ratio)), 
+        ratio_vals[mask_ratio],
+        yerr=(ratio_errs[mask_ratio] if ratio_errs is not None else None),
+        fmt="o", markersize=5, capsize=3, elinewidth=1, alpha=0.85
+    )
+    plt.axhline(2.0, ls="--", color="red", alpha=0.6, label= "Reference = 2")
+    plt.axhline(1.0, ls="--", color="gray", alpha=0.6, label= "Reference = 1")
+    plt.xlabel("NV index (filtered)")
+    plt.ylabel(r"$\gamma / \Omega$")
+    plt.title(r"Ratio $\gamma / \Omega$ for each NV")
+    plt.grid(True, ls="--", alpha=0.5)
+    plt.legend(frameon=True)
+    plt.tight_layout()
+    plt.show()
+
 
 # import numpy as np
 # import matplotlib.pyplot as plt
@@ -1298,8 +1507,8 @@ if __name__ == "__main__":
 
     # Optional: quick log of how many were removed
     print(f"IQR filter kept {mask.sum()}/{len(mask)} NVs.")
-    plot_fit_parameters_scatter(fit_params, fit_errors=fit_errors, nv_list=nv_list, x= "Omega")
-    plt.show(block = True)
+    # plot_fit_parameters_scatter(fit_params, fit_errors=fit_errors, nv_list=nv_list, x= "Omega")
+    # plt.show(block = True)
     # sys.exit()
     # plot_T1_with_errorbars(fit_params, fit_errors, nv_list)
     # plot_fitted_data_separately(
@@ -1325,7 +1534,7 @@ if __name__ == "__main__":
         "2025_10_18-07_23_48-rubin-nv0_2025_09_08",
         "2025_10_18-03_24_11-rubin-nv0_2025_09_08",
     ]
-    indices_113_MHz = [0, 1, 3, 6, 10, 14, 16, 17, 19, 23, 24, 25, 26, 27, 32, 33, 34, 35,
+    indices_113_MHz = [1, 3, 6, 10, 14, 16, 17, 19, 23, 24, 25, 26, 27, 32, 33, 34, 35,
                     37, 38, 41, 49, 50, 51, 53, 54, 55, 60, 62, 63, 64, 66, 67, 68, 70,
                     72, 73, 74, 75, 76, 78, 80, 81, 82, 83, 84, 86, 88, 90, 92, 93, 95,
                     96, 99, 100, 101, 102, 103, 105, 108, 109, 111, 113, 114]
@@ -1340,7 +1549,7 @@ if __name__ == "__main__":
                     39, 40, 42, 43, 44, 45, 46, 47, 48, 52, 56, 57, 58, 59, 61, 65, 69,
                     71, 77, 79, 85, 87, 89, 91, 94, 97, 98, 104, 106, 107, 110, 112, 115,
                     116, 117]
-
+    
     # ======== RUN ALL THREE ========
 
     # Ω (looser IQR like your example; error cutoff optional)
@@ -1350,6 +1559,6 @@ if __name__ == "__main__":
     # γ @ 217 MHz
     res_g217 = run_fit_batch(gamma_217_files, indices_217_MHz)
     
-    plot_combined_omega_gamma(res_omega, res_g113, res_g217)
-
+    # plot_combined_omega_gamma(res_omega, res_g113, res_g217)
+    plot_omega_vs_gamma(res_omega, res_g113, res_g217)
     kpl.show(block=True)
