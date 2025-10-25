@@ -8,7 +8,7 @@ Created on Wed Apr 10 12:53:38 2019
 
 ### BEGIN NODE INFO
 [info]
-name = sig_gen_STAN_sg394_2
+name = sig_gen_STAN_sg394_1
 version = 1.0
 description =
 
@@ -26,7 +26,7 @@ from servers.outputs.sig_gen_STAN_sg394_0 import SigGenStanSg394
 
 
 class SigGenStanSg3942(SigGenStanSg394):
-    name = "sig_gen_STAN_sg394_2"
+    name = "sig_gen_STAN_sg394_1"
 
 
 __server__ = SigGenStanSg3942()

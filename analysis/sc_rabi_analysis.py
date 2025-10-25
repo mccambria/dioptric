@@ -175,7 +175,7 @@ def plot_rabi_fits(
     num_cols=9,
     period_bin_width=8,  # ns, choose a multiple of 4 if you want
     period_round_to=4,  # ns
-    period_keep_range=(100, 200),  # ns, set to None to disable range filter
+    period_keep_range=(100, 300),  # ns, set to None to disable range filter
 ):
     """
     Plot fitted Rabi oscillations for each NV and summarize Rabi periods.
@@ -581,7 +581,10 @@ if __name__ == "__main__":
     file_stem = ["2025_10_13-20_49_30-rubin-nv0_2025_09_08"] ## deer
     indices_113_MHz = [0, 1, 3, 6, 10, 14, 16, 17, 19, 23, 24, 25, 26, 27, 32, 33, 34, 35, 37, 38, 41, 49, 50, 51, 53, 54, 55, 60, 62, 63, 64, 66, 67, 68, 70, 72, 73, 74, 75, 76, 78, 80, 81, 82, 83, 84, 86, 88, 90, 92, 93, 95, 96, 99, 100, 101, 102, 103, 105, 108, 109, 111, 113, 114]
     ### johnson
-    file_stem = ["2025_10_24-03_41_53-johnson-nv0_2025_10_21"] ## 2.78, 2.84
+    # file_stem = ["2025_10_24-03_41_53-johnson-nv0_2025_10_21"] ## 2.78, 2.84
+    # file_stem = ["2025_10_24-23_14_38-johnson-nv0_2025_10_21"] ## 2.78, 2.84
+    file_stem = ["2025_10_25-05_55_59-johnson-nv0_2025_10_21"] ## 2.78, 2.84
+    
     data = dm.get_raw_data(file_stem=file_stem, load_npz=True, use_cache=False)
     nv_list = data["nv_list"]
     taus = data["taus"]

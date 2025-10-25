@@ -172,31 +172,31 @@ def plot_nv_resonance(
     ax_snr.tick_params(axis="both", labelsize=14)
     plt.show(block=True)
     # Set plot style
-    # for nv_ind in range(num_nvs):
-    #     fig, ax = plt.subplots(figsize=(8, 5))
-    #     # Data points with error bars
-    #     ax.errorbar(
-    #         freqs,
-    #         avg_counts[nv_ind],
-    #         yerr=avg_counts_ste[nv_ind],
-    #         fmt="o",
-    #         color="steelblue",
-    #         ecolor="gray",
-    #         elinewidth=1,
-    #         capsize=3,
-    #         markersize=5,
-    #         label="Data"
-    #     )
-    #     # Fit curve
-    #     ax.plot(freqs_dense, fit_fns[nv_ind], "-", color="red", label="Fit")
-    #     # Labels and style
-    #     ax.set_xlabel("Frequency (GHz)")
-    #     ax.set_ylabel("Normalized NV Population")
-    #     ax.set_title(f"NV Index: {nv_ind}")
-    #     ax.grid(True, linestyle="--", alpha=0.6)
-    #     ax.legend()
-    #     plt.show(block=True)
-    # return
+    for nv_ind in range(num_nvs):
+        fig, ax = plt.subplots(figsize=(8, 5))
+        # Data points with error bars
+        ax.errorbar(
+            freqs,
+            avg_counts[nv_ind],
+            yerr=avg_counts_ste[nv_ind],
+            fmt="o",
+            color="steelblue",
+            ecolor="gray",
+            elinewidth=1,
+            capsize=3,
+            markersize=5,
+            label="Data"
+        )
+        # Fit curve
+        ax.plot(freqs_dense, fit_fns[nv_ind], "-", color="red", label="Fit")
+        # Labels and style
+        ax.set_xlabel("Frequency (GHz)")
+        ax.set_ylabel("Normalized NV Population")
+        ax.set_title(f"NV Index: {nv_ind}")
+        ax.grid(True, linestyle="--", alpha=0.6)
+        ax.legend()
+        plt.show(block=True)
+    return
 
     # ----------------- Example of use in your pipeline -----------------
     # center_freqs is your list of (f1, f2) from the fit_results
@@ -735,10 +735,13 @@ if __name__ == "__main__":
     file_ids = [
         "2025_10_23-08_33_06-johnson-nv0_2025_10_21",
     ]
+    # file_ids = [
+    #     "2025_10_24-09_48_53-johnson-nv0_2025_10_21",
+    # ]
+
     file_ids = [
-        "2025_10_24-09_48_53-johnson-nv0_2025_10_21",
+        "2025_10_25-12_06_28-johnson-nv0_2025_10_21",
     ]
-    
     # Load the first dataset as a base
     combined_data = dm.get_raw_data(
         file_stem=file_ids[0], load_npz=True, use_cache=True

@@ -1053,3 +1053,4 @@ def get_rabi_period(uwave_ind=0):
 
 if __name__ == "__main__":
     print(get_default_charge_readout_duration())
+    print(get_sig_gen_i_element(uwave_ind=2))

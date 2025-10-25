@@ -8,7 +8,7 @@ Created on Wed Apr 10 12:53:38 2019
 
 ### BEGIN NODE INFO
 [info]
-name = sig_gen_STAN_sg394
+name = sig_gen_STAN_sg394_0
 version = 1.0
 description =
 
@@ -36,7 +36,7 @@ from utils import tool_belt as tb
 
 
 class SigGenStanSg394(LabradServer, SigGenVector):
-    name = "sig_gen_STAN_sg394"
+    name = "sig_gen_STAN_sg394_0"
     pc_name = socket.gethostname()
 
     def initServer(self):
@@ -146,7 +146,7 @@ class SigGenStanSg394(LabradServer, SigGenVector):
 
         ###updated by SBC 04/29/2025
         amp = float(self.sig_gen.query("AMPR?"))
-        if amp > 10:
+        if amp > 13:
             raise Exception(
                 f"IQ modulation on sg394 supports up to 10 dBm. The power was set to {amp} dBm and the operation was stopped."
             )

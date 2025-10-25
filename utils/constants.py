@@ -17,23 +17,39 @@ number = int | float
 
 # Virtual laser keys are the names of virtual lasers, which accomplish one and only
 # one function and must be associated with a physical laser in config
-class VirtualLaserKey(Enum):
-    # Scanning virtual lasers
-    IMAGING = auto()
-    RED_IMAGING = auto()  # SBC - crreatf for red widefield calibration
-    ION = auto()
-    SCC = auto()
-    CHARGE_POL = auto()
-    SPIN_POL = auto()
-    SHELVING = auto()
-    SPIN_READOUT = auto()  # Standard spin readout
-    # Widefield virtual lasers
-    WIDEFIELD_SHELVING = auto()
-    WIDEFIELD_IMAGING = auto()
-    WIDEFIELD_CHARGE_READOUT = auto()
-    WIDEFIELD_SPIN_POL = auto()
-    #Cryo Singlet Drive
-    SINGLET_DRIVE = auto()
+# class VirtualLaserKey(Enum):
+#     # Scanning virtual lasers
+#     IMAGING = auto()
+#     RED_IMAGING = auto()  # SBC - crreatf for red widefield calibration
+#     ION = auto()
+#     SCC = auto()
+#     CHARGE_POL = auto()
+#     SPIN_POL = auto()
+#     SHELVING = auto()
+#     SPIN_READOUT = auto()  # Standard spin readout
+#     # Widefield virtual lasers
+#     WIDEFIELD_SHELVING = auto()
+#     WIDEFIELD_IMAGING = auto()
+#     WIDEFIELD_CHARGE_READOUT = auto()
+#     WIDEFIELD_SPIN_POL = auto()
+#     #Cryo Singlet Drive
+#     SINGLET_DRIVE = auto()
+
+## sbc
+class VirtualLaserKey(StrEnum):
+    IMAGING = "imaging"
+    RED_IMAGING = "red_imaging"
+    ION = "ion"
+    SCC = "scc"
+    CHARGE_POL = "charge_pol"
+    SPIN_POL = "spin_pol"
+    SHELVING = "shelving"
+    SPIN_READOUT = "spin_readout"
+    WIDEFIELD_SHELVING = "widefield_shelving"
+    WIDEFIELD_IMAGING = "widefield_imaging"
+    WIDEFIELD_CHARGE_READOUT = "widefield_charge_readout"
+    WIDEFIELD_SPIN_POL = "widefield_spin_pol"
+    SINGLET_DRIVE = "singlet_drive"
 
 # Coords keys are the names associated with the various physical coordinates
 # for each NV. Each positioner name is a coords key. CoordsKey.PIXEL is associated
