@@ -744,16 +744,16 @@ if __name__ == "__main__":
 
     #duration
     data = dm.get_raw_data(
-        file_stem="2025_10_07-22_42_14-rubin-nv0_2025_09_08", load_npz=True
+        file_stem="2025_10_25-17_57_10-johnson-nv0_2025_10_21", load_npz=True
     )
 
     results = process_and_plot_durations(data)
 
     #amp_file id
-    data = dm.get_raw_data(
-        file_stem="2025_10_07-19_22_19-rubin-nv0_2025_09_08", load_npz=True
-    )
-    results = process_and_plot_amplitudes(data)
+    # data = dm.get_raw_data(
+    #     file_stem="2025_10_07-19_22_19-rubin-nv0_2025_09_08", load_npz=True
+    # )
+    # results = process_and_plot_amplitudes(data)
 
     print("Results:", results)
     # print(f"{file_name}_{duration_file_id}")
