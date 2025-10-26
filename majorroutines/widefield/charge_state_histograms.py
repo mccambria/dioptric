@@ -437,9 +437,7 @@ if __name__ == "__main__":
     # )
     # process_and_plot(data, do_plot_histograms=True)
     data = dm.get_raw_data(
-        file_stem="2025_10_25-15_08_51-johnson-nv0_2025_10_21", load_npz=True
+        file_stem="2025_10_26-14_03_21-johnson-nv0_2025_10_21", load_npz=True
     )
-    print(data["nv_list"])
-    # data = dm.get_raw_data(file_id=1803617430430, load_npz=False)
-    # process_and_plot(data, do_plot_histograms=True)
+    process_and_plot(data, do_plot_histograms=True)
     kpl.show(block=True)
