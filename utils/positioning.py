@@ -50,7 +50,6 @@ def set_xyz(coords, positioner=CoordsKey.SAMPLE, drift_adjust=None, ramp=None):
         return _set_xyz_ramp(coords, positioner)
 
     else:
-        # print(f"Setting {positioner} to {coords}")
         return _set_xyz(coords, positioner)
 
 
@@ -230,7 +229,7 @@ def get_nv_pulse_duration(nv_sig: NVSig, vkey: VirtualLaserKey) -> int:
     pulse_dur_val = nv_sig.pulse_durations
     if isinstance(pulse_dur_val, dict):
         
-        pulse_duraions = pulse_dur_val['4']
+        pulse_duraions = pulse_dur_val[vkey]
     else:
         pulse_duraions = pulse_dur_val
     

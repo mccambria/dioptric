@@ -57,11 +57,11 @@ def process_and_plot(nv_list, taus, sig_counts, ref_counts, duration_or_amp):
     snr_ax.set_xlabel(xlabel)
     snr_ax.set_ylabel("SNR")
 
-    for ind in range(num_nvs):
-        fig, ax = plt.subplots()
-        kpl.plot_points(ax, taus, avg_snr[ind], yerr=avg_snr_ste[ind])
-        ax.set_title(ind)
-        plt.show(block=True)
+    # for ind in range(num_nvs):
+    #     fig, ax = plt.subplots()
+    #     kpl.plot_points(ax, taus, avg_snr[ind], yerr=avg_snr_ste[ind])
+    #     ax.set_title(ind)
+    #     plt.show(block=True)
 
     # Average across NVs
     avg_snr_fig, avg_snr_ax = plt.subplots()

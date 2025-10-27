@@ -175,12 +175,12 @@ config |= {
             green_laser: {
                 "delay": 0,
                 "mod_mode": ModMode.DIGITAL,
-                "positioner": thor_galvos,
+                "positioner": CoordsKey.PIXEL,
             },
             tisapph_laser: {
                 "delay": 0,
                 "mod_mode": ModMode.DIGITAL,
-                "positioner": thor_galvos,
+                "positioner": CoordsKey.PIXEL,
             },
         },
         "VirtualLasers": {
@@ -259,7 +259,7 @@ config |= {
         # "calibration_coords_nv2": calibration_coords_nv2,
         # "calibration_coords_nv3": calibration_coords_nv3,
         "pixel_to_sample_affine_transformation_matrix": pixel_to_sample_affine_transformation_matrix,
-        "cryo_piezos_voltage": 30,
+        "cryo_piezos_voltage": 33,
         "z_bias_adjust": 0.0
     },
     ###

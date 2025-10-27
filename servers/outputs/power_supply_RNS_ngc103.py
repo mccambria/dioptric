@@ -24,7 +24,6 @@ timeout = 5
 """
 import sys
 
-sys.path.append(r"C:\Users\kolko\Downloads\rsinstrument-1.102.0\rsinstrument-1.102.0")
 import logging
 import socket
 import time
@@ -32,7 +31,6 @@ import time
 import pyvisa as visa  # Docs here: https://pyvisa.readthedocs.io/en/master/
 from labrad.server import LabradServer, setting
 from RsInstrument import RsInstrument
-import RsInstrument as Rs
 from twisted.internet.defer import ensureDeferred
 
 from utils import common
@@ -44,7 +42,7 @@ from typing import Union
 class PowerSupplyRnsNgc103(LabradServer, RsInstrument):
     name = "power_supply_RNS_ngc103"
     pc_name = socket.gethostname()
-
+    self.initServer()
     def initServer(self, startOpen=False):
         tb.configure_logging(self)
         config = common.get_config_dict()
@@ -102,13 +100,13 @@ class PowerSupplyRnsNgc103(LabradServer, RsInstrument):
         self.direction_channels = direction_channels
             
         self.open = True
-        Rs.RsInstrument.assert_minimum_version('1.50.0')
+        RsInstrument.assert_minimum_version('1.50.0')
         IP=None
         if IP == None:
-            self.instr = Rs.RsInstrument('TCPIP::192.168.56.101::hislip0', True, False, "Simulate=True")
+            self.instr = RsInstrument('TCPIP::192.168.56.101::hislip0', True, False, "Simulate=True")
             print("the power supply " + self._query_command('*IDN?') + " was connected at " + str(datetime.now()))
         else:
-            self.instr = Rs.RsInstrument(f'{IP}', True, False, "Simulate=False")
+            self.instr = RsInstrument(f'{IP}', True, False, "Simulate=False")
             print("the power supply " + self._query_command('*IDN?') + " was connected at " + str(datetime.now()))
 
     @setting(1)

@@ -22,7 +22,7 @@ timeout = 5
 ### END NODE INFO
 """
 
-from servers.outputs.sig_gen_STAN_sg394 import SigGenStanSg394
+from servers.outputs.sig_gen_STAN_sg394_0 import SigGenStanSg394
 
 
 class SigGenStanSg3942(SigGenStanSg394):

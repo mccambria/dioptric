@@ -26,134 +26,104 @@ from utils.constants import (
     VirtualLaserKey,
 )
 
-
-# Confocal scan (abstract; device picked by config)
-import time
-import numpy as np
-import matplotlib.pyplot as plt
-import sys
-from utils import tool_belt as tb
-from utils import positioning as pos
-from utils import kplotlib as kpl
-from utils import data_manager as dm
-from utils import common
-from utils.constants import (
-    VirtualLaserKey, CoordsKey, CountFormat, PosControlMode, NVSig
-)
-
 SEQ_FILE_SEQUENCE_SCAN = "simple_readout_laser_free_test.py"  # expects [0, readout_ns, x[], y[]]
 SEQ_FILE_PIXEL_READOUT  = "simple_readout.py"                 # per-pixel readout when we move in Python
 
-def _snake_fill(vals, img, cursor):
+# --- replace the snake helper with a raster helper ---
+def _raster_fill(vals, img, state):
+    """
+    Row-major fill, bottom row first, left -> right on every row.
+    `state` holds a single integer: number of pixels already written.
+    """
     h, w = img.shape
-    if not cursor:
-        cursor[:] = [w, h-1]
-    x, y = cursor
-    left = (h-1-y) % 2 == 0
+    if not state:        # initialize write index
+        state[:] = [0]
+    i = state[0]
     for v in vals:
-        if left:
-            if x == 0: y -= 1; left = False
-            else: x -= 1
-        else:
-            if x == w-1: y -= 1; left = True
-            else: x += 1
-        if y < 0: break
+        if i >= h * w:
+            break
+        row = i // w
+        col = i %  w
+        y = (h - 1) - row   # bottom row first (origin='lower')
+        x = col             # left -> right
         img[y, x] = v
-    cursor[:] = [x, y]
+        i += 1
+    state[:] = [i]
 
 def confocal_scan(nv_sig: NVSig, x_range, y_range, num_steps, nv_minus_init=False):
     cfg = common.get_config_dict()
     count_fmt: CountFormat = cfg["count_format"]
 
-    # 1) Resolve the imaging positioner from config (abstract)
     positioner = pos.get_laser_positioner(VirtualLaserKey.IMAGING)
     mode = pos.get_positioner_control_mode(positioner)
 
-    # 2) Build grid in the space that matches the imaging coordinate system
+    # Build grid (1D coordinate axes + random-access XY)
     x0, y0 = pos.get_nv_coords(nv_sig, coords_key=CoordsKey.PIXEL)
     X, Y, x1d, y1d, extent = pos.get_scan_grid_2d(x0, y0, x_range, y_range, num_steps, num_steps)
     total = len(X)
 
     # Readout timing/laser from virtual laser
+    h = w = num_steps
+    total = h * w
+    # --- UI throttling: update plot every N pixels (about ~8 updates/row) ---
+    UPDATE_EVERY = 1
+    pixels_done = 0
+    # Timing / laser
     vld = tb.get_virtual_laser_dict(VirtualLaserKey.IMAGING)
     readout_ns = int(nv_sig.pulse_durations.get(VirtualLaserKey.IMAGING, int(vld["duration"])))
     readout_s = readout_ns / 1e9
     readout_laser = vld["physical_name"]
 
-    # Servers
-    pulse = tb.get_server_pulse_streamer()   # or tb.get_server_pulse_gen(), per your tb
+    pulse = tb.get_server_pulse_streamer()
     ctr   = tb.get_server_counter()
 
-    # Buffers/plot
-    pos.set_xyz_on_nv(nv_sig)
-    img = np.full((num_steps, num_steps), np.nan, float)
+    img = np.full((h, w), np.nan, float)
     img_kcps = np.copy(img) if count_fmt == CountFormat.KCPS else None
-    cursor = []
+
     kpl.init_kplotlib()
-    fig, ax = plt.subplots()
+    fig, ax = plt.subplots(figsize=(7, 5.2))
+    ax.set_xlabel("Voltage (V)")
+    ax.set_ylabel("Voltage (V)")
     kpl.imshow(ax, img if img_kcps is None else img_kcps,
-               title=f"Confocal scan, {readout_laser}, {time.ctime()}",
-               #title=f"Confocal scan, {readout_laser}, {readout_ns/1e3:.1f} μs",
-               cbar_label=("Kcps" if img_kcps is not None else "Counts"),
+            #    title=f"XY={nv_sig.coords[CoordsKey.SAMPLE]}, Z={nv_sig.coords[CoordsKey.Z]}, {ccryo.get_sample_name()}",
+               title=f"{readout_laser}, {readout_ns/1e6:.1f} ms",
+               cbar_label=("Kcps" if img_kcps is not None else "Raw Counts"),
                extent=extent)
 
     tb.reset_cfm()
     tb.init_safe_stop()
     ctr.start_tag_stream()
 
-    def _n(x):
-        if x is None: return 0
-        try: return len(x)
-        except: return int(getattr(x, "size", 0))
+    # ---- sequence loading (hardware delay, not Python sleep) ----
+    pos_key = CoordsKey.PIXEL
+    delay_ns = int(cfg["Positioning"]["Positioners"][pos_key]["delay"])  # e.g. 400e3 ns for galvo
+    period_ns = pulse.stream_load(
+        SEQ_FILE_PIXEL_READOUT,
+        tb.encode_seq_args([delay_ns, readout_ns, readout_laser, 1.0])  # laser args ignored by your seq
+    )[0]
 
     try:
         if mode == PosControlMode.SEQUENCE:
-            # 3A) Sequence-driven scan: pass full XY arrays to the timing sequence
-            seq_args = [0, readout_ns, list(X), list(Y)]
+            # ---- RASTER ORDER COORDINATE LISTS (no serpentine) ----
+            Xr = []
+            Yr = []
+            for row in range(h):
+                y = y1d[(h - 1) - row]   # bottom row first
+                for col in range(w):
+                    x = x1d[col]        # left -> right always
+                    Xr.append(x); Yr.append(y)
+
+            seq_args = [0, readout_ns, list(Xr), list(Yr)]   # delay handled in pixel-readout mode only
             period_ns = pulse.stream_load(SEQ_FILE_SEQUENCE_SCAN, tb.encode_seq_args(seq_args))[0]
             pulse.stream_start(total)
+
+            written = []  # state for _raster_fill
+            done = 0
+            # conservative timeout
             timeout = time.time() + (period_ns * 1e-9) * total + 10.0
 
-            done = 0
             while done < total and not tb.safe_stop():
                 if time.time() > timeout: break
-                if nv_minus_init:
-                    raw = ctr.read_counter_modulo_gates(2)
-                    if _n(raw) == 0: continue
-                    vals = [max(int(a)-int(b), 0) for (a,b) in raw]
-                else:
-                    raw = ctr.read_counter_simple()
-                    if _n(raw) == 0: continue
-                    vals = [int(v) for v in raw]
-                _snake_fill(vals, img, cursor)
-                done += len(vals)
-                if img_kcps is not None:
-                    img_kcps[:] = (img/1000.0)/readout_s
-                    kpl.imshow_update(ax, img_kcps)
-                else:
-                    kpl.imshow_update(ax, img)
-
-        else:
-            # 3B) Step/stream-driven scan: move per pixel, read per pixel
-            # Load a simple per-pixel readout sequence (no XY arrays)
-            period_ns = pulse.stream_load(SEQ_FILE_PIXEL_READOUT,
-                                          tb.encode_seq_args([0, readout_ns]))[0]
-
-            # Optional: small settle from config if present
-            settle_s = float(cfg.get("piezo_settle_s", 0.0))
-
-            # Snake iteration order matches _snake_fill; we just iterate linearly and rely on fill order
-            pulse.stream_start(total)
-            idx = 0
-            while idx < total and not tb.safe_stop():
-                # Move to target imaging coordinates (abstract call; routes to configured positioner)
-                pos.set_xyz((X[idx], Y[idx]), positioner=positioner)
-                # positioner.load_stream_xy([X[idx]], [Y[idx]], False)
-                # .set_xyz((X[idx], Y[idx]), positioner=positioner)
-                if settle_s > 0:
-                    tb.sleep_seconds_safely(settle_s)
-
-                # Read one or more samples for this pixel
                 if nv_minus_init:
                     raw = ctr.read_counter_modulo_gates(2)
                     vals = [max(int(a)-int(b), 0) for (a,b) in raw]
@@ -164,8 +134,8 @@ def confocal_scan(nv_sig: NVSig, x_range, y_range, num_steps, nv_minus_init=Fals
                 if not vals:
                     continue
 
-                _snake_fill(vals, img, cursor)
-                idx += len(vals)
+                _raster_fill(vals, img, written)
+                done = written[0]
 
                 if img_kcps is not None:
                     img_kcps[:] = (img/1000.0)/readout_s
@@ -173,23 +143,82 @@ def confocal_scan(nv_sig: NVSig, x_range, y_range, num_steps, nv_minus_init=Fals
                 else:
                     kpl.imshow_update(ax, img)
 
+        else:
+            # ---- STEP/STREAM CONTROL: drive stage in raster order ----
+            # pulse.stream_start(total)
+
+            written = []  # state for _raster_fill
+            for row in range(h):
+                if tb.safe_stop(): break
+                y = y1d[(h - 1) - row]  # bottom row first
+                for col in range(w):
+                    if tb.safe_stop(): break
+                    x = x1d[col]        # left -> right
+                    pos.set_xyz((x, y), positioner=positioner)
+
+                    pulse.stream_start(1)  # <<< moved here
+                    # read exactly ONE sample per pixel
+                    if nv_minus_init:
+                        raw = ctr.read_counter_modulo_gates(2, 1)  # [[a,b]]
+                        vals = [max(int(raw[0][0]) - int(raw[0][1]), 0)]
+                    else:
+                        raw = ctr.read_counter_simple(1)            # [c]
+                        vals = [int(raw[0])]
+
+                    if not vals:
+                        continue
+
+                    _raster_fill(vals, img, written)
+
+                    # if img_kcps is not None:
+                    #     img_kcps[:] = (img/1000.0)/readout_s
+                    #     kpl.imshow_update(ax, img_kcps)
+                    # else:
+                    #     kpl.imshow_update(ax, img)
+
+                    # UI throttle
+                    pixels_done = written[0]
+                    if (pixels_done % UPDATE_EVERY) == 0:
+                        if img_kcps is not None:
+                            img_kcps[:] = (img / 1000.0) / readout_s
+                            kpl.imshow_update(ax, img_kcps)
+                        else:
+                            kpl.imshow_update(ax, img)
+
     finally:
         ctr.clear_buffer()
         tb.reset_cfm()
 
-    # Save
+    # ---- Save (units consistent with display/return) ----
+    is_kcps = (count_fmt == CountFormat.KCPS)
+    img_out = (img/1000.0)/readout_s if is_kcps else img
+    units_out = "kcps" if is_kcps else "counts"
+
     ts = dm.get_time_stamp()
-    raw = dict(
-        timestamp=ts,
-        mode="confocal_scan",
-        num_steps=num_steps,
-        x_range=x_range, y_range=y_range,
-        x_center=x0, y_center=y0,
-        extent=extent,
-        readout_ns=readout_ns, readout_units="ns",
-        img_array=img.astype(int), img_array_units="counts",
-        x_coords_1d=x1d, y_coords_1d=y1d,
-    )
+    # raw = dict(
+    #     timestamp=ts,
+    #     "nv_sig": nv_sig,
+    #     mode="confocal_scan_raster",
+    #     num_steps=num_steps,
+    #     x_range=x_range, y_range=y_range,
+    #     x_center=x0, y_center=y0,
+    #     extent=extent,
+    #     readout_ns=readout_ns, readout_units="ns",
+    #     img_array=img_out.astype(float), img_array_units=units_out,
+    #     x_coords_1d=x1d, y_coords_1d=y1d,
+    #     nv_sig=nv_sig.__dict__ if hasattr(nv_sig, "__dict__") else nv_sig,
+    # )
+    raw = {
+    "timestamp": ts,
+    "nv_sig": nv_sig,
+    "num_steps": num_steps,
+    "x_range": x_range, "y_range": y_range,
+    "x_center": x0, "y_center": y0,
+    "extent": extent,
+    "readout_ns": readout_ns, "readout_units": "ns",
+    "img_array": img_out.astype(float), "img_array_units": units_out,
+    "x_coords_1d": x1d, "y_coords_1d": y1d,
+    }
     path = dm.get_file_path(__file__, ts, getattr(nv_sig, "name", "nv"))
     dm.save_figure(fig, path)
     dm.save_raw_data(raw, path)
@@ -423,14 +452,32 @@ def confocal_scan(nv_sig: NVSig, x_range, y_range, num_steps, nv_minus_init=Fals
 #     return img_array, coords_1_1d, coords_2_1d
 
 # ---------------------------------------------------------------------------
+    kpl.show()
+    return img_out, x1d, y1d
+
+# # ---------------------------------------------------------------------------
 # Simple viewer for previously saved scan files (optional)
 # ---------------------------------------------------------------------------
+def get_coord(coords, key):
+    # Allow either Enum or string
+    if hasattr(key, "name"):  # Enum
+        return coords.get(key, coords.get(key.name))
+    return coords.get(key)
 if __name__ == "__main__":
-    file_name = "2023_09_11-13_52_01-johnson-nvref"
+    file_name = "2025_10_25-11_09_07-(lovelace)"
 
-    data = tb.get_raw_data(file_name)
+    data = dm.get_raw_data(file_name)
+    print("Top-level keys in saved file:")
+    print(list(data.keys()))
+    nv_sig = data["nv_sig"]
+    # z_coord = nv_sig["coords"]["z"]
+    # z_coord = nv_sig.coords[CoordsKey.Z]
+
+    print(nv_sig)
+    z_coord = get_coord(nv_sig.coords, CoordsKey.Z)
+    print(z_coord)
     img_array = np.array(data["img_array"])
-    readout_ns = data["readout"]
+    readout_ns = data["readout_ns"]
     img_array_kcps = (img_array / 1000.0) / (readout_ns * 1e-9)
     extent = data.get("extent", None)
 

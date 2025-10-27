@@ -33,9 +33,9 @@ green_laser_aod = "laser_INTE_520_aod"
 red_laser_aod = "laser_COBO_638_aod"
 
 
-calibration_coords_pixel = [[13.905, 11.931], [151.679, 245.068],[240.501, 17.871]]
-calibration_coords_green = [[119.451, 121.595],[106.759, 93.57],[93.74, 118.298]]
-calibration_coords_red = [[82.012, 83.799],[72.603, 60.48],[61.204, 79.853]]
+calibration_coords_pixel = [[14.043, 37.334],[106.538, 237.374],[218.314, 23.302]]
+calibration_coords_green = [[119.811, 118.835], [111.802, 95.037],[96.387, 118.141]]
+calibration_coords_red = [[82.515, 81.753], [76.88, 62.032], [63.543, 80.085]]
 
 # Create the dictionaries using the provided lists
 calibration_coords_nv1 = {
@@ -99,8 +99,9 @@ config |= {
         "pulse_gen_SWAB_82_ip_2": "192.168.0.160",
         "rotation_stage_THOR_ell18k_com": "COM8",
         "sig_gen_BERK_bnc835_visa": "TCPIP::128.104.ramp_to_zero_duration.114::inst0::INSTR",
-        "sig_gen_STAN_sg394_visa": "TCPIP::192.168.0.120::inst0::INSTR",
-        "sig_gen_STAN_sg394_2_visa": "TCPIP::192.168.0.121::inst0::INSTR",
+        "sig_gen_STAN_sg394_0_visa": "TCPIP::192.168.0.120::inst0::INSTR",
+        "sig_gen_STAN_sg394_1_visa": "TCPIP::192.168.0.121::inst0::INSTR",
+        "sig_gen_STAN_sg394_2_visa": "TCPIP::192.168.0.178::inst0::INSTR",
         "sig_gen_TEKT_tsg4104a_visa": "TCPIP0::128.104.ramp_to_zero_duration.112::5025::SOCKET",
         "tagger_SWAB_20_1_serial": "1740000JEH",
         "tagger_SWAB_20_2_serial": "1948000SIP",
@@ -115,36 +116,47 @@ config |= {
     "Microwaves": {
         "PhysicalSigGens": {
             "sig_gen_BERK_bnc835": {"delay": 151, "fm_mod_bandwidth": 100000.0},
-            "sig_gen_STAN_sg394": {"delay": 104, "fm_mod_bandwidth": 100000.0},
-            "sig_gen_STAN_sg394_2": {"delay": 151, "fm_mod_bandwidth": 100000.0},
+            "sig_gen_STAN_sg394_0": {"delay": 104, "fm_mod_bandwidth": 100000.0},
+            "sig_gen_STAN_sg394_1": {"delay": 151, "fm_mod_bandwidth": 100000.0},
+            "sig_gen_STAN_sg394_2": {"delay": 151, "fm_mod_bandwidth": 100000.0}, ## need a work
             "sig_gen_TEKT_tsg4104a": {"delay": 57},
         },
         "iq_comp_amp": 0.5,
         "iq_delay": 140,
         "VirtualSigGens": {
             0: {
-                "physical_name": "sig_gen_STAN_sg394",
-                "uwave_power": 9.6,
-                # "frequency": 2.7805,
-                "frequency": 2.7661,
-                # "frequency": 0.1331,
-                "rabi_period": 176,
-                "pi_pulse": 88,
-                "pi_on_2_pulse": 44,
-                # "frequency": 2.8227,
+                "physical_name": "sig_gen_STAN_sg394_0",
+                "uwave_power": 11.0,
+                "frequency": 2.7851,
+                # "frequency": 2.766091,
+                "rabi_period": 256,
+                "pi_pulse": 128,
+                "pi_on_2_pulse": 64,
+                # "frequency": 2.935030,
                 # "rabi_period": 112,
                 # "pi_pulse": 56,
                 # "pi_on_2_pulse": 28,
             },
-            # sig gen 1 is iq molulated
             1: {
+                "physical_name": "sig_gen_STAN_sg394_1",
+                "uwave_power": 11.0,
+                # "frequency": 2.822728,
+                "frequency": 2.8405,
+                # "rabi_period": 112,
+                # "pi_pulse": 56,
+                # "pi_on_2_pulse": 28,
+                # "frequency": 2.982049,
+                "rabi_period": 192,
+                "pi_pulse": 92,
+                "pi_on_2_pulse": 48,
+            },
+            2: {
                 "physical_name": "sig_gen_STAN_sg394_2",
-                "uwave_power": 9.6,
-                "frequency": 2.8227,
-                # "frequency": 2.8420,
-                "rabi_period": 112,
-                "pi_pulse": 56,
-                "pi_on_2_pulse": 28,
+                "uwave_power": 11.0,
+                "frequency": 0.133,
+                "rabi_period": 176,
+                "pi_pulse": 88,
+                "pi_on_2_pulse": 44,
             },
         },
     },
@@ -190,6 +202,7 @@ config |= {
             # LaserKey.IMAGING: {"physical_name": green_laser, "duration": 50e6},
             VirtualLaserKey.IMAGING: {
                 "physical_name": green_laser,
+                # "duration": 12e6,
                 "duration": 12e6,
             },
             # SBC: created for calibration only
@@ -347,8 +360,8 @@ config |= {
             "do_laser_COBO_638_dm": 3,  # red TTL
             # microwaves (TTL gate to SGs)
             # "do_sig_gen_BERK_bnc835_gate": 4,
-            "do_sig_gen_STAN_sg394_2_gate": 4,
-            "do_sig_gen_STAN_sg394_gate": 5,
+            "do_sig_gen_STAN_sg394_1_gate": 4,
+            "do_sig_gen_STAN_sg394_0_gate": 5,
             # analog (for the yellow AOM amplitude)
             "ao_laser_OPTO_589_am": 0,  # yellow analog modulation
         },
@@ -376,6 +389,9 @@ pi_on_2_pulse_0 = virtual_sig_gens_dict[0]["pi_on_2_pulse"]
 rabi_period_1 = virtual_sig_gens_dict[1]["rabi_period"]
 pi_pulse_1 = virtual_sig_gens_dict[1]["pi_pulse"]
 pi_on_2_pulse_1 = virtual_sig_gens_dict[1]["pi_on_2_pulse"]
+rabi_period_2 = virtual_sig_gens_dict[2]["rabi_period"]
+pi_pulse_2 = virtual_sig_gens_dict[2]["pi_pulse"]
+pi_on_2_pulse_2 = virtual_sig_gens_dict[2]["pi_on_2_pulse"]
 ramp_to_zero_duration = 64
 virtual_lasers_dict = config["Optics"]["VirtualLasers"]
 iq_buffer = config["CommonDurations"]["iq_buffer"]
@@ -552,7 +568,7 @@ opx_config = {
                 "scc": "do_scc",
             },
         },
-        "do_sig_gen_STAN_sg394_dm": {
+        "do_sig_gen_STAN_sg394_0_dm": {
             # "digitalInputs": {"chan": {"port": ("con1", 9), "delay": 0, "buffer": 0}},
             "digitalInputs": {"chan": {"port": ("con1", 9), "delay": iq_delay, "buffer": 0}},
             "operations": {
@@ -562,7 +578,7 @@ opx_config = {
                 "pi_on_2_pulse": "do_pi_on_2_pulse_0",
             },
         },
-        "do_sig_gen_STAN_sg394_2_dm": {
+        "do_sig_gen_STAN_sg394_1_dm": {
             # 230 ns I channel latency measured 3/26/25 MCC and Saroj using oscilloscope
             "digitalInputs": {
                 # "chan": {"port": ("con1", 10), "delay": 0, "buffer": 0}
@@ -576,9 +592,18 @@ opx_config = {
                 "pi_on_2_pulse": "do_pi_on_2_pulse_1",
             },
         },
+        "do_sig_gen_STAN_sg394_2_dm": {
+            "digitalInputs": {"chan": {"port": ("con1", 3), "delay": 0, "buffer": 0}},
+            "operations": {
+                "on": "do_on",
+                "off": "do_off",
+                "pi_pulse": "do_pi_pulse_2",
+                "pi_on_2_pulse": "do_pi_on_2_pulse_2",
+            },
+        },
         # region Microwave iq modulation
         # Additional operations are generated algorithmically with generate_iq_pulses()
-        "ao_sig_gen_STAN_sg394_i": {
+        "ao_sig_gen_STAN_sg394_0_i": {
             "singleInput": {"port": ("con1", 5)},
             "intermediate_frequency": 0,
             "operations": {
@@ -589,7 +614,7 @@ opx_config = {
                 "pi_on_2_pulse": "ao_iq_pi_on_2_pulse_0",
             },
         },
-        "ao_sig_gen_STAN_sg394_q": {
+        "ao_sig_gen_STAN_sg394_0_q": {
             "singleInput": {"port": ("con1", 8)},
             "intermediate_frequency": 0,
             "operations": {
@@ -600,7 +625,7 @@ opx_config = {
                 "pi_on_2_pulse": "ao_iq_pi_on_2_pulse_0",
             },
         },
-        "ao_sig_gen_STAN_sg394_2_i": {
+        "ao_sig_gen_STAN_sg394_1_i": {
             "singleInput": {"port": ("con1", 9)},
             "intermediate_frequency": 0,
             "operations": {
@@ -611,7 +636,7 @@ opx_config = {
                 "pi_on_2_pulse": "ao_iq_pi_on_2_pulse_1",
             },
         },
-        "ao_sig_gen_STAN_sg394_2_q": {
+        "ao_sig_gen_STAN_sg394_1_q": {
             "singleInput": {"port": ("con1", 10)},
             "intermediate_frequency": 0,
             "operations": {
@@ -620,6 +645,33 @@ opx_config = {
                 "off": "ao_off",
                 "pi_pulse": "ao_iq_pi_pulse_1",
                 "pi_on_2_pulse": "ao_iq_pi_on_2_pulse_1",
+            },
+        },
+        ### SBC: added extra I/Q pair for sg394_2
+        ### NOTE: these elements currently map to the *same physical AO ports*
+        ### (con1,9) and (con1,10) already used by sg394_1.
+        ### That means sg394_1 and sg394_2 cannot be active simultaneously.
+        ### If you intend to use them independently, assign new AO ports.
+        "ao_sig_gen_STAN_sg394_2_i": {
+            "singleInput": {"port": ("con1", 9)},
+            "intermediate_frequency": 0,
+            "operations": {
+                "iq_test": "iq_test",
+                "on": "ao_cw",
+                "off": "ao_off",
+                "pi_pulse": "ao_iq_pi_pulse_2",
+                "pi_on_2_pulse": "ao_iq_pi_on_2_pulse_2",
+            },
+        },
+        "ao_sig_gen_STAN_sg394_2_q": {
+            "singleInput": {"port": ("con1", 10)},
+            "intermediate_frequency": 0,
+            "operations": {
+                "iq_test": "iq_test",
+                "on": "ao_cw",
+                "off": "ao_off",
+                "pi_pulse": "ao_iq_pi_pulse_2",
+                "pi_on_2_pulse": "ao_iq_pi_on_2_pulse_2",
             },
         },
         # endregion
@@ -792,6 +844,16 @@ opx_config = {
             "length": int(pi_on_2_pulse_1) + 2 * iq_buffer,
             "waveforms": {"single": "cw"},
         },
+        "ao_iq_pi_pulse_2": {
+            "operation": "control",
+            "length": int(pi_pulse_2) + 2 * iq_buffer,
+            "waveforms": {"single": "cw"},
+        },
+        "ao_iq_pi_on_2_pulse_2": {
+            "operation": "control",
+            "length": int(pi_on_2_pulse_2) + 2 * iq_buffer,
+            "waveforms": {"single": "cw"},
+        },
         ### Digital
         "do_iq_test": {
             "operation": "control",
@@ -863,6 +925,16 @@ opx_config = {
             "length": int(pi_on_2_pulse_1),
             "digital_marker": "on",
         },
+        "do_pi_pulse_2": {
+            "operation": "control",
+            "length": int(pi_pulse_2),
+            "digital_marker": "on",
+        },
+        "do_pi_on_2_pulse_2": {
+            "operation": "control",
+            "length": int(pi_on_2_pulse_2),
+            "digital_marker": "on",
+        },
         ### Mixed
     },
     # endregion
@@ -870,21 +942,23 @@ opx_config = {
     ### Analog
     "waveforms": {
         # Green AOD
-        "green_aod_cw-opti": {"type": "constant", "sample": 0.09},
-        "green_aod_cw-charge_pol": {"type": "constant", "sample": 0.07},
+        "green_aod_cw-opti": {"type": "constant", "sample": 0.11},
+        "green_aod_cw-charge_pol": {"type": "constant", "sample": 0.08},
         "green_aod_cw-spin_pol": {"type": "constant", "sample": 0.05},
         "green_aod_cw-shelving": {"type": "constant", "sample": 0.05},
         "green_aod_cw-scc": {"type": "constant", "sample": 0.15},
         # Red AOD
-        "red_aod_cw-opti": {"type": "constant", "sample": 0.15},
-        "red_aod_cw-ion": {"type": "constant", "sample": 0.15},
-        "red_aod_cw-scc": {"type": "constant", "sample": 0.15},
+        "red_aod_cw-opti": {"type": "constant", "sample": 0.13},
+        "red_aod_cw-ion": {"type": "constant", "sample": 0.13},
+        "red_aod_cw-scc": {"type": "constant", "sample": 0.13},
         # Yellow AOM
-        "yellow_imaging": {"type": "constant", "sample": 0.35},
+        "yellow_imaging": {"type": "constant", "sample": 0.45},
         # "yellow_charge_readout": {"type": "constant", "sample": 0.2675},
         # "yellow_charge_readout": {"type": "constant", "sample": 0.2367}, #136NVs
-        "yellow_charge_readout": {"type": "constant", "sample": 0.2267}, #118NVs
-        "yellow_spin_pol": {"type": "constant", "sample": 0.24},
+        # "yellow_charge_readout": {"type": "constant", "sample": 0.2267}, #118NVs
+        # "yellow_charge_readout": {"type": "constant", "sample": 0.34947}, ## 312NV johnson
+        "yellow_charge_readout": {"type": "constant", "sample": 0.313148}, ## 230NV johnson
+        "yellow_spin_pol": {"type": "constant", "sample": 0.31510},
         "yellow_shelving": {"type": "constant", "sample": 0.20},
         # Other
         "aod_cw": {"type": "constant", "sample": 0.35},
