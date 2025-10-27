@@ -73,7 +73,7 @@ def confocal_scan(nv_sig: NVSig, x_range, y_range, num_steps, nv_minus_init=Fals
     x0, y0 = pos.get_nv_coords(nv_sig, coords_key=CoordsKey.PIXEL)
     X, Y, x1d, y1d, extent = pos.get_scan_grid_2d(x0, y0, x_range, y_range, num_steps, num_steps)
     total = len(X)
-    
+
     # Readout timing/laser from virtual laser
     vld = tb.get_virtual_laser_dict(VirtualLaserKey.IMAGING)
     readout_ns = int(nv_sig.pulse_durations.get(VirtualLaserKey.IMAGING, int(vld["duration"])))
@@ -263,7 +263,7 @@ def confocal_scan(nv_sig: NVSig, x_range, y_range, num_steps, nv_minus_init=Fals
 #     laser_key = VirtualLaserKey.IMAGING  # imaging virtual laser
 #     positioner = pos.get_laser_positioner(laser_key)
 #     print(f"pistioner for {laser_key.name}: {positioner}")
-    
+
 #     # print(f"Using positioner: {positioner}")
 #     # Get XY center in the imaging (galvo/AOD) space.
 #     # If per-laser coords are missing, your modified get_nv_coords will derive from PIXEL/SAMPLE.
