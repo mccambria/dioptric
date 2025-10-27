@@ -394,7 +394,7 @@ if __name__ == "__main__":
     remove_outliers_flag = False  # Set this flag to enable/disable outlier removal
     reorder_coords_flag = True  # Set this flag to enable/disable reordering of NVs
     data = dm.get_raw_data(
-        file_stem="2025_10_22-23_31_15-johnson-nv0_2025_10_21", load_npz=True
+        file_stem="2025_10_26-18_08_38-johnson-nv0_2025_10_21", load_npz=True
     )
     img_array = np.array(data["ref_img_array"])
     # img_array = data["img_array"]
@@ -703,11 +703,11 @@ if __name__ == "__main__":
     # spot_weights = non_linear_weights(filtered_intensities, alpha=0.9)
 
     # # Save the filtered results
-    save_results(
-        filtered_reordered_coords,
-        filtered_reordered_spot_weights,
-        filename="slmsuite/nv_blob_detection/nv_blob_230nvs_reordered.npz",
-    )
+    # save_results(
+    #     filtered_reordered_coords,
+    #     filtered_reordered_spot_weights,
+    #     filename="slmsuite/nv_blob_detection/nv_blob_230nvs_reordered.npz",
+    # )
 
     # # Plot the original image with circles around each NV
 

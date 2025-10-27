@@ -313,14 +313,14 @@ if __name__ == "__main__":
     kpl.init_kplotlib()
     # Load the image data
     data = dm.get_raw_data(
-        file_stem="2025_10_22-23_31_15-johnson-nv0_2025_10_21", load_npz=True
+        file_stem="2025_10_26-18_08_38-johnson-nv0_2025_10_21", load_npz=True
     )
     img_array = np.array(data["ref_img_array"])
     # img_array = np.array(data["img_array"])
 
     # Apply the blob detection and Gaussian fitting
     sigma = 2.0
-    lower_threshold = 0.04
+    lower_threshold = 0.08
     upper_threshold = 500
     smoothing_sigma = 0.0
     nv_coordinates, integrated_counts, spot_sizes = detect_nv_coordinates_blob(
@@ -392,4 +392,4 @@ if __name__ == "__main__":
     # )
 
     # full ROI -- multiple images save in the same file
-    process_scan_file(file_stem="2025_10_22-01_29_02-rubin-nv0_2025_09_08")
+    # process_scan_file(file_stem="2025_10_22-01_29_02-rubin-nv0_2025_09_08")
