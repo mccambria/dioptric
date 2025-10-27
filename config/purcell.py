@@ -957,7 +957,7 @@ opx_config = {
         # "yellow_charge_readout": {"type": "constant", "sample": 0.2367}, #136NVs
         # "yellow_charge_readout": {"type": "constant", "sample": 0.2267}, #118NVs
         # "yellow_charge_readout": {"type": "constant", "sample": 0.34947}, ## 312NV johnson
-        "yellow_charge_readout": {"type": "constant", "sample": 0.31510}, ## 230NV johnson
+        "yellow_charge_readout": {"type": "constant", "sample": 0.313148}, ## 230NV johnson
         "yellow_spin_pol": {"type": "constant", "sample": 0.31510},
         "yellow_shelving": {"type": "constant", "sample": 0.20},
         # Other
