@@ -464,16 +464,27 @@ if __name__ == "__main__":
         #     f"f0={fit['f0_MHz']:.3f} MHz, Tc={fit['Tc_ns']:.1f} ns, "
         #     f"φ0={fit['phi0_rad']:.2f} rad, RMS={fit['residual_rms']:.4g}"
         # )
+        # fit = fit_two_block_pipeline(T_us, norm_counts)
+        # print(
+        #     f"[Two-block fit ns/MHz] success={fit['success']}, "
+        #     f"f0={fit['f0_MHz']:.3f} MHz, Tc={fit['Tc_ns']:.1f} ns, "
+        #     f"φ0={fit['phi0_rad']:.2f} rad, RMS={fit['residual_rms']:.4g}"
+        # )
 
         # Per-NV plots (step through one by one)
+        # plot_each_nv_fit(
+        #     T_us, norm_counts, norm_counts_ste, fit, pause=0.0, save_dir=None
+        # )
         # plot_each_nv_fit(
         #     T_us, norm_counts, norm_counts_ste, fit
         # )
 
         # --- Plots ---
         # plot_phase_hist(fit["phi_i_est_rad"])
+        # plot_phase_hist(fit["phi_i_est_rad"])
         # plot_each_nv_fit(T_us, norm_counts, norm_counts_ste, fit)
         # plot_two_block_overlays(T_us, C, fit)
+        plot_spin_echo_all(nv_list, T_us, norm_counts, norm_counts_ste)
         plot_spin_echo_all(nv_list, T_us, norm_counts, norm_counts_ste)
     except Exception as e:
         print(f"Error occurred: {e}")
