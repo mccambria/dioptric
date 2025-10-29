@@ -136,8 +136,8 @@ import matplotlib.pyplot as plt
 import numpy as np
 
 ### green and red calibaton at RT setup 2025-09-15
-pixel_coords_list = [[119.715, 118.886],[111.743, 95.075], [95.042, 117.296]]
-red_coords_list = [[82.287, 81.487], [76.669, 61.833], [62.324, 79.011]]
+pixel_coords_list = [[119.811, 118.835], [111.802, 95.037],[96.387, 118.141]]
+red_coords_list = [[82.515, 81.753], [76.88, 62.032], [63.543, 80.085]]
 # Given pixel coordinates and corresponding red coordinates
 # pixel_coords_list = np.array(
 #     [
@@ -168,10 +168,10 @@ if len(pixel_coords_list) >= 3:
     # New pixel coordinate for which we want to find the corresponding red coordinate
     new_pixel_coord = np.array(
         [
-            [108.395, 107.296],
-            [119.811, 118.835],
-            [111.802, 95.037],
-            [95.102, 117.241],
+            [108.28, 107.37],
+            [119.675, 118.904],
+            [111.679, 95.109],
+            [96.317, 118.251],
         ],
         dtype=np.float32,
     )
@@ -275,13 +275,13 @@ def generate_divisible_by_4(min_val, max_val, num_steps):
 
 # Example Usage
 min_duration = 16
-max_duration = 2000
-num_steps = 25
+max_duration = 210
+num_steps = 18
 
 step_values = generate_divisible_by_4(min_duration, max_duration, num_steps)
 print(step_values)
 print(len(step_values))
-
+sys.exit()
 def logspace_div4(min_val, max_val, num_steps, base=10.0):
     if not (min_val > 0 and max_val > min_val and num_steps >= 2):
         raise ValueError("Bad inputs.")
@@ -309,7 +309,7 @@ def logspace_div4(min_val, max_val, num_steps, base=10.0):
 
 
 # Example
-print(logspace_div4(16, 2000, 25))
+print(logspace_div4(16, 200, 18))
 sys.exit()
 
 # sys.exit()

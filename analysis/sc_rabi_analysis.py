@@ -583,8 +583,8 @@ if __name__ == "__main__":
     ### johnson
     # file_stem = ["2025_10_24-03_41_53-johnson-nv0_2025_10_21"] ## 2.78, 2.84
     # file_stem = ["2025_10_24-23_14_38-johnson-nv0_2025_10_21"] ## 2.78, 2.84
-    file_stem = ["2025_10_25-05_55_59-johnson-nv0_2025_10_21"] ## 2.78, 2.84
-    
+    # file_stem = ["2025_10_25-05_55_59-johnson-nv0_2025_10_21"] ## 2.78, 2.84
+    file_stem = ["2025_10_28-09_07_10-johnson-nv0_2025_10_21"]
     data = dm.get_raw_data(file_stem=file_stem, load_npz=True, use_cache=False)
     nv_list = data["nv_list"]
     taus = data["taus"]

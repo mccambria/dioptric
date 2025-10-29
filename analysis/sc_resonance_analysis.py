@@ -295,8 +295,8 @@ def plot_nv_resonance(
     plt.grid(True, linestyle="--", alpha=0.5)
     # return
 
-    filter_nvs = True
-    # filter_nvs = False
+    # filter_nvs = True
+    filter_nvs = False
     if filter_nvs:
         # target_peak_values = [0.113, 0.217]
         target_peak_values = [0.77, 0.181]
@@ -451,7 +451,7 @@ def plot_nv_resonance(
         # dm.save_figure(fig, file_path)
         # plt.close(fig)
 
-    return
+    # return
     # Plot filtered resonance fits
     sns.set(style="whitegrid", palette="muted")
     num_filtered_nvs = len(filtered_nv_list)
@@ -744,6 +744,9 @@ if __name__ == "__main__":
     ]
     file_ids = [
         "2025_10_27-11_35_46-johnson-nv0_2025_10_21",
+    ]
+    file_ids = [
+        "2025_10_28-03_08_17-johnson-nv0_2025_10_21",
     ]
     # Load the first dataset as a base
     combined_data = dm.get_raw_data(
