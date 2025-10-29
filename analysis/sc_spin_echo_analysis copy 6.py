@@ -563,6 +563,11 @@ if __name__ == "__main__":
                   "2025_10_09-23_03_41-rubin-nv0_2025_09_08",
                   "2025_10_10-14_23_58-rubin-nv0_2025_09_08",
                   "2025_10_10-17_04_27-rubin-nv0_2025_09_08"]
+    
+    file_stems = ["2025_10_29-10_33_01-johnson-nv0_2025_10_21",
+                "2025_10_29-02_21_07-johnson-nv0_2025_10_21",
+                ]
+    
     try:
         data = widefield.process_multiple_files(file_stems, load_npz=True)
         # data = widefield.process_multiple_files(file_stems)
