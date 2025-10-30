@@ -136,8 +136,8 @@ import matplotlib.pyplot as plt
 import numpy as np
 
 ### green and red calibaton at RT setup 2025-09-15
-pixel_coords_list = [[119.811, 118.835], [111.802, 95.037],[96.387, 118.141]]
-red_coords_list = [[82.515, 81.753], [76.88, 62.032], [63.543, 80.085]]
+pixel_coords_list = [[119.675, 118.904], [111.679, 95.109],[96.317, 118.251]]
+red_coords_list = [[82.509, 81.823],[76.828, 62.075],[63.512, 80.154]]
 # Given pixel coordinates and corresponding red coordinates
 # pixel_coords_list = np.array(
 #     [

@@ -181,8 +181,8 @@ def do_optimize_readout_amp(nv_list):
     # num_reps = 150
     # num_runs = 5
     num_reps = 12
-    num_runs = 200
-    # num_runs = 400
+    # num_runs = 200
+    num_runs = 400
     min_amp = 0.8 
     max_amp = 1.2
     return optimize_charge_state_histograms_mcc.optimize_readout_amp(
@@ -192,7 +192,7 @@ def do_optimize_readout_amp(nv_list):
 def do_optimize_scc_readout_amp(nv_list):
     num_steps = 18
     num_reps = 16
-    num_runs = 500
+    num_runs = 2
     min_amp = 0.8
     max_amp = 1.2
     return optimize_scc_readout.optimize_readout_amp(
@@ -1391,9 +1391,9 @@ if __name__ == "__main__":
     print(f"Green Laser Coordinates: {green_coords_list[0]}")
     print(f"Red Laser Coordinates: {red_coords_list[0]}")
 
-    # pixel_coords_list = [[124.195, 127.341],[14.043, 37.334],[106.538, 237.374],[218.314, 23.302]]
-    # green_coords_list = [[108.28, 107.37], [119.675, 118.904], [111.679, 95.109],[96.317, 118.251]]
-    # red_coords_list = [[73.677, 71.919], [82.509, 81.823],[76.828, 62.075],[63.512, 80.154]]
+    pixel_coords_list = [[124.195, 127.341],[14.043, 37.334],[106.538, 237.374],[218.314, 23.302]]
+    green_coords_list = [[108.338, 107.396], [119.63, 118.934], [111.638, 95.157],[96.302, 118.276]]
+    red_coords_list = [[73.677, 71.919], [82.509, 81.823],[76.828, 62.075],[63.512, 80.154]]
     num_nvs = len(pixel_coords_list)
     threshold_list = [None] * num_nvs
     # fmt: off
@@ -1561,9 +1561,9 @@ if __name__ == "__main__":
         # do_optimize_sample(nv_sig)
         # optimize.optimize_pixel_and_z(nv_sig, do_plot=True)
         # coords_key = None
-        # coords_key = green_laser
+        coords_key = green_laser
         # coords_key = red_laser
-        # do_optimize_loop(np.array(nv_list), np.array(coords_key))
+        do_optimize_loop(np.array(nv_list), np.array(coords_key))
 
         # do_charge_state_histograms(nv_list)
         # do_charge_state_conditional_init(nv_list)
@@ -1581,6 +1581,7 @@ if __name__ == "__main__":
         # do_optimize_scc_duration(nv_list)
         # do_optimize_scc_amp(nv_list)
         # optimize_scc_amp_and_duration(nv_list)
+        # do_optimize_scc_readout_amp(nv_list)
         # do_crosstalk_check(nv_sig)
         # do_spin_pol_check(nv_sig)
 
@@ -1599,7 +1600,7 @@ if __name__ == "__main__":
         # do_deer_hahn(nv_list)
         # do_deer_hahn_rabi(nv_list)
         # do_resonance_zoom(nv_list)
-        do_spin_echo(nv_list)
+        # do_spin_echo(nv_list)
         # do_spin_echo_1(nv_list)
         # do_ramsey(nv_list)
 

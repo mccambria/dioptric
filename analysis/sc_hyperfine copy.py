@@ -1,5 +1,6 @@
 import numpy as np
 import matplotlib.pyplot as plt
+from utils import kplotlib as kpl
 import scipy.linalg as la
 import pandas as pd
 from pathlib import Path
@@ -8,6 +9,7 @@ import os
 from joblib import Parallel, delayed
 from datetime import datetime
 
+kpl.init_kplotlib()
 # Constants
 D = 2 * np.pi * 2.87e9  # NV zero-field splitting in rad/s
 gamma_e = 1.760859644e11  # Electron gyromagnetic ratio (rad/s/T)
@@ -126,17 +128,20 @@ def plot_echo(taus, signal, title="Echo coherence"):
 # === PARAMETERS ===
 gamma = 175.6  # nuclear flip rate (1/s)
 N_trials = 10000
-taus = np.linspace(0, 600e-6, 121)  # echo delays (seconds)
-spin_block_size = 15
-max_spin = 150  # total spins to consider
+taus = np.linspace(0, 600e-5, 121)  # echo delays (seconds)
+spin_block_size = 6
+max_spin = 60  # total spins to consider
 save_dir = Path("analysis/nv_hyperfine_coupling")
 save_dir.mkdir(parents=True, exist_ok=True)
 
 data = load_hyperfine_data()
 
-
+# distance =data["distance"].values
+# mask = distance < 15 
+# print(len(distance[mask]))
+# sys.exit()
 # === SEMICLASSICAL SIMULATION ===
-def simulate_semiclassical_echo(index_range, taus, gamma=175.6, N_trials=100):
+def simulate_semiclassical_echo(index_range, taus, gamma=175.6, N_trials=1000):
     A_zz = data["Azz"].values[list(index_range)]
     coherence = []
     for tau in taus:
@@ -171,20 +176,20 @@ echo_total = np.prod(results, axis=0)
 now = datetime.now().strftime("%Y%m%d_%H%M%S")
 
 # === SAVE ===
-np.savez(
-    save_dir / f"semiclassical_clusters_{max_spin}_spins_{now}.npz",
-    taus=taus,
-    echo_total=echo_total,
-    cluster_echoes=np.array(results),
-    cluster_ranges=np.array(spin_ranges),
-)
-
+# np.savez(
+#     save_dir / f"semiclassical_clusters_{max_spin}_spins_{now}.npz",
+#     taus=taus,
+#     echo_total=echo_total,
+#     cluster_echoes=np.array(results),
+#     cluster_ranges=np.array(spin_ranges),
+# )
+# echo_total = np.round(echo_total, 3)
 # === PLOT ===
-plt.figure(figsize=(10, 5))
+plt.figure(figsize=(8, 6))
 plt.plot(taus * 1e6, echo_total, color="black", lw=2, label="Total Echo")
 
-for i, cluster in enumerate(results):
-    plt.plot(taus * 1e6, cluster, "--", alpha=0.5, label=f"Cluster {i+1}")
+# for i, cluster in enumerate(results):
+#     plt.plot(taus * 1e6, cluster, "--", alpha=0.5, label=f"Cluster {i+1}")
 
 plt.xlabel("Echo delay $\\tau$ (μs)")
 plt.ylabel("Coherence")
@@ -193,37 +198,39 @@ plt.grid(True)
 plt.legend(loc="upper right", fontsize=8)
 plt.tight_layout()
 # plt.savefig(save_dir / f"semiclassical_clusters_{max_spin}_spins.png", dpi=300)
-plt.show()
+plt.show(block=True)
+
+
 sys.exit()
 
 
-def plot_semiclassical_vs_distance_cutoffs(
-    distances, Azz_full, taus, gamma=175.6, N_trials=2000, cutoffs=[10, 15, 20, 25, 30]
-):
+# def plot_semiclassical_vs_distance_cutoffs(
+#     distances, Azz_full, taus, gamma=175.6, N_trials=2000, cutoffs=[10, 15, 20, 25, 30]
+# ):
 
-    plt.figure(figsize=(10, 5))
-    for cutoff in cutoffs:
-        mask = distances > cutoff
-        A_zz_cut = Azz_full[mask]
-        coh = simulate_semiclassical_echo(
-            A_zz_cut * 2 * np.pi * 1e6, taus, gamma, N_trials
-        )
-        plt.plot(taus * 1e6, coh, label=f"r > {cutoff} Å (n={len(A_zz_cut)})")
+#     plt.figure(figsize=(10, 5))
+#     for cutoff in cutoffs:
+#         mask = distances > cutoff
+#         A_zz_cut = Azz_full[mask]
+#         coh = simulate_semiclassical_echo(
+#             A_zz_cut * 2 * np.pi * 1e6, taus, gamma, N_trials
+#         )
+#         plt.plot(taus * 1e6, coh, label=f"r > {cutoff} Å (n={len(A_zz_cut)})")
 
-    plt.xlabel("Echo delay $\\tau$ ($\\mu$s)")
-    plt.ylabel("Semiclassical coherence")
-    plt.title("Semiclassical Decoherence vs. Distance Cutoff")
-    plt.grid(True)
-    plt.legend()
-    plt.tight_layout()
-    plt.show()
+#     plt.xlabel("Echo delay $\\tau$ ($\\mu$s)")
+#     plt.ylabel("Semiclassical coherence")
+#     plt.title("Semiclassical Decoherence vs. Distance Cutoff")
+#     plt.grid(True)
+#     plt.legend()
+#     plt.tight_layout()
+#     plt.show()
 
 
-distances = data["distance"].values
+# distances = data["distance"].values
 
-Azz = data["Azz"].values
-taus = np.linspace(0, 200e-6, 121)
-plot_semiclassical_vs_distance_cutoffs(distances, Azz, taus)
+# Azz = data["Azz"].values
+# taus = np.linspace(0, 200e-6, 121)
+# plot_semiclassical_vs_distance_cutoffs(distances, Azz, taus)
 
 # sys.exit()
 
