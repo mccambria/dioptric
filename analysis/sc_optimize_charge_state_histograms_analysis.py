@@ -243,7 +243,7 @@ def process_and_plot(raw_data):
             optimal_values.append((nv_ind, np.nan, np.nan))
             continue
 
-        # # # Plotting
+        # # # # Plotting
         # fig, ax1 = plt.subplots(figsize=(7, 5))
         # # Plot readout fidelity
         # ax1.plot(
@@ -296,7 +296,7 @@ def process_and_plot(raw_data):
         # ax1.legend(lines + lines2, labels + labels2, loc="upper left", fontsize=11)
         # ax1.set_title(f"NV{nv_ind} - Optimal Step Val: {optimal_step_val:.3f}")
         # plt.tight_layout()
-        plt.show(block=True)
+        # plt.show(block=True)
 
     # save opimal step values
     total_power = np.sum(optimal_step_vals) / len(optimal_step_vals)
@@ -1020,8 +1020,9 @@ if __name__ == "__main__":
     # file_id = "2025_10_22-09_46_22-johnson-nv0_2025_10_21"
     # file_id = "2025_10_22-13_38_22-johnson-nv0_2025_10_21"
     # file_id = "2025_10_23-02_24_51-johnson-nv0_2025_10_21"
-    file_id = "2025_10_26-16_36_03-johnson-nv0_2025_10_21"
-         
+    # file_id = "2025_10_26-16_36_03-johnson-nv0_2025_10_21"
+    file_id = "2025_10_30-06_21_14-johnson-nv0_2025_10_21"
+    
     ### pol amp var
     # file_id = "2025_09_12-16_53_34-rubin-nv0_2025_09_08"
     # file_id = "2025_09_12-18_30_09-rubin-nv0_2025_09_08"
@@ -1045,15 +1046,15 @@ if __name__ == "__main__":
     # file_id = "2025_09_28-00_14_24-rubin-nv0_2025_09_08"
     # file_id = "2025_09_28-22_59_27-rubin-nv0_2025_09_08"
     # file_id = "2025_10_23-15_48_46-johnson-nv0_2025_10_21"
-    file_id = "2025_10_26-20_37_42-johnson-nv0_2025_10_21"
+    # file_id = "2025_10_26-20_37_42-johnson-nv0_2025_10_21"
     
 
     # dm.USE_NEW_CLOUD = False
-    raw_data = dm.get_raw_data(file_stem=file_id, load_npz=True)
+    # raw_data = dm.get_raw_data(file_stem=file_id, load_npz=True)
     # file_name = dm.get_file_name(file_id=file_id)
     # print(f"{file_name}_{file_id}")
-    # process_and_plot(raw_data)
+    process_and_plot(raw_data)
     # process_and_plot_green(raw_data)
-    process_and_plot_charge(raw_data)
+    # process_and_plot_charge(raw_data)
     # print(dm.get_file_name(1717056176426))
     plt.show(block=True)

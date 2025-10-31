@@ -475,23 +475,6 @@ def plot_spin_echo_all(nv_list, taus, norm_counts, norm_counts_ste):
             label.set_horizontalalignment("right")
             label.set_x(0.02)  # Fine-tune this as needed
             label.set_zorder(100)
-        # for col in range(num_cols):
-        #     bottom_row_idx = num_rows * num_cols - num_cols + col
-        #     if bottom_row_idx < len(axes):
-        #         ax = axes[bottom_row_idx]
-        #         tick_positions = np.linspace(min(taus) + 2, max(taus) - 2, 6)
-        #         ax.set_xticks(tick_positions)
-        #         ax.set_xticklabels(
-        #             [f"{tick:.2f}" for tick in tick_positions],
-        #             rotation=45,
-        #             fontsize=9,
-        #             y=0.00,
-        #         )
-        #         ax.set_xlim(min(taus), max(taus))
-        #         ax.set_xlabel("Time (µs)")
-        #     else:
-        #         ax.set_xticklabels([])
-    # Set xticks only for bottom row
 
     for col in range(num_cols):
         bottom_row_idx = num_rows * num_cols - num_cols + col
