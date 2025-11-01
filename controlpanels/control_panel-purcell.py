@@ -541,7 +541,7 @@ def do_resonance(nv_list):
     # num_steps = 24
     num_steps = 45
     num_reps = 3
-    num_runs = 400
+    num_runs = 500
     # num_runs = 1
     freqs = calculate_freqs(freq_center, freq_range, num_steps)
     ##
@@ -1349,7 +1349,7 @@ if __name__ == "__main__":
     # magnet_angle = 90
     date_str = "2025_10_21"
     sample_coords = [0.4, 0.8]
-    z_coord = 1.3
+    z_coord = 1.1
     # Load NV pixel coordinates1
     pixel_coords_list = load_nv_coords(
         # file_path="slmsuite/nv_blob_detection/nv_blob_308nvs_reordered.npz",
@@ -1393,8 +1393,8 @@ if __name__ == "__main__":
     print(f"Red Laser Coordinates: {red_coords_list[0]}")
 
     # pixel_coords_list = [[124.195, 127.341],[14.043, 37.334],[106.538, 237.374],[218.314, 23.302]]
-    # green_coords_list = [[108.3, 107.346], [119.686, 118.871], [111.685, 95.101],[111.685, 95.101]]
-    # red_coords_list = [[73.677, 71.919], [82.519, 81.797],[76.833, 62.069], [63.531, 80.154]]
+    # green_coords_list = [[108.313, 107.362], [119.723, 118.876], [111.728, 95.086], [96.363, 118.259]]
+    # red_coords_list = [[73.66, 71.88], [82.549, 81.803],[76.869, 62.059], [63.549, 80.163]]
     num_nvs = len(pixel_coords_list)
     threshold_list = [None] * num_nvs
     # fmt: off
@@ -1515,7 +1515,7 @@ if __name__ == "__main__":
         # )
 
         do_compensate_for_drift(nv_sig)
-        do_widefield_image_sample(nv_sig, 50)
+        # do_widefield_image_sample(nv_sig, 50)
         # do_widefield_image_sample(nv_sig, 400)
 
         # for nv in nv_list:
@@ -1583,7 +1583,7 @@ if __name__ == "__main__":
         # do_check_readout_fidelity(nv_list)
 
         # do_scc_snr_check(nv_list)
-        # do_optimize_scc_duration(nv_list)
+        do_optimize_scc_duration(nv_list)
         # do_optimize_scc_amp(nv_list)
         # optimize_scc_amp_and_duration(nv_list)
         # do_optimize_scc_readout_amp(nv_list)
@@ -1605,7 +1605,7 @@ if __name__ == "__main__":
         # do_deer_hahn(nv_list)
         # do_deer_hahn_rabi(nv_list)
         # do_resonance_zoom(nv_list)
-        do_spin_echo(nv_list)
+        # do_spin_echo(nv_list)
         # do_spin_echo_1(nv_list)
         # do_ramsey(nv_list)
 
