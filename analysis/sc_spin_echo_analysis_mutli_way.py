@@ -24,7 +24,6 @@ except Exception:
         def wrap(fn):
             return fn
         return wrap
-    
 # --- Your utilities (assumed in PYTHONPATH) ----------------------------------
 from utils import data_manager as dm
 from utils import kplotlib as kpl
@@ -33,8 +32,9 @@ from utils.tool_belt import curve_fit
 from scipy.optimize import least_squares
 # =============================================================================
 # Finer model
+#    - COMB has NO overall comb_contrast
+#    - MOD carries the overall amplitude (and optional beating)
 # =============================================================================
-
 # def fine_decay(
 #     tau,
 #     baseline,
@@ -57,14 +57,13 @@ from scipy.optimize import least_squares
 
 #     envelope(τ) = exp[-((τ / (1000*T2_ms)) ** T2_exp)]
 
-#     COMB(τ) = sum_k  A_k * exp(-((τ - μ_k)/w_k)^4)
+#     COMB(τ) = sum_k  [ 1/(1+k)^amp_taper_alpha ] * exp(-((τ - μ_k)/w_k)^4)
 #         μ_k = k * revival_time * (1 + k*revival_chirp)
 #         w_k = width0_us * (1 + k*width_slope)
-#         A_k = comb_contrast / (1+k)^amp_taper_alpha
 
 #     MOD(τ) = comb_contrast - osc_contrast * sin^2(π f0 τ + φ0) * sin^2(π f1 τ + φ1)
 #     """
-#     # Defaults that preserve your prior behavior if omitted:
+#     # defaults
 #     if amp_taper_alpha is None: amp_taper_alpha = 0.0
 #     if width_slope     is None: width_slope     = 0.0
 #     if revival_chirp   is None: revival_chirp   = 0.0
@@ -75,7 +74,7 @@ from scipy.optimize import least_squares
 #     if osc_phi1        is None: osc_phi1        = 0.0
 
 #     tau = np.asarray(tau, dtype=float).ravel()
-#     width0_us   = max(1e-9, float(width0_us))
+#     width0_us    = max(1e-9, float(width0_us))
 #     revival_time = max(1e-9, float(revival_time))
 #     T2_us        = max(1e-9, 1000.0 * float(T2_ms))
 #     T2_exp       = float(T2_exp)
@@ -83,13 +82,12 @@ from scipy.optimize import least_squares
 #     # envelope
 #     envelope = np.exp(-((tau / T2_us) ** T2_exp))
 
-#     # how many revivals to include
+#     # number of revivals to include
 #     tau_max = float(np.nanmax(tau)) if tau.size else 0.0
 #     n_guess = max(1, min(64, int(np.ceil(1.2 * tau_max / revival_time)) + 1))
 
 #     comb = _comb_quartic_powerlaw(
 #         tau,
-#         comb_contrast,
 #         revival_time,
 #         width0_us,
 #         amp_taper_alpha,
@@ -98,98 +96,16 @@ from scipy.optimize import least_squares
 #         n_guess
 #     )
 
-#     # beating
+#     # beating lives in MOD; comb_contrast is the overall amplitude (once)
 #     if (osc_contrast != 0.0) and (osc_f0 != 0.0 or osc_f1 != 0.0):
 #         s0 = np.sin(np.pi * osc_f0 * tau + osc_phi0)
 #         s1 = np.sin(np.pi * osc_f1 * tau + osc_phi1)
 #         beat = (s0 * s0) * (s1 * s1)
-#         # mod = comb_contrast - osc_contrast * beat
-#         mod = 1.0 - osc_contrast * beat
+#         mod = comb_contrast - osc_contrast * beat
 #     else:
 #         mod = comb_contrast
 
 #     return baseline - envelope * mod * comb
-
-
-# def fine_decay_fixed_revival(
-#     tau,
-#     baseline,
-#     comb_contrast,
-#     width0_us,
-#     T2_ms,
-#     T2_exp,
-#     amp_taper_alpha=None,
-#     width_slope=None,
-#     revival_chirp=None,
-#     osc_contrast=None,
-#     osc_f0=None,
-#     osc_f1=None,
-#     osc_phi0=None,
-#     osc_phi1=None,
-#     _fixed_rev_time_us=50.0
-# ):
-#     return fine_decay(
-#         tau,
-#         baseline,
-#         comb_contrast,
-#         _fixed_rev_time_us,
-#         width0_us,
-#         T2_ms,
-#         T2_exp,
-#         amp_taper_alpha,
-#         width_slope,
-#         revival_chirp,
-#         osc_contrast,
-#         osc_f0,
-#         osc_f1,
-#         osc_phi0,
-#         osc_phi1,
-#     )
-
-
-# @njit
-# def _comb_quartic_powerlaw(
-#     tau,
-#     comb_contrast,
-#     revival_time,
-#     width0_us,
-#     amp_taper_alpha,
-#     width_slope,
-#     revival_chirp,
-#     n_guess
-# ):
-#     n = tau.shape[0]
-#     out = np.zeros(n, dtype=np.float64)
-#     tmax = 0.0
-#     for i in range(n):
-#         if tau[i] > tmax:
-#             tmax = tau[i]
-
-#     for k in range(n_guess):
-#         mu_k = k * revival_time * (1.0 + k * revival_chirp)
-#         # cull if beyond interest range
-#         w_k = width0_us * (1.0 + k * width_slope)
-#         if w_k <= 0.0:
-#             continue
-#         # Stop if the center is well beyond max window + few widths
-#         if mu_k > tmax + 5.0 * w_k:
-#             break
-
-#         amp_k = comb_contrast / ((1.0 + k) ** amp_taper_alpha)
-#         inv_w4 = 1.0 / (w_k ** 4)
-
-#         for i in range(n):
-#             x = tau[i] - mu_k
-#             out[i] += amp_k * np.exp(- (x * x) * (x * x) * inv_w4)
-
-#     return out
-
-# =========================
-# 1) Physics fix (Option A)
-#    - COMB has NO overall comb_contrast
-#    - MOD carries the overall amplitude (and optional beating)
-# =========================
-
 def fine_decay(
     tau,
     baseline,
@@ -201,43 +117,39 @@ def fine_decay(
     amp_taper_alpha=None,
     width_slope=None,
     revival_chirp=None,
-    osc_contrast=None,
+    # --- NEW: signed oscillation amplitude (additive), plus 2 freqs optional
+    osc_amp=None,            # signed, can be ±
     osc_f0=None,
-    osc_f1=None,
     osc_phi0=None,
+    osc_f1=None,
     osc_phi1=None,
 ):
     """
-    signal(τ) = baseline - envelope(τ) * MOD(τ) * COMB(τ)
-
-    envelope(τ) = exp[-((τ / (1000*T2_ms)) ** T2_exp)]
-
-    COMB(τ) = sum_k  [ 1/(1+k)^amp_taper_alpha ] * exp(-((τ - μ_k)/w_k)^4)
-        μ_k = k * revival_time * (1 + k*revival_chirp)
-        w_k = width0_us * (1 + k*width_slope)
-
-    MOD(τ) = comb_contrast - osc_contrast * sin^2(π f0 τ + φ0) * sin^2(π f1 τ + φ1)
+    signal(τ) = baseline
+                - envelope(τ) * comb_contrast * COMB(τ)         [revival dip]
+                + envelope(τ) * COMB(τ) * OSC(τ)                [signed oscillation]
+    where:  envelope = exp[-(τ/T2)^n],  COMB = sum_k ... quartic lobes
+            OSC(τ) = osc_amp * [cos(2π f0 τ + φ0) + cos(2π f1 τ + φ1)]   (missing terms ignored)
     """
     # defaults
     if amp_taper_alpha is None: amp_taper_alpha = 0.0
     if width_slope     is None: width_slope     = 0.0
     if revival_chirp   is None: revival_chirp   = 0.0
-    if osc_contrast    is None: osc_contrast    = 0.0
+    if osc_amp         is None: osc_amp         = 0.0
     if osc_f0          is None: osc_f0          = 0.0
-    if osc_f1          is None: osc_f1          = 0.0
     if osc_phi0        is None: osc_phi0        = 0.0
+    if osc_f1          is None: osc_f1          = 0.0
     if osc_phi1        is None: osc_phi1        = 0.0
 
-    tau = np.asarray(tau, dtype=float).ravel()
+    tau = np.asarray(tau, float).ravel()
     width0_us    = max(1e-9, float(width0_us))
     revival_time = max(1e-9, float(revival_time))
-    T2_us        = max(1e-9, 1000.0 * float(T2_ms))
+    T2_us        = max(1e-9, 1000.0*float(T2_ms))
     T2_exp       = float(T2_exp)
 
-    # envelope
     envelope = np.exp(-((tau / T2_us) ** T2_exp))
 
-    # number of revivals to include
+    # how many revivals
     tau_max = float(np.nanmax(tau)) if tau.size else 0.0
     n_guess = max(1, min(64, int(np.ceil(1.2 * tau_max / revival_time)) + 1))
 
@@ -251,16 +163,21 @@ def fine_decay(
         n_guess
     )
 
-    # beating lives in MOD; comb_contrast is the overall amplitude (once)
-    if (osc_contrast != 0.0) and (osc_f0 != 0.0 or osc_f1 != 0.0):
-        s0 = np.sin(np.pi * osc_f0 * tau + osc_phi0)
-        s1 = np.sin(np.pi * osc_f1 * tau + osc_phi1)
-        beat = (s0 * s0) * (s1 * s1)
-        mod = comb_contrast - osc_contrast * beat
-    else:
-        mod = comb_contrast
+    carrier = envelope * comb  # use same spatial/temporal gating
 
-    return baseline - envelope * mod * comb
+    # revival dip (always subtractive)
+    dip = comb_contrast * carrier
+
+    # signed oscillation term (zero-mean cosines)
+    osc = 0.0
+    if osc_amp != 0.0:
+        if osc_f0 != 0.0:
+            osc += np.cos(2*np.pi*osc_f0 * tau + osc_phi0)
+        if osc_f1 != 0.0:
+            osc += np.cos(2*np.pi*osc_f1 * tau + osc_phi1)
+        # if neither f is set, osc stays 0
+
+    return baseline - dip + carrier * (osc_amp * osc)
 
 
 def fine_decay_fixed_revival(
@@ -297,7 +214,6 @@ def fine_decay_fixed_revival(
         osc_phi0,
         osc_phi1,
     )
-
 
 @njit
 def _comb_quartic_powerlaw(
@@ -339,52 +255,202 @@ def _comb_quartic_powerlaw(
 # =============================================================================
 # Fitting helpers
 # =============================================================================
+# def _initial_guess_and_bounds(times_us, y, enable_extras=True, fixed_rev_time=None):
+#     """
+#     Build p0 and bounds for fine_decay*.
+#     p = [baseline, comb_contrast, revival_time, width0_us, T2_ms, T2_exp, ... extras ...]
+#     or if fixed revival: [baseline, comb_contrast, width0_us, T2_ms, T2_exp, ...]
+#     """
+#     # crude baseline from early points; robust min for contrast scale
+#     idx_b = min(7, len(y)-1) if len(y) else 0
+#     baseline_guess = float(y[idx_b]) if y.size else 0.5
+#     quart_min = float(np.nanmin(y)) if y.size else baseline_guess - 0.2
+#     comb_contrast_guess = max(1e-3, baseline_guess - quart_min)
+
+#     # Envelope rough T2 using a late point:
+#     j = max(0, len(times_us)-7)
+#     # avoid invalids
+#     ratio = (baseline_guess - y[j]) / max(1e-9, comb_contrast_guess)
+#     ratio = min(max(ratio, 1e-9), 0.999999)
+#     # exp(-(t/T2)^exp) ~ ratio -> -(t/T2)^3 ~ ln(ratio) -> T2 ~ t / (-ln(ratio))^(1/3)
+#     T2_exp_guess = 3.0
+#     tlate = max(1e-3, float(times_us[j]))
+#     T2_ms_guess = 0.1 * (1.0 / max(1e-9, (-np.log(ratio)) ** (1.0 / T2_exp_guess)))
+
+#     # width ~ a few µs, revival ~ ~50 µs typical in your code
+#     width0_guess = 6.0
+#     revival_guess = 39.2 if fixed_rev_time is None else fixed_rev_time
+
+#     # Base params and bounds:
+#     if fixed_rev_time is None:
+#         p0  = [baseline_guess, comb_contrast_guess, revival_guess, width0_guess, T2_ms_guess, T2_exp_guess]
+#         lb  = [0.0,           0.0,                30.0,          0.5,          0.0,        0.5]
+#         ub  = [1.0,           1.0,                50.0,          20.0,         2000.0,     10.0]
+#     else:
+#         p0  = [baseline_guess, comb_contrast_guess, width0_guess, T2_ms_guess, T2_exp_guess]
+#         lb  = [0.0,           0.0,                0.5,          0.0,          0.5]
+#         ub  = [1.0,           1.0,                20.0,         2000.0,       10.0]
+
+#     # add extras?
+#     if enable_extras:
+#         # [amp_taper_alpha, width_slope, revival_chirp, osc_contrast, osc_f0, osc_f1, osc_phi0, osc_phi1]
+#         # extra_p0  = [0.3, 0.02, 0.0,  0.15, 0.30, 0.10, 0.0, 0.0]
+#         # extra_lb  = [0.0, 0.00, -0.01, -0.5, 0.00, 0.00, -np.pi, -np.pi]
+#         # extra_ub  = [2.0, 0.20,  0.01,  0.5, 5.00, 1.00,  np.pi,  np.pi]
+        
+#         extra_p0  = [0.3,   0.02,   0.0,   0.05,  0.02,  0.00,  0.0,   0.0]
+#         extra_lb  = [0.0,   0.00,  -0.01, -0.60,  0.001, 0.00, -np.pi, -np.pi]
+#         extra_ub  = [2.0,   0.20,   0.01,  0.60,  0.20,  0.20,  np.pi,  np.pi]
+#         # indices:   α     width_s  chirp  Aosc   f0     f1     φ0      φ1
+#         p0.extend(extra_p0)
+#         lb.extend(extra_lb)
+#         ub.extend(extra_ub)
+
+#     return np.array(p0, float), np.array(lb, float), np.array(ub, float)
+
+def _smart_percentiles(y, p_low=5, p_high=90):
+    y = np.asarray(y, float)
+    if y.size == 0:
+        return 0.0, 1.0
+    lo = float(np.nanpercentile(y, p_low))
+    hi = float(np.nanpercentile(y, p_high))
+    return lo, hi
+
+def _uniformize(times_us, y):
+    """Resample to a uniform grid if needed (for FFT seeding). Returns (tu, yu)."""
+    t = np.asarray(times_us, float)
+    y = np.asarray(y, float)
+    if t.size < 8:
+        return t, y
+    dt = np.diff(t)
+    if np.allclose(dt, dt.mean(), rtol=1e-2, atol=1e-3):
+        return t, y
+    n = max(256, int(2**np.ceil(np.log2(len(t)))))
+    tu = np.linspace(t.min(), t.max(), n)
+    yu = np.interp(tu, t, y)
+    return tu, yu
+
+def _fft_peak_freq(times_us, resid, fmin, fmax):
+    """Find dominant frequency (cycles/μs) in [fmin, fmax] from FFT of residual."""
+    t, r = _uniformize(times_us, resid)
+    if t.size < 16:
+        return None
+    # detrend & window
+    r = r - np.nanmedian(r)
+    r = np.nan_to_num(r, nan=0.0)
+    r = r * np.hanning(len(r))
+    dt = np.diff(t).mean()
+    freqs = np.fft.rfftfreq(len(r), d=dt)  # cycles per μs if t is μs
+    Y = np.fft.rfft(r)
+    band = (freqs >= fmin) & (freqs <= fmax)
+    if not np.any(band):
+        return None
+    k = np.argmax(np.abs(Y[band]))
+    f_hat = float(freqs[band][k])
+    return f_hat if np.isfinite(f_hat) and f_hat > 0 else None
+
 def _initial_guess_and_bounds(times_us, y, enable_extras=True, fixed_rev_time=None):
     """
-    Build p0 and bounds for fine_decay*.
-    p = [baseline, comb_contrast, revival_time, width0_us, T2_ms, T2_exp, ... extras ...]
-    or if fixed revival: [baseline, comb_contrast, width0_us, T2_ms, T2_exp, ...]
+    Smart p0 and bounds for fine_decay that (a) respect your 0→0.6→1 behavior
+    and (b) allow both slow and fast beats without violating Nyquist.
     """
-    # crude baseline from early points; robust min for contrast scale
-    idx_b = min(7, len(y)-1) if len(y) else 0
-    baseline_guess = float(y[idx_b]) if y.size else 0.5
-    quart_min = float(np.nanmin(y)) if y.size else baseline_guess - 0.2
-    comb_contrast_guess = max(1e-3, baseline_guess - quart_min)
+    times_us = np.asarray(times_us, float)
+    y = np.asarray(y, float)
 
-    # Envelope rough T2 using a late point:
-    j = max(0, len(times_us)-7)
-    # avoid invalids
-    ratio = (baseline_guess - y[j]) / max(1e-9, comb_contrast_guess)
-    ratio = min(max(ratio, 1e-9), 0.999999)
-    # exp(-(t/T2)^exp) ~ ratio -> -(t/T2)^3 ~ ln(ratio) -> T2 ~ t / (-ln(ratio))^(1/3)
-    T2_exp_guess = 3.0
-    tlate = max(1e-3, float(times_us[j]))
-    T2_ms_guess = 0.1 * (1.0 / max(1e-9, (-np.log(ratio)) ** (1.0 / T2_exp_guess)))
+    # ------- robust baseline & contrast -------
+    y_lo, y_hi = _smart_percentiles(y, 5, 90)
+    baseline_guess = float(y_hi) if np.isfinite(y_hi) else (y[0] if y.size else 0.6)
+    # we want ~0.4 contrast if min near 0 and baseline ~0.6
+    comb_contrast_guess = max(0.05, min(baseline_guess - y_lo, baseline_guess - 0.02, 0.9))
+    # enforce min >= 0 later via bounds tying comb_contrast to baseline
 
-    # width ~ a few µs, revival ~ ~50 µs typical in your code
-    width0_guess = 6.0
-    revival_guess = 39.2 if fixed_rev_time is None else fixed_rev_time
-
-    # Base params and bounds:
-    if fixed_rev_time is None:
-        p0  = [baseline_guess, comb_contrast_guess, revival_guess, width0_guess, T2_ms_guess, T2_exp_guess]
-        lb  = [0.0,           0.0,                30.0,          0.5,          0.0,        0.5]
-        ub  = [1.0,           1.0,                50.0,          20.0,         2000.0,     10.0]
+    # ------- envelope rough seed -------
+    # take a late window
+    if times_us.size:
+        j0 = max(0, len(times_us) - max(7, len(times_us)//10))
+        y_late = float(np.nanmean(y[j0:])) if j0 < len(y) else float(y[-1])
+        ratio = (baseline_guess - y_late) / max(1e-9, comb_contrast_guess)
+        ratio = min(max(ratio, 1e-6), 0.999999)
+        T2_exp_guess = 2.0  # slightly softer than 3
+        # T2_ms guess scaled by total span; keep conservative
+        tspan_us = max(1.0, float(times_us.max() - times_us.min())) if times_us.size else 100.0
+        T2_ms_guess = max(0.01, 0.25 * (tspan_us/1000.0) / max(1e-6, (-np.log(ratio))**(1.0/T2_exp_guess)))
     else:
-        p0  = [baseline_guess, comb_contrast_guess, width0_guess, T2_ms_guess, T2_exp_guess]
-        lb  = [0.0,           0.0,                0.5,          0.0,          0.5]
-        ub  = [1.0,           1.0,                20.0,         2000.0,       10.0]
+        T2_exp_guess, T2_ms_guess = 2.0, 0.1
 
-    # add extras?
-    if enable_extras:
-        # [amp_taper_alpha, width_slope, revival_chirp, osc_contrast, osc_f0, osc_f1, osc_phi0, osc_phi1]
-        extra_p0  = [0.3, 0.02, 0.0,  0.15, 0.30, 0.10, 0.0, 0.0]
-        extra_lb  = [0.0, 0.00, -0.01, -0.5, 0.00, 0.00, -np.pi, -np.pi]
-        extra_ub  = [2.0, 0.20,  0.01,  0.5, 5.00, 1.00,  np.pi,  np.pi]
-        p0.extend(extra_p0)
-        lb.extend(extra_lb)
-        ub.extend(extra_ub)
+    width0_guess = 6.0
+    revival_guess = 38.0 if fixed_rev_time is None else fixed_rev_time
 
+    # ------- base vector & bounds -------
+    if fixed_rev_time is None:
+        p0 = [baseline_guess, comb_contrast_guess, revival_guess, width0_guess, T2_ms_guess, T2_exp_guess]
+        # tie comb_contrast to baseline: ub later adjusted below
+        lb = [0.0,  0.00, 30.0, 1.0,  0.005, 0.6]
+        ub = [1.05, 0.95, 60.0, 20.0, 2000.0, 4.0]
+    else:
+        p0 = [baseline_guess, comb_contrast_guess, width0_guess, T2_ms_guess, T2_exp_guess]
+        lb = [0.0,  0.00, 1.0,  0.005, 0.6]
+        ub = [1.05, 0.95, 20.0, 2000.0, 4.0]
+
+    # tighten comb_contrast upper bound so min >= 0:
+    # comb_contrast <= baseline - eps
+    eps_min = 0.01
+    if fixed_rev_time is None:
+        ub[1] = min(ub[1], max(0.05, p0[0] - eps_min))
+    else:
+        ub[1] = min(ub[1], max(0.05, p0[0] - eps_min))
+
+    if not enable_extras:
+        return np.array(p0, float), np.array(lb, float), np.array(ub, float)
+
+    # ------- oscillation seeds from data (residual FFT) -------
+    # quick residual against a smooth proxy (use running median or simple poly)
+    # here: subtract high percentile baseline as crude detrend
+    # resid = y - baseline_guess
+
+    # sampling-derived frequency bounds
+    # if times_us.size >= 2:
+    #     dt_min = float(np.diff(np.unique(times_us)).min())
+    #     fnyq = 0.5 / max(dt_min, 1e-6)     # cycles/μs
+    #     fmax_fast = min(0.9 * fnyq, 10.0)  # cap very high just in case
+    #     tspan = float(times_us.max() - times_us.min())
+    #     fmin_resolvable = max(1.0 / max(2.0 * tspan, 1e-6), 0.001)
+    # else:
+    #     fmax_fast, fmin_resolvable = 1.0, 0.001
+
+    # slow band & fast band
+    # f0_lo, f0_hi = max(0.002, fmin_resolvable), 0.05
+    # f1_lo, f1_hi = max(0.05, 2.0 / max(tspan, 1e-6)), max(0.06, fmax_fast)
+
+    # f0_hat = _fft_peak_freq(times_us, resid, f0_lo, f0_hi)
+    # f1_hat = _fft_peak_freq(times_us, resid, f1_lo, f1_hi)
+
+    # osc_amp_seed = min(0.15, 0.5 * comb_contrast_guess)
+    # osc_amp_lb   = -min(0.9, comb_contrast_guess)
+    # osc_amp_ub   =  min(0.9, comb_contrast_guess)
+    # ------- extras: [amp_taper_alpha, width_slope, revival_chirp, osc_contrast, osc_f0, osc_f1, osc_phi0, osc_phi1]
+    # extra_p0 = [0.3, 0.02, 0.0,  0.10,  0.02,  0.10,  0.0,  0.0]
+    # extra_lb = [0.0, 0.00, -0.01, 0.00,  f0_lo, f1_lo, -np.pi, -np.pi]
+    # extra_ub = [2.0, 0.20,  0.01, min(0.9, p0[1]*1.2),  f0_hi, f1_hi,  np.pi,  np.pi]
+    
+    extra_p0  = [0.3, 0.02, 0.0,  0.15, 0.50, 0.10, 0.0, 0.0]
+    extra_lb  = [0.0, 0.00, -0.01, -1.0, 0.00, 0.00, -np.pi, -np.pi]
+    extra_ub  = [2.0, 0.20,  0.01,  1.0, 5.00, 5.00,  np.pi,  np.pi]
+        
+    # [amp_taper_alpha, width_slope, revival_chirp, osc_amp, osc_f0, osc_f1, osc_phi0, osc_phi1]
+    # extra_p0 = [0.3, 0.02, 0.0,  osc_amp_seed,  0.10,  0.1,  0.0, 0.0]
+    # extra_lb = [0.0, 0.00,-0.01,  osc_amp_lb,    f0_lo,    f1_lo,   -np.pi,-np.pi]
+    # extra_ub = [2.0, 0.20, 0.01,  osc_amp_ub,    f0_hi,    f1_hi,    np.pi, np.pi]
+    # seed slow/fast from FFT if found
+    # if f0_hat is not None:
+    #     extra_p0[4] = np.clip(f0_hat, extra_lb[4], extra_ub[4])
+    # if f1_hat is not None:
+    #     extra_p0[5] = np.clip(f1_hat, extra_lb[5], extra_ub[5])
+
+    # start oscillation contrast small; allow up to ~1.2× comb_contrast but <= 0.9
+    # extra_p0[3] = min(0.15, p0[1]*0.5)
+
+    p0.extend(extra_p0); lb.extend(extra_lb); ub.extend(extra_ub)
     return np.array(p0, float), np.array(lb, float), np.array(ub, float)
 
 
@@ -858,6 +924,12 @@ if __name__ == "__main__":
     #             "2025_10_29-02_21_07-johnson-nv0_2025_10_21",
     #             ]
     
+    ###204NVs
+    file_stems = ["2025_10_31-23_53_21-johnson-nv0_2025_10_21",
+                  "2025_10_31-15_40_56-johnson-nv0_2025_10_21",
+                  "2025_10_31-07_42_45-johnson-nv0_2025_10_21",
+                ]
+    
     data = widefield.process_multiple_files(file_stems, load_npz=True)
     nv_list = data["nv_list"]
     taus = data["taus"]
@@ -885,50 +957,47 @@ if __name__ == "__main__":
     ENABLE_EXTRAS     = True        # enable alpha/width_slope/chirp + beating + phases
     DEFAULT_REV_US = 39.2
     # 1) FIT
-    # popts, pcovs, chis, fit_fns, fit_nv_labels = run(
-    #     nv_list, norm_counts, norm_counts_ste, total_evolution_times,
-    #     nv_inds=None,
-    #     use_fixed_revival=False, enable_extras=True, fixed_rev_time=39.2
-    # )
+    popts, pcovs, chis, fit_fns, fit_nv_labels = run(
+        nv_list, norm_counts, norm_counts_ste, total_evolution_times,
+        nv_inds=None,
+        use_fixed_revival=False, enable_extras=True, fixed_rev_time=38.2
+    )
     timestamp = dm.get_time_stamp()
-    # fit_dict = {
-    #     "timestamp": timestamp,
-    #     "dataset_ids": file_stems,
-    #     "default_rev_us": float(DEFAULT_REV_US),
-    #     "run_flags": {
-    #         "use_fixed_revival": bool(USE_FIXED_REVIVAL),
-    #         "enable_extras": bool(ENABLE_EXTRAS),
-    #     },
-    #     "nv_labels": list(map(int, fit_nv_labels)),
-    #     "times_us": np.asarray(total_evolution_times, float).tolist(),
-    #     "popts": [p.tolist() if p is not None else None for p in popts],
-    #     "pcovs": [c.tolist() if c is not None else None for c in pcovs],
-    #     "red_chi2": [float(c) if c is not None else None for c in chis],
-    #     "fit_fn_names": [
-    #         fn.__name__ if fn is not None else None for fn in fit_fns
-    #     ],
-    #     "unified_keys": [
-    #         "baseline", "comb_contrast", "revival_time_us", "width0_us", "T2_ms", "T2_exp",
-    #         "amp_taper_alpha", "width_slope", "revival_chirp",
-    #         "osc_contrast", "osc_f0", "osc_f1", "osc_phi0", "osc_phi1"
-    #     ]
-    # }
-    # repr_nv_sig = widefield.get_repr_nv_sig(nv_list)
-    # repr_nv_name = repr_nv_sig.name
-    # file_path = dm.get_file_path(__file__, timestamp, repr_nv_name)
-    # print(file_path )
+    fit_dict = {
+        "timestamp": timestamp,
+        "dataset_ids": file_stems,
+        "default_rev_us": float(DEFAULT_REV_US),
+        "run_flags": {
+            "use_fixed_revival": bool(USE_FIXED_REVIVAL),
+            "enable_extras": bool(ENABLE_EXTRAS),
+        },
+        "nv_labels": list(map(int, fit_nv_labels)),
+        "times_us": np.asarray(total_evolution_times, float).tolist(),
+        "popts": [p.tolist() if p is not None else None for p in popts],
+        "pcovs": [c.tolist() if c is not None else None for c in pcovs],
+        "red_chi2": [float(c) if c is not None else None for c in chis],
+        "fit_fn_names": [
+            fn.__name__ if fn is not None else None for fn in fit_fns
+        ],
+        "unified_keys": [
+            "baseline", "comb_contrast", "revival_time_us", "width0_us", "T2_ms", "T2_exp",
+            "amp_taper_alpha", "width_slope", "revival_chirp",
+            "osc_contrast", "osc_f0", "osc_f1", "osc_phi0", "osc_phi1"
+        ]
+    }
+    repr_nv_sig = widefield.get_repr_nv_sig(nv_list)
+    repr_nv_name = repr_nv_sig.name
+    file_path = dm.get_file_path(__file__, timestamp, repr_nv_name)
+    print(file_path )
     # dm.save_raw_data(fit_dict, file_path)
 
-    
-    
-    
     ## laod analysed data
-    file_stem= "2025_11_01-16_57_48-rubin-nv0_2025_09_08"
-    data = dm.get_raw_data(file_stem=file_stem)
-    popts = data["popts"]
-    chis = data["red_chi2"]
-    fit_nv_labels = data ["nv_labels"]
-    fit_fns = data["fit_fn_names"]
+    # file_stem= "2025_11_01-16_57_48-rubin-nv0_2025_09_08"
+    # data = dm.get_raw_data(file_stem=file_stem)
+    # popts = data["popts"]
+    # chis = data["red_chi2"]
+    # fit_nv_labels = data ["nv_labels"]
+    # fit_fns = data["fit_fn_names"]
     # repr_nv_sig = widefield.get_repr_nv_sig(nv_list)
     # repr_nv_name = repr_nv_sig.name
     # 2) PARAM PANELS (T2 outlier filter)
@@ -939,15 +1008,15 @@ if __name__ == "__main__":
     )
 
     # 3) INDIVIDUAL FITS — PASS THE SAME LABELS + PER-NV FIT FUNCTIONS
-    # _ = plot_individual_fits(
-    #     norm_counts, norm_counts_ste, total_evolution_times,
-    #     popts,
-    #     nv_inds=fit_nv_labels,
-    #     fit_fn_per_nv=fit_fns,
-    #     keep_mask=keep_mask,
-    #     show_residuals=True,
-    #     block=False
-    # )
+    _ = plot_individual_fits(
+        norm_counts, norm_counts_ste, total_evolution_times,
+        popts,
+        nv_inds=fit_nv_labels,
+        fit_fn_per_nv=fit_fns,
+        keep_mask=keep_mask,
+        show_residuals=True,
+        block=False
+    )
 
     
     ## laod analysed data
