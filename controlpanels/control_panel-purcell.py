@@ -861,6 +861,7 @@ def do_xy_uniform_revival_scan(nv_list, xy_seq="xy8-1"):
     min_tau = 1e3
     dip = 19.6/2 # us
     dip_width = 2e3
+    taus = []
     gap = np.linspace(min_tau, dip - dip_width, 11)
     taus.extend(gap.tolist())
     first_dip = np.linspace(dip - dip_width, dip + dip_width, 31)
@@ -1575,7 +1576,7 @@ if __name__ == "__main__":
         # do_charge_state_histograms_images(nv_list, vary_pol_laser=True)
 
         # do_optimize_pol_amp(nv_list)
-        # do_optimize_pol_duration(nv_list)
+        do_optimize_pol_duration(nv_list)
         # do_optimize_readout_amp(nv_list)
         # do_optimize_readout_duration(nv_list)
         # optimize_readout_amp_and_duration(nv_list)
@@ -1583,7 +1584,7 @@ if __name__ == "__main__":
         # do_check_readout_fidelity(nv_list)
 
         # do_scc_snr_check(nv_list)
-        do_optimize_scc_duration(nv_list)
+        # do_optimize_scc_duration(nv_list)
         # do_optimize_scc_amp(nv_list)
         # optimize_scc_amp_and_duration(nv_list)
         # do_optimize_scc_readout_amp(nv_list)

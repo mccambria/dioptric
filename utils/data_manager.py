@@ -112,7 +112,7 @@ def save_figure(fig, file_path):
 
     # Write to bytes then upload that to the cloud
     ext = "png"
-    file_path = file_path.with_suffix(".{ext}")
+    file_path = file_path.with_suffix(f".{ext}")
     content = BytesIO()
     # fig.savefig(content, format=ext)
     fig.savefig(content, format=ext, dpi=300, bbox_inches="tight")

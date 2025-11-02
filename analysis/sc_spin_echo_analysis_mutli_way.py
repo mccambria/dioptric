@@ -24,7 +24,7 @@ except Exception:
         def wrap(fn):
             return fn
         return wrap
-
+    
 # --- Your utilities (assumed in PYTHONPATH) ----------------------------------
 from utils import data_manager as dm
 from utils import kplotlib as kpl
@@ -649,7 +649,7 @@ def _normalize_popt_to_unified(p):
 # ==========================================
 
 def plot_each_param_separately(popts, chi2_list,
-                               fit_nv_labels,      # <— labels returned by run
+                               fit_nv_labels,
                                save_prefix=None,
                                include_trend=True,
                                bins=30,
@@ -695,15 +695,22 @@ def plot_each_param_separately(popts, chi2_list,
 
     def _one(vec, name, ylabel):
         fig, axes = plt.subplots(1, 2 if include_trend else 1, figsize=(10 if include_trend else 5, 4))
-        if include_trend: axh, axt = axes
-        else:             axh = axes
+        if include_trend: 
+            axh, axt = axes
+        else:             
+            axh = axes
         axh.hist(vec[np.isfinite(vec)], bins=bins)
-        axh.set_title(f"{name} histogram"); axh.set_xlabel(ylabel); axh.set_ylabel("count")
+        axh.set_title(f"{name} histogram") 
+        axh.set_xlabel(ylabel) 
+        axh.set_ylabel("count")
         if include_trend:
             axt.plot(labels_f, vec, ".", ms=4)
-            axt.set_title(f"{name} vs NV label"); axt.set_xlabel("NV label"); axt.set_ylabel(ylabel)
-        fig.tight_layout()
-        if save_prefix: fig.savefig(f"{save_prefix}-{name}.png", dpi=220)
+            axt.set_title(f"{name} vs NV label") 
+            axt.set_xlabel("NV label") 
+            axt.set_ylabel(ylabel)
+        if save_prefix: 
+            file_path = dm.get_file_path(__file__, timestamp, f"{save_prefix}_{name}.png")
+            dm.save_figure(fig, file_path)
         return fig
 
     figs = []
@@ -713,15 +720,25 @@ def plot_each_param_separately(popts, chi2_list,
         figs.append((name, _one(arr_f[:, col], name, unit)))
 
     fig_chi, axes = plt.subplots(1, 2 if include_trend else 1, figsize=(10 if include_trend else 5, 4))
-    if include_trend: axh, axt = axes
-    else:             axh = axes
+    if include_trend: 
+        axh, axt = axes
+    else:             
+        axh = axes
     axh.hist(chi2_f[np.isfinite(chi2_f)], bins=bins)
-    axh.set_title("reduced χ² histogram"); axh.set_xlabel("χ²_red"); axh.set_ylabel("count")
+    axh.set_title("reduced χ² histogram") 
+    axh.set_xlabel("χ²_red")
+    axh.set_ylabel("count")
     if include_trend:
         axt.plot(labels_f, chi2_f, ".", ms=4)
-        axt.set_title("reduced χ² vs NV label"); axt.set_xlabel("NV label"); axt.set_ylabel("χ²_red")
+        axt.set_title("reduced χ² vs NV label") 
+        axt.set_xlabel("NV label") 
+        axt.set_ylabel("χ²_red")
     fig_chi.tight_layout()
-    if save_prefix: fig_chi.savefig(f"{save_prefix}-chi2_red.png", dpi=220)
+    if save_prefix: 
+        fig_chi.savefig(f"{save_prefix}-chi2_red.png", dpi=220)
+        file_path = dm.get_file_path(__file__, timestamp, f"{save_prefix}-chi2_red.png")
+        dm.save_figure(fig_chi, file_path)
+        
     figs.append(("chi2_red", fig_chi))
 
     kept_labels = labels_f.astype(int)
@@ -812,9 +829,9 @@ def plot_individual_fits(
         else:
             ax.set_xlabel("Total evolution time (µs)")
 
-        fig.tight_layout()
         if save_prefix:
-            fig.savefig(f"{save_prefix}-nv{int(lbl):03d}.png", dpi=dpi)
+            file_path = dm.get_file_path(__file__, timestamp, f"{save_prefix}-nv{int(lbl):03d}")
+            dm.save_figure(fig, file_path,f"nv{int(lbl):03d}")
         figs.append((lbl, fig))
 
     if figs:
@@ -866,18 +883,24 @@ if __name__ == "__main__":
     # Toggle these as you wish:
     USE_FIXED_REVIVAL = False       # True -> uses fine_decay_fixed_revival
     ENABLE_EXTRAS     = True        # enable alpha/width_slope/chirp + beating + phases
-
+    DEFAULT_REV_US = 39.2
     # 1) FIT
-    popts, pcovs, chis, fit_fns, fit_nv_labels = run(
-        nv_list, norm_counts, norm_counts_ste, total_evolution_times,
-        nv_inds=None,
-        use_fixed_revival=False, enable_extras=True, fixed_rev_time=39.2
-    )
+    # popts, pcovs, chis, fit_fns, fit_nv_labels = run(
+    #     nv_list, norm_counts, norm_counts_ste, total_evolution_times,
+    #     nv_inds=None,
+    #     use_fixed_revival=False, enable_extras=True, fixed_rev_time=39.2
+    # )
     timestamp = dm.get_time_stamp()
     # fit_dict = {
     #     "timestamp": timestamp,
-    #     "model_name": fine_decay,
-    #     "nv_labels": list(map(int, fit_nv_labels)),   # NV indices used in fitting
+    #     "dataset_ids": file_stems,
+    #     "default_rev_us": float(DEFAULT_REV_US),
+    #     "run_flags": {
+    #         "use_fixed_revival": bool(USE_FIXED_REVIVAL),
+    #         "enable_extras": bool(ENABLE_EXTRAS),
+    #     },
+    #     "nv_labels": list(map(int, fit_nv_labels)),
+    #     "times_us": np.asarray(total_evolution_times, float).tolist(),
     #     "popts": [p.tolist() if p is not None else None for p in popts],
     #     "pcovs": [c.tolist() if c is not None else None for c in pcovs],
     #     "red_chi2": [float(c) if c is not None else None for c in chis],
@@ -893,23 +916,39 @@ if __name__ == "__main__":
     # repr_nv_sig = widefield.get_repr_nv_sig(nv_list)
     # repr_nv_name = repr_nv_sig.name
     # file_path = dm.get_file_path(__file__, timestamp, repr_nv_name)
+    # print(file_path )
     # dm.save_raw_data(fit_dict, file_path)
 
+    
+    
+    
+    ## laod analysed data
+    file_stem= "2025_11_01-16_57_48-rubin-nv0_2025_09_08"
+    data = dm.get_raw_data(file_stem=file_stem)
+    popts = data["popts"]
+    chis = data["red_chi2"]
+    fit_nv_labels = data ["nv_labels"]
+    fit_fns = data["fit_fn_names"]
+    # repr_nv_sig = widefield.get_repr_nv_sig(nv_list)
+    # repr_nv_name = repr_nv_sig.name
     # 2) PARAM PANELS (T2 outlier filter)
     figs, keep_mask, kept_labels = plot_each_param_separately(
-        popts, chis, fit_nv_labels,
+        popts, chis, fit_nv_labels, 
+        save_prefix= "rubin-spin_echo-2025_09_08",
         t2_policy=dict(method="iqr", iqr_k=5, abs_range=(0.00, 1.0))
     )
 
     # 3) INDIVIDUAL FITS — PASS THE SAME LABELS + PER-NV FIT FUNCTIONS
-    _ = plot_individual_fits(
-        norm_counts, norm_counts_ste, total_evolution_times,
-        popts,
-        nv_inds=fit_nv_labels,
-        fit_fn_per_nv=fit_fns,
-        keep_mask=keep_mask,
-        show_residuals=True,
-        block=False
-    )
+    # _ = plot_individual_fits(
+    #     norm_counts, norm_counts_ste, total_evolution_times,
+    #     popts,
+    #     nv_inds=fit_nv_labels,
+    #     fit_fn_per_nv=fit_fns,
+    #     keep_mask=keep_mask,
+    #     show_residuals=True,
+    #     block=False
+    # )
 
+    
+    ## laod analysed data
     kpl.show(block=True)

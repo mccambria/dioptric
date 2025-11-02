@@ -7,9 +7,7 @@ Created on Spring, 2024
 @author: saroj chand
 """
 
-import io
 import os
-import sys
 import warnings
 from datetime import datetime
 
@@ -19,23 +17,15 @@ import imageio
 import matplotlib as mpl
 import matplotlib.pyplot as plt
 import numpy as np
-import pandas as pd
-import scipy.ndimage as ndimage
 
 # Generate a phase .gif
 from IPython.display import Image
-from scipy.optimize import curve_fit
 
-from slmsuite import example_library
 from slmsuite.hardware.cameras.thorlabs import ThorCam
 from slmsuite.hardware.cameraslms import FourierSLM
-from slmsuite.hardware.slms.meadowlark import Meadowlark
 from slmsuite.hardware.slms.thorlabs import ThorSLM
 from slmsuite.holography import analysis, toolbox
-from slmsuite.holography.algorithms import FeedbackHologram, SpotHologram
-from slmsuite.misc import fitfunctions
-from utils import data_manager as dm
-from utils import tool_belt as tb
+from slmsuite.holography.algorithms import SpotHologram
 
 warnings.filterwarnings("ignore")
 mpl.rc("image", cmap="Blues")
@@ -292,7 +282,7 @@ def nuvu2thorcam_calibration(coords):
     )
 
     cal_coords_nuvu = np.array(
-       [[225.09, 240.491], [192.772, 21.227], [20.788, 157.738]], dtype="float32"
+        [[225.09, 240.491], [192.772, 21.227], [20.788, 157.738]], dtype="float32"
     )
     # Compute the affine transformation matrix
     M = cv2.getAffineTransform(cal_coords_nuvu, cal_coords_thorcam)
@@ -313,7 +303,7 @@ def load_nv_coords(
     # file_path="slmsuite/nv_blob_detection/nv_blob_312nvs_reordered.npz", #johnson
     # file_path="slmsuite/nv_blob_detection/nv_blob_230nvs_reordered.npz", #johnson
     # file_path="slmsuite/nv_blob_detection/nv_blob_223nvs_reordered.npz", #johnson
-    file_path="slmsuite/nv_blob_detection/nv_blob_204nvs_reordered.npz", #johnson
+    file_path="slmsuite/nv_blob_detection/nv_blob_204nvs_reordered.npz",  # johnson
 ):
     data = np.load(file_path, allow_pickle=True)
     nv_coordinates = data["nv_coordinates"]

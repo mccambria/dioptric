@@ -134,7 +134,7 @@ import sys
 import cv2
 import matplotlib.pyplot as plt
 import numpy as np
-
+from scipy.optimize import curve_fit
 ### green and red calibaton at RT setup 2025-09-15
 pixel_coords_list = [[119.675, 118.904], [111.679, 95.109],[96.317, 118.251]]
 red_coords_list = [[82.509, 81.823],[76.828, 62.075],[63.512, 80.154]]
@@ -348,11 +348,6 @@ sys.exit()
 # plt.grid(True)
 # plt.show()
 # Try a logarithmic function instead, which might better capture the relationship
-
-import matplotlib.pyplot as ply
-import numpy as np
-from scipy.optimize import curve_fit
-
 from utils import kplotlib as kpl
 
 kpl.init_kplotlib()
