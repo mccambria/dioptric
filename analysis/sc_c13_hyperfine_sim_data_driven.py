@@ -1,3 +1,4 @@
+
 # -*- coding: utf-8 -*-
 """
 Spin-echo simulator for a single NV with flexible 13C configuration.
@@ -16,6 +17,7 @@ import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
 from pathlib import Path
+from utils import data_manager as dm
 
 # ---------- Optional numba (falls back gracefully) ----------
 try:
@@ -36,69 +38,7 @@ B_vec_G = np.array([-6.18037755, -18.54113264, -43.26264283], dtype=float)
 B_vec_T = B_vec_G * 1e-4
 
 # =============================================================================
-# Fine-decay (phenomenological) -- optional
-# =============================================================================
-# def fine_decay(
-#     tau_us,
-#     baseline=1.0,
-#     comb_contrast=0.6,
-#     revival_time=37.0,
-#     width0_us=6.0,
-#     T2_ms=0.08,
-#     T2_exp=1.0,
-#     amp_taper_alpha=0.0,
-#     width_slope=0.0,
-#     revival_chirp=0.0,
-#     osc_contrast=0.0,
-#     osc_f0=0.0,
-#     osc_f1=0.0,
-#     osc_phi0=0.0,
-#     osc_phi1=0.0,
-# ):
-#     """
-#     signal(τ) = baseline - envelope(τ) * MOD(τ) * COMB(τ)
-#     (Option A: comb has no overall amplitude; MOD carries comb_contrast)
-
-#     envelope(τ) = exp[-((τ / (1000*T2_ms)) ** T2_exp)]
-#     COMB(τ) = sum_k [ 1/(1+k)^amp_taper_alpha ] * exp(-((τ - μ_k)/w_k)^4)
-#       μ_k = k * revival_time * (1 + k*revival_chirp)
-#       w_k = width0_us * (1 + k*width_slope)
-#     MOD(τ) = comb_contrast - osc_contrast * sin^2(π f0 τ + φ0) * sin^2(π f1 τ + φ1)
-
-#     τ in microseconds.
-#     """
-#     tau = np.asarray(tau_us, dtype=float).ravel()
-#     width0_us   = max(1e-9, float(width0_us))
-#     revival_time = max(1e-9, float(revival_time))
-#     T2_us        = max(1e-9, 1000.0 * float(T2_ms))
-#     T2_exp       = float(T2_exp)
-
-#     envelope = np.exp(-((tau / T2_us) ** T2_exp))
-
-#     tau_max = float(np.nanmax(tau)) if tau.size else 0.0
-#     n_guess = max(1, min(64, int(np.ceil(1.2 * tau_max / revival_time)) + 1))
-
-#     comb = _comb_quartic_powerlaw(
-#         tau,
-#         revival_time,
-#         width0_us,
-#         amp_taper_alpha,
-#         width_slope,
-#         revival_chirp,
-#         n_guess
-#     )
-
-#     if (osc_contrast != 0.0) and (osc_f0 != 0.0 or osc_f1 != 0.0):
-#         s0 = np.sin(np.pi * osc_f0 * tau + osc_phi0)
-#         s1 = np.sin(np.pi * osc_f1 * tau + osc_phi1)
-#         beat = (s0 * s0) * (s1 * s1)
-#         mod = comb_contrast - osc_contrast * beat
-#     else:
-#         mod = comb_contrast
-
-#     return baseline - envelope * mod * comb
-# =============================================================================
-# Fine-decay (phenomenological) -- optional
+# Fine-decay (phenomenological)
 # =============================================================================
 def fine_decay(
     tau_us,
@@ -202,137 +142,6 @@ def _comb_quartic_powerlaw(
             out[i] += amp_k * np.exp(- (x * x) * (x * x) * inv_w4)
 
     return out
-
-def apply_revival_gated_modulation_from_avg(avg_signal, taus_sec, fine_params, mask_power=1.0):
-    """
-    Phenomenological gating of microscopic average (optional).
-    Set fine_params=None to skip this step entirely.
-    """
-    if fine_params is None:
-        return avg_signal
-
-    eps = 1e-12
-    avg = np.asarray(avg_signal, float).copy()
-    if not np.all(np.isfinite(avg)):
-        avg = np.nan_to_num(avg, nan=1.0, posinf=1.0, neginf=1.0)
-
-    denom = avg[0] if (avg.size > 0 and abs(avg[0]) > eps) else np.max(np.abs(avg))
-    if denom is None or denom < eps:
-        denom = 1.0
-    avg /= denom
-
-    tau_us = np.asarray(taus_sec, float) * 1e6
-    # build comb mask using same internals as fine_decay (normalized)
-    revival_time  = float(fine_params.get("revival_time", 37.0))
-    width0_us     = float(fine_params.get("width0_us", 6.0))
-    amp_taper     = float(fine_params.get("amp_taper_alpha", 0.0))
-    width_slope   = float(fine_params.get("width_slope", 0.0))
-    revival_chirp = float(fine_params.get("revival_chirp", 0.0))
-    T2_ms         = float(fine_params.get("T2_ms", 0.1))
-    T2_exp        = float(fine_params.get("T2_exp", 2.0))
-
-    revival_time = max(revival_time, 1e-9)
-    width0_us    = max(width0_us,   1e-9)
-
-    n_guess = max(1, min(64, int(np.ceil(1.2 * (tau_us.max() if tau_us.size else 0.0)/revival_time)) + 1))
-    comb = _comb_quartic_powerlaw(
-        tau_us, revival_time, width0_us, amp_taper, width_slope, revival_chirp, n_guess
-    )
-    comb = np.nan_to_num(comb, nan=0.0, posinf=0.0, neginf=0.0)
-    cmax = comb.max() if comb.size else 0.0
-    mask = (comb / cmax) if (cmax > eps) else np.ones_like(comb)
-
-    if mask_power != 1.0:
-        mask = np.power(np.clip(mask, 0.0, 1.0), mask_power)
-
-    T2_us = max(1000.0 * T2_ms, 1e-9)
-    env = np.exp(-((tau_us / T2_us) ** T2_exp))
-    env = np.nan_to_num(env, nan=0.0, posinf=0.0, neginf=0.0)
-
-    avg_gated = 1.0 - (1.0 - avg) * mask
-    final = 1.0 - (1.0 - avg_gated) * env
-    return np.clip(final, -1e3, 1e3)
-
-# def _synthesize_comb_only(taus_sec, p):
-#     """Comb-only revival with stretched-exponential envelope; no beating."""
-#     # safe gets + defaults
-#     baseline  = float(p.get("baseline", 1.0))
-#     comb_c    = float(p.get("comb_contrast", 0.6))
-#     Trev_us   = float(p.get("revival_time", 37.0))
-#     w0_us     = float(p.get("width0_us", 6.0))
-#     T2_ms     = float(p.get("T2_ms", 0.08))
-#     T2_exp    = float(p.get("T2_exp", 1.0))
-#     taper     = float(p.get("amp_taper_alpha", 0.0))
-#     w_slope   = float(p.get("width_slope", 0.0))
-#     chirp     = float(p.get("revival_chirp", 0.0))
-#     return fine_decay(
-#         tau_us=taus_sec * 1e6,
-#         baseline=baseline,
-#         comb_contrast=comb_c,
-#         revival_time=Trev_us,
-#         width0_us=w0_us,
-#         T2_ms=T2_ms,
-#         T2_exp=T2_exp,
-#         amp_taper_alpha=taper,
-#         width_slope=w_slope,
-#         revival_chirp=chirp,
-#         osc_contrast=0.0,  # no beating if there are no spins
-#         osc_f0=0.0, osc_f1=0.0, osc_phi0=0.0, osc_phi1=0.0,
-#     )
-
-# def revivals_only_mapping(microscopic, taus_s, p, power=2.0):
-#     """
-#     Force oscillations to live only near revivals.
-#     microscopic : m(τ) in [0,1] from product of Mk (no baseline applied yet)
-#     p           : dict with keys baseline, comb_contrast, revival_time (us), width0_us (us),
-#                   T2_ms, T2_exp, amp_taper_alpha, width_slope, revival_chirp
-#     power       : sharpness of the gating (>=1). Bigger = tighter around revivals.
-#     """
-#     # ---- unpack & guards ----
-#     baseline      = float(p.get("baseline", 0.6))
-#     comb_contrast = float(p.get("comb_contrast", 0.4))
-#     Trev_us       = max(1e-9, float(p.get("revival_time", 37.0)))
-#     w0_us         = max(1e-9, float(p.get("width0_us", 6.0)))
-#     T2_ms         = float(p.get("T2_ms", 0.08))
-#     T2_exp        = float(p.get("T2_exp", 1.2))
-#     taper         = float(p.get("amp_taper_alpha", 0.0))
-#     w_slope       = float(p.get("width_slope", 0.0))
-#     chirp         = float(p.get("revival_chirp", 0.0))
-
-#     taus_us = np.asarray(taus_s, float) * 1e6
-#     m = np.asarray(microscopic, float)
-#     if not np.all(np.isfinite(m)):
-#         m = np.nan_to_num(m, nan=1.0)
-
-#     # ---- build a 0..1 comb mask ----
-#     tau_max = float(np.nanmax(taus_us)) if taus_us.size else 0.0
-#     n_guess = max(1, min(64, int(np.ceil(1.2 * tau_max / Trev_us)) + 1))
-#     mask = _comb_quartic_powerlaw(
-#         taus_us, Trev_us, w0_us, taper, w_slope, chirp, n_guess
-#     )
-#     mask = np.nan_to_num(mask, nan=0.0)
-#     mmax = mask.max() if mask.size else 0.0
-#     mask = (mask / mmax) if mmax > 1e-12 else np.ones_like(taus_us)
-
-#     # sharpen/soften
-#     if power != 1.0:
-#         mask = np.power(np.clip(mask, 0.0, 1.0), float(power))
-
-#     # ---- stretched-exponential envelope (global) ----
-#     T2_us = max(1e-9, 1000.0 * T2_ms)
-#     env = np.exp(-((taus_us / T2_us) ** T2_exp))
-
-#     # ---- gate only the *deviation* from 1: outside revivals → flat at 1
-#     dev = (1.0 - m)            # deviation below 1
-#     gated_dev = dev * mask     # keep only near revivals
-#     gated = 1.0 - gated_dev    # back to [~1-dip, 1]
-
-#     # ---- finally map to your baseline and dip depth, and apply envelope once
-#     #      signal(τ) = baseline - comb_contrast * (1 - gated) * env
-#     y = baseline - comb_contrast * (1.0 - gated) * env
-
-#     # Optional: clip to [0,1] if you normalize that way
-#     return np.clip(y, -1e3, 1e3)
 
 def revivals_only_mapping(microscopic, taus_s, p, power=2.0):
     """
@@ -519,7 +328,9 @@ def simulate_random_spin_echo_average(
     num_spins=30,
     num_realizations=1,
     distance_cutoff=None,
-    Ak_cutoff_kHz=0.0,
+    Ak_min_kHz=None,   # keep if A∥ ≥ Ak_min_kHz (if set)
+    Ak_max_kHz=None,   # keep if A∥ ≤ Ak_max_kHz (if set)
+    Ak_abs=True,       # compare |A∥| if True, signed A∥ if False
     R_NV=np.eye(3),
     fine_params=None,              # set None for microscopic-only
     abundance_fraction=0.011,
@@ -580,17 +391,25 @@ def simulate_random_spin_echo_average(
 
         # Apparent A_parallel for current B (NV frame)
         A_par, _ = compute_hyperfine_components(A_nv, B_hat_NV)
-        if np.abs(A_par) > Ak_cutoff_kHz * 1e3:
-            pos_crystal = np.array([row.x, row.y, row.z], float)
-            pos_nv = R_NV @ pos_crystal
-            sites.append({
-                "site_id": int(row["index"]),
-                "A0": A_nv,
-                "pos0": pos_nv,
-                "dist": float(row.distance),
-                "Apar_Hz": float(A_par),
-            })
-
+        # --------- NEW A∥ filter (replaces: if np.abs(A_par) > Ak_cutoff_kHz * 1e3:) ---------
+        A_par_kHz = (abs(A_par) if Ak_abs else A_par) / 1e3
+        keep_A = True
+        if Ak_min_kHz is not None:
+            keep_A &= (A_par_kHz >= float(Ak_min_kHz))
+        if Ak_max_kHz is not None:
+            keep_A &= (A_par_kHz <= float(Ak_max_kHz))
+        if not keep_A:
+            continue
+        # ---------------------------------------------------------------------------
+        pos_crystal = np.array([row.x, row.y, row.z], float)
+        pos_nv = R_NV @ pos_crystal
+        sites.append({
+            "site_id": int(row["index"]),
+            "A0": A_nv,
+            "pos0": pos_nv,
+            "dist": float(row.distance),
+            "Apar_Hz": float(A_par),
+        })
     N_candidates = len(sites)
     if N_candidates == 0:
         taus_us = taus_s * 1e6
@@ -682,16 +501,7 @@ def simulate_random_spin_echo_average(
     # Average (for single realization this is just identity)
     avg_signal = np.mean(all_signals, axis=0)
 
-    # Optional phenomenological gating
-    # avg_signal = apply_revival_gated_modulation_from_avg(avg_signal, taus_s, fine_params, mask_power=2.0)
-    # Optional phenomenological gating
-    # avg_signal = apply_revival_gated_modulation_from_avg(avg_signal, taus_s, fine_params, mask_power=2.0)
-    # if fine_params is not None:
-    #     if np.nanmax(avg_signal) - np.nanmin(avg_signal) < 1e-4:
-    #         avg_signal = _synthesize_comb_only(taus_s, fine_params)   # taus is in seconds here
-    # else:
-    #     avg_signal = apply_revival_gated_modulation_from_avg(avg_signal, taus_s, fine_params, mask_power=2.0, verbose=False)
-    # avg_signal = apply_revival_gated_modulation_from_avg(avg_signal, taus_s, fine_params, mask_power=2.0)
+    # phenomenological gating
     if fine_params is not None:
         if np.nanmax(avg_signal) - np.nanmin(avg_signal) < 1e-4:
             # no microscopic modulation -> synthesize clean comb at your baseline
@@ -802,7 +612,7 @@ def plot_echo_with_sites(taus_us, echo, aux, title="Spin Echo (single NV)", rmax
         cc = np.asarray(stats["chosen_counts"], int)
         lines_stats.append(f"Chosen/site per realization: {int(np.median(cc))} (med)")
     if lines_stats:
-        ax0.text(0.01, 0.02, "\n".join(lines_stats), transform=ax0.transAxes,
+        ax0.text(0.61, 0.02, "\n".join(lines_stats), transform=ax0.transAxes,
                  fontsize=9, va="bottom", ha="left",
                  bbox=dict(boxstyle="round,pad=0.35", facecolor="white", alpha=0.9, lw=0.6))
 
@@ -812,11 +622,11 @@ def plot_echo_with_sites(taus_us, echo, aux, title="Spin Echo (single NV)", rmax
                  fontsize=9, va="bottom", ha="right",
                  bbox=dict(boxstyle="round,pad=0.35", facecolor="white", alpha=0.9, lw=0.6))
 
-    es_lines = _echo_summary_lines(taus_us, echo)
-    if es_lines:
-        ax0.text(0.99, 0.98, "\n".join(es_lines), transform=ax0.transAxes,
-                 fontsize=9, va="top", ha="right",
-                 bbox=dict(boxstyle="round,pad=0.35", facecolor="white", alpha=0.9, lw=0.6))
+    # es_lines = _echo_summary_lines(taus_us, echo)
+    # if es_lines:
+    #     ax0.text(0.99, 0.98, "\n".join(es_lines), transform=ax0.transAxes,
+    #              fontsize=9, va="top", ha="right",
+    #              bbox=dict(boxstyle="round,pad=0.35", facecolor="white", alpha=0.9, lw=0.6))
 
     picked_all = aux.get("picked_ids_per_realization", [])
     if picked_all and len(picked_all[0]) > 0:
@@ -887,57 +697,197 @@ def plot_echo_with_sites(taus_us, echo, aux, title="Spin Echo (single NV)", rmax
 # =============================================================================
 # Example usage
 # =============================================================================
-if __name__ == "__main__":
-    # Example file path (replace with your actual file)
-    input_file = r"analysis/nv_hyperfine_coupling/nv-2.txt"
+# if __name__ == "__main__":
 
-    # Phenomenological params (set to None for microscopic-only)
-    fine_params = dict(
-        baseline=0.6,
-        comb_contrast=0.45,
-        revival_time=37.0,
-        width0_us=10.0,
-        T2_ms=0.08,
-        T2_exp=1.2,
-        amp_taper_alpha=0.0,
-        width_slope=0.0,
-        revival_chirp=0.0,
-        osc_contrast=0.4,  # usually 0 for echo (no extra beating)
-        osc_f0=0.0,
-        osc_f1=0.0,
-        osc_phi0=0.0,
-        osc_phi1=0.0,
-    )
+# --- 0) Pull your saved fit dict (as you outlined) ---
+file_stem = "2025_11_02-19_55_17-johnson_204nv_s3-003c56"
+fit = dm.get_raw_data(file_stem=file_stem)
 
-    # Choose mode:
-    # 1) Exact sites (lock configuration)
-    fixed_ids = []  # e.g., [12, 45, 78]
+keys = fit["unified_keys"]
+def _asdict(p):
+    d = {k: None for k in keys}
+    if p is None: 
+        return d
+    for k, v in zip(keys, p + [None]*(len(keys)-len(p))):
+        d[k] = v
+    return d
 
-    # 2) Or pass a fixed presence mask (same length as candidate sites) after loading once
-    fixed_mask = None
+labels = list(map(int, fit["nv_labels"]))
+popts  = fit["popts"]
+chis   = fit.get("red_chi2", [None]*len(popts))
 
-    taus, echo, aux = simulate_random_spin_echo_average(
-        hyperfine_path=input_file,
-        tau_range_us=(0, 100),
-        num_spins=None,                    # take all chosen/present sites
-        num_realizations=1,                # single trace
-        distance_cutoff=5.0,               # Å or whatever your file uses
-        Ak_cutoff_kHz=0.0,
-        R_NV=np.eye(3),
-        fine_params=fine_params,           # set to None for microscopic-only
-        abundance_fraction=0.011,          # natural abundance, ignored if fixed_ids/mask used
-        rng_seed=4242, run_salt=2000,
-        randomize_positions=False,
-        selection_mode="uniform",
-        ensure_unique_across_realizations=False,
-        annotate_from_realization=0,
-        keep_nv_orientation=True,
-        fixed_site_ids=fixed_ids if fixed_ids else None,
-        fixed_presence_mask=fixed_mask,
-        reuse_present_mask=True,           # if not fixing sites, draw once and reuse
-    )
+# --- 1) Make a clean parameter matrix (NaNs for missing), in unified_keys order ---
+P = np.full((len(popts), len(keys)), np.nan, float)
+for i, p in enumerate(popts):
+    d = _asdict(p)
+    for j, k in enumerate(keys):
+        v = d[k]
+        if v is None: continue
+        try:
+            P[i, j] = float(v)
+        except Exception:
+            pass
 
-    # fig = plot_echo_with_sites(taus, echo, aux, title="Spin Echo (single realization)")
-    # fig = plot_echo_and_sites(taus, echo, aux, title="Spin Echo (single NV)", fine_params=fine_params)
-    plot_echo_with_sites(taus, echo, aux, title="Spin Echo (single NV)")
-    plt.show()
+# Convenience indices
+K = {k: j for j, k in enumerate(keys)}
+k_base = K["baseline"]; k_cc  = K["comb_contrast"]
+k_Trev = K["revival_time_us"]; k_w0 = K["width0_us"]
+k_T2   = K["T2_ms"]; k_n     = K["T2_exp"]
+k_a    = K["amp_taper_alpha"]; k_ws = K["width_slope"]; k_ch = K["revival_chirp"]
+k_A    = K["osc_amp"]; k_f0   = K["osc_f0"]; k_f1 = K["osc_f1"]; k_p0 = K["osc_phi0"]; k_p1 = K["osc_phi1"]
+
+# --- 2) Build cohort priors (median & MAD) for each parameter ---
+def _nanmedian(x): return np.nanmedian(x) if np.isfinite(np.nanmedian(x)) else np.nan
+def _mad(x):
+    med = _nanmedian(x)
+    if not np.isfinite(med): return np.nan
+    return _nanmedian(np.abs(x - med)) * 1.4826
+
+cohort_med = np.array([_nanmedian(P[:,j]) for j in range(P.shape[1])])
+cohort_mad = np.array([_mad(P[:,j])       for j in range(P.shape[1])])
+
+# Reasonable hard bounds/guards (edit to taste)
+bounds = {
+    "baseline": (0.0, 1.2),
+    "comb_contrast": (0.0, 1.1),
+    "revival_time_us": (25.0, 55.0),
+    "width0_us": (1.0, 25.0),
+    "T2_ms": (1e-3, 2e3),
+    "T2_exp": (0.6, 4.0),
+    "amp_taper_alpha": (0.0, 2.0),
+    "width_slope": (-0.2, 0.2),
+    "revival_chirp": (-0.06, 0.06),
+    "osc_amp": (-0.5, 0.5),     # allow above-baseline crests
+    "osc_f0": (0.0, 0.50),      # cycles/μs ~ MHz
+    "osc_f1": (0.0, 0.50),
+    "osc_phi0": (-np.pi, np.pi),
+    "osc_phi1": (-np.pi, np.pi),
+}
+
+def _clip_by_key(k, v):
+    lo, hi = bounds[k]
+    return float(np.minimum(hi, np.maximum(lo, v)))
+
+# --- 3) NV-specific jitter scale (use MAD around each NV if you have repeats; else cohort MAD) ---
+# Here we’ll just use cohort MAD and a mixing factor so we don’t over-jitter.
+mix_global = 0.3   # 30% cohort prior noise
+rng = np.random.default_rng(20251102)
+
+def _nv_prior_draw(i):
+    out = {}
+    for k, j in K.items():
+        # center at NV’s fitted value if finite; else cohort median
+        mu = P[i, j] if np.isfinite(P[i, j]) else cohort_med[j]
+        if not np.isfinite(mu):
+            # final fallback constants
+            if k == "baseline": mu = 0.6
+            elif k == "comb_contrast": mu = 0.45
+            elif k == "revival_time_us": mu = 38.0
+            elif k == "width0_us": mu = 7.0
+            elif k == "T2_ms": mu = 0.08
+            elif k == "T2_exp": mu = 1.2
+            else:
+                mu = 0.0
+
+        # jitter σ: a blend of cohort MAD and a small absolute floor
+        sig = cohort_mad[j]
+        if not np.isfinite(sig) or sig == 0.0:
+            sig = 1e-3
+        # symmetric jitter for all (including phases); widen a bit for osc_amp
+        widen = 1.0 if k != "osc_amp" else 1.5
+        draw = mu + widen * mix_global * sig * rng.standard_normal()
+
+        out[k] = _clip_by_key(k, draw)
+    return out
+
+# --- 4) Run stochastic synthetic echoes per NV, then aggregate ---
+def synth_per_nv(nv_idx, R=8, tau_range_us=(0, 100),
+                 hyperfine_path="analysis/nv_hyperfine_coupling/nv-2.txt",
+                 abundance_fraction=0.011,
+                 distance_cutoff=8.0,
+                 num_spins=None,               # None = all present, else subsample
+                 selection_mode="top_Apar",    # or "uniform" / "distance_weighted"
+                 reuse_present_mask=True):
+    lbl = labels[nv_idx]
+    # precompute a reproducible stream salt per NV
+    salt = int(lbl) & 0xFFFFFFFF
+
+    # Pull phenomenology draw for each realization
+    traces = []
+    fine_list = []
+    for r in range(R):
+        fp = _nv_prior_draw(nv_idx)
+        fine_params = dict(
+            baseline=fp["baseline"],
+            comb_contrast=fp["comb_contrast"],
+            revival_time=fp["revival_time_us"],
+            width0_us=fp["width0_us"],
+            T2_ms=fp["T2_ms"],
+            T2_exp=fp["T2_exp"],
+            amp_taper_alpha=fp["amp_taper_alpha"],
+            width_slope=fp["width_slope"],
+            revival_chirp=fp["revival_chirp"],
+            # Additive oscillation around revivals (your model uses MHz==cycles/us)
+            osc_add_amp=fp["osc_amp"],
+            osc_f0_MHz=fp["osc_f0"],
+            osc_f1_MHz=fp["osc_f1"],
+            osc_phi0=fp["osc_phi0"],
+            osc_phi1=fp["osc_phi1"],
+        )
+
+        taus, echo, aux = simulate_random_spin_echo_average(
+            hyperfine_path=hyperfine_path,
+            tau_range_us=tau_range_us,
+            num_spins=num_spins,
+            num_realizations=1,
+            distance_cutoff=8.0,
+            Ak_min_kHz=None,   # keep if A∥ ≥ Ak_min_kHz (if set)
+            Ak_max_kHz=None,   # keep if A∥ ≤ Ak_max_kHz (if set)
+            Ak_abs=True,       # compare |A∥| if True, signed A∥ if False
+            R_NV=np.eye(3),
+            fine_params=fine_params,
+            abundance_fraction=abundance_fraction,
+            rng_seed=4242, run_salt=salt + r,   # reproducible per NV + realization
+            randomize_positions=False,
+            selection_mode=selection_mode,
+            ensure_unique_across_realizations=False,
+            annotate_from_realization=0,
+            keep_nv_orientation=True,
+            fixed_site_ids=None,
+            fixed_presence_mask=None,
+            reuse_present_mask=reuse_present_mask,
+        )
+        traces.append(echo)
+        fine_list.append(fine_params)
+        plot_echo_with_sites(taus, echo, aux, title="Spin Echo (single NV)")
+
+    traces = np.asarray(traces, float)        # [R, T]
+    mean = np.nanmean(traces, axis=0)
+    p16  = np.nanpercentile(traces, 16, axis=0)
+    p84  = np.nanpercentile(traces, 84, axis=0)
+    return dict(label=int(lbl), taus_us=taus, mean=mean, p16=p16, p84=p84,
+                fine_draws=fine_list)
+
+# --- 5) Orchestrate over a subset / all NVs ---
+# Example: pick K best NVs by chi2 and simulate each
+def _to_float_or_inf(x):
+    try:
+        if x is None: return np.inf
+        v = float(x);  return v if np.isfinite(v) else np.inf
+    except Exception:
+        return np.inf
+
+chi_vals = np.array([_to_float_or_inf(c) for c in chis], float)
+order = np.argsort(chi_vals)  # lowest χ² first, infs at end
+keep = [i for i in order if popts[i] is not None][:20]  # e.g., top 12 NVs
+
+results = []
+for i in keep:
+    res = synth_per_nv(i, R=12, tau_range_us=(0, 100),
+                       hyperfine_path="analysis/nv_hyperfine_coupling/nv-2.txt",
+                       num_spins=None, selection_mode="uniform")
+    results.append(res)
+
+plt.show()
+# 'results' now has per-NV mean/p16/p84 bands you can plot quickly.
+# (Use your plot_echo_with_sites for single-NV visualization if you want detail.)

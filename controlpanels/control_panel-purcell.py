@@ -983,12 +983,12 @@ def do_sq_relaxation(nv_list):
     max_tau = 10e6 + min_tau
     num_steps = 21
     num_reps = 10
-    num_runs = 400
+    num_runs = 800
     # num_runs = 2
     # relaxation_interleave.sq_relaxation(
     #     nv_list, num_steps, num_reps, num_runs, min_tau, max_tau
     # )
-    for _ in range(2):
+    for _ in range(1):
         relaxation_interleave.sq_relaxation(
             nv_list, num_steps, num_reps, num_runs, min_tau, max_tau
         )
@@ -999,7 +999,7 @@ def do_dq_relaxation(nv_list):
     max_tau = 10e6 + min_tau
     num_steps = 21
     num_reps = 10
-    num_runs = 300
+    num_runs = 800
 
     # relaxation_interleave.dq_relaxation(
     #     nv_list, num_steps, num_reps, num_runs, min_tau, max_tau
@@ -1607,7 +1607,7 @@ if __name__ == "__main__":
         # do_deer_hahn(nv_list)
         # do_deer_hahn_rabi(nv_list)
         # do_resonance_zoom(nv_list)
-        do_spin_echo(nv_list)
+        # do_spin_echo(nv_list)
         # do_spin_echo_1(nv_list)
         # do_ramsey(nv_list)
 
@@ -1616,8 +1616,8 @@ if __name__ == "__main__":
         # do_T2_correlation_test(nv_list)
         # do_two_block_hahn_correlation(nv_list)
         # do_resonance(nv_list)
-        # do_sq_relaxation(nv_list)
-        # do_dq_relaxation(nv_list)
+        do_sq_relaxation(nv_list)
+        do_dq_relaxation(nv_list)
         # do_detect_cosmic_rays(nv_list)
         # do_check_readout_fidelity(nv_list)
         # do_charge_quantum_jump(nv_list)
