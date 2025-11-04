@@ -34,8 +34,8 @@ red_laser_aod = "laser_COBO_638_aod"
 
 
 calibration_coords_pixel = [[14.043, 37.334],[106.538, 237.374],[218.314, 23.302]]
-calibration_coords_green = [[119.675, 118.904], [111.679, 95.109],[96.317, 118.251]]
-calibration_coords_red = [[82.509, 81.823],[76.828, 62.075],[63.512, 80.154]]
+calibration_coords_green = [[119.723, 118.876], [111.728, 95.086], [96.363, 118.259]]
+calibration_coords_red = [[82.549, 81.803],[76.869, 62.059], [63.549, 80.163]]
 
 # Create the dictionaries using the provided lists
 calibration_coords_nv1 = {
@@ -148,6 +148,7 @@ config |= {
                 # "frequency": 2.982049,
                 "rabi_period": 192,
                 "pi_pulse": 88,
+                # "pi_pulse": 96, 
                 "pi_on_2_pulse": 44,
             },
             2: {
@@ -167,7 +168,6 @@ config |= {
         "spot_radius": 2.5,  # Radius for integrating NV counts in a camera image
         "bias_clamp": 300,  # (changing this won't actually change the value on the camera currently)
         "em_gain": 5000,
-        # "em_gain": 1000,
         # "em_gain": 10,
         "temp": -60,
         "timeout": 60e3,  # ms
@@ -958,7 +958,8 @@ opx_config = {
         # "yellow_charge_readout": {"type": "constant", "sample": 0.2267}, #118NVs
         # "yellow_charge_readout": {"type": "constant", "sample": 0.34947}, ## 312NV johnson
         # "yellow_charge_readout": {"type": "constant", "sample": 0.313148}, ## 230NV johnson
-        "yellow_charge_readout": {"type": "constant", "sample": 0.3098}, ## 223NV johnson
+        # "yellow_charge_readout": {"type": "constant", "sample": 0.3084}, ## 223NV johnson
+        "yellow_charge_readout": {"type": "constant", "sample": 0.299064}, ## 204NV johnson
         "yellow_spin_pol": {"type": "constant", "sample": 0.31510},
         "yellow_shelving": {"type": "constant", "sample": 0.20},
         # Other

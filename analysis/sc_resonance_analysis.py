@@ -295,11 +295,11 @@ def plot_nv_resonance(
     plt.grid(True, linestyle="--", alpha=0.5)
     # return
 
-    # filter_nvs = True
-    filter_nvs = False
+    filter_nvs = True
+    # filter_nvs = False
     if filter_nvs:
         # target_peak_values = [0.113, 0.217]
-        target_peak_values = [0.77, 0.181]
+        target_peak_values = [0.077, 0.1813]
         # target_peak_values = [0.290]
         tolerance = 0.008
         # Filter indices based on proximity to target peak differences
@@ -363,7 +363,7 @@ def plot_nv_resonance(
     #     for idx in range(num_nvs)
     #     if idx not in indices_to_remove_manually
     # ]
-    # return
+    return
     filtered_nv_list = [nv_list[idx] for idx in filtered_indices]
     filtered_avg_counts = [avg_counts[idx] for idx in filtered_indices]
     filtered_avg_counts_ste = [avg_counts_ste[idx] for idx in filtered_indices]
@@ -451,7 +451,7 @@ def plot_nv_resonance(
         # dm.save_figure(fig, file_path)
         # plt.close(fig)
 
-    # return
+    return
     # Plot filtered resonance fits
     sns.set(style="whitegrid", palette="muted")
     num_filtered_nvs = len(filtered_nv_list)
@@ -732,27 +732,33 @@ if __name__ == "__main__":
     ]
 
     ## 312 nVs
-    file_ids = [
-        "2025_10_23-08_33_06-johnson-nv0_2025_10_21",
-    ]
+    # file_ids = [
+    #     "2025_10_23-08_33_06-johnson-nv0_2025_10_21",
+    # ]
+    
     # file_ids = [
     #     "2025_10_24-09_48_53-johnson-nv0_2025_10_21",
     # ]
 
+    # file_ids = [
+    #     "2025_10_25-12_06_28-johnson-nv0_2025_10_21",
+    # ]
+    # file_ids = [
+    #     "2025_10_27-11_35_46-johnson-nv0_2025_10_21",
+    # ]
+    # file_ids = [
+    #     "2025_10_28-03_08_17-johnson-nv0_2025_10_21",
+    # ]
+    # file_ids = [
+    #     "2025_11_01-07_35_08-johnson-nv0_2025_10_21",
+    # ]
     file_ids = [
-        "2025_10_25-12_06_28-johnson-nv0_2025_10_21",
-    ]
-    file_ids = [
-        "2025_10_27-11_35_46-johnson-nv0_2025_10_21",
-    ]
-    file_ids = [
-        "2025_10_28-03_08_17-johnson-nv0_2025_10_21",
+        "2025_11_04-03_46_51-johnson-nv0_2025_10_21",
     ]
     # Load the first dataset as a base
     combined_data = dm.get_raw_data(
         file_stem=file_ids[0], load_npz=True, use_cache=True
     )
-
     combined_sig_counts = None
     combined_ref_counts = None
 

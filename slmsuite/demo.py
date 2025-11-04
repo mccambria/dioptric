@@ -134,10 +134,10 @@ import sys
 import cv2
 import matplotlib.pyplot as plt
 import numpy as np
-
+from scipy.optimize import curve_fit
 ### green and red calibaton at RT setup 2025-09-15
-pixel_coords_list = [[119.811, 118.835], [111.802, 95.037],[96.387, 118.141]]
-red_coords_list = [[82.515, 81.753], [76.88, 62.032], [63.543, 80.085]]
+pixel_coords_list = [[119.675, 118.904], [111.679, 95.109],[96.317, 118.251]]
+red_coords_list = [[82.509, 81.823],[76.828, 62.075],[63.512, 80.154]]
 # Given pixel coordinates and corresponding red coordinates
 # pixel_coords_list = np.array(
 #     [
@@ -168,10 +168,10 @@ if len(pixel_coords_list) >= 3:
     # New pixel coordinate for which we want to find the corresponding red coordinate
     new_pixel_coord = np.array(
         [
-            [108.28, 107.37],
-            [119.675, 118.904],
-            [111.679, 95.109],
-            [96.317, 118.251],
+            [108.313, 107.362],
+            [119.723, 118.876],
+            [111.728, 95.086],
+            [96.363, 118.259],
         ],
         dtype=np.float32,
     )
@@ -348,11 +348,6 @@ sys.exit()
 # plt.grid(True)
 # plt.show()
 # Try a logarithmic function instead, which might better capture the relationship
-
-import matplotlib.pyplot as ply
-import numpy as np
-from scipy.optimize import curve_fit
-
 from utils import kplotlib as kpl
 
 kpl.init_kplotlib()

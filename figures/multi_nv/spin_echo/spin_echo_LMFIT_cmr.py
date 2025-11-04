@@ -850,8 +850,8 @@ if __name__ == "__main__":
     kpl.init_kplotlib()
 
     # Combined file
-    data = dm.get_raw_data(file_id=1755199883770)
-
+    # data = dm.get_raw_data(file_id=1755199883770)
+    data = dm.get_raw_data(file_stem="2025_01_20-22_54_02-johnson-nv0_2024_03_12")
     split_esr = [12, 13, 14, 61, 116]
     broad_esr = [52, 11]
     weak_esr = [72, 64, 55, 96, 112, 87, 12, 58, 36]

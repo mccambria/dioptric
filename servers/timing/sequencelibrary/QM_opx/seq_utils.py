@@ -341,6 +341,7 @@ def macro_charge_state_readout(duration: int = None, amp: float = None):
     if duration is None:
         duration = get_default_charge_readout_duration()
 
+    print(amp, duration)
     qua.align()
     if amp is not None:
         qua.play("charge_readout" * qua.amp(amp), readout_laser_el)

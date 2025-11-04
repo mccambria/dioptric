@@ -395,29 +395,16 @@ def process_and_plot(raw_data):
 
 # endregion
 
-
-def optimize_pol_duration(
-    nv_list, num_steps, num_reps, num_runs, min_duration, max_duration
-):
-    return _main(
-        nv_list, num_steps, num_reps, num_runs, min_duration, max_duration, True, True
-    )
-
-
-def optimize_pol_amp(nv_list, num_steps, num_reps, num_runs, min_amp, max_amp):
-    return _main(nv_list, num_steps, num_reps, num_runs, min_amp, max_amp, True, False)
-
-
 def optimize_readout_duration(
     nv_list, num_steps, num_reps, num_runs, min_duration, max_duration
 ):
     return _main(
-        nv_list, num_steps, num_reps, num_runs, min_duration, max_duration, False, True
+        nv_list, num_steps, num_reps, num_runs, min_duration, max_duration, True
     )
 
 
 def optimize_readout_amp(nv_list, num_steps, num_reps, num_runs, min_amp, max_amp):
-    return _main(nv_list, num_steps, num_reps, num_runs, min_amp, max_amp, False, False)
+    return _main(nv_list, num_steps, num_reps, num_runs, min_amp, max_amp, False)
 
 
 def _main(
@@ -427,32 +414,35 @@ def _main(
     num_runs,
     min_step_val,
     max_step_val,
-    optimize_pol_or_readout,
     optimize_duration_or_amp,
     uwave_ind_list=[0, 1],
 ):
     ### Initial setup
     seq_file = "optimize_scc_readout.py"
     step_vals = np.linspace(min_step_val, max_step_val, num_steps)
-    if optimize_duration_or_amp:
-        step_vals = step_vals.astype(int)
     pulse_gen = tb.get_server_pulse_gen()
 
     ### Collect the data
 
     def run_fn(shuffled_step_inds):
         # NumPy indexing allows list-based indexing
-        shuffled_step_vals = step_vals[shuffled_step_inds].tolist()
+        shuffled_step_vals = [step_vals[ind] for ind in shuffled_step_inds]
         seq_args = [
             widefield.get_base_scc_seq_args(nv_list, uwave_ind_list),
             shuffled_step_vals,
-            optimize_pol_or_readout,
-            optimize_duration_or_amp,
         ]
         seq_args_string = tb.encode_seq_args(seq_args)
         pulse_gen.stream_load(seq_file, seq_args_string, num_reps)
 
-    raw_data = base_routine.main(nv_list, num_steps, num_reps, num_runs, run_fn=run_fn)
+
+    raw_data = base_routine.main(
+        nv_list,
+        num_steps,
+        num_reps,
+        num_runs,
+        run_fn=run_fn,
+        uwave_ind_list=uwave_ind_list,
+    )
 
     ### Processing
 
@@ -464,7 +454,6 @@ def _main(
         "timestamp": timestamp,
         "min_step_val": min_step_val,
         "max_step_val": max_step_val,
-        "optimize_pol_or_readout": optimize_pol_or_readout,
         "optimize_duration_or_amp": optimize_duration_or_amp,
     }
 
