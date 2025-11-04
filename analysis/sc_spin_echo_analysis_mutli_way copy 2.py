@@ -37,45 +37,120 @@ from scipy.optimize import least_squares
 #    - COMB has NO overall comb_contrast
 #    - MOD carries the overall amplitude (and optional beating)
 # =============================================================================
+# def fine_decay(
+#     tau,
+#     baseline,
+#     comb_contrast,
+#     revival_time,
+#     width0_us,
+#     T2_ms,
+#     T2_exp,
+#     amp_taper_alpha=None,
+#     width_slope=None,
+#     revival_chirp=None,
+#     osc_contrast=None,
+#     osc_f0=None,
+#     osc_f1=None,
+#     osc_phi0=None,
+#     osc_phi1=None,
+# ):
+#     """
+#     signal(τ) = baseline - envelope(τ) * MOD(τ) * COMB(τ)
+
+#     envelope(τ) = exp[-((τ / (1000*T2_ms)) ** T2_exp)]
+
+#     COMB(τ) = sum_k  [ 1/(1+k)^amp_taper_alpha ] * exp(-((τ - μ_k)/w_k)^4)
+#         μ_k = k * revival_time * (1 + k*revival_chirp)
+#         w_k = width0_us * (1 + k*width_slope)
+
+#     MOD(τ) = comb_contrast - osc_contrast * sin^2(π f0 τ + φ0) * sin^2(π f1 τ + φ1)
+#     """
+#     # defaults
+#     if amp_taper_alpha is None: amp_taper_alpha = 0.0
+#     if width_slope     is None: width_slope     = 0.0
+#     if revival_chirp   is None: revival_chirp   = 0.0
+#     if osc_contrast    is None: osc_contrast    = 0.0
+#     if osc_f0          is None: osc_f0          = 0.0
+#     if osc_f1          is None: osc_f1          = 0.0
+#     if osc_phi0        is None: osc_phi0        = 0.0
+#     if osc_phi1        is None: osc_phi1        = 0.0
+
+#     tau = np.asarray(tau, dtype=float).ravel()
+#     width0_us    = max(1e-9, float(width0_us))
+#     revival_time = max(1e-9, float(revival_time))
+#     T2_us        = max(1e-9, 1000.0 * float(T2_ms))
+#     T2_exp       = float(T2_exp)
+
+#     # envelope
+#     envelope = np.exp(-((tau / T2_us) ** T2_exp))
+
+#     # number of revivals to include
+#     tau_max = float(np.nanmax(tau)) if tau.size else 0.0
+#     n_guess = max(1, min(64, int(np.ceil(1.2 * tau_max / revival_time)) + 1))
+
+#     comb = _comb_quartic_powerlaw(
+#         tau,
+#         revival_time,
+#         width0_us,
+#         amp_taper_alpha,
+#         width_slope,
+#         revival_chirp,
+#         n_guess
+#     )
+
+#     # beating lives in MOD; comb_contrast is the overall amplitude (once)
+#     if (osc_contrast != 0.0) and (osc_f0 != 0.0 or osc_f1 != 0.0):
+#         s0 = np.sin(np.pi * osc_f0 * tau + osc_phi0)
+#         s1 = np.sin(np.pi * osc_f1 * tau + osc_phi1)
+#         beat = (s0 * s0) * (s1 * s1)
+#         mod = comb_contrast - osc_contrast * beat
+#     else:
+#         mod = comb_contrast
+
+#     return baseline - envelope * mod * comb
+
+
 def fine_decay(
-    tau,
-    baseline,
-    comb_contrast,
-    revival_time,
-    width0_us,
-    T2_ms,
-    T2_exp,
-    amp_taper_alpha=None,
-    width_slope=None,
-    revival_chirp=None,
-    osc_contrast=None,
-    osc_f0=None,
-    osc_f1=None,
-    osc_phi0=None,
-    osc_phi1=None,
+    tau_us,
+    baseline=1.0,
+    comb_contrast=0.6,
+    revival_time=37.0,
+    width0_us=6.0,
+    T2_ms=0.08,
+    T2_exp=1.0,
+    amp_taper_alpha=0.0,
+    width_slope=0.0,
+    revival_chirp=0.0,
+    # NEW (additive, signed; zero-mean cos carrier(s))
+    osc_amp=0.0,
+    osc_f0=0.0,
+    osc_phi0=0.0,
+    osc_f1=0.0,
+    osc_phi1=0.0,
 ):
     """
-    signal(τ) = baseline - envelope(τ) * MOD(τ) * COMB(τ)
+    signal(τ) = baseline
+                - comb_contrast * envelope(τ) * COMB(τ)               [dip]
+                +                 envelope(τ) * COMB(τ) * OSC(τ)      [signed oscillation]
 
-    envelope(τ) = exp[-((τ / (1000*T2_ms)) ** T2_exp)]
+    envelope(τ) = exp[-(τ / (1000*T2_ms))^T2_exp]
+    COMB(τ)     = Σ_k [ 1/(1+k)^amp_taper_alpha ] * exp(-((τ-μ_k)/w_k)^4)
+                    μ_k = k * revival_time * (1 + k*revival_chirp)
+                    w_k = width0_us * (1 + k*width_slope)
 
-    COMB(τ) = sum_k  [ 1/(1+k)^amp_taper_alpha ] * exp(-((τ - μ_k)/w_k)^4)
-        μ_k = k * revival_time * (1 + k*revival_chirp)
-        w_k = width0_us * (1 + k*width_slope)
-
-    MOD(τ) = comb_contrast - osc_contrast * sin^2(π f0 τ + φ0) * sin^2(π f1 τ + φ1)
+    OSC(τ)      = osc_amp * [ cos(2π f0 τ + φ0) + cos(2π f1 τ + φ1) ]   # zero mean
+    τ in microseconds, f in cycles/μs, phases in rad.
     """
-    # defaults
-    if amp_taper_alpha is None: amp_taper_alpha = 0.0
-    if width_slope     is None: width_slope     = 0.0
-    if revival_chirp   is None: revival_chirp   = 0.0
-    if osc_contrast    is None: osc_contrast    = 0.0
-    if osc_f0          is None: osc_f0          = 0.0
-    if osc_f1          is None: osc_f1          = 0.0
-    if osc_phi0        is None: osc_phi0        = 0.0
-    if osc_phi1        is None: osc_phi1        = 0.0
+    amp_taper_alpha = 0.0 if amp_taper_alpha is None else float(amp_taper_alpha)
+    width_slope     = 0.0 if width_slope     is None else float(width_slope)
+    revival_chirp   = 0.0 if revival_chirp   is None else float(revival_chirp)
+    osc_amp         = 0.0 if osc_amp         is None else float(osc_amp)
+    osc_f0          = 0.0 if osc_f0          is None else float(osc_f0)
+    osc_f1          = 0.0 if osc_f1          is None else float(osc_f1)
+    osc_phi0        = 0.0 if osc_phi0        is None else float(osc_phi0)
+    osc_phi1        = 0.0 if osc_phi1        is None else float(osc_phi1)
 
-    tau = np.asarray(tau, dtype=float).ravel()
+    tau = np.asarray(tau_us, dtype=float).ravel()
     width0_us    = max(1e-9, float(width0_us))
     revival_time = max(1e-9, float(revival_time))
     T2_us        = max(1e-9, 1000.0 * float(T2_ms))
@@ -98,17 +173,53 @@ def fine_decay(
         n_guess
     )
 
-    # beating lives in MOD; comb_contrast is the overall amplitude (once)
-    if (osc_contrast != 0.0) and (osc_f0 != 0.0 or osc_f1 != 0.0):
-        s0 = np.sin(np.pi * osc_f0 * tau + osc_phi0)
-        s1 = np.sin(np.pi * osc_f1 * tau + osc_phi1)
-        beat = (s0 * s0) * (s1 * s1)
-        mod = comb_contrast - osc_contrast * beat
-    else:
-        mod = comb_contrast
+    carrier = envelope * comb
 
-    return baseline - envelope * mod * comb
+    # baseline minus revival dip
+    dip = comb_contrast * carrier
 
+    # additive, zero-mean oscillation (can push above baseline)
+    osc = 0.0
+    if (osc_amp != 0.0) and (osc_f0 != 0.0 or osc_f1 != 0.0):
+        osc += np.cos(2*np.pi*osc_f0 * tau + osc_phi0)
+        osc += np.cos(2*np.pi*osc_f1 * tau + osc_phi1)
+
+    return baseline - dip + carrier * (osc_amp * osc)
+
+# def fine_decay_fixed_revival(
+#     tau,
+#     baseline,
+#     comb_contrast,
+#     width0_us,
+#     T2_ms,
+#     T2_exp,
+#     amp_taper_alpha=None,
+#     width_slope=None,
+#     revival_chirp=None,
+#     osc_contrast=None,
+#     osc_f0=None,
+#     osc_f1=None,
+#     osc_phi0=None,
+#     osc_phi1=None,
+#     _fixed_rev_time_us=50.0
+# ):
+#     return fine_decay(
+#         tau,
+#         baseline,
+#         comb_contrast,
+#         _fixed_rev_time_us,
+#         width0_us,
+#         T2_ms,
+#         T2_exp,
+#         amp_taper_alpha,
+#         width_slope,
+#         revival_chirp,
+#         osc_contrast,
+#         osc_f0,
+#         osc_f1,
+#         osc_phi0,
+#         osc_phi1,
+#     )
 
 def fine_decay_fixed_revival(
     tau,
@@ -120,7 +231,7 @@ def fine_decay_fixed_revival(
     amp_taper_alpha=None,
     width_slope=None,
     revival_chirp=None,
-    osc_contrast=None,
+    osc_amp=None,
     osc_f0=None,
     osc_f1=None,
     osc_phi0=None,
@@ -138,10 +249,10 @@ def fine_decay_fixed_revival(
         amp_taper_alpha,
         width_slope,
         revival_chirp,
-        osc_contrast,
+        osc_amp,   # was osc_contrast
         osc_f0,
-        osc_f1,
-        osc_phi0,
+        osc_phi0,  # <-- swap order
+        osc_f1,    # <-- swap order
         osc_phi1,
     )
 
@@ -186,6 +297,7 @@ def _comb_quartic_powerlaw(
 # =============================================================================
 # Fitting helpers
 # =============================================================================
+
 def _smart_percentiles(y, p_low=5, p_high=90):
     y = np.asarray(y, float)
     if y.size == 0:
@@ -311,13 +423,13 @@ def _initial_guess_and_bounds(times_us, y, enable_extras=True, fixed_rev_time=No
     # extra_lb = [0.0, 0.00, -0.01, 0.00,  f0_lo, f1_lo, -np.pi, -np.pi]
     # extra_ub = [2.0, 0.20,  0.01, min(0.9, p0[1]*1.2),  f0_hi, f1_hi,  np.pi,  np.pi]
     
-    extra_p0 = [0.3, 0.02, 0.0,  0.30, 0.10, 0.01, 0.0, 0.0]
-    extra_lb = [0.0, 0.00, -0.01, -3.00, 0.00, 0.00, -np.pi, -np.pi]
-    extra_ub = [2.0, 0.20,  0.01,  2.20, 0.40, 0.20,  np.pi,  np.pi]
+    # extra_p0 = [0.3, 0.02, 0.0,  0.30, 0.10, 0.01, 0.0, 0.0]
+    # extra_lb = [0.0, 0.00, -0.01, -3.00, 0.00, 0.00, -np.pi, -np.pi]
+    # extra_ub = [2.0, 0.20,  0.01,  2.20, 0.40, 0.20,  np.pi,  np.pi]
     
-    # extra_p0 = [None, None, None,  0.30, 0.5, 0.1, 0.0, 0.0]
-    # extra_lb = [None, None, None,  -2.00, 0.00, 0.00, -np.pi, -np.pi]
-    # extra_ub = [None, None,  None,  2.20, 4.0, 1.0,  np.pi,  np.pi]
+    extra_p0 = [0.0, 0.0, 0.0,  0.30, 0.5, 0.1, 0.0, 0.0]
+    extra_lb = [0.0, 0.0, 0.0,  -2.00, 0.00, 0.00, -np.pi, -np.pi]
+    extra_ub = [0.0, 0.0, 0.0,  2.20, 4.0, 1.0,  np.pi,  np.pi]
         
     # # [amp_taper_alpha, width_slope, revival_chirp, osc_amp, osc_f0, osc_f1, osc_phi0, osc_phi1]
     # extra_p0 = [None, None, None,  osc_amp_seed,  0.10,  0.1,  0.0, 0.0]
@@ -334,6 +446,54 @@ def _initial_guess_and_bounds(times_us, y, enable_extras=True, fixed_rev_time=No
 
     p0.extend(extra_p0); lb.extend(extra_lb); ub.extend(extra_ub)
     return np.array(p0, float), np.array(lb, float), np.array(ub, float)
+
+def _seed_osc_from_grid(times_us, y, yerr, core_params, fit_fn_core,
+                        f_lo=0.02, f_hi=0.15, n_grid=60, phase_grid=(0.0, np.pi/2, np.pi, -np.pi/2)):
+    """
+    Given a core fit (no oscillation), find a good (osc_amp, f, phi) seed by
+    linear regression over a coarse frequency grid. Returns (amp, f, phi).
+    """
+    t = np.asarray(times_us, float)
+    yy = np.asarray(y, float)
+    ee = np.maximum(1e-9, np.asarray(yerr, float))
+    carrier = fit_fn_core(t, *core_params)   # this is baseline - dip if you use your core-only fn
+    # We want residual of data after removing baseline - dip:
+    resid = yy - carrier
+
+    best = (0.0, None, None)  # (amp, f, phi)
+
+    for f in np.linspace(f_lo, f_hi, n_grid):
+        c = np.cos(2*np.pi*f*t)
+        s = np.sin(2*np.pi*f*t)
+        # weighted linear regression resid ≈ carrier * (A*c + B*s)
+        X = np.column_stack([carrier*c, carrier*s])
+        w = 1.0 / ee
+        Xw = X * w[:, None]
+        yw = resid * w
+        # solve (Xw^T Xw) beta = Xw^T yw
+        try:
+            beta, *_ = np.linalg.lstsq(Xw, yw, rcond=None)
+        except np.linalg.LinAlgError:
+            continue
+        A, B = beta
+        amp = np.hypot(A, B)
+        phi = np.arctan2(-B, A)  # so that A cos + B sin = amp cos(· + phi)
+        if amp > best[0]:
+            best = (float(amp), float(f), float(phi))
+
+    return best  # (amp, f, phi)
+def core_only(tau, baseline, comb_contrast, revival_time, width0_us, T2_ms, T2_exp,
+              amp_taper_alpha=0.0, width_slope=0.0, revival_chirp=0.0):
+    tau = np.asarray(tau, float)
+    env = np.exp(-((tau / (1000.0*T2_ms)) ** T2_exp))
+    tau_max = float(np.nanmax(tau)) if tau.size else 0.0
+    n_guess = max(1, min(64, int(np.ceil(1.2 * tau_max / max(1e-9, revival_time))) + 1))
+    comb = _comb_quartic_powerlaw(tau, revival_time, width0_us,
+                                  amp_taper_alpha or 0.0,
+                                  width_slope or 0.0,
+                                  revival_chirp or 0.0,
+                                  n_guess)
+    return baseline - comb_contrast * env * comb
 
 
 def _chi2_red(y, yerr, yfit, npar):
@@ -354,6 +514,15 @@ def _sanitize_trace(times_us, y, yerr, err_floor=1e-3):
         t, yy, ee = t[uniq_idx], yy[uniq_idx], ee[uniq_idx]
     return t, yy, ee
 
+
+def _revival_weights(t, Trev, w0, width_slope=0.0, nrev=8, boost=2.0):
+    w = np.ones_like(t, float)
+    for k in range(nrev):
+        mu_k = k * Trev
+        wk = w0 * (1.0 + k*width_slope)
+        w *= 1.0 + (boost-1.0) * np.exp(-((t - mu_k)/(1.5*wk+1e-9))**2)
+    return w
+
 def _fit_curve_fit(fit_fn, times_us, y, yerr, p0, lb, ub, maxfev):
     popt, pcov, _ = curve_fit(
         fit_fn,
@@ -369,18 +538,25 @@ def _fit_curve_fit(fit_fn, times_us, y, yerr, p0, lb, ub, maxfev):
     red  = _chi2_red(y, yerr, yfit, len(popt))
     return popt, pcov, red
 
-def _fit_least_squares(fit_fn, times_us, y, yerr, p0, lb, ub, max_nfev):
-    """Robust fallback using soft-L1 loss; returns popt, pseudo-pcov=None, red."""
+def _fit_least_squares(fit_fn, times_us, y, yerr, p0, lb, ub, max_nfev, weights=None):
+    """Robust fallback using soft-L1; optional per-point weights."""
+    t = np.asarray(times_us, float)
+    yy = np.asarray(y, float)
+    ee = np.maximum(1e-12, np.asarray(yerr, float))
+    ww = None if weights is None else np.asarray(weights, float)
+
     def resid(p):
-        return (y - fit_fn(times_us, *p)) / yerr
+        r = (yy - fit_fn(t, *p)) / ee
+        return r if ww is None else r * ww
+
     res = least_squares(
-        resid, x0=p0, bounds=(lb, ub),
+        resid, x0=np.asarray(p0, float), bounds=(lb, ub),
         loss="soft_l1", f_scale=1.0,
         max_nfev=max_nfev, ftol=1e-8, xtol=1e-8, gtol=1e-8,
     )
     popt = res.x
-    yfit = fit_fn(times_us, *popt)
-    red  = _chi2_red(y, yerr, yfit, len(popt))
+    yfit = fit_fn(t, *popt)
+    red  = _chi2_red(yy, ee, yfit, len(popt))
     return popt, None, red
 
 def _pick_best(cands):
@@ -425,7 +601,10 @@ def fit_one_nv_with_amp_sweep(times_us, y, yerr,
     Pick the best (lowest reduced χ²). Returns (popt, pcov, red, used_fn, chosen_amp_bounds).
     """
     # --- sanitize data
-    t, yy, ee = _sanitize_trace(times_us, y, yerr, err_floor=1e-3)
+    # t, yy, ee = _sanitize_trace(times_us, y, yerr, err_floor=1e-3)
+    # was 1e-3
+    t   , yy, ee = _sanitize_trace(times_us, y, yerr, err_floor=3e-4)
+
     if len(t) < 8:
         raise RuntimeError("Too few valid points after sanitization")
 
@@ -445,8 +624,96 @@ def fit_one_nv_with_amp_sweep(times_us, y, yerr,
         lb = np.array(lb_base, float)
         ub = np.array(ub_base, float)
 
+        lb2 = np.array(lb_base, float)
+        ub2 = np.array(ub_base, float)
+
         # try to set osc_amp bounds; if extras not present, we still test core-only strategies
         extras_present = _set_osc_amp_bounds(lb, ub, fit_fn_base, a_min, a_max)
+
+
+        # ----- Stage 1: core-only fit (freeze oscillation to zero) -----
+        def _finite_or_zero(x): 
+            try:
+                v = float(x)
+                return v if np.isfinite(v) else 0.0
+            except Exception:
+                return 0.0
+
+        alpha0 = _finite_or_zero(p0_base[6] if len(p0_base)>6 else 0.0)
+        slope0 = _finite_or_zero(p0_base[7] if len(p0_base)>7 else 0.0)
+        chirp0 = _finite_or_zero(p0_base[8] if len(p0_base)>8 else 0.0)
+        kcore = _core_len_for_fn(fit_fn_base)
+        p0_core, lb_core, ub_core = np.array(p0_base[:kcore]), np.array(lb_base[:kcore]), np.array(ub_base[:kcore])
+
+        p_core, _, red_core = _fit_least_squares(
+            lambda tt, *pp: core_only(tt, *pp,
+                                    amp_taper_alpha=alpha0,
+                                    width_slope=slope0,
+                                    revival_chirp=chirp0),
+            t, yy, ee, p0_core, lb_core, ub_core, max_nfev=max_nfev
+        )
+        # Sampling-aware frequency band (cycles/µs)
+       # ----- Frequency band in MHz (cycles/µs) -----
+        if len(t) >= 2:
+            dt_min_us = float(np.diff(np.unique(t)).min())
+            span_us   = float(t.max() - t.min())
+            f_nyq     = 0.5 / max(dt_min_us, 1e-9)                 # MHz
+            f_lo_samp = max(1.0 / max(2.0*span_us, 1e-6), 1e-6)    # need ~≥2 periods; MHz
+        else:
+            f_nyq, f_lo_samp = 0.5, 1e-6
+
+        # target 1–600 kHz in MHz
+        F_EXPECT_LO = 0.001
+        F_EXPECT_HI = 0.600
+
+        f_lo = max(f_lo_samp, F_EXPECT_LO)
+        f_hi = min(f_nyq,     F_EXPECT_HI)
+        if f_lo >= f_hi:
+            f_lo = max(0.5*f_lo_samp, 1e-6)
+            f_hi = max(min(0.75*f_nyq, F_EXPECT_HI), f_lo*2)
+
+        kcore = _core_len_for_fn(fit_fn_base)
+        # apply to both f0 (kcore+4) and f1 (kcore+5) envelopes
+        lb[kcore+4],  ub[kcore+4]  = f_lo, f_hi
+        lb2[kcore+5], ub2[kcore+5] = f_lo, f_hi
+
+        print(f"[band] span={span_us:.1f} µs, dt_min={dt_min_us:.3g} µs ⇒ {f_lo:.6f}–{f_hi:.6f} MHz")
+
+
+        # ----- Stage 2: seed oscillation from grid (single freq) -----
+        # Use small freedom for α/slope/chirp or zeros, your choice:
+        alpha = 0.0; slope = 0.0; chirp = 0.0
+        seed_amp, seed_f, seed_phi = _seed_osc_from_grid(
+            t, yy, ee,
+            core_params=p_core,
+            fit_fn_core=lambda tt, *pp: core_only(tt, *pp, amp_taper_alpha=alpha, width_slope=slope, revival_chirp=chirp),
+            f_lo=f_lo, f_hi=f_hi,
+            n_grid=max(600, int(120 * (f_hi - f_lo) * max(1.0, t.max() - t.min())))
+        )
+        if not np.isfinite(seed_amp) or seed_amp <= 0.0 or not np.isfinite(seed_f):
+            seed_amp, seed_f, seed_phi = 0.08, 0.08, 0.0   # 0.08 MHz = 80 kHz
+            
+        # assemble a full-parameter seed & bounds with osc_amp kept away from zero
+        p0_seed = np.array(p0_base, float)
+        p0_seed[:kcore] = p_core
+        p0_seed[kcore+0] = alpha
+        p0_seed[kcore+1] = slope
+        p0_seed[kcore+2] = chirp
+        p0_seed[kcore+3] = seed_amp
+        p0_seed[kcore+4] = seed_f
+        p0_seed[kcore+5] = 0.0        # we’ll use a single-freq first; set f1=0
+        p0_seed[kcore+6] = seed_phi
+        p0_seed[kcore+7] = 0.0
+
+        lb[kcore+3] = max(0.3*seed_amp, 0.01)     # keep away from 0
+        ub[kcore+3] = min(2.5*seed_amp, max(0.4, p0_base[1]))  # not larger than comb_contrast-is
+
+        w = _revival_weights(t, p_core[2] if len(p_core)>2 else (p0_base[2] if len(p0_base)>2 else 38.0),
+                            p_core[3] if len(p_core)>3 else (p0_base[3] if len(p0_base)>3 else 6.0),
+                            width_slope=slope, nrev=8, boost=2.0)
+
+        # ----- Stage 3: robust fit with weights, then (optional) full refine with f1 free -----
+        # p_seed, pcov_seed, red_seed = _fit_least_squares(fit_fn_base, t, yy, ee, p0_seed, lb, ub, max_nfev=max_nfev)
 
         # --------- collect attempts for this amp window ----------
         attempts = []
@@ -454,6 +721,53 @@ def fit_one_nv_with_amp_sweep(times_us, y, yerr,
         def log_try(name):
             if verbose:
                 print(f"  [{ab}] trying: {name}")
+
+        # ----- NEW: seeded, weighted LSQ attempt (this is the one that usually wins) -----
+        try:
+            log_try("lsq_seeded_weighted")
+            popt, pcov, red = _fit_least_squares(
+                fit_fn_base, t, yy, ee,
+                p0=p0_seed, lb=lb, ub=ub, max_nfev=max_nfev, weights=w
+            )
+            attempts.append((f"lsq_seeded_weighted_amp{ab}", popt, pcov, red, fit_fn_base, "ok"))
+        except Exception as e:
+            attempts.append((f"lsq_seeded_weighted_amp{ab}", None, None, np.inf, fit_fn_base, f"fail: {e}"))
+
+        # ----- Optional: short refine with f1 free (unlock it only now) -----
+        try:
+            log_try("lsq_seeded_weighted_f1_free")
+            lb2, ub2, p02 = lb.copy(), ub.copy(), popt.copy()
+            # unlock f1
+            # lb2[kcore+5], ub2[kcore+5] = 0.02, 0.15   # or sampling-derived (see next patch)
+            lb2[kcore+5], ub2[kcore+5] = f_lo, f_hi
+
+            p02[kcore+5] = 0.05
+            popt2, pcov2, red2 = _fit_least_squares(
+                fit_fn_base, t, yy, ee, p0=p02, lb=lb2, ub=ub2, max_nfev=max_nfev, weights=w
+            )
+            attempts.append((f"lsq_seeded_weighted_f1free_amp{ab}", popt2, pcov2, red2, fit_fn_base, "ok"))
+        except Exception as e:
+            attempts.append((f"lsq_seeded_weighted_f1free_amp{ab}", None, None, np.inf, fit_fn_base, f"fail: {e}"))
+
+        try:
+            log_try("lsq_lock_f0_then_free")
+            p_lock = popt.copy()
+            lb_lock, ub_lock = lb.copy(), ub.copy()
+            # lock f0 to seed_f
+            lb_lock[kcore+4] = ub_lock[kcore+4] = max(f_lo, min(seed_f, f_hi))
+            p_lock[kcore+4]  = lb_lock[kcore+4]
+            p_lock2, _, red_lock = _fit_least_squares(
+                fit_fn_base, t, yy, ee, p0=p_lock, lb=lb_lock, ub=ub_lock,
+                max_nfev=max_nfev, weights=w
+            )
+            # now free f0 within band and re-fit
+            p_free, _, red_free = _fit_least_squares(
+                fit_fn_base, t, yy, ee, p0=p_lock2, lb=lb, ub=ub,
+                max_nfev=max_nfev, weights=w
+            )
+            attempts.append(("lsq_lockfree_amp{ab}", p_free, None, red_free, fit_fn_base, "ok"))
+        except Exception as e:
+            attempts.append(("lsq_lockfree_amp{ab}", None, None, np.inf, fit_fn_base, f"fail: {e}"))
 
         # Strategy A: curve_fit + extras (only if extras exist)
         if enable_extras and extras_present:
@@ -522,6 +836,11 @@ def fit_one_nv_with_amp_sweep(times_us, y, yerr,
     chosen_amp_bounds, name, popt, pcov, red, used_fn, note = best_overall
     if verbose:
         print(f"[BEST] amp_bounds={chosen_amp_bounds}, mode={name}, redχ²={red:.3g}")
+        kcore = _core_len_for_fn(used_fn)
+        amp  = popt[kcore+3]
+        f0   = popt[kcore+4]
+        print(f"[pick] amp={amp:.4f}, f0={f0:.6f} MHz, on_bounds={f0<=lb[kcore+4]+1e-6 or f0>=ub[kcore+4]-1e-6}")
+
 
     return popt, pcov, red, used_fn, chosen_amp_bounds
 
@@ -989,10 +1308,13 @@ if __name__ == "__main__":
                   "2025_10_31-07_42_45-johnson-nv0_2025_10_21",
                 ]
     ###204NVs dataset 2
-    # file_stems = ["2025_11_03-01_47_09-johnson-nv0_2025_10_21",
+    # file_stems_2 = ["2025_11_03-01_47_09-johnson-nv0_2025_10_21",
     #               "2025_11_02-14_49_57-johnson-nv0_2025_10_21",
     #               "2025_11_02-04_46_56-johnson-nv0_2025_10_21",
     #             ]
+    
+    # file_stems = file_stems_1 + file_stems_2
+    
     data = widefield.process_multiple_files(file_stems, load_npz=True)
     nv_list = data["nv_list"]
     taus = data["taus"]
