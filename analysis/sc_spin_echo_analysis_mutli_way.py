@@ -109,6 +109,74 @@ def fine_decay(
 
     return baseline - envelope * mod * comb
 
+# =============================================================================
+def fine_decay(
+    tau_us,
+    baseline=1.0,
+    comb_contrast=0.6,
+    revival_time=37.0,
+    width0_us=6.0,
+    T2_ms=0.08,
+    T2_exp=1.0,
+    amp_taper_alpha=0.0,
+    width_slope=0.0,
+    revival_chirp=0.0,
+    # NEW (additive, signed; zero-mean cos carrier(s))
+    osc_amp=0.0,
+    osc_f0=0.0,
+    osc_phi0=0.0,
+    osc_f1=0.0,
+    osc_phi1=0.0,
+):
+    """
+    signal(τ) = baseline
+                - comb_contrast * envelope(τ) * COMB(τ)               [dip]
+                +                 envelope(τ) * COMB(τ) * OSC(τ)      [signed oscillation]
+
+    envelope(τ) = exp[-(τ / (1000*T2_ms))^T2_exp]
+    COMB(τ)     = Σ_k [ 1/(1+k)^amp_taper_alpha ] * exp(-((τ-μ_k)/w_k)^4)
+                    μ_k = k * revival_time * (1 + k*revival_chirp)
+                    w_k = width0_us * (1 + k*width_slope)
+
+    OSC(τ)      = osc_amp * [ cos(2π f0 τ + φ0) + cos(2π f1 τ + φ1) ]   # zero mean
+    τ in microseconds, f in cycles/μs, phases in rad.
+    """
+    tau = np.asarray(tau_us, dtype=float).ravel()
+    width0_us    = max(1e-9, float(width0_us))
+    revival_time = max(1e-9, float(revival_time))
+    T2_us        = max(1e-9, 1000.0 * float(T2_ms))
+    T2_exp       = float(T2_exp)
+
+    # envelope
+    envelope = np.exp(-((tau / T2_us) ** T2_exp))
+
+    # number of revivals to include
+    tau_max = float(np.nanmax(tau)) if tau.size else 0.0
+    n_guess = max(1, min(64, int(np.ceil(1.2 * tau_max / revival_time)) + 1))
+
+    comb = _comb_quartic_powerlaw(
+        tau,
+        revival_time,
+        width0_us,
+        amp_taper_alpha,
+        width_slope,
+        revival_chirp,
+        n_guess
+    )
+
+    carrier = envelope * comb
+
+    # baseline minus revival dip
+    dip = comb_contrast * carrier
+
+    # additive, zero-mean oscillation (can push above baseline)
+    osc = 0.0
+    if (osc_amp != 0.0) and (osc_f0 != 0.0 or osc_f1 != 0.0):
+        osc += np.cos(2*np.pi*osc_f0 * tau + osc_phi0)
+        osc += np.cos(2*np.pi*osc_f1 * tau + osc_phi1)
+
+    return baseline - dip + carrier * (osc_amp * osc)
+
 def fine_decay_fixed_revival(
     tau,
     baseline,
@@ -279,12 +347,12 @@ def _initial_guess_and_bounds(times_us, y, enable_extras=True, fixed_rev_time=No
     if not enable_extras:
         return np.array(p0, float), np.array(lb, float), np.array(ub, float)
 
-    # ------- oscillation seeds from data (residual FFT) -------
-    # quick residual against a smooth proxy (use running median or simple poly)
-    # here: subtract high percentile baseline as crude detrend
+    # # ------- oscillation seeds from data (residual FFT) -------
+    # # quick residual against a smooth proxy (use running median or simple poly)
+    # # here: subtract high percentile baseline as crude detrend
     # resid = y - baseline_guess
 
-    # sampling-derived frequency bounds
+    # # sampling-derived frequency bounds
     # if times_us.size >= 2:
     #     dt_min = float(np.diff(np.unique(times_us)).min())
     #     fnyq = 0.5 / max(dt_min, 1e-6)     # cycles/μs
@@ -294,7 +362,7 @@ def _initial_guess_and_bounds(times_us, y, enable_extras=True, fixed_rev_time=No
     # else:
     #     fmax_fast, fmin_resolvable = 1.0, 0.001
 
-    # slow band & fast band
+    # # slow band & fast band
     # f0_lo, f0_hi = max(0.002, fmin_resolvable), 0.05
     # f1_lo, f1_hi = max(0.05, 2.0 / max(tspan, 1e-6)), max(0.06, fmax_fast)
 
@@ -309,21 +377,25 @@ def _initial_guess_and_bounds(times_us, y, enable_extras=True, fixed_rev_time=No
     # extra_lb = [0.0, 0.00, -0.01, 0.00,  f0_lo, f1_lo, -np.pi, -np.pi]
     # extra_ub = [2.0, 0.20,  0.01, min(0.9, p0[1]*1.2),  f0_hi, f1_hi,  np.pi,  np.pi]
     
-    extra_p0 = [0.3, 0.02, 0.0,  0.30, 0.10, 0.01, 0.0, 0.0]
-    extra_lb = [0.0, 0.00, -0.01, -3.00, 0.00, 0.00, -np.pi, -np.pi]
-    extra_ub = [2.0, 0.20,  0.01,  2.20, 0.40, 0.20,  np.pi,  np.pi]
-            
-    # [amp_taper_alpha, width_slope, revival_chirp, osc_amp, osc_f0, osc_f1, osc_phi0, osc_phi1]
-    # extra_p0 = [0.3, 0.02, 0.0,  osc_amp_seed,  0.10,  0.1,  0.0, 0.0]
-    # extra_lb = [0.0, 0.00,-0.01,  osc_amp_lb,    f0_lo,    f1_lo,   -np.pi,-np.pi]
-    # extra_ub = [2.0, 0.20, 0.01,  osc_amp_ub,    f0_hi,    f1_hi,    np.pi, np.pi]
-    # seed slow/fast from FFT if found
+    # extra_p0 = [0.3, 0.02, 0.0,  0.30, 0.10, 0.01, 0.0, 0.0]
+    # extra_lb = [0.0, 0.00, -0.01, -3.00, 0.00, 0.00, -np.pi, -np.pi]
+    # extra_ub = [2.0, 0.20,  0.01,  2.20, 0.40, 0.20,  np.pi,  np.pi]
+    
+    extra_p0 = [None, None, None,  0.30, 0.5, 0.1, 0.0, 0.0]
+    extra_lb = [None, None, None,  -2.00, 0.00, 0.00, -np.pi, -np.pi]
+    extra_ub = [None, None,  None,  2.20, 4.0, 1.0,  np.pi,  np.pi]
+        
+    # # [amp_taper_alpha, width_slope, revival_chirp, osc_amp, osc_f0, osc_f1, osc_phi0, osc_phi1]
+    # extra_p0 = [None, None, None,  osc_amp_seed,  0.10,  0.1,  0.0, 0.0]
+    # extra_lb = [None, None, None,   osc_amp_lb,    f0_lo,    f1_lo,   -np.pi,-np.pi]
+    # extra_ub = [None, None,  None,  osc_amp_ub,    f0_hi,    f1_hi,    np.pi, np.pi]
+    # # seed slow/fast from FFT if found
     # if f0_hat is not None:
     #     extra_p0[4] = np.clip(f0_hat, extra_lb[4], extra_ub[4])
     # if f1_hat is not None:
     #     extra_p0[5] = np.clip(f1_hat, extra_lb[5], extra_ub[5])
 
-    # start oscillation contrast small; allow up to ~1.2× comb_contrast but <= 0.9
+    # # start oscillation contrast small; allow up to ~1.2× comb_contrast but <= 0.9
     # extra_p0[3] = min(0.15, p0[1]*0.5)
 
     p0.extend(extra_p0); lb.extend(extra_lb); ub.extend(extra_ub)
@@ -978,7 +1050,6 @@ def plot_individual_fits(
     show_residuals=True,
     n_fit_points=1000,
     save_prefix=None,
-    dpi=220,
     block=False,
     default_rev_for_plot=39.2,
     red_chi2_list=None,          # OPTIONAL: pass list of reduced-χ² (same order as popts)
@@ -1099,10 +1170,10 @@ if __name__ == "__main__":
                   "2025_10_31-07_42_45-johnson-nv0_2025_10_21",
                 ]
     ###204NVs dataset 2
-    file_stems = ["2025_11_03-01_47_09-johnson-nv0_2025_10_21",
-                  "2025_11_02-14_49_57-johnson-nv0_2025_10_21",
-                  "2025_11_02-04_46_56-johnson-nv0_2025_10_21",
-                ]
+    # file_stems = ["2025_11_03-01_47_09-johnson-nv0_2025_10_21",
+    #               "2025_11_02-14_49_57-johnson-nv0_2025_10_21",
+    #               "2025_11_02-04_46_56-johnson-nv0_2025_10_21",
+    #             ]
     data = widefield.process_multiple_files(file_stems, load_npz=True)
     nv_list = data["nv_list"]
     taus = data["taus"]
@@ -1130,7 +1201,7 @@ if __name__ == "__main__":
     USE_FIXED_REVIVAL = False       # True -> uses fine_decay_fixed_revival
     ENABLE_EXTRAS     = True        # enable alpha/width_slope/chirp + beating + phases
     DEFAULT_REV_US = 38.2
-    # 1) FIT
+    # # 1) FIT
     popts, pcovs, chis, fit_fns, fit_nv_labels, chosen_amp_bounds  = run_with_amp_sweep(
         nv_list, norm_counts, norm_counts_ste, total_evolution_times,
         nv_inds=nv_inds,
@@ -1196,15 +1267,15 @@ if __name__ == "__main__":
     dm.save_raw_data(fit_dict, file_path)
     print(file_path )
 
-    # ## laod analysed data
+    # # ## laod analysed data
     # timestamp = dm.get_time_stamp()
-    # file_stem= "2025_11_01-16_57_48-rubin-nv0_2025_09_08"
+    # # file_stem= "2025_11_01-16_57_48-rubin-nv0_2025_09_08"
     # file_stem= "2025_11_02-19_55_17-johnson_204nv_s3-003c56" 
     # data = dm.get_raw_data(file_stem=file_stem)
     # popts = data["popts"]
     # chis = data["red_chi2"]
     # fit_nv_labels = data ["nv_labels"]
-    # fit_fns = data["fit_fn_names"]
+    # fit_fn_names = data["fit_fn_names"]
     # repr_nv_sig = widefield.get_repr_nv_sig(nv_list)
     # repr_nv_name = repr_nv_sig.name
     # 2) PARAM PANELS (T2 outlier filter)
@@ -1214,6 +1285,25 @@ if __name__ == "__main__":
     #     t2_policy=dict(method="iqr", iqr_k=5, abs_range=(0.00, 1.0))
     # )
 
+    
+    # fit_nv_labels  = list(map(int, data["nv_labels"]))
+    # fit_fn_names   = data["fit_fn_names"]
+
+    # # 1) Map stored names -> real callables
+    # _fn_map = {
+    #     "fine_decay": fine_decay,
+    #     "fine_decay_fixed_revival": fine_decay_fixed_revival,
+    # }
+    # fit_fns = []
+    # for name in fit_fn_names:
+    #     if name is None:
+    #         fit_fns.append(None)
+    #     else:
+    #         fn = _fn_map.get(name)
+    #         if fn is None:
+    #             fn = fine_decay
+    #         fit_fns.append(fn)
+        
     # 3) INDIVIDUAL FITS — PASS THE SAME LABELS + PER-NV FIT FUNCTIONS
     _ = plot_individual_fits(
         norm_counts, norm_counts_ste, total_evolution_times,
@@ -1225,6 +1315,4 @@ if __name__ == "__main__":
         block=False
     )
 
-    
-    ## laod analysed data
     kpl.show(block=True)

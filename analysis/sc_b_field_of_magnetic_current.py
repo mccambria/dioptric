@@ -128,7 +128,7 @@ if __name__ == "__main__":
     print(" f_minus (GHz):", outB["f_minus_GHz"])
 
     # C) Manual currents (e.g., try +0.2 A on both)
-    outC = predict_f_minus_after_coils(B_bg, mode="manual", Ixy_override=(0.2, 0.2))
+    outC = predict_f_minus_after_coils(B_bg, mode="manual", Ixy_override=(2, 2))
     print("\n[Manual currents 0.2A,0.2A] Ix,Iy (A):", outC["Ixy_A"])
     print(" New B_tot (G):", outC["B_tot_G"])
     print(" f_minus (GHz):", outC["f_minus_GHz"])
@@ -138,9 +138,9 @@ if __name__ == "__main__":
                   [ 0.5, 20.2],
                   [ 0.1, -0.2]])  # G/A, example
     outD = predict_f_minus_after_coils(B_bg, mode="set_inplane",
-                                       Bperp_G=15.0, theta_deg=55.0,
+                                       Bperp_G=15, theta_deg=55.0,
                                        K_3x2=K)  # general model
-    print("\n[General K, 10 G @45°] Ix,Iy (A):", outD['Ixy_A'])
+    print("\n[General K, 20 G @45°] Ix,Iy (A):", outD['Ixy_A'])
     print(" New B_tot (G):", outD['B_tot_G'])
     print(" f_minus (GHz):", outD['f_minus_GHz'])
 

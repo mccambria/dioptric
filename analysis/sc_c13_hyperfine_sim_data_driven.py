@@ -94,20 +94,17 @@ def fine_decay(
         n_guess
     )
 
-    carrier = envelope * comb
 
-    # baseline minus revival dip
-    dip = comb_contrast * carrier
-
-    # additive, zero-mean oscillation (can push above baseline)
-    osc = 0.0
-    if osc_amp != 0.0:
-        if osc_f0 != 0.0:
-            osc += np.cos(2*np.pi*osc_f0 * tau + osc_phi0)
-        if osc_f1 != 0.0:
-            osc += np.cos(2*np.pi*osc_f1 * tau + osc_phi1)
-
-    return baseline - dip + carrier * (osc_amp * osc)
+    # beating lives in MOD; comb_contrast is the overall amplitude (once)
+    if (osc_amp != 0.0) and (osc_f0 != 0.0 or osc_f1 != 0.0):
+        s0 = np.sin(np.pi * osc_f0 * tau + osc_phi0)
+        s1 = np.sin(np.pi * osc_f1 * tau + osc_phi1)
+        beat = (s0 * s0) * (s1 * s1)
+        mod = comb_contrast - osc_amp* beat
+    else:
+        mod = comb_contrast
+    
+    return baseline - envelope * mod * comb
 
 @njit
 def _comb_quartic_powerlaw(
@@ -286,6 +283,37 @@ def compute_echo_signal(hyperfine_tensors, tau_array_s, B_field_vec_T):
             A, B = compute_hyperfine_components(A_tensor, B_unit)
             Mk_prod *= Mk_tau(A, B, tau, omega_L)
         signal[i] = 0.5 * (1.0 + Mk_prod)
+    return signal
+
+def Mk_tau(A_Hz, B_Hz, tau_s, omegaL_Hz):
+    omega = 2*np.pi * np.sqrt(B_Hz**2 + (A_Hz - omegaL_Hz)**2)
+    return 1.0 - 2.0 * ((2*np.pi*B_Hz)**2 / (omega**2)) * (np.sin(omega * tau_s / 2.0)**4)
+
+def compute_echo_signal(hyperfine_tensors, tau_array_s, B_field_vec_T,
+                        sigma_B_G=0.0, eps_contrast=0.0, rng=None):
+    B_vec = np.array(B_field_vec_T, float)
+    if sigma_B_G > 0.0 and rng is not None:
+        B_vec = B_vec + 1e-4 * rng.normal(0.0, sigma_B_G, size=3)  # G→T
+
+    B_mag = np.linalg.norm(B_vec)
+    if B_mag == 0.0:
+        raise ValueError("B-field magnitude is zero.")
+    B_unit = B_vec / B_mag
+    omega_L = gamma_C13 * B_mag  # Hz
+
+    eta = max(0.0, min(1.0, 1.0 - eps_contrast))  # 0..1
+    signal = np.empty_like(tau_array_s, dtype=float)
+
+    for i, tau in enumerate(tau_array_s):
+        Mk_prod = 1.0
+        for A_tensor in hyperfine_tensors:
+            A_par, B_perp = compute_hyperfine_components(A_tensor, B_unit)
+            Mk = Mk_tau(A_par, B_perp, tau, omega_L)
+            if eps_contrast > 0.0:
+                Mk = 1.0 - eta * (1.0 - Mk)  # gentle contrast damping
+            Mk_prod *= Mk
+        signal[i] = 0.5 * (1.0 + Mk_prod)
+
     return signal
 
 # =============================================================================
@@ -614,13 +642,13 @@ def plot_echo_with_sites(taus_us, echo, aux, title="Spin Echo (single NV)", rmax
     if lines_stats:
         ax0.text(0.61, 0.02, "\n".join(lines_stats), transform=ax0.transAxes,
                  fontsize=9, va="bottom", ha="left",
-                 bbox=dict(boxstyle="round,pad=0.35", facecolor="white", alpha=0.9, lw=0.6))
+                 bbox=dict(boxstyle="round,pad=0.35", facecolor="white", alpha=0.6, lw=0.6))
 
     fp_lines = _fine_param_lines(fine_params)
     if fp_lines:
         ax0.text(0.99, 0.5, "\n".join(fp_lines), transform=ax0.transAxes,
                  fontsize=9, va="bottom", ha="right",
-                 bbox=dict(boxstyle="round,pad=0.35", facecolor="white", alpha=0.9, lw=0.6))
+                 bbox=dict(boxstyle="round,pad=0.35", facecolor="white", alpha=0.6, lw=0.6))
 
     # es_lines = _echo_summary_lines(taus_us, echo)
     # if es_lines:
@@ -657,7 +685,7 @@ def plot_echo_with_sites(taus_us, echo, aux, title="Spin Echo (single NV)", rmax
     ax1.scatter([0], [0], [0], s=70, marker="*", zorder=5)
     ax1.text(0, 0, 0, "NV", fontsize=9, ha="right", va="top")
     ax1.set_title("¹³C positions (NV frame)")
-    ax1.set_xlabel("x"); ax1.set_ylabel("y"); ax1.set_zlabel("z")
+    ax1.set_xlabel("x (Å)"); ax1.set_ylabel("y (Å)"); ax1.set_zlabel("z (Å)")
 
     # Symmetric limits about NV
     if rmax is None:
@@ -681,14 +709,14 @@ def plot_echo_with_sites(taus_us, echo, aux, title="Spin Echo (single NV)", rmax
                 f"Realizations: {n_real}"]
     if stats.get("N_candidates") is not None:
         left_box.append(f"Candidates: {stats['N_candidates']}")
-    ax1.text2D(0.01, 0.02, "\n".join(left_box), transform=ax1.transAxes,
-               fontsize=9, va="bottom", ha="left",
-               bbox=dict(boxstyle="round,pad=0.35", facecolor="white", alpha=0.9, lw=0.6))
+    # ax1.text2D(0.01, 0.02, "\n".join(left_box), transform=ax1.transAxes,
+    #            fontsize=9, va="bottom", ha="left",
+    #            bbox=dict(boxstyle="round,pad=0.35", facecolor="white", alpha=0.9, lw=0.6))
 
     table_lines = _site_table_lines(info, max_rows=8)
     ax1.text2D(0.99, 0.02, "\n".join(table_lines), transform=ax1.transAxes,
                fontsize=9, family="monospace", va="bottom", ha="right",
-               bbox=dict(boxstyle="round,pad=0.35", facecolor="white", alpha=0.9, lw=0.6))
+               bbox=dict(boxstyle="round,pad=0.35", facecolor="white", alpha=0.6, lw=0.6))
 
     plt.tight_layout()
     return fig
@@ -757,7 +785,7 @@ bounds = {
     "amp_taper_alpha": (0.0, 2.0),
     "width_slope": (-0.2, 0.2),
     "revival_chirp": (-0.06, 0.06),
-    "osc_amp": (-0.5, 0.5),     # allow above-baseline crests
+    "osc_amp": (-0.3, 0.3),     # allow above-baseline crests
     "osc_f0": (0.0, 0.50),      # cycles/μs ~ MHz
     "osc_f1": (0.0, 0.50),
     "osc_phi0": (-np.pi, np.pi),
@@ -841,8 +869,8 @@ def synth_per_nv(nv_idx, R=8, tau_range_us=(0, 100),
             num_spins=num_spins,
             num_realizations=1,
             distance_cutoff=8.0,
-            Ak_min_kHz=None,   # keep if A∥ ≥ Ak_min_kHz (if set)
-            Ak_max_kHz=None,   # keep if A∥ ≤ Ak_max_kHz (if set)
+            Ak_min_kHz=0,   # keep if A∥ ≥ Ak_min_kHz (if set)
+            Ak_max_kHz=600,   # keep if A∥ ≤ Ak_max_kHz (if set)
             Ak_abs=True,       # compare |A∥| if True, signed A∥ if False
             R_NV=np.eye(3),
             fine_params=fine_params,
@@ -859,7 +887,7 @@ def synth_per_nv(nv_idx, R=8, tau_range_us=(0, 100),
         )
         traces.append(echo)
         fine_list.append(fine_params)
-        plot_echo_with_sites(taus, echo, aux, title="Spin Echo (single NV)")
+        # plot_echo_with_sites(taus, echo, aux, title="Spin Echo (single NV)")
 
     traces = np.asarray(traces, float)        # [R, T]
     mean = np.nanmean(traces, axis=0)
@@ -876,18 +904,23 @@ def _to_float_or_inf(x):
         v = float(x);  return v if np.isfinite(v) else np.inf
     except Exception:
         return np.inf
+    
+def main():
+    chi_vals = np.array([_to_float_or_inf(c) for c in chis], float)
+    order = np.argsort(chi_vals)  # lowest χ² first, infs at end
+    keep = [i for i in order if popts[i] is not None][:200]  # e.g., top 20 NVs
 
-chi_vals = np.array([_to_float_or_inf(c) for c in chis], float)
-order = np.argsort(chi_vals)  # lowest χ² first, infs at end
-keep = [i for i in order if popts[i] is not None][:20]  # e.g., top 12 NVs
+    results = []
+    for i in keep:
+        res = synth_per_nv(i, R=1, tau_range_us=(0, 100),
+                        hyperfine_path="analysis/nv_hyperfine_coupling/nv-2.txt",
+                        num_spins=None, selection_mode="uniform")
+        results.append(res)
 
-results = []
-for i in keep:
-    res = synth_per_nv(i, R=12, tau_range_us=(0, 100),
-                       hyperfine_path="analysis/nv_hyperfine_coupling/nv-2.txt",
-                       num_spins=None, selection_mode="uniform")
-    results.append(res)
-
-plt.show()
 # 'results' now has per-NV mean/p16/p84 bands you can plot quickly.
 # (Use your plot_echo_with_sites for single-NV visualization if you want detail.)
+if __name__ == "__main__":
+    main()
+    plt.show()
+
+    
