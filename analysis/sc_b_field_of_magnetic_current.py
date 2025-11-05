@@ -1,272 +1,354 @@
 import numpy as np
-
-# --- reuse your nv_axes() if already defined ---
+import sys
+from sc_b_field_of_magnetic import solve_B_from_odmr_order_invariant, print_full_summary
+# ---------------- NV geometry in CRYSTAL frame ----------------
 def nv_axes():
-    axes = np.array([
+    a = np.array([
         [ 1,  1,  1],
         [-1,  1,  1],
         [ 1, -1,  1],
         [ 1,  1, -1],
     ], dtype=float)
-    axes /= np.linalg.norm(axes, axis=1, keepdims=True)
-    return axes
+    return a / np.linalg.norm(a, axis=1, keepdims=True)
+
+def projections_abs_G(B_vec_G):
+    n = nv_axes()
+    return np.abs(n @ np.asarray(B_vec_G, float).reshape(3))
+
+def df_GHz_from_absproj(absproj_G, gamma_e_MHz_per_G=2.8025):
+    absproj_G = np.asarray(absproj_G, float).reshape(4)
+    return (gamma_e_MHz_per_G * absproj_G) / 1000.0
 
 def f_minus_from_B(B_vec_G, D_GHz=2.870, gamma_e_MHz_per_G=2.8025):
-    """
-    Return the 4 lower-branch ODMR lines (ms=0->-1) in GHz.
-    Convention: f_- = D - gamma_e * |n·B| / 1000  (always <= D).
-    """
-    n = nv_axes()             # (4,3)
-    projs_abs_G = np.abs(n @ np.asarray(B_vec_G, float).reshape(3))
-    return D_GHz - (gamma_e_MHz_per_G * projs_abs_G) / 1000.0
+    return D_GHz - df_GHz_from_absproj(projections_abs_G(B_vec_G), gamma_e_MHz_per_G)
 
-# ----- coil models -----
-def apply_currents_diag(B_bg_G, Ixy_A, kx_G_per_A=20.0, ky_G_per_A=20.0):
-    Ix, Iy = np.asarray(Ixy_A, float)
-    B_coil = np.array([kx_G_per_A * Ix, ky_G_per_A * Iy, 0.0])
-    return np.asarray(B_bg_G, float).reshape(3) + B_coil
+# ---------------- Coil models: y and z only ----------------
+# ================= Coils (crystal y/z) utilities =================
 
-def apply_currents_general(B_bg_G, Ixy_A, K_3x2):
-    return np.asarray(B_bg_G, float).reshape(3) + np.asarray(K_3x2, float) @ np.asarray(Ixy_A, float).reshape(2)
+NV_LABELS = ["[1, 1, 1]", "[-1, 1, 1]", "[1, -1, 1]", "[1, 1, -1]"]
 
-def currents_zero_transverse(B_bg_G, kx_G_per_A=20.0, ky_G_per_A=20.0):
-    Bx, By, _ = np.asarray(B_bg_G, float).reshape(3)
-    Ix = -Bx / kx_G_per_A
-    Iy = -By / ky_G_per_A
-    return np.array([Ix, Iy])
+def apply_currents_yz_diag(B0_G, Iy_A, Iz_A, ky_G_per_A=20.0, kz_G_per_A=20.0):
+    """Ideal diagonal coil map: ΔB = (0, ky*Iy, kz*Iz)."""
+    B0 = np.asarray(B0_G, float).reshape(3)
+    dB = np.array([0.0, ky_G_per_A*Iy_A, kz_G_per_A*Iz_A], float)
+    return B0 + dB
 
-def currents_set_inplane(B_bg_G, Bperp_G, theta_deg, kx_G_per_A=20.0, ky_G_per_A=20.0):
+def apply_currents_general(B0_G, Iyz_A, K_crys_3x2):
+    """General (possibly signed/crosstalk) crystal-frame map: B = B0 + K @ [Iy, Iz]."""
+    B0 = np.asarray(B0_G, float).reshape(3)
+    K  = np.asarray(K_crys_3x2, float).reshape(3,2)
+    I  = np.asarray(Iyz_A, float).reshape(2)
+    return B0 + K @ I
+
+def currents_for_ByBz_targets_diag(B0_G, By_tgt_G, Bz_tgt_G, ky_G_per_A=20.0, kz_G_per_A=20.0):
+    """Pick Iy,Iz to hit target By,Bz for diagonal gains (no x coil)."""
+    B0 = np.asarray(B0_G, float).reshape(3)
+    Iy = (By_tgt_G - B0[1]) / ky_G_per_A
+    Iz = (Bz_tgt_G - B0[2]) / kz_G_per_A
+    return np.array([Iy, Iz], float)
+
+def currents_for_ByBz_targets_general(B0_G, By_tgt_G, Bz_tgt_G, K_crys_3x2):
     """
-    Target in-plane field of magnitude Bperp at angle theta (deg) from +x toward +y.
-    Keep Bz equal to background (no z coil).
+    Solve least-squares for Iy,Iz to achieve By,Bz with general K.
+    Uses only y,z rows of K (2x2 effective).
     """
+    B0 = np.asarray(B0_G, float).reshape(3)
+    K  = np.asarray(K_crys_3x2, float).reshape(3,2)
+    A  = K[1:3, :]                       # rows for y,z
+    b  = np.array([By_tgt_G - B0[1], Bz_tgt_G - B0[2]], float)
+    Iyz, *_ = np.linalg.lstsq(A, b, rcond=None)
+    return Iyz
+
+def set_Bperp_theta(B0_G, Bperp_G, theta_deg):
+    """Utility: desired (By,Bz) from magnitude/angle in y–z plane (θ from +y toward +z)."""
     th = np.deg2rad(theta_deg)
-    B_tgt = np.array([Bperp_G*np.cos(th), Bperp_G*np.sin(th), np.asarray(B_bg_G, float).reshape(3)[2]])
-    Ix = (B_tgt[0] - B_bg_G[0]) / kx_G_per_A
-    Iy = (B_tgt[1] - B_bg_G[1]) / ky_G_per_A
-    return np.array([Ix, Iy]), B_tgt
+    By_tgt = Bperp_G * np.cos(th)
+    Bz_tgt = Bperp_G * np.sin(th)
+    return By_tgt, Bz_tgt
 
-# ----- end-to-end helper -----
-def predict_f_minus_after_coils(B_bg_G,
-                                mode="zero_transverse",
-                                kx_G_per_A=20.0,
-                                ky_G_per_A=20.0,
-                                Bperp_G=None,
-                                theta_deg=None,
-                                Ixy_override=None,
-                                K_3x2=None,
-                                D_GHz=2.870,
-                                gamma_e_MHz_per_G=2.8025):
+def f_minus_from_B(B_vec_G, D_GHz=2.870, gamma_e_MHz_per_G=2.8025):
+    n = nv_axes()
+    projs_abs = np.abs(n @ np.asarray(B_vec_G, float).reshape(3))
+    return D_GHz - (gamma_e_MHz_per_G * projs_abs) / 1000.0
+
+# ---------- Splitting control with y/z coils ----------
+def nudge_axis_split_yz(
+    B0_G, axis_idx, delta_f_MHz,
+    K_crys_3x2=None, ky_G_per_A=20.0, kz_G_per_A=20.0,
+    D_GHz=2.870, gamma_e_MHz_per_G=2.8025
+):
     """
-    Compute the new f_- list after applying coil currents.
-
-    Parameters
-    ----------
-    B_bg_G : array-like, shape (3,)
-        Background field (G) from your solver.
-    mode : {"zero_transverse","set_inplane","manual"}
-        - "zero_transverse": cancels Bx, By.
-        - "set_inplane": set in-plane magnitude/angle (needs Bperp_G, theta_deg).
-        - "manual": directly use Ixy_override currents (A).
-    kx_G_per_A, ky_G_per_A : float
-        Coil gains for x and y (G/A) if using diagonal model.
-    Bperp_G, theta_deg : float
-        Target in-plane magnitude (G) and angle (deg) for "set_inplane".
-    Ixy_override : (Ix, Iy) in amps for "manual".
-    K_3x2 : optional 3x2 matrix (G/A). If provided, uses general model (misalignment).
-    D_GHz, gamma_e_MHz_per_G : floats
-        Spectroscopic constants.
-
-    Returns
-    -------
-    out : dict with keys
-        "Ixy_A" (amps), "B_tot_G" (3,), "f_minus_GHz" (4,), "model" ("diag" or "general")
+    Increase splitting of one NV axis by delta_f_MHz (decrease f_- by that amount),
+    using only y/z coils. Linearized step assuming the sign of n·B does not flip.
+    Minimal-norm solution.
     """
-    B_bg_G = np.asarray(B_bg_G, float).reshape(3)
+    n = nv_axes()
+    B0 = np.asarray(B0_G, float).reshape(3)
+    proj = float(n[axis_idx] @ B0)
+    sgn  = 1.0 if proj >= 0 else -1.0
 
-    # choose currents
-    if mode == "zero_transverse":
-        Ixy_A = currents_zero_transverse(B_bg_G, kx_G_per_A, ky_G_per_A)
-    elif mode == "set_inplane":
-        assert Bperp_G is not None and theta_deg is not None, "Provide Bperp_G and theta_deg"
-        Ixy_A, _ = currents_set_inplane(B_bg_G, Bperp_G, theta_deg, kx_G_per_A, ky_G_per_A)
-    elif mode == "manual":
-        assert Ixy_override is not None, "Provide Ixy_override=(Ix,Iy) in amps"
-        Ixy_A = np.asarray(Ixy_override, float).reshape(2)
+    # target increase in |n·B| (Gauss)
+    delta_abs_G = (delta_f_MHz / gamma_e_MHz_per_G) * 1000.0
+    # scalar constraint: n·(ΔB) = sgn * delta_abs_G
+    # With y/z coils: ΔB = K @ ΔI (general) or ΔB=(0, ky dIy, kz dIz) (diag)
+    if K_crys_3x2 is None:
+        # diag map
+        A = np.array([n[axis_idx,1]*ky_G_per_A, n[axis_idx,2]*kz_G_per_A], float).reshape(1,2)
     else:
-        raise ValueError("mode must be one of {'zero_transverse','set_inplane','manual'}")
+        A = (n[axis_idx].reshape(1,3) @ np.asarray(K_crys_3x2, float)).reshape(1,2)
+    b = np.array([sgn * delta_abs_G], float)  # 1x1
 
-    # propagate to total B
-    if K_3x2 is None:
-        model = "diag"
-        B_tot_G = apply_currents_diag(B_bg_G, Ixy_A, kx_G_per_A, ky_G_per_A)
+    # Minimal-norm ΔI solving A ΔI = b
+    dI, *_ = np.linalg.lstsq(A, b, rcond=None)
+
+    # Apply
+    if K_crys_3x2 is None:
+        B_new = apply_currents_yz_diag(B0, dI[0], dI[1], ky_G_per_A, kz_G_per_A)
     else:
-        model = "general"
-        B_tot_G = apply_currents_general(B_bg_G, Ixy_A, K_3x2)
+        B_new = apply_currents_general(B0, dI, K_crys_3x2)
 
-    # predict lower-branch lines
-    f_minus = f_minus_from_B(B_tot_G, D_GHz=D_GHz, gamma_e_MHz_per_G=gamma_e_MHz_per_G)
-    return {"Ixy_A": Ixy_A, "B_tot_G": B_tot_G, "f_minus_GHz": f_minus, "model": model}
+    return dict(
+        delta_Iyz_A=dI,
+        B_new_G=B_new,
+        f_minus_new_GHz=f_minus_from_B(B_new, D_GHz, gamma_e_MHz_per_G)
+    )
 
-# ================== examples ==================
+def target_two_axes_splits_yz(
+    B0_G, axes_idx, target_f_minus_GHz,
+    K_crys_3x2=None, ky_G_per_A=20.0, kz_G_per_A=20.0,
+    D_GHz=2.870, gamma_e_MHz_per_G=2.8025
+):
+    """
+    Hit two NV axes' f_- targets (least-squares) using y/z coils only.
+    We linearize around current signs.
+    """
+    assert len(axes_idx) == 2 and len(target_f_minus_GHz) == 2
+    n = nv_axes()
+    B0 = np.asarray(B0_G, float).reshape(3)
+
+    # current signs for the chosen axes
+    s = np.sign(n @ B0 + 1e-15)  # shape (4,)
+
+    # desired |n·B| for the two axes (Gauss)
+    abs_des = [(D_GHz - f)*1000.0/gamma_e_MHz_per_G for f in target_f_minus_GHz]
+
+    # Build 2x2 system in ΔI
+    if K_crys_3x2 is None:
+        # diag: Δp_i = n_i,y ky dIy + n_i,z kz dIz
+        A = np.array([
+            [n[axes_idx[0],1]*ky_G_per_A, n[axes_idx[0],2]*kz_G_per_A],
+            [n[axes_idx[1],1]*ky_G_per_A, n[axes_idx[1],2]*kz_G_per_A],
+        ], float)
+    else:
+        A = (n[axes_idx] @ np.asarray(K_crys_3x2, float)).reshape(2,2)
+
+    p0 = (n @ B0)[axes_idx]              # signed current projections for the two axes
+    b  = np.array([s[axes_idx[0]]*abs_des[0] - p0[0],
+                   s[axes_idx[1]]*abs_des[1] - p0[1]], float)
+
+    dI, *_ = np.linalg.lstsq(A, b, rcond=None)
+
+    # apply
+    if K_crys_3x2 is None:
+        B_new = apply_currents_yz_diag(B0, dI[0], dI[1], ky_G_per_A, kz_G_per_A)
+    else:
+        B_new = apply_currents_general(B0, dI, K_crys_3x2)
+
+    return dict(
+        delta_Iyz_A=dI,
+        B_new_G=B_new,
+        f_minus_new_GHz=f_minus_from_B(B_new, D_GHz, gamma_e_MHz_per_G)
+    )
+
+# ================= Pretty printers =================
+
+def print_coil_step(title, out_Bsolve, B_after, Iyz, D_GHz=2.870, gamma_e_MHz_per_G=2.8025):
+    n = nv_axes()
+    f0 = out_Bsolve["f_minus_nvaxes_GHz"]
+    f1 = f_minus_from_B(B_after, D_GHz, gamma_e_MHz_per_G)
+    print(f"\n[{title}]")
+    print(" Iy,Iz (A):", np.round(np.asarray(Iyz, float), 6))
+    print(" B_before (G):", np.round(out_Bsolve["B"], 6))
+    print(" B_after  (G):", np.round(B_after, 6))
+    print(" f_- before (nv_axes order):", np.round(f0, 12))
+    print(" f_- after  (nv_axes order):", np.round(f1, 12))
+    print(" Δf (MHz, nv_axes order):", np.round(1000*(f0 - f1), 6))
+
+
+# ===== utilities: projections from lines (robust to D drift if both branches available) =====
+def abs_proj_from_fminus(f_minus_GHz, D_GHz=2.8785, gamma_e_MHz_per_G=2.8025):
+    """|n·B| (G) from lower branch only."""
+    return (D_GHz - float(f_minus_GHz)) * 1000.0 / float(gamma_e_MHz_per_G)
+
+def abs_proj_from_branches(f_minus_GHz, f_plus_GHz, gamma_e_MHz_per_G=2.8025):
+    """|n·B| (G) from the pair (f-, f+), cancels D:  f+ - f- = 2*gamma*|n·B|/1000."""
+    return (float(f_plus_GHz) - float(f_minus_GHz)) * 1000.0 / (2.0 * float(gamma_e_MHz_per_G))
+
+# ===== K_crys fitter: B = B0 + K @ Iyz, with Iyz = [Iy, Iz]^T =====
+def fit_K_crys_from_measurements(meas_list, D_GHz=2.8785, gamma_e_MHz_per_G=2.8025):
+    """
+    Fit K_crys (3x2) from multiple measurements:
+      meas = dict(
+        Iy=float, Iz=float,
+        f_minus=[4 floats]  OR  branches=[(f_-0,f_+0), (f_-1,f_+1), (f_-2,f_+2), (f_-3,f_+3)]
+      )
+    Assumes all lines are from the same spot; uses your order-invariant solver to get B for each meas.
+    Returns: K (3x2), B0 (reference B), residuals dict.
+    """
+    assert len(meas_list) >= 2, "Need ≥2 measurements (ref + another) to estimate K."
+    # 1) Solve B for each measurement
+    B_list, I_list = [], []
+    for m in meas_list:
+        if "branches" in m and m["branches"] is not None:
+            # Optional sanity: we could compute |n·B| from pairs, but we still solve via f_- list.
+            f_minus = [fm for (fm, fp) in m["branches"]]
+        else:
+            f_minus = m["f_minus"]
+        out = solve_B_from_odmr_order_invariant(f_minus, D_GHz=D_GHz, gamma_e_MHz_per_G=gamma_e_MHz_per_G)
+        B_list.append(out["B"])
+        I_list.append(np.array([m["Iy"], m["Iz"]], float))
+    B_arr = np.vstack(B_list)      # (M,3)
+    I_arr = np.vstack(I_list)      # (M,2)
+
+    # 2) Pick the first as reference (could also average the ones with Iy=Iz=0 if you have many)
+    B0 = B_arr[0]
+    dB = (B_arr - B0)              # (M,3)
+    # Build tall system for all rows (x,y,z) at once:
+    # For each measurement k: dB_k (3,) = K (3x2) @ I_k (2,)
+    # Stack as: [I_k^T ⊗ I_3] vec(K) = dB_k, solve in LS sense
+    # Easier: solve row-wise: for each axis j, dB[:,j] ~ I_arr @ K_rowj
+    K = np.zeros((3,2), float)
+    for j in range(3):
+        Kj, *_ = np.linalg.lstsq(I_arr, dB[:, j], rcond=None)
+        K[j, :] = Kj
+
+    # 3) Residuals (how well K reproduces all dB)
+    dB_pred = I_arr @ K.T
+    res = dB - dB_pred
+    rms = float(np.sqrt(np.mean(res**2)))
+    return K, B0, dict(rms_G=rms, dB=dB, dB_pred=dB_pred, res=res, I_arr=I_arr)
+
+def print_K_summary(K):
+    print("\n=== Estimated K_crys (G/A) ===")
+    print("columns = effect of 1 A on [Iy, Iz]")
+    print("   dB/dIy:", np.round(K[:,0], 6), " (→ ΔB for +1 A on y-coil)")
+    print("   dB/dIz:", np.round(K[:,1], 6), " (→ ΔB for +1 A on z-coil)")
+    # quick axis sanity
+    dom_y = np.argmax(np.abs(K[:,0]))
+    dom_z = np.argmax(np.abs(K[:,1]))
+    ax = ["Bx","By","Bz"]
+    print(f" dominant component from Iy is {ax[dom_y]}")
+    print(f" dominant component from Iz is {ax[dom_z]}")
+
+# ===== convenience: solve B before/after and show coil-induced ΔB =====
+def summarize_one_setting(B_before_G, Iy, Iz, D_GHz, gamma_e_MHz_per_G, f_minus_after):
+    out_after = solve_B_from_odmr_order_invariant(f_minus_after, D_GHz=D_GHz, gamma_e_MHz_per_G=gamma_e_MHz_per_G)
+    B_after = out_after["B"]
+    dB = B_after - np.asarray(B_before_G, float).reshape(3)
+    print("\n--- Coil setting summary ---")
+    print(f" Currents Iy={Iy:.4f} A, Iz={Iz:.4f} A")
+    print(" B_before (G):", np.round(B_before_G, 6))
+    print(" B_after  (G):", np.round(B_after, 6))
+    print(" ΔB       (G):", np.round(dB, 6))
+    return out_after, dB
+
 if __name__ == "__main__":
-    # Background field from your earlier solve:
-    B_bg = np.array([-6.18037755, -18.54113264, -43.26264283])  # G
+    # ---------------- 1) Base solve from your measured quartet ----------------
+    D = 2.8785
+    gamma = 2.8025  # MHz/G
 
-    # A) Zero Bx, By
-    outA = predict_f_minus_after_coils(B_bg, mode="zero_transverse", kx_G_per_A=15.0, ky_G_per_A=15.0)
-    print("[Zero transverse] Ix,Iy (A):", outA["Ixy_A"])
-    print(" New B_tot (G):", outA["B_tot_G"])
-    print(" f_minus (GHz):", outA["f_minus_GHz"])
+    f_base = [2.7660, 2.7851, 2.8235, 2.8405]  # any order
+    out0 = solve_B_from_odmr_order_invariant(f_base, D_GHz=D, gamma_e_MHz_per_G=gamma)
+    # print_full_summary(f_base, out0)  # nice one-shot summary
+    B0 = out0["B"]
 
-    # B) Set B_perp = 10 G along +x (theta=0°), keep Bz fixed
-    outB = predict_f_minus_after_coils(B_bg, mode="set_inplane",
-                                       Bperp_G=10.0, theta_deg=0.0,
-                                       kx_G_per_A=15.0, ky_G_per_A=15.0)
-    print("\n[Set B_perp=10 G at 0°] Ix,Iy (A):", outB["Ixy_A"])
-    print(" New B_tot (G):", outB["B_tot_G"])
-    print(" f_minus (GHz):", outB["f_minus_GHz"])
+    # ---------------- 2) One coil setting: Iy=1.54 A, Iz=0.73 A ---------------
+    # (You should measure ALL 4 after-lines; put them here.)
+    # If you only have two, still run this; you’ll need a full quartet later to fit K.
+    f_after = [
+        2.7991,  # example (you reported for one orientation)
+        2.8282,  # example (you reported for one orientation)
+        2.8697,  # placeholder
+        # 2.7950,  # placeholder
+    ]
+    out1, dB_1 = summarize_one_setting(B0, Iy=1.54, Iz=0.73, D_GHz=D, gamma_e_MHz_per_G=gamma, f_minus_after=f_after)
 
-    # C) Manual currents (e.g., try +0.2 A on both)
-    outC = predict_f_minus_after_coils(B_bg, mode="manual", Ixy_override=(2, 2))
-    print("\n[Manual currents 0.2A,0.2A] Ix,Iy (A):", outC["Ixy_A"])
-    print(" New B_tot (G):", outC["B_tot_G"])
-    print(" f_minus (GHz):", outC["f_minus_GHz"])
+    # ---------------- 3) Collect measurements to fit K_crys -------------------
+    # You need at least 2 distinct current settings (ref + another). Best is 3+.
+    # Prepare a list of dicts: each has Iy, Iz, and a full quartet of f_-.
+    meas_list = [
+        {"Iy": 0.0,  "Iz": 0.0,  "f_minus": f_base},   # reference
+        {"Iy": 1.54, "Iz": 0.73, "f_minus": f_after},  # your mixed setting
+        # Add at least one more distinct setting (ideally one-coil-at-a-time):
+        # e.g., Iy sweep, Iz=0
+        # {"Iy": 1.00, "Iz": 0.0,  "f_minus": [ ... four after-lines ... ]},
+        # {"Iy": 0.0,  "Iz": 1.00, "f_minus": [ ... four after-lines ... ]},
+    ]
 
-    # D) If you have a measured K (uncomment and replace numbers), it will use the general model
-    K = np.array([[19.8,  0.3],
-                  [ 0.5, 20.2],
-                  [ 0.1, -0.2]])  # G/A, example
-    outD = predict_f_minus_after_coils(B_bg, mode="set_inplane",
-                                       Bperp_G=15, theta_deg=55.0,
-                                       K_3x2=K)  # general model
-    print("\n[General K, 20 G @45°] Ix,Iy (A):", outD['Ixy_A'])
-    print(" New B_tot (G):", outD['B_tot_G'])
-    print(" f_minus (GHz):", outD['f_minus_GHz'])
+    # Fit K (3x2). With only 2 entries you’ll get a first estimate; 3+ is better.
+    K, B0_fit, stats = fit_K_crys_from_measurements(meas_list, D_GHz=D, gamma_e_MHz_per_G=gamma)
+    print_K_summary(K)
+    print("Fit RMS (G):", stats["rms_G"])
 
+    # ---------------- 4) Use K to predict / plan coil moves -------------------
+    # Example: set By,Bz targets (diagonal or general map).
+    # If you trust K (general), do:
+    By_tgt, Bz_tgt = 10.0, -20.0
+    Iyz = currents_for_ByBz_targets_general(B0, By_tgt, Bz_tgt, K_crys_3x2=K)
+    B_new = apply_currents_general(B0, Iyz, K)
+    print_coil_step("Hit By,Bz targets with fitted K", out0, B_new, Iyz, D_GHz=D, gamma_e_MHz_per_G=gamma)
 
-# import numpy as np
+    # Or: nudge the splitting of a specific NV axis by Δf (MHz) using y/z coils:
+    axis_to_nudge = 0  # 0→[1,1,1], 1→[-1,1,1], 2→[1,-1,1], 3→[1,1,-1]
+    nudge = nudge_axis_split_yz(B0, axis_to_nudge, delta_f_MHz=5.0, K_crys_3x2=K, D_GHz=D, gamma_e_MHz_per_G=gamma)
+    print_coil_step(f"Nudge NV axis {axis_to_nudge} by +5 MHz (lower branch)", out0, nudge["B_new_G"], nudge["delta_Iyz_A"], D_GHz=D, gamma_e_MHz_per_G=gamma)
+sys.exit()
+# ================= Demo / how-to =================
+if __name__ == "__main__":
+    # 1) Solve B in crystal axes from any-order input
+    f_input = [2.76, 2.78, 2.82, 2.84]      # try shuffling; result is invariant
+    out = solve_B_from_odmr_order_invariant(f_input)
+    # print_full_summary(f_input, out)
 
-# # --- NV axes (same order as your solver) ---
-# def nv_axes():
-#     axes = np.array([
-#         [ 1,  1,  1],
-#         [-1,  1,  1],
-#         [ 1, -1,  1],
-#         [ 1,  1, -1],
-#     ], dtype=float)
-#     axes /= np.linalg.norm(axes, axis=1, keepdims=True)
-#     return axes
+    # Example coil model: choose ONE of these
+    # (A) Simple diagonal 20 G/A
+    ky, kz = 20.0, 20.0
+    K = None
 
-# def f_minus_from_B(B_vec_G, D_GHz=2.870, gamma_e_MHz_per_G=2.8025):
-#     """Return 4 lower-branch ODMR lines (GHz): f_- = D - gamma_e*|n·B|/1000."""
-#     n = nv_axes()  # (4,3)
-#     projs_abs_G = np.abs(n @ np.asarray(B_vec_G, float).reshape(3))
-#     return D_GHz - (gamma_e_MHz_per_G * projs_abs_G) / 1000.0
+    # (B) Or measured general K (uncomment to use)
+    # K = np.array([[  0.2,  -0.3],
+    #               [ 19.7,   0.5],
+    #               [ -0.1,  20.3]], float)  # example G/A (columns = Iy, Iz)
 
-# # --- Coil models (diagonal gains; no z-coil) ---
-# def apply_currents_diag(B_bg_G, Ixy_A, kx_G_per_A=20.0, ky_G_per_A=20.0):
-#     Ix, Iy = np.asarray(Ixy_A, float)
-#     B_coil = np.array([kx_G_per_A * Ix, ky_G_per_A * Iy, 0.0])
-#     return np.asarray(B_bg_G, float).reshape(3) + B_coil
+    B0 = out["B"]
 
-# # === Core: increase splitting of a chosen axis j by a desired amount ===
-# def increase_axis_splitting(
-#     B_bg_G,
-#     j_axis,
-#     delta_split_MHz=None,
-#     delta_abs_proj_G=None,
-#     Ixy_base_A=(0.0, 0.0),
-#     kx_G_per_A=20.0,
-#     ky_G_per_A=20.0,
-#     D_GHz=2.870,
-#     gamma_e_MHz_per_G=2.8025,
-# ):
-#     """
-#     Increase the splitting (lower f_-) of NV line j by nudging Ix,Iy along a direction
-#     that maximizes |n_j · ΔB| and minimally perturbs others (in 2D coil space).
+    # 2) Zero By,Bz
+    if K is None:
+        IyIz = currents_for_ByBz_targets_diag(B0, 0.0, 0.0, ky, kz)
+        Bz0 = apply_currents_yz_diag(B0, IyIz[0], IyIz[1], ky, kz)
+    else:
+        IyIz = currents_for_ByBz_targets_general(B0, 0.0, 0.0, K)
+        Bz0 = apply_currents_general(B0, IyIz, K)
+    print_coil_step("Zero By,Bz", out, Bz0, IyIz)
 
-#     Choose either:
-#       - delta_split_MHz (desired *decrease* in f_- for axis j, in MHz), or
-#       - delta_abs_proj_G (desired *increase* in |n_j·B|, in Gauss).
+    # 3) Set in-plane B_perp = 12 G at θ=35° from +y towards +z
+    By_tgt, Bz_tgt = set_Bperp_theta(B0, Bperp_G=12.0, theta_deg=35.0)
+    if K is None:
+        IyIz = currents_for_ByBz_targets_diag(B0, By_tgt, Bz_tgt, ky, kz)
+        Bp = apply_currents_yz_diag(B0, IyIz[0], IyIz[1], ky, kz)
+    else:
+        IyIz = currents_for_ByBz_targets_general(B0, By_tgt, Bz_tgt, K)
+        Bp = apply_currents_general(B0, IyIz, K)
+    print_coil_step("Set B_perp=12G @ 35°", out, Bp, IyIz)
 
-#     Returns dict with initial & new currents, fields, and f_- lists.
-#     """
-#     assert (delta_split_MHz is not None) ^ (delta_abs_proj_G is not None), \
-#         "Specify exactly one of delta_split_MHz or delta_abs_proj_G."
+    # 4) Nudge splitting of a chosen NV axis (e.g., axis with lowest f_-)
+    j = int(np.argmin(out["f_minus_nvaxes_GHz"]))  # largest |n·B|
+    nudge = nudge_axis_split_yz(B0, j, delta_f_MHz=5.0, K_crys_3x2=K, ky_G_per_A=ky, kz_G_per_A=kz)
+    print_coil_step(f"Increase splitting on NV {NV_LABELS[j]} by 5 MHz", out, nudge["B_new_G"], nudge["delta_Iyz_A"])
 
-#     B_bg_G = np.asarray(B_bg_G, float).reshape(3)
-#     I0 = np.asarray(Ixy_base_A, float).reshape(2)
-#     n = nv_axes()
-#     kx, ky = float(kx_G_per_A), float(ky_G_per_A)
-
-#     # Current total B and initial f_-
-#     B0 = apply_currents_diag(B_bg_G, I0, kx, ky)
-#     f0 = f_minus_from_B(B0, D_GHz, gamma_e_MHz_per_G)
-
-#     # We want to *increase* |n_j · B| so that f_- decreases by delta_split_MHz (if given)
-#     pj = float(n[j_axis] @ B0)                 # current projection for axis j
-#     sgn = 1.0 if pj >= 0 else -1.0            # push farther from zero: Δp_j = sgn * Δ|p|
-#     if delta_abs_proj_G is None:
-#         # convert MHz split change to Gauss change in |n·B|
-#         delta_abs_proj_G = float(delta_split_MHz) / gamma_e_MHz_per_G * 1000.0
-#     delta_pj = sgn * delta_abs_proj_G          # desired change in the signed projection
-
-#     # Choose ΔI along vector that maximizes Δp_j per amp in 2D: v ∝ (n_jx/kx, n_jy/ky)
-#     # This yields Δp_j = (n_jx^2 + n_jy^2) * α  with  ΔI = α * (n_jx/kx, n_jy/ky)
-#     njx, njy = n[j_axis, 0], n[j_axis, 1]
-#     denom = (njx**2 + njy**2)
-#     if denom < 1e-12:
-#         raise ValueError("Selected NV axis has no x/y component; cannot steer with x/y coils only.")
-#     alpha = delta_pj / denom
-#     dIx = alpha * (njx / kx)
-#     dIy = alpha * (njy / ky)
-#     I_new = I0 + np.array([dIx, dIy])
-
-#     # New field & lines
-#     B_new = apply_currents_diag(B_bg_G, I_new, kx, ky)
-#     f_new = f_minus_from_B(B_new, D_GHz, gamma_e_MHz_per_G)
-
-#     return {
-#         "Ixy_base_A": I0,
-#         "Ixy_new_A": I_new,
-#         "delta_Ixy_A": np.array([dIx, dIy]),
-#         "B_base_G": B0,
-#         "B_new_G": B_new,
-#         "f_minus_initial_GHz": f0,    # initial positions (same order as nv_axes)
-#         "f_minus_new_GHz": f_new,     # after the nudge
-#         "axis_index": int(j_axis),
-#         "delta_abs_proj_G": float(abs(delta_abs_proj_G)),
-#         "applied_signed_proj_change_G": float(delta_pj),
-#     }
-
-# # ================== Example: increase splitting of the ~2.78 GHz line ==================
-# if __name__ == "__main__":
-#     # Your background field (from your solver output):
-#     B_bg = np.array([-6.18037755, -18.54113264, -43.26264283])  # G
-
-#     # Identify which index is ~2.78 GHz at zero added current (coils off)
-#     f_init = f_minus_from_B(B_bg)
-#     print("Initial f_- (GHz) in nv_axes() order:", f_init)
-
-#     # Suppose the element near 2.78 GHz is at index j=1 (adjust if your order differs):
-#     j = int(np.argmin(np.abs(f_init - 2.78)))  # auto-pick closest to 2.78 GHz
-
-#     # Option A: ask for +5 MHz more splitting (i.e., push f_- down by 0.005 GHz = 5 MHz)
-#     out = increase_axis_splitting(
-#         B_bg_G=B_bg,
-#         j_axis=j,
-#         delta_split_MHz=5.0,     # desired *decrease* in f_- for that axis
-#         Ixy_base_A=(0.0, 0.0),   # base currents; change if you already bias the coils
-#         kx_G_per_A=20.0,
-#         ky_G_per_A=20.0,
-#     )
-
-#     print(f"\nTarget axis index: {out['axis_index']}")
-#     print("Base currents [Ix, Iy] (A):", out["Ixy_base_A"])
-#     print("New  currents [Ix, Iy] (A):", out["Ixy_new_A"])
-#     print("Δ currents [A]:", out["delta_Ixy_A"])
-#     print("B_base (G):", out["B_base_G"])
-#     print("B_new  (G):", out["B_new_G"])
-#     print("\nInitial f_- (GHz):", out["f_minus_initial_GHz"])  # printed in same order
-#     print("New     f_- (GHz):", out["f_minus_new_GHz"])
+    # 5) Target two axes’ f_- simultaneously (least-squares)
+    axes = [0, 1]  # e.g., [ [1,1,1], [-1,1,1] ]
+    f_targets = [out["f_minus_nvaxes_GHz"][0] - 3e-3,   # -3 MHz (increase splitting)
+                 out["f_minus_nvaxes_GHz"][1] - 2e-3]   # -2 MHz
+    two = target_two_axes_splits_yz(B0, axes, f_targets, K_crys_3x2=K, ky_G_per_A=ky, kz_G_per_A=kz)
+    print_coil_step(f"Target two axes {NV_LABELS[axes[0]]}, {NV_LABELS[axes[1]]}", out, two["B_new_G"], two["delta_Iyz_A"])
