@@ -7,7 +7,7 @@
 
   // --- Python / Pylance ---
   "python.analysis.typeCheckingMode": "off",
-  "python.defaultInterpreterPath": "C:\\Users\\matth\\miniconda3\\envs\\dioptric\\python.exe",
+  "python.defaultInterpreterPath": "C:\\Users\\Saroj Chand\\miniconda3\\envs\\dioptric\\python.exe",
   "python.terminal.activateEnvironment": true,   // VS Code will 'conda activate' for you
 
   // --- Make every new terminal start in (dioptric) on PowerShell ---
@@ -18,7 +18,7 @@
       "args": [
         "-NoExit",
         "-Command",
-        "(& 'C:\\Users\\matth\\miniconda3\\condabin\\conda.bat' 'shell.powershell' 'hook') | Out-String | Invoke-Expression; conda activate dioptric"
+        "(& 'C:\\Users\\Saroj Chand\\miniconda3\\condabin\\conda.bat' 'shell.powershell' 'hook') | Out-String | Invoke-Expression; conda activate dioptric"
       ]
     }
   },
