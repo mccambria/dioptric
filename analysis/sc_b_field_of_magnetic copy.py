@@ -306,7 +306,7 @@ if __name__ == "__main__":
     plan = plan_increase_Bmag_and_predict_peaks(
         f_current_GHz=f_base,
         D_GHz=D, gamma_e_MHz_per_G=gamma,
-        delta_Bmag_G=5.0,
+        delta_Bmag_G=10.0,
     )
     print_Bmag_increase_plan(plan, "Increase |B| by +5 G")
 
@@ -318,8 +318,8 @@ if __name__ == "__main__":
     plan2 = plan_increase_Bmag_and_predict_peaks(
         f_current_GHz=f_base,
         D_GHz=D, gamma_e_MHz_per_G=gamma,
-        scale_Bmag=10.0,
+        scale_Bmag=2.4,
         K_crys_3x2=K_diag,
-        coil_limit_A=2.0,  # optional safety
+        coil_limit_A=4.0,  # optional safety
     )
     print_Bmag_increase_plan(plan2, "Scale |B| by 1.10 with coil suggestion")
