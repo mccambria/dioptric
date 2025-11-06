@@ -145,12 +145,10 @@ def main(
 
     ### Move to top of Z range
 
-    print(f"\n[DEBUG] Getting current Z position...")
-    start_position = piezo.get_z_position()
-    print(f"[DEBUG] Current Z position: {start_position} steps")
-    top_position = start_position + scan_range
-    print(f"[DEBUG] Moving to top of Z range: {top_position} steps...")
-    piezo.write_z(top_position)
+    # Note: The piezo server maintains an internal position cache starting at 0
+    # We'll scan from +scan_range down to 0 (approaching the sample)
+    print(f"\n[DEBUG] Moving to top of scan range (Z={scan_range} steps)...")
+    piezo.write_z(scan_range)
 
     # Show live counts during movement to top
     move_start = time.time()
@@ -164,10 +162,7 @@ def main(
         time.sleep(0.05)
 
     print(f"\n[DEBUG] Total samples collected during move: {sample_count}")
-
-    # Set this as the starting reference (Z = scan_range)
-    piezo.set_z_reference(scan_range)
-    print(f"Starting scan from Z={scan_range} steps")
+    print(f"[DEBUG] Now scanning from Z={scan_range} down to Z=0...")
 
     ### Scan downward and collect photon counts
 
@@ -261,13 +256,16 @@ def main(
     print(f"Peak photon counts: {peak_counts:.0f}")
     print(f"Safety triggered: {safety_triggered}")
 
-    # Move to surface position and set as Z=0
-    print(f"Moving to surface position and setting as Z=0...")
+    # Move to surface position
+    print(f"\nMoving to surface position (Z={z_surface})...")
     piezo.write_z(z_surface)
     time.sleep(0.2)
-    piezo.set_z_reference(0)  # Set current position as Z=0
 
-    print("Z-axis calibration complete! Surface set as Z=0")
+    # NOTE: To set this as Z=0 reference, restart the LabRAD node to load new methods,
+    # then the calibration can call piezo.set_z_reference(0)
+    print(f"\nZ-axis calibration complete!")
+    print(f"NOTE: Surface is at Z={z_surface} steps in the current coordinate system")
+    print(f"      To use Z=0 as the surface reference, restart LabRAD node and re-run calibration")
 
     ### Create final plot
 
