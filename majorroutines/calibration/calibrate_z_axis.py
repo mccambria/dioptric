@@ -147,7 +147,16 @@ def main(
     pulse_gen.stream_start(-1)  # -1 means run continuously until stopped
     tb.init_safe_stop()
 
+    # Pre-allocate arrays for all data (filled with NaN, matching the initialized plot)
+    z_array = z_array_init.copy()
+    counts_array = counts_array_init.copy()
+
     for step_ind in range(num_steps):
+        if tb.safe_stop():
+            print("User stopped calibration")
+            safety_triggered = True
+            break
+
         # Calculate target Z position (moving downward)
         target_z = scan_range - (step_ind * step_size)
 
@@ -159,7 +168,7 @@ def main(
         counter.clear_buffer()
         time.sleep(0.01)  # Brief wait for buffer to fill
 
-        # Read counts (collect num_averages samples)
+        # Read counts continuously until we have enough samples (like stationary_count pattern)
         counts = []
         read_start = time.time()
         timeout = 2.0  # 2 second timeout per position
@@ -176,6 +185,10 @@ def main(
             new_samples = counter.read_counter_simple()
             if len(new_samples) > 0:
                 counts.extend(new_samples)
+                # Update plot immediately with partial data (like stationary_count)
+                mean_counts = np.mean(counts)
+                counts_array[step_ind] = mean_counts
+                kpl.plot_line_update(ax, x=z_array, y=counts_array, relim_x=False)
 
         if safety_triggered:
             break
@@ -184,20 +197,17 @@ def main(
         z_steps.append(target_z)
         photon_counts.append(mean_counts)
 
+        # Final update for this position
+        counts_array[step_ind] = mean_counts
+        kpl.plot_line_update(ax, x=z_array, y=counts_array, relim_x=False)
+        print(f"Step {step_ind + 1}/{num_steps}: Z={target_z} steps, counts={mean_counts:.0f}")
+
         # Safety check
         if mean_counts < safety_threshold and len(photon_counts) > 3:
             print(f"WARNING: Photon counts ({mean_counts:.0f}) below safety threshold!")
             print(f"Stopping at Z={target_z} steps to prevent collision")
             safety_triggered = True
             break
-
-        # Update plot every 10 steps (use kpl.plot_line_update like stationary_count)
-        if (step_ind + 1) % 10 == 0 or step_ind == 0:
-            # Convert lists to arrays for plotting
-            z_array = np.array(z_steps + [np.nan] * (num_steps - len(z_steps)))
-            counts_array = np.array(photon_counts + [np.nan] * (num_steps - len(photon_counts)))
-            kpl.plot_line_update(ax, x=z_array, y=counts_array)
-            print(f"Step {step_ind + 1}/{num_steps}: Z={target_z} steps, counts={mean_counts:.0f}")
 
     counter.stop_tag_stream()
 
