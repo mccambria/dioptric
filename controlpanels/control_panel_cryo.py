@@ -36,9 +36,10 @@ import majorroutines.confocal.confocal_image_sample as image_sample
 import majorroutines.confocal.confocal_stationary_count as stationary_count
 
 # import majorroutines.confocal.t1_dq_main as t1_dq_main
-# import majorroutines.confocal.targeting as targeting
+import majorroutines.targeting as targeting
 import utils.tool_belt as tool_belt
 from utils.constants import Axes, CoordsKey, NVSig, VirtualLaserKey
+from majorroutines.confocal.confocal_1D_scan import confocal_scan_1d
 
 # from utils.tool_belt import States
 
@@ -52,7 +53,7 @@ def do_image_sample(
     # scan_range = 0.2
     # num_steps = 60
 
-    scan_range = 1.0 #voltage 
+    scan_range = 0.5 #voltage #cryo image conversion: 37um/V; step size: x,y,z=40V (was 30)
     num_steps = 90
 
     # For now we only support square scans so pass scan_range twice
@@ -63,9 +64,44 @@ def do_image_sample(
         num_steps,
     )
 
+# def do_image_sample_Hahn( # From Hahn control panel, should not work with current version of image_sample
+#     nv_sig,
+#     nv_minus_initialization=False,
+#     cbarmin=None,
+#     cbarmax=None,
+# ):
+#     # scan_range = 0.2
+#     # num_steps = 60
+
+#     scan_range = 0.5
+#     num_steps = 90
+
+#     # For now we only support square scans so pass scan_range twice
+#     image_sample.main(
+#         nv_sig,
+#         scan_range,
+#         scan_range,
+#         num_steps,
+#         nv_minus_initialization=nv_minus_initialization,
+#         cmin=cbarmin,
+#         cmax=cbarmax,
+#     )
+
+def do_1D_scan(nv_sig):
+    scan_range = 0.4  # voltage range for X axis
+    num_steps = 60   # number of points along X
+    
+    # 1D scan function
+    counts, x_positions = confocal_scan_1d(
+        nv_sig,
+        scan_range,
+        num_steps,
+    )
+    
+    return counts, x_positions
 
 def do_image_sample_zoom(nv_sig):
-    scan_range = 0.05 #cryo iimage conversion: 37um/V; step size: x,y,z=30,30,40V
+    scan_range = 0.1 #TOO ZOOM FOR CURRENT SET-UP
     num_steps = 30
 
     image_sample.confocal_scan(
@@ -76,13 +112,13 @@ def do_image_sample_zoom(nv_sig):
     )
 
 
-# def do_optimize(nv_sig):
-#     targeting.main(
-#         nv_sig,
-#         set_to_opti_coords=False,
-#         save_data=True,
-#         plot_data=True,
-#     )
+def do_optimize(nv_sig):
+    targeting.main(
+        nv_sig,
+        set_to_opti_coords=False,
+        save_data=True,
+        plot_data=True,
+    )
 
 
 def do_stationary_count(
@@ -375,15 +411,17 @@ def do_stationary_count(
 # endregion
 
 def get_sample_name() -> str:
-    sample = "lovelace" #lovelace
+    sample = "Wu" #lovelace
     return sample
+
+# region main
 
 if __name__ == "__main__":
     ### Shared parameters
 
-    green_laser = "laserglow_532"
-    yellow_laser = "laserglow_589"
-    red_laser = "cobolt_638"
+    green_laser = "laser_COBO_520"
+    # yellow_laser = "laserglow_589"
+    # red_laser = "cobolt_638"
 
     # fmt: off
      #lovelace"
@@ -408,30 +446,30 @@ if __name__ == "__main__":
     # fmt: on
 
     # coords: SAMPLE (piezo) xyz 
-    # current step rate: 30.0V XY
-    # current step rate: 40.0V Z
+    # current step rate: 30.0V XYZ
+    # region Postion and Time Control
     sample_xy = [0.0,0.0] # piezo XY voltage input (1.0=1V) (not coordinates, relative)
     coord_z = 0  # piezo z voltage (0 is the set midpoint, absolute) (negative is closer to smaple, move unit steps in sample; 37 is good surface focus with bs for Lovelace; 20 is good for dye)
-    pixel_xy = [0.0, 0.0]  # galvo ref
+    pixel_xy = [0.0,0.0]   # galvo ref
 
     nv_sig = NVSig(
         name=f"({get_sample_name()})",
         coords={
             CoordsKey.SAMPLE: sample_xy,
             CoordsKey.Z: coord_z,
-            CoordsKey.PIXEL: pixel_xy,
+            CoordsKey.PIXEL: pixel_xy, #galvo 
         },
         disable_opt=False,
         disable_z_opt=True,
         expected_counts=13,
         pulse_durations={
-            VirtualLaserKey.IMAGING: int(5e6),
+            VirtualLaserKey.IMAGING: int(10e6), # readout is in ns (5e6 = 5ms)
             VirtualLaserKey.CHARGE_POL: int(1e4),
             VirtualLaserKey.SPIN_POL: 2000,
             VirtualLaserKey.SINGLET_DRIVE: 300,  # placeholder
         },
     )
-
+    # endregion
     ### Routines to execute
 
     try:
@@ -440,9 +478,41 @@ if __name__ == "__main__":
         # drift = tool_belt.get_drift()
         # tool_belt.set_drift([0.0, 0.0, drift[2]])  # Keep z
         # tool_belt.set_drift([drift[0], drift[1], 0.0])  # Keep xy
-        # pos.set_xyz_on_nv(nv_sig)
+        
+        pos.set_xyz_on_nv(nv_sig) # Hahn omits this line
 
-        # for z in np.arange(-24, 20, 4):
+
+        # region 1D scan
+
+        # do_1D_scan(nv_sig)
+        # z_range = np.linspace(750, 700, 51)
+        # for z in z_range:
+        #     nv_sig.coords[CoordsKey.Z] = z
+        #     pos.set_xyz_on_nv(nv_sig)
+        #     do_1D_scan(nv_sig)
+
+        # endregion 1D scan
+
+        # region Image sample
+
+        # do_image_sample(nv_sig)
+        # do_image_sample_zoom(nv_sig, nv_minus_initialization=True)
+        # Z AXIS PIEZO SCAN
+        #z_range = np.linspace(0, 10, 22)
+        #for z in z_range:
+            #nv_sig.coords[CoordsKey.Z] = z
+            #pos.set_xyz_on_nv(nv_sig)
+            #do_image_sample(nv_sig)
+
+        # do_image_sample_zoom(nv_sig)
+        # do_image_sample(nv_sig, nv_minus_initialization=True)
+        # do_image_sample_zoom(nv_sig, nv_minus_initialization=True)
+        #end region Image sample
+
+        # do_optimize(nv_sig)
+        # nv_sig["imaging_readout_dur"] = 5e7-
+        
+        #Hahn control panel image sample
         # for z in np.arange(0, -100, -5):
         # # while True:
         #     if tool_belt.safe_stop():
@@ -450,25 +520,11 @@ if __name__ == "__main__":
         #     nv_sig["coords"][2] = int(z)
         # do_image_sample(nv_sig)
         # nv_sig["imaging_readout_dur"] = 5e7
+        # do_image_sample_Hahn(nv_sig)
+        # do_image_sample_Hahn(nv_sig, nv_minus_initialization=True)
 
-        # region Image sample
-        # do_image_sample(nv_sig)
-        # ## Z AXIS PIEZO SCAN
-        z_range = np.linspace(0, -400, 61) # 37 is roughly the surface of Lovelace
-        for z in z_range:
-            nv_sig.coords[CoordsKey.Z] = z
-            pos.set_xyz_on_nv(nv_sig)
-            do_image_sample(nv_sig)
-        # do_image_sample_zoom(nv_sig)
-        # do_image_sample(nv_sig, nv_minus_initialization=True)
-        # do_image_sample_zoom(nv_sig, nv_minus_initialization=True)
-        #end region Image sample
-
-        # do_optimize(nv_sig)
-        # nv_sig["imaging_readout_dur"] = 5e7
-
-        # region Stationary count
-        # do_stationary_count(nv_sig, disable_opt=True) #Note there is a slow response time w/ the APD
+        # # region Stationary count
+        do_stationary_count(nv_sig, disable_opt=True) #Note there is a slow response time w/ the APD
         # do_stationary_count(nv_sig, disable_opt=True, nv_minus_initialization=True)
         # do_stationary_count(nv_sig, disable_opt=True, nv_zero_initialization=True)
         # endregion Stationary count
@@ -493,9 +549,11 @@ if __name__ == "__main__":
 
     except Exception as exc:
         recipient = "cmreiter@berkeley.edu"
-        # tool_belt.send_exception_email(email_to=recipient)
+        tool_belt.send_exception_email(email_to=recipient)
         raise exc
     finally:
         tool_belt.reset_cfm()
         tool_belt.reset_safe_stop()
         kpl.show(block=True)
+
+# region end main

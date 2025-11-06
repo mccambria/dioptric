@@ -117,6 +117,7 @@ config |= {
         },
         "power_supply_RNS_ngc103_visa": "TCPIP::192.168.0.130::INSTR",
         "pos_xyz_ATTO_piezos_ip": "192.168.0.199",
+        "filter_slider_THOR_ell9k_com": "COM5",
     },
     ###
     "Microwaves": {
@@ -259,7 +260,7 @@ config |= {
         # "calibration_coords_nv2": calibration_coords_nv2,
         # "calibration_coords_nv3": calibration_coords_nv3,
         "pixel_to_sample_affine_transformation_matrix": pixel_to_sample_affine_transformation_matrix,
-        "cryo_piezos_voltage": 33,
+        "cryo_piezos_voltage": 40, # was 30
         "z_bias_adjust": 0.0
     },
     ###

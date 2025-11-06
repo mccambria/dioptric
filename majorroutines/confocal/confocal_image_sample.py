@@ -153,7 +153,7 @@ def confocal_scan(nv_sig: NVSig, x_range, y_range, num_steps, nv_minus_init=Fals
                     x = x1d[col]        # left -> right
                     pos.set_xyz((x, y), positioner=positioner)
                     
-                    pulse.stream_start(1)  # <<< moved here
+                    pulse.stream_start(1) 
                     # read exactly ONE sample per pixel
                     if nv_minus_init:
                         raw = ctr.read_counter_modulo_gates(2, 1)  # [[a,b]]
@@ -231,18 +231,18 @@ def get_coord(coords, key):
         return coords.get(key, coords.get(key.name))
     return coords.get(key)
 if __name__ == "__main__":
-    file_name = "2025_10_25-11_09_07-(lovelace)"
+    file_name = "2025_10_23-22_42_56-(lovelace)"
 
     data = dm.get_raw_data(file_name)
     print("Top-level keys in saved file:")
     print(list(data.keys()))
-    nv_sig = data["nv_sig"]
+    # nv_sig = data["nv_sig"]
     # z_coord = nv_sig["coords"]["z"]
     # z_coord = nv_sig.coords[CoordsKey.Z]
 
-    print(nv_sig)
-    z_coord = get_coord(nv_sig.coords, CoordsKey.Z)
-    print(z_coord)
+    # print(nv_sig)
+    # z_coord = get_coord(nv_sig.coords, CoordsKey.Z)
+    # print(z_coord)
     img_array = np.array(data["img_array"])
     readout_ns = data["readout_ns"]
     img_array_kcps = (img_array / 1000.0) / (readout_ns * 1e-9)

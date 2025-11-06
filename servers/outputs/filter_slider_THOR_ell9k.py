@@ -31,6 +31,7 @@ import time
 import logging
 import socket
 from utils import common
+from utils import tool_belt as tb
 
 
 class FilterSliderThorEll9k(LabradServer):
@@ -38,16 +39,18 @@ class FilterSliderThorEll9k(LabradServer):
     pc_name = socket.gethostname()
 
     def initServer(self):
-        filename = (
-            "E:/Shared drives/Kolkowitz Lab" " Group/nvdata/pc_{}/labrad_logging/{}.log"
-        )
-        filename = filename.format(self.pc_name, self.name)
-        logging.basicConfig(
-            level=logging.INFO,
-            format="%(asctime)s %(levelname)-8s %(message)s",
-            datefmt="%y-%m-%d_%H-%M-%S",
-            filename=filename,
-        )
+        #filename = (
+        #    "G:/nvdata/pc_cryo/labrad_logging/pc_{}/labrad_logging/{}.log"
+        #)
+        #filename = filename.format(self.pc_name, self.name)
+        #logging.basicConfig(
+         #   level=logging.INFO,
+          #  format="%(asctime)s %(levelname)-8s %(message)s",
+           # datefmt="%y-%m-%d_%H-%M-%S",
+            #filename=filename,
+        #)
+        tb.configure_logging(self)
+
         config = common.get_config_dict()
         device_id = config["DeviceIDs"][f"{self.name}_com"]
         try:

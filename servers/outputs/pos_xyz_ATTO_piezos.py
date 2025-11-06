@@ -4,9 +4,20 @@ Output server for the attodry800's piezos. See the physical manual from the
 attodry for more information about how we're communicating with the piezos
 and how the piezos work physically. The axes are numeric, with x:1, y:2, z:3.
 
+The piezo controller is a ANC300. The carrier is an ACC50. The steo module is noted to be an ANM150, this needs to be confirmed.
+
+Some of the comments are dated. The piezos currently require Labrad to be refreshed 
+after moving the position for the controller to know where it is currently positioned.
+
+Step voltage is limited to 150V. Step frequency is limited to 10,000 Hz. Capaitance is 1.61uF.
+
+Positioner step is set to 40V (was 30V) and frequency to 1000Hz. This can be changed (make sure to update these parameters in the 'cryo' file)
+
 Created on Tue Dec 29 2020
+Updated on Wed Nov 5 2025
 
 @author: mccambria
+@author: chemistatcode
 
 ### BEGIN NODE INFO
 [info]
@@ -32,9 +43,7 @@ import logging
 from utils import common
 from utils import tool_belt as tb
 
-# telnetlib is a package for connecting to networked device over the telnet
-# protocol. See the ANC150 section of the cryostat manual for more details on
-# this connection
+# telnetlib is a package for connecting to networked device over the telnet protocol. 
 from telnetlib import Telnet
 
 
@@ -76,7 +85,7 @@ class PosXyzAttoPiezos(LabradServer):
         # Read until we're prompted for a command
         self.piezos.read_until(b"> ")
         # Make sure all the axis modes are set to ground, with default
-        # frequency and voltage of 1000 Hz and 30 V
+        # frequency and voltage of 1000 Hz and 30 V-> changed to 40V
         self.send_cmd_all("setm", "gnd")
         self.send_cmd_all("setf", 1000)
         self.send_cmd_all("setv", cryo_piezos_voltage)

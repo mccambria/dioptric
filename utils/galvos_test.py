@@ -164,6 +164,6 @@ thread.start()
 # Let it run for 10 seconds (or remove this to run indefinitely)
 time.sleep(6)
 
-# Stop
+# # Stop
 stop_event.set()
 thread.join()
