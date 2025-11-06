@@ -22,7 +22,7 @@ from utils import common
 from utils import data_manager as dm
 from utils import kplotlib as kpl
 from utils import tool_belt as tb
-from utils.constants import NVSig
+from utils.constants import NVSig, VirtualLaserKey
 
 
 def main(
@@ -85,12 +85,14 @@ def main(
 
     settling_time_sec = settling_time_ms / 1000.0
 
-    # Setup laser for imaging
-    laser_key = "imaging_laser"
-    readout_laser = nv_sig.get(laser_key, nv_sig.get("spin_readout_laser_key"))
-    readout_dur = nv_sig.get("imaging_readout_dur", nv_sig.get("spin_readout_dur", 1e6))
-    tb.set_filter(nv_sig, laser_key)
-    readout_power = tb.set_laser_power(nv_sig, laser_key)
+    # Setup laser for imaging (same pattern as z_scan_1d and stationary_count)
+    vld = tb.get_virtual_laser_dict(VirtualLaserKey.IMAGING)
+    readout_dur = int(
+        nv_sig.pulse_durations.get(VirtualLaserKey.IMAGING, int(vld["duration"]))
+    )
+    readout_laser = vld["physical_name"]
+    tb.set_filter(nv_sig, VirtualLaserKey.IMAGING)
+    readout_power = tb.set_laser_power(nv_sig, VirtualLaserKey.IMAGING)
 
     # Load pulse sequence for photon counting (same as stationary_count)
     delay = 0  # No delay needed for continuous counting
@@ -269,7 +271,7 @@ def main(
         "safety_triggered": safety_triggered,
     }
 
-    nv_name = nv_sig.get("name", "unknown")
+    nv_name = getattr(nv_sig, "name", "unknown")
     file_path = dm.get_file_path(__file__, timestamp, nv_name)
     dm.save_raw_data(raw_data, file_path)
     dm.save_figure(fig, file_path)
@@ -282,14 +284,14 @@ def main(
 
 if __name__ == "__main__":
     # Example usage
-    from utils.constants import NVSig
+    from utils.constants import NVSig, CoordsKey, VirtualLaserKey
 
     # Create a minimal nv_sig for testing
-    nv_sig = {
-        "name": "test_calibration",
-        "imaging_laser": "laser_INTE_520",
-        "imaging_readout_dur": 1e6,  # 1 ms
-    }
+    nv_sig = NVSig(
+        name="test_calibration",
+        coords={CoordsKey.SAMPLE: [0.0, 0.0], CoordsKey.Z: 0},
+        pulse_durations={VirtualLaserKey.IMAGING: int(1e6)},  # 1 ms
+    )
 
     results = main(
         nv_sig,
