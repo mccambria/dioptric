@@ -123,12 +123,24 @@ def main(
     print(f"Safety threshold: {safety_threshold} counts")
     print()
 
-    # Create figure for real-time monitoring
-    kpl.init_kplotlib(kpl.Size.SMALL)
-    fig, ax = plt.subplots(figsize=kpl.single_figsize)
+    # Create figure for real-time monitoring (same as stationary_count)
+    kpl.init_kplotlib()
+    fig, ax = plt.subplots()
+
+    # Initialize plot arrays with expected Z positions and NaN counts
+    z_array_init = np.array([scan_range - (i * step_size) for i in range(num_steps)])
+    counts_array_init = np.full(num_steps, np.nan)
+
+    # Initialize plot with kpl.plot_line (same as stationary_count)
+    kpl.plot_line(ax, z_array_init, counts_array_init)
     ax.set_xlabel("Z position (steps)")
     ax.set_ylabel("Photon counts")
     ax.set_title("Z-axis calibration")
+
+    try:
+        plt.get_current_fig_manager().window.showMaximized()
+    except Exception:
+        pass
 
     # Start continuous streaming (same pattern as stationary_count)
     counter.start_tag_stream()
@@ -179,16 +191,12 @@ def main(
             safety_triggered = True
             break
 
-        # Update plot every 10 steps
+        # Update plot every 10 steps (use kpl.plot_line_update like stationary_count)
         if (step_ind + 1) % 10 == 0 or step_ind == 0:
-            ax.clear()
-            ax.plot(z_steps, photon_counts, 'bo-')
-            ax.axhline(safety_threshold, color='r', linestyle='--', label=f'Safety threshold ({safety_threshold})')
-            ax.set_xlabel("Z position (steps)")
-            ax.set_ylabel("Photon counts")
-            ax.set_title("Z-axis calibration (in progress)")
-            ax.legend()
-            kpl.show(block=False)
+            # Convert lists to arrays for plotting
+            z_array = np.array(z_steps + [np.nan] * (num_steps - len(z_steps)))
+            counts_array = np.array(photon_counts + [np.nan] * (num_steps - len(photon_counts)))
+            kpl.plot_line_update(ax, x=z_array, y=counts_array)
             print(f"Step {step_ind + 1}/{num_steps}: Z={target_z} steps, counts={mean_counts:.0f}")
 
     counter.stop_tag_stream()
