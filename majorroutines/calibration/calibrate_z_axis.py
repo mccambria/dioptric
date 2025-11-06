@@ -78,6 +78,22 @@ def main(
     print(f"[DEBUG] Counter server: {counter}")
     print(f"[DEBUG] Pulse gen server: {pulse_gen}")
 
+    # Ensure clean state before starting (in case previous run was cancelled)
+    print("[DEBUG] Cleaning up any previous streams...")
+    try:
+        counter.stop_tag_stream()
+    except:
+        pass
+    try:
+        pulse_gen.stream_immediate()  # Stop any running stream
+    except:
+        pass
+    time.sleep(0.1)
+
+    # Reset CFM and clear buffer
+    tb.reset_cfm()
+    counter.clear_buffer()
+
     # Get calibration config if available
     config = common.get_config_dict()
     if "z_calibration" in config.get("Positioning", {}):
@@ -144,9 +160,21 @@ def main(
     pulse_gen.stream_start(-1)  # -1 means run continuously until stopped
     tb.init_safe_stop()
 
-    # Show live counts immediately while we prepare
-    print("[DEBUG] Starting live readout...")
-    time.sleep(0.1)  # Brief moment to accumulate some counts
+    # Verify we're getting samples before proceeding
+    print("[DEBUG] Verifying photon counting is working...")
+    time.sleep(0.2)  # Allow time for samples to accumulate
+    test_samples = counter.read_counter_simple()
+    if len(test_samples) == 0:
+        print("[ERROR] No photon counts detected! Check:")
+        print("  - Laser is on and aligned")
+        print("  - APD is connected and working")
+        print("  - Pulse streamer is configured correctly")
+        counter.stop_tag_stream()
+        return None
+    else:
+        avg_count = np.mean(test_samples)
+        print(f"[DEBUG] ✓ Photon counting working! Initial average: {avg_count:.0f} counts")
+        print(f"[DEBUG] Got {len(test_samples)} samples in 0.2s")
 
     ### Move to top of Z range
 
@@ -187,71 +215,76 @@ def main(
     z_array = z_array_init.copy()
     counts_array = counts_array_init.copy()
 
-    for step_ind in range(num_steps):
-        if tb.safe_stop():
-            print("User stopped calibration")
-            safety_triggered = True
-            break
-
-        # Calculate target Z position (moving downward)
-        target_z = scan_range - (step_ind * step_size)
-
-        # Move to position
-        print(f"\n[DEBUG] Moving to Z={target_z} steps...")
-        piezo.write_z(target_z)
-        print(f"[DEBUG] Waiting {settling_time_sec}s for piezo to settle...")
-        time.sleep(settling_time_sec)
-
-        # Clear buffer and collect fresh counts at this position
-        print(f"[DEBUG] Clearing counter buffer...")
-        counter.clear_buffer()
-        time.sleep(0.01)  # Brief wait for buffer to fill
-
-        # Read counts continuously until we have enough samples
-        counts = []
-        read_start = time.time()
-        timeout = 2.0  # 2 second timeout per position
-        print(f"[DEBUG] Collecting {num_averages} samples...")
-
-        while len(counts) < num_averages:
+    try:
+        for step_ind in range(num_steps):
             if tb.safe_stop():
                 print("User stopped calibration")
                 safety_triggered = True
                 break
-            if time.time() - read_start > timeout:
-                print(f"[DEBUG] Timeout! Got {len(counts)}/{num_averages} samples")
+
+            # Calculate target Z position (moving downward)
+            target_z = scan_range - (step_ind * step_size)
+
+            # Move to position
+            print(f"\n[DEBUG] Moving to Z={target_z} steps...")
+            piezo.write_z(target_z)
+            print(f"[DEBUG] Waiting {settling_time_sec}s for piezo to settle...")
+            time.sleep(settling_time_sec)
+
+            # Clear buffer and collect fresh counts at this position
+            print(f"[DEBUG] Clearing counter buffer...")
+            counter.clear_buffer()
+            time.sleep(0.01)  # Brief wait for buffer to fill
+
+            # Read counts continuously until we have enough samples
+            counts = []
+            read_start = time.time()
+            timeout = 2.0  # 2 second timeout per position
+            print(f"[DEBUG] Collecting {num_averages} samples...")
+
+            while len(counts) < num_averages:
+                if tb.safe_stop():
+                    print("User stopped calibration")
+                    safety_triggered = True
+                    break
+                if time.time() - read_start > timeout:
+                    print(f"[DEBUG] Timeout! Got {len(counts)}/{num_averages} samples")
+                    break
+
+                new_samples = counter.read_counter_simple()
+                if len(new_samples) > 0:
+                    counts.extend(new_samples)
+                    print(f"[DEBUG] Got {len(new_samples)} new samples, total={len(counts)}", end="\r")
+                    # Update plot immediately with partial data
+                    mean_counts = np.mean(counts)
+                    counts_array[step_ind] = mean_counts
+                    kpl.plot_line_update(ax, x=z_array, y=counts_array, relim_x=False)
+
+            if safety_triggered:
                 break
 
-            new_samples = counter.read_counter_simple()
-            if len(new_samples) > 0:
-                counts.extend(new_samples)
-                print(f"[DEBUG] Got {len(new_samples)} new samples, total={len(counts)}", end="\r")
-                # Update plot immediately with partial data
-                mean_counts = np.mean(counts)
-                counts_array[step_ind] = mean_counts
-                kpl.plot_line_update(ax, x=z_array, y=counts_array, relim_x=False)
+            mean_counts = np.mean(counts) if len(counts) > 0 else 0
+            z_steps.append(target_z)
+            photon_counts.append(mean_counts)
 
-        if safety_triggered:
-            break
+            # Final update for this position
+            counts_array[step_ind] = mean_counts
+            print(f"\n[DEBUG] Updating plot: Z={target_z}, counts={mean_counts:.0f}")
+            kpl.plot_line_update(ax, x=z_array, y=counts_array, relim_x=False)
+            print(f"==> Step {step_ind + 1}/{num_steps}: Z={target_z} steps, counts={mean_counts:.0f}")
 
-        mean_counts = np.mean(counts) if len(counts) > 0 else 0
-        z_steps.append(target_z)
-        photon_counts.append(mean_counts)
+            # Safety check
+            if mean_counts < safety_threshold and len(photon_counts) > 3:
+                print(f"WARNING: Photon counts ({mean_counts:.0f}) below safety threshold!")
+                print(f"Stopping at Z={target_z} steps to prevent collision")
+                safety_triggered = True
+                break
 
-        # Final update for this position
-        counts_array[step_ind] = mean_counts
-        print(f"\n[DEBUG] Updating plot: Z={target_z}, counts={mean_counts:.0f}")
-        kpl.plot_line_update(ax, x=z_array, y=counts_array, relim_x=False)
-        print(f"==> Step {step_ind + 1}/{num_steps}: Z={target_z} steps, counts={mean_counts:.0f}")
-
-        # Safety check
-        if mean_counts < safety_threshold and len(photon_counts) > 3:
-            print(f"WARNING: Photon counts ({mean_counts:.0f}) below safety threshold!")
-            print(f"Stopping at Z={target_z} steps to prevent collision")
-            safety_triggered = True
-            break
-
-    counter.stop_tag_stream()
+    finally:
+        # Always stop streams, even if cancelled or error occurs
+        print("\n[DEBUG] Stopping streams...")
+        counter.stop_tag_stream()
+        tb.reset_cfm()
 
     ### Analyze results
 
