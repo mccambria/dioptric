@@ -171,43 +171,90 @@ def main(
         print(f"[DEBUG] Photon counting working! Initial average: {avg_count:.0f} counts")
         print(f"[DEBUG] Got {len(test_samples)} samples in 0.2s")
 
-    ### Move to top of scan range
+    ### Phase 1: Move upward until we pass the surface peak and stabilize above it
 
-    # IMPORTANT: We need to physically move UP by scan_range steps from current position
-    print(f"\n[DEBUG] Current software position: {piezo.get_z_position()} steps")
-    print(f"[DEBUG] Moving UP by +{scan_range} steps from current position...")
-    print(f"[DEBUG] This may take a moment (600 steps at 1000Hz ≈ 0.6s)...")
+    print(f"\n=== PHASE 1: Moving upward to find and pass surface peak ===")
+    pos_start = piezo.get_z_position()
+    print(f"[DEBUG] Starting position: {pos_start} steps")
 
-    move_start_time = time.time()
-    try:
-        new_position = piezo.move_z_steps(scan_range)  # Move UP by scan_range steps
-        move_duration = time.time() - move_start_time
-        print(f"[DEBUG] Piezo move completed in {move_duration:.2f}s")
-        print(f"[DEBUG] New cached position: {new_position} steps")
-    except Exception as e:
-        print(f"[DEBUG] ERROR during piezo.move_z_steps(): {e}")
-        raise
-
-    # Record this as our starting position for the scan
-    scan_start_position = new_position
-    scan_end_position = new_position - scan_range
-    print(f"[DEBUG] Will scan from step {scan_start_position} down to step {scan_end_position}")
-
-    # Show live counts at top position to verify we're far from sample
-    print(f"[DEBUG] Checking photon counts at starting position...")
+    # Get baseline counts
+    counter.clear_buffer()
     time.sleep(0.1)
-    sample_count = 0
-    check_start = time.time()
-    while time.time() - check_start < 0.5:
-        new_samples = counter.read_counter_simple()
-        if len(new_samples) > 0:
-            sample_count += len(new_samples)
-            current_avg = np.mean(new_samples)
-            print(f"[DEBUG] Current counts: {current_avg:.0f} (samples: {sample_count})", end="\r")
+    baseline_samples = counter.read_counter_simple()
+    baseline_counts = np.mean(baseline_samples) if len(baseline_samples) > 0 else 0
+    print(f"[DEBUG] Baseline counts: {baseline_counts:.0f}")
+    print(f"[DEBUG] Note: If inside sample (~500 counts), will see peak as we move up through surface")
+    print(f"[DEBUG]       If already above, counts will stay low (~300-900)")
+
+    # Track peak finding
+    MOVE_INCREMENT = 50  # steps per increment
+    MAX_MOVES = 30  # Safety limit (30 * 50 = 1500 steps max)
+    counts_history = [baseline_counts]
+    peak_detected = False
+    peak_value = baseline_counts
+    moves_since_peak = 0
+    STABILIZE_MOVES = 5  # Need 5 consecutive moves below peak to confirm we passed it
+
+    print(f"[DEBUG] Moving upward in {MOVE_INCREMENT}-step increments, looking for peak ~3000...")
+
+    for move_num in range(MAX_MOVES):
+        # Move up by increment
+        piezo.move_z_steps(MOVE_INCREMENT)
+
+        # Wait and clear old buffer
+        time.sleep(0.05)
+        counter.clear_buffer()
         time.sleep(0.05)
 
-    print(f"\n[DEBUG] Counts at top: {current_avg:.0f} (expected: 300-900 if far from sample)")
-    print(f"[DEBUG] Starting scan...")
+        # Measure counts
+        test_samples = counter.read_counter_simple()
+        if len(test_samples) == 0:
+            print(f"  Move {move_num+1}: NO SAMPLES - continuing...")
+            continue
+
+        current_counts = np.mean(test_samples)
+        counts_history.append(current_counts)
+
+        # Check if this is a new peak
+        if current_counts > peak_value:
+            peak_value = current_counts
+            peak_detected = True
+            moves_since_peak = 0
+            print(f"  Move {move_num+1}: counts={current_counts:.0f} ★ NEW PEAK")
+        elif peak_detected:
+            moves_since_peak += 1
+            print(f"  Move {move_num+1}: counts={current_counts:.0f} (past peak, {moves_since_peak}/{STABILIZE_MOVES})")
+
+            # Check if we've moved far enough past peak
+            if moves_since_peak >= STABILIZE_MOVES and current_counts < 1000:
+                print(f"\n✓ Passed surface! Peak was {peak_value:.0f} counts, now stabilized at {current_counts:.0f}")
+                break
+        else:
+            print(f"  Move {move_num+1}: counts={current_counts:.0f} (searching for peak...)")
+
+    if not peak_detected:
+        print(f"\n[WARNING] No clear peak found in {MAX_MOVES * MOVE_INCREMENT} steps")
+        print(f"[WARNING] Continuing anyway from current position...")
+
+    scan_start_position = piezo.get_z_position()
+    total_moved_up = scan_start_position - pos_start
+
+    print(f"\n[DEBUG] Phase 1 complete:")
+    print(f"  Starting position: {pos_start}")
+    print(f"  Current position: {scan_start_position}")
+    print(f"  Total moved up: {total_moved_up} steps")
+    print(f"  Peak detected: {peak_value:.0f} counts")
+
+    # Get current counts
+    counter.clear_buffer()
+    time.sleep(0.1)
+    current_samples = counter.read_counter_simple()
+    current_counts = np.mean(current_samples) if len(current_samples) > 0 else 0
+    print(f"  Current counts: {current_counts:.0f} (should be ~300-900 if above sample)")
+
+    scan_end_position = scan_start_position - scan_range
+    print(f"\n=== PHASE 2: Precise downward scan to locate surface ===")
+    print(f"[DEBUG] Will scan from step {scan_start_position} down to step {scan_end_position}")
 
     ### Scan downward and collect photon counts
 
