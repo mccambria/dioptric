@@ -8,7 +8,7 @@ Includes safety monitoring to prevent sample collision.
 
 Created on November 5th, 2025
 
-@author: mccambria
+
 """
 
 import time
@@ -34,11 +34,11 @@ def main(
     settling_time_ms=10,
 ):
     """
-    Calibrate Z-axis by finding sample surface (peak photon counts).
+    Calibrate Z-axis by finding sample surface
 
     The routine moves the piezo to the top of its range, then scans downward
     while monitoring photon counts. The peak count position (surface) is set
-    as Z=0 reference for all subsequent experiments.
+    as Z=0 reference
 
     Parameters
     ----------
@@ -85,7 +85,7 @@ def main(
 
     settling_time_sec = settling_time_ms / 1000.0
 
-    # Setup laser for imaging (same pattern as z_scan_1d and stationary_count)
+    # Setup laser for imaging 
     vld = tb.get_virtual_laser_dict(VirtualLaserKey.IMAGING)
     readout_dur = int(
         nv_sig.pulse_durations.get(VirtualLaserKey.IMAGING, int(vld["duration"]))
@@ -94,7 +94,7 @@ def main(
     tb.set_filter(nv_sig, VirtualLaserKey.IMAGING)
     readout_power = tb.set_laser_power(nv_sig, VirtualLaserKey.IMAGING)
 
-    # Load pulse sequence for photon counting (same as stationary_count)
+    # Load pulse sequence for photon counting 
     delay = 0  # No delay needed for continuous counting
     seq_args = [delay, readout_dur, readout_laser, readout_power]
     seq_args_string = tb.encode_seq_args(seq_args)
@@ -102,19 +102,7 @@ def main(
 
     period = pulse_gen.stream_load(seq_file, seq_args_string)[0]
 
-    ### Move to top of Z range
-
-    print(f"Moving to top of Z range (+{scan_range} steps)...")
-    start_position = piezo.get_z_position()
-    top_position = start_position + scan_range
-    piezo.write_z(top_position)
-    time.sleep(0.5)  # Allow piezo to settle
-
-    # Set this as the starting reference (Z = scan_range)
-    piezo.set_z_reference(scan_range)
-    print(f"Starting scan from Z={scan_range} steps")
-
-    ### Scan downward and collect photon counts
+    ### Setup scan parameters and plot
 
     num_steps = int(scan_range / step_size) + 1
     z_steps = []
@@ -125,7 +113,7 @@ def main(
     print(f"Safety threshold: {safety_threshold} counts")
     print()
 
-    # Create figure for real-time monitoring (same as stationary_count)
+    # Create figure for real-time monitoring
     kpl.init_kplotlib()
     fig, ax = plt.subplots()
 
@@ -133,7 +121,7 @@ def main(
     z_array_init = np.array([scan_range - (i * step_size) for i in range(num_steps)])
     counts_array_init = np.full(num_steps, np.nan)
 
-    # Initialize plot with kpl.plot_line (same as stationary_count)
+    # Initialize plot with kpl.plot_line
     kpl.plot_line(ax, z_array_init, counts_array_init)
     ax.set_xlabel("Z position (steps)")
     ax.set_ylabel("Photon counts")
@@ -144,10 +132,36 @@ def main(
     except Exception:
         pass
 
-    # Start continuous streaming (same pattern as stationary_count)
+    # Start continuous streaming immediately for instant feedback
     counter.start_tag_stream()
     pulse_gen.stream_start(-1)  # -1 means run continuously until stopped
     tb.init_safe_stop()
+
+    # Show live counts immediately while we prepare
+    print("Starting live readout...")
+    time.sleep(0.05)  # Brief moment to accumulate some counts
+
+    ### Move to top of Z range
+
+    print(f"Moving to top of Z range (+{scan_range} steps)...")
+    start_position = piezo.get_z_position()
+    top_position = start_position + scan_range
+    piezo.write_z(top_position)
+
+    # Show live counts during movement to top 
+    move_start = time.time()
+    while time.time() - move_start < 0.5:  
+        new_samples = counter.read_counter_simple()
+        if len(new_samples) > 0:
+            current_avg = np.mean(new_samples)
+            print(f"Current counts: {current_avg:.0f}", end="\r")
+        time.sleep(0.05)
+
+    # Set this as the starting reference (Z = scan_range)
+    piezo.set_z_reference(scan_range)
+    print(f"Starting scan from Z={scan_range} steps")
+
+    ### Scan downward and collect photon counts
 
     # Pre-allocate arrays for all data (filled with NaN, matching the initialized plot)
     z_array = z_array_init.copy()
@@ -170,7 +184,7 @@ def main(
         counter.clear_buffer()
         time.sleep(0.01)  # Brief wait for buffer to fill
 
-        # Read counts continuously until we have enough samples (like stationary_count pattern)
+        # Read counts continuously until we have enough samples
         counts = []
         read_start = time.time()
         timeout = 2.0  # 2 second timeout per position
@@ -187,7 +201,7 @@ def main(
             new_samples = counter.read_counter_simple()
             if len(new_samples) > 0:
                 counts.extend(new_samples)
-                # Update plot immediately with partial data (like stationary_count)
+                # Update plot immediately with partial data 
                 mean_counts = np.mean(counts)
                 counts_array[step_ind] = mean_counts
                 kpl.plot_line_update(ax, x=z_array, y=counts_array, relim_x=False)
