@@ -196,34 +196,40 @@ def main(
     print(f"[DEBUG] Recording any peaks > {PEAK_THRESHOLD} counts encountered")
 
     for move_num in range(UPWARD_MOVES):
-        # Move up by increment
-        piezo.move_z_steps(MOVE_INCREMENT)
+        # Get position before move
+        pos_before = piezo.get_z_position()
 
-        # Wait and clear old buffer
-        time.sleep(0.05)
+        # Move up by increment
+        pos_after = piezo.move_z_steps(MOVE_INCREMENT)
+
+        # Wait MUCH longer for piezo to physically complete movement
+        # At 1000 Hz, 50 steps = 50ms, but add significant margin
+        time.sleep(0.3)  # 300ms to ensure physical movement completes
+
+        # Clear old buffer data
         counter.clear_buffer()
-        time.sleep(0.05)
+        time.sleep(0.1)  # Wait for fresh data
 
         # Measure counts
         test_samples = counter.read_counter_simple()
         if len(test_samples) == 0:
-            print(f"  Move {move_num+1}/{UPWARD_MOVES}: NO SAMPLES")
+            print(f"  Move {move_num+1}/{UPWARD_MOVES}: cache {pos_before}->{pos_after}, NO SAMPLES")
             continue
 
         current_counts = np.mean(test_samples)
-        current_position = piezo.get_z_position()
+        count_change = current_counts - counts_history[-1] if len(counts_history) > 0 else 0
         counts_history.append(current_counts)
+
+        # Show cache change AND count change to diagnose physical movement
+        cache_delta = pos_after - pos_before
+        print(f"  Move {move_num+1}/{UPWARD_MOVES}: cache +{cache_delta} ({pos_before}->{pos_after}), counts={current_counts:.0f} (delta:{count_change:+.0f})")
 
         # Check if this is a significant peak (actual surface)
         if current_counts > PEAK_THRESHOLD:
             if current_counts > surface_peak_value:
                 surface_peak_value = current_counts
-                surface_peak_position = current_position
-                print(f"  Move {move_num+1}/{UPWARD_MOVES}: counts={current_counts:.0f} SURFACE PEAK (position: {current_position})")
-            else:
-                print(f"  Move {move_num+1}/{UPWARD_MOVES}: counts={current_counts:.0f} (near surface peak)")
-        else:
-            print(f"  Move {move_num+1}/{UPWARD_MOVES}: counts={current_counts:.0f}")
+                surface_peak_position = pos_after
+                print(f"                     ^^^ SURFACE PEAK detected ^^^")
 
     print(f"\n[DEBUG] Upward scan complete - moved {UPWARD_MOVES * MOVE_INCREMENT} steps")
     if surface_peak_value == 0:
@@ -249,6 +255,19 @@ def main(
     current_counts = np.mean(current_samples) if len(current_samples) > 0 else 0
     print(f"  Current counts: {current_counts:.0f}")
 
+    # PHASE 2 AND SURFACE SETTING DISABLED FOR TESTING
+    print(f"\n=== PHASE 2: DISABLED (testing upward movement only) ===")
+    print(f"[DEBUG] Stopping here to avoid collision risk")
+    print(f"[DEBUG] Once upward movement is verified, Phase 2 will be re-enabled")
+
+    counter.stop_tag_stream()
+    tb.reset_cfm()
+    tb.reset_safe_stop()
+
+    return None
+
+    # === COMMENTED OUT - Phase 2 downward scan ===
+    """
     # Initialize data collection arrays
     z_steps = []
     photon_counts = []
@@ -430,6 +449,7 @@ def main(
 
     # Return results
     return raw_data
+    """
 
 
 if __name__ == "__main__":
