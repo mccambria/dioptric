@@ -21,8 +21,9 @@ from scipy.signal import find_peaks
 from utils import common
 from utils import data_manager as dm
 from utils import kplotlib as kpl
+from utils import positioning as pos
 from utils import tool_belt as tb
-from utils.constants import NVSig, VirtualLaserKey
+from utils.constants import CoordsKey, NVSig, VirtualLaserKey
 
 
 def main(
@@ -68,10 +69,14 @@ def main(
 
     ### Setup
 
-    # Get servers
-    piezo = common.get_server("pos_xyz_ATTO_piezos")
+    # Get servers using proper positioning utilities
+    piezo = pos.get_positioner_server(CoordsKey.Z)
     counter = tb.get_server_counter()
     pulse_gen = tb.get_server_pulse_streamer()
+
+    print(f"[DEBUG] Piezo server: {piezo}")
+    print(f"[DEBUG] Counter server: {counter}")
+    print(f"[DEBUG] Pulse gen server: {pulse_gen}")
 
     # Get calibration config if available
     config = common.get_config_dict()
