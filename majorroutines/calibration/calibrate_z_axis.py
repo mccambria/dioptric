@@ -31,7 +31,7 @@ def main(
     scan_range=600,
     step_size=5,
     num_averages=100,
-    safety_threshold=100,
+    safety_threshold=150,
     settling_time_ms=10,
 ):
     """
@@ -52,7 +52,7 @@ def main(
     num_averages : int
         Number of photon count samples per step (default: 100)
     safety_threshold : int
-        Minimum safe photon count - abort if below this (default: 100)
+        Minimum safe photon count - abort if below this (default: 150)
     settling_time_ms : float
         Wait time after each step in milliseconds (default: 10)
 
@@ -184,8 +184,8 @@ def main(
 
 
     # Track peak finding
-    MOVE_INCREMENT = 50  # steps per increment
-    UPWARD_MOVES = 20  # Move up 20 times (20 * 50 = 1000 steps total)
+    MOVE_INCREMENT = 100  # steps per increment (increased to overcome hysteresis)
+    UPWARD_MOVES = 10  # Move up 10 times (10 * 100 = 1000 steps total)
     PEAK_THRESHOLD = 2500  # Only consider peaks above this value (true surface)
 
     counts_history = [baseline_counts]
@@ -255,25 +255,12 @@ def main(
     current_counts = np.mean(current_samples) if len(current_samples) > 0 else 0
     print(f"  Current counts: {current_counts:.0f}")
 
-    # PHASE 2 AND SURFACE SETTING DISABLED FOR TESTING
-    print(f"\n=== PHASE 2: DISABLED (testing upward movement only) ===")
-    print(f"[DEBUG] Stopping here to avoid collision risk")
-    print(f"[DEBUG] Once upward movement is verified, Phase 2 will be re-enabled")
-
-    counter.stop_tag_stream()
-    tb.reset_cfm()
-    tb.reset_safe_stop()
-
-    return None
-
-    # === COMMENTED OUT - Phase 2 downward scan ===
-    """
     # Initialize data collection arrays
     z_steps = []
     photon_counts = []
     safety_triggered = False
 
-    # Decide whether we need Phase 2 or can skip directly to setting reference
+    # Decide whether we need Phase 2
     if surface_peak_value > 0 and surface_peak_position is not None:
         print(f"\n=== PHASE 2: Skipped (surface already found in Phase 1) ===")
         print(f"[DEBUG] Using detected peak: {surface_peak_value:.0f} counts at step {surface_peak_position}")
@@ -281,32 +268,44 @@ def main(
         z_steps = [surface_peak_position]
         photon_counts = [surface_peak_value]
     else:
-        # Need to do fine scan to find surface
+        # Need to do careful downward scan to find surface
+        # IMPORTANT: Phase 2 scans EVERY SINGLE STEP for safety (ignore step_size parameter)
+        phase2_step_size = 1  # Check every step to avoid collision
+        num_steps_phase2 = scan_range  # One measurement per step
         scan_end_position = scan_start_position - scan_range
-        print(f"\n=== PHASE 2: Precise downward scan to find surface ===")
-        print(f"[DEBUG] Surface not clearly detected in Phase 1, performing detailed scan")
-        print(f"[DEBUG] Will scan from step {scan_start_position} down to step {scan_end_position}")
+
+        print(f"\n=== PHASE 2: Careful downward scan with early stopping ===")
+        print(f"[DEBUG] Starting from: {scan_start_position}")
+        print(f"[DEBUG] Target end: {scan_end_position}")
+        print(f"[DEBUG] Step size: {phase2_step_size} (checking EVERY step for safety)")
+        print(f"[DEBUG] Safety threshold: {safety_threshold} counts")
+        print(f"[DEBUG] Will STOP EARLY if peak detected and confirmed")
 
         ### Scan downward and collect photon counts
 
         # Pre-allocate arrays for all data (filled with NaN)
-        # Generate actual step positions based on where we are now
-        actual_z_positions = np.array([scan_start_position - (i * step_size) for i in range(num_steps)])
-        counts_array = np.full(num_steps, np.nan)
+        actual_z_positions = np.array([scan_start_position - (i * phase2_step_size) for i in range(num_steps_phase2)])
+        counts_array = np.full(num_steps_phase2, np.nan)
 
-        # Now update the plot x-axis with actual scan range
+        # Update plot x-axis
         ax.set_xlim(scan_start_position + 5, scan_end_position - 5)
         print(f"[DEBUG] Plot x-axis set to [{scan_start_position}, {scan_end_position}]")
 
+        # Smart early stopping variables
+        found_peak_value = 0
+        found_peak_position = None
+        past_peak = False
+        PEAK_CONFIRM_THRESHOLD = 2000  # Stop when counts drop below this after seeing peak
+
         try:
-            for step_ind in range(num_steps):
+            for step_ind in range(num_steps_phase2):
                 if tb.safe_stop():
                     print("User stopped calibration")
                     safety_triggered = True
                     break
 
                 # Calculate target step position (moving downward toward sample)
-                target_steps = scan_start_position - (step_ind * step_size)
+                target_steps = scan_start_position - (step_ind * phase2_step_size)
 
                 # Move to position (absolute positioning using cached coordinates)
                 print(f"\n[DEBUG] Moving to step {target_steps}...")
@@ -352,14 +351,27 @@ def main(
 
                 # Final update for this position
                 counts_array[step_ind] = mean_counts
-                print(f"\n[DEBUG] Updating plot: step={target_steps}, counts={mean_counts:.0f}")
                 kpl.plot_line_update(ax, x=actual_z_positions, y=counts_array, relim_x=False)
-                print(f"==> Position {step_ind + 1}/{num_steps}: step {target_steps}, counts={mean_counts:.0f}")
+                print(f"==> Position {step_ind + 1}/{num_steps_phase2}: step {target_steps}, counts={mean_counts:.0f}")
 
-                # Safety check
+                # Smart peak detection with early stopping
+                if mean_counts > PEAK_THRESHOLD:
+                    if mean_counts > found_peak_value:
+                        found_peak_value = mean_counts
+                        found_peak_position = target_steps
+                        print(f"    >>> NEW PEAK: {mean_counts:.0f} at step {target_steps}")
+                elif found_peak_value > 0:
+                    # We've seen a peak, check if we've dropped below confirmation threshold
+                    if mean_counts < PEAK_CONFIRM_THRESHOLD:
+                        print(f"\n[SUCCESS] Peak confirmed! Stopping scan early")
+                        print(f"    Peak: {found_peak_value:.0f} counts at step {found_peak_position}")
+                        print(f"    Current: {mean_counts:.0f} counts (dropped below {PEAK_CONFIRM_THRESHOLD})")
+                        break
+
+                # Safety check - absolute minimum
                 if mean_counts < safety_threshold and len(photon_counts) > 3:
-                    print(f"WARNING: Photon counts ({mean_counts:.0f}) below safety threshold!")
-                    print(f"Stopping at step {target_steps} to prevent collision")
+                    print(f"\n[WARNING] Photon counts ({mean_counts:.0f}) below safety threshold!")
+                    print(f"[WARNING] Stopping at step {target_steps} to prevent collision")
                     safety_triggered = True
                     break
 
@@ -449,7 +461,6 @@ def main(
 
     # Return results
     return raw_data
-    """
 
 
 if __name__ == "__main__":
@@ -468,5 +479,5 @@ if __name__ == "__main__":
         scan_range=600,
         step_size=5,
         num_averages=100,
-        safety_threshold=100,
+        safety_threshold=150,
     )
