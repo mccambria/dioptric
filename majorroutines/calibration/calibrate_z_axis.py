@@ -138,9 +138,11 @@ def main(
 
     # Initialize plot with kpl.plot_line
     kpl.plot_line(ax, z_array_init, counts_array_init)
-    ax.set_xlabel("Z position (steps)")
+    ax.set_xlabel("Piezo steps (relative position)")
     ax.set_ylabel("Photon counts")
-    ax.set_title("Z-axis calibration")
+    ax.set_title("Z-axis calibration scan")
+    # Set x-axis limits explicitly so plot fills left-to-right as scan progresses
+    ax.set_xlim(scan_range + 5, -5)  # Reversed: 600 on left, 0 on right
 
     try:
         plt.get_current_fig_manager().window.showMaximized()
@@ -170,25 +172,30 @@ def main(
         print(f"[DEBUG] ✓ Photon counting working! Initial average: {avg_count:.0f} counts")
         print(f"[DEBUG] Got {len(test_samples)} samples in 0.2s")
 
-    ### Move to top of Z range
+    ### Move to top of scan range
 
-    # Note: The piezo server maintains an internal position cache starting at 0
-    # We'll scan from +scan_range down to 0 (approaching the sample)
-    print(f"\n[DEBUG] Moving to top of scan range (Z={scan_range} steps)...")
-    print(f"[DEBUG] This may take a moment as piezo moves 600 steps at 1000Hz...")
-    print(f"[DEBUG] Calling piezo.write_z({scan_range})...")
+    # IMPORTANT: We need to physically move UP by scan_range steps from current position
+    # Using move_z_steps() ensures actual physical movement regardless of software cache
+    print(f"\n[DEBUG] Current software position: {piezo.get_z_position()} steps")
+    print(f"[DEBUG] Moving UP by +{scan_range} steps from current position...")
+    print(f"[DEBUG] This may take a moment (600 steps at 1000Hz ≈ 0.6s)...")
 
     move_start_time = time.time()
     try:
-        piezo.write_z(scan_range)
+        new_position = piezo.move_z_steps(scan_range)  # Move UP by scan_range steps
         move_duration = time.time() - move_start_time
         print(f"[DEBUG] Piezo move completed in {move_duration:.2f}s")
+        print(f"[DEBUG] New position: {new_position} steps")
     except Exception as e:
-        print(f"[DEBUG] ERROR during piezo.write_z(): {e}")
+        print(f"[DEBUG] ERROR during piezo.move_z_steps(): {e}")
         raise
 
-    # Show live counts after arrival
-    print(f"[DEBUG] Checking photon counts at top position...")
+    # Now set this position as our reference point (step = scan_range)
+    print(f"[DEBUG] Setting current position as reference: {scan_range} steps")
+    piezo.set_z_reference(scan_range)
+
+    # Show live counts at top position to verify we're far from sample
+    print(f"[DEBUG] Checking photon counts at starting position...")
     time.sleep(0.1)
     sample_count = 0
     check_start = time.time()
@@ -197,11 +204,11 @@ def main(
         if len(new_samples) > 0:
             sample_count += len(new_samples)
             current_avg = np.mean(new_samples)
-            print(f"[DEBUG] Current counts: {current_avg:.0f} (total samples: {sample_count})", end="\r")
+            print(f"[DEBUG] Current counts: {current_avg:.0f} (samples: {sample_count})", end="\r")
         time.sleep(0.05)
 
-    print(f"\n[DEBUG] Total samples at top: {sample_count}")
-    print(f"[DEBUG] Now scanning from Z={scan_range} down to Z=0...")
+    print(f"\n[DEBUG] Counts at top: {current_avg:.0f} (expected: 300-900 if far from sample)")
+    print(f"[DEBUG] Now scanning from step {scan_range} down to step 0...")
 
     ### Scan downward and collect photon counts
 
@@ -216,13 +223,13 @@ def main(
                 safety_triggered = True
                 break
 
-            # Calculate target Z position (moving downward)
-            target_z = scan_range - (step_ind * step_size)
+            # Calculate target step position (moving downward toward sample)
+            target_steps = scan_range - (step_ind * step_size)
 
-            # Move to position
-            print(f"\n[DEBUG] Moving to Z={target_z} steps...")
-            piezo.write_z(target_z)
-            print(f"[DEBUG] Waiting {settling_time_sec}s for piezo to settle...")
+            # Move to position (absolute positioning from our reference point)
+            print(f"\n[DEBUG] Moving to step {target_steps}...")
+            piezo.write_z(target_steps)
+            print(f"[DEBUG] Settling {settling_time_sec}s...")
             time.sleep(settling_time_sec)
 
             # Clear buffer and collect fresh counts at this position
@@ -258,19 +265,19 @@ def main(
                 break
 
             mean_counts = np.mean(counts) if len(counts) > 0 else 0
-            z_steps.append(target_z)
+            z_steps.append(target_steps)
             photon_counts.append(mean_counts)
 
             # Final update for this position
             counts_array[step_ind] = mean_counts
-            print(f"\n[DEBUG] Updating plot: Z={target_z}, counts={mean_counts:.0f}")
+            print(f"\n[DEBUG] Updating plot: step={target_steps}, counts={mean_counts:.0f}")
             kpl.plot_line_update(ax, x=z_array, y=counts_array, relim_x=False)
-            print(f"==> Step {step_ind + 1}/{num_steps}: Z={target_z} steps, counts={mean_counts:.0f}")
+            print(f"==> Position {step_ind + 1}/{num_steps}: step {target_steps}, counts={mean_counts:.0f}")
 
             # Safety check
             if mean_counts < safety_threshold and len(photon_counts) > 3:
                 print(f"WARNING: Photon counts ({mean_counts:.0f}) below safety threshold!")
-                print(f"Stopping at Z={target_z} steps to prevent collision")
+                print(f"Stopping at step {target_steps} to prevent collision")
                 safety_triggered = True
                 break
 
@@ -295,37 +302,40 @@ def main(
 
     # Find peak photon count position (surface)
     peak_idx = np.argmax(photon_counts)
-    z_surface = z_steps[peak_idx]
+    surface_steps = z_steps[peak_idx]
     peak_counts = photon_counts[peak_idx]
 
     print()
     print(f"=== Calibration Results ===")
-    print(f"Surface found at Z={z_surface} steps")
+    print(f"Surface found at step position: {surface_steps}")
     print(f"Peak photon counts: {peak_counts:.0f}")
     print(f"Safety triggered: {safety_triggered}")
 
     # Move to surface position
-    print(f"\nMoving to surface position (Z={z_surface})...")
-    piezo.write_z(z_surface)
+    print(f"\nMoving to surface position (step {surface_steps})...")
+    piezo.write_z(surface_steps)
     time.sleep(0.2)
 
-    # NOTE: To set this as Z=0 reference, restart the LabRAD node to load new methods,
-    # then the calibration can call piezo.set_z_reference(0)
-    print(f"\nZ-axis calibration complete!")
-    print(f"NOTE: Surface is at Z={z_surface} steps in the current coordinate system")
-    print(f"      To use Z=0 as the surface reference, restart LabRAD node and re-run calibration")
+    # Set surface as step=0 reference point
+    print(f"Setting surface as reference point (step=0)...")
+    piezo.set_z_reference(0)
+
+    print(f"\n✓ Z-axis calibration complete!")
+    print(f"  Surface is now at step=0")
+    print(f"  You can move relative to surface using positive (away) or negative (toward) steps")
 
     ### Create final plot
 
     ax.clear()
     ax.plot(z_steps, photon_counts, 'bo-', label='Measured counts')
-    ax.plot(z_surface, peak_counts, 'r*', markersize=15, label=f'Surface (Z={z_surface})')
+    ax.plot(surface_steps, peak_counts, 'r*', markersize=15, label=f'Surface (step {surface_steps})')
     ax.axhline(safety_threshold, color='r', linestyle='--', alpha=0.5, label=f'Safety threshold')
-    ax.set_xlabel("Z position (steps)")
+    ax.set_xlabel("Piezo steps (relative position)")
     ax.set_ylabel("Photon counts")
-    ax.set_title(f"Z-axis calibration - Surface at Z={z_surface} steps")
+    ax.set_title(f"Z-axis calibration - Surface at step {surface_steps} (now set to step=0)")
     ax.legend()
     ax.grid(True, alpha=0.3)
+    ax.set_xlim(scan_range + 5, -5)  # Maintain left-to-right ordering
 
     ### Save data
 
@@ -333,16 +343,17 @@ def main(
     raw_data = {
         "timestamp": timestamp,
         "nv_sig": nv_sig,
-        "scan_range": scan_range,
+        "scan_range_steps": scan_range,
         "step_size": step_size,
         "num_averages": num_averages,
         "safety_threshold": safety_threshold,
         "settling_time_ms": settling_time_ms,
-        "z_surface_steps": int(z_surface),
+        "surface_step_position": int(surface_steps),
         "peak_counts": float(peak_counts),
-        "all_steps": z_steps.tolist(),
+        "all_step_positions": z_steps.tolist(),
         "all_counts": photon_counts.tolist(),
         "safety_triggered": safety_triggered,
+        "note": "Surface position set as step=0 reference after calibration",
     }
 
     nv_name = getattr(nv_sig, "name", "unknown")
