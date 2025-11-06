@@ -186,7 +186,6 @@ def main(
 
     MOVE_INCREMENT = 10  # Small steps for continuous monitoring
     PEAK_THRESHOLD = 2500  # Surface detection
-    MAX_SAFE_COUNTS = 4000  # Auto-stop if we go way past reasonable peak
 
     counts_history = [baseline_counts]
     surface_peak_value = 0
@@ -229,11 +228,6 @@ def main(
                         surface_peak_value = current_counts
                         surface_peak_position = pos_after
                         print(f"    >>> NEW PEAK DETECTED: {current_counts:.0f} at step {pos_after} <<<")
-
-                # Safety: auto-stop if counts way too high (something wrong)
-                if current_counts > MAX_SAFE_COUNTS:
-                    print(f"\n[WARNING] Counts unexpectedly high ({current_counts:.0f}), stopping for safety")
-                    break
 
             except Exception as e:
                 print(f"Move {move_count}: Error reading counts - {e}")
