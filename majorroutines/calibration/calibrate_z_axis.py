@@ -310,37 +310,48 @@ def main(
                 # Move to position (absolute positioning using cached coordinates)
                 print(f"\n[DEBUG] Moving to step {target_steps}...")
                 piezo.write_z(target_steps)
-                print(f"[DEBUG] Settling {settling_time_sec}s...")
-                time.sleep(settling_time_sec)
+
+                # Use longer settling time for more reliable measurements
+                settle_time = max(settling_time_sec, 0.05)  # At least 50ms
+                time.sleep(settle_time)
 
                 # Clear buffer and collect fresh counts at this position
-                print(f"[DEBUG] Clearing counter buffer...")
                 counter.clear_buffer()
-                time.sleep(0.01)  # Brief wait for buffer to fill
+                time.sleep(0.05)  # Longer wait for buffer to stabilize
 
                 # Read counts continuously until we have enough samples
                 counts = []
                 read_start = time.time()
-                timeout = 2.0  # 2 second timeout per position
-                print(f"[DEBUG] Collecting {num_averages} samples...")
+                timeout = 3.0  # 3 second timeout per position
+                read_attempts = 0
+                max_read_attempts = 50
 
-                while len(counts) < num_averages:
+                while len(counts) < num_averages and read_attempts < max_read_attempts:
                     if tb.safe_stop():
                         print("User stopped calibration")
                         safety_triggered = True
                         break
                     if time.time() - read_start > timeout:
-                        print(f"[DEBUG] Timeout! Got {len(counts)}/{num_averages} samples")
+                        print(f"\n[WARNING] Timeout at step {target_steps}! Got {len(counts)}/{num_averages} samples")
                         break
 
-                    new_samples = counter.read_counter_simple()
-                    if len(new_samples) > 0:
-                        counts.extend(new_samples)
-                        print(f"[DEBUG] Got {len(new_samples)} new samples, total={len(counts)}", end="\r")
-                        # Update plot immediately with partial data
-                        mean_counts = np.mean(counts)
-                        counts_array[step_ind] = mean_counts
-                        kpl.plot_line_update(ax, x=actual_z_positions, y=counts_array, relim_x=False)
+                    read_attempts += 1
+                    try:
+                        new_samples = counter.read_counter_simple()
+                        if len(new_samples) > 0:
+                            counts.extend(new_samples)
+                            # Update plot every 10 samples to reduce overhead
+                            if len(counts) % 10 == 0 or len(counts) >= num_averages:
+                                mean_counts = np.mean(counts)
+                                counts_array[step_ind] = mean_counts
+                                kpl.plot_line_update(ax, x=actual_z_positions, y=counts_array, relim_x=False)
+                        else:
+                            time.sleep(0.01)  # Small delay if no samples available
+                    except Exception as e:
+                        print(f"\n[ERROR] Counter read failed: {e}")
+                        time.sleep(0.05)  # Wait before retry
+                        counter.clear_buffer()  # Try clearing buffer on error
+                        time.sleep(0.02)
 
                 if safety_triggered:
                     break
