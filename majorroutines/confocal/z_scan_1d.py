@@ -74,7 +74,7 @@ def main(
     # Get servers
     piezo = common.get_server("pos_xyz_ATTO_piezos")
     ctr = tb.get_server_counter()
-    pulse = tb.get_server_pulse_gen()
+    pulse = tb.get_server_pulse_streamer()
 
     # Setup laser for imaging
     vld = tb.get_virtual_laser_dict(VirtualLaserKey.IMAGING)
@@ -112,15 +112,17 @@ def main(
 
     tb.reset_cfm()
     tb.init_safe_stop()
-    ctr.start_tag_stream()
 
-    # Sequence loading
-    pos_key = CoordsKey.Z
-    delay_ns = 1000  # 1 us for Z settling
+    # Sequence loading (same as stationary_count - load once)
+    delay_ns = 0  # No delay for continuous counting
     period_ns = pulse.stream_load(
         SEQ_FILE_PIXEL_READOUT,
         tb.encode_seq_args([delay_ns, readout_ns, readout_laser, readout_power]),
     )[0]
+
+    # Start continuous streaming (same pattern as stationary_count)
+    ctr.start_tag_stream()
+    pulse.stream_start(-1)  # -1 means run continuously until stopped
 
     ### Scan through Z positions
 
@@ -133,16 +135,30 @@ def main(
             piezo.write_z(int(z_pos))
             time.sleep(0.01)  # Settling time
 
-            # Start pulse sequence
-            pulse.stream_start(num_averages)
+            # Clear buffer and collect fresh counts
+            ctr.clear_buffer()
+            time.sleep(0.01)  # Brief wait for buffer to fill
 
-            # Read counts
-            if nv_minus_init:
-                raw = ctr.read_counter_modulo_gates(2, num_averages)
-                val = max(int(raw[0][0]) - int(raw[0][1]), 0) if raw else 0
+            # Read counts (collect num_averages samples)
+            counts = []
+            read_start = time.time()
+            timeout = 2.0
+
+            while len(counts) < num_averages:
+                if tb.safe_stop():
+                    break
+                if time.time() - read_start > timeout:
+                    break
+                new_samples = ctr.read_counter_simple()
+                if len(new_samples) > 0:
+                    counts.extend(new_samples)
+
+            # Calculate mean
+            if nv_minus_init and len(counts) >= 2:
+                # For charge init, pair samples and subtract
+                val = max(int(counts[0]) - int(counts[1]), 0) if len(counts) >= 2 else 0
             else:
-                raw = ctr.read_counter_simple(num_averages)
-                val = int(np.mean(raw)) if raw else 0
+                val = int(np.mean(counts)) if len(counts) > 0 else 0
 
             counts_1d[i] = val
 

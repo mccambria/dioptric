@@ -71,7 +71,7 @@ def main(
     # Get servers
     piezo = common.get_server("pos_xyz_ATTO_piezos")
     counter = tb.get_server_counter()
-    pulse_gen = tb.get_server_pulse_gen()
+    pulse_gen = tb.get_server_pulse_streamer()
 
     # Get calibration config if available
     config = common.get_config_dict()
@@ -92,18 +92,13 @@ def main(
     tb.set_filter(nv_sig, laser_key)
     readout_power = tb.set_laser_power(nv_sig, laser_key)
 
-    # Load pulse sequence for photon counting
-    # Use simple_readout with short delay
-    delay = 1000  # 1 us delay
+    # Load pulse sequence for photon counting (same as stationary_count)
+    delay = 0  # No delay needed for continuous counting
     seq_args = [delay, readout_dur, readout_laser, readout_power]
     seq_args_string = tb.encode_seq_args(seq_args)
     seq_file = "simple_readout.py"
 
-    ret_vals = pulse_gen.stream_load(seq_file, seq_args_string)
-    if ret_vals is not None and len(ret_vals) > 0:
-        period = ret_vals[0]
-    else:
-        period = delay + readout_dur
+    period = pulse_gen.stream_load(seq_file, seq_args_string)[0]
 
     ### Move to top of Z range
 
@@ -135,7 +130,10 @@ def main(
     ax.set_ylabel("Photon counts")
     ax.set_title("Z-axis calibration")
 
+    # Start continuous streaming (same pattern as stationary_count)
     counter.start_tag_stream()
+    pulse_gen.stream_start(-1)  # -1 means run continuously until stopped
+    tb.init_safe_stop()
 
     for step_ind in range(num_steps):
         # Calculate target Z position (moving downward)
@@ -145,22 +143,27 @@ def main(
         piezo.write_z(target_z)
         time.sleep(settling_time_sec)
 
-        # Collect photon counts
+        # Clear buffer and collect fresh counts at this position
         counter.clear_buffer()
-        pulse_gen.stream_start(num_averages)
+        time.sleep(0.01)  # Brief wait for buffer to fill
 
-        # Read counts
+        # Read counts (collect num_averages samples)
         counts = []
-        num_read = 0
-        while num_read < num_averages:
+        read_start = time.time()
+        timeout = 2.0  # 2 second timeout per position
+
+        while len(counts) < num_averages:
             if tb.safe_stop():
                 print("User stopped calibration")
                 safety_triggered = True
                 break
+            if time.time() - read_start > timeout:
+                print(f"Warning: timeout at Z={target_z}, got {len(counts)}/{num_averages} samples")
+                break
+
             new_samples = counter.read_counter_simple()
             if len(new_samples) > 0:
                 counts.extend(new_samples)
-                num_read += len(new_samples)
 
         if safety_triggered:
             break
