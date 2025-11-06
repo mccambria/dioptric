@@ -168,7 +168,7 @@ def main(
         return None
     else:
         avg_count = np.mean(test_samples)
-        print(f"[DEBUG] ✓ Photon counting working! Initial average: {avg_count:.0f} counts")
+        print(f"[DEBUG] Photon counting working! Initial average: {avg_count:.0f} counts")
         print(f"[DEBUG] Got {len(test_samples)} samples in 0.2s")
 
     ### Move to top of scan range
