@@ -80,19 +80,13 @@ def main(
 
     # Ensure clean state before starting (in case previous run was cancelled)
     print("[DEBUG] Cleaning up any previous streams...")
+    tb.reset_cfm()
+    tb.reset_safe_stop()
     try:
         counter.stop_tag_stream()
     except:
         pass
-    try:
-        pulse_gen.stream_immediate()  # Stop any running stream
-    except:
-        pass
     time.sleep(0.1)
-
-    # Reset CFM and clear buffer
-    tb.reset_cfm()
-    counter.clear_buffer()
 
     # Get calibration config if available
     config = common.get_config_dict()
@@ -281,10 +275,14 @@ def main(
                 break
 
     finally:
-        # Always stop streams, even if cancelled or error occurs
+        # Always stop streams and reset, even if cancelled or error occurs
         print("\n[DEBUG] Stopping streams...")
-        counter.stop_tag_stream()
+        try:
+            counter.stop_tag_stream()
+        except:
+            pass
         tb.reset_cfm()
+        tb.reset_safe_stop()
 
     ### Analyze results
 
