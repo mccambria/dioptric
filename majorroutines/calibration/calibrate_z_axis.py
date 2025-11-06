@@ -132,17 +132,16 @@ def main(
     kpl.init_kplotlib()
     fig, ax = plt.subplots()
 
-    # Initialize plot arrays with expected Z positions and NaN counts
-    z_array_init = np.array([scan_range - (i * step_size) for i in range(num_steps)])
-    counts_array_init = np.full(num_steps, np.nan)
+    # Initialize plot with placeholder data (will update x-axis after we know actual positions)
+    placeholder_x = np.linspace(0, scan_range, num_steps)
+    placeholder_y = np.full(num_steps, np.nan)
 
     # Initialize plot with kpl.plot_line
-    kpl.plot_line(ax, z_array_init, counts_array_init)
+    kpl.plot_line(ax, placeholder_x, placeholder_y)
     ax.set_xlabel("Piezo steps (relative position)")
     ax.set_ylabel("Photon counts")
     ax.set_title("Z-axis calibration scan")
-    # Set x-axis limits explicitly so plot fills left-to-right as scan progresses
-    ax.set_xlim(scan_range + 5, -5)  # Reversed: 600 on left, 0 on right
+    # Will set proper x-limits after we move to starting position
 
     try:
         plt.get_current_fig_manager().window.showMaximized()
@@ -175,7 +174,6 @@ def main(
     ### Move to top of scan range
 
     # IMPORTANT: We need to physically move UP by scan_range steps from current position
-    # Using move_z_steps() ensures actual physical movement regardless of software cache
     print(f"\n[DEBUG] Current software position: {piezo.get_z_position()} steps")
     print(f"[DEBUG] Moving UP by +{scan_range} steps from current position...")
     print(f"[DEBUG] This may take a moment (600 steps at 1000Hz ≈ 0.6s)...")
@@ -185,14 +183,15 @@ def main(
         new_position = piezo.move_z_steps(scan_range)  # Move UP by scan_range steps
         move_duration = time.time() - move_start_time
         print(f"[DEBUG] Piezo move completed in {move_duration:.2f}s")
-        print(f"[DEBUG] New position: {new_position} steps")
+        print(f"[DEBUG] New cached position: {new_position} steps")
     except Exception as e:
         print(f"[DEBUG] ERROR during piezo.move_z_steps(): {e}")
         raise
 
-    # Now set this position as our reference point (step = scan_range)
-    print(f"[DEBUG] Setting current position as reference: {scan_range} steps")
-    piezo.set_z_reference(scan_range)
+    # Record this as our starting position for the scan
+    scan_start_position = new_position
+    scan_end_position = new_position - scan_range
+    print(f"[DEBUG] Will scan from step {scan_start_position} down to step {scan_end_position}")
 
     # Show live counts at top position to verify we're far from sample
     print(f"[DEBUG] Checking photon counts at starting position...")
@@ -208,13 +207,18 @@ def main(
         time.sleep(0.05)
 
     print(f"\n[DEBUG] Counts at top: {current_avg:.0f} (expected: 300-900 if far from sample)")
-    print(f"[DEBUG] Now scanning from step {scan_range} down to step 0...")
+    print(f"[DEBUG] Starting scan...")
 
     ### Scan downward and collect photon counts
 
-    # Pre-allocate arrays for all data (filled with NaN, matching the initialized plot)
-    z_array = z_array_init.copy()
-    counts_array = counts_array_init.copy()
+    # Pre-allocate arrays for all data (filled with NaN)
+    # Generate actual step positions based on where we are now
+    actual_z_positions = np.array([scan_start_position - (i * step_size) for i in range(num_steps)])
+    counts_array = np.full(num_steps, np.nan)
+
+    # Now update the plot x-axis with actual scan range
+    ax.set_xlim(scan_start_position + 5, scan_end_position - 5)
+    print(f"[DEBUG] Plot x-axis set to [{scan_start_position}, {scan_end_position}]")
 
     try:
         for step_ind in range(num_steps):
@@ -224,9 +228,9 @@ def main(
                 break
 
             # Calculate target step position (moving downward toward sample)
-            target_steps = scan_range - (step_ind * step_size)
+            target_steps = scan_start_position - (step_ind * step_size)
 
-            # Move to position (absolute positioning from our reference point)
+            # Move to position (absolute positioning using cached coordinates)
             print(f"\n[DEBUG] Moving to step {target_steps}...")
             piezo.write_z(target_steps)
             print(f"[DEBUG] Settling {settling_time_sec}s...")
@@ -259,7 +263,7 @@ def main(
                     # Update plot immediately with partial data
                     mean_counts = np.mean(counts)
                     counts_array[step_ind] = mean_counts
-                    kpl.plot_line_update(ax, x=z_array, y=counts_array, relim_x=False)
+                    kpl.plot_line_update(ax, x=actual_z_positions, y=counts_array, relim_x=False)
 
             if safety_triggered:
                 break
@@ -271,7 +275,7 @@ def main(
             # Final update for this position
             counts_array[step_ind] = mean_counts
             print(f"\n[DEBUG] Updating plot: step={target_steps}, counts={mean_counts:.0f}")
-            kpl.plot_line_update(ax, x=z_array, y=counts_array, relim_x=False)
+            kpl.plot_line_update(ax, x=actual_z_positions, y=counts_array, relim_x=False)
             print(f"==> Position {step_ind + 1}/{num_steps}: step {target_steps}, counts={mean_counts:.0f}")
 
             # Safety check
@@ -328,14 +332,16 @@ def main(
 
     ax.clear()
     ax.plot(z_steps, photon_counts, 'bo-', label='Measured counts')
-    ax.plot(surface_steps, peak_counts, 'r*', markersize=15, label=f'Surface (step {surface_steps})')
+    ax.plot(surface_steps, peak_counts, 'r*', markersize=15, label=f'Surface (was step {surface_steps})')
     ax.axhline(safety_threshold, color='r', linestyle='--', alpha=0.5, label=f'Safety threshold')
     ax.set_xlabel("Piezo steps (relative position)")
     ax.set_ylabel("Photon counts")
     ax.set_title(f"Z-axis calibration - Surface at step {surface_steps} (now set to step=0)")
     ax.legend()
     ax.grid(True, alpha=0.3)
-    ax.set_xlim(scan_range + 5, -5)  # Maintain left-to-right ordering
+    # X-limits based on actual scan range
+    if len(z_steps) > 0:
+        ax.set_xlim(max(z_steps) + 5, min(z_steps) - 5)
 
     ### Save data
 
