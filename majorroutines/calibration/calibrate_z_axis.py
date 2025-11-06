@@ -160,10 +160,8 @@ def main(
     time.sleep(0.2)  # Allow time for samples to accumulate
     test_samples = counter.read_counter_simple()
     if len(test_samples) == 0:
-        print("[ERROR] No photon counts detected! Check:")
-        print("  - Laser is on and aligned")
-        print("  - APD is connected and working")
-        print("  - Pulse streamer is configured correctly")
+        print("[ERROR] No photon counts detected!")
+
         counter.stop_tag_stream()
         return None
     else:
@@ -183,8 +181,7 @@ def main(
     baseline_samples = counter.read_counter_simple()
     baseline_counts = np.mean(baseline_samples) if len(baseline_samples) > 0 else 0
     print(f"[DEBUG] Baseline counts: {baseline_counts:.0f}")
-    print(f"[DEBUG] Note: If inside sample (~500 counts), will see peak as we move up through surface")
-    print(f"[DEBUG]       If already above, counts will stay low (~300-900)")
+
 
     # Track peak finding
     MOVE_INCREMENT = 50  # steps per increment
@@ -227,7 +224,7 @@ def main(
 
             # Check if we've moved far enough past peak
             if moves_since_peak >= STABILIZE_MOVES and current_counts < 1000:
-                print(f"\n✓ Passed surface! Peak was {peak_value:.0f} counts, now stabilized at {current_counts:.0f}")
+                print(f"\n Passed surface! Peak was {peak_value:.0f} counts, now stabilized at {current_counts:.0f}")
                 break
         else:
             print(f"  Move {move_num+1}: counts={current_counts:.0f} (searching for peak...)")
@@ -371,7 +368,7 @@ def main(
     print(f"Setting surface as reference point (step=0)...")
     piezo.set_z_reference(0)
 
-    print(f"\n✓ Z-axis calibration complete!")
+    print(f"\n Z-axis calibration complete")
     print(f"  Surface is now at step=0")
     print(f"  You can move relative to surface using positive (away) or negative (toward) steps")
 
