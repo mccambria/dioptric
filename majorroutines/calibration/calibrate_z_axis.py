@@ -185,14 +185,20 @@ def main(
 
     # Track peak finding
     MOVE_INCREMENT = 50  # steps per increment
-    MAX_MOVES = 30  # Safety limit (30 * 50 = 1500 steps max)
-    counts_history = [baseline_counts]
-    peak_detected = False
-    peak_value = baseline_counts
-    moves_since_peak = 0
-    STABILIZE_MOVES = 5  # Need 5 consecutive moves below peak to confirm we passed it
+    MAX_MOVES = 40  # Safety limit (40 * 50 = 2000 steps max)
+    PEAK_THRESHOLD = 2500  # Only consider peaks above this value (true surface)
+    STABLE_TARGET_MIN = 300  # Target stable range (far from sample)
+    STABLE_TARGET_MAX = 900
+    STABLE_CHECKS = 3  # Need 3 consecutive stable readings
 
-    print(f"[DEBUG] Moving upward in {MOVE_INCREMENT}-step increments, looking for peak ~3000...")
+    counts_history = [baseline_counts]
+    surface_peak_value = 0  # Track the maximum peak > PEAK_THRESHOLD
+    surface_peak_position = None
+    stable_count = 0
+
+    print(f"[DEBUG] Moving upward in {MOVE_INCREMENT}-step increments...")
+    print(f"[DEBUG] Will continue until counts stabilize in [{STABLE_TARGET_MIN}, {STABLE_TARGET_MAX}] range")
+    print(f"[DEBUG] Recording any peaks > {PEAK_THRESHOLD} counts encountered")
 
     for move_num in range(MAX_MOVES):
         # Move up by increment
@@ -207,31 +213,45 @@ def main(
         test_samples = counter.read_counter_simple()
         if len(test_samples) == 0:
             print(f"  Move {move_num+1}: NO SAMPLES - continuing...")
+            stable_count = 0
             continue
 
         current_counts = np.mean(test_samples)
+        current_position = piezo.get_z_position()
         counts_history.append(current_counts)
 
-        # Check if this is a new peak
-        if current_counts > peak_value:
-            peak_value = current_counts
-            peak_detected = True
-            moves_since_peak = 0
-            print(f"  Move {move_num+1}: counts={current_counts:.0f} ★ NEW PEAK")
-        elif peak_detected:
-            moves_since_peak += 1
-            print(f"  Move {move_num+1}: counts={current_counts:.0f} (past peak, {moves_since_peak}/{STABILIZE_MOVES})")
+        # Check if this is a significant peak (actual surface)
+        if current_counts > PEAK_THRESHOLD:
+            if current_counts > surface_peak_value:
+                surface_peak_value = current_counts
+                surface_peak_position = current_position
+                print(f"  Move {move_num+1}: counts={current_counts:.0f} SURFACE PEAK (position: {current_position})")
+            else:
+                print(f"  Move {move_num+1}: counts={current_counts:.0f} (near surface peak)")
+            stable_count = 0  # Reset stability counter
+        # Check if counts are in stable range (far from sample)
+        elif STABLE_TARGET_MIN <= current_counts <= STABLE_TARGET_MAX:
+            stable_count += 1
+            print(f"  Move {move_num+1}: counts={current_counts:.0f} [stable {stable_count}/{STABLE_CHECKS}]")
 
-            # Check if we've moved far enough past peak
-            if moves_since_peak >= STABILIZE_MOVES and current_counts < 1000:
-                print(f"\n Passed surface! Peak was {peak_value:.0f} counts, now stabilized at {current_counts:.0f}")
+            # If we've seen 3 consecutive stable readings, we're done
+            if stable_count >= STABLE_CHECKS:
+                print(f"\n[SUCCESS] Reached stable region far from sample")
                 break
         else:
-            print(f"  Move {move_num+1}: counts={current_counts:.0f} (searching for peak...)")
+            # Not stable yet, reset counter
+            stable_count = 0
+            if current_counts > STABLE_TARGET_MAX:
+                print(f"  Move {move_num+1}: counts={current_counts:.0f} (above stable range, continuing up)")
+            else:
+                print(f"  Move {move_num+1}: counts={current_counts:.0f} (below stable range, continuing up)")
 
-    if not peak_detected:
-        print(f"\n[WARNING] No clear peak found in {MAX_MOVES * MOVE_INCREMENT} steps")
-        print(f"[WARNING] Continuing anyway from current position...")
+    if surface_peak_value == 0:
+        print(f"\n[WARNING] No surface peak > {PEAK_THRESHOLD} found in {MAX_MOVES * MOVE_INCREMENT} steps!")
+        print(f"[WARNING] Maximum count seen was {max(counts_history):.0f}")
+        print(f"[WARNING] Check: Is laser focused? Is sample present?")
+    else:
+        print(f"\n[SUCCESS] Surface peak detected: {surface_peak_value:.0f} counts at step {surface_peak_position}")
 
     scan_start_position = piezo.get_z_position()
     total_moved_up = scan_start_position - pos_start
@@ -240,104 +260,120 @@ def main(
     print(f"  Starting position: {pos_start}")
     print(f"  Current position: {scan_start_position}")
     print(f"  Total moved up: {total_moved_up} steps")
-    print(f"  Peak detected: {peak_value:.0f} counts")
+    if surface_peak_value > 0:
+        print(f"  Surface peak: {surface_peak_value:.0f} counts at step {surface_peak_position}")
 
     # Get current counts
     counter.clear_buffer()
     time.sleep(0.1)
     current_samples = counter.read_counter_simple()
     current_counts = np.mean(current_samples) if len(current_samples) > 0 else 0
-    print(f"  Current counts: {current_counts:.0f} (should be ~300-900 if above sample)")
+    print(f"  Current counts: {current_counts:.0f}")
 
-    scan_end_position = scan_start_position - scan_range
-    print(f"\n=== PHASE 2: Precise downward scan to locate surface ===")
-    print(f"[DEBUG] Will scan from step {scan_start_position} down to step {scan_end_position}")
+    # Initialize data collection arrays
+    z_steps = []
+    photon_counts = []
+    safety_triggered = False
 
-    ### Scan downward and collect photon counts
+    # Decide whether we need Phase 2 or can skip directly to setting reference
+    if surface_peak_value > 0 and surface_peak_position is not None:
+        print(f"\n=== PHASE 2: Skipped (surface already found in Phase 1) ===")
+        print(f"[DEBUG] Using detected peak: {surface_peak_value:.0f} counts at step {surface_peak_position}")
+        # Skip the scan, use the detected peak
+        z_steps = [surface_peak_position]
+        photon_counts = [surface_peak_value]
+    else:
+        # Need to do fine scan to find surface
+        scan_end_position = scan_start_position - scan_range
+        print(f"\n=== PHASE 2: Precise downward scan to find surface ===")
+        print(f"[DEBUG] Surface not clearly detected in Phase 1, performing detailed scan")
+        print(f"[DEBUG] Will scan from step {scan_start_position} down to step {scan_end_position}")
 
-    # Pre-allocate arrays for all data (filled with NaN)
-    # Generate actual step positions based on where we are now
-    actual_z_positions = np.array([scan_start_position - (i * step_size) for i in range(num_steps)])
-    counts_array = np.full(num_steps, np.nan)
+        ### Scan downward and collect photon counts
 
-    # Now update the plot x-axis with actual scan range
-    ax.set_xlim(scan_start_position + 5, scan_end_position - 5)
-    print(f"[DEBUG] Plot x-axis set to [{scan_start_position}, {scan_end_position}]")
+        # Pre-allocate arrays for all data (filled with NaN)
+        # Generate actual step positions based on where we are now
+        actual_z_positions = np.array([scan_start_position - (i * step_size) for i in range(num_steps)])
+        counts_array = np.full(num_steps, np.nan)
 
-    try:
-        for step_ind in range(num_steps):
-            if tb.safe_stop():
-                print("User stopped calibration")
-                safety_triggered = True
-                break
+        # Now update the plot x-axis with actual scan range
+        ax.set_xlim(scan_start_position + 5, scan_end_position - 5)
+        print(f"[DEBUG] Plot x-axis set to [{scan_start_position}, {scan_end_position}]")
 
-            # Calculate target step position (moving downward toward sample)
-            target_steps = scan_start_position - (step_ind * step_size)
-
-            # Move to position (absolute positioning using cached coordinates)
-            print(f"\n[DEBUG] Moving to step {target_steps}...")
-            piezo.write_z(target_steps)
-            print(f"[DEBUG] Settling {settling_time_sec}s...")
-            time.sleep(settling_time_sec)
-
-            # Clear buffer and collect fresh counts at this position
-            print(f"[DEBUG] Clearing counter buffer...")
-            counter.clear_buffer()
-            time.sleep(0.01)  # Brief wait for buffer to fill
-
-            # Read counts continuously until we have enough samples
-            counts = []
-            read_start = time.time()
-            timeout = 2.0  # 2 second timeout per position
-            print(f"[DEBUG] Collecting {num_averages} samples...")
-
-            while len(counts) < num_averages:
+        try:
+            for step_ind in range(num_steps):
                 if tb.safe_stop():
                     print("User stopped calibration")
                     safety_triggered = True
                     break
-                if time.time() - read_start > timeout:
-                    print(f"[DEBUG] Timeout! Got {len(counts)}/{num_averages} samples")
+
+                # Calculate target step position (moving downward toward sample)
+                target_steps = scan_start_position - (step_ind * step_size)
+
+                # Move to position (absolute positioning using cached coordinates)
+                print(f"\n[DEBUG] Moving to step {target_steps}...")
+                piezo.write_z(target_steps)
+                print(f"[DEBUG] Settling {settling_time_sec}s...")
+                time.sleep(settling_time_sec)
+
+                # Clear buffer and collect fresh counts at this position
+                print(f"[DEBUG] Clearing counter buffer...")
+                counter.clear_buffer()
+                time.sleep(0.01)  # Brief wait for buffer to fill
+
+                # Read counts continuously until we have enough samples
+                counts = []
+                read_start = time.time()
+                timeout = 2.0  # 2 second timeout per position
+                print(f"[DEBUG] Collecting {num_averages} samples...")
+
+                while len(counts) < num_averages:
+                    if tb.safe_stop():
+                        print("User stopped calibration")
+                        safety_triggered = True
+                        break
+                    if time.time() - read_start > timeout:
+                        print(f"[DEBUG] Timeout! Got {len(counts)}/{num_averages} samples")
+                        break
+
+                    new_samples = counter.read_counter_simple()
+                    if len(new_samples) > 0:
+                        counts.extend(new_samples)
+                        print(f"[DEBUG] Got {len(new_samples)} new samples, total={len(counts)}", end="\r")
+                        # Update plot immediately with partial data
+                        mean_counts = np.mean(counts)
+                        counts_array[step_ind] = mean_counts
+                        kpl.plot_line_update(ax, x=actual_z_positions, y=counts_array, relim_x=False)
+
+                if safety_triggered:
                     break
 
-                new_samples = counter.read_counter_simple()
-                if len(new_samples) > 0:
-                    counts.extend(new_samples)
-                    print(f"[DEBUG] Got {len(new_samples)} new samples, total={len(counts)}", end="\r")
-                    # Update plot immediately with partial data
-                    mean_counts = np.mean(counts)
-                    counts_array[step_ind] = mean_counts
-                    kpl.plot_line_update(ax, x=actual_z_positions, y=counts_array, relim_x=False)
+                mean_counts = np.mean(counts) if len(counts) > 0 else 0
+                z_steps.append(target_steps)
+                photon_counts.append(mean_counts)
 
-            if safety_triggered:
-                break
+                # Final update for this position
+                counts_array[step_ind] = mean_counts
+                print(f"\n[DEBUG] Updating plot: step={target_steps}, counts={mean_counts:.0f}")
+                kpl.plot_line_update(ax, x=actual_z_positions, y=counts_array, relim_x=False)
+                print(f"==> Position {step_ind + 1}/{num_steps}: step {target_steps}, counts={mean_counts:.0f}")
 
-            mean_counts = np.mean(counts) if len(counts) > 0 else 0
-            z_steps.append(target_steps)
-            photon_counts.append(mean_counts)
+                # Safety check
+                if mean_counts < safety_threshold and len(photon_counts) > 3:
+                    print(f"WARNING: Photon counts ({mean_counts:.0f}) below safety threshold!")
+                    print(f"Stopping at step {target_steps} to prevent collision")
+                    safety_triggered = True
+                    break
 
-            # Final update for this position
-            counts_array[step_ind] = mean_counts
-            print(f"\n[DEBUG] Updating plot: step={target_steps}, counts={mean_counts:.0f}")
-            kpl.plot_line_update(ax, x=actual_z_positions, y=counts_array, relim_x=False)
-            print(f"==> Position {step_ind + 1}/{num_steps}: step {target_steps}, counts={mean_counts:.0f}")
-
-            # Safety check
-            if mean_counts < safety_threshold and len(photon_counts) > 3:
-                print(f"WARNING: Photon counts ({mean_counts:.0f}) below safety threshold!")
-                print(f"Stopping at step {target_steps} to prevent collision")
-                safety_triggered = True
-                break
-
-    finally:
-        # Always stop streams and reset, even if cancelled or error occurs
-        print("\n[DEBUG] Stopping streams...")
-        try:
-            counter.stop_tag_stream()
-        except:
-            pass
-        tb.reset_cfm()
-        tb.reset_safe_stop()
+        finally:
+            # Always stop streams and reset, even if cancelled or error occurs
+            print("\n[DEBUG] Stopping streams...")
+            try:
+                counter.stop_tag_stream()
+            except:
+                pass
+            tb.reset_cfm()
+            tb.reset_safe_stop()
 
     ### Analyze results
 
