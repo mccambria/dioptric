@@ -148,12 +148,24 @@ def main(
     # Note: The piezo server maintains an internal position cache starting at 0
     # We'll scan from +scan_range down to 0 (approaching the sample)
     print(f"\n[DEBUG] Moving to top of scan range (Z={scan_range} steps)...")
-    piezo.write_z(scan_range)
+    print(f"[DEBUG] This may take a moment as piezo moves 600 steps at 1000Hz...")
+    print(f"[DEBUG] Calling piezo.write_z({scan_range})...")
 
-    # Show live counts during movement to top
-    move_start = time.time()
+    move_start_time = time.time()
+    try:
+        piezo.write_z(scan_range)
+        move_duration = time.time() - move_start_time
+        print(f"[DEBUG] Piezo move completed in {move_duration:.2f}s")
+    except Exception as e:
+        print(f"[DEBUG] ERROR during piezo.write_z(): {e}")
+        raise
+
+    # Show live counts after arrival
+    print(f"[DEBUG] Checking photon counts at top position...")
+    time.sleep(0.1)
     sample_count = 0
-    while time.time() - move_start < 0.5:
+    check_start = time.time()
+    while time.time() - check_start < 0.5:
         new_samples = counter.read_counter_simple()
         if len(new_samples) > 0:
             sample_count += len(new_samples)
@@ -161,7 +173,7 @@ def main(
             print(f"[DEBUG] Current counts: {current_avg:.0f} (total samples: {sample_count})", end="\r")
         time.sleep(0.05)
 
-    print(f"\n[DEBUG] Total samples collected during move: {sample_count}")
+    print(f"\n[DEBUG] Total samples at top: {sample_count}")
     print(f"[DEBUG] Now scanning from Z={scan_range} down to Z=0...")
 
     ### Scan downward and collect photon counts
