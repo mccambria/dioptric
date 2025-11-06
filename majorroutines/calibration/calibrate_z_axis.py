@@ -169,126 +169,171 @@ def main(
         print(f"[DEBUG] Photon counting working! Initial average: {avg_count:.0f} counts")
         print(f"[DEBUG] Got {len(test_samples)} samples in 0.2s")
 
-    ### Phase 1: Move upward until we pass the surface peak and stabilize above it
+    ### Continuous upward scan until user stops or peak found
 
-    print(f"\n=== PHASE 1: Moving upward to find and pass surface peak ===")
+    print(f"\n=== Continuous upward scan - monitoring for surface ===")
     pos_start = piezo.get_z_position()
-    print(f"[DEBUG] Starting position: {pos_start} steps")
+    print(f"Starting position: {pos_start} steps")
+    print(f"Moving up continuously in 10-step increments")
+    print(f"Press CTRL+C to stop when you see the peak\n")
 
-    # Get baseline counts
+    # Get initial counts
     counter.clear_buffer()
     time.sleep(0.1)
     baseline_samples = counter.read_counter_simple()
     baseline_counts = np.mean(baseline_samples) if len(baseline_samples) > 0 else 0
-    print(f"[DEBUG] Baseline counts: {baseline_counts:.0f}")
+    print(f"Initial counts: {baseline_counts:.0f}\n")
 
-
-    # Track peak finding
-    MOVE_INCREMENT = 100  # steps per increment (increased to overcome hysteresis)
-    UPWARD_MOVES = 10  # Move up 10 times (10 * 100 = 1000 steps total)
-    PEAK_THRESHOLD = 2500  # Only consider peaks above this value (true surface)
+    MOVE_INCREMENT = 10  # Small steps for continuous monitoring
+    PEAK_THRESHOLD = 2500  # Surface detection
+    MAX_SAFE_COUNTS = 4000  # Auto-stop if we go way past reasonable peak
 
     counts_history = [baseline_counts]
-    surface_peak_value = 0  # Track the maximum peak > PEAK_THRESHOLD
+    surface_peak_value = 0
     surface_peak_position = None
+    move_count = 0
 
-    print(f"[DEBUG] Moving upward {UPWARD_MOVES} times in {MOVE_INCREMENT}-step increments (total: {UPWARD_MOVES * MOVE_INCREMENT} steps)")
-    print(f"[DEBUG] Recording any peaks > {PEAK_THRESHOLD} counts encountered")
+    try:
+        while True:
+            if tb.safe_stop():
+                print("\nUser stopped scan")
+                break
 
-    for move_num in range(UPWARD_MOVES):
-        # Get position before move
-        pos_before = piezo.get_z_position()
+            move_count += 1
+            pos_before = piezo.get_z_position()
 
-        # Move up by increment
-        pos_after = piezo.move_z_steps(MOVE_INCREMENT)
+            # Move up
+            pos_after = piezo.move_z_steps(MOVE_INCREMENT)
+            time.sleep(0.15)  # Wait for movement
 
-        # Wait MUCH longer for piezo to physically complete movement
-        # At 1000 Hz, 50 steps = 50ms, but add significant margin
-        time.sleep(0.3)  # 300ms to ensure physical movement completes
+            # Get counts
+            counter.clear_buffer()
+            time.sleep(0.05)
 
-        # Clear old buffer data
-        counter.clear_buffer()
-        time.sleep(0.1)  # Wait for fresh data
+            try:
+                samples = counter.read_counter_simple()
+                if len(samples) == 0:
+                    print(f"Move {move_count}: step {pos_after}, NO SAMPLES")
+                    continue
 
-        # Measure counts
-        test_samples = counter.read_counter_simple()
-        if len(test_samples) == 0:
-            print(f"  Move {move_num+1}/{UPWARD_MOVES}: cache {pos_before}->{pos_after}, NO SAMPLES")
-            continue
+                current_counts = np.mean(samples)
+                count_change = current_counts - counts_history[-1]
+                counts_history.append(current_counts)
 
-        current_counts = np.mean(test_samples)
-        count_change = current_counts - counts_history[-1] if len(counts_history) > 0 else 0
-        counts_history.append(current_counts)
+                # Show current status
+                print(f"Move {move_count}: step {pos_after}, counts={current_counts:.0f} (change:{count_change:+.0f})")
 
-        # Show cache change AND count change to diagnose physical movement
-        cache_delta = pos_after - pos_before
-        print(f"  Move {move_num+1}/{UPWARD_MOVES}: cache +{cache_delta} ({pos_before}->{pos_after}), counts={current_counts:.0f} (delta:{count_change:+.0f})")
+                # Track peak
+                if current_counts > PEAK_THRESHOLD:
+                    if current_counts > surface_peak_value:
+                        surface_peak_value = current_counts
+                        surface_peak_position = pos_after
+                        print(f"    >>> NEW PEAK DETECTED: {current_counts:.0f} at step {pos_after} <<<")
 
-        # Check if this is a significant peak (actual surface)
-        if current_counts > PEAK_THRESHOLD:
-            if current_counts > surface_peak_value:
-                surface_peak_value = current_counts
-                surface_peak_position = pos_after
-                print(f"                     ^^^ SURFACE PEAK detected ^^^")
+                # Safety: auto-stop if counts way too high (something wrong)
+                if current_counts > MAX_SAFE_COUNTS:
+                    print(f"\n[WARNING] Counts unexpectedly high ({current_counts:.0f}), stopping for safety")
+                    break
 
-    print(f"\n[DEBUG] Upward scan complete - moved {UPWARD_MOVES * MOVE_INCREMENT} steps")
-    if surface_peak_value == 0:
-        print(f"[WARNING] No surface peak > {PEAK_THRESHOLD} found")
-        print(f"[WARNING] Maximum count seen was {max(counts_history):.0f}")
-    else:
-        print(f"[SUCCESS] Surface peak detected: {surface_peak_value:.0f} counts at step {surface_peak_position}")
+            except Exception as e:
+                print(f"Move {move_count}: Error reading counts - {e}")
+                time.sleep(0.1)
+
+    except KeyboardInterrupt:
+        print("\nScan interrupted by user")
 
     scan_start_position = piezo.get_z_position()
-    total_moved_up = scan_start_position - pos_start
+    total_moved = scan_start_position - pos_start
 
-    print(f"\n[DEBUG] Phase 1 complete:")
-    print(f"  Starting position: {pos_start}")
-    print(f"  Current position: {scan_start_position}")
-    print(f"  Total moved up: {total_moved_up} steps")
+    print(f"\n=== Scan Summary ===")
+    print(f"Starting position: {pos_start}")
+    print(f"Final position: {scan_start_position}")
+    print(f"Total moved up: {total_moved} steps")
     if surface_peak_value > 0:
-        print(f"  Surface peak: {surface_peak_value:.0f} counts at step {surface_peak_position}")
+        print(f"Peak detected: {surface_peak_value:.0f} counts at step {surface_peak_position}")
+    else:
+        print(f"No significant peak found (max seen: {max(counts_history):.0f})")
 
-    # Get current counts
-    counter.clear_buffer()
-    time.sleep(0.1)
-    current_samples = counter.read_counter_simple()
-    current_counts = np.mean(current_samples) if len(current_samples) > 0 else 0
-    print(f"  Current counts: {current_counts:.0f}")
-
-    # Initialize data collection arrays
+    # Use the detected peak or current position
     z_steps = []
     photon_counts = []
     safety_triggered = False
 
-    # Decide whether we need Phase 2
     if surface_peak_value > 0 and surface_peak_position is not None:
-        print(f"\n=== PHASE 2: Skipped (surface already found in Phase 1) ===")
-        print(f"[DEBUG] Using detected peak: {surface_peak_value:.0f} counts at step {surface_peak_position}")
-        # Skip the scan, use the detected peak
+        print(f"\nUsing detected peak for calibration")
         z_steps = [surface_peak_position]
         photon_counts = [surface_peak_value]
+        chosen_position = surface_peak_position
     else:
-        # Need to do careful downward scan to find surface
-        # IMPORTANT: Phase 2 scans EVERY SINGLE STEP for safety (ignore step_size parameter)
+        print(f"\nNo peak detected - would you like to use current position as reference?")
+        # For now, skip calibration if no peak found
+        counter.stop_tag_stream()
+        tb.reset_cfm()
+        return None
+
+    # Move to the chosen position
+    print(f"\nMoving to surface position (step {chosen_position})...")
+    piezo.write_z(chosen_position)
+    time.sleep(0.2)
+
+    # Set as reference
+    print(f"Setting this position as Z=0 reference...")
+    piezo.set_z_reference(0)
+
+    print(f"\nCalibration complete!")
+    print(f"Surface is now at step=0")
+
+    # Stop streams
+    counter.stop_tag_stream()
+    tb.reset_cfm()
+
+    ### Save and return
+    timestamp = dm.get_time_stamp()
+    raw_data = {
+        "timestamp": timestamp,
+        "nv_sig": nv_sig,
+        "calibration_method": "continuous_upward_scan",
+        "surface_step_position": int(chosen_position),
+        "peak_counts": float(surface_peak_value) if surface_peak_value > 0 else 0,
+        "total_steps_moved": int(total_moved),
+        "counts_history": [float(c) for c in counts_history],
+        "note": "Surface position set as step=0 reference after calibration",
+    }
+
+    nv_name = getattr(nv_sig, "name", "unknown")
+    file_path = dm.get_file_path(__file__, timestamp, nv_name)
+    dm.save_raw_data(raw_data, file_path)
+
+    print(f"Data saved to: {file_path}")
+    kpl.show()
+
+    return raw_data
+
+    # OLD CODE BELOW - NOT EXECUTED
+    if False:
+        # Continue in SAME direction as Phase 1
+        # Data shows: INCREASING step numbers = moving toward sample
+        # Phase 1 went UP (increased steps), Phase 2 should CONTINUE UP
         phase2_step_size = 1  # Check every step to avoid collision
         num_steps_phase2 = scan_range  # One measurement per step
-        scan_end_position = scan_start_position - scan_range
+        scan_end_position = scan_start_position + scan_range  # CONTINUE UPWARD
 
-        print(f"\n=== PHASE 2: Careful downward scan with early stopping ===")
+        print(f"\n=== PHASE 2: Continuing upward scan toward surface ===")
         print(f"[DEBUG] Starting from: {scan_start_position}")
         print(f"[DEBUG] Target end: {scan_end_position}")
         print(f"[DEBUG] Step size: {phase2_step_size} (checking EVERY step for safety)")
         print(f"[DEBUG] Safety threshold: {safety_threshold} counts")
+        print(f"[DEBUG] Direction: INCREASING steps = continuing toward surface")
         print(f"[DEBUG] Will STOP EARLY if peak detected and confirmed")
 
-        ### Scan downward and collect photon counts
+        ### Continue scanning upward toward surface
 
         # Pre-allocate arrays for all data (filled with NaN)
-        actual_z_positions = np.array([scan_start_position - (i * phase2_step_size) for i in range(num_steps_phase2)])
+        actual_z_positions = np.array([scan_start_position + (i * phase2_step_size) for i in range(num_steps_phase2)])
         counts_array = np.full(num_steps_phase2, np.nan)
 
         # Update plot x-axis
-        ax.set_xlim(scan_start_position + 5, scan_end_position - 5)
+        ax.set_xlim(scan_start_position - 5, scan_end_position + 5)
         print(f"[DEBUG] Plot x-axis set to [{scan_start_position}, {scan_end_position}]")
 
         # Smart early stopping variables
@@ -304,8 +349,8 @@ def main(
                     safety_triggered = True
                     break
 
-                # Calculate target step position (moving downward toward sample)
-                target_steps = scan_start_position - (step_ind * phase2_step_size)
+                # Calculate target step position (continuing upward toward sample)
+                target_steps = scan_start_position + (step_ind * phase2_step_size)
 
                 # Move to position (absolute positioning using cached coordinates)
                 print(f"\n[DEBUG] Moving to step {target_steps}...")
