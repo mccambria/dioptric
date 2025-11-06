@@ -1,6 +1,6 @@
 import numpy as np
 import sys
-from sc_b_field_of_magnetic import solve_B_from_odmr_order_invariant, print_full_summary
+from sc_b_field_calculations import solve_B_from_odmr_order_invariant, print_full_summary
 # ---------------- NV geometry in CRYSTAL frame ----------------
 def nv_axes():
     a = np.array([

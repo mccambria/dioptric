@@ -1350,7 +1350,7 @@ if __name__ == "__main__":
     # magnet_angle = 90
     date_str = "2025_10_21"
     sample_coords = [0.4, 0.8]
-    z_coord = 0.9
+    z_coord = 0.7
     # Load NV pixel coordinates1
     pixel_coords_list = load_nv_coords(
         # file_path="slmsuite/nv_blob_detection/nv_blob_308nvs_reordered.npz",
@@ -1394,7 +1394,7 @@ if __name__ == "__main__":
     print(f"Red Laser Coordinates: {red_coords_list[0]}")
 
     # pixel_coords_list = [[124.195, 127.341],[14.043, 37.334],[106.538, 237.374],[218.314, 23.302]]
-    # green_coords_list = [[108.313, 107.362], [119.723, 118.876], [111.728, 95.086], [96.363, 118.259]]
+    # green_coords_list = [[108.347, 107.429], [119.723, 118.876], [111.728, 95.086], [96.363, 118.259]]
     # red_coords_list = [[73.66, 71.88], [82.549, 81.803],[76.869, 62.059], [63.549, 80.163]]
     num_nvs = len(pixel_coords_list)
     threshold_list = [None] * num_nvs
@@ -1602,7 +1602,7 @@ if __name__ == "__main__":
         # do_calibrate_iq_delay(nv_list)
         # do_rabi(nv_list)
         # do_power_rabi(nv_list)
-        do_resonance(nv_list)
+        # do_resonance(nv_list)
         # do_rabi(nv_list)
         # do_deer_hahn(nv_list)
         # do_deer_hahn_rabi(nv_list)
@@ -1615,7 +1615,7 @@ if __name__ == "__main__":
         # do_two_block_hahn_spatial_correlation(nv_list)
         # do_T2_correlation_test(nv_list)
         # do_two_block_hahn_correlation(nv_list)
-        # do_resonance(nv_list)
+        do_resonance(nv_list)
         # do_sq_relaxation(nv_list)
         # do_dq_relaxation(nv_list)
         # do_detect_cosmic_rays(nv_list)
