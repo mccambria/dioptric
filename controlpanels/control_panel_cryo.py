@@ -34,6 +34,8 @@ import majorroutines.confocal.confocal_image_sample as image_sample
 # import majorroutines.confocal.resonance as resonance
 # import majorroutines.confocal.spin_echo as spin_echo
 import majorroutines.confocal.confocal_stationary_count as stationary_count
+import majorroutines.confocal.z_scan_1d as z_scan_1d
+import majorroutines.calibration.calibrate_z_axis as calibrate_z_axis
 
 # import majorroutines.confocal.t1_dq_main as t1_dq_main
 import majorroutines.targeting as targeting
@@ -134,6 +136,118 @@ def do_stationary_count(
         # nv_minus_initialization=nv_minus_initialization,
         # nv_zero_initialization=nv_zero_initialization,
     )
+
+
+def do_calibrate_z_axis(nv_sig):
+    """
+    Calibrate the Z-axis to find the sample surface.
+
+    This routine:
+    1. Moves the piezo to the top of the Z range
+    2. Scans downward while monitoring photon counts
+    3. Finds the peak photon count position (surface)
+    4. Sets that position as Z=0 reference
+    5. Includes safety monitoring to prevent collision
+
+    Returns the calibration results dictionary.
+    """
+    results = calibrate_z_axis.main(
+        nv_sig,
+        scan_range=600,  # Can be overridden by config
+        step_size=5,
+        num_averages=100,
+        safety_threshold=100,
+    )
+    return results
+
+
+def do_z_scan_1d(nv_sig, z_start=0, z_end=-400, num_steps=61, num_averages=1):
+    """
+    Perform a 1D Z-axis scan without calibration.
+
+    Scans along Z-axis, collecting photon counts at each position.
+    Does NOT move X or Y coordinates.
+    Displays real-time line plot of counts vs Z position.
+
+    Parameters
+    ----------
+    nv_sig : dict
+        NV center parameters
+    z_start : int
+        Starting Z position in steps
+    z_end : int
+        Ending Z position in steps
+    num_steps : int
+        Number of Z positions to scan
+    num_averages : int
+        Number of photon count samples to average at each Z position
+
+    Returns
+    -------
+    tuple
+        (counts, z_positions) - counts in kcps or raw depending on config
+    """
+    counts, z_positions = z_scan_1d.main(
+        nv_sig,
+        z_start=z_start,
+        z_end=z_end,
+        num_steps=num_steps,
+        num_averages=num_averages,
+        save_data=True,
+    )
+    return counts, z_positions
+
+
+def do_z_scan_calibrated(nv_sig, z_start=50, z_end=-350, num_steps=61, num_averages=1):
+    """
+    Perform a 1D Z-axis scan with automatic calibration.
+
+    This function:
+    1. Calibrates the Z-axis to find surface (Z=0)
+    2. Performs a 1D scan along Z-axis collecting photon counts
+    3. Displays real-time plot of counts vs Z position
+    4. Saves data and plot
+
+    Parameters
+    ----------
+    nv_sig : dict
+        NV center parameters
+    z_start : int
+        Starting Z position in steps (positive = above surface)
+    z_end : int
+        Ending Z position in steps (negative = below surface)
+    num_steps : int
+        Number of Z positions to scan
+    num_averages : int
+        Number of photon count samples to average at each Z position
+
+    Returns
+    -------
+    tuple
+        (counts, z_positions) - counts in kcps or raw depending on config
+    """
+    # First calibrate to find surface
+    print("=== Starting Z-axis calibration ===")
+    cal_results = do_calibrate_z_axis(nv_sig)
+
+    if cal_results is None:
+        print("ERROR: Calibration failed, aborting Z scan")
+        return None, None
+
+    print(f"Calibration complete. Surface set at Z=0")
+    print()
+
+    # Now perform 1D Z scan using the dedicated routine
+    counts, z_positions = z_scan_1d.main(
+        nv_sig,
+        z_start=z_start,
+        z_end=z_end,
+        num_steps=num_steps,
+        num_averages=num_averages,
+        save_data=True,
+    )
+
+    return counts, z_positions
 
 
 # def do_g2_measurement(nv_sig, apd_a_index, apd_b_index):

@@ -260,8 +260,15 @@ config |= {
         # "calibration_coords_nv2": calibration_coords_nv2,
         # "calibration_coords_nv3": calibration_coords_nv3,
         "pixel_to_sample_affine_transformation_matrix": pixel_to_sample_affine_transformation_matrix,
-        "cryo_piezos_voltage": 40, # was 30
-        "z_bias_adjust": 0.0
+        "cryo_piezos_voltage": 30,  
+        "z_bias_adjust": 0.0,
+        "z_calibration": {
+            "scan_range": 600,  # Total steps to scan during calibration
+            "step_size": 5,  # Step increment during scan
+            "num_averages": 100,  # Photon count samples per step
+            "safety_threshold": 100,  # Minimum safe photon count - abort if below
+            "settling_time_ms": 10,  # Wait time after each step movement
+        },
     },
     ###
     "Servers": {  # Bucket for miscellaneous servers not otherwise listed above

@@ -158,6 +158,36 @@ class PosXyzAttoPiezos(LabradServer):
         for axis in [1, 2, 3]:
             self.send_cmd(cmd, axis, arg)
 
+    @setting(0, returns="i")
+    def get_z_position(self, c):
+        """
+        Get the current cached Z position in steps.
+        Note: This is a software cache, not read from hardware.
+        """
+        return self.pos[2]
+
+    @setting(1, offset="i")
+    def set_z_reference(self, c, offset=0):
+        """
+        Reset the Z position cache to establish a new reference point.
+        The current physical position becomes 'offset' in the cache.
+        Use offset=0 to set current position as the zero reference.
+        """
+        self.pos[2] = offset
+        logging.info(f"Z reference set to {offset} steps")
+
+    @setting(5, num_steps="i", returns="i")
+    def move_z_steps(self, c, num_steps):
+        """
+        Move Z axis by a relative number of steps.
+        Positive steps = move up, negative steps = move down.
+        Returns the new Z position.
+        """
+        current_z = self.pos[2]
+        new_z = current_z + num_steps
+        self.write_ax(new_z, 3)
+        return self.pos[2]
+
     @setting(2, pos_in_steps="v")
     def write_z(self, c, pos_in_steps):
         """
