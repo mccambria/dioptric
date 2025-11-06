@@ -185,22 +185,17 @@ def main(
 
     # Track peak finding
     MOVE_INCREMENT = 50  # steps per increment
-    MAX_MOVES = 40  # Safety limit (40 * 50 = 2000 steps max)
+    UPWARD_MOVES = 20  # Move up 20 times (20 * 50 = 1000 steps total)
     PEAK_THRESHOLD = 2500  # Only consider peaks above this value (true surface)
-    STABLE_TARGET_MIN = 300  # Target stable range (far from sample)
-    STABLE_TARGET_MAX = 900
-    STABLE_CHECKS = 3  # Need 3 consecutive stable readings
 
     counts_history = [baseline_counts]
     surface_peak_value = 0  # Track the maximum peak > PEAK_THRESHOLD
     surface_peak_position = None
-    stable_count = 0
 
-    print(f"[DEBUG] Moving upward in {MOVE_INCREMENT}-step increments...")
-    print(f"[DEBUG] Will continue until counts stabilize in [{STABLE_TARGET_MIN}, {STABLE_TARGET_MAX}] range")
+    print(f"[DEBUG] Moving upward {UPWARD_MOVES} times in {MOVE_INCREMENT}-step increments (total: {UPWARD_MOVES * MOVE_INCREMENT} steps)")
     print(f"[DEBUG] Recording any peaks > {PEAK_THRESHOLD} counts encountered")
 
-    for move_num in range(MAX_MOVES):
+    for move_num in range(UPWARD_MOVES):
         # Move up by increment
         piezo.move_z_steps(MOVE_INCREMENT)
 
@@ -212,8 +207,7 @@ def main(
         # Measure counts
         test_samples = counter.read_counter_simple()
         if len(test_samples) == 0:
-            print(f"  Move {move_num+1}: NO SAMPLES - continuing...")
-            stable_count = 0
+            print(f"  Move {move_num+1}/{UPWARD_MOVES}: NO SAMPLES")
             continue
 
         current_counts = np.mean(test_samples)
@@ -225,33 +219,18 @@ def main(
             if current_counts > surface_peak_value:
                 surface_peak_value = current_counts
                 surface_peak_position = current_position
-                print(f"  Move {move_num+1}: counts={current_counts:.0f} SURFACE PEAK (position: {current_position})")
+                print(f"  Move {move_num+1}/{UPWARD_MOVES}: counts={current_counts:.0f} SURFACE PEAK (position: {current_position})")
             else:
-                print(f"  Move {move_num+1}: counts={current_counts:.0f} (near surface peak)")
-            stable_count = 0  # Reset stability counter
-        # Check if counts are in stable range (far from sample)
-        elif STABLE_TARGET_MIN <= current_counts <= STABLE_TARGET_MAX:
-            stable_count += 1
-            print(f"  Move {move_num+1}: counts={current_counts:.0f} [stable {stable_count}/{STABLE_CHECKS}]")
-
-            # If we've seen 3 consecutive stable readings, we're done
-            if stable_count >= STABLE_CHECKS:
-                print(f"\n[SUCCESS] Reached stable region far from sample")
-                break
+                print(f"  Move {move_num+1}/{UPWARD_MOVES}: counts={current_counts:.0f} (near surface peak)")
         else:
-            # Not stable yet, reset counter
-            stable_count = 0
-            if current_counts > STABLE_TARGET_MAX:
-                print(f"  Move {move_num+1}: counts={current_counts:.0f} (above stable range, continuing up)")
-            else:
-                print(f"  Move {move_num+1}: counts={current_counts:.0f} (below stable range, continuing up)")
+            print(f"  Move {move_num+1}/{UPWARD_MOVES}: counts={current_counts:.0f}")
 
+    print(f"\n[DEBUG] Upward scan complete - moved {UPWARD_MOVES * MOVE_INCREMENT} steps")
     if surface_peak_value == 0:
-        print(f"\n[WARNING] No surface peak > {PEAK_THRESHOLD} found in {MAX_MOVES * MOVE_INCREMENT} steps!")
+        print(f"[WARNING] No surface peak > {PEAK_THRESHOLD} found")
         print(f"[WARNING] Maximum count seen was {max(counts_history):.0f}")
-        print(f"[WARNING] Check: Is laser focused? Is sample present?")
     else:
-        print(f"\n[SUCCESS] Surface peak detected: {surface_peak_value:.0f} counts at step {surface_peak_position}")
+        print(f"[SUCCESS] Surface peak detected: {surface_peak_value:.0f} counts at step {surface_peak_position}")
 
     scan_start_position = piezo.get_z_position()
     total_moved_up = scan_start_position - pos_start
