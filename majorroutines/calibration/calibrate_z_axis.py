@@ -133,29 +133,37 @@ def main(
         pass
 
     # Start continuous streaming immediately for instant feedback
+    print("[DEBUG] Starting counter tag stream...")
     counter.start_tag_stream()
+    print("[DEBUG] Starting pulse generator stream...")
     pulse_gen.stream_start(-1)  # -1 means run continuously until stopped
     tb.init_safe_stop()
 
     # Show live counts immediately while we prepare
-    print("Starting live readout...")
-    time.sleep(0.05)  # Brief moment to accumulate some counts
+    print("[DEBUG] Starting live readout...")
+    time.sleep(0.1)  # Brief moment to accumulate some counts
 
     ### Move to top of Z range
 
-    print(f"Moving to top of Z range (+{scan_range} steps)...")
+    print(f"\n[DEBUG] Getting current Z position...")
     start_position = piezo.get_z_position()
+    print(f"[DEBUG] Current Z position: {start_position} steps")
     top_position = start_position + scan_range
+    print(f"[DEBUG] Moving to top of Z range: {top_position} steps...")
     piezo.write_z(top_position)
 
-    # Show live counts during movement to top 
+    # Show live counts during movement to top
     move_start = time.time()
-    while time.time() - move_start < 0.5:  
+    sample_count = 0
+    while time.time() - move_start < 0.5:
         new_samples = counter.read_counter_simple()
         if len(new_samples) > 0:
+            sample_count += len(new_samples)
             current_avg = np.mean(new_samples)
-            print(f"Current counts: {current_avg:.0f}", end="\r")
+            print(f"[DEBUG] Current counts: {current_avg:.0f} (total samples: {sample_count})", end="\r")
         time.sleep(0.05)
+
+    print(f"\n[DEBUG] Total samples collected during move: {sample_count}")
 
     # Set this as the starting reference (Z = scan_range)
     piezo.set_z_reference(scan_range)
@@ -177,10 +185,13 @@ def main(
         target_z = scan_range - (step_ind * step_size)
 
         # Move to position
+        print(f"\n[DEBUG] Moving to Z={target_z} steps...")
         piezo.write_z(target_z)
+        print(f"[DEBUG] Waiting {settling_time_sec}s for piezo to settle...")
         time.sleep(settling_time_sec)
 
         # Clear buffer and collect fresh counts at this position
+        print(f"[DEBUG] Clearing counter buffer...")
         counter.clear_buffer()
         time.sleep(0.01)  # Brief wait for buffer to fill
 
@@ -188,6 +199,7 @@ def main(
         counts = []
         read_start = time.time()
         timeout = 2.0  # 2 second timeout per position
+        print(f"[DEBUG] Collecting {num_averages} samples...")
 
         while len(counts) < num_averages:
             if tb.safe_stop():
@@ -195,13 +207,14 @@ def main(
                 safety_triggered = True
                 break
             if time.time() - read_start > timeout:
-                print(f"Warning: timeout at Z={target_z}, got {len(counts)}/{num_averages} samples")
+                print(f"[DEBUG] Timeout! Got {len(counts)}/{num_averages} samples")
                 break
 
             new_samples = counter.read_counter_simple()
             if len(new_samples) > 0:
                 counts.extend(new_samples)
-                # Update plot immediately with partial data 
+                print(f"[DEBUG] Got {len(new_samples)} new samples, total={len(counts)}", end="\r")
+                # Update plot immediately with partial data
                 mean_counts = np.mean(counts)
                 counts_array[step_ind] = mean_counts
                 kpl.plot_line_update(ax, x=z_array, y=counts_array, relim_x=False)
@@ -215,8 +228,9 @@ def main(
 
         # Final update for this position
         counts_array[step_ind] = mean_counts
+        print(f"\n[DEBUG] Updating plot: Z={target_z}, counts={mean_counts:.0f}")
         kpl.plot_line_update(ax, x=z_array, y=counts_array, relim_x=False)
-        print(f"Step {step_ind + 1}/{num_steps}: Z={target_z} steps, counts={mean_counts:.0f}")
+        print(f"==> Step {step_ind + 1}/{num_steps}: Z={target_z} steps, counts={mean_counts:.0f}")
 
         # Safety check
         if mean_counts < safety_threshold and len(photon_counts) > 3:
