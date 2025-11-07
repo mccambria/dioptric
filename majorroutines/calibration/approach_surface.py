@@ -107,7 +107,7 @@ def main(nv_sig, target_counts=7000, step_size=10, max_steps=10000, direction="d
     print(f"Beginning approach to target counts = {target_counts}...\n")
 
     # Initialize plot
-    fig, (ax1, ax2) = plt.subplots(2, 1, figsize=(12, 10))
+    fig, ax = plt.subplots(figsize=(12, 7))
     fig.suptitle("Safe Surface Approach", fontsize=16, fontweight='bold')
 
     try:
@@ -150,47 +150,43 @@ def main(nv_sig, target_counts=7000, step_size=10, max_steps=10000, direction="d
             counts.append(mean_counts)
             steps_moved += abs(step_increment)
 
-            # Print status every 10 steps
-            if len(positions) % 10 == 1:
+            # Print status every 20 steps
+            if len(positions) % 20 == 1:
                 distance_from_start = current_position - start_position
                 print(f"Position {current_position:7d} ({distance_from_start:+6d} from start), Counts {mean_counts:6.0f}")
 
-            # Update plot every 5 steps
-            if len(positions) % 5 == 0:
-                # Top plot: Counts vs position
-                ax1.clear()
-                ax1.plot(positions, counts, 'b-', linewidth=2)
-                ax1.plot(current_position, mean_counts, 'ro', markersize=10)
-                ax1.axhline(target_counts, color='green', linestyle='--', linewidth=2,
+            # Update plot every step for continuous feedback
+            if True:
+                # Counts vs position
+                ax.clear()
+                ax.plot(positions, counts, 'b-', linewidth=2)
+                ax.plot(current_position, mean_counts, 'ro', markersize=10)
+                ax.axhline(target_counts, color='green', linestyle='--', linewidth=2,
                            label=f'Target: {target_counts}')
-                ax1.set_xlabel("Z position (steps)", fontsize=11)
-                ax1.set_ylabel("Photon counts", fontsize=11)
-                ax1.set_title(f"Current: {mean_counts:.0f} counts at step {current_position}", fontsize=12)
-                ax1.legend()
-                ax1.grid(True, alpha=0.3)
-
-                # Bottom plot: Distance to target
-                distance_to_target = target_counts - mean_counts
-                ax2.clear()
-                ax2.bar(['Distance to Target'], [distance_to_target],
-                       color='orange' if distance_to_target > 0 else 'green', width=0.5)
-                ax2.axhline(0, color='black', linewidth=1)
-                ax2.set_ylabel("Count difference", fontsize=11)
-                ax2.set_title(f"{distance_to_target:+.0f} counts from target", fontsize=12)
-                ax2.grid(True, alpha=0.3, axis='y')
+                ax.set_xlabel("Z position (steps)", fontsize=11)
+                ax.set_ylabel("Photon counts", fontsize=11)
+                ax.set_title(f"Current: {mean_counts:.0f} counts at step {current_position}", fontsize=12)
+                ax.legend()
+                ax.grid(True, alpha=0.3)
 
                 plt.tight_layout()
                 plt.pause(0.01)
 
             # Check if target reached
             if mean_counts >= target_counts:
-
+                print(f"\n{'='*60}")
                 print(f"TARGET REACHED")
-
+                print(f"{'='*60}")
                 print(f"Position: {current_position} steps")
                 print(f"Counts: {mean_counts:.0f}")
                 print(f"Moved {abs(current_position - start_position)} steps from start")
+
+                # Set this position as Z=0 reference
+                print(f"\nSetting current position as Z=0 reference...")
+                piezo.set_z_reference(0)
+                print(f"Z position reset complete. Surface is now at step=0")
                 print(f"{'='*60}\n")
+
                 target_reached = True
                 break
 
