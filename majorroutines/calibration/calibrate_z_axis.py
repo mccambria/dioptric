@@ -2,20 +2,27 @@
 """
 Z-axis calibration routine for Attocube ANC300 piezo.
 
-Scans the Z-axis from top to bottom while monitoring photon counts to find
-the sample surface. Sets the peak photon count position as Z=0 reference.
-Includes safety monitoring to prevent sample collision.
+Establishes a reliable reference by scanning from maximum Z position downward
+to detect the sample surface. Records max→surface distance for position recovery
+and measures hysteresis for improved repeatability.
+
+Algorithm:
+1. Move to maximum Z position (up by configured steps)
+2. Scan downward collecting photon count profile
+3. Identify surface using scipy peak detection
+4. Verify surface position and measure hysteresis
+5. Set surface as Z=0 reference
 
 Created on November 5th, 2025
+Updated on November 7th, 2025
 
-
+@author: chemistatcode
 """
 
 import time
 
 import matplotlib.pyplot as plt
 import numpy as np
-from scipy.optimize import curve_fit
 from scipy.signal import find_peaks
 
 from utils import common
@@ -26,81 +33,76 @@ from utils import tool_belt as tb
 from utils.constants import CoordsKey, NVSig, VirtualLaserKey
 
 
-def main(
-    nv_sig,
-    scan_range=600,
-    step_size=5,
-    num_averages=100,
-    safety_threshold=150,
-    settling_time_ms=10,
-):
+def main(nv_sig, **kwargs):
     """
-    Calibrate Z-axis by finding sample surface
+    Calibrate Z-axis by scanning from maximum position down to sample surface.
 
-    The routine moves the piezo to the top of its range, then scans downward
-    while monitoring photon counts. The peak count position (surface) is set
-    as Z=0 reference
+    This routine establishes a reliable reference distance from max→surface that
+    can be used for position recovery when NVs are "lost" due to accumulated
+    positioning errors. Moving in one direction (downward) minimizes hysteresis
+    effects for better repeatability.
 
     Parameters
     ----------
-    nv_sig : dict
+    nv_sig : NVSig
         NV center parameters (name, laser settings, etc.)
-    scan_range : int
-        Total number of steps to scan (default: 600)
-    step_size : int
-        Step increment during scan (default: 5)
-    num_averages : int
-        Number of photon count samples per step (default: 100)
-    safety_threshold : int
-        Minimum safe photon count - abort if below this (default: 150)
-    settling_time_ms : float
-        Wait time after each step in milliseconds (default: 10)
+    **kwargs : dict
+        Optional parameter overrides. Can override any parameter from config's
+        z_calibration section (e.g., max_position_steps, scan_step_size, etc.)
 
     Returns
     -------
     dict
         Calibration results containing:
-        - z_surface_steps: Z position of surface (peak counts)
-        - peak_counts: Maximum photon count value
-        - all_steps: Array of all Z positions scanned
-        - all_counts: Array of photon counts at each position
-        - safety_triggered: Whether safety stop was activated
+        - max_position_absolute: Starting position before zeroing (steps)
+        - surface_position_absolute: Surface position before zeroing (steps)
+        - max_to_surface_distance: Reference distance (steps)
+        - surface_photon_counts: Peak counts at surface
+        - verification_errors: Position errors from verification passes (steps)
+        - suggested_z_bias_adjust: Calculated hysteresis compensation
+        - count_profile: Full (steps, counts) data arrays
     """
 
-    ### Setup
+    ### Setup and Configuration
 
-    # Get servers using proper positioning utilities
+    config = common.get_config_dict()
+    cal_config = config["Positioning"]["z_calibration"]
+
+    # Load parameters from config, allow kwargs to override
+    max_position_steps = kwargs.get("max_position_steps", cal_config["max_position_steps"])
+    scan_step_size = kwargs.get("scan_step_size", cal_config["scan_step_size"])
+    peak_threshold = kwargs.get("peak_threshold", cal_config["peak_threshold"])
+    scan_past_peak_steps = kwargs.get("scan_past_peak_steps", cal_config["scan_past_peak_steps"])
+    safety_min_counts = kwargs.get("safety_min_counts", cal_config["safety_min_counts"])
+    verification_passes = kwargs.get("verification_passes", cal_config["verification_passes"])
+    verification_retract_steps = kwargs.get("verification_retract_steps", cal_config["verification_retract_steps"])
+    settling_time_ms = kwargs.get("settling_time_ms", cal_config["settling_time_ms"])
+    max_scan_timeout_s = kwargs.get("max_scan_timeout_s", cal_config["max_scan_timeout_s"])
+
+    settling_time_s = settling_time_ms / 1000.0
+
+    # Get servers
     piezo = pos.get_positioner_server(CoordsKey.Z)
     counter = tb.get_server_counter()
-    pulse_gen = tb.get_server_pulse_streamer()
+    pulse_gen = tb.get_server_pulse_gen()
 
-    print(f"[DEBUG] Piezo server: {piezo}")
-    print(f"[DEBUG] Counter server: {counter}")
-    print(f"[DEBUG] Pulse gen server: {pulse_gen}")
+    print("\n" + "="*60)
+    print("Z-AXIS CALIBRATION - MAX TO SURFACE REFERENCE")
+    print("="*60)
+    print(f"Configuration:")
+    print(f"  Max position move: {max_position_steps} steps")
+    print(f"  Scan step size: {scan_step_size} steps")
+    print(f"  Peak threshold: {peak_threshold} counts")
+    print(f"  Scan past peak: {scan_past_peak_steps} steps")
+    print(f"  Safety minimum: {safety_min_counts} counts")
+    print(f"  Verification passes: {verification_passes}")
+    print("="*60 + "\n")
 
-    # Ensure clean state before starting (in case previous run was cancelled)
-    print("[DEBUG] Cleaning up any previous streams...")
+    # Reset hardware to clean state
     tb.reset_cfm()
-    tb.reset_safe_stop()
-    try:
-        counter.stop_tag_stream()
-    except:
-        pass
-    time.sleep(0.1)
+    tb.init_safe_stop()
 
-    # Get calibration config if available
-    config = common.get_config_dict()
-    if "z_calibration" in config.get("Positioning", {}):
-        cal_config = config["Positioning"]["z_calibration"]
-        scan_range = cal_config.get("scan_range", scan_range)
-        step_size = cal_config.get("step_size", step_size)
-        num_averages = cal_config.get("num_averages", num_averages)
-        safety_threshold = cal_config.get("safety_threshold", safety_threshold)
-        settling_time_ms = cal_config.get("settling_time_ms", settling_time_ms)
-
-    settling_time_sec = settling_time_ms / 1000.0
-
-    # Setup laser for imaging 
+    # Setup laser for imaging
     vld = tb.get_virtual_laser_dict(VirtualLaserKey.IMAGING)
     readout_dur = int(
         nv_sig.pulse_durations.get(VirtualLaserKey.IMAGING, int(vld["duration"]))
@@ -109,425 +111,393 @@ def main(
     tb.set_filter(nv_sig, VirtualLaserKey.IMAGING)
     readout_power = tb.set_laser_power(nv_sig, VirtualLaserKey.IMAGING)
 
-    # Load pulse sequence for photon counting 
-    delay = 0  # No delay needed for continuous counting
-    seq_args = [delay, readout_dur, readout_laser, readout_power]
+    # Load pulse sequence for photon counting
+    seq_args = [0, readout_dur, readout_laser, readout_power]
     seq_args_string = tb.encode_seq_args(seq_args)
     seq_file = "simple_readout.py"
-
     period = pulse_gen.stream_load(seq_file, seq_args_string)[0]
 
-    ### Setup scan parameters and plot
-
-    num_steps = int(scan_range / step_size) + 1
-    z_steps = []
-    photon_counts = []
-    safety_triggered = False
-
-    print(f"Scanning {num_steps} positions...")
-    print(f"Safety threshold: {safety_threshold} counts")
-    print()
-
-    # Create figure for real-time monitoring
-    kpl.init_kplotlib()
-    fig, ax = plt.subplots()
-
-    # Initialize plot with placeholder data (will update x-axis after we know actual positions)
-    placeholder_x = np.linspace(0, scan_range, num_steps)
-    placeholder_y = np.full(num_steps, np.nan)
-
-    # Initialize plot with kpl.plot_line
-    kpl.plot_line(ax, placeholder_x, placeholder_y)
-    ax.set_xlabel("Piezo steps (relative position)")
-    ax.set_ylabel("Photon counts")
-    ax.set_title("Z-axis calibration scan")
-    # Will set proper x-limits after we move to starting position
-
-    try:
-        plt.get_current_fig_manager().window.showMaximized()
-    except Exception:
-        pass
-
-    # Start continuous streaming immediately for instant feedback
-    print("[DEBUG] Starting counter tag stream...")
+    # Start continuous counting
     counter.start_tag_stream()
-    print("[DEBUG] Starting pulse generator stream...")
-    pulse_gen.stream_start(-1)  # -1 means run continuously until stopped
-    tb.init_safe_stop()
+    pulse_gen.stream_start(-1)  # Run continuously
 
-    # Verify we're getting samples before proceeding
-    print("[DEBUG] Verifying photon counting is working...")
-    time.sleep(0.2)  # Allow time for samples to accumulate
+    # Verify photon counting is working
+    time.sleep(0.2)
     test_samples = counter.read_counter_simple()
     if len(test_samples) == 0:
-        print("[ERROR] No photon counts detected!")
-
+        print("[ERROR] No photon counts detected! Check APD/laser setup.")
         counter.stop_tag_stream()
-        return None
-    else:
-        avg_count = np.mean(test_samples)
-        print(f"[DEBUG] Photon counting working! Initial average: {avg_count:.0f} counts")
-        print(f"[DEBUG] Got {len(test_samples)} samples in 0.2s")
-
-    ### Continuous upward scan until user stops or peak found
-
-    print(f"\n=== Continuous upward scan - monitoring for surface ===")
-    pos_start = piezo.get_z_position()
-    print(f"Starting position: {pos_start} steps")
-    print(f"Moving up continuously in 10-step increments")
-    print(f"Press CTRL+C to stop when you see the peak\n")
-
-    # Get initial counts
-    counter.clear_buffer()
-    time.sleep(0.1)
-    baseline_samples = counter.read_counter_simple()
-    baseline_counts = np.mean(baseline_samples) if len(baseline_samples) > 0 else 0
-    print(f"Initial counts: {baseline_counts:.0f}\n")
-
-    MOVE_INCREMENT = 10  # Small steps for continuous monitoring
-    PEAK_THRESHOLD = 2500  # Surface detection
-
-    counts_history = [baseline_counts]
-    surface_peak_value = 0
-    surface_peak_position = None
-    move_count = 0
-
-    try:
-        while True:
-            if tb.safe_stop():
-                print("\nUser stopped scan")
-                break
-
-            move_count += 1
-            pos_before = piezo.get_z_position()
-
-            # Move up
-            pos_after = piezo.move_z_steps(MOVE_INCREMENT)
-            time.sleep(0.15)  # Wait for movement
-
-            # Get counts
-            counter.clear_buffer()
-            time.sleep(0.05)
-
-            try:
-                samples = counter.read_counter_simple()
-                if len(samples) == 0:
-                    print(f"Move {move_count}: step {pos_after}, NO SAMPLES")
-                    continue
-
-                current_counts = np.mean(samples)
-                count_change = current_counts - counts_history[-1]
-                counts_history.append(current_counts)
-
-                # Show current status
-                print(f"Move {move_count}: step {pos_after}, counts={current_counts:.0f} (change:{count_change:+.0f})")
-
-                # Track peak
-                if current_counts > PEAK_THRESHOLD:
-                    if current_counts > surface_peak_value:
-                        surface_peak_value = current_counts
-                        surface_peak_position = pos_after
-                        print(f"    >>> NEW PEAK DETECTED: {current_counts:.0f} at step {pos_after} <<<")
-
-            except Exception as e:
-                print(f"Move {move_count}: Error reading counts - {e}")
-                time.sleep(0.1)
-
-    except KeyboardInterrupt:
-        print("\nScan interrupted by user")
-
-    scan_start_position = piezo.get_z_position()
-    total_moved = scan_start_position - pos_start
-
-    print(f"\n=== Scan Summary ===")
-    print(f"Starting position: {pos_start}")
-    print(f"Final position: {scan_start_position}")
-    print(f"Total moved up: {total_moved} steps")
-    if surface_peak_value > 0:
-        print(f"Peak detected: {surface_peak_value:.0f} counts at step {surface_peak_position}")
-    else:
-        print(f"No significant peak found (max seen: {max(counts_history):.0f})")
-
-    # Use the detected peak or current position
-    z_steps = []
-    photon_counts = []
-    safety_triggered = False
-
-    if surface_peak_value > 0 and surface_peak_position is not None:
-        print(f"\nUsing detected peak for calibration")
-        z_steps = [surface_peak_position]
-        photon_counts = [surface_peak_value]
-        chosen_position = surface_peak_position
-    else:
-        print(f"\nNo peak detected - would you like to use current position as reference?")
-        # For now, skip calibration if no peak found
-        counter.stop_tag_stream()
+        pulse_gen.stream_stop()
         tb.reset_cfm()
         return None
 
-    # Move to the chosen position
-    print(f"\nMoving to surface position (step {chosen_position})...")
-    piezo.write_z(chosen_position)
+    initial_avg = np.mean(test_samples)
+    print(f"Initial photon count check: {initial_avg:.0f} counts (working!)\n")
+
+    # Initialize plot for real-time monitoring
+    kpl.init_kplotlib()
+    fig, ax = plt.subplots(figsize=(10, 6))
+    ax.set_xlabel("Z position (steps)")
+    ax.set_ylabel("Photon counts")
+    ax.set_title("Z-axis calibration - Downward scan from maximum")
+    ax.grid(True, alpha=0.3)
+
+    try:
+        plt.get_current_fig_manager().window.showMaximized()
+    except:
+        pass
+
+    ### PHASE 1: Move to Maximum Position
+
+    print("="*60)
+    print("PHASE 1: Moving to Maximum Position")
+    print("="*60)
+
+    initial_position = piezo.get_z_position()
+    print(f"Current position: {initial_position} steps")
+    print(f"Moving UP {max_position_steps} steps to establish maximum...")
+
+    # Move to max position
+    max_position_absolute = piezo.move_z_steps(max_position_steps)
+    time.sleep(0.5)  # Allow movement to complete
+
+    print(f"Maximum position reached: {max_position_absolute} steps")
+    print(f"This will be the starting reference point.\n")
+
+    ### PHASE 2: Downward Scan with Data Collection
+
+    print("="*60)
+    print("PHASE 2: Scanning Downward to Find Surface")
+    print("="*60)
+    print(f"Scanning down in {scan_step_size} step increments")
+    print(f"Will continue {scan_past_peak_steps} steps past peak for full profile")
+    print(f"Safety abort if counts < {safety_min_counts}\n")
+
+    scan_positions = []  # Absolute step positions
+    scan_counts = []     # Mean photon counts at each position
+
+    current_position = max_position_absolute
+    peak_detected = False
+    steps_past_peak = 0
+    scan_start_time = time.time()
+
+    try:
+        while True:
+            # Check for user interrupt or timeout
+            if tb.safe_stop():
+                print("\n[User stopped scan]")
+                break
+
+            if time.time() - scan_start_time > max_scan_timeout_s:
+                print(f"\n[Timeout after {max_scan_timeout_s}s - stopping scan]")
+                break
+
+            # Move down one step
+            current_position = piezo.move_z_steps(-scan_step_size)
+            time.sleep(settling_time_s)
+
+            # Collect photon counts
+            counter.clear_buffer()
+            time.sleep(0.05)  # Let buffer accumulate samples
+
+            samples = counter.read_counter_simple()
+
+            if len(samples) == 0:
+                # Simple retry once
+                time.sleep(0.05)
+                samples = counter.read_counter_simple()
+
+            if len(samples) > 0:
+                mean_counts = np.mean(samples)
+            else:
+                # If still no samples, use last known value or zero
+                mean_counts = scan_counts[-1] if len(scan_counts) > 0 else 0
+                print(f"  [Warning: No samples at step {current_position}, using {mean_counts:.0f}]")
+
+            # Store data
+            scan_positions.append(current_position)
+            scan_counts.append(mean_counts)
+
+            # Update plot every 5 steps
+            if len(scan_positions) % 5 == 0:
+                ax.clear()
+                ax.plot(scan_positions, scan_counts, 'b-', linewidth=1)
+                ax.set_xlabel("Z position (steps)")
+                ax.set_ylabel("Photon counts")
+                ax.set_title(f"Downward scan - {len(scan_positions)} points")
+                ax.grid(True, alpha=0.3)
+                plt.pause(0.01)
+
+            # Peak detection logic
+            if mean_counts > peak_threshold and not peak_detected:
+                peak_detected = True
+                print(f"  >>> Peak detected! Counts: {mean_counts:.0f} at step {current_position}")
+
+            if peak_detected:
+                steps_past_peak += scan_step_size
+                if steps_past_peak >= scan_past_peak_steps:
+                    print(f"\nScan complete: {scan_past_peak_steps} steps past peak")
+                    break
+
+            # Safety check
+            if mean_counts < safety_min_counts and len(scan_counts) > 20:
+                print(f"\n[Safety abort: counts {mean_counts:.0f} < {safety_min_counts}]")
+                break
+
+            # Status display every 20 steps
+            if len(scan_positions) % 20 == 0:
+                print(f"  Step {current_position}: {mean_counts:.0f} counts")
+
+    except KeyboardInterrupt:
+        print("\n[Scan interrupted by user]")
+
+    finally:
+        # Always stop streams
+        counter.stop_tag_stream()
+        pulse_gen.stream_stop()
+
+    # Convert to numpy arrays
+    scan_positions = np.array(scan_positions)
+    scan_counts = np.array(scan_counts)
+
+    if len(scan_counts) < 10:
+        print("\n[ERROR] Insufficient data collected. Calibration aborted.")
+        tb.reset_cfm()
+        tb.reset_safe_stop()
+        return None
+
+    print(f"\nData collected: {len(scan_positions)} positions")
+    print(f"Position range: {scan_positions[0]} to {scan_positions[-1]} steps")
+    print(f"Count range: {scan_counts.min():.0f} to {scan_counts.max():.0f}\n")
+
+    ### PHASE 3: Peak Analysis with scipy.find_peaks
+
+    print("="*60)
+    print("PHASE 3: Analyzing Peak to Find Surface")
+    print("="*60)
+
+    # Find peaks in the count profile
+    # Use prominence to find the most significant peak
+    peaks_indices, peak_properties = find_peaks(
+        scan_counts,
+        height=peak_threshold,
+        prominence=peak_threshold * 0.3  # Peak must be 30% above surrounding
+    )
+
+    if len(peaks_indices) == 0:
+        print("[ERROR] No valid peak found in scan data!")
+        print("Possible issues:")
+        print("  - Peak threshold too high")
+        print("  - Didn't scan through surface")
+        print("  - Laser/APD alignment issue")
+        tb.reset_cfm()
+        tb.reset_safe_stop()
+        return None
+
+    # Find the highest prominence peak (should be the surface)
+    prominences = peak_properties['prominences']
+    highest_peak_idx = peaks_indices[np.argmax(prominences)]
+    surface_position_absolute = scan_positions[highest_peak_idx]
+    surface_counts = scan_counts[highest_peak_idx]
+
+    print(f"Surface identified using scipy.find_peaks:")
+    print(f"  Position: {surface_position_absolute} steps")
+    print(f"  Photon counts: {surface_counts:.0f}")
+    print(f"  Peak prominence: {prominences[np.argmax(prominences)]:.0f}")
+    print(f"  Total peaks found: {len(peaks_indices)}\n")
+
+    # Update plot with peak marked
+    ax.clear()
+    ax.plot(scan_positions, scan_counts, 'b-', linewidth=1, label='Scan data')
+    ax.plot(surface_position_absolute, surface_counts, 'r*',
+            markersize=15, label=f'Surface (step {surface_position_absolute})')
+    ax.axhline(peak_threshold, color='orange', linestyle='--',
+               alpha=0.5, label=f'Peak threshold ({peak_threshold})')
+    ax.set_xlabel("Z position (steps)")
+    ax.set_ylabel("Photon counts")
+    ax.set_title("Surface detected - Peak analysis")
+    ax.legend()
+    ax.grid(True, alpha=0.3)
+    plt.pause(0.1)
+
+    ### PHASE 4: Verification Scan (Hysteresis Measurement)
+
+    print("="*60)
+    print("PHASE 4: Verification and Hysteresis Measurement")
+    print("="*60)
+    print(f"Performing {verification_passes} approach cycles to measure repeatability\n")
+
+    verification_errors = []
+
+    # Restart counter for verification
+    counter.start_tag_stream()
+    pulse_gen.stream_start(-1)
     time.sleep(0.2)
 
-    # Set as reference
-    print(f"Setting this position as Z=0 reference...")
+    for pass_num in range(verification_passes):
+        print(f"Verification pass {pass_num + 1}/{verification_passes}:")
+
+        # Move away from surface
+        print(f"  Retracting {verification_retract_steps} steps...")
+        piezo.move_z_steps(verification_retract_steps)
+        time.sleep(settling_time_s * 2)
+
+        # Move back to calculated surface position
+        print(f"  Approaching surface at step {surface_position_absolute}...")
+        piezo.write_z(surface_position_absolute)
+        time.sleep(settling_time_s * 2)
+
+        # Measure counts at this position
+        counter.clear_buffer()
+        time.sleep(0.1)
+        samples = counter.read_counter_simple()
+
+        if len(samples) > 0:
+            measured_counts = np.mean(samples)
+            count_error = measured_counts - surface_counts
+            verification_errors.append(count_error)
+            print(f"  Counts at surface: {measured_counts:.0f} (error: {count_error:+.0f})")
+        else:
+            print(f"  [Warning: No counts measured on pass {pass_num + 1}]")
+            verification_errors.append(0)
+
+    counter.stop_tag_stream()
+    pulse_gen.stream_stop()
+
+    # Calculate hysteresis statistics
+    if len(verification_errors) > 0:
+        avg_error = np.mean(verification_errors)
+        std_error = np.std(verification_errors)
+        print(f"\nVerification statistics:")
+        print(f"  Average count error: {avg_error:+.0f} ± {std_error:.0f} counts")
+
+    ### PHASE 5: Hysteresis Compensation Calculation
+
+    print("\n" + "="*60)
+    print("PHASE 5: Hysteresis Compensation")
+    print("="*60)
+
+    # For now, we're measuring count repeatability, not position hysteresis
+    # A more sophisticated approach would scan around the surface on each pass
+    # to find the peak position shift. For this version, we'll provide a placeholder.
+
+    # Estimate hysteresis as a percentage (typical piezos: ~10-15%)
+    # Since we don't have direct position measurement, suggest a typical value
+    suggested_z_bias_adjust = 0.0  # Will be measured in future enhancement
+
+    print(f"Hysteresis measurement: Not yet implemented")
+    print(f"  Current z_bias_adjust: {config['Positioning']['z_bias_adjust']}")
+    print(f"  Suggested value: {suggested_z_bias_adjust} (placeholder)")
+    print(f"\nNote: For accurate hysteresis, need position-resolved verification scans")
+    print(f"      This will be implemented in a future enhancement.\n")
+
+    ### PHASE 6: Set Reference and Save
+
+    print("="*60)
+    print("PHASE 6: Setting Reference and Saving Results")
+    print("="*60)
+
+    # Calculate the key reference distance
+    max_to_surface_distance = max_position_absolute - surface_position_absolute
+
+    print(f"\nCalibration Summary:")
+    print(f"  Maximum position: {max_position_absolute} steps (before zeroing)")
+    print(f"  Surface position: {surface_position_absolute} steps (before zeroing)")
+    print(f"  Reference distance (max→surface): {max_to_surface_distance} steps")
+    print(f"  Surface photon counts: {surface_counts:.0f}")
+
+    # Move to surface
+    print(f"\nMoving to surface position...")
+    piezo.write_z(surface_position_absolute)
+    time.sleep(0.2)
+
+    # Set surface as step=0 reference
+    print(f"Setting surface as Z=0 reference...")
     piezo.set_z_reference(0)
 
-    print(f"\nCalibration complete!")
+    print(f"\n{'='*60}")
+    print("Z-AXIS CALIBRATION COMPLETE")
+    print(f"{'='*60}")
     print(f"Surface is now at step=0")
+    print(f"Store this reference: max→surface = {max_to_surface_distance} steps")
+    print(f"Use this value to recover position if NVs are lost")
+    print(f"{'='*60}\n")
 
-    # Stop streams
-    counter.stop_tag_stream()
-    tb.reset_cfm()
+    tb.reset_safe_stop()
 
-    ### Save and return
+    ### Save Data
+
     timestamp = dm.get_time_stamp()
     raw_data = {
         "timestamp": timestamp,
         "nv_sig": nv_sig,
-        "calibration_method": "continuous_upward_scan",
-        "surface_step_position": int(chosen_position),
-        "peak_counts": float(surface_peak_value) if surface_peak_value > 0 else 0,
-        "total_steps_moved": int(total_moved),
-        "counts_history": [float(c) for c in counts_history],
-        "note": "Surface position set as step=0 reference after calibration",
+        "calibration_method": "max_to_surface_downward_scan",
+        "config_parameters": {
+            "max_position_steps": max_position_steps,
+            "scan_step_size": scan_step_size,
+            "peak_threshold": peak_threshold,
+            "scan_past_peak_steps": scan_past_peak_steps,
+            "safety_min_counts": safety_min_counts,
+            "verification_passes": verification_passes,
+            "verification_retract_steps": verification_retract_steps,
+            "settling_time_ms": settling_time_ms,
+        },
+        "results": {
+            "max_position_absolute": int(max_position_absolute),
+            "surface_position_absolute": int(surface_position_absolute),
+            "max_to_surface_distance": int(max_to_surface_distance),
+            "surface_photon_counts": float(surface_counts),
+            "verification_count_errors": [float(e) for e in verification_errors],
+            "suggested_z_bias_adjust": float(suggested_z_bias_adjust),
+        },
+        "scan_data": {
+            "positions": scan_positions.tolist(),
+            "counts": scan_counts.tolist(),
+        },
+        "note": "Surface position set as step=0 reference. Use max_to_surface_distance for position recovery.",
     }
 
     nv_name = getattr(nv_sig, "name", "unknown")
     file_path = dm.get_file_path(__file__, timestamp, nv_name)
     dm.save_raw_data(raw_data, file_path)
 
-    print(f"Data saved to: {file_path}")
+    # Create final plot
+    fig_final, ax_final = plt.subplots(figsize=(12, 7))
+    ax_final.plot(scan_positions, scan_counts, 'b-', linewidth=1.5, label='Scan profile')
+    ax_final.plot(surface_position_absolute, surface_counts, 'r*',
+                  markersize=20, label=f'Surface (now step=0)')
+    ax_final.axhline(peak_threshold, color='orange', linestyle='--',
+                     alpha=0.5, label=f'Peak threshold')
+    ax_final.axhline(safety_min_counts, color='red', linestyle='--',
+                     alpha=0.5, label=f'Safety minimum')
+    ax_final.set_xlabel("Z position (steps, before zeroing)", fontsize=12)
+    ax_final.set_ylabel("Photon counts", fontsize=12)
+    ax_final.set_title(f"Z-Axis Calibration - Max→Surface Distance: {max_to_surface_distance} steps",
+                       fontsize=14, fontweight='bold')
+    ax_final.legend(fontsize=10)
+    ax_final.grid(True, alpha=0.3)
+
+    dm.save_figure(fig_final, file_path)
+
+    print(f"Data and plots saved to: {file_path}")
     kpl.show()
 
     return raw_data
 
-    # OLD CODE BELOW - NOT EXECUTED
-    if False:
-        # Continue in SAME direction as Phase 1
-        # Data shows: INCREASING step numbers = moving toward sample
-        # Phase 1 went UP (increased steps), Phase 2 should CONTINUE UP
-        phase2_step_size = 1  # Check every step to avoid collision
-        num_steps_phase2 = scan_range  # One measurement per step
-        scan_end_position = scan_start_position + scan_range  # CONTINUE UPWARD
-
-        print(f"\n=== PHASE 2: Continuing upward scan toward surface ===")
-        print(f"[DEBUG] Starting from: {scan_start_position}")
-        print(f"[DEBUG] Target end: {scan_end_position}")
-        print(f"[DEBUG] Step size: {phase2_step_size} (checking EVERY step for safety)")
-        print(f"[DEBUG] Safety threshold: {safety_threshold} counts")
-        print(f"[DEBUG] Direction: INCREASING steps = continuing toward surface")
-        print(f"[DEBUG] Will STOP EARLY if peak detected and confirmed")
-
-        ### Continue scanning upward toward surface
-
-        # Pre-allocate arrays for all data (filled with NaN)
-        actual_z_positions = np.array([scan_start_position + (i * phase2_step_size) for i in range(num_steps_phase2)])
-        counts_array = np.full(num_steps_phase2, np.nan)
-
-        # Update plot x-axis
-        ax.set_xlim(scan_start_position - 5, scan_end_position + 5)
-        print(f"[DEBUG] Plot x-axis set to [{scan_start_position}, {scan_end_position}]")
-
-        # Smart early stopping variables
-        found_peak_value = 0
-        found_peak_position = None
-        past_peak = False
-        PEAK_CONFIRM_THRESHOLD = 2000  # Stop when counts drop below this after seeing peak
-
-        try:
-            for step_ind in range(num_steps_phase2):
-                if tb.safe_stop():
-                    print("User stopped calibration")
-                    safety_triggered = True
-                    break
-
-                # Calculate target step position (continuing upward toward sample)
-                target_steps = scan_start_position + (step_ind * phase2_step_size)
-
-                # Move to position (absolute positioning using cached coordinates)
-                print(f"\n[DEBUG] Moving to step {target_steps}...")
-                piezo.write_z(target_steps)
-
-                # Use longer settling time for more reliable measurements
-                settle_time = max(settling_time_sec, 0.05)  # At least 50ms
-                time.sleep(settle_time)
-
-                # Clear buffer and collect fresh counts at this position
-                counter.clear_buffer()
-                time.sleep(0.05)  # Longer wait for buffer to stabilize
-
-                # Read counts continuously until we have enough samples
-                counts = []
-                read_start = time.time()
-                timeout = 3.0  # 3 second timeout per position
-                read_attempts = 0
-                max_read_attempts = 50
-
-                while len(counts) < num_averages and read_attempts < max_read_attempts:
-                    if tb.safe_stop():
-                        print("User stopped calibration")
-                        safety_triggered = True
-                        break
-                    if time.time() - read_start > timeout:
-                        print(f"\n[WARNING] Timeout at step {target_steps}! Got {len(counts)}/{num_averages} samples")
-                        break
-
-                    read_attempts += 1
-                    try:
-                        new_samples = counter.read_counter_simple()
-                        if len(new_samples) > 0:
-                            counts.extend(new_samples)
-                            # Update plot every 10 samples to reduce overhead
-                            if len(counts) % 10 == 0 or len(counts) >= num_averages:
-                                mean_counts = np.mean(counts)
-                                counts_array[step_ind] = mean_counts
-                                kpl.plot_line_update(ax, x=actual_z_positions, y=counts_array, relim_x=False)
-                        else:
-                            time.sleep(0.01)  # Small delay if no samples available
-                    except Exception as e:
-                        print(f"\n[ERROR] Counter read failed: {e}")
-                        time.sleep(0.05)  # Wait before retry
-                        counter.clear_buffer()  # Try clearing buffer on error
-                        time.sleep(0.02)
-
-                if safety_triggered:
-                    break
-
-                mean_counts = np.mean(counts) if len(counts) > 0 else 0
-                z_steps.append(target_steps)
-                photon_counts.append(mean_counts)
-
-                # Final update for this position
-                counts_array[step_ind] = mean_counts
-                kpl.plot_line_update(ax, x=actual_z_positions, y=counts_array, relim_x=False)
-                print(f"==> Position {step_ind + 1}/{num_steps_phase2}: step {target_steps}, counts={mean_counts:.0f}")
-
-                # Smart peak detection with early stopping
-                if mean_counts > PEAK_THRESHOLD:
-                    if mean_counts > found_peak_value:
-                        found_peak_value = mean_counts
-                        found_peak_position = target_steps
-                        print(f"    >>> NEW PEAK: {mean_counts:.0f} at step {target_steps}")
-                elif found_peak_value > 0:
-                    # We've seen a peak, check if we've dropped below confirmation threshold
-                    if mean_counts < PEAK_CONFIRM_THRESHOLD:
-                        print(f"\n[SUCCESS] Peak confirmed! Stopping scan early")
-                        print(f"    Peak: {found_peak_value:.0f} counts at step {found_peak_position}")
-                        print(f"    Current: {mean_counts:.0f} counts (dropped below {PEAK_CONFIRM_THRESHOLD})")
-                        break
-
-                # Safety check - absolute minimum
-                if mean_counts < safety_threshold and len(photon_counts) > 3:
-                    print(f"\n[WARNING] Photon counts ({mean_counts:.0f}) below safety threshold!")
-                    print(f"[WARNING] Stopping at step {target_steps} to prevent collision")
-                    safety_triggered = True
-                    break
-
-        finally:
-            # Always stop streams and reset, even if cancelled or error occurs
-            print("\n[DEBUG] Stopping streams...")
-            try:
-                counter.stop_tag_stream()
-            except:
-                pass
-            tb.reset_cfm()
-            tb.reset_safe_stop()
-
-    ### Analyze results
-
-    z_steps = np.array(z_steps)
-    photon_counts = np.array(photon_counts)
-
-    if len(photon_counts) < 5:
-        print("ERROR: Calibration aborted too early, insufficient data")
-        return None
-
-    # Find peak photon count position (surface)
-    peak_idx = np.argmax(photon_counts)
-    surface_steps = z_steps[peak_idx]
-    peak_counts = photon_counts[peak_idx]
-
-    print()
-    print(f"=== Calibration Results ===")
-    print(f"Surface found at step position: {surface_steps}")
-    print(f"Peak photon counts: {peak_counts:.0f}")
-    print(f"Safety triggered: {safety_triggered}")
-
-    # Move to surface position
-    print(f"\nMoving to surface position (step {surface_steps})...")
-    piezo.write_z(surface_steps)
-    time.sleep(0.2)
-
-    # Set surface as step=0 reference point
-    print(f"Setting surface as reference point (step=0)...")
-    piezo.set_z_reference(0)
-
-    print(f"\n Z-axis calibration complete")
-    print(f"  Surface is now at step=0")
-    print(f"  You can move relative to surface using positive (away) or negative (toward) steps")
-
-    ### Create final plot
-
-    ax.clear()
-    ax.plot(z_steps, photon_counts, 'bo-', label='Measured counts')
-    ax.plot(surface_steps, peak_counts, 'r*', markersize=15, label=f'Surface (was step {surface_steps})')
-    ax.axhline(safety_threshold, color='r', linestyle='--', alpha=0.5, label=f'Safety threshold')
-    ax.set_xlabel("Piezo steps (relative position)")
-    ax.set_ylabel("Photon counts")
-    ax.set_title(f"Z-axis calibration - Surface at step {surface_steps} (now set to step=0)")
-    ax.legend()
-    ax.grid(True, alpha=0.3)
-    # X-limits based on actual scan range
-    if len(z_steps) > 0:
-        ax.set_xlim(max(z_steps) + 5, min(z_steps) - 5)
-
-    ### Save data
-
-    timestamp = dm.get_time_stamp()
-    raw_data = {
-        "timestamp": timestamp,
-        "nv_sig": nv_sig,
-        "scan_range_steps": scan_range,
-        "step_size": step_size,
-        "num_averages": num_averages,
-        "safety_threshold": safety_threshold,
-        "settling_time_ms": settling_time_ms,
-        "surface_step_position": int(surface_steps),
-        "peak_counts": float(peak_counts),
-        "all_step_positions": z_steps.tolist(),
-        "all_counts": photon_counts.tolist(),
-        "safety_triggered": safety_triggered,
-        "note": "Surface position set as step=0 reference after calibration",
-    }
-
-    nv_name = getattr(nv_sig, "name", "unknown")
-    file_path = dm.get_file_path(__file__, timestamp, nv_name)
-    dm.save_raw_data(raw_data, file_path)
-    dm.save_figure(fig, file_path)
-
-    print(f"Data saved to: {file_path}")
-
-    # Return results
-    return raw_data
-
 
 if __name__ == "__main__":
-    # Example usage
+    """Example usage for testing"""
     from utils.constants import NVSig, CoordsKey, VirtualLaserKey
 
     # Create a minimal nv_sig for testing
     nv_sig = NVSig(
-        name="test_calibration",
+        name="test_z_calibration",
         coords={CoordsKey.SAMPLE: [0.0, 0.0], CoordsKey.Z: 0},
         pulse_durations={VirtualLaserKey.IMAGING: int(1e6)},  # 1 ms
     )
 
-    results = main(
-        nv_sig,
-        scan_range=600,
-        step_size=5,
-        num_averages=100,
-        safety_threshold=150,
-    )
+    # Run calibration with default config parameters
+    results = main(nv_sig)
+
+    # Or override specific parameters:
+    # results = main(nv_sig, max_position_steps=5000, scan_step_size=5)

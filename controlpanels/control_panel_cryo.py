@@ -156,7 +156,7 @@ def do_calibrate_z_axis(nv_sig):
         scan_range=600,  # Can be overridden by config
         step_size=5,
         num_averages=100,
-        safety_threshold=100,
+        safety_threshold=150,
     )
     return results
 

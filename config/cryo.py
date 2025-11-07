@@ -263,11 +263,15 @@ config |= {
         "cryo_piezos_voltage": 30,  
         "z_bias_adjust": 0.0,
         "z_calibration": {
-            "scan_range": 600,  # Total steps to scan during calibration
-            "step_size": 5,  # Step increment during scan
-            "num_averages": 100,  # Photon count samples per step
-            "safety_threshold": 100,  # Minimum safe photon count - abort if below
-            "settling_time_ms": 10,  # Wait time after each step movement
+            "max_position_steps": 10000,       # Steps to move up to reach max position
+            "scan_step_size": 10,              # Step increment during downward scan
+            "peak_threshold": 2500,            # Min counts to consider as potential surface peak
+            "scan_past_peak_steps": 200,       # Continue scanning past peak for profile mapping
+            "safety_min_counts": 150,          # Abort if counts drop below this (too deep)
+            "verification_passes": 2,          # Number of approach/retract cycles for hysteresis
+            "verification_retract_steps": 500, # Steps to move away for verification
+            "settling_time_ms": 50,            # Wait time after each step
+            "max_scan_timeout_s": 300,         # Maximum scan duration before abort
         },
     },
     ###
