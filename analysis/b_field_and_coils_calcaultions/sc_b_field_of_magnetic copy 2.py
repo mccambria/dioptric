@@ -10,7 +10,7 @@ from itertools import product, permutations
 
 import numpy as np
 from itertools import permutations, product
-from sc_b_field_of_magnetic import solve_B_from_odmr_order_invariant
+from sc_b_field_calculations import solve_B_from_odmr_order_invariant
 
 import numpy as np
 
@@ -233,6 +233,8 @@ def print_plan_250G(res, use_measured_before=True, title="Plan to |B|=250 G (cry
             fa = res["f_after_achieved_nv_GHz"][i]
             df = 1000*(fa - f_before[i])
             print(f" {lab:<12}   {f_before[i]:.9f}   {fa:.9f}   {df:+8.3f}")
+
+
 
 # ----------------- Example -----------------
 if __name__ == "__main__":

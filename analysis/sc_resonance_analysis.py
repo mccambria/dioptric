@@ -172,30 +172,30 @@ def plot_nv_resonance(
     ax_snr.tick_params(axis="both", labelsize=14)
     plt.show(block=True)
     # # Set plot style
-    for nv_ind in range(num_nvs):
-        fig, ax = plt.subplots(figsize=(8, 5))
-        # Data points with error bars
-        ax.errorbar(
-            freqs,
-            avg_counts[nv_ind],
-            yerr=avg_counts_ste[nv_ind],
-            fmt="o",
-            color="steelblue",
-            ecolor="gray",
-            elinewidth=1,
-            capsize=3,
-            markersize=5,
-            label="Data"
-        )
-        # Fit curve
-        ax.plot(freqs_dense, fit_fns[nv_ind], "-", color="red", label="Fit")
-        # Labels and style
-        ax.set_xlabel("Frequency (GHz)")
-        ax.set_ylabel("Normalized NV Population")
-        ax.set_title(f"NV Index: {nv_ind}")
-        ax.grid(True, linestyle="--", alpha=0.6)
-        ax.legend()
-        plt.show(block=True)
+    # for nv_ind in range(num_nvs):
+    #     fig, ax = plt.subplots(figsize=(8, 5))
+    #     # Data points with error bars
+    #     ax.errorbar(
+    #         freqs,
+    #         avg_counts[nv_ind],
+    #         yerr=avg_counts_ste[nv_ind],
+    #         fmt="o",
+    #         color="steelblue",
+    #         ecolor="gray",
+    #         elinewidth=1,
+    #         capsize=3,
+    #         markersize=5,
+    #         label="Data"
+    #     )
+    #     # Fit curve
+    #     ax.plot(freqs_dense, fit_fns[nv_ind], "-", color="red", label="Fit")
+    #     # Labels and style
+    #     ax.set_xlabel("Frequency (GHz)")
+    #     ax.set_ylabel("Normalized NV Population")
+    #     ax.set_title(f"NV Index: {nv_ind}")
+    #     ax.grid(True, linestyle="--", alpha=0.6)
+    #     ax.legend()
+    #     plt.show(block=True)
     # return
 
     # ----------------- Example of use in your pipeline -----------------
@@ -212,8 +212,8 @@ def plot_nv_resonance(
     print("No match:", no_match, "Multi-match:", multi_match)
     # Print the NV indices per orientation bin
     for t, idx_list in out['bins'].items():
-        print(f"Target {t:.2f} GHz -> NV indices {idx_list}")
-    # return
+        print(f"Target {t:.3f} GHz -> NV indices {idx_list}")
+    return
     ### snrs
     median_snr = np.median(snrs)
     print(f"median snr:{median_snr:.2f}")
@@ -749,11 +749,17 @@ if __name__ == "__main__":
     # file_ids = [
     #     "2025_10_28-03_08_17-johnson-nv0_2025_10_21",
     # ]
-    # file_ids = [
-    #     "2025_11_01-07_35_08-johnson-nv0_2025_10_21",
-    # ]
+    file_ids = [
+        "2025_11_01-07_35_08-johnson-nv0_2025_10_21",
+    ]
+    
+    # ## current: I_y (ch1) = 0.73, I_z(ch2)=1.54
     # file_ids = [
     #     "2025_11_04-03_46_51-johnson-nv0_2025_10_21",
+    # ]
+    # ## current: I_y (ch1) = 0, I_z(ch2)=1.0
+    # file_ids = [
+    #     "2025_11_05-02_06_38-johnson-nv0_2025_10_21",
     # ]
     # Load the first dataset as a base
     combined_data = dm.get_raw_data(
