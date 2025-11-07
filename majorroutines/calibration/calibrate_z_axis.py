@@ -71,14 +71,14 @@ def main(nv_sig, **kwargs):
     # Load parameters from config, allow kwargs to override
     max_position_steps = kwargs.get("max_position_steps", cal_config["max_position_steps"])
     scan_step_size = kwargs.get("scan_step_size", cal_config["scan_step_size"])
-    peak_threshold = kwargs.get("peak_threshold", cal_config["peak_threshold"])
+    min_peak_prominence_ratio = kwargs.get("min_peak_prominence_ratio", cal_config["min_peak_prominence_ratio"])
     scan_past_peak_steps = kwargs.get("scan_past_peak_steps", cal_config["scan_past_peak_steps"])
     safety_min_counts = kwargs.get("safety_min_counts", cal_config["safety_min_counts"])
     verification_passes = kwargs.get("verification_passes", cal_config["verification_passes"])
     verification_retract_steps = kwargs.get("verification_retract_steps", cal_config["verification_retract_steps"])
     settling_time_ms = kwargs.get("settling_time_ms", cal_config["settling_time_ms"])
     max_scan_timeout_s = kwargs.get("max_scan_timeout_s", cal_config["max_scan_timeout_s"])
-    above_surface_counts = kwargs.get("above_surface_counts", cal_config["above_surface_counts"])
+    min_scan_points = kwargs.get("min_scan_points", cal_config["min_scan_points"])
 
     settling_time_s = settling_time_ms / 1000.0
 
@@ -91,11 +91,11 @@ def main(nv_sig, **kwargs):
     print("Z-AXIS CALIBRATION - MAX TO SURFACE REFERENCE")
     print("="*60)
     print(f"Configuration:")
-    print(f"  Max position move: {max_position_steps} steps")
+    print(f"  Max position move: {max_position_steps} steps (~{max_position_steps*0.05:.2f} microns)")
     print(f"  Scan step size: {scan_step_size} steps")
-    print(f"  Peak threshold: {peak_threshold} counts")
+    print(f"  Peak prominence: {min_peak_prominence_ratio*100:.0f}% above baseline (relative detection)")
     print(f"  Scan past peak: {scan_past_peak_steps} steps")
-    print(f"  Safety minimum: {safety_min_counts} counts")
+    print(f"  Safety minimum: {safety_min_counts} counts (collision protection)")
     print(f"  Verification passes: {verification_passes}")
     print("="*60 + "\n")
 
@@ -164,33 +164,19 @@ def main(nv_sig, **kwargs):
 
     print(f"Maximum position reached: {max_position_absolute} steps")
 
-    # Check if we're still getting high counts (might still be at surface)
+    # Measure baseline counts at max position (above sample)
     counter.clear_buffer()
     time.sleep(0.2)
     check_samples = counter.read_counter_simple()
     if len(check_samples) > 0:
-        max_position_counts = np.mean(check_samples)
-        print(f"Photon counts at max position: {max_position_counts:.0f}")
+        baseline_counts = np.mean(check_samples)
+        print(f"Baseline counts above sample: {baseline_counts:.0f}")
+        print(f"  (Will detect surface as peak > {baseline_counts*(1+min_peak_prominence_ratio):.0f} counts)")
+    else:
+        baseline_counts = None
+        print(f"  (Could not measure baseline - will use relative peak detection)")
 
-        if max_position_counts > above_surface_counts:
-            print(f"\n[WARNING] High photon counts detected at max position!")
-            print(f"  Expected < {above_surface_counts} when above surface")
-            print(f"  Measured: {max_position_counts:.0f} counts")
-            print(f"  Possible issues:")
-            print(f"    - Room lights are on (turn them off for accurate calibration)")
-            print(f"    - Still at/near surface (need more steps to reach max)")
-            print(f"    - Laser power too high")
-
-            user_input = input("\n  Continue anyway? (y/n): ")
-            if user_input.lower() != 'y':
-                print("Calibration aborted by user")
-                counter.stop_tag_stream()
-                pulse_gen.stream_stop()
-                tb.reset_cfm()
-                tb.reset_safe_stop()
-                return None
-
-    print(f"This will be the starting reference point.\n")
+    print(f"Starting reference point established.\n")
 
     ### PHASE 2: Downward Scan with Data Collection
 
@@ -198,7 +184,8 @@ def main(nv_sig, **kwargs):
     print("PHASE 2: Scanning Downward to Find Surface")
     print("="*60)
     print(f"Scanning down in {scan_step_size} step increments")
-    print(f"Will continue {scan_past_peak_steps} steps past peak for full profile")
+    print(f"Will continue {scan_past_peak_steps} steps past peak for complete profile")
+    print(f"Using relative peak detection")
     print(f"Safety abort if counts < {safety_min_counts}\n")
 
     scan_positions = []  # Absolute step positions
@@ -256,10 +243,17 @@ def main(nv_sig, **kwargs):
                 ax.grid(True, alpha=0.3)
                 plt.pause(0.01)
 
-            # Peak detection logic
-            if mean_counts > peak_threshold and not peak_detected:
-                peak_detected = True
-                print(f"  >>> Peak detected! Counts: {mean_counts:.0f} at step {current_position}")
+            # Relative peak detection - look for increases above baseline
+            # Only start detecting after we have enough data to establish a baseline
+            if len(scan_counts) >= min_scan_points and not peak_detected:
+                # Use first N points as baseline estimate
+                current_baseline = np.mean(scan_counts[:min_scan_points])
+                threshold_for_peak = current_baseline * (1 + min_peak_prominence_ratio)
+
+                if mean_counts > threshold_for_peak:
+                    peak_detected = True
+                    print(f"  >>> Peak detected! Counts: {mean_counts:.0f} at step {current_position}")
+                    print(f"      (Baseline: {current_baseline:.0f}, Threshold: {threshold_for_peak:.0f})")
 
             if peak_detected:
                 steps_past_peak += scan_step_size
@@ -304,12 +298,18 @@ def main(nv_sig, **kwargs):
     print("PHASE 3: Analyzing Peak to Find Surface")
     print("="*60)
 
-    # Find peaks in the count profile
-    # Use prominence to find the most significant peak
+    # Find peaks in the count profile using RELATIVE detection
+    # Calculate baseline from first portion of scan (above sample)
+    baseline_scan = np.mean(scan_counts[:min(min_scan_points, len(scan_counts)//4)])
+    min_prominence = baseline_scan * min_peak_prominence_ratio
+
+    print(f"Baseline (above sample): {baseline_scan:.0f} counts")
+    print(f"Minimum prominence for peak: {min_prominence:.0f} counts")
+
+    # Find peaks using scipy with relative prominence
     peaks_indices, peak_properties = find_peaks(
         scan_counts,
-        height=peak_threshold,
-        prominence=peak_threshold * 0.3  # Peak must be 30% above surrounding
+        prominence=min_prominence  # Relative prominence threshold
     )
 
     if len(peaks_indices) == 0:
@@ -339,11 +339,13 @@ def main(nv_sig, **kwargs):
     ax.plot(scan_positions, scan_counts, 'b-', linewidth=1, label='Scan data')
     ax.plot(surface_position_absolute, surface_counts, 'r*',
             markersize=15, label=f'Surface (step {surface_position_absolute})')
-    ax.axhline(peak_threshold, color='orange', linestyle='--',
-               alpha=0.5, label=f'Peak threshold ({peak_threshold})')
+    ax.axhline(baseline_scan, color='green', linestyle='--',
+               alpha=0.5, label=f'Baseline ({baseline_scan:.0f})')
+    ax.axhline(baseline_scan * (1 + min_peak_prominence_ratio), color='orange',
+               linestyle='--', alpha=0.5, label=f'Detection threshold')
     ax.set_xlabel("Z position (steps)")
     ax.set_ylabel("Photon counts")
-    ax.set_title("Surface detected - Peak analysis")
+    ax.set_title("Surface detected - Relative peak analysis")
     ax.legend()
     ax.grid(True, alpha=0.3)
     plt.pause(0.1)
@@ -494,13 +496,19 @@ def main(nv_sig, **kwargs):
     ax_final.plot(scan_positions, scan_counts, 'b-', linewidth=1.5, label='Scan profile')
     ax_final.plot(surface_position_absolute, surface_counts, 'r*',
                   markersize=20, label=f'Surface (now step=0)')
-    ax_final.axhline(peak_threshold, color='orange', linestyle='--',
-                     alpha=0.5, label=f'Peak threshold')
+
+    # Show baseline and detection threshold
+    baseline_final = np.mean(scan_counts[:min(min_scan_points, len(scan_counts)//4)])
+    ax_final.axhline(baseline_final, color='green', linestyle='--',
+                     alpha=0.5, label=f'Baseline ({baseline_final:.0f})')
+    ax_final.axhline(baseline_final * (1 + min_peak_prominence_ratio), color='orange',
+                     linestyle='--', alpha=0.5, label=f'Detection threshold')
     ax_final.axhline(safety_min_counts, color='red', linestyle='--',
                      alpha=0.5, label=f'Safety minimum')
+
     ax_final.set_xlabel("Z position (steps, before zeroing)", fontsize=12)
     ax_final.set_ylabel("Photon counts", fontsize=12)
-    ax_final.set_title(f"Z-Axis Calibration - Max→Surface Distance: {max_to_surface_distance} steps",
+    ax_final.set_title(f"Z-Axis Calibration - Max→Surface Distance: {max_to_surface_distance} steps (~{max_to_surface_distance*0.05:.0f} µm)",
                        fontsize=14, fontweight='bold')
     ax_final.legend(fontsize=10)
     ax_final.grid(True, alpha=0.3)
