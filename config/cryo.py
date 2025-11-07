@@ -263,7 +263,7 @@ config |= {
         "cryo_piezos_voltage": 30,  
         "z_bias_adjust": 0.0,
         "z_calibration": {
-            "max_position_steps": 10000,       # Steps to move up to reach max position
+            "max_position_steps": 50000,       # Steps to move up to reach max position (~2.5mm @ 50nm/step)
             "scan_step_size": 10,              # Step increment during downward scan
             "peak_threshold": 2500,            # Min counts to consider as potential surface peak
             "scan_past_peak_steps": 200,       # Continue scanning past peak for profile mapping
@@ -272,6 +272,7 @@ config |= {
             "verification_retract_steps": 500, # Steps to move away for verification
             "settling_time_ms": 50,            # Wait time after each step
             "max_scan_timeout_s": 300,         # Maximum scan duration before abort
+            "above_surface_counts": 500,       # Expected counts when above surface (room lights off)
         },
     },
     ###
