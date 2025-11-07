@@ -273,6 +273,12 @@ config |= {
             "settling_time_ms": 50,            # Wait time after each step
             "max_scan_timeout_s": 300,         # Maximum scan duration before abort
             "min_scan_points": 50,             # Minimum points needed before peak detection
+            # Asymmetry measurement parameters
+            "measure_asymmetry": True,         # Measure up/down step asymmetry before calibration
+            "asymmetry_test_steps": 100,       # Steps for each asymmetry test movement (start small!)
+            "asymmetry_test_cycles": 3,        # Number of up/down cycles to average
+            "asymmetry_count_tolerance": 50,   # Acceptable count difference for "return to start"
+            "asymmetry_safety_drop": 0.30,     # Abort if counts drop more than 30% during test
         },
     },
     ###

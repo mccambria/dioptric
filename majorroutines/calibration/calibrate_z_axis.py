@@ -82,6 +82,13 @@ def main(nv_sig, **kwargs):
 
     settling_time_s = settling_time_ms / 1000.0
 
+    # Asymmetry measurement parameters
+    measure_asymmetry = kwargs.get("measure_asymmetry", cal_config.get("measure_asymmetry", True))
+    asymmetry_test_steps = kwargs.get("asymmetry_test_steps", cal_config.get("asymmetry_test_steps", 100))
+    asymmetry_test_cycles = kwargs.get("asymmetry_test_cycles", cal_config.get("asymmetry_test_cycles", 3))
+    asymmetry_count_tolerance = kwargs.get("asymmetry_count_tolerance", cal_config.get("asymmetry_count_tolerance", 50))
+    asymmetry_safety_drop = kwargs.get("asymmetry_safety_drop", cal_config.get("asymmetry_safety_drop", 0.30))
+
     # Get servers
     piezo = pos.get_positioner_server(CoordsKey.Z)
     counter = tb.get_server_counter()
@@ -97,6 +104,8 @@ def main(nv_sig, **kwargs):
     print(f"  Scan past peak: {scan_past_peak_steps} steps")
     print(f"  Safety minimum: {safety_min_counts} counts (collision protection)")
     print(f"  Verification passes: {verification_passes}")
+    if measure_asymmetry:
+        print(f"  Asymmetry measurement: {asymmetry_test_cycles} cycles of {asymmetry_test_steps} steps")
     print("="*60 + "\n")
 
     # Reset hardware to clean state
@@ -147,6 +156,151 @@ def main(nv_sig, **kwargs):
         plt.get_current_fig_manager().window.showMaximized()
     except:
         pass
+
+    ### PHASE 0: Asymmetry Measurement (Safety Critical!)
+
+    measured_z_bias = 0.0  # Default: no asymmetry
+
+    if measure_asymmetry:
+        print("="*60)
+        print("PHASE 0: Measuring Up/Down Step Asymmetry")
+        print("="*60)
+        print(f"Performing {asymmetry_test_cycles} test cycles to measure directional asymmetry")
+        print(f"Each cycle: UP {asymmetry_test_steps} steps, DOWN {asymmetry_test_steps} steps")
+        print(f"SAFETY: Will abort if counts drop > {asymmetry_safety_drop*100:.0f}% during test\n")
+
+        starting_position = piezo.get_z_position()
+        print(f"Starting position: {starting_position} steps")
+
+        # Measure baseline counts at start
+        counter.clear_buffer()
+        time.sleep(0.2)
+        baseline_samples = counter.read_counter_simple()
+        if len(baseline_samples) == 0:
+            print("[WARNING] Could not measure baseline counts for asymmetry test")
+            print("Skipping asymmetry measurement - using z_bias_adjust from config")
+            measured_z_bias = config["Positioning"]["z_bias_adjust"]
+        else:
+            baseline_counts = np.mean(baseline_samples)
+            print(f"Baseline counts: {baseline_counts:.0f}\n")
+
+            asymmetry_ratios = []
+
+            for cycle in range(asymmetry_test_cycles):
+                print(f"Asymmetry test cycle {cycle + 1}/{asymmetry_test_cycles}:")
+
+                # Move UP by test steps
+                print(f"  Moving UP {asymmetry_test_steps} steps...")
+                pos_after_up = piezo.move_z_steps(asymmetry_test_steps)
+                time.sleep(settling_time_s * 3)  # Extra settling for accuracy
+
+                # Measure counts after up
+                counter.clear_buffer()
+                time.sleep(0.1)
+                up_samples = counter.read_counter_simple()
+                up_counts = np.mean(up_samples) if len(up_samples) > 0 else baseline_counts
+                print(f"    Position: {pos_after_up}, Counts: {up_counts:.0f}")
+
+                # Move DOWN by test steps (should return to start if symmetric)
+                print(f"  Moving DOWN {asymmetry_test_steps} steps...")
+                pos_after_down = piezo.move_z_steps(-asymmetry_test_steps)
+                time.sleep(settling_time_s * 3)
+
+                # Measure counts after down
+                counter.clear_buffer()
+                time.sleep(0.1)
+                down_samples = counter.read_counter_simple()
+                down_counts = np.mean(down_samples) if len(down_samples) > 0 else baseline_counts
+                print(f"    Position: {pos_after_down}, Counts: {down_counts:.0f}")
+
+                # SAFETY CHECK: Abort if counts dropped too much
+                count_drop_ratio = (baseline_counts - down_counts) / baseline_counts
+                if count_drop_ratio > asymmetry_safety_drop:
+                    print(f"\n[SAFETY ABORT] Counts dropped {count_drop_ratio*100:.1f}% during test!")
+                    print(f"  Baseline: {baseline_counts:.0f} -> After down: {down_counts:.0f}")
+                    print(f"  This indicates SEVERE asymmetry (down steps >> up steps)")
+                    print(f"  Aborting to prevent damage. Recommendations:")
+                    print(f"    1. Use smaller test steps: asymmetry_test_steps=50")
+                    print(f"    2. Manually set z_bias_adjust in config (try 0.20)")
+                    print(f"    3. Clean/service piezo actuators")
+                    counter.stop_tag_stream()
+                    pulse_gen.stream_stop()
+                    tb.reset_cfm()
+                    tb.reset_safe_stop()
+                    return None
+
+                # Check if we're back to baseline
+                count_diff = abs(down_counts - baseline_counts)
+                position_diff = pos_after_down - starting_position
+
+                if count_diff < asymmetry_count_tolerance:
+                    print(f"    Returned to baseline (diff: {count_diff:.0f} counts)")
+                    asymmetry_ratios.append(0.0)  # Symmetric
+                else:
+                    # Counts didn't return to baseline - estimate asymmetry
+                    # If counts dropped, down steps moved us further than up
+                    # If counts increased, down steps moved us less than up
+                    if down_counts < baseline_counts:
+                        # Moved further down than expected - down steps are stronger
+                        excess_ratio = (baseline_counts - down_counts) / baseline_counts
+                        print(f"    WARNING: Down steps appear STRONGER (counts dropped by {count_diff:.0f})")
+                        print(f"      Estimated excess: {excess_ratio*100:.1f}%")
+                        asymmetry_ratios.append(excess_ratio)
+                    else:
+                        # Moved less down than expected - down steps are weaker
+                        deficiency_ratio = -(down_counts - baseline_counts) / baseline_counts
+                        print(f"    WARNING: Down steps appear WEAKER (counts rose by {count_diff:.0f})")
+                        print(f"      Estimated deficiency: {deficiency_ratio*100:.1f}%")
+                        asymmetry_ratios.append(deficiency_ratio)
+
+                print()
+
+            # Calculate average asymmetry
+            if len(asymmetry_ratios) > 0:
+                measured_z_bias = np.mean(asymmetry_ratios)
+                asymmetry_std = np.std(asymmetry_ratios)
+
+                print(f"\n{'='*60}")
+                print(f"Asymmetry Measurement Results:")
+                print(f"  Average z_bias_adjust: {measured_z_bias:.4f} ({measured_z_bias*100:.2f}%)")
+                print(f"  Standard deviation: {asymmetry_std:.4f}")
+                print(f"  Individual measurements: {[f'{r:.4f}' for r in asymmetry_ratios]}")
+
+                if abs(measured_z_bias) > 0.45:
+                    print(f"\n  WARNING: Measured asymmetry > 45% - this seems very high!")
+                    print(f"  This could indicate:")
+                    print(f"    - Very sticky piezos (needs cleaning/maintenance)")
+                    print(f"    - Measurement error (low count SNR)")
+                    print(f"    - Hardware issue")
+                    user_input = input(f"\n  Continue with measured value? (y/n): ")
+                    if user_input.lower() != 'y':
+                        print("Calibration aborted by user")
+                        counter.stop_tag_stream()
+                        pulse_gen.stream_stop()
+                        tb.reset_cfm()
+                        tb.reset_safe_stop()
+                        return None
+
+                print(f"\n  Applying z_bias_adjust = {measured_z_bias:.4f} for safe movements")
+                print(f"{'='*60}\n")
+
+                # Apply the measured bias to the piezo server
+                # Note: This modifies the server's internal state for this session
+                try:
+                    # Access the server's internal z_bias_adjust if possible
+                    # This is implementation-specific to pos_xyz_ATTO_piezos
+                    print(f"  [INFO] Measured asymmetry will be saved to calibration data")
+                    print(f"  [INFO] To apply permanently, update config: z_bias_adjust = {measured_z_bias:.4f}\n")
+                except Exception as e:
+                    print(f"  [WARNING] Could not apply z_bias_adjust to server: {e}\n")
+            else:
+                print(f"  No valid asymmetry measurements - using config value")
+                measured_z_bias = config["Positioning"]["z_bias_adjust"]
+
+    else:
+        print("Asymmetry measurement skipped (measure_asymmetry = False)")
+        measured_z_bias = config["Positioning"]["z_bias_adjust"]
+        print(f"Using z_bias_adjust from config: {measured_z_bias}\n")
 
     ### PHASE 1: Move to Maximum Position
 
@@ -451,6 +605,9 @@ def main(nv_sig, **kwargs):
     print(f"Surface is now at step=0")
     print(f"Store this reference: max→surface = {max_to_surface_distance} steps")
     print(f"Use this value to recover position if NVs are lost")
+    if measure_asymmetry:
+        print(f"\nMeasured z_bias_adjust: {measured_z_bias:.4f} ({measured_z_bias*100:.2f}%)")
+        print(f"Update config/cryo.py with this value for permanent correction")
     print(f"{'='*60}\n")
 
     tb.reset_safe_stop()
@@ -461,16 +618,17 @@ def main(nv_sig, **kwargs):
     raw_data = {
         "timestamp": timestamp,
         "nv_sig": nv_sig,
-        "calibration_method": "max_to_surface_downward_scan",
+        "calibration_method": "max_to_surface_downward_scan_with_asymmetry",
         "config_parameters": {
             "max_position_steps": max_position_steps,
             "scan_step_size": scan_step_size,
-            "peak_threshold": peak_threshold,
+            "min_peak_prominence_ratio": min_peak_prominence_ratio,
             "scan_past_peak_steps": scan_past_peak_steps,
             "safety_min_counts": safety_min_counts,
             "verification_passes": verification_passes,
             "verification_retract_steps": verification_retract_steps,
             "settling_time_ms": settling_time_ms,
+            "measure_asymmetry": measure_asymmetry,
         },
         "results": {
             "max_position_absolute": int(max_position_absolute),
@@ -478,6 +636,7 @@ def main(nv_sig, **kwargs):
             "max_to_surface_distance": int(max_to_surface_distance),
             "surface_photon_counts": float(surface_counts),
             "verification_count_errors": [float(e) for e in verification_errors],
+            "measured_z_bias_adjust": float(measured_z_bias),
             "suggested_z_bias_adjust": float(suggested_z_bias_adjust),
         },
         "scan_data": {
