@@ -87,8 +87,8 @@ def main(nv_sig, **kwargs):
     print(f"[DEBUG] Piezo server: {piezo}")
     counter = tb.get_server_counter()
     print(f"[DEBUG] Counter server: {counter}")
-    pulse_gen = tb.get_server_pulse_gen()
-    print(f"[DEBUG] Pulse gen server: {pulse_gen}")
+    pulse_gen = tb.get_server_pulse_streamer()
+    print(f"[DEBUG] Pulse streamer server: {pulse_gen}")
 
     print("\n" + "="*60)
     print("Z-AXIS CALIBRATION - MAX TO SURFACE REFERENCE")
