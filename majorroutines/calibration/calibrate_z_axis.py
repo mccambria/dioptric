@@ -82,9 +82,13 @@ def main(nv_sig, **kwargs):
     settling_time_s = settling_time_ms / 1000.0
 
     # Get servers
+    print("[DEBUG] Getting server connections...")
     piezo = pos.get_positioner_server(CoordsKey.Z)
+    print(f"[DEBUG] Piezo server: {piezo}")
     counter = tb.get_server_counter()
+    print(f"[DEBUG] Counter server: {counter}")
     pulse_gen = tb.get_server_pulse_gen()
+    print(f"[DEBUG] Pulse gen server: {pulse_gen}")
 
     print("\n" + "="*60)
     print("Z-AXIS CALIBRATION - MAX TO SURFACE REFERENCE")
@@ -99,10 +103,13 @@ def main(nv_sig, **kwargs):
     print("="*60 + "\n")
 
     # Reset hardware to clean state
+    print("[DEBUG] Resetting hardware...")
     tb.reset_cfm()
+    print("[DEBUG] Initializing safe stop...")
     tb.init_safe_stop()
 
     # Setup laser for imaging
+    print("[DEBUG] Setting up laser for imaging...")
     vld = tb.get_virtual_laser_dict(VirtualLaserKey.IMAGING)
     readout_dur = int(
         nv_sig.pulse_durations.get(VirtualLaserKey.IMAGING, int(vld["duration"]))
@@ -112,16 +119,23 @@ def main(nv_sig, **kwargs):
     readout_power = tb.set_laser_power(nv_sig, VirtualLaserKey.IMAGING)
 
     # Load pulse sequence for photon counting
+    print(f"[DEBUG] Loading pulse sequence: {readout_laser} at {readout_power} for {readout_dur}ns...")
     seq_args = [0, readout_dur, readout_laser, readout_power]
     seq_args_string = tb.encode_seq_args(seq_args)
     seq_file = "simple_readout.py"
+    print(f"[DEBUG] Calling pulse_gen.stream_load({seq_file})...")
     period = pulse_gen.stream_load(seq_file, seq_args_string)[0]
+    print(f"[DEBUG] Pulse sequence loaded. Period: {period}ns")
 
     # Start continuous counting
+    print("[DEBUG] Starting counter tag stream...")
     counter.start_tag_stream()
+    print("[DEBUG] Starting pulse generator stream...")
     pulse_gen.stream_start(-1)  # Run continuously
+    print("[DEBUG] Streams started successfully")
 
     # Verify photon counting is working
+    print("[DEBUG] Verifying photon counting is working...")
     time.sleep(0.2)
     test_samples = counter.read_counter_simple()
     if len(test_samples) == 0:
@@ -135,6 +149,7 @@ def main(nv_sig, **kwargs):
     print(f"Initial photon count check: {initial_avg:.0f} counts (working!)\n")
 
     # Initialize plot for real-time monitoring
+    print("[DEBUG] Initializing plot...")
     kpl.init_kplotlib()
     fig, ax = plt.subplots(figsize=(10, 6))
     ax.set_xlabel("Z position (steps)")
@@ -153,12 +168,15 @@ def main(nv_sig, **kwargs):
     print("PHASE 1: Moving to Maximum Position")
     print("="*60)
 
+    print("[DEBUG] Getting current Z position...")
     initial_position = piezo.get_z_position()
     print(f"Current position: {initial_position} steps")
     print(f"Moving UP {max_position_steps} steps to establish maximum...")
 
     # Move to max position
+    print(f"[DEBUG] Calling piezo.move_z_steps({max_position_steps})...")
     max_position_absolute = piezo.move_z_steps(max_position_steps)
+    print(f"[DEBUG] Move complete. New position: {max_position_absolute}")
     time.sleep(0.5)  # Allow movement to complete
 
     print(f"Maximum position reached: {max_position_absolute} steps")
@@ -181,6 +199,7 @@ def main(nv_sig, **kwargs):
     steps_past_peak = 0
     scan_start_time = time.time()
 
+    print("[DEBUG] Starting scan loop...")
     try:
         while True:
             # Check for user interrupt or timeout
@@ -195,6 +214,10 @@ def main(nv_sig, **kwargs):
             # Move down one step
             current_position = piezo.move_z_steps(-scan_step_size)
             time.sleep(settling_time_s)
+
+            # Debug output for first few steps
+            if len(scan_positions) < 3:
+                print(f"[DEBUG] Step {len(scan_positions)+1}: Moved to position {current_position}")
 
             # Collect photon counts
             counter.clear_buffer()
@@ -253,10 +276,13 @@ def main(nv_sig, **kwargs):
 
     finally:
         # Always stop streams
+        print("\n[DEBUG] Stopping streams...")
         counter.stop_tag_stream()
         pulse_gen.stream_stop()
+        print("[DEBUG] Streams stopped")
 
     # Convert to numpy arrays
+    print("[DEBUG] Converting data to numpy arrays...")
     scan_positions = np.array(scan_positions)
     scan_counts = np.array(scan_counts)
 
@@ -278,6 +304,7 @@ def main(nv_sig, **kwargs):
 
     # Find peaks in the count profile
     # Use prominence to find the most significant peak
+    print("[DEBUG] Running scipy.find_peaks...")
     peaks_indices, peak_properties = find_peaks(
         scan_counts,
         height=peak_threshold,
@@ -330,9 +357,11 @@ def main(nv_sig, **kwargs):
     verification_errors = []
 
     # Restart counter for verification
+    print("[DEBUG] Restarting streams for verification...")
     counter.start_tag_stream()
     pulse_gen.stream_start(-1)
     time.sleep(0.2)
+    print("[DEBUG] Streams restarted")
 
     for pass_num in range(verification_passes):
         print(f"Verification pass {pass_num + 1}/{verification_passes}:")
@@ -361,8 +390,10 @@ def main(nv_sig, **kwargs):
             print(f"  [Warning: No counts measured on pass {pass_num + 1}]")
             verification_errors.append(0)
 
+    print("[DEBUG] Stopping verification streams...")
     counter.stop_tag_stream()
     pulse_gen.stream_stop()
+    print("[DEBUG] Verification streams stopped")
 
     # Calculate hysteresis statistics
     if len(verification_errors) > 0:
@@ -413,7 +444,9 @@ def main(nv_sig, **kwargs):
 
     # Set surface as step=0 reference
     print(f"Setting surface as Z=0 reference...")
+    print(f"[DEBUG] Calling piezo.set_z_reference(0)...")
     piezo.set_z_reference(0)
+    print(f"[DEBUG] Reference set successfully")
 
     print(f"\n{'='*60}")
     print("Z-AXIS CALIBRATION COMPLETE")
@@ -427,7 +460,9 @@ def main(nv_sig, **kwargs):
 
     ### Save Data
 
+    print("[DEBUG] Preparing to save data...")
     timestamp = dm.get_time_stamp()
+    print(f"[DEBUG] Timestamp: {timestamp}")
     raw_data = {
         "timestamp": timestamp,
         "nv_sig": nv_sig,
