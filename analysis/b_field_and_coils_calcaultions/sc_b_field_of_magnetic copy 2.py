@@ -1,351 +1,297 @@
-# -*- coding: utf-8 -*-
-"""
-Extract the magnetic field (crystallographic axes only)
-Created on March 23th, 2025
-@author: Saroj Chand
-"""
+# coil_field_3d.py
+# Build the 3D magnetic field vector from two coil currents using your calibrated K,
+# sweep grids in current space, and (optionally) predict exact ODMR quartets.
 
+from __future__ import annotations
 import numpy as np
-from itertools import product, permutations
+from dataclasses import dataclass
+from typing import Tuple, Optional, Dict
+from sc_b_field_of_coils import exact_f_minus_quartet 
+import matplotlib.pyplot as plt
+from utils import kplotlib as kpl
+# ---------- Your locked-in calibration (crystal frame) ----------
+B0_DEFAULT = np.array([-46.275577, -17.165999, -5.701398], float)
 
-import numpy as np
-from itertools import permutations, product
-from sc_b_field_calculations import solve_B_from_odmr_order_invariant
+# K = [dB/dI_ch1, dB/dI_ch2] (columns), in Gauss per Amp
+K_DEFAULT = np.column_stack([
+    [ +0.803449,  -4.758891, -15.327336],   # dB/dI_ch1
+    [ -0.741645,  +4.202657,  -4.635283],   # dB/dI_ch2
+]).astype(float)
 
-import numpy as np
+# ---------- (Optional) exact quartet model hook ----------
+# If you already have an exact Hamiltonian solver, import it and set this flag True
+USE_EXACT = False
+try:
+    # Replace with your function if available:
+    # from sc_b_field_of_coils import exact_f_minus_quartet
+    # def exact_f_minus_quartet(B_crys_G: np.ndarray, D_GHz=2.8785, E_MHz=0.0, gamma_e_MHz_per_G=2.8025) -> np.ndarray: ...
+    pass
+except Exception:
+    USE_EXACT = False
 
-# ---------- NV geometry (crystal frame) ----------
-def nv_axes():
-    a = np.array([[ 1,  1,  1],
-                  [-1,  1,  1],
-                  [ 1, -1,  1],
-                  [ 1,  1, -1]], float)
-    a /= np.linalg.norm(a, axis=1, keepdims=True)
-    return a  # (4,3)
+D_GHZ   = 2.8785
+GAMMA   = 2.8025  # MHz/G
+E_MHZ   = 0.0
 
-# Local NV frames: R_i rotates crystal-frame vectors into NV-local frame
-def nv_local_frames():
-    """Return list of 3x3 rotations R_i: v_local = R_i @ v_crystal."""
-    nvs = nv_axes()
-    frames = []
-    for n in nvs:
-        z = n / np.linalg.norm(n)
-        # pick a helper to build an orthonormal basis
-        helper = np.array([0.0, 0.0, 1.0]) if abs(z[2]) < 0.9 else np.array([0.0, 1.0, 0.0])
-        x = np.cross(helper, z);  nx = np.linalg.norm(x)
-        x = x/nx if nx>0 else np.array([1.0, 0.0, 0.0])
-        y = np.cross(z, x)
-        R = np.vstack([x, y, z])            # rows are local unit axes in crystal coords
-        # We want v_local = R @ v_crystal
-        frames.append(R)
-    return frames  # list of (3,3)
+@dataclass
+class CoilField3D:
+    """Map coil currents (I_ch1, I_ch2) -> 3D magnetic field in crystal frame."""
+    B0: np.ndarray = B0_DEFAULT.copy()
+    K:  np.ndarray = K_DEFAULT.copy()
 
-# ---------- Spin-1 operators in local NV frame ----------
-# Spin-1 matrices (same as before)
-Sx = (1/np.sqrt(2))*np.array([[0, 1, 0],
-                              [1, 0, 1],
-                              [0, 1, 0]], float)
-Sy = (1/np.sqrt(2))*np.array([[0, -1j, 0],
-                              [1j,  0, -1j],
-                              [0,  1j,  0]], complex)
-Sz = np.array([[ 1, 0, 0],
-               [ 0, 0, 0],
-               [ 0, 0,-1]], float)
+    def field_from_currents(self, I_ch1: float, I_ch2: float, drift: Optional[np.ndarray]=None
+                            ) -> Tuple[np.ndarray, float, np.ndarray]:
+        """
+        Return (B, |B|, B_hat) for given currents (A). Optional 'drift' (G) is added if provided.
+        """
+        I = np.array([float(I_ch1), float(I_ch2)], float)
+        B = self.B0 + self.K @ I
+        if drift is not None:
+            B = B + np.asarray(drift, float).reshape(3)
+        Bmag = float(np.linalg.norm(B))
+        Bhat = (B/Bmag) if Bmag > 0 else np.array([0.0, 0.0, 1.0])
+        return B, Bmag, Bhat
 
-# Basis kets in the NV-local Sz basis: |+1>, |0>, |-1>
-ket_p1 = np.array([1.0, 0.0, 0.0], complex)
-ket_0  = np.array([0.0, 1.0, 0.0], complex)
-ket_m1 = np.array([0.0, 0.0, 1.0], complex)
+    def field_grid(self, I1_range: Tuple[float,float], I2_range: Tuple[float,float],
+                   n1: int=41, n2: int=41, drift: Optional[np.ndarray]=None
+                   ) -> Dict[str, np.ndarray]:
+        """
+        Sweep a rectangular grid in current space and return arrays:
+        Iy_grid, Iz_grid, Bx, By, Bz, Bmag  (all shapes (n1,n2)).
+        """
+        i1 = np.linspace(I1_range[0], I1_range[1], int(n1))
+        i2 = np.linspace(I2_range[0], I2_range[1], int(n2))
+        Iy, Iz = np.meshgrid(i1, i2, indexing="ij")  # (n1,n2)
 
-def exact_f_minus_for_one_NV(B_crys_G, R_local, D_GHz=2.8785, E_MHz=0.0, gamma_e_MHz_per_G=2.8025):
-    """
-    Robust: choose ms~0 and ms~±1 by overlap with |0>,|±1> in the NV-local basis.
-    Returns f_-(GHz) = E(lower of ±1-like) - E(0-like).
-    """
-    Bx, By, Bz = R_local @ np.asarray(B_crys_G, float).reshape(3)
+        # Vectorized: B = B0[:,None,None] + K @ [Iy, Iz]
+        col1 = self.K[:, 0].reshape(3,1,1) * Iy[None,:,:]
+        col2 = self.K[:, 1].reshape(3,1,1) * Iz[None,:,:]
+        B = self.B0.reshape(3,1,1) + col1 + col2
+        if drift is not None:
+            B = B + np.asarray(drift, float).reshape(3,1,1)
 
-    D_MHz = 1000.0*float(D_GHz)
-    H_ZFS = D_MHz * (Sz @ Sz - (2/3)*np.eye(3))
-    H_str = float(E_MHz) * (Sx @ Sx - Sy @ Sy)
-    H_Zee = float(gamma_e_MHz_per_G) * (Bx*Sx + By*Sy + Bz*Sz)
+        Bx, By, Bz = B[0], B[1], B[2]
+        Bmag = np.sqrt(Bx**2 + By**2 + Bz**2)
+        return {"Iy_grid": Iy, "Iz_grid": Iz, "Bx": Bx, "By": By, "Bz": Bz, "Bmag": Bmag}
 
-    H = H_ZFS + H_str + H_Zee
-    evals, evecs = np.linalg.eigh(H)   # columns of evecs are eigenvectors
+    def currents_for_deltaB(self, dB_target_G: np.ndarray, drift: Optional[np.ndarray]=None
+                            ) -> Dict[str, np.ndarray]:
+        """
+        Least-squares currents that achieve a target ΔB in the span of K.
+        Returns Iy, Iz, ΔB_achieved, residual.
+        """
+        dB = np.asarray(dB_target_G, float).reshape(3)
+        if drift is not None:
+            dB = dB - np.asarray(drift, float).reshape(3)
+        dI, *_ = np.linalg.lstsq(self.K, dB, rcond=None)
+        dB_ach = self.K @ dI
+        return {
+            "Iy_A": float(dI[0]), "Iz_A": float(dI[1]),
+            "dB_achieved_G": dB_ach, "dB_residual_G": dB_ach - dB
+        }
 
-    # Overlaps with Sz eigenkets in the *local* frame
-    overlaps_0  = np.abs(evecs.conj().T @ ket_0 )**2   # weight of |0>
-    overlaps_p1 = np.abs(evecs.conj().T @ ket_p1)**2   # weight of |+1>
-    overlaps_m1 = np.abs(evecs.conj().T @ ket_m1)**2   # weight of |-1>
+    def currents_for_target_B(self, B_target_G: np.ndarray, drift: Optional[np.ndarray]=None
+                              ) -> Dict[str, np.ndarray]:
+        """
+        Minimal-norm LS currents to move from B0 to a specified B_target (both crystal frame).
+        """
+        B_target = np.asarray(B_target_G, float).reshape(3)
+        dB_req = B_target - self.B0
+        if drift is not None:
+            dB_req = dB_req - np.asarray(drift, float).reshape(3)
+        return self.currents_for_deltaB(dB_req)
 
-    idx_0  = int(np.argmax(overlaps_0))                # ms~0-like
-    # For the ±1-like, forbid idx_0 and pick the most ±1-like among the rest
-    candidates = [i for i in range(3) if i != idx_0]
-    # score as total ±1 weight
-    scores_pm1 = [(overlaps_p1[i] + overlaps_m1[i], i) for i in candidates]
-    idx_pm1_hi = max(scores_pm1)[1]                    # most ±1-like among the two
-    idx_pm1_lo = min(scores_pm1)[1]                    # the other ±1-like
-    # lower of the two ±1-like energies:
-    idx_minus = idx_pm1_hi if evals[idx_pm1_hi] < evals[idx_pm1_lo] else idx_pm1_lo
-
-    f_minus_MHz = float(evals[idx_minus] - evals[idx_0])   # always ≥0 by construction
-    return f_minus_MHz/1000.0
-
-
-def exact_f_minus_quartet(B_crys_G, D_GHz=2.8785, E_MHz=0.0, gamma_e_MHz_per_G=2.8025):
-    """Exact quartet (nv_axes order) using full diagonalization."""
-    frames = nv_local_frames()
-    return np.array([
-        exact_f_minus_for_one_NV(B_crys_G, R, D_GHz, E_MHz, gamma_e_MHz_per_G)
-        for R in frames
-    ])
-
-# ---- Increase |B| along current direction using the exact model ----
-def plan_increase_Bmag_exact(f_current_GHz, D_GHz=2.8785, E_MHz=0.0, gamma_e_MHz_per_G=2.8025,
-                             delta_Bmag_G=None, scale_Bmag=None):
-    """
-    1) Solve B0 from current quartet (your order-invariant solver).
-    2) Set B1 = B̂0 * |B1| with |B1| = |B0|+delta or |B0|*scale.
-    3) Predict new exact quartet with full Hamiltonian (E included).
-    """
-    # You already have this function; call your order-invariant solver to get B0 in crystal frame.
-    # Below is a minimal drop-in call signature; replace with your existing function.
-    from math import isclose
-
-    # Reuse your existing order-invariant solver (not redefined here):
-    # out0 = solve_B_from_odmr_order_invariant(f_current_GHz, D_GHz, gamma_e_MHz_per_G)
-    # For clarity, assume it's in scope:
-    out0 = solve_B_from_odmr_order_invariant(f_current_GHz, D_GHz=D_GHz, gamma_e_MHz_per_G=gamma_e_MHz_per_G)
-    B0 = out0["B"]
-    B0_mag = float(np.linalg.norm(B0))
-    if B0_mag <= 0:
-        raise ValueError("Solved |B| invalid.")
-
-    if (delta_Bmag_G is None) == (scale_Bmag is None):
-        raise ValueError("Provide exactly one of delta_Bmag_G or scale_Bmag.")
-
-    B1_mag = B0_mag + float(delta_Bmag_G) if (delta_Bmag_G is not None) else B0_mag * float(scale_Bmag)
-    if B1_mag <= 0:
-        raise ValueError("Target |B| must be positive.")
-    B_hat = B0 / B0_mag
-    B1 = B_hat * B1_mag
-
-    f0 = exact_f_minus_quartet(B0, D_GHz=D_GHz, E_MHz=E_MHz, gamma_e_MHz_per_G=gamma_e_MHz_per_G)
-    f1 = exact_f_minus_quartet(B1, D_GHz=D_GHz, E_MHz=E_MHz, gamma_e_MHz_per_G=gamma_e_MHz_per_G)
-
-    return {
-        "B0_G": B0, "B1_G": B1, "B0_mag_G": B0_mag, "B1_mag_G": B1_mag,
-        "f_before_nv_GHz": f0, "f_after_nv_GHz": f1,
-    }
-
-NV_LABELS = ["[1,1,1]","[-1,1,1]","[1,-1,1]","[1,1,-1]"]
-
-def project_deltaB_to_spanK(K_3x2, dB):
-    K = np.asarray(K_3x2, float).reshape(3,2)
-    dB = np.asarray(dB, float).reshape(3)
-    K_pinv = np.linalg.pinv(K)            # 2x3
-    dB_proj = K @ (K_pinv @ dB)           # projection into Col(K)
-    resid   = dB - dB_proj
-    return dB_proj, resid
-
-def solve_currents_ls(K_3x2, dB_proj, current_limits_A=None):
-    K = np.asarray(K_3x2, float).reshape(3,2)
-    dB_proj = np.asarray(dB_proj, float).reshape(3)
-    I = np.linalg.lstsq(K, dB_proj, rcond=None)[0]     # [Iy, Iz]
-    if current_limits_A is not None:
-        lim = float(current_limits_A)
-        I = np.clip(I, -lim, +lim)
-    dB_ach = K @ I
-    return I, dB_ach
-
-def measured_baseline_in_nv_order(f_meas_GHz, D_GHz, gamma_e_MHz_per_G):
-    f = np.asarray(f_meas_GHz, float).reshape(4)
-    out = solve_B_from_odmr_order_invariant(f, D_GHz=D_GHz, gamma_e_MHz_per_G=gamma_e_MHz_per_G)
-    perm = out["perm"]
-    f_nv = np.empty(4, float)
-    for j_in, i_nv in enumerate(perm):
-        f_nv[i_nv] = f[j_in]
-    return f_nv, out
-
-def plan_to_target_Bmag_250G(f_current_GHz, D_GHz, gamma_e_MHz_per_G,
-                             K_3x2=None, current_limits_A=None, E_MHz=0.0,
-                             target_Bmag_G=250.0):
-    # 1) solve current B0
-    f_current_GHz = np.asarray(f_current_GHz, float).reshape(4)
-    f_before_nv_meas, out0 = measured_baseline_in_nv_order(f_current_GHz, D_GHz, gamma_e_MHz_per_G)
-    B0 = out0["B"]; B0_mag = float(np.linalg.norm(B0))
-    if B0_mag <= 0: raise ValueError("Solved |B| is zero/invalid.")
-
-    # 2) build target B1 = 250 G * Bhat
-    Bhat = B0 / B0_mag
-    B1_target = Bhat * float(target_Bmag_G)
-    dB_target = B1_target - B0
-
-    # 3) predict ideal quartet (exact model)
-    f_before = exact_f_minus_quartet(B0, D_GHz=D_GHz, E_MHz=E_MHz, gamma_e_MHz_per_G=gamma_e_MHz_per_G)
-    f_after_ideal = exact_f_minus_quartet(B1_target, D_GHz=D_GHz, E_MHz=E_MHz, gamma_e_MHz_per_G=gamma_e_MHz_per_G)
-
-    result = {
-        "B0_G": B0, "B0_mag_G": B0_mag,
-        "B1_target_G": B1_target, "B1_target_mag_G": float(target_Bmag_G),
-        "dB_target_G": dB_target,
-        "f_before_nv_GHz_meas": f_before_nv_meas,      # your measured baseline mapped into nv_axes order
-        "f_before_nv_GHz_model": f_before,             # model of baseline
-        "f_after_ideal_nv_GHz": f_after_ideal
-    }
-
-    # 4) Coil-constrained plan (optional if K provided)
-    if K_3x2 is not None:
-        dB_proj, resid = project_deltaB_to_spanK(K_3x2, dB_target)
-        I, dB_ach = solve_currents_ls(K_3x2, dB_proj, current_limits_A=current_limits_A)
-        B1_ach = B0 + dB_ach
-        f_after_ach = exact_f_minus_quartet(B1_ach, D_GHz=D_GHz, E_MHz=E_MHz, gamma_e_MHz_per_G=gamma_e_MHz_per_G)
-        result.update({
-            "Iy_A": float(I[0]), "Iz_A": float(I[1]),
-            "dB_projected_G": dB_proj, "dB_residual_unreachable_G": resid,
-            "B1_achieved_G": B1_ach,
-            "f_after_achieved_nv_GHz": f_after_ach
-        })
-    return result
-
-def print_plan_250G(res, use_measured_before=True, title="Plan to |B|=250 G (crystal frame)"):
-    labs = NV_LABELS
-    f_before = res["f_before_nv_GHz_meas"] if use_measured_before else res["f_before_nv_GHz_model"]
-    print(f"\n=== {title} ===")
-    print(f"|B| now: {res['B0_mag_G']:.3f} G   →   target: {res['B1_target_mag_G']:.3f} G")
-    print("B0 (G):        ", np.round(res["B0_G"], 6))
-    print("B1_target (G): ", np.round(res["B1_target_G"], 6))
-    print("ΔB_target (G): ", np.round(res["dB_target_G"], 6))
-
-    print("\nIdeal (exact Hamiltonian):")
-    print(" NV                f_- before (GHz)   f_- ideal (GHz)    Δf (MHz)")
-    for i,lab in enumerate(labs):
-        df = 1000*(res["f_after_ideal_nv_GHz"][i]-f_before[i])
-        print(f" {lab:<12}   {f_before[i]:.9f}   {res['f_after_ideal_nv_GHz'][i]:.9f}   {df:+8.3f}")
-
-    if "Iy_A" in res:
-        print("\nCoil-constrained (projected into span(K)):")
-        print(f" Iy (A): {res['Iy_A']:+.6f}   Iz (A): {res['Iz_A']:+.6f}")
-        print(" ΔB_proj (G):    ", np.round(res["dB_projected_G"], 6))
-        print(" ΔB_unreachable: ", np.round(res["dB_residual_unreachable_G"], 6), "(this part your coils cannot make)")
-        print(" B1_achieved (G):", np.round(res["B1_achieved_G"], 6))
-        print("\n NV                f_- before (GHz)   f_- achieved (GHz)  Δf (MHz)")
-        for i,lab in enumerate(labs):
-            fa = res["f_after_achieved_nv_GHz"][i]
-            df = 1000*(fa - f_before[i])
-            print(f" {lab:<12}   {f_before[i]:.9f}   {fa:.9f}   {df:+8.3f}")
+    def peaks_exact(self, B_crys_G: np.ndarray,
+                    D_GHz: float=D_GHZ, E_MHz: float=E_MHZ, gamma_e_MHz_per_G: float=GAMMA
+                    ) -> Optional[np.ndarray]:
+        """
+        Optional: return the exact quartet (GHz) if your exact solver is available.
+        """
+        if not USE_EXACT:
+            return None
+        return exact_f_minus_quartet(np.asarray(B_crys_G, float).reshape(3),
+                                     D_GHz=D_GHz, E_MHz=E_MHz,
+                                     gamma_e_MHz_per_G=gamma_e_MHz_per_G)
 
 
+    def field_maps_over_currents(cal,
+                                Iy_range=(-4.0, 4.0),
+                                Iz_range=(-4.0, 4.0),
+                                nI=201,
+                                target_Bmag_G=None,
+                                annotate_points=()):
+        """
+        2-D maps of Bx, By, Bz, and |B| vs (Iy, Iz).
 
-# ----------------- Example -----------------
+        Params
+        ------
+        cal : your NVCalib (must expose cal.field_from_currents(iy, iz) -> (B_vec, |B|, extras))
+        Iy_range, Iz_range : (min, max) in Amps for the two channels
+        nI : number of samples per axis
+        target_Bmag_G : if given, draw a |B|=target contour
+        annotate_points : list of (Iy, Iz, label) to mark on all maps
+        """
+        Iy = np.linspace(Iy_range[0], Iy_range[1], nI)
+        Iz = np.linspace(Iz_range[0], Iz_range[1], nI)
+        IZZ, IYY = np.meshgrid(Iz, Iy)  # note: X=Iz, Y=Iy for plotting
+
+        # compute fields on the grid
+        Bx = np.empty_like(IZZ, dtype=float)
+        By = np.empty_like(IZZ, dtype=float)
+        Bz = np.empty_like(IZZ, dtype=float)
+        Bm = np.empty_like(IZZ, dtype=float)
+
+        for i in range(nI):
+            for j in range(nI):
+                B, M, _ = cal.field_from_currents(IYY[i, j], IZZ[i, j])
+                Bx[i, j], By[i, j], Bz[i, j] = B
+                Bm[i, j] = M
+
+        # helper to make lots of contours
+        def contour_levels(arr, major=5.0, minor=1.0, symmetric=False):
+            a_min, a_max = float(np.nanmin(arr)), float(np.nanmax(arr))
+            if symmetric:
+                m = max(abs(a_min), abs(a_max))
+                a_min, a_max = -m, m
+            # major & minor grids
+            maj = np.arange(np.floor(a_min/major)*major, np.ceil(a_max/major)*major + 0.5*major, major)
+            mnr = np.arange(np.floor(a_min/minor)*minor, np.ceil(a_max/minor)*minor + 0.5*minor, minor)
+            return maj, mnr
+
+        # 2x2 maps
+        fig, axs = plt.subplots(2, 2, figsize=(12, 10), constrained_layout=True)
+        panels = [
+            ("Bx (G)", Bx, True),
+            ("By (G)", By, True),
+            ("Bz (G)", Bz, True),
+            ("|B| (G)", Bm, False),
+        ]
+
+        for ax, (title, Z, symm) in zip(axs.flat, panels):
+            maj, mnr = contour_levels(Z, major=5.0, minor=1.0, symmetric=symm)
+            # filled minor contours + line major contours
+            cf = ax.contourf(IZZ, IYY, Z, levels=mnr, extend="both")
+            cs_maj = ax.contour(IZZ, IYY, Z, levels=maj, colors="k", linewidths=1.0)
+            ax.clabel(cs_maj, fmt="%.0f", inline=True, fontsize=8)
+            # zero contour (for Bx,By,Bz)
+            if symm:
+                ax.contour(IZZ, IYY, Z, levels=[0.0], colors="white", linewidths=2.0, linestyles="--", alpha=0.9)
+
+            # optional |B| target on every panel for reference
+            if target_Bmag_G is not None and title != "Bx (G)":  # draw on By, Bz, |B|
+                cs_t = ax.contour(IZZ, IYY, Bm, levels=[float(target_Bmag_G)], colors="red", linewidths=2.0)
+                try:
+                    ax.clabel(cs_t, fmt=f"|B|={float(target_Bmag_G):.0f} G", inline=True, fontsize=9)
+                except Exception:
+                    pass
+
+            # annotate points
+            # for (iy0, iz0, lab) in annotate_points:
+            #     ax.plot(iz0, iy0, 'o', ms=6, mec='k', mfc='yellow', zorder=4)
+            #     if lab:
+            #         ax.text(iz0, iy0, f" {lab}", va="center", ha="left", fontsize=8, color="k")
+
+            ax.set_title(title)
+            ax.set_xlabel("I_ch2 (A)")
+            ax.set_ylabel("I_ch1 (A)")
+            ax.grid(alpha=0.2)
+            cbar = fig.colorbar(cf, ax=ax)
+            cbar.ax.set_ylabel(title)
+
+        fig.suptitle("Field maps vs coil currents (crystal frame)", y=1.02, fontsize=14)
+        plt.show()
+
+
+# -------------------------- Examples --------------------------
 if __name__ == "__main__":
-    # try any ordering you like:
+    kpl.init_kplotlib()
+    cal = CoilField3D()
 
-    # --- use the exact-model helpers you pasted earlier ---
-    # nv_axes(), nv_local_frames(), exact_f_minus_for_one_NV(), exact_f_minus_quartet()
-    # solve_B_from_odmr_order_invariant(...)
-    # plan_increase_Bmag_exact(...)      # from the code I gave
-    # (optional) your print helper print_Bmag_increase_plan(...)
+    # (1) Single prediction
+    Iy, Iz = 0.73, 1.54
+    B, Bmag, Bhat = cal.field_from_currents(Iy, Iz)
+    print("=== Single prediction ===")
+    print(f"I_ch1={Iy:.3f} A, I_ch2={Iz:.3f} A")
+    print("B (G):   ", np.round(B, 6))
+    print("|B| (G): ", f"{Bmag:.6f}")
+    print("B̂:       ", np.round(Bhat, 6))
 
-    # Your baseline quartet (any order) and constants
-    f_base = [2.7660, 2.7851, 2.8235, 2.8405]   # GHz, measured
-    D      = 2.8785                              # GHz
-    gamma  = 2.8025                              # MHz/G
+    # (2) Currents to reach a target B
+    B_target = np.array([-40.0, -18.0, -10.0])
+    plan = cal.currents_for_target_B(B_target)
+    print("\n=== Currents for target B ===")
+    print("B_target (G):    ", np.round(B_target, 6))
+    print("Iy (A), Iz (A):  ", plan["Iy_A"], plan["Iz_A"])
+    B2, B2mag, _ = cal.field_from_currents(plan["Iy_A"], plan["Iz_A"])
+    print("B_achieved (G):  ", np.round(B2, 6), "  |B|=", f"{B2mag:.6f} G")
+    print("ΔB residual (G): ", np.round(plan["dB_residual_G"], 6))
 
-    # =========================
-    # EXAMPLE A: Just predict
-    # Increase |B| by +5 G, keep direction fixed; predict new quartet (exact model, E=0)
-    # =========================
-    plan = plan_increase_Bmag_exact(
-        f_current_GHz=f_base,
-        D_GHz=D,
-        E_MHz=0.0,                 # set your strain here if known
-        gamma_e_MHz_per_G=gamma,
-        delta_Bmag_G=150.0           # OR use scale_Bmag=1.10 for +10%
-    )
-    print("\n=== Increase |B| by +5 G (exact model) ===")
-    print(f"|B|: {plan['B0_mag_G']:.3f} G  →  {plan['B1_mag_G']:.3f} G")
-    print("B0 (G):", np.round(plan["B0_G"], 6))
-    print("B1 (G):", np.round(plan["B1_G"], 6))
-    NV_LABELS = ["[1,1,1]","[-1,1,1]","[1,-1,1]","[1,1,-1]"]
-    print("\nNV (nv_axes order)      f_- before (GHz)   f_- after (GHz)    Δf (MHz)")
-    for i, lab in enumerate(NV_LABELS):
-        df = 1000*(plan["f_after_nv_GHz"][i] - plan["f_before_nv_GHz"][i])
-        print(f" {lab:<10}          {plan['f_before_nv_GHz'][i]:.9f}    {plan['f_after_nv_GHz'][i]:.9f}    {df:+8.3f}")
+    # (3) Build a current grid and get full 3D field arrays
+    grid = cal.field_grid(I1_range=(-2.0, 2.0), I2_range=(-2.0, 2.0), n1=51, n2=51)
+    print("\n=== Grid summary ===")
+    print("Iy_grid shape:", grid["Iy_grid"].shape)
+    print("Bmag stats (G): min={:.3f}, max={:.3f}".format(grid["Bmag"].min(), grid["Bmag"].max()))
 
-    # =========================
-    # EXAMPLE B: Also suggest Iy/Iz to realize ΔB
-    # =========================
-    # If you already have a coil map K_crys (3x2, columns are dB/dIy and dB/dIz in crystal axes), use it here.
-    # Start with a rough diagonal (replace with your fitted K when you have it):
-    K_diag = np.array([
-        [ 0.0,   0.0   ],   # dBx/dIy, dBx/dIz
-        [-6.37,  0.0   ],   # dBy/dIy, dBy/dIz
-        [ 0.0,  -17.39 ],   # dBz/dIy, dBz/dIz
-    ])  # G/A  (placeholder!)
+    # # current grid
 
-    # Recompute plan so we have ΔB = B1 - B0, then solve least-squares for currents
-    plan2 = plan_increase_Bmag_exact(
-        f_current_GHz=f_base, D_GHz=D, E_MHz=0.0, gamma_e_MHz_per_G=gamma,
-        scale_Bmag=3.10   # example: +10% magnitude
-    )
-    B0, B1 = plan2["B0_G"], plan2["B1_G"]
-    dB = B1 - B0
+    # ----------------------------
+    # Figure 2: |B| contour with the (Iy, Iz) path
+    # ----------------------------
+    # Build a current grid for contours
+    Iy_grid = np.linspace(-4.0, 4.0, 161)
+    Iz_grid = np.linspace(-4.0, 4.0, 161)
+    GG = cal.field_grid((Iy_grid.min(), Iy_grid.max()),
+                        (Iz_grid.min(), Iz_grid.max()),
+                        Iy_grid.size, Iz_grid.size)
+    Bmag_grid = GG["Bmag"]  # shape (nIy, nIz)
 
-    # Solve min-norm currents: minimize ||K dI - dB||_2
-    K = K_diag
-    lhs = K.T @ K
-    rhs = K.T @ dB
-    dI = np.linalg.lstsq(lhs, rhs, rcond=None)[0]   # [Iy, Iz]
-    Iy, Iz = float(dI[0]), float(dI[1])
+    # Contour levels
+    vmin, vmax = float(np.nanmin(Bmag_grid)), float(np.nanmax(Bmag_grid))
+    vmin_r = np.floor(vmin); vmax_r = np.ceil(vmax)
+    major_step, minor_step = 5.0, 1.0
+    levels_major = np.arange(vmin_r, vmax_r + 0.5*major_step, major_step)
+    levels_minor = np.arange(vmin_r, vmax_r + 0.5*minor_step, minor_step)
 
-    # Check what ΔB you actually get with that K, and the residual
-    dB_ach = K @ dI
-    res    = dB_ach - dB
+    target = 60.0  # G (adjust if you want a specific target band)
 
-    print("\n=== Coil suggestion for +10% |B| (LS, crystal frame) ===")
-    print(f"Iy (A): {Iy:+.6f}   Iz (A): {Iz:+.6f}")
-    print("Target ΔB (G):    ", np.round(dB, 6))
-    print("Achieved ΔB (G):  ", np.round(dB_ach, 6))
-    print("Residual ΔB (G):  ", np.round(res, 6))
+    plt.figure()
+    cf = plt.contourf(Iz_grid, Iy_grid, Bmag_grid, levels=levels_minor, extend="both")
+    CS_minor = plt.contour(Iz_grid, Iy_grid, Bmag_grid, levels=levels_minor, linewidths=0.5, colors="k", alpha=0.35)
+    CS_major = plt.contour(Iz_grid, Iy_grid, Bmag_grid, levels=levels_major, linewidths=1.2, colors="k")
+    CS_target = plt.contour(Iz_grid, Iy_grid, Bmag_grid, levels=[target], linewidths=2.2, colors="red")
 
-    # Predict quartet after applying achieved ΔB (exact model)
-    f_after_nv = exact_f_minus_quartet(B0 + dB_ach, D_GHz=D, E_MHz=0.0, gamma_e_MHz_per_G=gamma)
-    print("\nNV (nv_axes order)      f_- before (GHz)   f_- after (GHz)    Δf (MHz)")
-    for i, lab in enumerate(NV_LABELS):
-        f0 = plan2["f_before_nv_GHz"][i]
-        df = 1000*(f_after_nv[i] - f0)
-        print(f" {lab:<10}          {f0:.9f}    {f_after_nv[i]:.9f}    {df:+8.3f}")
+    plt.clabel(CS_major, inline=True, fontsize=8, fmt="%.0f G")
+    plt.clabel(CS_target, inline=True, fontsize=9, fmt=f"|B|={target:.0f} G")
 
-    # =========================
-    # (Optional) If you want to incorporate measured cross-talk:
-    # Build K from two one-coil shots (quartets at (Iy,0) and (0,Iz)) and ref (0,0),
-    # solve B for each, then finite-difference:
-    #   dB/dIy ≈ (B(Iy,0)-B(0,0))/Iy
-    #   dB/dIz ≈ (B(0,Iz)-B(0,0))/Iz
-    # Put those as columns of K and re-run the LS step above.
-    # =========================
+    # Overlay the sweep path in current space
+    # plt.plot(Iy_grid, Iy_grid, color="white", lw=2.0, label="sweep path")
+    # plt.scatter([Iz_grid[0], Iz_grid[-1]], [Iy_grid[0], Iy_grid[-1]], c=["cyan", "magenta"], s=60, zorder=3, label="start/end")
+    # plt.legend(loc="upper right")
 
-    # # Your measured baseline quartet (any order)
-    # f_base = [2.7660, 2.7851, 2.8235, 2.8405]   # GHz
-    # D = 2.8785
-    # gamma = 2.8025
-    # E = 0.0  # MHz (set if you have a measured strain splitting)
+    plt.xlabel("I_ch2 (A)")
+    plt.ylabel("I_ch1 (A)")
+    plt.title("|B| (G) over current grid + sweep path")
+    cbar = plt.colorbar(cf); cbar.set_label("|B| (G)")
+    plt.axhline(0, lw=0.7, color="k", alpha=0.4); plt.axvline(0, lw=0.7, color="k", alpha=0.4)
 
-    # # Replace this with your fitted coil map K_crys (3x2, columns = dB/dIy and dB/dIz in crystal axes)
-    # # Placeholder (y-only affects By, z-only affects Bz):
-    # K_crys = np.array([
-    #     [ 0.0,   0.0],     # dBx/dIy, dBx/dIz
-    #     [-6.37,  0.0],     # dBy/dIy, dBy/dIz   (example from your one-shot estimate)
-    #     [ 0.0, -17.39],    # dBz/dIy, dBz/dIz
-    # ])  # G/A
 
-    # res = plan_to_target_Bmag_250G(
-    #     f_current_GHz=f_base,
-    #     D_GHz=D,
-    #     gamma_e_MHz_per_G=gamma,
-    #     K_3x2=K_crys,
-    #     current_limits_A=14.0,     # clip if you want
-    #     E_MHz=E,
-    #     target_Bmag_G=200.0
-    # )
-    # print_plan_250G(res, use_measured_before=True)
+
+    # ---------------- Example usage ----------------
+    # Pick your grid & an example target
+    Iy_rng = (-4.0, 4.0)
+    Iz_rng = (-4.0, 4.0)
+    target = 60.0  # draw the |B|=60 G contour
+
+    # Optionally mark a few operating points
+    marks = [
+        (0.00, 0.00, "baseline"),
+        (0.73, 1.54, "op pt"),
+        (1.00, 0.00, "ch1=1A"),
+        (0.00, 1.00, "ch2=1A"),
+    ]
+
+    cal.field_maps_over_currents(Iy_range=Iy_rng, Iz_range=Iz_rng, nI=161,
+                            target_Bmag_G=target, annotate_points=marks)
+
+
+    kpl.show(block=True)
