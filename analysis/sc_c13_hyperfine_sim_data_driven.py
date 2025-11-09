@@ -17,6 +17,7 @@ import pandas as pd
 import matplotlib.pyplot as plt
 from pathlib import Path
 from utils import data_manager as dm
+from dataclasses import dataclass
 
 # ---------- Optional numba (falls back gracefully) ----------
 try:
@@ -138,6 +139,135 @@ def _comb_quartic_powerlaw(
     return out
 
 
+# =============================================================================
+# NOISE MODELING
+# =============================================================================
+@dataclass
+class NoiseSpec:
+    # photon/shot model (approximate binomial with variance ~ p(1-p)/N)
+    use_shot: bool = True
+    photons_mean: float = 3_000.0  # mean detected photons per point at y=1
+
+    # additive electronics noise
+    add_gauss_std: float = 0.003  # ~0.3% RMS
+
+    # slow drifts per trace
+    mult_gain_std: float = 0.02  # multiplicative gain ~ N(1,σ)
+    base_offset_std: float = 0.01  # additive offset ~ N(0,σ)
+
+    # correlated noise across tau
+    use_1f: bool = True
+    onef_strength: float = 0.004  # overall RMS of 1/f component
+    onef_alpha: float = 1.0  # spectral slope: 0=white, 1=pink
+
+    use_ar1: bool = False  # alternative to 1/f if you prefer
+    ar1_rho: float = 0.98  # correlation
+    ar1_sigma: float = 0.002  # innovations std
+
+    # timing jitter (distorts x-axis slightly)
+    timing_jitter_std_us: float = 0.01  # std of τ jitter (μs), applied pointwise
+
+    # small per-trace frequency detuning (mimics MW/B-field drift)
+    freq_detune_ppm: float = 200.0  # ppm of MHz-scale features; set 0 to disable
+
+    # rare spikes/outliers
+    glitch_prob: float = 0.001
+    glitch_magnitude: float = 0.1  # absolute kick
+
+    # quantization
+    quantize_bits: int = 0  # 0 to disable; else 12, 14, 16, ...
+
+    # bounds
+    clip_lo: float = -0.1  # allow slight under/overshoot pre-clip
+    clip_hi: float = 1.2
+
+
+def _gen_1f_noise(T: int, rng: np.random.Generator, alpha=1.0, rms=0.005):
+    """Synthesize length-T 1/f^alpha noise with target RMS."""
+    # frequency grid
+    freqs = np.fft.rfftfreq(T)
+    amp = np.ones_like(freqs)
+    # avoid division by zero at DC; leave DC random but small
+    amp[1:] = 1.0 / (freqs[1:] ** (alpha / 2.0))  # /2 because we’ll mirror energy
+    # complex spectrum with random phases
+    phases = rng.uniform(0, 2 * np.pi, size=freqs.shape)
+    spec = amp * (np.cos(phases) + 1j * np.sin(phases))
+    # inverse FFT to time domain
+    x = np.fft.irfft(spec, n=T)
+    # normalize to unit RMS then scale
+    x = x / (np.std(x) + 1e-12)
+    return rms * x
+
+
+def _gen_ar1_noise(T: int, rng: np.random.Generator, rho=0.98, sigma=0.002):
+    e = rng.standard_normal(T) * sigma
+    x = np.empty(T, float)
+    x[0] = e[0] / max(1e-6, (1 - rho))
+    for t in range(1, T):
+        x[t] = rho * x[t - 1] + e[t]
+    return x
+
+
+def apply_noise_pipeline(
+    y_clean: np.ndarray, taus_us: np.ndarray, rng: np.random.Generator, spec: NoiseSpec
+) -> np.ndarray:
+    y = y_clean.astype(float, copy=True)
+    T = y.shape[0]
+
+    # (0) small per-trace detuning → stretch tau slightly
+    if spec.freq_detune_ppm and np.any(np.diff(taus_us) > 0):
+        scale = 1.0 + 1e-6 * spec.freq_detune_ppm * rng.standard_normal()
+        # resample y at tau' = tau * scale
+        tau_scaled = taus_us * scale
+        y = np.interp(taus_us, tau_scaled, y, left=y[0], right=y[-1])
+
+    # (1) multiplicative gain & baseline offset (per trace)
+    if spec.mult_gain_std > 0:
+        gain = 1.0 + spec.mult_gain_std * rng.standard_normal()
+        y *= gain
+    if spec.base_offset_std > 0:
+        y += spec.base_offset_std * rng.standard_normal()
+
+    # (2) correlated noise across τ
+    if spec.use_1f and spec.onef_strength > 0:
+        y += _gen_1f_noise(T, rng, alpha=spec.onef_alpha, rms=spec.onef_strength)
+    elif spec.use_ar1:
+        y += _gen_ar1_noise(T, rng, rho=spec.ar1_rho, sigma=spec.ar1_sigma)
+
+    # (3) timing jitter: perturb τ and resample (pointwise)
+    if spec.timing_jitter_std_us > 0:
+        dt = rng.standard_normal(T) * spec.timing_jitter_std_us
+        tau_jit = np.clip(taus_us + dt, taus_us.min(), taus_us.max())
+        tau_jit.sort()  # preserve monotonicity; yields slight local stretching
+        y = np.interp(taus_us, tau_jit, y)
+
+    # (4) shot/readout noise (approximate binomial/Poisson)
+    if spec.use_shot and spec.photons_mean > 0:
+        # approximate: counts ~ Poisson(mu = photons_mean * y_clipped)
+        lam = np.clip(y, 0.0, 1.0) * spec.photons_mean
+        counts = rng.poisson(lam)
+        y = counts / max(1.0, spec.photons_mean)
+
+    # (5) additive Gaussian electronics noise
+    if spec.add_gauss_std > 0:
+        y += spec.add_gauss_std * rng.standard_normal(T)
+
+    # (6) rare glitches/outliers
+    if spec.glitch_prob > 0 and spec.glitch_magnitude > 0:
+        mask = rng.random(T) < spec.glitch_prob
+        y[mask] += spec.glitch_magnitude * rng.standard_normal(mask.sum())
+
+    # (7) quantization
+    if spec.quantize_bits and spec.quantize_bits > 0:
+        levels = 2**spec.quantize_bits
+        lo, hi = 0.0, 1.0  # assume normalized signal; adjust if needed
+        step = (hi - lo) / (levels - 1)
+        y = np.round(np.clip(y, lo, hi) / step) * step
+
+    # final clip
+    return np.clip(y, spec.clip_lo, spec.clip_hi)
+
+
 def revivals_only_mapping(microscopic, taus_s, p, power=2.0):
     """
     Gate microscopic deviations to revivals AND add a zero-mean oscillatory term
@@ -251,6 +381,19 @@ def _orthonormal_basis_from_z(z):
     return ez, e1, e2
 
 
+def make_R_NV(nv_axis_crystal):
+    """
+    nv_axis_crystal: tuple/list/np.array like (±1, ±1, ±1)
+    Returns R such that v_NV = R @ v_crystal and ez_NV aligns with nv_axis.
+    """
+    n = np.asarray(nv_axis_crystal, float)
+    n /= np.linalg.norm(n)  # unit
+    # reuse your ONB constructor but for the NV axis now
+    ez, e1, e2 = _orthonormal_basis_from_z(n)  # ez=n, e1,e2 ⟂ n
+    # rows are basis vectors expressed in crystal coords → left-multiply for coords in NV basis
+    return np.vstack([e1, e2, ez])
+
+
 def compute_hyperfine_components(A_tensor, B_unit):
     """
     Return scalar A_parallel and scalar B_perp (effective transverse coupling),
@@ -272,31 +415,6 @@ def Mk_tau(A_Hz, B_Hz, tau_s, omegaL_Hz):
     Single-spin Hahn-echo contribution (dimensionless).
     A_Hz, B_Hz, omegaL_Hz are in Hz; internally convert to angular frequency.
     """
-    # Convert to angular frequency (rad/s)
-    omega = 2 * np.pi * np.sqrt(B_Hz**2 + (A_Hz - omegaL_Hz) ** 2)
-    return 1.0 - 2.0 * ((2 * np.pi * B_Hz) ** 2 / (omega**2)) * (
-        np.sin(omega * tau_s / 2.0) ** 4
-    )
-
-
-def compute_echo_signal(hyperfine_tensors, tau_array_s, B_field_vec_T):
-    B_mag = np.linalg.norm(B_field_vec_T)
-    if B_mag == 0.0:
-        raise ValueError("B-field magnitude is zero.")
-    B_unit = B_field_vec_T / B_mag
-    omega_L = gamma_C13 * B_mag  # Hz
-
-    signal = np.empty_like(tau_array_s, dtype=float)
-    for i, tau in enumerate(tau_array_s):
-        Mk_prod = 1.0
-        for A_tensor in hyperfine_tensors:
-            A, B = compute_hyperfine_components(A_tensor, B_unit)
-            Mk_prod *= Mk_tau(A, B, tau, omega_L)
-        signal[i] = 0.5 * (1.0 + Mk_prod)
-    return signal
-
-
-def Mk_tau(A_Hz, B_Hz, tau_s, omegaL_Hz):
     omega = 2 * np.pi * np.sqrt(B_Hz**2 + (A_Hz - omegaL_Hz) ** 2)
     return 1.0 - 2.0 * ((2 * np.pi * B_Hz) ** 2 / (omega**2)) * (
         np.sin(omega * tau_s / 2.0) ** 4
@@ -373,6 +491,81 @@ def _choose_sites(rng, present_sites, num_spins, selection_mode="uniform"):
     return [present_sites[i] for i in idx]
 
 
+HF_COLS = ["index", "distance", "x", "y", "z", "Axx", "Ayy", "Azz", "Axy", "Axz", "Ayz"]
+
+
+def read_hyperfine_table_safe(path: str | Path) -> pd.DataFrame:
+    path = Path(path)
+    # find first data row that starts with an integer (skip headers/junk)
+    with path.open("r", encoding="utf-8", errors="ignore") as f:
+        lines = f.readlines()
+
+    def _is_int_start(s: str) -> bool:
+        s = s.lstrip()
+        if not s:
+            return False
+        t = s.split()[0]
+        try:
+            int(t)
+            return True
+        except Exception:
+            return False
+
+    try:
+        data_start = next(i for i, line in enumerate(lines) if _is_int_start(line))
+    except StopIteration:
+        raise RuntimeError(f"Could not locate data start in hyperfine file: {path}")
+
+    # primary path: pandas
+    try:
+        df = pd.read_csv(
+            path,
+            sep=r"\s+",  # robust whitespace split
+            engine="python",
+            comment="#",  # ignore commented tails
+            header=None,
+            names=HF_COLS,
+            usecols=list(range(11)),  # ensure exactly 11 cols
+            skiprows=data_start,
+            na_filter=False,
+        )
+        # enforce dtypes
+        df = df.astype(
+            {
+                "index": int,
+                "distance": float,
+                "x": float,
+                "y": float,
+                "z": float,
+                "Axx": float,
+                "Ayy": float,
+                "Azz": float,
+                "Axy": float,
+                "Axz": float,
+                "Ayz": float,
+            },
+            errors="ignore",
+        )
+        return df
+    except Exception as e:
+        # fallback: numpy → DataFrame
+        arr = np.loadtxt(
+            path,
+            comments="#",
+            dtype=float,
+            ndmin=2,
+        )
+        if arr.shape[1] < 11:
+            raise RuntimeError(
+                f"Expected ≥11 columns, found {arr.shape[1]} in {path}"
+            ) from e
+        arr = arr[:, :11]
+        df = pd.DataFrame(arr, columns=HF_COLS)
+        # index is float now; coerce to int safely
+        df["index"] = df["index"].round().astype(int)
+        return df
+
+
 # =============================================================================
 # Main simulator
 # =============================================================================
@@ -421,31 +614,7 @@ def simulate_random_spin_echo_average(
     B_hat_NV = B_vec_NV / np.linalg.norm(B_vec_NV)
 
     # Load hyperfine file (formatted .txt with header then table)
-    file_path = Path(hyperfine_path)
-    with open(file_path, "r") as f:
-        lines = f.readlines()
-    data_start = next(
-        i for i, line in enumerate(lines) if line.strip().startswith("1 ")
-    )
-    df = pd.read_csv(
-        file_path,
-        delim_whitespace=True,
-        skiprows=data_start,
-        header=None,
-        names=[
-            "index",
-            "distance",
-            "x",
-            "y",
-            "z",
-            "Axx",
-            "Ayy",
-            "Azz",
-            "Axy",
-            "Axz",
-            "Ayz",
-        ],
-    )
+    df = read_hyperfine_table_safe(hyperfine_path)
     if distance_cutoff is not None:
         df = df[df["distance"] < distance_cutoff]
 
@@ -1034,9 +1203,9 @@ def synth_per_nv(
             tau_range_us=tau_range_us,
             num_spins=num_spins,
             num_realizations=1,
-            distance_cutoff=8.0,
-            Ak_min_kHz=0,  # keep if A∥ ≥ Ak_min_kHz (if set)
-            Ak_max_kHz=600,  # keep if A∥ ≤ Ak_max_kHz (if set)
+            distance_cutoff=15.0,
+            Ak_min_kHz=2,  # keep if A∥ ≥ Ak_min_kHz (if set)
+            Ak_max_kHz=800,  # keep if A∥ ≤ Ak_max_kHz (if set)
             Ak_abs=True,  # compare |A∥| if True, signed A∥ if False
             R_NV=np.eye(3),
             fine_params=fine_params,
@@ -1052,6 +1221,24 @@ def synth_per_nv(
             fixed_presence_mask=None,
             reuse_present_mask=reuse_present_mask,
         )
+        NOISE = NoiseSpec(
+            use_shot=True,
+            photons_mean=2500.0,
+            add_gauss_std=0.003,
+            mult_gain_std=0.02,
+            base_offset_std=0.01,
+            use_1f=True,
+            onef_strength=0.004,
+            onef_alpha=1.0,
+            timing_jitter_std_us=0.01,
+            freq_detune_ppm=150.0,
+            glitch_prob=0.001,
+            glitch_magnitude=0.08,
+            quantize_bits=12,
+        )
+        ## Apply noise
+        # echo = apply_noise_pipeline(echo, taus, rng, NOISE)
+        ##collect
         traces.append(echo)
         fine_list.append(fine_params)
         plot_echo_with_sites(taus, echo, aux, title="Spin Echo (single NV)")
@@ -1080,13 +1267,13 @@ def _to_float_or_inf(x):
 def main():
     chi_vals = np.array([_to_float_or_inf(c) for c in chis], float)
     order = np.argsort(chi_vals)  # lowest χ² first, infs at end
-    keep = [i for i in order if popts[i] is not None][:200]  # e.g., top 20 NVs
+    keep = [i for i in order if popts[i] is not None][:20]  # e.g., top 20 NVs
 
     results = []
     for i in keep:
         res = synth_per_nv(
             i,
-            R=1,
+            R=2,
             tau_range_us=(0, 100),
             hyperfine_path="analysis/nv_hyperfine_coupling/nv-2.txt",
             num_spins=None,
