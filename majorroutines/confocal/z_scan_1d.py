@@ -5,6 +5,7 @@
 Performs a scan along the Z-axis without moving X/Y position, collecting
 photon counts at each Z position and displaying a line plot.
 
+
 Created on November 5th, 2025
 
 """
@@ -110,16 +111,15 @@ def main(
     tb.reset_cfm()
     tb.init_safe_stop()
 
-    # Sequence loading (same as stationary_count - load once)
-    delay_ns = 0  # No delay for continuous counting
+    # Sequence loading - load once, trigger per position (confocal pattern)
+    delay_ns = 0  # No delay for single-pixel readout
     period_ns = pulse.stream_load(
         SEQ_FILE_PIXEL_READOUT,
         tb.encode_seq_args([delay_ns, readout_ns, readout_laser, readout_power]),
     )[0]
 
-    # Start continuous streaming (same pattern as stationary_count)
+    # Start tag stream once (confocal pattern)
     ctr.start_tag_stream()
-    pulse.stream_start(-1)  # -1 means run continuously until stopped
 
     ### Scan through Z positions
 
@@ -136,39 +136,30 @@ def main(
                 break
 
             # Move Z position relatively
-            print(f"[DEBUG] Step {i+1}: Moving Z by {step_size}...", flush=True)
             current_z_pos = piezo.move_z_steps(step_size)
-            print(f"[DEBUG] Step {i+1}: Now at Z={current_z_pos}", flush=True)
-            time.sleep(0.05)  # Settling time
+            time.sleep(0.01)  # Brief settling time
 
-            # Clear buffer and collect fresh counts
-            ctr.clear_buffer()
-            time.sleep(0.05)  # Wait for fresh data
-
-            # Read counts (collect num_averages samples)
-            print(f"[DEBUG] Step {i+1}: Reading {num_averages} samples...", flush=True)
+            # Collect num_averages samples at this position (confocal pattern)
             counts = []
-            read_start = time.time()
-            timeout = 2.0
-
-            while len(counts) < num_averages:
+            for _ in range(num_averages):
                 if tb.safe_stop():
                     break
-                if time.time() - read_start > timeout:
-                    print(f"[WARNING] Timeout reading counts at step {i+1}")
-                    break
-                new_samples = ctr.read_counter_simple()
-                if len(new_samples) > 0:
-                    counts.extend(new_samples)
 
-            print(f"[DEBUG] Step {i+1}: Collected {len(counts)} samples", flush=True)
+                # Trigger exactly 1 pulse sequence (confocal pattern)
+                pulse.stream_start(1)
 
-            # Calculate mean
-            if nv_minus_init and len(counts) >= 2:
-                # For charge init, pair samples and subtract
-                val = max(int(counts[0]) - int(counts[1]), 0) if len(counts) >= 2 else 0
-            else:
-                val = int(np.mean(counts)) if len(counts) > 0 else 0
+                # Read exactly 1 sample (blocking call)
+                if nv_minus_init:
+                    raw = ctr.read_counter_modulo_gates(2, 1)  # [[a,b]]
+                    val_single = max(int(raw[0][0]) - int(raw[0][1]), 0)
+                else:
+                    raw = ctr.read_counter_simple(1)  # [c]
+                    val_single = int(raw[0])
+
+                counts.append(val_single)
+
+            # Calculate mean of samples
+            val = int(np.mean(counts)) if len(counts) > 0 else 0
 
             # Store actual position and counts
             z_positions.append(current_z_pos)
@@ -214,7 +205,6 @@ def main(
 
     finally:
         ctr.stop_tag_stream()
-        pulse.stream_stop()
         tb.reset_safe_stop()
         tb.reset_cfm()
         print(f"\nScan complete: collected {len(z_positions)} data points")
