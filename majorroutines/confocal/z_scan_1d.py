@@ -211,6 +211,8 @@ def main(
 
     ### Save data
 
+    print("Processing data...", flush=True)
+
     # Convert lists to numpy arrays for processing and output
     z_positions_array = np.array(z_positions)
     counts_1d_array = np.array(counts_1d)
@@ -237,10 +239,15 @@ def main(
     }
 
     if save_data:
+        print("Saving data...", flush=True)
         path = dm.get_file_path(__file__, ts, getattr(nv_sig, "name", "nv"))
         dm.save_figure(fig, path)
         dm.save_raw_data(raw_data, path)
+        print(f"Data saved to: {path}")
 
+    # Turn off interactive mode and show final plot
+    plt.ioff()
+    print("Displaying final plot (close window to exit)...", flush=True)
     kpl.show()
 
     return counts_out, z_positions_array
