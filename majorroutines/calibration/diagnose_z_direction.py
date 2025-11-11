@@ -19,7 +19,7 @@ from utils import tool_belt as tb
 from utils.constants import CoordsKey, NVSig, VirtualLaserKey
 
 
-def main(nv_sig, step_size=10, max_steps=50000, update_interval=20):
+def main(nv_sig, step_size=10, max_steps=50000, update_interval=1):
     """
     Step upward and plot photon counts in real-time to diagnose Z-axis behavior.
 
@@ -46,10 +46,9 @@ def main(nv_sig, step_size=10, max_steps=50000, update_interval=20):
     pulse_gen = tb.get_server_pulse_streamer()
 
     print("\n" + "="*60)
-    print("Z-AXIS DIAGNOSTIC - UPWARD SCAN")
+    print("Z-AXIS UPWARD SCAN")
     print("="*60)
     print(f"Step size: {step_size} steps")
-    print(f"Max distance: {max_steps} steps (~{max_steps*0.05:.0f} microns)")
     print(f"Press CTRL+C to stop at any time")
     print("="*60 + "\n")
 

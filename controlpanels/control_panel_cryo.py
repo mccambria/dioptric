@@ -36,12 +36,15 @@ import majorroutines.confocal.confocal_image_sample as image_sample
 import majorroutines.confocal.confocal_stationary_count as stationary_count
 import majorroutines.confocal.z_scan_1d as z_scan_1d
 import majorroutines.calibration.calibrate_z_axis as calibrate_z_axis
+from majorroutines.calibration import diagnose_z_direction
+from majorroutines.calibration import approach_surface
 
 # import majorroutines.confocal.t1_dq_main as t1_dq_main
 import majorroutines.targeting as targeting
 import utils.tool_belt as tool_belt
 from utils.constants import Axes, CoordsKey, NVSig, VirtualLaserKey
-from majorroutines.confocal.confocal_1D_scan import confocal_scan_1d
+from majorroutines.confocal.confocal_2D_scan import confocal_scan_2D_xz
+from majorroutines.confocal.z_scan_1d import main as scan_1D
 
 # from utils.tool_belt import States
 
@@ -68,8 +71,8 @@ def do_image_sample(nv_sig):
     # scan_range = 0.2
     # num_steps = 60
 
-    scan_range = 0.5 #voltage #cryo image conversion: 37um/V; step size: x,y,z=40V (was 30)
-    num_steps = 90
+    scan_range = 0.2 #voltage #cryo image conversion: 37um/V; step size: x,y,z=40V (was 30)
+    num_steps = 60
 
     # For now we only support square scans so pass scan_range twice
     image_sample.confocal_scan(
@@ -102,11 +105,13 @@ def do_image_sample(nv_sig):
 #         cmax=cbarmax,
 #     )
 
-def do_1D_scan(nv_sig):
+
+
+def do_2D_xz_scan(nv_sig):
     """
-    A 1D z-scan of the piezo that sweeps the x-axis of the galvo.
+    A 2D z-scan of the piezo that sweeps the x-axis of the galvo.
     This is a modified version of the 1D scan designed for when NVs location
-    are not known.
+    are not known. Plots a line plot.
 
     This routine:
     1. Starts at the defined Galvo position
@@ -121,7 +126,7 @@ def do_1D_scan(nv_sig):
     num_steps = 60   # number of points along X
     
     # 1D scan function
-    counts, x_positions = confocal_scan_1d(
+    counts, x_positions = confocal_scan_2D_xz(
         nv_sig,
         scan_range,
         num_steps,
@@ -139,8 +144,8 @@ def do_image_sample_zoom(nv_sig):
     This function is compatable with piezo z-axis scan and will create a new figure for each z position.
 
     """
-    scan_range = 0.1 #TOO ZOOM FOR CURRENT SET-UP
-    num_steps = 30
+    scan_range = 0.01 #TOO ZOOM FOR CURRENT SET-UP
+    num_steps = 10
 
     image_sample.confocal_scan(
         nv_sig,
@@ -187,18 +192,31 @@ def do_calibrate_z_axis(nv_sig):
     2. Scans downward while monitoring photon counts
     3. Finds the peak photon count position (surface)
     4. Sets that position as Z=0 reference
-    5. Includes safety monitoring to prevent collision
 
     Returns the calibration results dictionary.
     """
-    results = calibrate_z_axis.main(
+    # Go down to find approx. surface (target count=stopping point)
+    # results = approach_surface.main(
+    #     nv_sig,
+    #     target_counts=500,  # Stop at surface counts (needs to be updated)
+    #     direction="down"      # Move down toward surface
+    # )
+    # Continously go up for x amount of steps, stops after max steps (limited to 0.5mm, sample size)
+    results = diagnose_z_direction.main(
         nv_sig,
-        scan_range=600,  # Can be overridden by config
-        step_size=5,
-        num_averages=100,
-        safety_threshold=150,
+        step_size=10,      # 10 steps at a time
+        max_steps=500   # Stop after 100k steps max
     )
+    # Under construction, will combine above (and account for hysteresis)
+    # results = calibrate_z_axis.main(
+    #     nv_sig,
+    #     scan_range=600,  # Can be overridden by config
+    #     step_size=5,
+    #     num_averages=100,
+    #     safety_threshold=150,
+    # )
     return results
+
 
 # Under construction
 # def do_z_scan_1d(nv_sig, z_start=0, z_end=-400, num_steps=61, num_averages=1):
@@ -227,6 +245,7 @@ def do_calibrate_z_axis(nv_sig):
 #     tuple
 #         (counts, z_positions) - counts in kcps or raw depending on config
 #     """
+
 #     counts, z_positions = z_scan_1d.main(
 #         nv_sig,
 #         z_start=z_start,
@@ -604,7 +623,7 @@ if __name__ == "__main__":
     # current step rate: 30.0V XYZ
     # region Postion and Time Control
     sample_xy = [0.0,0.0] # piezo XY voltage input (1.0=1V) (not coordinates, relative)
-    coord_z = 100  # piezo z voltage (0 is the set midpoint, absolute) (negative is closer to smaple, move unit steps in sample; 37 is good surface focus with bs for Lovelace; 20 is good for dye)
+    coord_z = 0  # piezo z voltage (0 is the set midpoint, absolute) (negative is closer to smaple, move unit steps in sample; 37 is good surface focus with bs for Lovelace; 20 is good for dye)
     pixel_xy = [0.0,0.0]   # galvo ref
 
     nv_sig = NVSig(
@@ -618,7 +637,7 @@ if __name__ == "__main__":
         disable_z_opt=True,
         expected_counts=13,
         pulse_durations={
-            VirtualLaserKey.IMAGING: int(10e6), # readout is in ns (5e6 = 5ms)
+            VirtualLaserKey.IMAGING: int(5e6), # readout is in ns (5e6 = 5ms)
             VirtualLaserKey.CHARGE_POL: int(1e4),
             VirtualLaserKey.SPIN_POL: 2000,
             VirtualLaserKey.SINGLET_DRIVE: 300,  # placeholder
@@ -629,23 +648,24 @@ if __name__ == "__main__":
 
     try:
         tool_belt.init_safe_stop()
-        # tool_belt.set_drift([0.0, 0.0, 0.0])  # Totally reset
+        # tool_belt.set_drift([0.0, 0.0, 0.0])  # Totally rneset
         # drift = tool_belt.get_drift()
         # tool_belt.set_drift([0.0, 0.0, drift[2]])  # Keep z
         # tool_belt.set_drift([drift[0], drift[1], 0.0])  # Keep xy
         
-        #pos.set_xyz_on_nv(nv_sig) # Hahn omits this line
+        # pos.set_xyz_on_nv(nv_sig) # Hahn omits this line, currently leave this line out when calibrating z
 
-        # do_calibrate_z_axis(nv_sig)
+        do_calibrate_z_axis(nv_sig)
+        # do_z_scan_1d
 
-        # region 1D scan
+        # region 2D scan
 
-        # do_1D_scan(nv_sig)
-        # z_range = np.linspace(750, 700, 51)
+        # do_2D_xz_scan(nv_sig)
+        # z_range = np.linspace(0, 200, 41)
         # for z in z_range:
         #     nv_sig.coords[CoordsKey.Z] = z
         #     pos.set_xyz_on_nv(nv_sig)
-        #     do_1D_scan(nv_sig)
+        #     do_2D_xz_scan(nv_sig)
 
         # endregion 1D scan
 
@@ -654,11 +674,12 @@ if __name__ == "__main__":
         # do_image_sample(nv_sig)
         # do_image_sample_zoom(nv_sig, nv_minus_initialization=True)
         # Z AXIS PIEZO SCAN
-        #z_range = np.linspace(0, 10, 22)
-        #for z in z_range:
-            #nv_sig.coords[CoordsKey.Z] = z
-            #pos.set_xyz_on_nv(nv_sig)
-            #do_image_sample(nv_sig)
+        # z_range = np.linspace(0, -250, 21)
+        # for z in z_range:
+        #     nv_sig.coords[CoordsKey.Z] = z
+        #     pos.set_xyz_on_nv(nv_sig)
+        #     # do_image_sample_zoom(nv_sig)
+        #     do_image_sample(nv_sig)
 
         # do_image_sample_zoom(nv_sig)
         # do_image_sample(nv_sig, nv_minus_initialization=True)
@@ -679,12 +700,12 @@ if __name__ == "__main__":
         # do_image_sample_Hahn(nv_sig)
         # do_image_sample_Hahn(nv_sig, nv_minus_initialization=True)
 
-        # # region Stationary count
-        do_stationary_count(nv_sig, disable_opt=True) #Note there is a slow response time w/ the APD
+        # region Stationary count
+        # do_stationary_count(nv_sig, disable_opt=True) #Note there is a slow response time w/ the APD
         # do_stationary_count(nv_sig, disable_opt=True, nv_minus_initialization=True)
         # do_stationary_count(nv_sig, disable_opt=True, nv_zero_initialization=True)
         # endregion Stationary count
-
+ 
         # do_resonance(nv_sig, 2.87, 0.200)
         # do_resonance_state(nv_sig , States.LOW)
         # do_resonance_state(nv_sig, States.HIGH)

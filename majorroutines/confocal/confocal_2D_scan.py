@@ -50,7 +50,7 @@ def _raster_fill(vals, img, state):
         i += 1
     state[:] = [i]
 
-def confocal_scan_1d(nv_sig: NVSig, x_range, num_steps, nv_minus_init=False):
+def confocal_scan_2D_xz(nv_sig: NVSig, x_range, num_steps, nv_minus_init=False):
     """
     Perform a 1D confocal scan along the X axis only.
     
@@ -209,7 +209,7 @@ def confocal_scan_1d(nv_sig: NVSig, x_range, num_steps, nv_minus_init=False):
     raw_data = {
         "timestamp": ts,
         "nv_sig": nv_sig,
-        "mode": "confocal_scan_1d",
+        "mode": "confocal_scan_2D_xz",
         "num_steps": num_steps,
         "x_range": x_range,
         "x_center": x0, "y_center": y0,
