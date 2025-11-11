@@ -26,10 +26,10 @@ SEQ_FILE_PIXEL_READOUT = "simple_readout.py"
 
 def main(
     nv_sig: NVSig,
-    z_start,
-    z_end,
     num_steps,
+    step_size,
     num_averages=1,
+    min_threshold=None,
     nv_minus_init=False,
     save_data=True,
 ):
@@ -38,23 +38,26 @@ def main(
 
     This routine:
     - Does NOT move X or Y coordinates
-    - Scans only the Z-axis from z_start to z_end
+    - Starts from current Z position and moves relatively by step_size
+    - Scans Z-axis for num_steps iterations
     - Collects photon counts at each Z position
     - Displays real-time line plot of counts vs Z position
+    - Can pause if counts drop below threshold (requires user input to continue)
     - Saves data and plot
 
     Parameters
     ----------
     nv_sig : NVSig
         NV center parameters
-    z_start : int
-        Starting Z position in steps
-    z_end : int
-        Ending Z position in steps
     num_steps : int
         Number of Z positions to scan
+    step_size : int
+        Step size in piezo units (negative = toward surface/down, positive = away/up)
     num_averages : int
         Number of photon count samples to average at each Z position (default: 1)
+    min_threshold : float or None
+        Minimum photon count threshold. If counts drop below this value, scan pauses
+        and prompts user to continue or abort. None = no threshold check (default: None)
     nv_minus_init : bool
         Whether to use charge initialization (default: False)
     save_data : bool
@@ -72,7 +75,7 @@ def main(
     count_fmt: CountFormat = cfg["count_format"]
 
     # Get servers
-    piezo = common.get_server("pos_xyz_ATTO_piezos")
+    piezo = pos.get_positioner_server(CoordsKey.Z)
     ctr = tb.get_server_counter()
     pulse = tb.get_server_pulse_streamer()
 
@@ -87,10 +90,9 @@ def main(
     tb.set_filter(nv_sig, VirtualLaserKey.IMAGING)
     readout_power = tb.set_laser_power(nv_sig, VirtualLaserKey.IMAGING)
 
-    # Create Z scan array
-    z_positions = np.linspace(z_start, z_end, num_steps)
-    counts_1d = np.full(num_steps, np.nan, float)
-    counts_1d_kcps = np.copy(counts_1d) if count_fmt == CountFormat.KCPS else None
+    # Initialize data storage (will be populated during scan)
+    z_positions = []  # Actual positions from piezo
+    counts_1d = []    # Raw counts at each position
 
     ### Setup figure for real-time plotting
 
@@ -100,15 +102,10 @@ def main(
     ax.set_ylabel("Kcps" if count_fmt == CountFormat.KCPS else "Raw Counts")
     ax.set_title(f"{readout_laser}, {readout_ns/1e6:.1f} ms readout")
 
-    # Initial plot with NaN values
-    (line,) = ax.plot(
-        z_positions,
-        counts_1d if counts_1d_kcps is None else counts_1d_kcps,
-        "b.-",
-        markersize=4,
-    )
-    ax.set_xlim(z_positions[0], z_positions[-1])
+    # Initial empty plot
+    (line,) = ax.plot([], [], "b.-", markersize=4)
     ax.grid(True, alpha=0.3)
+    plt.ion()  # Enable interactive mode
 
     tb.reset_cfm()
     tb.init_safe_stop()
@@ -126,18 +123,25 @@ def main(
 
     ### Scan through Z positions
 
+    print(f"Starting Z scan: {num_steps} steps of {step_size} units")
+    print(f"Direction: {'toward surface (down)' if step_size < 0 else 'away from surface (up)'}")
+    if min_threshold is not None:
+        print(f"Threshold monitoring enabled: {min_threshold:.0f} counts")
+    print()
+
     try:
-        for i, z_pos in enumerate(z_positions):
+        for i in range(num_steps):
             if tb.safe_stop():
+                print("\n[STOPPED] User interrupt detected")
                 break
 
-            # Move to Z position
-            piezo.write_z(int(z_pos))
-            time.sleep(0.01)  # Settling time
+            # Move Z position relatively
+            current_z_pos = piezo.move_z_steps(step_size)
+            time.sleep(0.05)  # Settling time
 
             # Clear buffer and collect fresh counts
             ctr.clear_buffer()
-            time.sleep(0.01)  # Brief wait for buffer to fill
+            time.sleep(0.05)  # Wait for fresh data
 
             # Read counts (collect num_averages samples)
             counts = []
@@ -148,6 +152,7 @@ def main(
                 if tb.safe_stop():
                     break
                 if time.time() - read_start > timeout:
+                    print(f"[WARNING] Timeout reading counts at step {i+1}")
                     break
                 new_samples = ctr.read_counter_simple()
                 if len(new_samples) > 0:
@@ -160,32 +165,63 @@ def main(
             else:
                 val = int(np.mean(counts)) if len(counts) > 0 else 0
 
-            counts_1d[i] = val
+            # Store actual position and counts
+            z_positions.append(current_z_pos)
+            counts_1d.append(val)
 
-            # Update plot with auto-scaling
-            if counts_1d_kcps is not None:
-                counts_1d_kcps[:] = (counts_1d / 1000.0) / readout_s
-                line.set_ydata(counts_1d_kcps)
+            # Status printing (every 20 steps)
+            if (i + 1) % 20 == 0 or i == 0:
+                print(f"Step {i+1}/{num_steps}: Z={current_z_pos} steps, Counts={val:.0f}")
+
+            # Check threshold
+            if min_threshold is not None and val < min_threshold:
+                print(f"\n[THRESHOLD REACHED]")
+                print(f"  Current counts: {val:.0f}")
+                print(f"  Threshold: {min_threshold:.0f}")
+                print(f"  Position: Z={current_z_pos} steps")
+                response = input("  Continue scanning? (y/n): ").strip().lower()
+                if response != 'y':
+                    print("[STOPPED] Scan aborted by user")
+                    break
+                print("  Continuing scan...\n")
+
+            # Update plot (throttled to every 5 steps)
+            # if (i + 1) % 5 == 0 or i == 0 or i == num_steps - 1:
+            # Convert to arrays for plotting
+            z_array = np.array(z_positions)
+            counts_array = np.array(counts_1d)
+
+            # Convert to kcps if needed
+            if count_fmt == CountFormat.KCPS:
+                plot_data = (counts_array / 1000.0) / readout_s
             else:
-                line.set_ydata(counts_1d)
+                plot_data = counts_array
 
-            # Auto-scale Y axis based on valid data
-            valid_data = counts_1d_kcps if counts_1d_kcps is not None else counts_1d
-            valid_mask = ~np.isnan(valid_data)
-            if np.any(valid_mask):
-                ax.set_ylim(np.nanmin(valid_data) * 0.9, np.nanmax(valid_data) * 1.1)
+            # Update line data
+            line.set_data(z_array, plot_data)
 
-            ax.figure.canvas.draw()
-            ax.figure.canvas.flush_events()
+            # Auto-scale axes
+            ax.relim()
+            ax.autoscale_view()
+
+            # Refresh plot
+            plt.pause(0.01)
 
     finally:
-        ctr.clear_buffer()
+        ctr.stop_tag_stream()
+        pulse.stream_stop()
+        tb.reset_safe_stop()
         tb.reset_cfm()
+        print(f"\nScan complete: collected {len(z_positions)} data points")
 
     ### Save data
 
+    # Convert lists to numpy arrays for processing and output
+    z_positions_array = np.array(z_positions)
+    counts_1d_array = np.array(counts_1d)
+
     is_kcps = count_fmt == CountFormat.KCPS
-    counts_out = (counts_1d / 1000.0) / readout_s if is_kcps else counts_1d
+    counts_out = (counts_1d_array / 1000.0) / readout_s if is_kcps else counts_1d_array
     units_out = "kcps" if is_kcps else "counts"
 
     ts = dm.get_time_stamp()
@@ -193,15 +229,16 @@ def main(
         "timestamp": ts,
         "nv_sig": nv_sig,
         "mode": "z_scan_1d",
-        "num_steps": num_steps,
+        "num_steps_requested": num_steps,
+        "num_steps_completed": len(z_positions),
         "num_averages": num_averages,
-        "z_start": z_start,
-        "z_end": z_end,
+        "step_size": step_size,
+        "min_threshold": min_threshold,
         "readout_ns": readout_ns,
         "readout_units": "ns",
         "counts_array": counts_out.astype(float).tolist(),
         "counts_array_units": units_out,
-        "z_positions": z_positions.tolist(),
+        "z_positions": z_positions_array.tolist(),
     }
 
     if save_data:
@@ -211,7 +248,7 @@ def main(
 
     kpl.show()
 
-    return counts_out, z_positions
+    return counts_out, z_positions_array
 
 
 if __name__ == "__main__":
@@ -226,8 +263,8 @@ if __name__ == "__main__":
 
     results = main(
         nv_sig,
-        z_start=100,
-        z_end=-300,
-        num_steps=50,
-        num_averages=100,
+        num_steps=500,           # Number of steps to scan
+        step_size=-1,          # Negative = toward surface (down)
+        num_averages=1,       # Samples per position
+        min_threshold=100,     # Pause if counts drop below 1000
     )
