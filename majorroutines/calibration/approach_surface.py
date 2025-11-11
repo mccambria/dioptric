@@ -55,15 +55,10 @@ def main(nv_sig, target_counts=7000, step_size=10, max_steps=10000, direction="d
         step_increment = step_size
         direction_text = "UP (toward surface)"
 
-    print("\n" + "="*60)
-    print("SAFE SURFACE APPROACH")
-    print("="*60)
     print(f"Direction: {direction_text}")
     print(f"Target counts: {target_counts}")
     print(f"Step size: {step_size} steps")
-    print(f"Max distance: {max_steps} steps (~{max_steps*0.05:.0f} microns)")
     print(f"Press CTRL+C to stop at any time")
-    print("="*60 + "\n")
 
     # Setup
     tb.reset_cfm()
