@@ -37,37 +37,55 @@ def main(
     """
     Perform a 1D scan along the Z-axis, collecting photon counts at each position.
 
-    This routine:
-    - Does NOT move X or Y coordinates
-    - Starts from current Z position and moves relatively by step_size
-    - Scans Z-axis for num_steps iterations
-    - Collects photon counts at each Z position
-    - Displays real-time line plot of counts vs Z position
-    - Can pause if counts drop below threshold (requires user input to continue)
-    - Saves data and plot
+    Uses the confocal "step and measure" pattern:
+    - Move Z-axis relatively from current position
+    - Trigger pulse sequence for each measurement
+    - Read photon counts
+    - Average multiple samples per position if requested
+    - Monitor threshold and pause for user input if counts drop too low
+
+    This routine does NOT move X or Y coordinates - only Z-axis scanning.
 
     Parameters
     ----------
     nv_sig : NVSig
-        NV center parameters
+        NV center parameters including pulse durations, laser powers, and initial coordinates
     num_steps : int
-        Number of Z positions to scan
+        Number of Z positions to scan. Total distance = num_steps * step_size
     step_size : int
-        Step size in piezo units (negative = toward surface/down, positive = away/up)
-    num_averages : int
-        Number of photon count samples to average at each Z position (default: 1)
-    min_threshold : float or None
-        Minimum photon count threshold. If counts drop below this value, scan pauses
-        and prompts user to continue or abort. None = no threshold check (default: None)
-    nv_minus_init : bool
-        Whether to use charge initialization (default: False)
-    save_data : bool
-        Whether to save the data and plot (default: True)
+        Step size in piezo units per iteration.
+        Negative values move toward surface (down), positive values move away (up).
+        Example: step_size=-10 moves down 10 units per step
+    num_averages : int, optional
+        Number of photon count samples to collect and average at each Z position.
+        Default: 1 (matches confocal scan behavior for single sample per position)
+        Higher values improve statistics but slow down the scan.
+    min_threshold : float or None, optional
+        Minimum photon count threshold for safety monitoring.
+        If counts drop below this value, scan pauses and prompts:
+        "Continue scanning? (y/n)"
+        User must type 'y' to continue or 'n' to abort.
+        None = no threshold monitoring (default: None)
+    nv_minus_init : bool, optional
+        Whether to use NV- charge state initialization (two-gate readout).
+        True: uses modulo gates, subtracts background
+        False: simple single-gate readout (default: False)
+    save_data : bool, optional
+        Whether to save data and plot to disk (default: True)
+        Saves to: nvdata/pc_{hostname}/z_scan_1d/{date}/{timestamp}/
 
     Returns
     -------
-    tuple
-        (counts_array, z_positions) - counts in kcps or raw depending on config
+    counts_array : numpy.ndarray
+        1D array of photon counts at each Z position.
+        Units: kcps (kilocounts per second) if config["count_format"] == KCPS,
+               raw counts otherwise
+        Length: num_steps_completed (may be less than num_steps if aborted early)
+    z_positions_array : numpy.ndarray
+        1D array of actual Z positions in piezo steps.
+        These are the real positions returned by the piezo after each move.
+        Length: matches counts_array
+
     """
 
     ### Setup
@@ -181,8 +199,7 @@ def main(
                     break
                 print("  Continuing scan...\n")
 
-            # Update plot (throttled to every 5 steps)
-            # if (i + 1) % 5 == 0 or i == 0 or i == num_steps - 1:
+            # Update plot (every step for real-time visualization)
             # Convert to arrays for plotting
             z_array = np.array(z_positions)
             counts_array = np.array(counts_1d)
