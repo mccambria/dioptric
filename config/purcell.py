@@ -127,8 +127,7 @@ config |= {
             0: {
                 "physical_name": "sig_gen_STAN_sg394_0",
                 "uwave_power": 11.0,
-                # "frequency": 2.7851,
-                "frequency":2.8280, ## 
+                "frequency": 2.7878,
                 # "frequency": 2.766091,
                 "rabi_period": 256,
                 "pi_pulse": 128,
@@ -142,8 +141,7 @@ config |= {
                 "physical_name": "sig_gen_STAN_sg394_1",
                 "uwave_power": 11.0,
                 # "frequency": 2.822728,
-                # "frequency": 2.8405,
-                "frequency": 2.870, ### ccurren
+                "frequency": 2.8408,
                 # "rabi_period": 112,
                 # "pi_pulse": 56,
                 # "pi_on_2_pulse": 28,

@@ -4,31 +4,35 @@ Extract the magnetic field (crystallographic axes only)
 Created on March 23th, 2025
 @author: Saroj Chand
 """
+# -*- coding: utf-8 -*-
+"""
+validate_coils.py
+Reconstruct coil shots, predict exact quartets, and compute residuals
+(uses new B0 and K you solved from four ODMR quartets)
+"""
 
 import numpy as np
-from itertools import product, permutations
-
-import numpy as np
-from itertools import permutations, product
-from sc_b_field_calculations import solve_B_from_odmr_order_invariant
-
-import numpy as np
-# validate_coils.py
-# Reconstruct coil shots, predict exact quartets, and compute residuals
-
+from itertools import permutations
 
 # ---------- Constants ----------
 D_GHz   = 2.8785
-gamma   = 2.8025   # MHz/G
+GAMMA   = 2.8025   # MHz/G
 E_MHz   = 0.0
 
 NV_LABELS = ["[1,1,1]", "[-1,1,1]", "[1,-1,1]", "[1,1,-1]"]
 
-# ===== Paste your fitted values here =====
-B0 = np.array([-46.27557688, -17.16599864, -5.70139829], float)    # baseline field (G)
-Ky = np.array([  6.310500,   0.030810, -1.638782], float)    # dB/dIy (G/A)
-Kz = np.array([  6.468884,   4.104149, -3.782627], float)    # dB/dIz (G/A)
-# ========================================
+# ---------- New calibration (crystal frame) ----------
+# Baseline field from (0,0)
+B0 = np.array([-46.275577, -17.165999,  -5.701398], float)  # Gauss
+
+# Coil→Field map K (columns = dB/dI_ch1, dB/dI_ch2), Gauss per Amp
+K = np.column_stack([
+    [ +0.803449,  -4.758891, -15.327336],   # dB/dI_ch1
+    [ -0.741645,  +4.202657,  -4.635283],   # dB/dI_ch2
+]).astype(float)
+
+# Optional: common drift vector that applied to the old coil-on runs only
+DRIFT_OLD = np.array([ +6.134025, -4.403519, +5.701398 ], float)  # Gauss
 
 # ---------- NV geometry ----------
 def nv_axes():
@@ -39,7 +43,6 @@ def nv_axes():
     a /= np.linalg.norm(a, axis=1, keepdims=True)
     return a  # (4,3)
 
-# Build a rotation that maps crystal-> NV-local frame (rows = local axes)
 def nv_local_frames():
     frames = []
     for n in nv_axes():
@@ -51,7 +54,7 @@ def nv_local_frames():
         frames.append(np.vstack([x, y, z]))
     return frames
 
-# ---------- Exact S=1 Hamiltonian and f_- ----------
+# ---------- Exact S=1 Hamiltonian (f_- prediction) ----------
 Sx = (1/np.sqrt(2))*np.array([[0,1,0],[1,0,1],[0,1,0]], complex)
 Sy = (1/np.sqrt(2))*np.array([[0,-1j,0],[1j,0,-1j],[0,1j,0]], complex)
 Sz = np.array([[1,0,0],[0,0,0],[0,0,-1]], float)
@@ -60,13 +63,13 @@ ket_p1 = np.array([1,0,0], complex)
 ket_0  = np.array([0,1,0], complex)
 ket_m1 = np.array([0,0,1], complex)
 
-def exact_f_minus_for_one_NV(B_crys_G, R_local, D_GHz=D_GHz, E_MHz=E_MHz, gamma_e_MHz_per_G=gamma):
+def exact_f_minus_for_one_NV(B_crys_G, R_local, D_GHz=D_GHz, E_MHz=E_MHz, gamma_e_MHz_per_G=GAMMA):
     Bx, By, Bz = R_local @ np.asarray(B_crys_G, float).reshape(3)
-    D_MHz = 1000.0*D_GHz
-    H = D_MHz*(Sz@Sz - (2/3)*np.eye(3)) + E_MHz*(Sx@Sx - Sy@Sy) + gamma_e_MHz_per_G*(Bx*Sx + By*Sy + Bz*Sz)
+    H = (1000.0*D_GHz)*(Sz@Sz - (2/3)*np.eye(3)) \
+        + E_MHz*(Sx@Sx - Sy@Sy) \
+        + gamma_e_MHz_per_G*(Bx*Sx + By*Sy + Bz*Sz)
     evals, evecs = np.linalg.eigh(H)
 
-    # Identify |0>-like and the lower of the two |±1>-like
     overlaps_0  = np.abs(evecs.conj().T @ ket_0 )**2
     overlaps_p1 = np.abs(evecs.conj().T @ ket_p1)**2
     overlaps_m1 = np.abs(evecs.conj().T @ ket_m1)**2
@@ -77,110 +80,126 @@ def exact_f_minus_for_one_NV(B_crys_G, R_local, D_GHz=D_GHz, E_MHz=E_MHz, gamma_
     i_minus = ih if evals[ih] < evals[il] else il
     return float(evals[i_minus] - evals[i0]) / 1000.0  # GHz
 
-def exact_f_minus_quartet(B_crys_G, D_GHz=D_GHz, E_MHz=E_MHz, gamma_e_MHz_per_G=gamma):
+def exact_f_minus_quartet(B_crys_G, D_GHz=D_GHz, E_MHz=E_MHz, gamma_e_MHz_per_G=GAMMA):
     frames = nv_local_frames()
     return np.array([exact_f_minus_for_one_NV(B_crys_G, R, D_GHz, E_MHz, gamma_e_MHz_per_G)
                      for R in frames])
 
 # ---------- Utilities ----------
-def B_from_currents(Iy, Iz):
-    return B0 + Ky*Iy + Kz*Iz
+def B_from_currents(I_ch1, I_ch2, drift=None):
+    """Field for given currents (A). Optionally add a drift vector (Gauss)."""
+    I = np.array([float(I_ch1), float(I_ch2)], float)
+    B = B0 + K @ I
+    if drift is not None:
+        B = B + np.asarray(drift, float).reshape(3)
+    return B
 
 def residuals_MHz(f_meas, f_pred):
-    return 1000.0*(np.asarray(f_pred)-np.asarray(f_meas))
+    return 1000.0*(np.asarray(f_pred) - np.asarray(f_meas))
 
-def print_shot_report(name, Iy, Iz, f_meas_any_order=None):
+def assign_measured_to_nv_order(f_meas_GHz, B_crys_G):
     """
-    If f_meas_any_order is provided (length-4 list/array), we print both predicted
-    quartet (nv order) and the measured (sorted into nv order via best assignment).
-    If only currents are given, we just print the predicted.
+    Map 4 measured peaks (any order) into NV-axes order by matching |n·B|.
+    Returns array in NV order.
     """
-    B = B_from_currents(Iy, Iz)
-    f_pred = exact_f_minus_quartet(B, D_GHz, E_MHz, gamma)
+    f_meas = np.asarray(f_meas_GHz, float).reshape(4)
+    n = nv_axes()
+    abs_pred = np.abs(n @ B_crys_G)                      # Gauss
+    abs_meas = (D_GHz - f_meas) * 1000.0 / GAMMA        # Gauss
 
-    print(f"\n=== Shot: {name}  (Iy={Iy:.3f} A, Iz={Iz:.3f} A) ===")
-    print("B (G):", np.round(B, 6))
-    print("Predicted quartet (nv_axes order):")
-    for i,lab in enumerate(NV_LABELS):
+    best_perm, best_err = None, np.inf
+    idx = np.arange(4)
+    for perm in permutations(range(4)):
+        err = np.sum((abs_meas[idx] - abs_pred[list(perm)])**2)
+        if err < best_err:
+            best_err, best_perm = err, perm
+    f_nv = np.empty(4, float)
+    for j, i in enumerate(best_perm):
+        f_nv[i] = f_meas[j]
+    return f_nv
+
+def print_shot_report(name, I_ch1, I_ch2, f_meas_any_order=None, drift=None):
+    B = B_from_currents(I_ch1, I_ch2, drift=drift)
+    f_pred = exact_f_minus_quartet(B, D_GHz, E_MHz, GAMMA)
+
+    print(f"\n=== Shot: {name}  (I_ch1={I_ch1:.3f} A, I_ch2={I_ch2:.3f} A) ===")
+    print("B (G):   ", np.round(B, 6))
+    print("|B| (G): ", f"{np.linalg.norm(B):.6f}")
+    print("Predicted quartet (NV-axes order):")
+    for i, lab in enumerate(NV_LABELS):
         print(f"  {lab:<10}  f_- = {f_pred[i]:.9f} GHz")
 
     if f_meas_any_order is None:
         return
 
-    # Map measured (any order) into nv order by minimizing |n·B| mismatch
-    f_meas = np.asarray(f_meas_any_order, float).reshape(4)
-    n = nv_axes()
-    abs_pred = np.abs(n @ B)                      # |n·B| (G)
-    abs_meas = (D_GHz - f_meas) * 1000.0 / gamma # |n·B| from meas
-    # find best permutation
-    from itertools import permutations
-    best_perm, best_err = None, np.inf
-    for perm in permutations(range(4)):
-        err = np.sum((abs_meas[list(range(4))] - abs_pred[list(perm)])**2)
-        if err < best_err:
-            best_err, best_perm = err, perm
-    f_meas_nv = np.empty(4, float)
-    for j,i in enumerate(best_perm):
-        f_meas_nv[i] = f_meas[j]
-
-    # Residuals
+    f_meas_nv = assign_measured_to_nv_order(f_meas_any_order, B)
     r = residuals_MHz(f_meas_nv, f_pred)
-    print("\nMeasured quartet (mapped into nv_axes order):")
-    for i,lab in enumerate(NV_LABELS):
-        print(f"  {lab:<10}  f_meas = {f_meas_nv[i]:.9f} GHz   f_pred = {f_pred[i]:.9f} GHz   Δf = {r[i]:+8.3f} MHz")
+    print("\nMeasured quartet (mapped to NV-axes order):")
+    for i, lab in enumerate(NV_LABELS):
+        print(f"  {lab:<10}  f_meas = {f_meas_nv[i]:.9f} GHz   "
+              f"f_pred = {f_pred[i]:.9f} GHz   Δf = {r[i]:+8.3f} MHz")
     print(f"RMS(Δf) = {np.sqrt(np.mean(r**2)):.3f} MHz")
 
 # ---------- Batch validator ----------
-def validate_all(shots):
+def validate_all(shots, drift=None):
     """
-    shots: list of dicts, each with:
-      name, Iy, Iz, f_meas (optional 4-list in any order)
+    shots: list of dicts with
+      - name (str)
+      - I_ch1 (float)
+      - I_ch2 (float)
+      - f_meas (optional 4-list in any order)
+    drift: optional 3-vector (Gauss) to add for all shots (use DRIFT_OLD for that session)
     """
     for s in shots:
-        print_shot_report(s["name"], s["Iy"], s["Iz"], s.get("f_meas"))
+        print_shot_report(s["name"], s["I_ch1"], s["I_ch2"], s.get("f_meas"), drift=drift)
 
-# ---------- Optional: plan to increase |B| by ΔG along current direction ----------
-def plan_increase_Bmag(delta_Bmag_G):
-    Bmag0 = float(np.linalg.norm(B0))
-    if Bmag0 <= 0: raise ValueError("Invalid |B0|")
-    Bhat  = B0 / Bmag0
-    B1    = B0 + Bhat*delta_Bmag_G
-    dB    = B1 - B0
+# ---------- Plan: increase |B| by a given number of Gauss along current B̂ ----------
+def plan_increase_Bmag(delta_Bmag_G, use_drift=None):
+    B_start = B_from_currents(0.0, 0.0, drift=use_drift)
+    Bmag0 = float(np.linalg.norm(B_start))
+    if Bmag0 <= 0:
+        raise ValueError("Invalid |B| at start.")
+    Bhat  = B_start / Bmag0
+    B_goal = B_start + Bhat*float(delta_Bmag_G)
+    dB_req = B_goal - B0 - (np.asarray(use_drift) if use_drift is not None else 0.0)
 
-    # Least-squares currents to realize dB with K = [Ky Kz]
-    K = np.column_stack([Ky, Kz])  # 3x2
-    # Solve min ||K dI - dB||_2
-    dI, *_ = np.linalg.lstsq(K, dB, rcond=None)
-    Iy, Iz = float(dI[0]), float(dI[1])
-    B_ach  = B_from_currents(Iy, Iz)
+    # Least-squares currents for dB_req in span(K)
+    dI, *_ = np.linalg.lstsq(K, dB_req, rcond=None)
+    I1, I2 = float(dI[0]), float(dI[1])
+    B_ach  = B_from_currents(I1, I2, drift=use_drift)
+
     return {
-        "delta_Bmag_G": delta_Bmag_G,
-        "Iy_A": Iy, "Iz_A": Iz,
-        "B_target_G": B1, "B_achieved_G": B_ach,
-        "f_target_GHz": exact_f_minus_quartet(B1, D_GHz, E_MHz, gamma),
-        "f_achieved_GHz": exact_f_minus_quartet(B_ach, D_GHz, E_MHz, gamma),
+        "delta_Bmag_G": float(delta_Bmag_G),
+        "I_ch1_A": I1, "I_ch2_A": I2,
+        "B_start_G": B_start, "B_goal_G": B_goal, "B_achieved_G": B_ach,
+        "f_goal_GHz": exact_f_minus_quartet(B_goal, D_GHz, E_MHz, GAMMA),
+        "f_ach_GHz":  exact_f_minus_quartet(B_ach,  D_GHz, E_MHz, GAMMA),
     }
 
 # ---------- Example usage ----------
 if __name__ == "__main__":
-    # Put your measured quartets here (any order inside each list):
+    # Measured quartets (GHz), any internal order is OK
     shots = [
-        {"name":"(0,0)",   "Iy":0.0, "Iz":0.0, "f_meas":[2.7666, 2.7851, 2.8222, 2.8406]},
-        {"name":"(1,0)",   "Iy":1.0, "Iz":0.0, "f_meas":[2.7457, 2.7988, 2.8344, 2.8765]},
-        {"name":"(0,1)",   "Iy":0.0, "Iz":1.0, "f_meas":[2.7694, 2.8403, 2.7991, 2.8406]},
-        {"name":"(1,1)",   "Iy":1.0, "Iz":1.0, "f_meas":[2.7457, 2.8170, 2.8100, 2.8751]},
-        # You can add a validation point like (1,-1), etc.
-        # {"name":"(1,-1)", "Iy":1.0, "Iz":-1.0, "f_meas":[...]},
+        {"name":"(0,0)", "I_ch1":0.0, "I_ch2":0.0, "f_meas":[2.7666, 2.7851, 2.8222, 2.8406]},
+        {"name":"(1,0)", "I_ch1":1.0, "I_ch2":0.0, "f_meas":[2.7457, 2.7988, 2.8344, 2.8765]},
+        {"name":"(0,1)", "I_ch1":0.0, "I_ch2":1.0, "f_meas":[2.7694, 2.8403, 2.7991, 2.8406]},
+        {"name":"(1,1)", "I_ch1":1.0, "I_ch2":1.0, "f_meas":[2.7457, 2.8170, 2.8100, 2.8751]},
     ]
-    validate_all(shots)
 
-    # Example: ask for +10 G along current direction and see coils & predicted peaks
-    plan = plan_increase_Bmag(delta_Bmag_G=10.0)
+    # Validate without drift for new runs:
+    validate_all(shots, drift=None)
+
+    # If you want to “correct” the historical session that had a common drift, use:
+    # validate_all(shots, drift=DRIFT_OLD)
+
+    # Example plan: +10 G along current field direction (no drift)
+    plan = plan_increase_Bmag(delta_Bmag_G=10.0, use_drift=None)
     print("\n=== Plan: increase |B| by +10 G along current direction ===")
-    print(f"Iy = {plan['Iy_A']:+.4f} A,  Iz = {plan['Iz_A']:+.4f} A")
-    print("B target (G):   ", np.round(plan["B_target_G"], 6))
-    print("B achieved (G): ", np.round(plan["B_achieved_G"], 6))
-    print("\nNV (nv_axes order)    f_- target (GHz)   f_- achieved (GHz)   Δf (MHz)")
-    for i,lab in enumerate(NV_LABELS):
-        df = 1000.0*(plan["f_achieved_GHz"][i] - plan["f_target_GHz"][i])
-        print(f" {lab:<12}    {plan['f_target_GHz'][i]:.9f}      {plan['f_achieved_GHz'][i]:.9f}     {df:+8.3f}")
+    print(f"I_ch1 = {plan['I_ch1_A']:+.4f} A,  I_ch2 = {plan['I_ch2_A']:+.4f} A")
+    print("B start (G):    ", np.round(plan["B_start_G"], 6), f"  |B|={np.linalg.norm(plan['B_start_G']):.6f} G")
+    print("B goal  (G):    ", np.round(plan["B_goal_G"],  6), f"  |B|={np.linalg.norm(plan['B_goal_G']):.6f} G")
+    print("B achieved (G): ", np.round(plan["B_achieved_G"], 6), f"  |B|={np.linalg.norm(plan['B_achieved_G']):.6f} G")
+    print("\nNV (NV-axes order)   f_- goal (GHz)     f_- achieved (GHz)   Δf (MHz)")
+    for i, lab in enumerate(NV_LABELS):
+        df = 1000.0*(plan["f_ach_GHz"][i] - plan["f_goal_GHz"][i])
+        print(f" {lab:<12}   {plan['f_goal_GHz'][i]:.9f}      {plan['f_ach_GHz'][i]:.9f}     {df:+8.3f}")

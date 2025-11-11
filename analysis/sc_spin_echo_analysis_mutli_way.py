@@ -48,7 +48,8 @@ def fine_decay(
     amp_taper_alpha=None,
     width_slope=None,
     revival_chirp=None,
-    osc_contrast=None,
+    # osc_contrast=None,
+    osc_a_raw=None,
     osc_f0=None,
     osc_f1=None,
     osc_phi0=None,
@@ -69,7 +70,8 @@ def fine_decay(
     if amp_taper_alpha is None: amp_taper_alpha = 0.0
     if width_slope     is None: width_slope     = 0.0
     if revival_chirp   is None: revival_chirp   = 0.0
-    if osc_contrast    is None: osc_contrast    = 0.0
+    # if osc_contrast    is None: osc_contrast    = 0.0
+    if osc_a_raw       is None: osc_a_raw       = 0.0
     if osc_f0          is None: osc_f0          = 0.0
     if osc_f1          is None: osc_f1          = 0.0
     if osc_phi0        is None: osc_phi0        = 0.0
@@ -97,6 +99,8 @@ def fine_decay(
         revival_chirp,
         n_guess
     )
+    # osc_contrast = comb_contrast * (1.0 / (1.0 + np.exp(-osc_a_raw)))  # in (0, comb_contrast)
+    osc_contrast = comb_contrast * (1.0 / (1.0 + np.exp(-float(osc_a_raw))))
 
     # beating lives in MOD; comb_contrast is the overall amplitude (once)
     if (osc_contrast != 0.0) and (osc_f0 != 0.0 or osc_f1 != 0.0):
@@ -120,7 +124,8 @@ def fine_decay_fixed_revival(
     amp_taper_alpha=None,
     width_slope=None,
     revival_chirp=None,
-    osc_contrast=None,
+    # osc_contrast=None,
+    osc_a_raw=None,
     osc_f0=None,
     osc_f1=None,
     osc_phi0=None,
@@ -138,7 +143,8 @@ def fine_decay_fixed_revival(
         amp_taper_alpha,
         width_slope,
         revival_chirp,
-        osc_contrast,
+        # osc_contrast,
+        osc_a_raw,
         osc_f0,
         osc_f1,
         osc_phi0,
@@ -281,56 +287,18 @@ def _initial_guess_and_bounds(times_us, y, enable_extras=True, fixed_rev_time=No
     if not enable_extras:
         return np.array(p0, float), np.array(lb, float), np.array(ub, float)
 
-    # # ------- oscillation seeds from data (residual FFT) -------
-    # # quick residual against a smooth proxy (use running median or simple poly)
-    # # here: subtract high percentile baseline as crude detrend
-    # resid = y - baseline_guess
 
-    # # sampling-derived frequency bounds
-    # if times_us.size >= 2:
-    #     dt_min = float(np.diff(np.unique(times_us)).min())
-    #     fnyq = 0.5 / max(dt_min, 1e-6)     # cycles/μs
-    #     fmax_fast = min(0.9 * fnyq, 10.0)  # cap very high just in case
-    #     tspan = float(times_us.max() - times_us.min())
-    #     fmin_resolvable = max(1.0 / max(2.0 * tspan, 1e-6), 0.001)
-    # else:
-    #     fmax_fast, fmin_resolvable = 1.0, 0.001
-
-    # # slow band & fast band
-    # f0_lo, f0_hi = max(0.002, fmin_resolvable), 0.05
-    # f1_lo, f1_hi = max(0.05, 2.0 / max(tspan, 1e-6)), max(0.06, fmax_fast)
-
-    # f0_hat = _fft_peak_freq(times_us, resid, f0_lo, f0_hi)
-    # f1_hat = _fft_peak_freq(times_us, resid, f1_lo, f1_hi)
-
-    # osc_amp_seed = min(0.15, 0.5 * comb_contrast_guess)
-    # osc_amp_lb   = -min(0.9, comb_contrast_guess)
-    # osc_amp_ub   =  min(0.9, comb_contrast_guess)
-    # ------- extras: [amp_taper_alpha, width_slope, revival_chirp, osc_contrast, osc_f0, osc_f1, osc_phi0, osc_phi1]
-    # extra_p0 = [0.3, 0.02, 0.0,  0.10,  0.02,  0.10,  0.0,  0.0]
-    # extra_lb = [0.0, 0.00, -0.01, 0.00,  f0_lo, f1_lo, -np.pi, -np.pi]
-    # extra_ub = [2.0, 0.20,  0.01, min(0.9, p0[1]*1.2),  f0_hi, f1_hi,  np.pi,  np.pi]
     
-    extra_p0 = [0.3, 0.02, 0.0,  0.30, 0.10, 0.01, 0.0, 0.0]
-    extra_lb = [0.0, 0.00, -0.01, -3.00, 0.00, 0.00, -np.pi, -np.pi]
-    extra_ub = [2.0, 0.20,  0.01,  2.20, 0.40, 0.20,  np.pi,  np.pi]
+    # in _initial_guess_and_bounds(...), extras order stays:
+    # [amp_taper_alpha, width_slope, revival_chirp, osc_a_raw, osc_f0, osc_f1, osc_phi0, osc_phi1]
+    extra_p0 = [0.3, 0.02, 0.0,   0.0,  0.10, 0.01, 0.0, 0.0]   # a_raw ≈ 0 ⇒ osc_amp ≈ 0.5*comb_contrast
+    extra_lb = [0.0, 0.00, -0.01, -8.0, 0.00, 0.00, -np.pi, -np.pi]
+    extra_ub = [2.0, 0.20,  0.01,  8.0, 0.40, 0.20,  np.pi,  np.pi]
     
-    # extra_p0 = [None, None, None,  0.30, 0.5, 0.1, 0.0, 0.0]
-    # extra_lb = [None, None, None,  -2.00, 0.00, 0.00, -np.pi, -np.pi]
-    # extra_ub = [None, None,  None,  2.20, 4.0, 1.0,  np.pi,  np.pi]
-        
-    # # [amp_taper_alpha, width_slope, revival_chirp, osc_amp, osc_f0, osc_f1, osc_phi0, osc_phi1]
-    # extra_p0 = [None, None, None,  osc_amp_seed,  0.10,  0.1,  0.0, 0.0]
-    # extra_lb = [None, None, None,   osc_amp_lb,    f0_lo,    f1_lo,   -np.pi,-np.pi]
-    # extra_ub = [None, None,  None,  osc_amp_ub,    f0_hi,    f1_hi,    np.pi, np.pi]
-    # # seed slow/fast from FFT if found
-    # if f0_hat is not None:
-    #     extra_p0[4] = np.clip(f0_hat, extra_lb[4], extra_ub[4])
-    # if f1_hat is not None:
-    #     extra_p0[5] = np.clip(f1_hat, extra_lb[5], extra_ub[5])
+    # extra_p0 = [0.3, 0.02, 0.0,  0.30, 0.10, 0.01, 0.0, 0.0]
+    # extra_lb = [0.0, 0.00, -0.01, -3.00, 0.00, 0.00, -np.pi, -np.pi]
+    # extra_ub = [2.0, 0.20,  0.01,  2.20, 0.40, 0.20,  np.pi,  np.pi]
 
-    # # start oscillation contrast small; allow up to ~1.2× comb_contrast but <= 0.9
-    # extra_p0[3] = min(0.15, p0[1]*0.5)
 
     p0.extend(extra_p0); lb.extend(extra_lb); ub.extend(extra_ub)
     return np.array(p0, float), np.array(lb, float), np.array(ub, float)
@@ -412,6 +380,12 @@ def _set_osc_amp_bounds(lb, ub, fit_fn, new_min, new_max):
     ub[idx_amp] = float(new_max)
     return True
 
+
+def _cap_osc_amp_to_comb(lb, ub, p0, fit_fn):
+    k0 = _core_len_for_fn(fit_fn); idx_amp = k0 + 3  # osc_amp index
+    if idx_amp < len(ub):
+        ub[idx_amp] = min(ub[idx_amp], float(p0[1]))  # p0[1] is comb_contrast
+
 def fit_one_nv_with_amp_sweep(times_us, y, yerr,
                               amp_bound_grid=((-1,1), (-2,2), (-3,3), (-4,4)),
                               use_fixed_revival=False,
@@ -446,7 +420,8 @@ def fit_one_nv_with_amp_sweep(times_us, y, yerr,
         ub = np.array(ub_base, float)
 
         # try to set osc_amp bounds; if extras not present, we still test core-only strategies
-        extras_present = _set_osc_amp_bounds(lb, ub, fit_fn_base, a_min, a_max)
+        # extras_present = _set_osc_amp_bounds(lb, ub, fit_fn_base, a_min, a_max)
+        extras_present = _cap_osc_amp_to_comb(lb, ub, p0, fit_fn_base)
 
         # --------- collect attempts for this amp window ----------
         attempts = []
@@ -1020,7 +995,7 @@ if __name__ == "__main__":
     USE_FIXED_REVIVAL = False       # True -> uses fine_decay_fixed_revival
     ENABLE_EXTRAS     = True        # enable alpha/width_slope/chirp + beating + phases
     DEFAULT_REV_US = 38.2
-    # # 1) FIT
+    # # # 1) FIT
     popts, pcovs, chis, fit_fns, fit_nv_labels, chosen_amp_bounds  = run_with_amp_sweep(
         nv_list, norm_counts, norm_counts_ste, total_evolution_times,
         nv_inds=nv_inds,
@@ -1088,8 +1063,9 @@ if __name__ == "__main__":
 
     # # ## laod analysed data
     # timestamp = dm.get_time_stamp()
-    # # file_stem= "2025_11_01-16_57_48-rubin-nv0_2025_09_08"
+    # file_stem= "2025_11_01-16_57_48-rubin-nv0_2025_09_08"
     # file_stem= "2025_11_02-19_55_17-johnson_204nv_s3-003c56" 
+    # file_stem= "2025_11_09-16_04_14-johnson_204nv_s3-003c56" 
     # data = dm.get_raw_data(file_stem=file_stem)
     # popts = data["popts"]
     # chis = data["red_chi2"]
@@ -1103,8 +1079,21 @@ if __name__ == "__main__":
     #     save_prefix= "rubin-spin_echo-2025_09_08",
     #     t2_policy=dict(method="iqr", iqr_k=5, abs_range=(0.00, 1.0))
     # )
+    # label = 172
+    # labels = list(map(int, data["nv_labels"]))
+    # if label in labels:
+    #     i = labels.index(label)
+    #     p = data["popts"][i]
+    #     chi = data["red_chi2"][i]
+    #     fn  = data["fit_fn_names"][i]
+    #     print(f"NV label {label} -> index {i}")
+    #     print("popt:", p)
+    #     print("red_chi2:", chi)
+    #     print("fit_fn:", fn)
+    # else:
+    #     print(f"NV label {label} not found in this file. Available labels:", labels[:10], "...")
 
-    
+    # # sys.exit()
     # fit_nv_labels  = list(map(int, data["nv_labels"]))
     # fit_fn_names   = data["fit_fn_names"]
 

@@ -9,6 +9,8 @@ from typing import Tuple, Optional, Dict
 from sc_b_field_of_coils import exact_f_minus_quartet 
 import matplotlib.pyplot as plt
 from utils import kplotlib as kpl
+# --- A) Relabel quartet into NV-axes order given the CURRENT field ---
+from itertools import permutations
 # ---------- Your locked-in calibration (crystal frame) ----------
 B0_DEFAULT = np.array([-46.275577, -17.165999, -5.701398], float)
 
@@ -20,7 +22,7 @@ K_DEFAULT = np.column_stack([
 
 # ---------- (Optional) exact quartet model hook ----------
 # If you already have an exact Hamiltonian solver, import it and set this flag True
-USE_EXACT = False
+USE_EXACT = True
 try:
     # Replace with your function if available:
     # from sc_b_field_of_coils import exact_f_minus_quartet
@@ -32,6 +34,64 @@ except Exception:
 D_GHZ   = 2.8785
 GAMMA   = 2.8025  # MHz/G
 E_MHZ   = 0.0
+    # --- NV labels and axes ---
+NV_LABELS = ["[1,1,1]", "[-1,1,1]", "[1,-1,1]", "[1,1,-1]"]
+
+def _nv_axes():
+    a = np.array([[ 1,  1,  1],
+                [-1,  1,  1],
+                [ 1, -1,  1],
+                [ 1,  1, -1]], float)
+    a /= np.linalg.norm(a, axis=1, keepdims=True)
+    return a  # (4,3)
+
+
+def relabel_quartet_to_nv_order_exact(B_crys_G, f4_any_order_GHz,
+                                      D_GHz, E_MHz, gamma_e_MHz_per_G):
+    """
+    Return (f4_in_nv_order, perm, err_MHz2) using exact model matching.
+
+    We compute the predicted quartet in canonical NV order for this B.
+    Then we find the permutation of the measured 4 peaks that minimizes
+    sum_j (f_meas[p[j]] - f_pred[j])^2.
+    """
+    f_pred = exact_f_minus_quartet(
+        np.asarray(B_crys_G, float).reshape(3),
+        D_GHz=D_GHz, E_MHz=E_MHz, gamma_e_MHz_per_G=gamma_e_MHz_per_G
+    )
+    f_meas = np.asarray(f4_any_order_GHz, float).reshape(4)
+
+    best_perm, best_err = None, np.inf
+    for p in permutations(range(4)):
+        err = np.sum((1000.0*(f_meas[list(p)] - f_pred))**2)   # MHz^2
+        if err < best_err:
+            best_err, best_perm = err, p
+
+    f_nv = np.empty(4, float)
+    for j_in, i_nv in enumerate(best_perm):    # assign into NV order
+        f_nv[j_in] = f_meas[i_nv]
+    return f_nv, best_perm, best_err
+
+
+# --- B) Optional: retune D to anchor exact peaks to your baseline quartet ---
+def retune_D_to_baseline(f00_meas_GHz, B0_G, D_GHz, E_MHz, gamma_e_MHz_per_G):
+    """
+    Shift D so the mean predicted baseline f_- equals the mean measured f_-.
+    Good first-order correction for uniform offset (~few MHz).
+    """
+    f_pred = exact_f_minus_quartet(
+        B0_G, D_GHz=D_GHz, E_MHz=E_MHz, gamma_e_MHz_per_G=gamma_e_MHz_per_G
+    )
+    delta_MHz = 1000.0 * (np.mean(f00_meas_GHz) - np.mean(f_pred))
+    return D_GHz + delta_MHz/1000.0
+
+def print_residual_table(B, f_meas_any_order, D_GHz, E_MHz, gamma_e_MHz_per_G):
+    f_pred = exact_f_minus_quartet(B, D_GHz=D_GHz, E_MHz=E_MHz, gamma_e_MHz_per_G=gamma_e_MHz_per_G)
+    f_meas_nv, perm, err = relabel_quartet_to_nv_order_exact(B, f_meas_any_order, D_GHz, E_MHz, gamma_e_MHz_per_G)
+    nv_labels = ["[1,1,1]", "[-1,1,1]", "[1,-1,1]", "[1,1,-1]"]
+    print("perm (meas->NV):", perm, "  RMS Δf (MHz):", (err/4)**0.5)
+    for lab, fm, fp in zip(nv_labels, f_meas_nv, f_pred):
+        print(f"{lab:>9}   f_meas={fm:.9f}  f_pred={fp:.9f}   Δf={(1000*(fm-fp)):+.3f} MHz")
 
 @dataclass
 class CoilField3D:
@@ -114,11 +174,37 @@ class CoilField3D:
                                      gamma_e_MHz_per_G=gamma_e_MHz_per_G)
 
 
+    def predict_peaks(self,
+                    I_ch1: float,
+                    I_ch2: float,
+                    drift: Optional[np.ndarray] = None,
+                    D_GHz: float = D_GHZ,
+                    E_MHz: float = E_MHZ,
+                    gamma_e_MHz_per_G: float = GAMMA) -> Dict[str, np.ndarray]:
+        """
+        Currents -> field -> exact ODMR quartet (GHz) in NV-axes order:
+        [ [1,1,1], [-1,1,1], [1,-1,1], [1,1,-1] ]
+        """
+        B, Bmag, Bhat = self.field_from_currents(I_ch1, I_ch2, drift=drift)
+        f4_nv = None
+        perm = None
+        err = None
+        if USE_EXACT:
+            f4_raw = exact_f_minus_quartet(B, D_GHz=D_GHz, E_MHz=E_MHz, gamma_e_MHz_per_G=gamma_e_MHz_per_G)
+            # reorder measured/“raw” peaks into NV order by matching to exact-predicted NV-order peaks
+            f4_nv, perm, err = relabel_quartet_to_nv_order_exact(B, f4_raw, D_GHz, E_MHz, gamma_e_MHz_per_G)
+
+        return {"B_G": B, "|B|_G": Bmag, "B_hat": Bhat,
+                "f_minus_GHz": f4_nv, "raw_peaks_GHz": (f4_raw if USE_EXACT else None),
+                "perm_input_to_NV": perm, "relabel_error": err}
+
+
     def field_maps_over_currents(cal,
                                 Iy_range=(-4.0, 4.0),
                                 Iz_range=(-4.0, 4.0),
                                 nI=201,
                                 target_Bmag_G=None,
+                                use_baseline =True,
                                 annotate_points=()):
         """
         2-D maps of Bx, By, Bz, and |B| vs (Iy, Iz).
@@ -141,9 +227,21 @@ class CoilField3D:
         Bz = np.empty_like(IZZ, dtype=float)
         Bm = np.empty_like(IZZ, dtype=float)
 
+        # for i in range(nI):
+        #     for j in range(nI):
+        #         B, M, _ = cal.field_from_currents(IYY[i, j], IZZ[i, j])
+        #         Bx[i, j], By[i, j], Bz[i, j] = B
+        #         Bm[i, j] = M
+        
+        # choose baseline mode
+        B0_used = cal.B0 if use_baseline else np.zeros(3)
+
         for i in range(nI):
             for j in range(nI):
-                B, M, _ = cal.field_from_currents(IYY[i, j], IZZ[i, j])
+                # compute field with selected baseline
+                I = np.array([IYY[i, j], IZZ[i, j]], float)
+                B = B0_used + cal.K @ I
+                M = float(np.linalg.norm(B))
                 Bx[i, j], By[i, j], Bz[i, j] = B
                 Bm[i, j] = M
 
@@ -198,7 +296,11 @@ class CoilField3D:
             cbar = fig.colorbar(cf, ax=ax)
             cbar.ax.set_ylabel(title)
 
-        fig.suptitle("Field maps vs coil currents (crystal frame)", y=1.02, fontsize=14)
+        mode = "Coils + Magnet" if use_baseline else "Coils Only"
+        fig.suptitle(
+            f"Bx, By, Bz, |B| vs (Iy, Iz) — {mode} (Crystal Frame)\n"
+            f"|B0|={np.linalg.norm(B0_used):.1f} G"
+        )
         plt.show()
 
 
@@ -207,76 +309,60 @@ if __name__ == "__main__":
     kpl.init_kplotlib()
     cal = CoilField3D()
 
-    # (1) Single prediction
-    Iy, Iz = 0.73, 1.54
-    B, Bmag, Bhat = cal.field_from_currents(Iy, Iz)
-    print("=== Single prediction ===")
-    print(f"I_ch1={Iy:.3f} A, I_ch2={Iz:.3f} A")
-    print("B (G):   ", np.round(B, 6))
-    print("|B| (G): ", f"{Bmag:.6f}")
-    print("B̂:       ", np.round(Bhat, 6))
+    # # (1) Single prediction
+    # Iy, Iz = 0.73, 1.54
+    # B, Bmag, Bhat = cal.field_from_currents(Iy, Iz)
+    # print("=== Single prediction ===")
+    # print(f"I_ch1={Iy:.3f} A, I_ch2={Iz:.3f} A")
+    # print("B (G):   ", np.round(B, 6))
+    # print("|B| (G): ", f"{Bmag:.6f}")
+    # print("B̂:       ", np.round(Bhat, 6))
 
-    # (2) Currents to reach a target B
-    B_target = np.array([-40.0, -18.0, -10.0])
-    plan = cal.currents_for_target_B(B_target)
-    print("\n=== Currents for target B ===")
-    print("B_target (G):    ", np.round(B_target, 6))
-    print("Iy (A), Iz (A):  ", plan["Iy_A"], plan["Iz_A"])
-    B2, B2mag, _ = cal.field_from_currents(plan["Iy_A"], plan["Iz_A"])
-    print("B_achieved (G):  ", np.round(B2, 6), "  |B|=", f"{B2mag:.6f} G")
-    print("ΔB residual (G): ", np.round(plan["dB_residual_G"], 6))
+    # # (2) Currents to reach a target B
+    # B_target = np.array([-40.0, -18.0, -10.0])
+    # plan = cal.currents_for_target_B(B_target)
+    # print("\n=== Currents for target B ===")
+    # print("B_target (G):    ", np.round(B_target, 6))
+    # print("Iy (A), Iz (A):  ", plan["Iy_A"], plan["Iz_A"])
+    # B2, B2mag, _ = cal.field_from_currents(plan["Iy_A"], plan["Iz_A"])
+    # print("B_achieved (G):  ", np.round(B2, 6), "  |B|=", f"{B2mag:.6f} G")
+    # print("ΔB residual (G): ", np.round(plan["dB_residual_G"], 6))
 
-    # (3) Build a current grid and get full 3D field arrays
-    grid = cal.field_grid(I1_range=(-2.0, 2.0), I2_range=(-2.0, 2.0), n1=51, n2=51)
-    print("\n=== Grid summary ===")
-    print("Iy_grid shape:", grid["Iy_grid"].shape)
-    print("Bmag stats (G): min={:.3f}, max={:.3f}".format(grid["Bmag"].min(), grid["Bmag"].max()))
-
-    # # current grid
-
-    # ----------------------------
-    # Figure 2: |B| contour with the (Iy, Iz) path
-    # ----------------------------
-    # Build a current grid for contours
-    Iy_grid = np.linspace(-4.0, 4.0, 161)
-    Iz_grid = np.linspace(-4.0, 4.0, 161)
-    GG = cal.field_grid((Iy_grid.min(), Iy_grid.max()),
-                        (Iz_grid.min(), Iz_grid.max()),
-                        Iy_grid.size, Iz_grid.size)
-    Bmag_grid = GG["Bmag"]  # shape (nIy, nIz)
-
-    # Contour levels
-    vmin, vmax = float(np.nanmin(Bmag_grid)), float(np.nanmax(Bmag_grid))
-    vmin_r = np.floor(vmin); vmax_r = np.ceil(vmax)
-    major_step, minor_step = 5.0, 1.0
-    levels_major = np.arange(vmin_r, vmax_r + 0.5*major_step, major_step)
-    levels_minor = np.arange(vmin_r, vmax_r + 0.5*minor_step, minor_step)
-
-    target = 60.0  # G (adjust if you want a specific target band)
-
-    plt.figure()
-    cf = plt.contourf(Iz_grid, Iy_grid, Bmag_grid, levels=levels_minor, extend="both")
-    CS_minor = plt.contour(Iz_grid, Iy_grid, Bmag_grid, levels=levels_minor, linewidths=0.5, colors="k", alpha=0.35)
-    CS_major = plt.contour(Iz_grid, Iy_grid, Bmag_grid, levels=levels_major, linewidths=1.2, colors="k")
-    CS_target = plt.contour(Iz_grid, Iy_grid, Bmag_grid, levels=[target], linewidths=2.2, colors="red")
-
-    plt.clabel(CS_major, inline=True, fontsize=8, fmt="%.0f G")
-    plt.clabel(CS_target, inline=True, fontsize=9, fmt=f"|B|={target:.0f} G")
-
-    # Overlay the sweep path in current space
-    # plt.plot(Iy_grid, Iy_grid, color="white", lw=2.0, label="sweep path")
-    # plt.scatter([Iz_grid[0], Iz_grid[-1]], [Iy_grid[0], Iy_grid[-1]], c=["cyan", "magenta"], s=60, zorder=3, label="start/end")
-    # plt.legend(loc="upper right")
-
-    plt.xlabel("I_ch2 (A)")
-    plt.ylabel("I_ch1 (A)")
-    plt.title("|B| (G) over current grid + sweep path")
-    cbar = plt.colorbar(cf); cbar.set_label("|B| (G)")
-    plt.axhline(0, lw=0.7, color="k", alpha=0.4); plt.axvline(0, lw=0.7, color="k", alpha=0.4)
+    # # (3) Build a current grid and get full 3D field arrays
+    # grid = cal.field_grid(I1_range=(-2.0, 2.0), I2_range=(-2.0, 2.0), n1=51, n2=51)
+    # print("\n=== Grid summary ===")
+    # print("Iy_grid shape:", grid["Iy_grid"].shape)
+    # print("Bmag stats (G): min={:.3f}, max={:.3f}".format(grid["Bmag"].min(), grid["Bmag"].max()))
 
 
+    # (A) Predict quartet at a chosen operating point
+    # Iy, Iz = 0.73, 1.54
+    Iy, Iz = 1.0, 1.0
+    out = cal.predict_peaks(Iy, Iz)
+    print("\n=== Peak prediction ===")
+    print(f"Inputs: I_ch1 = {Iy:.6f} A, I_ch2 = {Iz:.6f} A")
+    print("Field (crystal frame):")
+    print(" B (G):   ", np.round(out["B_G"], 6))
+    print(" |B| (G): ", f"{out['|B|_G']:.6f}")
+    print(" B_hat:   ", np.round(out["B_hat"], 6))
 
-    # ---------------- Example usage ----------------
+    if out["f_minus_GHz"] is not None:
+        nv_labels = ["[1,1,1]", "[-1,1,1]", "[1,-1,1]", "[1,1,-1]"]
+        print("\nQuartet f_- (GHz) in NV-axes order:")
+        for lab, val in zip(nv_labels, out["f_minus_GHz"]):
+            print(f" {lab:<9} {val:.9f}")
+    else:
+        print("\n(Set USE_EXACT=True to print exact peaks.)")
+    
+    print("perm (raw->NV order):", out["perm_input_to_NV"], " map_err:", out["relabel_error"])
+
+    # out = cal.predict_peaks(0.0, 1.0)
+    # B = out["B_G"]
+    # f_meas_any_order = [...] 
+    # print_residual_table(B, f_meas_any_order, D_GHZ, E_MHZ, GAMMA)
+    # # ----------------------------
+    # # Figure: |B| contour with the (Iy, Iz) path
+    # # ----------------------------
     # Pick your grid & an example target
     Iy_rng = (-4.0, 4.0)
     Iz_rng = (-4.0, 4.0)
@@ -290,8 +376,8 @@ if __name__ == "__main__":
         (0.00, 1.00, "ch2=1A"),
     ]
 
-    cal.field_maps_over_currents(Iy_range=Iy_rng, Iz_range=Iz_rng, nI=161,
-                            target_Bmag_G=target, annotate_points=marks)
+    # cal.field_maps_over_currents(Iy_range=Iy_rng, Iz_range=Iz_rng, nI=161,
+    #                         target_Bmag_G=target, use_baseline=False, annotate_points=marks)
 
 
     kpl.show(block=True)

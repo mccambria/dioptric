@@ -745,7 +745,7 @@ def do_spin_echo(nv_list):
     # num_runs = 2
     # spin_echo.main(nv_list, num_steps, num_reps, num_runs, min_tau, max_tau)
     # spin_echo.main(nv_list, num_steps, num_reps, num_runs, taus=taus)
-    for ind in range(3):
+    for ind in range(6):
         spin_echo.main(nv_list, num_steps, num_reps, num_runs, taus=taus)
 
 
@@ -1602,12 +1602,12 @@ if __name__ == "__main__":
         # do_calibrate_iq_delay(nv_list)
         # do_rabi(nv_list)
         # do_power_rabi(nv_list)
-        do_resonance(nv_list)
+        # do_resonance(nv_list)
         # do_rabi(nv_list)
         # do_deer_hahn(nv_list)
         # do_deer_hahn_rabi(nv_list)
         # do_resonance_zoom(nv_list)
-        # do_spin_echo(nv_list)
+        do_spin_echo(nv_list)
         # do_spin_echo_1(nv_list)
         # do_ramsey(nv_list)
 
