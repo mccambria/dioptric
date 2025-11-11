@@ -136,7 +136,9 @@ def main(
                 break
 
             # Move Z position relatively
+            print(f"[DEBUG] Step {i+1}: Moving Z by {step_size}...", flush=True)
             current_z_pos = piezo.move_z_steps(step_size)
+            print(f"[DEBUG] Step {i+1}: Now at Z={current_z_pos}", flush=True)
             time.sleep(0.05)  # Settling time
 
             # Clear buffer and collect fresh counts
@@ -144,6 +146,7 @@ def main(
             time.sleep(0.05)  # Wait for fresh data
 
             # Read counts (collect num_averages samples)
+            print(f"[DEBUG] Step {i+1}: Reading {num_averages} samples...", flush=True)
             counts = []
             read_start = time.time()
             timeout = 2.0
@@ -157,6 +160,8 @@ def main(
                 new_samples = ctr.read_counter_simple()
                 if len(new_samples) > 0:
                     counts.extend(new_samples)
+
+            print(f"[DEBUG] Step {i+1}: Collected {len(counts)} samples", flush=True)
 
             # Calculate mean
             if nv_minus_init and len(counts) >= 2:
