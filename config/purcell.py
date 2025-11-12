@@ -34,8 +34,8 @@ red_laser_aod = "laser_COBO_638_aod"
 
 
 calibration_coords_pixel = [[14.043, 37.334],[106.538, 237.374],[218.314, 23.302]]
-calibration_coords_green = [[119.723, 118.876], [111.728, 95.086], [96.363, 118.259]]
-calibration_coords_red = [[82.549, 81.803],[76.869, 62.059], [63.549, 80.163]]
+calibration_coords_green = [[119.749, 118.832], [111.734, 95.057], [96.415, 118.192]]
+calibration_coords_red = [[82.572, 81.768], [76.875, 62.035], [63.594, 80.111]]
 
 # Create the dictionaries using the provided lists
 calibration_coords_nv1 = {
@@ -127,7 +127,7 @@ config |= {
             0: {
                 "physical_name": "sig_gen_STAN_sg394_0",
                 "uwave_power": 11.0,
-                "frequency": 2.7851,
+                "frequency": 2.7878,
                 # "frequency": 2.766091,
                 "rabi_period": 256,
                 "pi_pulse": 128,
@@ -141,7 +141,7 @@ config |= {
                 "physical_name": "sig_gen_STAN_sg394_1",
                 "uwave_power": 11.0,
                 # "frequency": 2.822728,
-                "frequency": 2.8405,
+                "frequency": 2.8408,
                 # "rabi_period": 112,
                 # "pi_pulse": 56,
                 # "pi_on_2_pulse": 28,

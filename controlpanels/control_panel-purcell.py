@@ -745,7 +745,7 @@ def do_spin_echo(nv_list):
     # num_runs = 2
     # spin_echo.main(nv_list, num_steps, num_reps, num_runs, min_tau, max_tau)
     # spin_echo.main(nv_list, num_steps, num_reps, num_runs, taus=taus)
-    for ind in range(3):
+    for ind in range(6):
         spin_echo.main(nv_list, num_steps, num_reps, num_runs, taus=taus)
 
 
@@ -1394,8 +1394,8 @@ if __name__ == "__main__":
     print(f"Red Laser Coordinates: {red_coords_list[0]}")
 
     # pixel_coords_list = [[124.195, 127.341],[14.043, 37.334],[106.538, 237.374],[218.314, 23.302]]
-    # green_coords_list = [[108.347, 107.429], [119.723, 118.876], [111.728, 95.086], [96.363, 118.259]]
-    # red_coords_list = [[73.66, 71.88], [82.549, 81.803],[76.869, 62.059], [63.549, 80.163]]
+    # green_coords_list = [[108.348, 107.335], [119.749, 118.832], [111.734, 95.057], [96.415, 118.192]]
+    # red_coords_list = [[73.689, 71.859], [82.572, 81.768], [76.875, 62.035], [63.594, 80.111]]
     num_nvs = len(pixel_coords_list)
     threshold_list = [None] * num_nvs
     # fmt: off
@@ -1444,7 +1444,7 @@ if __name__ == "__main__":
     indices_113_MHz = [0, 1, 3, 6, 10, 14, 16, 17, 19, 23, 24, 25, 26, 27, 32, 33, 34, 35, 37, 38, 41, 49, 50, 51, 53, 54, 55, 60, 62, 63, 64, 66, 67, 68, 70, 72, 73, 74, 75, 76, 78, 80, 81, 82, 83, 84, 86, 88, 90, 92, 93, 95, 96, 99, 100, 101, 102, 103, 105, 108, 109, 111, 113, 114]
     indices_217_MHz = [0, 2, 4, 5, 7, 8, 9, 11, 12, 13, 15, 18, 20, 21, 22, 28, 29, 30, 31, 36, 39, 40, 42, 43, 44, 45, 46, 47, 48, 52, 56, 57, 58, 59, 61, 65, 69, 71, 77, 79, 85, 87, 89, 91, 94, 97, 98, 104, 106, 107, 110, 112, 115, 116, 117]
     # scc_amp_list = [1.0] * num_nv
-    # scc_duration_list = [156] * num_nvs
+    # scc_duration_list = [100] * num_nvs
     # pol_duration_list = [600] * num_nvs
     # pol_duration_list = [1000] * num_nvs
     # nv_list[i] will have the ith coordinates from the above lists
@@ -1607,7 +1607,7 @@ if __name__ == "__main__":
         # do_deer_hahn(nv_list)
         # do_deer_hahn_rabi(nv_list)
         # do_resonance_zoom(nv_list)
-        # do_spin_echo(nv_list)
+        do_spin_echo(nv_list)
         # do_spin_echo_1(nv_list)
         # do_ramsey(nv_list)
 
@@ -1615,7 +1615,7 @@ if __name__ == "__main__":
         # do_two_block_hahn_spatial_correlation(nv_list)
         # do_T2_correlation_test(nv_list)
         # do_two_block_hahn_correlation(nv_list)
-        do_resonance(nv_list)
+        # do_resonance(nv_list)
         # do_sq_relaxation(nv_list)
         # do_dq_relaxation(nv_list)
         # do_detect_cosmic_rays(nv_list)
