@@ -271,11 +271,11 @@ def _initial_guess_and_bounds(times_us, y, enable_extras=True, fixed_rev_time=No
         p0 = [baseline_guess, comb_contrast_guess, revival_guess, width0_guess, T2_ms_guess, T2_exp_guess]
         # tie comb_contrast to baseline: ub later adjusted below
         lb = [0.0,  0.00, 25.0, 1.0,  0.001, 0.6]
-        ub = [1.05, 0.95, 55.0, 20.0, 6.0, 4.0]
+        ub = [1.05, 0.95, 55.0, 20.0, 0.6, 4.0]
     else:
         p0 = [baseline_guess, comb_contrast_guess, width0_guess, T2_ms_guess, T2_exp_guess]
         lb = [0.0,  0.00, 1.0,  0.001, 0.6]
-        ub = [1.05, 0.95, 20.0, 6.0, 4.0]
+        ub = [1.05, 0.95, 20.0, 0.6, 4.0]
 
     # tighten comb_contrast upper bound so min >= 0:
     # comb_contrast <= baseline - eps
@@ -1002,6 +1002,47 @@ def diversified_prior_overrides(
 
     return ovs
 
+def _score_tuple(popt, redchi, lb, ub, pmap, *, amp_weight=1e-3, bound_weight=0.1):
+    """
+    Return a tuple for min()-selection:
+      ( redchi + bound_penalty, amp_norm )
+    so we first pick good χ² that are NOT at bounds; then prefer smaller osc_amp.
+
+    - bound_penalty adds 'bound_weight' if a key param (T2_ms, T2_exp, osc_f*) is near its bound.
+    - amp_norm is |osc_amp| (or 0 if absent), scaled by amp_weight so it is a tie-breaker only.
+    """
+    pen = 0.0
+    if pmap:  # protect if pmap is None
+        def _near_wall(idx):
+            if idx is None or idx >= len(popt): return False
+            lo, hi, x = lb[idx], ub[idx], popt[idx]
+            if not (np.isfinite(lo) and np.isfinite(hi)): return False
+            span = max(1e-12, hi - lo)
+            return (x - lo) <= 0.01*span or (hi - x) <= 0.01*span
+
+        iT2   = pmap.get("T2_ms")
+        inT2  = pmap.get("T2_exp")
+        if iT2 is not None and _near_wall(iT2): pen += bound_weight * 2.0  # extra-punish T2 at wall
+        if inT2 is not None and _near_wall(inT2): pen += bound_weight
+
+        for k in ("osc_f0","osc_f1"):
+            ik = pmap.get(k)
+            if ik is not None and _near_wall(ik): pen += 0.5*bound_weight
+
+    iA = pmap.get("osc_amp") if pmap else None
+    amp_norm = abs(float(popt[iA])) if (iA is not None and iA < len(popt)) else 0.0
+    return (float(redchi) + pen, amp_weight * amp_norm)
+
+
+def _amp_windows_and_seeds():
+    # small→large windows; seeds inside each
+    return [
+        ((-0.3, 0.3), [0.10, 0.20]),
+        ((-0.6, 0.6), [0.15, 0.35, 0.55]),
+        ((-1.0, 1.0), [0.25, 0.50, 0.85]),
+        ((-2.0, 2.0), [0.40, 0.80, 1.20]),
+    ]
+
 
 # ================= Updated fitter with bound-repair ===========================
 
@@ -1089,6 +1130,46 @@ def fit_one_nv_with_freq_sweeps(
         fixed_rev_time=(None if fit_fn_base is fine_decay else fixed_rev_time),
     )
     pmap = _param_index_map(fit_fn_base)
+    
+    def _try_anti_cap(popt, lb, ub, used_fn, overrides, *, tol_rel=0.10):
+        pmap = _param_index_map(used_fn)
+        iT2 = pmap.get("T2_ms", None)
+        if iT2 is None: return (popt, None, None)
+
+        # is T2 near upper wall?
+        if not (np.isfinite(ub[iT2]) and abs(ub[iT2] - popt[iT2]) <= 0.01*max(1e-12, ub[iT2]-lb[iT2])):
+            return (popt, None, None)
+
+        best = (np.inf, popt, None)  # (redchi, popt, pcov)
+        for (amin, amax), a_seeds in [((-0.3,0.3), [0.1,0.2]),
+                                    ((-0.6,0.6), [0.15,0.35])]:
+            base_p0, base_lb, base_ub = _clone_vecs(p0_base, lb_base, ub_base)
+            _set_osc_amp_bounds(base_lb, base_ub, used_fn, amin, amax)
+            for a0 in a_seeds:
+                ov2 = dict(overrides); ov2["osc_amp"] = np.clip(a0, amin, amax)
+                p0_try, lb_try, ub_try = _apply_param_overrides(base_p0, base_lb, base_ub, used_fn, ov2, None)
+                try:
+                    popt2, pcov2, red2 = _fit_least_squares(used_fn, t, yy, ee, p0_try, lb_try, ub_try,
+                                                            max_nfev=small_max_nfev//2)
+                except Exception:
+                    continue
+                score = _score_tuple(popt2, red2, lb_try, ub_try, pmap)
+                if score[0] < best[0]:
+                    best = (score[0], popt2, pcov2)
+
+        # accept if χ² increased only mildly
+        _, popt_new, pcov_new = best
+        if popt_new is None: return (popt, None, None)
+
+        yfit_old = used_fn(t, *popt)
+        red_old  = _chi2_red(yy, ee, yfit_old, len(popt))
+        yfit_new = used_fn(t, *popt_new)
+        red_new  = _chi2_red(yy, ee, yfit_new, len(popt_new))
+
+        if (red_new - red_old) <= tol_rel * max(1e-9, red_old):
+            if verbose: print("[ANTI-CAP] Accepted alt solution: similar χ², \(T_2\) off the wall")
+            return (popt_new, pcov_new, red_new)
+        return (popt, None, None)
 
     # Core-only vectors (for FFT detrending / quick trials)
     if enable_extras:
@@ -1156,52 +1237,51 @@ def fit_one_nv_with_freq_sweeps(
         start_best = np.inf
         best_prior = None
 
-        for ov in prior_ovrs:
+        for ov in prior_ovrs:  # your diversified f0/f1 overrides
             f0 = float(ov.get("osc_f0", 0.0))
             f1 = float(ov.get("osc_f1", 0.0))
-            if not (lo <= f0 <= hi): 
-                continue
-            if not (0.0 <= f1 <= hi): 
-                continue
+            if not (lo <= f0 <= hi): continue
+            if not (0.0 <= f1 <= hi): continue
 
-            p0_try, lb_try, ub_try = _apply_param_overrides(
-                base_p0, base_lb, base_ub, fit_fn_base,
-                overrides=ov, bound_boxes=None,
-            )
+            for (amin,amax), a_seeds in _amp_windows_and_seeds():
+                base_p0, base_lb, base_ub = _clone_vecs(p0_base, lb_base, ub_base)
+                _set_osc_amp_bounds(base_lb, base_ub, fit_fn_base, amin, amax)
 
-            tried = False
-            red = np.inf
+                for a0 in a_seeds:
+                    ov2 = dict(ov)
+                    ov2["osc_amp"] = np.clip(a0, amin, amax)
 
-            # quick LSQ with extras (cheap budget)
-            if enable_extras and len(p0_try) > kcore:
-                try:
-                    if verbose:
-                        print(f"  [priors] lsq_extras f0={f0:.6g}, f1={f1:.6g}")
-                    popt, pcov, red = _fit_least_squares(
-                        fit_fn_base, t, yy, ee,
-                        p0_try, lb_try, ub_try,
-                        max_nfev=small_max_nfev // 4,
+                    p0_try, lb_try, ub_try = _apply_param_overrides(
+                        base_p0, base_lb, base_ub, fit_fn_base,
+                        overrides=ov2, bound_boxes=None,
                     )
-                    tried = True
-                except Exception:
-                    red = np.inf
 
-            # fallback: core-only
-            if not tried:
-                try:
-                    if verbose:
-                        print(f"  [priors] lsq_noextras f0={f0:.6g}, f1={f1:.6g}")
-                    popt, pcov, red = _fit_least_squares(
-                        fit_fn_base, t, yy, ee,
-                        p0_try[:kcore], lb_try[:kcore], ub_try[:kcore],
-                        max_nfev=small_max_nfev // 4,
-                    )
-                except Exception:
-                    red = np.inf
+                    # quick LSQ (+extras preferred)
+                    tried = False
+                    try:
+                        if enable_extras and len(p0_try) > kcore:
+                            if verbose: print(f"  [priors] lsq_extras f0={f0:.6g}, f1={f1:.6g}, A~{a0:.2f} @[{amin},{amax}]")
+                            popt, pcov, red = _fit_least_squares(
+                                fit_fn_base, t, yy, ee, p0_try, lb_try, ub_try, max_nfev=small_max_nfev//4
+                            )
+                            tried = True
+                        else:
+                            raise RuntimeError
+                    except Exception:
+                        try:
+                            if verbose: print(f"  [priors] lsq_noextras f0={f0:.6g}, f1={f1:.6g}, A~{a0:.2f} @[{amin},{amax}]")
+                            popt, pcov, red = _fit_least_squares(
+                                fit_fn_base, t, yy, ee, p0_try[:kcore], lb_try[:kcore], ub_try[:kcore],
+                                max_nfev=small_max_nfev//4
+                            )
+                        except Exception:
+                            continue
 
-            if red < start_best:
-                start_best = red
-                best_prior = ("lsq_prior", (-1.0, 1.0), ov, popt, pcov, red, fit_fn_base)
+                    # score with penalties (don’t accept T2 at wall)
+                    sc = _score_tuple(popt, red, lb_try, ub_try, _param_index_map(fit_fn_base))
+                    if sc[0] < start_best:
+                        start_best = sc[0]
+                        best_prior = ("lsq_prior", (amin, amax), ov2, popt, pcov, red, fit_fn_base)
 
         if best_prior is not None:
             # normalize tuple schema to match sweep candidates:
@@ -1355,9 +1435,28 @@ def fit_one_nv_with_freq_sweeps(
     if not all_candidates:
         raise RuntimeError("All frequency/amp sweep attempts failed.")
 
-    abest, overrides_best, mode_best, popt_best, pcov_best, red_best, fn_best = \
-        min(all_candidates, key=lambda c: c[5])
+    # abest, overrides_best, mode_best, popt_best, pcov_best, red_best, fn_best = \
+    #     min(all_candidates, key=lambda c: c[5])
+    
+    def _pick_best_with_penalty(cands, lb_ref, ub_ref, pmap_ref):
+    # each c: (ab, overrides, mode, popt, pcov, red, used_fn)
+        scored = []
+        for c in cands:
+            ab, ov, mode, popt, pcov, red, used_fn = c
+            sc = _score_tuple(popt, red, lb_ref, ub_ref, pmap_ref)
+            scored.append((sc, c))
+        scored.sort(key=lambda z: z[0])  # lexicographic: (chi+pen, amp_tie)
+        return scored[0][1]
 
+    abest, overrides_best, mode_best, popt_best, pcov_best, red_best, fn_best = \
+        _pick_best_with_penalty(all_candidates, lb_base, ub_base, _param_index_map(fit_fn_base))
+    
+    # after picking (abest, overrides_best, mode_best, popt_best, pcov_best, red_best, fn_best)
+    popt_alt, pcov_alt, red_alt = _try_anti_cap(popt_best, lb_base, ub_base, fn_best, overrides_best)
+    if popt_alt is not None and popt_alt is not popt_best:
+        popt_best, pcov_best, red_best = popt_alt, pcov_alt, red_alt if red_alt is not None else red_best
+
+        
     if verbose:
         print(f"[BEST] amp={abest}, mode={mode_best}, redχ²={red_best:.4g}, overrides={overrides_best}")
 
@@ -2053,9 +2152,9 @@ def plot_sorted_panels_with_err(
     title_prefix="Spin-Echo", t2_units="µs",
     # error-bar pruning controls (tune as you like)
     t2_rel_cap=1.0,      # hide T2 bars with σ > 100% of value
-    t2_pct_cap=95,       # and hide top 5% largest absolute T2 sigmas
+    t2_pct_cap=99,       # and hide top 5% largest absolute T2 sigmas
     A_rel_cap=0.75,      # hide A bars with σ > 75% of value
-    A_pct_cap=95         # and hide top 5% largest absolute A sigmas
+    A_pct_cap=99         # and hide top 5% largest absolute A sigmas
 ):
     N = len(nv_labels)
     mask_no_decay = np.zeros(N, bool) if mask_no_decay is None else mask_no_decay
@@ -2082,7 +2181,7 @@ def plot_sorted_panels_with_err(
         plt.grid(alpha=0.3)
         plt.xlabel("NV index (sorted)")
         plt.ylabel(r"$T_2$ (" + ("ms" if t2_units.lower().startswith("ms") else "µs") + ")")
-        # plt.yscale("log")
+        plt.yscale("log")
         plt.title(f"{title_prefix}: $T_2$ (sorted)")
         note = f"Excluded: no-decay={mask_no_decay.sum()}, fit-fail={mask_fit_fail.sum()}; Used={order.size}/{N}"
         plt.text(0.01, 0.98, note, transform=plt.gca().transAxes, ha="left", va="top", fontsize=8)
@@ -2105,7 +2204,7 @@ def plot_sorted_panels_with_err(
         plt.grid(alpha=0.3)
         plt.xlabel("NV index (sorted)"); plt.ylabel(r"$A_{\mathrm{hfs}}$ (kHz)")
         plt.title(f"{title_prefix}: $A_{{\\rm hfs}}$ (sorted)")
-        # plt.yscale("log")
+        plt.yscale("log")
         note = f"Excluded here (no valid freq): {(~valid_A).sum()}"
         plt.text(0.01, 0.98, note, transform=plt.gca().transAxes, ha="left", va="top", fontsize=8)
     else:
@@ -2133,13 +2232,21 @@ if __name__ == "__main__":
                   "2025_10_31-15_40_56-johnson-nv0_2025_10_21",
                   "2025_10_31-07_42_45-johnson-nv0_2025_10_21",
                 ]
-    ###204NVs dataset 2
-    # file_stems_2 = ["2025_11_03-01_47_09-johnson-nv0_2025_10_21",
-    #               "2025_11_02-14_49_57-johnson-nv0_2025_10_21",
-    #               "2025_11_02-04_46_56-johnson-nv0_2025_10_21",
-    #             ]
+ 
     
-    # file_stems = file_stems_1 + file_stems_2
+    ###204NVs dataset 2
+    file_stems_1 = ["2025_11_03-01_47_09-johnson-nv0_2025_10_21",
+                  "2025_11_02-14_49_57-johnson-nv0_2025_10_21",
+                  "2025_11_02-04_46_56-johnson-nv0_2025_10_21",
+                ]
+    ###204NVs
+    file_stems_2 = ["2025_11_11-06_02_04-johnson-nv0_2025_10_21",
+                    "2025_11_10-20_58_00-johnson-nv0_2025_10_21",
+                  "2025_11_10-11_36_39-johnson-nv0_2025_10_21",
+                  "2025_11_10-03_06_14-johnson-nv0_2025_10_21",
+                ]
+    
+    file_stems = file_stems_1 + file_stems_2
     
     # data = widefield.process_multiple_files(file_stems, load_npz=True)
     # nv_list = data["nv_list"]
@@ -2152,14 +2259,14 @@ if __name__ == "__main__":
     
     # timestamp = dm.get_time_stamp()  
     # processed_data = {
-        # "timestamp": timestamp,
-        # "dataset_ids": file_stems,
-        # "nv_list": nv_list,
-        # "norm_counts" :norm_counts,
-        # "norm_counts_ste" : norm_counts_ste,
-        # "total_evolution_times":total_evolution_times, 
+    #     "timestamp": timestamp,
+    #     "dataset_ids": file_stems,
+    #     "nv_list": nv_list,
+    #     "norm_counts" :norm_counts,
+    #     "norm_counts_ste" : norm_counts_ste,
+    #     "total_evolution_times":total_evolution_times, 
         
-        # }
+    #     }
     
     # tokens = []
     # for s in file_stems:
@@ -2175,7 +2282,9 @@ if __name__ == "__main__":
     # dm.save_raw_data(processed_data, file_path)
     # sys.exit()
     ### get proceeded data data
-    file_stem = "2025_11_10-16_17_03-johnson_204nv_s3-003c56"
+    # file_stem = "2025_11_10-16_17_03-johnson_204nv_s3-003c56" #dataset 1 
+    # file_stem = "2025_11_11-01_05_17-johnson_204nv_s3-0e14ae" #dataset 3
+    file_stem = "2025_11_11-01_15_45-johnson_204nv_s6-6d8f5c" #dataset2 + dataset3
     data = dm.get_raw_data(file_stem=file_stem)
     nv_list = data["nv_list"]
     norm_counts = np.array(data["norm_counts"])
@@ -2207,8 +2316,9 @@ if __name__ == "__main__":
     norm_counts,
     norm_counts_ste,
     total_evolution_times,
-    nv_inds=[35],
-    amp_bound_grid=((-0.5, 0.5), (-1.0, 1.0), (-2.0, 2.0)),
+    # nv_inds= [4, 7, 10, 15, 16, 18, 21, 24, 26, 27, 28, 33, 39, 43, 48, 52, 53, 57, 59, 61, 64, 65, 66, 68, 72, 73, 77, 83, 97, 102, 106, 109, 121, 123, 127, 129, 132, 135, 136, 139, 147, 152, 157, 163, 167, 173, 185, 189, 190, 193, 194, 195, 197, 198, 201, 202],
+    # nv_inds= [10, 15],
+    amp_bound_grid=((-0.6, 0.6),(-1.0, 1.0),(-2.0, 2.0),),
     # Optional: tighten frequency boxes
     freq_bound_boxes={"osc_f0": (0.001, 6.0), "osc_f1": (0.001, 6.0)},
     # Optional: force a band (else inferred from sampling)
@@ -2266,24 +2376,38 @@ if __name__ == "__main__":
     # name   = f"{sample}_{len(fit_nv_labels)}nv_{date}_{rev}_{model}_{sweep}_{srcsig}"
     # print(name)
     file_path = dm.get_file_path(__file__, timestamp, name)
-    # dm.save_raw_data(fit_dict, file_path)
+    dm.save_raw_data(fit_dict, file_path)
     # print(file_path )
-    # NV labels: [14, 17, 27, 29, 35, 38, 48, 60, 62, 75, 81, 88, 90, 96, 97, 101, 114, 115, 119, 127, 129, 130, 135, 148, 150, 153, 154, 158, 159, 161, 168, 173, 174, 185, 194, 195]
+    # NV labels: [ 96, 97, 101, 114, 115, 119, 127, 129, 130, 135, 148, 150, 153, 154, 158, 159, 161, 168, 173, 174, 185, 194, 195]
+    
+    plot_individual_fits(
+        norm_counts, norm_counts_ste, total_evolution_times,
+        popts,
+        nv_inds=fit_nv_labels,
+        fit_fn_per_nv=fit_fns,
+        # keep_mask=keep_mask,
+        show_residuals=True,
+        block=False
+    )
+    kpl.show(block=True)
+    sys.exit()
     # ## laod analysed data
     # timestamp = dm.get_time_stamp()
     # # file_stem= "2025_11_01-16_57_48-rubin-nv0_2025_09_08"
     # file_stem= "2025_11_10-19_33_17-johnson_204nv_s3-003c56" 
     # file_stem= "2025_11_10-21_38_55-johnson_204nv_s3-003c56" 
+    # file_stem= "2025_11_11-01_46_41-johnson_204nv_s3-003c56" 
+    file_stem= "2025_11_11-06_23_14-johnson_204nv_s6-6d8f5c" 
     
-    # data = dm.get_raw_data(file_stem=file_stem)
-    # popts = data["popts"]
-    # chis = data["red_chi2"]
-    # fit_nv_labels = data ["nv_labels"]
-    # fit_fn_names = data["fit_fn_names"]
-    # repr_nv_sig = widefield.get_repr_nv_sig(nv_list)
-    # repr_nv_name = repr_nv_sig.name
+    data = dm.get_raw_data(file_stem=file_stem)
+    popts = data["popts"]
+    chis = data["red_chi2"]
+    fit_nv_labels = data ["nv_labels"]
+    fit_fn_names = data["fit_fn_names"]
+    repr_nv_sig = widefield.get_repr_nv_sig(nv_list)
+    repr_nv_name = repr_nv_sig.name
     
-    # # 2) PARAM PANELS (T2 outlier filter)
+    # 2) PARAM PANELS (T2 outlier filter)
     # figs, keep_mask, kept_labels = plot_each_param_separately(
     #     popts, chis, fit_nv_labels, 
     #     save_prefix= "rubin-spin_echo-2025_09_08",
@@ -2291,23 +2415,23 @@ if __name__ == "__main__":
     # )
 
     
-    # fit_nv_labels  = list(map(int, data["nv_labels"]))
-    # fit_fn_names   = data["fit_fn_names"]
+    fit_nv_labels  = list(map(int, data["nv_labels"]))
+    fit_fn_names   = data["fit_fn_names"]
 
-    # # 1) Map stored names -> real callables
-    # _fn_map = {
-    #     "fine_decay": fine_decay,
-    #     "fine_decay_fixed_revival": fine_decay_fixed_revival,
-    # }
-    # fit_fns = []
-    # for name in fit_fn_names:
-    #     if name is None:
-    #         fit_fns.append(None)
-    #     else:
-    #         fn = _fn_map.get(name)
-    #         if fn is None:
-    #             fn = fine_decay
-    #         fit_fns.append(fn)
+    # 1) Map stored names -> real callables
+    _fn_map = {
+        "fine_decay": fine_decay,
+        "fine_decay_fixed_revival": fine_decay_fixed_revival,
+    }
+    fit_fns = []
+    for name in fit_fn_names:
+        if name is None:
+            fit_fns.append(None)
+        else:
+            fn = _fn_map.get(name)
+            if fn is None:
+                fn = fine_decay
+            fit_fns.append(fn)
         
     # 3) INDIVIDUAL FITS — PASS THE SAME LABELS + PER-NV FIT FUNCTIONS
     _ = plot_individual_fits(
@@ -2320,17 +2444,24 @@ if __name__ == "__main__":
         block=False
     )
      
-    # --------------------------
-    # Example usage
-    # --------------------------
-    # (nv, T2_us, f0_kHz, f1_kHz, A_pick_kHz, chis, fit_fail,
-    # sT2_us, sf0_kHz, sf1_kHz, sA_pick_kHz) = extract_T2_freqs_and_errors(
-    #     data, pick_freq="max", chi2_fail_thresh=3.0
+    # # --------------------------
+    # # Example usage
+    # # --------------------------
+    (nv, T2_us, f0_kHz, f1_kHz, A_pick_kHz, chis, fit_fail,
+    sT2_us, sf0_kHz, sf1_kHz, sA_pick_kHz) = extract_T2_freqs_and_errors(
+        data, pick_freq="max", chi2_fail_thresh=3.0
+    )
+    # plot_sorted_panels_with_err(
+    #     nv, T2_us, sT2_us, A_pick_kHz, sA_pick_kHz,
+    #     mask_fit_fail=fit_fail,
+    #     # tweak caps if needed:
+    #     t2_rel_cap=1.0, t2_pct_cap=95,
+    #     A_rel_cap=0.75, A_pct_cap=95
     # )
-    # print(T2_us)
-    # THRESH_US = 2000.0
+    # # print(T2_us)
+    # THRESH_US = 400.0
 
-    # # Base validity mask
+    # # # Base validity mask
     # valid = np.isfinite(T2_us) & (~fit_fail)
     # mask = valid & (T2_us >= THRESH_US)
 
@@ -2353,20 +2484,17 @@ if __name__ == "__main__":
 
     # print(f"NVs with T2 >= {THRESH_US:.0f} µs: {len(sel)}")
     # print(sel[["nv","T2_us","sT2_us","A_pick_kHz","sA_pick_kHz","f0_kHz","f1_kHz","red_chi2"]].to_string(index=False))
-    # # plot_sorted_panels_with_err(
-    # #     nv, T2_us, sT2_us, A_pick_kHz, sA_pick_kHz,
-    # #     mask_fit_fail=fit_fail,
-    # #     # tweak caps if needed:
-    # #     t2_rel_cap=1.0, t2_pct_cap=95,
-    # #     A_rel_cap=0.75, A_pct_cap=95
-    # # )
-    # 1) Strictly at the cap (allow tiny float noise)
-    # CAP_US = 2000
-    # mask_cap = np.isfinite(T2_us) & np.isclose(T2_us, CAP_US, atol=1e-6)
-    # cap_indices = np.where(mask_cap)[0]        # 0-based positions in your arrays
-    # cap_labels  = nv[mask_cap]                 # NV labels corresponding to those positions
 
-    # print("Count:", mask_cap.sum())
-    # print("Indices:", cap_indices.tolist())
-    # print("NV labels:", cap_labels.tolist())
+    # 1) Strictly at the cap (allow tiny float noise)
+    CAP_US = 200
+    THRESH_US = 200
+    # mask_cap = np.isfinite(T2_us) & np.isclose(T2_us, CAP_US, atol=1e-6)
+    mask_cap = np.isfinite(T2_us) & np.isclose(T2_us, CAP_US, atol=1e-6)
+    mask_cap = np.isfinite(T2_us) & (T2_us > THRESH_US)
+    cap_indices = np.where(mask_cap)[0]        # 0-based positions in your arrays
+    cap_labels  = nv[mask_cap]                 # NV labels corresponding to those positions
+
+    print("Count:", mask_cap.sum())
+    print("Indices:", cap_indices.tolist())
+    print("NV labels:", cap_labels.tolist())
     kpl.show(block=True)
