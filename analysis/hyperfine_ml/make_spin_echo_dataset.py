@@ -19,7 +19,7 @@ from analysis.sc_c13_hyperfine_sim_data_driven import (
     simulate_random_spin_echo_average,
     make_R_NV,
     B_vec_G,
-)  # <-- update path
+)
 
 timestamp = dm.get_time_stamp()
 name = "dataset_spin_echo"
@@ -42,8 +42,8 @@ class CONFIG:
     # Hyperfine table & physics filters
     HYPERFINE_PATH = "analysis/nv_hyperfine_coupling/nv-2.txt"
     DISTANCE_CUTOFF = 15.0  # Å or nm as in your table (whatever your file uses)
-    AK_MIN_KHZ = 2  # e.g., 5.0 to keep |A∥| >= 5 kHz (if Ak_abs=True)
-    AK_MAX_KHZ = 800  # e.g., 300.0 to keep |A∥| <= 300 kHz
+    AK_MIN_KHZ = 0  # e.g., 5.0 to keep |A∥| >= 5 kHz (if Ak_abs=True)
+    AK_MAX_KHZ = 6000  # e.g., 300.0 to keep |A∥| <= 300 kHz
     AK_ABS = True  # compare |A∥| if True, signed A∥ if False
     ABUNDANCE = 0.011  # natural 13C abundance
     NUM_SPINS = None  # None = all present sites, or int to subsample strongest/top_Apar
@@ -63,6 +63,13 @@ class CONFIG:
     # Optional noise (applied after simulation)
     ADD_GAUSS_NOISE = False
     NOISE_STD = 0.004  # ~0.4% RMS on normalized traces
+
+    # ---- NV filtering knobs (data-driven, but safe defaults) ----
+    CONTRAST_KEY = "comb_contrast"
+    T2_KEY = "T2_ms"
+    CONTRAST_RANGE = (0.2, 0.8)  # keep NVs with usable contrast
+    T2_RANGE_MS = (0.001, 1.0)  # 3 µs – 5 ms window; tune to your system
+    ROBUST_MAD_K = 4.0  # reject extreme outliers beyond K*MAD
 
 
 # -----------------------------------
@@ -193,10 +200,79 @@ def make_nv_param_drawer(
     return _nv_prior_draw
 
 
+def safe_json_dump(obj, path: Path, retries: int = 5, backoff: float = 0.1):
+    """
+    Atomically write JSON with retries (Windows/network-drive friendly).
+    Writes to <path>.tmp then os.replace(...) to final path.
+    """
+    path = Path(str(path).strip())
+    path.parent.mkdir(parents=True, exist_ok=True)
+    tmp = path.with_suffix(path.suffix + ".tmp")
+    last_err = None
+    for a in range(retries):
+        try:
+            with open(tmp, "w", encoding="utf-8", newline="\n") as f:
+                json.dump(obj, f, ensure_ascii=False, indent=2)
+                f.flush()
+                os.fsync(f.fileno())  # force to disk
+            os.replace(tmp, path)  # atomic on Windows too
+            return
+        except OSError as e:
+            last_err = e
+            time.sleep(backoff * (a + 1))
+    raise last_err
+
+
+timestamp = dm.get_time_stamp()
+name = "dataset_spin_echo"
+file_path = dm.get_file_path(__file__, timestamp, name)
+
+
 def add_noise(y: np.ndarray, std: float, rng: np.random.Generator) -> np.ndarray:
     if std <= 0:
         return y
     return (y + std * rng.standard_normal(y.shape)).astype(CONFIG.DTYPE, copy=False)
+
+
+def _nanmad(x):
+    med = np.nanmedian(x)
+    return med, 1.4826 * np.nanmedian(np.abs(x - med))
+
+
+def make_nv_filter_mask(
+    cohort, contrast_key, t2_key, contrast_range, t2_range_ms, mad_k=0.0
+):
+    K = cohort.K
+    P = cohort.P
+
+    # Pull columns (may contain NaNs)
+    c_idx = K.get(contrast_key, None)
+    t_idx = K.get(t2_key, None)
+    if c_idx is None or t_idx is None:
+        raise KeyError(f"Missing keys in cohort: need '{contrast_key}' and '{t2_key}'")
+
+    C = P[:, c_idx]  # comb_contrast
+    T2 = P[:, t_idx]  # T2_ms
+    # Basic finite + range masks
+    m_fin = np.isfinite(C) & np.isfinite(T2)
+    m_c = (C >= contrast_range[0]) & (C <= contrast_range[1])
+    m_t2 = (T2 >= t2_range_ms[0]) & (T2 <= t2_range_ms[1])
+
+    mask = m_fin & m_c & m_t2
+
+    # Optional robust outlier rejection using MAD (separately for C and T2)
+    if mad_k and mad_k > 0:
+        c_med, c_mad = _nanmad(C)
+        t_med, t_mad = _nanmad(T2)
+        if np.isfinite(c_mad) and c_mad > 0:
+            mask &= np.abs(C - c_med) <= mad_k * c_mad
+        if np.isfinite(t_mad) and t_mad > 0:
+            mask &= np.abs(T2 - t_med) <= mad_k * t_mad
+
+    return mask
+
+
+# before the shard loop:
 
 
 def trace_from_nv(
@@ -239,14 +315,15 @@ def trace_from_nv(
     else:
         raise ValueError(f"Unknown ORI_MODE: {CONFIG.ORI_MODE}")
 
+    # pass R_BY_ORI down (or store globally); inside trace_from_nv:
+    R_BY_ORI = [make_R_NV(ax) for ax in axes]
     # Make a per-trace salt (reproducible)
     salt_base = int(nv_label) & 0xFFFFFFFF
-
     out = []
     for ori_id in idxs:
         ax = axes[ori_id]
-        R_NV = make_R_NV(ax)
-
+        # R_NV = make_R_NV(ax)
+        R_NV = R_BY_ORI[ori_id]
         # orientation-specific salt for reproducibility
         salt = salt_base ^ (ori_id << 20) ^ int(rng.integers(0, 2**19))
 
@@ -314,12 +391,39 @@ def main():
     nv_draw = make_nv_param_drawer(cohort, cfg.JITTER_MIX, rng)
 
     # Choose which NVs to use (e.g., all that have non-NaN baseline)
-    valid = np.isfinite(cohort.P[:, cohort.K.get("baseline", 0)])
-    nv_indices = np.where(valid)[0]
+    # valid = np.isfinite(cohort.P[:, cohort.K.get("baseline", 0)])
+    fmask = make_nv_filter_mask(
+        cohort,
+        contrast_key=CONFIG.CONTRAST_KEY,
+        t2_key=CONFIG.T2_KEY,
+        contrast_range=CONFIG.CONTRAST_RANGE,
+        t2_range_ms=CONFIG.T2_RANGE_MS,
+        mad_k=CONFIG.ROBUST_MAD_K,
+    )
+    nv_indices = np.where(fmask)[0]
     if nv_indices.size == 0:
-        raise RuntimeError("No valid NVs found in the fit cohort.")
+        raise RuntimeError(
+            "No NVs passed the contrast/T2 filters — relax thresholds or inspect fits."
+        )
+
     nv_labels = cohort.labels[nv_indices]
 
+    # (Optional) quick stats
+    print(
+        f"[filter] kept {nv_indices.size}/{cohort.P.shape[0]} NVs "
+        f"({100.0*nv_indices.size/cohort.P.shape[0]:.1f}%) "
+        f"with {CONFIG.CONTRAST_RANGE[0]}≤{CONFIG.CONTRAST_KEY}≤{CONFIG.CONTRAST_RANGE[1]} "
+        f"and {CONFIG.T2_RANGE_MS[0]}≤{CONFIG.T2_KEY}≤{CONFIG.T2_RANGE_MS[1]} ms"
+    )
+    nv_filter = {
+        "contrast_key": CONFIG.CONTRAST_KEY,
+        "contrast_range": CONFIG.CONTRAST_RANGE,
+        "T2_key": CONFIG.T2_KEY,
+        "T2_range_ms": CONFIG.T2_RANGE_MS,
+        "robust_MAD_K": CONFIG.ROBUST_MAD_K,
+        "n_kept": int(nv_indices.size),
+        "n_total": int(cohort.P.shape[0]),
+    }
     # Work out sharding
     N = cfg.NUM_TRACES
     per = cfg.SHARD_SIZE
@@ -341,6 +445,11 @@ def main():
         traces = np.zeros((n_this, cfg.SAMPLES), dtype=cfg.DTYPE)
         metas = []
         taus_us = None
+        # allocate enough rows for worst-case emissions
+        max_rows = n_this if CONFIG.ORI_MODE != "both" else 2 * n_this
+        traces = np.empty((max_rows, cfg.SAMPLES), dtype=cfg.DTYPE)
+        metas = [None] * max_rows  # pre-size list to avoid reallocation
+        w = 0
 
         for i in range(n_this):
             i_nv = int(rr[start + i])
@@ -350,30 +459,57 @@ def main():
                 i_nv, lbl, rng, nv_draw, cfg.TAU_RANGE_US, cfg.SAMPLES
             )
 
-            # emit one (single/random) or two (both) traces
             for y, meta, taus in triples:
                 if taus.shape[0] != cfg.SAMPLES:
+                    # only interpolate when necessary
                     x = np.linspace(taus.min(), taus.max(), cfg.SAMPLES, dtype=float)
                     y = np.interp(x, taus, y).astype(cfg.DTYPE, copy=False)
-                    taus_out = x
-                else:
-                    taus_out = taus
-
-                # grow arrays if ORI_MODE == "both"
-                if traces.shape[0] == i:
-                    traces[i, :] = y
-                else:
-                    # append row (rare path; if you want fixed shard size, keep ORI_MODE != "both")
-                    traces = np.vstack([traces, y[None, :]])
-                    metas.append(meta)
                     if tau_cache is None:
-                        tau_cache = np.asarray(taus_out, float)
+                        tau_cache = x.astype(np.float32)
+                else:
+                    if tau_cache is None:
+                        tau_cache = taus.astype(np.float32)
 
-            # only append the meta for the first emission if single/random
-            if CONFIG.ORI_MODE != "both":
-                metas.append(triples[0][1])
-            if tau_cache is None:
-                tau_cache = np.asarray(triples[0][2], float)
+                traces[w, :] = y
+                metas[w] = meta
+                w += 1
+
+        # trim to actual number of written rows
+        traces = traces[:w, :]
+        metas = metas[:w]
+
+        # for i in range(n_this):
+        #     i_nv = int(rr[start + i])
+        #     lbl = int(rr_labels[start + i])
+
+        #     triples = trace_from_nv(
+        #         i_nv, lbl, rng, nv_draw, cfg.TAU_RANGE_US, cfg.SAMPLES
+        #     )
+
+        #     # emit one (single/random) or two (both) traces
+        #     for y, meta, taus in triples:
+        #         if taus.shape[0] != cfg.SAMPLES:
+        #             x = np.linspace(taus.min(), taus.max(), cfg.SAMPLES, dtype=float)
+        #             y = np.interp(x, taus, y).astype(cfg.DTYPE, copy=False)
+        #             taus_out = x
+        #         else:
+        #             taus_out = taus
+
+        #         # grow arrays if ORI_MODE == "both"
+        #         if traces.shape[0] == i:
+        #             traces[i, :] = y
+        #         else:
+        #             # append row (rare path; if you want fixed shard size, keep ORI_MODE != "both")
+        #             traces = np.vstack([traces, y[None, :]])
+        #             metas.append(meta)
+        #             if tau_cache is None:
+        #                 tau_cache = np.asarray(taus_out, float)
+
+        #     # only append the meta for the first emission if single/random
+        #     if CONFIG.ORI_MODE != "both":
+        #         metas.append(triples[0][1])
+        #     if tau_cache is None:
+        #         tau_cache = np.asarray(triples[0][2], float)
 
         # Save shard
         shard_path = outdir / f"shard_{s:04d}.npz"
@@ -382,32 +518,30 @@ def main():
             traces=traces,
             taus_us=tau_cache.astype(np.float32),
         )
-
         meta_path = outdir / f"shard_{s:04d}.json"
-        with open(meta_path, "w") as f:
-            json.dump(
-                dict(
-                    file_stem=cfg.FILE_STEM,
-                    hyperfine_path=cfg.HYPERFINE_PATH,
-                    distance_cutoff=cfg.DISTANCE_CUTOFF,
-                    ak_min_kHz=cfg.AK_MIN_KHZ,
-                    ak_max_kHz=cfg.AK_MAX_KHZ,
-                    ak_abs=cfg.AK_ABS,
-                    abundance=cfg.ABUNDANCE,
-                    num_spins=cfg.NUM_SPINS,
-                    selection=cfg.SELECTION,
-                    jitter_mix=cfg.JITTER_MIX,
-                    rng_seed=cfg.RNG_SEED,
-                    add_gauss_noise=cfg.ADD_GAUSS_NOISE,
-                    noise_std=cfg.NOISE_STD,
-                    metas=metas,
-                ),
-                f,
-                indent=2,
-            )
-
-        print(f"[{s+1}/{num_shards}] wrote {shard_path.name} ({n_this} traces)")
-
+        safe_json_dump(
+            dict(
+                file_stem=cfg.FILE_STEM,
+                hyperfine_path=cfg.HYPERFINE_PATH,
+                distance_cutoff=cfg.DISTANCE_CUTOFF,
+                ak_min_kHz=cfg.AK_MIN_KHZ,
+                ak_max_kHz=cfg.AK_MAX_KHZ,
+                ak_abs=cfg.AK_ABS,
+                abundance=cfg.ABUNDANCE,
+                num_spins=cfg.NUM_SPINS,
+                selection=cfg.SELECTION,
+                jitter_mix=cfg.JITTER_MIX,
+                rng_seed=cfg.RNG_SEED,
+                add_gauss_noise=cfg.ADD_GAUSS_NOISE,
+                noise_std=cfg.NOISE_STD,
+                metas=metas,
+                nv_filter=nv_filter,
+            ),
+            meta_path,
+        )
+        print(
+            f"[{s+1}/{num_shards}] wrote {shard_path.name} ({n_this} traces) & {meta_path.name}"
+        )
     dt = time.time() - t0
     print(f"Done. Wrote {N} traces in {num_shards} shard(s) to {outdir} in {dt:.1f}s.")
 
