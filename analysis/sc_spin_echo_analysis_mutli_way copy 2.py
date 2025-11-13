@@ -5,8 +5,6 @@ Spin-echo: finer fit + fitted-figure + parameter panels
 - Physics-y comb with quartic lobes, amplitude taper, width growth, chirp
 - Optional two-frequency sin^2 beating with phases
 - Smoothly plugs into your plotting + data pipeline
-
-Author: you + chatgpt teammate
 """
 
 import os
@@ -288,11 +286,11 @@ def _initial_guess_and_bounds(times_us, y, enable_extras=True, fixed_rev_time=No
     if not enable_extras:
         return np.array(p0, float), np.array(lb, float), np.array(ub, float)
 
-    
+
     # extra_p0 = [0.3, 0.02, 0.0,  0.30, 0.10, 0.01, 0.0, 0.0]
     # extra_lb = [0.0, 0.00, -0.01, -1.00, 0.00, 0.00, -np.pi, -np.pi]
     # extra_ub = [2.0, 0.20,  0.01,  1.00, 0.40, 0.20,  np.pi,  np.pi]
-    
+
     extra_p0 = [0.3, 0.02, 0.0,  0.30, 0.10, 0.01, 0.0, 0.0]
     extra_lb = [0.0, 0.00, -0.06, -1.00, 0.00, 0.00, -np.pi, -np.pi]
     extra_ub = [4.0, 0.80,  0.06,  1.00, 6.00, 6.00,  np.pi,  np.pi]
@@ -619,15 +617,15 @@ def _apply_param_overrides(p0, lb, ub, fit_fn, overrides=None, bound_boxes=None)
     return p0, lb, ub
 
 def _sanitize_bound_boxes(bound_boxes, band):
-    if not isinstance(bound_boxes, dict): 
+    if not isinstance(bound_boxes, dict):
         return {}
     bmin, bmax = band
     out = {}
     for k, box in bound_boxes.items():
-        if box is None: 
+        if box is None:
             continue
         lo, hi = box
-        if lo > hi: 
+        if lo > hi:
             lo, hi = hi, lo
         lo = max(0.0, max(lo, bmin))
         hi = min(hi, bmax)
@@ -762,7 +760,7 @@ def _bound_hits(popt, lb, ub, frac_tol=0.01, abs_tol=1e-9):
     low_tol  = np.maximum(frac_tol*span, abs_tol)
     high_tol = np.maximum(frac_tol*span, abs_tol)
     for i, (p, lo, hi, ltol, htol) in enumerate(zip(popt, lb, ub, low_tol, high_tol)):
-        if not np.isfinite(p): 
+        if not np.isfinite(p):
             continue
         if (p - lo) <= ltol:
             hits[i] = "low"
@@ -1130,7 +1128,7 @@ def fit_one_nv_with_freq_sweeps(
         fixed_rev_time=(None if fit_fn_base is fine_decay else fixed_rev_time),
     )
     pmap = _param_index_map(fit_fn_base)
-    
+
     def _try_anti_cap(popt, lb, ub, used_fn, overrides, *, tol_rel=0.10):
         pmap = _param_index_map(used_fn)
         iT2 = pmap.get("T2_ms", None)
@@ -1437,7 +1435,7 @@ def fit_one_nv_with_freq_sweeps(
 
     # abest, overrides_best, mode_best, popt_best, pcov_best, red_best, fn_best = \
     #     min(all_candidates, key=lambda c: c[5])
-    
+
     def _pick_best_with_penalty(cands, lb_ref, ub_ref, pmap_ref):
     # each c: (ab, overrides, mode, popt, pcov, red, used_fn)
         scored = []
@@ -1450,13 +1448,13 @@ def fit_one_nv_with_freq_sweeps(
 
     abest, overrides_best, mode_best, popt_best, pcov_best, red_best, fn_best = \
         _pick_best_with_penalty(all_candidates, lb_base, ub_base, _param_index_map(fit_fn_base))
-    
+
     # after picking (abest, overrides_best, mode_best, popt_best, pcov_best, red_best, fn_best)
     popt_alt, pcov_alt, red_alt = _try_anti_cap(popt_best, lb_base, ub_base, fn_best, overrides_best)
     if popt_alt is not None and popt_alt is not popt_best:
         popt_best, pcov_best, red_best = popt_alt, pcov_alt, red_alt if red_alt is not None else red_best
 
-        
+
     if verbose:
         print(f"[BEST] amp={abest}, mode={mode_best}, redχ²={red_best:.4g}, overrides={overrides_best}")
 
@@ -1736,20 +1734,20 @@ def plot_each_param_separately(popts, chi2_list,
 
     def _one(vec, name, ylabel):
         fig, axes = plt.subplots(1, 2 if include_trend else 1, figsize=(10 if include_trend else 5, 4))
-        if include_trend: 
+        if include_trend:
             axh, axt = axes
-        else:             
+        else:
             axh = axes
         axh.hist(vec[np.isfinite(vec)], bins=bins)
-        axh.set_title(f"{name} histogram") 
-        axh.set_xlabel(ylabel) 
+        axh.set_title(f"{name} histogram")
+        axh.set_xlabel(ylabel)
         axh.set_ylabel("count")
         if include_trend:
             axt.plot(labels_f, vec, ".", ms=4)
-            axt.set_title(f"{name} vs NV label") 
-            axt.set_xlabel("NV label") 
+            axt.set_title(f"{name} vs NV label")
+            axt.set_xlabel("NV label")
             axt.set_ylabel(ylabel)
-        if save_prefix: 
+        if save_prefix:
             file_path = dm.get_file_path(__file__, timestamp, f"{save_prefix}_{name}.png")
             dm.save_figure(fig, file_path)
         return fig
@@ -1761,25 +1759,25 @@ def plot_each_param_separately(popts, chi2_list,
         figs.append((name, _one(arr_f[:, col], name, unit)))
 
     fig_chi, axes = plt.subplots(1, 2 if include_trend else 1, figsize=(10 if include_trend else 5, 4))
-    if include_trend: 
+    if include_trend:
         axh, axt = axes
-    else:             
+    else:
         axh = axes
     axh.hist(chi2_f[np.isfinite(chi2_f)], bins=bins)
-    axh.set_title("reduced χ² histogram") 
+    axh.set_title("reduced χ² histogram")
     axh.set_xlabel("χ²_red")
     axh.set_ylabel("count")
     if include_trend:
         axt.plot(labels_f, chi2_f, ".", ms=4)
-        axt.set_title("reduced χ² vs NV label") 
-        axt.set_xlabel("NV label") 
+        axt.set_title("reduced χ² vs NV label")
+        axt.set_xlabel("NV label")
         axt.set_ylabel("χ²_red")
     fig_chi.tight_layout()
-    if save_prefix: 
+    if save_prefix:
         fig_chi.savefig(f"{save_prefix}-chi2_red.png", dpi=220)
         file_path = dm.get_file_path(__file__, timestamp, f"{save_prefix}-chi2_red.png")
         dm.save_figure(fig_chi, file_path)
-        
+
     figs.append(("chi2_red", fig_chi))
 
     kept_labels = labels_f.astype(int)
@@ -1904,7 +1902,7 @@ def _format_param_box(pdct):
 
 # --- UPDATED: now annotates each subplot with a fit-parameter box (and optional χ²_red) ---
 def plot_individual_fits(
-    norm_counts, 
+    norm_counts,
     norm_counts_ste,
     total_evolution_times,
     popts,
@@ -2222,18 +2220,18 @@ if __name__ == "__main__":
                   "2025_10_09-23_03_41-rubin-nv0_2025_09_08",
                   "2025_10_10-14_23_58-rubin-nv0_2025_09_08",
                   "2025_10_10-17_04_27-rubin-nv0_2025_09_08"]
-    
+
     # file_stems = ["2025_10_29-10_33_01-johnson-nv0_2025_10_21",
     #             "2025_10_29-02_21_07-johnson-nv0_2025_10_21",
     #             ]
-    
+
     ###204NVs
     file_stems = ["2025_10_31-23_53_21-johnson-nv0_2025_10_21",
                   "2025_10_31-15_40_56-johnson-nv0_2025_10_21",
                   "2025_10_31-07_42_45-johnson-nv0_2025_10_21",
                 ]
- 
-    
+
+
     ###204NVs dataset 2
     file_stems_1 = ["2025_11_03-01_47_09-johnson-nv0_2025_10_21",
                   "2025_11_02-14_49_57-johnson-nv0_2025_10_21",
@@ -2245,29 +2243,29 @@ if __name__ == "__main__":
                   "2025_11_10-11_36_39-johnson-nv0_2025_10_21",
                   "2025_11_10-03_06_14-johnson-nv0_2025_10_21",
                 ]
-    
+
     file_stems = file_stems_1 + file_stems_2
-    
+
     # data = widefield.process_multiple_files(file_stems, load_npz=True)
     # nv_list = data["nv_list"]
     # taus = data["taus"]
-    # total_evolution_times = 2 * np.array(taus) / 1e3  
+    # total_evolution_times = 2 * np.array(taus) / 1e3
     # counts = np.array(data["counts"])
     # sig = counts[0]
     # ref = counts[1]
     # norm_counts, norm_counts_ste = widefield.process_counts(nv_list, sig, ref, threshold=True)
-    
-    # timestamp = dm.get_time_stamp()  
+
+    # timestamp = dm.get_time_stamp()
     # processed_data = {
     #     "timestamp": timestamp,
     #     "dataset_ids": file_stems,
     #     "nv_list": nv_list,
     #     "norm_counts" :norm_counts,
     #     "norm_counts_ste" : norm_counts_ste,
-    #     "total_evolution_times":total_evolution_times, 
-        
+    #     "total_evolution_times":total_evolution_times,
+
     #     }
-    
+
     # tokens = []
     # for s in file_stems:
     #     m = re.search(r"-([A-Za-z0-9]+)-nv", s)  # e.g. "...-johnson-nv0_..."
@@ -2282,7 +2280,7 @@ if __name__ == "__main__":
     # dm.save_raw_data(processed_data, file_path)
     # sys.exit()
     ### get proceeded data data
-    # file_stem = "2025_11_10-16_17_03-johnson_204nv_s3-003c56" #dataset 1 
+    # file_stem = "2025_11_10-16_17_03-johnson_204nv_s3-003c56" #dataset 1
     # file_stem = "2025_11_11-01_05_17-johnson_204nv_s3-0e14ae" #dataset 3
     file_stem = "2025_11_11-01_15_45-johnson_204nv_s6-6d8f5c" #dataset2 + dataset3
     data = dm.get_raw_data(file_stem=file_stem)
@@ -2379,7 +2377,7 @@ if __name__ == "__main__":
     dm.save_raw_data(fit_dict, file_path)
     # print(file_path )
     # NV labels: [ 96, 97, 101, 114, 115, 119, 127, 129, 130, 135, 148, 150, 153, 154, 158, 159, 161, 168, 173, 174, 185, 194, 195]
-    
+
     plot_individual_fits(
         norm_counts, norm_counts_ste, total_evolution_times,
         popts,
@@ -2394,11 +2392,11 @@ if __name__ == "__main__":
     # ## laod analysed data
     # timestamp = dm.get_time_stamp()
     # # file_stem= "2025_11_01-16_57_48-rubin-nv0_2025_09_08"
-    # file_stem= "2025_11_10-19_33_17-johnson_204nv_s3-003c56" 
-    # file_stem= "2025_11_10-21_38_55-johnson_204nv_s3-003c56" 
-    # file_stem= "2025_11_11-01_46_41-johnson_204nv_s3-003c56" 
-    file_stem= "2025_11_11-06_23_14-johnson_204nv_s6-6d8f5c" 
-    
+    # file_stem= "2025_11_10-19_33_17-johnson_204nv_s3-003c56"
+    # file_stem= "2025_11_10-21_38_55-johnson_204nv_s3-003c56"
+    # file_stem= "2025_11_11-01_46_41-johnson_204nv_s3-003c56"
+    file_stem= "2025_11_11-06_23_14-johnson_204nv_s6-6d8f5c"
+
     data = dm.get_raw_data(file_stem=file_stem)
     popts = data["popts"]
     chis = data["red_chi2"]
@@ -2406,15 +2404,15 @@ if __name__ == "__main__":
     fit_fn_names = data["fit_fn_names"]
     repr_nv_sig = widefield.get_repr_nv_sig(nv_list)
     repr_nv_name = repr_nv_sig.name
-    
+
     # 2) PARAM PANELS (T2 outlier filter)
     # figs, keep_mask, kept_labels = plot_each_param_separately(
-    #     popts, chis, fit_nv_labels, 
+    #     popts, chis, fit_nv_labels,
     #     save_prefix= "rubin-spin_echo-2025_09_08",
     #     t2_policy=dict(method="iqr", iqr_k=5, abs_range=(0.00, 1.0))
     # )
 
-    
+
     fit_nv_labels  = list(map(int, data["nv_labels"]))
     fit_fn_names   = data["fit_fn_names"]
 
@@ -2432,7 +2430,7 @@ if __name__ == "__main__":
             if fn is None:
                 fn = fine_decay
             fit_fns.append(fn)
-        
+
     # 3) INDIVIDUAL FITS — PASS THE SAME LABELS + PER-NV FIT FUNCTIONS
     _ = plot_individual_fits(
         norm_counts, norm_counts_ste, total_evolution_times,
@@ -2443,7 +2441,7 @@ if __name__ == "__main__":
         show_residuals=True,
         block=False
     )
-     
+
     # # --------------------------
     # # Example usage
     # # --------------------------
