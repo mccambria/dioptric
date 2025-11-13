@@ -807,6 +807,244 @@ def plot_sorted_panels_with_err(
 
 
 
+# ---------- small helper used by your panel plot ----------
+def _mask_huge_errors(y, yerr, *, rel_cap=1.0, pct_cap=99):
+    if yerr is None: return None
+    yerr = np.asarray(yerr, float).copy()
+    bad = ~np.isfinite(yerr)
+    if np.any(np.isfinite(y) & np.isfinite(yerr)):
+        # cap relative blow-ups
+        bad |= (yerr > rel_cap * np.maximum(1e-12, np.abs(y)))
+        # cap extreme tail
+        thr = np.nanpercentile(yerr[~bad], pct_cap) if np.any(~bad) else np.inf
+        bad |= (yerr > thr)
+    yerr[bad] = 0.0
+    return yerr
+
+# ================= Experimental spectrum builders =============================
+
+def build_exp_lines(
+    f0_kHz, f1_kHz,
+    *,
+    fmin_kHz=1.0, fmax_kHz=20000.0,
+    weight_mode="unit",          # {"unit","invvar","inv_chi2","custom"}
+    sA_pick_kHz=None,            # needed for invvar
+    chis=None,                   # needed for inv_chi2
+    custom_weights=None,         # array same length as combined freqs if weight_mode="custom"
+    per_line_scale=1.0,
+):
+    """
+    Turn the experimental fitted frequencies into a list of sticks (freq, weight).
+    Includes both columns (f0,f1), filters to [fmin,fmax], and applies weights.
+
+    weight_mode:
+      - "unit"      → each line weight = 1
+      - "invvar"    → weight = 1 / σ_A^2   (uses sA_pick_kHz; broadcasts to both f0,f1)
+      - "inv_chi2"  → weight = 1 / χ²      (uses chis; broadcasts to both f0,f1)
+      - "custom"    → use `custom_weights` (must match length of resulting lines)
+    """
+    f0 = np.asarray(f0_kHz, float)
+    f1 = np.asarray(f1_kHz, float)
+
+    # collect valid frequencies
+    F = []
+    idx_src = []  # (row_index, which) for building weights later
+    for which, arr in enumerate((f0, f1)):   # 0→f0, 1→f1
+        m = np.isfinite(arr) & (arr >= fmin_kHz) & (arr <= fmax_kHz)
+        if np.any(m):
+            F.append(arr[m])
+            # remember where these came from
+            idxs = np.nonzero(m)[0]
+            idx_src.extend([(int(i), which) for i in idxs])
+
+    if not F:
+        return np.array([]), np.array([])
+
+    freqs = np.concatenate(F)
+    order = np.argsort(freqs)
+    freqs = freqs[order]
+    idx_src = [idx_src[i] for i in order]
+
+    # weights
+    if weight_mode == "unit":
+        w = np.ones_like(freqs, float)
+
+    elif weight_mode == "invvar":
+        if sA_pick_kHz is None:
+            raise ValueError("invvar weighting needs sA_pick_kHz.")
+        sA = np.asarray(sA_pick_kHz, float)
+        w = np.zeros_like(freqs, float)
+        for k, (i, _which) in enumerate(idx_src):
+            si = sA[i]
+            w[k] = 0.0 if (not np.isfinite(si) or si <= 0) else 1.0 / (si * si)
+
+    elif weight_mode == "inv_chi2":
+        if chis is None:
+            raise ValueError("inv_chi2 weighting needs chis.")
+        c = np.asarray(chis, float)
+        w = np.zeros_like(freqs, float)
+        for k, (i, _which) in enumerate(idx_src):
+            ci = c[i]
+            w[k] = 0.0 if (not np.isfinite(ci) or ci <= 0) else 1.0 / ci
+
+    elif weight_mode == "custom":
+        if custom_weights is None:
+            raise ValueError("custom weighting needs custom_weights.")
+        cw = np.asarray(custom_weights, float)
+        if cw.shape != freqs.shape:
+            raise ValueError("custom_weights must match combined frequency array length.")
+        w = cw.copy()
+
+    else:
+        raise ValueError(f"Unknown weight_mode='{weight_mode}'")
+
+    return freqs, per_line_scale * w
+
+
+def plot_exp_sticks(
+    freqs_kHz, weights=None, *,
+    title="Experimental ESEEM sticks (sorted)",
+    weight_caption="Weight (arb.)",
+    min_weight=0.0
+):
+    """Vertical-stick plot for experimental lines."""
+    if freqs_kHz.size == 0:
+        print("[plot_exp_sticks] No lines to plot.")
+        return
+    w = np.ones_like(freqs_kHz, float) if (weights is None) else np.asarray(weights, float)
+    m = (w >= float(min_weight)) & np.isfinite(freqs_kHz) & np.isfinite(w)
+    f = freqs_kHz[m]; w = w[m]
+    order = np.argsort(f); f = f[order]; w = w[order]
+
+    plt.figure(figsize=(9, 4.2))
+    for fk, wk in zip(f, w):
+        plt.vlines(fk, 0.0, wk, linewidth=1.5)
+    plt.xlabel("Frequency (kHz)")
+    plt.ylabel(weight_caption)
+    plt.title(title)
+    plt.grid(True, alpha=0.25)
+    plt.tight_layout()
+    plt.show()
+
+
+
+def convolved_exp_spectrum(
+    freqs_kHz,
+    weights=None,
+    *,
+    f_range_kHz=(1.0, 20000.0),
+    npts=4000,
+    shape="gauss",          # {"gauss","lorentz"}
+    width_kHz=8.0,          # σ for gauss, HWHM γ for lorentz
+    width_is_fwhm=False,    # if True, converts FWHM -> (σ or γ)
+    log_x=True,             # plotting scale only
+    merge_tol_Hz=0.0,       # >0 to merge near-duplicate sticks before convolving
+    clean_neg_weights=True, # clip negatives to 0
+    normalize="max",        # {"max","area",None}
+    title_prefix="Experimental ESEEM spectrum",
+    weight_caption="unit weight",
+    ax=None
+):
+    """
+    Convolve discrete experimental lines with an analytic kernel (area-normalized).
+    Returns (f_kHz, spec), where spec may be normalized.
+
+    Notes:
+      - If you care about low-f detail, set log_x=True for plotting but keep evaluation
+        dense (increase npts) or use log_x=False with a fine linear grid.
+      - width_kHz is σ (gauss) or γ (lorentz). Set width_is_fwhm=True to pass FWHM.
+    """
+    f_in = np.asarray(freqs_kHz, float)
+    if f_in.size == 0:
+        raise ValueError("No experimental lines provided.")
+    w_in = np.ones_like(f_in) if weights is None else np.asarray(weights, float)
+
+    # Clean/clip weights
+    w_in = np.where(np.isfinite(w_in), w_in, 0.0)
+    if clean_neg_weights:
+        w_in = np.clip(w_in, 0.0, None)
+
+    # Band-limit lines
+    lo, hi = map(float, f_range_kHz)
+    if lo <= 0 and log_x:
+        raise ValueError("f_range_kHz[0] must be > 0 when log_x=True.")
+    m = np.isfinite(f_in) & (f_in >= lo) & (f_in <= hi)
+    f0 = f_in[m]; a0 = w_in[m]
+    if f0.size == 0:
+        raise ValueError("No experimental lines in requested range.")
+
+    # Optional: merge near-duplicates (before convolution)
+    if merge_tol_Hz and merge_tol_Hz > 0:
+        order = np.argsort(f0)
+        f0 = f0[order]; a0 = a0[order]
+        f_merged = [f0[0]]; a_merged = [a0[0]]
+        tol = float(merge_tol_Hz) * 1e-3  # convert Hz -> kHz for our arrays
+        for fk, ak in zip(f0[1:], a0[1:]):
+            if abs(fk - f_merged[-1]) <= tol:
+                # accumulate weight into previous line
+                a_merged[-1] += ak
+            else:
+                f_merged.append(fk); a_merged.append(ak)
+        f0 = np.asarray(f_merged, float)
+        a0 = np.asarray(a_merged, float)
+
+    # Evaluation grid (dense linear; we can still plot in log-x)
+    f = (np.logspace(np.log10(lo), np.log10(hi), int(npts))
+         if log_x else np.linspace(lo, hi, int(npts)))
+    f = f.astype(float)
+
+    # Kernel width handling
+    if shape.lower().startswith("gauss"):
+        # Use σ; if FWHM given, convert: FWHM = 2√(2ln2) σ
+        sigma = float(width_kHz)
+        if width_is_fwhm:
+            sigma = sigma / (2.0 * np.sqrt(2.0 * np.log(2.0)))
+        # Vectorized Gaussian: sum_k a_k * N(f; f_k, σ)
+        # Area-normalized kernel: 1/(σ√(2π)) * exp(-0.5 ((f-fk)/σ)^2)
+        df = f[:, None] - f0[None, :]
+        spec = np.exp(-0.5 * (df / sigma) ** 2) / (sigma * np.sqrt(2.0 * np.pi))
+        spec = (spec * a0[None, :]).sum(axis=1)
+        kern_label = f"Gaussian ({'FWHM' if width_is_fwhm else 'σ'}={width_kHz:.2f} kHz)"
+    else:
+        # Lorentzian uses HWHM γ; convert FWHM -> γ if requested (FWHM = 2γ)
+        gamma = float(width_kHz)
+        if width_is_fwhm:
+            gamma = gamma / 2.0
+        df2 = (f[:, None] - f0[None, :]) ** 2
+        spec = (gamma / np.pi) / (df2 + gamma ** 2)
+        spec = (spec * a0[None, :]).sum(axis=1)
+        kern_label = f"Lorentzian ({'FWHM' if width_is_fwhm else 'γ'}={width_kHz:.2f} kHz)"
+
+    # Optional normalization
+    if normalize == "max":
+        mval = np.max(spec) if spec.size else 1.0
+        if mval > 0:
+            spec = spec / mval
+    elif normalize == "area":
+        # trapezoid area in kHz
+        area = np.trapz(spec, f)
+        if area > 0:
+            spec = spec / area
+
+    # Plot
+    ax = ax or plt.gca()
+    if log_x:
+        ax.set_xscale("log")
+    ax.plot(f, spec, lw=1.6)
+    ax.set_xlim(lo, hi)
+    ax.set_xlabel("Frequency (kHz)")
+    ylab = "Intensity (arb.)"
+    if normalize == "max":
+        ylab += " (unit max)"
+    elif normalize == "area":
+        ylab += " (unit area)"
+    ax.set_ylabel(ylab + f"\nweights = {weight_caption}")
+    ax.set_title(f"{title_prefix} • {kern_label}")
+    ax.grid(True, which="both", alpha=0.25)
+    plt.tight_layout()
+
+    return f, spec
+
 if __name__ == "__main__":
     kpl.init_kplotlib()
     # --- Load your data------------------------------------
@@ -959,11 +1197,40 @@ if __name__ == "__main__":
     fit_fail_m    = np.asarray(fit_fail)[mask]   # should now all be False by construction
 
     # ---- Plot with masked arrays only ----
-    plot_sorted_panels_with_err(
-        nv_m, T2_us_m, sT2_us_m, A_pick_kHz_m, sA_pick_kHz_m,
-        mask_fit_fail=np.zeros_like(fit_fail_m, dtype=bool),  # already filtered
-        # outlier caps (percentile-based trimming only for display)
-        t2_rel_cap=1.0, t2_pct_cap=95,
-        A_rel_cap=0.75, A_pct_cap=95
+    # (1) Your existing panels (unchanged)
+    # plot_sorted_panels_with_err(
+    #     nv_m, T2_us_m, sT2_us_m, A_pick_kHz_m, sA_pick_kHz_m,
+    #     mask_fit_fail=np.zeros_like(fit_fail_m, dtype=bool),
+    #     t2_rel_cap=1.0, t2_pct_cap=95, A_rel_cap=0.75, A_pct_cap=95
+    # )
+
+    # (2) Experimental sticks: choose a weighting
+    #   a) unit weights
+    F_kHz, W = build_exp_lines(f0_kHz_m, f1_kHz_m, fmin_kHz=1, fmax_kHz=20000, weight_mode="unit")
+
+    #   b) inverse-variance (needs sA_pick_kHz_m)
+    # F_kHz, W = build_exp_lines(f0_kHz_m, f1_kHz_m, fmin_kHz=1, fmax_kHz=20000,
+    #                            weight_mode="invvar", sA_pick_kHz=sA_pick_kHz_m)
+
+    #   c) inverse chi^2 (needs chis_m)
+    F_kHz, W = build_exp_lines(f0_kHz_m, f1_kHz_m, fmin_kHz=1, fmax_kHz=20000,
+                               weight_mode="inv_chi2", chis=chis_m)
+
+    # plot_exp_sticks(
+    #     F_kHz, W,
+    #     title="Experimental ESEEM sticks (sorted)",
+    #     weight_caption="unit weight"  # or "1/σ_A^2", or "1/χ²"
+    # )
+
+    # (3) Convolved spectrum (Gaussian)
+    _fff, _SSS = convolved_exp_spectrum(
+        F_kHz, W,
+        f_range_kHz=(1, 20000),
+        npts=2400,
+        shape="gauss",          # "lorentz" also available
+        width_kHz=8.0,
+        title_prefix="Experimental ESEEM spectrum",
+        weight_caption="unit weight"  # match what you chose above
     )
+
     kpl.show(block=True)

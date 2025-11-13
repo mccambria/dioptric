@@ -1750,6 +1750,7 @@ def plot_each_param_separately(popts, chi2_list,
             axt.set_xlabel("NV label") 
             axt.set_ylabel(ylabel)
         if save_prefix: 
+            timestamp = dm.get_time_stamp()
             file_path = dm.get_file_path(__file__, timestamp, f"{save_prefix}_{name}.png")
             dm.save_figure(fig, file_path)
         return fig
@@ -1776,6 +1777,7 @@ def plot_each_param_separately(popts, chi2_list,
         axt.set_ylabel("χ²_red")
     fig_chi.tight_layout()
     if save_prefix: 
+        timestamp = dm.get_time_stamp()
         fig_chi.savefig(f"{save_prefix}-chi2_red.png", dpi=220)
         file_path = dm.get_file_path(__file__, timestamp, f"{save_prefix}-chi2_red.png")
         dm.save_figure(fig_chi, file_path)
@@ -1997,6 +1999,7 @@ def plot_individual_fits(
         # optional save (uses your dm/timestamp if present)
         if save_prefix:
             try:
+                timestamp = dm.get_time_stamp()
                 file_path = dm.get_file_path(__file__, timestamp, f"{save_prefix}-nv{int(lbl):03d}")
                 dm.save_figure(fig, file_path, f"nv{int(lbl):03d}")
             except Exception:
@@ -2008,9 +2011,6 @@ def plot_individual_fits(
         plt.show(block=block)
     return figs
 
-# =============================================================================
-# CLI / Example
-# =============================================================================
 # ---- helpers ----
 def _index_map(unified_keys):
     return {k:i for i,k in enumerate(unified_keys)}
@@ -2209,292 +2209,3 @@ def plot_sorted_panels_with_err(
         plt.text(0.01, 0.98, note, transform=plt.gca().transAxes, ha="left", va="top", fontsize=8)
     else:
         print("[plot] No hyperfine points to plot.")
-
-
-if __name__ == "__main__":
-    kpl.init_kplotlib()
-    # --- Load your data------------------------------------
-    file_stems = ["2025_10_10-11_29_40-rubin-nv0_2025_09_08",
-                  "2025_10_10-08_55_59-rubin-nv0_2025_09_08",
-                  "2025_10_10-06_28_12-rubin-nv0_2025_09_08",
-                  "2025_10_10-03_59_48-rubin-nv0_2025_09_08",
-                  "2025_10_10-01_31_59-rubin-nv0_2025_09_08",
-                  "2025_10_09-23_03_41-rubin-nv0_2025_09_08",
-                  "2025_10_10-14_23_58-rubin-nv0_2025_09_08",
-                  "2025_10_10-17_04_27-rubin-nv0_2025_09_08"]
-    
-    # file_stems = ["2025_10_29-10_33_01-johnson-nv0_2025_10_21",
-    #             "2025_10_29-02_21_07-johnson-nv0_2025_10_21",
-    #             ]
-    
-    ###204NVs
-    file_stems = ["2025_10_31-23_53_21-johnson-nv0_2025_10_21",
-                  "2025_10_31-15_40_56-johnson-nv0_2025_10_21",
-                  "2025_10_31-07_42_45-johnson-nv0_2025_10_21",
-                ]
- 
-    
-    ###204NVs dataset 2
-    file_stems_1 = ["2025_11_03-01_47_09-johnson-nv0_2025_10_21",
-                  "2025_11_02-14_49_57-johnson-nv0_2025_10_21",
-                  "2025_11_02-04_46_56-johnson-nv0_2025_10_21",
-                ]
-    ###204NVs
-    file_stems_2 = ["2025_11_11-06_02_04-johnson-nv0_2025_10_21",
-                    "2025_11_10-20_58_00-johnson-nv0_2025_10_21",
-                  "2025_11_10-11_36_39-johnson-nv0_2025_10_21",
-                  "2025_11_10-03_06_14-johnson-nv0_2025_10_21",
-                ]
-    
-    file_stems = file_stems_1 + file_stems_2
-    
-    # data = widefield.process_multiple_files(file_stems, load_npz=True)
-    # nv_list = data["nv_list"]
-    # taus = data["taus"]
-    # total_evolution_times = 2 * np.array(taus) / 1e3  
-    # counts = np.array(data["counts"])
-    # sig = counts[0]
-    # ref = counts[1]
-    # norm_counts, norm_counts_ste = widefield.process_counts(nv_list, sig, ref, threshold=True)
-    
-    # timestamp = dm.get_time_stamp()  
-    # processed_data = {
-    #     "timestamp": timestamp,
-    #     "dataset_ids": file_stems,
-    #     "nv_list": nv_list,
-    #     "norm_counts" :norm_counts,
-    #     "norm_counts_ste" : norm_counts_ste,
-    #     "total_evolution_times":total_evolution_times, 
-        
-    #     }
-    
-    # tokens = []
-    # for s in file_stems:
-    #     m = re.search(r"-([A-Za-z0-9]+)-nv", s)  # e.g. "...-johnson-nv0_..."
-    #     if m: tokens.append(m.group(1))
-    # sample = max(set(tokens), key=tokens.count) if tokens else "sample"
-    # srcsig = f"s{len(file_stems)}-{hashlib.sha1('|'.join(file_stems).encode()).hexdigest()[:6]}"
-    # # --- tiny signature of the source list ---
-    # name   = f"{sample}_{len(nv_list)}nv_{srcsig}"
-    # # name   = f"{sample}_{len(fit_nv_labels)}nv_{date}_{rev}_{model}_{sweep}_{srcsig}"
-    # print(name)
-    # file_path = dm.get_file_path(__file__, timestamp, name)
-    # dm.save_raw_data(processed_data, file_path)
-    # sys.exit()
-    ### get proceeded data data
-    # file_stem = "2025_11_10-16_17_03-johnson_204nv_s3-003c56" #dataset 1 
-    # file_stem = "2025_11_11-01_05_17-johnson_204nv_s3-0e14ae" #dataset 3
-    file_stem = "2025_11_11-01_15_45-johnson_204nv_s6-6d8f5c" #dataset2 + dataset3
-    data = dm.get_raw_data(file_stem=file_stem)
-    nv_list = data["nv_list"]
-    norm_counts = np.array(data["norm_counts"])
-    norm_counts_ste = np.array(data["norm_counts_ste"])
-    total_evolution_times = np.array(data["total_evolution_times"])
-    # print(norm_counts[172])
-    # Example NV filtering
-    # split_esr = [12, 13, 14, 61, 116]
-    # broad_esr = [52, 11]
-    # weak_esr  = [72, 64, 55, 96, 112, 87, 12, 58, 36]
-    # skip_inds = list(set(split_esr + broad_esr + weak_esr))
-    # skip_inds = []
-    # nv_inds = [ind for ind in range(len(data["nv_list"])) if ind not in skip_inds]
-    # nv_inds = [2, 10, 22, 25, 55, 112]
-    # nv_inds = [196]
-    nv_inds = None
-    # --- Run and plot ---------------------------------------------------------
-    ts = datetime.now().strftime("%Y_%m_%d-%H_%M_%S")
-    repr_nv_sig = widefield.get_repr_nv_sig(data["nv_list"])
-    save_prefix = dm.get_file_path(__file__, ts, f"{repr_nv_sig.name}-finefit")
-
-    # Toggle these as you wish:
-    USE_FIXED_REVIVAL = False       # True -> uses fine_decay_fixed_revival
-    ENABLE_EXTRAS     = True        # enable alpha/width_slope/chirp + beating + phases
-    DEFAULT_REV_US = 37.2
-    # # 1) FIT
-    popts, pcovs, chis, fit_fns, fit_nv_labels = run_with_amp_and_freq_sweeps(
-    nv_list,
-    norm_counts,
-    norm_counts_ste,
-    total_evolution_times,
-    # nv_inds= [4, 7, 10, 15, 16, 18, 21, 24, 26, 27, 28, 33, 39, 43, 48, 52, 53, 57, 59, 61, 64, 65, 66, 68, 72, 73, 77, 83, 97, 102, 106, 109, 121, 123, 127, 129, 132, 135, 136, 139, 147, 152, 157, 163, 167, 173, 185, 189, 190, 193, 194, 195, 197, 198, 201, 202],
-    # nv_inds= [10, 15],
-    # amp_bound_grid=((-0.6, 0.6),(-1.0, 1.0),(-2.0, 2.0),),
-    # Optional: tighten frequency boxes
-    freq_bound_boxes={"osc_f0": (0.001, 6.0), "osc_f1": (0.001, 6.0)},
-    # Optional: force a band (else inferred from sampling)
-    freq_seed_band=(0.001, 6.0),
-    # Try more seeds if signals are messy
-    freq_seed_n_peaks=6,
-    # Add custom overrides (e.g., probe a specific revival_time or phase grid)
-    # extra_overrides_grid={"osc_phi0": [0.0, np.pi/3, 2*np.pi/3]},
-    extra_overrides_grid=None,
-    use_fixed_revival=False,
-    enable_extras=True,
-    fixed_rev_time=37.6,
-    verbose=True,
-)
-
-    timestamp = dm.get_time_stamp()
-    fit_dict = {
-        "timestamp": timestamp,
-        "dataset_ids": file_stems,                          # provenance
-        "default_rev_us": float(DEFAULT_REV_US),
-        "run_flags": {
-            "use_fixed_revival": bool(USE_FIXED_REVIVAL),
-            "enable_extras": bool(ENABLE_EXTRAS),
-        },
-
-        # NV indexing/order and sampling grid (so red_chi2 aligns with your original time axis if needed)
-        "nv_labels": list(map(int, fit_nv_labels)),
-        "times_us": np.asarray(total_evolution_times, float).tolist(),
-
-        # Core results you don't want to recompute
-        "popts": [p.tolist() if p is not None else None for p in popts],
-        "pcovs": [c.tolist() if c is not None else None for c in pcovs],
-        "red_chi2": [float(c) if c is not None else None for c in chis],
-        "fit_fn_names": [fn.__name__ if fn is not None else None for fn in fit_fns],
-
-        # Parameter key order (so you can interpret popts later without code spelunking)
-        "unified_keys": [
-            "baseline","comb_contrast","revival_time_us","width0_us","T2_ms","T2_exp",
-            "amp_taper_alpha","width_slope","revival_chirp",
-            "osc_amp","osc_f0","osc_f1","osc_phi0","osc_phi1"
-        ],
-      }
-    # repr_nv_sig = widefield.get_repr_nv_sig(nv_list)
-
-    # sample = (re.search(r"-([A-Za-z0-9]+)-nv", file_stems[0]) or [None,"sample"])[1]
-    # srcsig = f"s{len(file_stems)}-{hashlib.sha1('|'.join(file_stems).encode()).hexdigest()[:6]}"
-    tokens = []
-    for s in file_stems:
-        m = re.search(r"-([A-Za-z0-9]+)-nv", s)  # e.g. "...-johnson-nv0_..."
-        if m: tokens.append(m.group(1))
-    sample = max(set(tokens), key=tokens.count) if tokens else "sample"
-    srcsig = f"s{len(file_stems)}-{hashlib.sha1('|'.join(file_stems).encode()).hexdigest()[:6]}"
-    # --- tiny signature of the source list ---
-    name   = f"{sample}_{len(fit_nv_labels)}nv_{srcsig}"
-    # name   = f"{sample}_{len(fit_nv_labels)}nv_{date}_{rev}_{model}_{sweep}_{srcsig}"
-    # print(name)
-    file_path = dm.get_file_path(__file__, timestamp, name)
-    dm.save_raw_data(fit_dict, file_path)
-    # print(file_path )
-    # NV labels: [ 96, 97, 101, 114, 115, 119, 127, 129, 130, 135, 148, 150, 153, 154, 158, 159, 161, 168, 173, 174, 185, 194, 195]
-    
-    plot_individual_fits(
-        norm_counts, norm_counts_ste, total_evolution_times,
-        popts,
-        nv_inds=fit_nv_labels,
-        fit_fn_per_nv=fit_fns,
-        # keep_mask=keep_mask,
-        show_residuals=True,
-        block=False
-    )
-    kpl.show(block=True)
-    sys.exit()
-    # ## laod analysed data
-    # timestamp = dm.get_time_stamp()
-    # # file_stem= "2025_11_01-16_57_48-rubin-nv0_2025_09_08"
-    # file_stem= "2025_11_10-19_33_17-johnson_204nv_s3-003c56" 
-    # file_stem= "2025_11_10-21_38_55-johnson_204nv_s3-003c56" 
-    # file_stem= "2025_11_11-01_46_41-johnson_204nv_s3-003c56" 
-    file_stem= "2025_11_11-06_23_14-johnson_204nv_s6-6d8f5c" 
-    
-    data = dm.get_raw_data(file_stem=file_stem)
-    popts = data["popts"]
-    chis = data["red_chi2"]
-    fit_nv_labels = data ["nv_labels"]
-    fit_fn_names = data["fit_fn_names"]
-    repr_nv_sig = widefield.get_repr_nv_sig(nv_list)
-    repr_nv_name = repr_nv_sig.name
-    
-    # 2) PARAM PANELS (T2 outlier filter)
-    # figs, keep_mask, kept_labels = plot_each_param_separately(
-    #     popts, chis, fit_nv_labels, 
-    #     save_prefix= "rubin-spin_echo-2025_09_08",
-    #     t2_policy=dict(method="iqr", iqr_k=5, abs_range=(0.00, 1.0))
-    # )
-
-    
-    fit_nv_labels  = list(map(int, data["nv_labels"]))
-    fit_fn_names   = data["fit_fn_names"]
-
-    # 1) Map stored names -> real callables
-    _fn_map = {
-        "fine_decay": fine_decay,
-        "fine_decay_fixed_revival": fine_decay_fixed_revival,
-    }
-    fit_fns = []
-    for name in fit_fn_names:
-        if name is None:
-            fit_fns.append(None)
-        else:
-            fn = _fn_map.get(name)
-            if fn is None:
-                fn = fine_decay
-            fit_fns.append(fn)
-        
-    # 3) INDIVIDUAL FITS — PASS THE SAME LABELS + PER-NV FIT FUNCTIONS
-    _ = plot_individual_fits(
-        norm_counts, norm_counts_ste, total_evolution_times,
-        popts,
-        nv_inds=fit_nv_labels,
-        fit_fn_per_nv=fit_fns,
-        # keep_mask=keep_mask,
-        show_residuals=True,
-        block=False
-    )
-     
-    # # --------------------------
-    # # Example usage
-    # # --------------------------
-    (nv, T2_us, f0_kHz, f1_kHz, A_pick_kHz, chis, fit_fail,
-    sT2_us, sf0_kHz, sf1_kHz, sA_pick_kHz) = extract_T2_freqs_and_errors(
-        data, pick_freq="max", chi2_fail_thresh=3.0
-    )
-    # plot_sorted_panels_with_err(
-    #     nv, T2_us, sT2_us, A_pick_kHz, sA_pick_kHz,
-    #     mask_fit_fail=fit_fail,
-    #     # tweak caps if needed:
-    #     t2_rel_cap=1.0, t2_pct_cap=95,
-    #     A_rel_cap=0.75, A_pct_cap=95
-    # )
-    # # print(T2_us)
-    # THRESH_US = 400.0
-
-    # # # Base validity mask
-    # valid = np.isfinite(T2_us) & (~fit_fail)
-    # mask = valid & (T2_us >= THRESH_US)
-
-    # # Core table
-    # df = pd.DataFrame({
-    #     "nv": nv,
-    #     "T2_us": T2_us,
-    #     "T2_ms": T2_us/1000.0,
-    #     "sT2_us": sT2_us,
-    #     "f0_kHz": f0_kHz,
-    #     "sf0_kHz": sf0_kHz,
-    #     "f1_kHz": f1_kHz,
-    #     "sf1_kHz": sf1_kHz,
-    #     "A_pick_kHz": A_pick_kHz,
-    #     "sA_pick_kHz": sA_pick_kHz,
-    #     "red_chi2": chis,
-    #     "fit_fail": fit_fail,
-    # })
-    # sel = df.loc[mask].sort_values("T2_us", ascending=False).reset_index(drop=True)
-
-    # print(f"NVs with T2 >= {THRESH_US:.0f} µs: {len(sel)}")
-    # print(sel[["nv","T2_us","sT2_us","A_pick_kHz","sA_pick_kHz","f0_kHz","f1_kHz","red_chi2"]].to_string(index=False))
-
-    # 1) Strictly at the cap (allow tiny float noise)
-    CAP_US = 200
-    THRESH_US = 200
-    # mask_cap = np.isfinite(T2_us) & np.isclose(T2_us, CAP_US, atol=1e-6)
-    mask_cap = np.isfinite(T2_us) & np.isclose(T2_us, CAP_US, atol=1e-6)
-    mask_cap = np.isfinite(T2_us) & (T2_us > THRESH_US)
-    cap_indices = np.where(mask_cap)[0]        # 0-based positions in your arrays
-    cap_labels  = nv[mask_cap]                 # NV labels corresponding to those positions
-
-    print("Count:", mask_cap.sum())
-    print("Indices:", cap_indices.tolist())
-    print("NV labels:", cap_labels.tolist())
-    kpl.show(block=True)
