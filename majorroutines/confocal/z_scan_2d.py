@@ -17,7 +17,6 @@ import time
 
 import matplotlib.pyplot as plt
 import numpy as np
-from matplotlib.gridspec import GridSpec
 
 from utils import common
 from utils import data_manager as dm
@@ -178,33 +177,9 @@ def main(
     # Storage for all Z slices
     all_images = []  # List of 2D numpy arrays
     z_positions = []  # Actual Z positions from piezo
-
-    ### Setup figure for real-time plotting
+    all_figures = []  # Store figure handles for each Z position
 
     kpl.init_kplotlib()
-
-    # Calculate subplot grid layout (try to make roughly square)
-    ncols = int(np.ceil(np.sqrt(num_z_steps)))
-    nrows = int(np.ceil(num_z_steps / ncols))
-
-    fig = plt.figure(figsize=(ncols * 3, nrows * 3))
-    gs = GridSpec(nrows, ncols, figure=fig, hspace=0.3, wspace=0.3)
-    axes = []
-    img_handles = []  # Store image handles for updating
-    for i in range(num_z_steps):
-        row = i // ncols
-        col = i % ncols
-        ax = fig.add_subplot(gs[row, col])
-        axes.append(ax)
-        img_handles.append(None)  # Will be initialized when we start each Z scan
-
-    fig.suptitle(
-        f"Z-Scan 2D: {readout_laser}, {readout_ns/1e6:.1f} ms readout",
-        fontsize=14,
-        y=0.995,
-    )
-    plt.ion()  # Enable interactive mode
-    plt.show(block=False)  # Show the figure immediately
 
     tb.reset_cfm()
     tb.init_safe_stop()
@@ -257,22 +232,28 @@ def main(
                 flush=True,
             )
 
+            # Create NEW figure for this Z position (one figure per Z slice)
+            fig, ax = plt.subplots(figsize=(7, 5.2))
+
             # Create image array for this Z position
             img = np.full((h, w), np.nan, float)
             img_kcps = np.copy(img) if count_fmt == CountFormat.KCPS else None
 
-            # Initialize the subplot for this Z position with empty image
-            ax = axes[z_idx]
-            img_handles[z_idx] = kpl.imshow(
+            # Initialize the figure with empty image
+            kpl.imshow(
                 ax,
                 img_kcps if img_kcps is not None else img,
-                title=f"Z={current_z_pos} steps (scanning...)",
+                title=f"{readout_laser}, {readout_ns/1e6:.1f} ms, Z={current_z_pos} steps",
                 cbar_label=("Kcps" if img_kcps is not None else "Counts"),
                 extent=extent,
             )
-            ax.set_xlabel("X Voltage (V)")
-            ax.set_ylabel("Y Voltage (V)")
+            ax.set_xlabel("Voltage (V)")
+            ax.set_ylabel("Voltage (V)")
+            plt.show(block=False)  # Show this figure
             plt.pause(0.01)  # Force initial display
+
+            # Store figure handle
+            all_figures.append(fig)
 
             # === Perform 2D XY scan at this Z position ===
             # This is the core scanning logic from confocal_image_sample.py
@@ -408,11 +389,10 @@ def main(
                 flush=True,
             )
 
-            print(f"[DEBUG] Updating final title for subplot {z_idx}...", flush=True)
+            print(f"[DEBUG] Updating final title...", flush=True)
 
             # Update title to show final stats (image was already updated during scan)
-            ax = axes[z_idx]
-            ax.set_title(f"Z={current_z_pos} steps\nMean={mean_counts:.1f}")
+            ax.set_title(f"{readout_laser}, {readout_ns/1e6:.1f} ms, Z={current_z_pos} steps (Mean={mean_counts:.1f})")
 
             print(f"[DEBUG] Final refresh...", flush=True)
 
@@ -478,15 +458,23 @@ def main(
     }
 
     if save_data:
-        print("Saving data...", flush=True)
-        path = dm.get_file_path(__file__, ts, getattr(nv_sig, "name", "nv"))
-        dm.save_figure(fig, path)
-        dm.save_raw_data(raw_data, path, keys_to_compress=["img_arrays"])
-        print(f"Data saved to: {path}")
+        print("Saving data and figures...", flush=True)
+        base_path = dm.get_file_path(__file__, ts, getattr(nv_sig, "name", "nv"))
 
-    # Turn off interactive mode and show final plot
+        # Save each figure separately with Z index in filename
+        for z_idx, (fig, z_pos) in enumerate(zip(all_figures, z_positions)):
+            # Create filename with Z index
+            fig_path = base_path.parent / f"{base_path.stem}_z{z_idx:03d}_pos{z_pos}.png"
+            dm.save_figure(fig, fig_path)
+            print(f"  Saved figure {z_idx+1}/{len(all_figures)}: {fig_path.name}")
+
+        # Save raw data once (contains all images)
+        dm.save_raw_data(raw_data, base_path, keys_to_compress=["img_arrays"])
+        print(f"Data saved to: {base_path}")
+
+    # Turn off interactive mode and show final plots
     plt.ioff()
-    print("Displaying final plot (close window to exit)...", flush=True)
+    print(f"Displaying {len(all_figures)} figure windows (close all to exit)...", flush=True)
     kpl.show()
 
     return all_images_array, z_positions_array
