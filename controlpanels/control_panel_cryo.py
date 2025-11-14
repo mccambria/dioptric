@@ -35,6 +35,7 @@ import majorroutines.confocal.confocal_image_sample as image_sample
 # import majorroutines.confocal.spin_echo as spin_echo
 import majorroutines.confocal.confocal_stationary_count as stationary_count
 import majorroutines.confocal.z_scan_1d as z_scan_1d
+import majorroutines.confocal.z_scan_2d as z_scan_2d
 import majorroutines.calibration.calibrate_z_axis as calibrate_z_axis
 from majorroutines.calibration import diagnose_z_direction
 from majorroutines.calibration import approach_surface
@@ -219,7 +220,7 @@ def do_calibrate_z_axis(nv_sig):
 
 
 # region 1D Scan 
-def do_z_scan_1d(nv_sig, num_steps=500, step_size=-1, num_averages=1, min_threshold=100):
+def do_z_scan_1d(nv_sig, num_steps=500, step_size=1, num_averages=1, min_threshold=100):
     """
     Perform a 1D Z-axis scan without calibration.
 
@@ -247,13 +248,58 @@ def do_z_scan_1d(nv_sig, num_steps=500, step_size=-1, num_averages=1, min_thresh
     """
 
     results = z_scan_1d.main(
-        nv_sig, 
-        num_steps=1000, 
-        step_size=1, 
-        num_averages=1, 
-        min_threshold=100
+        nv_sig,
+        num_steps=num_steps,
+        step_size=step_size,
+        num_averages=num_averages,
+        min_threshold=min_threshold
     )
     return results
+
+
+def do_z_scan_2d(nv_sig):
+    """
+    Perform a 3D scan: 2D XY confocal images at multiple Z depths.
+
+    At each Z position, performs a complete 2D XY confocal scan using galvo mirrors.
+    Generates one image per Z slice, displayed as subplots in a single figure.
+
+    This routine:
+    1. Starts at the current Z position
+    2. Moves Z relatively by z_step_size using piezo controls
+    3. Performs complete 2D XY galvo scan (like do_image_sample)
+    4. Generates and displays 2D image for this Z position
+    5. Checks safety threshold (pauses if mean counts drop too low)
+    6. Repeats for all Z steps
+
+    Z Direction Convention (absolute positioning):
+    - Negative z_step_size: moves TOWARD sample (closer)
+    - Positive z_step_size: moves AWAY FROM sample (farther)
+
+    Returns the 3D image array and Z positions.
+    """
+    # XY scan parameters (matching do_image_sample defaults)
+    scan_range = 0.2  # XY range in volts
+    num_steps = 60    # XY resolution
+
+    # Z scan parameters
+    num_z_steps = 5   # Number of Z slices
+    z_step_size = -1    
+
+    # Safety and acquisition
+    num_averages = 1        # Samples per pixel
+    min_threshold = 100     # Pause if counts per image drops below this
+
+    return z_scan_2d.main(
+        nv_sig,
+        x_range=scan_range,
+        y_range=scan_range,
+        num_steps=num_steps,
+        num_z_steps=num_z_steps,
+        z_step_size=z_step_size,
+        num_averages=num_averages,
+        min_threshold=min_threshold,
+    )
 
 # end region
 
@@ -658,10 +704,11 @@ if __name__ == "__main__":
         #region 1D scan + Calibrate
         #do_calibrate_z_axis(nv_sig)
         do_z_scan_1d(nv_sig)
+        # do_z_scan_2d(nv_sig)
 
         # Manually set Z reference to current position
-        piezo = pos.get_positioner_server(CoordsKey.Z)
-        print(piezo.get_z_position())
+        # piezo = pos.get_positioner_server(CoordsKey.Z)
+        # print(piezo.get_z_position())
         # piezo.set_z_reference()
 
         # region 2D scan
@@ -680,12 +727,12 @@ if __name__ == "__main__":
         # do_image_sample(nv_sig)
         # do_image_sample_zoom(nv_sig, nv_minus_initialization=True)
         # Z AXIS PIEZO SCAN
-        z_range = np.linspace(-10, -50, 2)
-        for z in z_range:
-            nv_sig.coords[CoordsKey.Z] = z
-            pos.set_xyz_on_nv(nv_sig)
+        # z_range = np.linspace(-10, -50, 2)
+        # for z in z_range:
+            # nv_sig.coords[CoordsKey.Z] = z
+            # pos.set_xyz_on_nv(nv_sig)
             # do_image_sample_zoom(nv_sig)
-            do_image_sample(nv_sig)
+            # do_image_sample(nv_sig)
 
         # do_image_sample_zoom(nv_sig)
         # do_image_sample(nv_sig, nv_minus_initialization=True)
