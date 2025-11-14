@@ -19,6 +19,7 @@ import inspect
 import re, hashlib, datetime as dt
 import itertools, random
 import pandas as pd
+import numbers
 
 # --- Optional numba (falls back gracefully) ----------------------------------
 try:
@@ -215,25 +216,6 @@ def _uniformize(times_us, y):
     yu = np.interp(tu, t, y)
     return tu, yu
 
-def _fft_peak_freq(times_us, resid, fmin, fmax):
-    """Find dominant frequency (cycles/μs) in [fmin, fmax] from FFT of residual."""
-    t, r = _uniformize(times_us, resid)
-    if t.size < 16:
-        return None
-    # detrend & window
-    r = r - np.nanmedian(r)
-    r = np.nan_to_num(r, nan=0.0)
-    r = r * np.hanning(len(r))
-    dt = np.diff(t).mean()
-    freqs = np.fft.rfftfreq(len(r), d=dt)  # cycles per μs if t is μs
-    Y = np.fft.rfft(r)
-    band = (freqs >= fmin) & (freqs <= fmax)
-    if not np.any(band):
-        return None
-    k = np.argmax(np.abs(Y[band]))
-    f_hat = float(freqs[band][k])
-    return f_hat if np.isfinite(f_hat) and f_hat > 0 else None
-
 def _initial_guess_and_bounds(times_us, y, enable_extras=True, fixed_rev_time=None):
     """
     Smart p0 and bounds for fine_decay that (a) respect your 0→0.6→1 behavior
@@ -299,42 +281,6 @@ def _initial_guess_and_bounds(times_us, y, enable_extras=True, fixed_rev_time=No
 
     p0.extend(extra_p0); lb.extend(extra_lb); ub.extend(extra_ub)
     return np.array(p0, float), np.array(lb, float), np.array(ub, float)
-
-def _seed_osc_from_grid(times_us, y, yerr, core_params, fit_fn_core,
-                        f_lo=0.02, f_hi=0.15, n_grid=60, phase_grid=(0.0, np.pi/2, np.pi, -np.pi/2)):
-    """
-    Given a core fit (no oscillation), find a good (osc_amp, f, phi) seed by
-    linear regression over a coarse frequency grid. Returns (amp, f, phi).
-    """
-    t = np.asarray(times_us, float)
-    yy = np.asarray(y, float)
-    ee = np.maximum(1e-9, np.asarray(yerr, float))
-    carrier = fit_fn_core(t, *core_params)   # this is baseline - dip if you use your core-only fn
-    # We want residual of data after removing baseline - dip:
-    resid = yy - carrier
-
-    best = (0.0, None, None)  # (amp, f, phi)
-
-    for f in np.linspace(f_lo, f_hi, n_grid):
-        c = np.cos(2*np.pi*f*t)
-        s = np.sin(2*np.pi*f*t)
-        # weighted linear regression resid ≈ carrier * (A*c + B*s)
-        X = np.column_stack([carrier*c, carrier*s])
-        w = 1.0 / ee
-        Xw = X * w[:, None]
-        yw = resid * w
-        # solve (Xw^T Xw) beta = Xw^T yw
-        try:
-            beta, *_ = np.linalg.lstsq(Xw, yw, rcond=None)
-        except np.linalg.LinAlgError:
-            continue
-        A, B = beta
-        amp = np.hypot(A, B)
-        phi = np.arctan2(-B, A)  # so that A cos + B sin = amp cos(· + phi)
-        if amp > best[0]:
-            best = (float(amp), float(f), float(phi))
-
-    return best  # (amp, f, phi)
 
 def core_only(tau, baseline, comb_contrast, revival_time, width0_us, T2_ms, T2_exp,
               amp_taper_alpha=0.0, width_slope=0.0, revival_chirp=0.0):
@@ -423,8 +369,6 @@ def _pick_best(cands):
     return cands[i_best]
 
 
-# ---------------- Amp-bound sweep helpers ----------------
-
 def _core_len_for_fn(fit_fn):
     """Number of core params before 'extras' start."""
     # fine_decay: [baseline, comb_contrast, revival_time, width0_us, T2_ms, T2_exp] -> 6
@@ -441,6 +385,7 @@ def _set_osc_amp_bounds(lb, ub, fit_fn, new_min, new_max):
     lb[idx_amp] = float(new_min)
     ub[idx_amp] = float(new_max)
     return True
+
 # === NEW: parameter indexing helpers =========================================
 def _param_index_map(fit_fn):
     """
@@ -496,68 +441,6 @@ def _freq_band_from_times(times_us, margin=0.05, fmax_cap=None):
     fmax = (1.0 + margin) * fmax
     return fmin, fmax
 
-# === NEW: FFT-based frequency seeding ========================================
-def _seed_freqs_fft(times_us, y, yerr, fit_fn_core, p0_core, lb_core, ub_core,
-                    band=None, n_peaks=3, include_harmonics=True):
-    """
-    1) Fit a core (no-extras) model to capture comb/envelope
-    2) FFT residual -> pick top 'n_peaks' in band
-    3) Optionally add harmonics (2f, 3f) if within band
-    Returns sorted unique candidate frequencies (list of floats).
-    """
-    # fit core with curve_fit; if it fails, least_squares fallback
-    try:
-        popt, _, _ = _fit_curve_fit(fit_fn_core, times_us, y, yerr,
-                                    p0_core, lb_core, ub_core, maxfev=120000)
-    except Exception:
-        try:
-            popt, _, _ = _fit_least_squares(fit_fn_core, times_us, y, yerr,
-                                            p0_core, lb_core, ub_core, max_nfev=120000)
-        except Exception:
-            # fallback: no detrending
-            popt = None
-
-    if popt is not None:
-        resid = y - fit_fn_core(times_us, *popt)
-    else:
-        resid = y - np.nanmedian(y)
-
-    fmin, fmax = band if band is not None else _freq_band_from_times(times_us)
-    # use your FFT helper
-    t, r = _uniformize(times_us, resid)
-    if t.size < 16:
-        return []
-
-    r = r - np.nanmedian(r)
-    r = np.nan_to_num(r, nan=0.0)
-    r = r * np.hanning(len(r))
-    dt = np.diff(t).mean()
-    freqs = np.fft.rfftfreq(len(r), d=dt)
-    Y = np.fft.rfft(r)
-    band_mask = (freqs >= fmin) & (freqs <= fmax)
-    if not np.any(band_mask):
-        return []
-
-    mags = np.abs(Y[band_mask])
-    fband = freqs[band_mask]
-    order = np.argsort(mags)[::-1]  # descending
-    picked = []
-    for k in order[:max(1, n_peaks)]:
-        f = float(fband[k])
-        if f > 0 and np.isfinite(f):
-            picked.append(f)
-
-    # add harmonics if desired
-    cands = set(picked)
-    if include_harmonics:
-        for f in list(picked):
-            for m in (2, 3, 0.5, 1/3):
-                fm = m * f
-                if fmin <= fm <= fmax:
-                    cands.add(fm)
-
-    return sorted(cands)
-
 def _normalize_freq_band(times_us, band=None, fmax_cap=None):
     fmin_samp, fmax_samp = _freq_band_from_times(times_us, margin=0.0, fmax_cap=fmax_cap)
     if band is None:
@@ -579,7 +462,6 @@ def _normalize_freq_band(times_us, band=None, fmax_cap=None):
             fmin, fmax = 0.0, max(1e-3, fmax_samp)
     return float(fmin), float(fmax)
 
-# === NEW: generic multi-sweeper ==============================================
 def _clone_vecs(*vecs):
     return [np.array(v, float) if v is not None else None for v in vecs]
 
@@ -657,18 +539,6 @@ def build_freq_pairs(freqs, band, max_pairs=40, min_sep=0.01):
             out.append((f0, f1))
     return out[:max_pairs]
 
-
-def harmonic_candidates(f0, kmax=4, tol=0.003):
-    # Return plausible companions around simple ratios: 1/2, 2/3, 3/4, 1, 4/3, 3/2, 2
-    ratios = [(1,2),(2,3),(3,4),(1,1),(4,3),(3,2),(2,1)]
-    cand = []
-    for p,q in ratios:
-        f = f0 * (p/q)
-        if f > 0: cand.append(f)
-    # Collapse near-duplicates
-    cand = sorted(set(round(c,6) for c in cand))
-    return cand
-
 # ---- parameter indexing helpers --------------------------------------------
 
 def _param_index_map(fit_fn):
@@ -708,16 +578,6 @@ def _set_initial(p0, idx, val):
     idx = int(idx)
     p0[idx] = float(val)
 
-def _as_float_list(xs):
-    out = []
-    for x in xs:
-        try:
-            out.append(float(x))
-        except Exception:
-            pass
-    return out
-
-# ---- main fast fitter -------------------------------------------------------
 
 # ================= Bound-hit repair utilities ================================
 
@@ -743,12 +603,6 @@ def _set_bounds(lb, ub, idx, vmin, vmax):
 def _set_initial(p0, idx, val):
     idx = int(idx); p0[idx] = float(val)
 
-def _as_float_list(xs):
-    out = []
-    for x in xs:
-        try: out.append(float(x))
-        except Exception: pass
-    return out
 
 def _bound_hits(popt, lb, ub, frac_tol=0.01, abs_tol=1e-9):
     """
@@ -1034,21 +888,76 @@ def _score_tuple(popt, redchi, lb, ub, pmap, *, amp_weight=1e-3, bound_weight=0.
     return (float(redchi) + pen, amp_weight * amp_norm)
 
 
+# ================= Parameter indexing / bounds helpers =======================
+
+def _param_index_map(fit_fn):
+    """
+    Map parameter names to indices for the chosen fit function.
+
+    For fine_decay (free revival_time):
+      [baseline, comb_contrast, revival_time, width0_us, T2_ms, T2_exp,
+       amp_taper_alpha, width_slope, revival_chirp,
+       osc_amp, osc_f0, osc_phi0, osc_f1, osc_phi1]
+
+    For fine_decay_fixed_revival (no revival_time in core):
+      [baseline, comb_contrast, width0_us, T2_ms, T2_exp,
+       amp_taper_alpha, width_slope, revival_chirp,
+       osc_amp, osc_f0, osc_phi0, osc_f1, osc_phi1]
+    """
+    if fit_fn is fine_decay:
+        names = [
+            "baseline","comb_contrast","revival_time","width0_us","T2_ms","T2_exp",
+            "amp_taper_alpha","width_slope","revival_chirp",
+            "osc_amp","osc_f0","osc_phi0","osc_f1","osc_phi1",
+        ]
+    else:  # fine_decay_fixed_revival
+        names = [
+            "baseline","comb_contrast","width0_us","T2_ms","T2_exp",
+            "amp_taper_alpha","width_slope","revival_chirp",
+            "osc_amp","osc_f0","osc_phi0","osc_f1","osc_phi1",
+        ]
+    return {n: i for i, n in enumerate(names)}
+
+def _core_len_for_fn(fit_fn):
+    """Number of 'core' params before oscillation extras start."""
+    return 6 if fit_fn is fine_decay else 5
+
+def _set_bounds(lb, ub, idx, vmin, vmax):
+    idx = int(idx)
+    lb[idx] = float(vmin)
+    ub[idx] = float(vmax)
+
+def _set_initial(p0, idx, val):
+    idx = int(idx)
+    p0[idx] = float(val)
+
+def _get_val(vec, idx, default=None):
+    return float(vec[idx]) if (0 <= idx < len(vec)) else default
+
+def _set_osc_amp_bounds(lb, ub, fit_fn, new_min, new_max):
+    """
+    In-place change of osc_amp bounds in
+    [amp_taper_alpha, width_slope, revival_chirp, osc_amp, ...].
+    """
+    k0 = _core_len_for_fn(fit_fn)  # start of extras
+    idx_amp = k0 + 3               # extras: α, slope, chirp, osc_amp, ...
+    if idx_amp >= len(lb):
+        return False
+    lb[idx_amp] = float(new_min)
+    ub[idx_amp] = float(new_max)
+    return True
+
+def _clone_vecs(*vecs):
+    return [np.array(v, float) if v is not None else None for v in vecs]
+
+# Small osc_amp window by default – more physics-motivated and numerically stable
 def _amp_windows_and_seeds():
-    # small→large windows; seeds inside each
+    # windows in osc_amp, and a few seeds inside each
     return [
-        ((-0.3, 0.3), [0.10, 0.20]),
-        ((-0.6, 0.6), [0.15, 0.35, 0.55]),
-        ((-1.0, 1.0), [0.25, 0.50, 0.85]),
-        ((-2.0, 2.0), [0.40, 0.80, 1.20]),
+        ((-0.6, 0.6), [0.15, 0.35]),
+        ((-1.0, 1.0), [0.35, 0.75]),
     ]
-def _amp_windows_and_seeds():
-    # small→large windows; seeds inside each
-    return [
-        ((-0.6, 0.6), [0.35]),
-    ]
-import numbers
-import numpy as np
+
 
 def _is_num(x):
     return isinstance(x, numbers.Number) and np.isfinite(x)
@@ -1070,122 +979,20 @@ def _sanitize_overrides(ov: dict, pmap: dict) -> dict:
             raise TypeError(f"override '{k}' must be numeric, got {v!r} ({type(v)})")
         clean[k] = float(v)
     return clean
-# --- Allowed f+/- extraction (cycles/µs native; kHz adapter provided) --------
-
-def _hz_to_cyc_per_us(f_hz: float) -> float:
-    return float(f_hz) / 1e6  # cycles per microsecond == MHz
-
-def _extract_allowed_from_records(records, *,
-                                  orientations=None,
-                                  band=None,            # (fmin, fmax) in cycles/µs
-                                  kHz_range=None,       # alias: (fmin, fmax) in kHz
-                                  f_range_kHz=None,     # alias: (fmin, fmax) in kHz
-                                  dedupe_tol_cyc_per_us=1e-6):
-    """
-    Extract allowed f+/- lines from JSON-like records.
-
-    Input format (per record):
-      {
-        "orientation": (s1, s2, s3),
-        "f_plus_Hz":  <float> | None,
-        "f_minus_Hz": <float> | None,
-        "kappa":      <float> (optional)
-      }
-
-    Filters by "orientations" (list of tuples) if given, and by a frequency band.
-    Preferred band is 'band' in cycles/µs; alias support for kHz bands.
-
-    Returns: list[dict] with elements like
-      {"f": cycles/µs, "kappa": float, "src": record, "which": "f_plus_Hz"|"f_minus_Hz"}
-    """
-    out = []
-    if not isinstance(records, (list, tuple)) or not records:
-        return out
-
-    # --- Band alias normalization ---
-    if band is None:
-        kHz_rng = f_range_kHz or kHz_range
-        if kHz_rng is not None:
-            fmin_cyc = float(kHz_rng[0]) / 1000.0
-            fmax_cyc = float(kHz_rng[1]) / 1000.0
-            band = (min(fmin_cyc, fmax_cyc), max(fmin_cyc, fmax_cyc))
-
-    ori_set = set(map(tuple, orientations)) if orientations else None
-
-    for r in records:
-        try:
-            ori = tuple(r.get("orientation", ()))
-            if ori_set and (ori not in ori_set):
-                continue
-
-            kappa = float(r.get("kappa", 1.0))
-            for which in ("f_plus_Hz", "f_minus_Hz"):
-                f_hz = r.get(which, None)
-                if f_hz is None:
-                    continue
-                f = _hz_to_cyc_per_us(f_hz)  # cycles/µs
-                if not (np.isfinite(f) and f > 0):
-                    continue
-                if (band is None) or (band[0] <= f <= band[1]):
-                    out.append({"f": float(f), "kappa": kappa, "src": r, "which": which})
-        except Exception:
-            # ignore malformed line
-            continue
-
-    # Sort + dedupe (collapse near-duplicates)
-    out.sort(key=lambda d: d["f"])
-    uniq = []
-    for d in out:
-        if (not uniq) or (abs(d["f"] - uniq[-1]["f"]) > dedupe_tol_cyc_per_us):
-            uniq.append(d)
-    return uniq
-
-def _rank_allowed(allowed_list, mode="none"):
-    """
-    Reorder by weight.
-      mode: "none" | "kappa" | "per_line"
-        - "kappa": sort by descending kappa
-        - "per_line": uniform weight but keep stable order
-    """
-    if mode == "kappa":
-        return sorted(allowed_list, key=lambda d: float(d.get("kappa", 1.0)), reverse=True)
-    return list(allowed_list)
-
-# --- Adapter that returns (allowed_kHz, weights) for legacy callers -----------
-
-def extract_allowed_kHz_and_weights(records, *,
-                                    orientations=None,
-                                    band_kHz=None,            # (fmin, fmax) in kHz
-                                    weight_mode="none"):      # "none" | "kappa" | "per_line"
-    """
-    Convenience wrapper that produces two aligned arrays:
-        allowed_kHz: list[float]
-        weights:     list[float] or None
-    """
-    # Reuse the main extractor with alias band arg
-    allowed = _extract_allowed_from_records(
-        records,
-        orientations=orientations,
-        f_range_kHz=band_kHz,      # alias supported above
-    )
-
-    if not allowed:
-        return [], None
-
-    allowed = _rank_allowed(allowed, mode=weight_mode)
-    allowed_kHz = [d["f"] * 1000.0 for d in allowed]          # cycles/µs -> kHz
-    if weight_mode == "kappa":
-        weights = [float(d.get("kappa", 1.0)) for d in allowed]
-    elif weight_mode == "per_line":
-        weights = [1.0] * len(allowed)
-    else:
-        weights = None
-    return allowed_kHz, weights
 
 def extract_catalog_pairs_cyc(records, orientations, band_kHz, weight_mode):
+    """
+    Extract (f0,f1) pairs from catalog in cycles/µs (MHz):
+
+      f0 = max(f_plus, f_minus)
+      f1 = min(f_plus, f_minus)
+
+    Both must fall inside [kmin, kmax] in kHz.
+    """
     pairs = []
     weights = []
     kmin, kmax = band_kHz
+
     for r in records:
         # optional orientation filter
         if orientations is not None:
@@ -1201,7 +1008,7 @@ def extract_catalog_pairs_cyc(records, orientations, band_kHz, weight_mode):
         fplus_kHz  = float(fplus_Hz)  / 1e3
         fminus_kHz = float(fminus_Hz) / 1e3
 
-        # both must lie within the kHz band (you can relax if desired)
+        # both must lie within the kHz band
         if not (kmin <= fplus_kHz <= kmax and kmin <= fminus_kHz <= kmax):
             continue
 
@@ -1209,25 +1016,24 @@ def extract_catalog_pairs_cyc(records, orientations, band_kHz, weight_mode):
         fplus_cyc  = fplus_kHz  / 1000.0
         fminus_cyc = fminus_kHz / 1000.0
 
-        # enforce our convention f0 >= f1 ≥ 0
         f0 = max(fplus_cyc, fminus_cyc)
         f1 = min(fplus_cyc, fminus_cyc)
         if f0 <= 0.0 or f1 < 0.0:
             continue
 
-        # keep
         pairs.append((f0, f1))
         if weight_mode == "kappa":
             w = float(r.get("kappa", 1.0))
         elif weight_mode == "per_line":
-            w = 1.0  # or whatever you define per pair
+            w = 1.0
         else:
             w = 1.0
         weights.append(w)
 
     pairs = np.asarray(pairs, float)
-    weights = np.asarray(weights, float) if len(weights) else None
+    weights = np.asarray(weights, float) if weights else None
     return pairs, weights
+
 # ================= Updated fitter with bound-repair ===========================
 
 def fit_one_nv_with_freq_sweeps(
@@ -1320,54 +1126,13 @@ def fit_one_nv_with_freq_sweeps(
         fixed_rev_time=(None if fit_fn_base is fine_decay else fixed_rev_time),
     )
     pmap = _param_index_map(fit_fn_base)
-    
-    def _try_anti_cap(popt, lb, ub, used_fn, overrides, *, tol_rel=0.10):
-        pmap = _param_index_map(used_fn)
-        iT2 = pmap.get("T2_ms", None)
-        if iT2 is None: return (popt, None, None)
-
-        # is T2 near upper wall?
-        if not (np.isfinite(ub[iT2]) and abs(ub[iT2] - popt[iT2]) <= 0.01*max(1e-12, ub[iT2]-lb[iT2])):
-            return (popt, None, None)
-
-        best = (np.inf, popt, None)  # (redchi, popt, pcov)
-        for (amin, amax), a_seeds in [((-0.3,0.3), [0.1,0.2]),
-                                    ((-0.6,0.6), [0.15,0.35])]:
-            base_p0, base_lb, base_ub = _clone_vecs(p0_base, lb_base, ub_base)
-            _set_osc_amp_bounds(base_lb, base_ub, used_fn, amin, amax)
-            for a0 in a_seeds:
-                ov2 = _sanitize_overrides(ov2, _param_index_map(fit_fn_base))
-                p0_try, lb_try, ub_try = _apply_param_overrides(base_p0, base_lb, base_ub, used_fn, ov2, None)
-                try:
-                    popt2, pcov2, red2 = _fit_least_squares(used_fn, t, yy, ee, p0_try, lb_try, ub_try,
-                                                            max_nfev=small_max_nfev//2)
-                except Exception:
-                    continue
-                score = _score_tuple(popt2, red2, lb_try, ub_try, pmap)
-                if score[0] < best[0]:
-                    best = (score[0], popt2, pcov2)
-
-        # accept if χ² increased only mildly
-        _, popt_new, pcov_new = best
-        if popt_new is None: return (popt, None, None)
-
-        yfit_old = used_fn(t, *popt)
-        red_old  = _chi2_red(yy, ee, yfit_old, len(popt))
-        yfit_new = used_fn(t, *popt_new)
-        red_new  = _chi2_red(yy, ee, yfit_new, len(popt_new))
-
-        if (red_new - red_old) <= tol_rel * max(1e-9, red_old):
-            if verbose: print("[ANTI-CAP] Accepted alt solution: similar χ², \(T_2\) off the wall")
-            return (popt_new, pcov_new, red_new)
-        return (popt, None, None)
 
     # Core-only vectors (for FFT detrending / quick trials)
     if enable_extras:
         kcore = _core_len_for_fn(fit_fn_base)
-        p0_core, lb_core, ub_core = p0_base[:kcore], lb_base[:kcore], ub_base[:kcore]
     else:
         kcore = len(p0_base)
-        p0_core, lb_core, ub_core = p0_base, lb_base, ub_base
+
 
     # -----------------------------
     # 3) Frequency band + bound boxes
@@ -1387,107 +1152,7 @@ def fit_one_nv_with_freq_sweeps(
                 bound_boxes[k] = tuple(v)
 
     bound_boxes = _sanitize_bound_boxes(bound_boxes, band)
-    
-    # # -----------------------------
-    # # 4) Allowed-line seeds ONLY (no FFT)
-    # # -----------------------------
-    # if allowed_records is None or len(allowed_records) == 0:
-    #     raise RuntimeError("allowed_records must be provided to restrict f to f+/-.")
-    
-    # # Build band in kHz for the extractor
-    # band_kHz = (lo * 1000.0, hi * 1000.0)
-    # allowed_kHz, wts = extract_allowed_kHz_and_weights(
-    #     allowed_records,
-    #     orientations=allowed_orientations,
-    #     band_kHz=band_kHz,
-    #     weight_mode=allowed_weight_mode,  # "none" | "kappa" | "per_line"
-    # )
 
-    # # --- Normalize & align (keep freqs and weights locked together) ----------
-    # allowed_kHz = np.asarray(allowed_kHz, dtype=float)
-    # wts = None if wts is None else np.asarray(wts, dtype=float)
-
-    # if allowed_kHz.size == 0:
-    #     # Hard fail in allowed-only mode
-    #     raise RuntimeError("No allowed f+/- fall within the sampling/Nyquist band.")
-
-    # # Convert to cycles/µs (== MHz)
-    # freqs_cyc = (allowed_kHz / 1000.0).astype(float)
-
-    # # Nyquist guard (stay slightly under hi)
-    # nyq_guard = 0.95
-    # hi_guard = nyq_guard * hi
-
-    # # First clamp into [lo, hi_guard] and apply mask to weights too
-    # in_guard = (freqs_cyc >= lo) & (freqs_cyc <= hi_guard)
-    # freqs_cyc = freqs_cyc[in_guard]
-    # if wts is not None:
-    #     wts = wts[in_guard]
-
-    # if freqs_cyc.size == 0:
-    #     raise RuntimeError("No allowed lines remain after Nyquist guard; widen band or catalog.")
-
-    # # Derive a relaxed global allowed window around remaining lines using ±allowed_tol_kHz
-    # loA = max(lo,  float(np.min(freqs_cyc)) - allowed_tol_kHz / 1000.0)
-    # hiA = min(hi_guard, float(np.max(freqs_cyc)) + allowed_tol_kHz / 1000.0)
-    # if not (np.isfinite(loA) and np.isfinite(hiA)) or (hiA <= loA):
-    #     raise RuntimeError("Allowed frequency window collapsed after guarding; check inputs.")
-
-    # # Clamp again specifically to [loA, hiA]
-    # in_A = (freqs_cyc >= loA) & (freqs_cyc <= hiA)
-    # freqs_cyc = freqs_cyc[in_A]
-    # if wts is not None:
-    #     wts = wts[in_A]
-
-    # if freqs_cyc.size == 0:
-    #     raise RuntimeError("No allowed lines remain after clamping to [loA, hiA].")
-
-    # # De-duplicate (rounding in cyc/µs space); keep first occurrence; keep weights aligned
-    # key = np.round(freqs_cyc, 6)  # ~1 Hz in cyc/µs is 1e-6; 6 dp is good
-    # _, uniq_idx = np.unique(key, return_index=True)
-    # uniq_idx = np.sort(uniq_idx)
-    # freqs_cyc = freqs_cyc[uniq_idx]
-    # if wts is not None:
-    #     wts = wts[uniq_idx]
-
-    # if freqs_cyc.size == 0:
-    #     raise RuntimeError("Allowed-list collapsed after dedupe; relax tolerance or widen band.")
-
-    # # Optional: weight-aware ordering (highest first). Otherwise preserve order.
-    # ordered = freqs_cyc.tolist()
-    # if (allowed_weight_mode != "none") and (wts is not None):
-    #     freqs_src = np.asarray(freqs_cyc, float).ravel()
-    #     wts_src   = np.asarray(wts, float).ravel()
-
-    #     def _nearest_weight(freq):
-    #         j = int(np.argmin(np.abs(freqs_src - float(freq))))
-    #         if wts_src.size == 0:
-    #             return 0.0
-    #         j = max(0, min(j, wts_src.size - 1))  # clamp to avoid OOB
-    #         w = float(wts_src[j])
-    #         return w if np.isfinite(w) else 0.0
-
-    #     ordered = sorted(ordered, key=_nearest_weight, reverse=True)
-
-    # # Cap to top-K seeds to control grid growth
-    # if len(ordered) > prior_pairs_topK:
-    #     ordered = ordered[:prior_pairs_topK]
-    # # Bound boxes: use tightened window [loA, hiA]; then sanitize with overall (lo, hi)
-    # bound_boxes = {}
-    # if enable_extras and "osc_f0" in pmap:
-    #     bound_boxes["osc_f0"] = (max(0.0, loA), hiA)
-    # if enable_extras and "osc_f1" in pmap:
-    #     bound_boxes["osc_f1"] = (0.0, hiA)  # allow single-line fits via f1=0
-    # bound_boxes = _sanitize_bound_boxes(bound_boxes, (lo, hi))
-
-    # # Seed grid from allowed lines (+ 0.0 in f1 for single-line)
-    # seed_grid = {}
-    # if enable_extras and "osc_f0" in pmap and len(ordered) > 0:
-    #     seed_grid["osc_f0"] = ordered
-    # if enable_extras and "osc_f1" in pmap:
-    #     seed_grid["osc_f1"] = [0.0] + (ordered if len(ordered) > 0 else [])
-    # Pull pairs from catalog, then guard by Nyquist
-    
     # -----------------------------
     # 4) Allowed-line PAIRS ONLY (no FFT, no cross-pair mixing)
     # -----------------------------
@@ -1495,20 +1160,20 @@ def fit_one_nv_with_freq_sweeps(
         raise RuntimeError("allowed_records must be provided to restrict f to f+/− pairs.")
 
     band_kHz = (lo * 1000.0, hi * 1000.0)
-    
     pairs_cyc, pair_wts = extract_catalog_pairs_cyc(
-            allowed_records, allowed_orientations, band_kHz, allowed_weight_mode
-        )
+        allowed_records, allowed_orientations, band_kHz, allowed_weight_mode
+    )
 
     if pairs_cyc.size == 0:
         raise RuntimeError("No (f+, f−) pairs fall within the sampling/Nyquist band.")
 
     nyq_guard = 0.95
     hi_guard = nyq_guard * hi
-    m = (pairs_cyc[:,0] >= lo) & (pairs_cyc[:,0] <= hi_guard) & \
-        (pairs_cyc[:,1] >= 0.0) & (pairs_cyc[:,1] <= hi_guard)
+    m = (pairs_cyc[:, 0] >= lo) & (pairs_cyc[:, 0] <= hi_guard) & \
+        (pairs_cyc[:, 1] >= 0.0) & (pairs_cyc[:, 1] <= hi_guard)
     pairs_cyc = pairs_cyc[m]
-    if pair_wts is not None: pair_wts = pair_wts[m]
+    if pair_wts is not None:
+        pair_wts = pair_wts[m]
 
     if pairs_cyc.size == 0:
         raise RuntimeError("No pairs remain after Nyquist guard.")
@@ -1518,106 +1183,25 @@ def fit_one_nv_with_freq_sweeps(
     if (allowed_weight_mode != "none") and (pair_wts is not None):
         order = np.argsort(-pair_wts)
     pairs_cyc = pairs_cyc[order]
-    if pair_wts is not None: pair_wts = pair_wts[order]
+    if pair_wts is not None:
+        pair_wts = pair_wts[order]
 
     # De-duplicate pairs (round inside cyc/µs space)
-    key = np.round(pairs_cyc, 6)  # 6 dp is safe here
+    key = np.round(pairs_cyc, 6)
     _, uniq_idx = np.unique(key, axis=0, return_index=True)
     uniq_idx = np.sort(uniq_idx)
     pairs_cyc = pairs_cyc[uniq_idx]
-    if pair_wts is not None: pair_wts = pair_wts[uniq_idx]
+    if pair_wts is not None:
+        pair_wts = pair_wts[uniq_idx]
 
-    # Optional top-K cap
+    # Top-K subset used for the PRIOR stage
     if len(pairs_cyc) > prior_pairs_topK:
         pairs_cyc_topK = pairs_cyc[:prior_pairs_topK]
-        if pair_wts is not None:
-            pair_wts_topK = pair_wts[:prior_pairs_topK]
+        pair_wts_topK = pair_wts[:prior_pairs_topK] if pair_wts is not None else None
+    else:
+        pairs_cyc_topK = pairs_cyc
+        pair_wts_topK = pair_wts
 
-    # # ---------------------------------------------
-    # # 5) PRIOR (diversified allowed singles/pairs)
-    # # ---------------------------------------------
-    # all_candidates = []
-    # if prior_enable and enable_extras and ("osc_f0" in pmap) and len(pairs_cyc) > 0:
-    #     seeds = list(ordered)
-
-    #     # build prior overrides *only* from allowed lines:
-    #     prior_ovrs = []
-    #     # singles (f1 = 0)
-    #     prior_ovrs += [ {"osc_f0": f0, "osc_f1": 0.0} for f0 in seeds ]
-
-    #     # pairs (f1 < f0) with a small separation guard
-    #     for i, f0 in enumerate(seeds):
-    #         for f1 in seeds[:i]:
-    #             if abs(f0 - f1) >= prior_min_sep:
-    #                 prior_ovrs.append({"osc_f0": f0, "osc_f1": f1})
-
-    #     base_p0, base_lb, base_ub = _clone_vecs(p0_base, lb_base, ub_base)
-    #     _set_osc_amp_bounds(base_lb, base_ub, fit_fn_base, -1.0, 1.0)
-        
-    #     # progress accounting
-    #     AMP_WINDS = _amp_windows_and_seeds()  # [((amin,amax), [a_seeds...]), ...]
-    #     # AMP_WINDS = _amp_windows_and_seeds()  # [((amin,amax), [a_seeds...]), ...]
-    #     total_trials = sum(len(a_seeds) for _, a_seeds in AMP_WINDS) * len(prior_ovrs)
-
-    #     if verbose:
-    #         print(f"[PRIOR] starting: {len(prior_ovrs)} override(s) × "
-    #             f"{sum(len(a) for _, a in AMP_WINDS)} amp-seed(s) "
-    #             f"= {total_trials} trial(s) in band {lo:.4g}–{hi:.4g} cyc/µs", flush=True)
-
-    #     start_best = np.inf
-    #     best_prior = None
-        
-
-    #     for ov in prior_ovrs:
-    #         f0 = float(ov.get("osc_f0", 0.0))
-    #         f1 = float(ov.get("osc_f1", 0.0))
-    #         if not (lo <= f0 <= hi): continue
-    #         if not (0.0 <= f1 <= hi): continue
-
-    #         for (amin, amax), a_seeds in AMP_WINDS:
-    #             base_p0, base_lb, base_ub = _clone_vecs(p0_base, lb_base, ub_base)
-    #             _set_osc_amp_bounds(base_lb, base_ub, fit_fn_base, amin, amax)
-
-    #             for a0 in a_seeds:
-    #                 ov2 = dict(ov); ov2["osc_amp"] = np.clip(a0, amin, amax)
-
-    #                 p0_try, lb_try, ub_try = _apply_param_overrides(
-    #                     base_p0, base_lb, base_ub, fit_fn_base,
-    #                     overrides=ov2, bound_boxes=None,
-    #                 )
-
-    #                 try:
-    #                     # prefer extras
-    #                     popt, pcov, red = _fit_least_squares(
-    #                         fit_fn_base, t, yy, ee, p0_try, lb_try, ub_try, max_nfev=small_max_nfev//4
-    #                     )
-    #                 except Exception:
-    #                     # fallback: core-only
-    #                     try:
-    #                         popt, pcov, red = _fit_least_squares(
-    #                             fit_fn_base, t, yy, ee, p0_try[:kcore], lb_try[:kcore], ub_try[:kcore],
-    #                             max_nfev=small_max_nfev//4
-    #                         )
-    #                     except Exception:
-    #                         continue
-
-    #                 sc = _score_tuple(popt, red, lb_try, ub_try, _param_index_map(fit_fn_base))
-    #                 if sc[0] < start_best:
-    #                     start_best = sc[0]
-    #                     best_prior = ("lsq_prior", (amin, amax), ov2, popt, pcov, red, fit_fn_base)
-
-    #     if best_prior is not None:
-    #         name, ab, overrides, popt, pcov, red, used_fn = best_prior
-    #         all_candidates.append((ab, overrides, name, popt, pcov, red, used_fn))
-    #         if verbose:
-    #             print(f"[PRIOR-BEST] amp={ab}, mode={name}, redχ²={red:.4g}, overrides={overrides}")
-
-    #         if isinstance(early_stop_redchi, (int, float)) and red <= early_stop_redchi:
-    #             if verbose:
-    #                 print(f"[EARLY-STOP] Using prior candidate with redχ²={red:.4g}")
-    #             return popt, pcov, red, used_fn, ab, overrides
-    
-    
     # ---------------------------------------------
     # 5) PRIOR (keep catalog pairs; amplitude free)
     # ---------------------------------------------
@@ -1658,7 +1242,7 @@ def fit_one_nv_with_freq_sweeps(
                 _set_osc_amp_bounds(base_lb, base_ub, fit_fn_base, amin, amax)
 
                 # DO NOT add osc_amp to overrides -> keep it free
-                ov2 = dict( ov)
+                ov2 = dict(ov)
                 ov2 = _sanitize_overrides(ov2, _param_index_map(fit_fn_base))
 
                 p0_try, lb_try, ub_try = _apply_param_overrides(
@@ -1671,9 +1255,6 @@ def fit_one_nv_with_freq_sweeps(
                         fit_fn_base, t, yy, ee, p0_try, lb_try, ub_try,
                         max_nfev=small_max_nfev // 4
                     )
-                    # if verbose:
-                    #     print(f"[PRIOR try] f0={ov2['osc_f0']:.6g} f1={ov2['osc_f1']:.6g} "
-                    #         f"amp=free[{amin:.3g},{amax:.3g}] redχ²={red:.4g}")
                 except Exception:
                     # fallback: core-only
                     try:
@@ -1704,8 +1285,8 @@ def fit_one_nv_with_freq_sweeps(
     # ---------------------------------------------------
     # 6) Build PAIRED overrides (no mixing) + optional singles
     # ---------------------------------------------------
-    # Optional: “lock” pair freqs tightly so the optimizer cannot drift (0.0 = unlocked)
     lock_eps = float(globals().get("lock_pair_freqs_eps", 0.0))
+
     def _local_boxes_for_pair(ov):
         if lock_eps <= 0.0:
             return None
@@ -1714,17 +1295,17 @@ def fit_one_nv_with_freq_sweeps(
             "osc_f1": (max(0.0, ov["osc_f1"] - lock_eps), ov["osc_f1"] + lock_eps),
         }
 
-    # If you have extra_overrides_grid (e.g., phases), expand PER-PAIR (not cross-mixing f0/f1)
     def _product_with_extras(base_ov, extras_dict):
-        if not extras_dict: return [dict(base_ov)]
+        if not extras_dict:
+            return [dict(base_ov)]
         keys = list(extras_dict.keys())
         vals = [list(v) for v in extras_dict.values()]
         out = []
         def rec(i, cur):
-            if i == len(keys): out.append(cur.copy()); return
+            if i == len(keys):
+                out.append(cur.copy()); return
             k = keys[i]
             for x in vals[i]:
-                # x must be scalar here
                 if isinstance(x, (list, tuple, dict, np.ndarray)):
                     raise TypeError(f"extra override '{k}' must be scalar, got {type(x)}")
                 cur[k] = float(x)
@@ -1733,105 +1314,40 @@ def fit_one_nv_with_freq_sweeps(
         rec(0, dict(base_ov))
         return out
 
-
     # Final list of (override_dict, local_bound_boxes_or_None)
     paired_overrides = [{"osc_f0": float(f0), "osc_f1": float(f1)} for (f0, f1) in pairs_cyc]
     override_trials = []
     for ov in paired_overrides:
-        for t in _product_with_extras(ov, extra_overrides_grid):
-            t = _sanitize_overrides(t, _param_index_map(fit_fn_base))  # <— add this
-            override_trials.append((t, _local_boxes_for_pair(ov)))
+        for ov_ex in _product_with_extras(ov, extra_overrides_grid):
+            ov_ex = _sanitize_overrides(ov_ex, _param_index_map(fit_fn_base))
+            override_trials.append((ov_ex, _local_boxes_for_pair(ov)))
 
     # ---------------------------------------
     # 7) Full sweep over amp windows & seeds
     #    (coarse→fine survivor screening)
     # ---------------------------------------
     def _run_attempts_with_budget(p0_try, lb_try, ub_try, overrides, maxfev, max_nfev):
-        # type-guard
-        if overrides is not None and not isinstance(overrides, dict):
-            raise TypeError(f"overrides must be dict or None, got {type(overrides)}: {overrides}")
-
-        attempts = []
-
-        def _log(tag):
-            if verbose:
-                keys = ", ".join([f"{k}:{overrides[k]:.6g}" for k in overrides.keys()]) if overrides else ""
-                print(f"  [overrides={{ {keys} }}] {tag}")
-
-        # LSQ core-only
-        try:
-            _log("least_squares no-extras (soft_l1)")
-            popt_LB, pcov_LB, red_LB = _fit_least_squares(
-                fit_fn_base, t, yy, ee, p0_try[:kcore], lb_try[:kcore], ub_try[:kcore],
-                max_nfev=max_nfev
-            )
-            attempts.append(("lsq_noextras", popt_LB, pcov_LB, red_LB, fit_fn_base, "ok"))
-        except Exception as e:
-            attempts.append(("lsq_noextras", None, None, np.inf, fit_fn_base, f"fail: {e}"))
-
-        # LSQ extras
-        if enable_extras:
-            try:
-                _log("least_squares + extras (soft_l1)")
-                popt_L, pcov_L, red_L = _fit_least_squares(
-                    fit_fn_base, t, yy, ee, p0_try, lb_try, ub_try,
-                    max_nfev=max_nfev
-                )
-                attempts.append(("lsq_extras", popt_L, pcov_L, red_L, fit_fn_base, "ok"))
-            except Exception as e:
-                attempts.append(("lsq_extras", None, None, np.inf, fit_fn_base, f"fail: {e}"))
-
-        # curve_fit core-only
-        try:
-            _log("curve_fit no-extras")
-            popt_B, pcov_B, red_B = _fit_curve_fit(
-                fit_fn_base, t, yy, ee, p0_try[:kcore], lb_try[:kcore], ub_try[:kcore], maxfev=maxfev
-            )
-            attempts.append(("curve_fit_noextras", popt_B, pcov_B, red_B, fit_fn_base, "ok"))
-        except Exception as e:
-            attempts.append(("curve_fit_noextras", None, None, np.inf, fit_fn_base, f"fail: {e}"))
-
-        # curve_fit extras
-        if enable_extras:
-            try:
-                _log("curve_fit + extras")
-                popt, pcov, red = _fit_curve_fit(
-                    fit_fn_base, t, yy, ee, p0_try, lb_try, ub_try, maxfev=maxfev
-                )
-                attempts.append(("curve_fit_extras", popt, pcov, red, fit_fn_base, "ok"))
-            except Exception as e:
-                attempts.append(("curve_fit_extras", None, None, np.inf, fit_fn_base, f"fail: {e}"))
-
-        # fixed-revival try if base is free-revival
-        if fit_fn_base is fine_decay:
-            try:
-                _log("curve_fit fixed-revival")
-                p0_C, lb_C, ub_C = _initial_guess_and_bounds(
-                    t, yy, enable_extras=False, fixed_rev_time=fixed_rev_time
-                )
-                popt_C, pcov_C, red_C = _fit_curve_fit(
-                    fine_decay_fixed_revival, t, yy, ee, p0_C, lb_C, ub_C, maxfev=maxfev
-                )
-                attempts.append(("curve_fit_fixedrev", popt_C, pcov_C, red_C, fine_decay_fixed_revival, "ok"))
-            except Exception as e:
-                attempts.append(("curve_fit_fixedrev", None, None, np.inf, fine_decay_fixed_revival, f"fail: {e}"))
-
-        best_here = _pick_best(attempts)
-        if best_here is None:
-            return None
-        mode, popt, pcov, red, used_fn, _note = best_here
-        yfit = used_fn(times_us, *popt)
-        red  = _chi2_red(y, yerr, yfit, len(popt))
-        return (mode, popt, pcov, red, used_fn)
-    
-    def _run_attempts_with_budget(p0_try, lb_try, ub_try, overrides, maxfev, max_nfev):
         # bounds sanity
         if np.any(~np.isfinite(lb_try)) or np.any(~np.isfinite(ub_try)):
             if verbose: print("  [bounds] non-finite lb/ub; skip")
             return None
-        if np.any(ub_try < lb_try - 1e-12):
-            if verbose: 
-                bad = np.where(ub_try < lb_try - 1e-12)[0].tolist()
+
+        # Ensure strict lb < ub everywhere (SciPy requirement)
+        # If any interval is degenerate (lb == ub), widen it slightly around that value.
+        eps_bounds = 1e-10
+        bad_eq = (ub_try <= lb_try)
+        if np.any(bad_eq):
+            if verbose:
+                idx = np.where(bad_eq)[0].tolist()
+                print(f"  [bounds] lb>=ub at idx={idx}; widening by ±{eps_bounds:g}")
+            mid = 0.5 * (ub_try[bad_eq] + lb_try[bad_eq])
+            lb_try[bad_eq] = mid - eps_bounds
+            ub_try[bad_eq] = mid + eps_bounds
+
+        # If anything is still inverted (numeric weirdness), bail
+        if np.any(ub_try < lb_try):
+            if verbose:
+                bad = np.where(ub_try < lb_try)[0].tolist()
                 print(f"  [bounds] ub<lb at idx={bad}; skip")
             return None
 
@@ -1844,7 +1360,7 @@ def fit_one_nv_with_freq_sweeps(
         except Exception as e:
             if verbose: print(f"  [probe] model(p0) raised: {e!r}")
             return None
-
+        
         attempts = []
         def _log(tag):
             if verbose:
@@ -1910,11 +1426,13 @@ def fit_one_nv_with_freq_sweeps(
                 why = [a[0]+": "+str(a[5]) for a in attempts]
                 print("  [attempts] all failed → no candidate\n    " + "\n    ".join(why))
             return None
-
+        
         mode, popt, pcov, red, used_fn, _note = best_here
-        yfit = used_fn(times_us, *popt)
-        red  = _chi2_red(y, yerr, yfit, len(popt))
+        # Recompute χ² consistently on sanitized data
+        yfit = used_fn(t, *popt)
+        red  = _chi2_red(yy, ee, yfit, len(popt))
         return (mode, popt, pcov, red, used_fn)
+
 
     # main sweep
     all_candidates = []  # make sure this exists before use
@@ -1969,6 +1487,7 @@ def fit_one_nv_with_freq_sweeps(
             print("[SWEEP-EMPTY] Falling back to prior winner.")
         ab, ov, mode, popt, pcov, red, used_fn = best_prior_candidate
         return popt, pcov, red, used_fn, ab, ov
+    
     # -----------------------------
     # 8) Select best (and refine if needed)
     # -----------------------------
@@ -1991,11 +1510,6 @@ def fit_one_nv_with_freq_sweeps(
     abest, overrides_best, mode_best, popt_best, pcov_best, red_best, fn_best = \
         _pick_best_with_penalty(all_candidates, lb_base, ub_base, _param_index_map(fit_fn_base))
     
-    # after picking (abest, overrides_best, mode_best, popt_best, pcov_best, red_best, fn_best)
-    popt_alt, pcov_alt, red_alt = _try_anti_cap(popt_best, lb_base, ub_base, fn_best, overrides_best)
-    if popt_alt is not None and popt_alt is not popt_best:
-        popt_best, pcov_best, red_best = popt_alt, pcov_alt, red_alt if red_alt is not None else red_best
-
         
     if verbose:
         print(f"[BEST] amp={abest}, mode={mode_best}, redχ²={red_best:.4g}, overrides={overrides_best}")
@@ -2142,7 +1656,7 @@ def run_with_amp_and_freq_sweeps(
     *,
     # -------- amplitude sweep --------
     amp_bound_grid=((-0.5, 0.5), (-1, 1), (-2, 2)),
-
+    
     # -------- frequency handling --------
     freq_bound_boxes=None,              # {"osc_f0":(lo,hi),"osc_f1":(lo,hi)} in cyc/µs
     freq_seed_band=None,                # (fmin,fmax) cyc/µs
@@ -2155,7 +1669,7 @@ def run_with_amp_and_freq_sweeps(
     # -------- model toggles --------
     use_fixed_revival=False,
     enable_extras=True,
-    fixed_rev_time=39.2,
+    fixed_rev_time=37.6,
 
     # -------- prior / early-stop --------
     prior_enable=True,

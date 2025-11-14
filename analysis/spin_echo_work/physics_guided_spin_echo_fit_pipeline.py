@@ -55,21 +55,6 @@ except Exception:
     pass
 
 @dataclass
-class FitOutputs:
-    timestamp: str
-    dataset_ids: List[str]
-    default_rev_us: float
-    run_flags: Dict[str, bool]
-    nv_labels: List[int]
-    times_us: List[float]
-    popts: List[Optional[List[float]]]
-    pcovs: List[Optional[List[List[float]]]]
-    red_chi2: List[Optional[float]]
-    fit_fn_names: List[Optional[str]]
-    unified_keys: List[str]
-
-
-@dataclass
 class FitConfig:
     # ---------------- Model toggles ----------------
     use_fixed_revival: bool = False
@@ -136,6 +121,95 @@ def _infer_sampling_band(times_us: np.ndarray, margin: float = 0.05) -> Tuple[fl
     fmin = max(0.0, fmin)
     return (float(fmin), float(fmax))
 
+def _load_catalog_records_if_needed(cfg: FitConfig) -> Optional[List[Dict]]:
+    # Priority: explicit cfg.allowed_records > cfg.catalog_path > None
+    if getattr(cfg, "allowed_records", None) is not None:
+        return cfg.allowed_records
+    if cfg.catalog_path:
+        if not os.path.isfile(cfg.catalog_path):
+            raise FileNotFoundError(f"Catalog not found: {cfg.catalog_path}")
+        with open(cfg.catalog_path, "r", encoding="utf-8") as f:
+            return json.load(f)
+    return None
+
+def filter_allowed_records(
+    records: List[Dict],
+    *,
+    band_cyc_per_us: Tuple[float, float],
+    orientations: Optional[List[Tuple[int,int,int]]] = None,
+    kmin_kHz: float = 10.0,
+    kmax_kHz: float = 6000.0,
+    tol_kHz: float = 8.0,
+    topK: int = 16,
+    weight_field: str = "kappa",
+) -> List[Dict]:
+    """
+    Filter + score allowed-line records so the fitter has a compact, high-value set.
+    """
+    lo, hi = band_cyc_per_us
+    if not (np.isfinite(lo) and np.isfinite(hi)) or hi <= max(lo, 1e-15):
+        raise ValueError(f"Bad band_cyc_per_us={band_cyc_per_us}")
+
+    kept: List[Tuple[float, Dict]] = []  # (score, record)
+    ori_set = set(map(tuple, orientations)) if orientations else None
+
+    for r in records:
+        # Orientation filter
+        if ori_set is not None:
+            ori = r.get("orientation")
+            if ori is None or tuple(ori) not in ori_set:
+                continue
+
+        # Collect candidate frequencies (kHz) within kHz span
+        fk = []
+        for key in ("f_plus_Hz", "f_minus_Hz"):
+            val = r.get(key, None)
+            if val is None:
+                continue
+            f_kHz = float(val) / 1e3
+            if kmin_kHz <= f_kHz <= kmax_kHz:
+                fk.append(f_kHz)
+        if not fk:
+            continue
+
+        # Intersect with Nyquist band (in cycles/µs == MHz)
+        cyc = [f / 1000.0 for f in fk]
+        cyc = [
+            f for f in cyc
+            if (lo - tol_kHz/1000.0) <= f <= (min(hi*0.95, hi) + tol_kHz/1000.0)
+        ]
+        if not cyc:
+            continue
+
+        # Weight: prefer larger kappa (or 1 if absent)
+        wt = float(r.get(weight_field, 1.0))
+        mid = 0.5 * (lo + hi)
+        dist = min(abs(f - mid) for f in cyc)
+        score = wt / (1e-9 + (1.0 + dist))
+        kept.append((score, r))
+
+    if not kept:
+        return []
+
+    kept.sort(key=lambda x: x[0], reverse=True)
+    trimmed = [rec for _, rec in kept[:max(1, topK)]]
+
+    # De-dup using (orientation, repr_kHz)
+    seen = set()
+    out = []
+    for r in trimmed:
+        repr_kHz = None
+        for key in ("f_plus_Hz", "f_minus_Hz"):
+            if r.get(key) is not None:
+                repr_kHz = round(float(r[key]) / 1e3, 2)
+                break
+        key_ = (tuple(r.get("orientation", (0,0,0))), repr_kHz)
+        if key_ in seen:
+            continue
+        seen.add(key_)
+        out.append(r)
+    return out
+
 # --------------------------- Main entry-point -------------------------------
 def fit_spin_echo_dataset(
     nv_list: List[int],
@@ -149,7 +223,7 @@ def fit_spin_echo_dataset(
     cfg: Optional[FitConfig] = None,
     save_dir: Optional[str] = None,   # (unused by dm; kept for API parity)
     make_plots: bool = False,
-) -> Tuple[FitOutputs, str]:
+):
     """Run the full fit (amp+freq sweeps), optionally with physics-guided allowed-lines.
 
     Returns:
@@ -158,97 +232,6 @@ def fit_spin_echo_dataset(
     if cfg is None:
         cfg = FitConfig()
 
-    # ---------- local helpers ----------
-    def _load_catalog_records_if_needed() -> Optional[List[Dict]]:
-        # Priority: explicit cfg.allowed_records > cfg.catalog_path > None
-        if getattr(cfg, "allowed_records", None) is not None:
-            return cfg.allowed_records
-        if cfg.catalog_path:
-            if not os.path.isfile(cfg.catalog_path):
-                raise FileNotFoundError(f"Catalog not found: {cfg.catalog_path}")
-            with open(cfg.catalog_path, "r", encoding="utf-8") as f:
-                return json.load(f)
-        return None
-
-    def allowed_records(
-        records: List[Dict],
-        *,
-        band_cyc_per_us: Tuple[float, float],
-        orientations: Optional[List[Tuple[int,int,int]]] = None,
-        kmin_kHz: float = 10.0,
-        kmax_kHz: float = 6000.0,
-        tol_kHz: float = 8.0,
-        topK: int = 16,
-        weight_field: str = "kappa",   # "kappa" or any numeric field in records
-    ) -> List[Dict]:
-        """
-        Filter + score allowed-line records so the fitter has a compact, high-value set.
-        Expects each record to have, at least, f_plus_Hz / f_minus_Hz and optionally 'kappa'.
-        """
-        lo, hi = band_cyc_per_us
-        if not (np.isfinite(lo) and np.isfinite(hi)) or hi <= max(lo, 1e-15):
-            raise ValueError(f"Bad band_cyc_per_us={band_cyc_per_us}")
-
-        kept: List[Tuple[float, Dict]] = []  # (score, record)
-        for r in records:
-            # Orientation filter
-            if orientations is not None:
-                ori = r.get("orientation")
-                if ori is None or tuple(ori) not in set(map(tuple, orientations)):
-                    continue
-
-            # Collect candidate frequencies (kHz) within kHz span
-            fk = []
-            for key in ("f_plus_Hz", "f_minus_Hz"):
-                val = r.get(key, None)
-                if val is None:
-                    continue
-                f_kHz = float(val) / 1e3
-                if kmin_kHz <= f_kHz <= kmax_kHz:
-                    fk.append(f_kHz)
-
-            if not fk:
-                continue
-
-            # Intersect with Nyquist band (in cycles/µs == MHz)
-            # Convert kHz -> cycles/µs: 1 kHz == 0.001 cycles/µs
-            cyc = [f / 1000.0 for f in fk]
-            cyc = [f for f in cyc if (lo - tol_kHz/1000.0) <= f <= (min(hi*0.95, hi) + tol_kHz/1000.0)]
-            if not cyc:
-                continue
-
-            # Weight: prefer larger kappa (or 1 if absent)
-            wt = float(r.get(weight_field, 1.0))
-            # Prefer mid-band values a bit (distance from center penalty)
-            mid = 0.5 * (lo + hi)
-            dist = min(abs(f - mid) for f in cyc)
-            score = wt / (1e-9 + (1.0 + dist))  # simple heuristic
-
-            kept.append((score, r))
-
-        if not kept:
-            return []
-
-        # Sort by score desc and cap
-        kept.sort(key=lambda x: x[0], reverse=True)
-        trimmed = [rec for _, rec in kept[:max(1, topK)]]
-
-        # Final de-dup by rounded kHz to keep a diverse set
-        seen = set()
-        out = []
-        for r in trimmed:
-            # choose a representative frequency to dedupe by
-            repr_kHz = None
-            for key in ("f_plus_Hz", "f_minus_Hz"):
-                if r.get(key) is not None:
-                    repr_kHz = round(float(r[key]) / 1e3, 2)
-                    break
-            key_ = (tuple(r.get("orientation", (0,0,0))), repr_kHz)
-            if key_ in seen:
-                continue
-            seen.add(key_)
-            out.append(r)
-        return out
 
     # ---------- inputs & band ----------
     norm_counts = np.asarray(norm_counts, float)
@@ -272,24 +255,23 @@ def fit_spin_echo_dataset(
     )
 
     # ---------- allowed-lines preparation ----------
-    # Load records (cfg.allowed_records takes precedence over cfg.catalog_path)
-    raw_records = _load_catalog_records_if_needed()
+    raw_records = _load_catalog_records_if_needed(cfg)
 
-    # Optionally shrink the set to keep the fitter snappy
     allowed_records_final = None
     if raw_records:
-        allowed_records_final = allowed_records(
+        allowed_records_final = filter_allowed_records(
             raw_records,
             band_cyc_per_us=band,
-            orientations=cfg.orientations if getattr(cfg, "orientations", None) else getattr(cfg, "allowed_orientations", None),
+            orientations=cfg.orientations or getattr(cfg, "allowed_orientations", None),
             kmin_kHz=max(1.0, cfg.f_range_kHz[0]),
             kmax_kHz=min(6000.0, cfg.f_range_kHz[1]),
-            tol_kHz=float(getattr(cfg, "allowed_tol_kHz", 8.0)),
-            topK=int(getattr(cfg, "n_keep_each", 6)) * 2,  # a modest global cap
-            weight_field=str(getattr(cfg, "prior_weight_mode", "kappa")),
+            tol_kHz=float(cfg.allowed_tol_kHz),
+            topK=int(cfg.n_keep_each) * 2,
+            weight_field=str(cfg.prior_weight_mode),
         )
         if cfg.verbose:
             print(f"[allowed] kept {len(allowed_records_final)} record(s) after shrink")
+
 
     # ---------- run the fitter ----------
     print("=== Spin-echo fits starting ===")
@@ -388,8 +370,7 @@ if __name__ == "__main__":
     catalog_path = r"analysis\spin_echo_work\essem_freq_kappa_catalog_22A.json"
     with open(catalog_path, "r") as f:
         catalog_json = json.load(f)
-    # In your new pipeline, pass the whole JSON as allowed_records; the fitter
-    # will filter by orientation, band, and compute weights internally.
+
     allowed_records = catalog_json
 
     # --- 3) Build config ---
@@ -400,7 +381,7 @@ if __name__ == "__main__":
         fixed_rev_time_us=37.6,
 
         # Amplitude sweep (tight for speed; expand later if needed)
-        amp_bound_grid=((-0.6, 0.6),(-1.0, 1.)),
+        amp_bound_grid=((-0.6, 0.6),(-1.0, 1.0)),
 
         # Catalog / allowed-lines (we're directly passing allowed_records below)
         catalog_path=catalog_path,                 # <- set None to avoid double-loading via helper
@@ -408,7 +389,7 @@ if __name__ == "__main__":
         p_occ=0.011,
         f_range_kHz=(1, 6000),
         n_keep_each=600,
-        prior_pairs_topK=600,
+        prior_pairs_topK=200,
         min_sep_cyc_per_us=0.03,          # coarser de-dup in band than 0.01
         prior_weight_mode="kappa",
         prior_per_line_scale=1.0,

@@ -6,7 +6,7 @@ Spin-echo: finer fit + fitted-figure + parameter panels
 - Optional two-frequency sin^2 beating with phases
 - Smoothly plugs into your plotting + data pipeline
 
-Author: you + chatgpt teammate
+Author: @saroj chand
 """
 
 import os
@@ -36,167 +36,20 @@ from utils import kplotlib as kpl
 from utils import widefield as widefield
 from utils.tool_belt import curve_fit
 from scipy.optimize import least_squares
+from analysis.spin_echo_work.echo_plot_helpers import extract_T2_freqs_and_errors, params_to_dict, plot_individual_fits
+
 # =============================================================================
 # Finer model
 #    - COMB has NO overall comb_contrast
 #    - MOD carries the overall amplitude (and optional beating)
 # =============================================================================
 
-def fine_decay(
-    tau_us,
-    baseline=1.0,
-    comb_contrast=0.6,
-    revival_time=37.0,
-    width0_us=6.0,
-    T2_ms=0.08,
-    T2_exp=1.0,
-    amp_taper_alpha=0.0,
-    width_slope=0.0,
-    revival_chirp=0.0,
-    # NEW (additive, signed; zero-mean cos carrier(s))
-    osc_amp=0.0,
-    osc_f0=0.0,
-    osc_phi0=0.0,
-    osc_f1=0.0,
-    osc_phi1=0.0,
-):
-    """
-    signal(τ) = baseline
-                - comb_contrast * envelope(τ) * COMB(τ)               [dip]
-                +                 envelope(τ) * COMB(τ) * OSC(τ)      [signed oscillation]
-
-    envelope(τ) = exp[-(τ / (1000*T2_ms))^T2_exp]
-    COMB(τ)     = Σ_k [ 1/(1+k)^amp_taper_alpha ] * exp(-((τ-μ_k)/w_k)^4)
-                    μ_k = k * revival_time * (1 + k*revival_chirp)
-                    w_k = width0_us * (1 + k*width_slope)
-
-    OSC(τ)      = osc_amp * [ cos(2π f0 τ + φ0) + cos(2π f1 τ + φ1) ]   # zero mean
-    τ in microseconds, f in cycles/μs, phases in rad.
-    """
-    amp_taper_alpha = 0.0 if amp_taper_alpha is None else float(amp_taper_alpha)
-    width_slope     = 0.0 if width_slope     is None else float(width_slope)
-    revival_chirp   = 0.0 if revival_chirp   is None else float(revival_chirp)
-    osc_amp         = 0.0 if osc_amp         is None else float(osc_amp)
-    osc_f0          = 0.0 if osc_f0          is None else float(osc_f0)
-    osc_f1          = 0.0 if osc_f1          is None else float(osc_f1)
-    osc_phi0        = 0.0 if osc_phi0        is None else float(osc_phi0)
-    osc_phi1        = 0.0 if osc_phi1        is None else float(osc_phi1)
-
-    tau = np.asarray(tau_us, dtype=float).ravel()
-    width0_us    = max(1e-9, float(width0_us))
-    revival_time = max(1e-9, float(revival_time))
-    T2_us        = max(1e-9, 1000.0 * float(T2_ms))
-    T2_exp       = float(T2_exp)
-
-    # envelope
-    envelope = np.exp(-((tau / T2_us) ** T2_exp))
-
-    # number of revivals to include
-    tau_max = float(np.nanmax(tau)) if tau.size else 0.0
-    n_guess = max(1, min(64, int(np.ceil(1.2 * tau_max / revival_time)) + 1))
-
-    comb = _comb_quartic_powerlaw(
-        tau,
-        revival_time,
-        width0_us,
-        amp_taper_alpha,
-        width_slope,
-        revival_chirp,
-        n_guess
-    )
-
-    carrier = envelope * comb
-    # baseline minus revival dip
-    dip = comb_contrast * carrier
-    # additive, zero-mean oscillation (can push above baseline)
-    osc = 0.0
-    if osc_amp != 0.0:
-        if osc_f0 != 0.0:
-            osc += np.cos(2*np.pi*osc_f0 * tau + osc_phi0)
-        if osc_f1 != 0.0:
-            osc += np.cos(2*np.pi*osc_f1 * tau + osc_phi1)
-
-    return baseline - dip + carrier * (osc_amp * osc)
-
-def fine_decay_fixed_revival(
-    tau,
-    baseline,
-    comb_contrast,
-    width0_us,
-    T2_ms,
-    T2_exp,
-    amp_taper_alpha=None,
-    width_slope=None,
-    revival_chirp=None,
-    osc_amp=None,
-    osc_f0=None,
-    osc_f1=None,
-    osc_phi0=None,
-    osc_phi1=None,
-    _fixed_rev_time_us=37.0
-):
-    return fine_decay(
-        tau,
-        baseline,
-        comb_contrast,
-        _fixed_rev_time_us,
-        width0_us,
-        T2_ms,
-        T2_exp,
-        amp_taper_alpha,
-        width_slope,
-        revival_chirp,
-        osc_amp,   # was osc_contrast
-        osc_f0,
-        osc_phi0,  # <-- swap order
-        osc_f1,    # <-- swap order
-        osc_phi1,
-    )
-
-
-@njit
-def _comb_quartic_powerlaw(
-    tau,
-    revival_time,
-    width0_us,
-    amp_taper_alpha,
-    width_slope,
-    revival_chirp,
-    n_guess
-):
-    """
-    NOTE: no overall amplitude factor here (no comb_contrast).
-    """
-    n = tau.shape[0]
-    out = np.zeros(n, dtype=np.float64)
-    tmax = 0.0
-    for i in range(n):
-        if tau[i] > tmax:
-            tmax = tau[i]
-
-    for k in range(n_guess):
-        mu_k = k * revival_time * (1.0 + k * revival_chirp)
-        w_k  = width0_us * (1.0 + k * width_slope)
-        if w_k <= 0.0:
-            continue
-        if mu_k > tmax + 5.0 * w_k:
-            break
-
-        amp_k = 1.0 / ((1.0 + k) ** amp_taper_alpha)  # <- amplitude taper only
-        inv_w4 = 1.0 / (w_k ** 4)
-
-        for i in range(n):
-            x = tau[i] - mu_k
-            out[i] += amp_k * np.exp(- (x * x) * (x * x) * inv_w4)
-
-    return out
-
+from analysis.spin_echo_work.echo_fit_models import fine_decay, fine_decay_fixed_revival
 
 # ==========================================
 #  helper: decide which NVs to keep based on T2_ms
 # ==========================================
 
-# --- helper: decide which NVs to keep based on T2_ms ---
 def _t2_keep_mask(t2_ms,
                   method="iqr",          # "iqr" | "mad" | "z" | None (combine with abs_range if you want)
                   iqr_k=1.5,             # IQR multiplier (1.5 classic, 3.0 stricter)
@@ -388,331 +241,7 @@ def plot_each_param_separately(popts, chi2_list,
 #    - safely handle shorter popts (fixed-revival)
 # ==========================================
 
-def _coerce_to_core6(p, default_rev=39.2):
-    p = np.asarray(p, float)
-    if len(p) == 5:  # fixed-revival core -> inject revival_time for plotting with fine_decay
-        b, cc, w0, t2, exp = p
-        return np.array([b, cc, default_rev, w0, t2, exp], float)
-    return p
 
-def _safe_call_fit_fn(fit_fn, t, p, default_rev=39.2):
-    try:
-        return fit_fn(t, *p)
-    except TypeError:
-        return fit_fn(t, *_coerce_to_core6(p, default_rev=default_rev))
-
-# --- helpers you already have ---
-def _coerce_to_core6(p, default_rev=39.2):
-    p = np.asarray(p, float)
-    if len(p) == 5:  # fixed-revival core -> inject revival_time for plotting with fine_decay
-        b, cc, w0, t2, exp = p
-        return np.array([b, cc, default_rev, w0, t2, exp], float)
-    return p
-
-def _safe_call_fit_fn(fit_fn, t, p, default_rev=39.2):
-    try:
-        return fit_fn(t, *p)
-    except TypeError:
-        return fit_fn(t, *_coerce_to_core6(p, default_rev=default_rev))
-
-# --- NEW: map p -> dict using the fit function signature (best effort) ---
-def _params_to_dict(fit_fn, p, default_rev=39.2):
-    """
-    Turn a parameter vector 'p' into a name->value dict using the fit_fn signature.
-    If lengths don't match (e.g., coercion paths), fall back to a sensible mapping.
-    """
-    p = np.asarray(p, float).tolist()
-    try:
-        sig = inspect.signature(fit_fn)
-        names = [k for k in sig.parameters.keys()][1:]  # drop 'tau'
-    except Exception:
-        names = []
-
-    d = {}
-    if names and len(p) <= len(names):
-        for name, val in zip(names, p):
-            d[name] = float(val)
-        # In case of fixed-revival core (no 'revival_time'):
-        if ('revival_time' not in d) and ('width0_us' in d) and ('T2_ms' in d):
-            d['revival_time'] = float(default_rev)
-        # Back-compat: normalize osc names
-        if 'osc_contrast' in d and 'osc_amp' not in d:
-            d['osc_amp'] = d['osc_contrast']
-    else:
-        # Fallback by length heuristics
-        # Core-6: [baseline, comb_contrast, revival_time, width0_us, T2_ms, T2_exp]
-        if len(p) >= 6:
-            d.update(dict(
-                baseline=p[0], comb_contrast=p[1], revival_time=p[2],
-                width0_us=p[3], T2_ms=p[4], T2_exp=p[5]
-            ))
-        elif len(p) == 5:
-            d.update(dict(
-                baseline=p[0], comb_contrast=p[1], revival_time=default_rev,
-                width0_us=p[2], T2_ms=p[3], T2_exp=p[4]
-            ))
-        # Try to place extras in a common order if present beyond core-6
-        # [amp_taper_alpha, width_slope, revival_chirp, osc_amp (or contrast),
-        #  osc_f0, osc_f1, osc_phi0, osc_phi1, mu0_us]
-        extras = p[6:] if len(p) > 6 else []
-        keys_extras = [
-            "amp_taper_alpha", "width_slope", "revival_chirp",
-            "osc_amp", "osc_f0", "osc_f1", "osc_phi0", "osc_phi1"
-        ]
-        for k, v in zip(keys_extras, extras):
-            d[k] = float(v)
-
-    # Final tidy: ensure consistent fields exist (even if missing)
-    for k in ["baseline","comb_contrast","revival_time","width0_us","T2_ms","T2_exp",
-              "amp_taper_alpha","width_slope","revival_chirp",
-              "osc_amp","osc_f0", "osc_f1","osc_phi0","osc_phi1"]:
-        d.setdefault(k, None)
-    return d
-
-def _echo_summary_lines(t_us, y):
-    if len(y) == 0:
-        return []
-    arr = np.asarray(y, float)
-    n = max(3, len(arr)//6)
-    early = float(np.nanmean(arr[:n])); late = float(np.nanmean(arr[-n:]))
-    return [f"range: {arr.min():.3f}…{arr.max():.3f}",
-            f"⟨early⟩→⟨late⟩: {early:.3f}→{late:.3f}"]
-
-def _format_param_box(pdct):
-    """Make a compact, readable box for the most relevant parameters."""
-    def fmt(v, nd=3):
-        return ("—" if v is None else (f"{v:.{nd}g}" if isinstance(v, float) else str(v)))
-    lines = []
-    lines.append(f"baseline: {fmt(pdct['baseline'])}, comb_contrast: {fmt(pdct['comb_contrast'])}")
-    lines.append(f"Trev (μs): {fmt(pdct['revival_time'])}, rev_width (μs): {fmt(pdct['width0_us'])}")
-    lines.append(f"T2 (ms): {fmt(pdct['T2_ms'])}, T2_exp (n): {fmt(pdct['T2_exp'])}")
-    # Oscillation terms (show only if present / non-zero)
-    if (pdct.get("osc_amp") is not None) and (abs(pdct.get("osc_amp",0.0)) > 1e-6):
-        lines.append(f"osc_amp: {fmt(pdct['osc_amp'])}")
-        if pdct.get("osc_f0", None) is not None:
-            lines.append(f"f0 (cyc/μs): {fmt(pdct['osc_f0'])}, f1 (cyc/μs): {fmt(pdct['osc_f1'])}")
-        if pdct.get("osc_phi0", None) is not None:
-            lines.append(f"φ0 (rad): {fmt(pdct['osc_phi0'])}, φ1 (rad): {fmt(pdct['osc_phi1'])}")
-    # Comb shaping
-    if any(pdct.get(k, None) not in (None, 0.0) for k in ("amp_taper_alpha","width_slope","revival_chirp")):
-        lines.append(f"α: {fmt(pdct['amp_taper_alpha'])}, slope: {fmt(pdct['width_slope'])}, chirp: {fmt(pdct['revival_chirp'])}")
-    return lines
-
-# --- UPDATED: now annotates each subplot with a fit-parameter box (and optional χ²_red) ---
-def plot_individual_fits(
-    norm_counts, 
-    norm_counts_ste,
-    total_evolution_times,
-    popts,
-    nv_inds,              # labels same order as popts
-    fit_fn_per_nv,        # per-NV fit function
-    keep_mask=None,
-    show_residuals=True,
-    n_fit_points=1000,
-    save_prefix=None,
-    block=False,
-    default_rev_for_plot=39.2,
-    red_chi2_list=None,          # OPTIONAL: pass list of reduced-χ² (same order as popts)
-    show_param_box=True,         # toggle the on-plot parameter box
-):
-    N = len(popts)
-    assert len(nv_inds) == N, "nv_inds must be same length/order as popts"
-    t_all = np.asarray(total_evolution_times, float)
-
-    positions = np.arange(N)
-    if keep_mask is not None:
-        positions = positions[np.asarray(keep_mask, bool)]
-
-    figs = []
-    for pos in positions:
-        lbl = nv_inds[pos]
-        p   = popts[pos]
-        if p is None:
-            continue
-
-        fit_fn = fit_fn_per_nv[pos] or fine_decay
-
-        y = np.asarray(norm_counts[lbl], float)
-        e = np.asarray(norm_counts_ste[lbl], float)
-
-        if show_residuals:
-            fig, (ax, axr) = plt.subplots(2, 1, figsize=(7, 6), sharex=True,
-                                          gridspec_kw=dict(height_ratios=[3, 1], hspace=0.06))
-        else:
-            fig, ax = plt.subplots(1, 1, figsize=(7, 4.6))
-
-        # data
-        ax.errorbar(t_all, y, yerr=e, fmt="o", ms=3.5, lw=0.8, alpha=0.9, capsize=2)
-        ax.set_ylabel("Normalized NV$^{-}$ population")
-
-        # model curve (dense grid)
-        t_fit = np.linspace(np.nanmin(t_all), np.nanmax(t_all), n_fit_points)
-        y_fit = _safe_call_fit_fn(fit_fn, t_fit, p, default_rev=default_rev_for_plot)
-        ax.plot(t_fit, y_fit, "-", lw=2)
-
-        ax.set_title(f"NV {lbl}")
-        ymin = min(np.nanmin(y)-0.1, -0.1)
-        ymax = max(np.nanmax(y)+0.1, 1.2)
-        ax.set_ylim(ymin, ymax)
-        ax.grid(True, alpha=0.25)
-
-        # residuals
-        if show_residuals:
-            y_model = _safe_call_fit_fn(fit_fn, t_all, p, default_rev=default_rev_for_plot)
-            res = y - y_model
-            axr.axhline(0.0, ls="--", lw=1.0)
-            axr.plot(t_all, res, ".", ms=3.5)
-            axr.set_xlabel("Total evolution time (µs)")
-            axr.set_ylabel("res.")
-            axr.grid(True, alpha=0.25)
-        else:
-            ax.set_xlabel("Total evolution time (µs)")
-
-        # --- NEW: add a fit-parameter box + echo summary + optional χ²_red ---
-        if show_param_box:
-            pdict = _params_to_dict(fit_fn, p, default_rev=default_rev_for_plot)
-            box_lines = _format_param_box(pdict)
-            # top-right: parameter box
-            ax.text(
-                0.99, 0.98, "\n".join(box_lines), transform=ax.transAxes,
-                ha="right", va="top", fontsize=9,
-                bbox=dict(boxstyle="round,pad=0.35", facecolor="white", alpha=0.6, lw=0.6)
-            )
-            # top-left: quick data summary + χ²_red (if provided)
-            # left_lines = _echo_summary_lines(t_all, y)
-            left_lines = []
-            if red_chi2_list is not None and np.isfinite(red_chi2_list[pos]):
-                left_lines.append(f"χ²_red: {red_chi2_list[pos]:.3g}")
-            if left_lines:
-                ax.text(
-                    0.01, 0.98, "\n".join(left_lines), transform=ax.transAxes,
-                    ha="left", va="top", fontsize=9,
-                    bbox=dict(boxstyle="round,pad=0.35", facecolor="white", alpha=0.6, lw=0.6)
-                )
-
-        # optional save (uses your dm/timestamp if present)
-        if save_prefix:
-            try:
-                file_path = dm.get_file_path(__file__, timestamp, f"{save_prefix}-nv{int(lbl):03d}")
-                dm.save_figure(fig, file_path, f"nv{int(lbl):03d}")
-            except Exception:
-                pass
-
-        figs.append((lbl, fig))
-
-    if figs:
-        plt.show(block=block)
-    return figs
-
-# =============================================================================
-# CLI / Example
-# =============================================================================
-# ---- helpers ----
-def _index_map(unified_keys):
-    return {k:i for i,k in enumerate(unified_keys)}
-
-def _safe_sigma(pcov, idx):
-    try:
-        if pcov is None: return np.nan
-        pcov = np.asarray(pcov, float)
-        if idx is None or idx >= pcov.shape[0]: return np.nan
-        v = pcov[idx, idx]
-        return np.sqrt(v) if (np.isfinite(v) and v >= 0) else np.nan
-    except Exception:
-        return np.nan
-
-def extract_T2_freqs_and_errors(fit_dict, *, pick_freq="max", chi2_fail_thresh=None):
-    """
-    Returns
-    -------
-    nv_labels, T2_us, f0_kHz, f1_kHz, A_pick_kHz, chis, fit_fail,
-    sT2_us, sf0_kHz, sf1_kHz, sA_pick_kHz
-    """
-    keys   = fit_dict["unified_keys"]
-    kmap   = _index_map(keys)
-    popts  = fit_dict["popts"]
-    pcovs  = fit_dict.get("pcovs", [None]*len(popts))
-    chis   = np.array(fit_dict.get("red_chi2", [np.nan]*len(popts)), float)
-    nvlbl  = np.asarray(fit_dict["nv_labels"], int)
-
-    idx_T2 = kmap.get("T2_ms", None)
-    idx_f0 = kmap.get("osc_f0", None)
-    idx_f1 = kmap.get("osc_f1", None)
-
-    N = len(popts)
-    T2_us      = np.full(N, np.nan)
-    f0_kHz     = np.full(N, np.nan)
-    f1_kHz     = np.full(N, np.nan)
-    A_pick_kHz = np.full(N, np.nan)
-    sT2_us     = np.full(N, np.nan)
-    sf0_kHz    = np.full(N, np.nan)
-    sf1_kHz    = np.full(N, np.nan)
-    sA_pick_kHz= np.full(N, np.nan)
-    fit_fail   = np.zeros(N, bool)
-
-    for i, (p, C) in enumerate(zip(popts, pcovs)):
-        if not isinstance(p, (list, tuple)):
-            fit_fail[i] = True
-            continue
-
-        # chi2 filter (optional)
-        if chi2_fail_thresh is not None:
-            try:
-                if float(chis[i]) > float(chi2_fail_thresh):
-                    fit_fail[i] = True
-            except Exception:
-                pass
-
-        # T2 (ms -> µs) + sigma
-        if idx_T2 is not None and idx_T2 < len(p):
-            try:
-                T2_us[i]  = float(p[idx_T2]) * 1000.0
-                sT2_ms    = _safe_sigma(C, idx_T2)
-                sT2_us[i] = (sT2_ms * 1000.0) if np.isfinite(sT2_ms) else np.nan
-            except Exception:
-                pass
-
-        # f0, f1 (cycles/µs = MHz) -> kHz + sigmas
-        cand = []
-        tags = []  # keep which index produced which
-        if idx_f0 is not None and idx_f0 < len(p):
-            try:
-                f0 = float(p[idx_f0])
-                if np.isfinite(f0) and f0 > 0:
-                    f0_kHz[i]  = 1000.0 * f0
-                    s0         = _safe_sigma(C, idx_f0)
-                    sf0_kHz[i] = (1000.0 * s0) if np.isfinite(s0) else np.nan
-                    cand.append(f0); tags.append("f0")
-            except Exception:
-                pass
-        if idx_f1 is not None and idx_f1 < len(p):
-            try:
-                f1 = float(p[idx_f1])
-                if np.isfinite(f1) and f1 > 0:
-                    f1_kHz[i]  = 1000.0 * f1
-                    s1         = _safe_sigma(C, idx_f1)
-                    sf1_kHz[i] = (1000.0 * s1) if np.isfinite(s1) else np.nan
-                    cand.append(f1); tags.append("f1")
-            except Exception:
-                pass
-
-        if cand:
-            if pick_freq == "min":
-                j = int(np.argmin(cand))
-            elif pick_freq == "nonzero_first":
-                j = 0
-            else:  # "max"
-                j = int(np.argmax(cand))
-            f_pick = cand[j]
-            tag    = tags[j]
-            A_pick_kHz[i] = 1000.0 * f_pick
-            if tag == "f0":
-                sA_pick_kHz[i] = sf0_kHz[i]
-            else:
-                sA_pick_kHz[i] = sf1_kHz[i]
-
-    return (nvlbl, T2_us, f0_kHz, f1_kHz, A_pick_kHz, chis, fit_fail,
-            sT2_us, sf0_kHz, sf1_kHz, sA_pick_kHz)
 
 # --- keep your existing extract_T2_freqs_and_errors(...) ---
 
@@ -1076,6 +605,118 @@ def convolved_exp_spectrum(
 
     return f, spec
 
+
+def plot_sorted_exp_branches(
+    f0_kHz,
+    f1_kHz,
+    sf0_kHz=None,
+    sf1_kHz=None,
+    title_prefix="Spin-echo",
+    f_range_kHz=(15, 15000),
+    A_rel_cap=0.7,
+    A_pct_cap=200.0,
+):
+    """
+    Plot experimental spin-echo-derived frequencies for f0 and f1 separately,
+    sorted by magnitude, on a log-y axis.
+
+    Parameters
+    ----------
+    f0_kHz, f1_kHz : array-like
+        Arrays of picked frequencies (kHz) for each NV (one per NV per branch).
+    sf0_kHz, sf1_kHz : array-like or None
+        1σ errors on f0 and f1 (kHz). If None, no error bars for that branch.
+    title_prefix : str
+        Prefix for the plot title.
+    f_range_kHz : (float, float)
+        Y-axis range in kHz.
+    A_rel_cap, A_pct_cap : float
+        Parameters passed to _mask_huge_errors for clipping crazy error bars.
+    """
+    f0_kHz = np.asarray(f0_kHz, float)
+    f1_kHz = np.asarray(f1_kHz, float)
+    sf0_kHz = None if sf0_kHz is None else np.asarray(sf0_kHz, float)
+    sf1_kHz = None if sf1_kHz is None else np.asarray(sf1_kHz, float)
+
+    # --- Branch f0 ---
+    valid0 = np.isfinite(f0_kHz) & (f0_kHz > 0)
+    if np.any(valid0):
+        idx0 = np.where(valid0)[0]
+        order0 = idx0[np.argsort(f0_kHz[idx0])]
+        x0 = np.arange(1, order0.size + 1)
+        y0 = f0_kHz[order0]
+        y0err_raw = sf0_kHz[order0] if sf0_kHz is not None else None
+        y0err = _mask_huge_errors(y0, y0err_raw,
+                                  rel_cap=A_rel_cap, pct_cap=A_pct_cap)
+    else:
+        order0 = np.array([], int)
+        x0 = y0 = y0err = None
+
+    # --- Branch f1 ---
+    valid1 = np.isfinite(f1_kHz) & (f1_kHz > 0)
+    if np.any(valid1):
+        idx1 = np.where(valid1)[0]
+        order1 = idx1[np.argsort(f1_kHz[idx1])]
+        x1 = np.arange(1, order1.size + 1)
+        y1 = f1_kHz[order1]
+        y1err_raw = sf1_kHz[order1] if sf1_kHz is not None else None
+        y1err = _mask_huge_errors(y1, y1err_raw,
+                                  rel_cap=A_rel_cap, pct_cap=A_pct_cap)
+    else:
+        order1 = np.array([], int)
+        x1 = y1 = y1err = None
+
+    # --- Plot ---
+    fig, ax = plt.subplots(figsize=(10, 6))
+
+    if x0 is not None:
+        ax.errorbar(
+            x0, y0, yerr=y0err,
+            fmt="o", ms=3, lw=0.8,
+            capsize=2, elinewidth=0.8,
+            alpha=0.95,
+            label=r"Exp $f_0$ (lower branch)",
+        )
+
+    if x1 is not None:
+        ax.errorbar(
+            x1, y1, yerr=y1err,
+            fmt="s", ms=3, lw=0.8,
+            capsize=2, elinewidth=0.8,
+            alpha=0.95,
+            label=r"Exp $f_1$ (upper branch)",
+        )
+
+    ax.set_yscale("log")
+    ax.set_ylim(*f_range_kHz)
+    ax.set_xlabel("NV index (sorted within each branch)")
+    ax.set_ylabel(r"Frequency (kHz)")
+    ax.set_title(f"{title_prefix}: $f_0$ and $f_1$ (sorted)")
+    ax.set_ylim(ymin=10, ymax=10000)
+    ax.yaxis.set_major_locator(mticker.LogLocator(base=10))
+    ax.yaxis.set_minor_locator(mticker.LogLocator(base=10, subs=np.arange(2, 10)))
+    ax.yaxis.set_minor_formatter(mticker.NullFormatter())
+    ax.grid(True, which="both", alpha=0.3)
+
+    # Notes about excluded NVs
+    note0 = f"Excluded f0: {(~valid0).sum()}"
+    note1 = f"Excluded f1: {(~valid1).sum()}"
+    ax.text(
+        0.01, 0.97, note0,
+        transform=ax.transAxes,
+        ha="left", va="top", fontsize=8,
+    )
+    ax.text(
+        0.01, 0.92, note1,
+        transform=ax.transAxes,
+        ha="left", va="top", fontsize=8,
+    )
+
+    ax.legend(framealpha=0.85)
+    fig.tight_layout()
+    plt.show()
+
+
 if __name__ == "__main__":
     kpl.init_kplotlib()
     # --- Load your data------------------------------------
@@ -1129,7 +770,7 @@ if __name__ == "__main__":
     # file_stem= "2025_11_10-21_38_55-johnson_204nv_s3-003c56" 
     # file_stem= "2025_11_11-01_46_41-johnson_204nv_s3-003c56" 
     # file_stem= "2025_11_11-06_23_14-johnson_204nv_s6-6d8f5c" 
-    file_stem= "2025_11_12-08_51_17-johnson_204nv_s7-aab2d0"
+    # file_stem= "2025_11_12-08_51_17-johnson_204nv_s7-aab2d0"
     file_stem= "2025_11_13-06_28_22-sample_204nv_s1-e85aa7"
     
     
@@ -1168,15 +809,15 @@ if __name__ == "__main__":
             fit_fns.append(fn)
         
     # 3) INDIVIDUAL FITS — PASS THE SAME LABELS + PER-NV FIT FUNCTIONS
-    # _ = plot_individual_fits(
-    #     norm_counts, norm_counts_ste, total_evolution_times,
-    #     popts,
-    #     nv_inds=fit_nv_labels,
-    #     fit_fn_per_nv=fit_fns,
-    #     # keep_mask=keep_mask,
-    #     show_residuals=True,
-    #     block=False
-    # )
+    _ = plot_individual_fits(
+        norm_counts, norm_counts_ste, total_evolution_times,
+        popts,
+        nv_inds=fit_nv_labels,
+        fit_fn_per_nv=fit_fns,
+        # keep_mask=keep_mask,
+        show_residuals=True,
+        block=False
+    )
      
     # # --------------------------
     # # Example usage
@@ -1187,12 +828,10 @@ if __name__ == "__main__":
         data, pick_freq="max", chi2_fail_thresh=3.0
     )
 
-    # ---- Base validity + T2 threshold mask ----
     THRESH_US = 600.0
     valid = np.isfinite(T2_us) & (~fit_fail)
     mask  = valid & (T2_us <= THRESH_US)
 
-    # ---- Build a table (pre-mask) just for printing/sanity checks ----
     df = pd.DataFrame({
         "nv": nv,
         "T2_us": T2_us,
@@ -1206,16 +845,13 @@ if __name__ == "__main__":
     })
     sel = df.loc[mask].sort_values("T2_us", ascending=False).reset_index(drop=True)
     print(f"NVs with T2 ≥ {THRESH_US:.0f} µs: {len(sel)}")
-    print(sel[["nv","T2_us","sT2_us","A_pick_kHz","sA_pick_kHz","f0_kHz","f1_kHz","red_chi2"]].to_string(index=False))
+    print(sel[["nv","T2_us","sT2_us","A_pick_kHz","sA_pick_kHz",
+            "f0_kHz","f1_kHz","red_chi2"]].to_string(index=False))
 
-    # ---- Optional: detect exact cap hits (e.g., when T2 pinned at a limit) ----
     CAP_US = 600.0
     mask_cap_exact = np.isfinite(T2_us) & np.isclose(T2_us, CAP_US, atol=1e-6)
     cap_indices = np.where(mask_cap_exact)[0]
     cap_labels  = np.asarray(nv)[mask_cap_exact]
-    # print(f"[cap=={CAP_US:.0f} µs] Count: {mask_cap_exact.sum()}")
-    # print("Indices:", cap_indices.tolist())
-    # print("NV labels:", cap_labels.tolist())
 
     # ---- Apply mask to ALL arrays before plotting ----
     nv_m          = np.asarray(nv)[mask]
@@ -1223,19 +859,21 @@ if __name__ == "__main__":
     sT2_us_m      = np.asarray(sT2_us)[mask]
     A_pick_kHz_m  = np.asarray(A_pick_kHz)[mask]
     sA_pick_kHz_m = np.asarray(sA_pick_kHz)[mask]
-    # If your plotting uses these too:
     f0_kHz_m      = np.asarray(f0_kHz)[mask]
     f1_kHz_m      = np.asarray(f1_kHz)[mask]
+    sf0_kHz_m     = np.asarray(sf0_kHz)[mask]
+    sf1_kHz_m     = np.asarray(sf1_kHz)[mask]
     chis_m        = np.asarray(chis)[mask]
-    fit_fail_m    = np.asarray(fit_fail)[mask]   # should now all be False by construction
+    fit_fail_m    = np.asarray(fit_fail)[mask]   # should be all False
+
 
     # ---- Plot with masked arrays only ----
     # (1) Your existing panels (unchanged)
-    plot_sorted_panels_with_err(
-        nv_m, T2_us_m, sT2_us_m, A_pick_kHz_m, sA_pick_kHz_m,
-        mask_fit_fail=np.zeros_like(fit_fail_m, dtype=bool),
-        t2_rel_cap=1.0, t2_pct_cap=95, A_rel_cap=0.75, A_pct_cap=95
-    )
+    # plot_sorted_panels_with_err(
+    #     nv_m, T2_us_m, sT2_us_m, A_pick_kHz_m, sA_pick_kHz_m,
+    #     mask_fit_fail=np.zeros_like(fit_fail_m, dtype=bool),
+    #     t2_rel_cap=1.0, t2_pct_cap=95, A_rel_cap=0.75, A_pct_cap=95
+    # )
 
     # (2) Experimental sticks: choose a weighting
     #   a) unit weights
@@ -1249,11 +887,11 @@ if __name__ == "__main__":
     F_kHz, W = build_exp_lines(f0_kHz_m, f1_kHz_m, fmin_kHz=1, fmax_kHz=20000,
                                weight_mode="inv_chi2", chis=chis_m)
 
-    plot_exp_sticks(
-        F_kHz, W,
-        title="Experimental ESEEM sticks (sorted)",
-        weight_caption="unit weight"  # or "1/σ_A^2", or "1/χ²"
-    )
+    # plot_exp_sticks(
+    #     F_kHz, W,
+    #     title="Experimental ESEEM sticks (sorted)",
+    #     weight_caption="unit weight"  # or "1/σ_A^2", or "1/χ²"
+    # )
 
     # # (3) Convolved spectrum (Gaussian)
     # _fff, _SSS = convolved_exp_spectrum(
@@ -1265,5 +903,14 @@ if __name__ == "__main__":
     #     title_prefix="Experimental ESEEM spectrum",
     #     weight_caption="unit weight"  # match what you chose above
     # )
+    
+    # plot_sorted_exp_branches(
+    # f0_kHz=f0_kHz_m,
+    # f1_kHz=f1_kHz_m,
+    # sf0_kHz=sf0_kHz_m,
+    # sf1_kHz=sf1_kHz_m,
+    # title_prefix="Spin-echo fit with free oscillation frequencies",
+    # f_range_kHz=(10, 6000),)
+
 
     kpl.show(block=True)

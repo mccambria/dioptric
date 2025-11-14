@@ -1482,7 +1482,7 @@ if __name__ == "__main__":
     # print(f"Created NV: {nv_sig.name}, Coords: {nv_sig.coords}")
     # nv_sig.expected_counts = 900
     # nv_sig.expected_counts = 1400
-    nv_sig.expected_counts = 1350
+    nv_sig.expected_counts = 1300
     # nv_sig.expected_counts = 1500
 
     # nv_list = nv_list[::-1]  # flipping the order of NVs
@@ -1617,7 +1617,7 @@ if __name__ == "__main__":
         # do_two_block_hahn_correlation(nv_list)
         # do_resonance(nv_list)
         # do_sq_relaxation(nv_list)
-        # do_dq_relaxation(nv_list)
+        do_dq_relaxation(nv_list)
         # do_detect_cosmic_rays(nv_list)
         # do_check_readout_fidelity(nv_list)
         # do_charge_quantum_jump(nv_list)
