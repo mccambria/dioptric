@@ -161,8 +161,9 @@ def main(
     readout_s = readout_ns * 1e-9
     readout_laser = vld["physical_name"]
 
-    tb.set_filter(nv_sig, VirtualLaserKey.IMAGING)
-    readout_power = tb.set_laser_power(nv_sig, VirtualLaserKey.IMAGING)
+    # Note: Unlike z_scan_1d, we do NOT call tb.set_filter() or tb.set_laser_power()
+    # here because the pulse sequence handles laser control for galvo scanning.
+    # Calling these functions can interfere with sequence-based control.
 
     # Build XY scan grid (same for all Z positions)
     x0, y0 = pos.get_nv_coords(nv_sig, coords_key=CoordsKey.PIXEL)
@@ -208,7 +209,7 @@ def main(
     delay_ns = int(cfg["Positioning"]["Positioners"][pos_key]["delay"])
     period_ns = pulse.stream_load(
         SEQ_FILE_PIXEL_READOUT,
-        tb.encode_seq_args([delay_ns, readout_ns, readout_laser, readout_power]),
+        tb.encode_seq_args([delay_ns, readout_ns, readout_laser, 1.0]),  # Power controlled by sequence
     )[0]
 
     # Start tag stream once
@@ -256,6 +257,8 @@ def main(
 
             # === Perform 2D XY scan at this Z position ===
             # This is the core scanning logic from confocal_image_sample.py
+
+            pixel_count = 0  # Track progress
 
             if mode == PosControlMode.SEQUENCE:
                 # Hardware-driven galvo scanning
@@ -314,6 +317,12 @@ def main(
                             continue
 
                         _raster_fill(vals, img, written)
+
+                        # Progress update every 10% of pixels
+                        pixel_count += 1
+                        if pixel_count % (xy_pixels_per_image // 10) == 0:
+                            progress = (pixel_count / xy_pixels_per_image) * 100
+                            print(f"  Progress: {progress:.0f}% ({pixel_count}/{xy_pixels_per_image} pixels)", flush=True)
 
             # === End of XY scan for this Z ===
 
