@@ -13,6 +13,7 @@ Created on November 13th, 2025
 
 """
 
+import copy
 import time
 
 import matplotlib.pyplot as plt
@@ -104,9 +105,8 @@ def main(
         Default: 1 (single sample per pixel, faster scanning)
         Higher values improve statistics but slow the scan significantly.
     min_threshold : float or None, optional
-        Minimum photon count threshold for safety monitoring.
-        Applied to the mean counts of each full XY image.
-        If mean counts drop below this value, scan pauses and prompts:
+        Minimum photon count threshold for safety monitoring (per-pixel).
+        If ANY pixel drops below this value, scan pauses and prompts:
         "Continue scanning? (y/n)"
         User must type 'y' to continue or 'n' to abort.
         None = no threshold monitoring (default: None)
@@ -116,7 +116,8 @@ def main(
         False: simple single-gate readout (default: False)
     save_data : bool, optional
         Whether to save data and figures to disk (default: True)
-        Saves to: nvdata/pc_{hostname}/z_scan_2d/{date}/{timestamp}/
+        Each Z slice saves immediately to:
+        nvdata/pc_{hostname}/z_scan_2d/{date}/{timestamp}-{nv_name}_z{idx}_pos{position}.txt/.png
 
     Returns
     -------
@@ -134,6 +135,8 @@ def main(
     -----
     - XY scanning uses CoordsKey.PIXEL (galvo mirrors)
     - Z scanning uses CoordsKey.Z (piezo)
+    - Each Z slice is saved immediately upon completion (one file per Z position)
+    - Additional combined file with all Z slices saved at end
     - Total scan time ≈ (num_steps² × num_z_steps × readout_time)
       Example: 60² × 20 × 5ms = 360 seconds = 6 minutes
     - Memory usage: 60×60×20 images ≈ 5.7 MB (automatically compressed to NPZ)
@@ -177,6 +180,9 @@ def main(
     z_positions = []  # Actual Z positions from piezo
     all_figures = []  # Store figure handles for each Z position
 
+    # Get single timestamp for the entire scan (used for all files)
+    ts = dm.get_time_stamp()
+
     kpl.init_kplotlib()
 
     tb.reset_cfm()
@@ -205,8 +211,12 @@ def main(
     print(f"XY scan: {num_steps}x{num_steps} pixels, range={x_range}V x {y_range}V")
     print(f"Total pixels: {xy_pixels_per_image * num_z_steps:,}")
     if min_threshold is not None:
-        print(f"Threshold monitoring: {min_threshold:.0f} counts (mean per image)")
+        print(f"Threshold monitoring: {min_threshold:.0f} counts (per pixel)")
     print(f"{'='*60}\n")
+
+    # Timing tracking
+    scan_start_time = time.time()
+    z_slice_times = []  # Track time per completed Z slice for estimation
 
     try:
         for z_idx in range(num_z_steps):
@@ -255,6 +265,10 @@ def main(
 
             # === Perform 2D XY scan at this Z position ===
             # This is the core scanning logic from confocal_image_sample.py
+
+            # Timing for this Z slice
+            z_slice_start_time = time.time()
+            last_checkpoint_time = z_slice_start_time
 
             pixel_count = 0  # Track progress
             UPDATE_EVERY = 1  # Update every pixel (same as confocal_image_sample.py)
@@ -315,6 +329,18 @@ def main(
                         if not vals:
                             continue
 
+                        # Check per-pixel threshold
+                        if min_threshold is not None and val < min_threshold:
+                            print(f"\n[THRESHOLD REACHED]")
+                            print(f"  Pixel counts: {val:.0f}")
+                            print(f"  Threshold: {min_threshold:.0f}")
+                            print(f"  Position: Z={current_z_pos} steps, pixel ({row},{col})")
+                            response = input("  Continue scanning? (y/n): ").strip().lower()
+                            if response != "y":
+                                print("[STOPPED] Scan aborted by user")
+                                raise StopIteration  # Break out of nested loops
+                            print("  Continuing scan...\n")
+
                         _raster_fill(vals, img, written)
 
                         # Progress update every 10% of pixels
@@ -329,8 +355,38 @@ def main(
                                 kpl.imshow_update(ax, img)
 
                         if pixel_count % (xy_pixels_per_image // 10) == 0:
+                            current_time = time.time()
                             progress = (pixel_count / xy_pixels_per_image) * 100
-                            print(f"  Progress: {progress:.0f}% ({pixel_count}/{xy_pixels_per_image} pixels)", flush=True)
+
+                            # Calculate time for this 10% segment
+                            segment_time = current_time - last_checkpoint_time
+                            last_checkpoint_time = current_time
+
+                            # Estimate time remaining for current slice
+                            elapsed_slice = current_time - z_slice_start_time
+                            pixels_remaining = xy_pixels_per_image - pixel_count
+                            avg_time_per_pixel = elapsed_slice / pixel_count
+                            slice_time_remaining = pixels_remaining * avg_time_per_pixel
+
+                            # Estimate total time remaining for all slices
+                            if len(z_slice_times) > 0:
+                                # Use average of completed slices
+                                avg_slice_time = np.mean(z_slice_times)
+                                slices_remaining = num_z_steps - z_idx - 1
+                                total_time_remaining = slice_time_remaining + (slices_remaining * avg_slice_time)
+                            else:
+                                # First slice - can only estimate based on current progress
+                                estimated_total_slice_time = (elapsed_slice / pixel_count) * xy_pixels_per_image
+                                slices_remaining = num_z_steps - z_idx - 1
+                                total_time_remaining = slice_time_remaining + (slices_remaining * estimated_total_slice_time)
+
+                            print(
+                                f"  Progress: {progress:.0f}% ({pixel_count}/{xy_pixels_per_image} pixels) | "
+                                f"Segment: {segment_time:.1f}s | "
+                                f"Slice ETA: {slice_time_remaining/60:.1f}m | "
+                                f"Total ETA: {total_time_remaining/60:.1f}m",
+                                flush=True
+                            )
 
             # === End of XY scan for this Z ===
 
@@ -341,43 +397,66 @@ def main(
             # Store the image (in output units)
             all_images.append(img_display.copy())
 
-            # Calculate mean counts for threshold check
-            mean_counts = np.nanmean(img_display)
+            # Track time for this Z slice
+            z_slice_time = time.time() - z_slice_start_time
+            z_slice_times.append(z_slice_time)
 
-            print(
-                f"[Z {z_idx+1}/{num_z_steps}] Complete. Mean counts: {mean_counts:.1f}",
-                flush=True,
-            )
-
-            # Update title to show final stats (image was already updated during scan)
-            ax.set_title(f"{readout_laser}, {readout_ns/1e6:.1f} ms, Z={current_z_pos} steps (Mean={mean_counts:.1f})")
+            print(f"[Z {z_idx+1}/{num_z_steps}] Complete in {z_slice_time/60:.1f}m.", flush=True)
 
             # Final refresh
             plt.pause(0.01)
 
-            # Check threshold
-            if min_threshold is not None and mean_counts < min_threshold:
-                print(f"\n[THRESHOLD REACHED]")
-                print(f"  Mean counts: {mean_counts:.1f}")
-                print(f"  Threshold: {min_threshold:.0f}")
-                print(f"  Z position: {current_z_pos} steps")
-                response = input("  Continue scanning? (y/n): ").strip().lower()
-                if response != "y":
-                    print("[STOPPED] Scan aborted by user")
-                    break
-                print("  Continuing scan...\n")
+            # Save this Z slice immediately (same pattern as confocal_image_sample.py)
+            if save_data:
+                # Create nv_sig copy with Z info in name for unique file path
+                nv_sig_z = copy.copy(nv_sig)
+                nv_name = getattr(nv_sig, "name", "nv")
+                nv_sig_z.name = f"{nv_name}_z{z_idx:03d}_pos{current_z_pos}"
+
+                # Save figure and data for this Z slice
+                file_path = dm.get_file_path(__file__, ts, nv_sig_z.name)
+                dm.save_figure(fig, file_path)
+
+                # Save individual slice data
+                slice_data = {
+                    "timestamp": ts,
+                    "nv_sig": nv_sig,
+                    "z_index": z_idx,
+                    "z_position": current_z_pos,
+                    "num_xy_steps": num_steps,
+                    "x_range": x_range,
+                    "y_range": y_range,
+                    "x_center": x0,
+                    "y_center": y0,
+                    "extent": extent,
+                    "readout_ns": readout_ns,
+                    "readout_units": "ns",
+                    "img_array": img_display.astype(float).tolist(),
+                    "img_array_units": "kcps" if is_kcps else "counts",
+                    "x_coords_1d": x1d,
+                    "y_coords_1d": y1d,
+                }
+                dm.save_raw_data(slice_data, file_path)
+                print(f"  Saved: {file_path.name}")
 
             print()  # Blank line between Z steps
 
+    except StopIteration:
+        # Catch the threshold abort exception
+        pass
     finally:
         ctr.stop_tag_stream()
         tb.reset_safe_stop()
         tb.reset_cfm()
-        print(f"\nScan complete: {len(z_positions)} Z slices collected")
 
-    ### Save data
+        # Final timing summary
+        total_scan_time = time.time() - scan_start_time
+        print(f"\nScan complete: {len(z_positions)} Z slices collected in {total_scan_time/60:.1f}m")
+        if len(z_slice_times) > 0:
+            avg_slice_time = np.mean(z_slice_times)
+            print(f"Average time per slice: {avg_slice_time/60:.1f}m")
 
-    print("Processing data...", flush=True)
+    ### Save combined data (optional summary file)
 
     # Convert lists to numpy arrays
     all_images_array = np.array(all_images)  # Shape: [num_z, h, w]
@@ -385,50 +464,42 @@ def main(
 
     units_out = "kcps" if is_kcps else "counts"
 
-    ts = dm.get_time_stamp()
-    raw_data = {
-        "timestamp": ts,
-        "nv_sig": nv_sig,
-        "mode": "z_scan_2d",
-        "num_z_steps_requested": num_z_steps,
-        "num_z_steps_completed": len(z_positions),
-        "z_step_size": z_step_size,
-        "num_xy_steps": num_steps,
-        "x_range": x_range,
-        "y_range": y_range,
-        "x_center": x0,
-        "y_center": y0,
-        "extent": extent,
-        "num_averages": num_averages,
-        "min_threshold": min_threshold,
-        "readout_ns": readout_ns,
-        "readout_units": "ns",
-        "img_arrays": all_images_array.astype(float),  # Compressed to NPZ
-        "img_arrays_units": units_out,
-        "img_arrays_shape": list(all_images_array.shape),
-        "z_positions": z_positions_array.tolist(),
-        "x_coords_1d": x1d,
-        "y_coords_1d": y1d,
-    }
+    # Optionally save combined data (all Z slices in one file)
+    if save_data and len(all_images) > 0:
+        print("Saving combined z-stack data...", flush=True)
+        nv_name = getattr(nv_sig, "name", "nv")
+        combined_path = dm.get_file_path(__file__, ts, f"{nv_name}_combined")
 
-    if save_data:
-        print("Saving data and figures...", flush=True)
-        base_path = dm.get_file_path(__file__, ts, getattr(nv_sig, "name", "nv"))
-
-        # Save each figure separately with Z index in filename
-        for z_idx, (fig, z_pos) in enumerate(zip(all_figures, z_positions)):
-            # Create filename with Z index
-            fig_path = base_path.parent / f"{base_path.stem}_z{z_idx:03d}_pos{z_pos}.png"
-            dm.save_figure(fig, fig_path)
-            print(f"  Saved figure {z_idx+1}/{len(all_figures)}: {fig_path.name}")
-
-        # Save raw data once (contains all images)
-        dm.save_raw_data(raw_data, base_path, keys_to_compress=["img_arrays"])
-        print(f"Data saved to: {base_path}")
+        combined_data = {
+            "timestamp": ts,
+            "nv_sig": nv_sig,
+            "mode": "z_scan_2d_combined",
+            "num_z_steps_requested": num_z_steps,
+            "num_z_steps_completed": len(z_positions),
+            "z_step_size": z_step_size,
+            "num_xy_steps": num_steps,
+            "x_range": x_range,
+            "y_range": y_range,
+            "x_center": x0,
+            "y_center": y0,
+            "extent": extent,
+            "num_averages": num_averages,
+            "min_threshold": min_threshold,
+            "readout_ns": readout_ns,
+            "readout_units": "ns",
+            "img_arrays": all_images_array.astype(float),  # Compressed to NPZ
+            "img_arrays_units": units_out,
+            "img_arrays_shape": list(all_images_array.shape),
+            "z_positions": z_positions_array.tolist(),
+            "x_coords_1d": x1d,
+            "y_coords_1d": y1d,
+        }
+        dm.save_raw_data(combined_data, combined_path, keys_to_compress=["img_arrays"])
+        print(f"  Combined data: {combined_path.name}")
 
     # Turn off interactive mode and show final plots
     plt.ioff()
-    print(f"Displaying {len(all_figures)} figure windows (close all to exit)...", flush=True)
+    print(f"\n{len(all_figures)} figure windows displayed. Close all to exit.", flush=True)
     kpl.show()
 
     return all_images_array, z_positions_array
