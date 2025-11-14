@@ -149,8 +149,6 @@ def main(
     piezo = pos.get_positioner_server(CoordsKey.Z)
     positioner = pos.get_laser_positioner(VirtualLaserKey.IMAGING)
     mode = pos.get_positioner_control_mode(positioner)
-    print(f"[DEBUG] Positioner mode detected: {mode}", flush=True)
-    print(f"[DEBUG] Positioner: {positioner}", flush=True)
     pulse = tb.get_server_pulse_streamer()
     ctr = tb.get_server_counter()
 
@@ -259,11 +257,7 @@ def main(
             # This is the core scanning logic from confocal_image_sample.py
 
             pixel_count = 0  # Track progress
-            UPDATE_EVERY = max(1, xy_pixels_per_image // 100)  # Update every 1% of pixels
-
-            print(f"[DEBUG] Starting XY scan, mode={mode}", flush=True)
-            print(f"[DEBUG] Image dimensions: h={h}, w={w}, total pixels={xy_pixels_per_image}", flush=True)
-            print(f"[DEBUG] Will update plot every {UPDATE_EVERY} pixels", flush=True)
+            UPDATE_EVERY = 1  # Update every pixel (same as confocal_image_sample.py)
 
             if mode == PosControlMode.SEQUENCE:
                 # Hardware-driven galvo scanning
@@ -286,28 +280,16 @@ def main(
 
             else:
                 # Software-driven scanning (step-and-measure)
-                print(f"[DEBUG] Entering STEP/STREAM mode scanning", flush=True)
                 written = []  # state for _raster_fill
                 for row in range(h):
                     if tb.safe_stop():
                         break
                     y = y1d[(h - 1) - row]  # bottom row first
-                    if row == 0:
-                        print(f"[DEBUG] Starting row 0, y={y}", flush=True)
                     for col in range(w):
                         if tb.safe_stop():
                             break
                         x = x1d[col]  # left -> right
-
-                        # Debug first pixel
-                        if row == 0 and col == 0:
-                            print(f"[DEBUG] First pixel: x={x}, y={y}", flush=True)
-                            print(f"[DEBUG] Setting position...", flush=True)
-
                         pos.set_xyz((x, y), positioner=positioner)
-
-                        if row == 0 and col == 0:
-                            print(f"[DEBUG] Position set. Starting pulse...", flush=True)
 
                         # Collect num_averages samples at this pixel
                         counts = []
@@ -316,10 +298,6 @@ def main(
                                 break
 
                             pulse.stream_start(1)
-
-                            if row == 0 and col == 0:
-                                print(f"[DEBUG] Pulse started. Reading counter...", flush=True)
-
                             # Read exactly ONE sample per pixel
                             if nv_minus_init:
                                 raw = ctr.read_counter_modulo_gates(2, 1)  # [[a,b]]
@@ -328,25 +306,16 @@ def main(
                                 raw = ctr.read_counter_simple(1)  # [c]
                                 val_single = int(raw[0])
 
-                            if row == 0 and col == 0:
-                                print(f"[DEBUG] Counter read: val={val_single}", flush=True)
-
                             counts.append(val_single)
 
                         # Average the samples
                         val = int(np.mean(counts)) if len(counts) > 0 else 0
                         vals = [val]
 
-                        if row == 0 and col == 0:
-                            print(f"[DEBUG] Averaged value: {val}", flush=True)
-
                         if not vals:
                             continue
 
                         _raster_fill(vals, img, written)
-
-                        if row == 0 and col == 0:
-                            print(f"[DEBUG] Raster filled. Pixel complete.", flush=True)
 
                         # Progress update every 10% of pixels
                         pixel_count += 1
@@ -363,20 +332,11 @@ def main(
                             progress = (pixel_count / xy_pixels_per_image) * 100
                             print(f"  Progress: {progress:.0f}% ({pixel_count}/{xy_pixels_per_image} pixels)", flush=True)
 
-                        # Debug: show progress for first 5 pixels
-                        if pixel_count <= 5:
-                            print(f"[DEBUG] Pixel {pixel_count} complete", flush=True)
-
             # === End of XY scan for this Z ===
-
-            print(f"[DEBUG] XY scan loop complete. Processing image...", flush=True)
 
             # Convert to kcps if needed
             is_kcps = count_fmt == CountFormat.KCPS
             img_display = (img / 1000.0) / readout_s if is_kcps else img
-
-            print(f"[DEBUG] Image converted. Shape: {img_display.shape}, dtype: {img_display.dtype}", flush=True)
-            print(f"[DEBUG] Image stats: min={np.nanmin(img_display):.2f}, max={np.nanmax(img_display):.2f}, mean={np.nanmean(img_display):.2f}", flush=True)
 
             # Store the image (in output units)
             all_images.append(img_display.copy())
@@ -389,17 +349,11 @@ def main(
                 flush=True,
             )
 
-            print(f"[DEBUG] Updating final title...", flush=True)
-
             # Update title to show final stats (image was already updated during scan)
             ax.set_title(f"{readout_laser}, {readout_ns/1e6:.1f} ms, Z={current_z_pos} steps (Mean={mean_counts:.1f})")
 
-            print(f"[DEBUG] Final refresh...", flush=True)
-
             # Final refresh
             plt.pause(0.01)
-
-            print(f"[DEBUG] Z slice {z_idx} complete.", flush=True)
 
             # Check threshold
             if min_threshold is not None and mean_counts < min_threshold:
