@@ -218,44 +218,44 @@ def do_calibrate_z_axis(nv_sig):
     return results
 
 
-# Under construction
-# def do_z_scan_1d(nv_sig, z_start=0, z_end=-400, num_steps=61, num_averages=1):
-#     """
-#     Perform a 1D Z-axis scan without calibration.
+# region 1D Scan 
+def do_z_scan_1d(nv_sig, num_steps=500, step_size=-1, num_averages=1, min_threshold=100):
+    """
+    Perform a 1D Z-axis scan without calibration.
 
-#     Scans along Z-axis, collecting photon counts at each position.
-#     Does NOT move X or Y coordinates.
-#     Displays real-time line plot of counts vs Z position.
+    Scans along Z-axis, collecting photon counts at each position.
+    Does NOT move X or Y coordinates.
+    Displays real-time line plot of counts vs Z position.
 
-#     Parameters
-#     ----------
-#     nv_sig : dict
-#         NV center parameters
-#     z_start : int
-#         Starting Z position in steps
-#     z_end : int
-#         Ending Z position in steps
-#     num_steps : int
-#         Number of Z positions to scan
-#     num_averages : int
-#         Number of photon count samples to average at each Z position
+    Parameters
+    ----------
+    nv_sig : dict
+        NV center parameters
+    z_start : int
+        Starting Z position in steps
+    z_end : int
+        Ending Z position in steps
+    num_steps : int
+        Number of Z positions to scan
+    num_averages : int
+        Number of photon count samples to average at each Z position
 
-#     Returns
-#     -------
-#     tuple
-#         (counts, z_positions) - counts in kcps or raw depending on config
-#     """
+    Returns
+    -------
+    tuple
+        (counts, z_positions) - counts in kcps or raw depending on config
+    """
 
-#     counts, z_positions = z_scan_1d.main(
-#         nv_sig,
-#         z_start=z_start,
-#         z_end=z_end,
-#         num_steps=num_steps,
-#         num_averages=num_averages,
-#         save_data=True,
-#     )
-#     return counts, z_positions
+    results = z_scan_1d.main(
+        nv_sig, 
+        num_steps=1000, 
+        step_size=1, 
+        num_averages=1, 
+        min_threshold=100
+    )
+    return results
 
+# end region
 
 # def do_z_scan_calibrated(nv_sig, z_start=50, z_end=-350, num_steps=61, num_averages=1):
 #     """
@@ -624,7 +624,7 @@ if __name__ == "__main__":
     # region Postion and Time Control
     sample_xy = [0.0,0.0] # piezo XY voltage input (1.0=1V) (not coordinates, relative)
     coord_z = 0  # piezo z voltage (0 is the set midpoint, absolute) (negative is closer to smaple, move unit steps in sample; 37 is good surface focus with bs for Lovelace; 20 is good for dye)
-    pixel_xy = [0.0,0.0]   # galvo ref
+    pixel_xy = [0,0] #[0.1,0] #[0,0.1]   # galvo ref
 
     nv_sig = NVSig(
         name=f"({get_sample_name()})",
@@ -637,7 +637,7 @@ if __name__ == "__main__":
         disable_z_opt=True,
         expected_counts=13,
         pulse_durations={
-            VirtualLaserKey.IMAGING: int(5e6), # readout is in ns (5e6 = 5ms)
+            VirtualLaserKey.IMAGING: int(10e6), # readout is in ns (5e6 = 5ms)
             VirtualLaserKey.CHARGE_POL: int(1e4),
             VirtualLaserKey.SPIN_POL: 2000,
             VirtualLaserKey.SINGLET_DRIVE: 300,  # placeholder
@@ -655,8 +655,14 @@ if __name__ == "__main__":
         
         # pos.set_xyz_on_nv(nv_sig) # Hahn omits this line, currently leave this line out when calibrating z
 
-        do_calibrate_z_axis(nv_sig)
-        # do_z_scan_1d
+        #region 1D scan + Calibrate
+        #do_calibrate_z_axis(nv_sig)
+        do_z_scan_1d(nv_sig)
+
+        # Manually set Z reference to current position
+        piezo = pos.get_positioner_server(CoordsKey.Z)
+        print(piezo.get_z_position())
+        # piezo.set_z_reference()
 
         # region 2D scan
 
@@ -674,12 +680,12 @@ if __name__ == "__main__":
         # do_image_sample(nv_sig)
         # do_image_sample_zoom(nv_sig, nv_minus_initialization=True)
         # Z AXIS PIEZO SCAN
-        # z_range = np.linspace(0, -250, 21)
-        # for z in z_range:
-        #     nv_sig.coords[CoordsKey.Z] = z
-        #     pos.set_xyz_on_nv(nv_sig)
-        #     # do_image_sample_zoom(nv_sig)
-        #     do_image_sample(nv_sig)
+        z_range = np.linspace(-10, -50, 2)
+        for z in z_range:
+            nv_sig.coords[CoordsKey.Z] = z
+            pos.set_xyz_on_nv(nv_sig)
+            # do_image_sample_zoom(nv_sig)
+            do_image_sample(nv_sig)
 
         # do_image_sample_zoom(nv_sig)
         # do_image_sample(nv_sig, nv_minus_initialization=True)
