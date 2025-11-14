@@ -19,6 +19,8 @@ import inspect
 import re, hashlib, datetime as dt
 import itertools, random
 import pandas as pd
+import matplotlib.pyplot as plt, matplotlib.ticker as mticker
+
 
 # --- Optional numba (falls back gracefully) ----------------------------------
 try:
@@ -793,14 +795,40 @@ def plot_sorted_panels_with_err(
 
         yerr = _mask_huge_errors(y, yerr_raw, rel_cap=A_rel_cap, pct_cap=A_pct_cap)
 
-        plt.figure(figsize=(10,5))
-        plt.errorbar(x, y, yerr=yerr, fmt="o", ms=3, lw=0.8, capsize=2, elinewidth=0.8, alpha=0.95, label="Spin-echo derived (picked)")
-        plt.grid(alpha=0.3)
-        plt.xlabel("NV index (sorted)"); plt.ylabel(r"$A_{\mathrm{hfs}}$ (kHz)")
-        plt.title(f"{title_prefix}: $A_{{\\rm hfs}}$ (sorted)")
-        plt.yscale("log")
+        fig, ax = plt.subplots(figsize=(8,6))
+        ax.errorbar(
+            x, y, yerr=yerr,
+            fmt="o", ms=3, lw=0.8,
+            capsize=2, elinewidth=0.8,
+            alpha=0.95,
+            label="Spin-echo derived (picked)",
+        )
+        # ax.grid(alpha=0.3)
+
+        # Axis labels / title
+        ax.set_xlabel("NV index (sorted)")
+        ax.set_ylabel(r"$A_{\mathrm{hfs}}$ (kHz)")
+        ax.set_title(f"{title_prefix}: $A_{{\\rm hfs}}$ (sorted)")
+
+        # Log y-scale
+        ax.set_yscale("log")
+        ax.yaxis.set_major_locator(mticker.LogLocator(base=10))
+        ax.yaxis.set_minor_locator(mticker.LogLocator(base=10, subs=np.arange(2, 10)))
+        ax.yaxis.set_minor_formatter(mticker.NullFormatter())
+
+        ax.grid(True, which="both", alpha=0.3)
+        # Note about excluded points
         note = f"Excluded here (no valid freq): {(~valid_A).sum()}"
-        plt.text(0.01, 0.98, note, transform=plt.gca().transAxes, ha="left", va="top", fontsize=8)
+
+        # Put note in axes coordinates (top-left of plot)
+        ax.text(
+            0.01, 0.98, note,
+            transform=ax.transAxes,
+            ha="left", va="top",
+            fontsize=8,
+        )
+
+        fig.tight_layout()
     else:
         print("[plot] No hyperfine points to plot.")
 
@@ -916,11 +944,12 @@ def plot_exp_sticks(
     f = freqs_kHz[m]; w = w[m]
     order = np.argsort(f); f = f[order]; w = w[order]
 
-    plt.figure(figsize=(9, 4.2))
+    plt.figure(figsize=(10, 5))
     for fk, wk in zip(f, w):
         plt.vlines(fk, 0.0, wk, linewidth=1.5)
     plt.xlabel("Frequency (kHz)")
     plt.ylabel(weight_caption)
+    plt.xscale("log")
     plt.title(title)
     plt.grid(True, alpha=0.25)
     plt.tight_layout()
@@ -1027,7 +1056,9 @@ def convolved_exp_spectrum(
             spec = spec / area
 
     # Plot
-    ax = ax or plt.gca()
+    # ax = ax or plt.gca()
+    # ax, fig = plt.figure()
+    fig, ax = plt.subplots()
     if log_x:
         ax.set_xscale("log")
     ax.plot(f, spec, lw=1.6)
@@ -1099,6 +1130,8 @@ if __name__ == "__main__":
     # file_stem= "2025_11_11-01_46_41-johnson_204nv_s3-003c56" 
     # file_stem= "2025_11_11-06_23_14-johnson_204nv_s6-6d8f5c" 
     file_stem= "2025_11_12-08_51_17-johnson_204nv_s7-aab2d0"
+    file_stem= "2025_11_13-06_28_22-sample_204nv_s1-e85aa7"
+    
     
     data = dm.get_raw_data(file_stem=file_stem)
     popts = data["popts"]
@@ -1180,9 +1213,9 @@ if __name__ == "__main__":
     mask_cap_exact = np.isfinite(T2_us) & np.isclose(T2_us, CAP_US, atol=1e-6)
     cap_indices = np.where(mask_cap_exact)[0]
     cap_labels  = np.asarray(nv)[mask_cap_exact]
-    print(f"[cap=={CAP_US:.0f} µs] Count: {mask_cap_exact.sum()}")
-    print("Indices:", cap_indices.tolist())
-    print("NV labels:", cap_labels.tolist())
+    # print(f"[cap=={CAP_US:.0f} µs] Count: {mask_cap_exact.sum()}")
+    # print("Indices:", cap_indices.tolist())
+    # print("NV labels:", cap_labels.tolist())
 
     # ---- Apply mask to ALL arrays before plotting ----
     nv_m          = np.asarray(nv)[mask]
@@ -1198,11 +1231,11 @@ if __name__ == "__main__":
 
     # ---- Plot with masked arrays only ----
     # (1) Your existing panels (unchanged)
-    # plot_sorted_panels_with_err(
-    #     nv_m, T2_us_m, sT2_us_m, A_pick_kHz_m, sA_pick_kHz_m,
-    #     mask_fit_fail=np.zeros_like(fit_fail_m, dtype=bool),
-    #     t2_rel_cap=1.0, t2_pct_cap=95, A_rel_cap=0.75, A_pct_cap=95
-    # )
+    plot_sorted_panels_with_err(
+        nv_m, T2_us_m, sT2_us_m, A_pick_kHz_m, sA_pick_kHz_m,
+        mask_fit_fail=np.zeros_like(fit_fail_m, dtype=bool),
+        t2_rel_cap=1.0, t2_pct_cap=95, A_rel_cap=0.75, A_pct_cap=95
+    )
 
     # (2) Experimental sticks: choose a weighting
     #   a) unit weights
@@ -1216,21 +1249,21 @@ if __name__ == "__main__":
     F_kHz, W = build_exp_lines(f0_kHz_m, f1_kHz_m, fmin_kHz=1, fmax_kHz=20000,
                                weight_mode="inv_chi2", chis=chis_m)
 
-    # plot_exp_sticks(
-    #     F_kHz, W,
-    #     title="Experimental ESEEM sticks (sorted)",
-    #     weight_caption="unit weight"  # or "1/σ_A^2", or "1/χ²"
-    # )
-
-    # (3) Convolved spectrum (Gaussian)
-    _fff, _SSS = convolved_exp_spectrum(
+    plot_exp_sticks(
         F_kHz, W,
-        f_range_kHz=(1, 20000),
-        npts=2400,
-        shape="gauss",          # "lorentz" also available
-        width_kHz=8.0,
-        title_prefix="Experimental ESEEM spectrum",
-        weight_caption="unit weight"  # match what you chose above
+        title="Experimental ESEEM sticks (sorted)",
+        weight_caption="unit weight"  # or "1/σ_A^2", or "1/χ²"
     )
+
+    # # (3) Convolved spectrum (Gaussian)
+    # _fff, _SSS = convolved_exp_spectrum(
+    #     F_kHz, W,
+    #     f_range_kHz=(1, 20000),
+    #     npts=2400,
+    #     shape="gauss",          # "lorentz" also available
+    #     width_kHz=8.0,
+    #     title_prefix="Experimental ESEEM spectrum",
+    #     weight_caption="unit weight"  # match what you chose above
+    # )
 
     kpl.show(block=True)

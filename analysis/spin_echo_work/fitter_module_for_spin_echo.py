@@ -6,7 +6,7 @@ Spin-echo: finer fit + fitted-figure + parameter panels
 - Optional two-frequency sin^2 beating with phases
 - Smoothly plugs into your plotting + data pipeline
 
-Author: you + chatgpt teammate
+Author: Sarohj Chand
 """
 
 import os
@@ -1042,13 +1042,197 @@ def _amp_windows_and_seeds():
         ((-1.0, 1.0), [0.25, 0.50, 0.85]),
         ((-2.0, 2.0), [0.40, 0.80, 1.20]),
     ]
+def _amp_windows_and_seeds():
+    # small→large windows; seeds inside each
+    return [
+        ((-0.6, 0.6), [0.35]),
+    ]
+import numbers
+import numpy as np
 
+def _is_num(x):
+    return isinstance(x, numbers.Number) and np.isfinite(x)
 
+def _sanitize_overrides(ov: dict, pmap: dict) -> dict:
+    clean = {}
+    for k, v in (ov or {}).items():
+        if k not in pmap:
+            # skip unknown params silently (or warn)
+            continue
+        # unwrap 1-element containers
+        if isinstance(v, (list, tuple, np.ndarray)):
+            if len(v) != 1:
+                raise TypeError(f"override '{k}' must be scalar, got {type(v)} with len={len(v)}")
+            v = v[0]
+        if isinstance(v, dict):
+            raise TypeError(f"override '{k}' must be scalar, got dict")
+        if not _is_num(v):
+            raise TypeError(f"override '{k}' must be numeric, got {v!r} ({type(v)})")
+        clean[k] = float(v)
+    return clean
+# --- Allowed f+/- extraction (cycles/µs native; kHz adapter provided) --------
+
+def _hz_to_cyc_per_us(f_hz: float) -> float:
+    return float(f_hz) / 1e6  # cycles per microsecond == MHz
+
+def _extract_allowed_from_records(records, *,
+                                  orientations=None,
+                                  band=None,            # (fmin, fmax) in cycles/µs
+                                  kHz_range=None,       # alias: (fmin, fmax) in kHz
+                                  f_range_kHz=None,     # alias: (fmin, fmax) in kHz
+                                  dedupe_tol_cyc_per_us=1e-6):
+    """
+    Extract allowed f+/- lines from JSON-like records.
+
+    Input format (per record):
+      {
+        "orientation": (s1, s2, s3),
+        "f_plus_Hz":  <float> | None,
+        "f_minus_Hz": <float> | None,
+        "kappa":      <float> (optional)
+      }
+
+    Filters by "orientations" (list of tuples) if given, and by a frequency band.
+    Preferred band is 'band' in cycles/µs; alias support for kHz bands.
+
+    Returns: list[dict] with elements like
+      {"f": cycles/µs, "kappa": float, "src": record, "which": "f_plus_Hz"|"f_minus_Hz"}
+    """
+    out = []
+    if not isinstance(records, (list, tuple)) or not records:
+        return out
+
+    # --- Band alias normalization ---
+    if band is None:
+        kHz_rng = f_range_kHz or kHz_range
+        if kHz_rng is not None:
+            fmin_cyc = float(kHz_rng[0]) / 1000.0
+            fmax_cyc = float(kHz_rng[1]) / 1000.0
+            band = (min(fmin_cyc, fmax_cyc), max(fmin_cyc, fmax_cyc))
+
+    ori_set = set(map(tuple, orientations)) if orientations else None
+
+    for r in records:
+        try:
+            ori = tuple(r.get("orientation", ()))
+            if ori_set and (ori not in ori_set):
+                continue
+
+            kappa = float(r.get("kappa", 1.0))
+            for which in ("f_plus_Hz", "f_minus_Hz"):
+                f_hz = r.get(which, None)
+                if f_hz is None:
+                    continue
+                f = _hz_to_cyc_per_us(f_hz)  # cycles/µs
+                if not (np.isfinite(f) and f > 0):
+                    continue
+                if (band is None) or (band[0] <= f <= band[1]):
+                    out.append({"f": float(f), "kappa": kappa, "src": r, "which": which})
+        except Exception:
+            # ignore malformed line
+            continue
+
+    # Sort + dedupe (collapse near-duplicates)
+    out.sort(key=lambda d: d["f"])
+    uniq = []
+    for d in out:
+        if (not uniq) or (abs(d["f"] - uniq[-1]["f"]) > dedupe_tol_cyc_per_us):
+            uniq.append(d)
+    return uniq
+
+def _rank_allowed(allowed_list, mode="none"):
+    """
+    Reorder by weight.
+      mode: "none" | "kappa" | "per_line"
+        - "kappa": sort by descending kappa
+        - "per_line": uniform weight but keep stable order
+    """
+    if mode == "kappa":
+        return sorted(allowed_list, key=lambda d: float(d.get("kappa", 1.0)), reverse=True)
+    return list(allowed_list)
+
+# --- Adapter that returns (allowed_kHz, weights) for legacy callers -----------
+
+def extract_allowed_kHz_and_weights(records, *,
+                                    orientations=None,
+                                    band_kHz=None,            # (fmin, fmax) in kHz
+                                    weight_mode="none"):      # "none" | "kappa" | "per_line"
+    """
+    Convenience wrapper that produces two aligned arrays:
+        allowed_kHz: list[float]
+        weights:     list[float] or None
+    """
+    # Reuse the main extractor with alias band arg
+    allowed = _extract_allowed_from_records(
+        records,
+        orientations=orientations,
+        f_range_kHz=band_kHz,      # alias supported above
+    )
+
+    if not allowed:
+        return [], None
+
+    allowed = _rank_allowed(allowed, mode=weight_mode)
+    allowed_kHz = [d["f"] * 1000.0 for d in allowed]          # cycles/µs -> kHz
+    if weight_mode == "kappa":
+        weights = [float(d.get("kappa", 1.0)) for d in allowed]
+    elif weight_mode == "per_line":
+        weights = [1.0] * len(allowed)
+    else:
+        weights = None
+    return allowed_kHz, weights
+
+def extract_catalog_pairs_cyc(records, orientations, band_kHz, weight_mode):
+    pairs = []
+    weights = []
+    kmin, kmax = band_kHz
+    for r in records:
+        # optional orientation filter
+        if orientations is not None:
+            ori = tuple(r.get("orientation", ()))
+            if ori not in orientations:
+                continue
+
+        fplus_Hz  = r.get("f_plus_Hz",  None)
+        fminus_Hz = r.get("f_minus_Hz", None)
+        if fplus_Hz is None or fminus_Hz is None:
+            continue
+
+        fplus_kHz  = float(fplus_Hz)  / 1e3
+        fminus_kHz = float(fminus_Hz) / 1e3
+
+        # both must lie within the kHz band (you can relax if desired)
+        if not (kmin <= fplus_kHz <= kmax and kmin <= fminus_kHz <= kmax):
+            continue
+
+        # convert to cycles/µs (== MHz)
+        fplus_cyc  = fplus_kHz  / 1000.0
+        fminus_cyc = fminus_kHz / 1000.0
+
+        # enforce our convention f0 >= f1 ≥ 0
+        f0 = max(fplus_cyc, fminus_cyc)
+        f1 = min(fplus_cyc, fminus_cyc)
+        if f0 <= 0.0 or f1 < 0.0:
+            continue
+
+        # keep
+        pairs.append((f0, f1))
+        if weight_mode == "kappa":
+            w = float(r.get("kappa", 1.0))
+        elif weight_mode == "per_line":
+            w = 1.0  # or whatever you define per pair
+        else:
+            w = 1.0
+        weights.append(w)
+
+    pairs = np.asarray(pairs, float)
+    weights = np.asarray(weights, float) if len(weights) else None
+    return pairs, weights
 # ================= Updated fitter with bound-repair ===========================
 
 def fit_one_nv_with_freq_sweeps(
     times_us, y, yerr,
-    amp_bound_grid=((-1, 1),),          # start narrow; add (-3,3) in a retry if needed
+    amp_bound_grid=((-0.5, 0.5), (-1, 1), (-2, 2)),
     *,
     # Frequency handling
     freq_bound_boxes=None,              # e.g. {"osc_f0": (0.04, 0.36), "osc_f1": (0.0, 0.36)}
@@ -1063,7 +1247,7 @@ def fit_one_nv_with_freq_sweeps(
     fixed_rev_time=37.6,
     # Prior harmonic pass (fast pre-fit using simple (f0,f1) ratios)
     prior_enable=True,
-    prior_max_pairs=24,                  # small, fast
+    prior_pairs_topK=24,                  # small, fast
     prior_min_sep=0.01,
     early_stop_redchi=None,              # stop after prior if already excellent
     # Optimizer budgets (progressive)
@@ -1077,6 +1261,12 @@ def fit_one_nv_with_freq_sweeps(
     coarse_max_nfev=200000,
     # Data cleaning
     err_floor=1e-3,
+    # NEW:
+    allowed_records=None,            # list of dicts (your JSON)
+    allowed_orientations=None,       # e.g. [(1,1,1)]
+    allowed_tol_kHz=8.0,             # half-width window for bounds around each allowed line
+    allowed_weight_mode="none",      # "none" | "kappa" | "per_line"
+    p_occ=0.011,
     # Logging
     verbose=True,
 ):
@@ -1146,7 +1336,7 @@ def fit_one_nv_with_freq_sweeps(
             base_p0, base_lb, base_ub = _clone_vecs(p0_base, lb_base, ub_base)
             _set_osc_amp_bounds(base_lb, base_ub, used_fn, amin, amax)
             for a0 in a_seeds:
-                ov2 = dict(overrides); ov2["osc_amp"] = np.clip(a0, amin, amax)
+                ov2 = _sanitize_overrides(ov2, _param_index_map(fit_fn_base))
                 p0_try, lb_try, ub_try = _apply_param_overrides(base_p0, base_lb, base_ub, used_fn, ov2, None)
                 try:
                     popt2, pcov2, red2 = _fit_least_squares(used_fn, t, yy, ee, p0_try, lb_try, ub_try,
@@ -1197,117 +1387,360 @@ def fit_one_nv_with_freq_sweeps(
                 bound_boxes[k] = tuple(v)
 
     bound_boxes = _sanitize_bound_boxes(bound_boxes, band)
+    
+    # # -----------------------------
+    # # 4) Allowed-line seeds ONLY (no FFT)
+    # # -----------------------------
+    # if allowed_records is None or len(allowed_records) == 0:
+    #     raise RuntimeError("allowed_records must be provided to restrict f to f+/-.")
+    
+    # # Build band in kHz for the extractor
+    # band_kHz = (lo * 1000.0, hi * 1000.0)
+    # allowed_kHz, wts = extract_allowed_kHz_and_weights(
+    #     allowed_records,
+    #     orientations=allowed_orientations,
+    #     band_kHz=band_kHz,
+    #     weight_mode=allowed_weight_mode,  # "none" | "kappa" | "per_line"
+    # )
 
+    # # --- Normalize & align (keep freqs and weights locked together) ----------
+    # allowed_kHz = np.asarray(allowed_kHz, dtype=float)
+    # wts = None if wts is None else np.asarray(wts, dtype=float)
+
+    # if allowed_kHz.size == 0:
+    #     # Hard fail in allowed-only mode
+    #     raise RuntimeError("No allowed f+/- fall within the sampling/Nyquist band.")
+
+    # # Convert to cycles/µs (== MHz)
+    # freqs_cyc = (allowed_kHz / 1000.0).astype(float)
+
+    # # Nyquist guard (stay slightly under hi)
+    # nyq_guard = 0.95
+    # hi_guard = nyq_guard * hi
+
+    # # First clamp into [lo, hi_guard] and apply mask to weights too
+    # in_guard = (freqs_cyc >= lo) & (freqs_cyc <= hi_guard)
+    # freqs_cyc = freqs_cyc[in_guard]
+    # if wts is not None:
+    #     wts = wts[in_guard]
+
+    # if freqs_cyc.size == 0:
+    #     raise RuntimeError("No allowed lines remain after Nyquist guard; widen band or catalog.")
+
+    # # Derive a relaxed global allowed window around remaining lines using ±allowed_tol_kHz
+    # loA = max(lo,  float(np.min(freqs_cyc)) - allowed_tol_kHz / 1000.0)
+    # hiA = min(hi_guard, float(np.max(freqs_cyc)) + allowed_tol_kHz / 1000.0)
+    # if not (np.isfinite(loA) and np.isfinite(hiA)) or (hiA <= loA):
+    #     raise RuntimeError("Allowed frequency window collapsed after guarding; check inputs.")
+
+    # # Clamp again specifically to [loA, hiA]
+    # in_A = (freqs_cyc >= loA) & (freqs_cyc <= hiA)
+    # freqs_cyc = freqs_cyc[in_A]
+    # if wts is not None:
+    #     wts = wts[in_A]
+
+    # if freqs_cyc.size == 0:
+    #     raise RuntimeError("No allowed lines remain after clamping to [loA, hiA].")
+
+    # # De-duplicate (rounding in cyc/µs space); keep first occurrence; keep weights aligned
+    # key = np.round(freqs_cyc, 6)  # ~1 Hz in cyc/µs is 1e-6; 6 dp is good
+    # _, uniq_idx = np.unique(key, return_index=True)
+    # uniq_idx = np.sort(uniq_idx)
+    # freqs_cyc = freqs_cyc[uniq_idx]
+    # if wts is not None:
+    #     wts = wts[uniq_idx]
+
+    # if freqs_cyc.size == 0:
+    #     raise RuntimeError("Allowed-list collapsed after dedupe; relax tolerance or widen band.")
+
+    # # Optional: weight-aware ordering (highest first). Otherwise preserve order.
+    # ordered = freqs_cyc.tolist()
+    # if (allowed_weight_mode != "none") and (wts is not None):
+    #     freqs_src = np.asarray(freqs_cyc, float).ravel()
+    #     wts_src   = np.asarray(wts, float).ravel()
+
+    #     def _nearest_weight(freq):
+    #         j = int(np.argmin(np.abs(freqs_src - float(freq))))
+    #         if wts_src.size == 0:
+    #             return 0.0
+    #         j = max(0, min(j, wts_src.size - 1))  # clamp to avoid OOB
+    #         w = float(wts_src[j])
+    #         return w if np.isfinite(w) else 0.0
+
+    #     ordered = sorted(ordered, key=_nearest_weight, reverse=True)
+
+    # # Cap to top-K seeds to control grid growth
+    # if len(ordered) > prior_pairs_topK:
+    #     ordered = ordered[:prior_pairs_topK]
+    # # Bound boxes: use tightened window [loA, hiA]; then sanitize with overall (lo, hi)
+    # bound_boxes = {}
+    # if enable_extras and "osc_f0" in pmap:
+    #     bound_boxes["osc_f0"] = (max(0.0, loA), hiA)
+    # if enable_extras and "osc_f1" in pmap:
+    #     bound_boxes["osc_f1"] = (0.0, hiA)  # allow single-line fits via f1=0
+    # bound_boxes = _sanitize_bound_boxes(bound_boxes, (lo, hi))
+
+    # # Seed grid from allowed lines (+ 0.0 in f1 for single-line)
+    # seed_grid = {}
+    # if enable_extras and "osc_f0" in pmap and len(ordered) > 0:
+    #     seed_grid["osc_f0"] = ordered
+    # if enable_extras and "osc_f1" in pmap:
+    #     seed_grid["osc_f1"] = [0.0] + (ordered if len(ordered) > 0 else [])
+    # Pull pairs from catalog, then guard by Nyquist
+    
     # -----------------------------
-    # 4) FFT frequency seeds
+    # 4) Allowed-line PAIRS ONLY (no FFT, no cross-pair mixing)
     # -----------------------------
-    fit_fn_core = fit_fn_base
-    freq_seeds = _seed_freqs_fft(
-        t, yy, ee,
-        fit_fn_core, p0_core, lb_core, ub_core,
-        band=band,
-        n_peaks=freq_seed_n_peaks,
-        include_harmonics=seed_include_harmonics
-    )
-    if verbose:
-        try:
-            print(f"FFT freq seeds (cycles/µs): {np.round(freq_seeds, 6)} in band {np.round(band, 6)}")
-        except Exception:
-            print(f"FFT freq seeds (cycles/µs): {freq_seeds} in band {band}")
+    if allowed_records is None or len(allowed_records) == 0:
+        raise RuntimeError("allowed_records must be provided to restrict f to f+/− pairs.")
 
-    # ---------------------------------------------
-    # 5) PRIOR (diversified harmonic/paired seeds)
-    # ---------------------------------------------
-    all_candidates = []
-    if prior_enable and enable_extras and ("osc_f0" in pmap) and len(freq_seeds) > 0:
-        # distinct seeds within band
-        seeds = _uniq_in_band(freq_seeds, lo, hi)
-
-        # build diversified overrides: singles (f1=0) + wide/close pairs + harmonics
-        prior_ovrs = diversified_prior_overrides(
-            seeds, (lo, hi),
-            min_sep=prior_min_sep, nyq_guard=0.95,
-            n_single=min(12, max(4, len(seeds))),
-            n_pairs=prior_max_pairs, nbuckets=5, jitter=0.015, seed=1729
+    band_kHz = (lo * 1000.0, hi * 1000.0)
+    
+    pairs_cyc, pair_wts = extract_catalog_pairs_cyc(
+            allowed_records, allowed_orientations, band_kHz, allowed_weight_mode
         )
 
-        base_p0, base_lb, base_ub = _clone_vecs(p0_base, lb_base, ub_base)
-        _set_osc_amp_bounds(base_lb, base_ub, fit_fn_base, -1.0, 1.0)
+    if pairs_cyc.size == 0:
+        raise RuntimeError("No (f+, f−) pairs fall within the sampling/Nyquist band.")
+
+    nyq_guard = 0.95
+    hi_guard = nyq_guard * hi
+    m = (pairs_cyc[:,0] >= lo) & (pairs_cyc[:,0] <= hi_guard) & \
+        (pairs_cyc[:,1] >= 0.0) & (pairs_cyc[:,1] <= hi_guard)
+    pairs_cyc = pairs_cyc[m]
+    if pair_wts is not None: pair_wts = pair_wts[m]
+
+    if pairs_cyc.size == 0:
+        raise RuntimeError("No pairs remain after Nyquist guard.")
+
+    # Optional: sort pairs by weight
+    order = np.arange(len(pairs_cyc))
+    if (allowed_weight_mode != "none") and (pair_wts is not None):
+        order = np.argsort(-pair_wts)
+    pairs_cyc = pairs_cyc[order]
+    if pair_wts is not None: pair_wts = pair_wts[order]
+
+    # De-duplicate pairs (round inside cyc/µs space)
+    key = np.round(pairs_cyc, 6)  # 6 dp is safe here
+    _, uniq_idx = np.unique(key, axis=0, return_index=True)
+    uniq_idx = np.sort(uniq_idx)
+    pairs_cyc = pairs_cyc[uniq_idx]
+    if pair_wts is not None: pair_wts = pair_wts[uniq_idx]
+
+    # Optional top-K cap
+    if len(pairs_cyc) > prior_pairs_topK:
+        pairs_cyc_topK = pairs_cyc[:prior_pairs_topK]
+        if pair_wts is not None:
+            pair_wts_topK = pair_wts[:prior_pairs_topK]
+
+    # # ---------------------------------------------
+    # # 5) PRIOR (diversified allowed singles/pairs)
+    # # ---------------------------------------------
+    # all_candidates = []
+    # if prior_enable and enable_extras and ("osc_f0" in pmap) and len(pairs_cyc) > 0:
+    #     seeds = list(ordered)
+
+    #     # build prior overrides *only* from allowed lines:
+    #     prior_ovrs = []
+    #     # singles (f1 = 0)
+    #     prior_ovrs += [ {"osc_f0": f0, "osc_f1": 0.0} for f0 in seeds ]
+
+    #     # pairs (f1 < f0) with a small separation guard
+    #     for i, f0 in enumerate(seeds):
+    #         for f1 in seeds[:i]:
+    #             if abs(f0 - f1) >= prior_min_sep:
+    #                 prior_ovrs.append({"osc_f0": f0, "osc_f1": f1})
+
+    #     base_p0, base_lb, base_ub = _clone_vecs(p0_base, lb_base, ub_base)
+    #     _set_osc_amp_bounds(base_lb, base_ub, fit_fn_base, -1.0, 1.0)
+        
+    #     # progress accounting
+    #     AMP_WINDS = _amp_windows_and_seeds()  # [((amin,amax), [a_seeds...]), ...]
+    #     # AMP_WINDS = _amp_windows_and_seeds()  # [((amin,amax), [a_seeds...]), ...]
+    #     total_trials = sum(len(a_seeds) for _, a_seeds in AMP_WINDS) * len(prior_ovrs)
+
+    #     if verbose:
+    #         print(f"[PRIOR] starting: {len(prior_ovrs)} override(s) × "
+    #             f"{sum(len(a) for _, a in AMP_WINDS)} amp-seed(s) "
+    #             f"= {total_trials} trial(s) in band {lo:.4g}–{hi:.4g} cyc/µs", flush=True)
+
+    #     start_best = np.inf
+    #     best_prior = None
+        
+
+    #     for ov in prior_ovrs:
+    #         f0 = float(ov.get("osc_f0", 0.0))
+    #         f1 = float(ov.get("osc_f1", 0.0))
+    #         if not (lo <= f0 <= hi): continue
+    #         if not (0.0 <= f1 <= hi): continue
+
+    #         for (amin, amax), a_seeds in AMP_WINDS:
+    #             base_p0, base_lb, base_ub = _clone_vecs(p0_base, lb_base, ub_base)
+    #             _set_osc_amp_bounds(base_lb, base_ub, fit_fn_base, amin, amax)
+
+    #             for a0 in a_seeds:
+    #                 ov2 = dict(ov); ov2["osc_amp"] = np.clip(a0, amin, amax)
+
+    #                 p0_try, lb_try, ub_try = _apply_param_overrides(
+    #                     base_p0, base_lb, base_ub, fit_fn_base,
+    #                     overrides=ov2, bound_boxes=None,
+    #                 )
+
+    #                 try:
+    #                     # prefer extras
+    #                     popt, pcov, red = _fit_least_squares(
+    #                         fit_fn_base, t, yy, ee, p0_try, lb_try, ub_try, max_nfev=small_max_nfev//4
+    #                     )
+    #                 except Exception:
+    #                     # fallback: core-only
+    #                     try:
+    #                         popt, pcov, red = _fit_least_squares(
+    #                             fit_fn_base, t, yy, ee, p0_try[:kcore], lb_try[:kcore], ub_try[:kcore],
+    #                             max_nfev=small_max_nfev//4
+    #                         )
+    #                     except Exception:
+    #                         continue
+
+    #                 sc = _score_tuple(popt, red, lb_try, ub_try, _param_index_map(fit_fn_base))
+    #                 if sc[0] < start_best:
+    #                     start_best = sc[0]
+    #                     best_prior = ("lsq_prior", (amin, amax), ov2, popt, pcov, red, fit_fn_base)
+
+    #     if best_prior is not None:
+    #         name, ab, overrides, popt, pcov, red, used_fn = best_prior
+    #         all_candidates.append((ab, overrides, name, popt, pcov, red, used_fn))
+    #         if verbose:
+    #             print(f"[PRIOR-BEST] amp={ab}, mode={name}, redχ²={red:.4g}, overrides={overrides}")
+
+    #         if isinstance(early_stop_redchi, (int, float)) and red <= early_stop_redchi:
+    #             if verbose:
+    #                 print(f"[EARLY-STOP] Using prior candidate with redχ²={red:.4g}")
+    #             return popt, pcov, red, used_fn, ab, overrides
+    
+    
+    # ---------------------------------------------
+    # 5) PRIOR (keep catalog pairs; amplitude free)
+    # ---------------------------------------------
+    all_candidates = []
+    if prior_enable and enable_extras and ("osc_f0" in pmap) and pairs_cyc_topK.size > 0:
+        # exact pairs from catalog (no singles)
+        prior_ovrs = [{"osc_f0": float(f0), "osc_f1": float(f1)}
+                    for (f0, f1) in pairs_cyc_topK]
+
+        AMP_WINDS = _amp_windows_and_seeds()   # we still use its windows, but amp is FREE
+        n_amp_windows = len(AMP_WINDS)
+        if verbose:
+            print(f"[PRIOR] starting: {len(prior_ovrs)} override(s) × "
+                f"{n_amp_windows} amp-window(s) (amp=free) "
+                f"= {len(prior_ovrs)*n_amp_windows} trial(s) in band {lo:.5g}–{hi:.5g} cyc/µs",
+                flush=True)
 
         start_best = np.inf
         best_prior = None
 
-        for ov in prior_ovrs:  # your diversified f0/f1 overrides
-            f0 = float(ov.get("osc_f0", 0.0))
-            f1 = float(ov.get("osc_f1", 0.0))
-            if not (lo <= f0 <= hi): continue
-            if not (0.0 <= f1 <= hi): continue
+        # Optional: lock freqs very tightly (set small eps>0 to hard-freeze)
+        eps = 1e-6  # e.g., 1e-6 to pin, 0.0 to leave free
 
-            for (amin,amax), a_seeds in _amp_windows_and_seeds():
+        for ov in prior_ovrs:
+            # Build local frequency boxes if locking is requested
+            box_local = {}
+            if eps > 0.0:
+                if "osc_f0" in pmap and "osc_f0" in ov:
+                    f0 = float(ov["osc_f0"])
+                    box_local["osc_f0"] = (max(0.0, f0 - eps), f0 + eps)
+                if "osc_f1" in pmap and "osc_f1" in ov:
+                    f1 = float(ov["osc_f1"])
+                    box_local["osc_f1"] = (max(0.0, f1 - eps), f1 + eps)
+
+            for (amin, amax), _a_seeds in AMP_WINDS:
+                # amplitude is FREE within (amin, amax): set bounds only, no osc_amp in overrides
                 base_p0, base_lb, base_ub = _clone_vecs(p0_base, lb_base, ub_base)
                 _set_osc_amp_bounds(base_lb, base_ub, fit_fn_base, amin, amax)
 
-                for a0 in a_seeds:
-                    ov2 = dict(ov)
-                    ov2["osc_amp"] = np.clip(a0, amin, amax)
+                # DO NOT add osc_amp to overrides -> keep it free
+                ov2 = dict( ov)
+                ov2 = _sanitize_overrides(ov2, _param_index_map(fit_fn_base))
 
-                    p0_try, lb_try, ub_try = _apply_param_overrides(
-                        base_p0, base_lb, base_ub, fit_fn_base,
-                        overrides=ov2, bound_boxes=None,
+                p0_try, lb_try, ub_try = _apply_param_overrides(
+                    base_p0, base_lb, base_ub, fit_fn_base,
+                    overrides=ov2, bound_boxes=(box_local or bound_boxes)
+                )
+
+                try:
+                    popt, pcov, red = _fit_least_squares(
+                        fit_fn_base, t, yy, ee, p0_try, lb_try, ub_try,
+                        max_nfev=small_max_nfev // 4
                     )
-
-                    # quick LSQ (+extras preferred)
-                    tried = False
+                    # if verbose:
+                    #     print(f"[PRIOR try] f0={ov2['osc_f0']:.6g} f1={ov2['osc_f1']:.6g} "
+                    #         f"amp=free[{amin:.3g},{amax:.3g}] redχ²={red:.4g}")
+                except Exception:
+                    # fallback: core-only
                     try:
-                        if enable_extras and len(p0_try) > kcore:
-                            if verbose: print(f"  [priors] lsq_extras f0={f0:.6g}, f1={f1:.6g}, A~{a0:.2f} @[{amin},{amax}]")
-                            popt, pcov, red = _fit_least_squares(
-                                fit_fn_base, t, yy, ee, p0_try, lb_try, ub_try, max_nfev=small_max_nfev//4
-                            )
-                            tried = True
-                        else:
-                            raise RuntimeError
+                        popt, pcov, red = _fit_least_squares(
+                            fit_fn_base, t, yy, ee,
+                            p0_try[:kcore], lb_try[:kcore], ub_try[:kcore],
+                            max_nfev=small_max_nfev // 4
+                        )
                     except Exception:
-                        try:
-                            if verbose: print(f"  [priors] lsq_noextras f0={f0:.6g}, f1={f1:.6g}, A~{a0:.2f} @[{amin},{amax}]")
-                            popt, pcov, red = _fit_least_squares(
-                                fit_fn_base, t, yy, ee, p0_try[:kcore], lb_try[:kcore], ub_try[:kcore],
-                                max_nfev=small_max_nfev//4
-                            )
-                        except Exception:
-                            continue
+                        continue
 
-                    # score with penalties (don’t accept T2 at wall)
-                    sc = _score_tuple(popt, red, lb_try, ub_try, _param_index_map(fit_fn_base))
-                    if sc[0] < start_best:
-                        start_best = sc[0]
-                        best_prior = ("lsq_prior", (amin, amax), ov2, popt, pcov, red, fit_fn_base)
-
+                sc = _score_tuple(popt, red, lb_try, ub_try, _param_index_map(fit_fn_base))
+                if sc[0] < start_best:
+                    start_best = sc[0]
+                    best_prior = ("lsq_prior", (amin, amax), ov2, popt, pcov, red, fit_fn_base)
+        best_prior_candidate = None
         if best_prior is not None:
-            # normalize tuple schema to match sweep candidates:
             name, ab, overrides, popt, pcov, red, used_fn = best_prior
-            all_candidates.append((ab, overrides, name, popt, pcov, red, used_fn))
+            best_prior_candidate = (ab, overrides, name, popt, pcov, red, used_fn)
+            all_candidates.append(best_prior_candidate)
             if verbose:
                 print(f"[PRIOR-BEST] amp={ab}, mode={name}, redχ²={red:.4g}, overrides={overrides}")
-
             if isinstance(early_stop_redchi, (int, float)) and red <= early_stop_redchi:
                 if verbose:
                     print(f"[EARLY-STOP] Using prior candidate with redχ²={red:.4g}")
                 return popt, pcov, red, used_fn, ab, overrides
-    # 6) Seed grid for the full sweep (amp × …)
+
     # ---------------------------------------------------
-    seed_grid = {}
-    if enable_extras and len(freq_seeds) > 0:
-        seed_grid["osc_f0"] = _as_float_list(freq_seeds)
-        seed_grid["osc_f1"] = [0.0] + _as_float_list(freq_seeds)  # allow single-frequency
+    # 6) Build PAIRED overrides (no mixing) + optional singles
+    # ---------------------------------------------------
+    # Optional: “lock” pair freqs tightly so the optimizer cannot drift (0.0 = unlocked)
+    lock_eps = float(globals().get("lock_pair_freqs_eps", 0.0))
+    def _local_boxes_for_pair(ov):
+        if lock_eps <= 0.0:
+            return None
+        return {
+            "osc_f0": (max(0.0, ov["osc_f0"] - lock_eps), ov["osc_f0"] + lock_eps),
+            "osc_f1": (max(0.0, ov["osc_f1"] - lock_eps), ov["osc_f1"] + lock_eps),
+        }
 
-    if extra_overrides_grid:
-        for k, v in extra_overrides_grid.items():
-            seed_grid.setdefault(k, [])
-            seed_grid[k].extend(list(v))
+    # If you have extra_overrides_grid (e.g., phases), expand PER-PAIR (not cross-mixing f0/f1)
+    def _product_with_extras(base_ov, extras_dict):
+        if not extras_dict: return [dict(base_ov)]
+        keys = list(extras_dict.keys())
+        vals = [list(v) for v in extras_dict.values()]
+        out = []
+        def rec(i, cur):
+            if i == len(keys): out.append(cur.copy()); return
+            k = keys[i]
+            for x in vals[i]:
+                # x must be scalar here
+                if isinstance(x, (list, tuple, dict, np.ndarray)):
+                    raise TypeError(f"extra override '{k}' must be scalar, got {type(x)}")
+                cur[k] = float(x)
+                rec(i+1, cur)
+            cur.pop(k, None)
+        rec(0, dict(base_ov))
+        return out
 
-    # Keep only params that exist in this model
-    seed_grid = {k: v for k, v in seed_grid.items() if k in pmap}
+
+    # Final list of (override_dict, local_bound_boxes_or_None)
+    paired_overrides = [{"osc_f0": float(f0), "osc_f1": float(f1)} for (f0, f1) in pairs_cyc]
+    override_trials = []
+    for ov in paired_overrides:
+        for t in _product_with_extras(ov, extra_overrides_grid):
+            t = _sanitize_overrides(t, _param_index_map(fit_fn_base))  # <— add this
+            override_trials.append((t, _local_boxes_for_pair(ov)))
 
     # ---------------------------------------
     # 7) Full sweep over amp windows & seeds
@@ -1390,8 +1823,102 @@ def fit_one_nv_with_freq_sweeps(
         yfit = used_fn(times_us, *popt)
         red  = _chi2_red(y, yerr, yfit, len(popt))
         return (mode, popt, pcov, red, used_fn)
+    
+    def _run_attempts_with_budget(p0_try, lb_try, ub_try, overrides, maxfev, max_nfev):
+        # bounds sanity
+        if np.any(~np.isfinite(lb_try)) or np.any(~np.isfinite(ub_try)):
+            if verbose: print("  [bounds] non-finite lb/ub; skip")
+            return None
+        if np.any(ub_try < lb_try - 1e-12):
+            if verbose: 
+                bad = np.where(ub_try < lb_try - 1e-12)[0].tolist()
+                print(f"  [bounds] ub<lb at idx={bad}; skip")
+            return None
+
+        # probe model at p0 to catch domain errors (nan/overflow)
+        try:
+            y0 = fit_fn_base(t, *p0_try)
+            if (not np.all(np.isfinite(y0))) or (y0.shape != yy.shape):
+                if verbose: print("  [probe] model(p0) non-finite or wrong shape; skip")
+                return None
+        except Exception as e:
+            if verbose: print(f"  [probe] model(p0) raised: {e!r}")
+            return None
+
+        attempts = []
+        def _log(tag):
+            if verbose:
+                keys = ", ".join([f"{k}:{overrides[k]:.6g}" for k in overrides.keys()]) if overrides else ""
+                print(f"  [overrides={{ {keys} }}] {tag}")
+
+        def _record(tag, fn, ok_tuple=None, err=None):
+            if ok_tuple is not None:
+                popt, pcov, red = ok_tuple
+                attempts.append((tag, popt, pcov, red, fn, "ok"))
+            else:
+                attempts.append((tag, None, None, np.inf, fn, f"fail: {err}"))
+                if verbose: print(f"    -> {tag} failed: {err}")
+
+        # least_squares (core)
+        try:
+            _log("least_squares no-extras (soft_l1)")
+            ok = _fit_least_squares(fit_fn_base, t, yy, ee, p0_try[:kcore], lb_try[:kcore], ub_try[:kcore], max_nfev=max_nfev)
+            _record("lsq_noextras", fit_fn_base, ok_tuple=ok)
+        except Exception as e:
+            _record("lsq_noextras", fit_fn_base, err=e)
+
+        # least_squares (+extras)
+        if enable_extras:
+            try:
+                _log("least_squares + extras (soft_l1)")
+                ok = _fit_least_squares(fit_fn_base, t, yy, ee, p0_try, lb_try, ub_try, max_nfev=max_nfev)
+                _record("lsq_extras", fit_fn_base, ok_tuple=ok)
+            except Exception as e:
+                _record("lsq_extras", fit_fn_base, err=e)
+
+        # curve_fit (core)
+        try:
+            _log("curve_fit no-extras")
+            ok = _fit_curve_fit(fit_fn_base, t, yy, ee, p0_try[:kcore], lb_try[:kcore], ub_try[:kcore], maxfev=maxfev)
+            _record("curve_fit_noextras", fit_fn_base, ok_tuple=ok)
+        except Exception as e:
+            _record("curve_fit_noextras", fit_fn_base, err=e)
+
+        # curve_fit (+extras)
+        if enable_extras:
+            try:
+                _log("curve_fit + extras")
+                ok = _fit_curve_fit(fit_fn_base, t, yy, ee, p0_try, lb_try, ub_try, maxfev=maxfev)
+                _record("curve_fit_extras", fit_fn_base, ok_tuple=ok)
+            except Exception as e:
+                _record("curve_fit_extras", fit_fn_base, err=e)
+
+        # fixed-revival (optional)
+        if fit_fn_base is fine_decay:
+            try:
+                _log("curve_fit fixed-revival")
+                p0_C, lb_C, ub_C = _initial_guess_and_bounds(t, yy, enable_extras=False, fixed_rev_time=fixed_rev_time)
+                ok = _fit_curve_fit(fine_decay_fixed_revival, t, yy, ee, p0_C, lb_C, ub_C, maxfev=maxfev)
+                _record("curve_fit_fixedrev", fine_decay_fixed_revival, ok_tuple=ok)
+            except Exception as e:
+                _record("curve_fit_fixedrev", fine_decay_fixed_revival, err=e)
+
+        # choose best; if ALL failed, report and return None
+        best_here = _pick_best(attempts)
+        if best_here is None:
+            if verbose:
+                why = [a[0]+": "+str(a[5]) for a in attempts]
+                print("  [attempts] all failed → no candidate\n    " + "\n    ".join(why))
+            return None
+
+        mode, popt, pcov, red, used_fn, _note = best_here
+        yfit = used_fn(times_us, *popt)
+        red  = _chi2_red(y, yerr, yfit, len(popt))
+        return (mode, popt, pcov, red, used_fn)
 
     # main sweep
+    all_candidates = []  # make sure this exists before use
+
     for ab in amp_bound_grid:
         a_min, a_max = float(ab[0]), float(ab[1])
 
@@ -1401,17 +1928,25 @@ def fit_one_nv_with_freq_sweeps(
             base_p0, base_lb, base_ub, fit_fn_base, overrides=None, bound_boxes=bound_boxes,
         )
 
-        # ---- coarse screening over all overrides for this amp window ----
+        # ---- coarse screening over *paired* overrides for this amp window ----
         coarse_pool = []  # (coarse_red, (p0_try, lb_try, ub_try, overrides))
-        for overrides in _grid_product(seed_grid):
+        for (overrides, local_boxes) in override_trials:
+            # prefer local pair-lock box if present
+            bboxes = local_boxes or None
             p0_try, lb_try, ub_try = _apply_param_overrides(
-                base_p0, base_lb, base_ub, fit_fn_base, overrides=overrides, bound_boxes=None,
+                base_p0, base_lb, base_ub, fit_fn_base, overrides=overrides, bound_boxes=bboxes,
             )
             cscore = _coarse_redchi(fit_fn_base, t, yy, ee, p0_try, lb_try, ub_try, kcore)
             coarse_pool.append((cscore, (p0_try, lb_try, ub_try, overrides)))
 
         coarse_pool.sort(key=lambda x: x[0])
         survivors = [x[1] for x in coarse_pool[:max(1, int(coarse_K))]]
+        if not survivors:
+            if verbose:
+                print("[COARSE] no survivors; taking best coarse candidate anyway")
+            # pick the lowest coarse score if exists
+            if coarse_pool:
+                survivors = [sorted(coarse_pool, key=lambda x: (np.inf if not np.isfinite(x[0]) else x[0]))[0][1]]
 
         # ---- run heavy attempts on survivors with SMALL budgets ----
         for (p0_try, lb_try, ub_try, overrides) in survivors:
@@ -1428,7 +1963,12 @@ def fit_one_nv_with_freq_sweeps(
                 if verbose:
                     print(f"[EARLY-STOP] Sweep reached redχ²={red:.3g}")
                 return popt, pcov, red, used_fn, ab, overrides
-
+    
+    if (len(all_candidates) == 0) and (best_prior_candidate is not None):
+        if verbose:
+            print("[SWEEP-EMPTY] Falling back to prior winner.")
+        ab, ov, mode, popt, pcov, red, used_fn = best_prior_candidate
+        return popt, pcov, red, used_fn, ab, ov
     # -----------------------------
     # 8) Select best (and refine if needed)
     # -----------------------------
@@ -1485,12 +2025,29 @@ def fit_one_nv_with_freq_sweeps(
     # Warm start from previous best params
     p0_try = np.array(popt_best, dtype=float)
 
-    # Optionally freeze f0,f1 during refine
+    # --- SNAP TO ALLOWED LINES (robust) ---
     pidx = _param_index_map(fn_best)
-    if "osc_f0" in pidx: lb_try[pidx["osc_f0"]] = ub_try[pidx["osc_f0"]] = p0_try[pidx["osc_f0"]]
-    if "osc_f1" in pidx and overrides_best.get("osc_f1", 0.0) != 0.0:
-        lb_try[pidx["osc_f1"]] = ub_try[pidx["osc_f1"]] = p0_try[pidx["osc_f1"]]
 
+    allowed_set = np.asarray(pairs_cyc, float)  # or np.asarray(ordered, float)
+    allowed_set = allowed_set[np.isfinite(allowed_set) & (allowed_set > 0)]
+    _tol_kHz = float(allowed_tol_kHz) if 'allowed_tol_kHz' in globals() else 2.0
+    
+    # --- Freeze to the selected pair (strict) ---
+    pidx = _param_index_map(fn_best)
+
+    def _has(name): 
+        return (name in pidx) and (pidx[name] < len(p0_try))
+
+    # Use exactly the pair that won during the sweep:
+    if _has("osc_f0") and ("osc_f0" in overrides_best):
+        p0_try[pidx["osc_f0"]] = float(overrides_best["osc_f0"])
+        lb_try[pidx["osc_f0"]] = ub_try[pidx["osc_f0"]] = p0_try[pidx["osc_f0"]]
+
+    use_f1 = (overrides_best.get("osc_f1", 0.0) != 0.0)
+    if _has("osc_f1") and use_f1:
+        p0_try[pidx["osc_f1"]] = float(overrides_best["osc_f1"])
+        lb_try[pidx["osc_f1"]] = ub_try[pidx["osc_f1"]] = p0_try[pidx["osc_f1"]]
+    
     # Run big budgets
     res = _run_attempts_with_budget(
         p0_try, lb_try, ub_try, overrides_best,
@@ -1509,703 +2066,235 @@ def fit_one_nv_with_freq_sweeps(
     # --- Bound-hit repair pass ------------------------------------------------
     pmap_win = _param_index_map(fn_best)
     hits = _bound_hits(popt_best, lb_try, ub_try, frac_tol=0.01, abs_tol=1e-10)
-    # If osc_amp is pressed against window edge, escalate window and repair too
+
+    # If osc_amp is pressed against window edge, escalate window once (e.g. (-1,1)→(-3,3))
     if "osc_amp" in pmap_win:
         iA = pmap_win["osc_amp"]
         if iA in hits:
-            # escalate amp window once (e.g., (-1,1) → (-3,3))
             a0, a1 = float(abest[0]), float(abest[1])
-            if (a1 - a0) <= 2.01:  # was likely (-1,1)
+            if (a1 - a0) <= 2.01:
                 if verbose:
-                    print("[REPAIR] Escalating osc_amp window to (-3,3)")
-                abest = (-3.0, 3.0)
+                    print("[REPAIR] Escalating osc_amp window to (-2,2)")
+                abest = (-2.0, 2.0)
 
     if hits:
-        if verbose:
-            # make readable names of hit params
-            inv = {j:i for i,j in pmap_win.items()}
-            hit_names = [inv[i] for i in hits.keys()]
-            print(f"[REPAIR] Params at bounds: {hit_names} → widening boxes & reseeding")
+        # Build set of indices we must NOT touch (frequencies frozen by overrides_best)
+        frozen_idxs = set()
+        if "osc_f0" in pmap_win and ("osc_f0" in overrides_best):
+            frozen_idxs.add(pmap_win["osc_f0"])
+        use_f1 = (overrides_best.get("osc_f1", 0.0) != 0.0)
+        if use_f1 and ("osc_f1" in pmap_win) and ("osc_f1" in overrides_best):
+            frozen_idxs.add(pmap_win["osc_f1"])
 
-        # 1) widen only those hit params
-        lb_rep, ub_rep = _repair_bounds_for_hits(lb_try, ub_try, hits, pmap, freq_band=band)
+        # Remove frozen indices from hits so they won't be widened or reseeded
+        hits = {k: v for k, v in hits.items() if k not in frozen_idxs}
 
-        # 2) re-tie contrast to baseline
-        p0_rep = np.array(popt_best, float)
-        p0_rep, lb_rep, ub_rep = _retie_contrast_to_baseline(p0_rep, lb_rep, ub_rep, pmap_win, eps=0.01)
+        if hits:
+            if verbose:
+                inv = {j: i for i, j in pmap_win.items()}
+                hit_names = [inv.get(i, f"param[{i}]") for i in hits.keys()]
+                print(f"[REPAIR] Params at bounds (non-frozen): {hit_names} → widening boxes & reseeding")
 
-        # 3) reseed hit indices at the centers of widened boxes
-        p0_rep = _reseed_to_center(p0_rep, lb_rep, ub_rep, only_idxs=list(hits.keys()))
+            # 1) widen only those hit params (use the correct map and freq band)
+            lb_rep, ub_rep = _repair_bounds_for_hits(lb_try, ub_try, hits, pmap_win, freq_band=band)
 
-        # 4) run heavy attempt
-        res_rep = _run_attempts_with_budget(
-            p0_rep, lb_rep, ub_rep, overrides_best,
-            maxfev=big_maxfev, max_nfev=big_max_nfev
-        )
-        if res_rep is not None:
-            mode_r, popt_r, pcov_r, red_r, fn_r = res_rep
-            if np.isfinite(red_r) and (red_r < red_best):
-                if verbose:
-                    print(f"[REPAIR-BEST] mode={mode_r}, redχ²={red_r:.4g} < {red_best:.4g}")
-                popt_best, pcov_best, red_best, fn_best = popt_r, pcov_r, red_r, fn_r
-            else:
-                if verbose:
-                    print(f"[REPAIR] did not improve (keeping redχ²={red_best:.4g})")
+            # 2) keep frequencies frozen in the repaired boxes
+            if "osc_f0" in pmap_win and (pmap_win["osc_f0"] in frozen_idxs):
+                i0 = pmap_win["osc_f0"]; f0 = float(popt_best[i0])
+                lb_rep[i0] = ub_rep[i0] = f0
+            if use_f1 and "osc_f1" in pmap_win and (pmap_win["osc_f1"] in frozen_idxs):
+                i1 = pmap_win["osc_f1"]; f1 = float(popt_best[i1])
+                lb_rep[i1] = ub_rep[i1] = f1
+
+            # 3) re-tie contrast to baseline
+            p0_rep = np.array(popt_best, float)
+            p0_rep, lb_rep, ub_rep = _retie_contrast_to_baseline(p0_rep, lb_rep, ub_rep, pmap_win, eps=0.01)
+
+            # 4) reseed hit indices at centers (exclude frozen)
+            reseed_idxs = [i for i in hits.keys() if i not in frozen_idxs]
+            p0_rep = _reseed_to_center(p0_rep, lb_rep, ub_rep, only_idxs=reseed_idxs)
+
+            # 5) run heavy attempt
+            res_rep = _run_attempts_with_budget(
+                p0_rep, lb_rep, ub_rep, overrides_best,
+                maxfev=big_maxfev, max_nfev=big_max_nfev
+            )
+            if res_rep is not None:
+                mode_r, popt_r, pcov_r, red_r, fn_r = res_rep
+                if np.isfinite(red_r) and (red_r < red_best):
+                    if verbose:
+                        print(f"[REPAIR-BEST] mode={mode_r}, redχ²={red_r:.4g} < {red_best:.4g}")
+                    popt_best, pcov_best, red_best, fn_best = popt_r, pcov_r, red_r, fn_r
+                else:
+                    if verbose:
+                        print(f"[REPAIR] did not improve (keeping redχ²={red_best:.4g})")
 
     return popt_best, pcov_best, red_best, fn_best, abest, overrides_best
 
 
 
-# === NEW: top-level runner that includes freq sweeps ==========================
-def run_with_amp_and_freq_sweeps(nv_list, norm_counts, norm_counts_ste, times_us,
-                                 nv_inds=None,
-                                 amp_bound_grid=((-0.5,0.5), (-1,1), (-2,2), (-3,3), (-4,4)),
-                                 freq_bound_boxes=None,
-                                 freq_seed_band=None,
-                                 freq_seed_n_peaks=3,
-                                 seed_include_harmonics=True,
-                                 extra_overrides_grid=None,
-                                 use_fixed_revival=False,
-                                 enable_extras=True,
-                                 fixed_rev_time=39.2,
-                                 verbose=True):
+def run_with_amp_and_freq_sweeps(
+    nv_list,
+    norm_counts,
+    norm_counts_ste,
+    times_us,
+    nv_inds=None,
+    *,
+    # -------- amplitude sweep --------
+    amp_bound_grid=((-0.5, 0.5), (-1, 1), (-2, 2)),
+
+    # -------- frequency handling --------
+    freq_bound_boxes=None,              # {"osc_f0":(lo,hi),"osc_f1":(lo,hi)} in cyc/µs
+    freq_seed_band=None,                # (fmin,fmax) cyc/µs
+    freq_seed_n_peaks=3,
+    seed_include_harmonics=True,
+
+    # -------- extra multi-start overrides --------
+    extra_overrides_grid=None,          # dict of param->[values]
+
+    # -------- model toggles --------
+    use_fixed_revival=False,
+    enable_extras=True,
+    fixed_rev_time=39.2,
+
+    # -------- prior / early-stop --------
+    prior_enable=True,
+    prior_pairs_topK=24,
+    prior_min_sep=0.01,
+    early_stop_redchi=None,
+
+    # -------- optimizer budgets --------
+    small_maxfev=40_000,
+    small_max_nfev=60_000,
+    big_maxfev=120_000,
+    big_max_nfev=180_000,
+    refine_target_red=1.05,
+
+    # -------- coarse screening --------
+    coarse_K=8,
+    coarse_max_nfev=200_000,
+
+    # -------- data cleaning --------
+    err_floor=1e-3,
+
+    # -------- allowed-lines (catalog) controls --------
+    allowed_records=None,               # list[dict] from catalog
+    allowed_orientations=None,          # e.g. [(1,1,1)]
+    allowed_tol_kHz=8.0,                # ± window for snapping/bounds
+    allowed_weight_mode="none",         # "none"|"kappa"|"per_line"
+    p_occ=0.011,
+
+    # -------- logging --------
+    verbose=True,
+):
+    """
+    Run single-NV fits across a set of NV indices with amplitude-bound sweeps,
+    frequency constraints, and optional physics-guided prior seeds.
+
+    Returns:
+        popts, pcovs, chis, fit_fns, nv_inds, chosen_amp_bounds, chosen_overrides
+    """
+    # Normalize NV indices
     if nv_inds is None:
         nv_inds = list(range(len(nv_list)))
-    popts, pcovs, chis, fit_fns, chosen_amp_bounds, chosen_overrides = [], [], [], [], [], []
-    for lbl in nv_inds:
-        print(f"Fitting (amp+freq sweeps) for NV {lbl}")
+
+    # Basic array guards
+    times_us = np.asarray(times_us, float).ravel()
+    norm_counts = np.asarray(norm_counts, float)
+    norm_counts_ste = np.asarray(norm_counts_ste, float)
+
+    if norm_counts.shape != norm_counts_ste.shape:
+        raise ValueError("norm_counts and norm_counts_ste must have the same shape.")
+    if norm_counts.shape[0] < max(nv_inds) + 1:
+        raise ValueError("nv_inds references an index beyond norm_counts rows.")
+
+    popts, pcovs, chis, fit_fns = [], [], [], []
+    chosen_amp_bounds, chosen_overrides = [], []
+
+    for idx, lbl in enumerate(nv_inds, 1):
+        if verbose:
+            print(f"Fitting (amp+freq sweeps) for NV {lbl}  [{idx}/{len(nv_inds)}]")
+
+        # Pull/shape this NV's trace
+        y  = np.asarray(norm_counts[lbl], float).ravel()
+        ye = np.asarray(norm_counts_ste[lbl], float).ravel()
+
+        if (y.size != times_us.size) or (ye.size != times_us.size):
+            print(f"[WARN] NV {lbl}: length mismatch (t={times_us.size}, y={y.size}, e={ye.size}); skipping.")
+            popts.append(None); pcovs.append(None); chis.append(np.nan); fit_fns.append(None)
+            chosen_amp_bounds.append(None); chosen_overrides.append({})
+            continue
+
+        # Gentle error floor
+        ye = np.maximum(ye, err_floor)
+
         try:
             pi, cov, chi, fn, ab, ov = fit_one_nv_with_freq_sweeps(
-                times_us,
-                norm_counts[lbl], norm_counts_ste[lbl],
+                times_us, y, ye,
                 amp_bound_grid=amp_bound_grid,
+
+                # Frequency handling
                 freq_bound_boxes=freq_bound_boxes,
                 freq_seed_band=freq_seed_band,
                 freq_seed_n_peaks=freq_seed_n_peaks,
                 seed_include_harmonics=seed_include_harmonics,
+
+                # Extra multi-starts
                 extra_overrides_grid=extra_overrides_grid,
+
+                # Model choice
                 use_fixed_revival=use_fixed_revival,
                 enable_extras=enable_extras,
                 fixed_rev_time=fixed_rev_time,
-                verbose=verbose
+
+                # Prior / early-stop
+                prior_enable=prior_enable,
+                prior_pairs_topK=prior_pairs_topK,
+                prior_min_sep=prior_min_sep,
+                early_stop_redchi=early_stop_redchi,
+
+                # Optimizer budgets
+                small_maxfev=small_maxfev,
+                small_max_nfev=small_max_nfev,
+                big_maxfev=big_maxfev,
+                big_max_nfev=big_max_nfev,
+                refine_target_red=refine_target_red,
+
+                # Coarse screening
+                coarse_K=coarse_K,
+                coarse_max_nfev=coarse_max_nfev,
+
+                # Data cleaning
+                err_floor=err_floor,
+
+                # Allowed-lines (catalog)
+                allowed_records=allowed_records,
+                allowed_orientations=allowed_orientations,
+                allowed_tol_kHz=allowed_tol_kHz,
+                allowed_weight_mode=allowed_weight_mode,
+                p_occ=p_occ,
+
+                # Logging
+                verbose=verbose,
             )
+
         except Exception as e:
-            print(f"[WARN] Fit failed for NV {lbl}: {e}")
-            pi=cov=fn=None; chi=np.nan; ab=None; ov={}
+            if verbose:
+                print(f"[WARN] Fit failed for NV {lbl}: {e}")
+            pi = cov = fn = None
+            chi = np.nan
+            ab = None
+            ov = {}
+
         popts.append(pi); pcovs.append(cov); chis.append(chi); fit_fns.append(fn)
         chosen_amp_bounds.append(ab); chosen_overrides.append(ov)
-    return popts, pcovs, chis, fit_fns, nv_inds
 
-# ==========================================
-#  helper: decide which NVs to keep based on T2_ms
-# ==========================================
-
-# --- helper: decide which NVs to keep based on T2_ms ---
-def _t2_keep_mask(t2_ms,
-                  method="iqr",          # "iqr" | "mad" | "z" | None (combine with abs_range if you want)
-                  iqr_k=1.5,             # IQR multiplier (1.5 classic, 3.0 stricter)
-                  mad_k=3.5,             # MAD multiplier (≈3–4 is common)
-                  z_thresh=4.0,          # |z| threshold
-                  abs_range=None,        # e.g. (0.01, 50.0) ms   -> keep only inside this range
-                  finite_only=True):
-    """
-    Returns a boolean mask of same length as t2_ms where True = keep.
-    Combines: finite filter, optional abs_range, and one robust method.
-    """
-    t2 = np.asarray(t2_ms, float)
-    keep = np.ones_like(t2, dtype=bool)
-
-    if finite_only:
-        keep &= np.isfinite(t2)
-
-    if abs_range is not None:
-        lo, hi = abs_range
-        keep &= (t2 >= lo) & (t2 <= hi)
-
-    # Robust method (computed only on currently "keep" values)
-    x = t2[keep]
-    if x.size == 0:
-        return keep  # nothing left anyway
-
-    if method == "iqr":
-        q1, q3 = np.nanpercentile(x, [25, 75])
-        iqr = q3 - q1
-        lo = q1 - iqr_k * iqr
-        hi = q3 + iqr_k * iqr
-        keep_subset = (x >= lo) & (x <= hi)
-
-    elif method == "mad":
-        med = np.nanmedian(x)
-        mad = np.nanmedian(np.abs(x - med)) + 1e-12
-        # robust z ~ 0.6745*(x-med)/MAD   -> use |robust z| <= mad_k
-        rz = 0.6745 * (x - med) / mad
-        keep_subset = np.abs(rz) <= mad_k
-
-    elif method == "z":
-        mu = np.nanmean(x)
-        sd = np.nanstd(x) + 1e-12
-        z = (x - mu) / sd
-        keep_subset = np.abs(z) <= z_thresh
-
-    else:
-        # No robust method; rely only on finite/abs_range
-        return keep
-
-    # write back into full mask at the positions that were "keep" so far
-    idx = np.where(keep)[0]
-    keep[idx] = keep_subset
-    return keep
-
-
-_UNIFIED_KEYS = [
-    "baseline", "comb_contrast", "revival_time_us", "width0_us", "T2_ms", "T2_exp",
-    "amp_taper_alpha", "width_slope", "revival_chirp",
-    "osc_contrast", "osc_f0", "osc_f1", "osc_phi0", "osc_phi1"
-]
-
-def _normalize_popt_to_unified(p):
-    q = np.full(14, np.nan, float)
-    L = len(p); p = np.asarray(p, float)
-    if L == 6:      # variable core, no extras
-        q[0:6] = p[0:6]
-    elif L == 5:    # fixed core, no extras
-        q[0] = p[0]; q[1] = p[1]; q[2] = np.nan; q[3] = p[2]; q[4] = p[3]; q[5] = p[4]
-    elif L == 14:   # variable + extras
-        q[0:6] = p[0:6]; q[6:] = p[6:14]
-    elif L == 13:   # fixed + extras
-        q[0] = p[0]; q[1] = p[1]; q[2] = np.nan; q[3] = p[2]; q[4] = p[3]; q[5] = p[4]
-        q[6:] = p[5:13]
-    else:
-        if L >= 6:
-            q[0:6] = p[0:6]
-            if L > 6:
-                m = min(8, L-6); q[6:6+m] = p[6:6+m]
-        elif L >= 5:
-            q[0] = p[0]; q[1] = p[1]; q[2] = np.nan; q[3] = p[2]; q[4] = p[3]; q[5] = p[4]
-    return q
-
-# ==========================================
-# 2) Parameter panels with full-length mask
-#    (T2-based outlier rejection)
-# ==========================================
-
-def plot_each_param_separately(popts, chi2_list,
-                               fit_nv_labels,
-                               save_prefix=None,
-                               include_trend=True,
-                               bins=30,
-                               t2_policy=dict(method="iqr", iqr_k=1.5,
-                                              abs_range=None, mad_k=3.5,
-                                              z_thresh=4.0, finite_only=True)):
-    valid = [(i, p, chi2_list[i] if i < len(chi2_list) else np.nan)
-             for i, p in enumerate(popts) if p is not None]
-    if not valid:
-        print("No successful fits.")
-        return [], np.zeros(len(popts), bool), np.array([], int)
-
-    uni_rows, x_labels, chi2_ok, positions = [], [], [], []
-    for i, p, chi in valid:
-        uni_rows.append(_normalize_popt_to_unified(p))
-        x_labels.append(fit_nv_labels[i])   # <— use the provided labels!
-        chi2_ok.append(chi)
-        positions.append(i)
-
-    arr      = np.vstack(uni_rows)
-    x_labels = np.asarray(x_labels)
-    chi2_ok  = np.asarray(chi2_ok, float)
-    positions= np.asarray(positions, int)
-
-    # T2 filter on the valid subset
-    t2 = arr[:, 4]
-    keep_valid = _t2_keep_mask(
-        t2,
-        method=t2_policy.get("method", "iqr"),
-        iqr_k=t2_policy.get("iqr_k", 1.5),
-        mad_k=t2_policy.get("mad_k", 3.5),
-        z_thresh=t2_policy.get("z_thresh", 4.0),
-        abs_range=t2_policy.get("abs_range", None),
-        finite_only=t2_policy.get("finite_only", True)
-    )
-
-    full_mask = np.zeros(len(popts), dtype=bool)
-    full_mask[positions] = keep_valid
-
-    arr_f      = arr[keep_valid]
-    labels_f   = x_labels[keep_valid]
-    chi2_f     = chi2_ok[keep_valid]
-
-    def _one(vec, name, ylabel):
-        fig, axes = plt.subplots(1, 2 if include_trend else 1, figsize=(10 if include_trend else 5, 4))
-        if include_trend: 
-            axh, axt = axes
-        else:             
-            axh = axes
-        axh.hist(vec[np.isfinite(vec)], bins=bins)
-        axh.set_title(f"{name} histogram") 
-        axh.set_xlabel(ylabel) 
-        axh.set_ylabel("count")
-        if include_trend:
-            axt.plot(labels_f, vec, ".", ms=4)
-            axt.set_title(f"{name} vs NV label") 
-            axt.set_xlabel("NV label") 
-            axt.set_ylabel(ylabel)
-        if save_prefix: 
-            timestamp = dm.get_time_stamp()
-            file_path = dm.get_file_path(__file__, timestamp, f"{save_prefix}_{name}.png")
-            dm.save_figure(fig, file_path)
-        return fig
-
-    figs = []
-    units = ["arb.","arb.","µs","µs","ms","–",
-             "–","– per revival","fraction","arb.","1/µs","1/µs","rad","rad"]
-    for col, (name, unit) in enumerate(zip(_UNIFIED_KEYS, units)):
-        figs.append((name, _one(arr_f[:, col], name, unit)))
-
-    fig_chi, axes = plt.subplots(1, 2 if include_trend else 1, figsize=(10 if include_trend else 5, 4))
-    if include_trend: 
-        axh, axt = axes
-    else:             
-        axh = axes
-    axh.hist(chi2_f[np.isfinite(chi2_f)], bins=bins)
-    axh.set_title("reduced χ² histogram") 
-    axh.set_xlabel("χ²_red")
-    axh.set_ylabel("count")
-    if include_trend:
-        axt.plot(labels_f, chi2_f, ".", ms=4)
-        axt.set_title("reduced χ² vs NV label") 
-        axt.set_xlabel("NV label") 
-        axt.set_ylabel("χ²_red")
-    fig_chi.tight_layout()
-    if save_prefix: 
-        timestamp = dm.get_time_stamp()
-        fig_chi.savefig(f"{save_prefix}-chi2_red.png", dpi=220)
-        file_path = dm.get_file_path(__file__, timestamp, f"{save_prefix}-chi2_red.png")
-        dm.save_figure(fig_chi, file_path)
-        
-    figs.append(("chi2_red", fig_chi))
-
-    kept_labels = labels_f.astype(int)
-    return figs, full_mask, kept_labels
-
-
-# ==========================================
-# 3) Individual NV fit plots
-#    - keep passed nv_inds
-#    - safely handle shorter popts (fixed-revival)
-# ==========================================
-
-def _coerce_to_core6(p, default_rev=39.2):
-    p = np.asarray(p, float)
-    if len(p) == 5:  # fixed-revival core -> inject revival_time for plotting with fine_decay
-        b, cc, w0, t2, exp = p
-        return np.array([b, cc, default_rev, w0, t2, exp], float)
-    return p
-
-def _safe_call_fit_fn(fit_fn, t, p, default_rev=39.2):
-    try:
-        return fit_fn(t, *p)
-    except TypeError:
-        return fit_fn(t, *_coerce_to_core6(p, default_rev=default_rev))
-
-# --- helpers you already have ---
-def _coerce_to_core6(p, default_rev=39.2):
-    p = np.asarray(p, float)
-    if len(p) == 5:  # fixed-revival core -> inject revival_time for plotting with fine_decay
-        b, cc, w0, t2, exp = p
-        return np.array([b, cc, default_rev, w0, t2, exp], float)
-    return p
-
-def _safe_call_fit_fn(fit_fn, t, p, default_rev=39.2):
-    try:
-        return fit_fn(t, *p)
-    except TypeError:
-        return fit_fn(t, *_coerce_to_core6(p, default_rev=default_rev))
-
-# --- NEW: map p -> dict using the fit function signature (best effort) ---
-def _params_to_dict(fit_fn, p, default_rev=39.2):
-    """
-    Turn a parameter vector 'p' into a name->value dict using the fit_fn signature.
-    If lengths don't match (e.g., coercion paths), fall back to a sensible mapping.
-    """
-    p = np.asarray(p, float).tolist()
-    try:
-        sig = inspect.signature(fit_fn)
-        names = [k for k in sig.parameters.keys()][1:]  # drop 'tau'
-    except Exception:
-        names = []
-
-    d = {}
-    if names and len(p) <= len(names):
-        for name, val in zip(names, p):
-            d[name] = float(val)
-        # In case of fixed-revival core (no 'revival_time'):
-        if ('revival_time' not in d) and ('width0_us' in d) and ('T2_ms' in d):
-            d['revival_time'] = float(default_rev)
-        # Back-compat: normalize osc names
-        if 'osc_contrast' in d and 'osc_amp' not in d:
-            d['osc_amp'] = d['osc_contrast']
-    else:
-        # Fallback by length heuristics
-        # Core-6: [baseline, comb_contrast, revival_time, width0_us, T2_ms, T2_exp]
-        if len(p) >= 6:
-            d.update(dict(
-                baseline=p[0], comb_contrast=p[1], revival_time=p[2],
-                width0_us=p[3], T2_ms=p[4], T2_exp=p[5]
-            ))
-        elif len(p) == 5:
-            d.update(dict(
-                baseline=p[0], comb_contrast=p[1], revival_time=default_rev,
-                width0_us=p[2], T2_ms=p[3], T2_exp=p[4]
-            ))
-        # Try to place extras in a common order if present beyond core-6
-        # [amp_taper_alpha, width_slope, revival_chirp, osc_amp (or contrast),
-        #  osc_f0, osc_f1, osc_phi0, osc_phi1, mu0_us]
-        extras = p[6:] if len(p) > 6 else []
-        keys_extras = [
-            "amp_taper_alpha", "width_slope", "revival_chirp",
-            "osc_amp", "osc_f0", "osc_f1", "osc_phi0", "osc_phi1"
-        ]
-        for k, v in zip(keys_extras, extras):
-            d[k] = float(v)
-
-    # Final tidy: ensure consistent fields exist (even if missing)
-    for k in ["baseline","comb_contrast","revival_time","width0_us","T2_ms","T2_exp",
-              "amp_taper_alpha","width_slope","revival_chirp",
-              "osc_amp","osc_f0", "osc_f1","osc_phi0","osc_phi1"]:
-        d.setdefault(k, None)
-    return d
-
-def _echo_summary_lines(t_us, y):
-    if len(y) == 0:
-        return []
-    arr = np.asarray(y, float)
-    n = max(3, len(arr)//6)
-    early = float(np.nanmean(arr[:n])); late = float(np.nanmean(arr[-n:]))
-    return [f"range: {arr.min():.3f}…{arr.max():.3f}",
-            f"⟨early⟩→⟨late⟩: {early:.3f}→{late:.3f}"]
-
-def _format_param_box(pdct):
-    """Make a compact, readable box for the most relevant parameters."""
-    def fmt(v, nd=3):
-        return ("—" if v is None else (f"{v:.{nd}g}" if isinstance(v, float) else str(v)))
-    lines = []
-    lines.append(f"baseline: {fmt(pdct['baseline'])}, comb_contrast: {fmt(pdct['comb_contrast'])}")
-    lines.append(f"Trev (μs): {fmt(pdct['revival_time'])}, rev_width (μs): {fmt(pdct['width0_us'])}")
-    lines.append(f"T2 (ms): {fmt(pdct['T2_ms'])}, T2_exp (n): {fmt(pdct['T2_exp'])}")
-    # Oscillation terms (show only if present / non-zero)
-    if (pdct.get("osc_amp") is not None) and (abs(pdct.get("osc_amp",0.0)) > 1e-6):
-        lines.append(f"osc_amp: {fmt(pdct['osc_amp'])}")
-        if pdct.get("osc_f0", None) is not None:
-            lines.append(f"f0 (cyc/μs): {fmt(pdct['osc_f0'])}, f1 (cyc/μs): {fmt(pdct['osc_f1'])}")
-        if pdct.get("osc_phi0", None) is not None:
-            lines.append(f"φ0 (rad): {fmt(pdct['osc_phi0'])}, φ1 (rad): {fmt(pdct['osc_phi1'])}")
-    # Comb shaping
-    if any(pdct.get(k, None) not in (None, 0.0) for k in ("amp_taper_alpha","width_slope","revival_chirp")):
-        lines.append(f"α: {fmt(pdct['amp_taper_alpha'])}, slope: {fmt(pdct['width_slope'])}, chirp: {fmt(pdct['revival_chirp'])}")
-    return lines
-
-# --- UPDATED: now annotates each subplot with a fit-parameter box (and optional χ²_red) ---
-def plot_individual_fits(
-    norm_counts, 
-    norm_counts_ste,
-    total_evolution_times,
-    popts,
-    nv_inds,              # labels same order as popts
-    fit_fn_per_nv,        # per-NV fit function
-    keep_mask=None,
-    show_residuals=True,
-    n_fit_points=1000,
-    save_prefix=None,
-    block=False,
-    default_rev_for_plot=39.2,
-    red_chi2_list=None,          # OPTIONAL: pass list of reduced-χ² (same order as popts)
-    show_param_box=True,         # toggle the on-plot parameter box
-):
-    N = len(popts)
-    assert len(nv_inds) == N, "nv_inds must be same length/order as popts"
-    t_all = np.asarray(total_evolution_times, float)
-
-    positions = np.arange(N)
-    if keep_mask is not None:
-        positions = positions[np.asarray(keep_mask, bool)]
-
-    figs = []
-    for pos in positions:
-        lbl = nv_inds[pos]
-        p   = popts[pos]
-        if p is None:
-            continue
-
-        fit_fn = fit_fn_per_nv[pos] or fine_decay
-
-        y = np.asarray(norm_counts[lbl], float)
-        e = np.asarray(norm_counts_ste[lbl], float)
-
-        if show_residuals:
-            fig, (ax, axr) = plt.subplots(2, 1, figsize=(7, 6), sharex=True,
-                                          gridspec_kw=dict(height_ratios=[3, 1], hspace=0.06))
-        else:
-            fig, ax = plt.subplots(1, 1, figsize=(7, 4.6))
-
-        # data
-        ax.errorbar(t_all, y, yerr=e, fmt="o", ms=3.5, lw=0.8, alpha=0.9, capsize=2)
-        ax.set_ylabel("Normalized NV$^{-}$ population")
-
-        # model curve (dense grid)
-        t_fit = np.linspace(np.nanmin(t_all), np.nanmax(t_all), n_fit_points)
-        y_fit = _safe_call_fit_fn(fit_fn, t_fit, p, default_rev=default_rev_for_plot)
-        ax.plot(t_fit, y_fit, "-", lw=2)
-
-        ax.set_title(f"NV {lbl}")
-        ymin = min(np.nanmin(y)-0.1, -0.1)
-        ymax = max(np.nanmax(y)+0.1, 1.2)
-        ax.set_ylim(ymin, ymax)
-        ax.grid(True, alpha=0.25)
-
-        # residuals
-        if show_residuals:
-            y_model = _safe_call_fit_fn(fit_fn, t_all, p, default_rev=default_rev_for_plot)
-            res = y - y_model
-            axr.axhline(0.0, ls="--", lw=1.0)
-            axr.plot(t_all, res, ".", ms=3.5)
-            axr.set_xlabel("Total evolution time (µs)")
-            axr.set_ylabel("res.")
-            axr.grid(True, alpha=0.25)
-        else:
-            ax.set_xlabel("Total evolution time (µs)")
-
-        # --- NEW: add a fit-parameter box + echo summary + optional χ²_red ---
-        if show_param_box:
-            pdict = _params_to_dict(fit_fn, p, default_rev=default_rev_for_plot)
-            box_lines = _format_param_box(pdict)
-            # top-right: parameter box
-            ax.text(
-                0.99, 0.98, "\n".join(box_lines), transform=ax.transAxes,
-                ha="right", va="top", fontsize=9,
-                bbox=dict(boxstyle="round,pad=0.35", facecolor="white", alpha=0.6, lw=0.6)
-            )
-            # top-left: quick data summary + χ²_red (if provided)
-            # left_lines = _echo_summary_lines(t_all, y)
-            left_lines = []
-            if red_chi2_list is not None and np.isfinite(red_chi2_list[pos]):
-                left_lines.append(f"χ²_red: {red_chi2_list[pos]:.3g}")
-            if left_lines:
-                ax.text(
-                    0.01, 0.98, "\n".join(left_lines), transform=ax.transAxes,
-                    ha="left", va="top", fontsize=9,
-                    bbox=dict(boxstyle="round,pad=0.35", facecolor="white", alpha=0.6, lw=0.6)
-                )
-
-        # optional save (uses your dm/timestamp if present)
-        if save_prefix:
-            try:
-                timestamp = dm.get_time_stamp()
-                file_path = dm.get_file_path(__file__, timestamp, f"{save_prefix}-nv{int(lbl):03d}")
-                dm.save_figure(fig, file_path, f"nv{int(lbl):03d}")
-            except Exception:
-                pass
-
-        figs.append((lbl, fig))
-
-    if figs:
-        plt.show(block=block)
-    return figs
-
-# ---- helpers ----
-def _index_map(unified_keys):
-    return {k:i for i,k in enumerate(unified_keys)}
-
-def _safe_sigma(pcov, idx):
-    try:
-        if pcov is None: return np.nan
-        pcov = np.asarray(pcov, float)
-        if idx is None or idx >= pcov.shape[0]: return np.nan
-        v = pcov[idx, idx]
-        return np.sqrt(v) if (np.isfinite(v) and v >= 0) else np.nan
-    except Exception:
-        return np.nan
-
-def extract_T2_freqs_and_errors(fit_dict, *, pick_freq="max", chi2_fail_thresh=None):
-    """
-    Returns
-    -------
-    nv_labels, T2_us, f0_kHz, f1_kHz, A_pick_kHz, chis, fit_fail,
-    sT2_us, sf0_kHz, sf1_kHz, sA_pick_kHz
-    """
-    keys   = fit_dict["unified_keys"]
-    kmap   = _index_map(keys)
-    popts  = fit_dict["popts"]
-    pcovs  = fit_dict.get("pcovs", [None]*len(popts))
-    chis   = np.array(fit_dict.get("red_chi2", [np.nan]*len(popts)), float)
-    nvlbl  = np.asarray(fit_dict["nv_labels"], int)
-
-    idx_T2 = kmap.get("T2_ms", None)
-    idx_f0 = kmap.get("osc_f0", None)
-    idx_f1 = kmap.get("osc_f1", None)
-
-    N = len(popts)
-    T2_us      = np.full(N, np.nan)
-    f0_kHz     = np.full(N, np.nan)
-    f1_kHz     = np.full(N, np.nan)
-    A_pick_kHz = np.full(N, np.nan)
-    sT2_us     = np.full(N, np.nan)
-    sf0_kHz    = np.full(N, np.nan)
-    sf1_kHz    = np.full(N, np.nan)
-    sA_pick_kHz= np.full(N, np.nan)
-    fit_fail   = np.zeros(N, bool)
-
-    for i, (p, C) in enumerate(zip(popts, pcovs)):
-        if not isinstance(p, (list, tuple)):
-            fit_fail[i] = True
-            continue
-
-        # chi2 filter (optional)
-        if chi2_fail_thresh is not None:
-            try:
-                if float(chis[i]) > float(chi2_fail_thresh):
-                    fit_fail[i] = True
-            except Exception:
-                pass
-
-        # T2 (ms -> µs) + sigma
-        if idx_T2 is not None and idx_T2 < len(p):
-            try:
-                T2_us[i]  = float(p[idx_T2]) * 1000.0
-                sT2_ms    = _safe_sigma(C, idx_T2)
-                sT2_us[i] = (sT2_ms * 1000.0) if np.isfinite(sT2_ms) else np.nan
-            except Exception:
-                pass
-
-        # f0, f1 (cycles/µs = MHz) -> kHz + sigmas
-        cand = []
-        tags = []  # keep which index produced which
-        if idx_f0 is not None and idx_f0 < len(p):
-            try:
-                f0 = float(p[idx_f0])
-                if np.isfinite(f0) and f0 > 0:
-                    f0_kHz[i]  = 1000.0 * f0
-                    s0         = _safe_sigma(C, idx_f0)
-                    sf0_kHz[i] = (1000.0 * s0) if np.isfinite(s0) else np.nan
-                    cand.append(f0); tags.append("f0")
-            except Exception:
-                pass
-        if idx_f1 is not None and idx_f1 < len(p):
-            try:
-                f1 = float(p[idx_f1])
-                if np.isfinite(f1) and f1 > 0:
-                    f1_kHz[i]  = 1000.0 * f1
-                    s1         = _safe_sigma(C, idx_f1)
-                    sf1_kHz[i] = (1000.0 * s1) if np.isfinite(s1) else np.nan
-                    cand.append(f1); tags.append("f1")
-            except Exception:
-                pass
-
-        if cand:
-            if pick_freq == "min":
-                j = int(np.argmin(cand))
-            elif pick_freq == "nonzero_first":
-                j = 0
-            else:  # "max"
-                j = int(np.argmax(cand))
-            f_pick = cand[j]
-            tag    = tags[j]
-            A_pick_kHz[i] = 1000.0 * f_pick
-            if tag == "f0":
-                sA_pick_kHz[i] = sf0_kHz[i]
+        if verbose:
+            # heartbeat
+            if np.isfinite(chi):
+                print(f"[DONE] NV {lbl}: redχ²={chi:.4g}, amp_bounds={ab}, overrides={ov}")
             else:
-                sA_pick_kHz[i] = sf1_kHz[i]
+                print(f"[DONE] NV {lbl}: redχ²=nan (failed)")
 
-    return (nvlbl, T2_us, f0_kHz, f1_kHz, A_pick_kHz, chis, fit_fail,
-            sT2_us, sf0_kHz, sf1_kHz, sA_pick_kHz)
+    return popts, pcovs, chis, fit_fns, nv_inds, chosen_amp_bounds, chosen_overrides
 
-# --- keep your existing extract_T2_freqs_and_errors(...) ---
-
-def _mask_huge_errors(values, sigmas, *, rel_cap=None, pct_cap=None):
-    """
-    Returns a copy of 'sigmas' with too-large bars set to NaN (so matplotlib won't draw them).
-      rel_cap:   max allowed sigma/value (e.g., 0.75). If value<=0 or NaN, rel test is skipped.
-      pct_cap:   clip absolute sigma above this percentile to NaN (e.g., 95).
-    """
-    if sigmas is None: return None
-    v = np.asarray(values, float)
-    s = np.asarray(sigmas, float).copy()
-
-    # relative cap
-    if rel_cap is not None:
-        with np.errstate(divide='ignore', invalid='ignore'):
-            rel = s / v
-        bad_rel = ~np.isfinite(rel) | (rel > float(rel_cap))
-        s[bad_rel] = np.nan
-
-    # percentile cap (absolute)
-    if pct_cap is not None:
-        finite = np.isfinite(s) & (s > 0)
-        if np.any(finite):
-            thresh = np.percentile(s[finite], float(pct_cap))
-            s[(s > thresh)] = np.nan
-
-    return s
-
-def plot_sorted_panels_with_err(
-    nv_labels, T2_us, sT2_us, A_pick_kHz, sA_pick_kHz, *,
-    mask_no_decay=None, mask_fit_fail=None,
-    title_prefix="Spin-Echo", t2_units="µs",
-    # error-bar pruning controls (tune as you like)
-    t2_rel_cap=1.0,      # hide T2 bars with σ > 100% of value
-    t2_pct_cap=99,       # and hide top 5% largest absolute T2 sigmas
-    A_rel_cap=0.75,      # hide A bars with σ > 75% of value
-    A_pct_cap=99         # and hide top 5% largest absolute A sigmas
-):
-    N = len(nv_labels)
-    mask_no_decay = np.zeros(N, bool) if mask_no_decay is None else mask_no_decay
-    mask_fit_fail = np.zeros(N, bool) if mask_fit_fail is None else mask_fit_fail
-
-    # ---- (a) T2 sorted with pruned error bars ----
-    valid_t2 = np.isfinite(T2_us) & (~mask_no_decay) & (~mask_fit_fail)
-    if np.any(valid_t2):
-        idx = np.where(valid_t2)[0]
-        order = idx[np.argsort(T2_us[idx])]
-        x = np.arange(1, order.size+1)
-
-        if t2_units.lower().startswith("ms"):
-            y    = T2_us[order] / 1000.0
-            yerr_raw = (sT2_us[order] / 1000.0) if sT2_us is not None else None
-        else:
-            y    = T2_us[order]
-            yerr_raw = sT2_us[order] if sT2_us is not None else None
-
-        yerr = _mask_huge_errors(y, yerr_raw, rel_cap=t2_rel_cap, pct_cap=t2_pct_cap)
-
-        plt.figure(figsize=(10,5))
-        plt.errorbar(x, y, yerr=yerr, fmt="o", ms=3, lw=0.8, capsize=2, elinewidth=0.8, alpha=0.95)
-        plt.grid(alpha=0.3)
-        plt.xlabel("NV index (sorted)")
-        plt.ylabel(r"$T_2$ (" + ("ms" if t2_units.lower().startswith("ms") else "µs") + ")")
-        plt.yscale("log")
-        plt.title(f"{title_prefix}: $T_2$ (sorted)")
-        note = f"Excluded: no-decay={mask_no_decay.sum()}, fit-fail={mask_fit_fail.sum()}; Used={order.size}/{N}"
-        plt.text(0.01, 0.98, note, transform=plt.gca().transAxes, ha="left", va="top", fontsize=8)
-    else:
-        print("[plot] No valid T2 to plot.")
-
-    # ---- (b) Ahfs sorted with pruned error bars ----
-    valid_A = np.isfinite(A_pick_kHz) & (A_pick_kHz > 0)
-    if np.any(valid_A):
-        idx = np.where(valid_A)[0]
-        order = idx[np.argsort(A_pick_kHz[idx])]
-        x = np.arange(1, order.size+1)
-        y = A_pick_kHz[order]
-        yerr_raw = sA_pick_kHz[order] if sA_pick_kHz is not None else None
-
-        yerr = _mask_huge_errors(y, yerr_raw, rel_cap=A_rel_cap, pct_cap=A_pct_cap)
-
-        plt.figure(figsize=(10,5))
-        plt.errorbar(x, y, yerr=yerr, fmt="o", ms=3, lw=0.8, capsize=2, elinewidth=0.8, alpha=0.95, label="Spin-echo derived (picked)")
-        plt.grid(alpha=0.3)
-        plt.xlabel("NV index (sorted)"); plt.ylabel(r"$A_{\mathrm{hfs}}$ (kHz)")
-        plt.title(f"{title_prefix}: $A_{{\\rm hfs}}$ (sorted)")
-        plt.yscale("log")
-        note = f"Excluded here (no valid freq): {(~valid_A).sum()}"
-        plt.text(0.01, 0.98, note, transform=plt.gca().transAxes, ha="left", va="top", fontsize=8)
-    else:
-        print("[plot] No hyperfine points to plot.")

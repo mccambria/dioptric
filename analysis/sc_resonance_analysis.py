@@ -214,7 +214,7 @@ def plot_nv_resonance(
     # Print the NV indices per orientation bin
     for t, idx_list in out['bins'].items():
         print(f"Target {t:.3f} GHz -> NV indices {idx_list}")
-    return
+    # return
     ### snrs
     median_snr = np.median(snrs)
     print(f"median snr:{median_snr:.2f}")
@@ -780,9 +780,9 @@ if __name__ == "__main__":
     # ]
     ## 312 nVs
     ##  current: I_y (ch1) = 0.0, I_z(ch2)=1.0
-    file_ids = [
-        "2025_11_07-02_08_20-johnson-nv0_2025_10_21",
-    ]
+    # file_ids = [
+    #     "2025_11_07-02_08_20-johnson-nv0_2025_10_21",
+    # ]
     ## 312 nVs
     ###  current: I_y (ch1) = 1.0, I_z(ch2)=0.0
     # file_ids = [
@@ -790,14 +790,14 @@ if __name__ == "__main__":
     # ]
     ## 312 nVs
     ###  current: I_y (ch1) = 1.0, I_z(ch2)=1.0
-    file_ids = [
-        "2025_11_08-03_22_11-johnson-nv0_2025_10_21",
-    ]
+    # file_ids = [
+    #     "2025_11_08-03_22_11-johnson-nv0_2025_10_21",
+    # ]
     ## 204 nVs
     ###  current: I_y (ch1) = 0.0, I_z(ch2)=0.0
-    # file_ids = [
-    #     "2025_11_09-10_40_49-johnson-nv0_2025_10_21",
-    # ]
+    file_ids = [
+        "2025_11_09-10_40_49-johnson-nv0_2025_10_21",
+    ]
     # Load the first dataset as a base
     combined_data = dm.get_raw_data(
         file_stem=file_ids[0], load_npz=True, use_cache=True

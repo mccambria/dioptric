@@ -2,6 +2,8 @@ import json, csv, numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
 from analysis.sc_c13_hyperfine_sim_data_driven import read_hyperfine_table_safe, B_vec_T
+import matplotlib.pyplot as plt, matplotlib.ticker as mticker
+
 # ---------- helpers you already have (shown for completeness) ----------
 # Pauli/2:
 Sx = 0.5 * np.array([[0, 1],[1, 0]], float)
@@ -151,7 +153,6 @@ def load_candidates(path_json,
     return sel
 
 
-import matplotlib.pyplot as plt, matplotlib.ticker as mticker
 
 
 # --- Load your precomputed catalog (from build_essem_catalog) ---
@@ -398,10 +399,10 @@ if __name__ == "__main__":
     recs = select_records(load_catalog("analysis/spin_echo_work/essem_freq_catalog_22A.json"),
                       fmin_kHz=150, fmax_kHz=20000, orientations=None)
 
-    plot_sorted_expected_sticks(recs, p_occ=0.011, f_range_kHz=(10, 20000))
+    plot_sorted_expected_sticks(recs, p_occ=0.011, f_range_kHz=(50, 6000))
 
-    expected_stick_spectrum_from_recs(
-        recs, p_occ=0.011, orientations=None,
-        f_range_kHz=(150, 20000), use_weights=True,
-        merge_tol_kHz=2.0, normalize=False
-    )
+    # expected_stick_spectrum_from_recs(
+    #     recs, p_occ=0.011, orientations=None,
+    #     f_range_kHz=(150, 20000), use_weights=True,
+    #     merge_tol_kHz=2.0, normalize=False
+    # )

@@ -43,116 +43,16 @@ try:
     from eseem_utils import (
         load_catalog,
         select_records,
-        build_single_freq_candidates,
-        build_pair_freq_candidates,
-        plot_candidate_pairs,
+        build_feasible_freqs_from_recs,
     )
 except Exception:
-    # Lightweight fallbacks if eseem_utils isn't present; you can remove this.
-    def load_catalog(path):
-        with open(path, 'r', encoding='utf-8') as f:
-            data = json.load(f)
-        return data['records'] if isinstance(data, dict) and 'records' in data else data
-    def select_records(recs, fmin_kHz=150, fmax_kHz=20000, orientations=None):
-        def ok_o(r):
-            return True if orientations is None else r.get('orientation') in set(map(tuple, orientations))
-        out=[]
-        for r in recs:
-            fp=float(r.get('f_plus_kHz', np.nan)); fm=float(r.get('f_minus_kHz', np.nan))
-            if not ok_o(r):
-                continue
-            if (np.isfinite(fp) and fmin_kHz<=fp<=fmax_kHz) or (np.isfinite(fm) and fmin_kHz<=fm<=fmax_kHz):
-                out.append(r)
-        return out
-    def build_single_freq_candidates(recs, p_occ=0.011, orientations=None, f_range_kHz=(150,20000), n_keep=24, weighted=True):
-        # naive top-frequency chooser
-        F=[]
-        for r in select_records(recs, *f_range_kHz, orientations=orientations):
-            for k in ('f_plus_kHz','f_minus_kHz'):
-                f=r.get(k, None)
-                if f is None: continue
-                F.append(float(f))
-        if not F: return []
-        F=sorted(set([float(f) for f in F if np.isfinite(f) and f>0]))
-        return [f*1e-3 for f in F[:n_keep]]
-    def build_pair_freq_candidates(recs, p_occ=0.011, orientations=None, f_range_kHz=(150,20000), n_keep_each=16, min_sep_cyc_per_us=0.01, weighted=True):
-        singles = build_single_freq_candidates(recs, p_occ, orientations, f_range_kHz, n_keep_each, weighted)
-        singles = sorted(set(float(x) for x in singles))
-        pairs=[]
-        for i,f0 in enumerate(singles):
-            for f1 in singles[:i]:
-                if abs(f0-f1)>=min_sep_cyc_per_us:
-                    pairs.append((f0,f1))
-            pairs.append((f0,0.0))
-        return pairs[:40]
-    def plot_candidate_pairs(pairs: List[Tuple[float,float]], title='Candidate (f0,f1)'):
-        if not pairs: return
-        arr=np.asarray(pairs,float)
-        plt.figure(figsize=(6,5)); plt.plot(arr[:,0],arr[:,1],'.'); plt.xlabel('f0 (cyc/μs)'); plt.ylabel('f1 (cyc/μs)'); plt.title(title); plt.grid(alpha=0.3); plt.tight_layout(); plt.show()
-
+    pass
 # We also expect your fitter to be importable from your analysis code
 try:
     from fitter_module_for_spin_echo import run_with_amp_and_freq_sweeps  # rename to your path
 except Exception:
     # If already in the global namespace (e.g., Jupyter), this import may be unnecessary.
     pass
-
-# -------------------------- Utilities ---------------------------------------
-
-def _infer_sampling_band(times_us: np.ndarray, margin: float = 0.05) -> Tuple[float, float]:
-    t = np.asarray(times_us, float)
-    t = t[np.isfinite(t)]
-    if t.size < 2:
-        return 0.0, 1.0
-    span = float(t.max() - t.min())
-    if span <= 0:
-        return 0.0, 1.0
-    diffs = np.diff(np.unique(t))
-    dt_min = float(np.nanmin(diffs)) if diffs.size else span
-    fmin = 1.0 / span
-    fmax = 0.5 / max(1e-9, dt_min)
-    # slack
-    return (max(0.0, (1 - margin) * fmin), (1 + margin) * fmax)
-
-
-def _stable_name(file_stems: List[str], nv_labels: List[int], suffix: str) -> str:
-    tokens = []
-    for s in file_stems:
-        m = re.search(r"-([A-Za-z0-9]+)-nv", s)
-        if m:
-            tokens.append(m.group(1))
-    sample = max(set(tokens), key=tokens.count) if tokens else "sample"
-    srcsig = f"s{len(file_stems)}-" + hashlib.sha1("|".join(file_stems).encode()).hexdigest()[:6]
-    return f"{sample}_{len(nv_labels)}nv_{srcsig}_{suffix}"
-
-
-@dataclass
-class FitConfig:
-    # Model toggles
-    use_fixed_revival: bool = False
-    enable_extras: bool = True
-    fixed_rev_time_us: float = 37.6
-
-    # Amplitude windows to sweep for osc_amp
-    amp_bound_grid: Tuple[Tuple[float, float], ...] = ((-0.6, 0.6), (-1.0, 1.0), (-2.0, 2.0))
-
-    # Frequency constraints (cycles/μs)
-    freq_seed_band: Optional[Tuple[float, float]] = None   # if None, inferred from sampling
-    freq_bound_boxes: Optional[Dict[str, Tuple[float, float]]] = None  # {"osc_f0":(lo,hi), "osc_f1":(lo,hi)}
-    freq_seed_n_peaks: int = 6
-    seed_include_harmonics: bool = True
-
-    # Physics-guided priors from catalog (optional)
-    catalog_path: Optional[str] = None
-    orientations: Optional[List[Tuple[int,int,int]]] = None
-    p_occ: float = 0.011
-    f_range_kHz: Tuple[float, float] = (150.0, 20000.0)
-    n_keep_each: int = 16
-    min_sep_cyc_per_us: float = 0.01
-
-    # Fitter verbosity
-    verbose: bool = True
-
 
 @dataclass
 class FitOutputs:
@@ -169,63 +69,74 @@ class FitOutputs:
     unified_keys: List[str]
 
 
-# ------------------------- Prior builders -----------------------------------
+@dataclass
+class FitConfig:
+    # ---------------- Model toggles ----------------
+    use_fixed_revival: bool = False
+    enable_extras: bool = True
+    fixed_rev_time_us: float = 37.6
 
-def build_prior_overrides_from_catalog(cfg: FitConfig) -> Optional[Dict[str, List[float]]]:
-    """Return an `extra_overrides_grid` dict or None.
+    # ---------------- Amplitude sweep ----------------
+    amp_bound_grid: Tuple[Tuple[float, float], ...] = ((-0.6, 0.6),)
 
-    NOTE: run_with_amp_and_freq_sweeps() accepts a grid over parameter lists
-    and forms the Cartesian product. To avoid huge grids, we:
-      1) build a compact set of pairs
-      2) derive a compact set of singles (used when f1=0)
-      3) return small lists; yes, it will cross-combine, but lists are short
+    # ---------------- Frequency seeding/boxes ----------------
+    freq_seed_band: Optional[Tuple[float, float]] = None
+    freq_bound_boxes: Optional[Dict[str, Tuple[float, float]]] = None
+    freq_seed_n_peaks: int = 16
+    prior_pairs_topK: int = 8
+    seed_include_harmonics: bool = True
+
+    # ---------------- Catalog / allowed-lines ----------------
+    catalog_path: Optional[str] = None
+    orientations: Optional[List[Tuple[int, int, int]]] = None
+    p_occ: float = 0.011
+    f_range_kHz: Tuple[float, float] = (1.0, 6000.0)
+    n_keep_each: int = 16
+    min_sep_cyc_per_us: float = 0.01
+    prior_weight_mode: str = "kappa"
+    prior_per_line_scale: float = 1.0
+    allowed_tol_kHz: float = 8.0
+    allowed_weight_mode: str = "kappa"
+
+    # These were added dynamically — include them explicitly:
+    allowed_records: Optional[List[Dict]] = None
+    allowed_orientations: Optional[List[Tuple[int,int,int]]] = None
+
+    # ---------------- Prior pass & early stop ----------------
+    prior_enable: bool = True
+    early_stop_redchi: Optional[float] = None
+
+    # ---------------- Budgets & screening ----------------
+    coarse_K: int = 8
+    small_maxfev: int = 40_000
+    small_max_nfev: int = 60_000
+    big_maxfev: int = 120_000
+    big_max_nfev: int = 180_000
+    refine_target_red: float = 1.05
+
+    # ---------------- Misc ----------------
+    verbose: bool = True
+
+
+
+# ---------- tiny helpers you referenced ----------
+
+def _infer_sampling_band(times_us: np.ndarray, margin: float = 0.05) -> Tuple[float, float]:
     """
-    if not cfg.catalog_path:
-        return None
-    try:
-        recs = select_records(
-            load_catalog(cfg.catalog_path),
-            fmin_kHz=cfg.f_range_kHz[0],
-            fmax_kHz=cfg.f_range_kHz[1],
-            orientations=cfg.orientations,
-        )
-    except Exception as e:
-        print(f"[WARN] Could not load catalog '{cfg.catalog_path}': {e}")
-        return None
-
-    pairs = build_pair_freq_candidates(
-        recs,
-        p_occ=cfg.p_occ,
-        orientations=cfg.orientations,
-        f_range_kHz=cfg.f_range_kHz,
-        n_keep_each=cfg.n_keep_each,
-        min_sep_cyc_per_us=cfg.min_sep_cyc_per_us,
-        weighted=True,
-    )
-
-    # Keep a very small, diverse subset to limit the cross-product explosion
-    pairs = pairs[:20]
-
-    singles = sorted({p[0] for p in pairs} | {p[1] for p in pairs if p[1] > 0})
-    singles = singles[:12]
-
-    # Optional preview
-    if cfg.verbose and pairs:
-        plot_candidate_pairs(pairs, title="Physics-guided candidate pairs (cycles/μs)")
-
-    # Grid: these will be cross-combined (small!)
-    grid = {
-        "osc_f0": singles[:6],  # handful for f0
-        "osc_f1": [0.0] + singles[:6],  # allow single-tone (f1=0)
-        # You can optionally seed phases:
-        # "osc_phi0": [0.0, np.pi/2],
-        # "osc_phi1": [0.0],
-    }
-    return grid
-
+    Nyquist-safe band from sampling: fmin ~ 1/span, fmax ~ 1/(2*dt_min), then +/- margin.
+    Returns (fmin, fmax) in cycles/µs.
+    """
+    t = np.asarray(times_us, float)
+    if t.size < 2:
+        return (0.0, 1.0)
+    span = max(1e-9, float(t.max() - t.min()))
+    dt_min = max(1e-9, float(np.diff(np.unique(t)).min()))
+    fmin = (1.0 / span) * (1.0 - margin)
+    fmax = (0.5 / dt_min) * (1.0 + margin)
+    fmin = max(0.0, fmin)
+    return (float(fmin), float(fmax))
 
 # --------------------------- Main entry-point -------------------------------
-
 def fit_spin_echo_dataset(
     nv_list: List[int],
     norm_counts: np.ndarray,
@@ -236,17 +147,110 @@ def fit_spin_echo_dataset(
     default_rev_us: float = 37.2,
     nv_inds: Optional[List[int]] = None,
     cfg: Optional[FitConfig] = None,
-    save_dir: Optional[str] = None,
+    save_dir: Optional[str] = None,   # (unused by dm; kept for API parity)
     make_plots: bool = False,
 ) -> Tuple[FitOutputs, str]:
-    """Run the full fit (amp+freq sweeps), optionally with catalog priors.
+    """Run the full fit (amp+freq sweeps), optionally with physics-guided allowed-lines.
 
-    Returns (FitOutputs dataclass, saved_json_path)
+    Returns:
+        (FitOutputs dataclass, saved_json_path)
     """
     if cfg is None:
         cfg = FitConfig()
 
-    # Sanity on arrays
+    # ---------- local helpers ----------
+    def _load_catalog_records_if_needed() -> Optional[List[Dict]]:
+        # Priority: explicit cfg.allowed_records > cfg.catalog_path > None
+        if getattr(cfg, "allowed_records", None) is not None:
+            return cfg.allowed_records
+        if cfg.catalog_path:
+            if not os.path.isfile(cfg.catalog_path):
+                raise FileNotFoundError(f"Catalog not found: {cfg.catalog_path}")
+            with open(cfg.catalog_path, "r", encoding="utf-8") as f:
+                return json.load(f)
+        return None
+
+    def allowed_records(
+        records: List[Dict],
+        *,
+        band_cyc_per_us: Tuple[float, float],
+        orientations: Optional[List[Tuple[int,int,int]]] = None,
+        kmin_kHz: float = 10.0,
+        kmax_kHz: float = 6000.0,
+        tol_kHz: float = 8.0,
+        topK: int = 16,
+        weight_field: str = "kappa",   # "kappa" or any numeric field in records
+    ) -> List[Dict]:
+        """
+        Filter + score allowed-line records so the fitter has a compact, high-value set.
+        Expects each record to have, at least, f_plus_Hz / f_minus_Hz and optionally 'kappa'.
+        """
+        lo, hi = band_cyc_per_us
+        if not (np.isfinite(lo) and np.isfinite(hi)) or hi <= max(lo, 1e-15):
+            raise ValueError(f"Bad band_cyc_per_us={band_cyc_per_us}")
+
+        kept: List[Tuple[float, Dict]] = []  # (score, record)
+        for r in records:
+            # Orientation filter
+            if orientations is not None:
+                ori = r.get("orientation")
+                if ori is None or tuple(ori) not in set(map(tuple, orientations)):
+                    continue
+
+            # Collect candidate frequencies (kHz) within kHz span
+            fk = []
+            for key in ("f_plus_Hz", "f_minus_Hz"):
+                val = r.get(key, None)
+                if val is None:
+                    continue
+                f_kHz = float(val) / 1e3
+                if kmin_kHz <= f_kHz <= kmax_kHz:
+                    fk.append(f_kHz)
+
+            if not fk:
+                continue
+
+            # Intersect with Nyquist band (in cycles/µs == MHz)
+            # Convert kHz -> cycles/µs: 1 kHz == 0.001 cycles/µs
+            cyc = [f / 1000.0 for f in fk]
+            cyc = [f for f in cyc if (lo - tol_kHz/1000.0) <= f <= (min(hi*0.95, hi) + tol_kHz/1000.0)]
+            if not cyc:
+                continue
+
+            # Weight: prefer larger kappa (or 1 if absent)
+            wt = float(r.get(weight_field, 1.0))
+            # Prefer mid-band values a bit (distance from center penalty)
+            mid = 0.5 * (lo + hi)
+            dist = min(abs(f - mid) for f in cyc)
+            score = wt / (1e-9 + (1.0 + dist))  # simple heuristic
+
+            kept.append((score, r))
+
+        if not kept:
+            return []
+
+        # Sort by score desc and cap
+        kept.sort(key=lambda x: x[0], reverse=True)
+        trimmed = [rec for _, rec in kept[:max(1, topK)]]
+
+        # Final de-dup by rounded kHz to keep a diverse set
+        seen = set()
+        out = []
+        for r in trimmed:
+            # choose a representative frequency to dedupe by
+            repr_kHz = None
+            for key in ("f_plus_Hz", "f_minus_Hz"):
+                if r.get(key) is not None:
+                    repr_kHz = round(float(r[key]) / 1e3, 2)
+                    break
+            key_ = (tuple(r.get("orientation", (0,0,0))), repr_kHz)
+            if key_ in seen:
+                continue
+            seen.add(key_)
+            out.append(r)
+        return out
+
+    # ---------- inputs & band ----------
     norm_counts = np.asarray(norm_counts, float)
     norm_counts_ste = np.asarray(norm_counts_ste, float)
     total_evolution_times = np.asarray(total_evolution_times, float)
@@ -254,7 +258,6 @@ def fit_spin_echo_dataset(
     if nv_inds is None:
         nv_inds = list(range(len(nv_list)))
 
-    # Sampling-informed band if not provided
     band = cfg.freq_seed_band
     if band is None:
         band = _infer_sampling_band(total_evolution_times, margin=0.05)
@@ -262,29 +265,72 @@ def fit_spin_echo_dataset(
             print(f"[band] inferred from sampling: {band[0]:.6g}–{band[1]:.6g} cycles/μs")
 
     # Default frequency boxes: respect Nyquist
-    freq_boxes = cfg.freq_bound_boxes or {"osc_f0": (max(0.001, band[0]), band[1]),
-                                          "osc_f1": (0.0, band[1])}
+    freq_boxes = (
+        cfg.freq_bound_boxes
+        or {"osc_f0": (max(0.001, band[0]), band[1]),
+            "osc_f1": (0.0, band[1])}
+    )
 
-    # Optional physics-guided prior grid
-    prior_grid = build_prior_overrides_from_catalog(cfg)
+    # ---------- allowed-lines preparation ----------
+    # Load records (cfg.allowed_records takes precedence over cfg.catalog_path)
+    raw_records = _load_catalog_records_if_needed()
 
-    # Run the fitter
+    # Optionally shrink the set to keep the fitter snappy
+    allowed_records_final = None
+    if raw_records:
+        allowed_records_final = allowed_records(
+            raw_records,
+            band_cyc_per_us=band,
+            orientations=cfg.orientations if getattr(cfg, "orientations", None) else getattr(cfg, "allowed_orientations", None),
+            kmin_kHz=max(1.0, cfg.f_range_kHz[0]),
+            kmax_kHz=min(6000.0, cfg.f_range_kHz[1]),
+            tol_kHz=float(getattr(cfg, "allowed_tol_kHz", 8.0)),
+            topK=int(getattr(cfg, "n_keep_each", 6)) * 2,  # a modest global cap
+            weight_field=str(getattr(cfg, "prior_weight_mode", "kappa")),
+        )
+        if cfg.verbose:
+            print(f"[allowed] kept {len(allowed_records_final)} record(s) after shrink")
+
+    # ---------- run the fitter ----------
     print("=== Spin-echo fits starting ===")
-    popts, pcovs, chis, fit_fns, fit_nv_labels = run_with_amp_and_freq_sweeps(
+    (popts, pcovs, chis, fit_fns, fit_nv_labels, chosen_amp_bounds, chosen_overrides) = run_with_amp_and_freq_sweeps(
         nv_list,
         norm_counts,
         norm_counts_ste,
         total_evolution_times,
         nv_inds=nv_inds,
+        # amplitude sweep
         amp_bound_grid=cfg.amp_bound_grid,
+        # frequency
         freq_bound_boxes=freq_boxes,
         freq_seed_band=band,
         freq_seed_n_peaks=cfg.freq_seed_n_peaks,
         seed_include_harmonics=cfg.seed_include_harmonics,
-        extra_overrides_grid=prior_grid,  # None if no catalog provided
+        # prior/extra overrides (phases, etc.) — pass None here; we rely on allowed-lines path
+        extra_overrides_grid=None,
+        # model toggles
         use_fixed_revival=cfg.use_fixed_revival,
         enable_extras=cfg.enable_extras,
         fixed_rev_time=cfg.fixed_rev_time_us,
+        # allowed-lines (catalog) controls
+        allowed_records=allowed_records_final if allowed_records_final is not None else getattr(cfg, "allowed_records", None),
+        allowed_orientations=getattr(cfg, "allowed_orientations", None) or cfg.orientations,
+        allowed_tol_kHz=getattr(cfg, "allowed_tol_kHz", 8.0),
+        allowed_weight_mode=getattr(cfg, "allowed_weight_mode", "kappa"),
+        p_occ=getattr(cfg, "p_occ", 0.011),
+        # prior / early-stop and budgets threaded (so CLI/CFG has one source of truth)
+        prior_enable=getattr(cfg, "prior_enable", True),
+        prior_pairs_topK=getattr(cfg, "prior_pairs_topK", 6),   # reuse as small pair budget
+        prior_min_sep=getattr(cfg, "min_sep_cyc_per_us", 0.01),
+        early_stop_redchi=getattr(cfg, "early_stop_redchi", None),
+        small_maxfev=getattr(cfg, "small_maxfev", 40_000),
+        small_max_nfev=getattr(cfg, "small_max_nfev", 60_000),
+        big_maxfev=getattr(cfg, "big_maxfev", 120_000),
+        big_max_nfev=getattr(cfg, "big_max_nfev", 180_000),
+        refine_target_red=getattr(cfg, "refine_target_red", 1.05),
+        coarse_K=getattr(cfg, "coarse_K", 4),
+        coarse_max_nfev=getattr(cfg, "coarse_max_nfev", 200_000),
+        err_floor=1e-3,
         verbose=cfg.verbose,
     )
 
@@ -295,14 +341,10 @@ def fit_spin_echo_dataset(
         "osc_amp","osc_f0","osc_f1","osc_phi0","osc_phi1"
     ]
 
-    out = FitOutputs(
+    out = dict(
         timestamp=datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
         dataset_ids=list(map(str, file_stems)),
         default_rev_us=float(default_rev_us),
-        run_flags={
-            "use_fixed_revival": bool(cfg.use_fixed_revival),
-            "enable_extras": bool(cfg.enable_extras),
-        },
         nv_labels=list(map(int, fit_nv_labels)),
         times_us=np.asarray(total_evolution_times, float).tolist(),
         popts=[(p.tolist() if p is not None else None) for p in popts],
@@ -326,83 +368,89 @@ def fit_spin_echo_dataset(
     timestamp = dm.get_time_stamp()
     file_path = dm.get_file_path(__file__, timestamp, name)
     dm.save_raw_data(out, file_path)
-    save_dir = save_dir or str(Path.cwd() / "spin_echo_fits")
-
     print(f"[SAVE] {file_path}")
-
-    # Optional quick plots: residual snapshots for a few NVs
-    if make_plots:
-        _quick_residual_plots(
-            nv_list, norm_counts, norm_counts_ste, total_evolution_times,
-            popts, fit_fns, out.nv_labels, nmax=6
-        )
 
     return out, file_path
 
 
-# -------------------------- Plot helpers ------------------------------------
-
-def _quick_residual_plots(nv_list, y, ye, t_us, popts, fit_fns, labels, nmax=6):
-    idxs = list(range(min(nmax, len(labels))))
-    for i in idxs:
-        p = popts[i]; fn = fit_fns[i]
-        if p is None or fn is None:
-            continue
-        yy = y[i]; ee = np.maximum(1e-9, ye[i])
-        yfit = fn(t_us, *p)
-        resid = (yy - yfit) / ee
-        fig, axes = plt.subplots(1, 2, figsize=(10, 3.5))
-        axes[0].plot(t_us, yy, '.', ms=3, alpha=0.8)
-        axes[0].plot(t_us, yfit, '-', lw=1.2)
-        axes[0].set_xlabel('τ (μs)'); axes[0].set_ylabel('Norm. counts')
-        axes[0].set_title(f'NV {labels[i]}: fit')
-        axes[0].grid(alpha=0.3)
-        axes[1].plot(t_us, resid, '.', ms=3)
-        axes[1].axhline(0, color='k', lw=0.8)
-        axes[1].set_xlabel('τ (μs)'); axes[1].set_ylabel('resid / σ')
-        axes[1].set_title('Residuals')
-        axes[1].grid(alpha=0.3)
-        plt.tight_layout(); plt.show()
-
-
-# --------------------------- Example usage ----------------------------------
 if __name__ == "__main__":
-    # Example placeholders — replace with your real arrays/objects
-    # norm_counts, norm_counts_ste, total_evolution_times, nv_list, file_stems
-    file_stems = "2025_11_11-01_15_45-johnson_204nv_s6-6d8f5c" #dataset2 + dataset3
-    data = dm.get_raw_data(file_stem=file_stems)
+
+    # --- 1) Load raw dataset ---
+    file_stem = "2025_11_11-01_15_45-johnson_204nv_s6-6d8f5c"   # dataset2 + dataset3
+    data = dm.get_raw_data(file_stem=file_stem)
     nv_list = data["nv_list"]
-    norm_counts = np.array(data["norm_counts"])
-    norm_counts_ste = np.array(data["norm_counts_ste"])
-    total_evolution_times = np.array(data["total_evolution_times"])
-    
+    norm_counts = np.asarray(data["norm_counts"], float)
+    norm_counts_ste = np.asarray(data["norm_counts_ste"], float)
+    total_evolution_times = np.asarray(data["total_evolution_times"], float)
+
+    # --- 2) Load the frequency catalog → allowed_records ---
+    # NOTE: raw string for Windows backslashes
+    catalog_path = r"analysis\spin_echo_work\essem_freq_kappa_catalog_22A.json"
+    with open(catalog_path, "r") as f:
+        catalog_json = json.load(f)
+    # In your new pipeline, pass the whole JSON as allowed_records; the fitter
+    # will filter by orientation, band, and compute weights internally.
+    allowed_records = catalog_json
+
+    # --- 3) Build config ---
     cfg = FitConfig(
+        # Model toggles
         use_fixed_revival=False,
         enable_extras=True,
         fixed_rev_time_us=37.6,
-        # optional physics-guided priors:
-        catalog_path="analysis/spin_echo_work/essem_freq_catalog_22A.json",
-        orientations=None,          # or [(1,1,1), (1,-1,1), ...]
-        p_occ=0.011,                # 1.1% 13C
-        f_range_kHz=(150, 20000),
-        n_keep_each=16,
-        min_sep_cyc_per_us=0.01,
+
+        # Amplitude sweep (tight for speed; expand later if needed)
+        amp_bound_grid=((-0.6, 0.6),(-1.0, 1.)),
+
+        # Catalog / allowed-lines (we're directly passing allowed_records below)
+        catalog_path=catalog_path,                 # <- set None to avoid double-loading via helper
+        orientations=None,                 # or e.g. [(1,1,1), (1,-1,1), ...]
+        p_occ=0.011,
+        f_range_kHz=(1, 6000),
+        n_keep_each=600,
+        prior_pairs_topK=600,
+        min_sep_cyc_per_us=0.03,          # coarser de-dup in band than 0.01
+        prior_weight_mode="kappa",
+        prior_per_line_scale=1.0,
+        allowed_tol_kHz=2.0,
+        allowed_weight_mode="kappa",
+
+        # Hand the allowed-lines JSON directly:
+        allowed_records=allowed_records,
+        allowed_orientations=None,
+
+        # Prior + budgets
+        prior_enable=True,
+        early_stop_redchi=None,            # e.g. 1.10 to stop early on good fits
+
+        coarse_K=16,
+        small_maxfev=200_000,
+        small_max_nfev=200_000,
+        big_maxfev=220_000,
+        big_max_nfev=280_000,
+        refine_target_red=1.05,
+
         verbose=True,
     )
 
-    out, path = fit_spin_echo_dataset(
-        nv_list,                    # your labels
-        norm_counts,                # shape (N_NV, N_t)
-        norm_counts_ste,            # same shape
-        total_evolution_times,      # τ in μs
-        file_stems,                 # provenance list
+    # --- 4) (Optional) choose a subset of NVs to fit (faster dev runs) ---
+    # nv_inds = list(range(0, 20))
+    nv_inds = None
+
+    # --- 5) Run fits ---
+    # (We already print inside fit_spin_echo_dataset; no need to print here again)
+    out, saved_path = fit_spin_echo_dataset(
+        nv_list=nv_list,
+        norm_counts=norm_counts,
+        norm_counts_ste=norm_counts_ste,
+        total_evolution_times=total_evolution_times,
+        file_stems=[file_stem],         # <- must be a list
         default_rev_us=37.2,
-        nv_inds=None,               # or a subset list
+        nv_inds=nv_inds,
         cfg=cfg,
-        save_dir="spin_echo_fits",
-        make_plots=True,
+        make_plots=True,                # set False to skip figures
     )
-    print("Saved:", path)
-    # raise SystemExit(
-    #     "Import this module and call fit_spin_echo_dataset(...) from your notebook/script."
-    # )
+
+    # --- 6) Inspect results quickly ---
+    print(f"\nSaved results: {saved_path}")
+    # print(f"NVs fitted: {len(out.popts)}")
