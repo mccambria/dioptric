@@ -190,11 +190,13 @@ def main(
     fig = plt.figure(figsize=(ncols * 3, nrows * 3))
     gs = GridSpec(nrows, ncols, figure=fig, hspace=0.3, wspace=0.3)
     axes = []
+    img_handles = []  # Store image handles for updating
     for i in range(num_z_steps):
         row = i // ncols
         col = i % ncols
         ax = fig.add_subplot(gs[row, col])
         axes.append(ax)
+        img_handles.append(None)  # Will be initialized when we start each Z scan
 
     fig.suptitle(
         f"Z-Scan 2D: {readout_laser}, {readout_ns/1e6:.1f} ms readout",
@@ -202,6 +204,7 @@ def main(
         y=0.995,
     )
     plt.ion()  # Enable interactive mode
+    plt.show(block=False)  # Show the figure immediately
 
     tb.reset_cfm()
     tb.init_safe_stop()
@@ -256,14 +259,30 @@ def main(
 
             # Create image array for this Z position
             img = np.full((h, w), np.nan, float)
+            img_kcps = np.copy(img) if count_fmt == CountFormat.KCPS else None
+
+            # Initialize the subplot for this Z position with empty image
+            ax = axes[z_idx]
+            img_handles[z_idx] = kpl.imshow(
+                ax,
+                img_kcps if img_kcps is not None else img,
+                title=f"Z={current_z_pos} steps (scanning...)",
+                cbar_label=("Kcps" if img_kcps is not None else "Counts"),
+                extent=extent,
+            )
+            ax.set_xlabel("X Voltage (V)")
+            ax.set_ylabel("Y Voltage (V)")
+            plt.pause(0.01)  # Force initial display
 
             # === Perform 2D XY scan at this Z position ===
             # This is the core scanning logic from confocal_image_sample.py
 
             pixel_count = 0  # Track progress
+            UPDATE_EVERY = max(1, xy_pixels_per_image // 100)  # Update every 1% of pixels
 
             print(f"[DEBUG] Starting XY scan, mode={mode}", flush=True)
             print(f"[DEBUG] Image dimensions: h={h}, w={w}, total pixels={xy_pixels_per_image}", flush=True)
+            print(f"[DEBUG] Will update plot every {UPDATE_EVERY} pixels", flush=True)
 
             if mode == PosControlMode.SEQUENCE:
                 # Hardware-driven galvo scanning
@@ -350,6 +369,15 @@ def main(
 
                         # Progress update every 10% of pixels
                         pixel_count += 1
+
+                        # Update plot in real-time (throttled to avoid matplotlib overhead)
+                        if (pixel_count % UPDATE_EVERY) == 0 or pixel_count == 1:
+                            if img_kcps is not None:
+                                img_kcps[:] = (img / 1000.0) / readout_s
+                                kpl.imshow_update(ax, img_kcps)
+                            else:
+                                kpl.imshow_update(ax, img)
+
                         if pixel_count % (xy_pixels_per_image // 10) == 0:
                             progress = (pixel_count / xy_pixels_per_image) * 100
                             print(f"  Progress: {progress:.0f}% ({pixel_count}/{xy_pixels_per_image} pixels)", flush=True)
@@ -380,26 +408,18 @@ def main(
                 flush=True,
             )
 
-            print(f"[DEBUG] Updating subplot {z_idx}...", flush=True)
+            print(f"[DEBUG] Updating final title for subplot {z_idx}...", flush=True)
 
-            # Update subplot for this Z position
+            # Update title to show final stats (image was already updated during scan)
             ax = axes[z_idx]
-            kpl.imshow(
-                ax,
-                img_display,
-                title=f"Z={current_z_pos} steps\nMean={mean_counts:.1f}",
-                cbar_label=("Kcps" if is_kcps else "Counts"),
-                extent=extent,
-            )
-            ax.set_xlabel("X Voltage (V)")
-            ax.set_ylabel("Y Voltage (V)")
+            ax.set_title(f"Z={current_z_pos} steps\nMean={mean_counts:.1f}")
 
-            print(f"[DEBUG] Subplot updated. Refreshing plot...", flush=True)
+            print(f"[DEBUG] Final refresh...", flush=True)
 
-            # Refresh plot
+            # Final refresh
             plt.pause(0.01)
 
-            print(f"[DEBUG] Plot refreshed. Z slice {z_idx} complete.", flush=True)
+            print(f"[DEBUG] Z slice {z_idx} complete.", flush=True)
 
             # Check threshold
             if min_threshold is not None and mean_counts < min_threshold:
