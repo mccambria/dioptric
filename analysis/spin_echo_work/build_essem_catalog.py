@@ -734,31 +734,31 @@ if __name__ == "__main__":
     # Theory-only visualizations
     # plot_sorted_expected_sticks(recs, p_occ=0.011, f_range_kHz=(15, 1500))
     
-    # f_stick, a_stick, fig, ax = expected_stick_spectrum_from_recs(
-    #     recs,
-    #     p_occ=0.011,
-    #     orientations=None,
-    #     f_range_kHz=(15, 15000),
-    #     use_weights=True,
-    #     merge_tol_kHz=2.0,
-    #     normalize=False,
-    # )
+    f_stick, a_stick, fig, ax = expected_stick_spectrum_from_recs(
+        recs,
+        p_occ=0.011,
+        orientations=None,
+        f_range_kHz=(15, 15000),
+        use_weights=True,
+        merge_tol_kHz=2.0,
+        normalize=False,
+    )
 
     # 3) Example: compare experiment to catalog
     #    Suppose for this NV, fitter gave osc_f0, osc_f1 in kHz:
-    exp_pairs_kHz = [(232.0, 125.0), (490.0, 384.0), (69.6, 36.76),(753.89, 647.49)]
-    matches_df = match_exp_pairs_to_catalog(exp_pairs_kHz, recs, tol_kHz=5.0)
-    print(matches_df.head())
+    # exp_pairs_kHz = [(232.0, 125.0), (490.0, 384.0), (69.6, 36.76),(753.89, 647.49)]
+    # matches_df = match_exp_pairs_to_catalog(exp_pairs_kHz, recs, tol_kHz=5.0)
+    # print(matches_df.head())
 
     # # 4) Overlay experiment on expected spectrum (visual check)
     # overlay_exp_on_expected_spectrum(recs, exp_pairs_kHz, p_occ=0.011,
     #                                  f_range_kHz=(15, 6000), merge_tol_kHz=2.0)
 
-    plot_sorted_expected_sticks(recs, p_occ=0.011, f_range_kHz=(15, 15000))
+    # plot_sorted_expected_sticks(recs, p_occ=0.011, f_range_kHz=(15, 15000))
 
     # expected_stick_spectrum_from_recs(
     #     recs, p_occ=0.011, orientations=None,
     #     f_range_kHz=(150, 20000), use_weights=True,
     #     merge_tol_kHz=2.0, normalize=False
     # )
-    plot_sorted_expected_sticks_split(recs, p_occ=0.011, f_range_kHz=(15, 15000))
+    # plot_sorted_expected_sticks_split(recs, p_occ=0.011, f_range_kHz=(15, 15000))

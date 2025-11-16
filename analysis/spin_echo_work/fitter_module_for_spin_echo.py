@@ -1646,7 +1646,6 @@ def fit_one_nv_with_freq_sweeps(
     return popt_best, pcov_best, red_best, fn_best, abest, overrides_best
 
 
-
 def run_with_amp_and_freq_sweeps(
     nv_list,
     norm_counts,
@@ -1692,11 +1691,14 @@ def run_with_amp_and_freq_sweeps(
     err_floor=1e-3,
 
     # -------- allowed-lines (catalog) controls --------
-    allowed_records=None,               # list[dict] from catalog
-    allowed_orientations=None,          # e.g. [(1,1,1)]
+    allowed_records=None,               # list[dict] from catalog (all orientations)
+    allowed_orientations=None,          # global fallback (e.g. [(1,1,1)])
     allowed_tol_kHz=8.0,                # ± window for snapping/bounds
     allowed_weight_mode="none",         # "none"|"kappa"|"per_line"
     p_occ=0.011,
+
+    # -------- NEW: per-NV orientations --------
+    nv_orientations=None,               # shape (N_NV, 3), ints ±1
 
     # -------- logging --------
     verbose=True,
@@ -1705,8 +1707,8 @@ def run_with_amp_and_freq_sweeps(
     Run single-NV fits across a set of NV indices with amplitude-bound sweeps,
     frequency constraints, and optional physics-guided prior seeds.
 
-    Returns:
-        popts, pcovs, chis, fit_fns, nv_inds, chosen_amp_bounds, chosen_overrides
+    If nv_orientations is provided, for each NV we restrict the catalog to
+    that NV's orientation only when generating allowed lines.
     """
     # Normalize NV indices
     if nv_inds is None:
@@ -1721,6 +1723,14 @@ def run_with_amp_and_freq_sweeps(
         raise ValueError("norm_counts and norm_counts_ste must have the same shape.")
     if norm_counts.shape[0] < max(nv_inds) + 1:
         raise ValueError("nv_inds references an index beyond norm_counts rows.")
+
+    # Optional sanity check on nv_orientations
+    if nv_orientations is not None:
+        nv_orientations = np.asarray(nv_orientations, int)
+        if nv_orientations.shape[0] < max(nv_inds) + 1 or nv_orientations.shape[1] != 3:
+            raise ValueError(
+                f"nv_orientations must have shape (N_NV, 3); got {nv_orientations.shape}"
+            )
 
     popts, pcovs, chis, fit_fns = [], [], [], []
     chosen_amp_bounds, chosen_overrides = [], []
@@ -1741,6 +1751,15 @@ def run_with_amp_and_freq_sweeps(
 
         # Gentle error floor
         ye = np.maximum(ye, err_floor)
+
+        # ---------- per-NV orientation filter for catalog ----------
+        if nv_orientations is not None:
+            ori_vec = nv_orientations[lbl]          # e.g. [-1, 1, 1]
+            ori_tuple = tuple(int(x) for x in ori_vec)
+            local_allowed_orientations = [ori_tuple]
+        else:
+            # fallback to whatever was passed globally
+            local_allowed_orientations = allowed_orientations
 
         try:
             pi, cov, chi, fn, ab, ov = fit_one_nv_with_freq_sweeps(
@@ -1782,8 +1801,8 @@ def run_with_amp_and_freq_sweeps(
                 err_floor=err_floor,
 
                 # Allowed-lines (catalog)
-                allowed_records=allowed_records,
-                allowed_orientations=allowed_orientations,
+                allowed_records=allowed_records,                # full catalog
+                allowed_orientations=local_allowed_orientations, # per-NV orientation
                 allowed_tol_kHz=allowed_tol_kHz,
                 allowed_weight_mode=allowed_weight_mode,
                 p_occ=p_occ,
@@ -1804,11 +1823,9 @@ def run_with_amp_and_freq_sweeps(
         chosen_amp_bounds.append(ab); chosen_overrides.append(ov)
 
         if verbose:
-            # heartbeat
             if np.isfinite(chi):
                 print(f"[DONE] NV {lbl}: redχ²={chi:.4g}, amp_bounds={ab}, overrides={ov}")
             else:
                 print(f"[DONE] NV {lbl}: redχ²=nan (failed)")
 
     return popts, pcovs, chis, fit_fns, nv_inds, chosen_amp_bounds, chosen_overrides
-

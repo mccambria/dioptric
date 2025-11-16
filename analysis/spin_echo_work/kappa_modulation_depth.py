@@ -2,6 +2,7 @@
 # Orientation-aware ESEEM catalog + filtering + plotting
 # =============================================================================
 from __future__ import annotations
+import sys
 import json, csv, numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
@@ -9,7 +10,8 @@ from pathlib import Path
 from typing import Iterable, Tuple, List, Dict, Optional
 from analysis.sc_c13_hyperfine_sim_data_driven import read_hyperfine_table_safe, B_vec_T
 from typing import Tuple, Optional, Sequence
-
+import matplotlib.pyplot as plt, matplotlib.ticker as mticker
+from utils import kplotlib as kpl
 # ---------- You already have these imports/helpers in your env ----------
 # from analysis.sc_c13_hyperfine_sim_data_driven import read_hyperfine_table_safe, B_vec_T
 # If not available, provide your own read_hyperfine_table_safe
@@ -74,6 +76,9 @@ def _kappa_and_fpm(
 
     n0 = _safe_norm(Omega0)
     nm = _safe_norm(Omega_m)
+    n0_hat = Omega0 / n0
+    nm_hat = Omega_m / nm
+    
     cross = np.cross(Omega0, Omega_m)
     kappa = float((cross @ cross) / (n0 * n0 * nm * nm))
     kappa = max(0.0, min(1.0, kappa))
@@ -89,7 +94,20 @@ def _kappa_and_fpm(
     cos_theta = float(np.clip((Omega0 @ Omega_m) / (n0 * nm), -1.0, 1.0))
     theta_deg = np.degrees(np.arccos(cos_theta))
 
-    return kappa, f_minus, f_plus, omegaI, nm, A_par, A_perp, theta_deg
+    return (
+            kappa,
+            f_minus,
+            f_plus,
+            omegaI,
+            nm,
+            A_par,
+            A_perp,
+            theta_deg,
+            n0_hat,
+            nm_hat,
+            Bhat,
+            z_nv_cubic,
+        )
 
 
 # ---------- Build catalog with exact κ and per-line weights ----------
@@ -135,17 +153,23 @@ def build_essem_catalog_with_kappa(
                 )
                 * 1e6
             )
-            kappa, f_minus, f_plus, omegaI, nm, A_par, A_perp, theta_deg = (
-                _kappa_and_fpm(
-                    A_file_Hz,
-                    ori,
-                    B,
-                    gamma_hz_per_t=gamma_n_Hz_per_T,
-                    ms=ms,
-                    phi_deg=phi_deg,
-                )
+            kappa, f_minus, f_plus, omegaI, nm, A_par, A_perp, theta_deg, \
+            n0_hat, nm_hat, Bhat, z_nv_cubic = _kappa_and_fpm(
+                A_file_Hz,
+                ori,
+                B,
+                gamma_hz_per_t=gamma_n_Hz_per_T,
+                ms=ms,
+                phi_deg=phi_deg,
             )
+
             w_line = float(p_occ) * (kappa * 0.25)  # per-line first-order weight
+
+            # handy scalar projections
+            cos_B_n0  = float(Bhat @ n0_hat)
+            cos_B_nm  = float(Bhat @ nm_hat)
+            cos_NV_n0 = float(z_nv_cubic @ n0_hat)
+            cos_NV_nm = float(z_nv_cubic @ nm_hat)
 
             recs.append(
                 {
@@ -162,8 +186,25 @@ def build_essem_catalog_with_kappa(
                     "theta_deg": float(theta_deg),
                     "line_w_minus": w_line,
                     "line_w_plus": w_line,
+
+                    # NEW: coordinates from hyperfine table (if present)
+                    "x_A": float(row.get("x_A", row.get("x", np.nan))),
+                    "y_A": float(row.get("y_A", row.get("y", np.nan))),
+                    "z_A": float(row.get("z_A", row.get("z", np.nan))),
+
+                    # NEW: quantization directions & geometry (all JSON-friendly lists/scalars)
+                    "n0_hat": [float(v) for v in n0_hat],       # ms = 0 quantization axis
+                    "nm_hat": [float(v) for v in nm_hat],       # ms manifold quantization axis
+                    "B_hat": [float(v) for v in Bhat],          # direction of B
+                    "z_nv_cubic": [float(v) for v in z_nv_cubic],  # NV axis in cubic frame
+
+                    "cos_B_n0":  cos_B_n0,
+                    "cos_B_nm":  cos_B_nm,
+                    "cos_NV_n0": cos_NV_n0,
+                    "cos_NV_nm": cos_NV_nm,
                 }
             )
+
 
     # Save
     with open(out_json, "w") as f:
@@ -840,9 +881,237 @@ def convolved_exp_spectrum(
     return f, spec, fig, ax
 
 
+
+# ---------- small helper used by your panel plot ----------
+def _mask_huge_errors(y, yerr, *, rel_cap=1.0, pct_cap=99):
+    """
+    Return a copy of yerr where obviously huge / broken errors are zeroed.
+    - rel_cap: drop points where yerr > rel_cap * |y|
+    - pct_cap: also drop errors above this percentile of the remaining ones.
+    """
+    if yerr is None:
+        return None
+
+    y    = np.asarray(y, float)
+    yerr = np.asarray(yerr, float).copy()
+
+    bad = ~np.isfinite(yerr)
+
+    # only operate where both y and yerr are finite
+    finite = np.isfinite(y) & np.isfinite(yerr)
+    if np.any(finite):
+        # 1) relative cap
+        bad |= (yerr > rel_cap * np.maximum(1e-12, np.abs(y)))
+
+        # 2) percentile cap – make percentile safe
+        pct = float(pct_cap)
+        if not np.isfinite(pct):
+            pct = 100.0
+        pct = min(max(pct, 0.0), 100.0)  # clamp to [0, 100]
+
+        tail_mask = ~bad & finite
+        if np.any(tail_mask):
+            thr = np.nanpercentile(yerr[tail_mask], pct)
+            bad |= (yerr > thr)
+
+    # zero out bad errors
+    yerr[bad] = 0.0
+    return yerr
+
+def plot_sorted_branches(
+    f0_kHz,
+    f1_kHz,
+    sf0_kHz=None,
+    sf1_kHz=None,
+    *,
+    title_prefix="Spin-echo",
+    f_range_kHz=(15, 15000),
+    label0=r"$f_+$ (lower branch)",
+    label1=r"$f_-$ (upper branch)",
+    A_rel_cap=0.7,
+    A_pct_cap=200.0,
+):
+    """
+    Generic version: plot two branches (f0, f1) sorted by magnitude.
+
+    You can use it for experiment or theory by changing title_prefix/labels.
+    """
+    f0_kHz = np.asarray(f0_kHz, float)
+    f1_kHz = np.asarray(f1_kHz, float)
+    sf0_kHz = None if sf0_kHz is None else np.asarray(sf0_kHz, float)
+    sf1_kHz = None if sf1_kHz is None else np.asarray(sf1_kHz, float)
+
+    # --- Branch f0 ---
+    valid0 = np.isfinite(f0_kHz) & (f0_kHz > 0)
+    if np.any(valid0):
+        idx0 = np.where(valid0)[0]
+        order0 = idx0[np.argsort(f0_kHz[idx0])]
+        x0 = np.arange(1, order0.size + 1)
+        y0 = f0_kHz[order0]
+        y0err_raw = sf0_kHz[order0] if sf0_kHz is not None else None
+        y0err = _mask_huge_errors(
+            y0, y0err_raw, rel_cap=A_rel_cap, pct_cap=A_pct_cap
+        )
+    else:
+        order0 = np.array([], int)
+        x0 = y0 = y0err = None
+
+    # --- Branch f1 ---
+    valid1 = np.isfinite(f1_kHz) & (f1_kHz > 0)
+    if np.any(valid1):
+        idx1 = np.where(valid1)[0]
+        order1 = idx1[np.argsort(f1_kHz[idx1])]
+        x1 = np.arange(1, order1.size + 1)
+        y1 = f1_kHz[order1]
+        y1err_raw = sf1_kHz[order1] if sf1_kHz is not None else None
+        y1err = _mask_huge_errors(
+            y1, y1err_raw, rel_cap=A_rel_cap, pct_cap=A_pct_cap
+        )
+    else:
+        order1 = np.array([], int)
+        x1 = y1 = y1err = None
+
+    # --- Plot ---
+    fig, ax = plt.subplots(figsize=(10, 6))
+
+    if x0 is not None:
+        ax.errorbar(
+            x0, y0, yerr=y0err,
+            fmt="o", ms=1, lw=0.8,
+            capsize=1, elinewidth=0.8,
+            alpha=0.95,
+            label=label0,
+        )
+
+    if x1 is not None:
+        ax.errorbar(
+            x1, y1, yerr=y1err,
+            fmt="s", ms=1, lw=0.8,
+            capsize=1, elinewidth=0.8,
+            alpha=0.95,
+            label=label1,
+        )
+
+    ax.set_yscale("log")
+    ax.set_ylim(*f_range_kHz)
+    ax.set_xlabel("NV index (sorted within each branch)")
+    ax.set_ylabel("Frequency (kHz)")
+    ax.set_title(f"{title_prefix}: $f_0$ and $f_1$ (sorted)")
+    ax.yaxis.set_major_locator(mticker.LogLocator(base=10))
+    ax.yaxis.set_minor_locator(mticker.LogLocator(base=10, subs=np.arange(2, 10)))
+    ax.yaxis.set_minor_formatter(mticker.NullFormatter())
+    ax.grid(True, which="both", alpha=0.3)
+
+    note0 = f"Excluded f0: {(~valid0).sum()}"
+    note1 = f"Excluded f1: {(~valid1).sum()}"
+    ax.text(0.01, 0.97, note0, transform=ax.transAxes,
+            ha="left", va="top", fontsize=8)
+    ax.text(0.01, 0.92, note1, transform=ax.transAxes,
+            ha="left", va="top", fontsize=8)
+
+    ax.legend(framealpha=0.85)
+    fig.tight_layout()
+    plt.show()
+
+    return fig, ax
+
+
+
+def plot_theoretical_kappa_vs_distance(
+    catalog_json: str,
+    orientations=None,
+    distance_max_A: float | None = None,
+):
+    """
+    Visualize catalog kappa values:
+      - κ vs distance (scatter)
+      - κ sorted in descending order vs rank
+    """
+    # ---- load catalog ----
+    recs = load_catalog(catalog_json)
+
+    if orientations is not None:
+        ori_set = {tuple(o) for o in orientations}
+        ori_str = ", ".join([f"[{o[0]}, {o[1]}, {o[2]}]" for o in ori_set])
+        ori_label = f"orientations: {ori_str}"
+    else:
+        ori_set = None
+        ori_label = "all orientations"
+
+    dist = []
+    kap  = []
+
+    for r in recs:
+        if ori_set is not None and tuple(r["orientation"]) not in ori_set:
+            continue
+
+        dA = float(r.get("distance_A", np.nan))
+        k  = float(r.get("kappa", np.nan))
+
+        if not (np.isfinite(dA) and np.isfinite(k)):
+            continue
+
+        if (distance_max_A is not None) and (dA > distance_max_A):
+            continue
+
+        dist.append(dA)
+        kap.append(k)
+
+    dist = np.asarray(dist, float)
+    kap  = np.asarray(kap, float)
+
+    if dist.size == 0:
+        raise ValueError("No finite (distance_A, kappa) pairs found in catalog.")
+
+    # ---- build figure: κ vs r and κ sorted ----
+    fig, (ax0, ax1) = plt.subplots(1, 2, figsize=(12, 5), sharey=False)
+
+    # Panel 1: κ vs distance
+    ax0.scatter(dist, kap, s=12, alpha=0.7)
+    ax0.set_xlabel("Distance (Å)")
+    ax0.set_ylabel(r"Theoretical $\kappa$")
+    ax0.set_title(rf"$\kappa$ vs distance ({ori_label})")
+    ax0.grid(True, alpha=0.3)
+
+
+
+    # Panel 2: κ sorted (descending) vs rank
+    kap_sorted = np.sort(kap)[::-1]
+    ranks = np.arange(1, kap_sorted.size + 1)
+
+    ax1.plot(ranks, kap_sorted, "o-", ms=2, lw=1.0, alpha=0.9)
+    ax1.set_xlabel("Site rank (sorted by κ, descending)")
+    ax1.set_ylabel(r"Theoretical $\kappa$")
+    ax1.set_title(r"$\kappa$ spectrum (descending)")
+    ax1.grid(True, alpha=0.3)
+        # --- add full κ definition + small-coupling approximation on the left panel ---
+    kappa_text = (
+        r"$\kappa = \frac{|\boldsymbol{\Omega}_0 \times \boldsymbol{\Omega}_m|^2}"
+        r"{|\boldsymbol{\Omega}_0|^2\,|\boldsymbol{\Omega}_m|^2}"
+        r" = \sin^2\theta$" "\n"
+        r"$\boldsymbol{\Omega}_0 = \omega_I \hat{\mathbf{B}},\ "
+        r"\boldsymbol{\Omega}_m = \boldsymbol{\Omega}_0 + m_s \mathbf{A}$" "\n"
+        r"Small-coupling ($|A|\ll\omega_I$): "
+        r"$\kappa \approx (A_{\perp}/\omega_I)^2$"
+    )
+
+    # put the box on panel 2 (ax1)
+    ax1.text(
+        0.97, 0.8,
+        kappa_text,
+        transform=ax1.transAxes,   # <--- changed from ax0 to ax1
+        ha="right",
+        va="top",
+        fontsize=13,
+        bbox=dict(facecolor="white", alpha=0.9, edgecolor="none", pad=6),
+    )
+
+    return fig, (ax0, ax1)
+
+
 # ------------------------------ Example --------------------------------------
 if __name__ == "__main__":
-
+    kpl.init_kplotlib()
     # 0) (Optional) Build catalog once (then reuse JSON/CSV)
     # build_essem_catalog_with_kappa(
     #     hyperfine_path="analysis/nv_hyperfine_coupling/nv-2.txt",
@@ -857,11 +1126,12 @@ if __name__ == "__main__":
     #     out_csv="essem_freq_kappa_catalog_22A.csv",
     #     read_hf_table_fn=None,
     # )
-
-    recs_all = load_catalog("analysis/spin_echo_work/essem_freq_kappa_catalog_22A.json")
+    # sys.exit()
+    recs_all = load_catalog("analysis/spin_echo_work/essem_freq_kappa_catalog_22A_updated.json")
 
     # Filter by orientation & frequency band (or set orientations=None for all)
-    ori_sel = [(1, 1, 1), (1, 1, -1), (1, -1, 1), (-1, 1, 1)]
+    # ori_sel = [(1, 1, 1), (1, 1, -1), (1, -1, 1), (-1, 1, 1)]
+    ori_sel = None
     recs = select_records(
         recs_all,
         fmin_kHz=1,
@@ -870,15 +1140,30 @@ if __name__ == "__main__":
         use_plus_and_minus=True,
     )
 
-    # A) Discrete sticks using *per-line* weights (p_occ·κ/4 stored per f±)
-    fk, w, meta = lines_from_recs(
-        recs,
-        orientations=None,  # already filtered
-        fmin_kHz=1,
-        fmax_kHz=20000,
-        weight_mode="kappa",  # "kappa" or "unit" also fine
-        per_line_scale=1.0,
+
+
+    fig, axes = plot_theoretical_kappa_vs_distance(
+        catalog_json="analysis/spin_echo_work/essem_freq_kappa_catalog_22A_updated.json",
+        orientations=[(1,1,1)],   # or None for all
+        # orientations=None,   # or None for all
+        distance_max_A=15.0,                 # match your catalog cutoff
     )
+    plt.show(block=True)
+    sys.exit()
+    # kpl.show(block=True)
+
+    # A) Discrete sticks using *per-line* weights (p_occ·κ/4 stored per f±)
+    # fk, w, meta = lines_from_recs(
+    #     recs,
+    #     orientations=None,  # already filtered
+    #     fmin_kHz=1,
+    #     fmax_kHz=20000,
+    #     weight_mode="kappa",  # "kappa" or "unit" also fine
+    #     per_line_scale=1.0,
+    # )
+    
+    
+    
     # plot_sticks_kappa(
     #     fk,
     #     w,
@@ -899,16 +1184,37 @@ if __name__ == "__main__":
     #     title_prefix="Expected ESEEM spectrum",
     # )
     # 1) Load catalog you already built (has f± and kappa)
+    # 1) Load full catalog
     recs_all = load_catalog("analysis/spin_echo_work/essem_freq_kappa_catalog_22A.json")
 
-    # 2) Filter by orientation and band
-    ori_sel = [(1, 1, 1)]
+    # 2) Optionally restrict to some orientations and band
+    ori_sel = [(1, 1, 1), (1, 1, -1), (1, -1, 1), (-1, 1, 1)]
     recs = select_records(
         recs_all,
-        fmin_kHz=1,
-        fmax_kHz=20000,
+        fmin_kHz=50.0,
+        fmax_kHz=20000.0,
         orientations=ori_sel,
         use_plus_and_minus=True,
+    )
+
+    # 3) Extract f_- and f_+ separately, in kHz
+    f_minus_kHz = np.array([float(r["f_minus_Hz"]) * 1e-3 for r in recs])
+    f_plus_kHz  = np.array([float(r["f_plus_Hz"])  * 1e-3 for r in recs])
+
+    # (optional) also grab site indices / orientations if you want to track them
+    site_idx    = np.array([int(r["site_index"]) for r in recs])
+    oris        = np.array([tuple(r["orientation"]) for r in recs])
+    kappa       = np.array([float(r.get("kappa", 0.0)) for r in recs])
+
+    fig_th, ax_th = plot_sorted_branches(
+        f_minus_kHz,
+        f_plus_kHz,
+        sf0_kHz=None,
+        sf1_kHz=None,
+        title_prefix="Theoretical ESEEM catalog",
+        label0=r"Theory $f_-$",
+        label1=r"Theory $f_+$",
+        f_range_kHz=(10, 10000),
     )
 
     # 3) Get expected sticks including pairs (tunable pair_scale)
@@ -937,35 +1243,35 @@ if __name__ == "__main__":
     #     weight_caption="first + pairs",
     # )
     # Build multiplicity sticks
-    fk, w, tags = expected_sticks_general(
-        recs,
-        orientations=None,
-        fmin_kHz=1,
-        fmax_kHz=20000,
-        include_order1=True,
-        first_weight_mode="kappa",  # or "per_line" if you stored p_occ*κ/4
-        scale_order1=1.0,
-        p_occ=0.011,
-        include_order2=True,
-        branch_mode="all_pairs_strict",  # <-- legacy behavior
-        pair_scale=1.0,
-        include_order3=False,  # <-- OFF to match pair-only
-        top_k_by_kappa=600,
-        dedup_tol_kHz=0.75,
-    )
+    # fk, w, tags = expected_sticks_general(
+    #     recs,
+    #     orientations=None,
+    #     fmin_kHz=1,
+    #     fmax_kHz=20000,
+    #     include_order1=True,
+    #     first_weight_mode="kappa",  # or "per_line" if you stored p_occ*κ/4
+    #     scale_order1=1.0,
+    #     p_occ=0.011,
+    #     include_order2=True,
+    #     branch_mode="all_pairs_strict",  # <-- legacy behavior
+    #     pair_scale=1.0,
+    #     include_order3=False,  # <-- OFF to match pair-only
+    #     top_k_by_kappa=600,
+    #     dedup_tol_kHz=0.75,
+    # )
 
     # Convolve to a smooth curve (use your existing util)
-    _f, _S, fig, ax = convolved_exp_spectrum(
-        fk,
-        w,
-        f_range_kHz=(1, 20000),
-        npts=2400,
-        shape="gauss",
-        width_kHz=8.0,
-        title_prefix="Expected ESEEM (1st + pairs + triples)",
-        weight_caption="p_occ-scaled κ^m / 4^m",
-        log_x=True,
-    )
+    # _f, _S, fig, ax = convolved_exp_spectrum(
+    #     fk,
+    #     w,
+    #     f_range_kHz=(1, 20000),
+    #     npts=2400,
+    #     shape="gauss",
+    #     width_kHz=8.0,
+    #     title_prefix="Expected ESEEM (1st + pairs + triples)",
+    #     weight_caption="p_occ-scaled κ^m / 4^m",
+    #     log_x=True,
+    # )
     plt.show()
 
     # 4) Plot sticks & convolved spectrum (you already have plotting helpers)

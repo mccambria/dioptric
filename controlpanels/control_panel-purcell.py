@@ -1517,7 +1517,7 @@ if __name__ == "__main__":
         # )
 
         do_compensate_for_drift(nv_sig)
-        # do_widefield_image_sample(nv_sig, 50)
+        do_widefield_image_sample(nv_sig, 50)
         # do_widefield_image_sample(nv_sig, 400)
 
         # for nv in nv_list:
@@ -1617,7 +1617,7 @@ if __name__ == "__main__":
         # do_two_block_hahn_correlation(nv_list)
         # do_resonance(nv_list)
         # do_sq_relaxation(nv_list)
-        do_dq_relaxation(nv_list)
+        # do_dq_relaxation(nv_list)
         # do_detect_cosmic_rays(nv_list)
         # do_check_readout_fidelity(nv_list)
         # do_charge_quantum_jump(nv_list)

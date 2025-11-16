@@ -30,7 +30,7 @@ from datetime import datetime
 from pathlib import Path
 from typing import Iterable, Optional, Tuple, List, Dict
 from utils import data_manager as dm
-
+import sys
 import numpy as np
 import matplotlib.pyplot as plt
 
@@ -105,7 +105,6 @@ class FitConfig:
 
 
 # ---------- tiny helpers you referenced ----------
-
 def _infer_sampling_band(times_us: np.ndarray, margin: float = 0.05) -> Tuple[float, float]:
     """
     Nyquist-safe band from sampling: fmin ~ 1/span, fmax ~ 1/(2*dt_min), then +/- margin.
@@ -138,8 +137,8 @@ def filter_allowed_records(
     band_cyc_per_us: Tuple[float, float],
     orientations: Optional[List[Tuple[int,int,int]]] = None,
     kmin_kHz: float = 10.0,
-    kmax_kHz: float = 6000.0,
-    tol_kHz: float = 8.0,
+    kmax_kHz: float = 10000.0,
+    tol_kHz: float = 0.0,
     topK: int = 16,
     weight_field: str = "kappa",
 ) -> List[Dict]:
@@ -223,6 +222,8 @@ def fit_spin_echo_dataset(
     cfg: Optional[FitConfig] = None,
     save_dir: Optional[str] = None,   # (unused by dm; kept for API parity)
     make_plots: bool = False,
+    nv_orientations=None,   # <--- this array you loaded from data
+
 ):
     """Run the full fit (amp+freq sweeps), optionally with physics-guided allowed-lines.
 
@@ -255,24 +256,8 @@ def fit_spin_echo_dataset(
     )
 
     # ---------- allowed-lines preparation ----------
-    raw_records = _load_catalog_records_if_needed(cfg)
-
-    allowed_records_final = None
-    if raw_records:
-        allowed_records_final = filter_allowed_records(
-            raw_records,
-            band_cyc_per_us=band,
-            orientations=cfg.orientations or getattr(cfg, "allowed_orientations", None),
-            kmin_kHz=max(1.0, cfg.f_range_kHz[0]),
-            kmax_kHz=min(6000.0, cfg.f_range_kHz[1]),
-            tol_kHz=float(cfg.allowed_tol_kHz),
-            topK=int(cfg.n_keep_each) * 2,
-            weight_field=str(cfg.prior_weight_mode),
-        )
-        if cfg.verbose:
-            print(f"[allowed] kept {len(allowed_records_final)} record(s) after shrink")
-
-
+    allowed_records = _load_catalog_records_if_needed(cfg)
+    
     # ---------- run the fitter ----------
     print("=== Spin-echo fits starting ===")
     (popts, pcovs, chis, fit_fns, fit_nv_labels, chosen_amp_bounds, chosen_overrides) = run_with_amp_and_freq_sweeps(
@@ -295,7 +280,7 @@ def fit_spin_echo_dataset(
         enable_extras=cfg.enable_extras,
         fixed_rev_time=cfg.fixed_rev_time_us,
         # allowed-lines (catalog) controls
-        allowed_records=allowed_records_final if allowed_records_final is not None else getattr(cfg, "allowed_records", None),
+        allowed_records=allowed_records if allowed_records is not None else getattr(cfg, "allowed_records", None),
         allowed_orientations=getattr(cfg, "allowed_orientations", None) or cfg.orientations,
         allowed_tol_kHz=getattr(cfg, "allowed_tol_kHz", 8.0),
         allowed_weight_mode=getattr(cfg, "allowed_weight_mode", "kappa"),
@@ -314,6 +299,7 @@ def fit_spin_echo_dataset(
         coarse_max_nfev=getattr(cfg, "coarse_max_nfev", 200_000),
         err_floor=1e-3,
         verbose=cfg.verbose,
+        nv_orientations=nv_orientations,
     )
 
     # Package outputs (stable schema)
@@ -334,6 +320,7 @@ def fit_spin_echo_dataset(
         red_chi2=[(float(x) if x is not None else None) for x in chis],
         fit_fn_names=[(fn.__name__ if fn is not None else None) for fn in fit_fns],
         unified_keys=unified_keys,
+        orientations=np.asarray(nv_orientations, int).tolist(),
     )
 
     # Save JSON
@@ -358,16 +345,23 @@ def fit_spin_echo_dataset(
 if __name__ == "__main__":
 
     # --- 1) Load raw dataset ---
-    file_stem = "2025_11_11-01_15_45-johnson_204nv_s6-6d8f5c"   # dataset2 + dataset3
+    # file_stem = "2025_11_11-01_15_45-johnson_204nv_s6-6d8f5c"   # dataset2 + dataset3
+    file_stem = "2025_11_15-14_11_49-johnson_204nv_s9-17d44b" # dataset2 + dataset3 (more data and orientain)
     data = dm.get_raw_data(file_stem=file_stem)
     nv_list = data["nv_list"]
     norm_counts = np.asarray(data["norm_counts"], float)
     norm_counts_ste = np.asarray(data["norm_counts_ste"], float)
     total_evolution_times = np.asarray(data["total_evolution_times"], float)
+    nv_orientations = np.asarray(data["orientations"], dtype=int)
+
 
     # --- 2) Load the frequency catalog → allowed_records ---
+    target_orientations = [
+        (1, 1, -1),
+        (-1, 1, 1),
+    ]
     # NOTE: raw string for Windows backslashes
-    catalog_path = r"analysis\spin_echo_work\essem_freq_kappa_catalog_22A.json"
+    catalog_path = r"analysis\spin_echo_work\essem_freq_kappa_catalog_22A_updated.json"
     with open(catalog_path, "r") as f:
         catalog_json = json.load(f)
 
@@ -388,8 +382,8 @@ if __name__ == "__main__":
         orientations=None,                 # or e.g. [(1,1,1), (1,-1,1), ...]
         p_occ=0.011,
         f_range_kHz=(1, 6000),
-        n_keep_each=600,
-        prior_pairs_topK=200,
+        n_keep_each=1500,
+        prior_pairs_topK=1500,
         min_sep_cyc_per_us=0.03,          # coarser de-dup in band than 0.01
         prior_weight_mode="kappa",
         prior_per_line_scale=1.0,
@@ -419,17 +413,17 @@ if __name__ == "__main__":
     nv_inds = None
 
     # --- 5) Run fits ---
-    # (We already print inside fit_spin_echo_dataset; no need to print here again)
     out, saved_path = fit_spin_echo_dataset(
         nv_list=nv_list,
         norm_counts=norm_counts,
         norm_counts_ste=norm_counts_ste,
         total_evolution_times=total_evolution_times,
-        file_stems=[file_stem],         # <- must be a list
+        file_stems=[file_stem],
         default_rev_us=37.2,
         nv_inds=nv_inds,
         cfg=cfg,
-        make_plots=True,                # set False to skip figures
+        make_plots=True,
+        nv_orientations=nv_orientations,   # <--- this array you loaded from data
     )
 
     # --- 6) Inspect results quickly ---

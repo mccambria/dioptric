@@ -301,15 +301,22 @@ def plot_sorted_panels_with_err(
 
         yerr = _mask_huge_errors(y, yerr_raw, rel_cap=t2_rel_cap, pct_cap=t2_pct_cap)
 
-        plt.figure(figsize=(10,5))
-        plt.errorbar(x, y, yerr=yerr, fmt="o", ms=3, lw=0.8, capsize=2, elinewidth=0.8, alpha=0.95)
-        plt.grid(alpha=0.3)
-        plt.xlabel("NV index (sorted)")
-        plt.ylabel(r"$T_2$ (" + ("ms" if t2_units.lower().startswith("ms") else "µs") + ")")
-        plt.yscale("log")
-        plt.title(f"{title_prefix}: $T_2$ (sorted)")
+        fig, ax = plt.subplots(figsize=(10,6))
+        ax.errorbar(x, y, yerr=yerr, fmt="o", ms=3, lw=0.8, capsize=2, elinewidth=0.8, alpha=0.95)
+        ax.set_xlabel("NV index (sorted)")
+        ax.set_ylabel(r"$T_2$ (" + ("ms" if t2_units.lower().startswith("ms") else "µs") + ")")
+        ax.set_title(f"{title_prefix}: $A_{{\\rm hfs}}$ (sorted)")
+
+        # Log y-scale
+        ax.set_yscale("log")
+        ax.yaxis.set_major_locator(mticker.LogLocator(base=10))
+        ax.yaxis.set_minor_locator(mticker.LogLocator(base=10, subs=np.arange(2, 10)))
+        ax.yaxis.set_minor_formatter(mticker.NullFormatter())
+        ax.set_title(f"{title_prefix}: $T_2$ (sorted)")
+        ax.grid(True, which="both", alpha=0.3)
+    
         note = f"Excluded: no-decay={mask_no_decay.sum()}, fit-fail={mask_fit_fail.sum()}; Used={order.size}/{N}"
-        plt.text(0.01, 0.98, note, transform=plt.gca().transAxes, ha="left", va="top", fontsize=8)
+        fig.text(0.01, 0.98, note, transform=plt.gca().transAxes, ha="left", va="top", fontsize=8)
     else:
         print("[plot] No valid T2 to plot.")
 
@@ -366,17 +373,40 @@ def plot_sorted_panels_with_err(
 
 # ---------- small helper used by your panel plot ----------
 def _mask_huge_errors(y, yerr, *, rel_cap=1.0, pct_cap=99):
-    if yerr is None: return None
+    """
+    Return a copy of yerr where obviously huge / broken errors are zeroed.
+    - rel_cap: drop points where yerr > rel_cap * |y|
+    - pct_cap: also drop errors above this percentile of the remaining ones.
+    """
+    if yerr is None:
+        return None
+
+    y    = np.asarray(y, float)
     yerr = np.asarray(yerr, float).copy()
+
     bad = ~np.isfinite(yerr)
-    if np.any(np.isfinite(y) & np.isfinite(yerr)):
-        # cap relative blow-ups
+
+    # only operate where both y and yerr are finite
+    finite = np.isfinite(y) & np.isfinite(yerr)
+    if np.any(finite):
+        # 1) relative cap
         bad |= (yerr > rel_cap * np.maximum(1e-12, np.abs(y)))
-        # cap extreme tail
-        thr = np.nanpercentile(yerr[~bad], pct_cap) if np.any(~bad) else np.inf
-        bad |= (yerr > thr)
+
+        # 2) percentile cap – make percentile safe
+        pct = float(pct_cap)
+        if not np.isfinite(pct):
+            pct = 100.0
+        pct = min(max(pct, 0.0), 100.0)  # clamp to [0, 100]
+
+        tail_mask = ~bad & finite
+        if np.any(tail_mask):
+            thr = np.nanpercentile(yerr[tail_mask], pct)
+            bad |= (yerr > thr)
+
+    # zero out bad errors
     yerr[bad] = 0.0
     return yerr
+
 
 # ================= Experimental spectrum builders =============================
 
@@ -717,6 +747,7 @@ def plot_sorted_exp_branches(
     plt.show()
 
 
+
 if __name__ == "__main__":
     kpl.init_kplotlib()
     # --- Load your data------------------------------------
@@ -771,8 +802,10 @@ if __name__ == "__main__":
     # file_stem= "2025_11_11-01_46_41-johnson_204nv_s3-003c56" 
     # file_stem= "2025_11_11-06_23_14-johnson_204nv_s6-6d8f5c" 
     # file_stem= "2025_11_12-08_51_17-johnson_204nv_s7-aab2d0"
-    file_stem= "2025_11_13-06_28_22-sample_204nv_s1-e85aa7"
+    # file_stem= "2025_11_13-06_28_22-sample_204nv_s1-e85aa7"
+ 
     
+    file_stem = "2025_11_14-03_05_30-sample_204nv_s1-e85aa7" # freqs freeze
     
     data = dm.get_raw_data(file_stem=file_stem)
     popts = data["popts"]
@@ -809,15 +842,15 @@ if __name__ == "__main__":
             fit_fns.append(fn)
         
     # 3) INDIVIDUAL FITS — PASS THE SAME LABELS + PER-NV FIT FUNCTIONS
-    _ = plot_individual_fits(
-        norm_counts, norm_counts_ste, total_evolution_times,
-        popts,
-        nv_inds=fit_nv_labels,
-        fit_fn_per_nv=fit_fns,
-        # keep_mask=keep_mask,
-        show_residuals=True,
-        block=False
-    )
+    # _ = plot_individual_fits(
+    #     norm_counts, norm_counts_ste, total_evolution_times,
+    #     popts,
+    #     nv_inds=fit_nv_labels,
+    #     fit_fn_per_nv=fit_fns,
+    #     # keep_mask=keep_mask,
+    #     show_residuals=True,
+    #     block=False
+    # )
      
     # # --------------------------
     # # Example usage
@@ -869,23 +902,23 @@ if __name__ == "__main__":
 
     # ---- Plot with masked arrays only ----
     # (1) Your existing panels (unchanged)
-    # plot_sorted_panels_with_err(
-    #     nv_m, T2_us_m, sT2_us_m, A_pick_kHz_m, sA_pick_kHz_m,
-    #     mask_fit_fail=np.zeros_like(fit_fail_m, dtype=bool),
-    #     t2_rel_cap=1.0, t2_pct_cap=95, A_rel_cap=0.75, A_pct_cap=95
-    # )
+    plot_sorted_panels_with_err(
+        nv_m, T2_us_m, sT2_us_m, A_pick_kHz_m, sA_pick_kHz_m,
+        mask_fit_fail=np.zeros_like(fit_fail_m, dtype=bool),
+        t2_rel_cap=1.0, t2_pct_cap=95, A_rel_cap=0.75, A_pct_cap=95
+    )
 
     # (2) Experimental sticks: choose a weighting
     #   a) unit weights
-    F_kHz, W = build_exp_lines(f0_kHz_m, f1_kHz_m, fmin_kHz=1, fmax_kHz=20000, weight_mode="unit")
+    # F_kHz, W = build_exp_lines(f0_kHz_m, f1_kHz_m, fmin_kHz=1, fmax_kHz=20000, weight_mode="unit")
 
     #   b) inverse-variance (needs sA_pick_kHz_m)
     # F_kHz, W = build_exp_lines(f0_kHz_m, f1_kHz_m, fmin_kHz=1, fmax_kHz=20000,
     #                            weight_mode="invvar", sA_pick_kHz=sA_pick_kHz_m)
 
     #   c) inverse chi^2 (needs chis_m)
-    F_kHz, W = build_exp_lines(f0_kHz_m, f1_kHz_m, fmin_kHz=1, fmax_kHz=20000,
-                               weight_mode="inv_chi2", chis=chis_m)
+    # F_kHz, W = build_exp_lines(f0_kHz_m, f1_kHz_m, fmin_kHz=1, fmax_kHz=20000,
+    #                            weight_mode="inv_chi2", chis=chis_m)
 
     # plot_exp_sticks(
     #     F_kHz, W,
@@ -904,13 +937,14 @@ if __name__ == "__main__":
     #     weight_caption="unit weight"  # match what you chose above
     # )
     
-    # plot_sorted_exp_branches(
-    # f0_kHz=f0_kHz_m,
-    # f1_kHz=f1_kHz_m,
-    # sf0_kHz=sf0_kHz_m,
-    # sf1_kHz=sf1_kHz_m,
+    plot_sorted_exp_branches(
+    f0_kHz=f0_kHz_m,
+    f1_kHz=f1_kHz_m,
+    sf0_kHz=sf0_kHz_m,
+    sf1_kHz=sf1_kHz_m,
     # title_prefix="Spin-echo fit with free oscillation frequencies",
-    # f_range_kHz=(10, 6000),)
-
+    title_prefix = "Spin-echo fit with theory-constrained frequencies",
+    f_range_kHz=(10, 6000),
+    )
 
     kpl.show(block=True)

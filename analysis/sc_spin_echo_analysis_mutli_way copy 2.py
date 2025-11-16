@@ -2209,6 +2209,16 @@ def plot_sorted_panels_with_err(
         print("[plot] No hyperfine points to plot.")
 
 
+def build_nv_orientation_map(table=None):
+    nv_to_ori = {}
+    for ori, idx_list in table.items():
+        for nv_idx in idx_list:
+            if nv_idx in nv_to_ori:
+                raise ValueError(f"NV {nv_idx} appears in multiple orientations!")
+            nv_to_ori[nv_idx] = ori
+    return nv_to_ori
+
+
 if __name__ == "__main__":
     kpl.init_kplotlib()
     # --- Load your data------------------------------------
@@ -2238,47 +2248,103 @@ if __name__ == "__main__":
                   "2025_11_02-04_46_56-johnson-nv0_2025_10_21",
                 ]
     ###204NVs
-    file_stems_2 = ["2025_11_11-06_02_04-johnson-nv0_2025_10_21",
+    file_stems_2 = [
+                    "2025_11_11-23_52_50-johnson-nv0_2025_10_21",
+                    "2025_11_11-14_53_37-johnson-nv0_2025_10_21",
+                    "2025_11_11-06_02_04-johnson-nv0_2025_10_21",
                     "2025_11_10-20_58_00-johnson-nv0_2025_10_21",
-                  "2025_11_10-11_36_39-johnson-nv0_2025_10_21",
-                  "2025_11_10-03_06_14-johnson-nv0_2025_10_21",
+                    "2025_11_10-11_36_39-johnson-nv0_2025_10_21",
+                    "2025_11_10-03_06_14-johnson-nv0_2025_10_21",
                 ]
 
     file_stems = file_stems_1 + file_stems_2
 
-    # data = widefield.process_multiple_files(file_stems, load_npz=True)
-    # nv_list = data["nv_list"]
-    # taus = data["taus"]
-    # total_evolution_times = 2 * np.array(taus) / 1e3
-    # counts = np.array(data["counts"])
-    # sig = counts[0]
-    # ref = counts[1]
-    # norm_counts, norm_counts_ste = widefield.process_counts(nv_list, sig, ref, threshold=True)
+    ####
+    ####Target 2.788 GHz NV indices
+    # "[1, 1, -1]"  =  [0, 1, 3, 5, 6, 7, 9, 10, 13, 18, 19, 21, 24, 25, 27, 28, 30, 32, 34, 36, 40, 41, 43, 44, 46, 48, 49, 51, 52, 53, 56, 57, 64, 65, 66, 67, 68, 69, 73, 75, 77, 80, 82, 84, 86, 88, 91, 98, 100, 101, 102, 103, 106, 107, 109, 110, 111, 113, 115, 116, 118, 119, 120, 121, 123, 124, 127, 129, 130, 131, 132, 133, 134, 135, 141, 142, 146, 149, 150, 152, 153, 156, 157, 158, 162, 163, 165, 167, 168, 171, 174, 177, 179, 184, 185, 186, 187, 189, 190, 191, 192, 193, 195, 198, 201, 203]
+    # # ####Target 2.841 GHz -> NV indices 
+    # "[-1, 1, 1]" = [2, 4, 8, 11, 12, 14, 15, 16, 17, 20, 22, 23, 26, 29, 31, 33, 35, 37, 38, 39, 42, 45, 47, 50, 54, 55, 58, 59, 60, 61, 62, 63, 70, 71, 72, 74, 76, 78, 79, 81, 83, 85, 87, 89, 90, 92, 93, 94, 95, 96, 97, 99, 104, 105, 108, 112, 114, 117, 122, 125, 126, 128, 136, 137, 138, 139, 140, 143, 144, 145, 147, 148, 151, 154, 155, 159, 160, 161, 164, 166, 169, 170, 172, 173, 175, 176, 178, 180, 181, 182, 183, 188, 194, 196, 197, 199, 200, 202]
 
-    # timestamp = dm.get_time_stamp()
-    # processed_data = {
-    #     "timestamp": timestamp,
-    #     "dataset_ids": file_stems,
-    #     "nv_list": nv_list,
-    #     "norm_counts" :norm_counts,
-    #     "norm_counts_ste" : norm_counts_ste,
-    #     "total_evolution_times":total_evolution_times,
+    # Map orientation → list of NV indices (from your note)
+    # Your orientation lists (as you gave them)
+    ORI_11m1 = [0, 1, 3, 5, 6, 7, 9, 10, 13, 18, 19, 21, 24, 25, 27, 28, 30, 32, 34,
+                36, 40, 41, 43, 44, 46, 48, 49, 51, 52, 53, 56, 57, 64, 65, 66, 67,
+                68, 69, 73, 75, 77, 80, 82, 84, 86, 88, 91, 98, 100, 101, 102, 103,
+                106, 107, 109, 110, 111, 113, 115, 116, 118, 119, 120, 121, 123,
+                124, 127, 129, 130, 131, 132, 133, 134, 135, 141, 142, 146, 149,
+                150, 152, 153, 156, 157, 158, 162, 163, 165, 167, 168, 171, 174,
+                177, 179, 184, 185, 186, 187, 189, 190, 191, 192, 193, 195, 198,
+                201, 203]
 
-    #     }
+    ORI_m111 = [2, 4, 8, 11, 12, 14, 15, 16, 17, 20, 22, 23, 26, 29, 31, 33, 35, 37,
+                38, 39, 42, 45, 47, 50, 54, 55, 58, 59, 60, 61, 62, 63, 70, 71, 72,
+                74, 76, 78, 79, 81, 83, 85, 87, 89, 90, 92, 93, 94, 95, 96, 97, 99,
+                104, 105, 108, 112, 114, 117, 122, 125, 126, 128, 136, 137, 138,
+                139, 140, 143, 144, 145, 147, 148, 151, 154, 155, 159, 160, 161,
+                164, 166, 169, 170, 172, 173, 175, 176, 178, 180, 181, 182, 183,
+                188, 194, 196, 197, 199, 200, 202]
 
-    # tokens = []
-    # for s in file_stems:
-    #     m = re.search(r"-([A-Za-z0-9]+)-nv", s)  # e.g. "...-johnson-nv0_..."
-    #     if m: tokens.append(m.group(1))
-    # sample = max(set(tokens), key=tokens.count) if tokens else "sample"
-    # srcsig = f"s{len(file_stems)}-{hashlib.sha1('|'.join(file_stems).encode()).hexdigest()[:6]}"
-    # # --- tiny signature of the source list ---
-    # name   = f"{sample}_{len(nv_list)}nv_{srcsig}"
-    # # name   = f"{sample}_{len(fit_nv_labels)}nv_{date}_{rev}_{model}_{sweep}_{srcsig}"
+
+    data = widefield.process_multiple_files(file_stems, load_npz=True)
+    nv_list = data["nv_list"]
+    taus = data["taus"]
+    total_evolution_times = 2 * np.array(taus) / 1e3
+    counts = np.array(data["counts"])
+    sig = counts[0]
+    ref = counts[1]
+    norm_counts, norm_counts_ste = widefield.process_counts(nv_list, sig, ref, threshold=True)
+    
+    # --- build per-NV orientations ----
+    ORI_11m1_set = set(ORI_11m1)
+    ORI_m111_set = set(ORI_m111)
+
+    # After you get nv_list from widefield.ocess_multiple_files(...)
+    n_nv = len(nv_list)
+
+    # Just “global indices” = position in the list
+    nv_indices_global = np.arange(n_nv, dtype=int)
+
+    # Orientation array (N × 3) and labels
+    orientations = np.zeros((n_nv, 3), dtype=int)
+    ori_labels   = []
+
+    for i in range(n_nv):
+        if i in ORI_11m1_set:
+            ori = (1, 1, -1)
+        elif i in ORI_m111_set:
+            ori = (-1, 1, 1)
+        else:
+            ori = (0, 0, 0)   # unknown / unused
+
+        orientations[i, :] = ori
+        ori_labels.append(f"[{ori[0]}, {ori[1]}, {ori[2]}]")
+    
+    timestamp = dm.get_time_stamp()
+    processed_data = {
+        "timestamp": timestamp,
+        "dataset_ids": file_stems,
+        "nv_list": nv_list,
+        "norm_counts": norm_counts,
+        "norm_counts_ste": norm_counts_ste,
+        "total_evolution_times": total_evolution_times,
+        "nv_indices_global": nv_indices_global,  # 0..N-1
+        "orientations": orientations,                  # shape (N, 3)
+        # "orientation_labels": np.array(ori_labels, dtype=object),
+    }
+    tokens = []
+    for s in file_stems:
+        m = re.search(r"-([A-Za-z0-9]+)-nv", s)  # e.g. "...-johnson-nv0_..."
+        if m: tokens.append(m.group(1))
+    sample = max(set(tokens), key=tokens.count) if tokens else "sample"
+    srcsig = f"s{len(file_stems)}-{hashlib.sha1('|'.join(file_stems).encode()).hexdigest()[:6]}"
+    # --- tiny signature of the source list ---
+    name   = f"{sample}_{len(nv_list)}nv_{srcsig}"
+    # name   = f"{sample}_{len(fit_nv_labels)}nv_{date}_{rev}_{model}_{sweep}_{srcsig}"
     # print(name)
-    # file_path = dm.get_file_path(__file__, timestamp, name)
-    # dm.save_raw_data(processed_data, file_path)
-    # sys.exit()
+    file_path = dm.get_file_path(__file__, timestamp, name)
+    dm.save_raw_data(processed_data, file_path)
+    
+    sys.exit()
     ### get proceeded data data
     # file_stem = "2025_11_10-16_17_03-johnson_204nv_s3-003c56" #dataset 1
     # file_stem = "2025_11_11-01_05_17-johnson_204nv_s3-0e14ae" #dataset 3

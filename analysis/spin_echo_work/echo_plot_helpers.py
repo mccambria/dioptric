@@ -18,6 +18,7 @@ import matplotlib.pyplot as plt
 import inspect
 import re, hashlib, datetime as dt
 from analysis.spin_echo_work.echo_fit_models import fine_decay, fine_decay_fixed_revival
+import matplotlib.ticker as mticker
 
 # --- Optional numba (falls back gracefully) ----------------------------------
 try:
@@ -595,20 +596,36 @@ def plot_echo_with_sites(
     # --- NEW: plot full fit curve (using your fine_decay model) ---
     if (fit_fn is not None) and (fit_params is not None):
         taus_arr = np.asarray(taus_us, float)
-        if tau_is_half_time:
-            t_model = 2.0 * taus_arr  # model expects total evolution time
-        else:
-            t_model = taus_arr
 
-        y_fit = _safe_call_fit_fn(fit_fn, t_model, fit_params, default_rev=default_rev_for_plot)
+        # make a denser grid for smooth curve
+        if taus_arr.size > 1:
+            tau_min = float(np.nanmin(taus_arr))
+            tau_max = float(np.nanmax(taus_arr))
+            # e.g. 4× more points than data
+            taus_dense = np.linspace(tau_min, tau_max, 4 * taus_arr.size)
+        else:
+            taus_dense = taus_arr
+
+        if tau_is_half_time:
+            t_model = 2.0 * taus_dense  # model expects total evolution time
+        else:
+            t_model = taus_dense
+
+        y_fit = _safe_call_fit_fn(
+            fit_fn,
+            t_model,
+            fit_params,
+            default_rev=default_rev_for_plot,
+        )
+
         ax0.plot(
-            taus_arr,
+            taus_dense,
             y_fit,
-            "-", lw=1.8,
+            "-",
+            lw=1.8,
             alpha=0.9,
             label="fit (full model)",
         )
-
     # --- overlay envelope(s) ---
     env_line = None
     if show_env and fine_params:
@@ -789,3 +806,58 @@ def plot_echo_with_sites(
     )
 
     return fig
+
+
+
+def plot_branch_pairs(
+    f0_kHz,
+    f1_kHz,
+    title="Spin-echo branch pairs (f0, f1)",
+    f_range_kHz=(10, 6000),
+):
+    """
+    Pairwise plot: for each NV, draw a small vertical 'stick'
+    connecting f0 and f1, with markers at each end.
+    """
+    f0 = np.asarray(f0_kHz, float)
+    f1 = np.asarray(f1_kHz, float)
+
+    # keep only finite, >0 pairs
+    mask = np.isfinite(f0) & np.isfinite(f1) & (f0 > 0) & (f1 > 0)
+    f0 = f0[mask]
+    f1 = f1[mask]
+
+    if f0.size == 0:
+        raise ValueError("No valid (f0, f1) pairs to plot.")
+
+    # sort by f0 (or by min(f0,f1) if you prefer)
+    order = np.argsort(f0)
+    f0 = f0[order]
+    f1 = f1[order]
+    x  = np.arange(1, len(f0) + 1)
+
+    fig, ax = plt.subplots(figsize=(8, 5))
+
+    # sticks
+    for xi, y0, y1 in zip(x, f0, f1):
+        ax.vlines(xi, min(y0, y1), max(y0, y1), lw=0.7, alpha=0.6)
+
+    # markers
+    ax.scatter(x, f0, s=12, marker="o", label="f0")
+    ax.scatter(x, f1, s=12, marker="s", label="f1")
+
+    ax.set_yscale("log")
+    ax.set_ylim(*f_range_kHz)
+    ax.set_xlabel("NV index (sorted by f0)")
+    ax.set_ylabel("Frequency (kHz)")
+    ax.set_title(title)
+
+    ax.yaxis.set_major_locator(mticker.LogLocator(base=10))
+    ax.yaxis.set_minor_locator(mticker.LogLocator(base=10, subs=np.arange(2, 10)))
+    ax.yaxis.set_minor_formatter(mticker.NullFormatter())
+    ax.grid(True, which="both", alpha=0.3)
+    ax.legend(framealpha=0.85)
+
+    fig.tight_layout()
+    plt.show()
+    return fig, ax

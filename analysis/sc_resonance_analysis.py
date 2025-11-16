@@ -214,7 +214,7 @@ def plot_nv_resonance(
     # Print the NV indices per orientation bin
     for t, idx_list in out['bins'].items():
         print(f"Target {t:.3f} GHz -> NV indices {idx_list}")
-    # return
+    return
     ### snrs
     median_snr = np.median(snrs)
     print(f"median snr:{median_snr:.2f}")
