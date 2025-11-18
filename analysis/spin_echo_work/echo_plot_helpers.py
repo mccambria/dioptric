@@ -14,10 +14,12 @@ import sys
 import traceback
 from datetime import datetime
 import numpy as np
+import pandas as pd
 import matplotlib.pyplot as plt
 import inspect
 import re, hashlib, datetime as dt
 from analysis.spin_echo_work.echo_fit_models import fine_decay, fine_decay_fixed_revival
+
 import matplotlib.ticker as mticker
 
 # --- Optional numba (falls back gracefully) ----------------------------------
@@ -809,15 +811,48 @@ def plot_echo_with_sites(
 
 
 
+def _normalize_orientation_array(orientation):
+    """
+    Take an array-like of orientation entries and return a 1D object array
+    of tuples like (-1,1,1) or None.
+    """
+    norm = []
+    for o in orientation:
+        if o is None or (isinstance(o, float) and not np.isfinite(o)):
+            norm.append(None)
+            continue
+        try:
+            # e.g. o is something like np.array([-1,1,1]) or list
+            t = tuple(int(v) for v in np.ravel(o))
+        except Exception:
+            # fall back to tuple(o)
+            t = tuple(o)
+        norm.append(t)
+    return np.array(norm, dtype=object)
+
 def plot_branch_pairs(
     f0_kHz,
     f1_kHz,
     title="Spin-echo branch pairs (f0, f1)",
     f_range_kHz=(10, 6000),
+    exp_freqs=True,
+    orientation=None,           # optional per-NV orientation
+    ori_to_str=None,            # optional converter to nice labels
 ):
     """
     Pairwise plot: for each NV, draw a small vertical 'stick'
-    connecting f0 and f1, with markers at each end.
+    connecting f0 and f1.
+
+    If `orientation` is None:
+        - Use markers:
+            f0 -> circle ("o")
+            f1 -> square ("s")
+
+    If `orientation` is provided:
+        - Markers encode ORIENTATION:
+            first orientation  -> "o"
+            second orientation -> "s"
+          (f0 and f1 for a given NV share the same marker)
     """
     f0 = np.asarray(f0_kHz, float)
     f1 = np.asarray(f1_kHz, float)
@@ -827,28 +862,124 @@ def plot_branch_pairs(
     f0 = f0[mask]
     f1 = f1[mask]
 
+    ori_list = None
+    if orientation is not None:
+        # slice orientation with same mask
+        ori_arr = np.asarray(orientation, dtype=object)[mask]
+
     if f0.size == 0:
         raise ValueError("No valid (f0, f1) pairs to plot.")
 
-    # sort by f0 (or by min(f0,f1) if you prefer)
-    order = np.argsort(f0)
+    # sort by mid-frequency
+    mid_freq = (f0 + f1) / 2.0
+    order = np.argsort(mid_freq)
     f0 = f0[order]
     f1 = f1[order]
-    x  = np.arange(1, len(f0) + 1)
+
+    if orientation is not None:
+        ori_arr = ori_arr[order]
+
+        # normalize each entry to a tuple like (-1,1,1) or None
+        ori_list = []
+        for o in ori_arr:
+            if o is None:
+                ori_list.append(None)
+                continue
+
+            arr = np.asarray(o)
+            if arr.size == 0:
+                ori_list.append(None)
+                continue
+
+            flat = arr.ravel()
+            # typical case: 3-vector
+            if flat.size == 3:
+                tup = (int(flat[0]), int(flat[1]), int(flat[2]))
+            else:
+                tup = tuple(int(v) for v in flat)
+            ori_list.append(tup)
+
+    x = np.arange(1, len(f0) + 1)
 
     fig, ax = plt.subplots(figsize=(8, 5))
 
-    # sticks
+    # vertical sticks
     for xi, y0, y1 in zip(x, f0, f1):
         ax.vlines(xi, min(y0, y1), max(y0, y1), lw=0.7, alpha=0.6)
 
-    # markers
-    ax.scatter(x, f0, s=12, marker="o", label="f0")
-    ax.scatter(x, f1, s=12, marker="s", label="f1")
+    # -----------------------------------------
+    # CASE 1: no orientation info (old behavior)
+    # -----------------------------------------
+    if ori_list is None:
+        if exp_freqs:
+            ax.scatter(x, f0, s=12, marker="o", label="f0")
+            ax.scatter(x, f1, s=12, marker="s", label="f1")
+        else:
+            ax.scatter(x, f0, s=12, marker="o", label="f_plus")
+            ax.scatter(x, f1, s=12, marker="s", label="f_minus")
+
+    # -----------------------------------------
+    # CASE 2: orientation-aware markers
+    # -----------------------------------------
+    else:
+        if ori_to_str is None:
+            def ori_to_str(o):
+                return str(o)
+
+        # get unique orientations as tuples via plain Python
+        keys_seen = set()
+        unique_oris = []
+        for t in ori_list:
+            if t is None:
+                continue
+            if t not in keys_seen:
+                keys_seen.add(t)
+                unique_oris.append(t)
+
+        # sort deterministically
+        unique_oris.sort()
+
+        # assign markers: first ori -> circle, second -> square, others '^'
+        marker_map = {}
+        for idx, ori_val in enumerate(unique_oris):
+            if idx == 0:
+                marker_map[ori_val] = "o"
+            elif idx == 1:
+                marker_map[ori_val] = "s"
+            else:
+                marker_map[ori_val] = "^"
+
+        handled = set()
+        for ori_val in unique_oris:
+            m = marker_map[ori_val]
+
+            # Python-level mask: ori_list is list of tuples / None
+            mask_ori = np.array([o == ori_val for o in ori_list], dtype=bool)
+
+            x_sub  = x[mask_ori]
+            f0_sub = f0[mask_ori]
+            f1_sub = f1[mask_ori]
+
+            ori_label = ori_to_str(ori_val)
+
+            ax.scatter(
+                x_sub,
+                f0_sub,
+                s=12,
+                marker=m,
+                label=f"{ori_label} (f0,f1)" if ori_val not in handled else None,
+            )
+            ax.scatter(
+                x_sub,
+                f1_sub,
+                s=12,
+                marker=m,
+            )
+            handled.add(ori_val)
 
     ax.set_yscale("log")
     ax.set_ylim(*f_range_kHz)
-    ax.set_xlabel("NV index (sorted by f0)")
+    ax.set_xlabel("NV index (sorted by mid-frequency)")
     ax.set_ylabel("Frequency (kHz)")
     ax.set_title(title)
 
@@ -861,3 +992,4 @@ def plot_branch_pairs(
     fig.tight_layout()
     plt.show()
     return fig, ax
+

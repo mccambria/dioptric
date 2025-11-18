@@ -297,7 +297,7 @@ def lines_from_recs(
         kappa_val = float(r.get(kappa_key, 0.0))
         for tag, wkey in (
             ("f_minus_Hz", per_line_key_minus),
-            ("f_plus_Hz", per_line_key_plus),
+            ("f_plus_Hz",  per_line_key_plus),
         ):
             fHz = float(r[tag])
             if not (lo <= fHz <= hi):
@@ -306,7 +306,8 @@ def lines_from_recs(
             if weight_mode == "unit":
                 w = 1.0
             elif weight_mode == "per_line":
-                w = float(r.get(wkey, 0.0))  # e.g., p_occ·κ/4 already encoded per line
+                # e.g., p_occ·κ/4 already encoded per line
+                w = float(r.get(wkey, 0.0))
             elif weight_mode == "kappa":
                 w = kappa_val
             else:
@@ -320,42 +321,102 @@ def lines_from_recs(
     return np.asarray(F)[order], np.asarray(W)[order], [M[i] for i in order]
 
 
+
 # ---------- 3A) Plot discrete sticks with explicit κ labels ----------
 def plot_sticks_kappa(
     freqs_kHz: np.ndarray,
     weights: Optional[np.ndarray] = None,
+    meta: Optional[List[Tuple]] = None,
     *,
     title: str = None,
     weight_caption: str = None,
     min_weight: float = 0.0,
 ):
     """
-    Vertical-stick plot with explicit labels.
-    Use `weight_caption` to describe what weights mean (e.g., 'raw κ',
+    Vertical-stick plot for ESEEM lines.
+
+    If `meta` is provided (from lines_from_recs), it must be a list of
+    (orientation, site_index, tag) where `tag` identifies f- vs f+.
+    In that case, f₋ and f₊ are plotted in different colors with a legend.
+
+    `weight_caption` describes what the weights mean (e.g., 'raw κ',
     or 'per-line weight = p_occ·κ/4').
     """
     if freqs_kHz.size == 0:
         print("[plot_sticks_kappa] No lines to plot.")
         return
+
+    # Weights
     w = np.ones_like(freqs_kHz) if weights is None else np.asarray(weights, float)
+
+    # Apply weight threshold
     m = w >= float(min_weight)
-    f, w = freqs_kHz[m], w[m]
+    f = freqs_kHz[m]
+    w = w[m]
+    if meta is not None:
+        meta = [meta[i] for i, keep in enumerate(m) if keep]
+
+    # Sort by frequency
     order = np.argsort(f)
-    f, w = f[order], w[order]
+    f = f[order]
+    w = w[order]
+    if meta is not None:
+        meta = [meta[i] for i in order]
 
     if title is None:
         title = "Discrete ESEEM sticks (sorted by frequency)"
     if weight_caption is None:
         weight_caption = "Weight"
 
-    plt.figure(figsize=(9, 4.2))
+    plt.figure(figsize=(18, 6))
 
-    for fk, wk in zip(f, w):
-        plt.vlines(fk, 0.0, wk, linewidth=1.5)
+    # ---------- Case A: no meta → single-color fallback ----------
+    if meta is None:
+        for fk, wk in zip(f, w):
+            plt.vlines(fk, 0.0, wk, linewidth=0.6)
+    else:
+        # Extract tags and classify f- vs f+ in a robust way
+        tags_raw = [m_i[2] for m_i in meta]  # third entry is tag ("f_minus_Hz" / "f_plus_Hz")
+        tags_str = [str(t).lower() for t in tags_raw]
+
+        is_minus = np.array(["minus" in t for t in tags_str], dtype=bool)
+        is_plus  = np.array(["plus"  in t for t in tags_str], dtype=bool)
+
+        print(f"[plot_sticks_kappa] N_minus={is_minus.sum()}, N_plus={is_plus.sum()}, N_total={len(tags_str)}")
+
+        # f− (difference branch)
+        if np.any(is_minus):
+            plt.vlines(
+                f[is_minus],
+                0.0,
+                w[is_minus],
+                linewidth=0.6,
+                color="C0",
+                label=r"$f_{-}$",
+            )
+
+        # f+ (sum branch)
+        if np.any(is_plus):
+            plt.vlines(
+                f[is_plus],
+                0.0,
+                w[is_plus],
+                linewidth=0.6,
+                color="C1",
+                label=r"$f_{+}$",
+            )
+
+        # If tags couldn't be interpreted, fall back
+        if (not np.any(is_minus)) and (not np.any(is_plus)):
+            print("[plot_sticks_kappa] WARNING: could not identify f- vs f+ from meta tags; using single color.")
+            for fk, wk in zip(f, w):
+                plt.vlines(fk, 0.0, wk, linewidth=0.6)
+        else:
+            plt.legend(loc="upper right", fontsize=10)
+
     plt.title(title)
     plt.xlabel("Frequency (kHz)")
     plt.xscale("log")
-    # plt.xlim(*freqs_kHz)
     plt.ylabel(weight_caption)
     plt.grid(True, alpha=0.25)
     plt.tight_layout()
@@ -377,18 +438,30 @@ def convolved_expected_from_recs(
     per_line_key_plus: str = "line_w_plus",
     kappa_key: str = "kappa",
     per_line_scale: float = 1.0,
+    # Larmor marker
+    larmor_kHz: Optional[float] = None,
     # labeling
     title_prefix: str = "Expected ESEEM spectrum",
 ) -> Tuple[np.ndarray, np.ndarray]:
     """
     Build a smooth expected spectrum by convolving each discrete line with a kernel.
+    Branch-resolved: f_- and f_+ are plotted in different colors.
+    
+    If larmor_kHz is not None, draw a vertical line at the nuclear Larmor frequency ν_I.
 
     weight_mode:
       - "kappa"    → weight = κ (same for f± per site) × per_line_scale
       - "per_line" → weight = record['line_w_minus/plus'] × per_line_scale
       - "unit"     → weight = 1 × per_line_scale
+
+    Returns
+    -------
+    f : ndarray
+        Frequency axis (kHz, log-spaced).
+    spec_total : ndarray
+        Total spectrum = spec_minus + spec_plus (+ any untagged lines).
     """
-    freqs, w, _ = lines_from_recs(
+    freqs_kHz, w, meta = lines_from_recs(
         records,
         orientations=orientations,
         fmin_kHz=f_range_kHz[0],
@@ -399,47 +472,314 @@ def convolved_expected_from_recs(
         kappa_key=kappa_key,
         per_line_scale=per_line_scale,
     )
-    if freqs.size == 0:
+    if freqs_kHz.size == 0:
         raise ValueError("No lines in requested range.")
 
+    # Log-spaced frequency axis
     f = np.logspace(np.log10(f_range_kHz[0]), np.log10(f_range_kHz[1]), int(npts))
-    spec = np.zeros_like(f, float)
+
+    # ---------- Fallback if no meta (no branch tags) ----------
+    if not meta:
+        spec = np.zeros_like(f, float)
+
+        if shape.lower().startswith("gauss"):
+            s = float(width_kHz)
+            norm = s * np.sqrt(2 * np.pi)
+            for f0, a in zip(freqs_kHz, w):
+                spec += a * np.exp(-0.5 * ((f - f0) / s) ** 2) / norm
+            kern_label = f"Gaussian (σ={width_kHz:.2f} kHz)"
+        else:
+            g = float(width_kHz)
+            for f0, a in zip(freqs_kHz, w):
+                spec += a * (g / np.pi) / ((f - f0) ** 2 + g**2)
+            kern_label = f"Lorentzian (γ={width_kHz:.2f} kHz)"
+
+        # y-label text
+        if weight_mode == "kappa":
+            wlabel = "κ"
+        elif weight_mode == "per_line":
+            wlabel = "per-line weight (e.g., p_occ·κ/4)"
+        else:
+            wlabel = "unit weight"
+
+        fig, ax = plt.subplots(figsize=(15, 6))
+        ax.set_xscale("log")
+        ax.plot(f, spec, lw=1.6)
+        ax.set_xlim(*f_range_kHz)
+        ax.set_xlabel("Frequency (kHz)")
+        ax.set_ylabel(f"Expected intensity (arb.)\nweights = {wlabel}")
+        title = f"{title_prefix} • {kern_label}"
+        if orientations is not None:
+            title += f" • orientations={list(map(tuple, orientations))}"
+        ax.set_title(title)
+        ax.grid(True, which="both", alpha=0.25)
+
+        # --- Larmor marker (if requested) ---
+        if larmor_kHz is not None:
+            ax.axvline(larmor_kHz, linestyle=":", linewidth=1.0)
+            ymin, ymax = ax.get_ylim()
+            ax.text(
+                larmor_kHz,
+                ymax,
+                r"$\nu_I$",
+                rotation=90,
+                ha="right",
+                va="top",
+                fontsize=9,
+            )
+
+        plt.tight_layout()
+        plt.show()
+        return f, spec
+
+    # ---------- Branch-resolved case: split into f- and f+ ----------
+    tags_raw = [m_i[2] for m_i in meta]      # ("f_minus_Hz" / "f_plus_Hz")
+    tags_str = [str(t).lower() for t in tags_raw]
+
+    is_minus = np.array(["minus" in t for t in tags_str], dtype=bool)
+    is_plus  = np.array(["plus"  in t for t in tags_str], dtype=bool)
+    is_other = ~(is_minus | is_plus)
+
+    # Helper: convolve for a specific branch
+    def _convolve_branch(freqs_branch_kHz, weights_branch):
+        spec_branch = np.zeros_like(f, float)
+        if freqs_branch_kHz.size == 0:
+            return spec_branch
+
+        if shape.lower().startswith("gauss"):
+            s = float(width_kHz)
+            norm = s * np.sqrt(2 * np.pi)
+            for f0, a in zip(freqs_branch_kHz, weights_branch):
+                spec_branch += a * np.exp(-0.5 * ((f - f0) / s) ** 2) / norm
+        else:
+            g = float(width_kHz)
+            for f0, a in zip(freqs_branch_kHz, weights_branch):
+                spec_branch += a * (g / np.pi) / ((f - f0) ** 2 + g**2)
+        return spec_branch
+
+    freqs_minus = freqs_kHz[is_minus]
+    w_minus     = w[is_minus]
+    freqs_plus  = freqs_kHz[is_plus]
+    w_plus      = w[is_plus]
+    freqs_other = freqs_kHz[is_other]
+    w_other     = w[is_other]
+
+    spec_minus = _convolve_branch(freqs_minus, w_minus)
+    spec_plus  = _convolve_branch(freqs_plus,  w_plus)
+    spec_other = _convolve_branch(freqs_other, w_other)
+    spec_total = spec_minus + spec_plus + spec_other
 
     if shape.lower().startswith("gauss"):
-        s = float(width_kHz)
-        norm = s * np.sqrt(2 * np.pi)
-        for f0, a in zip(freqs, w):
-            spec += a * np.exp(-0.5 * ((f - f0) / s) ** 2) / norm
         kern_label = f"Gaussian (σ={width_kHz:.2f} kHz)"
     else:
-        g = float(width_kHz)
-        for f0, a in zip(freqs, w):
-            spec += a * (g / np.pi) / ((f - f0) ** 2 + g**2)
         kern_label = f"Lorentzian (γ={width_kHz:.2f} kHz)"
 
-    # Make the weight label explicit
     if weight_mode == "kappa":
-        wlabel = "κ (per line; same κ for f±)"
+        wlabel = "κ (per line)"
     elif weight_mode == "per_line":
         wlabel = "per-line weight (e.g., p_occ·κ/4)"
     else:
         wlabel = "unit weight"
 
-    fig, ax = plt.subplots(figsize=(9, 5))
+    fig, ax = plt.subplots(figsize=(15, 6))
     ax.set_xscale("log")
-    ax.plot(f, spec, lw=1.6)
     ax.set_xlim(*f_range_kHz)
     ax.set_xlabel("Frequency (kHz)")
     ax.set_ylabel(f"Expected intensity (arb.)\nweights = {wlabel}")
+
+    # Plot branches with different styles
+    if np.any(is_minus):
+        ax.plot(f, spec_minus, lw=1.4, label=r"$f_{-}$")
+    if np.any(is_plus):
+        ax.plot(f, spec_plus,  lw=1.4, label=r"$f_{+}$")
+    if np.any(is_other):
+        ax.plot(f, spec_other, lw=1.0, label="other lines", linestyle=":")
+
+    # Total as thin dashed curve
+    ax.plot(f, spec_total, lw=1.0, linestyle="--", alpha=0.6, label="sum")
+
     title = f"{title_prefix} • {kern_label}"
     if orientations is not None:
         title += f" • orientations={list(map(tuple, orientations))}"
     ax.set_title(title)
     ax.grid(True, which="both", alpha=0.25)
+
+    # --- Larmor marker (if requested) ---
+    if larmor_kHz is not None:
+        ax.axvline(larmor_kHz, linestyle=":", linewidth=1.0)
+        ymin, ymax = ax.get_ylim()
+        ax.text(
+            larmor_kHz,
+            ymax,
+            r"$\nu_I$",
+            rotation=90,
+            ha="right",
+            va="top",
+            fontsize=9,
+        )
+
+    ax.legend(loc="upper right", fontsize=9)
     plt.tight_layout()
     plt.show()
-    return f, spec
 
+    return f, spec_total
+
+
+# Small helper if you don't already have it
+def _ori_tuple(o) -> Tuple[int, int, int]:
+    return tuple(int(x) for x in o)
+
+
+def pair_axis_from_recs(
+    records: List[Dict],
+    orientations: Optional[Iterable[Tuple[int, int, int]]] = None,
+    *,
+    fmin_kHz: float = 0.0,
+    fmax_kHz: float = np.inf,
+    axis: str = "f_mid",           # {"f_mid", "delta_f"}
+    weight_mode: str = "kappa",    # {"kappa", "per_pair", "unit"}
+    kappa_key: str = "kappa",
+    per_line_key_minus: str = "line_w_minus",
+    per_line_key_plus: str  = "line_w_plus",
+    per_pair_scale: float = 1.0,
+) -> Tuple[np.ndarray, np.ndarray, List[Tuple]]:
+    """
+    Build a 1D 'pair spectrum' from catalog records.
+
+    axis:
+        'f_mid'   → use (f_+ + f_-)/2  (Larmor-like frequency)
+        'delta_f' → use (f_+ - f_-)/2  (anisotropy / mixing scale)
+
+    weight_mode:
+        'kappa'   → weight = κ for that site
+        'per_pair'→ weight = line_w_minus + line_w_plus (if present)
+        'unit'    → weight = 1 for every pair
+
+    Returns
+    -------
+    freq_axis_kHz : np.ndarray
+        1D axis in kHz (mid or delta, depending on `axis`).
+    weights       : np.ndarray
+        Same length as freq_axis_kHz.
+    meta          : list of tuples
+        (orientation, site_index, f_plus_kHz, f_minus_kHz) for each stick.
+    """
+    lo_Hz = float(fmin_kHz) * 1e3
+    hi_Hz = float(fmax_kHz) * 1e3
+
+    allowed = None if orientations is None else {_ori_tuple(o) for o in orientations}
+
+    F_axis = []
+    W = []
+    meta = []
+
+    axis = axis.lower()
+    if axis not in {"f_mid", "delta_f"}:
+        raise ValueError(f"axis must be 'f_mid' or 'delta_f', got {axis!r}")
+
+    for r in records:
+        ori = _ori_tuple(r["orientation"])
+        if allowed is not None and ori not in allowed:
+            continue
+
+        f_plus_Hz  = float(r["f_plus_Hz"])
+        f_minus_Hz = float(r["f_minus_Hz"])
+
+        # Require both branches in the band (like your pair extractor)
+        if not (lo_Hz <= f_plus_Hz <= hi_Hz and lo_Hz <= f_minus_Hz <= hi_Hz):
+            continue
+
+        # Convert to kHz
+        f_plus_kHz  = f_plus_Hz  * 1e-3
+        f_minus_kHz = f_minus_Hz * 1e-3
+
+        # Pair axes
+        f_mid_kHz   = 0.5 * (f_plus_kHz + f_minus_kHz)
+        delta_f_kHz = 0.5 * abs(f_plus_kHz - f_minus_kHz)
+
+        if axis == "f_mid":
+            f_axis = f_mid_kHz
+        else:  # "delta_f"
+            f_axis = delta_f_kHz
+
+        # Weight choices
+        if weight_mode == "unit":
+            w = 1.0
+        elif weight_mode == "kappa":
+            w = float(r.get(kappa_key, 0.0))
+        elif weight_mode == "per_pair":
+            w_m = float(r.get(per_line_key_minus, 0.0))
+            w_p = float(r.get(per_line_key_plus, 0.0))
+            w = w_m + w_p
+        else:
+            raise ValueError(f"Unknown weight_mode='{weight_mode}'")
+
+        w *= per_pair_scale
+
+        F_axis.append(f_axis)
+        W.append(w)
+        meta.append((ori, int(r["site_index"]), f_plus_kHz, f_minus_kHz))
+
+    if not F_axis:
+        return np.array([]), np.array([]), []
+
+    F_axis = np.asarray(F_axis, float)
+    W = np.asarray(W, float)
+
+    order = np.argsort(F_axis)
+    return F_axis[order], W[order], [meta[i] for i in order]
+
+
+def plot_pair_spectrum(
+    freq_axis_kHz: np.ndarray,
+    weights: Optional[np.ndarray] = None,
+    *,
+    axis: str = "f_mid",           # {"f_mid", "delta_f"}
+    title: Optional[str] = None,
+    min_weight: float = 0.0,
+):
+    """
+    Plot a 1D stick spectrum of ESEEM pairs along either f_mid or Δf.
+
+    freq_axis_kHz : output from pair_axis_from_recs(...).
+    weights       : same length, or None → all ones.
+    axis          : 'f_mid' or 'delta_f' (for axis label/title).
+    """
+    axis = axis.lower()
+    if freq_axis_kHz.size == 0:
+        print("[plot_pair_spectrum] No pairs to plot.")
+        return
+
+    w = np.ones_like(freq_axis_kHz) if weights is None else np.asarray(weights, float)
+    m = w >= float(min_weight)
+    f = freq_axis_kHz[m]
+    w = w[m]
+
+    order = np.argsort(f)
+    f = f[order]
+    w = w[order]
+
+    if axis == "f_mid":
+        xlabel = r"$f_{\mathrm{mid}} = (f_+ + f_-)/2$ (kHz)"
+        default_title = "ESEEM pair spectrum vs mid-frequency"
+    else:
+        xlabel = r"$\Delta f = (f_+ - f_-)/2$ (kHz)"
+        default_title = "ESEEM pair spectrum vs half-splitting"
+
+    if title is None:
+        title = default_title
+
+    plt.figure(figsize=(10, 5))
+    for fk, wk in zip(f, w):
+        plt.vlines(fk, 0.0, wk, linewidth=0.7)
+
+    plt.title(title)
+    plt.xlabel(xlabel)
+    plt.ylabel("Weight")
+    plt.xscale("log")
+    plt.grid(True, alpha=0.25)
+    plt.tight_layout()
+    plt.show()
 
 def expected_sticks_with_multiplicity_pair(
     records: List[Dict],
@@ -1131,7 +1471,7 @@ if __name__ == "__main__":
 
     # Filter by orientation & frequency band (or set orientations=None for all)
     # ori_sel = [(1, 1, 1), (1, 1, -1), (1, -1, 1), (-1, 1, 1)]
-    ori_sel = None
+    ori_sel = [(1, 1, 1)]
     recs = select_records(
         recs_all,
         fmin_kHz=1,
@@ -1140,49 +1480,49 @@ if __name__ == "__main__":
         use_plus_and_minus=True,
     )
 
-
-
-    fig, axes = plot_theoretical_kappa_vs_distance(
-        catalog_json="analysis/spin_echo_work/essem_freq_kappa_catalog_22A_updated.json",
-        orientations=[(1,1,1)],   # or None for all
-        # orientations=None,   # or None for all
-        distance_max_A=15.0,                 # match your catalog cutoff
-    )
-    plt.show(block=True)
-    sys.exit()
+    # fig, axes = plot_theoretical_kappa_vs_distance(
+    #     catalog_json="analysis/spin_echo_work/essem_freq_kappa_catalog_22A_updated.json",
+    #     orientations=[(1,1,1)],   # or None for all
+    #     # orientations=None,   # or None for all
+    #     distance_max_A=15.0,                 # match your catalog cutoff
+    # )
+    # plt.show(block=True)
+    # sys.exit()
     # kpl.show(block=True)
 
     # A) Discrete sticks using *per-line* weights (p_occ·κ/4 stored per f±)
-    # fk, w, meta = lines_from_recs(
-    #     recs,
-    #     orientations=None,  # already filtered
-    #     fmin_kHz=1,
-    #     fmax_kHz=20000,
-    #     weight_mode="kappa",  # "kappa" or "unit" also fine
-    #     per_line_scale=1.0,
-    # )
-    
-    
-    
-    # plot_sticks_kappa(
-    #     fk,
-    #     w,
-    #     title=f"Discrete ESEEM sticks {ori_sel}",
-    #     weight_caption="Per-line weight (p_occ · κ/4)",
-    # )
+    freqs_kHz, weights, meta = lines_from_recs(
+        recs,
+        orientations=ori_sel,   # or None
+        fmin_kHz=1.0,
+        fmax_kHz=10000.0,
+        weight_mode="kappa",                 # or "per_line", "unit"
+    )
 
+    plot_sticks_kappa(
+        freqs_kHz,
+        weights,
+        meta=meta,                           # <-- IMPORTANT
+        title=f"ESEEM discrete lines {ori_sel}",
+        weight_caption="κ (dimensionless)",
+        min_weight=0.0,
+    )
+    nu_I_kHz = 53.3 
     # # B) Smooth spectrum with explicit kernel/weight labels
-    # _f, _S = convolved_expected_from_recs(
-    #     recs,
-    #     orientations=None,
-    #     f_range_kHz=(1, 20000),
-    #     npts=2400,
-    #     shape="gauss",  # or "lorentz"
-    #     width_kHz=8.0,
-    #     weight_mode="kappa",  # matches above
-    #     per_line_scale=1.0,
-    #     title_prefix="Expected ESEEM spectrum",
-    # )
+    f, spec = convolved_expected_from_recs(
+        recs,
+        orientations=ori_sel,  # or None
+        f_range_kHz=(1, 10000),
+        npts=2000,
+        shape="gauss",
+        width_kHz=8.0,
+        weight_mode="kappa",
+        larmor_kHz=nu_I_kHz,
+    )
+
+
+    plt.show(block=True)
+    sys.exit()
     # 1) Load catalog you already built (has f± and kappa)
     # 1) Load full catalog
     recs_all = load_catalog("analysis/spin_echo_work/essem_freq_kappa_catalog_22A.json")
@@ -1206,31 +1546,31 @@ if __name__ == "__main__":
     oris        = np.array([tuple(r["orientation"]) for r in recs])
     kappa       = np.array([float(r.get("kappa", 0.0)) for r in recs])
 
-    fig_th, ax_th = plot_sorted_branches(
-        f_minus_kHz,
-        f_plus_kHz,
-        sf0_kHz=None,
-        sf1_kHz=None,
-        title_prefix="Theoretical ESEEM catalog",
-        label0=r"Theory $f_-$",
-        label1=r"Theory $f_+$",
-        f_range_kHz=(10, 10000),
-    )
+    # fig_th, ax_th = plot_sorted_branches(
+    #     f_minus_kHz,
+    #     f_plus_kHz,
+    #     sf0_kHz=None,
+    #     sf1_kHz=None,
+    #     title_prefix="Theoretical ESEEM catalog",
+    #     label0=r"Theory $f_-$",
+    #     label1=r"Theory $f_+$",
+    #     f_range_kHz=(10, 10000),
+    # )
 
     # 3) Get expected sticks including pairs (tunable pair_scale)
-    # fk, w, tags = expected_sticks_with_multiplicity_pair(
-    #     recs,
-    #     orientations=None,  # already filtered above
-    #     fmin_kHz=1,
-    #     fmax_kHz=20000,
-    #     use_first_order=True,  # keep dominant lines
-    #     first_weight_mode="kappa",  # or "per_line" to use p_occ*κ/4 you stored
-    #     per_line_scale=1.0,
-    #     use_pairs=True,  # add |fi±fj| lines
-    #     pair_scale=1.0,  # start at 1.0; decrease if pairs look too strong
-    #     p_occ=0.011,
-    #     top_k_by_kappa=600,  # trims O(N^2)
-    # )
+    fk, w, tags = expected_sticks_with_multiplicity_pair(
+        recs,
+        orientations=None,  # already filtered above
+        fmin_kHz=1,
+        fmax_kHz=20000,
+        use_first_order=True,  # keep dominant lines
+        first_weight_mode="kappa",  # or "per_line" to use p_occ*κ/4 you stored
+        per_line_scale=1.0,
+        use_pairs=True,  # add |fi±fj| lines
+        pair_scale=1.0,  # start at 1.0; decrease if pairs look too strong
+        p_occ=0.011,
+        top_k_by_kappa=600,  # trims O(N^2)
+    )
     # # # If you want to convolve the (fk, w) that already include pairs, use your 'experimental' convolver:
     # convolved_exp_spectrum(
     #     fk,

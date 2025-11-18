@@ -244,7 +244,9 @@ def fit_spin_echo_dataset(
 
     band = cfg.freq_seed_band
     if band is None:
-        band = _infer_sampling_band(total_evolution_times, margin=0.05)
+        # band = _infer_sampling_band(total_evolution_times, margin=0.05)
+        # print(band)
+        band = (0.001, 6.0) ## manual
         if cfg.verbose:
             print(f"[band] inferred from sampling: {band[0]:.6g}–{band[1]:.6g} cycles/μs")
 
@@ -260,7 +262,7 @@ def fit_spin_echo_dataset(
     
     # ---------- run the fitter ----------
     print("=== Spin-echo fits starting ===")
-    (popts, pcovs, chis, fit_fns, fit_nv_labels, chosen_amp_bounds, chosen_overrides) = run_with_amp_and_freq_sweeps(
+    (popts, pcovs, chis, fit_fns, fit_nv_labels, chosen_amp_bounds, chosen_overrides, site_ids) = run_with_amp_and_freq_sweeps(
         nv_list,
         norm_counts,
         norm_counts_ste,
@@ -321,6 +323,7 @@ def fit_spin_echo_dataset(
         fit_fn_names=[(fn.__name__ if fn is not None else None) for fn in fit_fns],
         unified_keys=unified_keys,
         orientations=np.asarray(nv_orientations, int).tolist(),
+        site_id=[int(s) for s in site_ids],   # <-- here
     )
 
     # Save JSON
@@ -376,14 +379,16 @@ if __name__ == "__main__":
 
         # Amplitude sweep (tight for speed; expand later if needed)
         amp_bound_grid=((-0.6, 0.6),(-1.0, 1.0)),
-
+        # ---------------- Frequency seeding/boxes ----------------
+        freq_seed_band = (1.0, 6000), 
+        prior_pairs_topK=1500,
+        
         # Catalog / allowed-lines (we're directly passing allowed_records below)
         catalog_path=catalog_path,                 # <- set None to avoid double-loading via helper
         orientations=None,                 # or e.g. [(1,1,1), (1,-1,1), ...]
         p_occ=0.011,
         f_range_kHz=(1, 6000),
         n_keep_each=1500,
-        prior_pairs_topK=1500,
         min_sep_cyc_per_us=0.03,          # coarser de-dup in band than 0.01
         prior_weight_mode="kappa",
         prior_per_line_scale=1.0,
@@ -410,7 +415,7 @@ if __name__ == "__main__":
 
     # --- 4) (Optional) choose a subset of NVs to fit (faster dev runs) ---
     # nv_inds = list(range(0, 20))
-    nv_inds = None
+    nv_inds = [137]
 
     # --- 5) Run fits ---
     out, saved_path = fit_spin_echo_dataset(

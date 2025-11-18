@@ -992,6 +992,7 @@ def extract_catalog_pairs_cyc(records, orientations, band_kHz, weight_mode):
     pairs = []
     weights = []
     kmin, kmax = band_kHz
+    pair_indeces = []
 
     for r in records:
         # optional orientation filter
@@ -1029,10 +1030,14 @@ def extract_catalog_pairs_cyc(records, orientations, band_kHz, weight_mode):
         else:
             w = 1.0
         weights.append(w)
+        
+        # 
+        site_index = r.get("site_index", None)
+        pair_indeces.append(site_index)
 
     pairs = np.asarray(pairs, float)
     weights = np.asarray(weights, float) if weights else None
-    return pairs, weights
+    return pairs, weights, pair_indeces
 
 # ================= Updated fitter with bound-repair ===========================
 
@@ -1137,7 +1142,8 @@ def fit_one_nv_with_freq_sweeps(
     # -----------------------------
     # 3) Frequency band + bound boxes
     # -----------------------------
-    band = _normalize_freq_band(t, freq_seed_band, fmax_cap=None)  # (lo, hi)
+    # band = _normalize_freq_band(t, freq_seed_band, fmax_cap=None)  # (lo, hi)
+    band = freq_seed_band  # (lo, hi)
     lo, hi = band
 
     bound_boxes = {}
@@ -1156,22 +1162,35 @@ def fit_one_nv_with_freq_sweeps(
     # -----------------------------
     # 4) Allowed-line PAIRS ONLY (no FFT, no cross-pair mixing)
     # -----------------------------
+    # -----------------------------
+    # 4) Allowed-line PAIRS ONLY (no FFT, no cross-pair mixing)
+    # -----------------------------
     if allowed_records is None or len(allowed_records) == 0:
         raise RuntimeError("allowed_records must be provided to restrict f to f+/− pairs.")
 
     band_kHz = (lo * 1000.0, hi * 1000.0)
-    pairs_cyc, pair_wts = extract_catalog_pairs_cyc(
+    print(band_kHz)
+    # Now also get cite/site IDs
+    pairs_cyc, pair_wts, pair_ids = extract_catalog_pairs_cyc(
         allowed_records, allowed_orientations, band_kHz, allowed_weight_mode
     )
 
     if pairs_cyc.size == 0:
         raise RuntimeError("No (f+, f−) pairs fall within the sampling/Nyquist band.")
 
-    nyq_guard = 0.95
+    # Make pair_ids indexable like the arrays
+    pair_ids = np.asarray(pair_ids, dtype=object)
+
+    nyq_guard = 0.99
     hi_guard = nyq_guard * hi
-    m = (pairs_cyc[:, 0] >= lo) & (pairs_cyc[:, 0] <= hi_guard) & \
+
+    # mask out-of-band pairs
+    m = (
+        (pairs_cyc[:, 0] >= lo) & (pairs_cyc[:, 0] <= hi_guard) &
         (pairs_cyc[:, 1] >= 0.0) & (pairs_cyc[:, 1] <= hi_guard)
+    )
     pairs_cyc = pairs_cyc[m]
+    pair_ids  = pair_ids[m]
     if pair_wts is not None:
         pair_wts = pair_wts[m]
 
@@ -1182,7 +1201,9 @@ def fit_one_nv_with_freq_sweeps(
     order = np.arange(len(pairs_cyc))
     if (allowed_weight_mode != "none") and (pair_wts is not None):
         order = np.argsort(-pair_wts)
+
     pairs_cyc = pairs_cyc[order]
+    pair_ids  = pair_ids[order]
     if pair_wts is not None:
         pair_wts = pair_wts[order]
 
@@ -1190,34 +1211,52 @@ def fit_one_nv_with_freq_sweeps(
     key = np.round(pairs_cyc, 6)
     _, uniq_idx = np.unique(key, axis=0, return_index=True)
     uniq_idx = np.sort(uniq_idx)
+
     pairs_cyc = pairs_cyc[uniq_idx]
+    pair_ids  = pair_ids[uniq_idx]
     if pair_wts is not None:
         pair_wts = pair_wts[uniq_idx]
 
     # Top-K subset used for the PRIOR stage
     if len(pairs_cyc) > prior_pairs_topK:
         pairs_cyc_topK = pairs_cyc[:prior_pairs_topK]
-        pair_wts_topK = pair_wts[:prior_pairs_topK] if pair_wts is not None else None
+        pair_ids_topK  = pair_ids[:prior_pairs_topK]
+        pair_wts_topK  = pair_wts[:prior_pairs_topK] if pair_wts is not None else None
     else:
         pairs_cyc_topK = pairs_cyc
-        pair_wts_topK = pair_wts
+        pair_ids_topK  = pair_ids
+        pair_wts_topK  = pair_wts
+
+    # (optional) keep both the full set and top-K set around
+    # pairs_cyc, pair_ids, pair_wts hold ALL;
+    # pairs_cyc_topK, pair_ids_topK, pair_wts_topK hold PRIOR subset
+
 
     # ---------------------------------------------
     # 5) PRIOR (keep catalog pairs; amplitude free)
     # ---------------------------------------------
     all_candidates = []
     if prior_enable and enable_extras and ("osc_f0" in pmap) and pairs_cyc_topK.size > 0:
-        # exact pairs from catalog (no singles)
-        prior_ovrs = [{"osc_f0": float(f0), "osc_f1": float(f1)}
-                    for (f0, f1) in pairs_cyc_topK]
+        # exact pairs from catalog (no singles), keep site IDs
+        prior_ovrs = []
+        for (f0, f1), site_id in zip(pairs_cyc_topK, pair_ids_topK):
+            prior_ovrs.append(
+                {
+                    "osc_f0": float(f0),
+                    "osc_f1": float(f1),
+                    "site_id": int(site_id),   # <-- carries catalog index / site id
+                }
+            )
 
         AMP_WINDS = _amp_windows_and_seeds()   # we still use its windows, but amp is FREE
         n_amp_windows = len(AMP_WINDS)
         if verbose:
-            print(f"[PRIOR] starting: {len(prior_ovrs)} override(s) × "
+            print(
+                f"[PRIOR] starting: {len(prior_ovrs)} override(s) × "
                 f"{n_amp_windows} amp-window(s) (amp=free) "
                 f"= {len(prior_ovrs)*n_amp_windows} trial(s) in band {lo:.5g}–{hi:.5g} cyc/µs",
-                flush=True)
+                flush=True
+            )
 
         start_best = np.inf
         best_prior = None
@@ -1226,6 +1265,8 @@ def fit_one_nv_with_freq_sweeps(
         eps = 1e-6  # e.g., 1e-6 to pin, 0.0 to leave free
 
         for ov in prior_ovrs:
+            sid = int(ov.get("site_id", -1))  # <-- extract site_id for this prior
+
             # Build local frequency boxes if locking is requested
             box_local = {}
             if eps > 0.0:
@@ -1269,24 +1310,31 @@ def fit_one_nv_with_freq_sweeps(
                 sc = _score_tuple(popt, red, lb_try, ub_try, _param_index_map(fit_fn_base))
                 if sc[0] < start_best:
                     start_best = sc[0]
-                    best_prior = ("lsq_prior", (amin, amax), ov2, popt, pcov, red, fit_fn_base)
+                    # store sid in best_prior
+                    best_prior = ("lsq_prior", (amin, amax), ov2, sid, popt, pcov, red, fit_fn_base)
+
         best_prior_candidate = None
         if best_prior is not None:
-            name, ab, overrides, popt, pcov, red, used_fn = best_prior
-            best_prior_candidate = (ab, overrides, name, popt, pcov, red, used_fn)
+            name, ab, overrides, sid, popt, pcov, red, used_fn = best_prior
+            # match layout of all_candidates: (ab, overrides, sid, mode, popt, pcov, red, used_fn)
+            best_prior_candidate = (ab, overrides, sid, name, popt, pcov, red, used_fn)
             all_candidates.append(best_prior_candidate)
             if verbose:
-                print(f"[PRIOR-BEST] amp={ab}, mode={name}, redχ²={red:.4g}, overrides={overrides}")
+                print(f"[PRIOR-BEST] amp={ab}, mode={name}, redχ²={red:.4g}, "
+                      f"overrides={overrides}, site_id={sid}")
             if isinstance(early_stop_redchi, (int, float)) and red <= early_stop_redchi:
                 if verbose:
-                    print(f"[EARLY-STOP] Using prior candidate with redχ²={red:.4g}")
-                return popt, pcov, red, used_fn, ab, overrides
+                    print(f"[EARLY-STOP] Using prior candidate with redχ²={red:.4g}, site_id={sid}")
+                # include sid in the early-return signature
+                return popt, pcov, red, used_fn, ab, overrides, sid
 
     # ---------------------------------------------------
     # 6) Build PAIRED overrides (no mixing) + optional singles
     # ---------------------------------------------------
-    lock_eps = float(globals().get("lock_pair_freqs_eps", 0.0))
-
+    # lock_pair_freqs_eps = 1e-6 
+    # lock_eps = float(globals().get("lock_pair_freqs_eps", 0.0))
+    lock_eps = 1e-6 
+    # lock_eps = float(globals().get("lock_pair_freqs_eps", 0.0))
     def _local_boxes_for_pair(ov):
         if lock_eps <= 0.0:
             return None
@@ -1315,14 +1363,23 @@ def fit_one_nv_with_freq_sweeps(
         return out
 
     # Final list of (override_dict, local_bound_boxes_or_None)
-    paired_overrides = [{"osc_f0": float(f0), "osc_f1": float(f1)} for (f0, f1) in pairs_cyc]
-    override_trials = []
-    for ov in paired_overrides:
-        for ov_ex in _product_with_extras(ov, extra_overrides_grid):
-            ov_ex = _sanitize_overrides(ov_ex, _param_index_map(fit_fn_base))
-            override_trials.append((ov_ex, _local_boxes_for_pair(ov)))
+    # paired_overrides = [{"osc_f0": float(f0), "osc_f1": float(f1)} for (f0, f1) in pairs_cyc]
+    paired_overrides = []
+    for (f0, f1), site_id in zip(pairs_cyc, pair_ids):
+        base_ov = {
+            "osc_f0": float(f0),
+            "osc_f1": float(f1),
+            # no site_id here: this dict is only for fit parameters
+        }
+        paired_overrides.append((base_ov, int(site_id)))
 
-    # ---------------------------------------
+    override_trials = []
+    for (base_ov, sid) in paired_overrides:
+        for ov_ex in _product_with_extras(base_ov, extra_overrides_grid):
+            ov_fit = _sanitize_overrides(ov_ex, _param_index_map(fit_fn_base))
+            override_trials.append((ov_fit, _local_boxes_for_pair(base_ov), sid))
+
+        # ---------------------------------------
     # 7) Full sweep over amp windows & seeds
     #    (coarse→fine survivor screening)
     # ---------------------------------------
@@ -1334,7 +1391,7 @@ def fit_one_nv_with_freq_sweeps(
 
         # Ensure strict lb < ub everywhere (SciPy requirement)
         # If any interval is degenerate (lb == ub), widen it slightly around that value.
-        eps_bounds = 1e-10
+        eps_bounds = 1e-6
         bad_eq = (ub_try <= lb_try)
         if np.any(bad_eq):
             if verbose:
@@ -1435,8 +1492,6 @@ def fit_one_nv_with_freq_sweeps(
 
 
     # main sweep
-    all_candidates = []  # make sure this exists before use
-
     for ab in amp_bound_grid:
         a_min, a_max = float(ab[0]), float(ab[1])
 
@@ -1447,18 +1502,19 @@ def fit_one_nv_with_freq_sweeps(
         )
 
         # ---- coarse screening over *paired* overrides for this amp window ----
-        coarse_pool = []  # (coarse_red, (p0_try, lb_try, ub_try, overrides))
-        for (overrides, local_boxes) in override_trials:
-            # prefer local pair-lock box if present
+        coarse_pool = []  # (coarse_red, (p0_try, lb_try, ub_try, overrides, site_id))
+        for (overrides, local_boxes, sid) in override_trials:
             bboxes = local_boxes or None
             p0_try, lb_try, ub_try = _apply_param_overrides(
-                base_p0, base_lb, base_ub, fit_fn_base, overrides=overrides, bound_boxes=bboxes,
+                base_p0, base_lb, base_ub, fit_fn_base,
+                overrides=overrides, bound_boxes=bboxes,
             )
             cscore = _coarse_redchi(fit_fn_base, t, yy, ee, p0_try, lb_try, ub_try, kcore)
-            coarse_pool.append((cscore, (p0_try, lb_try, ub_try, overrides)))
+            coarse_pool.append((cscore, (p0_try, lb_try, ub_try, overrides, sid)))
 
         coarse_pool.sort(key=lambda x: x[0])
         survivors = [x[1] for x in coarse_pool[:max(1, int(coarse_K))]]
+
         if not survivors:
             if verbose:
                 print("[COARSE] no survivors; taking best coarse candidate anyway")
@@ -1467,7 +1523,7 @@ def fit_one_nv_with_freq_sweeps(
                 survivors = [sorted(coarse_pool, key=lambda x: (np.inf if not np.isfinite(x[0]) else x[0]))[0][1]]
 
         # ---- run heavy attempts on survivors with SMALL budgets ----
-        for (p0_try, lb_try, ub_try, overrides) in survivors:
+        for (p0_try, lb_try, ub_try, overrides, sid) in survivors:
             res = _run_attempts_with_budget(
                 p0_try, lb_try, ub_try, overrides,
                 maxfev=small_maxfev, max_nfev=small_max_nfev
@@ -1475,53 +1531,56 @@ def fit_one_nv_with_freq_sweeps(
             if res is None:
                 continue
             mode, popt, pcov, red, used_fn = res
-            all_candidates.append((ab, overrides, mode, popt, pcov, red, used_fn))
+            all_candidates.append((ab, overrides, sid, mode, popt, pcov, red, used_fn))
 
-            if isinstance(early_stop_redchi, (int,float)) and red <= early_stop_redchi:
+            if isinstance(early_stop_redchi, (int, float)) and red <= early_stop_redchi:
                 if verbose:
-                    print(f"[EARLY-STOP] Sweep reached redχ²={red:.3g}")
-                return popt, pcov, red, used_fn, ab, overrides
-    
+                    print(f"[EARLY-STOP] Sweep reached redχ²={red:.3g}, site_id={sid}")
+                return popt, pcov, red, used_fn, ab, overrides, sid
+
+            
     if (len(all_candidates) == 0) and (best_prior_candidate is not None):
         if verbose:
             print("[SWEEP-EMPTY] Falling back to prior winner.")
-        ab, ov, mode, popt, pcov, red, used_fn = best_prior_candidate
-        return popt, pcov, red, used_fn, ab, ov
+        ab, ov, sid, mode, popt, pcov, red, used_fn = best_prior_candidate
+        return popt, pcov, red, used_fn, ab, ov, sid
+
     
     # -----------------------------
     # 8) Select best (and refine if needed)
     # -----------------------------
     if not all_candidates:
         raise RuntimeError("All frequency/amp sweep attempts failed.")
-
-    # abest, overrides_best, mode_best, popt_best, pcov_best, red_best, fn_best = \
-    #     min(all_candidates, key=lambda c: c[5])
     
+    # each c: (ab, overrides, sid, mode, popt, pcov, red, used_fn)
     def _pick_best_with_penalty(cands, lb_ref, ub_ref, pmap_ref):
-    # each c: (ab, overrides, mode, popt, pcov, red, used_fn)
         scored = []
         for c in cands:
-            ab, ov, mode, popt, pcov, red, used_fn = c
+            ab, ov, sid, mode, popt, pcov, red, used_fn = c
             sc = _score_tuple(popt, red, lb_ref, ub_ref, pmap_ref)
             scored.append((sc, c))
         scored.sort(key=lambda z: z[0])  # lexicographic: (chi+pen, amp_tie)
         return scored[0][1]
 
-    abest, overrides_best, mode_best, popt_best, pcov_best, red_best, fn_best = \
+
+    abest, overrides_best, site_id_best, mode_best, popt_best, pcov_best, red_best, fn_best = \
         _pick_best_with_penalty(all_candidates, lb_base, ub_base, _param_index_map(fit_fn_base))
-    
-        
+
+            
     if verbose:
-        print(f"[BEST] amp={abest}, mode={mode_best}, redχ²={red_best:.4g}, overrides={overrides_best}")
+        print(f"[BEST] amp={abest}, mode={mode_best}, redχ²={red_best:.4g}, "
+          f"overrides={overrides_best}, site_id={site_id_best}")
 
     # --- Early exit if already good enough ---
     if np.isfinite(red_best) and (early_stop_redchi is not None) and (red_best <= early_stop_redchi):
         if verbose:
             print(f"[EARLY-STOP] Keeping prior/sweep best (redχ²={red_best:.4g} ≤ {early_stop_redchi})")
-        return popt_best, pcov_best, red_best, fn_best, abest, overrides_best
+        return popt_best, pcov_best, red_best, fn_best, abest, overrides_best, site_id_best
+
 
     if not np.isfinite(red_best):
-        return popt_best, pcov_best, red_best, fn_best, abest, overrides_best
+        return popt_best, pcov_best, red_best, fn_best, abest, overrides_best, site_id_best
+
 
     if verbose:
         print("[REFINE] Re-running best candidate with bigger budgets")
@@ -1567,15 +1626,14 @@ def fit_one_nv_with_freq_sweeps(
         p0_try, lb_try, ub_try, overrides_best,
         maxfev=big_maxfev, max_nfev=big_max_nfev
     )
+
     if res is not None:
         mode_r, popt_r, pcov_r, red_r, fn_r = res
         if np.isfinite(red_r) and (red_r < red_best):
             if verbose:
-                print(f"[REFINE-BEST] mode={mode_r}, redχ²={red_r:.4g} < {red_best:.4g} (improved)")
+                print(f"[REPAIR-BEST] mode={mode_r}, redχ²={red_r:.4g} < {red_best:.4g}, "
+                    f"site_id={site_id_best}")
             popt_best, pcov_best, red_best, fn_best = popt_r, pcov_r, red_r, fn_r
-        else:
-            if verbose:
-                print(f"[REFINE] did not improve (staying at redχ²={red_best:.4g})")
 
     # --- Bound-hit repair pass ------------------------------------------------
     pmap_win = _param_index_map(fn_best)
@@ -1633,17 +1691,30 @@ def fit_one_nv_with_freq_sweeps(
                 p0_rep, lb_rep, ub_rep, overrides_best,
                 maxfev=big_maxfev, max_nfev=big_max_nfev
             )
-            if res_rep is not None:
+            # if res_rep is not None:
+            #     mode_r, popt_r, pcov_r, red_r, fn_r = res_rep
+            #     if np.isfinite(red_r) and (red_r < red_best):
+            #         if verbose:
+            #             print(f"[REPAIR-BEST] mode={mode_r}, redχ²={red_r:.4g} < {red_best:.4g}")
+            #         popt_best, pcov_best, red_best, fn_best = popt_r, pcov_r, red_r, fn_r
+            #     else:
+            #         if verbose:
+            #             print(f"[REPAIR] did not improve (keeping redχ²={red_best:.4g})")
+            if res_rep  is not None:
                 mode_r, popt_r, pcov_r, red_r, fn_r = res_rep
                 if np.isfinite(red_r) and (red_r < red_best):
                     if verbose:
-                        print(f"[REPAIR-BEST] mode={mode_r}, redχ²={red_r:.4g} < {red_best:.4g}")
+                        print(f"[REPAIR-BEST] mode={mode_r}, redχ²={red_r:.4g} < {red_best:.4g}, "
+                            f"site_id={site_id_best}")
                     popt_best, pcov_best, red_best, fn_best = popt_r, pcov_r, red_r, fn_r
                 else:
                     if verbose:
-                        print(f"[REPAIR] did not improve (keeping redχ²={red_best:.4g})")
+                        print(f"[REPAIR] did not improve (keeping redχ²={red_best:.4g}, "
+                            f"site_id={site_id_best})")
 
-    return popt_best, pcov_best, red_best, fn_best, abest, overrides_best
+
+    return popt_best, pcov_best, red_best, fn_best, abest, overrides_best, site_id_best
+
 
 
 def run_with_amp_and_freq_sweeps(
@@ -1734,6 +1805,7 @@ def run_with_amp_and_freq_sweeps(
 
     popts, pcovs, chis, fit_fns = [], [], [], []
     chosen_amp_bounds, chosen_overrides = [], []
+    best_site_ids = []
 
     for idx, lbl in enumerate(nv_inds, 1):
         if verbose:
@@ -1762,7 +1834,7 @@ def run_with_amp_and_freq_sweeps(
             local_allowed_orientations = allowed_orientations
 
         try:
-            pi, cov, chi, fn, ab, ov = fit_one_nv_with_freq_sweeps(
+            pi, cov, chi, fn, ab, ov, sid = fit_one_nv_with_freq_sweeps(
                 times_us, y, ye,
                 amp_bound_grid=amp_bound_grid,
 
@@ -1817,15 +1889,17 @@ def run_with_amp_and_freq_sweeps(
             pi = cov = fn = None
             chi = np.nan
             ab = None
+            sid = -1
             ov = {}
 
         popts.append(pi); pcovs.append(cov); chis.append(chi); fit_fns.append(fn)
         chosen_amp_bounds.append(ab); chosen_overrides.append(ov)
+        best_site_ids.append(sid)
 
         if verbose:
             if np.isfinite(chi):
-                print(f"[DONE] NV {lbl}: redχ²={chi:.4g}, amp_bounds={ab}, overrides={ov}")
+                print(f"[DONE] NV {lbl}: redχ²={chi:.4g}, amp_bounds={ab}, overrides={ov}, site_id={sid}")
             else:
-                print(f"[DONE] NV {lbl}: redχ²=nan (failed)")
+                print(f"[DONE] NV {lbl}: redχ²=nan (failed), site_id={sid}")
 
-    return popts, pcovs, chis, fit_fns, nv_inds, chosen_amp_bounds, chosen_overrides
+    return popts, pcovs, chis, fit_fns, nv_inds, chosen_amp_bounds, chosen_overrides,  best_site_ids

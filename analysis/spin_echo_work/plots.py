@@ -805,7 +805,8 @@ if __name__ == "__main__":
     # file_stem= "2025_11_13-06_28_22-sample_204nv_s1-e85aa7"
  
     
-    file_stem = "2025_11_14-03_05_30-sample_204nv_s1-e85aa7" # freqs freeze
+    file_stem = "2025_11_14-03_05_30-sample_204nv_s1-e85aa7" # freqs (200) freeze
+    file_stem = "2025_11_15-23_05_22-sample_204nv_s1-e85aa7" # freqs (1500) freeze
     
     data = dm.get_raw_data(file_stem=file_stem)
     popts = data["popts"]
@@ -816,11 +817,11 @@ if __name__ == "__main__":
     repr_nv_name = repr_nv_sig.name
     
     # 2) PARAM PANELS (T2 outlier filter)
-    # figs, keep_mask, kept_labels = plot_each_param_separately(
-    #     popts, chis, fit_nv_labels, 
-    #     save_prefix= "rubin-spin_echo-2025_09_08",
-    #     t2_policy=dict(method="iqr", iqr_k=5, abs_range=(0.00, 1.0))
-    # )
+    figs, keep_mask, kept_labels = plot_each_param_separately(
+        popts, chis, fit_nv_labels, 
+        save_prefix= "rubin-spin_echo-2025_09_08",
+        t2_policy=dict(method="iqr", iqr_k=5, abs_range=(0.00, 1.0))
+    )
 
     
     fit_nv_labels  = list(map(int, data["nv_labels"]))
@@ -851,7 +852,7 @@ if __name__ == "__main__":
     #     show_residuals=True,
     #     block=False
     # )
-     
+    sys.exit()
     # # --------------------------
     # # Example usage
     # # --------------------------
