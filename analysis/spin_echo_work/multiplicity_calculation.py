@@ -213,7 +213,7 @@ def build_site_multiplicity_with_theory(
     """
 
     # --------- 0) How many NVs are in the dataset? ---------
-    N_NV = matches_df["nv"].nunique()
+    N_NV = matches_df["nv_label"].nunique()
     print(f"[INFO] Number of NVs in dataset: N_NV = {N_NV}")
 
     # --------- 1) Experimental site stats (NV → site multiplicity) ---------
@@ -230,7 +230,7 @@ def build_site_multiplicity_with_theory(
         matches_df
         .groupby(site_key, as_index=False)
         .agg(
-            n_matches=("nv", "count"),
+            n_matches=("nv_label", "count"),
             kappa_mean=("kappa", "mean"),
         )
     )

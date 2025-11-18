@@ -303,6 +303,225 @@ class CoilField3D:
         )
         plt.show()
 
+    def sweep_peaks_along_line(
+        self,
+        I_ch1_start: float,
+        I_ch2_start: float,
+        I_ch1_end: float,
+        I_ch2_end: float,
+        n_steps: int = 101,
+        drift: Optional[np.ndarray] = None,
+        D_GHz: float = D_GHZ,
+        E_MHz: float = E_MHZ,
+        gamma_e_MHz_per_G: float = GAMMA,
+    ) -> Dict[str, np.ndarray]:
+        """
+        Sweep a straight line in (I_ch1, I_ch2) space and track:
+          - B vector (G)
+          - |B| (G)
+          - quartet f_- (GHz, NV order)
+          - shift from baseline (MHz, NV order)
+
+        Returns a dict with keys:
+          "I_ch1_A"           : shape (N,)
+          "I_ch2_A"           : shape (N,)
+          "B_G"               : shape (N,3)
+          "Bmag_G"            : shape (N,)
+          "f_minus_GHz"       : shape (N,4)
+          "delta_f_MHz"       : shape (N,4)
+        """
+        I1 = np.linspace(I_ch1_start, I_ch1_end, int(n_steps))
+        I2 = np.linspace(I_ch2_start, I_ch2_end, int(n_steps))
+
+        B_all = np.empty((n_steps, 3), float)
+        Bmag_all = np.empty(n_steps, float)
+        f_all = np.full((n_steps, 4), np.nan, float)
+        df_all = np.full((n_steps, 4), np.nan, float)
+
+        for k in range(n_steps):
+            out = self.predict_peaks(
+                I1[k], I2[k],
+                drift=drift,
+                D_GHz=D_GHz,
+                E_MHz=E_MHz,
+                gamma_e_MHz_per_G=gamma_e_MHz_per_G,
+            )
+            B_all[k, :] = out["B_G"]
+            Bmag_all[k] = out["|B|_G"]
+
+            if out["f_minus_GHz"] is not None:
+                f_all[k, :] = out["f_minus_GHz"]
+            if out["relabel_error"] is not None:
+                df_all[k, :] = out["relabel_error"]
+
+        return {
+            "I_ch1_A": I1,
+            "I_ch2_A": I2,
+            "B_G": B_all,
+            "Bmag_G": Bmag_all,
+            "f_minus_GHz": f_all,
+            "delta_f_MHz": df_all,
+        }
+        
+    def peak_maps_over_currents(
+        cal,
+        Iy_range=(-4.0, 4.0),
+        Iz_range=(-4.0, 4.0),
+        nI: int = 81,
+        drift: Optional[np.ndarray] = None,
+        D_GHz: float = D_GHZ,
+        E_MHz: float = E_MHZ,
+        gamma_e_MHz_per_G: float = GAMMA,
+    ) -> Dict[str, np.ndarray]:
+        """
+        Build 2D maps over (I_ch1, I_ch2):
+
+            - Bmag_G : |B| (G)
+            - Bx, By, Bz : components (G)
+            - f_minus_GHz : ODMR quartet (GHz, NV-order) at each grid point, shape (nI, nI, 4)
+            - delta_f_MHz : shift from baseline B0 (MHz, NV-order), shape (nI, nI, 4)
+
+        Axes convention:
+            X = I_ch2 (A),  Y = I_ch1 (A)  [same as field_maps_over_currents]
+        """
+        Iy = np.linspace(Iy_range[0], Iy_range[1], int(nI))
+        Iz = np.linspace(Iz_range[0], Iz_range[1], int(nI))
+        IZZ, IYY = np.meshgrid(Iz, Iy)  # X=Iz, Y=Iy
+
+        Bx = np.empty_like(IZZ, dtype=float)
+        By = np.empty_like(IZZ, dtype=float)
+        Bz = np.empty_like(IZZ, dtype=float)
+        Bm = np.empty_like(IZZ, dtype=float)
+
+        f_map = np.full((nI, nI, 4), np.nan, float)
+        df_map = np.full((nI, nI, 4), np.nan, float)
+
+        for i in range(nI):
+            for j in range(nI):
+                out = cal.predict_peaks(
+                    IYY[i, j],
+                    IZZ[i, j],
+                    drift=drift,
+                    D_GHz=D_GHz,
+                    E_MHz=E_MHZ,
+                    gamma_e_MHz_per_G=gamma_e_MHz_per_G,
+                )
+                B = out["B_G"]
+                Bx[i, j], By[i, j], Bz[i, j] = B
+                Bm[i, j] = out["|B|_G"]
+
+                if out["f_minus_GHz"] is not None:
+                    f_map[i, j, :] = out["f_minus_GHz"]
+                if out["relabel_error"] is not None:
+                    df_map[i, j, :] = out["relabel_error"]
+
+        return {
+            "Iy_grid": IYY,
+            "Iz_grid": IZZ,
+            "Bx_G": Bx,
+            "By_G": By,
+            "Bz_G": Bz,
+            "Bmag_G": Bm,
+            "f_minus_GHz": f_map,
+            "delta_f_MHz": df_map,
+        }
+
+    def sweep_peaks_vs_current(
+        self,
+        I_ch1_start: float,
+        I_ch2_start: float,
+        I_ch1_end: float,
+        I_ch2_end: float,
+        n_steps: int = 101,
+        drift: Optional[np.ndarray] = None,
+        D_GHz: float = D_GHZ,
+        E_MHz: float = E_MHZ,
+        gamma_e_MHz_per_G: float = GAMMA,
+    ) -> Dict[str, np.ndarray]:
+        """
+        Sweep along a straight line in (I_ch1, I_ch2) space and track:
+
+          - I_ch1_A, I_ch2_A : currents (A)
+          - Bmag_G           : |B| (G)
+          - f_minus_GHz      : quartet (GHz, NV-order), shape (N,4)
+
+        This is intended for plotting "current vs absolute peak frequency"
+        with color = |B|.
+        """
+        I1 = np.linspace(I_ch1_start, I_ch1_end, int(n_steps))
+        I2 = np.linspace(I_ch2_start, I_ch2_end, int(n_steps))
+
+        Bmag_all = np.empty(n_steps, float)
+        f_all = np.full((n_steps, 4), np.nan, float)
+
+        for k in range(n_steps):
+            out = self.predict_peaks(
+                I1[k], I2[k],
+                drift=drift,
+                D_GHz=D_GHz,
+                E_MHz=E_MHZ,
+                gamma_e_MHz_per_G=gamma_e_MHz_per_G,
+            )
+            Bmag_all[k] = out["|B|_G"]
+            if out["f_minus_GHz"] is not None:
+                f_all[k, :] = out["f_minus_GHz"]
+
+        return {
+            "I_ch1_A": I1,
+            "I_ch2_A": I2,
+            "Bmag_G": Bmag_all,
+            "f_minus_GHz": f_all,
+        }
+        
+    def peak_maps_over_currents(
+        self,
+        I_ch1_range=(-4.0, 4.0),
+        I_ch2_range=(-4.0, 4.0),
+        nI: int = 81,
+        drift: Optional[np.ndarray] = None,
+        D_GHz: float = D_GHZ,
+        E_MHz: float = E_MHZ,
+        gamma_e_MHz_per_G: float = GAMMA,
+    ) -> Dict[str, np.ndarray]:
+        """
+        Build 2D maps over (I_ch1, I_ch2):
+
+          - I_ch1_grid (A), I_ch2_grid (A)
+          - Bmag_G : |B| (G)
+          - f_minus_GHz : ODMR quartet (GHz, NV-order), shape (nI, nI, 4)
+
+        Axes:
+          X = I_ch1, Y = I_ch2  (indexing='xy')
+        """
+        I1 = np.linspace(I_ch1_range[0], I_ch1_range[1], int(nI))
+        I2 = np.linspace(I_ch2_range[0], I_ch2_range[1], int(nI))
+
+        I1_grid, I2_grid = np.meshgrid(I1, I2, indexing="xy")  # shapes (nI, nI)
+
+        Bmag = np.empty_like(I1_grid, dtype=float)
+        f_map = np.full((nI, nI, 4), np.nan, float)
+
+        for i in range(nI):
+            for j in range(nI):
+                out = self.predict_peaks(
+                    I1_grid[i, j],
+                    I2_grid[i, j],
+                    drift=drift,
+                    D_GHz=D_GHz,
+                    E_MHz=E_MHZ,
+                    gamma_e_MHz_per_G=gamma_e_MHz_per_G,
+                )
+                Bmag[i, j] = out["|B|_G"]
+                if out["f_minus_GHz"] is not None:
+                    f_map[i, j, :] = out["f_minus_GHz"]
+
+        return {
+            "I_ch1_grid": I1_grid,
+            "I_ch2_grid": I2_grid,
+            "Bmag_G": Bmag,
+            "f_minus_GHz": f_map,
+        }
+
 
 # -------------------------- Examples --------------------------
 if __name__ == "__main__":
@@ -337,7 +556,7 @@ if __name__ == "__main__":
 
     # (A) Predict quartet at a chosen operating point
     # Iy, Iz = 0.73, 1.54
-    Iy, Iz = 1.0, 1.0
+    Iy, Iz = 3.0, -3.0
     out = cal.predict_peaks(Iy, Iz)
     print("\n=== Peak prediction ===")
     print(f"Inputs: I_ch1 = {Iy:.6f} A, I_ch2 = {Iz:.6f} A")
@@ -366,7 +585,7 @@ if __name__ == "__main__":
     # Pick your grid & an example target
     Iy_rng = (-4.0, 4.0)
     Iz_rng = (-4.0, 4.0)
-    target = 60.0  # draw the |B|=60 G contour
+    target = 70.0  # draw the |B|=60 G contour
 
     # Optionally mark a few operating points
     marks = [
@@ -379,5 +598,237 @@ if __name__ == "__main__":
     # cal.field_maps_over_currents(Iy_range=Iy_rng, Iz_range=Iz_rng, nI=161,
     #                         target_Bmag_G=target, use_baseline=False, annotate_points=marks)
 
+    # # Example: sweep I_ch1 from 0 → 3 A with I_ch2 fixed at -3 A
+    sweep = cal.sweep_peaks_along_line(
+        I_ch1_start=0.0,
+        I_ch2_start=-3.0,
+        I_ch1_end=3.0,
+        I_ch2_end=-3.0,
+        n_steps=101,
+    )
 
-    kpl.show(block=True)
+    Bmag = sweep["Bmag_G"]
+    f = sweep["f_minus_GHz"]   # (N,4)
+    df = sweep["delta_f_MHz"]  # (N,4)
+
+    nv_labels = NV_LABELS
+
+    # Example 1: absolute frequencies vs |B|
+    plt.figure()
+    for j, lab in enumerate(nv_labels):
+        plt.plot(Bmag, 1000.0 * (f[:, j] - D_GHZ), label=lab)  # offset from D, in MHz
+    plt.xlabel("|B| (G)")
+    plt.ylabel("f_- - D (MHz)")
+    plt.title("ODMR peaks vs |B| (NV axes order)")
+    plt.legend()
+    plt.grid(alpha=0.3)
+
+    # Example 2: shift from baseline vs |B|
+    plt.figure()
+    for j, lab in enumerate(nv_labels):
+        plt.plot(Bmag, df[:, j], label=lab)
+    plt.xlabel("|B| (G)")
+    plt.ylabel("Δf from baseline (MHz)")
+    plt.title("Peak motion w.r.t. baseline B0")
+    plt.legend()
+    plt.grid(alpha=0.3)
+    
+    
+    # # ---------------------------
+    # # 2D map: currents vs B-field
+    # # ---------------------------
+    # Iy_rng = (-4.0, 4.0)
+    # Iz_rng = (-4.0, 4.0)
+
+    # maps = cal.peak_maps_over_currents(
+    #     Iy_range=Iy_rng,
+    #     Iz_range=Iz_rng,
+    #     nI=101,
+    # )
+
+    # IYY = maps["Iy_grid"]
+    # IZZ = maps["Iz_grid"]
+    # Bm  = maps["Bmag_G"]          # this is your "z" (B field magnitude)
+    # f_map = maps["f_minus_GHz"]   # full quartet if you want to use it later
+
+    # plt.figure(figsize=(7, 6))
+    # cf = plt.contourf(
+    #     IZZ, IYY, Bm,
+    #     levels=50,
+    #     extend="both",
+    # )
+    # cs = plt.contour(
+    #     IZZ, IYY, Bm,
+    #     levels=np.arange(0, np.nanmax(Bm), 10.0),
+    #     colors="k",
+    #     linewidths=0.7,
+    #     alpha=0.5,
+    # )
+    # plt.clabel(cs, fmt="%.0f G", inline=True, fontsize=8)
+
+    # plt.xlabel("I_ch2 (A)")
+    # plt.ylabel("I_ch1 (A)")
+    # plt.title("|B| (G) vs currents")
+    # cbar = plt.colorbar(cf)
+    # cbar.set_label("|B| (G)")
+    # plt.grid(alpha=0.2)
+
+    # nv_idx = 0  # 0..3 for [1,1,1], [-1,1,1], [1,-1,1], [1,1,-1]
+    # f0 = f_map[:, :, nv_idx]   # GHz
+
+    # plt.figure(figsize=(7, 6))
+    # cf2 = plt.contourf(
+    #     IZZ, IYY,
+    #     1000.0 * (f0 - D_GHZ),   # offset from D in MHz
+    #     levels=50,
+    #     extend="both",
+    # )
+    # plt.contour(IZZ, IYY, Bm, levels=[50.0, 60.0, 70.0], colors="white", linewidths=1.0)
+    # plt.xlabel("I_ch2 (A)")
+    # plt.ylabel("I_ch1 (A)")
+    # plt.title("NV [1,1,1] peak (f_- - D) vs currents")
+    # cbar2 = plt.colorbar(cf2)
+    # cbar2.set_label("f_- - D (MHz)")
+    # plt.grid(alpha=0.2)
+
+    
+    # # Example: sweep I_ch1 from 0 → 3 A with I_ch2 fixed at -3 A
+    # sweep = cal.sweep_peaks_vs_current(
+    #     I_ch1_start=-4.0,
+    #     I_ch2_start=-4.0,
+    #     I_ch1_end=4.0,
+    #     I_ch2_end=4.0,
+    #     n_steps=200,
+    # )
+
+    # I1 = sweep["I_ch1_A"]
+    # Bmag = sweep["Bmag_G"]
+    # f = sweep["f_minus_GHz"]   # shape (N, 4)
+    # nv_labels = NV_LABELS
+
+    # plt.figure(figsize=(8, 6))
+
+    # # 1) Main scatter: current vs absolute frequency, color = |B|
+    # for j, lab in enumerate(nv_labels):
+    #     sc = plt.scatter(
+    #         I1,
+    #         f[:, j],      # absolute position (GHz)
+    #         c=Bmag,
+    #         s=10,
+    #     )
+
+    # # Shared colorbar for |B|
+    # cbar = plt.colorbar(sc)
+    # cbar.set_label("|B| (G)")
+
+    # # 2) Annotate each NV line directly (no legend)
+    # for j, lab in enumerate(nv_labels):
+    #     finite = np.isfinite(f[:, j])
+    #     if not np.any(finite):
+    #         continue
+    #     # pick a point near the end of the sweep where the data is valid
+    #     idx = np.where(finite)[0][-1]
+    #     x_anno = I1[idx]
+    #     y_anno = f[idx, j]
+
+    #     plt.text(
+    #         x_anno,
+    #         y_anno,
+    #         f"  {lab}",  # small offset with leading spaces
+    #         fontsize=9,
+    #         color="black",
+    #         ha="left",
+    #         va="center",
+    #     )
+
+    # # 3) “Contour circles” along the curves at selected |B| levels,
+    # #    and annotate each circle with its |B| value.
+    # B_levels = [50.0, 70.0, 90.0]   # choose whatever field values are interesting
+    # tol_G = 0.08                     # tolerance in Gauss for matching |B| ≈ B0
+
+    # # some small offsets so text doesn't sit exactly on the marker
+    # dx = 0.03 * (I1.max() - I1.min())   # horizontal offset in current units
+    # dy = 0.001                          # vertical offset in GHz (tweak as needed)
+
+    # for B0 in B_levels:
+    #     # For each NV, find ALL points on that curve where |B| ~ B0
+    #     for j in range(f.shape[1]):
+    #         # indices where |B| is within tol_G of B0
+    #         idxs = np.where(np.isclose(Bmag, B0, atol=tol_G))[0]
+    #         if idxs.size == 0:
+    #             continue
+
+    #         for k, idx in enumerate(idxs):
+    #             if not np.isfinite(f[idx, j]):
+    #                 continue
+
+    #             x = I1[idx]
+    #             y = f[idx, j]
+
+    #             # alternate annotation side so they don't all stack on one side
+    #             x_off = dx if (k % 2 == 0) else -dx
+
+    #             # open circle at that point
+    #             plt.scatter(
+    #                 x,
+    #                 y,
+    #                 facecolors="none",
+    #                 edgecolors="k",
+    #                 s=50,
+    #                 linewidths=1.0,
+    #             )
+
+    #             # text label next to the circle
+    #             plt.text(
+    #                 x + x_off,
+    #                 y + dy,
+    #                 f"{B0:.0f} G",
+    #                 fontsize=7,
+    #                 ha="left" if x_off > 0 else "right",
+    #                 va="center",
+    #             )
+
+    # plt.xlabel("I_ch1 (A)")
+    # plt.ylabel("f_- (GHz)")              # absolute position
+    # plt.title("Absolute ODMR peaks vs I_ch1 (color = |B|)")
+    # plt.grid(alpha=0.3)
+
+    # no legend needed—everything is annotated on the plot
+
+
+
+    # # Build 2D maps
+    # maps = cal.peak_maps_over_currents(
+    #     I_ch1_range=(-4.0, 4.0),
+    #     I_ch2_range=(-4.0, 4.0),
+    #     nI=101,
+    # )
+
+    # I1g = maps["I_ch1_grid"]   # x-axis
+    # I2g = maps["I_ch2_grid"]   # y-axis
+    # f_map = maps["f_minus_GHz"]  # (nI, nI, 4)
+
+    # nv_labels = NV_LABELS
+
+    # fig, axs = plt.subplots(2, 2, figsize=(10, 8), constrained_layout=True)
+
+    # for ax, j, lab in zip(axs.flat, range(4), nv_labels):
+    #     Z = f_map[:, :, j]   # GHz for this NV
+
+    #     # you can pick levels or let contourf decide
+    #     cf = ax.contourf(
+    #         I1g, I2g, Z,
+    #         levels=50,
+    #         extend="both",
+    #     )
+
+    #     ax.set_xlabel("I_ch1 (A)")
+    #     ax.set_ylabel("I_ch2 (A)")
+    #     ax.set_title(f"{lab}  f_- (GHz)")
+    #     ax.grid(alpha=0.2)
+
+    #     cbar = fig.colorbar(cf, ax=ax)
+    #     cbar.set_label("f_- (GHz)")
+
+    # fig.suptitle("Absolute ODMR peak frequency vs (I_ch1, I_ch2)\n(NV axes order)")
+    # kpl.show(block=True)

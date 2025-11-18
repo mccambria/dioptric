@@ -217,35 +217,35 @@ if __name__ == "__main__":
   # cal.set_drift(DRIFT_OLD)      # only if you want to correct that old session
 
   # 1) Predict peaks for a shot
-  # f = cal.predict_peaks(I1=0.73, I2=1.54)   # prints B, |B|, B_hat, and quartet
+  f = cal.predict_peaks(I1=-3.0, I2=-2.0)   # prints B, |B|, B_hat, and quartet
 
   # 2) Scale |B| by +10% along current direction
   # plan = cal.currents_to_scale_Bmag(scale=1.10)  # prints plan; plan['Iy_A'], plan['Iz_A']
 
   # 3) Aim for an explicit target B
-  # planB = cal.currents_for_target_B([-120.0, -18.0, -10.0])
+#   planB = cal.currents_for_target_B([-120.0, -18.0, -10.0])
 
   # 4) Solve currents for a desired ΔB directly
-  # planD = cal.currents_for_deltaB([-0.56, +3.0, -18.3])
+#   planD = cal.currents_for_deltaB([-0.56, +3.0, -18.3])
 
   # # 5) If you need the exact quartet at the planned B:
-  # B_planned, *_ = cal.predict_B(planB["Iy_A"], planB["Iz_A"])
-  # f_exact = exact_f_minus_quartet(B_planned, D_GHz=cal.D, E_MHz=cal.E, gamma_e_MHz_per_G=cal.g)
+#   B_planned, *_ = cal.predict_B(planB["Iy_A"], planB["Iz_A"])
+#   f_exact = exact_f_minus_quartet(B_planned, D_GHz=cal.D, E_MHz=cal.E, gamma_e_MHz_per_G=cal.g)
   
-  # planB = cal.currents_for_target_B([-120.0, -18.0, -10.0], clip_A=10.0, ridge=0.0)
+#   planB = cal.currents_for_target_B([-120.0, -18.0, -10.0], clip_A=10.0, ridge=0.0)
   # Inspect:
   # - planB["reachability"]  (likely very low because of huge -x request)
   # - planB["dB_unreachable_G"]  (the part K cannot make)
   # - planB["B_achieved_G"], then if you want exact peaks at that B:
-  # B_ach = planB["B_achieved_G"]
-  # f_exact = exact_f_minus_quartet(B_ach, D_GHz=cal.D, E_MHz=cal.E, gamma_e_MHz_per_G=cal.g)
+#   B_ach = planB["B_achieved_G"]
+#   f_exact = exact_f_minus_quartet(B_ach, D_GHz=cal.D, E_MHz=cal.E, gamma_e_MHz_per_G=cal.g)
 
   # 2) Get currents for a (possibly unreachable) target B with diagnostics
-  planB = cal.currents_for_target_B([-65.0, -18.0, -10.0], clip_A=10.0, ridge=0.0)
+#   planB = cal.currents_for_target_B([-45.0, -35.0, -20.0], clip_A=10.0, ridge=0.0)
 
   # 3) Print total |B| and exact quartet at the achieved B
-  cal.print_plan_with_peaks(planB, exact_quartet_fn=exact_f_minus_quartet)
+#   cal.print_plan_with_peaks(planB, exact_quartet_fn=exact_f_minus_quartet)
 
   # If you just want the raw values programmatically:
-  B_ach, Bmag_ach, f_exact = cal.peaks_at_currents(planB["Iy_A"], planB["Iz_A"], exact_quartet_fn=exact_f_minus_quartet)
-  print("\n(B_achieved, |B|, first f_-):", np.round(B_ach,6), f"{Bmag_ach:.6f}", f"{f_exact[0]:.9f} GHz")
+#   B_ach, Bmag_ach, f_exact = cal.peaks_at_currents(planB["Iy_A"], planB["Iz_A"], exact_quartet_fn=exact_f_minus_quartet)
+#   print("\n(B_achieved, |B|, first f_-):", np.round(B_ach,6), f"{Bmag_ach:.6f}", f"{f_exact[0]:.9f} GHz")

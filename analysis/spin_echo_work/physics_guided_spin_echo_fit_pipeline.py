@@ -380,7 +380,7 @@ if __name__ == "__main__":
         # Amplitude sweep (tight for speed; expand later if needed)
         amp_bound_grid=((-0.6, 0.6),(-1.0, 1.0)),
         # ---------------- Frequency seeding/boxes ----------------
-        freq_seed_band = (1.0, 6000), 
+        # freq_seed_band = (1.0, 6000), 
         prior_pairs_topK=1500,
         
         # Catalog / allowed-lines (we're directly passing allowed_records below)
@@ -415,7 +415,7 @@ if __name__ == "__main__":
 
     # --- 4) (Optional) choose a subset of NVs to fit (faster dev runs) ---
     # nv_inds = list(range(0, 20))
-    nv_inds = [137]
+    nv_inds = None
 
     # --- 5) Run fits ---
     out, saved_path = fit_spin_echo_dataset(

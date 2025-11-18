@@ -143,16 +143,11 @@ config |= {
                 "physical_name": "sig_gen_STAN_sg394_1",
                 "uwave_power": 11.0,
                 # "frequency": 2.917151,
-                "frequency": 2.7878,
-                # "frequency": 2.8408,
-                # "rabi_period": 112,
-                # "pi_pulse": 56,
-                # "pi_on_2_pulse": 28,
+                # "frequency": 2.7878,
+                "frequency": 2.8408,
                 # "frequency": 2.982049,
                 "rabi_period": 192,
-                # "pi_pulse": 88,
-                "pi_pulse": 128,
-                # "pi_pulse": 96, 
+                "pi_pulse": 88,
                 "pi_on_2_pulse": 44,
             },
             2: {
@@ -961,9 +956,9 @@ opx_config = {
         # "yellow_charge_readout": {"type": "constant", "sample": 0.2367}, #136NVs
         # "yellow_charge_readout": {"type": "constant", "sample": 0.2267}, #118NVs
         # "yellow_charge_readout": {"type": "constant", "sample": 0.34947}, ## 312NV johnson
-        # "yellow_charge_readout": {"type": "constant", "sample": 0.313148}, ## 230NV johnson
+        "yellow_charge_readout": {"type": "constant", "sample": 0.313148}, ## 230NV johnson
         # "yellow_charge_readout": {"type": "constant", "sample": 0.3084}, ## 223NV johnson
-        "yellow_charge_readout": {"type": "constant", "sample": 0.299064}, ## 204NV johnson
+        # "yellow_charge_readout": {"type": "constant", "sample": 0.299064}, ## 204NV johnson
         "yellow_spin_pol": {"type": "constant", "sample": 0.31510},
         "yellow_shelving": {"type": "constant", "sample": 0.20},
         # Other
