@@ -535,13 +535,13 @@ def do_calibrate_iq_delay(nv_list):
 def do_resonance(nv_list):
     freq_center = 2.87
     
-    # freq_range = 0.40
-    # num_steps = 70
+    freq_range = 0.36
+    num_steps = 65
     
-    freq_range = 0.240
-    num_steps = 40
-    num_reps = 3
-    num_runs = 500
+    # freq_range = 0.260
+    # num_steps = 40
+    num_reps = 2
+    num_runs = 800
     # num_runs = 1
     freqs = calculate_freqs(freq_center, freq_range, num_steps)
     ##
@@ -1517,7 +1517,7 @@ if __name__ == "__main__":
         # )
 
         do_compensate_for_drift(nv_sig)
-        # do_widefield_image_sample(nv_sig, 50)
+        do_widefield_image_sample(nv_sig, 50)
         # do_widefield_image_sample(nv_sig, 400)
 
         # for nv in nv_list:

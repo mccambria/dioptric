@@ -172,37 +172,38 @@ def plot_nv_resonance(
     ax_snr.tick_params(axis="both", labelsize=14)
     plt.show(block=True)
     # # Set plot style
-    # for nv_ind in range(num_nvs):
-    #     fig, ax = plt.subplots(figsize=(8, 5))
-    #     # Data points with error bars
-    #     ax.errorbar(
-    #         freqs,
-    #         avg_counts[nv_ind],
-    #         yerr=avg_counts_ste[nv_ind],
-    #         fmt="o",
-    #         color="steelblue",
-    #         ecolor="gray",
-    #         elinewidth=1,
-    #         capsize=3,
-    #         markersize=5,
-    #         label="Data"
-    #     )
-    #     # Fit curve
-    #     ax.plot(freqs_dense, fit_fns[nv_ind], "-", color="red", label="Fit")
-    #     # Labels and style
-    #     ax.set_xlabel("Frequency (GHz)")
-    #     ax.set_ylabel("Normalized NV Population")
-    #     ax.set_title(f"NV Index: {nv_ind}")
-    #     ax.grid(True, linestyle="--", alpha=0.6)
-    #     ax.legend()
-    #     plt.show(block=True)
-    # return
+    for nv_ind in range(num_nvs):
+        fig, ax = plt.subplots(figsize=(8, 5))
+        # Data points with error bars
+        ax.errorbar(
+            freqs,
+            avg_counts[nv_ind],
+            yerr=avg_counts_ste[nv_ind],
+            fmt="o",
+            color="steelblue",
+            ecolor="gray",
+            elinewidth=1,
+            capsize=3,
+            markersize=5,
+            label="Data"
+        )
+        # Fit curve
+        ax.plot(freqs_dense, fit_fns[nv_ind], "-", color="red", label="Fit")
+        # Labels and style
+        ax.set_xlabel("Frequency (GHz)")
+        ax.set_ylabel("Normalized NV Population")
+        ax.set_title(f"NV Index: {nv_ind}")
+        ax.grid(True, linestyle="--", alpha=0.6)
+        ax.legend()
+        plt.show(block=True)
+    return
 
     # ----------------- Example of use in your pipeline -----------------
     # center_freqs is your list of (f1, f2) from the fit_results
     # If you can also return (amp1, amp2) per NV from the fit, pass as peak_amps=...
     # targets = (2.766, 2.786, 2.82, 2.840)  # GHz
-    targets = (2.787527, 2.840802)  # GHz
+    # targets = (2.787527, 2.840802)  # GHz
+    targets = (2.8247, 2.840802)  # GHz
     out = classify_nv_by_ms_minus_targets(center_freqs, targets_ghz=targets, tol_mhz=60.0)
 
     # Access results:
@@ -797,6 +798,10 @@ if __name__ == "__main__":
     ###  current: I_y (ch1) = 0.0, I_z(ch2)=0.0
     file_ids = [
         "2025_11_09-10_40_49-johnson-nv0_2025_10_21",
+    ]
+    ## 212 nVs
+    file_ids = [
+        "2025_11_18-21_37_56-johnson-nv0_2025_10_21",
     ]
     # Load the first dataset as a base
     combined_data = dm.get_raw_data(
