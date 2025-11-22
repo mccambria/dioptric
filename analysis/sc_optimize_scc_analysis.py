@@ -697,7 +697,7 @@ def process_and_plot_durations(data):
     # Print lists of durations and SNRs
     print("Optimal Durations:")
 
-    optimal_durations = [optimal_durations[nv] for nv in selected_indices]
+    optimal_durations = [int(round(optimal_durations[nv]/4)*4) for nv in selected_indices]
     print("Optimal SNRs:")
     print(optimal_durations)
     optimal_snrs = [optimal_snrs[nv] for nv in selected_indices]
@@ -746,7 +746,7 @@ if __name__ == "__main__":
 
     #duration
     data = dm.get_raw_data(
-        file_stem="2025_10_27-17_13_59-johnson-nv0_2025_10_21", load_npz=True
+        file_stem="2025_11_22-12_50_55-johnson-nv0_2025_10_21", load_npz=True
     )
 
     results = process_and_plot_durations(data)

@@ -2177,7 +2177,8 @@ if __name__ == "__main__":
     # fit_file_stem    = "2025_11_13-06_28_22-sample_204nv_s1-e85aa7"   # where popts & freqs live
     # fit_file_stem  = "2025_11_14-03_05_30-sample_204nv_s1-e85aa7" # 200 freqs freeze
     # fit_file_stem  = "2025_11_14-18_28_58-sample_204nv_s1-e85aa7" # 600 freqs freeze
-    fit_file_stem  = "2025_11_17-09_49_42-sample_204nv_s1-fcc605" # site encoded, all freqs
+    # fit_file_stem  = "2025_11_17-09_49_42-sample_204nv_s1-fcc605" # site encoded, all freqs
+    fit_file_stem  = "2025_11_19-14_19_23-sample_204nv_s1-fcc605" # site 1khz-6Mhz
     counts_file_stem = "2025_11_11-01_15_45-johnson_204nv_s6-6d8f5c"  # merged dataset2+3 counts
 
     ## ---- 2) global theory-vs-exp matching (use FIT file) ----##
@@ -2238,8 +2239,9 @@ if __name__ == "__main__":
     print(matches_df["err_pair_kHz"].describe())
     print(matches_df.head())
     
-    # site_stats = analyze_matched_c13_sites(matches_df, title_prefix="Sample 204 NVs")
-
+    site_stats = analyze_matched_c13_sites(matches_df, title_prefix="Sample 204 NVs")
+    kpl.show(block=True)
+    sys.exit()
     # derive experimental band in kHz (or set manually)
     exp_f = matches_df["f_minus_kHz"].to_numpy(float)
     f_band_kHz = (np.nanmin(exp_f), np.nanmax(exp_f))
@@ -2475,45 +2477,45 @@ if __name__ == "__main__":
     # )
 
 
-    orbit_df = find_c3v_orbits_from_nv2(
-        hyperfine_path=HYPERFINE_PATH,
-        r_max_A=22.0,      # or 15.0, to match your catalog cutoff
-        tol_r_A=0.02,      # 0.02 Å is usually fine
-        tol_dir=5e-2,      # ~0.05 in unit-vector norm (~few degrees)
-    )
+    # orbit_df = find_c3v_orbits_from_nv2(
+    #     hyperfine_path=HYPERFINE_PATH,
+    #     r_max_A=22.0,      # or 15.0, to match your catalog cutoff
+    #     tol_r_A=0.02,      # 0.02 Å is usually fine
+    #     tol_dir=5e-2,      # ~0.05 in unit-vector norm (~few degrees)
+    # )
 
-    print(orbit_df.head(20))
+    # print(orbit_df.head(20))
 
-    # See the multiplicity stats
-    print("\nMultiplicity histogram (theory):")
-    print(orbit_df["n_equiv_theory"].value_counts().sort_index())
+    # # See the multiplicity stats
+    # print("\nMultiplicity histogram (theory):")
+    # print(orbit_df["n_equiv_theory"].value_counts().sort_index())
 
-    site_stats_full = build_site_multiplicity_with_theory(
-        matches_df=matches_df,
-        orbit_df=orbit_df,
-        p13=0.011,   # natural abundance
-    )
+    # site_stats_full = build_site_multiplicity_with_theory(
+    #     matches_df=matches_df,
+    #     orbit_df=orbit_df,
+    #     p13=0.011,   # natural abundance
+    # )
 
-    # Sort by experimental multiplicity (most repeated sites first)
-    cols_to_show = [
-        "site_index",
-        "orientation",
-        "distance_A",
-        "x_A", "y_A", "z_A",
-        "n_matches",
-        "n_equiv_theory",
-        "p_shell",
-        "E_n_matches",
-        "match_ratio",
-        "kappa_mean",
-    ]
+    # # Sort by experimental multiplicity (most repeated sites first)
+    # cols_to_show = [
+    #     "site_index",
+    #     "orientation",
+    #     "distance_A",
+    #     "x_A", "y_A", "z_A",
+    #     "n_matches",
+    #     "n_equiv_theory",
+    #     "p_shell",
+    #     "E_n_matches",
+    #     "match_ratio",
+    #     "kappa_mean",
+    # ]
 
-    print(
-        site_stats_full
-        .sort_values("n_matches", ascending=False)
-        [cols_to_show]
-        .head(15)
-        .to_string(index=False)
-    )
+    # print(
+    #     site_stats_full
+    #     .sort_values("n_matches", ascending=False)
+    #     [cols_to_show]
+    #     .head(15)
+    #     .to_string(index=False)
+    # )
     kpl.show(block=True)
 

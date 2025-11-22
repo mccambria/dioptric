@@ -19,7 +19,6 @@ def nv_axes():
     ], dtype=float)
     axes /= np.linalg.norm(axes, axis=1, keepdims=True)
     return axes
-
 NV_LABELS = ["[1, 1, 1]", "[-1, 1, 1]", "[1, -1, 1]", "[1, 1, -1]"]
 
 # ----------------- Order-invariant solver -----------------
@@ -100,7 +99,7 @@ def solve_B_from_odmr_order_invariant(
 # ----------------- Frequency → orientation mapper -----------------
 def map_frequencies_to_orientations(
     f_ms_minus_GHz, B_crystal,
-    D_GHz=2.870, gamma_e_MHz_per_G=2.8025
+    D_GHz=2.8785, gamma_e_MHz_per_G=2.8025
 ):
     """
     Given any-order f_- and solved B (crystal), map each measured line
@@ -182,7 +181,8 @@ def print_full_summary(f_any_order, out, D_GHz=2.8785, gamma_e_MHz_per_G=2.8025)
 # ----------------- Example -----------------
 if __name__ == "__main__":
     # try any ordering you like:
-    f = [2.7666, 2.7851, 2.8222, 2.8406]  # shuffled example
+    # f = [2.7666, 2.7851, 2.8222, 2.8406]  # shuffled example
+    f = [2.7230, 2.7461, 2.8300, 2.8475]  # shuffled example
 
     out = solve_B_from_odmr_order_invariant(f)
     print_full_summary(f, out)
