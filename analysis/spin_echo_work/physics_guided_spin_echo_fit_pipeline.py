@@ -23,6 +23,7 @@ This module is careful to:
   • Serialize results with a stable schema (JSON)
   • Plot quick sanity visuals per NV (optional)
 """
+
 from __future__ import annotations
 import os, re, json, hashlib
 from dataclasses import dataclass, asdict
@@ -49,10 +50,13 @@ except Exception:
     pass
 # We also expect your fitter to be importable from your analysis code
 try:
-    from fitter_module_for_spin_echo import run_with_amp_and_freq_sweeps  # rename to your path
+    from fitter_module_for_spin_echo import (
+        run_with_amp_and_freq_sweeps,
+    )  # rename to your path
 except Exception:
     # If already in the global namespace (e.g., Jupyter), this import may be unnecessary.
     pass
+
 
 @dataclass
 class FitConfig:
@@ -85,7 +89,7 @@ class FitConfig:
 
     # These were added dynamically — include them explicitly:
     allowed_records: Optional[List[Dict]] = None
-    allowed_orientations: Optional[List[Tuple[int,int,int]]] = None
+    allowed_orientations: Optional[List[Tuple[int, int, int]]] = None
 
     # ---------------- Prior pass & early stop ----------------
     prior_enable: bool = True
@@ -103,9 +107,10 @@ class FitConfig:
     verbose: bool = True
 
 
-
 # ---------- tiny helpers you referenced ----------
-def _infer_sampling_band(times_us: np.ndarray, margin: float = 0.05) -> Tuple[float, float]:
+def _infer_sampling_band(
+    times_us: np.ndarray, margin: float = 0.05
+) -> Tuple[float, float]:
     """
     Nyquist-safe band from sampling: fmin ~ 1/span, fmax ~ 1/(2*dt_min), then +/- margin.
     Returns (fmin, fmax) in cycles/µs.
@@ -120,6 +125,7 @@ def _infer_sampling_band(times_us: np.ndarray, margin: float = 0.05) -> Tuple[fl
     fmin = max(0.0, fmin)
     return (float(fmin), float(fmax))
 
+
 def _load_catalog_records_if_needed(cfg: FitConfig) -> Optional[List[Dict]]:
     # Priority: explicit cfg.allowed_records > cfg.catalog_path > None
     if getattr(cfg, "allowed_records", None) is not None:
@@ -131,11 +137,12 @@ def _load_catalog_records_if_needed(cfg: FitConfig) -> Optional[List[Dict]]:
             return json.load(f)
     return None
 
+
 def filter_allowed_records(
     records: List[Dict],
     *,
     band_cyc_per_us: Tuple[float, float],
-    orientations: Optional[List[Tuple[int,int,int]]] = None,
+    orientations: Optional[List[Tuple[int, int, int]]] = None,
     kmin_kHz: float = 10.0,
     kmax_kHz: float = 10000.0,
     tol_kHz: float = 0.0,
@@ -174,8 +181,9 @@ def filter_allowed_records(
         # Intersect with Nyquist band (in cycles/µs == MHz)
         cyc = [f / 1000.0 for f in fk]
         cyc = [
-            f for f in cyc
-            if (lo - tol_kHz/1000.0) <= f <= (min(hi*0.95, hi) + tol_kHz/1000.0)
+            f
+            for f in cyc
+            if (lo - tol_kHz / 1000.0) <= f <= (min(hi * 0.95, hi) + tol_kHz / 1000.0)
         ]
         if not cyc:
             continue
@@ -191,7 +199,7 @@ def filter_allowed_records(
         return []
 
     kept.sort(key=lambda x: x[0], reverse=True)
-    trimmed = [rec for _, rec in kept[:max(1, topK)]]
+    trimmed = [rec for _, rec in kept[: max(1, topK)]]
 
     # De-dup using (orientation, repr_kHz)
     seen = set()
@@ -202,12 +210,13 @@ def filter_allowed_records(
             if r.get(key) is not None:
                 repr_kHz = round(float(r[key]) / 1e3, 2)
                 break
-        key_ = (tuple(r.get("orientation", (0,0,0))), repr_kHz)
+        key_ = (tuple(r.get("orientation", (0, 0, 0))), repr_kHz)
         if key_ in seen:
             continue
         seen.add(key_)
         out.append(r)
     return out
+
 
 # --------------------------- Main entry-point -------------------------------
 def fit_spin_echo_dataset(
@@ -220,10 +229,9 @@ def fit_spin_echo_dataset(
     default_rev_us: float = 37.2,
     nv_inds: Optional[List[int]] = None,
     cfg: Optional[FitConfig] = None,
-    save_dir: Optional[str] = None,   # (unused by dm; kept for API parity)
+    save_dir: Optional[str] = None,  # (unused by dm; kept for API parity)
     make_plots: bool = False,
-    nv_orientations=None,   # <--- this array you loaded from data
-
+    nv_orientations=None,  # <--- this array you loaded from data
 ):
     """Run the full fit (amp+freq sweeps), optionally with physics-guided allowed-lines.
 
@@ -232,7 +240,6 @@ def fit_spin_echo_dataset(
     """
     if cfg is None:
         cfg = FitConfig()
-
 
     # ---------- inputs & band ----------
     norm_counts = np.asarray(norm_counts, float)
@@ -244,25 +251,35 @@ def fit_spin_echo_dataset(
 
     band = cfg.freq_seed_band
     if band is None:
-        # band = _infer_sampling_band(total_evolution_times, margin=0.05)
+        band = _infer_sampling_band(total_evolution_times, margin=0.05)
         # print(band)
-        band = (0.001, 6.0) ## manual
+        # band = (0.001, 6.0)  ## manual
         if cfg.verbose:
-            print(f"[band] inferred from sampling: {band[0]:.6g}–{band[1]:.6g} cycles/μs")
+            print(
+                f"[band] inferred from sampling: {band[0]:.6g}–{band[1]:.6g} cycles/μs"
+            )
 
     # Default frequency boxes: respect Nyquist
-    freq_boxes = (
-        cfg.freq_bound_boxes
-        or {"osc_f0": (max(0.001, band[0]), band[1]),
-            "osc_f1": (0.0, band[1])}
-    )
+    freq_boxes = cfg.freq_bound_boxes or {
+        "osc_f0": (max(0.001, band[0]), band[1]),
+        "osc_f1": (0.0, band[1]),
+    }
 
     # ---------- allowed-lines preparation ----------
     allowed_records = _load_catalog_records_if_needed(cfg)
-    
+
     # ---------- run the fitter ----------
     print("=== Spin-echo fits starting ===")
-    (popts, pcovs, chis, fit_fns, fit_nv_labels, chosen_amp_bounds, chosen_overrides, site_ids) = run_with_amp_and_freq_sweeps(
+    (
+        popts,
+        pcovs,
+        chis,
+        fit_fns,
+        fit_nv_labels,
+        chosen_amp_bounds,
+        chosen_overrides,
+        site_ids,
+    ) = run_with_amp_and_freq_sweeps(
         nv_list,
         norm_counts,
         norm_counts_ste,
@@ -282,14 +299,21 @@ def fit_spin_echo_dataset(
         enable_extras=cfg.enable_extras,
         fixed_rev_time=cfg.fixed_rev_time_us,
         # allowed-lines (catalog) controls
-        allowed_records=allowed_records if allowed_records is not None else getattr(cfg, "allowed_records", None),
-        allowed_orientations=getattr(cfg, "allowed_orientations", None) or cfg.orientations,
+        allowed_records=(
+            allowed_records
+            if allowed_records is not None
+            else getattr(cfg, "allowed_records", None)
+        ),
+        allowed_orientations=getattr(cfg, "allowed_orientations", None)
+        or cfg.orientations,
         allowed_tol_kHz=getattr(cfg, "allowed_tol_kHz", 8.0),
         allowed_weight_mode=getattr(cfg, "allowed_weight_mode", "kappa"),
         p_occ=getattr(cfg, "p_occ", 0.011),
         # prior / early-stop and budgets threaded (so CLI/CFG has one source of truth)
         prior_enable=getattr(cfg, "prior_enable", True),
-        prior_pairs_topK=getattr(cfg, "prior_pairs_topK", 6),   # reuse as small pair budget
+        prior_pairs_topK=getattr(
+            cfg, "prior_pairs_topK", 6
+        ),  # reuse as small pair budget
         prior_min_sep=getattr(cfg, "min_sep_cyc_per_us", 0.01),
         early_stop_redchi=getattr(cfg, "early_stop_redchi", None),
         small_maxfev=getattr(cfg, "small_maxfev", 40_000),
@@ -306,9 +330,20 @@ def fit_spin_echo_dataset(
 
     # Package outputs (stable schema)
     unified_keys = [
-        "baseline","comb_contrast","revival_time_us","width0_us","T2_ms","T2_exp",
-        "amp_taper_alpha","width_slope","revival_chirp",
-        "osc_amp","osc_f0","osc_f1","osc_phi0","osc_phi1"
+        "baseline",
+        "comb_contrast",
+        "revival_time_us",
+        "width0_us",
+        "T2_ms",
+        "T2_exp",
+        "amp_taper_alpha",
+        "width_slope",
+        "revival_chirp",
+        "osc_amp",
+        "osc_f0",
+        "osc_f1",
+        "osc_phi0",
+        "osc_phi1",
     ]
 
     out = dict(
@@ -323,18 +358,19 @@ def fit_spin_echo_dataset(
         fit_fn_names=[(fn.__name__ if fn is not None else None) for fn in fit_fns],
         unified_keys=unified_keys,
         orientations=np.asarray(nv_orientations, int).tolist(),
-        site_id=[int(s) for s in site_ids],   # <-- here
+        site_id=[int(s) for s in site_ids],  # <-- here
     )
 
     # Save JSON
     tokens = []
     for s in file_stems:
         m = re.search(r"-([A-Za-z0-9]+)-nv", s)  # e.g. "...-johnson-nv0_..."
-        if m: tokens.append(m.group(1))
+        if m:
+            tokens.append(m.group(1))
     sample = max(set(tokens), key=tokens.count) if tokens else "sample"
     srcsig = f"s{len(file_stems)}-{hashlib.sha1('|'.join(file_stems).encode()).hexdigest()[:6]}"
     # --- tiny signature of the source list ---
-    name   = f"{sample}_{len(fit_nv_labels)}nv_{srcsig}"
+    name = f"{sample}_{len(fit_nv_labels)}nv_{srcsig}"
     # name   = f"{sample}_{len(fit_nv_labels)}nv_{date}_{rev}_{model}_{sweep}_{srcsig}"
     # print(name)
     timestamp = dm.get_time_stamp()
@@ -349,14 +385,13 @@ if __name__ == "__main__":
 
     # --- 1) Load raw dataset ---
     # file_stem = "2025_11_11-01_15_45-johnson_204nv_s6-6d8f5c"   # dataset2 + dataset3
-    file_stem = "2025_11_15-14_11_49-johnson_204nv_s9-17d44b" # dataset2 + dataset3 (more data and orientain)
+    file_stem = "2025_11_15-14_11_49-johnson_204nv_s9-17d44b"  # dataset2 + dataset3 (more data and orientain)
     data = dm.get_raw_data(file_stem=file_stem)
     nv_list = data["nv_list"]
     norm_counts = np.asarray(data["norm_counts"], float)
     norm_counts_ste = np.asarray(data["norm_counts_ste"], float)
     total_evolution_times = np.asarray(data["total_evolution_times"], float)
     nv_orientations = np.asarray(data["orientations"], dtype=int)
-
 
     # --- 2) Load the frequency catalog → allowed_records ---
     target_orientations = [
@@ -376,40 +411,34 @@ if __name__ == "__main__":
         use_fixed_revival=False,
         enable_extras=True,
         fixed_rev_time_us=37.6,
-
         # Amplitude sweep (tight for speed; expand later if needed)
-        amp_bound_grid=((-0.6, 0.6),(-1.0, 1.0)),
+        amp_bound_grid=((-0.6, 0.6), (-1.0, 1.0)),
         # ---------------- Frequency seeding/boxes ----------------
-        # freq_seed_band = (1.0, 6000), 
+        # freq_seed_band = (1.0, 6000),
         prior_pairs_topK=1500,
-        
         # Catalog / allowed-lines (we're directly passing allowed_records below)
-        catalog_path=catalog_path,                 # <- set None to avoid double-loading via helper
-        orientations=None,                 # or e.g. [(1,1,1), (1,-1,1), ...]
+        catalog_path=catalog_path,  # <- set None to avoid double-loading via helper
+        orientations=None,  # or e.g. [(1,1,1), (1,-1,1), ...]
         p_occ=0.011,
         f_range_kHz=(1, 6000),
         n_keep_each=1500,
-        min_sep_cyc_per_us=0.03,          # coarser de-dup in band than 0.01
+        min_sep_cyc_per_us=0.03,  # coarser de-dup in band than 0.01
         prior_weight_mode="kappa",
         prior_per_line_scale=1.0,
         allowed_tol_kHz=2.0,
         allowed_weight_mode="kappa",
-
         # Hand the allowed-lines JSON directly:
         allowed_records=allowed_records,
         allowed_orientations=None,
-
         # Prior + budgets
         prior_enable=True,
-        early_stop_redchi=None,            # e.g. 1.10 to stop early on good fits
-
+        early_stop_redchi=None,  # e.g. 1.10 to stop early on good fits
         coarse_K=16,
         small_maxfev=200_000,
         small_max_nfev=200_000,
         big_maxfev=220_000,
         big_max_nfev=280_000,
         refine_target_red=1.05,
-
         verbose=True,
     )
 
@@ -428,7 +457,7 @@ if __name__ == "__main__":
         nv_inds=nv_inds,
         cfg=cfg,
         make_plots=True,
-        nv_orientations=nv_orientations,   # <--- this array you loaded from data
+        nv_orientations=nv_orientations,  # <--- this array you loaded from data
     )
 
     # --- 6) Inspect results quickly ---
