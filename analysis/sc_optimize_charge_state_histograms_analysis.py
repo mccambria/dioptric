@@ -1039,7 +1039,8 @@ if __name__ == "__main__":
     # file_id = "2025_10_23-15_48_46-johnson-nv0_2025_10_21"
     # file_id = "2025_10_26-20_37_42-johnson-nv0_2025_10_21"
     # file_id = "2025_10_30-18_37_28-johnson-nv0_2025_10_21"
-    file_id = "2025_11_01-19_02_31-johnson-nv0_2025_10_21"
+    # file_id = "2025_11_01-19_02_31-johnson-nv0_2025_10_21"
+    file_id = "2025_11_22-19_58_10-johnson-nv0_2025_10_21"
     
     # dm.USE_NEW_CLOUD = False
     raw_data = dm.get_raw_data(file_stem=file_id, load_npz=True)

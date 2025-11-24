@@ -692,106 +692,106 @@ if __name__ == "__main__":
     # plt.grid(alpha=0.2)
 
     
-    # # Example: sweep I_ch1 from 0 → 3 A with I_ch2 fixed at -3 A
-    # sweep = cal.sweep_peaks_vs_current(
-    #     I_ch1_start=-4.0,
-    #     I_ch2_start=-4.0,
-    #     I_ch1_end=4.0,
-    #     I_ch2_end=4.0,
-    #     n_steps=200,
-    # )
+    # Example: sweep I_ch1 from 0 → 3 A with I_ch2 fixed at -3 A
+    sweep = cal.sweep_peaks_vs_current(
+        I_ch1_start=-4.0,
+        I_ch2_start=-4.0,
+        I_ch1_end=4.0,
+        I_ch2_end=4.0,
+        n_steps=200,
+    )
 
-    # I1 = sweep["I_ch1_A"]
-    # Bmag = sweep["Bmag_G"]
-    # f = sweep["f_minus_GHz"]   # shape (N, 4)
-    # nv_labels = NV_LABELS
+    I1 = sweep["I_ch1_A"]
+    Bmag = sweep["Bmag_G"]
+    f = sweep["f_minus_GHz"]   # shape (N, 4)
+    nv_labels = NV_LABELS
 
-    # plt.figure(figsize=(8, 6))
+    plt.figure(figsize=(8, 6))
 
-    # # 1) Main scatter: current vs absolute frequency, color = |B|
-    # for j, lab in enumerate(nv_labels):
-    #     sc = plt.scatter(
-    #         I1,
-    #         f[:, j],      # absolute position (GHz)
-    #         c=Bmag,
-    #         s=10,
-    #     )
+    # 1) Main scatter: current vs absolute frequency, color = |B|
+    for j, lab in enumerate(nv_labels):
+        sc = plt.scatter(
+            I1,
+            f[:, j],      # absolute position (GHz)
+            c=Bmag,
+            s=10,
+        )
 
-    # # Shared colorbar for |B|
-    # cbar = plt.colorbar(sc)
-    # cbar.set_label("|B| (G)")
+    # Shared colorbar for |B|
+    cbar = plt.colorbar(sc)
+    cbar.set_label("|B| (G)")
 
-    # # 2) Annotate each NV line directly (no legend)
-    # for j, lab in enumerate(nv_labels):
-    #     finite = np.isfinite(f[:, j])
-    #     if not np.any(finite):
-    #         continue
-    #     # pick a point near the end of the sweep where the data is valid
-    #     idx = np.where(finite)[0][-1]
-    #     x_anno = I1[idx]
-    #     y_anno = f[idx, j]
+    # 2) Annotate each NV line directly (no legend)
+    for j, lab in enumerate(nv_labels):
+        finite = np.isfinite(f[:, j])
+        if not np.any(finite):
+            continue
+        # pick a point near the end of the sweep where the data is valid
+        idx = np.where(finite)[0][-1]
+        x_anno = I1[idx]
+        y_anno = f[idx, j]
 
-    #     plt.text(
-    #         x_anno,
-    #         y_anno,
-    #         f"  {lab}",  # small offset with leading spaces
-    #         fontsize=9,
-    #         color="black",
-    #         ha="left",
-    #         va="center",
-    #     )
+        plt.text(
+            x_anno,
+            y_anno,
+            f"  {lab}",  # small offset with leading spaces
+            fontsize=9,
+            color="black",
+            ha="left",
+            va="center",
+        )
 
-    # # 3) “Contour circles” along the curves at selected |B| levels,
-    # #    and annotate each circle with its |B| value.
-    # B_levels = [50.0, 70.0, 90.0]   # choose whatever field values are interesting
-    # tol_G = 0.08                     # tolerance in Gauss for matching |B| ≈ B0
+    # 3) “Contour circles” along the curves at selected |B| levels,
+    #    and annotate each circle with its |B| value.
+    B_levels = [50.0, 70.0, 90.0]   # choose whatever field values are interesting
+    tol_G = 0.08                     # tolerance in Gauss for matching |B| ≈ B0
 
-    # # some small offsets so text doesn't sit exactly on the marker
-    # dx = 0.03 * (I1.max() - I1.min())   # horizontal offset in current units
-    # dy = 0.001                          # vertical offset in GHz (tweak as needed)
+    # some small offsets so text doesn't sit exactly on the marker
+    dx = 0.03 * (I1.max() - I1.min())   # horizontal offset in current units
+    dy = 0.001                          # vertical offset in GHz (tweak as needed)
 
-    # for B0 in B_levels:
-    #     # For each NV, find ALL points on that curve where |B| ~ B0
-    #     for j in range(f.shape[1]):
-    #         # indices where |B| is within tol_G of B0
-    #         idxs = np.where(np.isclose(Bmag, B0, atol=tol_G))[0]
-    #         if idxs.size == 0:
-    #             continue
+    for B0 in B_levels:
+        # For each NV, find ALL points on that curve where |B| ~ B0
+        for j in range(f.shape[1]):
+            # indices where |B| is within tol_G of B0
+            idxs = np.where(np.isclose(Bmag, B0, atol=tol_G))[0]
+            if idxs.size == 0:
+                continue
 
-    #         for k, idx in enumerate(idxs):
-    #             if not np.isfinite(f[idx, j]):
-    #                 continue
+            for k, idx in enumerate(idxs):
+                if not np.isfinite(f[idx, j]):
+                    continue
 
-    #             x = I1[idx]
-    #             y = f[idx, j]
+                x = I1[idx]
+                y = f[idx, j]
 
-    #             # alternate annotation side so they don't all stack on one side
-    #             x_off = dx if (k % 2 == 0) else -dx
+                # alternate annotation side so they don't all stack on one side
+                x_off = dx if (k % 2 == 0) else -dx
 
-    #             # open circle at that point
-    #             plt.scatter(
-    #                 x,
-    #                 y,
-    #                 facecolors="none",
-    #                 edgecolors="k",
-    #                 s=50,
-    #                 linewidths=1.0,
-    #             )
+                # open circle at that point
+                plt.scatter(
+                    x,
+                    y,
+                    facecolors="none",
+                    edgecolors="k",
+                    s=50,
+                    linewidths=1.0,
+                )
 
-    #             # text label next to the circle
-    #             plt.text(
-    #                 x + x_off,
-    #                 y + dy,
-    #                 f"{B0:.0f} G",
-    #                 fontsize=7,
-    #                 ha="left" if x_off > 0 else "right",
-    #                 va="center",
-    #             )
+                # text label next to the circle
+                plt.text(
+                    x + x_off,
+                    y + dy,
+                    f"{B0:.0f} G",
+                    fontsize=7,
+                    ha="left" if x_off > 0 else "right",
+                    va="center",
+                )
 
-    # plt.xlabel("I_ch1 (A)")
-    # plt.ylabel("f_- (GHz)")              # absolute position
-    # plt.title("Absolute ODMR peaks vs I_ch1 (color = |B|)")
-    # plt.grid(alpha=0.3)
+    plt.xlabel("I_ch1 (A)")
+    plt.ylabel("f_- (GHz)")              # absolute position
+    plt.title("Absolute ODMR peaks vs I_ch1 (color = |B|)")
+    plt.grid(alpha=0.3)
 
     # no legend needed—everything is annotated on the plot
 
@@ -831,4 +831,4 @@ if __name__ == "__main__":
     #     cbar.set_label("f_- (GHz)")
 
     # fig.suptitle("Absolute ODMR peak frequency vs (I_ch1, I_ch2)\n(NV axes order)")
-    # kpl.show(block=True)
+    kpl.show(block=True)
