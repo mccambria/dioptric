@@ -705,8 +705,9 @@ def do_ac_stark(nv_list):
 
 
 def do_spin_echo(nv_list):
-    # revival_period = int(51.5e3 / 2)
-    revival_period = int(38.5e3 / 2)
+    # revival_period = int(51.5e3 / 2) ### ~37.0 G
+    # revival_period = int(38.5e3 / 2)### 49.68 G
+    revival_period = int(28.6e3 / 2) ### 65.14G
     min_tau = 200
     taus = []
     revival_width = 6e3
@@ -1350,7 +1351,7 @@ if __name__ == "__main__":
     # magnet_angle = 90
     date_str = "2025_10_21"
     sample_coords = [0.4, 0.8]
-    z_coord = 0.5
+    z_coord = 0.6
     # Load NV pixel coordinates1
     pixel_coords_list = load_nv_coords(
         # file_path="slmsuite/nv_blob_detection/nv_blob_308nvs_reordered.npz",
@@ -1518,7 +1519,7 @@ if __name__ == "__main__":
         # )
 
         do_compensate_for_drift(nv_sig)
-        # do_widefield_image_sample(nv_sig, 50)
+        do_widefield_image_sample(nv_sig, 50)
         # do_widefield_image_sample(nv_sig, 400)
 
         # for nv in nv_list:
