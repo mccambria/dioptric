@@ -231,7 +231,7 @@ def get_coord(coords, key):
         return coords.get(key, coords.get(key.name))
     return coords.get(key)
 if __name__ == "__main__":
-    file_name = "2025_10_23-22_42_56-(lovelace)"
+    file_name = "2025_11_24-18_58_56-(Rubin)"
 
     data = dm.get_raw_data(file_name)
     print("Top-level keys in saved file:")

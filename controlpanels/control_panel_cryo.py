@@ -70,10 +70,10 @@ def do_image_sample(nv_sig):
 
     """
     # scan_range = 0.2
-    # num_steps = 60
+    # num_steps = 90
 
-    scan_range = 0.2 #voltage #cryo image conversion: 37um/V; step size: x,y,z=40V (was 30)
-    num_steps = 60
+    scan_range = 0.2 #voltage #cryo image conversion: 37um/V; step size: x,y,z=30V
+    num_steps = 90
 
     # For now we only support square scans so pass scan_range twice
     image_sample.confocal_scan(
@@ -145,8 +145,8 @@ def do_image_sample_zoom(nv_sig):
     This function is compatable with piezo z-axis scan and will create a new figure for each z position.
 
     """
-    scan_range = 0.01 #TOO ZOOM FOR CURRENT SET-UP
-    num_steps = 10
+    scan_range = 0.1 #TOO ZOOM FOR CURRENT SET-UP
+    num_steps = 45
 
     image_sample.confocal_scan(
         nv_sig,
@@ -220,7 +220,7 @@ def do_calibrate_z_axis(nv_sig):
 
 
 # region 1D Scan 
-def do_z_scan_1d(nv_sig, num_steps=500, step_size=1, num_averages=1, min_threshold=100):
+def do_z_scan_1d(nv_sig, num_steps=500, step_size=1, num_averages=1, min_threshold=5):
     """
     Perform a 1D Z-axis scan without calibration.
 
@@ -257,7 +257,7 @@ def do_z_scan_1d(nv_sig, num_steps=500, step_size=1, num_averages=1, min_thresho
     return results
 
 
-def do_z_scan_2d(nv_sig):
+def do_z_scan_3d(nv_sig):
     """
     Perform a 3D scan: 2D XY confocal images at multiple Z depths.
 
@@ -280,15 +280,15 @@ def do_z_scan_2d(nv_sig):
     """
     # XY scan parameters (matching do_image_sample defaults)
     scan_range = 0.2  # XY range in volts
-    num_steps = 60    # XY resolution
+    num_steps = 90    # XY resolution
 
     # Z scan parameters
-    num_z_steps = 5   # Number of Z slices
-    z_step_size = -1    
+    num_z_steps = 42   # Number of Z slices
+    z_step_size = 3     # Each step ~100nm RT (+/- or up/down for direction)
 
     # Safety and acquisition
     num_averages = 1        # Samples per pixel
-    min_threshold = 100     # Pause if counts per image drops below this
+    min_threshold = 0     # Pause if counts per image drops below this
 
     return z_scan_2d.main(
         nv_sig,
@@ -631,7 +631,7 @@ def do_z_scan_2d(nv_sig):
 # endregion
 
 def get_sample_name() -> str:
-    sample = "Wu" #lovelace
+    sample = "Rubin" #Wu
     return sample
 
 # region main
@@ -670,7 +670,11 @@ if __name__ == "__main__":
     # region Postion and Time Control
     sample_xy = [0.0,0.0] # piezo XY voltage input (1.0=1V) (not coordinates, relative)
     coord_z = 0  # piezo z voltage (0 is the set midpoint, absolute) (negative is closer to smaple, move unit steps in sample; 37 is good surface focus with bs for Lovelace; 20 is good for dye)
-    pixel_xy = [0,0] #[0.1,0] #[0,0.1]   # galvo ref
+    # pixel_xy = [0.091, -0.11]  #bright spot nov 24 2025
+    # pixel_xy = [-0.117, 0.142] # NV canidate
+    # pixel_xy = [-0.044, 0.116]  # center of good NV image Nov 20+24 2025
+    pixel_xy = [0.0, 0.0]  # galvo ref
+
 
     nv_sig = NVSig(
         name=f"({get_sample_name()})",
@@ -697,42 +701,44 @@ if __name__ == "__main__":
         # tool_belt.set_drift([0.0, 0.0, 0.0])  # Totally rneset
         # drift = tool_belt.get_drift()
         # tool_belt.set_drift([0.0, 0.0, drift[2]])  # Keep z
-        # tool_belt.set_drift([drift[0], drift[1], 0.0])  # Keep xy
+        # tool_belt.set_drifts([drift[0], drift[1], 0.0])  # Keep xy
         
-        # pos.set_xyz_on_nv(nv_sig) # Hahn omits this line, currently leave this line out when calibrating z
+        pos.set_xyz_on_nv(nv_sig) # Hahn omits this line, currently leave this line out when calibrating z
 
         #region 1D scan + Calibrate
         #do_calibrate_z_axis(nv_sig)
-        do_z_scan_1d(nv_sig)
-        # do_z_scan_2d(nv_sig)
+        # do_z_scan_1d(nv_sig, step_size=1)
+
 
         # Manually set Z reference to current position
         # piezo = pos.get_positioner_server(CoordsKey.Z)
-        # print(piezo.get_z_position())
+        # # print(piezo.get_z_position())
         # piezo.set_z_reference()
 
-        # region 2D scan
+        # region 2D scan (x galvo, z piezo)
 
-        # do_2D_xz_scan(nv_sig)
-        # z_range = np.linspace(0, 200, 41)
+        # # do_2D_xz_scan(nv_sig)
+        # z_range = np.linspace(0, -150, 31)
         # for z in z_range:
         #     nv_sig.coords[CoordsKey.Z] = z
         #     pos.set_xyz_on_nv(nv_sig)
         #     do_2D_xz_scan(nv_sig)
 
-        # endregion 1D scan
+        # endregion 2D scan
 
-        # region Image sample
+        # region Image sample     
 
-        # do_image_sample(nv_sig)
+        # do_z_scan_3d(nv_sig) # (xy gavo, z piezo)
+        do_image_sample(nv_sig)
+        # do_image_sample_zoom(nv_sig)
         # do_image_sample_zoom(nv_sig, nv_minus_initialization=True)
         # Z AXIS PIEZO SCAN
-        # z_range = np.linspace(-10, -50, 2)
+        # z_range = np.linspace(0, 0, 30)
         # for z in z_range:
-            # nv_sig.coords[CoordsKey.Z] = z
-            # pos.set_xyz_on_nv(nv_sig)
-            # do_image_sample_zoom(nv_sig)
-            # do_image_sample(nv_sig)
+        #     nv_sig.coords[CoordsKey.Z] = z
+        #     # pos.set_xyz_on_nv(nv_sig)
+        #     # do_image_sample_zoom(nv_sig)
+        #     do_image_sample(nv_sig)
 
         # do_image_sample_zoom(nv_sig)
         # do_image_sample(nv_sig, nv_minus_initialization=True)
@@ -740,6 +746,7 @@ if __name__ == "__main__":
         #end region Image sample
 
         # do_optimize(nv_sig)
+
         # nv_sig["imaging_readout_dur"] = 5e7-
         
         #Hahn control panel image sample
