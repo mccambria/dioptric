@@ -1395,8 +1395,8 @@ if __name__ == "__main__":
     print(f"Red Laser Coordinates: {red_coords_list[0]}")
 
     # pixel_coords_list = [[124.195, 127.341],[14.043, 37.334],[106.538, 237.374],[218.314, 23.302]]
-    # green_coords_list = [[108.148, 107.474], [119.522, 118.997], [111.538, 95.186], [96.194, 118.343]]
-    # red_coords_list = [[73.501, 71.89], [82.395, 81.819], [76.707, 62.056], [63.349, 80.092]]
+    # green_coords_list = [[108.076, 107.54], [119.465, 119.045],[111.48, 95.262],[96.135, 118.428]]
+    # red_coords_list = [[73.452, 71.912],[82.348, 81.852], [76.649, 62.12], [63.305, 80.154]]
     num_nvs = len(pixel_coords_list)
     threshold_list = [None] * num_nvs
     # fmt: off
@@ -1519,7 +1519,7 @@ if __name__ == "__main__":
         # )
 
         do_compensate_for_drift(nv_sig)
-        do_widefield_image_sample(nv_sig, 50)
+        # do_widefield_image_sample(nv_sig, 50)
         # do_widefield_image_sample(nv_sig, 400)
 
         # for nv in nv_list:
@@ -1586,7 +1586,7 @@ if __name__ == "__main__":
         # do_optimize_spin_pol_amp(nv_list)
         # do_check_readout_fidelity(nv_list)
 
-        # do_scc_snr_check(nv_list)
+        do_scc_snr_check(nv_list)
         # do_optimize_scc_duration(nv_list)
         # do_optimize_scc_amp(nv_list)
         # optimize_scc_amp_and_duration(nv_list)
