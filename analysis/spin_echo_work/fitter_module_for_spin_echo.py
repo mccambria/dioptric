@@ -1162,9 +1162,6 @@ def fit_one_nv_with_freq_sweeps(
     # -----------------------------
     # 4) Allowed-line PAIRS ONLY (no FFT, no cross-pair mixing)
     # -----------------------------
-    # -----------------------------
-    # 4) Allowed-line PAIRS ONLY (no FFT, no cross-pair mixing)
-    # -----------------------------
     if allowed_records is None or len(allowed_records) == 0:
         raise RuntimeError("allowed_records must be provided to restrict f to f+/− pairs.")
 
