@@ -171,31 +171,31 @@ def plot_nv_resonance(
     ax_snr.grid(True, linestyle="--", alpha=0.6)
     ax_snr.tick_params(axis="both", labelsize=14)
     plt.show(block=True)
-    # # # # Set plot style
-    # for nv_ind in range(num_nvs):
-    #     fig, ax = plt.subplots(figsize=(8, 5))
-    #     # Data points with error bars
-    #     ax.errorbar(
-    #         freqs,
-    #         avg_counts[nv_ind],
-    #         yerr=avg_counts_ste[nv_ind],
-    #         fmt="o",
-    #         color="steelblue",
-    #         ecolor="gray",
-    #         elinewidth=1,
-    #         capsize=3,
-    #         markersize=5,
-    #         label="Data"
-    #     )
-    #     # Fit curve
-    #     ax.plot(freqs_dense, fit_fns[nv_ind], "-", color="red", label="Fit")
-    #     # Labels and style
-    #     ax.set_xlabel("Frequency (GHz)")
-    #     ax.set_ylabel("Normalized NV Population")
-    #     ax.set_title(f"NV Index: {nv_ind}")
-    #     ax.grid(True, linestyle="--", alpha=0.6)
-    #     ax.legend()
-    #     plt.show(block=True)
+    # # # Set plot style
+    for nv_ind in range(num_nvs):
+        fig, ax = plt.subplots(figsize=(8, 5))
+        # Data points with error bars
+        ax.errorbar(
+            freqs,
+            avg_counts[nv_ind],
+            yerr=avg_counts_ste[nv_ind],
+            fmt="o",
+            color="steelblue",
+            ecolor="gray",
+            elinewidth=1,
+            capsize=3,
+            markersize=5,
+            label="Data"
+        )
+        # Fit curve
+        ax.plot(freqs_dense, fit_fns[nv_ind], "-", color="red", label="Fit")
+        # Labels and style
+        ax.set_xlabel("Frequency (GHz)")
+        ax.set_ylabel("Normalized NV Population")
+        ax.set_title(f"NV Index: {nv_ind}")
+        ax.grid(True, linestyle="--", alpha=0.6)
+        ax.legend()
+        plt.show(block=True)
 
     # ----------------- Example of use in your pipeline -----------------
     # center_freqs is your list of (f1, f2) from the fit_results
@@ -753,15 +753,32 @@ if __name__ == "__main__":
     # file_ids = [
     #     "2025_11_09-10_40_49-johnson-nv0_2025_10_21",
     # ]
+    
+    ####### Iy=3A, IZ = -3A
     # ## 312 nVs
     # file_ids = [
     #     "2025_11_20-09_14_44-johnson-nv0_2025_10_21",
     # ]
     
     ## 204 nVs
+    # file_ids = [
+    #     "2025_11_21-06_06_26-johnson-nv0_2025_10_21",
+    # ]
+    
+    ####### Iy=3A, IZ =3A
+    ## 312 nVs
     file_ids = [
-        "2025_11_21-06_06_26-johnson-nv0_2025_10_21",
+        "2025_11_27-11_18_26-johnson-nv0_2025_10_21",
     ]
+    
+    ####### Iy=3A, IZ =0
+    ## 312 nVs
+    file_ids = [
+        "2025_11_28-01_53_35-johnson-nv0_2025_10_21",
+    ]
+    
+    
+    
     # Load the first dataset as a base
     combined_data = dm.get_raw_data(
         file_stem=file_ids[0], load_npz=True, use_cache=True
@@ -819,7 +836,7 @@ if __name__ == "__main__":
                 new_ref_counts[:, :, :, 0::2] = new_ref_counts_0
                 new_ref_counts[:, :, :, 1::2] = new_ref_counts_1
 
-                # Append new data
+                # Append new data 
                 combined_sig_counts = np.append(
                     combined_sig_counts, new_sig_counts, axis=1
                 )

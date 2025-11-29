@@ -19,6 +19,8 @@ K_DEFAULT = np.column_stack([
     [ +0.803449,  -4.758891, -15.327336],   # dB/dI_ch1
     [ -0.741645,  +4.202657,  -4.635283],   # dB/dI_ch2
 ]).astype(float)
+# B0_DEFAULT = [-46.275577 -17.165999  -5.701398]
+K_DEFAULT  = np.column_stack([ [-4.020998 -5.141574 -2.160538] , [ 1.462581 -0.392783 -2.407475] ]).astype(float)
 
 # ---------- (Optional) exact quartet model hook ----------
 # If you already have an exact Hamiltonian solver, import it and set this flag True
@@ -556,7 +558,7 @@ if __name__ == "__main__":
 
     # (A) Predict quartet at a chosen operating point
     # Iy, Iz = 0.73, 1.54
-    Iy, Iz = 3.0, -3.0
+    Iy, Iz = 3.0, 3.0
     out = cal.predict_peaks(Iy, Iz)
     print("\n=== Peak prediction ===")
     print(f"Inputs: I_ch1 = {Iy:.6f} A, I_ch2 = {Iz:.6f} A")
@@ -583,8 +585,8 @@ if __name__ == "__main__":
     # # Figure: |B| contour with the (Iy, Iz) path
     # # ----------------------------
     # Pick your grid & an example target
-    Iy_rng = (-4.0, 4.0)
-    Iz_rng = (-4.0, 4.0)
+    Iy_rng = (-3.0, 3.0)
+    Iz_rng = (-3.0, 3.0)
     target = 70.0  # draw the |B|=60 G contour
 
     # Optionally mark a few operating points
@@ -694,10 +696,10 @@ if __name__ == "__main__":
     
     # Example: sweep I_ch1 from 0 → 3 A with I_ch2 fixed at -3 A
     sweep = cal.sweep_peaks_vs_current(
-        I_ch1_start=-4.0,
-        I_ch2_start=-4.0,
-        I_ch1_end=4.0,
-        I_ch2_end=4.0,
+        I_ch1_start=-3.0,
+        I_ch2_start=3.0,
+        I_ch1_end=3.0,
+        I_ch2_end=3.0,
         n_steps=200,
     )
 
