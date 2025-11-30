@@ -1453,21 +1453,21 @@ def plot_theoretical_kappa_vs_distance(
 if __name__ == "__main__":
     kpl.init_kplotlib()
     # 0) (Optional) Build catalog once (then reuse JSON/CSV)
-    # build_essem_catalog_with_kappa(
-    #     hyperfine_path="analysis/nv_hyperfine_coupling/nv-2.txt",
-    #     B_lab_vec=B_vec_T,
-    #     orientations=((1, 1, 1), (1, 1, -1), (1, -1, 1), (-1, 1, 1)),
-    #     distance_max_A=22.0,
-    #     gamma_n_Hz_per_T=GAMMA_C13_HZ_PER_T,
-    #     p_occ=0.011,  # 13C abundance
-    #     ms=-1,
-    #     phi_deg=0.0,
-    #     out_json="essem_freq_kappa_catalog_22A.json",
-    #     out_csv="essem_freq_kappa_catalog_22A.csv",
-    #     read_hf_table_fn=None,
-    # )
-    # sys.exit()
-    recs_all = load_catalog("analysis/spin_echo_work/essem_freq_kappa_catalog_22A_updated.json")
+    build_essem_catalog_with_kappa(
+        hyperfine_path="analysis/nv_hyperfine_coupling/nv-2.txt",
+        B_lab_vec=B_vec_T,
+        orientations=((1, 1, 1), (1, 1, -1), (1, -1, 1), (-1, 1, 1)),
+        distance_max_A=22.0,
+        gamma_n_Hz_per_T=GAMMA_C13_HZ_PER_T,
+        p_occ=0.011,  # 13C abundance
+        ms=-1,
+        phi_deg=0.0,
+        out_json="essem_freq_kappa_catalog_22A_65G.json",
+        out_csv="essem_freq_kappa_catalog_22A_65G.csv",
+        read_hf_table_fn=None,
+    )
+    sys.exit()
+    recs_all = load_catalog("analysis/spin_echo_work/essem_freq_kappa_catalog_22A_49G.json")
 
     # Filter by orientation & frequency band (or set orientations=None for all)
     # ori_sel = [(1, 1, 1), (1, 1, -1), (1, -1, 1), (-1, 1, 1)]

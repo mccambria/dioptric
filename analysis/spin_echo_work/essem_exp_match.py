@@ -6,6 +6,8 @@ import matplotlib.pyplot as plt
 import matplotlib.ticker as mticker
 from utils import data_manager as dm
 from utils import kplotlib as kpl
+from typing import Optional
+from collections.abc import Sequence
 from analysis.sc_c13_hyperfine_sim_data_driven import (
     read_hyperfine_table_safe,
     B_vec_T,  # your lab field (Tesla)
@@ -20,7 +22,8 @@ from analysis.spin_echo_work.echo_plot_helpers import (
 from multiplicity_calculation import (
     find_c3v_orbits_from_nv2,
     build_site_multiplicity_with_theory,
-    mutliplicity_plots,
+    # mutliplicity_plots,
+    multiplicity_plots,
 )
 
 # ---------------------------------------------------------------------
@@ -28,7 +31,7 @@ from multiplicity_calculation import (
 # ---------------------------------------------------------------------
 
 HYPERFINE_PATH = "analysis/nv_hyperfine_coupling/nv-2.txt"
-CATALOG_JSON = "analysis/spin_echo_work/essem_freq_kappa_catalog_22A_updated.json"
+CATALOG_JSON = "analysis/spin_echo_work/essem_freq_kappa_catalog_22A_65G.json"
 
 # Optional: which orientations to consider when comparing theory/exp
 DEFAULT_ORIENTATIONS = [
@@ -941,11 +944,12 @@ def _build_site_info_from_match_and_catalog(row, hf_row, catalog_recs):
     ]
 
 
+
 def make_echo_plus_matched_site_plot(
     counts_file_stem: str,
     fit_file_stem: str,
     matches_enriched: pd.DataFrame,
-    hf_df: pd.DataFrame,
+    hf_df: Optional[pd.DataFrame],
     nv_label: int,
     use_half_time_as_tau: bool = True,
     units_label: str = "(Norm.)",
@@ -955,36 +959,87 @@ def make_echo_plus_matched_site_plot(
       left: experimental spin-echo trace + fit + envelope
       right: matched 13C site in 3D (NV frame)
     for a chosen NV label.
+
+    If `hf_df` is None, only the matched site (from `matches_enriched`)
+    will be shown (no background candidate cloud).
     """
 
-    # ---------- 1) Match-row + hyperfine row for this NV ----------
+    # ---------- 1) Match-row for this NV ----------
     row = matches_enriched.loc[matches_enriched["nv_label"] == nv_label]
     if row.empty:
         raise ValueError(f"No entry for NV {nv_label} in matches_enriched.")
     row = row.iloc[0]
 
-    # Try to get a valid hyperfine row; if missing, we'll still plot the echo.
-    site_index_val = row.get("site_index", np.nan)
+    # ---------- 1b) Optional hyperfine table info (background cloud) ----------
     hf_row = None
-    site_index = None
+    all_pos = None
+    xcol = ycol = zcol = None
 
-    if np.isfinite(site_index_val):
-        site_index = int(site_index_val)
-        hf_row_candidates = hf_df.loc[hf_df["site_index"] == site_index]
-        if hf_row_candidates.empty:
-            print(
-                f"[WARN] No hyperfine row found for site_index={site_index}; "
-                "will plot echo without site geometry."
-            )
+    stats = {
+        "N_candidates": 0,
+        "abundance_fraction": None,
+    }
+
+    if hf_df is not None and not hf_df.empty:
+        # Figure out which columns are x/y/z in hf_df
+        xcol, ycol, zcol = _get_coord_cols(hf_df)
+
+        # Background: all candidate site positions
+        if {xcol, ycol, zcol}.issubset(hf_df.columns):
+            all_pos = hf_df[[xcol, ycol, zcol]].to_numpy(float)
+
+        stats["N_candidates"] = len(hf_df)
+
+        # Try to find a matching hyperfine row for this site_index
+        site_index_val = row.get("site_index", np.nan)
+        if np.isfinite(site_index_val):
+            site_index = int(site_index_val)
+            hf_row_candidates = hf_df.loc[hf_df["site_index"] == site_index]
+            if hf_row_candidates.empty:
+                print(
+                    f"[WARN] No hyperfine row found for site_index={site_index}; "
+                    "will still plot matched site if coordinates are in matches_enriched."
+                )
+            else:
+                hf_row = hf_row_candidates.iloc[0]
         else:
-            hf_row = hf_row_candidates.iloc[0]
+            print(
+                f"[WARN] NV {nv_label} has no valid site_index; "
+                "will still plot matched site if coordinates are in matches_enriched."
+            )
     else:
-        print(
-            f"[WARN] NV {nv_label} has no valid site_index; "
-            "will plot echo without site geometry."
-        )
+        # No hyperfine table: no background positions
+        all_pos = None
 
-    xcol, ycol, zcol = _get_coord_cols(hf_df)
+    # ---------- 1c) Foreground: matched site position ----------
+    matched_pos = None
+    site_info = []
+
+    # Prefer coordinates stored directly in the matched row
+    x = row.get("x_A", np.nan)
+    y = row.get("y_A", np.nan)
+    z = row.get("z_A", np.nan)
+
+    if np.all(np.isfinite([x, y, z])):
+        matched_pos = np.array([[x, y, z]], dtype=float)
+
+    # If we have a hyperfine row and site_info helper, build site_info
+    if hf_row is not None:
+        catalog_recs = load_catalog(CATALOG_JSON)
+        site_info = _build_site_info_from_match_and_catalog(row, hf_row, catalog_recs)
+
+        # Optional: if matched_pos is still None, fall back to hf_row coords
+        if matched_pos is None and (xcol is not None):
+            matched_pos = np.array(
+                [[hf_row[xcol], hf_row[ycol], hf_row[zcol]]],
+                dtype=float,
+            )
+
+    if matched_pos is None:
+        print(
+            f"[WARN] NV {nv_label}: no valid coordinates for matched site; "
+            "will plot echo only."
+        )
 
     # ---------- 2) Load counts data (echo) ----------
     data_counts = dm.get_raw_data(file_stem=counts_file_stem)
@@ -1024,30 +1079,8 @@ def make_echo_plus_matched_site_plot(
         fine_params["T2_fit_us"] = 1000.0 * fine_params.get("T2_ms", 0.0)
 
     # ---------- 4) Build aux dict for plot_echo_with_sites ----------
-    # Background: all candidate sites
-    all_pos = None
-    if {xcol, ycol, zcol}.issubset(hf_df.columns):
-        all_pos = hf_df[[xcol, ycol, zcol]].to_numpy(float)
-
-    # Foreground: matched site (if we have one)
-    if hf_row is not None:
-        pos = np.array(
-            [[hf_row[xcol], hf_row[ycol], hf_row[zcol]]],
-            dtype=float,
-        )
-        catalog_recs = load_catalog(CATALOG_JSON)
-        site_info = _build_site_info_from_match_and_catalog(row, hf_row, catalog_recs)
-    else:
-        pos = None
-        site_info = []
-
-    stats = {
-        "N_candidates": len(hf_df),
-        "abundance_fraction": None,
-    }
-
     aux = {
-        "positions": pos,
+        "positions": matched_pos,
         "site_info": site_info,
         "all_candidate_positions": all_pos,
         "stats": stats,
@@ -1083,6 +1116,40 @@ def make_echo_plus_matched_site_plot(
     )
 
     return fig
+
+
+
+def make_echo_plus_matched_site_plots_batch(
+    counts_file_stem: str,
+    fit_file_stem: str,
+    matches_enriched: pd.DataFrame,
+    hf_df: Optional[pd.DataFrame],
+    nv_labels: Sequence[int],
+    use_half_time_as_tau: bool = True,
+    units_label: str = "(Norm.)",
+):
+    """
+    Generate one echo+matched-site figure per NV in `nv_labels`.
+
+    Returns
+    -------
+    figs : list of matplotlib.figure.Figure
+        List of figures, one per NV.
+    """
+    figs = []
+    for nv_label in nv_labels:
+        fig = make_echo_plus_matched_site_plot(
+            counts_file_stem=counts_file_stem,
+            fit_file_stem=fit_file_stem,
+            matches_enriched=matches_enriched,
+            hf_df=hf_df,
+            nv_label=int(nv_label),
+            use_half_time_as_tau=use_half_time_as_tau,
+            units_label=units_label,
+        )
+        figs.append(fig)
+    return figs
+
 
 
 _fn_map = {
@@ -2125,149 +2192,15 @@ def summarize_simulated_sites(
     return sim_sites, site_stats_sim
 
 
-if __name__ == "__main__":
-    kpl.init_kplotlib()
-
-    # ---- 1) file stems ----
-    # fit_file_stem    = "2025_11_13-06_28_22-sample_204nv_s1-e85aa7"   # where popts & freqs live
-    # fit_file_stem  = "2025_11_14-03_05_30-sample_204nv_s1-e85aa7" # 200 freqs freeze
-    # fit_file_stem  = "2025_11_14-18_28_58-sample_204nv_s1-e85aa7" # 600 freqs freeze
-    # fit_file_stem  = "2025_11_17-09_49_42-sample_204nv_s1-fcc605" # site encoded, all freqs
-    fit_file_stem = "2025_11_19-14_19_23-sample_204nv_s1-fcc605"  # site 1khz-6Mhz
-    counts_file_stem = (
-        "2025_11_11-01_15_45-johnson_204nv_s6-6d8f5c"  # merged dataset2+3 counts
-    )
-
-    ## ---- 2) global theory-vs-exp matching (use FIT file) ----##
-    hf_df = load_hyperfine_table(distance_cutoff=15.0)  # or 15.0, etc.
-    data = dm.get_raw_data(file_stem=fit_file_stem)
-    fit_summary = freqs_from_popts_exact(file_stem=fit_file_stem)
-
-    nv = np.asarray(fit_summary["nv"], int)
-    T2_us = np.asarray(fit_summary["T2_us"], float)
-    f0_kHz = np.asarray(fit_summary["f0_kHz"], float)
-    f1_kHz = np.asarray(fit_summary["f1_kHz"], float)
-    A_pick_kHz = np.asarray(fit_summary["A_pick_kHz"], float)
-    chis = np.asarray(fit_summary["chis"], float)
-    fit_fail = np.asarray(fit_summary["fit_fail"], bool)
-    sT2_us = np.asarray(fit_summary["sT2_us"], float)
-    sf0_kHz = np.asarray(fit_summary["sf0_kHz"], float)
-    sf1_kHz = np.asarray(fit_summary["sf1_kHz"], float)
-    sA_pick_kHz = np.asarray(fit_summary["sA_pick_kHz"], float)
-
-    nv_oris = np.asarray(fit_summary["orientations"], int)
-    site_ids = np.asarray(fit_summary["site_ids"], int)
-
-    mask = (
-        np.isfinite(f0_kHz)
-        & np.isfinite(f1_kHz)
-        & (f0_kHz > 0)
-        & (f1_kHz >= 0)
-        & (~np.array(fit_fail, dtype=bool))
-    )
-
-    nv_kept = nv[mask]
-    f0_kept_kHz = f0_kHz[mask]
-    f1_kept_kHz = f1_kHz[mask]
-    site_ids_kept = site_ids[mask]
-    nv_oris_kept = nv_oris[mask]
-    print(site_ids_kept)
-    if f0_kept_kHz.shape != f1_kept_kHz.shape:
-        raise ValueError("f0_kHz and f1_kHz must have same shape.")
-    if f0_kept_kHz.ndim != 1:
-        raise ValueError("f0_kHz and f1_kHz must be 1D.")
-    if site_ids_kept.shape[0] != f0_kept_kHz.shape[0]:
-        raise ValueError("site_ids must have same length as f0_kHz/f1_kHz.")
-
-    exp_pairs_with_labels = list(
-        zip(
-            nv_kept.tolist(),
-            [(float(f0), float(f1)) for f0, f1 in zip(f0_kept_kHz, f1_kept_kHz)],
-        )
-    )
-
-    catalog_records = load_catalog(CATALOG_JSON)
-    matches_df = pairwise_match_from_site_ids_kHz(
-        nv_labels=nv_kept,
-        f0_kHz=f0_kept_kHz,
-        f1_kHz=f1_kept_kHz,
-        site_ids=site_ids_kept,
-        nv_orientations=nv_oris_kept,
-        records=catalog_records,
-    )
-
-    print(matches_df["err_pair_kHz"].describe())
-    print(matches_df.head())
-
-    site_stats = analyze_matched_c13_sites(matches_df, title_prefix="Sample 204 NVs")
-    kpl.show(block=True)
-    sys.exit()
-    # derive experimental band in kHz (or set manually)
-    exp_f = matches_df["f_minus_kHz"].to_numpy(float)
-    f_band_kHz = (np.nanmin(exp_f), np.nanmax(exp_f))
-
-    catalog = load_catalog(
-        CATALOG_JSON
-    )  # list of dicts with f_minus_Hz, orientation, ...
-    n_nv = matches_df["nv_label"].nunique()
-
-    # # Load catalog (list of dicts) and simulate
-    # catalog = load_catalog(CATALOG_JSON)  # has orientation, f_minus_Hz, f_plus_Hz, kappa, ...
-
-    # f0_sim_kHz, f1_sim_kHz, ori_sim_list = simulate_branch_pairs_like_exp(
-    #     catalog,
-    #     matches_df=matches_df,          # same DataFrame you used for exp plotting
-    #     c13_abundance=0.011,
-    #     rng_seed=123,
-    #     freq_minus_col="f_minus_Hz",
-    #     freq_plus_col="f_plus_Hz",
-    # )
-
-    # # Convert ori_sim_list to a numpy array for plot_branch_pairs
-    # ori_sim_array = np.array(ori_sim_list, dtype=object)
-
-    # plot_branch_pairs(
-    #     f0_sim_kHz,
-    #     f1_sim_kHz,
-    #     title="204NV: simulated (f0, f1) pairs – random 13C",
-    #     exp_freqs=True,
-    #     orientation=ori_sim_array,
-    #     ori_to_str=ori_to_str,
-    # )
-
-    # band = f_band_kHz   # kHz
-    band = (10, 1500)  # kHz
-
-    catalog = load_catalog(CATALOG_JSON)
-
-    (
-        f0_sim_kHz,
-        f1_sim_kHz,
-        ori_sim,
-        site_index_sim,
-        x_sim_A,
-        y_sim_A,
-        z_sim_A,
-    ) = simulate_branch_pairs_like_exp(
-        catalog,
-        matches_df=matches_df,
-        c13_abundance=0.011,
-        rng_seed=1,
-        freq_minus_col="f_minus_Hz",
-        freq_plus_col="f_plus_Hz",
-        f_band_kHz=band,
-    )
-
-    # 1) Branch-pair plot (same style as experiment)
-    plot_branch_pairs(
-        f1_sim_kHz,
-        f0_sim_kHz,
-        title=f"204NVs: simulated (f0, f1) pairs ({band[0]:.0f}–{band[1]:.0f}) kHz",
-        exp_freqs=True,
-        orientation=ori_sim,
-        ori_to_str=ori_to_str,
-    )
-
+def plot_simualted(
+    f0_sim_kHz,
+    f1_sim_kHz,
+    ori_sim,
+    site_index_sim,
+    x_sim_A,
+    y_sim_A,
+    z_sim_A,
+):
     # 2) Positions of simulated sites that actually contributed (non-NaN)
     mask_valid = np.isfinite(f0_sim_kHz) & np.isfinite(f1_sim_kHz)
 
@@ -2388,11 +2321,21 @@ if __name__ == "__main__":
     # fit_file_stem    = "2025_11_13-06_28_22-sample_204nv_s1-e85aa7"   # where popts & freqs live
     # fit_file_stem  = "2025_11_14-03_05_30-sample_204nv_s1-e85aa7" # 200 freqs freeze
     # fit_file_stem  = "2025_11_14-18_28_58-sample_204nv_s1-e85aa7" # 600 freqs freeze
+    # fit_file_stem = (
+    #     "2025_11_17-09_49_42-sample_204nv_s1-fcc605"  # site encoded, all freqs (nysq band)
+    # )
+    # fit_file_stem = (
+    #     "2025_11_19-14_19_23-sample_204nv_s1-fcc605"  # site encoded, 1500 freqs pairs (1khz-6Mhz)
+    # )
+    # counts_file_stem = (
+    #     "2025_11_11-01_15_45-johnson_204nv_s6-6d8f5c"  # merged dataset2+3 counts
+    # )
+    #### B field:
     fit_file_stem = (
-        "2025_11_17-09_49_42-sample_204nv_s1-fcc605"  # site encoded, all freqs
+        "2025_11_29-04_52_18-sample_204nv_s1-d278ee"  # site encoded, all freqs (nysq band)
     )
     counts_file_stem = (
-        "2025_11_11-01_15_45-johnson_204nv_s6-6d8f5c"  # merged dataset2+3 counts
+        "2025_11_28-16_39_32-johnson_204nv_s6-902522"  # merged dataset2+3 counts
     )
 
     ## ---- 2) global theory-vs-exp matching (use FIT file) ----##
@@ -2453,16 +2396,33 @@ if __name__ == "__main__":
     )
 
     print(matches_df["err_pair_kHz"].describe())
+    row = matches_df.loc[matches_df["nv_label"] == 137]
+    print(row.T)
+
     print(matches_df.head())
 
     # site_stats = analyze_matched_c13_sites(matches_df, title_prefix="204 NVs")
 
-    ## ---- 3) simulations template set by experiment ----##
+    # ---- 3) echo trace and corresponding matched site ----
+
+    # nv_list = [0, 1, 2, 137]  # whatever NVs you care about
+    # nv_list = nv_kept
+    # figs = make_echo_plus_matched_site_plots_batch(
+    #     counts_file_stem=counts_file_stem,
+    #     fit_file_stem=fit_file_stem,
+    #     matches_enriched=matches_df,  # from pairwise_match_from_site_ids_kHz
+    #     hf_df=hf_df,                   # <- only use matched site coordinates
+    #     nv_labels=nv_list,
+    #     use_half_time_as_tau=False,
+    # )
+    # plt.show(block=True)
+
+    ## ---- 4) simulations template set by experiment ----##
     exp_f = matches_df["f_minus_kHz"].to_numpy(float)
     f_band_kHz = (np.nanmin(exp_f), np.nanmax(exp_f))
     n_nv = matches_df["nv_label"].nunique()
-    # band = f_band_kHz   # kHz
-    band = (10, 1500)  # kHz
+    band = f_band_kHz   # kHz
+    # # band = (10, 1500)  # kHz
 
     # (
     #     f0_sim_kHz,
@@ -2492,16 +2452,8 @@ if __name__ == "__main__":
     #     z_sim_A,
     # )
 
-    # ---- 4) echo trace and corresponding matched site ----
-    # fig = make_echo_plus_matched_site_plot(
-    #     counts_file_stem=counts_file_stem,
-    #     fit_file_stem=fit_file_stem,
-    #     matches_enriched=matches_df,
-    #     hf_df=hf_df,
-    #     nv_label=137,
-    #     use_half_time_as_tau=False,
-    # )
-
+    # sys.exit()
+    # ---- 5) Multiplicity Analsysis by both theory and experiment ----##
     orbit_df = find_c3v_orbits_from_nv2(
         hyperfine_path=HYPERFINE_PATH,
         r_max_A=22.0,  # or 15.0, to match your catalog cutoff
@@ -2509,11 +2461,11 @@ if __name__ == "__main__":
         tol_dir=5e-2,  # ~0.05 in unit-vector norm (~few degrees)
     )
 
-    # print(orbit_df.head(20))
+    print(orbit_df.head(20))
 
-    # # See the multiplicity stats
-    # print("\nMultiplicity histogram (theory):")
-    # print(orbit_df["n_equiv_theory"].value_counts().sort_index())
+    # See the multiplicity stats
+    print("\nMultiplicity histogram (theory):")
+    print(orbit_df["n_equiv_theory"].value_counts().sort_index())
 
     site_stats_full = build_site_multiplicity_with_theory(
         matches_df=matches_df,
@@ -2521,25 +2473,153 @@ if __name__ == "__main__":
         p13=0.011,  # natural abundance
     )
 
-    # Sort by experimental multiplicity (most repeated sites first)
+    # --- 1) Choose which columns & rows to show ---
     cols_to_show = [
         "site_index",
         "orientation",
         "distance_A",
-        "x_A",
-        "y_A",
-        "z_A",
         "n_matches",
         "n_equiv_theory",
         "p_shell",
         "E_n_matches",
         "match_ratio",
         "kappa_mean",
+        "f0_kHz_mean",
+        "f1_kHz_mean",
+        "equiv_occupied_sites",
+        "n_equiv_occupied",
+        "n_matches_equiv_total",
     ]
 
-    print(
+    # print(
+    #     site_stats_full.sort_values("n_matches", ascending=False)[cols_to_show]
+    #     .head(15)
+    #     .to_string(index=False)
+    # )
+
+    multiplicity_plots(site_stats_full)
+
+    topN = 15  # or 20, etc.
+    table_df = (
         site_stats_full.sort_values("n_matches", ascending=False)[cols_to_show]
-        .head(15)
-        .to_string(index=False)
+        .head(topN)
+        .copy()
     )
+
+    # --- 2) Format numeric columns nicely ---
+    float_cols_3 = ["distance_A", "p_shell", "E_n_matches", "match_ratio", "kappa_mean"]
+    float_cols_1 = ["f0_kHz_mean", "f1_kHz_mean"]
+
+    for col in float_cols_3:
+        if col in table_df.columns:
+            table_df[col] = table_df[col].map(lambda x: f"{x:.3f}")
+
+    for col in float_cols_1:
+        if col in table_df.columns:
+            table_df[col] = table_df[col].map(lambda x: f"{x:.1f}")
+
+    # Make sure equiv_occupied_sites is a readable string, not a Python list repr
+    def _fmt_equiv_sites(val):
+        if isinstance(val, (list, tuple)):
+            return ",".join(str(int(v)) for v in val)
+        # sometimes stored as string already or NaN
+        return (
+            ""
+            if (val is None or (isinstance(val, float) and np.isnan(val)))
+            else str(val)
+        )
+
+    if "equiv_occupied_sites" in table_df.columns:
+        table_df["equiv_occupied_sites"] = table_df["equiv_occupied_sites"].apply(
+            _fmt_equiv_sites
+        )
+
+    # --- 3) Pretty column labels with manual line breaks ---
+    col_labels = [
+        "site\nindex",  # site_index
+        "orientation",  # orientation
+        r"distance\n($\mathrm{\AA}$)",  # distance_A
+        r"$n_{\mathrm{matches}}$",  # n_matches
+        r"$n_{\mathrm{eq}}$\n(theory)",  # n_equiv_theory
+        r"$p_{\mathrm{shell}}$",  # p_shell
+        r"$\mathbb{E}[n_{\mathrm{matches}}]$",  # E_n_matches
+        r"match\nratio",  # match_ratio
+        r"$\bar{\kappa}$",  # kappa_mean
+        r"$\bar f_0$\n(kHz)",  # f0_kHz_mean
+        r"$\bar f_1$\n(kHz)",  # f1_kHz_mean
+        "equiv.\noccupied\nsites",  # equiv_occupied_sites
+        r"$n_{\mathrm{occ}}^{\mathrm{equiv}}$",  # n_equiv_occupied
+        r"$n_{\mathrm{matches}}^{\mathrm{equiv}}$",  # n_matches_equiv_total
+    ]
+
+    # Sanity check (optional)
+    assert len(col_labels) == len(
+        cols_to_show
+    ), "col_labels and cols_to_show length mismatch"
+
+    # --- 4) Build table figure ---
+    n_rows, n_cols = table_df.shape
+
+    fig_w = max(10, 0.85 * n_cols)  # a bit wider for 14 columns
+    fig_h = max(4.0, 0.45 * (n_rows + 2))  # some room for equations
+    fig, ax = plt.subplots(figsize=(fig_w, fig_h))
+    ax.axis("off")
+
+    table = ax.table(
+        cellText=table_df.values,
+        colLabels=col_labels,
+        loc="center",
+        cellLoc="center",
+    )
+
+    # --- 5) Styling ---
+    table.auto_set_font_size(False)
+    table.set_fontsize(7.5)
+    table.scale(1.0, 1.25)
+
+    # Bold header row + light gray background
+    for (row, col), cell in table.get_celld().items():
+        if row == 0:
+            cell.set_text_props(weight="bold")
+            cell.set_facecolor("#e0e0e0")
+
+    # --- 6) Title + equations line ---
+
+    title = "Top sites by experimental multiplicity and symmetry-adjusted expectation"
+
+    equations = (
+        r"$p_{\mathrm{shell}} = 1 - (1 - p_{13})^{n_{\mathrm{eq}}},\quad "
+        r"\mathbb{E}[n_{\mathrm{matches}}] = N_{\mathrm{NV}}\; p_{\mathrm{shell}},\quad "
+        r"R = \dfrac{n_{\mathrm{matches}}}{\mathbb{E}[n_{\mathrm{matches}}]}$"
+    )
+
+    ax.set_title(title, pad=30, fontsize=18)
+
+    # Equations just under the title
+    fig.text(
+        0.5,
+        0.85,
+        equations,
+        ha="center",
+        va="center",
+        fontsize=15,
+    )
+
+    # Optional short legend for the equivalent columns
+    legend_text = (
+        r"$n_{\mathrm{occ}}^{\mathrm{equiv}}$: # of symmetry-equivalent sites "
+        r"that are occupied in the dataset; "
+        r"$n_{\mathrm{matches}}^{\mathrm{equiv}}$: total matches summed over those sites."
+    )
+    fig.text(
+        0.5,
+        0.80,
+        legend_text,
+        ha="center",
+        va="center",
+        fontsize=11,
+    )
+
+    # plt.tight_layout(rect=[0.02, 0.02, 0.98, 0.98])  # leave room at top
+
     kpl.show(block=True)

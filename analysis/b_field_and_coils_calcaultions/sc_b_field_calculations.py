@@ -334,7 +334,11 @@ def align_f_new_to_reference(f_ref_nvaxes, f_new_raw):
 if __name__ == "__main__":
     # Reference and new datasets (same four branches, same index order)
     f_ref = [2.7666, 2.7851, 2.8222, 2.8406]
-    f_new = [2.7245, 2.7471,  2.8480, 2.8282]
+    # f_new = [2.7245, 2.7471,  2.8480, 2.8282]
+    # f_ref = [2.7058, 2.7859,  2.8280, 2.8699]
+    # f_new = [2.7058, 2.7859,  2.8280, 2.8699]
+    f_new = [2.7081, 2.8083,  2.8251, 2.8536]   
+    
     # For your *real* coil step, plug in the actual 4 numbers here.
 
     # --- Reference solve ---

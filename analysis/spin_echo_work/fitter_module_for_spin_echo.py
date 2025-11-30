@@ -246,14 +246,14 @@ def _initial_guess_and_bounds(times_us, y, enable_extras=True, fixed_rev_time=No
         T2_exp_guess, T2_ms_guess = 2.0, 0.1
 
     width0_guess = 6.0
-    revival_guess = 38.0 if fixed_rev_time is None else fixed_rev_time
+    revival_guess = 28.0 if fixed_rev_time is None else fixed_rev_time
 
     # ------- base vector & bounds -------
     if fixed_rev_time is None:
         p0 = [baseline_guess, comb_contrast_guess, revival_guess, width0_guess, T2_ms_guess, T2_exp_guess]
         # tie comb_contrast to baseline: ub later adjusted below
-        lb = [0.0,  0.00, 25.0, 1.0,  0.001, 0.6]
-        ub = [1.05, 0.95, 55.0, 20.0, 0.6, 4.0]
+        lb = [0.0,  0.00, 15.0, 1.0,  0.001, 0.6]
+        ub = [1.05, 0.95, 40.0, 20.0, 0.6, 4.0]
     else:
         p0 = [baseline_guess, comb_contrast_guess, width0_guess, T2_ms_guess, T2_exp_guess]
         lb = [0.0,  0.00, 1.0,  0.001, 0.6]
@@ -1159,9 +1159,6 @@ def fit_one_nv_with_freq_sweeps(
 
     bound_boxes = _sanitize_bound_boxes(bound_boxes, band)
 
-    # -----------------------------
-    # 4) Allowed-line PAIRS ONLY (no FFT, no cross-pair mixing)
-    # -----------------------------
     # -----------------------------
     # 4) Allowed-line PAIRS ONLY (no FFT, no cross-pair mixing)
     # -----------------------------

@@ -2915,6 +2915,10 @@ if __name__ == "__main__":
     #             "2025_10_29-02_21_07-johnson-nv0_2025_10_21",
     #             ]
 
+    # --- Magnetic field (crystal axes) ---
+    B_G = [-46.27557688 -17.16599864  -5.70139829]
+    B_G_mag =  49.685072884712
+    B_hat =  [-0.93137786 -0.34549609 -0.11475073]
     ###204NVs
     file_stems = [
         "2025_10_31-23_53_21-johnson-nv0_2025_10_21",
@@ -2939,7 +2943,47 @@ if __name__ == "__main__":
     ]
 
     file_stems = file_stems_1 + file_stems_2
+    
+    ###
+    
+    ### New B field: 
+    # --- Magnetic field (crystal axes) ---
+    B_G =  [-31.61263115 -56.58135644  -6.5512002 ]  
+    B_G_mag = 65.143891267575
+    B_hat =  [-0.48527391 -0.86855967 -0.10056507]
+    # --- Your B-field info ---
+    B_G = np.array([-31.61263115, -56.58135644,  -6.5512002])
+    B_G_mag = 65.143891267575
+    B_hat = np.array([-0.48527391, -0.86855967, -0.10056507])
 
+    # --- Quartet frequency shifts per NV axis ---
+
+    axes = np.array([
+        [ 1,  1,  1],
+        [-1,  1,  1],
+        [ 1, -1,  1],
+        [ 1,  1, -1],
+    ], dtype=int)
+
+    # ref / new in GHz, Δf in MHz
+    f_ref_GHz = np.array([2.766625, 2.840625, 2.822175, 2.785075])
+    f_new_GHz = np.array([2.725200, 2.827500, 2.848700, 2.746400])
+    delta_f_MHz = np.array([-41.425, -13.125, +26.525, -38.675])
+
+    quartet_freq_shifts = {
+            "axes": axes,              # (4, 3) int
+            "f_ref_GHz": f_ref_GHz,    # (4,)
+            "f_new_GHz": f_new_GHz,    # (4,)
+            "delta_f_MHz": delta_f_MHz # (4,)
+        }    
+    file_stems = [
+            "2025_11_25-21_57_00-johnson-nv0_2025_10_21",
+            "2025_11_25-13_19_23-johnson-nv0_2025_10_21",
+            "2025_11_25-04_44_08-johnson-nv0_2025_10_21",
+            "2025_11_24-20_06_54-johnson-nv0_2025_10_21",
+            "2025_11_24-11_36_56-johnson-nv0_2025_10_21",
+            "2025_11_24-03_03_41-johnson-nv0_2025_10_21",
+        ]
     ####
     ####Target 2.788 GHz NV indices
     # "[1, 1, -1]"  =  [0, 1, 3, 5, 6, 7, 9, 10, 13, 18, 19, 21, 24, 25, 27, 28, 30, 32, 34, 36, 40, 41, 43, 44, 46, 48, 49, 51, 52, 53, 56, 57, 64, 65, 66, 67, 68, 69, 73, 75, 77, 80, 82, 84, 86, 88, 91, 98, 100, 101, 102, 103, 106, 107, 109, 110, 111, 113, 115, 116, 118, 119, 120, 121, 123, 124, 127, 129, 130, 131, 132, 133, 134, 135, 141, 142, 146, 149, 150, 152, 153, 156, 157, 158, 162, 163, 165, 167, 168, 171, 174, 177, 179, 184, 185, 186, 187, 189, 190, 191, 192, 193, 195, 198, 201, 203]
@@ -3204,8 +3248,16 @@ if __name__ == "__main__":
         "total_evolution_times": total_evolution_times,
         "nv_indices_global": nv_indices_global,  # 0..N-1
         "orientations": orientations,  # shape (N, 3)
+        
         # "orientation_labels": np.array(ori_labels, dtype=object),
     }
+    # --- Add to your processed_data dict ---
+    processed_data.update({
+        "B_G": B_G,                       # Gauss, shape (3,)
+        "B_G_mag": B_G_mag,               # |B| in Gauss
+        "B_hat": B_hat,                   # unit vector
+        "quartet_freq_shifts": quartet_freq_shifts,
+    })
     tokens = []
     for s in file_stems:
         m = re.search(r"-([A-Za-z0-9]+)-nv", s)  # e.g. "...-johnson-nv0_..."

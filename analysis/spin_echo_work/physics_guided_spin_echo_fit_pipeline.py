@@ -63,7 +63,8 @@ class FitConfig:
     # ---------------- Model toggles ----------------
     use_fixed_revival: bool = False
     enable_extras: bool = True
-    fixed_rev_time_us: float = 37.6
+    # fixed_rev_time_us: float = 37.6
+    fixed_rev_time_us: float = 28.6
 
     # ---------------- Amplitude sweep ----------------
     amp_bound_grid: Tuple[Tuple[float, float], ...] = ((-0.6, 0.6),)
@@ -385,7 +386,8 @@ if __name__ == "__main__":
 
     # --- 1) Load raw dataset ---
     # file_stem = "2025_11_11-01_15_45-johnson_204nv_s6-6d8f5c"   # dataset2 + dataset3
-    file_stem = "2025_11_15-14_11_49-johnson_204nv_s9-17d44b"  # dataset2 + dataset3 (more data and orientain)
+    # file_stem = "2025_11_15-14_11_49-johnson_204nv_s9-17d44b"  # dataset2 + dataset3 (more data and orientain)
+    file_stem = "2025_11_28-16_39_32-johnson_204nv_s6-902522"  # new B 65G field
     data = dm.get_raw_data(file_stem=file_stem)
     nv_list = data["nv_list"]
     norm_counts = np.asarray(data["norm_counts"], float)
@@ -399,7 +401,7 @@ if __name__ == "__main__":
         (-1, 1, 1),
     ]
     # NOTE: raw string for Windows backslashes
-    catalog_path = r"analysis\spin_echo_work\essem_freq_kappa_catalog_22A_updated.json"
+    catalog_path = r"analysis\spin_echo_work\essem_freq_kappa_catalog_22A_65G.json"
     with open(catalog_path, "r") as f:
         catalog_json = json.load(f)
 
@@ -453,7 +455,8 @@ if __name__ == "__main__":
         norm_counts_ste=norm_counts_ste,
         total_evolution_times=total_evolution_times,
         file_stems=[file_stem],
-        default_rev_us=37.2,
+        # default_rev_us=37.2,
+        default_rev_us=28.6,
         nv_inds=nv_inds,
         cfg=cfg,
         make_plots=True,

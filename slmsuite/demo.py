@@ -136,8 +136,8 @@ import matplotlib.pyplot as plt
 import numpy as np
 from scipy.optimize import curve_fit
 ### green and red calibaton at RT setup 2025-09-15
-pixel_coords_list = [[119.675, 118.904], [111.679, 95.109],[96.317, 118.251]]
-red_coords_list = [[82.509, 81.823],[76.828, 62.075],[63.512, 80.154]]
+pixel_coords_list = [[119.522, 118.997], [111.538, 95.186], [96.194, 118.343]]
+red_coords_list = [[82.395, 81.819], [76.707, 62.056], [63.349, 80.092]]
 # Given pixel coordinates and corresponding red coordinates
 # pixel_coords_list = np.array(
 #     [
@@ -168,10 +168,10 @@ if len(pixel_coords_list) >= 3:
     # New pixel coordinate for which we want to find the corresponding red coordinate
     new_pixel_coord = np.array(
         [
-        [108.177, 107.44],
-        [119.586, 118.935],
-        [111.571, 95.147],
-        [96.215, 118.325],
+        [108.029, 107.546],
+        [119.416, 119.07],
+        [111.441, 95.271],
+        [96.096, 118.463],
         ],
         dtype=np.float32,
     )
