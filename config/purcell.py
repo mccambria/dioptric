@@ -34,8 +34,8 @@ red_laser_aod = "laser_COBO_638_aod"
 
 
 calibration_coords_pixel = [[14.043, 37.334],[106.538, 237.374],[218.314, 23.302]]
-calibration_coords_green = [[119.465, 119.045],[111.48, 95.262],[96.135, 118.428]]
-calibration_coords_red = [[82.348, 81.852], [76.649, 62.12], [63.305, 80.154]]
+calibration_coords_green = [[119.416, 119.07], [111.441, 95.271], [96.096, 118.463]]
+calibration_coords_red = [[82.306, 81.873], [76.625, 62.12], [63.265, 80.185]]
 
 # Create the dictionaries using the provided lists
 calibration_coords_nv1 = {
@@ -128,9 +128,10 @@ config |= {
                 "physical_name": "sig_gen_STAN_sg394_0",
                 "uwave_power": 11.0,
                 # "frequency": 2.7878,
-                "frequency": 2.747151,
+                # "frequency": 2.747151,
                 # "frequency":2.963189,
                 # "frequency": 2.917151,
+                "frequency": 2.8082,
                 "rabi_period": 256,
                 "pi_pulse": 128,
                 # "pi_pulse": 240,
@@ -146,7 +147,8 @@ config |= {
                 # "frequency": 2.917151,
                 # "frequency": 2.8408,
                 # "frequency": 2.982049,
-                "frequency": 2.828210,
+                # "frequency": 2.828210,1
+                "frequency": 2.8252,
                 "rabi_period": 192,
                 "pi_pulse": 88,
                 "pi_on_2_pulse": 44,
@@ -956,10 +958,10 @@ opx_config = {
         # "yellow_charge_readout": {"type": "constant", "sample": 0.2675},
         # "yellow_charge_readout": {"type": "constant", "sample": 0.2367}, #136NVs
         # "yellow_charge_readout": {"type": "constant", "sample": 0.2267}, #118NVs
-        "yellow_charge_readout": {"type": "constant", "sample": 0.34947}, ## 312NV johnson
+        # "yellow_charge_readout": {"type": "constant", "sample": 0.34947}, ## 312NV johnson
         # "yellow_charge_readout": {"type": "constant", "sample": 0.313148}, ## 230NV johnson
         # "yellow_charge_readout": {"type": "constant", "sample": 0.3084}, ## 223NV johnson
-        # "yellow_charge_readout": {"type": "constant", "sample": 0.299064}, ## 204NV johnson
+        "yellow_charge_readout": {"type": "constant", "sample": 0.299064}, ## 204NV johnson
         "yellow_spin_pol": {"type": "constant", "sample": 0.31510},
         "yellow_shelving": {"type": "constant", "sample": 0.20},
         # Other

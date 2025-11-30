@@ -330,7 +330,7 @@ def plot_orbit_rings_3d(
     orbit_stats,
     color_key="frac_occupied_sites",   # or "n_matches_equiv_total" or "kappa_mean"
     size_key="n_matches_equiv_total",  # or None
-    nv_axis_color="k",
+    nv_axis_color="b",
 ):
     """
     3D visualization of C3v orbits as rings around the NV.
@@ -340,7 +340,7 @@ def plot_orbit_rings_3d(
     - Discrete symmetry-equivalent sites marked on each ring
     """
 
-    fig = plt.figure(figsize=(7.5, 7.5))
+    fig = plt.figure(figsize=(6, 5))
     ax = fig.add_subplot(111, projection="3d")
 
     # ----- 1) Choose what sets color -----
@@ -425,7 +425,6 @@ def plot_orbit_rings_3d(
         Z,
         c=C,
         s=S,
-        cmap="viridis",
         vmin=cmin,
         vmax=cmax,
         alpha=0.9,
@@ -434,20 +433,33 @@ def plot_orbit_rings_3d(
     cbar = plt.colorbar(sc, ax=ax, pad=0.1)
     cbar.set_label(c_label, fontsize=11)
 
-    # ----- 4) NV axis (make it clearly “axis-like”) -----
-    R_max = orbit_stats["r_A"].max() * 1.1
-    ax.plot(
-        [0, 0],
-        [0, 0],
-        [-0.1 * R_max, R_max],
+    # ----- 4) NV position (star) and NV axis (arrow) -----
+    # NV at origin
+    ax.scatter(
+        [0],
+        [0],
+        [0],
+        marker="*",
+        s=40,
         color=nv_axis_color,
-        linewidth=1.5,
-        linestyle="--",
+        edgecolors="k",
+        linewidths=0.5,
+        zorder=5,
+    )
+
+    # NV axis as an arrow along +z
+    R_max = orbit_stats["r_A"].max() * 1.1
+    ax.quiver(
+        0, 0, 0,           # start at origin
+        0, 0, R_max,       # direction vector
+        color=nv_axis_color,
+        linewidth=1.0,
+        arrow_length_ratio=0.08,
     )
     ax.text(
         0,
         0,
-        1.02 * R_max,
+        1.05 * R_max,
         "NV axis",
         fontsize=10,
         ha="center",
@@ -470,7 +482,7 @@ def plot_orbit_rings_3d(
     ax.view_init(elev=22, azim=40)
 
     # Optional: fade grid for cleaner look
-    ax.grid(False)
+    ax.grid(True, alpha=0.5)
 
     plt.show()
 

@@ -761,9 +761,9 @@ if __name__ == "__main__":
     # ]
     
     ## 204 nVs
-    file_ids = [
-        "2025_11_21-06_06_26-johnson-nv0_2025_10_21",
-    ]
+    # file_ids = [
+    #     "2025_11_21-06_06_26-johnson-nv0_2025_10_21",
+    # ]
     
     ####### Iy=3A, IZ =3A
     ## 312 nVs
@@ -777,9 +777,9 @@ if __name__ == "__main__":
     #     "2025_11_28-01_53_35-johnson-nv0_2025_10_21",
     # ]
     ## 204 nVs
-    # file_ids = [
-    #     "2025_11_29-04_02_02-johnson-nv0_2025_10_21",
-    # ]
+    file_ids = [
+        "2025_11_29-04_02_02-johnson-nv0_2025_10_21",
+    ]
     
     # Load the first dataset as a base
     combined_data = dm.get_raw_data(
