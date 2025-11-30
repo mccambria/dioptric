@@ -326,29 +326,184 @@ def build_site_multiplicity_with_theory(
     return site_stats
 
 
+def plot_orbit_rings_3d(
+    orbit_stats,
+    color_key="frac_occupied_sites",   # or "n_matches_equiv_total" or "kappa_mean"
+    size_key="n_matches_equiv_total",  # or None
+    nv_axis_color="k",
+):
+    """
+    3D visualization of C3v orbits as rings around the NV.
+    - NV at origin
+    - NV axis along +z
+    - Each orbit is a ring at fixed radius r_A and polar angle theta_deg
+    - Discrete symmetry-equivalent sites marked on each ring
+    """
+
+    fig = plt.figure(figsize=(7.5, 7.5))
+    ax = fig.add_subplot(111, projection="3d")
+
+    # ----- 1) Choose what sets color -----
+    if color_key in orbit_stats.columns:
+        col_vals_orbit = orbit_stats[color_key].values.astype(float)
+    elif "frac_occupied_sites" in orbit_stats.columns:
+        col_vals_orbit = orbit_stats["frac_occupied_sites"].values.astype(float)
+        color_key = "frac_occupied_sites"
+    else:
+        col_vals_orbit = orbit_stats["n_matches_equiv_total"].values.astype(float)
+        color_key = "n_matches_equiv_total"
+
+    cmin, cmax = float(col_vals_orbit.min()), float(col_vals_orbit.max())
+    if color_key == "frac_occupied_sites":
+        cmin, cmax = 0.0, 1.0
+        c_label = "Fraction of equivalent sites occupied"
+    elif color_key == "kappa_mean":
+        c_label = r"$\langle \kappa \rangle$ (ESEEM misalignment)"
+    else:
+        c_label = "Total NVs matched in orbit"
+
+    # ----- 2) Marker sizes from size_key -----
+    if size_key is not None and size_key in orbit_stats.columns:
+        size_vals_orbit = orbit_stats[size_key].values.astype(float)
+        # Normalize to a reasonable range of marker sizes
+        if size_vals_orbit.max() > 0:
+            size_norm = (size_vals_orbit - size_vals_orbit.min()) / (
+                size_vals_orbit.max() - size_vals_orbit.min() + 1e-12
+            )
+        else:
+            size_norm = np.zeros_like(size_vals_orbit)
+        size_vals_orbit = 10 + 20 * size_norm  # 10–100 pt^2
+    else:
+        size_vals_orbit = np.full(len(orbit_stats), 40.0)
+
+    all_x, all_y, all_z, all_c, all_s = [], [], [], [], []
+
+    # ----- 3) Loop over orbits: draw rings + discrete sites -----
+    for idx, row in orbit_stats.iterrows():
+        r = row["r_A"]
+        theta = np.deg2rad(row["theta_deg"])    # angle to NV axis
+        n_equiv = int(row["n_equiv_theory"])
+        c_val = float(row[color_key]) if color_key in row else float(col_vals_orbit[idx])
+        s_val = float(size_vals_orbit[idx])
+
+        # (a) Continuous ring (light, thin)
+        phi_ring = np.linspace(0, 2 * np.pi, 300)
+        x_ring = r * np.sin(theta) * np.cos(phi_ring)
+        y_ring = r * np.sin(theta) * np.sin(phi_ring)
+        z_ring = r * np.cos(theta) * np.ones_like(phi_ring)
+        ax.plot(
+            x_ring,
+            y_ring,
+            z_ring,
+            linewidth=0.4,
+            alpha=0.25,
+            color="gray",
+        )
+
+        # (b) Discrete symmetry-equivalent sites
+        phi_sites = np.linspace(0, 2 * np.pi, n_equiv, endpoint=False)
+        x_sites = r * np.sin(theta) * np.cos(phi_sites)
+        y_sites = r * np.sin(theta) * np.sin(phi_sites)
+        z_sites = r * np.cos(theta) * np.ones_like(phi_sites)
+
+        all_x.append(x_sites)
+        all_y.append(y_sites)
+        all_z.append(z_sites)
+        all_c.append(np.full_like(x_sites, c_val, dtype=float))
+        all_s.append(np.full_like(x_sites, s_val, dtype=float))
+
+    # Concatenate all sites into single arrays for scatter
+    X = np.concatenate(all_x)
+    Y = np.concatenate(all_y)
+    Z = np.concatenate(all_z)
+    C = np.concatenate(all_c)
+    S = np.concatenate(all_s)
+
+    sc = ax.scatter(
+        X,
+        Y,
+        Z,
+        c=C,
+        s=S,
+        cmap="viridis",
+        vmin=cmin,
+        vmax=cmax,
+        alpha=0.9,
+        edgecolors="none",
+    )
+    cbar = plt.colorbar(sc, ax=ax, pad=0.1)
+    cbar.set_label(c_label, fontsize=11)
+
+    # ----- 4) NV axis (make it clearly “axis-like”) -----
+    R_max = orbit_stats["r_A"].max() * 1.1
+    ax.plot(
+        [0, 0],
+        [0, 0],
+        [-0.1 * R_max, R_max],
+        color=nv_axis_color,
+        linewidth=1.5,
+        linestyle="--",
+    )
+    ax.text(
+        0,
+        0,
+        1.02 * R_max,
+        "NV axis",
+        fontsize=10,
+        ha="center",
+        va="bottom",
+        color=nv_axis_color,
+    )
+
+    # ----- 5) Formatting / aesthetics -----
+    ax.set_xlabel("x (Å)")
+    ax.set_ylabel("y (Å)")
+    ax.set_zlabel("z (Å)")
+    ax.set_title(r"C$_{3v}$ orbit rings around the NV", fontsize=14)
+
+    # Equal aspect ratio
+    max_range = R_max
+    for axis in "xyz":
+        getattr(ax, f"set_{axis}lim")((-max_range, max_range))
+
+    # A slightly tilted view so rings are visible as circles
+    ax.view_init(elev=22, azim=40)
+
+    # Optional: fade grid for cleaner look
+    ax.grid(False)
+
+    plt.show()
+
+
 #### plot helper
-def mutliplicity_plots(site_stats_full):
+def multiplicity_plots(site_stats_full):
+    """
+    Make a set of diagnostic plots for site multiplicity, shell occupancy,
+    and the geometry of active 13C shells around the NV.
+    """
+
+    # ---------- 1) Per-site: distance vs n_matches, colored by kappa ----------
     ss = site_stats_full.copy()
+
     plt.figure(figsize=(6, 5))
     sc = plt.scatter(
         ss["distance_A"],
         ss["n_matches"],
         c=ss["kappa_mean"],
-        s=20,
+        s=15,
     )
     plt.xlabel("Distance to NV (Å)", fontsize=15)
     plt.ylabel("Number of NVs matched to this site", fontsize=15)
     cbar = plt.colorbar(sc)
-    cbar.set_label(r"$\langle \kappa \rangle$")
+    cbar.set_label(r"$\langle \kappa \rangle$", fontsize=13)
     plt.title("Site multiplicity vs. distance (per site)", fontsize=15)
 
-    ss = site_stats_full.copy()
-
+    # ---------- 2) Observed vs expected multiplicity (per-site) ----------
     plt.figure(figsize=(6, 6))
     plt.scatter(
         ss["E_n_matches"],
         ss["n_matches"],
-        s=20,
+        s=15,
         alpha=0.7,
     )
     max_val = max(ss["E_n_matches"].max(), ss["n_matches"].max()) * 1.1
@@ -360,13 +515,14 @@ def mutliplicity_plots(site_stats_full):
     plt.yscale("log")
     plt.title("Observed vs expected site multiplicity", fontsize=15)
 
-    # Build orbit-level stats
+    # ---------- 3) Orbit-level stats (group symmetry-equivalent sites) ----------
     orbit_stats = site_stats_full.groupby("orbit_id", as_index=False).agg(
         r_A=("distance_A", "mean"),
-        theta_deg=("theta_deg", "mean"),
+        theta_deg=("theta_deg", "mean"),  # purely geometric angle of the site position
         n_equiv_theory=("n_equiv_theory", "max"),
         n_equiv_occupied=("n_equiv_occupied", "max"),
         n_matches_equiv_total=("n_matches_equiv_total", "max"),
+        kappa_mean=("kappa_mean", "mean"),  # <--- NEW: orbit-averaged modulation depth
     )
 
     # Fraction of symmetry-equivalent sites that are actually occupied
@@ -374,50 +530,245 @@ def mutliplicity_plots(site_stats_full):
         orbit_stats["n_equiv_occupied"] / orbit_stats["n_equiv_theory"]
     )
 
+    # ---------- 4) Orbit-level occupancy: r vs total matched, colored by fraction ----------
     plt.figure(figsize=(6, 5))
     sc = plt.scatter(
         orbit_stats["r_A"],
         orbit_stats["n_matches_equiv_total"],
         c=orbit_stats["frac_occupied_sites"],
-        s=20,
+        s=15,
     )
     plt.xlabel("Radius of shell r (Å)", fontsize=15)
     plt.ylabel("Total NVs matched in this shell (all equivalent sites)", fontsize=13)
     cbar = plt.colorbar(sc)
     cbar.set_label("Fraction of symmetry-equivalent sites occupied", fontsize=13)
     plt.title("Orbit-level occupancy", fontsize=15)
+    
+    # ---------- 5) NEW: Polar “orbit map” around the NV ----------
+    # r = radius in Å, theta = angle to NV axis (deg -> rad)
+    theta_deg = orbit_stats["theta_deg"].values
+    theta_rad = np.deg2rad(theta_deg)
+    r_A = orbit_stats["r_A"].values
+    weight = orbit_stats["n_matches_equiv_total"].values  # or frac_occupied_sites
 
+    # --- Base scatter ---
+    fig = plt.figure(figsize=(8, 6))
+    ax = fig.add_subplot(111, projection="polar")
+
+    sc = ax.scatter(
+        theta_rad,
+        r_A,
+        c=weight,
+        s=15,
+    )
+    cbar = plt.colorbar(sc, ax=ax, pad=0.1)
+    cbar.set_label("Total NVs matched in orbit", fontsize=13)
+
+    ax.set_title("Topography of active $^{13}$C shells (orbit map)")
+    ax.set_rlabel_position(270)
+
+    # ---------- Shell / orbit highlighting ----------
+
+    # 1) Assign each orbit to a radial shell (rounded radius)
+    orbit_stats_shell = orbit_stats.copy()
+    orbit_stats_shell["r_shell"] = np.round(orbit_stats_shell["r_A"], 2)
+
+    for r_shell, grp in orbit_stats_shell.groupby("r_shell"):
+        # Mean radius for this shell (they'll all be ~r_shell anyway)
+        r = grp["r_A"].mean()
+
+        # Draw a dashed ring for this shell
+        phi = np.linspace(0, 2*np.pi, 400)
+        # Thicker & darker ring if the shell contains multiple distinct orbits
+        has_multiple_orbits = len(grp) > 1
+        lw = 1.5 if has_multiple_orbits else 0.5
+        alpha = 0.5 if has_multiple_orbits else 0.2
+
+        ax.plot(
+            phi,
+            np.full_like(phi, r),
+            linestyle="--",
+            linewidth=lw,
+            alpha=alpha,
+        )
+
+        # 2) Optional: annotate how many orbits are on this ring
+        # (place label at small polar angle so labels don't pile up)
+        # ax.text(
+        #     0.05,  # angle in rad
+        #     r,
+        #     f"×{len(grp)}",   # e.g. “×3” means 3 distinct orbits at this radius
+        #     fontsize=7,
+        #     ha="left",
+        #     va="center",
+        #     alpha=0.7,
+        # )
+
+    plt.show()
+    # ----- 1) Polar orbit map -----
+    theta_rad = np.deg2rad(orbit_stats["theta_deg"])
+    r_A = orbit_stats["r_A"]
+    weight = orbit_stats["n_matches_equiv_total"]  # or frac_occupied_sites
+
+    fig = plt.figure(figsize=(7, 6))
+    ax = fig.add_subplot(111, projection="polar")
+
+    sc = ax.scatter(
+        theta_rad,
+        r_A,
+        c=weight,
+        s=18,
+    )
+    cbar = plt.colorbar(sc, ax=ax, pad=0.1)
+    cbar.set_label("Total NVs matched in orbit", fontsize=12)
+
+    # Light rings for shells (no text)
+    r_rounded = np.round(r_A, 2)
+    for r in np.unique(r_rounded):
+        phi = np.linspace(0, 2*np.pi, 400)
+        ax.plot(
+            phi,
+            np.full_like(phi, r),
+            linestyle="--",
+            linewidth=0.4,
+            alpha=0.25,
+        )
+
+    ax.set_title("Topography of active $^{13}$C shells (orbit map)", fontsize=14)
+    ax.set_rlabel_position(135)
+    ax.tick_params(labelsize=10)
+
+    # ----- 2) 1D multiplicity vs radius plot -----
+    # Group orbits by (rounded) radius to count how many distinct orbits per shell
+    ring_counts = (
+        orbit_stats
+        .assign(r_rounded=np.round(orbit_stats["r_A"], 2))
+        .groupby("r_rounded", as_index=False)
+        .size()
+        .rename(columns={"size": "n_orbits"})
+        .sort_values("r_rounded")
+    )
+
+    fig, ax = plt.subplots(figsize=(8, 4))
+    markerline, stemlines, baseline = ax.stem(
+        ring_counts["r_rounded"],
+        ring_counts["n_orbits"],
+        basefmt=" ",      # no horizontal baseline
+        linefmt="-",      # default line style
+        markerfmt="o",    # circular markers
+    )
+    # Make it a bit lighter so it doesn’t dominate
+    plt.setp(stemlines, linewidth=1.0, alpha=0.7)
+    plt.setp(markerline, markersize=4)
+
+    ax.set_xlabel("Radius r (Å)", fontsize=12)
+    ax.set_ylabel("# distinct orbits at this radius", fontsize=12)
+    ax.set_title("Shell multiplicity (number of orbits per radius)", fontsize=13)
+    ax.tick_params(labelsize=10)
+    plt.show()
+
+    # Assume orbit_stats already has kappa_mean (0..1)
+    theta_eff_rad = np.arcsin(np.sqrt(orbit_stats["kappa_mean"].clip(0, 1)))
+    r_A = orbit_stats["r_A"].values
+    weight = orbit_stats["n_matches_equiv_total"].values  # or frac_occupied_sites
+
+    fig = plt.figure(figsize=(7, 6))
+    ax = fig.add_subplot(111, projection="polar")
+
+    sc = ax.scatter(
+        theta_eff_rad,
+        r_A,
+        c=weight,
+        s=20,
+    )
+
+    cbar = plt.colorbar(sc, ax=ax, pad=0.1)
+    cbar.set_label("Total NVs matched in orbit", fontsize=12)
+
+    ax.set_title(r"Active $^{13}$C orbits: radius vs ESEEM misalignment", fontsize=14)
+    ax.set_thetamin(0)
+    ax.set_thetamax(90)  # since theta_eff in [0, π/2]
+    ax.set_theta_zero_location("N")
+    ax.set_theta_direction(-1)
+
+    ax.set_rlabel_position(135)
+    ax.set_ylabel("Radius r (Å)", fontsize=12)  # symbolic in polar, but OK for caption
+    plt.show()
+    
+    
     plt.figure(figsize=(6, 5))
-    sc = plt.scatter(
-        orbit_stats["theta_deg"],
+    plt.scatter(
         orbit_stats["r_A"],
+        orbit_stats["kappa_mean"],
         c=orbit_stats["n_matches_equiv_total"],
         s=20,
     )
+    plt.xlabel("Radius r (Å)")
+    plt.ylabel(r"Mean ESEEM misalignment $\langle\kappa\rangle$")
+    cbar = plt.colorbar()
+    cbar.set_label("Total NVs matched in orbit")
+    plt.title(r"ESEEM misalignment vs distance")
+    plt.show()
+
+
+    # ---------- Cartesian version: r vs theta with a line through the points ----------
+    plt.figure(figsize=(6, 5))
+    # Scatter
+    sc = plt.scatter(
+        theta_deg,
+        r_A,
+        c=weight,
+        s=15,
+    )
+
     plt.xlabel(r"Angle to NV axis $\theta$ (deg)", fontsize=15)
     plt.ylabel("Radius r (Å)", fontsize=15)
     cbar = plt.colorbar(sc)
     cbar.set_label("Total NVs matched in orbit", fontsize=15)
-    plt.title("Topography of active 13C shells", fontsize=15)
+    plt.title("Topography of active $^{13}$C shells", fontsize=15)
+    plt.show()
+    
+    plt.figure(figsize=(6, 5))
+    plt.scatter(
+        orbit_stats["kappa_mean"],
+        orbit_stats["n_matches_equiv_total"],
+        s=20,
+        alpha=0.7,
+    )
+    plt.xlabel(r"Mean misalignment $\langle\kappa\rangle$")
+    plt.ylabel("Total NVs matched in orbit")
+    plt.title(r"Which orbits contribute most ESEEM signal?")
+    plt.tight_layout()
     plt.show()
 
+
+
+    # ---------- 6) Histogram: per-site multiplicities ----------
     plt.figure(figsize=(6, 5))
-    plt.hist(
-        site_stats_full["n_matches"],
-        bins=np.arange(1, site_stats_full["n_matches"].max() + 2) - 0.5,
-    )
+    bins = np.arange(1, site_stats_full["n_matches"].max() + 2) - 0.5
+    plt.hist(site_stats_full["n_matches"], bins=bins)
     plt.xlabel("# NVs matched to site", fontsize=15)
     plt.ylabel("Count of sites", fontsize=15)
     plt.title("Distribution of per-site multiplicities", fontsize=15)
-    plt.show()
 
+    # ---------- 7) Histogram: over-/under-representation (match_ratio) ----------
     plt.figure(figsize=(6, 5))
     plt.hist(site_stats_full["match_ratio"], bins=30)
     plt.xlabel("match_ratio = n_matches / E_n_matches", fontsize=15)
     plt.ylabel("Count of sites", fontsize=15)
     plt.title("Over-/under-representation of sites", fontsize=15)
-    plt.show()
+    
+    # Color by occupancy (what fraction of equivalent sites are actually filled)
+    plot_orbit_rings_3d(orbit_stats, color_key="frac_occupied_sites")
 
+    # Or: color by ESEEM misalignment, size by occupancy:
+    plot_orbit_rings_3d(
+        orbit_stats,
+        color_key="kappa_mean",
+        size_key="n_matches_equiv_total",
+    )
+
+    plt.show()
 
 if __name__ == "__main__":
 

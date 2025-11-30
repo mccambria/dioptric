@@ -63,7 +63,8 @@ class FitConfig:
     # ---------------- Model toggles ----------------
     use_fixed_revival: bool = False
     enable_extras: bool = True
-    fixed_rev_time_us: float = 37.6
+    # fixed_rev_time_us: float = 37.6
+    fixed_rev_time_us: float = 28.6
 
     # ---------------- Amplitude sweep ----------------
     amp_bound_grid: Tuple[Tuple[float, float], ...] = ((-0.6, 0.6),)
@@ -454,7 +455,8 @@ if __name__ == "__main__":
         norm_counts_ste=norm_counts_ste,
         total_evolution_times=total_evolution_times,
         file_stems=[file_stem],
-        default_rev_us=37.2,
+        # default_rev_us=37.2,
+        default_rev_us=28.6,
         nv_inds=nv_inds,
         cfg=cfg,
         make_plots=True,

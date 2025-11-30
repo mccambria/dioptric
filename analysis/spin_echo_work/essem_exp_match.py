@@ -22,7 +22,8 @@ from analysis.spin_echo_work.echo_plot_helpers import (
 from multiplicity_calculation import (
     find_c3v_orbits_from_nv2,
     build_site_multiplicity_with_theory,
-    mutliplicity_plots,
+    # mutliplicity_plots,
+    multiplicity_plots,
 )
 
 # ---------------------------------------------------------------------
@@ -30,7 +31,7 @@ from multiplicity_calculation import (
 # ---------------------------------------------------------------------
 
 HYPERFINE_PATH = "analysis/nv_hyperfine_coupling/nv-2.txt"
-CATALOG_JSON = "analysis/spin_echo_work/essem_freq_kappa_catalog_22A_updated.json"
+CATALOG_JSON = "analysis/spin_echo_work/essem_freq_kappa_catalog_22A_65G.json"
 
 # Optional: which orientations to consider when comparing theory/exp
 DEFAULT_ORIENTATIONS = [
@@ -2321,14 +2322,21 @@ if __name__ == "__main__":
     # fit_file_stem    = "2025_11_13-06_28_22-sample_204nv_s1-e85aa7"   # where popts & freqs live
     # fit_file_stem  = "2025_11_14-03_05_30-sample_204nv_s1-e85aa7" # 200 freqs freeze
     # fit_file_stem  = "2025_11_14-18_28_58-sample_204nv_s1-e85aa7" # 600 freqs freeze
-    fit_file_stem = (
-        "2025_11_17-09_49_42-sample_204nv_s1-fcc605"  # site encoded, all freqs (nysq band)
-    )
+    # fit_file_stem = (
+    #     "2025_11_17-09_49_42-sample_204nv_s1-fcc605"  # site encoded, all freqs (nysq band)
+    # )
     # fit_file_stem = (
     #     "2025_11_19-14_19_23-sample_204nv_s1-fcc605"  # site encoded, 1500 freqs pairs (1khz-6Mhz)
     # )
+    # counts_file_stem = (
+    #     "2025_11_11-01_15_45-johnson_204nv_s6-6d8f5c"  # merged dataset2+3 counts
+    # )
+    #### B field: 
+    fit_file_stem = (
+        "2025_11_29-04_52_18-sample_204nv_s1-d278ee"  # site encoded, all freqs (nysq band) 
+    )
     counts_file_stem = (
-        "2025_11_11-01_15_45-johnson_204nv_s6-6d8f5c"  # merged dataset2+3 counts
+        "2025_11_28-16_39_32-johnson_204nv_s6-902522"  # merged dataset2+3 counts
     )
 
     ## ---- 2) global theory-vs-exp matching (use FIT file) ----##
@@ -2398,17 +2406,17 @@ if __name__ == "__main__":
 
     # ---- 3) echo trace and corresponding matched site ----
     
-    nv_list = [0, 1, 2, 137]  # whatever NVs you care about
-    nv_list = nv_kept
-    figs = make_echo_plus_matched_site_plots_batch(
-        counts_file_stem=counts_file_stem,
-        fit_file_stem=fit_file_stem,
-        matches_enriched=matches_df,  # from pairwise_match_from_site_ids_kHz
-        hf_df=hf_df,                   # <- only use matched site coordinates
-        nv_labels=nv_list,
-        use_half_time_as_tau=False,
-    )
-    plt.show(block=True)
+    # nv_list = [0, 1, 2, 137]  # whatever NVs you care about
+    # nv_list = nv_kept
+    # figs = make_echo_plus_matched_site_plots_batch(
+    #     counts_file_stem=counts_file_stem,
+    #     fit_file_stem=fit_file_stem,
+    #     matches_enriched=matches_df,  # from pairwise_match_from_site_ids_kHz
+    #     hf_df=hf_df,                   # <- only use matched site coordinates
+    #     nv_labels=nv_list,
+    #     use_half_time_as_tau=False,
+    # )
+    # plt.show(block=True)
 
     ## ---- 4) simulations template set by experiment ----##
     exp_f = matches_df["f_minus_kHz"].to_numpy(float)
@@ -2445,7 +2453,7 @@ if __name__ == "__main__":
     #     z_sim_A,
     # )
 
-    sys.exit()
+    # sys.exit()
     # ---- 5) Multiplicity Analsysis by both theory and experiment ----##
     orbit_df = find_c3v_orbits_from_nv2(
         hyperfine_path=HYPERFINE_PATH,
@@ -2490,8 +2498,7 @@ if __name__ == "__main__":
     #     .to_string(index=False)
     # )
 
-
-    mutliplicity_plots(site_stats_full)
+    multiplicity_plots(site_stats_full)
 
     topN = 15  # or 20, etc.
     table_df = (
