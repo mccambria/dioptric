@@ -37,7 +37,6 @@ DEFAULT_ORIENTATIONS = [
     (1, -1, 1),
     (-1, 1, 1),
 ]
-
 # ---------------------------------------------------------------------
 # CATALOG + HYPERFINE LOADING
 # ---------------------------------------------------------------------
@@ -2134,37 +2133,40 @@ if __name__ == "__main__":
     # fit_file_stem  = "2025_11_14-03_05_30-sample_204nv_s1-e85aa7" # 200 freqs freeze
     # fit_file_stem  = "2025_11_14-18_28_58-sample_204nv_s1-e85aa7" # 600 freqs freeze
     # fit_file_stem  = "2025_11_17-09_49_42-sample_204nv_s1-fcc605" # site encoded, all freqs
-    fit_file_stem  = "2025_11_19-14_19_23-sample_204nv_s1-fcc605" # site 1khz-6Mhz
-    counts_file_stem = "2025_11_11-01_15_45-johnson_204nv_s6-6d8f5c"  # merged dataset2+3 counts
+    fit_file_stem = "2025_11_19-14_19_23-sample_204nv_s1-fcc605"  # site 1khz-6Mhz
+    counts_file_stem = (
+        "2025_11_11-01_15_45-johnson_204nv_s6-6d8f5c"  # merged dataset2+3 counts
+    )
 
     ## ---- 2) global theory-vs-exp matching (use FIT file) ----##
-    hf_df = load_hyperfine_table(distance_cutoff=15.0)   # or 15.0, etc.
+    hf_df = load_hyperfine_table(distance_cutoff=15.0)  # or 15.0, etc.
     data = dm.get_raw_data(file_stem=fit_file_stem)
     fit_summary = freqs_from_popts_exact(file_stem=fit_file_stem)
 
-    nv         = np.asarray(fit_summary["nv"], int)
-    T2_us      = np.asarray(fit_summary["T2_us"], float)
-    f0_kHz     = np.asarray(fit_summary["f0_kHz"], float)
-    f1_kHz     = np.asarray(fit_summary["f1_kHz"], float)
+    nv = np.asarray(fit_summary["nv"], int)
+    T2_us = np.asarray(fit_summary["T2_us"], float)
+    f0_kHz = np.asarray(fit_summary["f0_kHz"], float)
+    f1_kHz = np.asarray(fit_summary["f1_kHz"], float)
     A_pick_kHz = np.asarray(fit_summary["A_pick_kHz"], float)
-    chis       = np.asarray(fit_summary["chis"], float)
-    fit_fail   = np.asarray(fit_summary["fit_fail"], bool)
-    sT2_us     = np.asarray(fit_summary["sT2_us"], float)
-    sf0_kHz    = np.asarray(fit_summary["sf0_kHz"], float)
-    sf1_kHz    = np.asarray(fit_summary["sf1_kHz"], float)
-    sA_pick_kHz= np.asarray(fit_summary["sA_pick_kHz"], float)
+    chis = np.asarray(fit_summary["chis"], float)
+    fit_fail = np.asarray(fit_summary["fit_fail"], bool)
+    sT2_us = np.asarray(fit_summary["sT2_us"], float)
+    sf0_kHz = np.asarray(fit_summary["sf0_kHz"], float)
+    sf1_kHz = np.asarray(fit_summary["sf1_kHz"], float)
+    sA_pick_kHz = np.asarray(fit_summary["sA_pick_kHz"], float)
 
-    nv_oris  = np.asarray(fit_summary["orientations"], int)
+    nv_oris = np.asarray(fit_summary["orientations"], int)
     site_ids = np.asarray(fit_summary["site_ids"], int)
 
     mask = (
-        np.isfinite(f0_kHz) & np.isfinite(f1_kHz) &
-        (f0_kHz > 0) & (f1_kHz >= 0) &
-        (~np.array(fit_fail, dtype=bool))
+        np.isfinite(f0_kHz)
+        & np.isfinite(f1_kHz)
+        & (f0_kHz > 0)
+        & (f1_kHz >= 0)
+        & (~np.array(fit_fail, dtype=bool))
     )
 
-
-    nv_kept     = nv[mask]
+    nv_kept = nv[mask]
     f0_kept_kHz = f0_kHz[mask]
     f1_kept_kHz = f1_kHz[mask]
     site_ids_kept = site_ids[mask]
@@ -2177,15 +2179,17 @@ if __name__ == "__main__":
     if site_ids_kept.shape[0] != f0_kept_kHz.shape[0]:
         raise ValueError("site_ids must have same length as f0_kHz/f1_kHz.")
 
-    exp_pairs_with_labels = list(zip(
-        nv_kept.tolist(),
-        [(float(f0), float(f1)) for f0, f1 in zip(f0_kept_kHz, f1_kept_kHz)],
-    ))
+    exp_pairs_with_labels = list(
+        zip(
+            nv_kept.tolist(),
+            [(float(f0), float(f1)) for f0, f1 in zip(f0_kept_kHz, f1_kept_kHz)],
+        )
+    )
 
     catalog_records = load_catalog(CATALOG_JSON)
     matches_df = pairwise_match_from_site_ids_kHz(
-        nv_labels= nv_kept ,
-        f0_kHz= f0_kept_kHz,
+        nv_labels=nv_kept,
+        f0_kHz=f0_kept_kHz,
         f1_kHz=f1_kept_kHz,
         site_ids=site_ids_kept,
         nv_orientations=nv_oris_kept,
@@ -2202,7 +2206,9 @@ if __name__ == "__main__":
     exp_f = matches_df["f_minus_kHz"].to_numpy(float)
     f_band_kHz = (np.nanmin(exp_f), np.nanmax(exp_f))
 
-    catalog = load_catalog(CATALOG_JSON)  # list of dicts with f_minus_Hz, orientation, ...
+    catalog = load_catalog(
+        CATALOG_JSON
+    )  # list of dicts with f_minus_Hz, orientation, ...
     n_nv = matches_df["nv_label"].nunique()
 
     # # Load catalog (list of dicts) and simulate
@@ -2230,7 +2236,7 @@ if __name__ == "__main__":
     # )
 
     # band = f_band_kHz   # kHz
-    band = (10,1500)   # kHz
+    band = (10, 1500)  # kHz
 
     catalog = load_catalog(CATALOG_JSON)
 
@@ -2496,13 +2502,12 @@ if __name__ == "__main__":
     #     use_half_time_as_tau=False,
     # )
 
-
-    # orbit_df = find_c3v_orbits_from_nv2(
-    #     hyperfine_path=HYPERFINE_PATH,
-    #     r_max_A=22.0,      # or 15.0, to match your catalog cutoff
-    #     tol_r_A=0.02,      # 0.02 Å is usually fine
-    #     tol_dir=5e-2,      # ~0.05 in unit-vector norm (~few degrees)
-    # )
+    orbit_df = find_c3v_orbits_from_nv2(
+        hyperfine_path=HYPERFINE_PATH,
+        r_max_A=22.0,  # or 15.0, to match your catalog cutoff
+        tol_r_A=0.02,  # 0.02 Å is usually fine
+        tol_dir=5e-2,  # ~0.05 in unit-vector norm (~few degrees)
+    )
 
     # print(orbit_df.head(20))
 
@@ -2510,32 +2515,31 @@ if __name__ == "__main__":
     # print("\nMultiplicity histogram (theory):")
     # print(orbit_df["n_equiv_theory"].value_counts().sort_index())
 
-    # site_stats_full = build_site_multiplicity_with_theory(
-    #     matches_df=matches_df,
-    #     orbit_df=orbit_df,
-    #     p13=0.011,   # natural abundance
-    # )
+    site_stats_full = build_site_multiplicity_with_theory(
+        matches_df=matches_df,
+        orbit_df=orbit_df,
+        p13=0.011,  # natural abundance
+    )
 
-    # # Sort by experimental multiplicity (most repeated sites first)
-    # cols_to_show = [
-    #     "site_index",
-    #     "orientation",
-    #     "distance_A",
-    #     "x_A", "y_A", "z_A",
-    #     "n_matches",
-    #     "n_equiv_theory",
-    #     "p_shell",
-    #     "E_n_matches",
-    #     "match_ratio",
-    #     "kappa_mean",
-    # ]
+    # Sort by experimental multiplicity (most repeated sites first)
+    cols_to_show = [
+        "site_index",
+        "orientation",
+        "distance_A",
+        "x_A",
+        "y_A",
+        "z_A",
+        "n_matches",
+        "n_equiv_theory",
+        "p_shell",
+        "E_n_matches",
+        "match_ratio",
+        "kappa_mean",
+    ]
 
-    # print(
-    #     site_stats_full
-    #     .sort_values("n_matches", ascending=False)
-    #     [cols_to_show]
-    #     .head(15)
-    #     .to_string(index=False)
-    # )
+    print(
+        site_stats_full.sort_values("n_matches", ascending=False)[cols_to_show]
+        .head(15)
+        .to_string(index=False)
+    )
     kpl.show(block=True)
-
