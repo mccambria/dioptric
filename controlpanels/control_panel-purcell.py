@@ -748,6 +748,7 @@ def do_spin_echo(nv_list):
     # spin_echo.main(nv_list, num_steps, num_reps, num_runs, min_tau, max_tau)
     # spin_echo.main(nv_list, num_steps, num_reps, num_runs, taus=taus)
     for ind in range(6):
+        do_widefield_image_sample(nv_sig, 50)
         spin_echo.main(nv_list, num_steps, num_reps, num_runs, taus=taus)
 
 

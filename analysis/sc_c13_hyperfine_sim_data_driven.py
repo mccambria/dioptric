@@ -19,7 +19,8 @@ from pathlib import Path
 from utils import data_manager as dm
 from utils import kplotlib as kpl
 from dataclasses import dataclass
-
+from typing import Iterable, Tuple, List, Dict, Optional
+import json
 # ---------- Optional numba (falls back gracefully) ----------
 try:
     from numba import njit
@@ -419,18 +420,6 @@ def make_R_NV(nv_axis_crystal):
     return np.vstack([e1, e2, ez])
 
 
-# def compute_hyperfine_components(A_tensor, nv_axis_hat):
-#     """
-#     Return (A_par, A_perp) in Hz, defined w.r.t. the NV axis.
-#     """
-#     ez, e1, e2 = _orthonormal_basis_from_z(nv_axis_hat)  # ez = NV axis
-#     A_par = ez @ A_tensor @ ez
-#     Aperp1 = e1 @ A_tensor @ ez
-#     Aperp2 = e2 @ A_tensor @ ez
-#     A_perp = np.sqrt(Aperp1**2 + Aperp2**2)
-#     return A_par, A_perp
-
-
 def compute_hyperfine_components(A_tensor, dir_hat):
     """
     Return (A_par, A_perp) in Hz, defined w.r.t. the *direction* dir_hat
@@ -485,7 +474,7 @@ def Mk_tau(A_par_Hz, A_perp_Hz, omegaI_Hz, tau_s):
     kappa = (A_perp_Hz**2) / (w_m1**2 + 1e-30)
 
     # sin arguments need cycles → use π*freq*τ because sin^2(ω τ /2) with ω=2π f ⇒ sin^2(π f τ)
-    return 1.0 - kappa * (np.sin(np.pi * w_plus * tau_s) ** 2) * (
+    return 1.0 - 2 * kappa * (np.sin(np.pi * w_plus * tau_s) ** 2) * (
         np.sin(np.pi * w_minus * tau_s) ** 2
     )
 
@@ -519,6 +508,34 @@ def compute_echo_signal(
     return signal
 
 
+def Mk_from_catalog_rec(rec, tau_array_s):
+    """
+    ESEEM factor using (kappa, f0, f-1) from the catalog.
+
+    rec must have:
+      - 'kappa'
+      - 'fI_Hz'       ≡ f0
+      - 'omega_ms_Hz' ≡ f-1
+    All freqs in Hz, tau_array_s in seconds.
+    """
+
+    kappa = float(rec["kappa"])
+    f0 = float(rec["f0_Hz"])       # from fI_Hz
+    f_m1 = float(rec["f_m1_Hz"])   # from omega_ms_Hz
+    tau = np.asarray(tau_array_s, float)
+
+    return 1.0 - 2.0 * kappa * (
+        np.sin(np.pi * f0 * tau) ** 2
+    ) * (
+        np.sin(np.pi * f_m1 * tau) ** 2
+    )
+
+def compute_echo_signal_from_catalog(chosen_sites, tau_array_s):
+    signal = np.ones_like(tau_array_s, dtype=float)
+    for rec in chosen_sites:
+        signal *= Mk_from_catalog_rec(rec, tau_array_s)
+    return signal
+
 # =============================================================================
 # RNG helpers and selection
 # =============================================================================
@@ -543,6 +560,7 @@ def _choose_sites(rng, present_sites, num_spins, selection_mode="uniform"):
     if selection_mode == "top_Apar":
         order = np.argsort([-abs(s["Apar_Hz"]) for s in present_sites])
         idx = order[:num_spins]
+
     elif selection_mode == "distance_weighted":
         r = np.array([max(s["dist"], 1e-12) for s in present_sites], float)
         w = 1.0 / (r**3)
@@ -550,8 +568,27 @@ def _choose_sites(rng, present_sites, num_spins, selection_mode="uniform"):
         idx = np.sort(
             rng.choice(len(present_sites), size=num_spins, replace=False, p=w)
         )
+
+    # NEW: pick strongest catalog entries by κ
+    elif selection_mode == "top_kappa":
+        order = np.argsort(
+            [-abs(s.get("kappa", 0.0)) for s in present_sites]
+        )
+        idx = order[:num_spins]
+
+    # NEW: pick by first-order line weight (minus+plus combined)
+    elif selection_mode == "top_weight":
+        order = np.argsort(
+            [
+                -(s.get("line_w_minus", 0.0) + s.get("line_w_plus", 0.0))
+                for s in present_sites
+            ]
+        )
+        idx = order[:num_spins]
+
     else:  # uniform
         idx = np.sort(rng.choice(len(present_sites), size=num_spins, replace=False))
+
     return [present_sites[i] for i in idx]
 
 
@@ -639,7 +676,15 @@ def read_hyperfine_table_safe(path: str | Path) -> pd.DataFrame:
         df["index"] = df["index"].round().astype(int)
         return df
 
+# ---------- 0) IO ----------
+def load_catalog(path_json: str) -> List[Dict]:
+    """Load ESEEM catalog (with κ and f± in Hz) written by your builder."""
+    with open(path_json, "r") as f:
+        return json.load(f)
 
+
+def _ori_tuple(o) -> Tuple[int, int, int]:
+    return tuple(int(x) for x in o)
 # =============================================================================
 # Main simulator
 # =============================================================================
@@ -665,6 +710,9 @@ def simulate_random_spin_echo_average(
     fixed_site_ids=None,  # exact sites to include
     fixed_presence_mask=None,  # boolean mask of length N_sites
     reuse_present_mask=True,  # draw Bernoulli once and reuse (quenched)
+    # -------- NEW: catalog options --------
+    catalog_json_path=None,          # if not None, use catalog instead of hyperfine_path
+    nv_orientation=None,        # e.g. (1,1,1); if None, keep all orientations
 ):
     """
     Returns:
@@ -684,54 +732,156 @@ def simulate_random_spin_echo_average(
     rng_streams = _spawn_streams(rng_seed, max(1, num_realizations), run_salt=run_salt)
 
     # Rotate B into NV frame once
+    # Rotate B into NV frame once (still used by the hyperfine path)
     B_vec_NV = R_NV @ B_vec_T
     B_hat_NV = B_vec_NV / np.linalg.norm(B_vec_NV)
 
-    # Load hyperfine file (formatted .txt with header then table)
-    df = read_hyperfine_table_safe(hyperfine_path)
-    if distance_cutoff is not None:
-        df = df[df["distance"] < distance_cutoff]
+    # -------------------------------------------------------------------------
+    # A) Use raw hyperfine table (original behavior)
+    # -------------------------------------------------------------------------
+    if catalog_json_path is None:
+        df = read_hyperfine_table_safe(hyperfine_path)
+        if distance_cutoff is not None:
+            df = df[df["distance"] < distance_cutoff]
 
-    # Build site list in NV frame (positions rotated once; tensors rotated once)
-    sites = []
-    for _, row in df.iterrows():
-        A = (
-            np.array(
+        sites = []
+        for _, row in df.iterrows():
+            A = (
+                np.array(
+                    [
+                        [row.Axx, row.Axy, row.Axz],
+                        [row.Axy, row.Ayy, row.Ayz],
+                        [row.Axz, row.Ayz, row.Azz],
+                    ],
+                    float,
+                )
+                * 1e6
+            )  # MHz -> Hz
+            A_nv = R_NV @ A @ R_NV.T
+
+            # Apparent A_parallel for current B (NV frame)
+            A_par, _ = compute_hyperfine_components(A_nv, B_hat_NV)
+
+            # A∥ filter (existing logic)
+            A_par_kHz = (abs(A_par) if Ak_abs else A_par) / 1e3
+            keep_A = True
+            if Ak_min_kHz is not None:
+                keep_A &= A_par_kHz >= float(Ak_min_kHz)
+            if Ak_max_kHz is not None:
+                keep_A &= A_par_kHz <= float(Ak_max_kHz)
+            if not keep_A:
+                continue
+
+            pos_crystal = np.array([row.x, row.y, row.z], float)
+            pos_nv = R_NV @ pos_crystal
+            sites.append(
+                {
+                    "site_id": int(row["index"]),
+                    "A0": A_nv,
+                    "pos0": pos_nv,
+                    "dist": float(row.distance),
+                    "Apar_Hz": float(A_par),
+                }
+            )
+    # -------------------------------------------------------------------------
+    # B) Use pre-built ESEEM catalog (kappa, f± in lab frame)
+    # -------------------------------------------------------------------------
+    else:
+        # Use pre-built ESEEM catalog (JSON list of dicts)
+        catalog = load_catalog(catalog_json_path)
+
+        # Optional: filter on NV orientation, e.g. (1,1,1)
+        if nv_orientation is not None:
+            ori_tgt = _ori_tuple(nv_orientation)
+            catalog = [
+                rec
+                for rec in catalog
+                if _ori_tuple(rec["orientation"]) == ori_tgt
+            ]
+            print(f"After orientation filter {ori_tgt}: {len(catalog)} records")
+
+        # Optional: distance cutoff (Å)
+        if distance_cutoff is not None:
+            dmax = float(distance_cutoff)
+            catalog = [
+                rec for rec in catalog
+                if rec.get("distance_A", np.inf) < dmax
+            ]
+            print(f"After distance cutoff < {dmax} Å: {len(catalog)} records")
+
+        f_minus_all = np.array([rec["f_minus_Hz"] for rec in catalog]) / 1e3
+        f_plus_all  = np.array([rec["f_plus_Hz"]  for rec in catalog]) / 1e3
+        print(f"f_- range (kHz): {f_minus_all.min():.1f} – {f_minus_all.max():.1f}")
+        print(f"f_+ range (kHz): {f_plus_all.min():.1f} – {f_plus_all.max():.1f}")
+
+        sites = []
+        for rec in catalog:
+            # -------- frequency-band filter using f_- and f_+ (in kHz) --------
+            f_minus_Hz = float(rec["f_minus_Hz"])
+            f_plus_Hz  = float(rec["f_plus_Hz"])
+            f_minus_kHz = f_minus_Hz / 1e3
+            f_plus_kHz  = f_plus_Hz  / 1e3
+
+            keep_f = True
+            if (Ak_min_kHz is not None) or (Ak_max_kHz is not None):
+                # Require *both* f_- and f_+ to lie inside [Ak_min_kHz, Ak_max_kHz]
+                in_minus = True
+                in_plus  = True
+
+                if Ak_min_kHz is not None:
+                    lo = float(Ak_min_kHz)
+                    in_minus &= (f_minus_kHz >= lo)
+                    in_plus  &= (f_plus_kHz  >= lo)
+
+                if Ak_max_kHz is not None:
+                    hi = float(Ak_max_kHz)
+                    in_minus &= (f_minus_kHz <= hi)
+                    in_plus  &= (f_plus_kHz  <= hi)
+
+                # keep only if BOTH lines are inside the band
+                keep_f = in_minus and in_plus
+
+            if not keep_f:
+                continue
+
+            # ------------------------------------------------------------------
+            pos = np.array(
                 [
-                    [row.Axx, row.Axy, row.Axz],
-                    [row.Axy, row.Ayy, row.Ayz],
-                    [row.Axz, row.Ayz, row.Azz],
+                    rec.get("x_A", rec.get("x", np.nan)),
+                    rec.get("y_A", rec.get("y", np.nan)),
+                    rec.get("z_A", rec.get("z", np.nan)),
                 ],
                 float,
             )
-            * 1e6
-        )  # MHz -> Hz
-        A_nv = R_NV @ A @ R_NV.T
 
-        # Apparent A_parallel for current B (NV frame)
-        A_par, _ = compute_hyperfine_components(A_nv, B_hat_NV)
-        # --------- NEW A∥ filter (replaces: if np.abs(A_par) > Ak_cutoff_kHz * 1e3:) ---------
-        A_par_kHz = (abs(A_par) if Ak_abs else A_par) / 1e3
-        keep_A = True
-        if Ak_min_kHz is not None:
-            keep_A &= A_par_kHz >= float(Ak_min_kHz)
-        if Ak_max_kHz is not None:
-            keep_A &= A_par_kHz <= float(Ak_max_kHz)
-        if not keep_A:
-            continue
-        # ---------------------------------------------------------------------------
-        pos_crystal = np.array([row.x, row.y, row.z], float)
-        pos_nv = R_NV @ pos_crystal
-        sites.append(
-            {
-                "site_id": int(row["index"]),
-                "A0": A_nv,
-                "pos0": pos_nv,
-                "dist": float(row.distance),
-                "Apar_Hz": float(A_par),
-            }
-        )
+            sites.append(
+                {
+                    "site_id": int(rec["site_index"]),
+
+                    # keep keys expected by the rest of the code:
+                    "A0": None,                     # not used in catalog mode
+                    "pos0": pos,
+                    "dist": float(rec.get("distance_A", np.nan)),
+
+                    # catalog-specific fields for time-domain M(τ)
+                    "kappa": float(rec["kappa"]),
+                    "f0_Hz": float(rec["fI_Hz"]),          # f_0  (ms = 0 manifold)
+                    "f_m1_Hz": float(rec["omega_ms_Hz"]),  # f_-1 (ms = -1 manifold)
+
+                    # sum/diff lines and weights
+                    "f_minus_Hz": f_minus_Hz,
+                    "f_plus_Hz": f_plus_Hz,
+                    "line_w_minus": float(rec.get("line_w_minus", 0.0)),
+                    "line_w_plus": float(rec.get("line_w_plus", 0.0)),
+                }
+            )
+
+
     N_candidates = len(sites)
+    print(
+        f"Total candidate sites after catalog filters "
+        f"(orientation, distance, f_-/f_+ band): {N_candidates}"
+    )
     if N_candidates == 0:
         taus_us = taus_s * 1e6
         flat = np.ones_like(taus_us)
@@ -814,33 +964,52 @@ def simulate_random_spin_echo_average(
         picked_ids_per_realization.append(picked_ids)
         used_site_ids.update(picked_ids)
 
-        # Prepare tensors for microscopic echo
-        tensors = [s["A0"] for s in chosen_sites]
+        # Compute echo: either from raw hyperfine tensors or from catalog
+        if catalog_json_path is None:
+            tensors = [s["A0"] for s in chosen_sites]
+            signal = compute_echo_signal(tensors, taus_s, B_vec_NV)
+        else:
+            signal = compute_echo_signal_from_catalog(chosen_sites, taus_s)
 
-        # Compute echo
-
-        signal = compute_echo_signal(tensors, taus_s, B_vec_NV)
         all_signals.append(signal)
+
 
         # Annotation (first realization by default)
         if r == annotate_from_realization:
             anno_positions = (
                 np.array([s["pos0"] for s in chosen_sites]) if chosen_sites else None
             )
-            anno_site_info = [
-                {
-                    "site_id": s["site_id"],
-                    "Apar_kHz": float(
-                        abs(compute_hyperfine_components(s["A0"], B_hat_NV)[0]) / 1e3
-                    ),
-                    "r": float(np.linalg.norm(s["pos0"])),
-                }
-                for s in chosen_sites
-            ]
+
+            if catalog_json_path is None:
+                anno_site_info = [
+                    {
+                        "site_id": s["site_id"],
+                        "Apar_kHz": float(
+                            abs(compute_hyperfine_components(s["A0"], B_hat_NV)[0]) / 1e3
+                        ),
+                        "r": float(np.linalg.norm(s["pos0"])),
+                    }
+                    for s in chosen_sites
+                ]
+            else:
+                # use catalog data directly (A∥ + f_- / f_+)
+                anno_site_info = [
+                    {
+                        "site_id": s["site_id"],
+                        "Apar_kHz": float(abs(s.get("Apar_Hz", 0.0)) / 1e3),
+                        "r": float(np.linalg.norm(s["pos0"])),
+                        "f_minus_kHz": float(s.get("f_minus_Hz", 0.0) / 1e3),
+                        "f_plus_kHz":  float(s.get("f_plus_Hz",  0.0) / 1e3),
+                    }
+                    for s in chosen_sites
+                ]
+
+
             if fine_params is not None and "revival_time" in fine_params:
                 revT_us = float(fine_params["revival_time"])
                 kmax = int(np.ceil((taus_s.max() * 1e6) / revT_us))
                 anno_rev_times = np.arange(0, kmax + 1) * revT_us
+
 
     # Average (for single realization this is just identity)
     avg_signal = np.mean(all_signals, axis=0)
@@ -893,7 +1062,6 @@ def set_axes_equal_3d(ax):
     ax.set_ylim3d(ymid - max_range, ymid + max_range)
     ax.set_zlim3d(zmid - max_range, zmid + max_range)
 
-
 def _echo_summary_lines(taus_us, echo):
     if len(echo) == 0:
         return []
@@ -937,20 +1105,48 @@ def _fine_param_lines(fine_params):
     return out
 
 
+# def _site_table_lines(site_info, max_rows=8):
+#     if not site_info:
+#         return ["(no annotated realization)"]
+#     rows = sorted(site_info, key=lambda d: -abs(d.get("Apar_kHz", 0.0)))
+#     lines = ["site  |A∥|(kHz)   r", "------------------------"]
+#     for d in rows[:max_rows]:
+#         sid = d.get("site_id", "?")
+#         apar = float(abs(d.get("Apar_kHz", 0.0)))
+#         rmag = float(d.get("r", np.nan))
+#         lines.append(f"{sid:<5} {apar:>8.0f}  {rmag:>6.2f}")
+#     if len(rows) > max_rows:
+#         lines.append(f"... (+{len(rows)-max_rows} more)")
+#     return lines
+# 
 def _site_table_lines(site_info, max_rows=8):
-    if not site_info:
-        return ["(no annotated realization)"]
-    rows = sorted(site_info, key=lambda d: -abs(d.get("Apar_kHz", 0.0)))
-    lines = ["site  |A∥|(kHz)   r", "------------------------"]
-    for d in rows[:max_rows]:
-        sid = d.get("site_id", "?")
-        apar = float(abs(d.get("Apar_kHz", 0.0)))
-        rmag = float(d.get("r", np.nan))
-        lines.append(f"{sid:<5} {apar:>8.0f}  {rmag:>6.2f}")
-    if len(rows) > max_rows:
-        lines.append(f"... (+{len(rows)-max_rows} more)")
-    return lines
+    """
+    Build a small text table for the annotation box on the 3D panel.
 
+    For catalog mode we show:
+      site_id | r (Å) | f_- (kHz) | f_+ (kHz)
+    """
+    if not site_info:
+        return ["No sites selected"]
+
+    lines = []
+    lines.append("id   r(Å)   f_-(kHz)   f_+(kHz)")
+
+    n = min(len(site_info), max_rows)
+    for meta in site_info[:n]:
+        sid = meta.get("site_id", "?")
+        r   = float(meta.get("r", np.nan))
+        f_m = float(meta.get("f_minus_kHz", np.nan))
+        f_p = float(meta.get("f_plus_kHz",  np.nan))
+
+        lines.append(
+            f"{sid:3d}  {r:5.2f}   {f_m:8.1f}   {f_p:8.1f}"
+        )
+
+    if len(site_info) > max_rows:
+        lines.append(f"... (+{len(site_info) - max_rows} more)")
+
+    return lines
 
 def _env_only_curve(taus_us, fine_params):
     """baseline - envelope(τ); ignores COMB/MOD so you see pure T2 envelope."""
@@ -1004,6 +1200,7 @@ def plot_echo_with_sites(
     fine_params=None,
     units_label="(arb units)",
     nv_label=None,  # <-- NEW: show NV id
+    nv_orientation = None,
     sim_info=None,  # <-- NEW: dict with sim settings to display
     show_env=True,  # <-- NEW: overlay envelope-only
     show_env_times_comb=False,  # <-- NEW: optionally overlay envelope×comb
@@ -1017,7 +1214,9 @@ def plot_echo_with_sites(
     ax0.set_ylabel(f"Coherence {units_label}")
 
     # Title: include NV label if provided
-    if nv_label is not None:
+    if nv_label and nv_orientation is not None:
+        ax0.set_title(f"{title} — NV {nv_label} [{nv_orientation}]")
+    elif nv_label is not None and nv_orientation is None:
         ax0.set_title(f"{title} — NV {nv_label}")
     else:
         ax0.set_title(title)
@@ -1187,14 +1386,19 @@ def plot_echo_with_sites(
     info = aux.get("site_info", [])
     if pos is not None and len(pos) > 0:
         ax1.scatter(pos[:, 0], pos[:, 1], pos[:, 2], s=20, depthshade=True)
+        # for pnt, meta in zip(pos, info):
+        #     # sid = meta.get("site_id", "?")
+        #     # apar = meta.get("Apar_kHz", 0.0)
+        #     rmag = meta.get("r", np.nan)
+        #     # label = f"{sid}\n|A∥|={apar:.0f} kHz\nr={rmag:.2f}"
+        #     label = f"r={rmag:.2f}"
+        #     # label = f"{sid}"
+        #     ax1.text(pnt[0], pnt[1], pnt[2], label, fontsize=8, ha="left", va="bottom")
         for pnt, meta in zip(pos, info):
-            # sid = meta.get("site_id", "?")
-            # apar = meta.get("Apar_kHz", 0.0)
             rmag = meta.get("r", np.nan)
-            # label = f"{sid}\n|A∥|={apar:.0f} kHz\nr={rmag:.2f}"
-            label = f"r={rmag:.2f}"
-            # label = f"{sid}"
-            ax1.text(pnt[0], pnt[1], pnt[2], label, fontsize=8, ha="left", va="bottom")
+            f_m  = meta.get("f_minus_kHz", np.nan)
+            label = f"r={rmag:.2f}\nf_-={f_m:.0f} kHz"
+            ax1.text(pnt[0], pnt[1], pnt[2], label, fontsize=7, ha="left", va="bottom")
 
     ax1.scatter([0], [0], [0], s=70, marker="*", zorder=5)
     ax1.text(0, 0, 0, "NV", fontsize=9, ha="right", va="top")
@@ -1336,11 +1540,10 @@ def plot_Apar_both_projections(
 
 # --- 0) Pull your saved fit dict (as you outlined) ---
 # file_stem = "2025_11_02-19_55_17-johnson_204nv_s3-003c56"
-file_stem = "2025_11_11-06_23_14-johnson_204nv_s6-6d8f5c"
+file_stem = "2025_11_17-09_49_42-sample_204nv_s1-fcc605"
 fit = dm.get_raw_data(file_stem=file_stem)
 
 keys = fit["unified_keys"]
-
 
 def _asdict(p):
     d = {k: None for k in keys}
@@ -1350,8 +1553,8 @@ def _asdict(p):
         d[k] = v
     return d
 
-
 labels = list(map(int, fit["nv_labels"]))
+nv_orientations = [tuple(o) for o in fit["orientations"]]
 popts = fit["popts"]
 chis = fit.get("red_chi2", [None] * len(popts))
 
@@ -1470,14 +1673,19 @@ def synth_per_nv(
     nv_idx,
     R=8,
     tau_range_us=(0, 100),
+    f_range_kHz=(10, 1500),
     hyperfine_path="analysis/nv_hyperfine_coupling/nv-2.txt",
     abundance_fraction=0.011,
     distance_cutoff=8.0,
     num_spins=None,  # None = all present, else subsample
     selection_mode="top_Apar",  # or "uniform" / "distance_weighted"
     reuse_present_mask=True,
+    catalog_json_path=None,
 ):
     lbl = int(labels[nv_idx])
+    nv_ori = nv_orientations[nv_idx]
+    Ak_min_kHz,  Ak_max_kHz = f_range_kHz
+    
     salt = lbl & 0xFFFFFFFF
 
     traces = []  # list of echo arrays (length T)
@@ -1513,8 +1721,8 @@ def synth_per_nv(
             num_spins=num_spins,
             num_realizations=1,
             distance_cutoff=distance_cutoff,  # <= use the function arg
-            Ak_min_kHz=1,
-            Ak_max_kHz=6000,
+            Ak_min_kHz= Ak_min_kHz,
+            Ak_max_kHz= Ak_max_kHz,
             Ak_abs=True,
             R_NV=np.eye(3),
             fine_params=fine_params,
@@ -1529,6 +1737,9 @@ def synth_per_nv(
             fixed_site_ids=None,
             fixed_presence_mask=None,
             reuse_present_mask=reuse_present_mask,
+            # NEW: catalog usage
+            catalog_json_path=catalog_json_path,
+            nv_orientation=nv_ori,   #NV orientation for this NV
         )
 
         # (Optional) Noise model here if desired
@@ -1540,19 +1751,20 @@ def synth_per_nv(
             aux,
             fine_params=fine_params,
             nv_label=lbl,
+            nv_orientation=nv_ori,
             sim_info=dict(
                 selection_mode=selection_mode,
                 distance_cutoff=distance_cutoff,
-                Ak_min_kHz=0,
-                Ak_max_kHz=600,
+                Ak_min_kHz=Ak_min_kHz,
+                Ak_max_kHz=Ak_max_kHz,
                 Ak_abs=True,
                 reuse_present_mask=reuse_present_mask,
                 hyperfine_path=hyperfine_path,
                 abundance_fraction=abundance_fraction,
                 num_spins=("all" if num_spins is None else int(num_spins)),
             ),
-            show_env=True,
-            show_env_times_comb=True,
+            show_env=False,
+            show_env_times_comb=False ,
         )
         plt.show()
 
@@ -1614,22 +1826,22 @@ def _to_float_or_inf(x):
 def main():
     # ---- Config ----
     CONTRAST_MIN = 0.10  # keep NVs with fitted comb_contrast >= 0.10
-    CONTRAST_MAX = 1.00  # e.g., set to 0.80 if you also want an upper cap
+    CONTRAST_MAX = 2.00  # e.g., set to 0.80 if you also want an upper cap
 
     # ---- Columns ----
     cc = P[:, k_cc]  # comb_contrast from your fits (dimensionless, typically 0..1)
 
     # ---- Masks ----
     has_cc = np.isfinite(cc)
-    meets_cc = has_cc & (cc >= CONTRAST_MIN)
+    meets_cc = has_cc & (abs(cc) >= CONTRAST_MIN)
     if CONTRAST_MAX is not None and np.isfinite(CONTRAST_MAX):
-        meets_cc &= cc <= CONTRAST_MAX
+        meets_cc &= abs(cc) <= CONTRAST_MAX
 
     # ---- Combine with your existing filters ----
     # (example: T2_us threshold + chi2 ordering)
     T2_ms = P[:, k_T2]
     T2_us = T2_ms * 1000.0
-    T2_THRESHOLD_US = 200.0
+    T2_THRESHOLD_US = 2000.0
     fast_T2 = np.isfinite(T2_us) & (T2_us < T2_THRESHOLD_US)
 
     chi_vals = np.array([_to_float_or_inf(c) for c in chis], float)
@@ -1654,10 +1866,12 @@ def main():
             i,
             R=1,
             tau_range_us=(0, 100),
+            f_range_kHz=(10, 1500),
             hyperfine_path="analysis/nv_hyperfine_coupling/nv-2.txt",
-            num_spins=None,
-            selection_mode="uniform",
-            distance_cutoff=15.0,
+            num_spins=1,
+            selection_mode="top_kappa",
+            distance_cutoff=22.0,
+            catalog_json_path="analysis\spin_echo_work\essem_freq_kappa_catalog_22A_49G.json",
         )
         results.append(res)
     # You now have a list of per-NV aggregates in `results`.
