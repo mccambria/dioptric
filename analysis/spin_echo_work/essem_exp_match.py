@@ -944,7 +944,6 @@ def _build_site_info_from_match_and_catalog(row, hf_row, catalog_recs):
     ]
 
 
-
 def make_echo_plus_matched_site_plot(
     counts_file_stem: str,
     fit_file_stem: str,
@@ -1118,7 +1117,6 @@ def make_echo_plus_matched_site_plot(
     return fig
 
 
-
 def make_echo_plus_matched_site_plots_batch(
     counts_file_stem: str,
     fit_file_stem: str,
@@ -1149,7 +1147,6 @@ def make_echo_plus_matched_site_plots_batch(
         )
         figs.append(fig)
     return figs
-
 
 
 _fn_map = {
@@ -2318,22 +2315,24 @@ if __name__ == "__main__":
     kpl.init_kplotlib()
 
     # ---- 1) file stems ----
+    ### B_vec_G = np.array([-46.18287122, -17.44411563, -5.57779074], dtype=float)  ##49.68G
     # fit_file_stem    = "2025_11_13-06_28_22-sample_204nv_s1-e85aa7"   # where popts & freqs live
     # fit_file_stem  = "2025_11_14-03_05_30-sample_204nv_s1-e85aa7" # 200 freqs freeze
     # fit_file_stem  = "2025_11_14-18_28_58-sample_204nv_s1-e85aa7" # 600 freqs freeze
     # fit_file_stem = (
-    #     "2025_11_17-09_49_42-sample_204nv_s1-fcc605"  # site encoded, all freqs (nysq band)
-    # )
     # fit_file_stem = (
     #     "2025_11_19-14_19_23-sample_204nv_s1-fcc605"  # site encoded, 1500 freqs pairs (1khz-6Mhz)
+    # )
+    #### B field:
+    # fit_file_stem = (
+    #     "2025_11_17-09_49_42-sample_204nv_s1-fcc605"  # site encoded, all freqs (nysq band)
     # )
     # counts_file_stem = (
     #     "2025_11_11-01_15_45-johnson_204nv_s6-6d8f5c"  # merged dataset2+3 counts
     # )
-    #### B field:
-    fit_file_stem = (
-        "2025_11_29-04_52_18-sample_204nv_s1-d278ee"  # site encoded, all freqs (nysq band)
-    )
+
+    #### B_vec_G = np.array([-31.61263115, -56.58135644, -6.5512002 ], dtype=float) ##65.14G
+    fit_file_stem = "2025_11_29-04_52_18-sample_204nv_s1-d278ee"  # site encoded, all freqs (nysq band)
     counts_file_stem = (
         "2025_11_28-16_39_32-johnson_204nv_s6-902522"  # merged dataset2+3 counts
     )
@@ -2421,7 +2420,7 @@ if __name__ == "__main__":
     exp_f = matches_df["f_minus_kHz"].to_numpy(float)
     f_band_kHz = (np.nanmin(exp_f), np.nanmax(exp_f))
     n_nv = matches_df["nv_label"].nunique()
-    band = f_band_kHz   # kHz
+    band = f_band_kHz  # kHz
     # # band = (10, 1500)  # kHz
 
     # (
