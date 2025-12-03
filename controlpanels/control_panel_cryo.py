@@ -145,8 +145,8 @@ def do_image_sample_zoom(nv_sig):
     This function is compatable with piezo z-axis scan and will create a new figure for each z position.
 
     """
-    scan_range = 0.1 #TOO ZOOM FOR CURRENT SET-UP
-    num_steps = 45
+    scan_range = 0.02 #TOO ZOOM FOR CURRENT SET-UP
+    num_steps = 20
 
     image_sample.confocal_scan(
         nv_sig,
@@ -155,14 +155,25 @@ def do_image_sample_zoom(nv_sig):
         num_steps,
     )
 
+def do_optimize_z(nv_sig):
+    ret_vals = targeting.optimize(nv_sig, coords_key=CoordsKey.Z)
+    opti_coords = ret_vals[0]
+    return opti_coords
 
-def do_optimize(nv_sig):
-    targeting.main(
-        nv_sig,
-        set_to_opti_coords=False,
-        save_data=True,
-        plot_data=True,
-    )
+
+def do_optimize_pixel(nv_sig):
+    ret_vals = targeting.optimize(nv_sig, coords_key=CoordsKey.PIXEL)
+    opti_coords = ret_vals[0]
+    return opti_coords
+
+
+# def do_optimize(nv_sig):
+#     targeting.main(
+#         nv_sig,
+#         set_to_opti_coords=False,
+#         save_data=True,
+#         plot_data=True,
+#     )
 
 
 def do_stationary_count(nv_sig, disable_opt=None,):
@@ -669,11 +680,10 @@ if __name__ == "__main__":
     # current step rate: 30.0V XYZ
     # region Postion and Time Control
     sample_xy = [0.0,0.0] # piezo XY voltage input (1.0=1V) (not coordinates, relative)
-    coord_z = 0  # piezo z voltage (0 is the set midpoint, absolute) (negative is closer to smaple, move unit steps in sample; 37 is good surface focus with bs for Lovelace; 20 is good for dye)
-    # pixel_xy = [0.091, -0.11]  #bright spot nov 24 2025
-    # pixel_xy = [-0.117, 0.142] # NV canidate
-    # pixel_xy = [-0.044, 0.116]  # center of good NV image Nov 20+24 2025
-    pixel_xy = [0.0, 0.0]  # galvo ref
+    coord_z = 0  # piezo z voltage (negative is closer to smaple)
+    # pixel_xy = [0.0, 0.0]  # galvo ref 
+    pixel_xy = [-0.013, 0.003] #NV 5 center
+    #pixel_xy = [-0.025, -0.019] #NV 5 
 
 
     nv_sig = NVSig(
@@ -729,8 +739,9 @@ if __name__ == "__main__":
         # region Image sample     
 
         # do_z_scan_3d(nv_sig) # (xy gavo, z piezo)
-        do_image_sample(nv_sig)
-        # do_image_sample_zoom(nv_sig)
+        # do_image_sample(nv_sig)
+        for i in range(27):
+            do_image_sample_zoom(nv_sig)
         # do_image_sample_zoom(nv_sig, nv_minus_initialization=True)
         # Z AXIS PIEZO SCAN
         # z_range = np.linspace(0, 0, 30)
@@ -745,7 +756,11 @@ if __name__ == "__main__":
         # do_image_sample_zoom(nv_sig, nv_minus_initialization=True)
         #end region Image sample
 
+        # region Optimize
         # do_optimize(nv_sig)
+        # do_optimize_pixel(nv_sig)
+        # do_optimize_z(nv_sig)
+        # endregion Optimize
 
         # nv_sig["imaging_readout_dur"] = 5e7-
         

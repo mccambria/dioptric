@@ -189,7 +189,7 @@ config |= {
             VirtualLaserKey.IMAGING: {
                 # "physical_name": green_laser,
                 "physical_name": green_laser, #this is the laser that appears on the imaging APD scan
-                "duration": 12e6, #this duration appears on the imaging APD scan
+                "duration": 12e6, #this duration appears on the imaging APD scan, this value is overwritten?
             },
 
             VirtualLaserKey.SINGLET_DRIVE: {
@@ -229,7 +229,7 @@ config |= {
         "Positioners": {
             #update with correct piezos for cryo
             CoordsKey.SAMPLE: {
-                "physical_name": "pos_xyz_ATTO_piezos",
+                "physical_name": "pos_xyz_ATTO_piezos", #xy atto
                 "control_mode": PosControlMode.STREAM,
                 "delay": int(1e6),  # 5 ms for PIFOC xyz
                 "nm_per_unit": 1000,
@@ -238,7 +238,7 @@ config |= {
                 "opti_virtual_laser_key": VirtualLaserKey.IMAGING,
             },
             CoordsKey.Z: {
-                "physical_name": "pos_xyz_ATTO_piezos",
+                "physical_name": "pos_xyz_ATTO_piezos", #z atto
                 "control_mode": PosControlMode.STREAM,
                 "delay": int(1e6),  # 5 ms for PIFOC xyz
                 "nm_per_unit": 1000,

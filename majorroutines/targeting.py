@@ -182,7 +182,7 @@ def _read_counts_camera_step(nv_sig, axis_ind=None, scan_vals=None):
 
 
 def _get_opti_virtual_laser_key(positioner):
-    if positioner is CoordsKey.SAMPLE:
+    if positioner is CoordsKey.SAMPLE: #may need to make this z for cryo
         laser_key = VirtualLaserKey.IMAGING
     else:
         config = common.get_config_dict()
@@ -316,7 +316,7 @@ def _find_center_coords(nv_sig: NVSig, positioner, axis_ind, fig=None):
 
     # Perform Gaussian fit on the counts
     laser_key = _get_opti_virtual_laser_key(positioner)
-    positive_amplitude = laser_key != VirtualLaserKey.ION
+    positive_amplitude = laser_key != VirtualLaserKey.ION #Find out if ok this is imaging, or add ion
     opti_coord = _fit_gaussian(scan_vals, counts, axis_ind, positive_amplitude, fig)
 
     return opti_coord, scan_vals, counts
