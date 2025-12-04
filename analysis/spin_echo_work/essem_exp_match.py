@@ -2453,7 +2453,7 @@ if __name__ == "__main__":
     #     z_sim_A,
     # )
 
-    # sys.exit()
+    sys.exit()
     # ---- 5) Multiplicity Analsysis by both theory and experiment ----##
     orbit_df = find_c3v_orbits_from_nv2(
         hyperfine_path=HYPERFINE_PATH,
