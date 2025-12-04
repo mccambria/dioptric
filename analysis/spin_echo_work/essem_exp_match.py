@@ -40,7 +40,6 @@ DEFAULT_ORIENTATIONS = [
     (1, -1, 1),
     (-1, 1, 1),
 ]
-
 # ---------------------------------------------------------------------
 # CATALOG + HYPERFINE LOADING
 # ---------------------------------------------------------------------
@@ -945,7 +944,6 @@ def _build_site_info_from_match_and_catalog(row, hf_row, catalog_recs):
     ]
 
 
-
 def make_echo_plus_matched_site_plot(
     counts_file_stem: str,
     fit_file_stem: str,
@@ -1119,7 +1117,6 @@ def make_echo_plus_matched_site_plot(
     return fig
 
 
-
 def make_echo_plus_matched_site_plots_batch(
     counts_file_stem: str,
     fit_file_stem: str,
@@ -1150,7 +1147,6 @@ def make_echo_plus_matched_site_plots_batch(
         )
         figs.append(fig)
     return figs
-
 
 
 _fn_map = {
@@ -2319,6 +2315,7 @@ if __name__ == "__main__":
     kpl.init_kplotlib()
 
     # ---- 1) file stems ----
+    ### B_vec_G = np.array([-46.18287122, -17.44411563, -5.57779074], dtype=float)  ##49.68G
     # fit_file_stem    = "2025_11_13-06_28_22-sample_204nv_s1-e85aa7"   # where popts & freqs live
     # fit_file_stem  = "2025_11_14-03_05_30-sample_204nv_s1-e85aa7" # 200 freqs freeze
     # fit_file_stem  = "2025_11_14-18_28_58-sample_204nv_s1-e85aa7" # 600 freqs freeze
@@ -2331,9 +2328,9 @@ if __name__ == "__main__":
     counts_file_stem = (
         "2025_11_11-01_15_45-johnson_204nv_s6-6d8f5c"  # merged dataset2+3 counts
     )
-    #### B field: 
+    #### B field:
     # fit_file_stem = (
-    #     "2025_11_30-04_35_04-sample_204nv_s1-d278ee"  # site encoded, all freqs (nysq band) 
+    #     "2025_11_30-04_35_04-sample_204nv_s1-d278ee"  # site encoded, all freqs (nysq band)
     # )
     # counts_file_stem = (
     #     "2025_11_28-16_39_32-johnson_204nv_s6-902522"  # merged dataset2+3 counts
@@ -2405,7 +2402,9 @@ if __name__ == "__main__":
     site_stats = analyze_matched_c13_sites(matches_df, title_prefix="204 NVs")
 
     # ---- 3) echo trace and corresponding matched site ----
-    
+
+    # nv_list = [0, 1, 2, 137]  # whatever NVs you care about
+
     nv_list = [0, 1, 2, 137, 196]  # whatever NVs you care about
     # nv_list = nv_kept
     figs = make_echo_plus_matched_site_plots_batch(
@@ -2417,12 +2416,12 @@ if __name__ == "__main__":
         use_half_time_as_tau=False,
     )
     plt.show(block=True)
-    
+
     ## ---- 4) simulations template set by experiment ----##
     exp_f = matches_df["f_minus_kHz"].to_numpy(float)
     f_band_kHz = (np.nanmin(exp_f), np.nanmax(exp_f))
     n_nv = matches_df["nv_label"].nunique()
-    band = f_band_kHz   # kHz
+    band = f_band_kHz  # kHz
     # # band = (10, 1500)  # kHz
 
     # (
