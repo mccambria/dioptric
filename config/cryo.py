@@ -72,12 +72,11 @@ config |= {
     ###
     "apd_indices": [0],  # APD indices for the tagger
     "count_format": CountFormat.RAW,
-    "collection_mode": CollectionMode.CAMERA,
-    "collection_mode_counter": CollectionMode.COUNTER,  # remove this line when set up in new computer
+    "collection_mode": CollectionMode.COUNTER,  # remove this line when set up in new computer
     # "charge_state_estimation_mode": ChargeStateEstimationMode.MLE,
     "charge_state_estimation_mode": ChargeStateEstimationMode.THRESHOLDING,
     "windows_repo_path": home / "GitHub/dioptric",
-    "disable_z_drift_compensation": False,
+    "disable_z_drift_compensation":True,
     ###
     # Common durations are in ns
     "CommonDurations": {
@@ -226,6 +225,7 @@ config |= {
     },
     ###
     "Positioning": {
+        "drift_xy_coords_key": CoordsKey.PIXEL,
         "Positioners": {
             #update with correct piezos for cryo
             CoordsKey.SAMPLE: {
@@ -251,7 +251,7 @@ config |= {
                 "control_mode": PosControlMode.STREAM,
                 "delay": int(400e3),  # 400 us for galvo
                 "nm_per_unit": 1000,
-                "optimize_range": 0.1,
+                "optimize_range": 0.015,
                 "units": "Voltage (V)",
                 "opti_virtual_laser_key": VirtualLaserKey.IMAGING,
             },
