@@ -156,7 +156,7 @@ def do_image_sample_zoom(nv_sig):
         num_steps,
     )
 
-def do_optimize_z(nv_sig, num_steps=40, step_size=1):
+def do_optimize_z(nv_sig, num_steps=40, step_size=1, scan_direction="up"):
     """
     Optimize Z position by scanning and fitting a Gaussian to find the focus peak.
 
@@ -172,6 +172,9 @@ def do_optimize_z(nv_sig, num_steps=40, step_size=1):
         Total number of Z positions to scan. Default: 40
     step_size : int, optional
         Step size in piezo units between positions. Default: 1
+    scan_direction : str, optional
+        Direction to scan: "up" starts low and scans upward (away from sample),
+        "down" starts high and scans downward (toward sample). Default: "up"
 
     Returns
     -------
@@ -185,6 +188,7 @@ def do_optimize_z(nv_sig, num_steps=40, step_size=1):
         num_averages=1,
         move_to_optimal=False,
         save_data=True,
+        scan_direction=scan_direction,
     )
 
     opti_z = results.get("opti_z")
