@@ -156,7 +156,7 @@ def do_image_sample_zoom(nv_sig):
         num_steps,
     )
 
-def do_optimize_z(nv_sig, num_steps=40, step_size=2):
+def do_optimize_z(nv_sig, num_steps=40, step_size=1):
     """
     Optimize Z position by scanning and fitting a Gaussian to find the focus peak.
 
@@ -171,7 +171,7 @@ def do_optimize_z(nv_sig, num_steps=40, step_size=2):
     num_steps : int, optional
         Total number of Z positions to scan. Default: 40
     step_size : int, optional
-        Step size in piezo units between positions. Default: 2
+        Step size in piezo units between positions. Default: 1
 
     Returns
     -------
@@ -182,8 +182,8 @@ def do_optimize_z(nv_sig, num_steps=40, step_size=2):
         nv_sig,
         num_steps=num_steps,
         step_size=step_size,
-        num_averages=3,
-        move_to_optimal=True,
+        num_averages=1,
+        move_to_optimal=False,
         save_data=True,
     )
 
@@ -775,7 +775,7 @@ if __name__ == "__main__":
 
         #region 1D scan + Calibrate
         #do_calibrate_z_axis(nv_sig)
-        do_z_scan_1d(nv_sig, step_size=1, num_steps=5)
+        # do_z_scan_1d(nv_sig, step_size=1, num_steps=5)
 
 
         # Manually set Z reference to current position
@@ -818,7 +818,7 @@ if __name__ == "__main__":
         # region Optimize
         # do_optimize(nv_sig)
         # do_optimize_pixel(nv_sig)
-        # do_optimize_z(nv_sig)
+        do_optimize_z(nv_sig)
         # do_optimize_green(nv_sig)
         # do_compensate_for_drift(nv_sig)
         # endregion Optimize
