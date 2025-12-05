@@ -18,6 +18,7 @@ Created on Oct 7th, 2025
 import copy
 import time
 import labrad
+import sys
 import numpy as np
 from utils import positioning as pos
 from utils import kplotlib as kpl
@@ -145,8 +146,8 @@ def do_image_sample_zoom(nv_sig):
     This function is compatable with piezo z-axis scan and will create a new figure for each z position.
 
     """
-    scan_range = 0.02 #TOO ZOOM FOR CURRENT SET-UP
-    num_steps = 20
+    scan_range = 0.15 
+    num_steps = 45
 
     image_sample.confocal_scan(
         nv_sig,
@@ -160,12 +161,25 @@ def do_optimize_z(nv_sig):
     opti_coords = ret_vals[0]
     return opti_coords
 
+def do_optimize_green(nv_sig):
+    # Use whatever coords key the imaging laser uses (PIXEL in cryo, AOD in widefield)
+    coords_key = pos.get_laser_positioner(VirtualLaserKey.IMAGING)
+    opti_coords, final_counts = targeting.optimize(nv_sig, coords_key=coords_key)
 
-def do_optimize_pixel(nv_sig):
-    ret_vals = targeting.optimize(nv_sig, coords_key=CoordsKey.PIXEL)
-    opti_coords = ret_vals[0]
+    if getattr(nv_sig, "expected_counts", None) is None:
+        nv_sig.expected_counts = final_counts
+
     return opti_coords
 
+
+# def do_optimize_pixel(nv_sig):
+#     ret_vals = targeting.optimize(nv_sig, coords_key=CoordsKey.PIXEL)
+#     opti_coords = ret_vals[0]
+#     return opti_coords
+
+
+def do_compensate_for_drift(nv_sig):
+    targeting.compensate_for_drift(nv_sig, no_crash=True)
 
 # def do_optimize(nv_sig):
 #     targeting.main(
@@ -681,9 +695,9 @@ if __name__ == "__main__":
     # region Postion and Time Control
     sample_xy = [0.0,0.0] # piezo XY voltage input (1.0=1V) (not coordinates, relative)
     coord_z = 0  # piezo z voltage (negative is closer to smaple)
-    # pixel_xy = [0.0, 0.0]  # galvo ref 
-    pixel_xy = [-0.013, 0.003] #NV 5 center
-    #pixel_xy = [-0.025, -0.019] #NV 5 
+    pixel_xy = [0.084, -0.075]  # galvo ref e
+    # pixel_xy = [-0.001, -0.012] #NV 5 center
+    # pixel_xy = [0.036, 0.063] #NV 7 canidate 
 
 
     nv_sig = NVSig(
@@ -703,6 +717,13 @@ if __name__ == "__main__":
             VirtualLaserKey.SINGLET_DRIVE: 300,  # placeholder
         },
     )
+
+    nv_sig.expected_counts = 100 # raw counts
+    
+    # cxn = labrad.connect()
+    # s = cxn.pos_xy_THOR_gvs212
+    # print(sorted(s.settings.keys()))
+    # sys.exit()
     # endregion
     ### Routines to execute
 
@@ -717,7 +738,7 @@ if __name__ == "__main__":
 
         #region 1D scan + Calibrate
         #do_calibrate_z_axis(nv_sig)
-        # do_z_scan_1d(nv_sig, step_size=1)
+        do_z_scan_1d(nv_sig, step_size=1, num_steps=5)
 
 
         # Manually set Z reference to current position
@@ -740,8 +761,9 @@ if __name__ == "__main__":
 
         # do_z_scan_3d(nv_sig) # (xy gavo, z piezo)
         # do_image_sample(nv_sig)
-        for i in range(27):
-            do_image_sample_zoom(nv_sig)
+        # do_image_sample_zoom(nv_sig)
+        # for i in range(27):
+        #     do_image_sample_zoom(nv_sig)
         # do_image_sample_zoom(nv_sig, nv_minus_initialization=True)
         # Z AXIS PIEZO SCAN
         # z_range = np.linspace(0, 0, 30)
@@ -760,8 +782,9 @@ if __name__ == "__main__":
         # do_optimize(nv_sig)
         # do_optimize_pixel(nv_sig)
         # do_optimize_z(nv_sig)
+        # do_optimize_green(nv_sig)
+        # do_compensate_for_drift(nv_sig)
         # endregion Optimize
-
         # nv_sig["imaging_readout_dur"] = 5e7-
         
         #Hahn control panel image sample
