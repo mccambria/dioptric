@@ -789,9 +789,6 @@ def optimize_z(
 
     # Move half the total range in opposite direction to center the scan
     half_steps = num_steps // 2
-    print(f"\n{'='*50}")
-    print("Z OPTIMIZATION")
-    print(f"{'='*50}")
     print(f"Initial Z position: {initial_z} steps")
     print(f"Scan range: {num_steps} steps of {step_size} units")
     print(f"Scan direction: {'low→high (up)' if scan_up else 'high→low (down)'}")
@@ -898,32 +895,102 @@ def optimize_z(
         ax.axvline(opti_z, color="g", linestyle="--", label=f"Max Z={opti_z:.1f}")
         ax.legend()
 
-    ### Move to optimal position
+    ### Move to optimal position using count-based feedback
     opti_counts = None
     if opti_z is not None and move_to_optimal:
-        # Calculate steps needed to move from current position to optimal
-        current_pos = z_positions[-1] if z_positions else initial_z
-        steps_to_optimal = int(round(opti_z - current_pos))
-        print(f"\nMoving to optimal Z ({steps_to_optimal:+d} steps from current)...")
-        piezo.move_z_steps(steps_to_optimal)
-        final_z = piezo.get_z_position()
-        print(f"Now at Z = {final_z} steps")
+        # Get target counts from the Gaussian fit (peak value)
+        if fit_params is not None:
+            target_counts = fit_params["amplitude"] + fit_params["offset"]
+        else:
+            # If fit failed, use max observed counts
+            target_counts = np.max(counts_array)
 
-        # Measure counts at optimal position
+        # Tolerance: consider "at optimal" when within this fraction of target
+        count_tolerance = 0.95  # Within 95% of peak counts
+        target_threshold = target_counts * count_tolerance
+
+        # Determine direction to move (toward optimal position)
+        current_pos = z_positions[-1] if z_positions else initial_z
+        move_direction = 1 if opti_z > current_pos else -1
+
+        print(f"\nMoving to optimal position using count feedback...")
+        print(f"  Target counts: {target_counts:.0f} (threshold: {target_threshold:.0f})")
+        print(f"  Current position: {current_pos}, Optimal estimate: {opti_z:.1f}")
+        print(f"  Moving {'up' if move_direction > 0 else 'down'}...")
+
+        # Start counter for feedback loop
         counter.start_tag_stream()
-        pulse_gen.stream_start(1)
-        raw = counter.read_counter_simple(1)
+
+        max_approach_steps = abs(int(round(opti_z - current_pos))) * 3  # Allow 3x estimated distance
+        approach_step = 0
+        found_optimal = False
+
+        # Helper to measure counts
+        def measure_counts(n_samples=3):
+            samples = []
+            for _ in range(n_samples):
+                pulse_gen.stream_start(1)
+                raw = counter.read_counter_simple(1)
+                if raw:
+                    samples.append(int(raw[0]))
+            return np.mean(samples) if samples else 0
+
+        # Measure current counts before moving
+        current_counts = measure_counts()
+        print(f"  Starting counts: {current_counts:.0f}")
+
+        # Step toward optimal, checking counts each step
+        while approach_step < max_approach_steps and not found_optimal:
+            if tb.safe_stop():
+                print("  [STOPPED] User interrupt during approach")
+                break
+
+            # Move one step toward optimal
+            piezo.move_z_steps(move_direction * step_size)
+            time.sleep(0.01)
+            approach_step += 1
+
+            # Measure counts at new position
+            current_counts = measure_counts()
+
+            # Check if we've reached target
+            if current_counts >= target_threshold:
+                found_optimal = True
+                print(f"  Step {approach_step}: counts={current_counts:.0f} >= threshold - FOUND!")
+            elif approach_step % 5 == 0:
+                print(f"  Step {approach_step}: counts={current_counts:.0f}")
+
+            # Safety: if counts are decreasing significantly, we may have overshot
+            # Check if we've passed the peak (counts dropping after being high)
+            if current_counts < target_threshold * 0.8 and approach_step > 5:
+                # Counts dropped - might have overshot, try reversing
+                print(f"  Counts dropped to {current_counts:.0f}, may have overshot")
+                # Try stepping back
+                for _ in range(3):
+                    piezo.move_z_steps(-move_direction * step_size)
+                    time.sleep(0.01)
+                current_counts = measure_counts()
+                if current_counts >= target_threshold:
+                    found_optimal = True
+                    print(f"  After reversing: counts={current_counts:.0f} - FOUND!")
+                break
+
         counter.stop_tag_stream()
-        opti_counts = int(raw[0]) if raw else None
-        if opti_counts:
-            print(f"Counts at optimal position: {opti_counts}")
+
+        final_z = piezo.get_z_position()
+        opti_counts = int(current_counts)
+
+        if found_optimal:
+            print(f"  Optimal position found at Z={final_z}")
+            print(f"  Final counts: {opti_counts}")
+        else:
+            print(f"  Could not reach target counts after {approach_step} steps")
+            print(f"  Final position: Z={final_z}, counts={opti_counts}")
 
     plt.ioff()
     tb.reset_cfm()
 
-    print(f"\n{'='*50}")
-    print("Z OPTIMIZATION COMPLETE")
-    print(f"{'='*50}\n")
+    print("COMPLETE")
 
     ### Save data
     results = {
