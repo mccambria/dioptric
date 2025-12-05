@@ -156,10 +156,47 @@ def do_image_sample_zoom(nv_sig):
         num_steps,
     )
 
-def do_optimize_z(nv_sig):
-    ret_vals = targeting.optimize(nv_sig, coords_key=CoordsKey.Z)
-    opti_coords = ret_vals[0]
-    return opti_coords
+def do_optimize_z(nv_sig, num_steps=40, step_size=2):
+    """
+    Optimize Z position by scanning and fitting a Gaussian to find the focus peak.
+
+    Uses the step-based scanning pattern from calibrate_z_axis.optimize_z which
+    is compatible with the Attocube piezo (unlike targeting.optimize which requires
+    streaming support).
+
+    Parameters
+    ----------
+    nv_sig : NVSig
+        NV center parameters (pulse durations, laser settings)
+    num_steps : int, optional
+        Total number of Z positions to scan. Default: 40
+    step_size : int, optional
+        Step size in piezo units between positions. Default: 2
+
+    Returns
+    -------
+    float or None
+        Optimal Z position (piezo steps), or None if optimization failed
+    """
+    results = calibrate_z_axis.optimize_z(
+        nv_sig,
+        num_steps=num_steps,
+        step_size=step_size,
+        num_averages=3,
+        move_to_optimal=True,
+        save_data=True,
+    )
+
+    opti_z = results.get("opti_z")
+    opti_counts = results.get("opti_counts")
+    fit_success = results.get("fit_success", False)
+
+    if fit_success:
+        print(f"Z optimization succeeded: Z={opti_z:.1f}, Counts={opti_counts}")
+    else:
+        print(f"Z optimization: Gaussian fit failed, using max position: Z={opti_z}")
+
+    return opti_z
 
 def do_optimize_green(nv_sig):
     # Use whatever coords key the imaging laser uses (PIXEL in cryo, AOD in widefield)

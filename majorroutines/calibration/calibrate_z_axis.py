@@ -680,6 +680,274 @@ def main(nv_sig, **kwargs):
     return raw_data
 
 
+def optimize_z(
+    nv_sig: NVSig,
+    num_steps: int = 40,
+    step_size: int = 2,
+    num_averages: int = 3,
+    move_to_optimal: bool = True,
+    save_data: bool = True,
+):
+    """
+    Optimize Z position by scanning and fitting a Gaussian to find the focus peak.
+
+    This function scans through Z positions centered around the current position,
+    collects photon counts at each position, fits a Gaussian to find the optimal
+    Z coordinate, and optionally moves to that position.
+
+    Uses the same hardware pattern as z_scan_1d.py (piezo stepping + counter readout).
+
+    Parameters
+    ----------
+    nv_sig : NVSig
+        NV center parameters (pulse durations, laser settings)
+    num_steps : int, optional
+        Total number of Z positions to scan. Default: 40
+        Scans half below and half above current position.
+    step_size : int, optional
+        Step size in piezo units between positions. Default: 2
+    num_averages : int, optional
+        Number of photon count samples to average at each position. Default: 3
+        Higher values improve SNR but slow down the scan.
+    move_to_optimal : bool, optional
+        Whether to move the piezo to the optimal Z position after fitting. Default: True
+    save_data : bool, optional
+        Whether to save scan data and plot. Default: True
+
+    Returns
+    -------
+    dict
+        Results containing:
+        - opti_z: Optimal Z position (piezo steps), or None if fit failed
+        - opti_counts: Photon counts at optimal position
+        - fit_params: Gaussian fit parameters (amplitude, center, sigma, offset)
+        - z_positions: Array of scanned Z positions
+        - counts: Array of photon counts at each position
+        - fit_success: Whether the Gaussian fit succeeded
+    """
+    from scipy.optimize import curve_fit
+
+    ### Setup
+    config = common.get_config_dict()
+
+    # Get servers - same pattern as z_scan_1d
+    piezo = pos.get_positioner_server(CoordsKey.Z)
+    counter = tb.get_server_counter()
+    pulse_gen = tb.get_server_pulse_streamer()
+
+    # Setup laser for imaging
+    laser_dict = tb.get_virtual_laser_dict(VirtualLaserKey.IMAGING)
+    readout_ns = int(
+        nv_sig.pulse_durations.get(VirtualLaserKey.IMAGING, int(laser_dict["duration"]))
+    )
+    readout_s = readout_ns * 1e-9
+    laser_name = laser_dict["physical_name"]
+
+    tb.set_filter(nv_sig, VirtualLaserKey.IMAGING)
+    laser_power = tb.set_laser_power(nv_sig, VirtualLaserKey.IMAGING)
+
+    # Data storage
+    z_positions = []
+    counts_list = []
+
+    ### Setup figure
+    kpl.init_kplotlib()
+    fig, ax = plt.subplots(figsize=(8, 5))
+    ax.set_xlabel("Z Position (steps)")
+    ax.set_ylabel("Counts")
+    ax.set_title("Z Optimization Scan")
+    (line,) = ax.plot([], [], "b.-", markersize=6)
+    ax.grid(True, alpha=0.3)
+    plt.ion()
+
+    tb.reset_cfm()
+    tb.init_safe_stop()
+
+    # Load pulse sequence once
+    seq_file = "simple_readout.py"
+    delay_ns = 0
+    pulse_gen.stream_load(
+        seq_file,
+        tb.encode_seq_args([delay_ns, readout_ns, laser_name, laser_power]),
+    )
+
+    # Start counter stream
+    counter.start_tag_stream()
+
+    # Get initial position
+    initial_z = piezo.get_z_position()
+
+    # Move half the total range in negative direction (toward sample)
+    # so we scan centered around the current position
+    half_steps = num_steps // 2
+    print(f"\n{'='*50}")
+    print("Z OPTIMIZATION")
+    print(f"{'='*50}")
+    print(f"Initial Z position: {initial_z} steps")
+    print(f"Scan range: {num_steps} steps of {step_size} units")
+    print(f"Averaging {num_averages} samples per position")
+    print(f"Moving to scan start ({half_steps * step_size} steps back)...")
+
+    for _ in range(half_steps):
+        piezo.move_z_steps(-step_size)
+    time.sleep(0.05)  # Settling time
+
+    scan_start_z = piezo.get_z_position()
+    print(f"Scan starting at Z = {scan_start_z} steps\n")
+
+    try:
+        for i in range(num_steps):
+            if tb.safe_stop():
+                print("\n[STOPPED] User interrupt")
+                break
+
+            # Move Z position
+            current_z = piezo.move_z_steps(step_size)
+            time.sleep(0.01)
+
+            # Collect samples at this position
+            samples = []
+            for _ in range(num_averages):
+                if tb.safe_stop():
+                    break
+                pulse_gen.stream_start(1)
+                raw = counter.read_counter_simple(1)
+                samples.append(int(raw[0]))
+
+            avg_counts = np.mean(samples) if samples else 0
+            z_positions.append(current_z)
+            counts_list.append(avg_counts)
+
+            # Update plot
+            line.set_data(z_positions, counts_list)
+            ax.relim()
+            ax.autoscale_view()
+            plt.pause(0.01)
+
+            if (i + 1) % 10 == 0:
+                print(f"Step {i+1}/{num_steps}: Z={current_z}, Counts={avg_counts:.0f}")
+
+    finally:
+        counter.stop_tag_stream()
+        tb.reset_safe_stop()
+
+    ### Fit Gaussian to find optimal Z
+    z_array = np.array(z_positions)
+    counts_array = np.array(counts_list)
+
+    # Gaussian fit function
+    def gaussian(x, amplitude, center, sigma, offset):
+        return offset + amplitude * np.exp(-((x - center) ** 2) / (2 * sigma**2))
+
+    opti_z = None
+    fit_params = None
+    fit_success = False
+
+    try:
+        # Initial guesses
+        offset_guess = np.min(counts_array)
+        amplitude_guess = np.max(counts_array) - offset_guess
+        center_guess = z_array[np.argmax(counts_array)]
+        sigma_guess = (z_array[-1] - z_array[0]) / 4
+
+        guess = [amplitude_guess, center_guess, sigma_guess, offset_guess]
+        bounds = (
+            [0, z_array[0], 0, 0],  # Lower bounds
+            [np.inf, z_array[-1], np.inf, np.inf],  # Upper bounds
+        )
+
+        popt, _ = curve_fit(gaussian, z_array, counts_array, p0=guess, bounds=bounds)
+        opti_z = popt[1]
+        fit_params = {
+            "amplitude": popt[0],
+            "center": popt[1],
+            "sigma": popt[2],
+            "offset": popt[3],
+        }
+        fit_success = True
+
+        # Plot the fit
+        z_fit = np.linspace(z_array[0], z_array[-1], 200)
+        counts_fit = gaussian(z_fit, *popt)
+        ax.plot(z_fit, counts_fit, "r-", linewidth=2, label="Gaussian fit")
+        ax.axvline(opti_z, color="g", linestyle="--", label=f"Optimal Z={opti_z:.1f}")
+        ax.legend()
+
+        print(f"\nGaussian fit results:")
+        print(f"  Optimal Z: {opti_z:.1f} steps")
+        print(f"  Amplitude: {popt[0]:.0f} counts")
+        print(f"  Sigma: {popt[2]:.1f} steps")
+        print(f"  Offset: {popt[3]:.0f} counts")
+
+    except Exception as e:
+        print(f"\nGaussian fit failed: {e}")
+        print("Using max counts position instead")
+        opti_z = z_array[np.argmax(counts_array)]
+        fit_params = None
+        ax.axvline(opti_z, color="g", linestyle="--", label=f"Max Z={opti_z:.1f}")
+        ax.legend()
+
+    ### Move to optimal position
+    opti_counts = None
+    if opti_z is not None and move_to_optimal:
+        # Calculate steps needed to move from current position to optimal
+        current_pos = z_positions[-1] if z_positions else initial_z
+        steps_to_optimal = int(round(opti_z - current_pos))
+        print(f"\nMoving to optimal Z ({steps_to_optimal:+d} steps from current)...")
+        piezo.move_z_steps(steps_to_optimal)
+        final_z = piezo.get_z_position()
+        print(f"Now at Z = {final_z} steps")
+
+        # Measure counts at optimal position
+        counter.start_tag_stream()
+        pulse_gen.stream_start(1)
+        raw = counter.read_counter_simple(1)
+        counter.stop_tag_stream()
+        opti_counts = int(raw[0]) if raw else None
+        if opti_counts:
+            print(f"Counts at optimal position: {opti_counts}")
+
+    plt.ioff()
+    tb.reset_cfm()
+
+    print(f"\n{'='*50}")
+    print("Z OPTIMIZATION COMPLETE")
+    print(f"{'='*50}\n")
+
+    ### Save data
+    results = {
+        "opti_z": float(opti_z) if opti_z is not None else None,
+        "opti_counts": opti_counts,
+        "fit_params": fit_params,
+        "z_positions": z_array.tolist(),
+        "counts": counts_array.tolist(),
+        "fit_success": fit_success,
+        "initial_z": initial_z,
+        "scan_params": {
+            "num_steps": num_steps,
+            "step_size": step_size,
+            "num_averages": num_averages,
+        },
+    }
+
+    if save_data:
+        timestamp = dm.get_time_stamp()
+        raw_data = {
+            "timestamp": timestamp,
+            "nv_sig": nv_sig,
+            "optimization_results": results,
+        }
+        nv_name = getattr(nv_sig, "name", "unknown")
+        file_path = dm.get_file_path(__file__, timestamp, f"{nv_name}_z_optimize")
+        dm.save_raw_data(raw_data, file_path)
+        dm.save_figure(fig, file_path)
+        print(f"Data saved to: {file_path}")
+
+    kpl.show()
+
+    return results
+
+
 if __name__ == "__main__":
     """Example usage for testing"""
     from utils.constants import NVSig, CoordsKey, VirtualLaserKey
@@ -696,3 +964,6 @@ if __name__ == "__main__":
 
     # Or override specific parameters:
     # results = main(nv_sig, max_position_steps=5000, scan_step_size=5)
+
+    # For Z optimization around current position:
+    # results = optimize_z(nv_sig, num_steps=40, step_size=2)
