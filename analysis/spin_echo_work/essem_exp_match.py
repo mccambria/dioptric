@@ -18,12 +18,14 @@ from analysis.spin_echo_work.echo_plot_helpers import (
     params_to_dict,
     plot_echo_with_sites,
     plot_branch_pairs,
+    compare_two_fields,
 )
 from multiplicity_calculation import (
     find_c3v_orbits_from_nv2,
     build_site_multiplicity_with_theory,
     # mutliplicity_plots,
     multiplicity_plots,
+    make_a_table
 )
 
 # ---------------------------------------------------------------------
@@ -32,6 +34,8 @@ from multiplicity_calculation import (
 
 HYPERFINE_PATH = "analysis/nv_hyperfine_coupling/nv-2.txt"
 CATALOG_JSON = "analysis/spin_echo_work/essem_freq_kappa_catalog_22A_65G.json"
+# CATALOG_JSON = "analysis/spin_echo_work/essem_freq_kappa_catalog_22A_49G.json"
+# CATALOG_JSON = "analysis/spin_echo_work/essem_freq_kappa_catalog_22A_49G.json"
 
 # Optional: which orientations to consider when comparing theory/exp
 DEFAULT_ORIENTATIONS = [
@@ -2310,31 +2314,265 @@ def plot_simualted(
     print("Simulated site multiplicity (n_matches_sim):")
     print(site_stats_sim["n_matches_sim"].value_counts().sort_index())
 
+def run_field_analysis(
+    label: str,
+    fit_file_stem: str,
+    counts_file_stem: str,
+    B_G: np.ndarray,
+    catalog_json: str,
+    distance_cutoff_A: float = 15.0,
+) -> dict:
+    """Run your full pipeline for one B field and return a compact summary."""
+    # 1) Load catalog + hyperfine
+    hf_df = load_hyperfine_table(distance_cutoff=distance_cutoff_A)
+    catalog_records = load_catalog(catalog_json)
+
+    # 2) Extract fit summary for this field
+    fit_summary = freqs_from_popts_exact(file_stem=fit_file_stem)
+    nv = np.asarray(fit_summary["nv"], int)
+    f0_kHz = np.asarray(fit_summary["f0_kHz"], float)
+    f1_kHz = np.asarray(fit_summary["f1_kHz"], float)
+    fit_fail = np.asarray(fit_summary["fit_fail"], bool)
+    nv_oris = np.asarray(fit_summary["orientations"], int)
+    site_ids = np.asarray(fit_summary["site_ids"], int)
+
+    mask = (
+        np.isfinite(f0_kHz)
+        & np.isfinite(f1_kHz)
+        & (f0_kHz > 0)
+        & (f1_kHz >= 0)
+        & (~fit_fail)
+    )
+
+    nv_kept = nv[mask]
+    f0_kept_kHz = f0_kHz[mask]
+    f1_kept_kHz = f1_kHz[mask]
+    site_ids_kept = site_ids[mask]
+    nv_oris_kept = nv_oris[mask]
+
+    # 3) Matching to catalog for this field
+    matches_df = pairwise_match_from_site_ids_kHz(
+        nv_labels=nv_kept,
+        f0_kHz=f0_kept_kHz,
+        f1_kHz=f1_kept_kHz,
+        site_ids=site_ids_kept,
+        nv_orientations=nv_oris_kept,
+        records=catalog_records,
+    )
+
+    # 4) Full site multiplicity analysis
+    orbit_df = find_c3v_orbits_from_nv2(
+        hyperfine_path=HYPERFINE_PATH,
+        r_max_A=22.0,
+        tol_r_A=0.02,
+        tol_dir=5e-2,
+    )
+    site_stats_full = build_site_multiplicity_with_theory(
+        matches_df=matches_df,
+        orbit_df=orbit_df,
+        p13=0.011,
+    )
+
+    # Attach metadata so you can stack later
+    B_mag_G = float(np.linalg.norm(B_G))
+    matches_df["field_label"] = label
+    matches_df["B_mag_G"] = B_mag_G
+    site_stats_full["field_label"] = label
+    site_stats_full["B_mag_G"] = B_mag_G
+
+    # (Optional) basic scalars you might want quickly
+    frac_matched = matches_df["nv_label"].nunique() / nv_kept.size
+
+    return dict(
+        label=label,
+        B_G=B_G,
+        B_mag_G=B_mag_G,
+        matches_df=matches_df,
+        site_stats=site_stats_full,
+        frac_matched=frac_matched,
+        n_nv_total=int(nv_kept.size),
+    )
+
+def plot_site_f_vs_B(all_matches: pd.DataFrame, site_list=None):
+    """
+    For each (orientation, site_index), plot matched f_minus/f_plus vs B_mag_G.
+    Optionally restrict to a few interesting sites.
+    """
+    df = all_matches.copy()
+    # key that identifies a physical 13C site
+    df["site_key"] = list(zip(df["orientation"], df["site_index"]))
+
+    if site_list is not None:
+        df = df[df["site_key"].isin(site_list)]
+
+    # keep only sites seen in more than one field
+    counts = df.groupby("site_key")["field_label"].nunique()
+    multi = counts[counts > 2].index
+    df = df[df["site_key"].isin(multi)]
+
+    for site_key, sub in df.groupby("site_key"):
+        ori, sid = site_key
+        fig, ax = plt.subplots(figsize=(6, 6))
+        ax.errorbar(
+            sub["B_mag_G"],
+            sub["f_minus_kHz"],
+            yerr=np.abs(sub["err_f0_kHz"]),  # or err on the branch you used
+            fmt="o-",
+            label="f_minus",
+        )
+        ax.errorbar(
+            sub["B_mag_G"],
+            sub["f_plus_kHz"],
+            yerr=np.abs(sub["err_f1_kHz"]),
+            fmt="s-",
+            label="f_plus",
+        )
+        ax.set_xlabel("|B| (G)")
+        ax.set_ylabel("frequency (kHz)")
+        ax.set_title(f"Site {sid}, ori={ori}")
+        ax.set_yscale("log")
+        ax.grid(True, which="both", alpha=0.3)
+        ax.legend()
+        
+def compare_multiplicity_across_fields(all_site_stats):
+    # site key without field
+    key = ["orientation", "site_index"]
+
+    # how many fields does each site show up in?
+    field_counts = all_site_stats.groupby(key)["field_label"].nunique().reset_index()
+    field_counts.rename(columns={"field_label": "n_fields_seen"}, inplace=True)
+
+    # average n_matches per field for sites that appear in multiple fields
+    agg = (
+        all_site_stats
+        .groupby(key + ["field_label"], as_index=False)
+        .agg(n_matches=("n_matches", "mean"))
+    )
+
+    print("Sites seen in ≥2 fields:")
+    print(field_counts[field_counts["n_fields_seen"] >= 2].sort_values("n_fields_seen"))
+
+    # Simple example: histogram of n_matches per field
+    fig, ax = plt.subplots(figsize=(6, 4))
+    for label, sub in all_site_stats.groupby("field_label"):
+        ax.hist(
+            sub["n_matches"],
+            bins=np.arange(0.5, sub["n_matches"].max() + 1.5),
+            histtype="step",
+            label=label,
+        )
+    ax.set_xlabel("n_matches (NVs per site)")
+    ax.set_ylabel("# of sites")
+    ax.set_title("Site multiplicity distribution vs field")
+    ax.legend()
+    return fig, ax
+
+def compare_NV_assignments(all_matches):
+    # one row per NV per field
+    df = all_matches[["nv_label", "field_label", "site_index", "err_pair_kHz"]].copy()
+    # keep only NVs that appear in more than one field
+    multi_nv = df.groupby("nv_label")["field_label"].nunique()
+    multi_nv = multi_nv[multi_nv > 1].index
+    df = df[df["nv_label"].isin(multi_nv)]
+
+    # how often does a given NV change site assignment?
+    site_spread = df.groupby("nv_label")["site_index"].nunique().reset_index()
+    site_spread.rename(columns={"site_index": "n_distinct_sites"}, inplace=True)
+
+    print("NVs with changing site assignment across fields:")
+    print(site_spread[site_spread["n_distinct_sites"] > 1].head(20))
 
 if __name__ == "__main__":
     kpl.init_kplotlib()
+    
+    field_cfgs = [
+    dict(
+        label="49G",
+        fit_file_stem="2025_11_19-14_19_23-sample_204nv_s1-fcc605",
+        counts_file_stem="2025_11_11-01_15_45-johnson_204nv_s6-6d8f5c",
+        B_G=np.array([-46.27557688, -17.16599864, -5.70139829]),
+        catalog_json="analysis/spin_echo_work/essem_freq_kappa_catalog_22A_49G.json",
+    ),
+    dict(
+        label="59G",
+        fit_file_stem="2025_12_05-07_51_13-sample_204nv_s1-4cf818",
+        counts_file_stem="2025_12_04-19_50_15-johnson_204nv_s9-2c83ab",
+        B_G=np.array([-41.57848995, -32.77145194, -27.5799348]),
+        catalog_json="analysis/spin_echo_work/essem_freq_kappa_catalog_22A_59G.json",
+    ),
+    dict(
+        label="65G",
+        fit_file_stem="2025_11_30-04_35_04-sample_204nv_s1-d278ee",
+        counts_file_stem="2025_11_28-16_39_32-johnson_204nv_s6-902522",
+        B_G=np.array([-31.61263115, -56.58135644, -6.5512002]),
+        catalog_json="analysis/spin_echo_work/essem_freq_kappa_catalog_22A_65G.json",
+    ),
+    ]
 
-    # ---- 1) file stems ----
-    ### B_vec_G = np.array([-46.18287122, -17.44411563, -5.57779074], dtype=float)  ##49.68G
+    results = []
+    for cfg in field_cfgs:
+        res = run_field_analysis(**cfg)
+        results.append(res)
+
+    all_matches = pd.concat([r["matches_df"] for r in results], ignore_index=True)
+    all_site_stats = pd.concat([r["site_stats"] for r in results], ignore_index=True)
+
+
+    
+    plot_site_f_vs_B(all_matches)
+    # compare_multiplicity_across_fields(all_site_stats)
+    # compare_NV_assignments(all_matches)
+    # plot_T2_vs_field(all_matches)
+    # plot_T2_vs_distance(all_matches)
+    # pick a few sites with large n_matches for f(B) tracks
+    # plt.show(block=True)
+
+    all_matches = pd.concat(
+    [
+        res["matches_df"].assign(
+            field_label=cfg["label"],
+            Bx_G=cfg["B_G"][0],
+            By_G=cfg["B_G"][1],
+            Bz_G=cfg["B_G"][2],
+        )
+        for cfg, res in zip(field_cfgs, results)
+    ],
+    ignore_index=True,)
+    wide_both = compare_two_fields(
+    all_matches,
+    field_labels=["49G","59G","65G"],     # explicit, or leave None to auto-detect the two
+    title_prefix="204 NVs"
+    )
+    plt.show(block=True)
+
+    sys.exit()
+    # --- Magnetic field (crystal axes) ---
+    # B_G = [-46.27557688 -17.16599864  -5.70139829]
+    # B_G_mag =  49.685072884712
+    # B_hat =  [-0.93137786 -0.34549609 -0.11475073]
     # fit_file_stem    = "2025_11_13-06_28_22-sample_204nv_s1-e85aa7"   # where popts & freqs live
     # fit_file_stem  = "2025_11_14-03_05_30-sample_204nv_s1-e85aa7" # 200 freqs freeze
     # fit_file_stem  = "2025_11_14-18_28_58-sample_204nv_s1-e85aa7" # 600 freqs freeze
-    fit_file_stem = (
-        "2025_11_17-09_49_42-sample_204nv_s1-fcc605"  # site encoded, all freqs (nysq band)
-    )
+    # fit_file_stem = (
+    #     "2025_11_17-09_49_42-sample_204nv_s1-fcc605"  # site encoded, all freqs (nysq band)
+    # )
     # fit_file_stem = (
     #     "2025_11_19-14_19_23-sample_204nv_s1-fcc605"  # site encoded, 1500 freqs pairs (1khz-6Mhz)
     # )
-    counts_file_stem = (
-        "2025_11_11-01_15_45-johnson_204nv_s6-6d8f5c"  # merged dataset2+3 counts
-    )
-    #### B field:
-    # fit_file_stem = (
-    #     "2025_11_30-04_35_04-sample_204nv_s1-d278ee"  # site encoded, all freqs (nysq band)
-    # )
     # counts_file_stem = (
-    #     "2025_11_28-16_39_32-johnson_204nv_s6-902522"  # merged dataset2+3 counts
+    #     "2025_11_11-01_15_45-johnson_204nv_s6-6d8f5c"  # merged dataset2+3 counts
     # )
+    
+    # --- Magnetic field (crystal axes) ---
+    # B_G =  [-31.61263115 -56.58135644  -6.5512002 ]  
+    # B_G = 65.143891267575
+    # B_G =  [-0.48527391 -0.86855967 -0.10056507]
+    fit_file_stem = (
+        "2025_11_30-04_35_04-sample_204nv_s1-d278ee"  # site encoded, all freqs (nysq band)
+    )
+    counts_file_stem = (
+        "2025_11_28-16_39_32-johnson_204nv_s6-902522" 
+    )
 
     ## ---- 2) global theory-vs-exp matching (use FIT file) ----##
     hf_df = load_hyperfine_table(distance_cutoff=15.0)  # or 15.0, etc.
@@ -2452,7 +2690,7 @@ if __name__ == "__main__":
     #     z_sim_A,
     # )
 
-    sys.exit()
+    # sys.exit()
     # ---- 5) Multiplicity Analsysis by both theory and experiment ----##
     orbit_df = find_c3v_orbits_from_nv2(
         hyperfine_path=HYPERFINE_PATH,
@@ -2473,24 +2711,6 @@ if __name__ == "__main__":
         p13=0.011,  # natural abundance
     )
 
-    # --- 1) Choose which columns & rows to show ---
-    cols_to_show = [
-        "site_index",
-        "orientation",
-        "distance_A",
-        "n_matches",
-        "n_equiv_theory",
-        "p_shell",
-        "E_n_matches",
-        "match_ratio",
-        "kappa_mean",
-        "f0_kHz_mean",
-        "f1_kHz_mean",
-        "equiv_occupied_sites",
-        "n_equiv_occupied",
-        "n_matches_equiv_total",
-    ]
-
     # print(
     #     site_stats_full.sort_values("n_matches", ascending=False)[cols_to_show]
     #     .head(15)
@@ -2498,128 +2718,7 @@ if __name__ == "__main__":
     # )
 
     multiplicity_plots(site_stats_full)
-
-    topN = 15  # or 20, etc.
-    table_df = (
-        site_stats_full.sort_values("n_matches", ascending=False)[cols_to_show]
-        .head(topN)
-        .copy()
-    )
-
-    # --- 2) Format numeric columns nicely ---
-    float_cols_3 = ["distance_A", "p_shell", "E_n_matches", "match_ratio", "kappa_mean"]
-    float_cols_1 = ["f0_kHz_mean", "f1_kHz_mean"]
-
-    for col in float_cols_3:
-        if col in table_df.columns:
-            table_df[col] = table_df[col].map(lambda x: f"{x:.3f}")
-
-    for col in float_cols_1:
-        if col in table_df.columns:
-            table_df[col] = table_df[col].map(lambda x: f"{x:.1f}")
-
-    # Make sure equiv_occupied_sites is a readable string, not a Python list repr
-    def _fmt_equiv_sites(val):
-        if isinstance(val, (list, tuple)):
-            return ",".join(str(int(v)) for v in val)
-        # sometimes stored as string already or NaN
-        return (
-            ""
-            if (val is None or (isinstance(val, float) and np.isnan(val)))
-            else str(val)
-        )
-
-    if "equiv_occupied_sites" in table_df.columns:
-        table_df["equiv_occupied_sites"] = table_df["equiv_occupied_sites"].apply(
-            _fmt_equiv_sites
-        )
-
-    # --- 3) Pretty column labels with manual line breaks ---
-    col_labels = [
-        "site\nindex",  # site_index
-        "orientation",  # orientation
-        r"distance\n($\mathrm{\AA}$)",  # distance_A
-        r"$n_{\mathrm{matches}}$",  # n_matches
-        r"$n_{\mathrm{eq}}$\n(theory)",  # n_equiv_theory
-        r"$p_{\mathrm{shell}}$",  # p_shell
-        r"$\mathbb{E}[n_{\mathrm{matches}}]$",  # E_n_matches
-        r"match\nratio",  # match_ratio
-        r"$\bar{\kappa}$",  # kappa_mean
-        r"$\bar f_0$\n(kHz)",  # f0_kHz_mean
-        r"$\bar f_1$\n(kHz)",  # f1_kHz_mean
-        "equiv.\noccupied\nsites",  # equiv_occupied_sites
-        r"$n_{\mathrm{occ}}^{\mathrm{equiv}}$",  # n_equiv_occupied
-        r"$n_{\mathrm{matches}}^{\mathrm{equiv}}$",  # n_matches_equiv_total
-    ]
-
-    # Sanity check (optional)
-    assert len(col_labels) == len(
-        cols_to_show
-    ), "col_labels and cols_to_show length mismatch"
-
-    # --- 4) Build table figure ---
-    n_rows, n_cols = table_df.shape
-
-    fig_w = max(10, 0.85 * n_cols)  # a bit wider for 14 columns
-    fig_h = max(4.0, 0.45 * (n_rows + 2))  # some room for equations
-    fig, ax = plt.subplots(figsize=(fig_w, fig_h))
-    ax.axis("off")
-
-    table = ax.table(
-        cellText=table_df.values,
-        colLabels=col_labels,
-        loc="center",
-        cellLoc="center",
-    )
-
-    # --- 5) Styling ---
-    table.auto_set_font_size(False)
-    table.set_fontsize(7.5)
-    table.scale(1.0, 1.25)
-
-    # Bold header row + light gray background
-    for (row, col), cell in table.get_celld().items():
-        if row == 0:
-            cell.set_text_props(weight="bold")
-            cell.set_facecolor("#e0e0e0")
-
-    # --- 6) Title + equations line ---
-
-    title = "Top sites by experimental multiplicity and symmetry-adjusted expectation"
-
-    equations = (
-        r"$p_{\mathrm{shell}} = 1 - (1 - p_{13})^{n_{\mathrm{eq}}},\quad "
-        r"\mathbb{E}[n_{\mathrm{matches}}] = N_{\mathrm{NV}}\; p_{\mathrm{shell}},\quad "
-        r"R = \dfrac{n_{\mathrm{matches}}}{\mathbb{E}[n_{\mathrm{matches}}]}$"
-    )
-
-    ax.set_title(title, pad=30, fontsize=18)
-
-    # Equations just under the title
-    fig.text(
-        0.5,
-        0.85,
-        equations,
-        ha="center",
-        va="center",
-        fontsize=15,
-    )
-
-    # Optional short legend for the equivalent columns
-    legend_text = (
-        r"$n_{\mathrm{occ}}^{\mathrm{equiv}}$: # of symmetry-equivalent sites "
-        r"that are occupied in the dataset; "
-        r"$n_{\mathrm{matches}}^{\mathrm{equiv}}$: total matches summed over those sites."
-    )
-    fig.text(
-        0.5,
-        0.80,
-        legend_text,
-        ha="center",
-        va="center",
-        fontsize=11,
-    )
-
-    # plt.tight_layout(rect=[0.02, 0.02, 0.98, 0.98])  # leave room at top
-
+    make_a_table(site_stats_full, topN=15)
     kpl.show(block=True)
+
+

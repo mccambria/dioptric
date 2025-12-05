@@ -21,7 +21,7 @@ kplt.init_kplotlib()
 # User-configurable parameters
 # ----------------------------
 base_folder = "G:\\NV_Widefield_RT_Setup_Enclosure_Temp_Logs"
-hours = 120  # window to analyze & plot
+hours = 150  # window to analyze & plot
 temp_low, temp_high = 15, 35  # sanity filter limits
 PLOT_ADEV = True  # set False if you don't want the Allan plot refreshing
 
@@ -33,7 +33,6 @@ channels = {
     "4D": "temp_4D.csv",
     "temp_stick": "temp_stick.csv",
 }
-
 
 # ----------------------------
 # Dynamic Allan taus
@@ -318,9 +317,9 @@ def update_plot():
 
     # Single persistent note on the figure (don’t add duplicates every refresh)
     note = (
-        "4A - near sample (feedback)\n"
-        "4B - experiment enclosure\n"
-        "4C - air inside duct of laser enclosure\n"
+        "4A - near sample \n"
+        "4B - experiment enclosure (feedback)\n"
+        "4C - laser enclosure (feedback)\n"
         "4D - laser enclosure\n"
         "temp_stick - outside monitor"
     )

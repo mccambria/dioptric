@@ -1462,8 +1462,8 @@ if __name__ == "__main__":
         p_occ=0.011,  # 13C abundance
         ms=-1,
         phi_deg=0.0,
-        out_json="essem_freq_kappa_catalog_22A_65G.json",
-        out_csv="essem_freq_kappa_catalog_22A_65G.csv",
+        out_json="essem_freq_kappa_catalog_22A_59G.json",
+        out_csv="essem_freq_kappa_catalog_22A_59G.csv",
         read_hf_table_fn=None,
     )
     sys.exit()
