@@ -156,7 +156,7 @@ def do_image_sample_zoom(nv_sig):
         num_steps,
     )
 
-def do_optimize_z(nv_sig, num_steps=40, step_size=1, scan_direction="up"):
+def do_optimize_z(nv_sig, num_steps=140, step_size=1, scan_direction="down"):
     """
     Optimize Z position by scanning and fitting a Gaussian to find the focus peak.
 
@@ -174,7 +174,7 @@ def do_optimize_z(nv_sig, num_steps=40, step_size=1, scan_direction="up"):
         Step size in piezo units between positions. Default: 1
     scan_direction : str, optional
         Direction to scan: "up" starts low and scans upward (away from sample),
-        "down" starts high and scans downward (toward sample). Default: "up"
+        "down" starts high and scans downward (toward sample). Default: "down"
 
     Returns
     -------
@@ -775,11 +775,11 @@ if __name__ == "__main__":
         # tool_belt.set_drift([0.0, 0.0, drift[2]])  # Keep z
         # tool_belt.set_drifts([drift[0], drift[1], 0.0])  # Keep xy
         
-        pos.set_xyz_on_nv(nv_sig) # Hahn omits this line, currently leave this line out when calibrating z
+        # pos.set_xyz_on_nv(nv_sig) # Hahn omits this line, currently leave this line out when calibrating z
 
         #region 1D scan + Calibrate
         #do_calibrate_z_axis(nv_sig)
-        # do_z_scan_1d(nv_sig, step_size=1, num_steps=5)
+        # do_z_scan_1d(nv_sig, step_size=-1, num_steps=200, min_threshold=0)
 
 
         # Manually set Z reference to current position
@@ -817,12 +817,12 @@ if __name__ == "__main__":
         # do_image_sample_zoom(nv_sig)
         # do_image_sample(nv_sig, nv_minus_initialization=True)
         # do_image_sample_zoom(nv_sig, nv_minus_initialization=True)
-        #end region Image sample
+        # end region Image sample
 
         # region Optimize
         # do_optimize(nv_sig)
         # do_optimize_pixel(nv_sig)
-        do_optimize_z(nv_sig)
+        # do_optimize_z(nv_sig)
         # do_optimize_green(nv_sig)
         # do_compensate_for_drift(nv_sig)
         # endregion Optimize
