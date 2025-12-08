@@ -993,10 +993,6 @@ def plot_branch_pairs(
     plt.show()
     return fig, ax
 
-import numpy as np
-import pandas as pd
-import matplotlib.pyplot as plt
-
 
 def compare_two_fields(
     matches_df: pd.DataFrame,

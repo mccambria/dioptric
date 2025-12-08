@@ -2485,41 +2485,41 @@ def compare_NV_assignments(all_matches):
 if __name__ == "__main__":
     kpl.init_kplotlib()
     
-    field_cfgs = [
-    dict(
-        label="49G",
-        fit_file_stem="2025_11_19-14_19_23-sample_204nv_s1-fcc605",
-        counts_file_stem="2025_11_11-01_15_45-johnson_204nv_s6-6d8f5c",
-        B_G=np.array([-46.27557688, -17.16599864, -5.70139829]),
-        catalog_json="analysis/spin_echo_work/essem_freq_kappa_catalog_22A_49G.json",
-    ),
-    dict(
-        label="59G",
-        fit_file_stem="2025_12_05-07_51_13-sample_204nv_s1-4cf818",
-        counts_file_stem="2025_12_04-19_50_15-johnson_204nv_s9-2c83ab",
-        B_G=np.array([-41.57848995, -32.77145194, -27.5799348]),
-        catalog_json="analysis/spin_echo_work/essem_freq_kappa_catalog_22A_59G.json",
-    ),
-    dict(
-        label="65G",
-        fit_file_stem="2025_11_30-04_35_04-sample_204nv_s1-d278ee",
-        counts_file_stem="2025_11_28-16_39_32-johnson_204nv_s6-902522",
-        B_G=np.array([-31.61263115, -56.58135644, -6.5512002]),
-        catalog_json="analysis/spin_echo_work/essem_freq_kappa_catalog_22A_65G.json",
-    ),
-    ]
+    # field_cfgs = [
+    # dict(
+    #     label="49G",
+    #     fit_file_stem="2025_11_19-14_19_23-sample_204nv_s1-fcc605",
+    #     counts_file_stem="2025_11_11-01_15_45-johnson_204nv_s6-6d8f5c",
+    #     B_G=np.array([-46.27557688, -17.16599864, -5.70139829]),
+    #     catalog_json="analysis/spin_echo_work/essem_freq_kappa_catalog_22A_49G.json",
+    # ),
+    # dict(
+    #     label="59G",
+    #     fit_file_stem="2025_12_05-07_51_13-sample_204nv_s1-4cf818",
+    #     counts_file_stem="2025_12_04-19_50_15-johnson_204nv_s9-2c83ab",
+    #     B_G=np.array([-41.57848995, -32.77145194, -27.5799348]),
+    #     catalog_json="analysis/spin_echo_work/essem_freq_kappa_catalog_22A_59G.json",
+    # ),
+    # dict(
+    #     label="65G",
+    #     fit_file_stem="2025_11_30-04_35_04-sample_204nv_s1-d278ee",
+    #     counts_file_stem="2025_11_28-16_39_32-johnson_204nv_s6-902522",
+    #     B_G=np.array([-31.61263115, -56.58135644, -6.5512002]),
+    #     catalog_json="analysis/spin_echo_work/essem_freq_kappa_catalog_22A_65G.json",
+    # ),
+    # ]
 
-    results = []
-    for cfg in field_cfgs:
-        res = run_field_analysis(**cfg)
-        results.append(res)
+    # results = []
+    # for cfg in field_cfgs:
+    #     res = run_field_analysis(**cfg)
+    #     results.append(res)
 
-    all_matches = pd.concat([r["matches_df"] for r in results], ignore_index=True)
-    all_site_stats = pd.concat([r["site_stats"] for r in results], ignore_index=True)
+    # all_matches = pd.concat([r["matches_df"] for r in results], ignore_index=True)
+    # all_site_stats = pd.concat([r["site_stats"] for r in results], ignore_index=True)
 
 
     
-    plot_site_f_vs_B(all_matches)
+    # plot_site_f_vs_B(all_matches)
     # compare_multiplicity_across_fields(all_site_stats)
     # compare_NV_assignments(all_matches)
     # plot_T2_vs_field(all_matches)
@@ -2527,25 +2527,25 @@ if __name__ == "__main__":
     # pick a few sites with large n_matches for f(B) tracks
     # plt.show(block=True)
 
-    all_matches = pd.concat(
-    [
-        res["matches_df"].assign(
-            field_label=cfg["label"],
-            Bx_G=cfg["B_G"][0],
-            By_G=cfg["B_G"][1],
-            Bz_G=cfg["B_G"][2],
-        )
-        for cfg, res in zip(field_cfgs, results)
-    ],
-    ignore_index=True,)
-    wide_both = compare_two_fields(
-    all_matches,
-    field_labels=["49G","59G","65G"],     # explicit, or leave None to auto-detect the two
-    title_prefix="204 NVs"
-    )
-    plt.show(block=True)
+    # all_matches = pd.concat(
+    # [
+    #     res["matches_df"].assign(
+    #         field_label=cfg["label"],
+    #         Bx_G=cfg["B_G"][0],
+    #         By_G=cfg["B_G"][1],
+    #         Bz_G=cfg["B_G"][2],
+    #     )
+    #     for cfg, res in zip(field_cfgs, results)
+    # ],
+    # ignore_index=True,)
+    # wide_both = compare_two_fields(
+    # all_matches,
+    # field_labels=["49G","59G","65G"],     # explicit, or leave None to auto-detect the two
+    # title_prefix="204 NVs"
+    # )
+    # plt.show(block=True)
 
-    sys.exit()
+    # sys.exit()
     # --- Magnetic field (crystal axes) ---
     # B_G = [-46.27557688 -17.16599864  -5.70139829]
     # B_G_mag =  49.685072884712
@@ -2573,7 +2573,12 @@ if __name__ == "__main__":
     counts_file_stem = (
         "2025_11_28-16_39_32-johnson_204nv_s6-902522" 
     )
-
+    
+    # --- Magnetic field (crystal axes) ---
+    B_G=np.array([-41.57848995, -32.77145194, -27.5799348])
+    fit_file_stem="2025_12_05-07_51_13-sample_204nv_s1-4cf818"
+    counts_file_stem="2025_12_04-19_50_15-johnson_204nv_s9-2c83ab"
+    catalog_json="analysis/spin_echo_work/essem_freq_kappa_catalog_22A_59G.json"
     ## ---- 2) global theory-vs-exp matching (use FIT file) ----##
     hf_df = load_hyperfine_table(distance_cutoff=15.0)  # or 15.0, etc.
     data = dm.get_raw_data(file_stem=fit_file_stem)
@@ -2621,7 +2626,7 @@ if __name__ == "__main__":
         )
     )
 
-    catalog_records = load_catalog(CATALOG_JSON)
+    catalog_records = load_catalog(catalog_json)
     matches_df = pairwise_match_from_site_ids_kHz(
         nv_labels=nv_kept,
         f0_kHz=f0_kept_kHz,

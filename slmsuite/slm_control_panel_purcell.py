@@ -236,7 +236,7 @@ def calibration_triangle():
     cam.set_exposure(0.1)
 
     # Define parameters for the equilateral triangle
-    center = (710, 560)  # Center of the triangle
+    center = (690, 560)  # Center of the triangle
     side_length = 400  # Length of each side of the triangle\
 
     # Calculate the coordinates of the three vertices of the equilateral triangle
@@ -276,13 +276,12 @@ def nuvu2thorcam_calibration(coords):
     Calibrates and transforms coordinates from the Nuvu camera's coordinate system
     to the Thorlabs camera's coordinate system using an affine transformation.
     """
-
     cal_coords_thorcam = np.array(
-        [[1056.410, 760.0], [363.589, 760.0], [710.0, 160.0]], dtype="float32"
+        [[1036.410, 760.0], [343.589, 760.0], [690.0, 160.0]], dtype="float32"
     )
 
     cal_coords_nuvu = np.array(
-        [[223.935, 243.062], [191.251, 23.886], [19.544, 160.338]], dtype="float32"
+        [[222.648, 237.893], [189.859, 18.467], [18.442, 155.225]], dtype="float32"
     )
     # Compute the affine transformation matrix
     M = cv2.getAffineTransform(cal_coords_nuvu, cal_coords_thorcam)
