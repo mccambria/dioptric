@@ -781,6 +781,146 @@ def multiplicity_plots(site_stats_full):
     )
 
     plt.show()
+    
+def make_a_table(site_stats_full, topN= 15):
+    # --- 1) Choose which columns & rows to show ---
+    cols_to_show = [
+        "site_index",
+        "orientation",
+        "distance_A",
+        "n_matches",
+        "n_equiv_theory",
+        "p_shell",
+        "E_n_matches",
+        "match_ratio",
+        "kappa_mean",
+        "f0_kHz_mean",
+        "f1_kHz_mean",
+        "equiv_occupied_sites",
+        "n_equiv_occupied",
+        "n_matches_equiv_total",
+    ]
+    table_df = (
+        site_stats_full.sort_values("n_matches", ascending=False)[cols_to_show]
+        .head(topN)
+        .copy()
+    )
+
+    # --- 2) Format numeric columns nicely ---
+    float_cols_3 = ["distance_A", "p_shell", "E_n_matches", "match_ratio", "kappa_mean"]
+    float_cols_1 = ["f0_kHz_mean", "f1_kHz_mean"]
+
+    for col in float_cols_3:
+        if col in table_df.columns:
+            table_df[col] = table_df[col].map(lambda x: f"{x:.3f}")
+
+    for col in float_cols_1:
+        if col in table_df.columns:
+            table_df[col] = table_df[col].map(lambda x: f"{x:.1f}")
+
+    # Make sure equiv_occupied_sites is a readable string, not a Python list repr
+    def _fmt_equiv_sites(val):
+        if isinstance(val, (list, tuple)):
+            return ",".join(str(int(v)) for v in val)
+        # sometimes stored as string already or NaN
+        return (
+            ""
+            if (val is None or (isinstance(val, float) and np.isnan(val)))
+            else str(val)
+        )
+
+    if "equiv_occupied_sites" in table_df.columns:
+        table_df["equiv_occupied_sites"] = table_df["equiv_occupied_sites"].apply(
+            _fmt_equiv_sites
+        )
+
+    # --- 3) Pretty column labels with manual line breaks ---
+    col_labels = [
+        "site\nindex",  # site_index
+        "orientation",  # orientation
+        r"distance\n($\mathrm{\AA}$)",  # distance_A
+        r"$n_{\mathrm{matches}}$",  # n_matches
+        r"$n_{\mathrm{eq}}$\n(theory)",  # n_equiv_theory
+        r"$p_{\mathrm{shell}}$",  # p_shell
+        r"$\mathbb{E}[n_{\mathrm{matches}}]$",  # E_n_matches
+        r"match\nratio",  # match_ratio
+        r"$\bar{\kappa}$",  # kappa_mean
+        r"$\bar f_0$\n(kHz)",  # f0_kHz_mean
+        r"$\bar f_1$\n(kHz)",  # f1_kHz_mean
+        "equiv.\noccupied\nsites",  # equiv_occupied_sites
+        r"$n_{\mathrm{occ}}^{\mathrm{equiv}}$",  # n_equiv_occupied
+        r"$n_{\mathrm{matches}}^{\mathrm{equiv}}$",  # n_matches_equiv_total
+    ]
+
+    # Sanity check (optional)
+    assert len(col_labels) == len(
+        cols_to_show
+    ), "col_labels and cols_to_show length mismatch"
+
+    # --- 4) Build table figure ---
+    n_rows, n_cols = table_df.shape
+
+    fig_w = max(10, 0.85 * n_cols)  # a bit wider for 14 columns
+    fig_h = max(4.0, 0.45 * (n_rows + 2))  # some room for equations
+    fig, ax = plt.subplots(figsize=(fig_w, fig_h))
+    ax.axis("off")
+
+    table = ax.table(
+        cellText=table_df.values,
+        colLabels=col_labels,
+        loc="center",
+        cellLoc="center",
+    )
+
+    # --- 5) Styling ---
+    table.auto_set_font_size(False)
+    table.set_fontsize(7.5)
+    table.scale(1.0, 1.25)
+
+    # Bold header row + light gray background
+    for (row, col), cell in table.get_celld().items():
+        if row == 0:
+            cell.set_text_props(weight="bold")
+            cell.set_facecolor("#e0e0e0")
+
+    # --- 6) Title + equations line ---
+
+    title = "Top sites by experimental multiplicity and symmetry-adjusted expectation"
+
+    equations = (
+        r"$p_{\mathrm{shell}} = 1 - (1 - p_{13})^{n_{\mathrm{eq}}},\quad "
+        r"\mathbb{E}[n_{\mathrm{matches}}] = N_{\mathrm{NV}}\; p_{\mathrm{shell}},\quad "
+        r"R = \dfrac{n_{\mathrm{matches}}}{\mathbb{E}[n_{\mathrm{matches}}]}$"
+    )
+
+    ax.set_title(title, pad=30, fontsize=18)
+
+    # Equations just under the title
+    fig.text(
+        0.5,
+        0.85,
+        equations,
+        ha="center",
+        va="center",
+        fontsize=15,
+    )
+
+    # Optional short legend for the equivalent columns
+    legend_text = (
+        r"$n_{\mathrm{occ}}^{\mathrm{equiv}}$: # of symmetry-equivalent sites "
+        r"that are occupied in the dataset; "
+        r"$n_{\mathrm{matches}}^{\mathrm{equiv}}$: total matches summed over those sites."
+    )
+    fig.text(
+        0.5,
+        0.80,
+        legend_text,
+        ha="center",
+        va="center",
+        fontsize=11,
+    )
+
+    # plt.tight_layout(rect=[0.02, 0.02, 0.98, 0.98])  # leave room at top
 
 if __name__ == "__main__":
 

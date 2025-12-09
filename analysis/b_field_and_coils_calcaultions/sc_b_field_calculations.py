@@ -336,8 +336,7 @@ if __name__ == "__main__":
     f_ref = [2.7666, 2.7851, 2.8222, 2.8406]
     # f_new = [2.7245, 2.7471,  2.8480, 2.8282]
     # f_ref = [2.7058, 2.7859,  2.8280, 2.8699]
-    # f_new = [2.7058, 2.7859,  2.8280, 2.8699]
-    f_new = [2.7081, 2.8083,  2.8251, 2.8536]   
+    f_new = [2.7081, 2.8083,  2.8536, 2.8251]
     
     # For your *real* coil step, plug in the actual 4 numbers here.
 
@@ -345,7 +344,7 @@ if __name__ == "__main__":
     out_ref = solve_B_from_odmr_order_invariant(f_ref)
     print("=== Reference full solve (used to define perm_ref) ===")
     print_full_summary(f_ref, out_ref)
-
+    
     perm_ref = out_ref["perm"]   # input idx -> nv_axes idx
 
     # --- New solve with fixed permutation ---

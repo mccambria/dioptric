@@ -993,3 +993,240 @@ def plot_branch_pairs(
     plt.show()
     return fig, ax
 
+
+def compare_two_fields(
+    matches_df: pd.DataFrame,
+    field_labels=None,
+    title_prefix: str = "C13 bath",
+):
+    """
+    Compare the same 13C sites between TWO fields and make 'meaningful' plots
+    that show what changed.
+
+    Requirements:
+      - matches_df has columns:
+          'orientation', 'site_index', 'field_label'
+        and ideally:
+          'distance_A', 'f_minus_kHz', 'f_plus_kHz', 'kappa'
+          optional: 'T2_us'
+      - Exactly two fields in 'field_label' (or specify them via field_labels).
+
+    What it does:
+      1) Aggregates per (orientation, site_index, field_label):
+           - distance_A (mean)
+           - f_minus_kHz (mean)
+           - f_plus_kHz (mean)
+           - kappa (mean)
+           - T2_us (mean, if present)
+           - n_matches (count)
+      2) Pivots to a wide table with separate columns per field.
+      3) Makes comparison plots:
+           - f_- (field1 vs field2) + identity line
+           - f_+ (field1 vs field2)
+           - kappa (field1 vs field2)
+           - multiplicity (n_matches field1 vs field2)
+           - histograms of Δf_- , Δf_+ , Δkappa
+           - |Δf_-| and |Δf_+| vs distance
+    """
+
+    df = matches_df.copy()
+
+    if "field_label" not in df.columns:
+        raise ValueError("matches_df must have a 'field_label' column to compare fields.")
+
+    # ------------------------ 0) choose which two fields ------------------------
+    unique_fields = list(df["field_label"].unique())
+    if field_labels is None:
+        if len(unique_fields) != 2:
+            raise ValueError(
+                f"Expected exactly 2 fields, found {len(unique_fields)}: {unique_fields}"
+            )
+        field_labels = sorted(unique_fields)
+    else:
+        # ensure they are actually present
+        for fld in field_labels:
+            if fld not in unique_fields:
+                raise ValueError(
+                    f"Requested field_label '{fld}' not found in matches_df "
+                    f"(present: {unique_fields})"
+                )
+        # if user passed more than 2, just take first two
+        field_labels = list(field_labels[:2])
+
+    f1, f2 = field_labels
+    print(f"Comparing fields: {f1} vs {f2}")
+
+    # ------------------------ 1) aggregate per site + field ------------------------
+    agg_dict = {
+        "distance_A": "mean",
+        "f_minus_kHz": "mean",
+        "f_plus_kHz": "mean",
+        "kappa": "mean",
+        "field_label": "first",
+    }
+
+    if "T2_us" in df.columns:
+        agg_dict["T2_us"] = "mean"
+
+    # Count how many NVs matched this site at each field
+    grouped = (
+        df.groupby(["orientation", "site_index", "field_label"], as_index=False)
+          .agg(agg_dict)
+    )
+    grouped["n_matches"] = df.groupby(
+        ["orientation", "site_index", "field_label"]
+    )["nv_label"].transform("nunique") if "nv_label" in df.columns else df.groupby(
+        ["orientation", "site_index", "field_label"]
+    )["distance_A"].transform("size")
+
+    # ------------------------ 2) pivot to wide format ------------------------
+    # index = (orientation, site_index), columns = field_label
+    wide = (
+        grouped.set_index(["orientation", "site_index", "field_label"])
+               .unstack("field_label")
+    )
+
+    # Flatten MultiIndex columns to e.g. "distance_A_f1"
+    wide.columns = [f"{col[0]}_{col[1]}" for col in wide.columns.values]
+    wide = wide.reset_index()
+
+    # Restrict to only the two fields we care about, and drop sites missing either field
+    needed_cols = []
+    for base in ["distance_A", "f_minus_kHz", "f_plus_kHz", "kappa", "n_matches"]:
+        needed_cols.extend([f"{base}_{f1}", f"{base}_{f2}"])
+    if "T2_us" in agg_dict:
+        needed_cols.extend([f"T2_us_{f1}", f"T2_us_{f2}"])
+
+    # Keep only rows where both fields exist (non-NaN) for at least the frequencies
+    mask_both = wide[[f"f_minus_kHz_{f1}", f"f_minus_kHz_{f2}"]].notna().all(axis=1)
+    wide_both = wide.loc[mask_both].copy()
+
+    print(f"Number of sites with data at BOTH fields: {len(wide_both)}")
+
+    # Distance: they should be the same across fields; just take f1's
+    rA = wide_both[f"distance_A_{f1}"].to_numpy(float)
+
+    # ------------------------ 3) convenience arrays ------------------------
+    f_minus_1 = wide_both[f"f_minus_kHz_{f1}"].to_numpy(float)
+    f_minus_2 = wide_both[f"f_minus_kHz_{f2}"].to_numpy(float)
+    f_plus_1 = wide_both[f"f_plus_kHz_{f1}"].to_numpy(float)
+    f_plus_2 = wide_both[f"f_plus_kHz_{f2}"].to_numpy(float)
+
+    kappa_1 = wide_both[f"kappa_{f1}"].to_numpy(float)
+    kappa_2 = wide_both[f"kappa_{f2}"].to_numpy(float)
+
+    nmatch_1 = wide_both[f"n_matches_{f1}"].to_numpy(float)
+    nmatch_2 = wide_both[f"n_matches_{f2}"].to_numpy(float)
+
+    # differences
+    d_fm = f_minus_2 - f_minus_1
+    d_fp = f_plus_2 - f_plus_1
+    d_kappa = kappa_2 - kappa_1
+    d_nmatch = nmatch_2 - nmatch_1
+
+    # optional T2
+    has_T2 = ("T2_us" in agg_dict) and (f"T2_us_{f1}" in wide_both.columns)
+    if has_T2:
+        T2_1 = wide_both[f"T2_us_{f1}"].to_numpy(float)
+        T2_2 = wide_both[f"T2_us_{f2}"].to_numpy(float)
+        d_T2 = T2_2 - T2_1
+
+    # ------------------------ 4) f_minus and f_plus comparison plots ------------------------
+    max_fm = max(f_minus_1.max(), f_minus_2.max())
+    max_fp = max(f_plus_1.max(), f_plus_2.max())
+
+    # f_minus: B1 vs B2
+    fig, ax = plt.subplots(figsize=(6, 5))
+    ax.scatter(f_minus_1, f_minus_2, s=20, alpha=0.7)
+    ax.plot([0, max_fm], [0, max_fm], "k--", linewidth=1)
+    ax.set_xlabel(f"$f_-({f1})$  (kHz)")
+    ax.set_ylabel(f"$f_-({f2})$  (kHz)")
+    ax.set_title(f"{title_prefix}: $f_-$ shift between {f1} and {f2}")
+    ax.grid(True, alpha=0.3)
+
+    # f_plus: B1 vs B2
+    fig, ax = plt.subplots(figsize=(6, 5))
+    ax.scatter(f_plus_1, f_plus_2, s=20, alpha=0.7)
+    ax.plot([0, max_fp], [0, max_fp], "k--", linewidth=1)
+    ax.set_xlabel(f"$f_+({f1})$  (kHz)")
+    ax.set_ylabel(f"$f_+({f2})$  (kHz)")
+    ax.set_title(f"{title_prefix}: $f_+$ shift between {f1} and {f2}")
+    ax.grid(True, alpha=0.3)
+
+    # ------------------------ 5) Δf histograms & Δf vs radius ------------------------
+    fig, ax = plt.subplots(figsize=(6, 4))
+    ax.hist(d_fm, bins=50, histtype="step", label=r"$\Delta f_- = f_-^{(2)} - f_-^{(1)}$")
+    ax.hist(d_fp, bins=50, histtype="step", label=r"$\Delta f_+ = f_+^{(2)} - f_+^{(1)}$")
+    ax.set_xlabel("Δf (kHz)")
+    ax.set_ylabel("Count of sites")
+    ax.set_title(f"{title_prefix}: frequency shifts between fields")
+    ax.legend()
+    ax.grid(True, alpha=0.3)
+
+    fig, ax = plt.subplots(figsize=(6, 5))
+    ax.scatter(rA, np.abs(d_fm), s=20, alpha=0.7, label=r"|Δf_-|")
+    ax.scatter(rA, np.abs(d_fp), s=20, alpha=0.7, label=r"|Δf_+|")
+    ax.set_xlabel("Distance NV–13C (Å)")
+    ax.set_ylabel("|Δf| (kHz)")
+    ax.set_title(f"{title_prefix}: magnitude of frequency shift vs radius")
+    ax.set_yscale("log")
+    ax.grid(True, which="both", alpha=0.3)
+    ax.legend()
+
+    # ------------------------ 6) kappa comparison ------------------------
+    fig, ax = plt.subplots(figsize=(6, 5))
+    ax.scatter(kappa_1, kappa_2, s=20, alpha=0.7)
+    ax.plot([0, 1], [0, 1], "k--", linewidth=1)
+    ax.set_xlabel(f"$\\kappa({f1})$")
+    ax.set_ylabel(f"$\\kappa({f2})$")
+    ax.set_title(f"{title_prefix}: ESEEM misalignment change")
+    ax.grid(True, alpha=0.3)
+
+    fig, ax = plt.subplots(figsize=(6, 4))
+    ax.hist(d_kappa, bins=40, histtype="stepfilled", alpha=0.6)
+    ax.set_xlabel(r"Δκ = κ(2) − κ(1)")
+    ax.set_ylabel("Count of sites")
+    ax.set_title(f"{title_prefix}: change in ESEEM misalignment between fields")
+    ax.grid(True, alpha=0.3)
+
+    # ------------------------ 7) multiplicity change ------------------------
+    fig, ax = plt.subplots(figsize=(6, 5))
+    ax.scatter(nmatch_1, nmatch_2, s=20, alpha=0.7)
+    max_nm = max(nmatch_1.max(), nmatch_2.max())
+    ax.plot([0, max_nm], [0, max_nm], "k--", linewidth=1)
+    ax.set_xlabel(f"$n_\\mathrm{{matches}}({f1})$")
+    ax.set_ylabel(f"$n_\\mathrm{{matches}}({f2})$")
+    ax.set_title(f"{title_prefix}: site multiplicity change between fields")
+    ax.set_xscale("log")
+    ax.set_yscale("log")
+    ax.grid(True, which="both", alpha=0.3)
+
+    fig, ax = plt.subplots(figsize=(6, 4))
+    ax.hist(d_nmatch, bins=np.arange(d_nmatch.min()-0.5, d_nmatch.max()+1.5, 1.0))
+    ax.set_xlabel(r"Δn_matches = n_matches(2) − n_matches(1)")
+    ax.set_ylabel("Count of sites")
+    ax.set_title(f"{title_prefix}: change in site occupancy between fields")
+    ax.grid(True, alpha=0.3)
+
+    # ------------------------ 8) T2 comparison (if available) ------------------------
+    if has_T2:
+        fig, ax = plt.subplots(figsize=(6, 5))
+        ax.scatter(T2_1, T2_2, s=20, alpha=0.7)
+        max_T2 = max(T2_1.max(), T2_2.max())
+        ax.plot([1e-1, max_T2], [1e-1, max_T2], "k--", linewidth=1)
+        ax.set_xscale("log")
+        ax.set_yscale("log")
+        ax.set_xlabel(f"$T_2({f1})$ (µs)")
+        ax.set_ylabel(f"$T_2({f2})$ (µs)")
+        ax.set_title(f"{title_prefix}: $T_2$ change between fields")
+        ax.grid(True, which="both", alpha=0.3)
+
+        fig, ax = plt.subplots(figsize=(6, 4))
+        ax.hist(d_T2, bins=40, histtype="stepfilled", alpha=0.6)
+        ax.set_xlabel(r"Δ$T_2$ = $T_2(2)$ − $T_2(1)$ (µs)")
+        ax.set_ylabel("Count of sites")
+        ax.set_title(f"{title_prefix}: change in $T_2$ between fields")
+        ax.grid(True, alpha=0.3)
+
+    print("compare_two_fields: finished. Call plt.show() (or kpl.show()) to view.")
+    return wide_both

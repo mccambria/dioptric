@@ -707,8 +707,8 @@ def do_ac_stark(nv_list):
 def do_spin_echo(nv_list):
     # revival_period = int(51.5e3 / 2) ### ~37.0 G
     # revival_period = int(38.5e3 / 2)### 49.68 G
-    # revival_period = int(28.6e3 / 2) ### 65.14G
-    revival_period = int(31.2e3 / 2) ### 59.69G
+    revival_period = int(28.6e3 / 2) ### 65.14G
+    # revival_period = int(31.2e3 / 2) ### 59.69G
     min_tau = 200
     taus = []
     revival_width = 6e3
@@ -1353,7 +1353,7 @@ if __name__ == "__main__":
     # magnet_angle = 90
     date_str = "2025_10_21"
     sample_coords = [0.4, 0.8]
-    z_coord = 0.4
+    z_coord = 0.2
     # Load NV pixel coordinates1
     pixel_coords_list = load_nv_coords(
         # file_path="slmsuite/nv_blob_detection/nv_blob_308nvs_reordered.npz",
@@ -1397,8 +1397,8 @@ if __name__ == "__main__":
     print(f"Red Laser Coordinates: {red_coords_list[0]}")
 
     # pixel_coords_list = [[124.195, 127.341],[14.043, 37.334],[106.538, 237.374],[218.314, 23.302]]
-    # green_coords_list = [[107.96, 107.655], [119.36, 119.145], [111.366, 95.361], [96.026, 118.536]]
-    # red_coords_list = [[73.343, 72.008],[82.257, 81.931],[76.56, 62.189],[63.205, 80.24]]
+    # green_coords_list = [[107.918, 107.717], [119.327, 119.235], [111.325, 95.45], [95.997, 118.606]]
+    # red_coords_list = [[73.307, 72.056], [82.227, 82.002], [76.524, 62.26], [63.179, 80.296][82.227, 82.002], [76.524, 62.26], [63.179, 80.296]]
     num_nvs = len(pixel_coords_list)
     threshold_list = [None] * num_nvs
     # fmt: off
@@ -1521,7 +1521,7 @@ if __name__ == "__main__":
         # )
 
         do_compensate_for_drift(nv_sig)
-        # do_widefield_image_sample(nv_sig, 50)
+        do_widefield_image_sample(nv_sig, 50)
         # do_widefield_image_sample(nv_sig, 400)
 
         # for nv in nv_list:

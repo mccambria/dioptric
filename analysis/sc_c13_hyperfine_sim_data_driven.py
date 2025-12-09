@@ -41,7 +41,8 @@ gamma_C13 = 10.705e6  # Hz/T  (13C gyromagnetic ratio)
 
 # Default lab field in Gauss (example), rotated later into NV frame
 # B_vec_G = np.array([-46.18287122, -17.44411563, -5.57779074], dtype=float) ##49.68G
-B_vec_G = np.array([-31.61263115, -56.58135644, -6.5512002], dtype=float)  ##65.14G
+# B_vec_G = np.array([-31.61263115, -56.58135644, -6.5512002 ], dtype=float) ##65.14G
+B_vec_G = np.array([-41.57848995, -32.77145194, -27.5799348 ], dtype=float) ##59.69G
 B_vec_T = B_vec_G * 1e-4
 
 
