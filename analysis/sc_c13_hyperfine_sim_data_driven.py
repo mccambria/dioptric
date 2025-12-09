@@ -21,6 +21,7 @@ from utils import kplotlib as kpl
 from dataclasses import dataclass
 from typing import Iterable, Tuple, List, Dict, Optional
 import json
+
 # ---------- Optional numba (falls back gracefully) ----------
 try:
     from numba import njit
@@ -40,7 +41,7 @@ gamma_C13 = 10.705e6  # Hz/T  (13C gyromagnetic ratio)
 
 # Default lab field in Gauss (example), rotated later into NV frame
 # B_vec_G = np.array([-46.18287122, -17.44411563, -5.57779074], dtype=float) ##49.68G
-B_vec_G = np.array([-31.61263115, -56.58135644, -6.5512002 ], dtype=float) ##65.14G
+B_vec_G = np.array([-31.61263115, -56.58135644, -6.5512002], dtype=float)  ##65.14G
 B_vec_T = B_vec_G * 1e-4
 
 
@@ -520,21 +521,21 @@ def Mk_from_catalog_rec(rec, tau_array_s):
     """
 
     kappa = float(rec["kappa"])
-    f0 = float(rec["f0_Hz"])       # from fI_Hz
-    f_m1 = float(rec["f_m1_Hz"])   # from omega_ms_Hz
+    f0 = float(rec["f0_Hz"])  # from fI_Hz
+    f_m1 = float(rec["f_m1_Hz"])  # from omega_ms_Hz
     tau = np.asarray(tau_array_s, float)
 
-    return 1.0 - 2.0 * kappa * (
-        np.sin(np.pi * f0 * tau) ** 2
-    ) * (
+    return 1.0 - 2.0 * kappa * (np.sin(np.pi * f0 * tau) ** 2) * (
         np.sin(np.pi * f_m1 * tau) ** 2
     )
+
 
 def compute_echo_signal_from_catalog(chosen_sites, tau_array_s):
     signal = np.ones_like(tau_array_s, dtype=float)
     for rec in chosen_sites:
         signal *= Mk_from_catalog_rec(rec, tau_array_s)
     return signal
+
 
 # =============================================================================
 # RNG helpers and selection
@@ -571,9 +572,7 @@ def _choose_sites(rng, present_sites, num_spins, selection_mode="uniform"):
 
     # NEW: pick strongest catalog entries by κ
     elif selection_mode == "top_kappa":
-        order = np.argsort(
-            [-abs(s.get("kappa", 0.0)) for s in present_sites]
-        )
+        order = np.argsort([-abs(s.get("kappa", 0.0)) for s in present_sites])
         idx = order[:num_spins]
 
     # NEW: pick by first-order line weight (minus+plus combined)
@@ -676,6 +675,7 @@ def read_hyperfine_table_safe(path: str | Path) -> pd.DataFrame:
         df["index"] = df["index"].round().astype(int)
         return df
 
+
 # ---------- 0) IO ----------
 def load_catalog(path_json: str) -> List[Dict]:
     """Load ESEEM catalog (with κ and f± in Hz) written by your builder."""
@@ -685,6 +685,8 @@ def load_catalog(path_json: str) -> List[Dict]:
 
 def _ori_tuple(o) -> Tuple[int, int, int]:
     return tuple(int(x) for x in o)
+
+
 # =============================================================================
 # Main simulator
 # =============================================================================
@@ -711,8 +713,8 @@ def simulate_random_spin_echo_average(
     fixed_presence_mask=None,  # boolean mask of length N_sites
     reuse_present_mask=True,  # draw Bernoulli once and reuse (quenched)
     # -------- NEW: catalog options --------
-    catalog_json_path=None,          # if not None, use catalog instead of hyperfine_path
-    nv_orientation=None,        # e.g. (1,1,1); if None, keep all orientations
+    catalog_json_path=None,  # if not None, use catalog instead of hyperfine_path
+    nv_orientation=None,  # e.g. (1,1,1); if None, keep all orientations
 ):
     """
     Returns:
@@ -794,23 +796,18 @@ def simulate_random_spin_echo_average(
         if nv_orientation is not None:
             ori_tgt = _ori_tuple(nv_orientation)
             catalog = [
-                rec
-                for rec in catalog
-                if _ori_tuple(rec["orientation"]) == ori_tgt
+                rec for rec in catalog if _ori_tuple(rec["orientation"]) == ori_tgt
             ]
             print(f"After orientation filter {ori_tgt}: {len(catalog)} records")
 
         # Optional: distance cutoff (Å)
         if distance_cutoff is not None:
             dmax = float(distance_cutoff)
-            catalog = [
-                rec for rec in catalog
-                if rec.get("distance_A", np.inf) < dmax
-            ]
+            catalog = [rec for rec in catalog if rec.get("distance_A", np.inf) < dmax]
             print(f"After distance cutoff < {dmax} Å: {len(catalog)} records")
 
         f_minus_all = np.array([rec["f_minus_Hz"] for rec in catalog]) / 1e3
-        f_plus_all  = np.array([rec["f_plus_Hz"]  for rec in catalog]) / 1e3
+        f_plus_all = np.array([rec["f_plus_Hz"] for rec in catalog]) / 1e3
         print(f"f_- range (kHz): {f_minus_all.min():.1f} – {f_minus_all.max():.1f}")
         print(f"f_+ range (kHz): {f_plus_all.min():.1f} – {f_plus_all.max():.1f}")
 
@@ -818,25 +815,25 @@ def simulate_random_spin_echo_average(
         for rec in catalog:
             # -------- frequency-band filter using f_- and f_+ (in kHz) --------
             f_minus_Hz = float(rec["f_minus_Hz"])
-            f_plus_Hz  = float(rec["f_plus_Hz"])
+            f_plus_Hz = float(rec["f_plus_Hz"])
             f_minus_kHz = f_minus_Hz / 1e3
-            f_plus_kHz  = f_plus_Hz  / 1e3
+            f_plus_kHz = f_plus_Hz / 1e3
 
             keep_f = True
             if (Ak_min_kHz is not None) or (Ak_max_kHz is not None):
                 # Require *both* f_- and f_+ to lie inside [Ak_min_kHz, Ak_max_kHz]
                 in_minus = True
-                in_plus  = True
+                in_plus = True
 
                 if Ak_min_kHz is not None:
                     lo = float(Ak_min_kHz)
-                    in_minus &= (f_minus_kHz >= lo)
-                    in_plus  &= (f_plus_kHz  >= lo)
+                    in_minus &= f_minus_kHz >= lo
+                    in_plus &= f_plus_kHz >= lo
 
                 if Ak_max_kHz is not None:
                     hi = float(Ak_max_kHz)
-                    in_minus &= (f_minus_kHz <= hi)
-                    in_plus  &= (f_plus_kHz  <= hi)
+                    in_minus &= f_minus_kHz <= hi
+                    in_plus &= f_plus_kHz <= hi
 
                 # keep only if BOTH lines are inside the band
                 keep_f = in_minus and in_plus
@@ -857,17 +854,14 @@ def simulate_random_spin_echo_average(
             sites.append(
                 {
                     "site_id": int(rec["site_index"]),
-
                     # keep keys expected by the rest of the code:
-                    "A0": None,                     # not used in catalog mode
+                    "A0": None,  # not used in catalog mode
                     "pos0": pos,
                     "dist": float(rec.get("distance_A", np.nan)),
-
                     # catalog-specific fields for time-domain M(τ)
                     "kappa": float(rec["kappa"]),
-                    "f0_Hz": float(rec["fI_Hz"]),          # f_0  (ms = 0 manifold)
+                    "f0_Hz": float(rec["fI_Hz"]),  # f_0  (ms = 0 manifold)
                     "f_m1_Hz": float(rec["omega_ms_Hz"]),  # f_-1 (ms = -1 manifold)
-
                     # sum/diff lines and weights
                     "f_minus_Hz": f_minus_Hz,
                     "f_plus_Hz": f_plus_Hz,
@@ -875,7 +869,6 @@ def simulate_random_spin_echo_average(
                     "line_w_plus": float(rec.get("line_w_plus", 0.0)),
                 }
             )
-
 
     N_candidates = len(sites)
     print(
@@ -973,7 +966,6 @@ def simulate_random_spin_echo_average(
 
         all_signals.append(signal)
 
-
         # Annotation (first realization by default)
         if r == annotate_from_realization:
             anno_positions = (
@@ -985,7 +977,8 @@ def simulate_random_spin_echo_average(
                     {
                         "site_id": s["site_id"],
                         "Apar_kHz": float(
-                            abs(compute_hyperfine_components(s["A0"], B_hat_NV)[0]) / 1e3
+                            abs(compute_hyperfine_components(s["A0"], B_hat_NV)[0])
+                            / 1e3
                         ),
                         "r": float(np.linalg.norm(s["pos0"])),
                     }
@@ -999,17 +992,15 @@ def simulate_random_spin_echo_average(
                         "Apar_kHz": float(abs(s.get("Apar_Hz", 0.0)) / 1e3),
                         "r": float(np.linalg.norm(s["pos0"])),
                         "f_minus_kHz": float(s.get("f_minus_Hz", 0.0) / 1e3),
-                        "f_plus_kHz":  float(s.get("f_plus_Hz",  0.0) / 1e3),
+                        "f_plus_kHz": float(s.get("f_plus_Hz", 0.0) / 1e3),
                     }
                     for s in chosen_sites
                 ]
-
 
             if fine_params is not None and "revival_time" in fine_params:
                 revT_us = float(fine_params["revival_time"])
                 kmax = int(np.ceil((taus_s.max() * 1e6) / revT_us))
                 anno_rev_times = np.arange(0, kmax + 1) * revT_us
-
 
     # Average (for single realization this is just identity)
     avg_signal = np.mean(all_signals, axis=0)
@@ -1061,6 +1052,7 @@ def set_axes_equal_3d(ax):
     ax.set_xlim3d(xmid - max_range, xmid + max_range)
     ax.set_ylim3d(ymid - max_range, ymid + max_range)
     ax.set_zlim3d(zmid - max_range, zmid + max_range)
+
 
 def _echo_summary_lines(taus_us, echo):
     if len(echo) == 0:
@@ -1118,7 +1110,7 @@ def _fine_param_lines(fine_params):
 #     if len(rows) > max_rows:
 #         lines.append(f"... (+{len(rows)-max_rows} more)")
 #     return lines
-# 
+#
 def _site_table_lines(site_info, max_rows=8):
     """
     Build a small text table for the annotation box on the 3D panel.
@@ -1135,18 +1127,17 @@ def _site_table_lines(site_info, max_rows=8):
     n = min(len(site_info), max_rows)
     for meta in site_info[:n]:
         sid = meta.get("site_id", "?")
-        r   = float(meta.get("r", np.nan))
+        r = float(meta.get("r", np.nan))
         f_m = float(meta.get("f_minus_kHz", np.nan))
-        f_p = float(meta.get("f_plus_kHz",  np.nan))
+        f_p = float(meta.get("f_plus_kHz", np.nan))
 
-        lines.append(
-            f"{sid:3d}  {r:5.2f}   {f_m:8.1f}   {f_p:8.1f}"
-        )
+        lines.append(f"{sid:3d}  {r:5.2f}   {f_m:8.1f}   {f_p:8.1f}")
 
     if len(site_info) > max_rows:
         lines.append(f"... (+{len(site_info) - max_rows} more)")
 
     return lines
+
 
 def _env_only_curve(taus_us, fine_params):
     """baseline - envelope(τ); ignores COMB/MOD so you see pure T2 envelope."""
@@ -1200,7 +1191,7 @@ def plot_echo_with_sites(
     fine_params=None,
     units_label="(arb units)",
     nv_label=None,  # <-- NEW: show NV id
-    nv_orientation = None,
+    nv_orientation=None,
     sim_info=None,  # <-- NEW: dict with sim settings to display
     show_env=True,  # <-- NEW: overlay envelope-only
     show_env_times_comb=False,  # <-- NEW: optionally overlay envelope×comb
@@ -1396,7 +1387,7 @@ def plot_echo_with_sites(
         #     ax1.text(pnt[0], pnt[1], pnt[2], label, fontsize=8, ha="left", va="bottom")
         for pnt, meta in zip(pos, info):
             rmag = meta.get("r", np.nan)
-            f_m  = meta.get("f_minus_kHz", np.nan)
+            f_m = meta.get("f_minus_kHz", np.nan)
             label = f"r={rmag:.2f}\nf_-={f_m:.0f} kHz"
             ax1.text(pnt[0], pnt[1], pnt[2], label, fontsize=7, ha="left", va="bottom")
 
@@ -1545,6 +1536,7 @@ fit = dm.get_raw_data(file_stem=file_stem)
 
 keys = fit["unified_keys"]
 
+
 def _asdict(p):
     d = {k: None for k in keys}
     if p is None:
@@ -1552,6 +1544,7 @@ def _asdict(p):
     for k, v in zip(keys, p + [None] * (len(keys) - len(p))):
         d[k] = v
     return d
+
 
 labels = list(map(int, fit["nv_labels"]))
 nv_orientations = [tuple(o) for o in fit["orientations"]]
@@ -1684,8 +1677,8 @@ def synth_per_nv(
 ):
     lbl = int(labels[nv_idx])
     nv_ori = nv_orientations[nv_idx]
-    Ak_min_kHz,  Ak_max_kHz = f_range_kHz
-    
+    Ak_min_kHz, Ak_max_kHz = f_range_kHz
+
     salt = lbl & 0xFFFFFFFF
 
     traces = []  # list of echo arrays (length T)
@@ -1721,8 +1714,8 @@ def synth_per_nv(
             num_spins=num_spins,
             num_realizations=1,
             distance_cutoff=distance_cutoff,  # <= use the function arg
-            Ak_min_kHz= Ak_min_kHz,
-            Ak_max_kHz= Ak_max_kHz,
+            Ak_min_kHz=Ak_min_kHz,
+            Ak_max_kHz=Ak_max_kHz,
             Ak_abs=True,
             R_NV=np.eye(3),
             fine_params=fine_params,
@@ -1739,7 +1732,7 @@ def synth_per_nv(
             reuse_present_mask=reuse_present_mask,
             # NEW: catalog usage
             catalog_json_path=catalog_json_path,
-            nv_orientation=nv_ori,   #NV orientation for this NV
+            nv_orientation=nv_ori,  # NV orientation for this NV
         )
 
         # (Optional) Noise model here if desired
@@ -1764,7 +1757,7 @@ def synth_per_nv(
                 num_spins=("all" if num_spins is None else int(num_spins)),
             ),
             show_env=False,
-            show_env_times_comb=False ,
+            show_env_times_comb=False,
         )
         plt.show()
 
@@ -1878,9 +1871,7 @@ def main():
     return results
 
 
-
 if __name__ == "__main__":
     # kpl.init_kplotlib()
     results = main()
     plt.show()
-   
