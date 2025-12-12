@@ -983,21 +983,83 @@ def optimize_z(
             if reached_optimal_region and current_counts < target_threshold:
                 # Counts dropped below threshold after being optimal - we've passed the peak
                 print(f"  Step {approach_step}: counts={current_counts:.0f} dropped below threshold - PASSED PEAK")
-                print(f"  Reversing to best position (counts={best_counts:.0f})...")
+                print(f"  Starting hill-climb to find true peak...")
 
-                # Step back until we reach or exceed best counts
-                reverse_steps = 0
-                max_reverse = 10
-                while reverse_steps < max_reverse:
-                    piezo.move_z_steps(-move_direction * step_size)
-                    time.sleep(0.01)
-                    reverse_steps += 1
-                    current_counts = measure_counts()
-                    print(f"    Reverse step {reverse_steps}: counts={current_counts:.0f}")
+                # Hill-climbing: oscillate back and forth until we settle at the peak
+                current_direction = -move_direction  # Start by reversing
+                hill_climb_step = 0
+                max_hill_climb_steps = 30
+                prev_counts = current_counts
+                direction_changes = 0
+                max_direction_changes = 6  # Limit oscillations
 
-                    if current_counts >= best_counts * 0.98:  # Within 2% of best
-                        print(f"    Reached peak!")
+                # Reset best tracking for hill climb phase
+                best_counts = current_counts
+                best_position = piezo.get_z_position()
+
+                while hill_climb_step < max_hill_climb_steps and direction_changes < max_direction_changes:
+                    if tb.safe_stop():
+                        print("    [STOPPED] User interrupt during hill climb")
                         break
+
+                    # Take a step in current direction
+                    piezo.move_z_steps(current_direction * step_size)
+                    time.sleep(0.01)
+                    hill_climb_step += 1
+
+                    # Measure counts
+                    current_counts = measure_counts()
+                    current_pos = piezo.get_z_position()
+
+                    # Track best position seen
+                    if current_counts > best_counts:
+                        best_counts = current_counts
+                        best_position = current_pos
+                        print(f"    Hill step {hill_climb_step}: counts={current_counts:.0f} (NEW BEST)")
+                    else:
+                        print(f"    Hill step {hill_climb_step}: counts={current_counts:.0f}")
+
+                    # If counts decreased from previous, we passed the peak - reverse
+                    if current_counts < prev_counts * 0.95:  # Allow 5% noise tolerance
+                        current_direction = -current_direction  # Reverse direction
+                        direction_changes += 1
+                        print(f"    Counts dropping, reversing direction (change #{direction_changes})")
+
+                    # Check if we've converged (counts stable near best)
+                    if current_counts >= best_counts * 0.98:
+                        # We're at or very near the best - check if stable
+                        if abs(current_counts - prev_counts) < best_counts * 0.03:
+                            print(f"    Converged at peak!")
+                            break
+
+                    prev_counts = current_counts
+
+                # If we didn't end at the best position, try to get there
+                if current_counts < best_counts * 0.95:
+                    print(f"    Final adjustment to best position (counts={best_counts:.0f})...")
+                    # We know best_position, but can't rely on step counts due to hysteresis
+                    # Do a few more oscillations toward higher counts
+                    for _ in range(5):
+                        # Try both directions, keep the one with higher counts
+                        piezo.move_z_steps(step_size)
+                        time.sleep(0.01)
+                        counts_pos = measure_counts()
+
+                        piezo.move_z_steps(-2 * step_size)  # Go back and past
+                        time.sleep(0.01)
+                        counts_neg = measure_counts()
+
+                        if counts_pos > counts_neg:
+                            piezo.move_z_steps(2 * step_size)  # Return to positive side
+                            current_counts = counts_pos
+                        else:
+                            current_counts = counts_neg
+
+                        print(f"    Adjustment: counts={current_counts:.0f}")
+
+                        if current_counts >= best_counts * 0.95:
+                            break
+
                 break
 
         counter.stop_tag_stream()
@@ -1007,7 +1069,7 @@ def optimize_z(
 
         if reached_optimal_region:
             print(f"  Optimal position found at Z={final_z}")
-            print(f"  Final counts: {opti_counts}")
+            print(f"  Final counts: {opti_counts} (best seen: {best_counts:.0f})")
         else:
             print(f"  Could not reach target counts after {approach_step} steps")
             print(f"  Final position: Z={final_z}, counts={opti_counts}")
