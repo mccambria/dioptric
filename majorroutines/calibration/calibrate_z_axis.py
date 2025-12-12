@@ -1090,7 +1090,8 @@ def optimize_z(
 
     ### Save data
     results = {
-        "opti_z": float(opti_z) if opti_z is not None else None,
+        "opti_z": float(final_z) if final_z is not None else None,  # Actual final position
+        "opti_z_fit": float(opti_z) if opti_z is not None else None,  # Gaussian fit estimate
         "opti_counts": opti_counts,
         "fit_params": fit_params,
         "z_positions": z_array.tolist(),
