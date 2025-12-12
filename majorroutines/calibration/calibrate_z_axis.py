@@ -991,13 +991,11 @@ def optimize_z(
                 hill_climb_step = 0
                 max_hill_climb_steps = 40
                 direction_changes = 0
-                max_direction_changes = 8  # Allow more oscillations for fine-tuning
 
                 # Use more averages during hill-climb for stability
                 hill_climb_averages = 5
 
                 # Track the best counts seen in the CURRENT direction of travel
-                # This resets after each direction change
                 best_in_direction = current_counts
                 steps_since_best_in_direction = 0
                 steps_before_reverse = 3  # Reverse after this many steps below best-in-direction
@@ -1006,12 +1004,10 @@ def optimize_z(
                 overall_best_counts = best_counts  # Keep from approach phase
                 overall_best_position = best_position
 
-                # Track recent peaks to detect convergence
-                peak_values = []  # Counts at each direction change
+                print(f"    Starting counts: {current_counts:.0f}, target threshold: {target_threshold:.0f}")
 
-                print(f"    Starting counts: {current_counts:.0f}, target: ~{overall_best_counts:.0f}")
-
-                while hill_climb_step < max_hill_climb_steps and direction_changes < max_direction_changes:
+                found_peak = False
+                while hill_climb_step < max_hill_climb_steps and not found_peak:
                     if tb.safe_stop():
                         print("    [STOPPED] User interrupt during hill climb")
                         break
@@ -1039,6 +1035,13 @@ def optimize_z(
                         steps_since_best_in_direction += 1
                         print(f"    Step {hill_climb_step}: counts={current_counts:.0f}, Z={current_pos}")
 
+                    # After first reversal, stop as soon as we reach target threshold
+                    # This confirms we're back in the peak region
+                    if direction_changes >= 1 and current_counts >= target_threshold:
+                        print(f"    FOUND PEAK: counts={current_counts:.0f} >= threshold after reversal")
+                        found_peak = True
+                        break
+
                     # Check if we should reverse:
                     # - We've gone several steps without improving
                     # - AND current counts are significantly below best in this direction
@@ -1048,18 +1051,7 @@ def optimize_z(
                     )
 
                     if should_reverse:
-                        # Record the peak we found in this direction
-                        peak_values.append(best_in_direction)
                         print(f"    Reversing: {steps_since_best_in_direction} steps past peak of {best_in_direction:.0f} (change #{direction_changes + 1})")
-
-                        # Check for convergence: if last 2 peaks are similar, we've found it
-                        if len(peak_values) >= 2:
-                            last_two_peaks = peak_values[-2:]
-                            peak_diff = abs(last_two_peaks[0] - last_two_peaks[1])
-                            avg_peak = np.mean(last_two_peaks)
-                            if peak_diff < avg_peak * 0.15:  # Peaks within 15% of each other
-                                print(f"    Converged! Last two peaks: {last_two_peaks}")
-                                break
 
                         # Reverse direction
                         current_direction = -current_direction
@@ -1072,10 +1064,6 @@ def optimize_z(
                 # Final report
                 final_z = piezo.get_z_position()
                 print(f"    Gradient ascent complete after {hill_climb_step} steps, {direction_changes} reversals")
-                print(f"    Peak values found: {[f'{p:.0f}' for p in peak_values]}")
-
-                # Update current_counts to reflect where we ended
-                current_counts = measure_counts(n_samples=hill_climb_averages)
 
                 # Update best tracking
                 best_counts = overall_best_counts
