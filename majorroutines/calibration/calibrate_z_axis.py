@@ -971,18 +971,18 @@ def optimize_z(
             # Check if we've reached the optimal region
             if current_counts >= target_threshold:
                 if not reached_optimal_region:
-                    print(f"  Step {approach_step}: counts={current_counts:.0f} >= threshold - REACHED OPTIMAL REGION")
+                    print(f"  Step {approach_step}: counts={current_counts:.0f}, Z={current_position} >= threshold - REACHED OPTIMAL REGION")
                     reached_optimal_region = True
                 else:
                     # Already in optimal region, just report progress
-                    print(f"  Step {approach_step}: counts={current_counts:.0f} (in optimal region)")
-            elif approach_step % 5 == 0:
-                print(f"  Step {approach_step}: counts={current_counts:.0f}")
+                    print(f"  Step {approach_step}: counts={current_counts:.0f}, Z={current_position} (in optimal region)")
+            else:
+                print(f"  Step {approach_step}: counts={current_counts:.0f}, Z={current_position}")
 
             # Only check for overshoot AFTER we've reached the optimal region
             if reached_optimal_region and current_counts < target_threshold:
                 # Counts dropped below threshold after being optimal - we've passed the peak
-                print(f"  Step {approach_step}: counts={current_counts:.0f} dropped below threshold - PASSED PEAK")
+                print(f"  Step {approach_step}: counts={current_counts:.0f}, Z={current_position} dropped below threshold - PASSED PEAK")
                 print(f"  Starting hill-climb to find true peak...")
 
                 # Hill-climbing: oscillate back and forth until we settle at the peak
@@ -992,10 +992,10 @@ def optimize_z(
                 direction_changes = 0
                 max_direction_changes = 6  # Limit oscillations
 
-                # Track consecutive drops for trend detection
-                consecutive_drops = 0
-                drops_before_reverse = 3  # Require 3 consecutive drops before reversing
-                drop_tolerance = 0.90  # 10% tolerance for noise
+                # Track how long we've been far from best counts
+                steps_below_threshold = 0
+                steps_before_reverse = 3  # Reverse if below threshold for this many steps
+                stray_threshold = 0.70  # Reverse if counts drop below 70% of best
 
                 # Keep history for trend tracking
                 recent_counts = [current_counts]
@@ -1025,36 +1025,35 @@ def optimize_z(
                     if current_counts > best_counts:
                         best_counts = current_counts
                         best_position = current_pos
-                        consecutive_drops = 0  # Reset drop counter on new best
-                        print(f"    Hill step {hill_climb_step}: counts={current_counts:.0f} (NEW BEST)")
+                        steps_below_threshold = 0  # Reset counter on new best
+                        print(f"    Hill step {hill_climb_step}: counts={current_counts:.0f}, Z={current_pos} (NEW BEST)")
                     else:
-                        print(f"    Hill step {hill_climb_step}: counts={current_counts:.0f}")
+                        print(f"    Hill step {hill_climb_step}: counts={current_counts:.0f}, Z={current_pos}")
 
                     # Update recent counts history
                     recent_counts.append(current_counts)
                     if len(recent_counts) > 4:
                         recent_counts.pop(0)
 
-                    # Check for consecutive drops (trend detection)
-                    if len(recent_counts) >= 2:
-                        if current_counts < recent_counts[-2] * drop_tolerance:
-                            consecutive_drops += 1
-                        else:
-                            consecutive_drops = 0  # Reset if not dropping
+                    # Check if we've strayed too far from best
+                    if current_counts < best_counts * stray_threshold:
+                        steps_below_threshold += 1
+                    else:
+                        steps_below_threshold = 0  # Reset if we're close to best
 
-                    # Only reverse after seeing consistent downward trend
-                    if consecutive_drops >= drops_before_reverse:
+                    # Reverse if we've been far from best for too long
+                    if steps_below_threshold >= steps_before_reverse:
                         current_direction = -current_direction  # Reverse direction
                         direction_changes += 1
-                        consecutive_drops = 0  # Reset counter
-                        print(f"    {drops_before_reverse} consecutive drops, reversing direction (change #{direction_changes})")
+                        steps_below_threshold = 0  # Reset counter
+                        print(f"    Too far from best for {steps_before_reverse} steps, reversing direction (change #{direction_changes})")
 
                     # Check if we've converged (counts stable near best)
-                    if current_counts >= best_counts * 0.98:
+                    if current_counts >= best_counts * 0.95:
                         # We're at or very near the best - check if stable over recent history
                         if len(recent_counts) >= 3:
                             recent_variance = max(recent_counts[-3:]) - min(recent_counts[-3:])
-                            if recent_variance < best_counts * 0.05:  # Within 5% variance
+                            if recent_variance < best_counts * 0.10:  # Within 10% variance
                                 print(f"    Converged at peak!")
                                 break
 
