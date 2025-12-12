@@ -156,7 +156,7 @@ def do_image_sample_zoom(nv_sig):
         num_steps,
     )
 
-def do_optimize_z(nv_sig, num_steps=6, step_size=1, scan_direction="down"):
+def do_optimize_z(nv_sig, num_steps=25, step_size=1, scan_direction="down"):
     """
     Optimize Z position by scanning and fitting a Gaussian to find the focus peak.
 
@@ -185,7 +185,7 @@ def do_optimize_z(nv_sig, num_steps=6, step_size=1, scan_direction="down"):
         nv_sig,
         num_steps=num_steps,
         step_size=step_size,
-        num_averages=1,
+        num_averages=5,
         move_to_optimal=True,
         save_data=True,
         scan_direction=scan_direction,
@@ -735,9 +735,9 @@ if __name__ == "__main__":
     # current step rate: 30.0V XYZ
     # region Postion and Time Control
     sample_xy = [0.0,0.0] # piezo XY voltage input (1.0=1V) (not coordinates, relative)
-    coord_z = 0  # piezo z voltage (negative is closer to smaple)
-    pixel_xy = [0,0]  # galvo XY 
-    # pixel_xy = [-0.056, -0.063]  # NV canidate
+    coord_z = 50  # piezo z voltage (negative is closer to smaple)
+    # pixel_xy = [0,0]  # galvo XY 
+    pixel_xy = [-0.056, -0.063]  # NV canidate
 
 # 
     nv_sig = NVSig(
@@ -774,14 +774,14 @@ if __name__ == "__main__":
         # tool_belt.set_drift([0.0, 0.0, drift[2]])  # Keep z
         # tool_belt.set_drifts([drift[0], drift[1], 0.0])  # Keep xy
         
-        pos.set_xyz_on_nv(nv_sig) # Hahn omits this line, currently leave this line out when calibrating z
+        # pos.set_xyz_on_nv(nv_sig) # Hahn omits this line, currently leave this line out when calibrating z
 
         #region 1D scan + Calibrate
-        #do_calibrate_z_axis(nv_sig)
+        # do_calibrate_z_axis(nv_sig)
         # do_z_scan_1d(nv_sig, step_size=-3, num_steps=500, min_threshold=0)
 
 
-        # Manually set Z reference to current position
+        # # Manually set Z reference to current position
         # piezo = pos.get_positioner_server(CoordsKey.Z)
         # # print(piezo.get_z_position())
         # piezo.set_z_reference()
@@ -800,7 +800,7 @@ if __name__ == "__main__":
         # region Image sample     
 
         # do_z_scan_3d(nv_sig) # (xy gavo, z piezo)
-        do_image_sample(nv_sig)
+        # do_image_sample(nv_sig)
         # do_image_sample_zoom(nv_sig)
         # for i in range(27):
         #     do_image_sample_zoom(nv_sig)
@@ -820,7 +820,7 @@ if __name__ == "__main__":
 
         # region Optimize
         # do_optimize(nv_sig)
-        # do_optimize_z(nv_sig) # z position optimize
+        do_optimize_z(nv_sig) # z position optimize
         # do_optimize_green(nv_sig) #xy galvo optimize
         # do_compensate_for_drift(nv_sig)
         # endregion Optimize
