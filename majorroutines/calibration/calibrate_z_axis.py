@@ -993,9 +993,9 @@ def optimize_z(
                 direction_changes = 0
                 max_direction_changes = 6  # Limit oscillations
 
-                # Reset best tracking for hill climb phase
-                best_counts = current_counts
-                best_position = piezo.get_z_position()
+                # Keep best_counts from approach phase - don't reset!
+                # This ensures we try to get back to the true peak we saw earlier
+                print(f"    Target: return to best seen counts ({best_counts:.0f})")
 
                 while hill_climb_step < max_hill_climb_steps and direction_changes < max_direction_changes:
                     if tb.safe_stop():
