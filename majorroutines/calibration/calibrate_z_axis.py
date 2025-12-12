@@ -983,29 +983,33 @@ def optimize_z(
             if reached_optimal_region and current_counts < target_threshold:
                 # Counts dropped below threshold after being optimal - we've passed the peak
                 print(f"  Step {approach_step}: counts={current_counts:.0f}, Z={current_position} dropped below threshold - PASSED PEAK")
-                print(f"  Starting hill-climb to find true peak...")
+                print(f"  Starting gradient ascent to find true peak...")
 
-                # Hill-climbing: oscillate back and forth until we settle at the peak
+                # Gradient ascent: follow increasing counts, reverse when counts drop
+                # Focus purely on counts, ignore position (due to piezo hysteresis)
                 current_direction = -move_direction  # Start by reversing
                 hill_climb_step = 0
-                max_hill_climb_steps = 30
+                max_hill_climb_steps = 40
                 direction_changes = 0
-                max_direction_changes = 6  # Limit oscillations
-
-                # Track how long we've been far from best counts
-                steps_below_threshold = 0
-                steps_before_reverse = 3  # Reverse if below threshold for this many steps
-                stray_threshold = 0.70  # Reverse if counts drop below 70% of best
-
-                # Keep history for trend tracking
-                recent_counts = [current_counts]
-
-                # Keep best_counts from approach phase - don't reset!
-                # This ensures we try to get back to the true peak we saw earlier
-                print(f"    Target: return to best seen counts ({best_counts:.0f})")
+                max_direction_changes = 8  # Allow more oscillations for fine-tuning
 
                 # Use more averages during hill-climb for stability
                 hill_climb_averages = 5
+
+                # Track the best counts seen in the CURRENT direction of travel
+                # This resets after each direction change
+                best_in_direction = current_counts
+                steps_since_best_in_direction = 0
+                steps_before_reverse = 3  # Reverse after this many steps below best-in-direction
+
+                # Track overall best for reporting
+                overall_best_counts = best_counts  # Keep from approach phase
+                overall_best_position = best_position
+
+                # Track recent peaks to detect convergence
+                peak_values = []  # Counts at each direction change
+
+                print(f"    Starting counts: {current_counts:.0f}, target: ~{overall_best_counts:.0f}")
 
                 while hill_climb_step < max_hill_climb_steps and direction_changes < max_direction_changes:
                     if tb.safe_stop():
@@ -1021,66 +1025,61 @@ def optimize_z(
                     current_counts = measure_counts(n_samples=hill_climb_averages)
                     current_pos = piezo.get_z_position()
 
-                    # Track best position seen
-                    if current_counts > best_counts:
-                        best_counts = current_counts
-                        best_position = current_pos
-                        steps_below_threshold = 0  # Reset counter on new best
-                        print(f"    Hill step {hill_climb_step}: counts={current_counts:.0f}, Z={current_pos} (NEW BEST)")
+                    # Track overall best
+                    if current_counts > overall_best_counts:
+                        overall_best_counts = current_counts
+                        overall_best_position = current_pos
+
+                    # Track best in current direction of travel
+                    if current_counts > best_in_direction:
+                        best_in_direction = current_counts
+                        steps_since_best_in_direction = 0
+                        print(f"    Step {hill_climb_step}: counts={current_counts:.0f}, Z={current_pos} (best in direction)")
                     else:
-                        print(f"    Hill step {hill_climb_step}: counts={current_counts:.0f}, Z={current_pos}")
+                        steps_since_best_in_direction += 1
+                        print(f"    Step {hill_climb_step}: counts={current_counts:.0f}, Z={current_pos}")
 
-                    # Update recent counts history
-                    recent_counts.append(current_counts)
-                    if len(recent_counts) > 4:
-                        recent_counts.pop(0)
+                    # Check if we should reverse:
+                    # - We've gone several steps without improving
+                    # - AND current counts are significantly below best in this direction
+                    should_reverse = (
+                        steps_since_best_in_direction >= steps_before_reverse
+                        and current_counts < best_in_direction * 0.80  # 20% below best in direction
+                    )
 
-                    # Check if we've strayed too far from best
-                    if current_counts < best_counts * stray_threshold:
-                        steps_below_threshold += 1
-                    else:
-                        steps_below_threshold = 0  # Reset if we're close to best
+                    if should_reverse:
+                        # Record the peak we found in this direction
+                        peak_values.append(best_in_direction)
+                        print(f"    Reversing: {steps_since_best_in_direction} steps past peak of {best_in_direction:.0f} (change #{direction_changes + 1})")
 
-                    # Reverse if we've been far from best for too long
-                    if steps_below_threshold >= steps_before_reverse:
-                        current_direction = -current_direction  # Reverse direction
-                        direction_changes += 1
-                        steps_below_threshold = 0  # Reset counter
-                        print(f"    Too far from best for {steps_before_reverse} steps, reversing direction (change #{direction_changes})")
-
-                    # Check if we've converged (counts stable near best)
-                    if current_counts >= best_counts * 0.95:
-                        # We're at or very near the best - check if stable over recent history
-                        if len(recent_counts) >= 3:
-                            recent_variance = max(recent_counts[-3:]) - min(recent_counts[-3:])
-                            if recent_variance < best_counts * 0.10:  # Within 10% variance
-                                print(f"    Converged at peak!")
+                        # Check for convergence: if last 2 peaks are similar, we've found it
+                        if len(peak_values) >= 2:
+                            last_two_peaks = peak_values[-2:]
+                            peak_diff = abs(last_two_peaks[0] - last_two_peaks[1])
+                            avg_peak = np.mean(last_two_peaks)
+                            if peak_diff < avg_peak * 0.15:  # Peaks within 15% of each other
+                                print(f"    Converged! Last two peaks: {last_two_peaks}")
                                 break
 
-                # If we didn't end at the best position, try to get there
-                if current_counts < best_counts * 0.90:
-                    print(f"    Final adjustment to best position (counts={best_counts:.0f})...")
-                    # Do a few more oscillations toward higher counts
-                    for adj_step in range(5):
-                        # Try both directions, keep the one with higher counts
-                        piezo.move_z_steps(step_size)
-                        time.sleep(0.01)
-                        counts_pos = measure_counts(n_samples=hill_climb_averages)
+                        # Reverse direction
+                        current_direction = -current_direction
+                        direction_changes += 1
 
-                        piezo.move_z_steps(-2 * step_size)  # Go back and past
-                        time.sleep(0.01)
-                        counts_neg = measure_counts(n_samples=hill_climb_averages)
+                        # Reset best-in-direction tracking
+                        best_in_direction = current_counts
+                        steps_since_best_in_direction = 0
 
-                        if counts_pos > counts_neg:
-                            piezo.move_z_steps(2 * step_size)  # Return to positive side
-                            current_counts = counts_pos
-                        else:
-                            current_counts = counts_neg
+                # Final report
+                final_z = piezo.get_z_position()
+                print(f"    Gradient ascent complete after {hill_climb_step} steps, {direction_changes} reversals")
+                print(f"    Peak values found: {[f'{p:.0f}' for p in peak_values]}")
 
-                        print(f"    Adjustment {adj_step + 1}: counts={current_counts:.0f}")
+                # Update current_counts to reflect where we ended
+                current_counts = measure_counts(n_samples=hill_climb_averages)
 
-                        if current_counts >= best_counts * 0.90:
-                            break
+                # Update best tracking
+                best_counts = overall_best_counts
+                best_position = overall_best_position
 
                 break
 
