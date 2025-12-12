@@ -156,7 +156,7 @@ def do_image_sample_zoom(nv_sig):
         num_steps,
     )
 
-def do_optimize_z(nv_sig, num_steps=25, step_size=1, scan_direction="down"):
+def do_optimize_z(nv_sig, num_steps=20, step_size=1, scan_direction="down"):
     """
     Optimize Z position by scanning and fitting a Gaussian to find the focus peak.
 
@@ -734,9 +734,9 @@ if __name__ == "__main__":
     # current step rate: 30.0V XYZ
     # region Postion and Time Control
     sample_xy = [0.0,0.0] # piezo XY voltage input (1.0=1V) (not coordinates, relative)
-    coord_z = 50  # piezo z voltage (negative is closer to smaple)
-    # pixel_xy = [0,0]  # galvo XY 
-    pixel_xy = [-0.056, -0.063]  # NV canidate
+    coord_z = 0  # piezo z voltage (negative is closer to smaple)
+    pixel_xy = [0,0]  # galvo XY 
+    # pixel_xy = [-0.03, -0.047]  # NV canidate
 
 # 
     nv_sig = NVSig(
@@ -773,7 +773,7 @@ if __name__ == "__main__":
         # tool_belt.set_drift([0.0, 0.0, drift[2]])  # Keep z
         # tool_belt.set_drifts([drift[0], drift[1], 0.0])  # Keep xy
         
-        # pos.set_xyz_on_nv(nv_sig) # Hahn omits this line, currently leave this line out when calibrating z
+        pos.set_xyz_on_nv(nv_sig) # Hahn omits this line, currently leave this line out when calibrating z
 
         #region 1D scan + Calibrate
         # do_calibrate_z_axis(nv_sig)
@@ -799,11 +799,15 @@ if __name__ == "__main__":
         # region Image sample     
 
         # do_z_scan_3d(nv_sig) # (xy gavo, z piezo)
-        # do_image_sample(nv_sig)
+        do_image_sample(nv_sig)
         # do_image_sample_zoom(nv_sig)
+
+        # Quick NV area scans
         # for i in range(27):
         #     do_image_sample_zoom(nv_sig)
+
         # do_image_sample_zoom(nv_sig, nv_minus_initialization=True)
+
         # Z AXIS PIEZO SCAN
         # z_range = np.linspace(0, 0, 30)
         # for z in z_range:
@@ -812,17 +816,16 @@ if __name__ == "__main__":
         #     # do_image_sample_zoom(nv_sig)
         #     do_image_sample(nv_sig)
 
-        # do_image_sample_zoom(nv_sig)
         # do_image_sample(nv_sig, nv_minus_initialization=True)
         # do_image_sample_zoom(nv_sig, nv_minus_initialization=True)
         # end region Image sample
 
         # region Optimize
-        # do_optimize(nv_sig)
-        do_optimize_z(nv_sig) # z position optimize
+        # do_optimize_z(nv_sig) # z position optimize
         # do_optimize_green(nv_sig) #xy galvo optimize
         # do_compensate_for_drift(nv_sig)
         # endregion Optimize
+
         # nv_sig["imaging_readout_dur"] = 5e7-
         
         #Hahn control panel image sample
