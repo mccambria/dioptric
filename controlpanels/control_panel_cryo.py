@@ -191,14 +191,13 @@ def do_optimize_z(nv_sig, num_steps=25, step_size=1, scan_direction="down"):
         scan_direction=scan_direction,
     )
 
-    opti_z = results.get("opti_z")
+    opti_z = results.get("opti_z")  # Actual final position
+    opti_z_fit = results.get("opti_z_fit")  # Gaussian fit estimate
     opti_counts = results.get("opti_counts")
-    fit_success = results.get("fit_success", False)
 
-    if fit_success:
-        print(f"Z optimization succeeded: Z={opti_z:.1f}, Counts={opti_counts}")
-    else:
-        print(f"Z optimization: Gaussian fit failed, using max position: Z={opti_z}")
+    print(f"Z optimization complete: Final Z={opti_z}, Counts={opti_counts}")
+    if opti_z_fit is not None:
+        print(f"  (Gaussian fit estimated Z={opti_z_fit:.1f})")
 
     return opti_z
 
