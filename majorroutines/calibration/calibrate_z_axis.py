@@ -851,17 +851,21 @@ def optimize_z(
     fit_params = None
     fit_success = False
 
+    # Use min/max to handle both scan directions (up or down)
+    z_min = np.min(z_array)
+    z_max = np.max(z_array)
+
     try:
         # Initial guesses
         offset_guess = np.min(counts_array)
         amplitude_guess = np.max(counts_array) - offset_guess
         center_guess = z_array[np.argmax(counts_array)]
-        sigma_guess = (z_array[-1] - z_array[0]) / 4
+        sigma_guess = (z_max - z_min) / 4
 
         guess = [amplitude_guess, center_guess, sigma_guess, offset_guess]
         bounds = (
-            [0, z_array[0], 0, 0],  # Lower bounds
-            [np.inf, z_array[-1], np.inf, np.inf],  # Upper bounds
+            [0, z_min, 0, 0],  # Lower bounds
+            [np.inf, z_max, np.inf, np.inf],  # Upper bounds
         )
 
         popt, _ = curve_fit(gaussian, z_array, counts_array, p0=guess, bounds=bounds)
@@ -875,7 +879,7 @@ def optimize_z(
         fit_success = True
 
         # Plot the fit
-        z_fit = np.linspace(z_array[0], z_array[-1], 200)
+        z_fit = np.linspace(z_min, z_max, 200)
         counts_fit = gaussian(z_fit, *popt)
         ax.plot(z_fit, counts_fit, "r-", linewidth=2, label="Gaussian fit")
         ax.axvline(opti_z, color="g", linestyle="--", label=f"Optimal Z={opti_z:.1f}")
