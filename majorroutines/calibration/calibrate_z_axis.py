@@ -939,8 +939,13 @@ def optimize_z(
         current_counts = measure_counts()
         print(f"  Starting counts: {current_counts:.0f}")
 
+        # Track the best position we've found
+        best_counts = current_counts
+        best_position = piezo.get_z_position()
+        reached_optimal_region = False
+
         # Step toward optimal, checking counts each step
-        while approach_step < max_approach_steps and not found_optimal:
+        while approach_step < max_approach_steps:
             if tb.safe_stop():
                 print("  [STOPPED] User interrupt during approach")
                 break
@@ -952,27 +957,43 @@ def optimize_z(
 
             # Measure counts at new position
             current_counts = measure_counts()
+            current_position = piezo.get_z_position()
 
-            # Check if we've reached target
+            # Track the best position we've seen
+            if current_counts > best_counts:
+                best_counts = current_counts
+                best_position = current_position
+
+            # Check if we've reached the optimal region
             if current_counts >= target_threshold:
-                found_optimal = True
-                print(f"  Step {approach_step}: counts={current_counts:.0f} >= threshold - FOUND!")
+                if not reached_optimal_region:
+                    print(f"  Step {approach_step}: counts={current_counts:.0f} >= threshold - REACHED OPTIMAL REGION")
+                    reached_optimal_region = True
+                else:
+                    # Already in optimal region, just report progress
+                    print(f"  Step {approach_step}: counts={current_counts:.0f} (in optimal region)")
             elif approach_step % 5 == 0:
                 print(f"  Step {approach_step}: counts={current_counts:.0f}")
 
-            # Safety: if counts are decreasing significantly, we may have overshot
-            # Check if we've passed the peak (counts dropping after being high)
-            if current_counts < target_threshold * 0.8 and approach_step > 5:
-                # Counts dropped - might have overshot, try reversing
-                print(f"  Counts dropped to {current_counts:.0f}, may have overshot")
-                # Try stepping back
-                for _ in range(3):
+            # Only check for overshoot AFTER we've reached the optimal region
+            if reached_optimal_region and current_counts < target_threshold:
+                # Counts dropped below threshold after being optimal - we've passed the peak
+                print(f"  Step {approach_step}: counts={current_counts:.0f} dropped below threshold - PASSED PEAK")
+                print(f"  Reversing to best position (counts={best_counts:.0f})...")
+
+                # Step back until we reach or exceed best counts
+                reverse_steps = 0
+                max_reverse = 10
+                while reverse_steps < max_reverse:
                     piezo.move_z_steps(-move_direction * step_size)
                     time.sleep(0.01)
-                current_counts = measure_counts()
-                if current_counts >= target_threshold:
-                    found_optimal = True
-                    print(f"  After reversing: counts={current_counts:.0f} - FOUND!")
+                    reverse_steps += 1
+                    current_counts = measure_counts()
+                    print(f"    Reverse step {reverse_steps}: counts={current_counts:.0f}")
+
+                    if current_counts >= best_counts * 0.98:  # Within 2% of best
+                        print(f"    Reached peak!")
+                        break
                 break
 
         counter.stop_tag_stream()
@@ -980,7 +1001,7 @@ def optimize_z(
         final_z = piezo.get_z_position()
         opti_counts = int(current_counts)
 
-        if found_optimal:
+        if reached_optimal_region:
             print(f"  Optimal position found at Z={final_z}")
             print(f"  Final counts: {opti_counts}")
         else:
