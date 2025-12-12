@@ -156,7 +156,7 @@ def do_image_sample_zoom(nv_sig):
         num_steps,
     )
 
-def do_optimize_z(nv_sig, num_steps=140, step_size=1, scan_direction="down"):
+def do_optimize_z(nv_sig, num_steps=6, step_size=1, scan_direction="down"):
     """
     Optimize Z position by scanning and fitting a Gaussian to find the focus peak.
 
@@ -186,7 +186,7 @@ def do_optimize_z(nv_sig, num_steps=140, step_size=1, scan_direction="down"):
         num_steps=num_steps,
         step_size=step_size,
         num_averages=1,
-        move_to_optimal=False,
+        move_to_optimal=True,
         save_data=True,
         scan_direction=scan_direction,
     )
@@ -736,11 +736,10 @@ if __name__ == "__main__":
     # region Postion and Time Control
     sample_xy = [0.0,0.0] # piezo XY voltage input (1.0=1V) (not coordinates, relative)
     coord_z = 0  # piezo z voltage (negative is closer to smaple)
-    pixel_xy = [0.084, -0.075]  # galvo ref e
-    # pixel_xy = [-0.001, -0.012] #NV 5 center
-    # pixel_xy = [0.036, 0.063] #NV 7 canidate 
+    pixel_xy = [0,0]  # galvo XY 
+    # pixel_xy = [-0.056, -0.063]  # NV canidate
 
-
+# 
     nv_sig = NVSig(
         name=f"({get_sample_name()})",
         coords={
@@ -759,7 +758,7 @@ if __name__ == "__main__":
         },
     )
 
-    nv_sig.expected_counts = 100 # raw counts
+    nv_sig.expected_counts = None # raw counts, none when unknown
     
     # cxn = labrad.connect()
     # s = cxn.pos_xy_THOR_gvs212
@@ -775,11 +774,11 @@ if __name__ == "__main__":
         # tool_belt.set_drift([0.0, 0.0, drift[2]])  # Keep z
         # tool_belt.set_drifts([drift[0], drift[1], 0.0])  # Keep xy
         
-        # pos.set_xyz_on_nv(nv_sig) # Hahn omits this line, currently leave this line out when calibrating z
+        pos.set_xyz_on_nv(nv_sig) # Hahn omits this line, currently leave this line out when calibrating z
 
         #region 1D scan + Calibrate
         #do_calibrate_z_axis(nv_sig)
-        # do_z_scan_1d(nv_sig, step_size=-1, num_steps=200, min_threshold=0)
+        # do_z_scan_1d(nv_sig, step_size=-3, num_steps=500, min_threshold=0)
 
 
         # Manually set Z reference to current position
@@ -795,13 +794,13 @@ if __name__ == "__main__":
         #     nv_sig.coords[CoordsKey.Z] = z
         #     pos.set_xyz_on_nv(nv_sig)
         #     do_2D_xz_scan(nv_sig)
-
+ 
         # endregion 2D scan
 
         # region Image sample     
 
         # do_z_scan_3d(nv_sig) # (xy gavo, z piezo)
-        # do_image_sample(nv_sig)
+        do_image_sample(nv_sig)
         # do_image_sample_zoom(nv_sig)
         # for i in range(27):
         #     do_image_sample_zoom(nv_sig)
@@ -821,9 +820,8 @@ if __name__ == "__main__":
 
         # region Optimize
         # do_optimize(nv_sig)
-        # do_optimize_pixel(nv_sig)
-        # do_optimize_z(nv_sig)
-        # do_optimize_green(nv_sig)
+        # do_optimize_z(nv_sig) # z position optimize
+        # do_optimize_green(nv_sig) #xy galvo optimize
         # do_compensate_for_drift(nv_sig)
         # endregion Optimize
         # nv_sig["imaging_readout_dur"] = 5e7-
@@ -849,7 +847,7 @@ if __name__ == "__main__":
         # do_resonance_state(nv_sig , States.LOW)
         # do_resonance_state(nv_sig, States.HIGH)
         # do_pulsed_resonance(nv_sig, 2.87, 0.200)
-        # do_pulsed_resonance_state(nv_sig, States.LOW)
+        # do_pulsed_re2.sonance_state(nv_sig, States.LOW)
         # do_pulsed_resonance_state(nv_sig, States.HIGH)
         # do_rabi(nv_sig)
         # do_rabi(nv_sig, States.HIGH, uwave_time_range=[0, 400])
