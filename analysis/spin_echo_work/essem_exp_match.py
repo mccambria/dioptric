@@ -8,6 +8,8 @@ from utils import data_manager as dm
 from utils import kplotlib as kpl
 from typing import Optional
 from collections.abc import Sequence
+from typing import Iterable, Tuple, List, Dict, Optional
+
 from analysis.sc_c13_hyperfine_sim_data_driven import (
     read_hyperfine_table_safe,
     B_vec_T,  # your lab field (Tesla)
@@ -27,7 +29,7 @@ from multiplicity_calculation import (
     multiplicity_plots,
     make_a_table
 )
-
+from kappa_modulation_depth import compute_dispersion_grid_for_site, plot_dispersion_2D_for_site
 # ---------------------------------------------------------------------
 # CONFIG / PATHS
 # ---------------------------------------------------------------------
@@ -229,8 +231,6 @@ def expected_stick_spectrum_from_recs(
     ax.set_title(f"Expected ESEEM stick spectrum (p_occ={p_occ:.3f})")
     ax.grid(True, which="both", alpha=0.25)
     ax.legend(framealpha=0.85)
-    fig.tight_layout()
-
     return f_stick, a_stick, fig, ax
 
 
@@ -329,7 +329,7 @@ def plot_sorted_exp_branches(
     ax.yaxis.set_minor_formatter(mticker.NullFormatter())
     ax.grid(True, which="both", alpha=0.3)
     ax.legend(framealpha=0.85)
-    fig.tight_layout()
+    
     return fig, ax
 
 
@@ -710,7 +710,7 @@ def plot_expected_with_exp_overlay(
                 ax.axvline(f, ymax=0.8, linestyle="--", alpha=0.5, color="C3")
         ax.plot([], [], "--", color="C3", alpha=0.8, label="Experimental f0,f1")
         ax.legend(framealpha=0.85)
-        fig.tight_layout()
+        
         return fig, ax
 
     # If we have matches_df, use it to separate matched vs unmatched NVs
@@ -736,7 +736,7 @@ def plot_expected_with_exp_overlay(
     ax.plot([], [], "--", color="C3", alpha=0.9, label="Exp (matched NVs)")
     ax.plot([], [], ":", color="C1", alpha=0.9, label="Exp (unmatched NVs)")
     ax.legend(framealpha=0.85)
-    fig.tight_layout()
+    
     return fig, ax
 
 
@@ -1379,7 +1379,7 @@ def plot_multiplicity_hist(site_stats, title_prefix="Matched 13C sites"):
     for v, c in zip(values, counts):
         ax.text(v, c + 0.5, str(c), ha="center", va="bottom", fontsize=8)
 
-    fig.tight_layout()
+    
     return fig, ax
 
 
@@ -2194,6 +2194,7 @@ def summarize_simulated_sites(
 
 
 def plot_simualted(
+    matches_df,
     f0_sim_kHz,
     f1_sim_kHz,
     ori_sim,
@@ -2314,6 +2315,85 @@ def plot_simualted(
     print("Simulated site multiplicity (n_matches_sim):")
     print(site_stats_sim["n_matches_sim"].value_counts().sort_index())
 
+# def run_field_analysis(
+#     label: str,
+#     fit_file_stem: str,
+#     counts_file_stem: str,
+#     B_G: np.ndarray,
+#     catalog_json: str,
+#     distance_cutoff_A: float = 15.0,
+# ) -> dict:
+#     """Run your full pipeline for one B field and return a compact summary."""
+#     # 1) Load catalog + hyperfine
+#     hf_df = load_hyperfine_table(distance_cutoff=distance_cutoff_A)
+#     catalog_records = load_catalog(catalog_json)
+
+#     # 2) Extract fit summary for this field
+#     fit_summary = freqs_from_popts_exact(file_stem=fit_file_stem)
+#     nv = np.asarray(fit_summary["nv"], int)
+#     f0_kHz = np.asarray(fit_summary["f0_kHz"], float)
+#     f1_kHz = np.asarray(fit_summary["f1_kHz"], float)
+#     fit_fail = np.asarray(fit_summary["fit_fail"], bool)
+#     nv_oris = np.asarray(fit_summary["orientations"], int)
+#     site_ids = np.asarray(fit_summary["site_ids"], int)
+
+#     mask = (
+#         np.isfinite(f0_kHz)
+#         & np.isfinite(f1_kHz)
+#         & (f0_kHz > 0)
+#         & (f1_kHz >= 0)
+#         & (~fit_fail)
+#     )
+
+#     nv_kept = nv[mask]
+#     f0_kept_kHz = f0_kHz[mask]
+#     f1_kept_kHz = f1_kHz[mask]
+#     site_ids_kept = site_ids[mask]
+#     nv_oris_kept = nv_oris[mask]
+
+#     # 3) Matching to catalog for this field
+#     matches_df = pairwise_match_from_site_ids_kHz(
+#         nv_labels=nv_kept,
+#         f0_kHz=f0_kept_kHz,
+#         f1_kHz=f1_kept_kHz,
+#         site_ids=site_ids_kept,
+#         nv_orientations=nv_oris_kept,
+#         records=catalog_records,
+#     )
+
+#     # 4) Full site multiplicity analysis
+#     orbit_df = find_c3v_orbits_from_nv2(
+#         hyperfine_path=HYPERFINE_PATH,
+#         r_max_A=22.0,
+#         tol_r_A=0.02,
+#         tol_dir=5e-2,
+#     )
+
+#     site_stats_full, orbit_stats = build_site_multiplicity_with_theory(
+#         matches_df=matches_df,
+#         orbit_df=orbit_df,
+#         p13=0.011,
+#     )
+
+#     B_mag_G = float(np.linalg.norm(B_G))
+#     for df in (matches_df, site_stats_full, orbit_stats):
+#         df["field_label"] = label
+#         df["B_mag_G"] = B_mag_G
+
+#     # (Optional) basic scalars you might want quickly
+#     frac_matched = matches_df["nv_label"].nunique() / nv_kept.size
+    
+#     return dict(
+#         label=label,
+#         B_G=B_G,
+#         B_mag_G=B_mag_G,
+#         matches_df=matches_df,
+#         site_stats=site_stats_full,
+#         orbit_stats=orbit_stats,
+#         frac_matched=frac_matched,
+#         n_nv_total=int(nv_kept.size),
+#     )
+
 def run_field_analysis(
     label: str,
     fit_file_stem: str,
@@ -2360,14 +2440,48 @@ def run_field_analysis(
         records=catalog_records,
     )
 
-    # 4) Full site multiplicity analysis
+    # -------------------- 3b) QUALITY CUTS --------------------
+    # attach comb_contrast and osc_amp from the same fit file
+    uni_df = extract_unified_fit_params(fit_file_stem)
+
+    matches_df = matches_df.merge(
+        uni_df,
+        on="nv_label",
+        how="left",
+    )
+
+    # normalized ESEEM amplitude
+    matches_df["osc_amp_norm"] = (
+        matches_df["osc_amp"] / matches_df["comb_contrast"]
+    )
+
+    # define a "good physics" mask
+    mask_good = (
+        np.isfinite(matches_df["kappa"])
+        & np.isfinite(matches_df["osc_amp_norm"])
+        & np.isfinite(matches_df["comb_contrast"])
+        & (matches_df["comb_contrast"] > 0.02)          # non-trivial echo
+        & (np.abs(matches_df["osc_amp_norm"]) < 3.0)    # kill ratios like 40, 100
+        & (matches_df["red_chi2"] < 3.0)                # decent fit
+    )
+
+    n_before = matches_df["nv_label"].nunique()
+    matches_df = matches_df[mask_good].copy()
+    n_after = matches_df["nv_label"].nunique()
+    print(
+        f"[{label}] kept {n_after} / {n_before} matched NVs after "
+        f"amp/chi² quality cuts"
+    )
+    # -----------------------------------------------------------
+
+    # 4) Full site multiplicity analysis (now only with good NVs)
     orbit_df = find_c3v_orbits_from_nv2(
         hyperfine_path=HYPERFINE_PATH,
         r_max_A=22.0,
         tol_r_A=0.02,
         tol_dir=5e-2,
     )
-    site_stats_full = build_site_multiplicity_with_theory(
+    site_stats_full, orbit_stats = build_site_multiplicity_with_theory(
         matches_df=matches_df,
         orbit_df=orbit_df,
         p13=0.011,
@@ -2377,11 +2491,18 @@ def run_field_analysis(
     B_mag_G = float(np.linalg.norm(B_G))
     matches_df["field_label"] = label
     matches_df["B_mag_G"] = B_mag_G
+
+    site_stats_full = site_stats_full.copy()
     site_stats_full["field_label"] = label
     site_stats_full["B_mag_G"] = B_mag_G
 
-    # (Optional) basic scalars you might want quickly
+    orbit_stats = orbit_stats.copy()
+    orbit_stats["field_label"] = label
+    orbit_stats["B_mag_G"] = B_mag_G
+
+    # (Optional) frac matched
     frac_matched = matches_df["nv_label"].nunique() / nv_kept.size
+    uni_df = extract_unified_fit_params(fit_file_stem)
 
     return dict(
         label=label,
@@ -2389,9 +2510,12 @@ def run_field_analysis(
         B_mag_G=B_mag_G,
         matches_df=matches_df,
         site_stats=site_stats_full,
+        orbit_stats=orbit_stats,
         frac_matched=frac_matched,
         n_nv_total=int(nv_kept.size),
+        unified_df=uni_df,
     )
+
 
 def plot_site_f_vs_B(all_matches: pd.DataFrame, site_list=None):
     """
@@ -2481,71 +2605,955 @@ def compare_NV_assignments(all_matches):
 
     print("NVs with changing site assignment across fields:")
     print(site_spread[site_spread["n_distinct_sites"] > 1].head(20))
+    
+def pick_hero_sites(all_site_stats, min_matches=3, min_fields=2, topN=10):
+    key = ["orientation", "site_index"]
+    # how many fields each site appears in
+    field_counts = (
+        all_site_stats.groupby(key)["field_label"]
+        .nunique()
+        .reset_index(name="n_fields")
+    )
+    # total matches across all fields
+    match_counts = (
+        all_site_stats.groupby(key)["n_matches"]
+        .sum()
+        .reset_index(name="n_matches_total")
+    )
+
+    merged = field_counts.merge(match_counts, on=key, how="inner")
+    heroes = merged[
+        (merged["n_fields"] >= min_fields)
+        & (merged["n_matches_total"] >= min_matches)
+    ].sort_values("n_matches_total", ascending=False)
+
+    hero_keys = list(zip(heroes["orientation"], heroes["site_index"]))
+    return hero_keys[:topN]
+
+def extract_unified_fit_params(
+    file_stem: str,
+    default_rev: float = 39.2,
+) -> pd.DataFrame:
+    """
+    Extract per-NV scalar fit parameters (comb_contrast, osc_amp, etc.)
+    from the saved popts using params_to_dict, in a flat DataFrame:
+
+      nv_label, red_chi2, comb_contrast, osc_amp
+    """
+    data_fit = dm.get_raw_data(file_stem=file_stem)
+
+    nv_labels = np.array(list(map(int, data_fit["nv_labels"])))
+    popts_list = data_fit["popts"]
+    fit_fn_names = data_fit["fit_fn_names"]
+    # try red_chi2 first, fall back to chis if needed
+    chis = np.asarray(data_fit.get("red_chi2", data_fit.get("chis", np.nan)), float)
+
+    def _safe_float(v, default=np.nan):
+        """
+        Robust float cast: None or non-numeric → default (NaN by default).
+        """
+        if v is None:
+            return float(default)
+        try:
+            return float(v)
+        except (TypeError, ValueError):
+            return float(default)
+
+    rows = []
+    for i, nv_label in enumerate(nv_labels):
+        p_raw = popts_list[i]
+        fn_name = fit_fn_names[i]
+        fn = _fn_map.get(fn_name, fine_decay)
+
+        if p_raw is None:
+            continue
+
+        p = np.asarray(p_raw, float)
+        if p.ndim == 0 or p.size < 2 or (not np.all(np.isfinite(p))):
+            continue
+
+        par = params_to_dict(fn, p, default_rev=default_rev)
+
+        rows.append(
+            dict(
+                nv_label=int(nv_label),
+                red_chi2=_safe_float(chis[i] if chis.size > i else np.nan),
+                comb_contrast=_safe_float(par.get("comb_contrast", np.nan)),
+                osc_amp=_safe_float(par.get("osc_amp", np.nan)),
+            )
+        )
+
+    return pd.DataFrame(rows)
+
+
+def attach_amplitude_to_matches(
+    matches_df: pd.DataFrame,
+    fit_file_stem: str,
+    default_rev_us: float | None = None,
+    normalize: bool = True,
+):
+    """
+    Merge experimental ESEEM amplitude information into matches_df.
+
+    Parameters
+    ----------
+    matches_df : DataFrame
+        Output of pairwise_match_from_site_ids_kHz (per NV row).
+    fit_file_stem : str
+        Fit file from your widefield analysis (same NV labeling).
+    normalize : bool
+        If True, also compute 'osc_amp_norm' = osc_amp / comb_contrast.
+
+    Returns
+    -------
+    merged : DataFrame
+        matches_df with new columns:
+          - osc_amp
+          - osc_amp_norm   (if normalize=True)
+          - baseline, comb_contrast, etc. (from unified keys)
+    """
+    uni = extract_unified_fit_params(
+        file_stem=fit_file_stem
+    )
+
+    merged = matches_df.merge(
+        uni,
+        on="nv_label",
+        how="left",
+        suffixes=("", "_fit"),
+    )
+
+    if normalize and ("osc_amp" in merged.columns) and ("comb_contrast" in merged.columns):
+        with np.errstate(divide="ignore", invalid="ignore"):
+            merged["osc_amp_norm"] = merged["osc_amp"] / merged["comb_contrast"]
+    else:
+        merged["osc_amp_norm"] = np.nan
+
+    return merged
+
+def plot_amp_vs_kappa(
+    matches_df: pd.DataFrame,
+    fit_file_stem: str,
+    default_rev_us: float | None = None,
+    use_normalized_amp: bool = True,
+    title_prefix: str = "204 NVs",
+):
+    """
+    Scatter of experimental ESEEM amplitude vs κ from catalog.
+
+    Expects matches_df to have at least:
+        nv_label, kappa, orientation
+    and optionally:
+        field_label (if you're stacking multiple B fields).
+
+    Parameters
+    ----------
+    use_normalized_amp : bool
+        If True, plot osc_amp_norm (osc_amp / comb_contrast).
+        If False, plot raw osc_amp.
+    """
+    df = attach_amplitude_to_matches(
+        matches_df=matches_df,
+        fit_file_stem=fit_file_stem,
+        default_rev_us=default_rev_us,
+        normalize=True,
+    )
+
+    amp_col = "osc_amp_norm" if use_normalized_amp else "osc_amp"
+    if amp_col not in df.columns:
+        raise KeyError(f"{amp_col} not found in merged DataFrame.")
+
+    # Only keep rows where both κ and amplitude are defined
+    mask = np.isfinite(df["kappa"]) & np.isfinite(df[amp_col])
+    df_plot = df[mask].copy()
+
+    if df_plot.empty:
+        print("[WARN] No finite κ and amplitude to plot.")
+        return None, None
+
+    # Orientation as string for legend
+    df_plot["ori_label"] = df_plot["orientation"].apply(ori_to_str)
+
+    # If you have multiple fields stacked, use field_label to color or facet
+    have_field = "field_label" in df_plot.columns
+
+    fig, ax = plt.subplots(figsize=(7, 5))
+
+    if have_field:
+        # color by field, marker by orientation
+        field_vals = sorted(df_plot["field_label"].unique())
+        markers = ["o", "s", "^", "D", "v", "P"]
+
+        for fi, field in enumerate(field_vals):
+            sub_field = df_plot[df_plot["field_label"] == field]
+            # group by orientation inside this field
+            for j, (ori_val, sub) in enumerate(sub_field.groupby("orientation")):
+                if sub.empty:
+                    continue
+                marker = markers[(fi + j) % len(markers)]
+                label = f"{field}, {ori_to_str(ori_val)}"
+                ax.scatter(
+                    sub["kappa"],
+                    np.abs(sub[amp_col]),
+                    s=25,
+                    alpha=0.75,
+                    marker=marker,
+                    label=label,
+                )
+    else:
+        # single field: just split by orientation
+        markers = ["o", "s", "^", "D"]
+        for j, (ori_val, sub) in enumerate(df_plot.groupby("orientation")):
+            if sub.empty:
+                continue
+            marker = markers[j % len(markers)]
+            ax.scatter(
+                sub["kappa"],
+                np.abs(sub[amp_col]),
+                s=25,
+                alpha=0.8,
+                marker=marker,
+                label=ori_to_str(ori_val),
+            )
+
+    ax.set_xlabel(r"$\kappa$ (catalog ESEEM weight)", fontsize=13)
+    if use_normalized_amp:
+        ax.set_ylabel(r"$|\mathrm{osc\_amp}| / \mathrm{comb\_contrast}$", fontsize=13)
+    else:
+        ax.set_ylabel(r"$|\mathrm{osc\_amp}|$ (fit units)", fontsize=13)
+
+    ax.set_title(
+        f"{title_prefix}: ESEEM amplitude vs κ",
+        fontsize=15,
+    )
+    ax.grid(True, alpha=0.3)
+    ax.legend(fontsize=8, framealpha=0.85)
+
+    
+    return fig, ax
+
+
+# -------------------------------------------------------------------------
+# Helpers: orientation normalization + catalog loading + join with matches
+# -------------------------------------------------------------------------
+def _normalize_orientation(o):
+    """
+    Make orientation hashable & consistent: (1,1,1), (1,1,-1), etc.
+    Handles list/tuple/np.array; if string, tries json.loads.
+    """
+    if isinstance(o, (list, tuple, np.ndarray)):
+        return tuple(int(x) for x in o)
+    if isinstance(o, str):
+        try:
+            parsed = json.loads(o)
+            if isinstance(parsed, (list, tuple)):
+                return tuple(int(x) for x in parsed)
+        except Exception:
+            pass
+    # fallback: treat as scalar / unknown
+    return (int(o),)
+
+
+def _load_catalog_df(catalog_json_path: str) -> pd.DataFrame:
+    """
+    Load the ESEEM catalog JSON produced by build_essem_catalog_with_kappa(...).
+    Assumes JSON is a list[dict].
+    """
+    with open(catalog_json_path, "r") as f:
+        recs = json.load(f)
+    df = pd.DataFrame(recs)
+
+    # Normalize orientation + build join key
+    df["ori_key"] = df["orientation"].apply(_normalize_orientation)
+    df["site_index"] = df["site_index"].astype(int)
+
+    # Ensure we have r, theta_geom_deg columns for geometry analysis
+    if {"x_A", "y_A", "z_A"}.issubset(df.columns):
+        r = np.sqrt(df["x_A"] ** 2 + df["y_A"] ** 2 + df["z_A"] ** 2)
+        df["r_A"] = r
+        z_over_r = np.clip(df["z_A"] / r.replace(0, np.nan), -1.0, 1.0)
+        df["theta_geom_deg"] = np.degrees(np.arccos(z_over_r))
+    else:
+        df["r_A"] = df.get("distance_A", np.nan)
+        df["theta_geom_deg"] = np.nan
+
+    return df
+
+
+def join_matches_with_catalog(matches_df: pd.DataFrame,
+                              catalog_json_path: str) -> pd.DataFrame:
+    """
+    Attach catalog geometry / κ / A_par/A_perp/etc to matches_df
+    using (orientation, site_index) as join key.
+    Expects matches_df to have 'orientation' and 'site_index' columns.
+    """
+    cat = _load_catalog_df(catalog_json_path).copy()
+
+    df = matches_df.copy()
+    df["ori_key"] = df["orientation"].apply(_normalize_orientation)
+    df["site_index"] = df["site_index"].astype(int)
+
+    merged = df.merge(
+        cat,
+        on=["ori_key", "site_index"],
+        suffixes=("", "_cat"),
+        how="left",
+    )
+    return merged
+
+# -------------------------------------------------------------------------
+# 1. Quantization-axis tomography: θ, cos distributions
+# -------------------------------------------------------------------------
+def plot_theta_distribution_all_vs_active(catalog_json_path: str,
+                                          matches_df: pd.DataFrame,
+                                          title_prefix: str = ""):
+    """
+    Compare θ (tilt between Ω0 and Ωm) for:
+      - all catalog sites
+      - active sites (those that appear in matches_df)
+    """
+    cat = _load_catalog_df(catalog_json_path)
+    merged = join_matches_with_catalog(matches_df, catalog_json_path)
+
+    # Active unique sites
+    active_sites = merged.drop_duplicates(subset=["ori_key", "site_index"])
+
+    theta_all = cat["theta_deg"].to_numpy()
+    theta_act = active_sites["theta_deg"].to_numpy()
+
+    fig, ax = plt.subplots()
+    bins = np.linspace(0, 90, 46)
+
+    ax.hist(theta_all, bins=bins, density=True, histtype="step", label="all sites")
+    ax.hist(theta_act, bins=bins, density=True, histtype="stepfilled", alpha=0.4,
+            label="active sites")
+
+    ax.set_xlabel(r"$\theta = \angle(\Omega_0,\Omega_m)$ [deg]")
+    ax.set_ylabel("Probability density")
+    ax.set_title(f"{title_prefix} Quantization-axis tilt distribution")
+    ax.legend()
+    return fig, ax
+
+
+def plot_cosine_distributions_all_vs_active(catalog_json_path: str,
+                                            matches_df: pd.DataFrame,
+                                            title_prefix: str = ""):
+    """
+    Compare cosines w.r.t B and NV axis for all vs active sites.
+    Uses:
+      cos_B_n0, cos_B_nm, cos_NV_n0, cos_NV_nm
+    """
+    cat = _load_catalog_df(catalog_json_path)
+    merged = join_matches_with_catalog(matches_df, catalog_json_path)
+    active_sites = merged.drop_duplicates(subset=["ori_key", "site_index"])
+
+    def _hist_pair(ax, col, label, bins):
+        ax.hist(cat[col].to_numpy(), bins=bins, density=True,
+                histtype="step", label=f"{label} (all)")
+        ax.hist(active_sites[col].to_numpy(), bins=bins, density=True,
+                histtype="stepfilled", alpha=0.4, label=f"{label} (active)")
+        ax.set_xlabel(col)
+        ax.set_ylabel("PDF")
+        ax.legend(loc="best")
+
+    bins = np.linspace(-1, 1, 41)
+    fig, axs = plt.subplots(2, 2, figsize=(8, 6), sharex=True, sharey=True)
+
+    _hist_pair(axs[0, 0], "cos_B_n0",  r"$\cos(\hat{B}, \hat{n}_0)$", bins)
+    _hist_pair(axs[0, 1], "cos_B_nm",  r"$\cos(\hat{B}, \hat{n}_m)$", bins)
+    _hist_pair(axs[1, 0], "cos_NV_n0", r"$\cos(\hat{n}_{NV}, \hat{n}_0)$", bins)
+    _hist_pair(axs[1, 1], "cos_NV_nm", r"$\cos(\hat{n}_{NV}, \hat{n}_m)$", bins)
+
+    fig.suptitle(f"{title_prefix} Quantization-axis cosine distributions")
+    
+    return fig, axs
+
+# -------------------------------------------------------------------------
+# 2. Geometric distribution g(r, theta) for active vs all sites
+# -------------------------------------------------------------------------
+def compute_g_r_theta(catalog_json_path: str,
+                      matches_df: pd.DataFrame,
+                      r_bins: np.ndarray | None = None,
+                      theta_bins: np.ndarray | None = None):
+    """
+    Compute g_active(r, theta) = H_active / H_all using catalog geometry:
+
+      r_A           = distance from NV (Å)
+      theta_geom_deg = arccos(z / r) in degrees
+
+    Returns:
+      g_active, r_centers, theta_centers
+    """
+    cat = _load_catalog_df(catalog_json_path)
+    merged = join_matches_with_catalog(matches_df, catalog_json_path)
+    active_sites = merged.drop_duplicates(subset=["ori_key", "site_index"])
+
+    r_all = cat["r_A"].to_numpy()
+    th_all = cat["theta_geom_deg"].to_numpy()
+
+    r_act = active_sites["r_A"].to_numpy()
+    th_act = active_sites["theta_geom_deg"].to_numpy()
+
+    if r_bins is None:
+        r_bins = np.linspace(2.0, float(np.nanmax(r_all)) + 1.0, 32)
+    if theta_bins is None:
+        theta_bins = np.linspace(0.0, 90.0, 32)
+
+    H_all, r_edges, th_edges = np.histogram2d(
+        r_all, th_all, bins=[r_bins, theta_bins]
+    )
+    H_act, _, _ = np.histogram2d(
+        r_act, th_act, bins=[r_bins, theta_bins]
+    )
+
+    eps = 1e-12
+    g_active = H_act / (H_all + eps)
+
+    r_centers = 0.5 * (r_edges[:-1] + r_edges[1:])
+    th_centers = 0.5 * (th_edges[:-1] + th_edges[1:])
+    return g_active, r_centers, th_centers
+
+
+def plot_g_r_theta(catalog_json_path: str,
+                   matches_df: pd.DataFrame,
+                   title_prefix: str = ""):
+    """
+    Plot g_active(r, theta) as a heatmap and its 1D projections g_r(r), g_theta(theta).
+    """
+    g_active, r_centers, th_centers = compute_g_r_theta(catalog_json_path, matches_df)
+
+    fig, axs = plt.subplots(1, 3, figsize=(12, 4))
+
+    # 2D heatmap
+    im = axs[0].imshow(
+        g_active.T,
+        origin="lower",
+        aspect="auto",
+        extent=[r_centers[0], r_centers[-1], th_centers[0], th_centers[-1]],
+    )
+    axs[0].set_xlabel(r"$r$ [Å]")
+    axs[0].set_ylabel(r"$\theta_{\mathrm{geom}}$ [deg]")
+    axs[0].set_title("g_active(r, θ)")
+    fig.colorbar(im, ax=axs[0], label="g_active")
+
+    # 1D g_r(r)
+    g_r = np.nanmean(g_active, axis=1)
+    axs[1].plot(r_centers, g_r, marker="o")
+    axs[1].set_xlabel(r"$r$ [Å]")
+    axs[1].set_ylabel("g_r(r)")
+    axs[1].set_title("Radial bias")
+
+    # 1D g_theta(θ)
+    g_th = np.nanmean(g_active, axis=0)
+    axs[2].plot(th_centers, g_th, marker="o")
+    axs[2].set_xlabel(r"$\theta_{\mathrm{geom}}$ [deg]")
+    axs[2].set_ylabel(r"g$_{\theta}(\theta)$")
+    axs[2].set_title("Angular bias")
+
+    fig.suptitle(f"{title_prefix} Geometric distribution of active $^{13}$C")
+    return fig, axs
+
+
+# -------------------------------------------------------------------------
+# 3. Multi-field f_minus/f_plus vs |B| for identified sites
+# -------------------------------------------------------------------------
+def collect_multifield_tracks(results: List[dict],
+                              field_cfgs: List[dict],
+                              min_fields: int = 2) -> pd.DataFrame:
+    """
+    Build a long DataFrame with experimental + catalog f_minus/f_plus vs |B|
+    for sites seen in >= min_fields.
+
+    Assumes:
+      - results[i]["matches_df"] is the per-field matches table
+      - field_cfgs[i] has keys: "label", "B_G", "catalog_json"
+      - matches_df has columns:
+          orientation, site_index,
+          f_minus_exp_kHz, f_plus_exp_kHz  (rename below if needed)
+    """
+    records = []
+
+    for cfg, res in zip(field_cfgs, results):
+        label = cfg["label"]
+        B_G = np.asarray(cfg["B_G"], float)
+        B_mag_G = float(np.linalg.norm(B_G))
+        B_mag_T = B_mag_G * 1e-4
+
+        matches = res["matches_df"].copy()
+        cat = _load_catalog_df(cfg["catalog_json"])
+
+        matches["ori_key"] = matches["orientation"].apply(_normalize_orientation)
+        matches["site_index"] = matches["site_index"].astype(int)
+        cat["ori_key"] = cat["orientation"].apply(_normalize_orientation)
+
+        merged = matches.merge(
+            cat[["ori_key", "site_index", "f_minus_Hz", "f_plus_Hz"]],
+            on=["ori_key", "site_index"],
+            how="left",
+            suffixes=("", "_cat"),
+        )
+
+        # --- IMPORTANT: adjust these column names to match your matches_df ---
+        f_minus_exp = merged["f_minus_kHz"].to_numpy()  # e.g. your fitted f_-
+        f_plus_exp  = merged["f_plus_kHz"].to_numpy()   # e.g. fitted f_+
+
+        for _, row in merged.iterrows():
+            records.append(
+                dict(
+                    field_label=label,
+                    B_mag_G=B_mag_G,
+                    B_mag_T=B_mag_T,
+                    ori_key=_normalize_orientation(row["orientation"]),
+                    site_index=int(row["site_index"]),
+                    f_minus_exp_kHz=float(row["f_minus_kHz"]),
+                    f_plus_exp_kHz=float(row["f_plus_kHz"]),
+                    f_minus_cat_kHz=float(row["f_minus_Hz"] / 1e3) if pd.notna(row["f_minus_Hz"]) else np.nan,
+                    f_plus_cat_kHz=float(row["f_plus_Hz"] / 1e3) if pd.notna(row["f_plus_Hz"]) else np.nan,
+                )
+            )
+
+    df_all = pd.DataFrame(records)
+
+    # Keep sites seen in >= min_fields
+    counts = (
+        df_all.drop_duplicates(subset=["field_label", "ori_key", "site_index"])
+        .groupby(["ori_key", "site_index"])["field_label"]
+        .nunique()
+        .rename("n_fields_seen")
+        .reset_index()
+    )
+    df_all = df_all.merge(counts, on=["ori_key", "site_index"], how="left")
+    df_filtered = df_all[df_all["n_fields_seen"] >= int(min_fields)].copy()
+    return df_filtered
+
+
+def plot_multifield_tracks(df_tracks: pd.DataFrame,
+                           max_sites: int = 5):
+    """
+    For up to max_sites distinct (ori_key, site_index), plot f_minus and f_plus
+    vs |B| for experimental points and catalog curves.
+    """
+    fig, axs = plt.subplots(1, 2, figsize=(10, 4), sharex=True)
+
+    # pick some "hero" sites
+    sites = (
+        df_tracks[["ori_key", "site_index", "n_fields_seen"]]
+        .drop_duplicates()
+        .sort_values("n_fields_seen", ascending=False)
+        .head(max_sites)
+        .itertuples(index=False)
+    )
+
+    for s in sites:
+        ori_key, site_index, n_fields = s
+        mask = (df_tracks["ori_key"] == ori_key) & (df_tracks["site_index"] == site_index)
+        df_s = df_tracks[mask].sort_values("B_mag_G")
+
+        label = f"{ori_key}, site {site_index} (N={n_fields})"
+
+        # f_minus
+        axs[0].plot(
+            df_s["B_mag_G"],
+            df_s["f_minus_cat_kHz"],
+            linestyle="-",
+            marker=None,
+            label=label,
+        )
+        axs[0].scatter(
+            df_s["B_mag_G"],
+            df_s["f_minus_exp_kHz"],
+            marker="o",
+        )
+
+        # f_plus
+        axs[1].plot(
+            df_s["B_mag_G"],
+            df_s["f_plus_cat_kHz"],
+            linestyle="-",
+            marker=None,
+            label=label,
+        )
+        axs[1].scatter(
+            df_s["B_mag_G"],
+            df_s["f_plus_exp_kHz"],
+            marker="o",
+        )
+
+    axs[0].set_xlabel(r"|B| [G]")
+    axs[1].set_xlabel(r"|B| [G]")
+    axs[0].set_ylabel(r"$f_-(B)$ [kHz]")
+    axs[1].set_ylabel(r"$f_+(B)$ [kHz]")
+    axs[0].set_title(r"$f_-(B)$: catalog vs experiment")
+    axs[1].set_title(r"$f_+(B)$: catalog vs experiment")
+    axs[0].legend(fontsize="x-small", loc="best")
+    return fig, axs
+
+def summarize_multifield_tracks(df_tracks: pd.DataFrame,
+                                min_fields: int = 3) -> pd.DataFrame:
+    """
+    For each (ori_key, site_index) seen in >= min_fields,
+    compute RMS residual between experimental and catalog f_-(B), f_+(B).
+    """
+    df = df_tracks[df_tracks["n_fields_seen"] >= min_fields].copy()
+    summaries = []
+
+    for (ori_key, site_idx), sub in df.groupby(["ori_key", "site_index"]):
+        sub = sub.sort_values("B_mag_G")
+
+        f_minus_exp = sub["f_minus_exp_kHz"].to_numpy()
+        f_minus_cat = sub["f_minus_cat_kHz"].to_numpy()
+        f_plus_exp  = sub["f_plus_exp_kHz"].to_numpy()
+        f_plus_cat  = sub["f_plus_cat_kHz"].to_numpy()
+
+        # ignore NaNs
+        mask_m = np.isfinite(f_minus_exp) & np.isfinite(f_minus_cat)
+        mask_p = np.isfinite(f_plus_exp) & np.isfinite(f_plus_cat)
+
+        if np.any(mask_m):
+            rms_m = float(np.sqrt(np.nanmean((f_minus_exp[mask_m] - f_minus_cat[mask_m])**2)))
+        else:
+            rms_m = np.nan
+
+        if np.any(mask_p):
+            rms_p = float(np.sqrt(np.nanmean((f_plus_exp[mask_p] - f_plus_cat[mask_p])**2)))
+        else:
+            rms_p = np.nan
+
+        summaries.append(
+            dict(
+                ori_key=ori_key,
+                site_index=site_idx,
+                n_fields_seen=sub["field_label"].nunique(),
+                rms_minus_kHz=rms_m,
+                rms_plus_kHz=rms_p,
+            )
+        )
+
+    return pd.DataFrame(summaries)
+
+# -------------------------------------------------------------------------
+# 4. T2 vs summed perpendicular coupling strength Σ|A_perp|^2
+# -------------------------------------------------------------------------
+def ensure_T2_ms_column(df: pd.DataFrame) -> pd.DataFrame:
+    """
+    Make sure there's a 'T2_ms' column in the unified fit df.
+    Falls back to T2_us or T2 if needed.
+    """
+    if "T2_ms" in df.columns:
+        return df
+
+    df = df.copy()
+
+    if "T2_us" in df.columns:
+        df["T2_ms"] = df["T2_us"] * 1e-3
+        return df
+
+    if "T2" in df.columns:
+        df["T2_ms"] = df["T2"]
+        return df
+
+    # nothing found – fill NaN so it still runs
+    df["T2_ms"] = np.nan
+    return df
+
+
+def compute_T2_vs_coupling(
+    unified_df: pd.DataFrame,
+    matches_df: pd.DataFrame,
+    kappa_threshold: float = 0.2,
+) -> pd.DataFrame:
+    """
+    For each NV:
+      - take T2 from unified_df
+      - accumulate S1 = sum_j |A_perp,j|^2
+                 S2 = sum_j kappa_j |A_perp,j|^2
+        over matched sites with kappa >= kappa_threshold.
+
+    Returns a df with columns: nv, T2_ms, inv_T2_kHz, S1, S2, n_active
+    """
+
+    # --- 1) Get (nv, T2_ms) ---
+    uni = ensure_T2_ms_column(unified_df)
+    df_nv = uni[["nv_label", "T2_ms"]].copy()
+    df_nv.rename(columns={"nv_label": "nv"}, inplace=True)
+
+    # --- 2) Prepare matches_df with geometry ---
+    mf = matches_df.copy()
+
+    # ensure we have an 'nv' column
+    if "nv" not in mf.columns:
+        if "nv_label" in mf.columns:
+            mf.rename(columns={"nv_label": "nv"}, inplace=True)
+        else:
+            raise KeyError(
+                "matches_df must contain an 'nv' or 'nv_label' column "
+                "to link nuclei to NVs."
+            )
+
+    # need kappa and A_perp_Hz from the catalog annotation
+    if "kappa" not in mf.columns or "A_perp_Hz" not in mf.columns:
+        raise KeyError(
+            "matches_df is missing 'kappa' or 'A_perp_Hz'. "
+            "Make sure you merged catalog geometry into matches_df "
+            "(e.g., via attach_catalog_geometry_to_matches)."
+        )
+
+    # --- 3) Select 'active' nuclei ---
+    active = mf[mf["kappa"] >= kappa_threshold].copy()
+
+    if active.empty:
+        # no active sites – still return something sane
+        out = df_nv.copy()
+        out["S1"] = 0.0
+        out["S2"] = 0.0
+        out["n_active"] = 0
+        out["inv_T2_kHz"] = 1.0 / (out["T2_ms"] * 1e3)
+        return out
+
+    # --- 4) Aggregate per NV ---
+    agg = (
+        active.assign(
+            A_perp_Hz_sq=lambda d: d["A_perp_Hz"] ** 2,
+            kappa_A_perp_Hz_sq=lambda d: d["kappa"] * d["A_perp_Hz"] ** 2,
+        )
+        .groupby("nv")
+        .agg(
+            S1=("A_perp_Hz_sq", "sum"),
+            S2=("kappa_A_perp_Hz_sq", "sum"),
+            # use whatever ID column you have for sites:
+            n_active=("site_index", "nunique"),
+        )
+        .reset_index()
+    )
+
+    # --- 5) Merge with T2 ---
+    out = df_nv.merge(agg, on="nv", how="left")
+
+    # fill NVs with no active 13C as S1=S2=0, n_active=0
+    out[["S1", "S2", "n_active"]] = out[["S1", "S2", "n_active"]].fillna(
+        {"S1": 0.0, "S2": 0.0, "n_active": 0}
+    )
+
+    # 1/T2 in kHz units for plotting
+    out["inv_T2_kHz"] = 1.0 / (out["T2_ms"] * 1e3)
+
+    return out
+
+def plot_T2_vs_coupling(df_nv: pd.DataFrame,
+                        title_prefix: str = ""):
+    """
+    Scatter plots of T2 vs S1 and T2 vs S2.
+    """
+    fig, axs = plt.subplots(1, 2, figsize=(9, 4), sharey=True)
+
+    # S1
+    axs[0].scatter(df_nv["S1_Hz2"], df_nv["T2_ms"], alpha=0.7)
+    axs[0].set_xlabel(r"$\Sigma_j |A_{\perp,j}|^2$ [Hz$^2$]")
+    axs[0].set_ylabel(r"$T_2$ [ms]")
+    axs[0].set_xscale("log")
+    axs[0].set_title("T2 vs Σ|A⊥|²")
+
+    # S2
+    axs[1].scatter(df_nv["S2_kappa_Hz2"], df_nv["T2_ms"], alpha=0.7)
+    axs[1].set_xlabel(r"$\Sigma_j \kappa_j |A_{\perp,j}|^2$ [Hz$^2$]")
+    axs[1].set_xscale("log")
+    axs[1].set_title("T2 vs Σ κ|A⊥|²")
+
+    fig.suptitle(f"{title_prefix} Decoherence vs active couplings")
+    return fig, axs
+
+
 
 if __name__ == "__main__":
     kpl.init_kplotlib()
-    
-    # field_cfgs = [
-    # dict(
-    #     label="49G",
-    #     fit_file_stem="2025_11_19-14_19_23-sample_204nv_s1-fcc605",
-    #     counts_file_stem="2025_11_11-01_15_45-johnson_204nv_s6-6d8f5c",
-    #     B_G=np.array([-46.27557688, -17.16599864, -5.70139829]),
-    #     catalog_json="analysis/spin_echo_work/essem_freq_kappa_catalog_22A_49G.json",
-    # ),
-    # dict(
-    #     label="59G",
-    #     fit_file_stem="2025_12_05-07_51_13-sample_204nv_s1-4cf818",
-    #     counts_file_stem="2025_12_04-19_50_15-johnson_204nv_s9-2c83ab",
-    #     B_G=np.array([-41.57848995, -32.77145194, -27.5799348]),
-    #     catalog_json="analysis/spin_echo_work/essem_freq_kappa_catalog_22A_59G.json",
-    # ),
-    # dict(
-    #     label="65G",
-    #     fit_file_stem="2025_11_30-04_35_04-sample_204nv_s1-d278ee",
-    #     counts_file_stem="2025_11_28-16_39_32-johnson_204nv_s6-902522",
-    #     B_G=np.array([-31.61263115, -56.58135644, -6.5512002]),
-    #     catalog_json="analysis/spin_echo_work/essem_freq_kappa_catalog_22A_65G.json",
-    # ),
-    # ]
 
-    # results = []
-    # for cfg in field_cfgs:
-    #     res = run_field_analysis(**cfg)
-    #     results.append(res)
+    field_cfgs = [
+        dict(
+            label="49G",
+            fit_file_stem="2025_11_19-14_19_23-sample_204nv_s1-fcc605",
+            counts_file_stem="2025_11_11-01_15_45-johnson_204nv_s6-6d8f5c",
+            B_G=np.array([-46.27557688, -17.16599864, -5.70139829]),
+            catalog_json="analysis/spin_echo_work/essem_freq_kappa_catalog_22A_49G.json",
+        ),
+        dict(
+            label="59G",
+            fit_file_stem="2025_12_05-07_51_13-sample_204nv_s1-4cf818",
+            counts_file_stem="2025_12_04-19_50_15-johnson_204nv_s9-2c83ab",
+            B_G=np.array([-41.57848995, -32.77145194, -27.5799348]),
+            catalog_json="analysis/spin_echo_work/essem_freq_kappa_catalog_22A_59G.json",
+        ),
+        dict(
+            label="65G",
+            fit_file_stem="2025_11_30-04_35_04-sample_204nv_s1-d278ee",
+            counts_file_stem="2025_11_28-16_39_32-johnson_204nv_s6-902522",
+            B_G=np.array([-31.61263115, -56.58135644, -6.5512002]),
+            catalog_json="analysis/spin_echo_work/essem_freq_kappa_catalog_22A_65G.json",
+        ),
+    ]
 
-    # all_matches = pd.concat([r["matches_df"] for r in results], ignore_index=True)
-    # all_site_stats = pd.concat([r["site_stats"] for r in results], ignore_index=True)
+    results = [run_field_analysis(**cfg) for cfg in field_cfgs]
 
+    all_matches = pd.concat(
+        [r["matches_df"] for r in results],
+        ignore_index=True,
+    )
+    all_site_stats = pd.concat(
+        [r["site_stats"] for r in results],
+        ignore_index=True,
+    )
+        
+    # for cfg, res in zip(field_cfgs, results):
+    #     label = cfg["label"]  # e.g. "49G", "59G", "65G"
 
-    
-    # plot_site_f_vs_B(all_matches)
-    # compare_multiplicity_across_fields(all_site_stats)
-    # compare_NV_assignments(all_matches)
-    # plot_T2_vs_field(all_matches)
-    # plot_T2_vs_distance(all_matches)
-    # pick a few sites with large n_matches for f(B) tracks
-    # plt.show(block=True)
-
-    # all_matches = pd.concat(
-    # [
-    #     res["matches_df"].assign(
-    #         field_label=cfg["label"],
-    #         Bx_G=cfg["B_G"][0],
-    #         By_G=cfg["B_G"][1],
-    #         Bz_G=cfg["B_G"][2],
+    #     # 1) amplitude vs kappa
+    #     fig, ax = plot_amp_vs_kappa(
+    #         matches_df=res["matches_df"],
+    #         fit_file_stem=cfg["fit_file_stem"],
+    #         title_prefix=f"204 NVs @ {label}",
+    #         use_normalized_amp=True,
     #     )
-    #     for cfg, res in zip(field_cfgs, results)
-    # ],
-    # ignore_index=True,)
-    # wide_both = compare_two_fields(
-    # all_matches,
-    # field_labels=["49G","59G","65G"],     # explicit, or leave None to auto-detect the two
-    # title_prefix="204 NVs"
-    # )
-    # plt.show(block=True)
 
-    # sys.exit()
+    #     # 2) θ distribution (all vs active)
+    #     fig, ax = plot_theta_distribution_all_vs_active(
+    #         catalog_json_path=cfg["catalog_json"],
+    #         matches_df=res["matches_df"],
+    #         title_prefix=f"204 NVs @ {label}",
+    #     )
+
+    #     # 3) cosine distributions (all vs active)
+    #     fig, axs = plot_cosine_distributions_all_vs_active(
+    #         catalog_json_path=cfg["catalog_json"],
+    #         matches_df=res["matches_df"],
+    #         title_prefix=f"204 NVs @ {label}",
+    #     )
+
+    #     # 4) g(r, θ) geometry
+    #     fig, axs = plot_g_r_theta(
+    #         catalog_json_path=cfg["catalog_json"],
+    #         matches_df=res["matches_df"],
+    #         title_prefix=f"204 NVs @ {label}",
+    #     )
+
+        # # 5) T2 vs coupling (THIS is the correct, single call)
+        # df_T2 = compute_T2_vs_coupling(
+        #     unified_df=res["unified_df"],      # from run_field_analysis
+        #     matches_df=res["matches_df"],      # annotated with kappa, A_perp_Hz
+        #     kappa_threshold=0.2,
+        # )
+        # fig, axs = plot_T2_vs_coupling(df_T2, title_prefix=f"204 NVs @ {label}")
+
+    tracks = collect_multifield_tracks(results, field_cfgs, min_fields=3)
+    fig, axs = plot_multifield_tracks(tracks, max_sites=6)
+    summary = summarize_multifield_tracks(tracks)
+    
+    # example: pick 6 best sites
+    hero_sites = []
+    for _, row in summary.head(6).iterrows():
+        ori = tuple(int(x) for x in row["ori_key"])
+        site_idx = int(row["site_index"])
+        label = f"{ori}, site {site_idx}"
+        hero_sites.append((ori, site_idx, label))
+
+    cfg_65 = [c for c in field_cfgs if c["label"] == "65G"][0]
+    B_hat_65 = cfg_65["B_G"] / np.linalg.norm(cfg_65["B_G"])
+    
+    for orientation, site_index, label in hero_sites:
+        grid = compute_dispersion_grid_for_site(
+            hyperfine_path=HYPERFINE_PATH,
+            orientation=orientation,
+            site_index=site_index,
+            B_hat0=B_hat_65,
+            Bmin_G=20.0,
+            Bmax_G=80.0,
+            n_B=81,
+            theta_min_deg=-60.0,
+            theta_max_deg=60.0,
+            n_theta=121,
+        )
+
+        fig, axs = plot_dispersion_2D_for_site(
+            grid,
+            title_prefix=f"{label} (around 65 G direction)",
+        )
+        plt.show()
+
+    print(summary.sort_values("rms_minus_kHz"))
+
+    plt.show(block=True)
+
+    sys.exit()
+    
+    # 1) NV-level consistency
+    compare_NV_assignments(all_matches)
+
+    # 2) multiplicity vs field
+    compare_multiplicity_across_fields(all_site_stats)
+
+    # 3) site-wise f±(B)
+    plot_site_f_vs_B(all_matches)
+
+    plt.show(block=True)
+
+    all_matches = pd.concat(
+    [
+        res["matches_df"].assign(
+            field_label=cfg["label"],
+            Bx_G=cfg["B_G"][0],
+            By_G=cfg["B_G"][1],
+            Bz_G=cfg["B_G"][2],
+        )
+        for cfg, res in zip(field_cfgs, results)
+    ],
+    ignore_index=True,)
+    wide_both = compare_two_fields(
+    all_matches,
+    field_labels=["49G","59G","65G"],     # explicit, or leave None to auto-detect the two
+    title_prefix="204 NVs"
+    )
+    
+    hero_sites = pick_hero_sites(all_site_stats, min_matches=3, min_fields=2, topN=8)
+    plot_site_f_vs_B(all_matches, site_list=hero_sites)
+
+    
+    
+    catalog_records = load_catalog("analysis/spin_echo_work/essem_freq_kappa_catalog_22A_59G.json")
+    matches_59 = all_matches[all_matches["field_label"] == "59G"]
+
+    exp_f = matches_59["f_minus_kHz"].to_numpy(float)
+    f_band_kHz = (np.nanmin(exp_f), np.nanmax(exp_f))
+    n_nv = matches_59["nv_label"].nunique()
+    band = f_band_kHz  # kHz
+    (
+        f0_sim_kHz,
+        f1_sim_kHz,
+        ori_sim,
+        site_index_sim,
+        x_sim_A,
+        y_sim_A,
+        z_sim_A,
+    ) = simulate_branch_pairs_like_exp(
+        catalog_records,
+        matches_df=matches_59,
+        c13_abundance=0.011,
+        rng_seed=1,
+        freq_minus_col="f_minus_Hz",
+        freq_plus_col="f_plus_Hz",
+        f_band_kHz=(np.nanmin(matches_59["f_minus_kHz"]), np.nanmax(matches_59["f_minus_kHz"])),
+    )
+
+    plot_simualted(
+        matches_59,
+        f0_sim_kHz,
+        f1_sim_kHz,
+        ori_sim,
+        site_index_sim,
+        x_sim_A,
+        y_sim_A,
+        z_sim_A,
+    )
+    plt.show(block=True)
+
+    sys.exit()
     # --- Magnetic field (crystal axes) ---
     # B_G = [-46.27557688 -17.16599864  -5.70139829]
     # B_G_mag =  49.685072884712

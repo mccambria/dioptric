@@ -323,7 +323,31 @@ def build_site_multiplicity_with_theory(
     # Ratio of observed to expected
     site_stats["match_ratio"] = site_stats["n_matches"] / site_stats["E_n_matches"]
 
-    return site_stats
+ 
+    # ---------- NEW: orbit / shell level summary ----------
+    orbit_stats = site_stats.groupby("orbit_id", as_index=False).agg(
+        r_A=("distance_A", "mean"),
+        theta_deg=("theta_deg", "mean"),
+        n_equiv_theory=("n_equiv_theory", "max"),
+        n_equiv_occupied=("n_equiv_occupied", "max"),
+        n_matches_equiv_total=("n_matches_equiv_total", "max"),
+        kappa_mean=("kappa_mean", "mean"),
+    )
+
+    orbit_stats["frac_occupied_sites"] = (
+        orbit_stats["n_equiv_occupied"] / orbit_stats["n_equiv_theory"]
+    )
+
+    # Shell-level expectation (defined once here)
+    n_eq = orbit_stats["n_equiv_theory"].astype(float)
+    orbit_stats["p_shell"] = 1.0 - (1.0 - p13) ** n_eq
+    orbit_stats["E_n_matches_shell"] = N_NV * orbit_stats["p_shell"]
+    orbit_stats["match_ratio_shell"] = (
+        orbit_stats["n_matches_equiv_total"] / orbit_stats["E_n_matches_shell"]
+    )
+
+    return site_stats, orbit_stats
+    # return site_stats
 
 
 def plot_orbit_rings_3d(
