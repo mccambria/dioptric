@@ -16,6 +16,7 @@ import time
 
 import matplotlib.pyplot as plt
 import numpy as np
+from scipy.interpolate import griddata
 from scipy.optimize import curve_fit
 
 from utils import common
@@ -189,22 +190,44 @@ def main(
     num_points = len(coords_x)
     print(f"Total scan points: {num_points}")
 
-    ### Setup figure for real-time display
+    ### Setup figure for real-time display (confocal-style imshow)
 
     kpl.init_kplotlib()
     fig, ax = plt.subplots(figsize=(8, 8))
-    ax.set_xlabel("X (V)")
-    ax.set_ylabel("Y (V)")
-    ax.set_title("XY Optimization - Concentric Circles")
-    ax.set_aspect("equal")
-    ax.grid(True, alpha=0.3)
 
-    # Plot scan pattern
-    scatter = ax.scatter(coords_x, coords_y, c=[0]*num_points, cmap="viridis",
-                        s=50, alpha=0.7)
-    ax.plot(center_x, center_y, "r+", markersize=15, markeredgewidth=2,
-            label="Initial position")
-    cbar = plt.colorbar(scatter, ax=ax, label="Counts")
+    # Create grid for interpolated image display
+    grid_resolution = 50  # Number of pixels per side
+    half_range = optimize_range * 1.1  # Slightly larger than scan area
+    x_grid = np.linspace(center_x - half_range, center_x + half_range, grid_resolution)
+    y_grid = np.linspace(center_y - half_range, center_y + half_range, grid_resolution)
+    X_grid, Y_grid = np.meshgrid(x_grid, y_grid)
+
+    # Initialize with NaN (will show as blank)
+    img_array = np.full((grid_resolution, grid_resolution), np.nan)
+
+    # Set up extent for imshow (left, right, bottom, top)
+    half_pixel = (x_grid[1] - x_grid[0]) / 2
+    extent = [
+        x_grid[0] - half_pixel,
+        x_grid[-1] + half_pixel,
+        y_grid[-1] + half_pixel,  # Note: y is flipped for image display
+        y_grid[0] - half_pixel,
+    ]
+
+    # Initial imshow display
+    kpl.imshow(
+        ax,
+        img_array,
+        title=f"XY Optimization - {laser_name}, {readout_ns/1e6:.1f} ms",
+        x_label="X Voltage (V)",
+        y_label="Y Voltage (V)",
+        cbar_label="Counts",
+        extent=extent,
+    )
+
+    # Mark initial position
+    ax.plot(center_x, center_y, "r+", markersize=15, markeredgewidth=2, zorder=10)
+
     plt.ion()
     plt.pause(0.1)
 
@@ -229,6 +252,33 @@ def main(
 
     counts_list = []
 
+    # Helper function to update image display with interpolation
+    def update_image_display(x_pts, y_pts, counts_pts):
+        if len(counts_pts) < 3:
+            return
+        # Interpolate scattered points onto grid
+        try:
+            img_interp = griddata(
+                (x_pts, y_pts),
+                counts_pts,
+                (X_grid, Y_grid),
+                method='cubic',
+                fill_value=np.nan
+            )
+            # Fill any remaining NaN with nearest neighbor
+            mask = np.isnan(img_interp)
+            if np.any(mask) and not np.all(mask):
+                img_nearest = griddata(
+                    (x_pts, y_pts),
+                    counts_pts,
+                    (X_grid, Y_grid),
+                    method='nearest'
+                )
+                img_interp[mask] = img_nearest[mask]
+            kpl.imshow_update(ax, img_interp)
+        except Exception:
+            pass  # Skip update if interpolation fails
+
     try:
         if num_averages == 1:
             # Streaming mode - load all coordinates at once
@@ -248,11 +298,13 @@ def main(
                     counts_list.extend(new_samples)
                     num_read += len(new_samples)
 
-                    # Update plot
-                    if num_read % 10 == 0:
-                        scatter.set_array(counts_list + [0] * (num_points - len(counts_list)))
-                        scatter.set_clim(vmin=min(counts_list) if counts_list else 0,
-                                        vmax=max(counts_list) if counts_list else 1)
+                    # Update interpolated image periodically
+                    if num_read % 5 == 0 or num_read == num_points:
+                        update_image_display(
+                            coords_x[:num_read],
+                            coords_y[:num_read],
+                            counts_list[:num_read]
+                        )
                         plt.pause(0.01)
 
             counter.stop_tag_stream()
@@ -282,11 +334,13 @@ def main(
                 avg_counts = np.mean(samples) if samples else 0
                 counts_list.append(avg_counts)
 
-                # Update plot periodically
-                if (i + 1) % 10 == 0:
-                    scatter.set_array(counts_list + [0] * (num_points - len(counts_list)))
-                    scatter.set_clim(vmin=min(counts_list) if counts_list else 0,
-                                    vmax=max(counts_list) if counts_list else 1)
+                # Update interpolated image periodically
+                if (i + 1) % 5 == 0:
+                    update_image_display(
+                        coords_x[:i+1],
+                        coords_y[:i+1],
+                        counts_list[:i+1]
+                    )
                     plt.pause(0.01)
                     print(f"  Progress: {i+1}/{num_points}")
 
@@ -370,23 +424,51 @@ def main(
         print(f"  Optimal Y: {opti_y:.4f} V")
         print(f"  Max counts: {counts_array[max_idx]:.0f}")
 
-    ### Update plot with results
+    ### Update plot with final interpolated image
 
-    # Final scatter plot
-    scatter.set_array(counts_array)
-    scatter.set_clim(vmin=np.min(counts_array), vmax=np.max(counts_array))
+    # Final interpolated image
+    img_final = None
+    if actual_points >= 3:
+        img_final = griddata(
+            (coords_x, coords_y),
+            counts_array,
+            (X_grid, Y_grid),
+            method='cubic',
+            fill_value=np.nan
+        )
+        # Fill NaN with nearest neighbor
+        mask = np.isnan(img_final)
+        if np.any(mask) and not np.all(mask):
+            img_nearest = griddata(
+                (coords_x, coords_y),
+                counts_array,
+                (X_grid, Y_grid),
+                method='nearest'
+            )
+            img_final[mask] = img_nearest[mask]
+        kpl.imshow_update(ax, img_final)
 
+    # Mark the scan points as small dots
+    ax.scatter(coords_x, coords_y, c='white', s=3, alpha=0.5, zorder=5)
+
+    # Mark optimal position
     if opti_x is not None and opti_y is not None:
-        ax.plot(opti_x, opti_y, "g*", markersize=20, label=f"Optimal ({opti_x:.4f}, {opti_y:.4f})")
+        ax.plot(opti_x, opti_y, "g*", markersize=20, zorder=10,
+                label=f"Optimal ({opti_x:.4f}, {opti_y:.4f})")
 
         # Draw circle showing fit sigma if available
         if fit_params is not None:
             sigma = fit_params["sigma"]
             circle = plt.Circle((opti_x, opti_y), sigma, fill=False,
-                               color="green", linestyle="--", linewidth=2, label=f"1σ = {sigma:.4f}")
+                               color="lime", linestyle="--", linewidth=2,
+                               label=f"1σ = {sigma:.4f}", zorder=9)
             ax.add_patch(circle)
 
-    ax.legend(loc="upper right")
+    # Re-mark initial position
+    ax.plot(center_x, center_y, "r+", markersize=15, markeredgewidth=2, zorder=10,
+            label="Initial position")
+
+    ax.legend(loc="upper right", facecolor='white', framealpha=0.8)
     plt.pause(0.1)
 
     ### Move to optimal position
@@ -415,6 +497,9 @@ def main(
 
     ### Prepare results
 
+    # Store final interpolated image if available
+    img_array_final = img_final.tolist() if img_final is not None else None
+
     results = {
         "opti_x": float(opti_x) if opti_x is not None else None,
         "opti_y": float(opti_y) if opti_y is not None else None,
@@ -426,6 +511,8 @@ def main(
         "fit_params": fit_params,
         "fit_success": fit_success,
         "initial_coords": initial_coords,
+        "img_array": img_array_final,
+        "img_extent": extent,
         "scan_params": {
             "num_radii": num_radii,
             "points_per_circle": points_per_circle,
