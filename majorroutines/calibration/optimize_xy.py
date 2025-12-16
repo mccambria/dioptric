@@ -151,8 +151,7 @@ def main(
 
     config = common.get_config_dict()
 
-    # Get galvo server (PIXEL coords for cryo setup)
-    galvo = pos.get_positioner_server(CoordsKey.PIXEL)
+    # Get hardware servers
     counter = tb.get_server_counter()
     pulse_gen = tb.get_server_pulse_streamer()
 
@@ -231,20 +230,18 @@ def main(
     plt.ion()
     plt.pause(0.1)
 
-    ### Hardware setup
+    ### Hardware setup (exact order from confocal_image_sample.py)
 
     tb.reset_cfm()
     tb.init_safe_stop()
+    counter.start_tag_stream()  # Start BEFORE loading sequence
 
-    # Position at starting point first
-    pos.set_xyz_on_nv(nv_sig)
-
-    # Load pulse sequence (same pattern as confocal_image_sample.py)
+    # Load pulse sequence
     seq_file = "simple_readout.py"
     positioner_dict = config["Positioning"]["Positioners"][CoordsKey.PIXEL]
     delay_ns = int(positioner_dict.get("delay", 0))
 
-    seq_args = [delay_ns, readout_ns, laser_name, laser_power]
+    seq_args = [delay_ns, readout_ns, laser_name, 1.0]  # Use 1.0 for power like confocal_image_sample
     pulse_gen.stream_load(seq_file, tb.encode_seq_args(seq_args))
 
     ### Collect counts
@@ -281,17 +278,15 @@ def main(
     try:
         # Use STEP mode pattern (same as confocal_image_sample.py):
         # Move position -> trigger 1 pulse -> read 1 sample -> repeat
-        # This is the correct pattern for galvo-based scanning in cryo setup
         print(f"Scanning {num_points} positions (step mode)...")
-        counter.start_tag_stream()
 
         for i in range(num_points):
             if tb.safe_stop():
                 print("\n[STOPPED] User interrupt")
                 break
 
-            # Move galvo to this position
-            galvo.write_xy(coords_x[i], coords_y[i])
+            # Move galvo to this position (same as confocal_image_sample)
+            pos.set_xyz((coords_x[i], coords_y[i]), positioner=CoordsKey.PIXEL)
 
             # Collect samples at this position
             samples = []
@@ -320,9 +315,9 @@ def main(
             if (i + 1) % 10 == 0:
                 print(f"  Progress: {i+1}/{num_points}, last count: {avg_counts:.0f}")
 
-        counter.stop_tag_stream()
-
     finally:
+        counter.clear_buffer()
+        tb.reset_cfm()
         tb.reset_safe_stop()
 
     counts_array = np.array(counts_list)
@@ -452,7 +447,7 @@ def main(
     opti_counts = None
     if opti_x is not None and opti_y is not None and move_to_optimal:
         print(f"\nMoving to optimal position...")
-        galvo.write_xy(opti_x, opti_y)
+        pos.set_xyz((opti_x, opti_y), positioner=CoordsKey.PIXEL)
         time.sleep(0.05)  # Settling time
 
         # Measure counts at optimal position
