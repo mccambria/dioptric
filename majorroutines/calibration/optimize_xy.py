@@ -158,15 +158,13 @@ def main(
     # Get optimize range from config
     optimize_range = pos.get_positioner_optimize_range(CoordsKey.PIXEL)
 
-    # Setup laser for imaging
+    # Setup laser for imaging (matching confocal_image_sample.py - no set_filter/set_laser_power)
     laser_dict = tb.get_virtual_laser_dict(VirtualLaserKey.IMAGING)
     readout_ns = int(
         nv_sig.pulse_durations.get(VirtualLaserKey.IMAGING, int(laser_dict["duration"]))
     )
+    readout_s = readout_ns / 1e9
     laser_name = laser_dict["physical_name"]
-
-    tb.set_filter(nv_sig, VirtualLaserKey.IMAGING)
-    laser_power = tb.set_laser_power(nv_sig, VirtualLaserKey.IMAGING)
 
     # Get initial position
     initial_coords = pos.get_nv_coords(nv_sig, CoordsKey.PIXEL)
@@ -279,6 +277,7 @@ def main(
         # Use STEP mode pattern (same as confocal_image_sample.py):
         # Move position -> trigger 1 pulse -> read 1 sample -> repeat
         print(f"Scanning {num_points} positions (step mode)...")
+        print(f"DEBUG: delay_ns={delay_ns}, readout_ns={readout_ns}, laser={laser_name}")
 
         for i in range(num_points):
             if tb.safe_stop():
@@ -295,6 +294,11 @@ def main(
                 pulse_gen.stream_start(1)
                 # Read exactly 1 sample (blocking)
                 raw = counter.read_counter_simple(1)
+
+                # Debug: print first few raw values
+                if i < 3:
+                    print(f"DEBUG point {i}: raw={raw}, type={type(raw)}")
+
                 if raw and len(raw) > 0:
                     samples.append(int(raw[0]))
 
