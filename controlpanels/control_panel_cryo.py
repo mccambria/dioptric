@@ -213,7 +213,7 @@ def do_optimize_green(nv_sig):
     return opti_coords
 
 
-def do_optimize_xy(nv_sig, num_radii=5, points_per_circle=12, fit_method="gaussian"):
+def do_optimize_xy(nv_sig, num_radii=7, points_per_circle=30, fit_method="gaussian"):
     """
     Optimize XY position using concentric circle scan pattern.
 
@@ -780,8 +780,8 @@ if __name__ == "__main__":
     # region Postion and Time Control
     sample_xy = [0.0,0.0] # piezo XY voltage input (1.0=1V) (not coordinates, relative)
     coord_z = 0  # piezo z voltage (negative is closer to smaple)
-    pixel_xy = [0,0]  # galvo XY 
-    # pixel_xy = [-0.053, -0.011]  # NV canidate
+    # pixel_xy = [0,0]  # galvo XY 
+    pixel_xy = [-0.053, -0.011]  # NV canidate
 
 # 
     nv_sig = NVSig(
@@ -844,7 +844,7 @@ if __name__ == "__main__":
         # region Image sample     
 
         # do_z_scan_3d(nv_sig) # (xy gavo, z piezo)
-        do_image_sample(nv_sig)
+        # do_image_sample(nv_sig)
         # do_image_sample_zoom(nv_sig)
 
         # Quick NV area scans
@@ -867,6 +867,7 @@ if __name__ == "__main__":
 
         # region Optimize
         # do_optimize_z(nv_sig) # z position optimize
+        do_optimize_xy(nv_sig) #xy galvo optimize but it works
         # do_optimize_green(nv_sig) #xy galvo optimize
         # do_compensate_for_drift(nv_sig)
         # endregion Optimize
