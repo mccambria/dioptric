@@ -236,17 +236,16 @@ def main(
     tb.reset_cfm()
     tb.init_safe_stop()
 
-    # Load pulse sequence
-    seq_file = "simple_readout.py"
-    delay_ns = 0
-    positioner_dict = config["Positioning"]["Positioners"][CoordsKey.PIXEL]
-    delay = int(positioner_dict.get("delay", 0))
-
-    seq_args = [delay, readout_ns, laser_name, laser_power]
-    pulse_gen.stream_load(seq_file, tb.encode_seq_args(seq_args))
-
-    # Position at starting point
+    # Position at starting point first
     pos.set_xyz_on_nv(nv_sig)
+
+    # Load pulse sequence (same pattern as confocal_image_sample.py)
+    seq_file = "simple_readout.py"
+    positioner_dict = config["Positioning"]["Positioners"][CoordsKey.PIXEL]
+    delay_ns = int(positioner_dict.get("delay", 0))
+
+    seq_args = [delay_ns, readout_ns, laser_name, laser_power]
+    pulse_gen.stream_load(seq_file, tb.encode_seq_args(seq_args))
 
     ### Collect counts
 
@@ -280,71 +279,48 @@ def main(
             pass  # Skip update if interpolation fails
 
     try:
-        if num_averages == 1:
-            # Streaming mode - load all coordinates at once
-            print("Using streaming mode...")
-            galvo.load_stream_xy(coords_x.tolist(), coords_y.tolist())
+        # Use STEP mode pattern (same as confocal_image_sample.py):
+        # Move position -> trigger 1 pulse -> read 1 sample -> repeat
+        # This is the correct pattern for galvo-based scanning in cryo setup
+        print(f"Scanning {num_points} positions (step mode)...")
+        counter.start_tag_stream()
 
-            counter.start_tag_stream()
-            num_read = 0
-            pulse_gen.stream_start(num_points)
+        for i in range(num_points):
+            if tb.safe_stop():
+                print("\n[STOPPED] User interrupt")
+                break
 
-            while num_read < num_points:
-                if tb.safe_stop():
-                    print("\n[STOPPED] User interrupt")
-                    break
-                new_samples = counter.read_counter_simple()
-                if len(new_samples) > 0:
-                    counts_list.extend(new_samples)
-                    num_read += len(new_samples)
+            # Move galvo to this position
+            galvo.write_xy(coords_x[i], coords_y[i])
 
-                    # Update interpolated image periodically
-                    if num_read % 5 == 0 or num_read == num_points:
-                        update_image_display(
-                            coords_x[:num_read],
-                            coords_y[:num_read],
-                            counts_list[:num_read]
-                        )
-                        plt.pause(0.01)
+            # Collect samples at this position
+            samples = []
+            for _ in range(num_averages):
+                # Trigger exactly 1 pulse sequence
+                pulse_gen.stream_start(1)
+                # Read exactly 1 sample (blocking)
+                raw = counter.read_counter_simple(1)
+                if raw and len(raw) > 0:
+                    samples.append(int(raw[0]))
 
-            counter.stop_tag_stream()
+            # Average the samples
+            avg_counts = np.mean(samples) if samples else 0
+            counts_list.append(avg_counts)
 
-        else:
-            # Step mode with averaging
-            print(f"Using step mode with {num_averages} averages...")
-            counter.start_tag_stream()
+            # Update interpolated image periodically
+            if (i + 1) % 5 == 0 or i == num_points - 1:
+                update_image_display(
+                    coords_x[:i+1],
+                    coords_y[:i+1],
+                    counts_list[:i+1]
+                )
+                plt.pause(0.01)
 
-            for i in range(num_points):
-                if tb.safe_stop():
-                    print("\n[STOPPED] User interrupt")
-                    break
+            # Progress output
+            if (i + 1) % 10 == 0:
+                print(f"  Progress: {i+1}/{num_points}, last count: {avg_counts:.0f}")
 
-                # Move to position
-                galvo.write_xy(coords_x[i], coords_y[i])
-                time.sleep(0.005)  # Settling time
-
-                # Collect multiple samples
-                samples = []
-                for _ in range(num_averages):
-                    pulse_gen.stream_start(1)
-                    raw = counter.read_counter_simple(1)
-                    if raw:
-                        samples.append(int(raw[0]))
-
-                avg_counts = np.mean(samples) if samples else 0
-                counts_list.append(avg_counts)
-
-                # Update interpolated image periodically
-                if (i + 1) % 5 == 0:
-                    update_image_display(
-                        coords_x[:i+1],
-                        coords_y[:i+1],
-                        counts_list[:i+1]
-                    )
-                    plt.pause(0.01)
-                    print(f"  Progress: {i+1}/{num_points}")
-
-            counter.stop_tag_stream()
+        counter.stop_tag_stream()
 
     finally:
         tb.reset_safe_stop()
