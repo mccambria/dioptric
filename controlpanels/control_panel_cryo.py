@@ -213,11 +213,11 @@ def do_optimize_green(nv_sig):
     return opti_coords
 
 
-def do_optimize_xy(nv_sig, num_radii=5, points_per_circle=30, fit_method="gaussian"):
+def do_optimize_xy(nv_sig, num_steps=15, fit_method="gaussian"):
     """
-    Optimize XY position using concentric circle scan pattern.
+    Optimize XY position using a grid/raster scan pattern.
 
-    Uses the galvo to scan in concentric circles around the current position,
+    Uses the galvo to scan a small grid around the current position,
     collects photon counts, and finds the optimal XY position using either
     2D Gaussian fitting or maximum counts.
 
@@ -225,10 +225,8 @@ def do_optimize_xy(nv_sig, num_radii=5, points_per_circle=30, fit_method="gaussi
     ----------
     nv_sig : NVSig
         NV center parameters (pulse durations, laser settings)
-    num_radii : int, optional
-        Number of concentric circles to scan. Default: 5
-    points_per_circle : int, optional
-        Number of points per circle. Default: 12 (every 30 degrees)
+    num_steps : int, optional
+        Number of steps per axis (creates num_steps x num_steps grid). Default: 15
     fit_method : str, optional
         Method to find optimal position: "gaussian" or "max_counts". Default: "gaussian"
 
@@ -239,8 +237,7 @@ def do_optimize_xy(nv_sig, num_radii=5, points_per_circle=30, fit_method="gaussi
     """
     results = optimize_xy.main(
         nv_sig,
-        num_radii=num_radii,
-        points_per_circle=points_per_circle,
+        num_steps=num_steps,
         fit_method=fit_method,
         move_to_optimal=True,
         save_data=True,
@@ -782,7 +779,6 @@ if __name__ == "__main__":
     coord_z = 0  # piezo z voltage (negative is closer to smaple)
     # pixel_xy = [0,0]  # galvo XY 
     pixel_xy = [-0.055, -0.015]  # NV canidate
-
 # 
     nv_sig = NVSig(
         name=f"({get_sample_name()})",
@@ -844,7 +840,7 @@ if __name__ == "__main__":
         # region Image sample     
 
         # do_z_scan_3d(nv_sig) # (xy gavo, z piezo)
-        # do_image_sample(nv_sig)
+        do_image_sample(nv_sig)
         # do_image_sample_zoom(nv_sig)
 
         # Quick NV area scans
@@ -868,7 +864,7 @@ if __name__ == "__main__":
         # region Optimize
         # do_optimize_z(nv_sig) # z position optimize
         do_optimize_xy(nv_sig) #xy galvo optimize but it works
-        # do_optimize_green(nv_sig) #old optimize xy
+        # do_optimize_green(nv_sig) # old optimize xy
         # do_compensate_for_drift(nv_sig)
         # endregion Optimize
 
