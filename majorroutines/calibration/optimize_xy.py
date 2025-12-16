@@ -56,6 +56,7 @@ def gaussian_2d(coords, amplitude, x0, y0, sigma, offset):
 def main(
     nv_sig: NVSig,
     num_steps: int = 15,
+    scan_range: float = None,
     fit_method: str = "gaussian",
     move_to_optimal: bool = True,
     save_data: bool = True,
@@ -74,6 +75,9 @@ def main(
         NV center parameters (pulse durations, laser settings)
     num_steps : int, optional
         Number of steps per axis (creates num_steps x num_steps grid). Default: 15
+    scan_range : float, optional
+        Total scan range in volts. If None, uses config's optimize_range.
+        Step size = scan_range / (num_steps - 1). Default: None
     fit_method : str, optional
         Method to find optimal position: "gaussian" for 2D Gaussian fit,
         "max_counts" for maximum counts. Default: "gaussian"
@@ -107,8 +111,11 @@ def main(
     counter = tb.get_server_counter()
     pulse_gen = tb.get_server_pulse_streamer()
 
-    # Get optimize range from config
-    optimize_range = pos.get_positioner_optimize_range(CoordsKey.PIXEL)
+    # Get optimize range - use provided value or fall back to config
+    if scan_range is None:
+        optimize_range = pos.get_positioner_optimize_range(CoordsKey.PIXEL)
+    else:
+        optimize_range = scan_range
 
     # Setup laser for imaging (matching confocal_image_sample.py)
     laser_dict = tb.get_virtual_laser_dict(VirtualLaserKey.IMAGING)
@@ -123,10 +130,14 @@ def main(
     center_x = initial_coords[0]
     center_y = initial_coords[1]
 
+    # Calculate step size
+    step_size = optimize_range / (num_steps - 1) if num_steps > 1 else 0
+
     print(f"\nXY Optimization - Grid Scan")
     print(f"="*50)
     print(f"Initial position: X={center_x:.4f}, Y={center_y:.4f}")
     print(f"Scan range: {optimize_range:.4f} V")
+    print(f"Step size: {step_size:.6f} V")
     print(f"Grid: {num_steps} x {num_steps} = {num_steps**2} points")
     print(f"Fit method: {fit_method}")
     print(f"="*50 + "\n")
