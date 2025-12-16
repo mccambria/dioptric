@@ -337,7 +337,8 @@ def main(
             sigma = fit_params["sigma"]
             circle = plt.Circle((opti_x, opti_y), sigma, fill=False,
                                color="lime", linestyle="--", linewidth=2,
-                               label=f"1σ = {sigma:.4f}", zorder=9)
+                               label=f"1σ = {sigma:.4f}", zorder=9,
+                               clip_on=True)  # Clip to axes bounds
             ax.add_patch(circle)
 
     # Re-mark initial position
@@ -345,6 +346,11 @@ def main(
             label="Initial position")
 
     ax.legend(loc="upper right", facecolor='white', framealpha=0.8)
+
+    # Set explicit axis limits to prevent circle from expanding plot area
+    ax.set_xlim(extent[0], extent[1])
+    ax.set_ylim(extent[2], extent[3])
+
     plt.pause(0.1)
 
     ### Move to optimal position
