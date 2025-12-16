@@ -38,6 +38,7 @@ import majorroutines.confocal.confocal_stationary_count as stationary_count
 import majorroutines.confocal.z_scan_1d as z_scan_1d
 import majorroutines.confocal.z_scan_2d as z_scan_2d
 import majorroutines.calibration.calibrate_z_axis as calibrate_z_axis
+import majorroutines.calibration.optimize_xy as optimize_xy
 from majorroutines.calibration import diagnose_z_direction
 from majorroutines.calibration import approach_surface
 
@@ -210,6 +211,50 @@ def do_optimize_green(nv_sig):
         nv_sig.expected_counts = final_counts
 
     return opti_coords
+
+
+def do_optimize_xy(nv_sig, num_radii=5, points_per_circle=12, fit_method="gaussian"):
+    """
+    Optimize XY position using concentric circle scan pattern.
+
+    Uses the galvo to scan in concentric circles around the current position,
+    collects photon counts, and finds the optimal XY position using either
+    2D Gaussian fitting or maximum counts.
+
+    Parameters
+    ----------
+    nv_sig : NVSig
+        NV center parameters (pulse durations, laser settings)
+    num_radii : int, optional
+        Number of concentric circles to scan. Default: 5
+    points_per_circle : int, optional
+        Number of points per circle. Default: 12 (every 30 degrees)
+    fit_method : str, optional
+        Method to find optimal position: "gaussian" or "max_counts". Default: "gaussian"
+
+    Returns
+    -------
+    tuple
+        (opti_x, opti_y) - Optimal XY coordinates in volts
+    """
+    results = optimize_xy.main(
+        nv_sig,
+        num_radii=num_radii,
+        points_per_circle=points_per_circle,
+        fit_method=fit_method,
+        move_to_optimal=True,
+        save_data=True,
+    )
+
+    opti_x = results.get("opti_x")
+    opti_y = results.get("opti_y")
+    opti_counts = results.get("opti_counts")
+
+    print(f"XY optimization complete: X={opti_x:.4f}, Y={opti_y:.4f}")
+    if opti_counts is not None:
+        print(f"  Counts at optimal position: {opti_counts}")
+
+    return opti_x, opti_y
 
 
 # def do_optimize_pixel(nv_sig):
