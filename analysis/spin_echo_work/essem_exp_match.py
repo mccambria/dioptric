@@ -19,13 +19,14 @@ from analysis.spin_echo_work.echo_plot_helpers import (
     plot_echo_with_sites,
     plot_branch_pairs,
     compare_two_fields,
+    plot_branch_correlation_by_orientation,
 )
 from multiplicity_calculation import (
     find_c3v_orbits_from_nv2,
     build_site_multiplicity_with_theory,
     # mutliplicity_plots,
     multiplicity_plots,
-    make_a_table
+    make_a_table,
 )
 
 # ---------------------------------------------------------------------
@@ -1626,7 +1627,6 @@ def analyze_matched_c13_sites(matches_df, *, title_prefix="Matched 13C sites"):
     site_stats["ori_label"] = site_stats["orientation"].apply(ori_to_str)
 
     # === 3D scatter of unique sites, SPLIT by orientation ===
-    kpl.init_kplotlib()
     for ori_val, sub in site_stats.groupby("orientation"):
         ori_lab = ori_to_str(ori_val)
 
@@ -1763,105 +1763,38 @@ def analyze_matched_c13_sites(matches_df, *, title_prefix="Matched 13C sites"):
     # ------------------------------------------------------------------
     # 2) Build a long-form branch table (one row per (NV, branch))
     # ------------------------------------------------------------------
-    matches = matches_df.copy()
-
-    matches_long = pd.DataFrame(
-        {
-            "nv": np.repeat(matches["nv_label"].values, 2),
-            "branch": np.tile(["f0", "f1"], len(matches)),
-            # theory & error per branch
-            "f_theory_kHz": np.concatenate(
-                [
-                    matches["f_minus_kHz"].values,
-                    matches["f_plus_kHz"].values,
-                ]
-            ),
-            "err_kHz": np.concatenate(
-                [
-                    matches["err_f0_kHz"].values,
-                    matches["err_f1_kHz"].values,
-                ]
-            ),
-            # experimental values per branch (aligned with f0/f1)
-            "f_exp_kHz": np.concatenate(
-                [
-                    matches["f0_fit_kHz"].values,
-                    matches["f1_fit_kHz"].values,
-                ]
-            ),
-            # carry over geometry / site info
-            "distance_A": np.repeat(matches["distance_A"].values, 2),
-            "orientation": np.repeat(matches["orientation"].values, 2),
-            "site_index": np.repeat(matches["site_index"].values, 2),
-            "x_A": np.repeat(matches["x_A"].values, 2),
-            "y_A": np.repeat(matches["y_A"].values, 2),
-            "z_A": np.repeat(matches["z_A"].values, 2),
-            "kappa": np.repeat(matches["kappa"].values, 2),
-        }
-    )
-
-    # Masks for the two branches
-    mask_f0 = matches_long["branch"] == "f0"
-    mask_f1 = matches_long["branch"] == "f1"
-
-    # Matched theory branches (with per-branch errors)
-    f0_theory = matches_long.loc[mask_f0, "f_theory_kHz"].to_numpy()
-    f1_theory = matches_long.loc[mask_f1, "f_theory_kHz"].to_numpy()
-    sf0 = matches_long.loc[mask_f0, "err_kHz"].to_numpy()
-    sf1 = matches_long.loc[mask_f1, "err_kHz"].to_numpy()
-
-    # ------------------------------------------------------------------
-    # 3) Sorted branch plots: experimental vs theory
-    # ------------------------------------------------------------------
-
-    # --- 1) Experimental branches, sorted ---
-    try:
-        f0_exp = matches["f0_fit_kHz"].to_numpy()
-        f1_exp = matches["f1_fit_kHz"].to_numpy()
-
-        # Assuming no explicit σ errors on exp for now
-        plot_sorted_exp_branches(
-            f0_exp,
-            f1_exp,
-            sf0_kHz=None,
-            sf1_kHz=None,
-            title_prefix=f"{title_prefix}: experimental branches",
-            f_range_kHz=(10, 6000),
-        )
-    except NameError:
-        print("plot_sorted_exp_branches not defined; skipping EXP branch plot.")
-
-    # --- 2) Matched theory branches, sorted (with |Δf| as errorbars) ---
-    try:
-        plot_sorted_exp_branches(
-            f0_theory,
-            f1_theory,
-            sf0_kHz=sf0,
-            sf1_kHz=sf1,
-            title_prefix=f"{title_prefix}: matched theory branches",
-            f_range_kHz=(10, 6000),
-        )
-    except NameError:
-        print("plot_sorted_exp_branches not defined; skipping theory branch plot.")
-
     # Experimental pairs, orientation-aware
     plot_branch_pairs(
-        matches["f0_fit_kHz"].to_numpy(),
         matches["f1_fit_kHz"].to_numpy(),
+        matches["f0_fit_kHz"].to_numpy(),
         title=f"{title_prefix}: experimental (f0, f1) pairs",
         exp_freqs=True,
         orientation=matches["orientation"].to_numpy(),
         ori_to_str=ori_to_str,
     )
 
+    plot_branch_correlation_by_orientation(
+        f1_kHz=matches["f1_fit_kHz"].to_numpy(),
+        f0_kHz=matches["f0_fit_kHz"].to_numpy(),
+        orientation=matches["orientation"].to_numpy(),
+        title="ESEEM branch correlation by NV orientation (exp)",
+        f_range_kHz=(10, 6000),
+        filter_to_range=True,
+        x_label="f0 (kHz)",
+        y_label="f1 (kHz)",
+    )
+
     plot_branch_pairs(
-        matches["f_plus_kHz"].to_numpy(),
         matches["f_minus_kHz"].to_numpy(),
+        matches["f_plus_kHz"].to_numpy(),
         title=f"{title_prefix}: matched theory (f_minus, f_plus) pairs",
         exp_freqs=False,
         orientation=matches["orientation"].to_numpy(),
         ori_to_str=ori_to_str,
     )
+
+    plt.show()
+
     # ------------------------------------------------------------------
     # 3) Pick a single "matched" frequency per NV:
     #    use the branch with the smaller |err|
@@ -2033,6 +1966,7 @@ def simulate_branch_pairs_like_exp(
     )
     # normalize NV orientations to tuples too
     nv_info["ori_tuple"] = nv_info["orientation"].apply(_norm_ori)
+    nv_labels_sim = nv_info["nv_label"].to_numpy(int)
 
     N = len(nv_info)
 
@@ -2042,6 +1976,7 @@ def simulate_branch_pairs_like_exp(
     x_sim_A = np.full(N, np.nan, float)
     y_sim_A = np.full(N, np.nan, float)
     z_sim_A = np.full(N, np.nan, float)
+    kappa_sim = np.full(N, np.nan, float)
     ori_list = []
 
     rng = np.random.default_rng(rng_seed)
@@ -2092,7 +2027,6 @@ def simulate_branch_pairs_like_exp(
             j = np.nanargmax(np.abs(kappa_vals))
         else:
             j = rng.integers(0, len(sub_occ))
-        j = rng.integers(0, len(sub_occ))
 
         rec = sub_occ.iloc[j]
 
@@ -2110,14 +2044,19 @@ def simulate_branch_pairs_like_exp(
         y_sim_A[i] = rec.get("y_A", np.nan)
         z_sim_A[i] = rec.get("z_A", np.nan)
 
+        # kappa for that chosen site
+        kappa_sim[i] = rec.get("kappa", np.nan)
+
     return (
         f0_sim_kHz,
         f1_sim_kHz,
+        nv_labels_sim,
         np.array(ori_list, dtype=object),
         site_index_sim,
         x_sim_A,
         y_sim_A,
         z_sim_A,
+        kappa_sim,
     )
 
 
@@ -2314,6 +2253,7 @@ def plot_simualted(
     print("Simulated site multiplicity (n_matches_sim):")
     print(site_stats_sim["n_matches_sim"].value_counts().sort_index())
 
+
 def run_field_analysis(
     label: str,
     fit_file_stem: str,
@@ -2393,6 +2333,7 @@ def run_field_analysis(
         n_nv_total=int(nv_kept.size),
     )
 
+
 def plot_site_f_vs_B(all_matches: pd.DataFrame, site_list=None):
     """
     For each (orientation, site_index), plot matched f_minus/f_plus vs B_mag_G.
@@ -2433,7 +2374,8 @@ def plot_site_f_vs_B(all_matches: pd.DataFrame, site_list=None):
         ax.set_yscale("log")
         ax.grid(True, which="both", alpha=0.3)
         ax.legend()
-        
+
+
 def compare_multiplicity_across_fields(all_site_stats):
     # site key without field
     key = ["orientation", "site_index"]
@@ -2443,10 +2385,8 @@ def compare_multiplicity_across_fields(all_site_stats):
     field_counts.rename(columns={"field_label": "n_fields_seen"}, inplace=True)
 
     # average n_matches per field for sites that appear in multiple fields
-    agg = (
-        all_site_stats
-        .groupby(key + ["field_label"], as_index=False)
-        .agg(n_matches=("n_matches", "mean"))
+    agg = all_site_stats.groupby(key + ["field_label"], as_index=False).agg(
+        n_matches=("n_matches", "mean")
     )
 
     print("Sites seen in ≥2 fields:")
@@ -2467,6 +2407,7 @@ def compare_multiplicity_across_fields(all_site_stats):
     ax.legend()
     return fig, ax
 
+
 def compare_NV_assignments(all_matches):
     # one row per NV per field
     df = all_matches[["nv_label", "field_label", "site_index", "err_pair_kHz"]].copy()
@@ -2482,9 +2423,11 @@ def compare_NV_assignments(all_matches):
     print("NVs with changing site assignment across fields:")
     print(site_spread[site_spread["n_distinct_sites"] > 1].head(20))
 
+
 if __name__ == "__main__":
-    kpl.init_kplotlib()
-    
+    # kpl.init_kplotlib()
+    kpl.init_kplotlib(constrained_layout=False, force=True)
+
     # field_cfgs = [
     # dict(
     #     label="49G",
@@ -2517,8 +2460,6 @@ if __name__ == "__main__":
     # all_matches = pd.concat([r["matches_df"] for r in results], ignore_index=True)
     # all_site_stats = pd.concat([r["site_stats"] for r in results], ignore_index=True)
 
-
-    
     # plot_site_f_vs_B(all_matches)
     # compare_multiplicity_across_fields(all_site_stats)
     # compare_NV_assignments(all_matches)
@@ -2547,38 +2488,34 @@ if __name__ == "__main__":
 
     # sys.exit()
     # --- Magnetic field (crystal axes) ---
-    # B_G = [-46.27557688 -17.16599864  -5.70139829]
-    # B_G_mag =  49.685072884712
-    # B_hat =  [-0.93137786 -0.34549609 -0.11475073]
+    # B_G = [-46.27557688 - 17.16599864 - 5.70139829]
+    # B_G_mag = 49.685072884712
+    # B_hat = [-0.93137786 - 0.34549609 - 0.11475073]
     # fit_file_stem    = "2025_11_13-06_28_22-sample_204nv_s1-e85aa7"   # where popts & freqs live
     # fit_file_stem  = "2025_11_14-03_05_30-sample_204nv_s1-e85aa7" # 200 freqs freeze
     # fit_file_stem  = "2025_11_14-18_28_58-sample_204nv_s1-e85aa7" # 600 freqs freeze
-    # fit_file_stem = (
-    #     "2025_11_17-09_49_42-sample_204nv_s1-fcc605"  # site encoded, all freqs (nysq band)
-    # )
+    fit_file_stem = "2025_11_17-09_49_42-sample_204nv_s1-fcc605"  # site encoded, all freqs (nysq band)
     # fit_file_stem = (
     #     "2025_11_19-14_19_23-sample_204nv_s1-fcc605"  # site encoded, 1500 freqs pairs (1khz-6Mhz)
     # )
-    # counts_file_stem = (
-    #     "2025_11_11-01_15_45-johnson_204nv_s6-6d8f5c"  # merged dataset2+3 counts
-    # )
-    
+    counts_file_stem = (
+        "2025_11_11-01_15_45-johnson_204nv_s6-6d8f5c"  # merged dataset2+3 counts
+    )
+    catalog_json = "analysis/spin_echo_work/essem_freq_kappa_catalog_22A_49G.json"
+
     # --- Magnetic field (crystal axes) ---
-    # B_G =  [-31.61263115 -56.58135644  -6.5512002 ]  
+    # B_G =  [-31.61263115 -56.58135644  -6.5512002 ]
     # B_G = 65.143891267575
     # B_G =  [-0.48527391 -0.86855967 -0.10056507]
-    fit_file_stem = (
-        "2025_11_30-04_35_04-sample_204nv_s1-d278ee"  # site encoded, all freqs (nysq band)
-    )
-    counts_file_stem = (
-        "2025_11_28-16_39_32-johnson_204nv_s6-902522" 
-    )
-    
+    # fit_file_stem = "2025_11_30-04_35_04-sample_204nv_s1-d278ee"  # site encoded, all freqs (nysq band)
+    # counts_file_stem = "2025_11_28-16_39_32-johnson_204nv_s6-902522"
+
     # --- Magnetic field (crystal axes) ---
-    B_G=np.array([-41.57848995, -32.77145194, -27.5799348])
-    fit_file_stem="2025_12_05-07_51_13-sample_204nv_s1-4cf818"
-    counts_file_stem="2025_12_04-19_50_15-johnson_204nv_s9-2c83ab"
-    catalog_json="analysis/spin_echo_work/essem_freq_kappa_catalog_22A_59G.json"
+    # B_G = np.array([-41.57848995, -32.77145194, -27.5799348])
+    # fit_file_stem = "2025_12_05-07_51_13-sample_204nv_s1-4cf818"
+    # counts_file_stem = "2025_12_04-19_50_15-johnson_204nv_s9-2c83ab"
+    # catalog_json = "analysis/spin_echo_work/essem_freq_kappa_catalog_22A_59G.json"
+
     ## ---- 2) global theory-vs-exp matching (use FIT file) ----##
     hf_df = load_hyperfine_table(distance_cutoff=15.0)  # or 15.0, etc.
     data = dm.get_raw_data(file_stem=fit_file_stem)
@@ -2641,7 +2578,19 @@ if __name__ == "__main__":
     print(row.T)
 
     print(matches_df.head())
-
+    cat_df = pd.DataFrame(catalog_records)
+    orientation = cat_df["orientation"].to_numpy()
+    plot_branch_correlation_by_orientation(
+        f0_kHz=cat_df["f_minus_Hz"].to_numpy() / 1e3,
+        f1_kHz=cat_df["f_plus_Hz"].to_numpy() / 1e3,
+        orientation=cat_df["orientation"].to_numpy(),
+        # orientation=[[1, 1, 1]],
+        title="Catalog branch correlation: f_- vs f_+",
+        f_range_kHz=(10, 6000),
+        filter_to_range=True,
+        x_label="f_- (kHz)",
+        y_label="f_+ (kHz)",
+    )
     site_stats = analyze_matched_c13_sites(matches_df, title_prefix="204 NVs")
 
     # ---- 3) echo trace and corresponding matched site ----
@@ -2654,7 +2603,7 @@ if __name__ == "__main__":
         counts_file_stem=counts_file_stem,
         fit_file_stem=fit_file_stem,
         matches_enriched=matches_df,  # from pairwise_match_from_site_ids_kHz
-        hf_df=hf_df,                   # <- only use matched site coordinates
+        hf_df=hf_df,  # <- only use matched site coordinates
         nv_labels=nv_list,
         use_half_time_as_tau=False,
     )
@@ -2667,34 +2616,25 @@ if __name__ == "__main__":
     band = f_band_kHz  # kHz
     # # band = (10, 1500)  # kHz
 
-    # (
-    #     f0_sim_kHz,
-    #     f1_sim_kHz,
-    #     ori_sim,
-    #     site_index_sim,
-    #     x_sim_A,
-    #     y_sim_A,
-    #     z_sim_A,
-    # ) = simulate_branch_pairs_like_exp(
-    #     catalog_records,
-    #     matches_df=matches_df,
-    #     c13_abundance=0.011,
-    #     rng_seed=1,
-    #     freq_minus_col="f_minus_Hz",
-    #     freq_plus_col="f_plus_Hz",
-    #     f_band_kHz=band,
-    # )
-
-    # plot_simualted(
-    #     f0_sim_kHz,
-    #     f1_sim_kHz,
-    #     ori_sim,
-    #     site_index_sim,
-    #     x_sim_A,
-    #     y_sim_A,
-    #     z_sim_A,
-    # )
-
+    (
+        f0_sim_kHz,
+        f1_sim_kHz,
+        nv_labels_sim,
+        ori_sim,
+        site_index_sim,
+        x_sim_A,
+        y_sim_A,
+        z_sim_A,
+        kappa_sim,
+    ) = simulate_branch_pairs_like_exp(
+        catalog_records,
+        matches_df=matches_df,
+        c13_abundance=0.011,
+        rng_seed=20,
+        freq_minus_col="f_minus_Hz",
+        freq_plus_col="f_plus_Hz",
+        f_band_kHz=band,
+    )
     # sys.exit()
     # ---- 5) Multiplicity Analsysis by both theory and experiment ----##
     orbit_df = find_c3v_orbits_from_nv2(
@@ -2703,18 +2643,19 @@ if __name__ == "__main__":
         tol_r_A=0.02,  # 0.02 Å is usually fine
         tol_dir=5e-2,  # ~0.05 in unit-vector norm (~few degrees)
     )
-
     print(orbit_df.head(20))
-
     # See the multiplicity stats
     print("\nMultiplicity histogram (theory):")
     print(orbit_df["n_equiv_theory"].value_counts().sort_index())
 
-    site_stats_full = build_site_multiplicity_with_theory(
-        matches_df=matches_df,
-        orbit_df=orbit_df,
-        p13=0.011,  # natural abundance
-    )
+    # Experiment
+    # site_stats_exp = build_site_multiplicity_with_theory(
+    #     matches_df=matches_df,
+    #     orbit_df=orbit_df,
+    #     p13=0.011,  # natural abundance
+    # )
+    # multiplicity_plots(site_stats_exp, dataset_label="Experiment")
+    # make_a_table(site_stats_exp, topN=15, dataset_label="Experiment")
 
     # print(
     #     site_stats_full.sort_values("n_matches", ascending=False)[cols_to_show]
@@ -2722,8 +2663,55 @@ if __name__ == "__main__":
     #     .to_string(index=False)
     # )
 
-    multiplicity_plots(site_stats_full)
-    make_a_table(site_stats_full, topN=15)
+    # # Simulation
+    plot_simualted(
+        f0_sim_kHz,
+        f1_sim_kHz,
+        ori_sim,
+        site_index_sim,
+        x_sim_A,
+        y_sim_A,
+        z_sim_A,
+    )
+
+    # Normalize orientations: ori_sim is array of tuples / None
+    def _norm_ori(o):
+        if o is None:
+            return None
+        arr = np.asarray(o)
+        flat = arr.ravel()
+        return tuple(int(v) for v in flat)
+
+    ori_sim_norm = [_norm_ori(o) for o in ori_sim]
+
+    sim_matches_df = pd.DataFrame(
+        {
+            "nv_label": nv_labels_sim.astype(int),  # if you added this earlier
+            "orientation": ori_sim_norm,
+            "site_index": site_index_sim.astype(int),
+            "x_A": x_sim_A,
+            "y_A": y_sim_A,
+            "z_A": z_sim_A,
+            "distance_A": np.sqrt(x_sim_A**2 + y_sim_A**2 + z_sim_A**2),
+            "f0_fit_kHz": f0_sim_kHz,
+            "f1_fit_kHz": f1_sim_kHz,
+            "kappa": kappa_sim,
+        }
+    )
+
+    # Define f_minus/f_plus in the same convention used downstream
+    sim_matches_df["f_minus_kHz"] = np.minimum(
+        sim_matches_df["f0_fit_kHz"], sim_matches_df["f1_fit_kHz"]
+    )
+    sim_matches_df["f_plus_kHz"] = np.maximum(
+        sim_matches_df["f0_fit_kHz"], sim_matches_df["f1_fit_kHz"]
+    )
+    site_stats_sim = build_site_multiplicity_with_theory(
+        matches_df=sim_matches_df,
+        orbit_df=orbit_df,
+        p13=0.011,  # natural abundance
+    )
+    multiplicity_plots(site_stats_sim, dataset_label="Simulation")
+    make_a_table(site_stats_sim, topN=15, dataset_label="Simulation")
+
     kpl.show(block=True)
-
-
