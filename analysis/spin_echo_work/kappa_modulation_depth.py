@@ -217,6 +217,162 @@ def build_essem_catalog_with_kappa(
         w.writerows(recs)
     return recs
 
+#---------------
+def compute_dispersion_grid_for_site(
+    hyperfine_path: str,
+    orientation: Tuple[int, int, int],
+    site_index: int,
+    B_hat0: np.ndarray,
+    Bmin_G: float = 20.0,
+    Bmax_G: float = 80.0,
+    n_B: int = 81,
+    theta_min_deg: float = -60.0,
+    theta_max_deg: float = 60.0,
+    n_theta: int = 121,
+    gamma_n_Hz_per_T: float = GAMMA_C13_HZ_PER_T,
+    ms: int = -1,
+    phi_deg: float = 0.0,
+):
+    """
+    Compute f_-(B,theta) and f_+(B,theta) for a single lattice site on a 2D grid:
+      - B magnitude in [Bmin_G, Bmax_G] along a cone around B_hat0
+      - tilt angle theta in [theta_min_deg, theta_max_deg] in a plane containing B_hat0
+
+    Returns: dict with keys:
+      B_mags_G:   (n_B,) array
+      thetas_deg: (n_theta,) array
+      f_minus_kHz: (n_theta, n_B) array
+      f_plus_kHz:  (n_theta, n_B) array
+      kappa:       (n_theta, n_B) array
+      theta_ms0_ms1_deg: (n_theta, n_B) array
+    """
+    # Normalize reference direction
+    B_hat0 = np.asarray(B_hat0, float)
+    B_hat0 /= np.linalg.norm(B_hat0)
+
+    # Choose an axis perpendicular to B_hat0 to define the tilt plane
+    trial = np.array([1.0, 0.0, 0.0])
+    if abs(np.dot(trial, B_hat0)) > 0.9:
+        trial = np.array([0.0, 1.0, 0.0])
+    u_perp = trial - np.dot(trial, B_hat0) * B_hat0
+    u_perp /= np.linalg.norm(u_perp)
+
+    # Grids
+    B_mags_G = np.linspace(Bmin_G, Bmax_G, n_B)
+    thetas_deg = np.linspace(theta_min_deg, theta_max_deg, n_theta)
+    B_mags_T = B_mags_G * 1e-4
+
+    # Hyperfine tensor for this site
+    df_hf = read_hyperfine_table_safe(hyperfine_path).copy()
+    row = df_hf.iloc[int(site_index)]
+    A_file_Hz = (
+        np.array(
+            [
+                [row.Axx, row.Axy, row.Axz],
+                [row.Axy, row.Ayy, row.Ayz],
+                [row.Axz, row.Ayz, row.Azz],
+            ],
+            float,
+        )
+        * 1e6
+    )
+
+    # Allocate grids
+    f_minus_grid = np.zeros((n_theta, n_B), float)
+    f_plus_grid = np.zeros((n_theta, n_B), float)
+    kappa_grid = np.zeros((n_theta, n_B), float)
+    theta_ms0_ms1_grid = np.zeros((n_theta, n_B), float)
+
+    for i_th, th_deg in enumerate(thetas_deg):
+        th = np.deg2rad(th_deg)
+        # B_hat in the plane spanned by B_hat0 and u_perp
+        B_hat = np.cos(th) * B_hat0 + np.sin(th) * u_perp
+        B_hat /= np.linalg.norm(B_hat)
+
+        for j_B, B_T in enumerate(B_mags_T * B_hat):
+            (
+                kappa,
+                f_minus,
+                f_plus,
+                omegaI,
+                nm,
+                A_par,
+                A_perp,
+                theta_deg,
+                n0_hat,
+                nm_hat,
+                Bhat_vec,
+                z_nv_cubic,
+            ) = _kappa_and_fpm(
+                A_file_Hz,
+                orientation,
+                B_T,
+                gamma_hz_per_t=gamma_n_Hz_per_T,
+                ms=ms,
+                phi_deg=phi_deg,
+            )
+
+            f_minus_grid[i_th, j_B] = f_minus / 1e3   # Hz -> kHz
+            f_plus_grid[i_th, j_B] = f_plus / 1e3
+            kappa_grid[i_th, j_B] = kappa
+            theta_ms0_ms1_grid[i_th, j_B] = theta_deg
+
+    return dict(
+        B_mags_G=B_mags_G,
+        thetas_deg=thetas_deg,
+        f_minus_kHz=f_minus_grid,
+        f_plus_kHz=f_plus_grid,
+        kappa=kappa_grid,
+        theta_ms0_ms1_deg=theta_ms0_ms1_grid,
+    )
+
+def plot_dispersion_2D_for_site(grid: dict,
+                                title_prefix: str = "",
+                                cmap: str = "viridis"):
+    """
+    Make a 1×2 panel:
+      left:  f_-(B,theta) vs (|B|, tilt angle)
+      right: f_+(B,theta) vs (|B|, tilt angle)
+    """
+    B_mags_G = grid["B_mags_G"]
+    thetas_deg = grid["thetas_deg"]
+    f_minus = grid["f_minus_kHz"]
+    f_plus = grid["f_plus_kHz"]
+
+    fig, axs = plt.subplots(1, 2, figsize=(10, 4), sharey=True)
+
+    extent = [B_mags_G.min(), B_mags_G.max(),
+              thetas_deg.min(), thetas_deg.max()]
+
+    im0 = axs[0].imshow(
+        f_minus,
+        origin="lower",
+        aspect="auto",
+        extent=extent,
+        cmap=cmap,
+    )
+    axs[0].set_title(r"$f_-(|B|,\theta)$")
+    axs[0].set_xlabel(r"|B| [G]")
+    axs[0].set_ylabel(r"tilt angle $\theta$ [deg]")
+    fig.colorbar(im0, ax=axs[0], label="kHz")
+
+    im1 = axs[1].imshow(
+        f_plus,
+        origin="lower",
+        aspect="auto",
+        extent=extent,
+        cmap=cmap,
+    )
+    axs[1].set_title(r"$f_+(|B|,\theta)$")
+    axs[1].set_xlabel(r"|B| [G]")
+    fig.colorbar(im1, ax=axs[1], label="kHz")
+
+    if title_prefix:
+        fig.suptitle(title_prefix, y=1.02)
+
+    fig.tight_layout()
+    return fig, axs
+
 
 # ---------- 0) IO ----------
 def load_catalog(path_json: str) -> List[Dict]:

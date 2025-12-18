@@ -8,6 +8,8 @@ from utils import data_manager as dm
 from utils import kplotlib as kpl
 from typing import Optional
 from collections.abc import Sequence
+from typing import Iterable, Tuple, List, Dict, Optional
+
 from analysis.sc_c13_hyperfine_sim_data_driven import (
     read_hyperfine_table_safe,
     B_vec_T,  # your lab field (Tesla)
@@ -28,7 +30,7 @@ from multiplicity_calculation import (
     multiplicity_plots,
     make_a_table,
 )
-
+from kappa_modulation_depth import compute_dispersion_grid_for_site, plot_dispersion_2D_for_site
 # ---------------------------------------------------------------------
 # CONFIG / PATHS
 # ---------------------------------------------------------------------
@@ -230,8 +232,6 @@ def expected_stick_spectrum_from_recs(
     ax.set_title(f"Expected ESEEM stick spectrum (p_occ={p_occ:.3f})")
     ax.grid(True, which="both", alpha=0.25)
     ax.legend(framealpha=0.85)
-    fig.tight_layout()
-
     return f_stick, a_stick, fig, ax
 
 
@@ -1540,6 +1540,7 @@ def ori_to_str(ori):
     return f"({o[0]},{o[1]},{o[2]})"
 
 
+
 def analyze_matched_c13_sites(matches_df, *, title_prefix="Matched 13C sites"):
     """
     Given a matches_df returned by match_exp_pairs_to_catalog(...),
@@ -2133,6 +2134,7 @@ def summarize_simulated_sites(
 
 
 def plot_simualted(
+    matches_df,
     f0_sim_kHz,
     f1_sim_kHz,
     ori_sim,
@@ -2300,14 +2302,48 @@ def run_field_analysis(
         records=catalog_records,
     )
 
-    # 4) Full site multiplicity analysis
+    # -------------------- 3b) QUALITY CUTS --------------------
+    # attach comb_contrast and osc_amp from the same fit file
+    uni_df = extract_unified_fit_params(fit_file_stem)
+
+    matches_df = matches_df.merge(
+        uni_df,
+        on="nv_label",
+        how="left",
+    )
+
+    # normalized ESEEM amplitude
+    matches_df["osc_amp_norm"] = (
+        matches_df["osc_amp"] / matches_df["comb_contrast"]
+    )
+
+    # define a "good physics" mask
+    mask_good = (
+        np.isfinite(matches_df["kappa"])
+        & np.isfinite(matches_df["osc_amp_norm"])
+        & np.isfinite(matches_df["comb_contrast"])
+        & (matches_df["comb_contrast"] > 0.02)          # non-trivial echo
+        & (np.abs(matches_df["osc_amp_norm"]) < 3.0)    # kill ratios like 40, 100
+        & (matches_df["red_chi2"] < 3.0)                # decent fit
+    )
+
+    n_before = matches_df["nv_label"].nunique()
+    matches_df = matches_df[mask_good].copy()
+    n_after = matches_df["nv_label"].nunique()
+    print(
+        f"[{label}] kept {n_after} / {n_before} matched NVs after "
+        f"amp/chi² quality cuts"
+    )
+    # -----------------------------------------------------------
+
+    # 4) Full site multiplicity analysis (now only with good NVs)
     orbit_df = find_c3v_orbits_from_nv2(
         hyperfine_path=HYPERFINE_PATH,
         r_max_A=22.0,
         tol_r_A=0.02,
         tol_dir=5e-2,
     )
-    site_stats_full = build_site_multiplicity_with_theory(
+    site_stats_full, orbit_stats = build_site_multiplicity_with_theory(
         matches_df=matches_df,
         orbit_df=orbit_df,
         p13=0.011,
@@ -2317,11 +2353,18 @@ def run_field_analysis(
     B_mag_G = float(np.linalg.norm(B_G))
     matches_df["field_label"] = label
     matches_df["B_mag_G"] = B_mag_G
+
+    site_stats_full = site_stats_full.copy()
     site_stats_full["field_label"] = label
     site_stats_full["B_mag_G"] = B_mag_G
 
-    # (Optional) basic scalars you might want quickly
+    orbit_stats = orbit_stats.copy()
+    orbit_stats["field_label"] = label
+    orbit_stats["B_mag_G"] = B_mag_G
+
+    # (Optional) frac matched
     frac_matched = matches_df["nv_label"].nunique() / nv_kept.size
+    uni_df = extract_unified_fit_params(fit_file_stem)
 
     return dict(
         label=label,
@@ -2329,9 +2372,12 @@ def run_field_analysis(
         B_mag_G=B_mag_G,
         matches_df=matches_df,
         site_stats=site_stats_full,
+        orbit_stats=orbit_stats,
         frac_matched=frac_matched,
         n_nv_total=int(nv_kept.size),
+        unified_df=uni_df,
     )
+
 
 
 def plot_site_f_vs_B(all_matches: pd.DataFrame, site_list=None):
@@ -2425,6 +2471,31 @@ def compare_NV_assignments(all_matches):
 
 
 if __name__ == "__main__":
+    kpl.init_kplotlib()
+
+    field_cfgs = [
+        dict(
+            label="49G",
+            fit_file_stem="2025_11_19-14_19_23-sample_204nv_s1-fcc605",
+            counts_file_stem="2025_11_11-01_15_45-johnson_204nv_s6-6d8f5c",
+            B_G=np.array([-46.27557688, -17.16599864, -5.70139829]),
+            catalog_json="analysis/spin_echo_work/essem_freq_kappa_catalog_22A_49G.json",
+        ),
+        dict(
+            label="59G",
+            fit_file_stem="2025_12_05-07_51_13-sample_204nv_s1-4cf818",
+            counts_file_stem="2025_12_04-19_50_15-johnson_204nv_s9-2c83ab",
+            B_G=np.array([-41.57848995, -32.77145194, -27.5799348]),
+            catalog_json="analysis/spin_echo_work/essem_freq_kappa_catalog_22A_59G.json",
+        ),
+        dict(
+            label="65G",
+            fit_file_stem="2025_11_30-04_35_04-sample_204nv_s1-d278ee",
+            counts_file_stem="2025_11_28-16_39_32-johnson_204nv_s6-902522",
+            B_G=np.array([-31.61263115, -56.58135644, -6.5512002]),
+            catalog_json="analysis/spin_echo_work/essem_freq_kappa_catalog_22A_65G.json",
+        ),
+    ]
     # kpl.init_kplotlib()
     kpl.init_kplotlib(constrained_layout=False, force=True)
 
@@ -2452,10 +2523,7 @@ if __name__ == "__main__":
     # ),
     # ]
 
-    # results = []
-    # for cfg in field_cfgs:
-    #     res = run_field_analysis(**cfg)
-    #     results.append(res)
+    results = [run_field_analysis(**cfg) for cfg in field_cfgs]
 
     # all_matches = pd.concat([r["matches_df"] for r in results], ignore_index=True)
     # all_site_stats = pd.concat([r["site_stats"] for r in results], ignore_index=True)

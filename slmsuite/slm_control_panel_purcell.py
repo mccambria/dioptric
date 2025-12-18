@@ -299,10 +299,10 @@ def load_nv_coords(
     # file_path="slmsuite/nv_blob_detection/nv_blob_151nvs_reordered.npz",
     # file_path="slmsuite/nv_blob_detection/nv_blob_136nvs_reordered.npz",
     # file_path="slmsuite/nv_blob_detection/nv_blob_118nvs_reordered.npz",
-    # file_path="slmsuite/nv_blob_detection/nv_blob_312nvs_reordered.npz", #johnson
+    file_path="slmsuite/nv_blob_detection/nv_blob_312nvs_reordered.npz", #johnson
     # file_path="slmsuite/nv_blob_detection/nv_blob_230nvs_reordered.npz", #johnson
     # file_path="slmsuite/nv_blob_detection/nv_blob_223nvs_reordered.npz", #johnson
-    file_path="slmsuite/nv_blob_detection/nv_blob_204nvs_reordered.npz",  # johnson
+    # file_path="slmsuite/nv_blob_detection/nv_blob_204nvs_reordered.npz",  # johnson
 ):
     data = np.load(file_path, allow_pickle=True)
     nv_coordinates = data["nv_coordinates"]
@@ -388,8 +388,8 @@ try:
     # test_wavefront_calibration()
     # wavefront_calibration()
     # load_wavefront_calibration()
-    compute_and_write_nvs_phase()
-    # calibration_triangle()
+    # compute_and_write_nvs_phase()
+    calibration_triangle()
     # circles()
     # write_pre_computed_circles()
     # smiley()
