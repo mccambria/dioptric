@@ -1353,7 +1353,7 @@ if __name__ == "__main__":
     # magnet_angle = 90
     date_str = "2025_10_21"
     sample_coords = [0.4, 0.8]
-    z_coord = 0.2
+    z_coord = -0.1
     # Load NV pixel coordinates1
     pixel_coords_list = load_nv_coords(
         # file_path="slmsuite/nv_blob_detection/nv_blob_308nvs_reordered.npz",
@@ -1486,7 +1486,7 @@ if __name__ == "__main__":
     # print(f"Created NV: {nv_sig.name}, Coords: {nv_sig.coords}")
     # nv_sig.expected_counts = 900
     # nv_sig.expected_counts = 1400
-    nv_sig.expected_counts = 1300
+    # nv_sig.expected_counts = 1300
     # nv_sig.expected_counts = 1500
 
     # nv_list = nv_list[::-1]  # flipping the order of NVs
@@ -1520,14 +1520,14 @@ if __name__ == "__main__":
         #     force_laser_key=VirtualLaserKey.RED_IMAGING,
         # )
 
-        do_compensate_for_drift(nv_sig)
-        do_widefield_image_sample(nv_sig, 50)
+        # do_compensate_for_drift(nv_sig)
+        # do_widefield_image_sample(nv_sig, 50)
         # do_widefield_image_sample(nv_sig, 400)
 
         # for nv in nv_list:
             # do_scanning_image_sample_zoom(nv)
 
-        # do_scanning_image_sample(nv_sig)
+        do_scanning_image_sample(nv_sig)
         # do_scanning_image_sample_zoom(nv_sig)
         # do_scanning_image_full_roi(nv_sig)
 
