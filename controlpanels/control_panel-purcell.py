@@ -1353,7 +1353,7 @@ if __name__ == "__main__":
     # magnet_angle = 90
     date_str = "2025_10_21"
     sample_coords = [0.4, 0.8]
-    z_coord = -0.1
+    z_coord = -0.2
     # Load NV pixel coordinates1
     pixel_coords_list = load_nv_coords(
         # file_path="slmsuite/nv_blob_detection/nv_blob_308nvs_reordered.npz",
@@ -1397,8 +1397,8 @@ if __name__ == "__main__":
     print(f"Red Laser Coordinates: {red_coords_list[0]}")
 
     # pixel_coords_list = [[124.195, 127.341],[14.043, 37.334],[106.538, 237.374],[218.314, 23.302]]
-    # green_coords_list = [[107.918, 107.717], [119.327, 119.235], [111.325, 95.45], [95.997, 118.606]]
-    # red_coords_list = [[73.307, 72.056], [82.227, 82.002], [76.524, 62.26], [63.179, 80.296][82.227, 82.002], [76.524, 62.26], [63.179, 80.296]]
+    # green_coords_list = [[108.028, 107.824], [119.429, 119.367], [111.429, 95.546], [96.1, 118.71]]
+    # red_coords_list = [[73.393, 72.148], [82.306, 82.115], [76.605, 62.343], [63.259, 80.385]]
     num_nvs = len(pixel_coords_list)
     threshold_list = [None] * num_nvs
     # fmt: off
@@ -1520,14 +1520,14 @@ if __name__ == "__main__":
         #     force_laser_key=VirtualLaserKey.RED_IMAGING,
         # )
 
-        # do_compensate_for_drift(nv_sig)
+        do_compensate_for_drift(nv_sig)
         # do_widefield_image_sample(nv_sig, 50)
         # do_widefield_image_sample(nv_sig, 400)
 
         # for nv in nv_list:
             # do_scanning_image_sample_zoom(nv)
 
-        do_scanning_image_sample(nv_sig)
+        # do_scanning_image_sample(nv_sig)
         # do_scanning_image_sample_zoom(nv_sig)
         # do_scanning_image_full_roi(nv_sig)
 
@@ -1588,7 +1588,7 @@ if __name__ == "__main__":
         # do_optimize_spin_pol_amp(nv_list)
         # do_check_readout_fidelity(nv_list)
 
-        # do_scc_snr_check(nv_list)
+        do_scc_snr_check(nv_list)
         # do_optimize_scc_duration(nv_list)
         # do_optimize_scc_amp(nv_list)
         # optimize_scc_amp_and_duration(nv_list)
