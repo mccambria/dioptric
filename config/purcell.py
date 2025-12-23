@@ -34,8 +34,8 @@ red_laser_aod = "laser_COBO_638_aod"
 
 
 calibration_coords_pixel = [[14.043, 37.334],[106.538, 237.374],[218.314, 23.302]]
-calibration_coords_green = [[119.327, 119.235], [111.325, 95.45], [95.997, 118.606]]
-calibration_coords_red = [[82.227, 82.002], [76.524, 62.26], [63.179, 80.296]]
+calibration_coords_green = [[119.429, 119.367], [111.429, 95.546], [96.1, 118.71]]
+calibration_coords_red = [[82.306, 82.115], [76.605, 62.343], [63.259, 80.385]]
 
 # Create the dictionaries using the provided lists
 calibration_coords_nv1 = {
@@ -128,7 +128,8 @@ config |= {
                 "physical_name": "sig_gen_STAN_sg394_0",
                 "uwave_power": 11.0,
                 # "frequency": 2.7878,
-                "frequency": 2.747151,
+                # "frequency": 2.747151,
+                "frequency": 2.709799,
                 # "frequency":2.963189,
                 # "frequency": 2.917151,
                 # "frequency": 2.8082,
@@ -147,7 +148,8 @@ config |= {
                 # "frequency": 2.917151,
                 # "frequency": 2.8408,
                 # "frequency": 2.982049,
-                "frequency": 2.828210,
+                # "frequency": 2.828210,
+                "frequency": 2.816912,
                 # "frequency": 2.8252,
                 "rabi_period": 192,
                 "pi_pulse": 88,
@@ -169,8 +171,8 @@ config |= {
         "resolution": (512, 512),
         "spot_radius": 2.5,  # Radius for integrating NV counts in a camera image
         "bias_clamp": 300,  # (changing this won't actually change the value on the camera currently)
-        # "em_gain": 5000,
-        "em_gain": 10,
+        "em_gain": 5000,
+        # "em_gain": 10,
         "temp": -60,
         "timeout": 60e3,  # ms
         # "timeout": -1,  # No timeout

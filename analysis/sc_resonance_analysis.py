@@ -172,30 +172,30 @@ def plot_nv_resonance(
     ax_snr.tick_params(axis="both", labelsize=14)
     plt.show(block=True)
     # # # Set plot style
-    for nv_ind in range(num_nvs):
-        fig, ax = plt.subplots(figsize=(8, 5))
-        # Data points with error bars
-        ax.errorbar(
-            freqs,
-            avg_counts[nv_ind],
-            yerr=avg_counts_ste[nv_ind],
-            fmt="o",
-            color="steelblue",
-            ecolor="gray",
-            elinewidth=1,
-            capsize=3,
-            markersize=5,
-            label="Data"
-        )
-        # Fit curve
-        ax.plot(freqs_dense, fit_fns[nv_ind], "-", color="red", label="Fit")
-        # Labels and style
-        ax.set_xlabel("Frequency (GHz)")
-        ax.set_ylabel("Normalized NV Population")
-        ax.set_title(f"NV Index: {nv_ind}")
-        ax.grid(True, linestyle="--", alpha=0.6)
-        ax.legend()
-        plt.show(block=True)
+    # for nv_ind in range(num_nvs):
+    #     fig, ax = plt.subplots(figsize=(8, 5))
+    #     # Data points with error bars
+    #     ax.errorbar(
+    #         freqs,
+    #         avg_counts[nv_ind],
+    #         yerr=avg_counts_ste[nv_ind],
+    #         fmt="o",
+    #         color="steelblue",
+    #         ecolor="gray",
+    #         elinewidth=1,
+    #         capsize=3,
+    #         markersize=5,
+    #         label="Data"
+    #     )
+    #     # Fit curve
+    #     ax.plot(freqs_dense, fit_fns[nv_ind], "-", color="red", label="Fit")
+    #     # Labels and style
+    #     ax.set_xlabel("Frequency (GHz)")
+    #     ax.set_ylabel("Normalized NV Population")
+    #     ax.set_title(f"NV Index: {nv_ind}")
+    #     ax.grid(True, linestyle="--", alpha=0.6)
+    #     ax.legend()
+    #     plt.show(block=True)
 
     # ----------------- Example of use in your pipeline -----------------
     # center_freqs is your list of (f1, f2) from the fit_results
@@ -256,8 +256,9 @@ def plot_nv_resonance(
     if filter_nvs:
         # target_peak_values = [0.113, 0.217]
         # target_peak_values = [0.077, 0.176]
-        target_peak_values = [0.113, 0.264]
-        tolerance = 0.008
+        # target_peak_values = [0.113, 0.264]
+        target_peak_values = [0.134, 0.326]
+        tolerance = 0.01
         # Filter indices based on proximity to target peak differences
         filtered_indices = [
             idx
@@ -780,6 +781,18 @@ if __name__ == "__main__":
     # file_ids = [
     #     "2025_11_29-04_02_02-johnson-nv0_2025_10_21",
     # ]
+    
+    ####### Iy=0, IZ =-3A
+    ## 312 nVs
+    file_ids = [
+        "2025_12_10-10_28_25-johnson-nv0_2025_10_21",
+    ]
+    ## 312 nVs
+    file_ids = [
+        "2025_12_20-06_01_33-johnson-nv0_2025_10_21",
+    ]
+ 
+    
     # Load the first dataset as a base
     combined_data = dm.get_raw_data(
         file_stem=file_ids[0], load_npz=True, use_cache=True
