@@ -901,16 +901,18 @@ if __name__ == "__main__":
     # ]
 
     # 8s wait time
-    file_ids = [1799642658475, 1799939800540, 1800188723197]
+    file_ids = ["2025_03_10-23_06_34-rubin-nv0_2025_02_26", 
+                "2025_03_11-05_07_58-rubin-nv0_2025_02_26", 
+                "2025_03_11-11_10_04-rubin-nv0_2025_02_26"]
 
-    file_names = [dm.get_file_name(file_id) for file_id in file_ids]
-    print(f"File names: {file_names}")
+    # file_names = [dm.get_file_name(file_id) for file_id in file_ids]
+    # print(f"File names: {file_names}")
     combined_file_id = "_".join(map(str, file_ids))
     file_name = f"charge_jump_{combined_file_id}.png"
     print(f"File names: {file_name}")
-    combined_data = dm.get_raw_data(file_id=file_ids[0])
+    combined_data = dm.get_raw_data(file_stem=file_ids[0])
     for file_id in file_ids[1:]:
-        new_data = dm.get_raw_data(file_id=file_id)
+        new_data = dm.get_raw_data(file_stem=file_id)
         combined_data["num_runs"] += new_data["num_runs"]
         combined_data["counts"] = np.append(
             combined_data["counts"], new_data["counts"], axis=2
