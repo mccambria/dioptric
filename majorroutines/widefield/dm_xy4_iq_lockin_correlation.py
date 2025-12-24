@@ -34,74 +34,127 @@ def _flatten_shots(x):
     return np.reshape(x, (-1,))
 
 
-def compute_iq_from_counts(counts, eps=1e-12):
-    """
-    counts: np.ndarray with shape [exp, nv, run, step, rep]
-        exp ordering: [I+, I-, Q+, Q-, (optional ref)]
-    Returns:
-        s: complex array [nv, shots]
-        I, Q: float arrays [nv, shots]
-    """
+def compute_iq_from_counts(counts, eps=1e-12, return_masks=False):
     counts = np.asarray(counts)
+
+    # If counts is object (None inside), force to float -> None becomes nan
+    if counts.dtype == object:
+        counts = counts.astype(float)
+
     assert counts.ndim == 5, f"Expected 5D counts, got shape {counts.shape}"
 
-    # Exps
-    Ip = counts[0]  # [nv, run, step, rep]
-    Im = counts[1]
-    Qp = counts[2]
-    Qm = counts[3]
+    Ip = np.asarray(counts[0], dtype=float)
+    Im = np.asarray(counts[1], dtype=float)
+    Qp = np.asarray(counts[2], dtype=float)
+    Qm = np.asarray(counts[3], dtype=float)
 
     num_nvs = Ip.shape[0]
-    # Flatten run/step/rep -> shots
     Ip_f = np.stack([_flatten_shots(Ip[nv]) for nv in range(num_nvs)], axis=0)
     Im_f = np.stack([_flatten_shots(Im[nv]) for nv in range(num_nvs)], axis=0)
     Qp_f = np.stack([_flatten_shots(Qp[nv]) for nv in range(num_nvs)], axis=0)
     Qm_f = np.stack([_flatten_shots(Qm[nv]) for nv in range(num_nvs)], axis=0)
 
-    I = (Ip_f - Im_f) / (Ip_f + Im_f + eps)
-    Q = (Qp_f - Qm_f) / (Qp_f + Qm_f + eps)
+    denI = Ip_f + Im_f
+    denQ = Qp_f + Qm_f
+
+    I = np.full_like(denI, np.nan, dtype=float)
+    Q = np.full_like(denQ, np.nan, dtype=float)
+
+    mI = np.isfinite(Ip_f) & np.isfinite(Im_f) & np.isfinite(denI) & (denI > 0)
+    mQ = np.isfinite(Qp_f) & np.isfinite(Qm_f) & np.isfinite(denQ) & (denQ > 0)
+
+    I[mI] = (Ip_f[mI] - Im_f[mI]) / (denI[mI] + eps)
+    Q[mQ] = (Qp_f[mQ] - Qm_f[mQ]) / (denQ[mQ] + eps)
+
     s = I + 1j * Q
+
+    if return_masks:
+        return s, I, Q, mI, mQ
     return s, I, Q
 
 
-def complex_coherence_matrix(s, remove_mean=True, eps=1e-18):
+def nan_pairwise_covariance(s, remove_mean=True, min_pairs=1000, eps=1e-18):
     """
-    s: complex array [nv, shots]
+    s: complex array [M, N] with possible NaNs.
     Returns:
-        coh: complex coherence matrix [nv, nv] with diag ~ 1
-        C: complex covariance matrix [nv, nv]
+      C: complex covariance-like matrix [M, M] using only pairwise-valid shots
+      cnt: number of valid (i,j) pairs used per entry
+      keep: boolean mask of NVs kept after basic validity checks
     """
-    s = np.asarray(s)
+    s = np.asarray(s, dtype=np.complex64)
+    M, N = s.shape
+
+    finite = np.isfinite(s)
+    valid_frac = finite.mean(axis=1)
+
+    # Keep NVs that have at least some decent fraction of valid samples
+    # (start lenient; tighten later)
+    keep = valid_frac > 0.5
+    s = s[keep]
+    finite = finite[keep]
+    M2 = s.shape[0]
+
+    if M2 < 2:
+        raise RuntimeError(f"After keep mask, only {M2} NVs remain (valid_frac>0.5).")
+
+    # Mean per NV over valid samples only
     if remove_mean:
-        s0 = s - np.mean(s, axis=1, keepdims=True)
+        denom = np.maximum(finite.sum(axis=1), 1)
+        mu = (np.where(finite, s, 0).sum(axis=1) / denom).astype(np.complex64)
+        s0 = s - mu[:, None]
     else:
-        s0 = s
+        s0 = s.copy()
 
-    # Covariance-like (not unbiased; we want stable estimator)
-    C = (s0 @ np.conjugate(s0.T)) / s0.shape[1]
+    # Zero-out invalid entries (they won't contribute)
+    s0z = np.where(finite, s0, 0).astype(np.complex64)
 
-    # Normalize to coherence
+    # Numerator and pair-counts
+    num = s0z @ s0z.conj().T                           # [M2,M2]
+    cnt = finite.astype(np.int32) @ finite.astype(np.int32).T  # [M2,M2]
+
+    # Divide only where we have enough pairs
+    C = np.full_like(num, np.nan, dtype=np.complex64)
+    ok = cnt >= min_pairs
+    C[ok] = num[ok] / (cnt[ok].astype(np.float32) + eps)
+
+    # Symmetrize
+    C = 0.5 * (C + C.conj().T)
+
+    return C, cnt, keep
+
+def coherence_from_cov(C, eps=1e-18, min_var=1e-12):
+    C = np.asarray(C)
     p = np.real(np.diag(C))
-    p = np.maximum(p, eps)
-    denom = np.sqrt(p[:, None] * p[None, :])
-    coh = C / denom
-    return coh, C
+
+    keep = np.isfinite(p) & (p > min_var)
+    C2 = C[keep][:, keep]
+
+    if C2.shape[0] < 2:
+        raise RuntimeError(f"After var-cut, only {C2.shape[0]} NVs remain.")
+
+    p2 = np.real(np.diag(C2))
+    denom = np.sqrt(np.maximum(p2[:, None] * p2[None, :], eps))
+    coh = C2 / denom
+    return coh, C2, keep
 
 
-def dominant_mode_stats(C):
-    """
-    C: Hermitian-ish covariance matrix [nv, nv]
-    Returns:
-        evals_sorted, evecs_sorted, frac_power_first
-    """
-    # Force Hermitian (numerical)
+def dominant_mode_stats(C, eps=1e-18):
+    C = np.asarray(C)
+    if C.ndim != 2 or C.shape[0] != C.shape[1]:
+        raise ValueError(f"C must be square, got shape {C.shape}")
+    if C.shape[0] < 2:
+        raise RuntimeError(f"Not enough NVs left to eigendecompose: C is {C.shape}")
+
     Ch = 0.5 * (C + np.conjugate(C.T))
     evals, evecs = np.linalg.eigh(Ch)
-    order = np.argsort(evals)
-    evals = evals[order]
+    order = np.argsort(np.real(evals))
+    evals = np.real(evals[order])
     evecs = evecs[:, order]
-    frac = float(evals[-1] / (np.sum(evals) + 1e-18))
+
+    tr = float(np.sum(evals))
+    frac = float(evals[-1] / (tr + eps))
     return evals, evecs, frac
+
 
 
 def process_and_plot_dm_lockin(raw_data, show=True):
@@ -119,10 +172,21 @@ def process_and_plot_dm_lockin(raw_data, show=True):
     # Build complex lock-in output per NV per shot
     s, I, Q = compute_iq_from_counts(counts)
 
-    # Coherence across NVs
-    coh, C = complex_coherence_matrix(s, remove_mean=True)
-    evals, evecs, frac = dominant_mode_stats(C)
-    v = evecs[:, -1]  # dominant spatial mode
+    M0, N = s.shape
+    print(f"[DM lock-in] raw: M={M0}, N={N}")
+    print(f"[DM lock-in] I NaN frac median={np.nanmedian(~np.isfinite(I)):.3g}")
+    print(f"[DM lock-in] Q NaN frac median={np.nanmedian(~np.isfinite(Q)):.3g}")
+
+    C, cnt, keep1 = nan_pairwise_covariance(s, remove_mean=True, min_pairs=1000)
+    coh, C2, keep2 = coherence_from_cov(C)
+
+    print(f"[DM lock-in] kept NVs after validity: {keep1.sum()} / {M0}")
+    print(f"[DM lock-in] kept NVs after var-cut: {keep2.sum()} / {keep1.sum()}")
+    print(f"[DM lock-in] median pair-count: {np.nanmedian(cnt[cnt>0])}")
+
+    evals, evecs, frac = dominant_mode_stats(C2)
+    v = evecs[:, -1]
+
 
     print(f"[DM lock-in] NVs: {num_nvs}")
     print(f"[DM lock-in] shots per NV: {s.shape[1]}")
@@ -288,6 +352,6 @@ def main(
 
 if __name__ == "__main__":
     kpl.init_kplotlib()
-    raw_data = dm.get_raw_data(file_stem="2025_12_23-16_10_36-johnson-nv0_2025_10_21", load_npz=True)
+    raw_data = dm.get_raw_data(file_stem="2025_12_24-09_32_29-johnson-nv0_2025_10_21", load_npz=True)
     figs, proc = process_and_plot_dm_lockin(raw_data, show=False)
     kpl.show(block=True)
