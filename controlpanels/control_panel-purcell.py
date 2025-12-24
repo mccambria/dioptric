@@ -52,6 +52,7 @@ from majorroutines.widefield import (
     spin_echo,
     spin_echo_phase_scan_test,
     two_block_hahn_correlation,
+    dm_xy4_iq_lockin_correlation,
     spin_pol_check,
     xy,
 )
@@ -519,6 +520,35 @@ def do_two_block_hahn_spatial_correlation(nv_list):
     # for _ in range(1):
     #     T2_correlation.main(nv_list, num_reps, num_runs, tau)
 
+def do_dm_xy4_iq_lockin(nv_list):
+    # Sit on the 13C revival: 2*tau = 15 us  ->  tau = 7.5 us
+    # This targets f0 ~ 1/(2*tau) = 66.7 kHz
+    tau_ns = int(3.75e3 / 4) * 4
+
+    # XY4-N: start with N=1 (total evolution ~ 60 us)
+    n_xy4_blocks = 1
+
+    # No MW-off ref needed (I±/Q± already normalizes well)
+    include_ref = False
+
+    # One complex sample s = I + iQ per "rep"
+    # Time per rep ~ 4 shots * 50 ms = 0.20 s  (plus small overhead)
+    #
+    # Total time (seconds) ≈ 0.20 * (num_reps * num_runs)
+    # => For ~1 hour, need num_reps*num_runs ≈ 18000
+    num_reps = 75
+    num_runs = 2000   # 200*90 = 18000 reps -> ~1 hour
+
+    dm_xy4_iq_lockin_correlation.main(
+        nv_list=nv_list,
+        num_reps=num_reps,
+        num_runs=num_runs,
+        tau_ns=tau_ns,
+        n_xy4_blocks=n_xy4_blocks,
+        include_ref=include_ref,
+        uwave_ind_list=(0, 1),
+    )
+    
 def do_calibrate_iq_delay(nv_list):
     min_tau = 20
     max_tau = 292
@@ -1398,8 +1428,8 @@ if __name__ == "__main__":
     print(f"Red Laser Coordinates: {red_coords_list[0]}")
 
     # pixel_coords_list = [[124.195, 127.341],[14.043, 37.334],[106.538, 237.374],[218.314, 23.302]]
-    # green_coords_list = [[108.028, 107.824], [119.429, 119.367], [111.429, 95.546], [96.1, 118.71]]
-    # red_coords_list = [[73.393, 72.148], [82.306, 82.115], [76.605, 62.343], [63.259, 80.385]]
+    # green_coords_list = [[108.119, 107.775],[119.539, 119.267],[111.527, 95.466],[96.203, 118.64]]
+    # red_coords_list = [[73.469, 72.113],[82.399, 82.039],[76.688, 62.283],[63.346, 80.334]]
     num_nvs = len(pixel_coords_list)
     threshold_list = [None] * num_nvs
     # fmt: off
@@ -1612,7 +1642,7 @@ if __name__ == "__main__":
         # do_deer_hahn(nv_list)
         # do_deer_hahn_rabi(nv_list)
         # do_resonance_zoom(nv_list)
-        do_spin_echo(nv_list)
+        # do_spin_echo(nv_list)
         # do_spin_echo_1(nv_list)
         # do_ramsey(nv_list)
 
@@ -1623,10 +1653,11 @@ if __name__ == "__main__":
         # do_resonance(nv_list)
         # do_sq_relaxation(nv_list)
         # do_dq_relaxation(nv_list)
-        # do_detect_cosmic_rays(nv_list)
+        do_detect_cosmic_rays(nv_list)
         # do_check_readout_fidelity(nv_list)
         # do_charge_quantum_jump(nv_list)
         # do_ac_stark(nv_list)
+        do_dm_xy4_iq_lockin(nv_list)
 
         # do_two_block_hahn_spatial_correlation(nv_list)
 
