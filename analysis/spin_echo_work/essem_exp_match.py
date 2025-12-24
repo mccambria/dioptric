@@ -2473,31 +2473,31 @@ def compare_NV_assignments(all_matches):
 if __name__ == "__main__":
     kpl.init_kplotlib()
 
-    field_cfgs = [
-        dict(
-            label="49G",
-            fit_file_stem="2025_11_19-14_19_23-sample_204nv_s1-fcc605",
-            counts_file_stem="2025_11_11-01_15_45-johnson_204nv_s6-6d8f5c",
-            B_G=np.array([-46.27557688, -17.16599864, -5.70139829]),
-            catalog_json="analysis/spin_echo_work/essem_freq_kappa_catalog_22A_49G.json",
-        ),
-        dict(
-            label="59G",
-            fit_file_stem="2025_12_05-07_51_13-sample_204nv_s1-4cf818",
-            counts_file_stem="2025_12_04-19_50_15-johnson_204nv_s9-2c83ab",
-            B_G=np.array([-41.57848995, -32.77145194, -27.5799348]),
-            catalog_json="analysis/spin_echo_work/essem_freq_kappa_catalog_22A_59G.json",
-        ),
-        dict(
-            label="65G",
-            fit_file_stem="2025_11_30-04_35_04-sample_204nv_s1-d278ee",
-            counts_file_stem="2025_11_28-16_39_32-johnson_204nv_s6-902522",
-            B_G=np.array([-31.61263115, -56.58135644, -6.5512002]),
-            catalog_json="analysis/spin_echo_work/essem_freq_kappa_catalog_22A_65G.json",
-        ),
-    ]
-    # kpl.init_kplotlib()
-    kpl.init_kplotlib(constrained_layout=False, force=True)
+    # field_cfgs = [
+    #     dict(
+    #         label="49G",
+    #         fit_file_stem="2025_11_19-14_19_23-sample_204nv_s1-fcc605",
+    #         counts_file_stem="2025_11_11-01_15_45-johnson_204nv_s6-6d8f5c",
+    #         B_G=np.array([-46.27557688, -17.16599864, -5.70139829]),
+    #         catalog_json="analysis/spin_echo_work/essem_freq_kappa_catalog_22A_49G.json",
+    #     ),
+    #     dict(
+    #         label="59G",
+    #         fit_file_stem="2025_12_05-07_51_13-sample_204nv_s1-4cf818",
+    #         counts_file_stem="2025_12_04-19_50_15-johnson_204nv_s9-2c83ab",
+    #         B_G=np.array([-41.57848995, -32.77145194, -27.5799348]),
+    #         catalog_json="analysis/spin_echo_work/essem_freq_kappa_catalog_22A_59G.json",
+    #     ),
+    #     dict(
+    #         label="65G",
+    #         fit_file_stem="2025_11_30-04_35_04-sample_204nv_s1-d278ee",
+    #         counts_file_stem="2025_11_28-16_39_32-johnson_204nv_s6-902522",
+    #         B_G=np.array([-31.61263115, -56.58135644, -6.5512002]),
+    #         catalog_json="analysis/spin_echo_work/essem_freq_kappa_catalog_22A_65G.json",
+    #     ),
+    # ]
+    # # kpl.init_kplotlib()
+    # kpl.init_kplotlib(constrained_layout=False, force=True)
 
     # field_cfgs = [
     # dict(
@@ -2523,7 +2523,7 @@ if __name__ == "__main__":
     # ),
     # ]
 
-    results = [run_field_analysis(**cfg) for cfg in field_cfgs]
+    # results = [run_field_analysis(**cfg) for cfg in field_cfgs]
 
     # all_matches = pd.concat([r["matches_df"] for r in results], ignore_index=True)
     # all_site_stats = pd.concat([r["site_stats"] for r in results], ignore_index=True)
