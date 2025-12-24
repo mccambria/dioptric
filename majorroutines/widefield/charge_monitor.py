@@ -212,7 +212,7 @@ def main(
     pulse_gen = tb.get_server_pulse_gen()
 
     num_steps = 1
-    num_exps_per_rep = 2
+    num_exps_per_rep = 3 ## for new case
 
     ### Collect the data
 

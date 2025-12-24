@@ -45,43 +45,87 @@ from servers.timing.sequencelibrary.QM_opx import seq_utils
 #     return seq, seq_ret_vals
 
 
+# def get_seq(pol_coords_list, charge_prep, dark_time_1_ns, dark_time_2_ns, num_reps):
+#     if num_reps is None:
+#         num_reps = 1
+#     num_nvs = len(pol_coords_list)
+#     # Convert dark times from nanoseconds to clock cycles
+#     dark_time_1 = seq_utils.convert_ns_to_cc(dark_time_1_ns, allow_zero=True)
+#     dark_time_2 = seq_utils.convert_ns_to_cc(dark_time_2_ns, allow_zero=True)
+#     dark_times = [dark_time_1, dark_time_2]
+
+#     with qua.program() as seq:
+#         seq_utils.init(num_nvs)
+#         seq_utils.macro_run_aods()
+
+#         def one_exp(dark_time, exp_ind):
+#             """Perform a single experiment with the specified dark time and experiment index."""
+#             if charge_prep:
+#                 seq_utils.macro_polarize(
+#                     pol_coords_list, spin_pol=False, targeted_polarization=True
+#                 )
+#             qua.align()  # Align polarization and readout operations
+#             if dark_time > 0:
+#                 qua.wait(dark_time)
+#             seq_utils.macro_charge_state_readout()
+#             seq_utils.macro_wait_for_trigger()
+
+#         def one_rep(rep_ind):
+#             """Execute all experiments within a single repetition."""
+#             for exp_ind, dark_time in enumerate(dark_times):
+#                 one_exp(dark_time, exp_ind)
+
+#         # Execute the sequence for the specified number of repetitions
+#         seq_utils.handle_reps(one_rep, num_reps, wait_for_trigger=False)
+#         seq_utils.macro_pause()  # Pause the sequence at the end
+
+#     seq_ret_vals = []
+#     return seq, seq_ret_vals
+
 def get_seq(pol_coords_list, charge_prep, dark_time_1_ns, dark_time_2_ns, num_reps):
     if num_reps is None:
         num_reps = 1
     num_nvs = len(pol_coords_list)
-    # Convert dark times from nanoseconds to clock cycles
-    dark_time_1 = seq_utils.convert_ns_to_cc(dark_time_1_ns, allow_zero=True)
-    dark_time_2 = seq_utils.convert_ns_to_cc(dark_time_2_ns, allow_zero=True)
-    dark_times = [dark_time_1, dark_time_2]
+
+    t1 = seq_utils.convert_ns_to_cc(dark_time_1_ns, allow_zero=True)
+    t2 = seq_utils.convert_ns_to_cc(dark_time_2_ns, allow_zero=True)
+
+    # Ensure t2 >= t1
+    t2_minus_t1 = t2 - t1
 
     with qua.program() as seq:
         seq_utils.init(num_nvs)
         seq_utils.macro_run_aods()
 
-        def one_exp(dark_time, exp_ind):
-            """Perform a single experiment with the specified dark time and experiment index."""
+        def one_rep(rep_ind):
             if charge_prep:
                 seq_utils.macro_polarize(
                     pol_coords_list, spin_pol=False, targeted_polarization=True
                 )
-            qua.align()  # Align polarization and readout operations
-            if dark_time > 0:
-                qua.wait(dark_time)
+
+            # Readout at t0 (immediately after prep)
+            qua.align()
             seq_utils.macro_charge_state_readout()
             seq_utils.macro_wait_for_trigger()
 
-        def one_rep(rep_ind):
-            """Execute all experiments within a single repetition."""
-            for exp_ind, dark_time in enumerate(dark_times):
-                one_exp(dark_time, exp_ind)
+            # Readout at t1
+            if t1 > 0:
+                qua.wait(t1)
+            qua.align()
+            seq_utils.macro_charge_state_readout()
+            seq_utils.macro_wait_for_trigger()
 
-        # Execute the sequence for the specified number of repetitions
+            # Readout at t2
+            if t2_minus_t1 > 0:
+                qua.wait(t2_minus_t1)
+            qua.align()
+            seq_utils.macro_charge_state_readout()
+            seq_utils.macro_wait_for_trigger()
+
         seq_utils.handle_reps(one_rep, num_reps, wait_for_trigger=False)
-        seq_utils.macro_pause()  # Pause the sequence at the end
+        seq_utils.macro_pause()
 
-    seq_ret_vals = []
-    return seq, seq_ret_vals
-
+    return seq, []
 
 if __name__ == "__main__":
     config_module = common.get_config_module()
