@@ -1119,7 +1119,7 @@ def do_detect_cosmic_rays(nv_list):
     # num_runs = 2
     # dark_time = 1e9 # 1s
     # dark_time = 10e6  # 10ms
-    dark_time_1 = 1e6  # 1 ms in nanoseconds
+    dark_time_1 = 8e6  # 1 ms in nanoseconds
     dark_time_2 = 8e9  # 8 s in nanoseconds
     # charge_monitor.detect_cosmic_rays(nv_list, num_reps, num_runs, dark_time)
     for _ in range(6):
@@ -1384,7 +1384,7 @@ if __name__ == "__main__":
     # magnet_angle = 90
     date_str = "2025_10_21"
     sample_coords = [0.4, 0.8]
-    z_coord = -0.2
+    z_coord = 0.0
     # Load NV pixel coordinates1
     pixel_coords_list = load_nv_coords(
         # file_path="slmsuite/nv_blob_detection/nv_blob_308nvs_reordered.npz",
@@ -1552,7 +1552,7 @@ if __name__ == "__main__":
         # )
 
         do_compensate_for_drift(nv_sig)
-        do_widefield_image_sample(nv_sig, 50)
+        # do_widefield_image_sample(nv_sig, 50)
         # do_widefield_image_sample(nv_sig, 400)
 
         # for nv in nv_list:
@@ -1653,7 +1653,7 @@ if __name__ == "__main__":
         # do_resonance(nv_list)
         # do_sq_relaxation(nv_list)
         # do_dq_relaxation(nv_list)
-        # do_detect_cosmic_rays(nv_list)
+        do_detect_cosmic_rays(nv_list)
         # do_check_readout_fidelity(nv_list)
         # do_charge_quantum_jump(nv_list)
         # do_ac_stark(nv_list)

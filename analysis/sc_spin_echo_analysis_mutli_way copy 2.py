@@ -2998,11 +2998,22 @@ if __name__ == "__main__":
                 "2025_11_30-07_21_26-johnson-nv0_2025_10_21",
                 "2025_11_30-15_56_42-johnson-nv0_2025_10_21",
                 ]
+    ######## Johnson B
+    B_G =  [-48.67047318, -32.07615947, 22.49657427]       
+    B_G_mag=  62.480323463718
+    B_hat = [-0.77897281, -0.51338018, 0.36005854]
+    file_stems = [
+                "2025_12_22-17_20_47-johnson-nv0_2025_10_21",
+                "2025_12_22-08_45_30-johnson-nv0_2025_10_21",
+                "2025_12_22-00_08_14-johnson-nv0_2025_10_21",
+                "2025_12_21-15_34_13-johnson-nv0_2025_10_21",
+                "2025_12_21-07_05_27-johnson-nv0_2025_10_21",
+                "2025_12_20-22_36_09-johnson-nv0_2025_10_21",
+                ]
     
     # ref / new in GHz, Δf in MHz
     f_ref_GHz = np.array([2.766625, 2.840625, 2.822175, 2.785075])
-    f_new_GHz = np.array([2.7081, 2.8251, 2.8083, 2.8536])
-    delta_f_MHz = np.array([-41.425, -13.125, +26.525, -38.675])
+    f_new_GHz = np.array([2.784250, 2.822175, 2.840625, 2.711450])
 
     quartet_freq_shifts = {
             "axes": axes,              # (4, 3) int
@@ -3034,7 +3045,7 @@ if __name__ == "__main__":
         nv_list, sig, ref, threshold=True
     )
 
-    # --- build per-NV orientations ----
+    #--- build per-NV orientations ----
     ORI_11m1_set = set(ORI_11m1)
     ORI_m111_set = set(ORI_m111)
 
