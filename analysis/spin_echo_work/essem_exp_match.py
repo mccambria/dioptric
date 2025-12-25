@@ -30,7 +30,11 @@ from multiplicity_calculation import (
     multiplicity_plots,
     make_a_table,
 )
-from kappa_modulation_depth import compute_dispersion_grid_for_site, plot_dispersion_2D_for_site
+from kappa_modulation_depth import (
+    compute_dispersion_grid_for_site,
+    plot_dispersion_2D_for_site,
+)
+
 # ---------------------------------------------------------------------
 # CONFIG / PATHS
 # ---------------------------------------------------------------------
@@ -1540,7 +1544,6 @@ def ori_to_str(ori):
     return f"({o[0]},{o[1]},{o[2]})"
 
 
-
 def analyze_matched_c13_sites(matches_df, *, title_prefix="Matched 13C sites"):
     """
     Given a matches_df returned by match_exp_pairs_to_catalog(...),
@@ -2313,18 +2316,16 @@ def run_field_analysis(
     )
 
     # normalized ESEEM amplitude
-    matches_df["osc_amp_norm"] = (
-        matches_df["osc_amp"] / matches_df["comb_contrast"]
-    )
+    matches_df["osc_amp_norm"] = matches_df["osc_amp"] / matches_df["comb_contrast"]
 
     # define a "good physics" mask
     mask_good = (
         np.isfinite(matches_df["kappa"])
         & np.isfinite(matches_df["osc_amp_norm"])
         & np.isfinite(matches_df["comb_contrast"])
-        & (matches_df["comb_contrast"] > 0.02)          # non-trivial echo
-        & (np.abs(matches_df["osc_amp_norm"]) < 3.0)    # kill ratios like 40, 100
-        & (matches_df["red_chi2"] < 3.0)                # decent fit
+        & (matches_df["comb_contrast"] > 0.02)  # non-trivial echo
+        & (np.abs(matches_df["osc_amp_norm"]) < 3.0)  # kill ratios like 40, 100
+        & (matches_df["red_chi2"] < 3.0)  # decent fit
     )
 
     n_before = matches_df["nv_label"].nunique()
@@ -2377,7 +2378,6 @@ def run_field_analysis(
         n_nv_total=int(nv_kept.size),
         unified_df=uni_df,
     )
-
 
 
 def plot_site_f_vs_B(all_matches: pd.DataFrame, site_list=None):
