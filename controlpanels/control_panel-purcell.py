@@ -1116,7 +1116,7 @@ def do_spin_pol_check(nv_sig):
 def do_detect_cosmic_rays(nv_list):
     num_reps = 4
     num_runs = 600
-    # num_runs = 2
+    num_runs = 2
     # dark_time = 1e9 # 1s
     # dark_time = 10e6  # 10ms
     dark_time_1 = 8e6  # 1 ms in nanoseconds
@@ -1619,7 +1619,7 @@ if __name__ == "__main__":
         # do_optimize_spin_pol_amp(nv_list)
         # do_check_readout_fidelity(nv_list)
 
-        # do_scc_snr_check(nv_list)
+        do_scc_snr_check(nv_list)
         # do_optimize_scc_duration(nv_list)
         # do_optimize_scc_amp(nv_list)
         # optimize_scc_amp_and_duration(nv_list)
