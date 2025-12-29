@@ -2583,6 +2583,12 @@ if __name__ == "__main__":
     # fit_file_stem = "2025_12_05-07_51_13-sample_204nv_s1-4cf818"
     # counts_file_stem = "2025_12_04-19_50_15-johnson_204nv_s9-2c83ab"
     # catalog_json = "analysis/spin_echo_work/essem_freq_kappa_catalog_22A_59G.json"
+    
+     # --- Magnetic field (crystal axes) ---
+    B_G = np.array([-48.67047318, -32.07615947, 22.49657427])
+    fit_file_stem = "2025_12_25-04_45_34-sample_204nv_s1-752556"
+    counts_file_stem = "2025_12_24-19_56_03-johnson_204nv_s6-ff5e17"
+    catalog_json = "analysis/spin_echo_work/essem_freq_kappa_catalog_22A_62G.json"   
 
     ## ---- 2) global theory-vs-exp matching (use FIT file) ----##
     hf_df = load_hyperfine_table(distance_cutoff=15.0)  # or 15.0, etc.
@@ -2665,8 +2671,8 @@ if __name__ == "__main__":
 
     # nv_list = [0, 1, 2, 137]  # whatever NVs you care about
 
-    nv_list = [0, 1, 2, 137, 196]  # whatever NVs you care about
-    # nv_list = nv_kept
+    # nv_list = [0, 1, 2, 137, 196]  # whatever NVs you care about
+    nv_list = nv_kept
     figs = make_echo_plus_matched_site_plots_batch(
         counts_file_stem=counts_file_stem,
         fit_file_stem=fit_file_stem,
@@ -2676,7 +2682,7 @@ if __name__ == "__main__":
         use_half_time_as_tau=False,
     )
     plt.show(block=True)
-
+    sys.exit()
     ## ---- 4) simulations template set by experiment ----##
     exp_f = matches_df["f_minus_kHz"].to_numpy(float)
     f_band_kHz = (np.nanmin(exp_f), np.nanmax(exp_f))

@@ -1116,10 +1116,10 @@ def do_spin_pol_check(nv_sig):
 def do_detect_cosmic_rays(nv_list):
     num_reps = 4
     num_runs = 600
-    # num_runs = 2
+    num_runs = 2
     # dark_time = 1e9 # 1s
     # dark_time = 10e6  # 10ms
-    dark_time_1 = 1e6  # 1 ms in nanoseconds
+    dark_time_1 = 8e6  # 1 ms in nanoseconds
     dark_time_2 = 8e9  # 8 s in nanoseconds
     # charge_monitor.detect_cosmic_rays(nv_list, num_reps, num_runs, dark_time)
     for _ in range(6):
@@ -1384,7 +1384,7 @@ if __name__ == "__main__":
     # magnet_angle = 90
     date_str = "2025_10_21"
     sample_coords = [0.4, 0.8]
-    z_coord = -0.2
+    z_coord = 0.3
     # Load NV pixel coordinates1
     pixel_coords_list = load_nv_coords(
         # file_path="slmsuite/nv_blob_detection/nv_blob_308nvs_reordered.npz",
@@ -1428,8 +1428,8 @@ if __name__ == "__main__":
     print(f"Red Laser Coordinates: {red_coords_list[0]}")
 
     # pixel_coords_list = [[124.195, 127.341],[14.043, 37.334],[106.538, 237.374],[218.314, 23.302]]
-    # green_coords_list = [[108.119, 107.775],[119.539, 119.267],[111.527, 95.466],[96.203, 118.64]]
-    # red_coords_list = [[73.469, 72.113],[82.399, 82.039],[76.688, 62.283],[63.346, 80.334]]
+    # green_coords_list = [[108.0, 107.846],[119.412, 119.364],[111.402, 95.571],[96.063, 118.755]]
+    # red_coords_list = [[73.369, 72.165],[82.292, 82.112],[76.582, 62.362],[63.227, 80.42]]
     num_nvs = len(pixel_coords_list)
     threshold_list = [None] * num_nvs
     # fmt: off
@@ -1552,7 +1552,7 @@ if __name__ == "__main__":
         # )
 
         do_compensate_for_drift(nv_sig)
-        do_widefield_image_sample(nv_sig, 50)
+        # do_widefield_image_sample(nv_sig, 50)
         # do_widefield_image_sample(nv_sig, 400)
 
         # for nv in nv_list:
@@ -1619,7 +1619,7 @@ if __name__ == "__main__":
         # do_optimize_spin_pol_amp(nv_list)
         # do_check_readout_fidelity(nv_list)
 
-        # do_scc_snr_check(nv_list)
+        do_scc_snr_check(nv_list)
         # do_optimize_scc_duration(nv_list)
         # do_optimize_scc_amp(nv_list)
         # optimize_scc_amp_and_duration(nv_list)

@@ -227,6 +227,228 @@ def detect_coincidence_events_old(data, exp_ind=1, scramble_trials=2000, p_thres
 
     return (fig1, fig2), events
 
+
+import numpy as np
+import matplotlib.pyplot as plt
+from utils import widefield
+
+
+def add_states_from_counts(data):
+    """Create data['states'] from data['counts'] using widefield.threshold_counts."""
+    if "states" in data:
+        return data
+
+    counts = np.asarray(data["counts"])          # (E, N, R, step, rep)
+    nv_list = data["nv_list"]
+
+    states_by_exp = []
+    for exp_ind in range(counts.shape[0]):
+        counts_exp = counts[exp_ind]             # (N, R, step, rep)
+        states_exp = widefield.threshold_counts(nv_list, counts_exp)
+        states_by_exp.append(states_exp)
+
+    data["states"] = np.asarray(states_by_exp)   # (E, N, R, step, rep)
+    return data
+
+
+def _states_by_exp_step0(data):
+    """Return states for step=0 as (E, N, R, rep)."""
+    states = np.asarray(data["states"])
+    if states.ndim != 5:
+        raise ValueError(f"Expected states.ndim=5, got {states.shape}")
+    return states[:, :, :, 0, :]  # (E, N, R, rep)
+
+
+def _empirical_right_tail_pvals(obs, null_samples_flat):
+    """Empirical p-values P_null(X >= obs)."""
+    null_sorted = np.sort(null_samples_flat)
+
+    def p_right(x):
+        idx = np.searchsorted(null_sorted, x, side="left")
+        return (len(null_sorted) - idx) / len(null_sorted)
+
+    return np.array([p_right(x) for x in obs])
+
+
+def detect_transition_bursts_3exp(
+    data,
+    from_exp,
+    to_exp,
+    transition="1->0",          # "1->0" (NV- to NV0) or "0->1"
+    scramble_trials=2000,
+    p_thresh=1e-4,
+    scramble_mode="roll",        # "roll" preserves per-NV temporal structure better than "perm"
+    seed=0,
+):
+    """
+    Detect bursts of transitions across NVs between two readouts within the same rep.
+
+    Returns:
+      figs: (hist_fig, timeseries_fig)
+      events: list of dicts with run/rep + NV indices that transitioned
+    """
+    data = add_states_from_counts(data)
+    S = _states_by_exp_step0(data)  # (E, N, R, rep)
+    E, N, R, REP = S.shape
+
+    if to_exp >= E or from_exp >= E:
+        raise ValueError(f"Requested exp {from_exp}->{to_exp}, but only E={E} exps saved.")
+
+    A = S[from_exp]  # (N, R, rep)
+    B = S[to_exp]    # (N, R, rep)
+
+    if transition == "1->0":
+        Tmask = (A == 1) & (B == 0)
+    elif transition == "0->1":
+        Tmask = (A == 0) & (B == 1)
+    else:
+        raise ValueError("transition must be '1->0' or '0->1'")
+
+    # Flatten shots: (N, shots) where shots = R * REP
+    shots = R * REP
+    Tflat = Tmask.reshape(N, shots)
+
+    # Observed transition counts per shot
+    obs_counts = Tflat.sum(axis=0).astype(int)  # (shots,)
+
+    # Scrambled null (break simultaneity, keep per-NV rate)
+    rng = np.random.default_rng(seed)
+    null_counts = np.empty((scramble_trials, shots), dtype=np.int16)
+
+    for k in range(scramble_trials):
+        scr = np.empty_like(Tflat)
+        if scramble_mode == "roll":
+            shifts = rng.integers(0, shots, size=N)
+            for i in range(N):
+                scr[i] = np.roll(Tflat[i], shifts[i])
+        elif scramble_mode == "perm":
+            for i in range(N):
+                scr[i] = rng.permutation(Tflat[i])
+        else:
+            raise ValueError("scramble_mode must be 'roll' or 'perm'")
+        null_counts[k] = scr.sum(axis=0)
+
+    null_flat = null_counts.ravel()
+    pvals = _empirical_right_tail_pvals(obs_counts, null_flat)
+    event_shots = np.where(pvals < p_thresh)[0]
+
+    # Plots
+    bins = np.arange(0, N + 2) - 0.5
+
+    fig1, ax1 = plt.subplots()
+    ax1.hist(obs_counts, bins=bins, alpha=0.7, label="Data")
+    ax1.hist(null_flat, bins=bins, alpha=0.5, label=f"Null ({scramble_mode})")
+    ax1.set_yscale("log")
+    ax1.set_xlabel(f"# transitions per shot ({transition})")
+    ax1.set_ylabel("Occurrences")
+    ax1.set_title(f"Transition bursts: exp {from_exp}->{to_exp}  (events={len(event_shots)})")
+    ax1.legend()
+
+    fig2, ax2 = plt.subplots()
+    ax2.plot(obs_counts, lw=1)
+    ax2.scatter(event_shots, obs_counts[event_shots], s=20)
+    ax2.set_xlabel("Shot index (flattened run×rep)")
+    ax2.set_ylabel(f"# transitions ({transition})")
+    ax2.set_title(f"Detected events: {len(event_shots)} (p < {p_thresh})")
+
+    # Package events with run/rep and which NVs transitioned
+    events = []
+    for shot in event_shots:
+        run_ind = shot // REP
+        rep_ind = shot % REP
+        nv_inds = np.where(Tflat[:, shot])[0].tolist()
+        events.append({
+            "shot": int(shot),
+            "run": int(run_ind),
+            "rep": int(rep_ind),
+            "n_trans": int(obs_counts[shot]),
+            "nv_inds": nv_inds,
+            "p": float(pvals[shot]),
+            "from_exp": int(from_exp),
+            "to_exp": int(to_exp),
+            "transition": transition,
+        })
+
+    print(
+        f"[exp {from_exp}->{to_exp}] shots={shots}, mean={obs_counts.mean():.3f}, "
+        f"max={obs_counts.max()}, events={len(events)}"
+    )
+    return (fig1, fig2), events
+
+
+def detect_state_coincidence_3exp(
+    data,
+    exp_ind,
+    scramble_trials=2000,
+    p_thresh=1e-4,
+    seed=0,
+):
+    """
+    Like your old coincidence detector, but works for any exp index (t0/t1/t2).
+    Detect shots with unusually many NV0 simultaneously.
+    """
+    data = add_states_from_counts(data)
+    S = _states_by_exp_step0(data)  # (E, N, R, rep)
+    E, N, R, REP = S.shape
+    if exp_ind >= E:
+        raise ValueError(f"exp_ind={exp_ind}, but only E={E} exps saved.")
+
+    s = S[exp_ind]  # (N, R, REP)
+    shots = R * REP
+    s_flat = s.reshape(N, shots)
+
+    # NV0 count per shot (assuming 1=NV-, 0=NV0)
+    nv0 = (N - np.sum(s_flat, axis=0)).astype(int)
+
+    rng = np.random.default_rng(seed)
+    null = np.empty((scramble_trials, shots), dtype=np.int16)
+    for k in range(scramble_trials):
+        scr = np.empty_like(s_flat)
+        shifts = rng.integers(0, shots, size=N)
+        for i in range(N):
+            scr[i] = np.roll(s_flat[i], shifts[i])
+        null[k] = N - np.sum(scr, axis=0)
+
+    null_flat = null.ravel()
+    pvals = _empirical_right_tail_pvals(nv0, null_flat)
+    event_shots = np.where(pvals < p_thresh)[0]
+
+    fig1, ax1 = plt.subplots()
+    bins = np.arange(0, N + 2) - 0.5
+    ax1.hist(nv0, bins=bins, alpha=0.7, label="Data")
+    ax1.hist(null_flat, bins=bins, alpha=0.5, label="Null (roll)")
+    ax1.set_yscale("log")
+    ax1.set_xlabel("# NVs in NV0 (per shot)")
+    ax1.set_ylabel("Occurrences")
+    ax1.set_title(f"NV0 coincidence bursts at exp {exp_ind} (events={len(event_shots)})")
+    ax1.legend()
+
+    fig2, ax2 = plt.subplots()
+    ax2.plot(nv0, lw=1)
+    ax2.scatter(event_shots, nv0[event_shots], s=20)
+    ax2.set_xlabel("Shot index (flattened run×rep)")
+    ax2.set_ylabel("# NV0")
+    ax2.set_title(f"Detected events: {len(event_shots)} (p < {p_thresh})")
+
+    events = []
+    for shot in event_shots:
+        run_ind = shot // REP
+        rep_ind = shot % REP
+        nv0_inds = np.where(s_flat[:, shot] == 0)[0].tolist()
+        events.append({
+            "shot": int(shot),
+            "run": int(run_ind),
+            "rep": int(rep_ind),
+            "nv0_count": int(nv0[shot]),
+            "nv0_inds": nv0_inds,
+            "p": float(pvals[shot]),
+            "exp_ind": int(exp_ind),
+        })
+
+    print(f"[exp {exp_ind}] shots={shots}, mean NV0={nv0.mean():.3f}, max NV0={nv0.max()}, events={len(events)}")
+    return (fig1, fig2), events
+
+
 if __name__ == "__main__":
     kpl.init_kplotlib()
 
@@ -279,45 +501,72 @@ if __name__ == "__main__":
 
     # 8s wait time (your stems)
 
-    # file stems
-    file_ids = [
-        "2025_03_10-23_06_34-rubin-nv0_2025_02_26",
-        "2025_03_11-05_07_58-rubin-nv0_2025_02_26",
-        "2025_03_11-11_10_04-rubin-nv0_2025_02_26",
-    ]
+    # # file stems
+    # file_ids = [
+    #     "2025_03_10-23_06_34-rubin-nv0_2025_02_26",
+    #     "2025_03_11-05_07_58-rubin-nv0_2025_02_26",
+    #     "2025_03_11-11_10_04-rubin-nv0_2025_02_26",
+    # ]
+    
 
-    datas = [dm.get_raw_data(file_stem=f) for f in file_ids]
+    data = dm.get_raw_data(file_stem="2025_12_24-22_48_09-johnson-nv0_2025_10_21")
+    print(data.keys())
+    # data = add_states_from_counts(data)
+    print("counts:", np.asarray(data["counts"]).shape)
+    # print("states:", np.asarray(data["states"]).shape)
 
-    combined_data = datas[0].copy()
-    for d in datas[1:]:
-        combined_data["counts"] = np.concatenate([combined_data["counts"], d["counts"]], axis=2)
-
-    combined_data["num_runs"] = np.asarray(combined_data["counts"]).shape[2]
-
-    print("counts shape:", np.asarray(combined_data["counts"]).shape)
-
-    # ---- IMPORTANT: create states from counts ----
-    combined_data = add_states_from_counts(combined_data)
-    print("states shape:", np.asarray(combined_data["states"]).shape)
-
-    # # ---- Now run your event detector ----
-    # (figs0, events0) = process_detect_charge_events(combined_data, exp_ind=0, scramble_trials=200, p_thresh=1e-6)
-    # (figs1, events1) = process_detect_charge_events(combined_data, exp_ind=1, scramble_trials=200, p_thresh=1e-6)
-
-
-    # print("num events exp0:", len(events0))
-    # print("num events exp1:", len(events1))
-
-    # exp_ind=1 is your long wait (8s) in your old setup
-    (figs, events) = detect_coincidence_events_old(
-        combined_data,
-        exp_ind=0,
-        scramble_trials=2000,
-        p_thresh=1e-4
+    # Transition bursts (recommended):
+    # exp 0 -> 1  : events during short wait t1
+    (figs01, ev01) = detect_transition_bursts_3exp(
+        data, from_exp=0, to_exp=1, transition="1->0",
+        scramble_trials=5000, p_thresh=1e-4
     )
 
-    print("Num events:", len(events))
+    # exp 1 -> 2  : events during long wait (t2 - t1)
+    (figs12, ev12) = detect_transition_bursts_3exp(
+        data, from_exp=1, to_exp=2, transition="1->0",
+        scramble_trials=5000, p_thresh=1e-4
+    )
+
+    # Optional: coincidence bursts at each readout:
+    (figs0, ev0) = detect_state_coincidence_3exp(data, exp_ind=0, scramble_trials=5000, p_thresh=1e-4)
+    (figs1, ev1) = detect_state_coincidence_3exp(data, exp_ind=1, scramble_trials=5000, p_thresh=1e-4)
+    (figs2, ev2) = detect_state_coincidence_3exp(data, exp_ind=2, scramble_trials=5000, p_thresh=1e-4)
+
     plt.show()
+
+
+#     datas = [dm.get_raw_data(file_stem=f) for f in file_ids]
+
+#     combined_data = datas[0].copy()
+#     for d in datas[1:]:
+#         combined_data["counts"] = np.concatenate([combined_data["counts"], d["counts"]], axis=2)
+
+#     combined_data["num_runs"] = np.asarray(combined_data["counts"]).shape[2]
+
+#     print("counts shape:", np.asarray(combined_data["counts"]).shape)
+
+#     # ---- IMPORTANT: create states from counts ----
+#     combined_data = add_states_from_counts(combined_data)
+#     print("states shape:", np.asarray(combined_data["states"]).shape)
+
+#     # # ---- Now run your event detector ----
+#     (figs0, events0) = process_detect_charge_events(combined_data, exp_ind=0, scramble_trials=200, p_thresh=1e-6)
+#     (figs1, events1) = process_detect_charge_events(combined_data, exp_ind=1, scramble_trials=200, p_thresh=1e-6)
+
+# # 
+#     print("num events exp0:", len(events0))
+#     print("num events exp1:", len(events1))
+
+    # # exp_ind=1 is your long wait (8s) in your old setup
+    # (figs, events) = detect_coincidence_events_old(
+    #     combined_data,
+    #     exp_ind=0,
+    #     scramble_trials=2000,
+    #     p_thresh=1e-4
+    # )
+
+    # print("Num events:", len(events))
 
 
     # Process data
