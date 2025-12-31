@@ -147,7 +147,7 @@ def do_image_sample_zoom(nv_sig):
     This function is compatable with piezo z-axis scan and will create a new figure for each z position.
 
     """
-    scan_range = 0.15 
+    scan_range = 0.1 
     num_steps = 45
 
     image_sample.confocal_scan(
@@ -157,11 +157,11 @@ def do_image_sample_zoom(nv_sig):
         num_steps,
     )
 
-def do_optimize_z(nv_sig, num_steps=30, step_size=1, scan_direction="down"):
+def do_optimize_z(nv_sig, num_steps=20, step_size=1, scan_direction="down"):
     """
     Optimize Z position by scanning and fitting a Gaussian to find the focus peak.
 
-    Uses the step-based scanning pattern from calibrate_z_axis.optimize_z which
+    # Uses the step-based scanning pattern from calibrate_z_axis.optimize_z which
     is compatible with the Attocube piezo (unlike targeting.optimize which requires
     streaming support).
 
@@ -213,7 +213,7 @@ def do_optimize_green(nv_sig):
     return opti_coords
 
 
-def do_optimize_xy(nv_sig, num_steps=15, fit_method="gaussian"):
+def do_optimize_xy(nv_sig, num_steps=15, scan_range=None, fit_method="gaussian"):
     """
     Optimize XY position using a grid/raster scan pattern.
 
@@ -227,6 +227,9 @@ def do_optimize_xy(nv_sig, num_steps=15, fit_method="gaussian"):
         NV center parameters (pulse durations, laser settings)
     num_steps : int, optional
         Number of steps per axis (creates num_steps x num_steps grid). Default: 15
+    scan_range : float, optional
+        Total scan range in volts. If None, uses config's optimize_range.
+        Step size = scan_range / (num_steps - 1). Default: None
     fit_method : str, optional
         Method to find optimal position: "gaussian" or "max_counts". Default: "gaussian"
 
@@ -238,6 +241,7 @@ def do_optimize_xy(nv_sig, num_steps=15, fit_method="gaussian"):
     results = optimize_xy.main(
         nv_sig,
         num_steps=num_steps,
+        scan_range=scan_range,
         fit_method=fit_method,
         move_to_optimal=True,
         save_data=True,
@@ -777,9 +781,10 @@ if __name__ == "__main__":
     # region Postion and Time Control
     sample_xy = [0.0,0.0] # piezo XY voltage input (1.0=1V) (not coordinates, relative)
     coord_z = 0  # piezo z voltage (negative is closer to smaple)
-    # pixel_xy = [0,0]  # galvo XY 
-    pixel_xy = [-0.055, -0.015]  # NV canidate
-# 
+    # pixel_xy = [0.053, -0.048]  # galvo XY 
+    # pixel_xy = [-0.017, -0.011]    # NV canidate
+    pixel_xy = [0,0]    # NV canidate
+# return 
     nv_sig = NVSig(
         name=f"({get_sample_name()})",
         coords={
@@ -815,15 +820,15 @@ if __name__ == "__main__":
         # tool_belt.set_drifts([drift[0], drift[1], 0.0])  # Keep xy
         
         pos.set_xyz_on_nv(nv_sig) # Hahn omits this line, currently leave this line out when calibrating z
-
+# 
         #region 1D scan + Calibrate
         # do_calibrate_z_axis(nv_sig)
         # do_z_scan_1d(nv_sig)
 
 
-        # # Manually set Z reference to current position
+        # # # # Manually set Z reference to current position
         # piezo = pos.get_positioner_server(CoordsKey.Z)
-        # print(piezo.get_z_position())
+        # # print(piezo.get_z_position())
         # piezo.set_z_reference()
 
         # region 2D scan (x galvo, z piezo)
@@ -845,17 +850,11 @@ if __name__ == "__main__":
 
         # Quick NV area scans
         # for i in range(27):
-        #     do_image_sample_zoom(nv_sig)
-
-        # do_image_sample_zoom(nv_sig, nv_minus_initialization=True)
-
-        # Z AXIS PIEZO SCAN
-        # z_range = np.linspace(0, 0, 30)
-        # for z in z_range:
+            # do_image_sample_zoom(nv_sig)
         #     nv_sig.coords[CoordsKey.Z] = z
         #     # pos.set_xyz_on_nv(nv_sig)
         #     # do_image_sample_zoom(nv_sig)
-        #     do_image_sample(nv_sig)
+        # do_image_sample(nv_sig)
 
         # do_image_sample(nv_sig, nv_minus_initialization=True)
         # do_image_sample_zoom(nv_sig, nv_minus_initialization=True)
@@ -863,7 +862,7 @@ if __name__ == "__main__":
 
         # region Optimize
         # do_optimize_z(nv_sig) # z position optimize
-        do_optimize_xy(nv_sig) #xy galvo optimize but it works
+        # do_optimize_xy(nv_sig, num_steps=8, scan_range=0.008) #xy galvo optimize but it works :)
         # do_optimize_green(nv_sig) # old optimize xy
         # do_compensate_for_drift(nv_sig)
         # endregion Optimize
@@ -882,7 +881,8 @@ if __name__ == "__main__":
         # do_image_sample_Hahn(nv_sig, nv_minus_initialization=True)
 
         # region Stationary count
-        # do_stationary_count(nv_sig, disable_opt=True) #Note there is a slow response time w/ the APD
+        # print( pixel_xy )
+        do_stationary_count(nv_sig, disable_opt=True) #Note there is a slow response time w/ the APD
         # do_stationary_count(nv_sig, disable_opt=True, nv_minus_initialization=True)
         # do_stationary_count(nv_sig, disable_opt=True, nv_zero_initialization=True)
         # endregion Stationary count

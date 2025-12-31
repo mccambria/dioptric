@@ -82,7 +82,7 @@ from utils import common
 # y_points = 100  # Resolution along Y
 # rate = 1000  # Point update rate (Hz)
 # return_delay = 0.001  # Delay at end of each line
-
+                                               
 
 # # === Raster scan function ===
 # def raster_scan(stop_event):
@@ -162,7 +162,7 @@ thread = threading.Thread(target=lissajous_scan, args=(stop_event,))
 thread.start()
 
 # Let it run for 10 seconds (or remove this to run indefinitely)
-time.sleep(6)
+time.sleep(10)
 
 # # Stop
 stop_event.set()
