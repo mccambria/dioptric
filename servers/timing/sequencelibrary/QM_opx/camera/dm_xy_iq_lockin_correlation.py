@@ -146,11 +146,11 @@ if __name__ == "__main__":
                 [False, False],
                 [0, 1],
             ],
-            tau=15e3,
+            tau_ns=15e3,
             n_pi=1,
             num_reps=1,
         )
-        sim_config = SimulationConfig(duration=int(300e3 / 4))
+        sim_config = SimulationConfig(duration=int(100e3 / 4))
         sim = opx.simulate(seq, sim_config)
         samples = sim.get_simulated_samples()
         samples.con1.plot()
