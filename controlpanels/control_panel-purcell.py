@@ -52,7 +52,7 @@ from majorroutines.widefield import (
     spin_echo,
     spin_echo_phase_scan_test,
     two_block_hahn_correlation,
-    dm_xy4_iq_lockin_correlation,
+    dm_xy_iq_lockin_correlation,
     spin_pol_check,
     xy,
 )
@@ -520,32 +520,19 @@ def do_two_block_hahn_spatial_correlation(nv_list):
     # for _ in range(1):
     #     T2_correlation.main(nv_list, num_reps, num_runs, tau)
 
-def do_dm_xy4_iq_lockin(nv_list):
-    # Sit on the 13C revival: 2*tau = 15 us  ->  tau = 7.5 us
-    # This targets f0 ~ 1/(2*tau) = 66.7 kHz
-    tau_ns = int(3.75e3 / 4) * 4
-
-    # XY4-N: start with N=1 (total evolution ~ 60 us)
-    n_xy4_blocks = 1
-
-    # No MW-off ref needed (I±/Q± already normalizes well)
-    include_ref = False
-
-    # One complex sample s = I + iQ per "rep"
-    # Time per rep ~ 4 shots * 50 ms = 0.20 s  (plus small overhead)
-    #
-    # Total time (seconds) ≈ 0.20 * (num_reps * num_runs)
-    # => For ~1 hour, need num_reps*num_runs ≈ 18000
+def do_dm_xy_iq_lockin(nv_list):
+    # tau_ns = int(3.75e3 / 4) * 4
+    tau_ns = int(15e3 / 4) * 4 # for single pi pulse/echo
+    n_pi = 1
     num_reps = 75
     num_runs = 2000   # 200*90 = 18000 reps -> ~1 hour
 
-    dm_xy4_iq_lockin_correlation.main(
+    dm_xy_iq_lockin_correlation.main(
         nv_list=nv_list,
         num_reps=num_reps,
         num_runs=num_runs,
         tau_ns=tau_ns,
-        n_xy4_blocks=n_xy4_blocks,
-        include_ref=include_ref,
+        n_pi=n_pi,
         uwave_ind_list=(0, 1),
     )
     
@@ -1619,7 +1606,7 @@ if __name__ == "__main__":
         # do_optimize_spin_pol_amp(nv_list)
         # do_check_readout_fidelity(nv_list)
 
-        # do_scc_snr_check(nv_list)
+        do_scc_snr_check(nv_list)
         # do_optimize_scc_duration(nv_list)
         # do_optimize_scc_amp(nv_list)
         # optimize_scc_amp_and_duration(nv_list)
@@ -1657,7 +1644,7 @@ if __name__ == "__main__":
         # do_check_readout_fidelity(nv_list)
         # do_charge_quantum_jump(nv_list)
         # do_ac_stark(nv_list)
-        # do_dm_xy4_iq_lockin(nv_list)
+        do_dm_xy_iq_lockin(nv_list)
 
         # do_two_block_hahn_spatial_correlation(nv_list)
 

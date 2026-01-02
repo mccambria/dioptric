@@ -262,8 +262,7 @@ def main(
     num_reps,
     num_runs,
     tau_ns,
-    n_xy4_blocks=1,
-    include_ref=False,
+    n_pi=1,
     uwave_ind_list=(0, 1),
 ):
     """
@@ -278,7 +277,7 @@ def main(
       XY4-N. Total pi pulses = 4 * n_xy4_blocks.
       Total evolution time ~ 8*tau*n_xy4_blocks (with this implementation).
     """
-    seq_file = "dm_xy4_iq_lockin_correlation.py"  # must match the QUA seq file name
+    seq_file = "dm_xy_iq_lockin_correlation.py"  # must match the QUA seq file name
     num_steps = 1
 
     pulse_gen = tb.get_server_pulse_gen()
@@ -286,7 +285,8 @@ def main(
     def run_fn(_shuffled_step_inds):
         seq_args = [
             widefield.get_base_scc_seq_args(nv_list, list(uwave_ind_list)),
-            float(tau_ns)
+            float(tau_ns),
+            n_pi,
         ]
         seq_args_string = tb.encode_seq_args(seq_args)
         pulse_gen.stream_load(seq_file, seq_args_string, num_reps)
@@ -318,8 +318,7 @@ def main(
     raw_data |= {
         "timestamp": timestamp,
         "tau_ns": tau_ns,
-        "n_xy4_blocks": n_xy4_blocks,
-        "include_ref": include_ref,
+        "n_pi_pulses": n_pi,
         "seq_file": seq_file,
     }
 
