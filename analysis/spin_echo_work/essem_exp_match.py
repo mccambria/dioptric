@@ -33,6 +33,11 @@ from multiplicity_calculation import (
 from kappa_modulation_depth import (
     compute_dispersion_grid_for_site,
     plot_dispersion_2D_for_site,
+    simulate_fpm_vs_B_for_site_all_fields,
+    plot_site_sim_overlay,
+    compute_full_angle_map_lab_spherical_for_site,
+    plot_full_angle_map_theta_phi_lab,
+    validate_site72_direct_vs_labmap,
 )
 
 # ---------------------------------------------------------------------
@@ -2259,6 +2264,80 @@ def plot_simualted(
     print(site_stats_sim["n_matches_sim"].value_counts().sort_index())
 
 
+def extract_unified_fit_params(fit_file_stem: str) -> pd.DataFrame:
+    d = dm.get_raw_data(file_stem=fit_file_stem)
+
+    nv = np.asarray(d["nv_labels"], dtype=int)
+    popts = d["popts"]
+    red = np.asarray(d.get("red_chi2", [np.nan] * len(nv)), dtype=float)
+
+    unified_keys = d.get("unified_keys", None)
+    if not isinstance(unified_keys, list):
+        raise KeyError(f"{fit_file_stem}: missing/invalid 'unified_keys'")
+
+    # Known reduced schema when the fitter returns a shorter parameter vector.
+    # (This is the most common compact ESEEM fit layout.)
+    reduced6_keys = [
+        "baseline",
+        "comb_contrast",
+        "T2_ms",
+        "osc_amp",
+        "osc_f0",
+        "osc_f1",
+    ]
+
+    # Choose key list based on popt length
+    schema_by_len = {
+        len(unified_keys): unified_keys,
+        6: reduced6_keys,
+    }
+
+    # Debug: count popt lengths
+    lens = [len(p) for p in popts if p is not None]
+    if lens:
+        uniq = {L: lens.count(L) for L in sorted(set(lens))}
+        print(f"[extract_unified_fit_params] {fit_file_stem}: popt lengths -> {uniq}")
+
+    rows = []
+    for nv_label, p, rchi in zip(nv, popts, red):
+        if p is None:
+            continue
+        p = np.asarray(p, float)
+        L = len(p)
+
+        keys = schema_by_len.get(L, None)
+        if keys is None:
+            # Unknown schema length; keep row but with NaNs so merge works
+            rows.append(
+                dict(
+                    nv_label=int(nv_label),
+                    comb_contrast=np.nan,
+                    osc_amp=np.nan,
+                    red_chi2=float(rchi),
+                )
+            )
+            continue
+
+        idx = {k: i for i, k in enumerate(keys)}
+
+        def getv(name):
+            i = idx.get(name, None)
+            return float(p[i]) if (i is not None and i < L) else np.nan
+
+        rows.append(
+            dict(
+                nv_label=int(nv_label),
+                comb_contrast=getv("comb_contrast"),
+                osc_amp=getv("osc_amp"),
+                red_chi2=float(rchi),
+                osc_f0_cyc_per_us=getv("osc_f0"),
+                osc_f1_cyc_per_us=getv("osc_f1"),
+            )
+        )
+
+    return pd.DataFrame(rows).drop_duplicates(subset=["nv_label"])
+
+
 def run_field_analysis(
     label: str,
     fit_file_stem: str,
@@ -2355,6 +2434,10 @@ def run_field_analysis(
     matches_df["field_label"] = label
     matches_df["B_mag_G"] = B_mag_G
 
+    matches_df["Bx_G"] = float(B_G[0])
+    matches_df["By_G"] = float(B_G[1])
+    matches_df["Bz_G"] = float(B_G[2])
+
     site_stats_full = site_stats_full.copy()
     site_stats_full["field_label"] = label
     site_stats_full["B_mag_G"] = B_mag_G
@@ -2422,6 +2505,114 @@ def plot_site_f_vs_B(all_matches: pd.DataFrame, site_list=None):
         ax.legend()
 
 
+def plot_site_fplus_vs_fminus_and_angles(
+    all_matches: pd.DataFrame,
+    site_list=None,
+    min_fields: int = 4,
+    annotate: bool = True,
+    use_one_point_per_field: bool = True,  # True: one point per field (recommended)
+    ax_equal_f: bool = False,  # f+ vs f- equal aspect
+):
+    """
+    For each (orientation, site_index) that appears in >=min_fields:
+
+      Panel A:  f_plus vs f_minus (with xerr/yerr if available)
+      Panel B:  B direction scatter in (phi, theta) for the same points
+
+    Requires:
+      field_label, orientation, site_index
+      f_minus_kHz, f_plus_kHz
+      err_f0_kHz, err_f1_kHz  (optional but recommended)
+      B_phi_deg, B_theta_deg  (compute with attach_Bhat_theta_phi)
+    """
+
+    df = all_matches.copy()
+    df["site_key"] = list(zip(df["orientation"], df["site_index"]))
+
+    if site_list is not None:
+        df = df[df["site_key"].isin(site_list)]
+
+    # keep only sites seen in >= min_fields
+    n_by_site = df.groupby("site_key")["field_label"].nunique()
+    keep_sites = n_by_site[n_by_site >= min_fields].index
+    df = df[df["site_key"].isin(keep_sites)]
+
+    if len(df) == 0:
+        print("No sites satisfy the min_fields/site_list filters.")
+        return
+
+    need_cols = ["B_phi_deg", "B_theta_deg", "f_minus_kHz", "f_plus_kHz", "field_label"]
+    for c in need_cols:
+        if c not in df.columns:
+            raise KeyError(
+                f"Missing column '{c}'. Did you run attach_Bhat_theta_phi()?"
+            )
+
+    for site_key, sub in df.groupby("site_key"):
+        ori, sid = site_key
+        sub = sub.copy()
+
+        # keep one representative per field (since direction is field-level anyway)
+        if use_one_point_per_field:
+            sub = sub.sort_values(
+                "err_pair_kHz" if "err_pair_kHz" in sub.columns else "field_label"
+            )
+            sub = sub.drop_duplicates("field_label", keep="first")
+
+        # errors (optional)
+        xerr = np.abs(sub["err_f0_kHz"]) if "err_f0_kHz" in sub.columns else None
+        yerr = np.abs(sub["err_f1_kHz"]) if "err_f1_kHz" in sub.columns else None
+
+        fig, (ax0, ax1) = plt.subplots(1, 2, figsize=(10, 4.5))
+        # ---------------- Panel A: f+ vs f- ----------------
+        for lab, g in sub.groupby("field_label"):
+            ax0.errorbar(
+                g["f_minus_kHz"],
+                g["f_plus_kHz"],
+                xerr=np.abs(g["err_f0_kHz"]) if "err_f0_kHz" in g else None,
+                yerr=np.abs(g["err_f1_kHz"]) if "err_f1_kHz" in g else None,
+                fmt="o",
+                capsize=2,
+                label=lab,
+            )
+
+        ax0.set_xlabel(r"$f_-$ (kHz)")
+        ax0.set_ylabel(r"$f_+$ (kHz)")
+        ax0.set_title(r"$f_+$ vs $f_-$")
+        ax0.grid(True, alpha=0.25)
+
+        # Optional: equal aspect helps you see “bending” vs monotonic separation
+        if ax_equal_f:
+            ax0.set_aspect("equal", adjustable="box")
+
+        # ---------------- Panel B: direction (phi, theta) ----------------
+        for lab, g in sub.groupby("field_label"):
+            ax1.scatter(g["B_phi_deg"], g["B_theta_deg"], label=lab)
+
+        if annotate:
+            for _, r in sub.iterrows():
+                ax1.text(
+                    r["B_phi_deg"] + 2,
+                    r["B_theta_deg"] + 2,
+                    str(r["field_label"]),
+                    fontsize=9,
+                )
+
+        ax1.set_xlabel(r"azimuth $\phi$ [deg]")
+        ax1.set_ylabel(r"polar $\theta$ [deg]")
+        ax1.set_title(r"$\hat B$ direction in $(\phi,\theta)$")
+        # ax1.set_xlim(-180, 180)
+        # ax1.set_ylim(0, 180)
+        ax1.grid(True, alpha=0.25)
+
+        # legend (shared meaning across both panels)
+        ax0.legend(fontsize=9, loc="best")
+        # (optional) ax1.legend(...) if you want it twice
+
+        fig.suptitle(f"Site {sid}, ori={ori}", y=0.98, fontsize=13)
+        # fig.subplots_adjust(top=0.88, wspace=0.30)
+
+
 def compare_multiplicity_across_fields(all_site_stats):
     # site key without field
     key = ["orientation", "site_index"]
@@ -2470,91 +2661,226 @@ def compare_NV_assignments(all_matches):
     print(site_spread[site_spread["n_distinct_sites"] > 1].head(20))
 
 
+def canonicalize_orientation_col(df: pd.DataFrame) -> pd.DataFrame:
+    out = df.copy()
+    out["orientation"] = out["orientation"].apply(
+        lambda o: tuple(np.asarray(o, int).tolist())
+    )
+    out["site_index"] = out["site_index"].astype(int)
+    return out
+
+
+def attach_field_vectors(all_matches: pd.DataFrame) -> pd.DataFrame:
+    df = all_matches.copy()
+    B = df[["Bx_G", "By_G", "Bz_G"]].to_numpy(float)
+    Bmag = np.linalg.norm(B, axis=1)
+    df["B_mag_G"] = Bmag
+
+    Bhat = B / Bmag[:, None]
+    df["Bhat_x"] = Bhat[:, 0]
+    df["Bhat_y"] = Bhat[:, 1]
+    df["Bhat_z"] = Bhat[:, 2]
+
+    # lon/lat (deg) for easy direction plotting
+    df["B_lon_deg"] = np.degrees(np.arctan2(df["Bhat_y"], df["Bhat_x"]))  # [-180,180]
+    df["B_lat_deg"] = np.degrees(np.arcsin(np.clip(df["Bhat_z"], -1, 1)))  # [-90,90]
+    return df
+
+
+def attach_lab_angles(df: pd.DataFrame, phi_range="0_360") -> pd.DataFrame:
+    out = df.copy()
+
+    if {"Bhat_x", "Bhat_y", "Bhat_z"}.issubset(out.columns):
+        bx = out["Bhat_x"].to_numpy(float)
+        by = out["Bhat_y"].to_numpy(float)
+        bz = out["Bhat_z"].to_numpy(float)
+    else:
+        B = out[["Bx_G", "By_G", "Bz_G"]].to_numpy(float)
+        Bh = B / np.linalg.norm(B, axis=1, keepdims=True)
+        bx, by, bz = Bh[:, 0], Bh[:, 1], Bh[:, 2]
+
+    theta = np.degrees(np.arccos(np.clip(bz, -1.0, 1.0)))  # 0..180 (polar from +Z)
+    phi = np.degrees(np.arctan2(by, bx))  # -180..180 (azimuth around +Z)
+
+    if phi_range == "0_360":
+        phi = np.mod(phi, 360.0)
+    elif phi_range == "-180_180":
+        phi = ((phi + 180.0) % 360.0) - 180.0
+
+    out["B_theta_deg"] = theta
+    out["B_phi_deg"] = phi
+    return out
+
+
 if __name__ == "__main__":
     kpl.init_kplotlib()
+    # -------------------- Main analysis per field --------------------
+    field_cfgs = [
+        dict(
+            label="49G",
+            fit_file_stem="2025_11_19-14_19_23-sample_204nv_s1-fcc605",
+            counts_file_stem="2025_11_11-01_15_45-johnson_204nv_s6-6d8f5c",
+            B_G=np.array([-46.27557688, -17.16599864, -5.70139829]),
+            catalog_json="analysis/spin_echo_work/essem_freq_kappa_catalog_22A_49G.json",
+        ),
+        dict(
+            label="59G",
+            fit_file_stem="2025_12_05-07_51_13-sample_204nv_s1-4cf818",
+            counts_file_stem="2025_12_04-19_50_15-johnson_204nv_s9-2c83ab",
+            B_G=np.array([-41.57848995, -32.77145194, -27.5799348]),
+            catalog_json="analysis/spin_echo_work/essem_freq_kappa_catalog_22A_59G.json",
+        ),
+        dict(
+            label="62G",
+            fit_file_stem="2025_12_25-04_45_34-sample_204nv_s1-752556",
+            counts_file_stem="2025_12_24-19_56_03-johnson_204nv_s6-ff5e17",
+            B_G=np.array([-48.67047318, -32.07615947, 22.49657427]),
+            catalog_json="analysis/spin_echo_work/essem_freq_kappa_catalog_22A_62G.json",
+        ),
+        dict(
+            label="65G",
+            fit_file_stem="2025_11_30-04_35_04-sample_204nv_s1-d278ee",
+            counts_file_stem="2025_11_28-16_39_32-johnson_204nv_s6-902522",
+            B_G=np.array([-31.61263115, -56.58135644, -6.5512002]),
+            catalog_json="analysis/spin_echo_work/essem_freq_kappa_catalog_22A_65G.json",
+        ),
+    ]
 
-    # field_cfgs = [
-    #     dict(
-    #         label="49G",
-    #         fit_file_stem="2025_11_19-14_19_23-sample_204nv_s1-fcc605",
-    #         counts_file_stem="2025_11_11-01_15_45-johnson_204nv_s6-6d8f5c",
-    #         B_G=np.array([-46.27557688, -17.16599864, -5.70139829]),
-    #         catalog_json="analysis/spin_echo_work/essem_freq_kappa_catalog_22A_49G.json",
-    #     ),
-    #     dict(
-    #         label="59G",
-    #         fit_file_stem="2025_12_05-07_51_13-sample_204nv_s1-4cf818",
-    #         counts_file_stem="2025_12_04-19_50_15-johnson_204nv_s9-2c83ab",
-    #         B_G=np.array([-41.57848995, -32.77145194, -27.5799348]),
-    #         catalog_json="analysis/spin_echo_work/essem_freq_kappa_catalog_22A_59G.json",
-    #     ),
-    #     dict(
-    #         label="65G",
-    #         fit_file_stem="2025_11_30-04_35_04-sample_204nv_s1-d278ee",
-    #         counts_file_stem="2025_11_28-16_39_32-johnson_204nv_s6-902522",
-    #         B_G=np.array([-31.61263115, -56.58135644, -6.5512002]),
-    #         catalog_json="analysis/spin_echo_work/essem_freq_kappa_catalog_22A_65G.json",
-    #     ),
-    # ]
-    # # kpl.init_kplotlib()
-    # kpl.init_kplotlib(constrained_layout=False, force=True)
+    results = [run_field_analysis(**cfg) for cfg in field_cfgs]
 
-    # field_cfgs = [
-    # dict(
-    #     label="49G",
-    #     fit_file_stem="2025_11_19-14_19_23-sample_204nv_s1-fcc605",
-    #     counts_file_stem="2025_11_11-01_15_45-johnson_204nv_s6-6d8f5c",
-    #     B_G=np.array([-46.27557688, -17.16599864, -5.70139829]),
-    #     catalog_json="analysis/spin_echo_work/essem_freq_kappa_catalog_22A_49G.json",
-    # ),
-    # dict(
-    #     label="59G",
-    #     fit_file_stem="2025_12_05-07_51_13-sample_204nv_s1-4cf818",
-    #     counts_file_stem="2025_12_04-19_50_15-johnson_204nv_s9-2c83ab",
-    #     B_G=np.array([-41.57848995, -32.77145194, -27.5799348]),
-    #     catalog_json="analysis/spin_echo_work/essem_freq_kappa_catalog_22A_59G.json",
-    # ),
-    # dict(
-    #     label="65G",
-    #     fit_file_stem="2025_11_30-04_35_04-sample_204nv_s1-d278ee",
-    #     counts_file_stem="2025_11_28-16_39_32-johnson_204nv_s6-902522",
-    #     B_G=np.array([-31.61263115, -56.58135644, -6.5512002]),
-    #     catalog_json="analysis/spin_echo_work/essem_freq_kappa_catalog_22A_65G.json",
-    # ),
-    # ]
-
-    # results = [run_field_analysis(**cfg) for cfg in field_cfgs]
-
-    # all_matches = pd.concat([r["matches_df"] for r in results], ignore_index=True)
-    # all_site_stats = pd.concat([r["site_stats"] for r in results], ignore_index=True)
+    all_matches = pd.concat([r["matches_df"] for r in results], ignore_index=True)
+    all_site_stats = pd.concat([r["site_stats"] for r in results], ignore_index=True)
 
     # plot_site_f_vs_B(all_matches)
+    # plot_site_f_vs_B_and_direction(all_matches, min_fields=4, ref_field_label="49G")
+    # plot_site_f_vs_B_and_direction(all_matches, site_list=[28, 72],  min_fields=4, ref_field_label="49G")
+
+    all_matches = attach_field_vectors(all_matches)  # gives Bhat_x/y/z
+    all_matches = attach_lab_angles(all_matches)  # adds B_phi_deg, B_theta_deg
+
+    plot_site_fplus_vs_fminus_and_angles(
+        all_matches,
+        min_fields=4,
+        use_one_point_per_field=True,
+    )
+    plt.show()
+
     # compare_multiplicity_across_fields(all_site_stats)
     # compare_NV_assignments(all_matches)
     # plot_T2_vs_field(all_matches)
     # plot_T2_vs_distance(all_matches)
     # pick a few sites with large n_matches for f(B) tracks
-    # plt.show(block=True)
-
-    # all_matches = pd.concat(
-    # [
-    #     res["matches_df"].assign(
-    #         field_label=cfg["label"],
-    #         Bx_G=cfg["B_G"][0],
-    #         By_G=cfg["B_G"][1],
-    #         Bz_G=cfg["B_G"][2],
-    #     )
-    #     for cfg, res in zip(field_cfgs, results)
-    # ],
-    # ignore_index=True,)
-    # wide_both = compare_two_fields(
-    # all_matches,
-    # field_labels=["49G","59G","65G"],     # explicit, or leave None to auto-detect the two
-    # title_prefix="204 NVs"
-    # )
-    # plt.show(block=True)
-
+    plt.show(block=True)
     # sys.exit()
+
+    all_matches = pd.concat(
+        [
+            res["matches_df"].assign(
+                field_label=cfg["label"],
+                Bx_G=cfg["B_G"][0],
+                By_G=cfg["B_G"][1],
+                Bz_G=cfg["B_G"][2],
+            )
+            for cfg, res in zip(field_cfgs, results)
+        ],
+        ignore_index=True,
+    )
+    wide_both = compare_two_fields(
+        all_matches,
+        field_labels=[
+            "49G",
+            "59G",
+            "62G",
+            "65G",
+        ],  # explicit, or leave None to auto-detect the two
+        title_prefix="204 NVs",
+    )
+
+    all_site_stats2 = canonicalize_orientation_col(all_site_stats)
+
+    field_labels = sorted(all_site_stats2["field_label"].unique())
+    n_fields = len(field_labels)
+    print("Fields:", field_labels, " n_fields=", n_fields)
+
+    site_counts = (
+        all_site_stats2.groupby(["orientation", "site_index"])["field_label"]
+        .nunique()
+        .sort_values(ascending=False)
+    )
+
+    sites_all = site_counts[site_counts == n_fields].index.tolist()
+    print(f"# sites seen in ALL {n_fields} fields:", len(sites_all))
+    print("Example (first 10):", sites_all[:10])
+
+    rank_df = (
+        all_site_stats2[
+            all_site_stats2.set_index(["orientation", "site_index"]).index.isin(
+                sites_all
+            )
+        ]
+        .groupby(["orientation", "site_index"], as_index=False)
+        .agg(n_matches_sum=("n_matches", "sum"), n_matches_mean=("n_matches", "mean"))
+        .sort_values("n_matches_sum", ascending=False)
+    )
+    print(rank_df.head(20))
+
+    B_by_field = {r["label"]: np.asarray(r["B_G"], float) for r in results}
+    for lab, B in B_by_field.items():
+        print(lab, " |B|=", np.linalg.norm(B), " Bhat=", B / np.linalg.norm(B))
+
+    site_key0 = tuple(rank_df.iloc[0][["orientation", "site_index"]])  # top ranked site
+    print("Top ranked site seen in all fields:", site_key0)
+
+    ori, sid = site_key0
+    overlay_points = []
+    for lab, Bvec_G in B_by_field.items():
+        b = np.asarray(Bvec_G, float)
+        overlay_points.append({"label": lab, "Bhat": b / np.linalg.norm(b)})
+
+    angle_map = compute_full_angle_map_lab_spherical_for_site(
+        hyperfine_path=HYPERFINE_PATH,
+        orientation=ori,
+        site_index=sid,
+        Bmag_G=62.0,  # pick a representative magnitude (or do one per field)
+        n_theta=91,
+        n_phi=181,
+        ms=-1,
+        phi_deg_nv=0.0,
+        phi_range="0_360",
+    )
+
+    plot_full_angle_map_theta_phi_lab(
+        angle_map,
+        title_prefix=f"Site {sid}, ori={ori}",
+        contour=True,
+        add_kappa_contours=True,
+        overlay_points=overlay_points,
+    )
+
+    # Example inputs (replace with your real ones)
+    phi_deg_nv_used = 0.0  # or 120.0 — MUST match what your catalog/fitting used
+    sid = 72
+    ori = (-1, 1, 1)  # see note below on how to get this from your tables
+
+    cfg = field_cfgs[0]  # 49G
+    Bvec_G = cfg["B_G"]
+    Bmag_G = float(np.linalg.norm(Bvec_G))
+
+    validate_site72_direct_vs_labmap(
+        hyperfine_path=HYPERFINE_PATH,
+        orientation=ori,  # must match the site72 orientation used in fit/catalog
+        site_index=72,
+        Bvec_G=Bvec_G,
+        Bmag_G=Bmag_G,
+        ms=-1,
+        phi_deg_nv=0.0,  # must match fit/catalog
+        phi_range="0_360",
+        n_theta=181,
+        n_phi=360,
+    )
+
+    plt.show(block=True)
+    sys.exit()
     # --- Magnetic field (crystal axes) ---
     # B_G = [-46.27557688 - 17.16599864 - 5.70139829]
     # B_G_mag = 49.685072884712
@@ -2583,12 +2909,12 @@ if __name__ == "__main__":
     # fit_file_stem = "2025_12_05-07_51_13-sample_204nv_s1-4cf818"
     # counts_file_stem = "2025_12_04-19_50_15-johnson_204nv_s9-2c83ab"
     # catalog_json = "analysis/spin_echo_work/essem_freq_kappa_catalog_22A_59G.json"
-    
-     # --- Magnetic field (crystal axes) ---
+
+    # --- Magnetic field (crystal axes) ---
     B_G = np.array([-48.67047318, -32.07615947, 22.49657427])
     fit_file_stem = "2025_12_25-04_45_34-sample_204nv_s1-752556"
     counts_file_stem = "2025_12_24-19_56_03-johnson_204nv_s6-ff5e17"
-    catalog_json = "analysis/spin_echo_work/essem_freq_kappa_catalog_22A_62G.json"   
+    catalog_json = "analysis/spin_echo_work/essem_freq_kappa_catalog_22A_62G.json"
 
     ## ---- 2) global theory-vs-exp matching (use FIT file) ----##
     hf_df = load_hyperfine_table(distance_cutoff=15.0)  # or 15.0, etc.

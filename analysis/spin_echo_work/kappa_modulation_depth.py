@@ -12,6 +12,8 @@ from analysis.sc_c13_hyperfine_sim_data_driven import read_hyperfine_table_safe,
 from typing import Tuple, Optional, Sequence
 import matplotlib.pyplot as plt, matplotlib.ticker as mticker
 from utils import kplotlib as kpl
+from itertools import combinations, product
+
 # ---------- You already have these imports/helpers in your env ----------
 # from analysis.sc_c13_hyperfine_sim_data_driven import read_hyperfine_table_safe, B_vec_T
 # If not available, provide your own read_hyperfine_table_safe
@@ -78,7 +80,7 @@ def _kappa_and_fpm(
     nm = _safe_norm(Omega_m)
     n0_hat = Omega0 / n0
     nm_hat = Omega_m / nm
-    
+
     cross = np.cross(Omega0, Omega_m)
     kappa = float((cross @ cross) / (n0 * n0 * nm * nm))
     kappa = max(0.0, min(1.0, kappa))
@@ -95,19 +97,19 @@ def _kappa_and_fpm(
     theta_deg = np.degrees(np.arccos(cos_theta))
 
     return (
-            kappa,
-            f_minus,
-            f_plus,
-            omegaI,
-            nm,
-            A_par,
-            A_perp,
-            theta_deg,
-            n0_hat,
-            nm_hat,
-            Bhat,
-            z_nv_cubic,
-        )
+        kappa,
+        f_minus,
+        f_plus,
+        omegaI,
+        nm,
+        A_par,
+        A_perp,
+        theta_deg,
+        n0_hat,
+        nm_hat,
+        Bhat,
+        z_nv_cubic,
+    )
 
 
 # ---------- Build catalog with exact κ and per-line weights ----------
@@ -153,8 +155,20 @@ def build_essem_catalog_with_kappa(
                 )
                 * 1e6
             )
-            kappa, f_minus, f_plus, omegaI, nm, A_par, A_perp, theta_deg, \
-            n0_hat, nm_hat, Bhat, z_nv_cubic = _kappa_and_fpm(
+            (
+                kappa,
+                f_minus,
+                f_plus,
+                omegaI,
+                nm,
+                A_par,
+                A_perp,
+                theta_deg,
+                n0_hat,
+                nm_hat,
+                Bhat,
+                z_nv_cubic,
+            ) = _kappa_and_fpm(
                 A_file_Hz,
                 ori,
                 B,
@@ -166,8 +180,8 @@ def build_essem_catalog_with_kappa(
             w_line = float(p_occ) * (kappa * 0.25)  # per-line first-order weight
 
             # handy scalar projections
-            cos_B_n0  = float(Bhat @ n0_hat)
-            cos_B_nm  = float(Bhat @ nm_hat)
+            cos_B_n0 = float(Bhat @ n0_hat)
+            cos_B_nm = float(Bhat @ nm_hat)
             cos_NV_n0 = float(z_nv_cubic @ n0_hat)
             cos_NV_nm = float(z_nv_cubic @ nm_hat)
 
@@ -186,25 +200,25 @@ def build_essem_catalog_with_kappa(
                     "theta_deg": float(theta_deg),
                     "line_w_minus": w_line,
                     "line_w_plus": w_line,
-
                     # NEW: coordinates from hyperfine table (if present)
                     "x_A": float(row.get("x_A", row.get("x", np.nan))),
                     "y_A": float(row.get("y_A", row.get("y", np.nan))),
                     "z_A": float(row.get("z_A", row.get("z", np.nan))),
-
                     # NEW: quantization directions & geometry (all JSON-friendly lists/scalars)
-                    "n0_hat": [float(v) for v in n0_hat],       # ms = 0 quantization axis
-                    "nm_hat": [float(v) for v in nm_hat],       # ms manifold quantization axis
-                    "B_hat": [float(v) for v in Bhat],          # direction of B
-                    "z_nv_cubic": [float(v) for v in z_nv_cubic],  # NV axis in cubic frame
-
-                    "cos_B_n0":  cos_B_n0,
-                    "cos_B_nm":  cos_B_nm,
+                    "n0_hat": [float(v) for v in n0_hat],  # ms = 0 quantization axis
+                    "nm_hat": [
+                        float(v) for v in nm_hat
+                    ],  # ms manifold quantization axis
+                    "B_hat": [float(v) for v in Bhat],  # direction of B
+                    "z_nv_cubic": [
+                        float(v) for v in z_nv_cubic
+                    ],  # NV axis in cubic frame
+                    "cos_B_n0": cos_B_n0,
+                    "cos_B_nm": cos_B_nm,
                     "cos_NV_n0": cos_NV_n0,
                     "cos_NV_nm": cos_NV_nm,
                 }
             )
-
 
     # Save
     with open(out_json, "w") as f:
@@ -217,7 +231,8 @@ def build_essem_catalog_with_kappa(
         w.writerows(recs)
     return recs
 
-#---------------
+
+# ---------------
 def compute_dispersion_grid_for_site(
     hyperfine_path: str,
     orientation: Tuple[int, int, int],
@@ -288,8 +303,7 @@ def compute_dispersion_grid_for_site(
         # B_hat in the plane spanned by B_hat0 and u_perp
         B_hat = np.cos(th) * B_hat0 + np.sin(th) * u_perp
         B_hat /= np.linalg.norm(B_hat)
-
-        for j_B, B_T in enumerate(B_mags_T * B_hat):
+        for j_B, B_T in enumerate(B_mags_T[:, None] * B_hat):
             (
                 kappa,
                 f_minus,
@@ -312,7 +326,7 @@ def compute_dispersion_grid_for_site(
                 phi_deg=phi_deg,
             )
 
-            f_minus_grid[i_th, j_B] = f_minus / 1e3   # Hz -> kHz
+            f_minus_grid[i_th, j_B] = f_minus / 1e3  # Hz -> kHz
             f_plus_grid[i_th, j_B] = f_plus / 1e3
             kappa_grid[i_th, j_B] = kappa
             theta_ms0_ms1_grid[i_th, j_B] = theta_deg
@@ -326,50 +340,574 @@ def compute_dispersion_grid_for_site(
         theta_ms0_ms1_deg=theta_ms0_ms1_grid,
     )
 
-def plot_dispersion_2D_for_site(grid: dict,
-                                title_prefix: str = "",
-                                cmap: str = "viridis"):
+
+# def plot_dispersion_2D_for_site(
+#     grid: dict, title_prefix: str = "", cmap: str = "viridis"
+# ):
+#     """
+#     Make a 1×2 panel:
+#       left:  f_-(B,theta) vs (|B|, tilt angle)
+#       right: f_+(B,theta) vs (|B|, tilt angle)
+#     """
+#     B_mags_G = grid["B_mags_G"]
+#     thetas_deg = grid["thetas_deg"]
+#     f_minus = grid["f_minus_kHz"]
+#     f_plus = grid["f_plus_kHz"]
+
+#     fig, axs = plt.subplots(1, 2, figsize=(10, 4), sharey=True)
+
+#     extent = [B_mags_G.min(), B_mags_G.max(), thetas_deg.min(), thetas_deg.max()]
+
+#     im0 = axs[0].imshow(
+#         f_minus,
+#         origin="lower",
+#         aspect="auto",
+#         extent=extent,
+#     )
+#     axs[0].set_title(r"$f_-(|B|,\theta)$")
+#     axs[0].set_xlabel(r"|B| [G]")
+#     axs[0].set_ylabel(r"tilt angle $\theta$ [deg]")
+#     fig.colorbar(im0, ax=axs[0], label="kHz")
+
+#     im1 = axs[1].imshow(
+#         f_plus,
+#         origin="lower",
+#         aspect="auto",
+#         extent=extent,
+#     )
+#     axs[1].set_title(r"$f_+(|B|,\theta)$")
+#     axs[1].set_xlabel(r"|B| [G]")
+#     fig.colorbar(im1, ax=axs[1], label="kHz")
+
+#     if title_prefix:
+#         fig.suptitle(title_prefix, y=1.02)
+
+#     # fig.tight_layout()
+#     return fig, axs
+
+
+def plot_dispersion_2D_for_site(
+    grid: dict,
+    title_prefix: str = "",
+    cmap: str = "viridis",
+    contour: bool = True,
+    n_levels: int = 10,
+    contour_color: str = "w",
+    contour_lw: float = 0.7,
+    add_kappa: bool = False,
+    kappa_as: str = "contour",  # "contour" or "alpha"
+    B_meas_G: float | None = None,
+    show_theta0: bool = True,
+):
     """
-    Make a 1×2 panel:
-      left:  f_-(B,theta) vs (|B|, tilt angle)
-      right: f_+(B,theta) vs (|B|, tilt angle)
+    1×2 panel:
+      left:  f_-(|B|,θ)   right: f_+(|B|,θ)
+    Adds contours + optional κ overlay + optional measured |B| marker.
     """
-    B_mags_G = grid["B_mags_G"]
-    thetas_deg = grid["thetas_deg"]
-    f_minus = grid["f_minus_kHz"]
-    f_plus = grid["f_plus_kHz"]
+    B_mags_G = np.asarray(grid["B_mags_G"], float)
+    thetas_deg = np.asarray(grid["thetas_deg"], float)
+    f_minus = np.asarray(grid["f_minus_kHz"], float)
+    f_plus = np.asarray(grid["f_plus_kHz"], float)
+    kappa = np.asarray(grid.get("kappa", None), float) if "kappa" in grid else None
 
-    fig, axs = plt.subplots(1, 2, figsize=(10, 4), sharey=True)
+    # Mesh for contouring
+    BB, TT = np.meshgrid(B_mags_G, thetas_deg)  # shapes (n_theta, n_B)
 
-    extent = [B_mags_G.min(), B_mags_G.max(),
-              thetas_deg.min(), thetas_deg.max()]
+    fig, axs = plt.subplots(1, 2, figsize=(11, 4.2), sharey=True)
+    extent = [B_mags_G.min(), B_mags_G.max(), thetas_deg.min(), thetas_deg.max()]
 
-    im0 = axs[0].imshow(
-        f_minus,
-        origin="lower",
-        aspect="auto",
-        extent=extent,
-        cmap=cmap,
-    )
-    axs[0].set_title(r"$f_-(|B|,\theta)$")
-    axs[0].set_xlabel(r"|B| [G]")
+    def _panel(ax, Z, title):
+        im = ax.imshow(Z, origin="lower", aspect="auto", extent=extent)
+
+        if contour:
+            zmin, zmax = np.nanmin(Z), np.nanmax(Z)
+            levels = np.linspace(zmin, zmax, n_levels)
+            cs = ax.contour(
+                BB, TT, Z, levels=levels, colors=contour_color, linewidths=contour_lw
+            )
+            ax.clabel(cs, inline=True, fontsize=7, fmt="%.0f")  # label in kHz (rounded)
+
+        # Optional κ overlay
+        if add_kappa and (kappa is not None):
+            if kappa_as == "contour":
+                # κ contours (e.g. 0.1, 0.2, ... 0.9)
+                k_levels = np.linspace(0.1, 0.9, 9)
+                ck = ax.contour(
+                    BB,
+                    TT,
+                    kappa,
+                    levels=k_levels,
+                    colors="k",
+                    linewidths=0.6,
+                    alpha=0.7,
+                )
+                ax.clabel(ck, inline=True, fontsize=6, fmt="κ=%.1f")
+            elif kappa_as == "alpha":
+                # make high-κ regions more opaque
+                kk = np.clip(kappa, 0, 1)
+                ax.imshow(
+                    kk,
+                    origin="lower",
+                    aspect="auto",
+                    extent=extent,
+                    cmap="gray",
+                    alpha=0.25,
+                )
+
+        if B_meas_G is not None:
+            ax.axvline(float(B_meas_G), linestyle="--", linewidth=1.0, alpha=0.8)
+
+        if show_theta0:
+            ax.axhline(0.0, linestyle=":", linewidth=1.0, alpha=0.6)
+
+        ax.set_title(title)
+        ax.set_xlabel(r"|B| [G]")
+        ax.grid(False)
+        return im
+
+    im0 = _panel(axs[0], f_minus, r"$f_-(|B|,\theta)$  [kHz]")
     axs[0].set_ylabel(r"tilt angle $\theta$ [deg]")
     fig.colorbar(im0, ax=axs[0], label="kHz")
 
-    im1 = axs[1].imshow(
-        f_plus,
-        origin="lower",
-        aspect="auto",
-        extent=extent,
-        cmap=cmap,
-    )
-    axs[1].set_title(r"$f_+(|B|,\theta)$")
-    axs[1].set_xlabel(r"|B| [G]")
+    im1 = _panel(axs[1], f_plus, r"$f_+(|B|,\theta)$  [kHz]")
     fig.colorbar(im1, ax=axs[1], label="kHz")
 
     if title_prefix:
-        fig.suptitle(title_prefix, y=1.02)
+        fig.suptitle(title_prefix, y=1.03)
 
+    # fig.tight_layout()
+    return fig, axs
+
+
+def _orthonormal_basis_from_B0(B0_hat: np.ndarray):
+    """Return (u1, u2, B0_hat) with u1,u2 ⟂ B0_hat."""
+    B0_hat = np.asarray(B0_hat, float)
+    B0_hat /= np.linalg.norm(B0_hat)
+
+    trial = np.array([1.0, 0.0, 0.0])
+    if abs(np.dot(trial, B0_hat)) > 0.9:
+        trial = np.array([0.0, 1.0, 0.0])
+
+    u1 = trial - np.dot(trial, B0_hat) * B0_hat
+    u1 /= np.linalg.norm(u1)
+    u2 = np.cross(B0_hat, u1)
+    u2 /= np.linalg.norm(u2)
+    return u1, u2, B0_hat
+
+
+def compute_full_angle_map_lab_spherical_for_site(
+    hyperfine_path: str,
+    orientation: tuple,
+    site_index: int,
+    Bmag_G: float,
+    n_theta: int = 91,
+    n_phi: int = 181,
+    ms: int = -1,
+    phi_deg_nv: float = 120.0,  # rotation used inside _build_U_from_orientation (NV gauge), NOT lab azimuth
+    phi_range: str = "0_360",
+):
+    thetas_deg = np.linspace(0.0, 180.0, n_theta)
+    phis_deg = (
+        np.linspace(0.0, 360.0, n_phi, endpoint=False)
+        if phi_range == "0_360"
+        else np.linspace(-180.0, 180.0, n_phi, endpoint=False)
+    )
+
+    th = np.deg2rad(thetas_deg)[:, None]
+    ph = np.deg2rad(phis_deg)[None, :]
+
+    # Absolute LAB spherical directions (independent of any measured B):
+    Bhat_grid = np.stack(
+        [
+            np.sin(th) * np.cos(ph),
+            np.sin(th) * np.sin(ph),
+            np.cos(th) * np.ones_like(ph),
+        ],
+        axis=2,
+    )  # (n_theta,n_phi,3)
+
+    Bmag_T = float(Bmag_G) * 1e-4
+
+    df_hf = read_hyperfine_table_safe(hyperfine_path).copy()
+    row = df_hf.iloc[int(site_index)]
+    A_file_Hz = (
+        np.array(
+            [
+                [row.Axx, row.Axy, row.Axz],
+                [row.Axy, row.Ayy, row.Ayz],
+                [row.Axz, row.Ayz, row.Azz],
+            ],
+            float,
+        )
+        * 1e6
+    )
+
+    f_minus = np.zeros((n_theta, n_phi), float)
+    f_plus = np.zeros((n_theta, n_phi), float)
+    kappa = np.zeros((n_theta, n_phi), float)
+
+    for i in range(n_theta):
+        for j in range(n_phi):
+            B_vec_T = Bmag_T * Bhat_grid[i, j, :]
+            kap, f_m, f_p, *_ = _kappa_and_fpm(
+                A_file_Hz, orientation, B_vec_T, ms=ms, phi_deg=phi_deg_nv
+            )
+            f_minus[i, j] = f_m / 1e3
+            f_plus[i, j] = f_p / 1e3
+            kappa[i, j] = kap
+
+    return dict(
+        basis="lab_spherical",
+        phi_range=phi_range,
+        thetas_deg=thetas_deg,
+        phis_deg=phis_deg,
+        Bhat_grid=Bhat_grid,
+        Bmag_G=float(Bmag_G),
+        f_minus_kHz=f_minus,
+        f_plus_kHz=f_plus,
+        kappa=kappa,
+    )
+
+
+def relative_theta_phi(B0_hat, Bhat_list, *, u1=None, u2=None):
+    """
+    Compute (theta,phi) in the SAME coordinate system as the map:
+      Bhat = cosθ B0_hat + sinθ (cosφ u1 + sinφ u2)
+
+    If u1/u2 are provided, we use them (this guarantees consistency with the grid).
+    """
+    B0_hat = np.asarray(B0_hat, float)
+    B0_hat /= np.linalg.norm(B0_hat)
+
+    if u1 is None or u2 is None:
+        # build (u1,u2) orthonormal basis around B0_hat
+        trial = np.array([1.0, 0.0, 0.0])
+        if abs(trial @ B0_hat) > 0.9:
+            trial = np.array([0.0, 1.0, 0.0])
+        u1 = trial - (trial @ B0_hat) * B0_hat
+        u1 /= np.linalg.norm(u1)
+        u2 = np.cross(B0_hat, u1)
+        u2 /= np.linalg.norm(u2)
+    else:
+        u1 = np.asarray(u1, float)
+        u1 /= np.linalg.norm(u1)
+        u2 = np.asarray(u2, float)
+        u2 /= np.linalg.norm(u2)
+
+    Bhat = np.asarray(Bhat_list, float)
+    if Bhat.ndim == 1:
+        Bhat = Bhat[None, :]
+
+    dots = np.clip(Bhat @ B0_hat, -1.0, 1.0)
+    theta = np.arccos(dots)
+
+    x = Bhat @ u1
+    y = Bhat @ u2
+    phi = np.arctan2(y, x)
+
+    return np.degrees(theta), np.degrees(phi)
+
+
+def wrap_phi_to_grid(phi_deg, phis_grid):
+    """
+    Wrap phi_deg into the same convention/range as phis_grid.
+    Supports grids like [0,360] or [-180,180].
+    """
+    phi = np.asarray(phi_deg, float)
+    phis = np.asarray(phis_grid, float)
+    pmin, pmax = float(np.nanmin(phis)), float(np.nanmax(phis))
+
+    # Case 1: grid looks like 0..360 (or 0..359.xx)
+    if pmin >= -1e-9 and pmax > 180:
+        return np.mod(phi, 360.0)
+
+    # Case 2: grid looks like -180..180
+    if pmin < 0 and pmax <= 180 + 1e-9:
+        return ((phi + 180.0) % 360.0) - 180.0
+
+    # Fallback: map phi into [pmin,pmax] by shifting
+    span = pmax - pmin
+    if span <= 0:
+        return phi
+    return pmin + np.mod(phi - pmin, span)
+
+
+def lab_theta_phi_from_Bhat(Bhat, phi_range="0_360"):
+    """
+    Absolute lab spherical angles:
+      theta = arccos(z) in [0,180]
+      phi   = atan2(y,x) in [-180,180] then mapped per phi_range
+    """
+    b = np.asarray(Bhat, float)
+    b /= np.linalg.norm(b)
+
+    theta = np.degrees(np.arccos(np.clip(b[2], -1.0, 1.0)))
+    phi = np.degrees(np.arctan2(b[1], b[0]))  # [-180,180]
+
+    if phi_range == "0_360":
+        phi = phi % 360.0
+    else:
+        phi = ((phi + 180.0) % 360.0) - 180.0
+
+    return theta, phi
+
+
+def plot_full_angle_map_theta_phi_lab(
+    angle_map: dict,
+    title_prefix: str = "",
+    contour: bool = True,
+    n_levels: int = 12,
+    add_kappa_contours: bool = False,
+    overlay_points=None,  # [{"label": "...", "Bhat": np.array([x,y,z])}, ...]
+):
+    assert angle_map.get("basis") == "lab_spherical"
+
+    thetas = np.asarray(angle_map["thetas_deg"], float)
+    phis = np.asarray(angle_map["phis_deg"], float)
+    f_minus = np.asarray(angle_map["f_minus_kHz"], float)
+    f_plus = np.asarray(angle_map["f_plus_kHz"], float)
+    kappa = np.asarray(angle_map.get("kappa", np.nan), float)
+    phi_range = angle_map.get("phi_range", "0_360")
+
+    PH, TH = np.meshgrid(phis, thetas)
+    extent = [phis.min(), phis.max(), thetas.min(), thetas.max()]
+
+    fig, axs = plt.subplots(
+        1, 2, figsize=(12, 4.5), sharey=True, constrained_layout=True
+    )
+
+    def _one(ax, Z, title):
+        im = ax.imshow(Z, origin="lower", aspect="auto", extent=extent)
+        if contour:
+            levels = np.linspace(np.nanmin(Z), np.nanmax(Z), n_levels)
+            cs = ax.contour(PH, TH, Z, levels=levels, colors="w", linewidths=0.7)
+            ax.clabel(cs, inline=True, fontsize=7, fmt="%.0f")
+        if add_kappa_contours:
+            ck = ax.contour(
+                PH,
+                TH,
+                kappa,
+                levels=np.linspace(0.1, 0.9, 9),
+                colors="m",
+                linewidths=0.6,
+                alpha=0.7,
+            )
+            ax.clabel(ck, inline=True, fontsize=6, fmt="κ=%.1f")
+        ax.set_title(title, fontsize=13)
+        ax.set_xlabel(r"lab azimuth $\phi$ [deg]")
+        ax.set_xlim(phis.min(), phis.max())
+        ax.set_ylim(thetas.min(), thetas.max())
+        return im
+
+    im0 = _one(axs[0], f_minus, r"$f_-(\theta,\phi)$  [kHz]")
+    im1 = _one(axs[1], f_plus, r"$f_+(\theta,\phi)$  [kHz]")
+    axs[0].set_ylabel(r"lab polar $\theta$ [deg] from +z")
+
+    # --- overlay experimental directions ---
+    if overlay_points:
+        th_list, ph_list, labels = [], [], []
+        for p in overlay_points:
+            b = np.asarray(p["Bhat"], float)
+            b /= np.linalg.norm(b)
+            th, ph = lab_theta_phi_from_Bhat(b, phi_range=phi_range)
+            th_list.append(th)
+            ph_list.append(ph)
+            labels.append(str(p.get("label", "")))
+
+        ph_arr = wrap_phi_to_grid(np.asarray(ph_list), phis)
+        th_arr = np.asarray(th_list)
+
+        for ax in axs:
+            ax.scatter(ph_arr, th_arr, marker="o", s=60, edgecolors="k", linewidths=0.6)
+            for ph, th, lab in zip(ph_arr, th_arr, labels):
+                ax.text(ph + 2, th + 2, lab, fontsize=8)
+
+    fig.colorbar(im0, ax=axs[0], label="kHz")
+    fig.colorbar(im1, ax=axs[1], label="kHz")
+
+    if title_prefix:
+        Bmag_G = None
+        sup = title_prefix + (f"  (|B|={Bmag_G:.1f} G)" if Bmag_G is not None else "")
+        fig.suptitle(sup, y=1.00, fontsize=13)
+
+    return fig, axs
+
+
+def lab_theta_phi_from_Bvec(Bvec, *, phi_range="0_360"):
+    """
+    Convert a LAB-frame vector Bvec to LAB spherical angles:
+      theta = arccos(z) in [0,180]
+      phi   = atan2(y,x) in (-180,180] then wrapped to match phi_range
+    """
+    Bvec = np.asarray(Bvec, float)
+    n = np.linalg.norm(Bvec)
+    if n == 0:
+        raise ValueError("Bvec has zero magnitude")
+    bhat = Bvec / n
+
+    theta = np.degrees(np.arccos(np.clip(bhat[2], -1.0, 1.0)))
+    phi = np.degrees(np.arctan2(bhat[1], bhat[0]))
+
+    if phi_range == "0_360":
+        phi = phi % 360.0
+    else:  # "-180_180"
+        phi = ((phi + 180.0) % 360.0) - 180.0
+
+    return float(theta), float(phi), bhat
+
+
+def nearest_phi_index(phi_grid_deg, phi_deg):
+    """
+    Works for either 0..360 or -180..180 grids.
+    Chooses nearest in circular sense.
+    """
+    ph = np.asarray(phi_grid_deg, float)
+    # circular difference in (-180,180]
+    d = (ph - float(phi_deg) + 180.0) % 360.0 - 180.0
+    return int(np.argmin(np.abs(d)))
+
+
+def validate_site72_direct_vs_labmap(
+    hyperfine_path,
+    orientation,
+    site_index,
+    Bvec_G,  # LAB vector in Gauss (or any units; direction matters)
+    Bmag_G,  # the magnitude you used in the map (must match your direct sim)
+    *,
+    ms=-1,
+    phi_deg_nv=120.0,  # IMPORTANT: must match what you used in fitting/catalog
+    phi_range="0_360",
+    n_theta=181,
+    n_phi=360,
+):
+    # --- load A tensor for this site ---
+    A_file_Hz, _ = load_A_file_Hz_by_site_index(hyperfine_path, site_index)
+
+    # --- DIRECT at this exact B direction + magnitude ---
+    _, _, bhat = lab_theta_phi_from_Bvec(Bvec_G, phi_range=phi_range)
+    B_T = (float(Bmag_G) * 1e-4) * bhat
+
+    kap0, f_m0, f_p0, *_ = _kappa_and_fpm(
+        A_file_Hz, orientation, B_T, ms=ms, phi_deg=phi_deg_nv
+    )
+    fm0_kHz = f_m0 / 1e3
+    fp0_kHz = f_p0 / 1e3
+
+    # --- MAP over all lab directions at fixed |B| ---
+    amap = compute_full_angle_map_lab_spherical_for_site(
+        hyperfine_path=hyperfine_path,
+        orientation=orientation,
+        site_index=site_index,
+        Bmag_G=Bmag_G,
+        n_theta=n_theta,
+        n_phi=n_phi,
+        ms=ms,
+        phi_deg_nv=phi_deg_nv,
+        phi_range=phi_range,
+    )
+
+    # locate this B direction in (theta,phi)
+    theta_deg, phi_deg, _ = lab_theta_phi_from_Bvec(Bvec_G, phi_range=phi_range)
+
+    it = int(np.argmin(np.abs(amap["thetas_deg"] - theta_deg)))
+    ip = nearest_phi_index(amap["phis_deg"], phi_deg)
+
+    fm1_kHz = float(amap["f_minus_kHz"][it, ip])
+    fp1_kHz = float(amap["f_plus_kHz"][it, ip])
+    kap1 = float(amap["kappa"][it, ip])
+
+    print(f"=== site (ori={orientation}, sid={site_index}) ===")
+    print(
+        f"target angles: theta={theta_deg:.3f} deg, phi={phi_deg:.3f} deg (grid idx it={it}, ip={ip})"
+    )
+    print(f"[direct]  f-={fm0_kHz:.9f} kHz, f+={fp0_kHz:.9f} kHz, kappa={kap0:.12f}")
+    print(f"[map]     f-={fm1_kHz:.9f} kHz, f+={fp1_kHz:.9f} kHz, kappa={kap1:.12f}")
+    print(
+        f"Δ(direct-map): Δf-={fm0_kHz-fm1_kHz:.3e} kHz, Δf+={fp0_kHz-fp1_kHz:.3e} kHz, Δκ={kap0-kap1:.3e}"
+    )
+
+
+def load_A_file_Hz_by_site_index(hyperfine_path: str, site_index: int):
+    df_hf = read_hyperfine_table_safe(hyperfine_path).copy()
+    row = df_hf.iloc[int(site_index)]
+    A_file_Hz = (
+        np.array(
+            [
+                [row.Axx, row.Axy, row.Axz],
+                [row.Axy, row.Ayy, row.Ayz],
+                [row.Axz, row.Ayz, row.Azz],
+            ],
+            float,
+        )
+        * 1e6
+    )
+    return A_file_Hz, row
+
+
+def simulate_fpm_vs_B_for_site_all_fields(
+    hyperfine_path: str,
+    site_key: tuple,  # (orientation_tuple, site_index)
+    B_by_field: dict,  # {field_label: B_vec_G}
+    Bmin_G: float = 20,
+    Bmax_G: float = 80,
+    n_B: int = 121,
+    ms: int = -1,
+    phi_deg: float = 0.0,
+):
+    ori, sid = site_key
+    ori = tuple(ori)
+    sid = int(sid)
+
+    A_file_Hz, _ = load_A_file_Hz_by_site_index(hyperfine_path, sid)
+
+    B_grid_G = np.linspace(Bmin_G, Bmax_G, n_B)
+
+    recs = []
+    for lab, Bvec_G in B_by_field.items():
+        Bvec_G = np.asarray(Bvec_G, float)
+        Bhat = Bvec_G / np.linalg.norm(Bvec_G)
+
+        for Bg in B_grid_G:
+            B_T = (Bg * 1e-4) * Bhat
+            kappa, f_minus, f_plus, *_ = _kappa_and_fpm(
+                A_file_Hz, ori, B_T, ms=ms, phi_deg=phi_deg
+            )
+            recs.append(
+                dict(
+                    field_label=lab,
+                    B_G=float(Bg),
+                    f_minus_kHz=float(f_minus / 1e3),
+                    f_plus_kHz=float(f_plus / 1e3),
+                    kappa=float(kappa),
+                )
+            )
+    return pd.DataFrame(recs)
+
+
+def plot_site_sim_overlay(site_key, sim_df, B_by_field, title_extra=""):
+    ori, sid = site_key
+    fig, axs = plt.subplots(1, 2, figsize=(11, 4), sharex=True)
+
+    for lab, g in sim_df.groupby("field_label"):
+        g = g.sort_values("B_G")
+        axs[0].plot(g["B_G"], g["f_minus_kHz"], label=lab)
+        axs[1].plot(g["B_G"], g["f_plus_kHz"], label=lab)
+
+        # mark the actual measured magnitude for this field
+        Bmag = float(np.linalg.norm(B_by_field[lab]))
+        # nearest simulated point
+        axs[0].axvline(Bmag, alpha=0.2)
+        axs[1].axvline(Bmag, alpha=0.2)
+
+    axs[0].set_title(r"Simulated $f_-(|B|)$")
+    axs[1].set_title(r"Simulated $f_+(|B|)$")
+    for ax in axs:
+        ax.set_xlabel("|B| [G]")
+        ax.grid(True, alpha=0.3)
+    axs[0].set_ylabel("kHz")
+    axs[1].legend()
+
+    fig.suptitle(f"Site {sid}, ori={ori} {title_extra}", y=1.02)
     fig.tight_layout()
     return fig, axs
 
@@ -453,7 +991,7 @@ def lines_from_recs(
         kappa_val = float(r.get(kappa_key, 0.0))
         for tag, wkey in (
             ("f_minus_Hz", per_line_key_minus),
-            ("f_plus_Hz",  per_line_key_plus),
+            ("f_plus_Hz", per_line_key_plus),
         ):
             fHz = float(r[tag])
             if not (lo <= fHz <= hi):
@@ -475,7 +1013,6 @@ def lines_from_recs(
         return np.array([]), np.array([]), []
     order = np.argsort(F)
     return np.asarray(F)[order], np.asarray(W)[order], [M[i] for i in order]
-
 
 
 # ---------- 3A) Plot discrete sticks with explicit κ labels ----------
@@ -532,13 +1069,17 @@ def plot_sticks_kappa(
             plt.vlines(fk, 0.0, wk, linewidth=0.6)
     else:
         # Extract tags and classify f- vs f+ in a robust way
-        tags_raw = [m_i[2] for m_i in meta]  # third entry is tag ("f_minus_Hz" / "f_plus_Hz")
+        tags_raw = [
+            m_i[2] for m_i in meta
+        ]  # third entry is tag ("f_minus_Hz" / "f_plus_Hz")
         tags_str = [str(t).lower() for t in tags_raw]
 
         is_minus = np.array(["minus" in t for t in tags_str], dtype=bool)
-        is_plus  = np.array(["plus"  in t for t in tags_str], dtype=bool)
+        is_plus = np.array(["plus" in t for t in tags_str], dtype=bool)
 
-        print(f"[plot_sticks_kappa] N_minus={is_minus.sum()}, N_plus={is_plus.sum()}, N_total={len(tags_str)}")
+        print(
+            f"[plot_sticks_kappa] N_minus={is_minus.sum()}, N_plus={is_plus.sum()}, N_total={len(tags_str)}"
+        )
 
         # f− (difference branch)
         if np.any(is_minus):
@@ -564,7 +1105,9 @@ def plot_sticks_kappa(
 
         # If tags couldn't be interpreted, fall back
         if (not np.any(is_minus)) and (not np.any(is_plus)):
-            print("[plot_sticks_kappa] WARNING: could not identify f- vs f+ from meta tags; using single color.")
+            print(
+                "[plot_sticks_kappa] WARNING: could not identify f- vs f+ from meta tags; using single color."
+            )
             for fk, wk in zip(f, w):
                 plt.vlines(fk, 0.0, wk, linewidth=0.6)
         else:
@@ -602,7 +1145,7 @@ def convolved_expected_from_recs(
     """
     Build a smooth expected spectrum by convolving each discrete line with a kernel.
     Branch-resolved: f_- and f_+ are plotted in different colors.
-    
+
     If larmor_kHz is not None, draw a vertical line at the nuclear Larmor frequency ν_I.
 
     weight_mode:
@@ -689,11 +1232,11 @@ def convolved_expected_from_recs(
         return f, spec
 
     # ---------- Branch-resolved case: split into f- and f+ ----------
-    tags_raw = [m_i[2] for m_i in meta]      # ("f_minus_Hz" / "f_plus_Hz")
+    tags_raw = [m_i[2] for m_i in meta]  # ("f_minus_Hz" / "f_plus_Hz")
     tags_str = [str(t).lower() for t in tags_raw]
 
     is_minus = np.array(["minus" in t for t in tags_str], dtype=bool)
-    is_plus  = np.array(["plus"  in t for t in tags_str], dtype=bool)
+    is_plus = np.array(["plus" in t for t in tags_str], dtype=bool)
     is_other = ~(is_minus | is_plus)
 
     # Helper: convolve for a specific branch
@@ -714,14 +1257,14 @@ def convolved_expected_from_recs(
         return spec_branch
 
     freqs_minus = freqs_kHz[is_minus]
-    w_minus     = w[is_minus]
-    freqs_plus  = freqs_kHz[is_plus]
-    w_plus      = w[is_plus]
+    w_minus = w[is_minus]
+    freqs_plus = freqs_kHz[is_plus]
+    w_plus = w[is_plus]
     freqs_other = freqs_kHz[is_other]
-    w_other     = w[is_other]
+    w_other = w[is_other]
 
     spec_minus = _convolve_branch(freqs_minus, w_minus)
-    spec_plus  = _convolve_branch(freqs_plus,  w_plus)
+    spec_plus = _convolve_branch(freqs_plus, w_plus)
     spec_other = _convolve_branch(freqs_other, w_other)
     spec_total = spec_minus + spec_plus + spec_other
 
@@ -747,7 +1290,7 @@ def convolved_expected_from_recs(
     if np.any(is_minus):
         ax.plot(f, spec_minus, lw=1.4, label=r"$f_{-}$")
     if np.any(is_plus):
-        ax.plot(f, spec_plus,  lw=1.4, label=r"$f_{+}$")
+        ax.plot(f, spec_plus, lw=1.4, label=r"$f_{+}$")
     if np.any(is_other):
         ax.plot(f, spec_other, lw=1.0, label="other lines", linestyle=":")
 
@@ -792,11 +1335,11 @@ def pair_axis_from_recs(
     *,
     fmin_kHz: float = 0.0,
     fmax_kHz: float = np.inf,
-    axis: str = "f_mid",           # {"f_mid", "delta_f"}
-    weight_mode: str = "kappa",    # {"kappa", "per_pair", "unit"}
+    axis: str = "f_mid",  # {"f_mid", "delta_f"}
+    weight_mode: str = "kappa",  # {"kappa", "per_pair", "unit"}
     kappa_key: str = "kappa",
     per_line_key_minus: str = "line_w_minus",
-    per_line_key_plus: str  = "line_w_plus",
+    per_line_key_plus: str = "line_w_plus",
     per_pair_scale: float = 1.0,
 ) -> Tuple[np.ndarray, np.ndarray, List[Tuple]]:
     """
@@ -838,7 +1381,7 @@ def pair_axis_from_recs(
         if allowed is not None and ori not in allowed:
             continue
 
-        f_plus_Hz  = float(r["f_plus_Hz"])
+        f_plus_Hz = float(r["f_plus_Hz"])
         f_minus_Hz = float(r["f_minus_Hz"])
 
         # Require both branches in the band (like your pair extractor)
@@ -846,11 +1389,11 @@ def pair_axis_from_recs(
             continue
 
         # Convert to kHz
-        f_plus_kHz  = f_plus_Hz  * 1e-3
+        f_plus_kHz = f_plus_Hz * 1e-3
         f_minus_kHz = f_minus_Hz * 1e-3
 
         # Pair axes
-        f_mid_kHz   = 0.5 * (f_plus_kHz + f_minus_kHz)
+        f_mid_kHz = 0.5 * (f_plus_kHz + f_minus_kHz)
         delta_f_kHz = 0.5 * abs(f_plus_kHz - f_minus_kHz)
 
         if axis == "f_mid":
@@ -890,7 +1433,7 @@ def plot_pair_spectrum(
     freq_axis_kHz: np.ndarray,
     weights: Optional[np.ndarray] = None,
     *,
-    axis: str = "f_mid",           # {"f_mid", "delta_f"}
+    axis: str = "f_mid",  # {"f_mid", "delta_f"}
     title: Optional[str] = None,
     min_weight: float = 0.0,
 ):
@@ -936,6 +1479,7 @@ def plot_pair_spectrum(
     plt.grid(True, alpha=0.25)
     plt.tight_layout()
     plt.show()
+
 
 def expected_sticks_with_multiplicity_pair(
     records: List[Dict],
@@ -1046,16 +1590,6 @@ def expected_sticks_with_multiplicity_pair(
         return np.array([]), np.array([]), []
     order = np.argsort(F)
     return np.asarray(F)[order], np.asarray(W)[order], [TAGS[k] for k in order]
-
-
-import numpy as np
-from itertools import combinations, product
-from typing import List, Dict, Tuple, Optional
-
-
-import numpy as np
-from itertools import combinations, product
-from typing import List, Dict, Tuple, Optional
 
 
 def expected_sticks_general(
@@ -1377,7 +1911,6 @@ def convolved_exp_spectrum(
     return f, spec, fig, ax
 
 
-
 # ---------- small helper used by your panel plot ----------
 def _mask_huge_errors(y, yerr, *, rel_cap=1.0, pct_cap=99):
     """
@@ -1388,7 +1921,7 @@ def _mask_huge_errors(y, yerr, *, rel_cap=1.0, pct_cap=99):
     if yerr is None:
         return None
 
-    y    = np.asarray(y, float)
+    y = np.asarray(y, float)
     yerr = np.asarray(yerr, float).copy()
 
     bad = ~np.isfinite(yerr)
@@ -1397,7 +1930,7 @@ def _mask_huge_errors(y, yerr, *, rel_cap=1.0, pct_cap=99):
     finite = np.isfinite(y) & np.isfinite(yerr)
     if np.any(finite):
         # 1) relative cap
-        bad |= (yerr > rel_cap * np.maximum(1e-12, np.abs(y)))
+        bad |= yerr > rel_cap * np.maximum(1e-12, np.abs(y))
 
         # 2) percentile cap – make percentile safe
         pct = float(pct_cap)
@@ -1408,11 +1941,12 @@ def _mask_huge_errors(y, yerr, *, rel_cap=1.0, pct_cap=99):
         tail_mask = ~bad & finite
         if np.any(tail_mask):
             thr = np.nanpercentile(yerr[tail_mask], pct)
-            bad |= (yerr > thr)
+            bad |= yerr > thr
 
     # zero out bad errors
     yerr[bad] = 0.0
     return yerr
+
 
 def plot_sorted_branches(
     f0_kHz,
@@ -1445,9 +1979,7 @@ def plot_sorted_branches(
         x0 = np.arange(1, order0.size + 1)
         y0 = f0_kHz[order0]
         y0err_raw = sf0_kHz[order0] if sf0_kHz is not None else None
-        y0err = _mask_huge_errors(
-            y0, y0err_raw, rel_cap=A_rel_cap, pct_cap=A_pct_cap
-        )
+        y0err = _mask_huge_errors(y0, y0err_raw, rel_cap=A_rel_cap, pct_cap=A_pct_cap)
     else:
         order0 = np.array([], int)
         x0 = y0 = y0err = None
@@ -1460,9 +1992,7 @@ def plot_sorted_branches(
         x1 = np.arange(1, order1.size + 1)
         y1 = f1_kHz[order1]
         y1err_raw = sf1_kHz[order1] if sf1_kHz is not None else None
-        y1err = _mask_huge_errors(
-            y1, y1err_raw, rel_cap=A_rel_cap, pct_cap=A_pct_cap
-        )
+        y1err = _mask_huge_errors(y1, y1err_raw, rel_cap=A_rel_cap, pct_cap=A_pct_cap)
     else:
         order1 = np.array([], int)
         x1 = y1 = y1err = None
@@ -1472,18 +2002,28 @@ def plot_sorted_branches(
 
     if x0 is not None:
         ax.errorbar(
-            x0, y0, yerr=y0err,
-            fmt="o", ms=1, lw=0.8,
-            capsize=1, elinewidth=0.8,
+            x0,
+            y0,
+            yerr=y0err,
+            fmt="o",
+            ms=1,
+            lw=0.8,
+            capsize=1,
+            elinewidth=0.8,
             alpha=0.95,
             label=label0,
         )
 
     if x1 is not None:
         ax.errorbar(
-            x1, y1, yerr=y1err,
-            fmt="s", ms=1, lw=0.8,
-            capsize=1, elinewidth=0.8,
+            x1,
+            y1,
+            yerr=y1err,
+            fmt="s",
+            ms=1,
+            lw=0.8,
+            capsize=1,
+            elinewidth=0.8,
             alpha=0.95,
             label=label1,
         )
@@ -1500,17 +2040,14 @@ def plot_sorted_branches(
 
     note0 = f"Excluded f0: {(~valid0).sum()}"
     note1 = f"Excluded f1: {(~valid1).sum()}"
-    ax.text(0.01, 0.97, note0, transform=ax.transAxes,
-            ha="left", va="top", fontsize=8)
-    ax.text(0.01, 0.92, note1, transform=ax.transAxes,
-            ha="left", va="top", fontsize=8)
+    ax.text(0.01, 0.97, note0, transform=ax.transAxes, ha="left", va="top", fontsize=8)
+    ax.text(0.01, 0.92, note1, transform=ax.transAxes, ha="left", va="top", fontsize=8)
 
     ax.legend(framealpha=0.85)
     fig.tight_layout()
     plt.show()
 
     return fig, ax
-
 
 
 def plot_theoretical_kappa_vs_distance(
@@ -1535,14 +2072,14 @@ def plot_theoretical_kappa_vs_distance(
         ori_label = "all orientations"
 
     dist = []
-    kap  = []
+    kap = []
 
     for r in recs:
         if ori_set is not None and tuple(r["orientation"]) not in ori_set:
             continue
 
         dA = float(r.get("distance_A", np.nan))
-        k  = float(r.get("kappa", np.nan))
+        k = float(r.get("kappa", np.nan))
 
         if not (np.isfinite(dA) and np.isfinite(k)):
             continue
@@ -1554,7 +2091,7 @@ def plot_theoretical_kappa_vs_distance(
         kap.append(k)
 
     dist = np.asarray(dist, float)
-    kap  = np.asarray(kap, float)
+    kap = np.asarray(kap, float)
 
     if dist.size == 0:
         raise ValueError("No finite (distance_A, kappa) pairs found in catalog.")
@@ -1569,8 +2106,6 @@ def plot_theoretical_kappa_vs_distance(
     ax0.set_title(rf"$\kappa$ vs distance ({ori_label})")
     ax0.grid(True, alpha=0.3)
 
-
-
     # Panel 2: κ sorted (descending) vs rank
     kap_sorted = np.sort(kap)[::-1]
     ranks = np.arange(1, kap_sorted.size + 1)
@@ -1580,22 +2115,25 @@ def plot_theoretical_kappa_vs_distance(
     ax1.set_ylabel(r"Theoretical $\kappa$")
     ax1.set_title(r"$\kappa$ spectrum (descending)")
     ax1.grid(True, alpha=0.3)
-        # --- add full κ definition + small-coupling approximation on the left panel ---
+    # --- add full κ definition + small-coupling approximation on the left panel ---
     kappa_text = (
         r"$\kappa = \frac{|\boldsymbol{\Omega}_0 \times \boldsymbol{\Omega}_m|^2}"
         r"{|\boldsymbol{\Omega}_0|^2\,|\boldsymbol{\Omega}_m|^2}"
-        r" = \sin^2\theta$" "\n"
+        r" = \sin^2\theta$"
+        "\n"
         r"$\boldsymbol{\Omega}_0 = \omega_I \hat{\mathbf{B}},\ "
-        r"\boldsymbol{\Omega}_m = \boldsymbol{\Omega}_0 + m_s \mathbf{A}$" "\n"
+        r"\boldsymbol{\Omega}_m = \boldsymbol{\Omega}_0 + m_s \mathbf{A}$"
+        "\n"
         r"Small-coupling ($|A|\ll\omega_I$): "
         r"$\kappa \approx (A_{\perp}/\omega_I)^2$"
     )
 
     # put the box on panel 2 (ax1)
     ax1.text(
-        0.97, 0.8,
+        0.97,
+        0.8,
         kappa_text,
-        transform=ax1.transAxes,   # <--- changed from ax0 to ax1
+        transform=ax1.transAxes,  # <--- changed from ax0 to ax1
         ha="right",
         va="top",
         fontsize=13,
@@ -1623,7 +2161,9 @@ if __name__ == "__main__":
         read_hf_table_fn=None,
     )
     sys.exit()
-    recs_all = load_catalog("analysis/spin_echo_work/essem_freq_kappa_catalog_22A_49G.json")
+    recs_all = load_catalog(
+        "analysis/spin_echo_work/essem_freq_kappa_catalog_22A_49G.json"
+    )
 
     # Filter by orientation & frequency band (or set orientations=None for all)
     # ori_sel = [(1, 1, 1), (1, 1, -1), (1, -1, 1), (-1, 1, 1)]
@@ -1649,21 +2189,21 @@ if __name__ == "__main__":
     # A) Discrete sticks using *per-line* weights (p_occ·κ/4 stored per f±)
     freqs_kHz, weights, meta = lines_from_recs(
         recs,
-        orientations=ori_sel,   # or None
+        orientations=ori_sel,  # or None
         fmin_kHz=1.0,
         fmax_kHz=10000.0,
-        weight_mode="kappa",                 # or "per_line", "unit"
+        weight_mode="kappa",  # or "per_line", "unit"
     )
 
     plot_sticks_kappa(
         freqs_kHz,
         weights,
-        meta=meta,                           # <-- IMPORTANT
+        meta=meta,  # <-- IMPORTANT
         title=f"ESEEM discrete lines {ori_sel}",
         weight_caption="κ (dimensionless)",
         min_weight=0.0,
     )
-    nu_I_kHz = 53.3 
+    nu_I_kHz = 53.3
     # # B) Smooth spectrum with explicit kernel/weight labels
     f, spec = convolved_expected_from_recs(
         recs,
@@ -1675,7 +2215,6 @@ if __name__ == "__main__":
         weight_mode="kappa",
         larmor_kHz=nu_I_kHz,
     )
-
 
     plt.show(block=True)
     sys.exit()
@@ -1695,12 +2234,12 @@ if __name__ == "__main__":
 
     # 3) Extract f_- and f_+ separately, in kHz
     f_minus_kHz = np.array([float(r["f_minus_Hz"]) * 1e-3 for r in recs])
-    f_plus_kHz  = np.array([float(r["f_plus_Hz"])  * 1e-3 for r in recs])
+    f_plus_kHz = np.array([float(r["f_plus_Hz"]) * 1e-3 for r in recs])
 
     # (optional) also grab site indices / orientations if you want to track them
-    site_idx    = np.array([int(r["site_index"]) for r in recs])
-    oris        = np.array([tuple(r["orientation"]) for r in recs])
-    kappa       = np.array([float(r.get("kappa", 0.0)) for r in recs])
+    site_idx = np.array([int(r["site_index"]) for r in recs])
+    oris = np.array([tuple(r["orientation"]) for r in recs])
+    kappa = np.array([float(r.get("kappa", 0.0)) for r in recs])
 
     # fig_th, ax_th = plot_sorted_branches(
     #     f_minus_kHz,
