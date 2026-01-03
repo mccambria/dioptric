@@ -811,6 +811,37 @@ def do_two_block_hahn_correlation(nv_list):
     for _ in range(2):
         two_block_hahn_correlation.main(nv_list, num_steps, num_reps, num_runs, tau, lag_taus)
 
+def do_two_block_hahn_correlation_dm(nv_list):
+    tau = 15e3  # your revival tau (ns)
+    # tau = 44  # your revival tau (ns)
+
+    # def lags_log_div4_ns(tmin_ns, tmax_ns, n):
+    #     # logspace, then round to nearest multiple of 4 ns
+    #     l = np.logspace(np.log10(tmin_ns), np.log10(tmax_ns), n)
+    #     l = np.unique((np.round(l / 4) * 4).astype(int))
+    #     l = l[(l >= tmin_ns) & (l <= tmax_ns)]
+    #     return l.tolist() 
+
+    lags_A = widefield.generate_divisible_by_4(int(0.2e3), int(20e3), 66)
+
+    # Bands
+    # lags_A = lags_log_div4_ns(16, int(50e3),  45)
+    # lags_B = lags_log_div4_ns(int(50e3), int(50e6), 35)
+    # lags_C = lags_log_div4_ns(int(50e6), int(2e9), 25)
+    # lags_A = lags_log_div4_ns(int(0.2e3), int(200e3), 45)  # 0.25–200 us
+    # lags_B = lags_log_div4_ns(int(200e3), int(20e6), 35)    # 0.2 ms–20 ms
+
+    num_reps = 4
+
+    # Fast band: cheap waits
+    two_block_hahn_correlation.main(nv_list, len(lags_A), num_reps, num_runs=2000, tau=tau, lag_taus=lags_A)
+
+    # Mid band
+    # two_block_hahn_correlation.main(nv_list, len(lags_B), num_reps, num_runs=200, tau=tau, lag_taus=lags_B)
+
+    # Slow band: waits dominate
+    # two_block_hahn_correlation.main(nv_list, len(lags_C), num_reps, num_runs=30,  tau=tau, lag_taus=lags_C)
+
 def do_spin_echo_1(nv_lis):
     min_tau = 200  # ns
     # max_tau = 20e3  # fallback
@@ -1539,7 +1570,7 @@ if __name__ == "__main__":
         # )
 
         do_compensate_for_drift(nv_sig)
-        do_widefield_image_sample(nv_sig, 50)
+        # do_widefield_image_sample(nv_sig, 50)
         # do_widefield_image_sample(nv_sig, 400)
 
         # for nv in nv_list:
@@ -1644,7 +1675,8 @@ if __name__ == "__main__":
         # do_check_readout_fidelity(nv_list)
         # do_charge_quantum_jump(nv_list)
         # do_ac_stark(nv_list)
-        do_dm_xy_iq_lockin(nv_list)
+        # do_dm_xy_iq_lockin(nv_list)
+        do_two_block_hahn_correlation_dm(nv_list)
 
         # do_two_block_hahn_spatial_correlation(nv_list)
 

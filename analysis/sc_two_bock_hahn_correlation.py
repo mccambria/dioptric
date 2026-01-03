@@ -264,8 +264,6 @@ def plot_each_nv_fit(T_ns, C, C_ste, fit, pause=0.0, save_dir=None):
 # -----------------------------
 # Main
 # -----------------------------
-
-
 def _auto_to_us(T_axis):
     """
     Convert provided time axis to microseconds.
@@ -277,7 +275,7 @@ def _auto_to_us(T_axis):
     return T_axis  # assume already µs
 
 
-def plot_spin_echo_all(nv_list, taus, norm_counts, norm_counts_ste):
+def plot_spin_echo_all(nv_list, taus, norm_counts, norm_counts_ste, ori = "All", params ="" ):
     fig, ax = plt.subplots()
     # Scatter plot with error bars
     # print(norm_counts.shape)
@@ -379,7 +377,7 @@ def plot_spin_echo_all(nv_list, taus, norm_counts, norm_counts_ste):
             ax = axes[bottom_row_idx]
             tick_positions = np.linspace(min(taus) + 2, max(taus) - 2, 6)
             ax.set_xticks(tick_positions)
-            # ax.set_xscale("log")
+            ax.set_xscale("log")
             ax.set_xticklabels(
                 [f"{tick:.2f}" for tick in tick_positions], rotation=45, fontsize=9
             )
@@ -396,18 +394,467 @@ def plot_spin_echo_all(nv_list, taus, norm_counts, norm_counts_ste):
     seq_name = "Two-block Hahn Correlation"
     pulse_seq = "π/2 – τ – π – τ – π/2 – T_lag – π/2 – τ – π – τ – π/2"
     seq_variant = "Quadrature readout"
-    orientation = "217 MHz NV class"
-    params = "τ = 44ns, T_lag ~ [16 ns – 2 µs]"
+    # params = "τ = 44ns, T_lag ~ [16 ns – 2 µs]"
 
     fig.suptitle(
         f"{seq_name}({pulse_seq})\n"
-        f"{seq_variant} – {orientation}({params})",
+        f"{seq_variant} – {ori}({params})",
         fontsize=14,
         y=0.995
     )
     # fig.suptitle(f"XY8 {all_file_ids_str}", fontsize=12, y=0.99)
     fig.tight_layout(pad=0.2, rect=[0.02, 0.01, 0.99, 0.99])
 
+
+
+import numpy as np
+import matplotlib.pyplot as plt
+
+def is_uniform_axis(x, rtol=1e-2):
+    x = np.asarray(x, float)
+    dx = np.diff(x)
+    return np.std(dx) / np.mean(dx) < rtol
+
+def detrend_rows(Y):
+    Y = np.asarray(Y, float)
+    return Y - np.mean(Y, axis=1, keepdims=True)
+
+def fft_psd_uniform(T_us, Y):
+    """
+    T_us: (M,) uniform spacing
+    Y: (N,M)
+    Returns: f_Hz (K,), psd_mean (K,), psd_all (N,K)
+    """
+    T_s = T_us * 1e-6
+    dt = np.median(np.diff(T_s))
+    Yd = detrend_rows(Y)
+    w = np.hanning(Yd.shape[1])[None, :]          # window
+    Yw = Yd * w
+
+    F = np.fft.rfft(Yw, axis=1)
+    f_Hz = np.fft.rfftfreq(Yw.shape[1], d=dt)
+
+    # window-normalized "power" (good enough for peak finding)
+    psd = (np.abs(F) ** 2) / np.sum(w**2)
+    psd_mean = np.median(psd, axis=0)
+    return f_Hz, psd_mean, psd
+
+def lomb_scargle_psd(T_us, Y, fmin_Hz=1.0, fmax_Hz=5e6, nfreq=4000):
+    """
+    Lomb–Scargle for uneven sampling. Uses a simple implementation.
+    Returns: f_Hz (nfreq,), p_mean (nfreq,), p_all (N,nfreq)
+    """
+    from scipy.signal import lombscargle
+
+    t = np.asarray(T_us) * 1e-6
+    Yd = detrend_rows(Y)
+
+    f_Hz = np.linspace(fmin_Hz, fmax_Hz, nfreq)
+    w = 2*np.pi*f_Hz
+
+    p_all = np.zeros((Yd.shape[0], nfreq))
+    for i in range(Yd.shape[0]):
+        p_all[i] = lombscargle(t, Yd[i], w, precenter=False, normalize=True)
+
+    p_mean = np.median(p_all, axis=0)
+    return f_Hz, p_mean, p_all
+
+def plot_spectrum(f_Hz, p_mean, title="Spectrum"):
+    fig, ax = plt.subplots()
+    ax.plot(f_Hz/1e3, p_mean)
+    ax.set_xlabel("Frequency (kHz)")
+    ax.set_ylabel("Power (arb.)")
+    ax.set_title(title)
+    # ax.set_xscale("log")
+    ax.grid(True, which="both", ls="--", lw=0.5)
+    return fig
+
+def demodulate_at_f0(T_us, Y, f0_Hz):
+    """
+    Returns per-NV complex amplitude z_i = <y_i * exp(-i 2π f0 t)>
+    """
+    t = np.asarray(T_us) * 1e-6
+    Yd = detrend_rows(Y)
+
+    ref = np.exp(-1j * 2*np.pi*f0_Hz * t)[None, :]
+    z = np.mean(Yd * ref, axis=1)   # (N,)
+    amp = np.abs(z)
+    phase = np.angle(z)            # [-pi, pi]
+    return z, amp, phase
+
+
+def pairwise_phase_corr_vs_r(xy_um, phase, nbins=25):
+    xy_um = np.asarray(xy_um, float)   # (N,2)
+    N = len(phase)
+
+    # pairwise distances + phase correlation
+    d_list, c_list = [], []
+    for i in range(N):
+        for j in range(i+1, N):
+            d = np.linalg.norm(xy_um[i]-xy_um[j])
+            c = np.cos(phase[i]-phase[j])
+            d_list.append(d); c_list.append(c)
+
+    d_list = np.asarray(d_list); c_list = np.asarray(c_list)
+    bins = np.linspace(d_list.min(), d_list.max(), nbins+1)
+    centers = 0.5*(bins[:-1]+bins[1:])
+    g = np.full(nbins, np.nan)
+    for k in range(nbins):
+        m = (d_list>=bins[k]) & (d_list<bins[k+1])
+        if np.any(m):
+            g[k] = np.mean(c_list[m])
+    return centers, g
+
+def plot_g_r(r_um, g):
+    fig, ax = plt.subplots()
+    ax.plot(r_um, g, "o-")
+    ax.set_xlabel("Distance r (µm)")
+    ax.set_ylabel(r"$\langle \cos(\Delta\phi)\rangle$")
+    ax.set_title("Phase-correlation vs distance at f0")
+    ax.grid(True, ls="--", lw=0.5)
+    return fig
+
+
+import numpy as np
+import matplotlib.pyplot as plt
+from scipy.optimize import least_squares
+from scipy.signal import lombscargle
+
+# -----------------------------
+# Spectrum-based init (works for uneven sampling)
+# -----------------------------
+def lomb_init_freqs(T_us, y, K=1, fmin_Hz=1e3, fmax_Hz=None, nfreq=8000):
+    """
+    Return K peak frequencies (Hz) from Lomb–Scargle of a 1D trace y(T).
+    Handles non-uniform T.
+    """
+    t = np.asarray(T_us, float) * 1e-6
+    yy = np.asarray(y, float) - np.mean(y)
+
+    if fmax_Hz is None:
+        ts = np.sort(t)
+        dt_min = np.min(np.diff(ts))
+        fmax_Hz = 0.5 / dt_min  # rough upper cap
+
+    f = np.linspace(fmin_Hz, fmax_Hz, nfreq)
+    w = 2 * np.pi * f
+    p = lombscargle(t, yy, w, precenter=False, normalize=True)
+
+    # pick separated top-K peaks
+    idx = np.argsort(p)[::-1]
+    picked = []
+    for j in idx:
+        fj = f[j]
+        if all(abs(fj - fk) > 0.05 * fk for fk in picked):  # 5% separation
+            picked.append(fj)
+        if len(picked) == K:
+            break
+    if len(picked) < K:
+        picked += [picked[-1] if picked else (fmin_Hz + 1.0)] * (K - len(picked))
+    return np.array(picked, float)
+
+
+# -----------------------------
+# Per-NV decaying cosine model fits
+# -----------------------------
+def fit_one_nv(T_us, y, yerr=None, K=1, init_freqs_Hz=None, fmin_Hz=1e3, fmax_Hz=None):
+    """
+    Fit one NV trace with K=1 or K=2 decaying cosines sharing Tc.
+    Uses seconds+Hz internally (avoids ns/us mixups).
+    Returns dict with fitted params + diagnostics.
+    """
+    T_us = np.asarray(T_us, float)
+    t = T_us * 1e-6
+    y = np.asarray(y, float)
+
+    # weights
+    if yerr is None:
+        sigma = np.ones_like(y)
+    else:
+        sigma = np.asarray(yerr, float)
+        sigma = np.where(np.isfinite(sigma) & (sigma > 0), sigma, np.nanmedian(sigma[sigma > 0]))
+        sigma = np.maximum(sigma, 1e-12)
+
+    # initial guesses
+    C0_0 = float(np.mean(y))
+    ptp = float(np.max(y) - np.min(y) + 1e-12)
+    A0 = 0.5 * ptp
+    Tc0 = 0.5 * (t.max() - t.min())
+    Tc0 = max(Tc0, 1e-6)
+
+    if init_freqs_Hz is None:
+        init_freqs_Hz = lomb_init_freqs(T_us, y, K=K, fmin_Hz=fmin_Hz, fmax_Hz=fmax_Hz)
+
+    init_freqs_Hz = np.asarray(init_freqs_Hz, float)
+
+    # frequency bounds: keep it reasonably tight around init to prevent nonsense
+    def f_bounds(f0):
+        # allow ±30% or ±2 MHz, whichever is larger
+        span = max(0.30 * f0, 2e6)
+        lo = max(fmin_Hz, f0 - span)
+        hi = (fmax_Hz if fmax_Hz is not None else (f0 + span))
+        return lo, hi
+
+    if K == 1:
+        f0 = init_freqs_Hz[0]
+        flo, fhi = f_bounds(f0)
+
+        # p = [C0, A, f, Tc, phi]
+        p0 = np.array([C0_0, A0, f0, Tc0, 0.0], float)
+
+        lb = np.array([C0_0 - 3*ptp, -10*ptp, flo, 1e-9, -2*np.pi], float)
+        ub = np.array([C0_0 + 3*ptp,  10*ptp, fhi, 1e2,   2*np.pi], float)
+
+        def model(p):
+            C0, A, f, Tc, phi = p
+            env = np.exp(-t / Tc)
+            return C0 + A * env * np.cos(2*np.pi*f*t + phi)
+
+        def resid(p):
+            return (model(p) - y) / sigma
+
+        res = least_squares(resid, p0, bounds=(lb, ub), loss="soft_l1", f_scale=1.0, max_nfev=20000)
+        yhat = model(res.x)
+
+        C0, A, f, Tc, phi = res.x
+        out = dict(
+            success=bool(res.success),
+            C0=C0, A1=A, f1_Hz=f, Tc_s=Tc, phi1=phi,
+            rms=float(np.sqrt(np.mean((yhat - y)**2))),
+            wrms=float(np.sqrt(np.mean(((yhat - y)/sigma)**2))),
+            nfev=int(res.nfev),
+            yhat=yhat,
+        )
+        return out
+
+    else:
+        f1, f2 = init_freqs_Hz[:2]
+        f1lo, f1hi = f_bounds(f1)
+        f2lo, f2hi = f_bounds(f2)
+
+        # p = [C0, A1, f1, phi1, A2, f2, phi2, Tc]
+        p0 = np.array([C0_0, 0.7*A0, f1, 0.0, 0.3*A0, f2, 0.0, Tc0], float)
+
+        lb = np.array([C0_0 - 3*ptp, -10*ptp, f1lo, -2*np.pi,
+                       -10*ptp, f2lo, -2*np.pi, 1e-9], float)
+        ub = np.array([C0_0 + 3*ptp,  10*ptp, f1hi,  2*np.pi,
+                        10*ptp, f2hi,  2*np.pi, 1e2], float)
+
+        def model(p):
+            C0, A1, f1, phi1, A2, f2, phi2, Tc = p
+            env = np.exp(-t / Tc)
+            return C0 + env*(A1*np.cos(2*np.pi*f1*t + phi1) + A2*np.cos(2*np.pi*f2*t + phi2))
+
+        def resid(p):
+            return (model(p) - y) / sigma
+
+        res = least_squares(resid, p0, bounds=(lb, ub), loss="soft_l1", f_scale=1.0, max_nfev=30000)
+        yhat = model(res.x)
+
+        C0, A1, f1, phi1, A2, f2, phi2, Tc = res.x
+
+        # enforce ordering (swap if needed)
+        if f2 < f1:
+            A1, A2 = A2, A1
+            f1, f2 = f2, f1
+            phi1, phi2 = phi2, phi1
+
+        out = dict(
+            success=bool(res.success),
+            C0=C0, A1=A1, f1_Hz=f1, phi1=phi1,
+            A2=A2, f2_Hz=f2, phi2=phi2,
+            Tc_s=Tc,
+            rms=float(np.sqrt(np.mean((yhat - y)**2))),
+            wrms=float(np.sqrt(np.mean(((yhat - y)/sigma)**2))),
+            nfev=int(res.nfev),
+            yhat=yhat,
+        )
+        return out
+
+
+def fit_all_nvs(T_us, Y, Yerr=None, K=1, init_freqs_Hz=None, fmin_Hz=1e3, fmax_Hz=None):
+    """
+    Fit all NVs independently.
+    Y: (N,M)
+    Returns dict of arrays.
+    """
+    Y = np.asarray(Y, float)
+    N, M = Y.shape
+    if Yerr is not None:
+        Yerr = np.asarray(Yerr, float)
+
+    # global init from median if not provided
+    if init_freqs_Hz is None:
+        y_med = np.median(Y, axis=0)
+        init_freqs_Hz = lomb_init_freqs(T_us, y_med, K=K, fmin_Hz=fmin_Hz, fmax_Hz=fmax_Hz)
+
+    results = []
+    for i in range(N):
+        yi = Y[i]
+        ei = (Yerr[i] if Yerr is not None else None)
+        ri = fit_one_nv(T_us, yi, yerr=ei, K=K, init_freqs_Hz=init_freqs_Hz, fmin_Hz=fmin_Hz, fmax_Hz=fmax_Hz)
+        ri["nv_index"] = i
+        results.append(ri)
+
+    # pack
+    out = {
+        "K": K,
+        "init_freqs_Hz": np.array(init_freqs_Hz, float),
+        "success": np.array([r["success"] for r in results], bool),
+        "rms": np.array([r["rms"] for r in results], float),
+        "wrms": np.array([r["wrms"] for r in results], float),
+        "Tc_us": np.array([r["Tc_s"]*1e6 for r in results], float),
+        "C0": np.array([r["C0"] for r in results], float),
+        "A1": np.array([r["A1"] for r in results], float),
+        "f1_MHz": np.array([r["f1_Hz"]*1e-6 for r in results], float),
+        "phi1": np.array([r["phi1"] for r in results], float),
+        "raw": results,
+    }
+    if K == 2:
+        out["A2"] = np.array([r["A2"] for r in results], float)
+        out["f2_MHz"] = np.array([r["f2_Hz"]*1e-6 for r in results], float)
+        out["phi2"] = np.array([r["phi2"] for r in results], float)
+    return out
+
+
+# -----------------------------
+# Scatter plots
+# -----------------------------
+def plot_fit_scatters(res, title_prefix="Per-NV fits", wrms_cut=None):
+    idx = np.arange(len(res["success"]))
+    good = res["success"].copy()
+    if wrms_cut is not None:
+        good &= (res["wrms"] < wrms_cut)
+
+    # 1) frequency vs NV index
+    plt.figure(figsize=(8,4))
+    plt.scatter(idx[good], res["f1_MHz"][good], s=15)
+    plt.xlabel("NV index")
+    plt.ylabel("f1 (MHz)")
+    plt.title(f"{title_prefix}: f1")
+    plt.grid(True, ls="--", lw=0.5)
+
+    # 2) amplitude vs NV index
+    plt.figure(figsize=(8,4))
+    plt.scatter(idx[good], res["A1"][good], s=15)
+    plt.xlabel("NV index")
+    plt.ylabel("A1 (arb.)")
+    plt.title(f"{title_prefix}: A1")
+    plt.grid(True, ls="--", lw=0.5)
+
+    # 3) Tc vs NV index
+    plt.figure(figsize=(8,4))
+    plt.scatter(idx[good], res["Tc_us"][good], s=15)
+    plt.xlabel("NV index")
+    plt.ylabel("Tc (µs)")
+    plt.title(f"{title_prefix}: Tc")
+    plt.grid(True, ls="--", lw=0.5)
+
+    # 4) RMS / wRMS diagnostic
+    plt.figure(figsize=(8,4))
+    plt.scatter(idx, res["wrms"], s=15)
+    plt.xlabel("NV index")
+    plt.ylabel("wRMS (dimensionless)")
+    plt.title(f"{title_prefix}: fit quality (wRMS)")
+    plt.grid(True, ls="--", lw=0.5)
+
+    # 5) freq vs amplitude (color by phase)
+    plt.figure(figsize=(6,5))
+    sc = plt.scatter(res["f1_MHz"][good], res["A1"][good], c=res["phi1"][good], s=25)
+    plt.xlabel("f1 (MHz)")
+    plt.ylabel("A1 (arb.)")
+    plt.title(f"{title_prefix}: f1 vs A1 (color=phi1)")
+    plt.grid(True, ls="--", lw=0.5)
+    plt.colorbar(sc, label="phi1 (rad)")
+
+    if res["K"] == 2:
+        # show second frequency too
+        plt.figure(figsize=(8,4))
+        plt.scatter(idx[good], res["f2_MHz"][good], s=15)
+        plt.xlabel("NV index")
+        plt.ylabel("f2 (MHz)")
+        plt.title(f"{title_prefix}: f2")
+        plt.grid(True, ls="--", lw=0.5)
+
+        plt.figure(figsize=(6,5))
+        sc2 = plt.scatter(res["f2_MHz"][good], res["A2"][good], c=res["phi2"][good], s=25)
+        plt.xlabel("f2 (MHz)")
+        plt.ylabel("A2 (arb.)")
+        plt.title(f"{title_prefix}: f2 vs A2 (color=phi2)")
+        plt.grid(True, ls="--", lw=0.5)
+        plt.colorbar(sc2, label="phi2 (rad)")
+
+import numpy as np
+import matplotlib.pyplot as plt
+
+def predict_dense(T_us_dense, fit):
+    """Return model prediction at dense times for either K=1 or K=2 fit dict."""
+    t = np.asarray(T_us_dense, float) * 1e-6
+
+    C0 = fit["C0"]
+    Tc = fit["Tc_s"]
+    env = np.exp(-t / Tc)
+
+    if "f2_Hz" in fit:  # K=2
+        A1, f1, phi1 = fit["A1"], fit["f1_Hz"], fit["phi1"]
+        A2, f2, phi2 = fit["A2"], fit["f2_Hz"], fit["phi2"]
+        yhat = C0 + env * (
+            A1 * np.cos(2*np.pi*f1*t + phi1) +
+            A2 * np.cos(2*np.pi*f2*t + phi2)
+        )
+    else:  # K=1
+        A1, f1, phi1 = fit["A1"], fit["f1_Hz"], fit["phi1"]
+        yhat = C0 + A1 * env * np.cos(2*np.pi*f1*t + phi1)
+
+    return yhat
+
+def plot_one_nv_fit(T_us, y, yerr, res, i, dense=1200, xscale="log"):
+    """
+    res: output of fit_all_nvs(...)
+    i: NV index
+    """
+    fit = res["raw"][i]
+
+    T_us = np.asarray(T_us, float)
+    y = np.asarray(y, float)
+    if yerr is not None:
+        yerr = np.asarray(yerr, float)
+
+    # dense time axis
+    if xscale == "log":
+        Tmin = np.min(T_us[T_us > 0])
+        Tmax = np.max(T_us)
+        T_dense = np.geomspace(Tmin, Tmax, dense)
+    else:
+        T_dense = np.linspace(np.min(T_us), np.max(T_us), dense)
+
+    y_dense = predict_dense(T_dense, fit)
+
+    # title string
+    if "f2_Hz" in fit:
+        title = (f"NV {i} | f1={fit['f1_Hz']*1e-6:.3f} MHz, "
+                 f"f2={fit['f2_Hz']*1e-6:.3f} MHz | "
+                 f"Tc={fit['Tc_s']*1e6:.2f} µs | wrms={fit['wrms']:.2f}")
+    else:
+        title = (f"NV {i} | f={fit['f1_Hz']*1e-6:.3f} MHz | "
+                 f"Tc={fit['Tc_s']*1e6:.2f} µs | wrms={fit['wrms']:.2f}")
+
+    fig, ax = plt.subplots(figsize=(7, 5))
+    if yerr is not None:
+        ax.errorbar(T_us, y, yerr=np.abs(yerr), fmt="o", ms=4, lw=1, capsize=2, label="data")
+    else:
+        ax.plot(T_us, y, "o", ms=4, label="data")
+
+    ax.plot(T_dense, y_dense, "-", lw=2, label="fit")
+    ax.set_title(title)
+    ax.set_xlabel("T_lag (µs)")
+    ax.set_ylabel("Signal (arb.)")
+    ax.grid(True, ls="--", lw=0.5)
+    if xscale is not None:
+        ax.set_xscale(xscale)
+    ax.legend()
+    plt.tight_layout()
+    return fig
 
 if __name__ == "__main__":
     kpl.init_kplotlib()
@@ -417,22 +864,29 @@ if __name__ == "__main__":
     #     "2025_10_15-05_35_19-rubin-nv0_2025_09_08",
     # ]
     ###interpulses gap 200ns
-    file_stems = [
-        "2025_10_16-00_40_47-rubin-nv0_2025_09_08",
-        "2025_10_16-05_56_38-rubin-nv0_2025_09_08",
-    ]
-    ### interpulses gap 44ns
     # file_stems = [
-    #     "2025_10_17-06_30_22-rubin-nv0_2025_09_08",
-    #     "2025_10_17-01_15_46-rubin-nv0_2025_09_08",
+    #     "2025_10_16-00_40_47-rubin-nv0_2025_09_08",
+    #     "2025_10_16-05_56_38-rubin-nv0_2025_09_08",
+    # ]
+    ## interpulses gap 44ns
+    file_stems = [
+        "2025_10_17-06_30_22-rubin-nv0_2025_09_08",
+        "2025_10_17-01_15_46-rubin-nv0_2025_09_08",
+    ]
+    
+    ### interpulses gap 15ns
+    # file_stems = [
+    #     "2026_01_02-00_24_34-johnson-nv0_2025_10_21",
     # ]
     try:
         data = widefield.process_multiple_files(file_stems, load_npz=True)
 
         nv_list = data["nv_list"]
         taus_raw = data["lag_taus"]  # could be ns or µs
-        T_us = _auto_to_us(taus_raw)  # ensure µs for the model
-
+        # T_us = _auto_to_us(taus_raw)  # ensure µs for the model
+        T_us = np.array(taus_raw) / 1e3  # ensure µs for the model
+        tau = data["tau"] / 1e3 ##
+        
         counts = np.array(data["counts"])
         sig_counts, ref_counts = counts[0], counts[1]
 
@@ -445,16 +899,50 @@ if __name__ == "__main__":
         # --- Optional: select a subset of NVs (ensure indices exist) ---
         # fmt:off
         # indices_113_MHz = [1, 3, 6, 10, 14, 16, 17, 19, 23, 24, 25, 26, 27, 32, 33, 34, 35, 37, 38, 41, 49, 50, 51, 53, 54, 55, 60, 62, 63, 64, 66, 67, 68, 70, 72, 73, 74, 75, 76, 78, 80, 81, 82, 83, 84, 86, 88, 90, 92, 93, 95, 96, 99, 100, 101, 102, 103, 105, 108, 109, 111, 113, 114]
-        indices_217_MHz = [2, 4, 5, 7, 8, 9, 11, 12, 13, 15, 18, 20, 21, 22, 28, 29, 30, 31, 36, 39, 40, 42, 43, 44, 45, 46, 47, 48, 52, 56, 57, 58, 59, 61, 65, 69, 71, 77, 79, 85, 87, 89, 91, 94, 97, 98, 104, 106, 107, 110, 112, 115, 116, 117]
+        # indices_217_MHz = [2, 4, 5, 7, 8, 9, 11, 12, 13, 15, 18, 20, 21, 22, 28, 29, 30, 31, 36, 39, 40, 42, 43, 44, 45, 46, 47, 48, 52, 56, 57, 58, 59, 61, 65, 69, 71, 77, 79, 85, 87, 89, 91, 94, 97, 98, 104, 106, 107, 110, 112, 115, 116, 117]
         # fmt:on
 
+        #fmt:off
+        # ORI_11m1 = [0, 1, 3, 5, 6, 7, 9, 10, 13, 18, 19, 21, 24, 25, 27, 28, 30, 32, 34, 36, 40, 41, 43, 44, 46, 48, 49, 51, 52, 53, 56, 57, 64, 65, 66, 67, 68, 69, 73, 75, 77, 80, 82, 84, 86, 88, 91, 98, 100, 101, 102, 103, 106, 107, 109, 110, 111, 113, 115, 116, 118, 119, 120, 121, 123, 124, 127, 129, 130, 131, 132, 133, 134, 135, 141, 142, 146, 149, 150, 152, 153, 156, 157, 158, 162, 163, 165, 167, 168, 171, 174, 177, 179, 184, 185, 186, 187, 189, 190, 191, 192, 193, 195, 198, 201, 203]
+        # ORI_m111 = [2, 4, 8, 11, 12, 14, 15, 16, 17, 20, 22, 23, 26, 29, 31, 33, 35, 37, 38, 39, 42, 45, 47, 50, 54, 55, 58, 59, 60, 61, 62, 63, 70, 71, 72, 74, 76, 78, 79, 81, 83, 85, 87, 89, 90, 92, 93, 94, 95, 96, 97, 99, 104, 105, 108, 112, 114, 117, 122, 125, 126, 128, 136, 137, 138, 139, 140, 143, 144, 145, 147, 148, 151, 154, 155, 159, 160, 161, 164, 166, 169, 170, 172, 173, 175, 176, 178, 180, 181, 182, 183, 188, 194, 196, 197, 199, 200, 202]
+        #fmt:on
         # Keep only in-range indices
-        N_all = len(nv_list)
-        sel = [i for i in indices_217_MHz if 0 <= i < N_all]
-        if len(sel) > 0:
-            nv_list = [nv_list[i] for i in sel]
-            norm_counts = norm_counts[sel, :]
-            norm_counts_ste = norm_counts_ste[sel, :]
+        # N_all = len(nv_list)
+        # sel = [i for i in indices_217_MHz if 0 <= i < N_all]
+        # if len(sel) > 0:
+        #     nv_list = [nv_list[i] for i in sel]
+        #     norm_counts = norm_counts[sel, :]
+        #     norm_counts_ste = norm_counts_ste[sel, :]
+
+
+        # Ensure increasing T and consistent ordering
+        order = np.argsort(T_us)
+        T_us_sorted = np.asarray(T_us)[order]
+        Y = np.asarray(norm_counts)[:, order]
+        T = T_us_sorted
+        Yerr = np.asarray(norm_counts_ste)[:, order]
+
+        # after you fit:
+        # res = fit_all_nvs(T, Y, Yerr=Yerr, K=1, ...)
+
+
+        # Decide K:
+        # Start with K=1; if you KNOW you have two real peaks (e.g. ~5 and ~9 MHz), set K=2.
+        K = 1  # or 2
+
+        # Fit all NVs
+        res = fit_all_nvs(T, Y, Yerr=Yerr, K=K, fmin_Hz=1e3)
+        i = 0  # any NV index
+        for i in range(len(nv_list)):
+            plot_one_nv_fit(T_us_sorted, Y[i], Yerr[i], res, i, xscale=None)
+            plt.show()
+            
+        # print("Global init freqs (MHz):", res["init_freqs_Hz"]*1e-6)
+        # print("Success rate:", np.mean(res["success"]))
+
+        # Scatter plots
+        # plot_fit_scatters(res, title_prefix=f"K={K} decaying-cos fit", wrms_cut=5.0)
+
 
         # --- Two-block joint fit ---
 
@@ -484,8 +972,9 @@ if __name__ == "__main__":
         # plot_phase_hist(fit["phi_i_est_rad"])
         # plot_each_nv_fit(T_us, norm_counts, norm_counts_ste, fit)
         # plot_two_block_overlays(T_us, C, fit)
-        plot_spin_echo_all(nv_list, T_us, norm_counts, norm_counts_ste)
-        plot_spin_echo_all(nv_list, T_us, norm_counts, norm_counts_ste)
+        params = f"Interpulse gap = {tau}µs, T_lag = {min(T_us)-max(T_us)} µs"
+        # plot_spin_echo_all(nv_list, T_us, norm_counts, norm_counts_ste, ori= "ORI_11m1", params=params)
+        # plot_spin_echo_all(nv_list, T_us, norm_counts, norm_counts_ste)
     except Exception as e:
         print(f"Error occurred: {e}")
         print(traceback.format_exc())

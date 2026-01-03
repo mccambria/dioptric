@@ -2257,7 +2257,6 @@ def remove_topk_modes(out, K=1):
     print(f"[remove-topK] K={K}: λmax={lam:.6f}, frac={frac:.8f}")
     return {"s_clean": s_clean, "C_clean": C, "lam": lam, "frac": frac}
 
-
 # ----------------------------
 # Suggested calls (after RUN 2)
 # ----------------------------
