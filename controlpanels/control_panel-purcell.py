@@ -578,13 +578,13 @@ def do_resonance(nv_list):
 
 
 def do_deer_hahn(nv_list):
-    freq_center = 0.133
+    freq_center = 0.175
     freq_range = 0.024
     num_steps =  48
     # num_reps = 6
     num_reps = 3
     num_runs = 400
-    # num_runs = 300
+    num_runs = 2
     freqs = calculate_freqs(freq_center, freq_range, num_steps)
     ##
     # Remove duplicates and sort
@@ -597,7 +597,7 @@ def do_deer_hahn(nv_list):
             num_reps,
             num_runs,
             freqs=freqs,
-            uwave_ind_list=[0,1],
+            uwave_ind_list=[0,1,2],
         )
 
 def do_deer_hahn_rabi(nv_list):
@@ -687,8 +687,8 @@ def do_spin_echo_phase_scan_test(nv_list, evol_time):
     # num_runs = 2
     # phi_list = np.linspace(0, 360, num_steps)
     # fmt: off
-    phi_list = [0, 45, 90, 135, 180, 225, 270, 315, 360]
-    # phi_list = [0, 18, 36, 54, 72, 90, 108, 126, 144, 162, 180, 198, 216, 234, 252, 270, 288, 306, 324, 342, 360]
+    # phi_list = [0, 45, 90, 135, 180, 225, 270, 315, 360]
+    phi_list = [0, 18, 36, 54, 72, 90, 108, 126, 144, 162, 180, 198, 216, 234, 252, 270, 288, 306, 324, 342, 360]
     # phi_list = [-351, -333, -315, -297, -279, -261, -243, -225, -207, -189, -171, -153, -135, -117, -99, -81, -63, -45, -27, -9, 9, 27, 45, 63, 81, 99, 117, 135, 153, 171, 189, 207, 225, 243, 261, 279, 297, 315, 333, 351]
     # fmt: on
     num_steps = len(phi_list)
@@ -1637,7 +1637,7 @@ if __name__ == "__main__":
         # do_optimize_spin_pol_amp(nv_list)
         # do_check_readout_fidelity(nv_list)
 
-        # do_scc_snr_check(nv_list)
+        do_scc_snr_check(nv_list)
         # do_optimize_scc_duration(nv_list)
         # do_optimize_scc_amp(nv_list)
         # optimize_scc_amp_and_duration(nv_list)
@@ -1676,7 +1676,7 @@ if __name__ == "__main__":
         # do_charge_quantum_jump(nv_list)
         # do_ac_stark(nv_list)
         # do_dm_xy_iq_lockin(nv_list)
-        do_two_block_hahn_correlation_dm(nv_list)
+        # do_two_block_hahn_correlation_dm(nv_list)
 
         # do_two_block_hahn_spatial_correlation(nv_list)
 

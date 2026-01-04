@@ -874,10 +874,14 @@ if __name__ == "__main__":
         "2025_10_17-01_15_46-rubin-nv0_2025_09_08",
     ]
     
-    ### interpulses gap 15ns
+    ### interpulses gap 15us
     # file_stems = [
     #     "2026_01_02-00_24_34-johnson-nv0_2025_10_21",
     # ]
+    file_stems = [
+        "2026_01_03-18_26_05-johnson-nv0_2025_10_21",
+    ]
+
     try:
         data = widefield.process_multiple_files(file_stems, load_npz=True)
 

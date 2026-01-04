@@ -2261,8 +2261,6 @@ def remove_topk_modes(out, K=1):
 # Suggested calls (after RUN 2)
 # ----------------------------
 if __name__ == "__main__":
-    from utils import data_manager as dm
-
     raw_data = dm.get_raw_data(
         file_stem="2025_12_24-09_32_29-johnson-nv0_2025_10_21", load_npz=True
     )
