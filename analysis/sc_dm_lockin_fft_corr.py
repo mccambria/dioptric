@@ -8,7 +8,7 @@
 import sys
 import numpy as np
 import matplotlib.pyplot as plt
-
+from utils import widefield
 # ----------------------------
 # 1) Build complex lock-in s = I + iQ
 # ----------------------------
@@ -716,7 +716,6 @@ def make_all_plots(out, dt=1.0, global_bad_thresh=0.9, fmax=None):
         plot_eigs(out["evals_spec"], title="Eigenvalues of spectral coherence")
 
 
-import numpy as np
 
 def block_contrast_abs(C, g1, g2):
     """Contrast = mean(|C| within groups) - mean(|C| cross), excluding diagonal."""
@@ -810,25 +809,6 @@ def shuffle_null_eigs(z_mn, nperm=300, seed=1, mode="time_shuffle"):
 
     return emax
 
-
-# def extract_xy_from_nv_list(nv_list, which="pixel"):
-#     """
-#     which: "pixel" (coords['pixel']) or "sample" (coords['sample']) or "laser_INTE_520_aod" etc.
-#     Returns xy: (M,2) float, mask_valid: (M,) bool
-#     """
-#     M = len(nv_list)
-#     xy = np.full((M, 2), np.nan, float)
-
-#     for i, nv in enumerate(nv_list):
-#         c = getattr(nv, "coords", None)
-#         if c is None:
-#             continue
-#         if which in c and c[which] is not None and len(c[which]) >= 2:
-#             xy[i] = np.array(c[which][:2], float)
-
-#     valid = np.all(np.isfinite(xy), axis=1)
-#     return xy, valid
-
 def correlated_participation_score(C, K=6):
     """
     Score_i = sum_{k=1..K} |v_k(i)|^2 where v_k are eigenvectors of C.
@@ -865,7 +845,6 @@ def plot_nv_map_scores(xy, score, valid=None, top_n=40, title="NV map (score)", 
         ax.invert_yaxis()  # pixel coords often have y downward
     plt.tight_layout()
     return fig, ax, top
-
 
 def corr_abs_vs_distance(C, xy, valid=None, nbins=25, subset=None):
     """
@@ -935,7 +914,7 @@ def plot_highlight(xy, highlight, title="", invert_y=True, label_first=20):
 
     fig, ax = plt.subplots(figsize=(5.5,5.5))
     ax.scatter(xy[:,0], xy[:,1], s=10, alpha=0.2)
-    ax.scatter(xy[highlight,0], xy[highlight,1], s=60, alpha=0.95)
+    ax.scatter(xy[highlight,0], xy[highlight,1], s=15, alpha=0.95)
     for i in highlight[:label_first]:
         ax.text(xy[i,0], xy[i,1], str(i), fontsize=8)
     ax.set_title(title)
@@ -943,7 +922,6 @@ def plot_highlight(xy, highlight, title="", invert_y=True, label_first=20):
     ax.axis("equal"); ax.grid(True, ls="--", lw=0.5)
     if invert_y: ax.invert_yaxis()
     plt.tight_layout()
-    plt.show()
 
 def cluster_stat_radius(xy, idx):
     """Radius of gyration of selected points."""
@@ -985,15 +963,1283 @@ def close_pairs(xy, idx, rmax=8.0):
     return pairs
 
 
+# ---------- helpers ----------
+def _nanpct(x, q):
+    x = np.asarray(x, float)
+    x = x[np.isfinite(x)]
+    if x.size == 0:
+        return np.nan
+    return np.percentile(x, q)
+
+def mad_zscore(x, eps=1e-12):
+    """Robust z-score via median absolute deviation."""
+    x = np.asarray(x, float)
+    med = np.nanmedian(x)
+    mad = np.nanmedian(np.abs(x - med))
+    scale = 1.4826 * max(mad, eps)
+    return (x - med) / scale
+
+def shot_energy_from_z(z_mn):
+    """Global per-shot energy; ~1 if perfectly whitened and stable."""
+    z = np.asarray(z_mn, np.complex128)
+    return np.nanmean(np.abs(z)**2, axis=0)
+
+def find_glitch_shots(energy, zthr=6.0):
+    """Return boolean mask for glitch shots using robust z-score."""
+    zz = mad_zscore(energy)
+    return np.abs(zz) >= zthr, zz
+
+
+# ---------- core plots ----------
+def plot_bad_run_stats(out, global_bad_thresh=0.9):
+    frac_run = out.get("frac_global_bad_per_run0", None)
+    if frac_run is None:
+        return
+    fig, ax = plt.subplots(figsize=(7, 3))
+    ax.plot(frac_run, "o-", ms=3)
+    ax.axhline(global_bad_thresh, ls="--")
+    ax.set_xlabel("Run index")
+    ax.set_ylabel("Frac(global-bad shots)")
+    ax.set_title("Bad-run diagnostic")
+    ax.grid(True, ls="--", lw=0.5)
+    plt.tight_layout()
+
+def plot_iq_cloud(out, max_points=200000):
+    I0 = out.get("I0", None)
+    Q0 = out.get("Q0", None)
+    if I0 is None or Q0 is None:
+        return
+
+    I = np.asarray(I0).ravel()
+    Q = np.asarray(Q0).ravel()
+    m = np.isfinite(I) & np.isfinite(Q)
+    I, Q = I[m], Q[m]
+    if I.size == 0:
+        return
+
+    if I.size > max_points:
+        idx = np.random.choice(I.size, size=max_points, replace=False)
+        I, Q = I[idx], Q[idx]
+
+    fig, ax = plt.subplots(figsize=(5, 5))
+    ax.plot(I, Q, ".", ms=1, alpha=0.25)
+    ax.set_xlabel("I")
+    ax.set_ylabel("Q")
+    ax.set_title("IQ cloud (sanity check)")
+    ax.grid(True, ls="--", lw=0.5)
+    plt.tight_layout()
+    
+def plot_iq_cloud_time_colored(out, use="s0", max_points=120000, stride=None,
+                               cmap="viridis", alpha=0.35, ms=2):
+    """
+    Colors IQ points by shot index (time). If it traces a path -> drift.
+    use: 's0' (recommended) or 'z' (whitened)
+    """
+    s = out.get(use, None)
+    if s is None:
+        raise KeyError(f"out['{use}'] not found")
+
+    s = np.asarray(s)
+    # s shape: (M,N)
+    I = np.real(s).ravel()
+    Q = np.imag(s).ravel()
+    t = np.tile(np.arange(s.shape[1]), s.shape[0])  # repeat shot index for each NV
+
+    m = np.isfinite(I) & np.isfinite(Q)
+    I, Q, t = I[m], Q[m], t[m]
+
+    if I.size == 0:
+        print("No finite IQ points.")
+        return
+
+    # Optional deterministic stride (faster + preserves time ordering)
+    if stride is not None and stride > 1:
+        sel = np.arange(I.size) % int(stride) == 0
+        I, Q, t = I[sel], Q[sel], t[sel]
+
+    # Random downsample (keeps speed)
+    if I.size > max_points:
+        idx = np.random.choice(I.size, size=max_points, replace=False)
+        I, Q, t = I[idx], Q[idx], t[idx]
+
+    # Normalize t to [0,1] for colormap
+    tn = (t - t.min()) / max(1, (t.max() - t.min()))
+
+    fig, ax = plt.subplots(figsize=(5.6, 5.2))
+    sc = ax.scatter(I, Q, c=tn, s=ms, alpha=alpha, cmap=cmap, linewidths=0)
+    ax.set_xlabel("I")
+    ax.set_ylabel("Q")
+    ax.set_title(f"IQ cloud colored by time (use='{use}')")
+    ax.grid(True, ls="--", lw=0.5)
+    cb = plt.colorbar(sc, ax=ax, fraction=0.046, pad=0.04)
+    cb.set_label("normalized shot index")
+    plt.tight_layout()
+
+def plot_global_vs_residual_cloud(out, use="s0", max_points=150000,
+                                 alpha=0.30, ms=2):
+    """
+    Left: global mean g[k] cloud (one point per shot)
+    Right: residuals r[n,k] = s[n,k] - g[k] cloud (many points)
+
+    If only the global mean has structure -> global common-mode.
+    """
+    s = out.get(use, None)
+    if s is None:
+        raise KeyError(f"out['{use}'] not found")
+    s = np.asarray(s)  # (M,N)
+
+    # Global mean per shot
+    g = np.nanmean(s, axis=0)  # (N,)
+
+    # Residuals
+    r = s - g[None, :]
+
+    # Prepare points
+    Ig, Qg = np.real(g), np.imag(g)
+    Ir, Qr = np.real(r).ravel(), np.imag(r).ravel()
+
+    mg = np.isfinite(Ig) & np.isfinite(Qg)
+    mr = np.isfinite(Ir) & np.isfinite(Qr)
+
+    Ig, Qg = Ig[mg], Qg[mg]
+    Ir, Qr = Ir[mr], Qr[mr]
+
+    # Downsample residuals for speed
+    if Ir.size > max_points:
+        idx = np.random.choice(Ir.size, size=max_points, replace=False)
+        Ir, Qr = Ir[idx], Qr[idx]
+
+    fig, ax = plt.subplots(1, 2, figsize=(10.8, 4.8))
+
+    # Global mean cloud
+    ax[0].scatter(Ig, Qg, s=12, alpha=0.7, linewidths=0)
+    ax[0].set_title("Global mean cloud: g[k] = mean_n s[n,k]")
+    ax[0].set_xlabel("I")
+    ax[0].set_ylabel("Q")
+    ax[0].grid(True, ls="--", lw=0.5)
+
+    # Residual cloud
+    ax[1].scatter(Ir, Qr, s=ms, alpha=alpha, linewidths=0)
+    ax[1].set_title("Residual cloud: r[n,k] = s[n,k] - g[k]")
+    ax[1].set_xlabel("I")
+    ax[1].set_ylabel("Q")
+    ax[1].grid(True, ls="--", lw=0.5)
+
+    # Match axes to compare shapes fairly
+    allI = np.r_[Ig, Ir]
+    allQ = np.r_[Qg, Qr]
+    if allI.size and allQ.size:
+        xlo, xhi = np.percentile(allI[np.isfinite(allI)], [1, 99])
+        ylo, yhi = np.percentile(allQ[np.isfinite(allQ)], [1, 99])
+        for a in ax:
+            a.set_xlim(xlo, xhi)
+            a.set_ylim(ylo, yhi)
+
+    plt.tight_layout()
+
+
+def plot_example_traces(out, nv_indices=(0, 1, 2, 3), nshots=800):
+    z = out.get("z", None)
+    if z is None:
+        return
+    z = np.asarray(z)
+    M, N = z.shape
+    nshots = min(int(nshots), N)
+    t = np.arange(nshots)
+
+    fig, ax = plt.subplots(figsize=(8, 3.5))
+    for i in nv_indices:
+        if 0 <= int(i) < M:
+            ax.plot(t, np.real(z[int(i), :nshots]), lw=1, label=f"NV {i}")
+    ax.set_xlabel("shot index")
+    ax.set_ylabel("Re(z) (whitened)")
+    ax.set_title("Example whitened traces")
+    ax.grid(True, ls="--", lw=0.5)
+    ax.legend(fontsize=8, ncol=2)
+    plt.tight_layout()
+
+def plot_matrix_abs(C, title="|C|", prc=(1, 99), diag_color="0.85"):
+    C = np.asarray(C, np.complex128)
+    A = np.abs(C)
+
+    # autoscale off-diagonal
+    A_tmp = A.copy()
+    np.fill_diagonal(A_tmp, np.nan)
+    vmin, vmax = np.nanpercentile(A_tmp, prc)
+    if not np.isfinite(vmin) or not np.isfinite(vmax) or vmin == vmax:
+        vmin, vmax = np.nanmin(A_tmp), np.nanmax(A_tmp)
+
+    mask = np.eye(A.shape[0], dtype=bool)
+    Am = np.ma.array(A, mask=mask)
+
+    cmap = plt.cm.viridis.copy()
+    cmap.set_bad(diag_color)
+
+    fig, ax = plt.subplots(figsize=(6.2, 5.2))
+    im = ax.imshow(Am, aspect="auto", vmin=vmin, vmax=vmax, cmap=cmap)
+    ax.set_title(title)
+    ax.set_xlabel("NV index")
+    ax.set_ylabel("NV index")
+    plt.colorbar(im, ax=ax, fraction=0.046, pad=0.04)
+    plt.tight_layout()
+
+
+def plot_common_mode_and_glitches(out, dt=1.0, zthr=10.0, nshots=None):
+    a = out.get("a_time", None)
+    z = out.get("z", None)
+    if a is None or z is None:
+        return
+
+    a = np.asarray(a)
+    z = np.asarray(z)
+    E = shot_energy_from_z(z)
+    glitch, Ez = find_glitch_shots(E, zthr=zthr)
+
+    if nshots is not None:
+        nshots = min(int(nshots), a.size)
+        a = a[:nshots]
+        E = E[:nshots]
+        glitch = glitch[:nshots]
+        Ez = Ez[:nshots]
+
+    t = np.arange(a.size) * float(dt)
+
+    # time series
+    fig, ax = plt.subplots(figsize=(9, 3.2))
+    ax.plot(t, np.real(a), lw=1, label="Re(a)")
+    ax.plot(t, np.imag(a), lw=1, label="Im(a)")
+    if np.any(glitch):
+        ax.plot(t[glitch], np.real(a)[glitch], "rx", ms=5, label="glitch shots")
+    ax.set_xlabel("time (s)" if dt != 1.0 else "shot index")
+    ax.set_ylabel("a(t)")
+    ax.set_title("Top correlated mode a(t) (with glitch markers)")
+    ax.grid(True, ls="--", lw=0.5)
+    ax.legend(fontsize=8, ncol=3)
+    plt.tight_layout()
+
+    # shot energy
+    fig, ax = plt.subplots(figsize=(9, 4.0))
+    ax.plot(t, E, lw=1)
+    ax.set_xlabel("time (s)" if dt != 1.0 else "shot index")
+    ax.set_ylabel("mean |z|^2 across NVs")
+    ax.set_title(f"Shot energy (robust z-score threshold = {zthr})")
+    ax.grid(True, ls="--", lw=0.5)
+    # show robust scale
+    ax2 = ax.twinx()
+    ax2.plot(t, Ez, alpha=0.0)  # just to set scale if needed
+    plt.tight_layout()
+
+    print("shot_energy percentiles:", np.nanpercentile(E, [50, 90, 95, 99, 99.5, 99.9]))
+    print("glitch shots fraction:", float(np.mean(glitch)))
+
+import numpy as np
+import matplotlib.pyplot as plt
+
+def shot_energy_from_z(z):
+    """E[k] = mean_n |z[n,k]|^2"""
+    z = np.asarray(z)
+    return np.mean(np.abs(z)**2, axis=0)
+
+def robust_zscore_mad(x, eps=1e-12):
+    """Robust z-score using median and MAD."""
+    x = np.asarray(x, float)
+    med = np.nanmedian(x)
+    mad = np.nanmedian(np.abs(x - med))
+    sigma = 1.4826 * mad + eps
+    return (x - med) / sigma, med, sigma
+
+def find_glitch_shots(E, zthr=10.0):
+    """Return glitch mask where robust z-score(E) > zthr."""
+    Ez, med, sig = robust_zscore_mad(E)
+    glitch = Ez > float(zthr)
+    return glitch, Ez, med, sig
+
+def plot_common_mode_and_glitches(out, dt=1.0, zthr=10.0, nshots=None,
+                                  lag=1, amp_min_percentile=10.0, fmax=None):
+    """
+    Plots:
+      (1) common-mode a(t): Re/Im + amplitude
+      (2) common-mode phase (unwrapped) with masking for low amplitude
+      (3) phase increments dphi(t; lag)
+      (4) shot energy E[k] + robust z-score + glitch markers
+    """
+    a = out.get("a_time", None)
+    z = out.get("z", None)
+    if a is None or z is None:
+        raise ValueError("out must contain 'a_time' and 'z'")
+
+    a = np.asarray(a, np.complex128)
+    z = np.asarray(z, np.complex128)
+
+    E = shot_energy_from_z(z)
+    glitch, Ez, Em, Es = find_glitch_shots(E, zthr=zthr)
+
+    # optional truncation
+    N = a.size
+    if nshots is not None:
+        N = min(int(nshots), N)
+        a = a[:N]
+        E = E[:N]
+        glitch = glitch[:N]
+        Ez = Ez[:N]
+
+    t = np.arange(N) * float(dt)
+
+    # common-mode amplitude/phase
+    amp = np.abs(a)
+    phi = np.unwrap(np.angle(a))
+
+    # mask phase when amplitude is too small
+    thr = np.nanpercentile(amp, float(amp_min_percentile))
+    phase_mask = amp >= thr
+    phi_masked = np.where(phase_mask, phi, np.nan)
+
+    # phase increments
+    if lag >= 1 and N > lag:
+        dphi = np.angle(a[lag:] * np.conj(a[:-lag]))  # in (-pi, pi]
+        td = t[:-lag]  # aligns with dphi
+    else:
+        dphi = None
+        td = None
+
+    # --- (1) a(t): Re/Im + glitch markers ---
+    fig, ax = plt.subplots(figsize=(9, 3.2))
+    ax.plot(t, np.real(a), lw=1, label="Re(a)")
+    ax.plot(t, np.imag(a), lw=1, label="Im(a)")
+    if np.any(glitch):
+        ax.plot(t[glitch], np.real(a)[glitch], "rx", ms=5, label="glitch shots")
+    ax.set_xlabel("time (s)" if dt != 1.0 else "shot index")
+    ax.set_ylabel("a(t)")
+    ax.set_title("Top correlated mode a(t)")
+    ax.grid(True, ls="--", lw=0.5)
+    ax.legend(fontsize=8, ncol=3)
+    plt.tight_layout()
+
+    # --- (1b) |a(t)| ---
+    fig, ax = plt.subplots(figsize=(9, 2.6))
+    ax.plot(t, amp, lw=1)
+    if np.any(glitch):
+        ax.plot(t[glitch], amp[glitch], "rx", ms=5)
+    ax.axhline(thr, ls="--", lw=1)
+    ax.set_xlabel("time (s)" if dt != 1.0 else "shot index")
+    ax.set_ylabel("|a(t)|")
+    ax.set_title(f"Common-mode amplitude |a(t)| (phase mask threshold = p{amp_min_percentile:g})")
+    ax.grid(True, ls="--", lw=0.5)
+    plt.tight_layout()
+
+    # --- (2) phase ---
+    fig, ax = plt.subplots(figsize=(9, 2.8))
+    ax.plot(t, phi_masked, lw=1)
+    if np.any(glitch):
+        ax.plot(t[glitch], phi_masked[glitch], "rx", ms=5)
+    ax.set_xlabel("time (s)" if dt != 1.0 else "shot index")
+    ax.set_ylabel("unwrap(angle(a)) [rad]")
+    ax.set_title("Common-mode phase (masked when |a| is small)")
+    ax.grid(True, ls="--", lw=0.5)
+    plt.tight_layout()
+
+    # --- (3) phase increments ---
+    if dphi is not None:
+        fig, ax = plt.subplots(figsize=(9, 2.8))
+        ax.plot(td, dphi, lw=1)
+        ax.set_xlabel("time (s)" if dt != 1.0 else "shot index")
+        ax.set_ylabel(f"dphi(t, lag={lag}) [rad]")
+        ax.set_title("Common-mode phase increments (shot-to-shot phase noise proxy)")
+        ax.grid(True, ls="--", lw=0.5)
+        plt.tight_layout()
+
+    # --- (4) shot energy ---
+    fig, ax = plt.subplots(figsize=(9, 3.2))
+    ax.plot(t, E, lw=1, label="E[k]=mean |z|^2")
+    if np.any(glitch):
+        ax.plot(t[glitch], E[glitch], "rx", ms=5, label="glitch shots")
+    ax.set_xlabel("time (s)" if dt != 1.0 else "shot index")
+    ax.set_ylabel("shot energy E[k]")
+    ax.set_title(f"Shot energy (robust z-score > {zthr}; median={Em:.4g}, robustσ={Es:.4g})")
+    ax.grid(True, ls="--", lw=0.5)
+    ax.legend(fontsize=8)
+    plt.tight_layout()
+
+    # --- optional: spectrum of a(t) ---
+    # (useful if you want to see lines in the common mode)
+    A = np.fft.rfft((a[:N] - np.mean(a[:N])) * np.hanning(N))
+    f = np.fft.rfftfreq(N, d=float(dt))
+    psd = np.abs(A)**2
+    fig, ax = plt.subplots(figsize=(9, 3.0))
+    ax.plot(f, psd, lw=1)
+    ax.set_xlabel("Hz" if dt != 1.0 else "cycles/shot")
+    ax.set_ylabel("|A(f)|^2")
+    ax.set_title("Spectrum of a(t)")
+    ax.grid(True, ls="--", lw=0.5)
+    if fmax is not None:
+        ax.set_xlim(0, fmax)
+    plt.tight_layout()
+
+    print("shot_energy percentiles:", np.nanpercentile(E, [50, 90, 95, 99, 99.5, 99.9]))
+    print("glitch shots fraction:", float(np.mean(glitch)))
+
+def make_summary_plots(out, dt=1.0, global_bad_thresh=0.9, zthr=6.0):
+    plot_bad_run_stats(out, global_bad_thresh=global_bad_thresh)
+    plot_iq_cloud(out)
+    plot_iq_cloud_time_colored(out, use="s0")
+    plot_global_vs_residual_cloud(out, use="s0")
+
+    plot_example_traces(out, nv_indices=(0, 1, 2, 3), nshots=8000)
+
+    if "C_time" in out:
+        plot_matrix_abs(out["C_time"], title="Time-domain |C| (NV×NV)")
+    if "evals_time" in out:
+        plot_eigs(out["evals_time"], title="Eigenvalues of time-domain C")
+
+    plot_common_mode_and_glitches(out, dt=dt, zthr=zthr)
+    plt.show()
+
+
+def top_by_mass(v, frac=0.8):
+    """
+    Smallest set of indices whose sum(|v|^2) reaches `frac`.
+    v: complex eigenvector (length M)
+    """
+    v = np.asarray(v)
+    w = np.abs(v)**2
+    w = w / np.sum(w)
+    order = np.argsort(w)[::-1]
+    c = np.cumsum(w[order])
+    k = int(np.searchsorted(c, frac) + 1)
+    return order[:k], w, order, c
+
+# ----------------------------
+# Helpers (keep small + reusable)
+# ----------------------------
+def shot_energy(z_mn):
+    """Per-shot mean power across NVs. z_mn: (M,N) complex."""
+    z = np.asarray(z_mn, np.complex128)
+    return np.mean(np.abs(z) ** 2, axis=0)
+
+def per_shot_normalize(z_mn, eps=1e-12):
+    """Normalize each shot so mean power across NVs is 1."""
+    z = np.asarray(z_mn, np.complex128)
+    E = shot_energy(z)
+    return z / np.sqrt(np.maximum(E, eps))[None, :], E
+
+def top_eig_from_z(z_mn):
+    """Return (lambda1, evals, v1) from coherence_matrix_time(z_mn)."""
+    C = coherence_matrix_time(z_mn)
+    w, V = eig_hermitian(C)
+    return float(w[0]), w, V[:, 0]
+
+def remove_mode(z_mn, v_m):
+    """Project out rank-1 mode: z -> z - v (v^H z)."""
+    z = np.asarray(z_mn, np.complex128)
+    v = np.asarray(v_m, np.complex128).reshape(-1)
+    a = v.conj().T @ z              # (N,)
+    return z - np.outer(v, a)       # (M,N)
+
+def top_by_mass(v_m, frac=0.80):
+    """Smallest index set whose cumulative |v|^2 mass reaches frac."""
+    v = np.asarray(v_m, np.complex128).reshape(-1)
+    p = np.abs(v) ** 2
+    p = p / np.sum(p)
+    order = np.argsort(p)[::-1]
+    cdf = np.cumsum(p[order])
+    k = int(np.searchsorted(cdf, frac) + 1)
+    return order[:k], p, order, cdf
+
+def participation_ratio(v_m, eps=1e-30):
+    """PR = 1/sum p_i^2 with p_i=|v_i|^2 normalized."""
+    v = np.asarray(v_m, np.complex128).reshape(-1)
+    p = np.abs(v) ** 2
+    p = p / np.maximum(np.sum(p), eps)
+    return float(1.0 / np.sum(p ** 2))
+
+def fraction_in_group(indices, group):
+    s = set(group)
+    idx = np.asarray(indices, int)
+    return float(np.mean([i in s for i in idx]))
+
+# ----------------------------
+# Main “sanity + interpretation” block
+# ----------------------------
+def analyze_correlated_modes(
+    out,
+    nv_list,
+    ORI_11m1=None,
+    ORI_m111=None,
+    K=6,
+    prc_clip=(99.0, 99.5, 99.9),
+    mass_frac=0.80,
+    nbins_all=25,
+    nbins_top=15,
+    top_subset=40,
+):
+    z = out["z"]            # (M,N)
+    C = out["C_time"]       # (M,M)
+
+    # 1) Shot-energy sanity + per-shot normalization effect
+    lam1_raw, w_raw, v1_raw = top_eig_from_z(z)
+
+    zN, E = per_shot_normalize(z)
+    lam1_norm, w_norm, v1_norm = top_eig_from_z(zN)
+
+    print("Top evals (raw)      :", w_raw[:K])
+    print("Top evals (shot-norm) :", w_norm[:K])
+
+    pcts = [0.01, 0.1, 1, 5, 10, 25, 50, 75, 90, 95, 99, 99.9]
+    vals = np.percentile(E, pcts)
+    print("shot_energy percentiles:")
+    for q, v in zip(pcts, vals):
+        print(f"{q:>5}%  {v:.4f}")
+    print("min / max:", float(np.min(E)), float(np.max(E)))
+
+    # 2) Sensitivity to clipping high-energy shots
+    for prc in prc_clip:
+        thr = np.percentile(E, prc)
+        keep = E <= thr
+        lam1_clip, _, _ = top_eig_from_z(z[:, keep])
+        print(f"drop top {(100-prc):.1f}% energy shots -> keep {keep.mean()*100:.2f}% shots, lam1={lam1_clip:.6f}")
+
+    # 3) Remove the top mode and recompute lambda1
+    z_perp = remove_mode(z, v1_raw)
+    lam1_after, w_after, v1_after = top_eig_from_z(z_perp)
+    print("lam1 before:", lam1_raw)
+    print("lam1 after removing mode1:", lam1_after)
+
+    # 4) Eigenmodes / participation maps
+    w_eval, V = eig_hermitian(C)
+    score = np.sum(np.abs(V[:, :K]) ** 2, axis=1)  # participation across top-K modes
+
+    print("Top evals:", w_eval[:K])
+    idx_top = np.argsort(score)[::-1][:20]
+    print("Top 20 NVs by participation score:", idx_top.tolist())
+    print("Scores:", score[idx_top])
+
+    plt.figure(figsize=(7,3))
+    plt.plot(score, "o", ms=3)
+    plt.xlabel("NV index"); 
+    # plt.ylabel(r"$\sum_{k \le K} |v_k|^2$")
+    plt.ylabel("sum_{k<=K} |v_k|^2")
+    plt.title("NV participation in top correlated modes")
+    plt.grid(True, ls="--", lw=0.5); plt.tight_layout(); plt.show()
+
+    # matrix sorted by score
+    order = np.argsort(score)[::-1]
+    Cp = C[np.ix_(order, order)]
+    plot_matrix(Cp, title="C_time sorted by participation score", show_phase=False)
+
+    # XY maps
+    xy_pix, valid = extract_xy_from_nv_list(nv_list, key="pixel")
+    fig, ax, top = plot_nv_map_scores(
+        xy_pix, score, valid=valid, top_n=min(200, len(score)),
+        title="Pixel map: participation score"
+    )
+    print("Top indices:", top[:20])
+
+    # distance dependence
+    r_all, m_all = corr_abs_vs_distance(C, xy_pix, valid=valid, nbins=nbins_all)
+    plot_corr_vs_r(r_all, m_all, title="C_time: mean |C_ij| vs pixel distance (all NVs)")
+
+    topN = np.argsort(score)[::-1][:top_subset]
+    r_top, m_top = corr_abs_vs_distance(C, xy_pix, valid=valid, nbins=nbins_top, subset=topN)
+    plot_corr_vs_r(r_top, m_top, title=f"C_time: mean |C_ij| vs distance (top-{top_subset})")
+
+    # orientation fractions (optional)
+    if ORI_11m1 is not None and ORI_m111 is not None:
+        print("Top subset fraction ORI_11m1:", fraction_in_group(topN, ORI_11m1))
+        print("Top subset fraction ORI_m111:", fraction_in_group(topN, ORI_m111))
+
+    # 5) Per-mode “who contributes” via mass cutoff (clean visualization set)
+    for k in range(K):
+        vk = V[:, k]
+        pr = participation_ratio(vk)
+        idx80, _, _, _ = top_by_mass(vk, frac=mass_frac)
+        idx95, _, _, _ = top_by_mass(vk, frac=0.95)
+
+        print(f"mode {k+1}: eval={w_eval[k]:.6f}, PR~{pr:.1f}, "
+              f"N{int(mass_frac*100)}={len(idx80)}, N95={len(idx95)}")
+
+        plot_highlight(
+            xy_pix, idx80,
+            title=f"Mode {k+1}: top contributors ({int(mass_frac*100)}% mass)",
+            invert_y=True, label_first=25
+        )
+        plt.show()
+
+    # 6) Brightness vs participation (optional diagnostic)
+    bright = np.mean(np.abs(out["s0"]), axis=1)  # proxy
+    plt.figure(figsize=(4,4))
+    plt.plot(bright, score, "o", ms=3)
+    plt.xlabel("mean |s0| (brightness proxy)")
+    # plt.ylabel(r"$\sum_{k\le K}|v_k|^2$")
+    plt.ylabel("sum_{k<=K} |v_k|^2")
+    plt.title("Brightness vs correlated participation")
+    plt.grid(True, ls="--", lw=0.5)
+    plt.tight_layout(); plt.show()
+    print("corrcoef:", float(np.corrcoef(bright, score)[0, 1]))
+
+    return {
+        "lam1_raw": lam1_raw,
+        "lam1_shotnorm": lam1_norm,
+        "lam1_after_remove_mode1": lam1_after,
+        "E_shot": E,
+        "w": w_eval,
+        "V": V,
+        "score": score,
+        "xy_pix": xy_pix,
+        "valid": valid,
+    }
+
+import numpy as np
+import matplotlib.pyplot as plt
+
+def _offdiag_vlims(A, prc=(1, 99)):
+    """Robust color limits using off-diagonal percentiles."""
+    A = np.array(A, float, copy=True)
+    np.fill_diagonal(A, np.nan)
+    vmin, vmax = np.nanpercentile(A, prc)
+    if not np.isfinite(vmin) or not np.isfinite(vmax) or vmin == vmax:
+        vmin, vmax = np.nanmin(A), np.nanmax(A)
+    return vmin, vmax
+
+def _imshow_diag_gray(ax, A, vmin=None, vmax=None, cmap=None, diag_gray="0.85"):
+    """imshow with diagonal masked to gray."""
+    A = np.asarray(A)
+    mask = np.eye(A.shape[0], dtype=bool)
+    Am = np.ma.array(A, mask=mask)
+
+    if cmap is None:
+        cmap = plt.cm.viridis.copy()
+    else:
+        cmap = plt.get_cmap(cmap).copy()
+
+    cmap.set_bad(diag_gray)
+    im = ax.imshow(Am, aspect="auto", vmin=vmin, vmax=vmax, cmap=cmap)
+    return im
+
+def plot_complex_matrix(G, title="Complex matrix", show_phase=True, prc_abs=(1, 99),
+                        mask_phase_below=0.0):
+    """
+    G: (M,M) complex (e.g., coherence matrix)
+    mask_phase_below: if >0, phase is masked where |G| < threshold (recommended ~0.05-0.1)
+    """
+    G = np.asarray(G, np.complex128)
+
+    # --- |G| ---
+    A = np.abs(G)
+    vmin, vmax = _offdiag_vlims(A, prc=prc_abs)
+    fig, ax = plt.subplots(figsize=(6.5, 5.5))
+    im = _imshow_diag_gray(ax, A, vmin=vmin, vmax=vmax, cmap="viridis")
+    ax.set_title(f"{title} |G|")
+    ax.set_xlabel("NV index")
+    ax.set_ylabel("NV index")
+    plt.colorbar(im, ax=ax, fraction=0.046, pad=0.04)
+    plt.tight_layout()
+
+    # --- phase(G) ---
+    if show_phase:
+        P = np.angle(G)
+
+        if mask_phase_below and mask_phase_below > 0:
+            P = np.array(P, float, copy=True)
+            P[np.abs(G) < float(mask_phase_below)] = np.nan
+
+        # phase scale fixed to [-pi, pi]
+        fig, ax = plt.subplots(figsize=(6.5, 5.5))
+        im = _imshow_diag_gray(ax, P, vmin=-np.pi, vmax=np.pi, cmap="twilight")
+        ax.set_title(f"{title} phase(G)  (masked where |G|<{mask_phase_below:g})" if mask_phase_below else f"{title} phase(G)")
+        ax.set_xlabel("NV index")
+        ax.set_ylabel("NV index")
+        cbar = plt.colorbar(im, ax=ax, fraction=0.046, pad=0.04)
+        cbar.set_ticks([-np.pi, -np.pi/2, 0, np.pi/2, np.pi])
+        cbar.set_ticklabels(["-π", "-π/2", "0", "π/2", "π"])
+        plt.tight_layout()
+
+def plot_real_matrix(R, title="Real matrix", prc=(1, 99), symmetric=True):
+    """
+    R: (M,M) real (e.g., correlation matrix)
+    symmetric: if True, use symmetric color limits about 0.
+    """
+    R = np.asarray(R, float)
+    if symmetric:
+        vmax = np.nanpercentile(np.abs(R - np.diag(np.diag(R))), prc[1])  # robust
+        vmax = float(vmax) if np.isfinite(vmax) and vmax > 0 else float(np.nanmax(np.abs(R)))
+        vmin = -vmax
+    else:
+        vmin, vmax = _offdiag_vlims(R, prc=prc)
+
+    fig, ax = plt.subplots(figsize=(6.5, 5.5))
+    im = _imshow_diag_gray(ax, R, vmin=vmin, vmax=vmax, cmap="RdBu_r")
+    ax.set_title(title)
+    ax.set_xlabel("NV index")
+    ax.set_ylabel("NV index")
+    plt.colorbar(im, ax=ax, fraction=0.046, pad=0.04)
+    plt.tight_layout()
+
+def plot_top_eigs(C, K=20, title="Top eigenvalues"):
+    C = np.asarray(C)
+    # Hermitian eigs if complex coherence; for real corr it's also fine
+    Csym = 0.5 * (C + C.conj().T)
+    w = np.linalg.eigvalsh(Csym)
+    w = np.sort(np.real(w))[::-1]
+    fig, ax = plt.subplots(figsize=(6, 3))
+    ax.plot(w[:K], "o-")
+    ax.set_xlabel("mode index")
+    ax.set_ylabel("eigenvalue")
+    ax.set_title(title)
+    ax.grid(True, ls="--", lw=0.5)
+    plt.tight_layout()
+    return w
+
+# ---------- Example “main” plotting wrapper ----------
+def plot_all_pairwise(out, use="z", mask_phase_below=0.):
+    """
+    out: your analysis dict
+    use: "z" for whitened complex series, or "s0" for pre-whitened complex series
+    """
+    x = out[use]  # (M,N) complex
+
+    # complex coherence
+    C = (x @ x.conj().T) / max(x.shape[1], 1)
+    C = 0.5 * (C + C.conj().T)
+    p = np.real(np.diag(C))
+    p = np.maximum(p, 1e-18)
+    G = C / np.sqrt(p[:, None] * p[None, :])
+
+    plot_complex_matrix(G, title=f"Pairwise coherence from out['{use}']", show_phase=True,
+                        prc_abs=(1, 99), mask_phase_below=mask_phase_below)
+    plot_top_eigs(G, K=25, title=f"Eigenvalues of coherence (out['{use}'])")
+
+    # phase-noise correlation (shot-to-shot phase increments)
+    dphi = np.angle(x[:, 1:] * np.conj(x[:, :-1]))  # (M,N-1) real
+    dphi = dphi - dphi.mean(axis=1, keepdims=True)
+    dphi = dphi / (dphi.std(axis=1, keepdims=True) + 1e-12)
+    Rphi = (dphi @ dphi.T) / max(dphi.shape[1], 1)
+    Rphi = 0.5 * (Rphi + Rphi.T)
+    np.fill_diagonal(Rphi, 1.0)
+
+    plot_real_matrix(Rphi, title=f"Phase-increment correlation (out['{use}'])", symmetric=True)
+    plot_top_eigs(Rphi, K=25, title=f"Eigenvalues of phase-increment corr (out['{use}'])")
+
+    plt.show()
+
+import numpy as np
+import matplotlib.pyplot as plt
+
+
+def phase_increments(x_mn, lag=1, amp_mask=None, eps=1e-12):
+    """
+    Compute per-NV phase increments:
+        dphi[n,t] = angle( x[n,t+lag] * conj(x[n,t]) )
+
+    x_mn: (M,N) complex
+    lag: integer >= 1
+    amp_mask: None OR float threshold. If provided, mask times where |x| is too small:
+              keeps only where |x[t]| and |x[t+lag]| >= amp_mask
+    Returns dphi: (M, N-lag) float (may contain NaNs if masked)
+    """
+    x = np.asarray(x_mn, np.complex128)
+    if lag < 1 or lag >= x.shape[1]:
+        raise ValueError("lag must be >=1 and < Nshots")
+
+    x0 = x[:, :-lag]
+    x1 = x[:, lag:]
+
+    dphi = np.angle(x1 * np.conj(x0))  # (M, N-lag)
+
+    if amp_mask is not None:
+        a0 = np.abs(x0)
+        a1 = np.abs(x1)
+        good = (a0 >= float(amp_mask)) & (a1 >= float(amp_mask)) & np.isfinite(dphi)
+        dphi = np.where(good, dphi, np.nan)
+
+    return dphi
+
+
+def pearson_corr_matrix_from_rows(Y_mk, eps=1e-12):
+    """
+    Pearson correlation across rows of Y (M,K), allowing NaNs (pairwise complete).
+    Returns R: (M,M) with diag=1.
+    """
+    Y = np.asarray(Y_mk, float)
+    M, K = Y.shape
+    R = np.full((M, M), np.nan, float)
+
+    # Fast path if no NaNs:
+    if np.isfinite(Y).all():
+        Yc = Y - Y.mean(axis=1, keepdims=True)
+        Ys = Yc / (Yc.std(axis=1, keepdims=True) + eps)
+        R = (Ys @ Ys.T) / max(K - 1, 1)
+        R = 0.5 * (R + R.T)
+        np.fill_diagonal(R, 1.0)
+        return R
+
+    # Pairwise NaN-safe path:
+    for i in range(M):
+        yi = Y[i]
+        mi = np.isfinite(yi)
+        for j in range(i, M):
+            yj = Y[j]
+            m = mi & np.isfinite(yj)
+            n = int(m.sum())
+            if n < 3:
+                continue
+            a = yi[m]
+            b = yj[m]
+            a = a - a.mean()
+            b = b - b.mean()
+            denom = (np.sqrt(np.mean(a*a)) * np.sqrt(np.mean(b*b)) + eps)
+            r = float(np.mean(a*b) / denom)
+            R[i, j] = r
+            R[j, i] = r
+    np.fill_diagonal(R, 1.0)
+    return R
+
+
+# def phase_increment_pearson_matrix(x_mn, lag=1, amp_mask=None, eps=1e-12):
+#     """
+#     Convenience wrapper: returns (Rphi, dphi)
+#     """
+#     dphi = phase_increments(x_mn, lag=lag, amp_mask=amp_mask, eps=eps)
+#     Rphi = pearson_corr_matrix_from_rows(dphi, eps=eps)
+#     return Rphi, dphi
+
+import numpy as np
+import matplotlib.pyplot as plt
+
+
+# ---------- utilities ----------
+def _safe_percentile_vlim(A, prc=99):
+    """Robust symmetric limits for plotting off-diagonal values."""
+    A = np.array(A, float, copy=True)
+    np.fill_diagonal(A, np.nan)
+    v = np.nanpercentile(np.abs(A), prc)
+    if not np.isfinite(v) or v <= 0:
+        v = np.nanmax(np.abs(A))
+        if not np.isfinite(v) or v <= 0:
+            v = 1.0
+    return float(v)
+
+def offdiag_values(C, mode="abs"):
+    """
+    Return 1D array of off-diagonal entries.
+    mode: 'abs', 'real', 'imag', 'phase'
+    """
+    C = np.asarray(C)
+    M = C.shape[0]
+    iu = np.triu_indices(M, k=1)
+
+    if mode == "abs":
+        v = np.abs(C[iu])
+    elif mode == "real":
+        v = np.real(C[iu])
+    elif mode == "imag":
+        v = np.imag(C[iu])
+    elif mode == "phase":
+        v = np.angle(C[iu])
+    else:
+        raise ValueError("mode must be abs/real/imag/phase")
+
+    v = np.asarray(v).ravel()
+    v = v[np.isfinite(v)]
+    return v
+
+
+# ---------- grouping / permutations ----------
+def permutation_by_score(score, descending=True):
+    score = np.asarray(score, float)
+    order = np.argsort(score)
+    if descending:
+        order = order[::-1]
+    groups = {"sorted": (0, len(order))}
+    return order.astype(int), groups
+
+def permutation_by_orientation(M, ORI_11m1, ORI_m111, keep_rest=True):
+    ORI_11m1 = [i for i in ORI_11m1 if 0 <= i < M]
+    ORI_m111 = [i for i in ORI_m111 if 0 <= i < M and i not in set(ORI_11m1)]
+    perm = ORI_11m1 + ORI_m111
+    if keep_rest:
+        rest = [i for i in range(M) if i not in set(perm)]
+        perm += rest
+    perm = np.array(perm, int)
+    n1 = len(ORI_11m1)
+    n2 = len(ORI_m111)
+    groups = {
+        "ORI_11m1": (0, n1),
+        "ORI_m111": (n1, n1 + n2),
+        "rest": (n1 + n2, len(perm)),
+    }
+    return perm, groups
+
+def split_by_sign_of_mode(v, frac_clip=0.0):
+    """
+    Split NVs into positive/negative groups based on a *mode loading* vector v.
+
+    Handles complex v by fixing a global phase so sum(v) is real positive,
+    then splitting by sign of real(v).
+
+    frac_clip: optionally drop near-zero values (e.g. 0.02 keeps only |x| above 2% quantile).
+    Returns (perm, groups, sign_value)
+    """
+    v = np.asarray(v, np.complex128)
+
+    # Fix global phase so sum(v) becomes real positive (remove arbitrary eigenvector phase)
+    s = np.sum(v)
+    if np.abs(s) > 0:
+        v = v * np.exp(-1j * np.angle(s))
+
+    x = np.real(v)  # sign decision variable
+
+    if frac_clip > 0:
+        thr = np.quantile(np.abs(x), frac_clip)
+        keep = np.abs(x) >= thr
+    else:
+        keep = np.ones_like(x, dtype=bool)
+
+    pos = np.where((x >= 0) & keep)[0].tolist()
+    neg = np.where((x < 0) & keep)[0].tolist()
+    drop = np.where(~keep)[0].tolist()
+
+    perm = np.array(pos + neg + drop, int)
+    groups = {"pos": (0, len(pos)), "neg": (len(pos), len(pos) + len(neg)), "dropped": (len(pos) + len(neg), len(perm))}
+    return perm, groups, x
+
+
+# ---------- plotting ----------
+def plot_matrix_with_groups(C, perm=None, groups=None, mode="abs", title="Matrix",
+                            vlim=None, diag_color="0.85", prc=99):
+    """
+    mode:
+      - for complex C: 'abs' or 'phase' or 'real' or 'imag'
+      - for real C: 'real' is typical
+    """
+    C = np.asarray(C)
+    M = C.shape[0]
+    if perm is None:
+        perm = np.arange(M, dtype=int)
+    Cp = C[np.ix_(perm, perm)]
+
+    # choose what to show
+    if mode == "abs":
+        A = np.abs(Cp)
+    elif mode == "phase":
+        A = np.angle(Cp)
+    elif mode == "real":
+        A = np.real(Cp)
+    elif mode == "imag":
+        A = np.imag(Cp)
+    else:
+        raise ValueError("mode must be abs/phase/real/imag")
+
+    # mask diagonal (gray)
+    mask = np.eye(M, dtype=bool)
+    Am = np.ma.array(A, mask=mask)
+
+    # set limits
+    if vlim is None:
+        if mode == "phase":
+            vmin, vmax = -np.pi, np.pi
+        else:
+            v = _safe_percentile_vlim(A, prc=prc)
+            vmin, vmax = (-v, v) if mode in ("real", "imag") else (0, v)
+    else:
+        if isinstance(vlim, (tuple, list)) and len(vlim) == 2:
+            vmin, vmax = float(vlim[0]), float(vlim[1])
+        else:
+            v = float(vlim)
+            vmin, vmax = (-v, v) if mode in ("real", "imag") else (0, v)
+
+    cmap = plt.cm.viridis.copy() if mode in ("abs",) else plt.cm.RdBu_r.copy()
+    cmap.set_bad(diag_color)
+
+    fig, ax = plt.subplots(figsize=(6.8, 5.8))
+    im = ax.imshow(Am, aspect="auto", vmin=vmin, vmax=vmax, cmap=cmap)
+    ax.set_title(title)
+    ax.set_xlabel("NV index (sorted)" if perm is not None else "NV index")
+    ax.set_ylabel("NV index (sorted)" if perm is not None else "NV index")
+    plt.colorbar(im, ax=ax, fraction=0.046, pad=0.04)
+
+    # boundaries + labels
+    if groups is not None:
+        for name, (a, b) in groups.items():
+            if a > 0:
+                ax.axhline(a - 0.5, color="w", lw=1.2)
+                ax.axvline(a - 0.5, color="w", lw=1.2)
+        for name, (a, b) in groups.items():
+            if (b - a) <= 0:
+                continue
+            c = 0.5 * (a + b - 1)
+            ax.text(-0.02, c, name, va="center", ha="right", transform=ax.get_yaxis_transform())
+            ax.text(c, -0.03, name, va="top", ha="center", transform=ax.get_xaxis_transform())
+
+    ax.grid(False)
+    plt.tight_layout()
+    return fig, ax
+
+
+def plot_offdiag_hist(C, mode="abs", bins=80, title="Off-diagonal histogram"):
+    v = offdiag_values(C, mode=mode)
+    fig, ax = plt.subplots(figsize=(6.2, 3.2))
+    ax.hist(v, bins=bins)
+    ax.set_title(title)
+    ax.set_xlabel(f"off-diagonal {mode}(C_ij)")
+    ax.set_ylabel("count")
+    ax.grid(True, ls="--", lw=0.5)
+    plt.tight_layout()
+    return fig, ax
+
+
+def plot_offdiag_hist_within_cross(C, groupA, groupB, mode="abs", bins=80,
+                                  title="Within vs Cross hist"):
+    C = np.asarray(C)
+    A = np.array(groupA, int)
+    B = np.array(groupB, int)
+
+    def _vals(idx1, idx2, upper_only=True):
+        sub = C[np.ix_(idx1, idx2)]
+        if idx1 is idx2 and upper_only:
+            m = np.triu(np.ones(sub.shape, bool), k=1)
+            sub = sub[m]
+        else:
+            sub = sub.ravel()
+        if mode == "abs": sub = np.abs(sub)
+        elif mode == "real": sub = np.real(sub)
+        elif mode == "imag": sub = np.imag(sub)
+        elif mode == "phase": sub = np.angle(sub)
+        sub = sub[np.isfinite(sub)]
+        return sub
+
+    vAA = _vals(A, A, upper_only=True)
+    vBB = _vals(B, B, upper_only=True)
+    vAB = _vals(A, B, upper_only=False)
+
+    fig, ax = plt.subplots(figsize=(6.6, 3.2))
+    ax.hist(vAA, bins=bins, alpha=0.6, label="within A")
+    ax.hist(vBB, bins=bins, alpha=0.6, label="within B")
+    ax.hist(vAB, bins=bins, alpha=0.6, label="cross A×B")
+    ax.set_title(title)
+    ax.set_xlabel(f"{mode}(C_ij)")
+    ax.set_ylabel("count")
+    ax.grid(True, ls="--", lw=0.5)
+    ax.legend(fontsize=9)
+    plt.tight_layout()
+    return fig, ax
+
+
+def phase_increment_series(x_mn, lag=1, amp_mode="min"):
+    """
+    x_mn: (M,N) complex series
+    Returns:
+      dphi: (M, N-lag) in (-pi, pi]
+      amp:  (M, N-lag) amplitude proxy used for masking
+    """
+    x = np.asarray(x_mn, np.complex128)
+    if lag < 1 or lag >= x.shape[1]:
+        raise ValueError("lag must satisfy 1 <= lag < N")
+
+    x1 = x[:, lag:]
+    x0 = x[:, :-lag]
+
+    d = x1 * np.conj(x0)
+    dphi = np.angle(d)
+
+    a1 = np.abs(x1)
+    a0 = np.abs(x0)
+    if amp_mode == "min":
+        amp = np.minimum(a0, a1)
+    elif amp_mode == "geom":
+        amp = np.sqrt(a0 * a1)
+    else:
+        raise ValueError("amp_mode must be 'min' or 'geom'")
+
+    return dphi, amp
+
+
+def phase_increment_pearson_matrix(
+    x_mn,
+    lag=1,
+    amp_mask=None,
+    amp_mode="min",
+    eps=1e-12,
+    return_aux=False,
+):
+    """
+    Pearson corr across NVs of phase increments dphi.
+
+    amp_mask options:
+      - None: no mask
+      - scalar thr: keep samples where amp >= thr (global threshold)
+      - array shape (M,) or (M,1): per-NV threshold
+
+    Returns:
+      Rphi: (M,M) real, diag = 1
+      dphi: (M, N-lag) phase increments
+      (optional aux): dict with mask stats
+    """
+    dphi, amp = phase_increment_series(x_mn, lag=lag, amp_mode=amp_mode)
+    M, T = dphi.shape
+
+    # build validity mask W (M,T)
+    if amp_mask is None:
+        W = np.ones((M, T), dtype=bool)
+    else:
+        thr = np.asarray(amp_mask)
+        if thr.ndim == 0:   # scalar
+            W = amp >= float(thr)
+        else:
+            thr = thr.reshape(M, 1)
+            W = amp >= thr
+
+    # center per NV over its valid samples
+    X = dphi.astype(np.float32)
+    Wf = W.astype(np.float32)
+
+    n_i = np.sum(Wf, axis=1)  # (M,)
+    n_i_safe = np.maximum(n_i, 1.0)
+
+    mu = (X * Wf).sum(axis=1) / n_i_safe
+    Xc = (X - mu[:, None]) * Wf
+
+    # pairwise counts (intersection sizes) and dot products
+    Nij = Wf @ Wf.T                      # (M,M)
+    Sij = Xc @ Xc.T                      # (M,M)
+
+    # per-NV variance estimates
+    var_i = np.diag(Sij) / np.maximum(n_i - 1.0, 1.0)
+    var_i = np.maximum(var_i, eps)
+
+    denom = np.sqrt(var_i[:, None] * var_i[None, :])
+
+    # covariance uses Nij; correlation uses per-NV vars
+    cov = Sij / np.maximum(Nij - 1.0, 1.0)
+    Rphi = cov / denom
+
+    # clean up / clip
+    Rphi = np.clip(Rphi, -1.0, 1.0)
+    np.fill_diagonal(Rphi, 1.0)
+
+    if not return_aux:
+        return Rphi, dphi
+    aux = {
+        "W": W,
+        "Nij": Nij,
+        "n_i": n_i,
+        "mu": mu,
+        "amp_used": amp,
+    }
+    return Rphi, dphi, aux
+
+def plot_matrix_views(
+    A, title,
+    ORI_11m1=None, ORI_m111=None,
+    sign_vec=None,
+    score=None,
+    bins=80,
+    show_phase=False,
+):
+    """
+    A: (M,M) real or complex matrix
+    score: (M,) per-NV score for sorting (optional)
+    sign_vec: (M,) vector to split pos/neg (optional; e.g. v1 of C_time)
+    """
+
+    M = A.shape[0]
+
+    # 1) raw
+    plot_matrix_with_groups(A, mode=("abs" if np.iscomplexobj(A) else "real"), title=title + " (raw)")
+    plot_offdiag_hist(A, mode=("abs" if np.iscomplexobj(A) else "real"), bins=bins,
+                      title=title + " (offdiag hist)")
+
+    # 2) sorted by score (e.g. |v1| or scoreK)
+    if score is not None:
+        permS, groupsS = permutation_by_score(score, descending=True)
+        plot_matrix_with_groups(A, perm=permS, groups=groupsS,
+                                mode=("abs" if np.iscomplexobj(A) else "real"),
+                                title=title + " (sorted by score)")
+        plot_offdiag_hist(A[np.ix_(permS, permS)],
+                          mode=("abs" if np.iscomplexobj(A) else "real"),
+                          bins=bins,
+                          title=title + " (sorted offdiag hist)")
+
+    # 3) orientation grouping
+    if ORI_11m1 is not None and ORI_m111 is not None:
+        permO, groupsO = permutation_by_orientation(M, ORI_11m1, ORI_m111, keep_rest=True)
+        plot_matrix_with_groups(A, perm=permO, groups=groupsO,
+                                mode=("abs" if np.iscomplexobj(A) else "real"),
+                                title=title + " (orientation grouped)")
+        plot_offdiag_hist_within_cross(A, ORI_11m1, ORI_m111,
+                                       mode=("abs" if np.iscomplexobj(A) else "real"),
+                                       bins=bins,
+                                       title=title + " (within/cross by orientation)")
+
+    # 4) split into +/- groups using sign_vec
+    if sign_vec is not None:
+        permP, groupsP, xsign = split_by_sign_of_mode(sign_vec, frac_clip=0.0)
+        plot_matrix_with_groups(A, perm=permP, groups=groupsP,
+                                mode=("abs" if np.iscomplexobj(A) else "real"),
+                                title=title + " (split by +/- group)")
+        # hist within/cross for pos/neg
+        pos_idx = permP[np.arange(groupsP["pos"][0], groupsP["pos"][1])]
+        neg_idx = permP[np.arange(groupsP["neg"][0], groupsP["neg"][1])]
+        plot_offdiag_hist_within_cross(A, pos_idx, neg_idx,
+                                       mode=("abs" if np.iscomplexobj(A) else "real"),
+                                       bins=bins,
+                                       title=title + " (within/cross pos-neg)")
+
+    plt.show()
+
+import numpy as np
+
+def perm_by_spectral_seriation(A, use_abs=True, eps=1e-12):
+    """
+    Returns a permutation that tends to place highly correlated indices adjacent.
+    Uses Fiedler vector of graph Laplacian of similarity matrix.
+
+    A: (M,M) real/complex
+    use_abs: if True, uses S=|A| as similarity. Otherwise uses S=A (clipped).
+    """
+    A = np.asarray(A)
+    if np.iscomplexobj(A):
+        S = np.abs(A) if use_abs else np.real(A)
+    else:
+        S = np.abs(A) if use_abs else A.copy()
+
+    # remove diagonal self-similarity
+    S = S.copy()
+    np.fill_diagonal(S, 0.0)
+
+    # ensure nonnegative
+    S = np.maximum(S, 0.0)
+
+    # Laplacian
+    d = S.sum(axis=1)
+    L = np.diag(d) - S
+
+    # eigenvectors of symmetric L
+    w, V = np.linalg.eigh(0.5 * (L + L.T))
+
+    # Fiedler vector = 2nd smallest eigenvector (skip constant mode)
+    if V.shape[1] < 2:
+        return np.arange(A.shape[0], dtype=int)
+
+    v = V[:, 1]
+    perm = np.argsort(v)
+    return perm
+
 # ----------------------------
 # Example usage (edit for your loader)
 # ----------------------------
 if __name__ == "__main__":
     # Example: load from an npz that contains 'counts'
     from utils import data_manager as dm
-    raw_data = dm.get_raw_data(
-        file_stem="2025_12_24-09_32_29-johnson-nv0_2025_10_21", load_npz=True
-    )
+    # raw_data = dm.get_raw_data(
+    #     file_stem="2025_12_24-09_32_29-johnson-nv0_2025_10_21", load_npz=True
+    # )
+    file_stems = ["2026_01_04-18_43_01-johnson-nv0_2025_10_21",
+                  "2026_01_05-14_32_43-johnson-nv0_2025_10_21"]
+    # raw_data = dm.get_raw_data(
+    #     file_stem="2026_01_04-18_43_01-johnson-nv0_2025_10_21", load_npz=True
+    # )
+    raw_data= widefield.process_multiple_files(file_stems, load_npz=True)
+
     nv_list =  raw_data["nv_list"] 
     counts = raw_data["counts"]
     
@@ -1003,306 +2249,63 @@ if __name__ == "__main__":
     global_bad_thresh=0.9,
     trim_trailing=True,
     drop_all_bad_runs=False,
-    detrend=True,
-    regress_global=True,
-    regress_use_Q=True,
-    fband=(0.05, 0.15),      # example band if dt=1.0 cycles/shot; otherwise Hz
-)
-
-
-    # ORI_11m1 = [...]   # your list
-    # ORI_m111 = [...]   # your list
+    detrend=False,
+    regress_global=False,
+    regress_use_Q=False,
+    fband=None,
+    )
     # #fmt:off 
     ORI_11m1 = [0, 1, 3, 5, 6, 7, 9, 10, 13, 18, 19, 21, 24, 25, 27, 28, 30, 32, 34, 36, 40, 41, 43, 44, 46, 48, 49, 51, 52, 53, 56, 57, 64, 65, 66, 67, 68, 69, 73, 75, 77, 80, 82, 84, 86, 88, 91, 98, 100, 101, 102, 103, 106, 107, 109, 110, 111, 113, 115, 116, 118, 119, 120, 121, 123, 124, 127, 129, 130, 131, 132, 133, 134, 135, 141, 142, 146, 149, 150, 152, 153, 156, 157, 158, 162, 163, 165, 167, 168, 171, 174, 177, 179, 184, 185, 186, 187, 189, 190, 191, 192, 193, 195, 198, 201, 203]
     ORI_m111 = [2, 4, 8, 11, 12, 14, 15, 16, 17, 20, 22, 23, 26, 29, 31, 33, 35, 37, 38, 39, 42, 45, 47, 50, 54, 55, 58, 59, 60, 61, 62, 63, 70, 71, 72, 74, 76, 78, 79, 81, 83, 85, 87, 89, 90, 92, 93, 94, 95, 96, 97, 99, 104, 105, 108, 112, 114, 117, 122, 125, 126, 128, 136, 137, 138, 139, 140, 143, 144, 145, 147, 148, 151, 154, 155, 159, 160, 161, 164, 166, 169, 170, 172, 173, 175, 176, 178, 180, 181, 182, 183, 188, 194, 196, 197, 199, 200, 202] 
     # # #fmt:on
-    # M = out["M"]
-    # perm, groups = make_orientation_permutation(M, ORI_11m1, ORI_m111, keep_rest=True)
-
-    # # time-domain matrix
-    # plot_matrix_with_boundaries(out["C_time"], perm, groups, title="C_time", abs_phase="abs")
-    # plot_matrix_with_boundaries(out["C_time"], perm, groups, title="C_time", abs_phase="phase")
-
-    # # spectral matrix (if you computed fband)
-    # if "coh_spec" in out:
-    #     plot_matrix_with_boundaries(out["coh_spec"], perm, groups, title="coh_spec", abs_phase="abs", prc=(1,99))
-
-
-    # C = out["C_time"]  # or out["coh_spec"]
-    # res = perm_test_orientation(C, ORI_11m1, ORI_m111, nperm=2000)
-    # print("Contrast (within-cross) =", res["obs"])
-    # print("within =", res["within"], "cross =", res["cross"])
-    # print("Permutation p-value =", res["p"])
-    
-    # plt.figure()
-    # plt.hist(res["null"], bins=40)
-    # plt.axvline(res["obs"], ls="--")
-    # plt.xlabel("within - cross (|C|)")
-    # plt.ylabel("count")
-    # plt.title(f"Permutation test, p={res['p']:.3g}")
-
-    C = out["C_time"]
-    diag = np.real(np.diag(C))
-    print("diag mean±std:", diag.mean(), diag.std(), "min/max:", diag.min(), diag.max())
-    v1 = out["v1_time"]
-    w = np.abs(v1)
-    w = w / np.linalg.norm(w)
-
-    PR = 1.0 / np.sum(w**4)          # participation ratio ~ #effective NVs
-    M = out["M"]
-    print("Participation ratio:", PR, "out of M =", M)
-    plt.figure(figsize=(7,3))
-    plt.plot(np.abs(out["v1_time"]), "o", ms=3)
-    plt.xlabel("NV index"); plt.ylabel("|v1|"); plt.title("Top-mode weights |v1|")
-    plt.grid(True, ls="--", lw=0.5); plt.tight_layout(); plt.show()
-    
-    z = out["z"]                          # (M, Nshots)
-    shot_energy = np.mean(np.abs(z)**2, axis=0)  # should be ~1 after whitening
-
-    plt.figure(figsize=(7,3))
-    plt.plot(shot_energy, lw=1)
-    plt.axhline(np.median(shot_energy), ls="--")
-    plt.xlabel("shot"); plt.ylabel("mean |z|^2 across NVs")
-    plt.title("Shot energy (find global glitches)")
-    plt.grid(True, ls="--", lw=0.5); plt.tight_layout(); plt.show()
-
-    print("energy percentiles:", np.percentile(shot_energy, [50, 90, 95, 99, 99.5, 99.9]))
-    
-    M, R, S, P = out["M"], out["R"], out["S"], out["P"]
+    make_summary_plots(out, dt=0.264, global_bad_thresh=0.9, zthr=10.0)
     z = out["z"]
-    shot_energy = np.mean(np.abs(z)**2, axis=0)
+    # print(z.shape())
+    print(type(z), len(z))
+    print(type(z[0]), getattr(z[0], "shape", None))
 
-    # reshape into runs if possible
-    if shot_energy.size == R*S*P:
-        E = shot_energy.reshape(R, S*P)           # (R, shots_per_run)
-        E_run = np.mean(E, axis=1)               # mean energy per run
-
-        plt.figure(figsize=(7,3))
-        plt.plot(E_run, "o-", ms=3)
-        plt.xlabel("run index")
-        plt.ylabel("mean shot_energy in run")
-        plt.title("Run-averaged shot energy")
-        plt.grid(True, ls="--", lw=0.5)
-        plt.tight_layout()
-        plt.show()
-    else:
-        print("Cannot reshape by runs because shots were dropped (NaNs).")
-    
-    top = np.array([107,186,98,51,189,14,201,50,199,8,202,59,21,45,57,73,108,155,114,97])
-    M = out["M"]
-    mask_top = np.zeros(M, bool); mask_top[top] = True
-
-    z = out["z"]
-    E_all  = np.mean(np.abs(z)**2, axis=0)
-    E_top  = np.mean(np.abs(z[mask_top])**2, axis=0)
-    E_rest = np.mean(np.abs(z[~mask_top])**2, axis=0)
-
-    plt.figure(figsize=(8,3))
-    plt.plot(E_all,  lw=1, label="all NVs")
-    plt.plot(E_top,  lw=1, label="top subset")
-    plt.plot(E_rest, lw=1, label="rest")
-    plt.xlabel("shot")
-    plt.ylabel("mean |z|^2")
-    plt.title("Shot energy by group")
-    plt.grid(True, ls="--", lw=0.5)
-    plt.legend()
-    plt.tight_layout()
-    plt.show()
-
-
-    def per_shot_normalize(z, eps=1e-12):
-        E = np.mean(np.abs(z)**2, axis=0)
-        return z / np.sqrt(np.maximum(E, eps))[None, :]
-
-    z = out["z"]
-    C0 = out["C_time"]
-    w0, _ = eig_hermitian(C0)
-
-    zN = per_shot_normalize(z)
-    CN = coherence_matrix_time(zN)
-    wN, _ = eig_hermitian(CN)
-
-    print("Top evals before:", w0[:6])
-    print("Top evals after per-shot norm:", wN[:6])
-
-
-    p = [0.01, 0.1, 1, 5, 10, 25, 50, 75, 90, 95, 99, 99.9]
-    print("shot_energy percentiles:")
-    for q, v in zip(p, np.percentile(shot_energy, p)):
-        print(f"{q:>5}%  {v:.4f}")
-
-    print("min / max:", float(np.min(shot_energy)), float(np.max(shot_energy)))
-
-
-    E = shot_energy
-    w = 200  # smoothing window (shots)
-    E_s = np.convolve(E, np.ones(w)/w, mode="same")
-
-    thr = 0.8  # adjust
-    bad = E_s < thr
-
-    plt.figure(figsize=(8,3))
-    plt.plot(E, lw=0.5, alpha=0.4, label="shot_energy")
-    plt.plot(E_s, lw=2, label=f"smoothed ({w})")
-    plt.axhline(thr, ls="--")
-    plt.legend()
-    plt.xlabel("shot")
-    plt.ylabel("mean |z|^2")
-    plt.title("Detect low-energy regime")
-    plt.grid(True, ls="--", lw=0.5)
-    plt.tight_layout()
-    plt.show()
-
-    print("fraction below thr:", bad.mean())
     sys.exit()
-    def top_eig_from_z(z):
-        C = coherence_matrix_time(z)
-        w, V = eig_hermitian(C)
-        return float(w[0]), w, V[:,0]
+    res = analyze_correlated_modes(out, nv_list, K=6)
+    # plot_all_pairwise(out, use="z",  mask_phase_below=0.0)   # best for coherence structure
+    # or, if you want the more “physical” (brightness-weighted) signal:
+    # plot_all_pairwise(out, use="s0", mask_phase_below=0.0)
 
-    for prc in [99.0, 99.5, 99.9]:
-        thr = np.percentile(shot_energy, prc)
-        keep = shot_energy <= thr
-        lam1, evals, v1 = top_eig_from_z(z[:, keep])
-        print(f"drop top {(100-prc):.1f}% energy shots -> keep {keep.mean()*100:.2f}% shots, lam1={lam1:.6f}")
+    # Choose what you want to analyze:
+    # x = out["z"]   # whitened (good for detecting structure independent of brightness)
+    x = out["s0"]    # more “physical”, retains amplitude weighting (often better for phase-noise realism)
 
-    z = out["z"]
-    v1 = out["v1_time"]
-    a  = out["a_time"]
-
-    z_perp = z - np.outer(v1, a)      # remove rank-1 component
-
-    lam1_before = out["evals_time"][0]
-    lam1_after, evals_after, _ = top_eig_from_z(z_perp)
-
-    print("lam1 before:", lam1_before)
-    print("lam1 after removing mode1:", lam1_after)
-
-
-    def top_mode_loadings(out, K=5):
-        V = np.column_stack([out["v1_time"]])  # placeholder if you only stored v1
-        # Better: recompute eigenvectors once from C_time so you have top K:
-        w, Vfull = eig_hermitian(out["C_time"])
-        return w[:K], Vfull[:, :K]
-
-    evalsK, VK = top_mode_loadings(out, K=6)
-    print("Top evals:", evalsK)
-
-    # NV importance score: sum of squared magnitudes across first K modes
-    score = np.sum(np.abs(VK)**2, axis=1)  # (M,)
-    idx = np.argsort(score)[::-1]
-
-    print("Top 20 NVs by correlated-mode score:\n", idx[:20])
-    print("Scores:", score[idx[:20]])
+    Rphi, dphi = phase_increment_pearson_matrix(x, lag=1, amp_mask=None)
+    plot_matrix(Rphi, title="Phase-increment Pearson corr (lag=1)")
     
-    import matplotlib.pyplot as plt
-    plt.figure(figsize=(7,3))
-    plt.plot(score, "o", ms=3)
-    plt.xlabel("NV index"); plt.ylabel("sum_k |v_k|^2")
-    plt.title("NV participation in top correlated modes")
-    plt.grid(True, ls="--", lw=0.5); plt.tight_layout(); plt.show()
-
-    order = np.argsort(score)[::-1]
-    Cp = out["C_time"][np.ix_(order, order)]
-    plot_matrix(Cp, title="C_time sorted by correlated-mode score", show_phase=False)
-
-
-    xy_pix, valid = extract_xy_from_nv_list(nv_list, key="pixel")
-    score, evalsK, VK = correlated_participation_score(out["C_time"], K=6)
-    fig, ax, top = plot_nv_map_scores(xy_pix, score, valid=valid, top_n=40,
-                                    title="Pixel map: participation score")
-    print("Top indices:", top[:20])
-
-
-    r_all, m_all = corr_abs_vs_distance(out["C_time"], xy_pix, valid=valid, nbins=25)
-    plot_corr_vs_r(r_all, m_all, title="C_time: mean |C_ij| vs pixel distance (all NVs)")
-
-    # focus only on the strongly participating subset (say top 40 by score)
-    top40 = np.argsort(score)[::-1][:40]
-    r_top, m_top = corr_abs_vs_distance(out["C_time"], xy_pix, valid=valid, nbins=15, subset=top40)
-    plot_corr_vs_r(r_top, m_top, title="C_time: mean |C_ij| vs distance (top-40 subset)")
-
-
-    def fraction_in_group(indices, group):
-        s = set(group)
-        return np.mean([i in s for i in indices])
-
-    top40 = np.argsort(score)[::-1][:40]
-    print("Top40 fraction ORI_11m1:", fraction_in_group(top40, ORI_11m1))
-    print("Top40 fraction ORI_m111:", fraction_in_group(top40, ORI_m111))
-
-    # z = out["z"]
-    # emax_null = shuffle_null_eigs(z, nperm=300, seed=1, mode="time_shuffle")
-
-    # lam1_obs = out["evals_time"][0]
-    # p = (np.sum(emax_null >= lam1_obs) + 1) / (len(emax_null) + 1)
-
-    # print("Top eigen (obs):", lam1_obs)
-    # print("Null mean±std:", emax_null.mean(), emax_null.std())
-    # print("p-value:", p)
-
-    # plt.figure()
-    # plt.hist(emax_null, bins=35)
-    # plt.axvline(lam1_obs, ls="--")
-    # plt.xlabel("Top eigenvalue (null)")
-    # plt.ylabel("count")
-    # plt.title(f"Top-eigen null, p={p:.3g}")
-    # plt.grid(True, ls="--", lw=0.5)
-    # plt.show()
+    amp_thr = np.percentile(np.abs(x), 20)  # example: drop lowest 10% amplitude points
+    Rphi, _ = phase_increment_pearson_matrix(x, lag=1, amp_mask=amp_thr)
+    plot_matrix(Rphi, title=f"Phase-increment corr (amp_mask={amp_thr:.3g})")
     
-    
-    # ---- run it ----
-    xy_pix, valid = extract_xy_from_nv_list(nv_list, key="pixel")
+    x = out["s0"]
+    amp_thr_per_nv = np.percentile(np.abs(x), 20, axis=1)
 
-    top = np.array([107,186,98,51,189,14,201,50,199,8,202,59,21,45,57,73,108,155,114,97])
-    top = top[valid[top]]   # safety
+    Rphi, dphi = phase_increment_pearson_matrix(x, lag=1, amp_mask=amp_thr_per_nv)
 
-    plot_highlight(xy_pix, top, title="Top correlated NVs (pixel coords)", invert_y=True)
+    # choose a score for sorting: e.g. "row strength"
+    score_Rphi = np.mean(np.abs(Rphi - np.eye(Rphi.shape[0])), axis=1)
 
-    obs, null, p = perm_test_spatial_cluster(xy_pix[valid], np.where(valid)[0].searchsorted(top), nperm=2000)
-    # The indexing above is only needed if you subselect valid; simplest is keep valid==all True for your data.
-    print("cluster radius (obs):", obs, "p(clustered):", p)
+    # use sign split from the TOP MODE of C_time (so it's consistent across matrices)
+    w_eval, V = eig_hermitian(out["C_time"])
+    v1 = V[:, 0]
 
-    plt.figure()
-    plt.hist(null, bins=40)
-    plt.axvline(obs, ls="--")
-    plt.xlabel("radius of gyration (random subsets)")
-    plt.ylabel("count")
-    plt.title(f"Spatial clustering test (smaller=more clustered), p={p:.3g}")
-    plt.grid(True, ls="--", lw=0.5)
-    plt.tight_layout()
-    plt.show()
+    # plot_matrix_views(
+    #     Rphi,
+    #     title="Phase-increment Pearson corr (lag=1)",
+    #     ORI_11m1=ORI_11m1,
+    #     ORI_m111=ORI_m111,
+    #     sign_vec=v1,
+    #     score=score_Rphi,
+    #     bins=80,
+    # )
 
-    xy_aod, valid_aod = extract_xy_from_nv_list(nv_list, key="laser_INTE_520_aod")
-    plot_highlight(xy_aod, top, title="Top correlated NVs (520 AOD coords)", invert_y=False)
-
-    w, V = eig_hermitian(out["C_time"])  # V[:,k]
-    K = 6
-    for k in range(K):
-        vk = V[:,k]
-        pr = 1.0 / np.sum((np.abs(vk)/np.linalg.norm(vk))**4)
-        idxk = np.argsort(np.abs(vk))[::-1][:20]
-        print(f"mode {k+1}: eval={w[k]:.6f}, PR~{pr:.1f}, top idx={idxk.tolist()}")
-        plot_highlight(xy_pix, idxk, title=f"Mode {k+1} top NVs (pixel)", invert_y=True, label_first=12)
-
-
-    score = np.sum(np.abs(V[:, :6])**2, axis=1)
-
-    bright = np.mean(np.abs(out["s0"]), axis=1)  # proxy; or use raw counts if you prefer
-
-    plt.figure(figsize=(4,4))
-    plt.plot(bright, score, "o", ms=3)
-    plt.xlabel("mean |s0| (brightness proxy)")
-    plt.ylabel("participation score (sum |v_k|^2)")
-    plt.title("Brightness vs correlated participation")
-    plt.grid(True, ls="--", lw=0.5)
-    plt.tight_layout()
-    plt.show()
-
-    print("corrcoef:", float(np.corrcoef(bright, score)[0,1]))
-
+    perm = perm_by_spectral_seriation(Rphi, use_abs=True)
+    plot_matrix(Rphi[np.ix_(perm, perm)], title="Rphi (spectral-sorted)", show_phase=False)
 
     plt.show()
-
     # Replace this with your actual counts:
     # raise SystemExit("Edit __main__ with your counts loader (npz / dm.get_raw_data / etc.)")

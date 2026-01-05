@@ -526,15 +526,15 @@ def do_dm_xy_iq_lockin(nv_list):
     n_pi = 1
     num_reps = 75
     num_runs = 2000   # 200*90 = 18000 reps -> ~1 hour
-
-    dm_xy_iq_lockin_correlation.main(
-        nv_list=nv_list,
-        num_reps=num_reps,
-        num_runs=num_runs,
-        tau_ns=tau_ns,
-        n_pi=n_pi,
-        uwave_ind_list=(0, 1),
-    )
+    for _ in range(2):
+        dm_xy_iq_lockin_correlation.main(
+            nv_list=nv_list,
+            num_reps=num_reps,
+            num_runs=num_runs,
+            tau_ns=tau_ns,
+            n_pi=n_pi,
+            uwave_ind_list=(0, 1),
+        )
     
 def do_calibrate_iq_delay(nv_list):
     min_tau = 20
@@ -1668,14 +1668,14 @@ if __name__ == "__main__":
         # do_two_block_hahn_spatial_correlation(nv_list)
         # do_T2_correlation_test(nv_list)
         # do_two_block_hahn_correlation(nv_list)
-        # do_resonance(nv_list)
+        # do_resonance(nv_list) 
         # do_sq_relaxation(nv_list)
         # do_dq_relaxation(nv_list)
         # do_detect_cosmic_rays(nv_list)
         # do_check_readout_fidelity(nv_list)
         # do_charge_quantum_jump(nv_list)
         # do_ac_stark(nv_list)
-        # do_dm_xy_iq_lockin(nv_list)
+        do_dm_xy_iq_lockin(nv_list)
         # do_two_block_hahn_correlation_dm(nv_list)
 
         # do_two_block_hahn_spatial_correlation(nv_list)

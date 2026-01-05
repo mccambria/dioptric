@@ -256,7 +256,6 @@ def process_and_plot_dm_lockin(raw_data, show=True):
 # -----------------------------
 # Main experiment
 # -----------------------------
-
 def main(
     nv_list,
     num_reps,
@@ -296,7 +295,7 @@ def main(
         num_steps,
         num_reps,
         num_runs,
-        num_exps= 4,
+        num_exps= 5,
         run_fn=run_fn,
         uwave_ind_list=list(uwave_ind_list),
         load_iq=True,
