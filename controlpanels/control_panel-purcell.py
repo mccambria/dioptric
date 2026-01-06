@@ -680,7 +680,7 @@ def do_rabi(nv_list):
     # rabi.main(nv_list, num_steps, num_reps, num_runs, min_tau, max_tau, uwave_ind_list)
 
 
-def do_widefield_coherence_test(nv_list, evol_time):
+def do_widefield_coherence_test(nv_list, evol_time, seq_type):
     # num_reps = 11
     num_reps = 15
     num_runs = 150
@@ -694,7 +694,7 @@ def do_widefield_coherence_test(nv_list, evol_time):
     num_steps = len(phi_list)
     uwave_ind_list = [0, 1]  # both are has iq modulation
     widefield_coherence.main(
-        nv_list, num_steps, num_reps, num_runs, phi_list, evol_time, uwave_ind_list
+        nv_list, num_steps, num_reps, num_runs, phi_list, evol_time, seq_type, uwave_ind_list
     )
     # for _ in range(2):
     #     spin_echo_phase_scan_test.main(
@@ -1570,7 +1570,7 @@ if __name__ == "__main__":
         # )
 
         do_compensate_for_drift(nv_sig)
-        # do_widefield_image_sample(nv_sig, 50)
+        do_widefield_image_sample(nv_sig, 50)
         # do_widefield_image_sample(nv_sig, 400)
 
         # for nv in nv_list:
@@ -1648,10 +1648,14 @@ if __name__ == "__main__":
         # do_calibrate_green_red_delay()
         # do_spin_echo_phase_scan_test(nv_list)  # for iq mod test
         # evol_time_list = [18000, 19600, 21000]
-        evol_time_list = [15000]
-        seq_type = "xy4" # "ramsey", "spin_echo", "xy4", "xy8", "xy16"
-        for val in evol_time_list:
-            do_widefield_coherence_test(nv_list, val)
+
+        evol_time_list = [24, 15000]  # ns
+        seq_types = ["hahn", "xy4", "xy8"]  # or add "ramsey", "xy16"
+
+        for seq_type in seq_types:
+            for evol_time in evol_time_list:
+                print(f"Running {seq_type} at evol_time={evol_time} ns")
+                do_widefield_coherence_test(nv_list, evol_time, seq_type)
 
         # do_bootstrapped_pulse_error_tomography(nv_list)
         # do_calibrate_iq_delay(nv_list)

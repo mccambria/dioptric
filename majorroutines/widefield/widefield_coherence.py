@@ -254,12 +254,13 @@ def create_fit_figure(nv_list, phis, norm_counts, norm_counts_ste):
 #     # plt.show()
 
 
-def main(nv_list, num_steps, num_reps, num_runs, phi_list, evol_time, uwave_ind_list):
-    ### Some initial setup
+def main(nv_list, num_steps, num_reps, num_runs, phi_list, evol_time, seq_type, uwave_ind_list):
     pulse_gen = tb.get_server_pulse_gen()
     seq_file = "widefield_coherence.py"
-    
-    ### Collect the data
+
+    # ---- minimal safety: map 360 -> 0, keep ints ----
+    phi_list = [int(ph) % 360 for ph in phi_list]
+    num_steps = len(phi_list)
 
     def run_fn(shuffled_step_inds):
         step_vals = [phi_list[ind] for ind in shuffled_step_inds]
@@ -267,9 +268,8 @@ def main(nv_list, num_steps, num_reps, num_runs, phi_list, evol_time, uwave_ind_
             widefield.get_base_scc_seq_args(nv_list, uwave_ind_list),
             step_vals,
             evol_time,
-            # seq_type,
+            seq_type,
         ]
-        # print(seq_args)
         seq_args_string = tb.encode_seq_args(seq_args)
         pulse_gen.stream_load(seq_file, seq_args_string, num_reps)
 
@@ -284,40 +284,23 @@ def main(nv_list, num_steps, num_reps, num_runs, phi_list, evol_time, uwave_ind_
         load_iq=True,
     )
 
-    ### save the raw data
     timestamp = dm.get_time_stamp()
     raw_data |= {
         "timestamp": timestamp,
         "phis": phi_list,
-        "phi-units": "radian",
+        "phi-units": "deg",     # <-- FIX
         "evol_time": evol_time,
         "evol_time-unit": "ns",
+        "seq_type": seq_type,
     }
 
     repr_nv_sig = widefield.get_repr_nv_sig(nv_list)
-    repr_nv_name = repr_nv_sig.name
-    file_path = dm.get_file_path(__file__, timestamp, repr_nv_name)
+    file_path = dm.get_file_path(__file__, timestamp, repr_nv_sig.name)
     dm.save_raw_data(raw_data, file_path)
 
-    ### Clean up
     tb.reset_cfm()
-
-    ### Process and plot
-    try:
-        raw_fig = None
-        fit_fig = None
-        counts = raw_data["counts"]
-        sig_counts = counts[0]
-        ref_counts = counts[1]
-        norm_counts, norm_counts_ste = widefield.process_counts(
-            nv_list, sig_counts, ref_counts, threshold=True
-        )
-        fit_fig = create_fit_figure(nv_list, phi_list, norm_counts, norm_counts_ste)
-    except Exception:
-        print(traceback.format_exc())
-        raw_fig = None
-        fit_fig = None
     kpl.show()
+
 
     # if raw_fig is not None:
     #     dm.save_figure(raw_fig, file_path)
