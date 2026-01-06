@@ -5,6 +5,7 @@ Optimize on an NV
 Largely rewritten August 16th, 2023
 
 @author: mccambria
+@author: sbchand
 """
 
 

@@ -257,7 +257,7 @@ def create_fit_figure(nv_list, phis, norm_counts, norm_counts_ste):
 def main(nv_list, num_steps, num_reps, num_runs, phi_list, evol_time, uwave_ind_list):
     ### Some initial setup
     pulse_gen = tb.get_server_pulse_gen()
-    seq_file = "spin_echo_phase_scan.py"
+    seq_file = "widefield_coherence.py"
     
     ### Collect the data
 
@@ -267,6 +267,7 @@ def main(nv_list, num_steps, num_reps, num_runs, phi_list, evol_time, uwave_ind_
             widefield.get_base_scc_seq_args(nv_list, uwave_ind_list),
             step_vals,
             evol_time,
+            # seq_type,
         ]
         # print(seq_args)
         seq_args_string = tb.encode_seq_args(seq_args)
@@ -339,8 +340,9 @@ if __name__ == "__main__":
         # file_stem="2025_04_30-00_36_54-rubin-nv0_2025_02_26",  # ramsey
         # file_stem="2025_04_30-12_43_15-rubin-nv0_2025_02_26",  # xy8
         # file_stem="2025_10_10-21_51_14-rubin-nv0_2025_09_08",  # xy8
-        file_stem="2025_10_11-00_03_47-rubin-nv0_2025_09_08",  # spin echo
+        # file_stem="2025_10_11-00_03_47-rubin-nv0_2025_09_08",  # spin echo
         # file_stem="2025_10_13-14_00_31-rubin-nv0_2025_09_08",  # xy8
+        file_stem="2026_01_05-18_44_14-johnson-nv0_2025_10_21",  # xy8
         load_npz=True,
         use_cache=True,
     )

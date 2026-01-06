@@ -50,10 +50,10 @@ from majorroutines.widefield import (
     T2_correlation,
     two_block_hahn_spatial_correlation,
     spin_echo,
-    spin_echo_phase_scan_test,
     two_block_hahn_correlation,
     dm_xy_iq_lockin_correlation,
     spin_pol_check,
+    widefield_coherence,
     xy,
 )
 
@@ -680,7 +680,7 @@ def do_rabi(nv_list):
     # rabi.main(nv_list, num_steps, num_reps, num_runs, min_tau, max_tau, uwave_ind_list)
 
 
-def do_spin_echo_phase_scan_test(nv_list, evol_time):
+def do_widefield_coherence_test(nv_list, evol_time):
     # num_reps = 11
     num_reps = 15
     num_runs = 150
@@ -693,7 +693,7 @@ def do_spin_echo_phase_scan_test(nv_list, evol_time):
     # fmt: on
     num_steps = len(phi_list)
     uwave_ind_list = [0, 1]  # both are has iq modulation
-    spin_echo_phase_scan_test.main(
+    widefield_coherence.main(
         nv_list, num_steps, num_reps, num_runs, phi_list, evol_time, uwave_ind_list
     )
     # for _ in range(2):
@@ -1637,7 +1637,7 @@ if __name__ == "__main__":
         # do_optimize_spin_pol_amp(nv_list)
         # do_check_readout_fidelity(nv_list)
 
-        do_scc_snr_check(nv_list)
+        # do_scc_snr_check(nv_list)
         # do_optimize_scc_duration(nv_list)
         # do_optimize_scc_amp(nv_list)
         # optimize_scc_amp_and_duration(nv_list)
@@ -1648,8 +1648,10 @@ if __name__ == "__main__":
         # do_calibrate_green_red_delay()
         # do_spin_echo_phase_scan_test(nv_list)  # for iq mod test
         # evol_time_list = [18000, 19600, 21000]
-        # for val in evol_time_list:
-        #     do_spin_echo_phase_scan_test(nv_list, val)  # for iq mod test
+        evol_time_list = [15000]
+        seq_type = "xy4" # "ramsey", "spin_echo", "xy4", "xy8", "xy16"
+        for val in evol_time_list:
+            do_widefield_coherence_test(nv_list, val)
 
         # do_bootstrapped_pulse_error_tomography(nv_list)
         # do_calibrate_iq_delay(nv_list)
@@ -1675,7 +1677,7 @@ if __name__ == "__main__":
         # do_check_readout_fidelity(nv_list)
         # do_charge_quantum_jump(nv_list)
         # do_ac_stark(nv_list)
-        do_dm_xy_iq_lockin(nv_list)
+        # do_dm_xy_iq_lockin(nv_list)
         # do_two_block_hahn_correlation_dm(nv_list)
 
         # do_two_block_hahn_spatial_correlation(nv_list)

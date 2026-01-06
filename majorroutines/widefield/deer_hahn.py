@@ -1,12 +1,28 @@
 # -*- coding: utf-8 -*-
 """
-Pulsed deer haha on multiple NVs with spin-to-charge
-conversion readout imaged onto a camera
+Pulsed widefield DEER (Hahn echo) on multiple NVs with spin-to-charge conversion (SCC)
+readout imaged onto a camera.
 
-Created on Coct 9th, 2025
+This routine sweeps an RF (bath) frequency while running a fixed NV Hahn-echo sequence.
+To suppress slow drifts, each RF point is acquired in an interleaved ON/OFF scheme:
 
-@author: schand
+  [f_on0, f_off0, f_on1, f_off1, ...]   where  f_off = f_on + Δ
+
+The saved data are post-processed to:
+  • split interleaved ON/OFF shots into two spectra per NV
+  • compute DEER contrast (e.g., (ON−OFF)/OFF) with propagated uncertainty
+  • optionally fit each NV’s DEER dip/peak (Gaussian or Lorentzian) and report
+    f0, amplitude, width, and reduced χ²
+  • optionally aggregate a selected NV subset (median + IQR bands) for a robust
+    ensemble view
+
+Hardware notes:
+  • NV MW source(s): fixed frequency and power (pulsed/gated by the sequencer)
+  • RF source: frequency updated each step; RF gated by TTL during the DEER window
+
+Created: Oct 9, 2025 (Saroj Chand)
 """
+
 
 import os
 import sys

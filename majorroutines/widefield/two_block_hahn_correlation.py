@@ -2,9 +2,9 @@
 """
 Widefield Rabi experiment
 
-Created on November 29th, 2023
+Created on November 29th, 2025
 
-@author: mccambria
+@author: sbchand
 """
 
 import sys

@@ -1184,56 +1184,54 @@ def plot_matrix_abs(C, title="|C|", prc=(1, 99), diag_color="0.85"):
     plt.tight_layout()
 
 
-def plot_common_mode_and_glitches(out, dt=1.0, zthr=10.0, nshots=None):
-    a = out.get("a_time", None)
-    z = out.get("z", None)
-    if a is None or z is None:
-        return
+# def plot_common_mode_and_glitches(out, dt=1.0, zthr=10.0, nshots=None):
+#     a = out.get("a_time", None)
+#     z = out.get("z", None)
+#     if a is None or z is None:
+#         return
 
-    a = np.asarray(a)
-    z = np.asarray(z)
-    E = shot_energy_from_z(z)
-    glitch, Ez = find_glitch_shots(E, zthr=zthr)
+#     a = np.asarray(a)
+#     z = np.asarray(z)
+#     E = shot_energy_from_z(z)
+#     glitch, Ez = find_glitch_shots(E, zthr=zthr)
 
-    if nshots is not None:
-        nshots = min(int(nshots), a.size)
-        a = a[:nshots]
-        E = E[:nshots]
-        glitch = glitch[:nshots]
-        Ez = Ez[:nshots]
+#     if nshots is not None:
+#         nshots = min(int(nshots), a.size)
+#         a = a[:nshots]
+#         E = E[:nshots]
+#         glitch = glitch[:nshots]
+#         Ez = Ez[:nshots]
 
-    t = np.arange(a.size) * float(dt)
+#     t = np.arange(a.size) * float(dt)
 
-    # time series
-    fig, ax = plt.subplots(figsize=(9, 3.2))
-    ax.plot(t, np.real(a), lw=1, label="Re(a)")
-    ax.plot(t, np.imag(a), lw=1, label="Im(a)")
-    if np.any(glitch):
-        ax.plot(t[glitch], np.real(a)[glitch], "rx", ms=5, label="glitch shots")
-    ax.set_xlabel("time (s)" if dt != 1.0 else "shot index")
-    ax.set_ylabel("a(t)")
-    ax.set_title("Top correlated mode a(t) (with glitch markers)")
-    ax.grid(True, ls="--", lw=0.5)
-    ax.legend(fontsize=8, ncol=3)
-    plt.tight_layout()
+#     # time series
+#     fig, ax = plt.subplots(figsize=(9, 3.2))
+#     ax.plot(t, np.real(a), lw=1, label="Re(a)")
+#     ax.plot(t, np.imag(a), lw=1, label="Im(a)")
+#     if np.any(glitch):
+#         ax.plot(t[glitch], np.real(a)[glitch], "rx", ms=5, label="glitch shots")
+#     ax.set_xlabel("time (s)" if dt != 1.0 else "shot index")
+#     ax.set_ylabel("a(t)")
+#     ax.set_title("Top correlated mode a(t) (with glitch markers)")
+#     ax.grid(True, ls="--", lw=0.5)
+#     ax.legend(fontsize=8, ncol=3)
+#     plt.tight_layout()
 
-    # shot energy
-    fig, ax = plt.subplots(figsize=(9, 4.0))
-    ax.plot(t, E, lw=1)
-    ax.set_xlabel("time (s)" if dt != 1.0 else "shot index")
-    ax.set_ylabel("mean |z|^2 across NVs")
-    ax.set_title(f"Shot energy (robust z-score threshold = {zthr})")
-    ax.grid(True, ls="--", lw=0.5)
-    # show robust scale
-    ax2 = ax.twinx()
-    ax2.plot(t, Ez, alpha=0.0)  # just to set scale if needed
-    plt.tight_layout()
+#     # shot energy
+#     fig, ax = plt.subplots(figsize=(9, 4.0))
+#     ax.plot(t, E, lw=1)
+#     ax.set_xlabel("time (s)" if dt != 1.0 else "shot index")
+#     ax.set_ylabel("mean |z|^2 across NVs")
+#     ax.set_title(f"Shot energy (robust z-score threshold = {zthr})")
+#     ax.grid(True, ls="--", lw=0.5)
+#     # show robust scale
+#     ax2 = ax.twinx()
+#     ax2.plot(t, Ez, alpha=0.0)  # just to set scale if needed
+#     plt.tight_layout()
 
-    print("shot_energy percentiles:", np.nanpercentile(E, [50, 90, 95, 99, 99.5, 99.9]))
-    print("glitch shots fraction:", float(np.mean(glitch)))
+#     print("shot_energy percentiles:", np.nanpercentile(E, [50, 90, 95, 99, 99.5, 99.9]))
+#     print("glitch shots fraction:", float(np.mean(glitch)))
 
-import numpy as np
-import matplotlib.pyplot as plt
 
 def shot_energy_from_z(z):
     """E[k] = mean_n |z[n,k]|^2"""
@@ -1378,8 +1376,219 @@ def plot_common_mode_and_glitches(out, dt=1.0, zthr=10.0, nshots=None,
     print("shot_energy percentiles:", np.nanpercentile(E, [50, 90, 95, 99, 99.5, 99.9]))
     print("glitch shots fraction:", float(np.mean(glitch)))
 
+
+import numpy as np
+import matplotlib.pyplot as plt
+
+# ----------------------------
+# Core helpers
+# ----------------------------
+def shot_energy(x_mn):
+    """Per-shot mean power across NVs. x_mn: (M,N) complex."""
+    x = np.asarray(x_mn)
+    return np.nanmean(np.abs(x)**2, axis=0)
+
+def global_mean_series(x_mn):
+    """g[k] = mean_n x[n,k]."""
+    x = np.asarray(x_mn)
+    return np.nanmean(x, axis=0)
+
+def split_common_and_residual(x_mn):
+    """
+    x_mn: (M,N)
+    g: (N,) global mean series
+    r: (M,N) residuals after removing g[k]
+    """
+    x = np.asarray(x_mn)
+    g = global_mean_series(x)          # (N,)
+    r = x - g[None, :]                 # (M,N)
+    return g, r
+
+def robust_zscore(x_1d, eps=1e-12):
+    """Robust z-score using median/MAD."""
+    x = np.asarray(x_1d, float)
+    med = np.nanmedian(x)
+    mad = np.nanmedian(np.abs(x - med))
+    sigma = 1.4826 * mad
+    sigma = max(float(sigma), eps)
+    return (x - med) / sigma
+
+def find_glitch_shots(E, zthr=8.0):
+    """
+    E: (N,) shot energy series
+    Returns glitch_mask (N,), Ez (N,) robust z-score
+    """
+    Ez = robust_zscore(E)
+    glitch = np.abs(Ez) >= float(zthr)
+    return glitch, Ez
+
+# ----------------------------
+# Main plotter
+# ----------------------------
+import numpy as np
+import matplotlib.pyplot as plt
+
+import numpy as np
+import matplotlib.pyplot as plt
+
+def robust_zscore_mad(x, eps=1e-12):
+    """Robust z-score using median + MAD."""
+    x = np.asarray(x, float)
+    med = np.nanmedian(x)
+    mad = np.nanmedian(np.abs(x - med))
+    sigma = 1.4826 * mad + eps
+    z = (x - med) / sigma
+    return z, med, sigma
+
+def shot_energy(x_mn):
+    """E[k] = mean_n |x[n,k]|^2. x_mn: (M,N) complex."""
+    x = np.asarray(x_mn)
+    return np.nanmean(np.abs(x)**2, axis=0)
+
+def split_common_and_residual(x_mn):
+    """g[k] = mean_n x[n,k], r[n,k] = x[n,k] - g[k]."""
+    x = np.asarray(x_mn)
+    g = np.nanmean(x, axis=0)          # (N,)
+    r = x - g[None, :]                 # (M,N)
+    return g, r
+
+def plot_physical_shot_diagnostics_s0(
+    out,
+    nshots=None,
+    dt=1.0,
+    zthr=8.0,
+    amp_prc=20.0,
+    mark_glitches=True,
+):
+    """
+    Physical-only diagnostics from out["s0"] (complex lock-in series).
+
+    Plots:
+      1) Shot energy E[k] = <|s0|^2>_n  (+ glitch markers via robust z-score)
+      2) Residual energy after removing global mean g[k] = <s0>_n
+      3) |g[k]| (global mean amplitude)
+      4) dphi[k] = angle(g[k] * conj(g[k-1])) (masked when |g| is small)
+    """
+    if "s0" not in out:
+        raise KeyError("out does not contain 's0'. This function is physical-only and expects out['s0'].")
+
+    x = np.asarray(out["s0"])
+    if x.ndim != 2:
+        raise ValueError(f"Expected out['s0'] shape (M,N), got {x.shape}")
+
+    if nshots is not None:
+        nshots = min(int(nshots), x.shape[1])
+        x = x[:, :nshots]
+
+    M, N = x.shape
+    t = np.arange(N, dtype=float) * float(dt)
+    xlab = "time (s)" if dt != 1.0 else "shot index"
+
+    # Common-mode split
+    g, r = split_common_and_residual(x)
+
+    # Energies
+    E = shot_energy(x)
+    Eres = shot_energy(r)
+
+    # Glitches from E
+    zE, Em, Es = robust_zscore_mad(E)
+    glitch = np.abs(zE) >= float(zthr)
+
+    # Global amplitude + phase increment
+    amp = np.abs(g)
+    amp_thr = np.nanpercentile(amp, float(amp_prc))
+
+    # phase increment is the physical-ish thing (absolute phase is arbitrary)
+    dphi = np.angle(g[1:] * np.conj(g[:-1]))  # (N-1,)
+
+    # Mask dphi where global mean is too small on either shot
+    good = amp > amp_thr
+    good_d = good[1:] & good[:-1]
+    dphi_m = np.where(good_d, dphi, np.nan)
+
+    # # ----- PLOTS -----
+    # fig, ax = plt.subplots(3, 1, figsize=(10, 7.2), sharex=True)
+
+    # # 1) Shot energy
+    # ax[0].plot(t, E, lw=1)
+    # if mark_glitches and np.any(glitch):
+    #     ax[0].plot(t[glitch], E[glitch], "rx", ms=4, label=f"glitch |zE|≥{zthr:g}")
+    #     ax[0].legend(fontsize=8, loc="upper right")
+    # ax[0].set_ylabel(r"$\langle |s_0|^2\rangle_n$")
+    # ax[0].set_title("Shot energy (global amplitude events)")
+
+    # # 2) Residual energy
+    # ax[1].plot(t, Eres, lw=1)
+    # if mark_glitches and np.any(glitch):
+    #     ax[1].plot(t[glitch], Eres[glitch], "rx", ms=4)
+    # ax[1].set_ylabel(r"$\langle |s_0-g|^2\rangle_n$")
+    # ax[1].set_title("Residual energy after removing global mean (tests ‘pure common-mode’)")
+
+    # # 3) |g|
+    # ax[2].plot(t, amp, lw=1, label=r"$|g[k]|$")
+    # ax[2].axhline(amp_thr, ls="--", lw=1, label=f"|g| threshold (p{amp_prc:g})")
+    # if mark_glitches and np.any(glitch):
+    #     ax[2].plot(t[glitch], amp[glitch], "rx", ms=4)
+    # ax[2].set_ylabel(r"$|g[k]|$")
+    # ax[2].set_xlabel(xlab)
+    # ax[2].set_title("Global mean amplitude (common-mode strength)")
+    # ax[2].legend(fontsize=8, loc="upper right")
+
+    # for a in ax:
+    #     a.grid(True, ls="--", lw=0.5)
+    # plt.tight_layout()
+    # plt.show()
+
+    # # ----- PLOTS -----
+    fig, ax = plt.subplots(1, 1, figsize=(10, 3.0))
+    # 1) Shot energy
+    ax.plot(t, E, lw=1)
+    if mark_glitches and np.any(glitch):
+        ax.plot(t[glitch], E[glitch], "rx", ms=4, label=f"glitch |zE|≥{zthr:g}")
+        ax.legend(fontsize=8, loc="upper right")
+    ax.set_ylabel(r"$\langle |s_0|^2\rangle_n$")
+    ax.set_xlabel(xlab)
+    ax.set_title("Shot energy (global amplitude events)")
+    ax.grid(True, ls="--", lw=0.5)
+    plt.tight_layout()
+    plt.show()
+
+    
+    # 4) Phase increments (separate, clearer scaling)
+    fig, axp = plt.subplots(1, 1, figsize=(10, 3.0))
+    axp.plot(t[1:], dphi_m, lw=1)
+    axp.set_xlabel(xlab)
+    axp.set_ylabel(r"$\Delta\phi[k]$ (rad)")
+    axp.set_title(r"Global phase increment $\Delta\phi[k]=\arg(g[k]g^*[k-1])$ (masked when |g| small)")
+    axp.grid(True, ls="--", lw=0.5)
+    plt.tight_layout()
+    plt.show()
+
+    # ----- PRINTS -----
+    prc = [1, 5, 50, 95, 99]
+    print("E percentiles:", np.nanpercentile(E, prc))
+    print("Eres percentiles:", np.nanpercentile(Eres, prc))
+    print("amp_thr:", float(amp_thr), f"(mask keeps {100*np.nanmean(good):.1f}% shots)")
+    print("glitch fraction:", float(np.nanmean(glitch)))
+    print("zE percentiles:", np.nanpercentile(zE, [1, 50, 99]))
+
+    return {
+        "t": t,
+        "E": E,
+        "Eres": Eres,
+        "zE": zE,
+        "glitch": glitch,
+        "g": g,
+        "amp": amp,
+        "amp_thr": amp_thr,
+        "dphi": dphi,
+        "dphi_masked": dphi_m,
+    }
+
+
 def make_summary_plots(out, dt=1.0, global_bad_thresh=0.9, zthr=6.0):
-    plot_bad_run_stats(out, global_bad_thresh=global_bad_thresh)
+    # plot_bad_run_stats(out, global_bad_thresh=global_bad_thresh)
     plot_iq_cloud(out)
     plot_iq_cloud_time_colored(out, use="s0")
     plot_global_vs_residual_cloud(out, use="s0")
@@ -2258,11 +2467,16 @@ if __name__ == "__main__":
     ORI_11m1 = [0, 1, 3, 5, 6, 7, 9, 10, 13, 18, 19, 21, 24, 25, 27, 28, 30, 32, 34, 36, 40, 41, 43, 44, 46, 48, 49, 51, 52, 53, 56, 57, 64, 65, 66, 67, 68, 69, 73, 75, 77, 80, 82, 84, 86, 88, 91, 98, 100, 101, 102, 103, 106, 107, 109, 110, 111, 113, 115, 116, 118, 119, 120, 121, 123, 124, 127, 129, 130, 131, 132, 133, 134, 135, 141, 142, 146, 149, 150, 152, 153, 156, 157, 158, 162, 163, 165, 167, 168, 171, 174, 177, 179, 184, 185, 186, 187, 189, 190, 191, 192, 193, 195, 198, 201, 203]
     ORI_m111 = [2, 4, 8, 11, 12, 14, 15, 16, 17, 20, 22, 23, 26, 29, 31, 33, 35, 37, 38, 39, 42, 45, 47, 50, 54, 55, 58, 59, 60, 61, 62, 63, 70, 71, 72, 74, 76, 78, 79, 81, 83, 85, 87, 89, 90, 92, 93, 94, 95, 96, 97, 99, 104, 105, 108, 112, 114, 117, 122, 125, 126, 128, 136, 137, 138, 139, 140, 143, 144, 145, 147, 148, 151, 154, 155, 159, 160, 161, 164, 166, 169, 170, 172, 173, 175, 176, 178, 180, 181, 182, 183, 188, 194, 196, 197, 199, 200, 202] 
     # # #fmt:on
-    make_summary_plots(out, dt=0.264, global_bad_thresh=0.9, zthr=10.0)
-    z = out["z"]
-    # print(z.shape())
-    print(type(z), len(z))
-    print(type(z[0]), getattr(z[0], "shape", None))
+    # make_summary_plots(out, dt=0.240, global_bad_thresh=0.9, zthr=10.0)
+    # plot_shot_diagnostics(out, use="s0", nshots=300000)  # most “physical”
+    # plot_shot_diagnostics(out, use="z",  nshots=300000)  # ensemble outlier score
+    res = plot_physical_shot_diagnostics_s0(
+    out,
+    nshots=None,   # or None for all shots
+    dt=0.240,        # seconds per complex shot (your value)
+    zthr=20.0,       # glitch threshold in robust z-score units
+    amp_prc=20.0,   # mask phase-increment when |g| is in lowest 20%
+    mark_glitches=False)
 
     sys.exit()
     res = analyze_correlated_modes(out, nv_list, K=6)

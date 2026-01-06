@@ -1,12 +1,15 @@
 # -*- coding: utf-8 -*-
 """
-Illuminate an area, collecting onto the camera. Interleave a signal and control sequence
-and plot the difference
+Widefield conditional charge initialization / ionization study.
 
-Created on Fall 2023
+Runs "charge_state_conditional_init.py" over many NVs with optional charge prep, thresholds
+camera counts into NV⁻/NV⁰ states, and plots the fraction of NVs in NV⁻ vs number of attempts
+(with an optional simple fit). Saves raw_data + figure; includes optional image-inset analysis.
 
-@author: mccambria
+Created: Fall 2023 (mccambria)
+Updated: 2024-12-05 (Saroj Chand)
 """
+
 
 import os
 import sys
