@@ -1,9 +1,16 @@
 # -*- coding: utf-8 -*-
 """
-Widefield bootstrap tomography of pulses experiment
-Created on April, 2025
+Widefield bootstrap pulse-error tomography (Dobrovitski et al., PRL 105, 077601, 2010).
+
+Runs (or loads) a fixed set of bootstrap sequences on many NVs, normalizes counts to ⟨σ_z⟩,
+extracts pulse angle + axis-tilt error parameters (with gauge fix ε′_y = 0), and plots errors
+in degrees.
+
+Created: 2025-04
+Updated: 2026-01-05
 @author: sbchand
 """
+
 
 import sys
 import time

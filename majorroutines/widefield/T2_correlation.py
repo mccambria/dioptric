@@ -2,9 +2,9 @@
 """
 Optimize SCC parameters
 
-Created on December 6th, 2023
+Created on December 6th, 2025
 
-@author: mccambria
+@author: sbchand
 """
 
 import random

@@ -33,9 +33,9 @@ green_laser_aod = "laser_INTE_520_aod"
 red_laser_aod = "laser_COBO_638_aod"
 
 
-calibration_coords_pixel = [[14.043, 37.334],[106.538, 237.374],[230.347, 30.026]]
-calibration_coords_green = [[119.715, 118.886],[111.743, 95.075], [95.042, 117.296]]
-calibration_coords_red = [[82.287, 81.487], [76.669, 61.833], [62.324, 79.011]]
+calibration_coords_pixel = [[14.043, 37.334],[106.538, 237.374],[218.314, 23.302]]
+calibration_coords_green = [[119.419, 119.481],[111.434, 95.675],[96.084, 118.836]]
+calibration_coords_red = [[82.294, 82.207],[76.605, 62.448],[63.242, 80.487]]
 
 # Create the dictionaries using the provided lists
 calibration_coords_nv1 = {
@@ -127,10 +127,15 @@ config |= {
             0: {
                 "physical_name": "sig_gen_STAN_sg394_0",
                 "uwave_power": 11.0,
-                "frequency": 2.7851,
-                # "frequency": 2.766091,
+                # "frequency": 2.7878,
+                # "frequency": 2.747151,
+                "frequency": 2.709799,
+                # "frequency":2.963189,
+                # "frequency": 2.917151,
+                # "frequency": 2.8082,
                 "rabi_period": 256,
                 "pi_pulse": 128,
+                # "pi_pulse": 240,
                 "pi_on_2_pulse": 64,
                 # "frequency": 2.935030,
                 # "rabi_period": 112,
@@ -140,20 +145,20 @@ config |= {
             1: {
                 "physical_name": "sig_gen_STAN_sg394_1",
                 "uwave_power": 11.0,
-                # "frequency": 2.822728,
-                "frequency": 2.8405,
-                # "rabi_period": 112,
-                # "pi_pulse": 56,
-                # "pi_on_2_pulse": 28,
+                # "frequency": 2.917151,
+                # "frequency": 2.8408,
                 # "frequency": 2.982049,
+                # "frequency": 2.828210,
+                "frequency": 2.816912,
+                # "frequency": 2.8252,
                 "rabi_period": 192,
-                "pi_pulse": 92,
-                "pi_on_2_pulse": 48,
+                "pi_pulse": 88,
+                "pi_on_2_pulse": 44,
             },
             2: {
                 "physical_name": "sig_gen_STAN_sg394_2",
                 "uwave_power": 11.0,
-                "frequency": 0.133,
+                "frequency": 0.173,
                 "rabi_period": 176,
                 "pi_pulse": 88,
                 "pi_on_2_pulse": 44,
@@ -167,7 +172,6 @@ config |= {
         "spot_radius": 2.5,  # Radius for integrating NV counts in a camera image
         "bias_clamp": 300,  # (changing this won't actually change the value on the camera currently)
         "em_gain": 5000,
-        # "em_gain": 1000,
         # "em_gain": 10,
         "temp": -60,
         "timeout": 60e3,  # ms
@@ -943,21 +947,24 @@ opx_config = {
     "waveforms": {
         # Green AOD
         "green_aod_cw-opti": {"type": "constant", "sample": 0.11},
-        "green_aod_cw-charge_pol": {"type": "constant", "sample": 0.08},
+        "green_aod_cw-charge_pol": {"type": "constant", "sample": 0.11},
         "green_aod_cw-spin_pol": {"type": "constant", "sample": 0.05},
         "green_aod_cw-shelving": {"type": "constant", "sample": 0.05},
         "green_aod_cw-scc": {"type": "constant", "sample": 0.15},
         # Red AOD
-        "red_aod_cw-opti": {"type": "constant", "sample": 0.15},
-        "red_aod_cw-ion": {"type": "constant", "sample": 0.15},
-        "red_aod_cw-scc": {"type": "constant", "sample": 0.15},
+        "red_aod_cw-opti": {"type": "constant", "sample": 0.13},
+        "red_aod_cw-ion": {"type": "constant", "sample": 0.13},
+        "red_aod_cw-scc": {"type": "constant", "sample": 0.13},
         # Yellow AOM
         "yellow_imaging": {"type": "constant", "sample": 0.45},
         # "yellow_charge_readout": {"type": "constant", "sample": 0.2675},
         # "yellow_charge_readout": {"type": "constant", "sample": 0.2367}, #136NVs
         # "yellow_charge_readout": {"type": "constant", "sample": 0.2267}, #118NVs
-        "yellow_charge_readout": {"type": "constant", "sample": 0.34947},
-        "yellow_spin_pol": {"type": "constant", "sample": 0.24},
+        # "yellow_charge_readout": {"type": "constant", "sample": 0.34947}, ## 312NV johnson
+        # "yellow_charge_readout": {"type": "constant", "sample": 0.313148}, ## 230NV johnson
+        # "yellow_charge_readout": {"type": "constant", "sample": 0.3084}, ## 223NV johnson
+        "yellow_charge_readout": {"type": "constant", "sample": 0.299064}, ## 204NV johnson
+        "yellow_spin_pol": {"type": "constant", "sample": 0.31510},
         "yellow_shelving": {"type": "constant", "sample": 0.20},
         # Other
         "aod_cw": {"type": "constant", "sample": 0.35},

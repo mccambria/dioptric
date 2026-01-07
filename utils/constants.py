@@ -16,26 +16,7 @@ number = int | float
 
 
 # Virtual laser keys are the names of virtual lasers, which accomplish one and only
-# one function and must be associated with a physical laser in config
-# class VirtualLaserKey(Enum):
-#     # Scanning virtual lasers
-#     IMAGING = auto()
-#     RED_IMAGING = auto()  # SBC - crreatf for red widefield calibration
-#     ION = auto()
-#     SCC = auto()
-#     CHARGE_POL = auto()
-#     SPIN_POL = auto()
-#     SHELVING = auto()
-#     SPIN_READOUT = auto()  # Standard spin readout
-#     # Widefield virtual lasers
-#     WIDEFIELD_SHELVING = auto()
-#     WIDEFIELD_IMAGING = auto()
-#     WIDEFIELD_CHARGE_READOUT = auto()
-#     WIDEFIELD_SPIN_POL = auto()
-#     #Cryo Singlet Drive
-#     SINGLET_DRIVE = auto()
-
-## sbc
+### NOTE: 
 class VirtualLaserKey(StrEnum):
     IMAGING = "imaging"
     RED_IMAGING = "red_imaging"
@@ -58,7 +39,6 @@ class CoordsKey(StrEnum):
     SAMPLE = "sample"
     PIXEL = "pixel"
     Z = "z"
-
 
 @dataclass
 class NVSig:

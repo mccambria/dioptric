@@ -181,6 +181,7 @@ def macro(
         seq_utils.macro_wait_for_trigger()
 
     def one_rep(rep_ind=0):
+        print(num_exps_per_rep)
         for exp_ind in range(num_exps_per_rep):
             one_exp(rep_ind, exp_ind)
 

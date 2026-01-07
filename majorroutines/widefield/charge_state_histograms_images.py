@@ -1,11 +1,12 @@
 # -*- coding: utf-8 -*-
 """
-Illuminate an area, collecting onto the camera. Interleave a signal and control sequence
-and plot the difference.
+Widefield charge-state histogram scan vs AOM power (pol or readout).
 
-Created on Fall 2023
+Sweeps AOM voltage across steps, acquires interleaved signal/reference images on the camera,
+fits per-NV bimodal (NV⁻/NV⁰) count histograms to extract thresholds + readout/prep fidelities,
+and saves summary plots (heatmaps + averages) along with raw data.
 
-@author: mccambria
+Created: Fall 2025 (Saroj Chand)
 """
 
 import os

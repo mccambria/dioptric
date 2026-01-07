@@ -1,12 +1,18 @@
 # -*- coding: utf-8 -*-
 """
-Illuminate an area, collecting onto the camera. Interleave a signal and control sequence
-and plot the difference
+Widefield charge-state histogram acquisition + fidelity extraction.
 
-Created on Fall 2023
+Illuminates an area and records camera counts for many NVs while interleaving:
+  (1) signal: with ionization pulse
+  (2) reference: without ionization pulse
+Then (optionally) plots per-NV histograms, fits the reference distribution with a
+bimodal model (NV⁰ / NV⁻), extracts an optimal threshold, and reports readout &
+preparation fidelities (plus ionization probability).
 
-@author: mccambria
+Created: Fall 2023 (M. Cambria)
+Updated: Fall 2025 (Saroj Chand)
 """
+
 
 import os
 import sys
@@ -432,10 +438,12 @@ if __name__ == "__main__":
     # data = dm.get_raw_data(file_id=1806222218365, load_npz=False)
     # data = dm.get_raw_data(file_id=1806227898070, load_npz=False)
     # data = dm.get_raw_data(file_id=1806410973406, load_npz=False)
+    # data = dm.get_raw_data(
+    #     file_stem="2025_10_23-17_31_05-johnson-nv0_2025_10_21", load_npz=True
+    # )
+    # process_and_plot(data, do_plot_histograms=True)
     data = dm.get_raw_data(
-        file_stem="2025_10_23-17_31_05-johnson-nv0_2025_10_21", load_npz=True
+        file_stem="2025_10_26-17_45_04-johnson-nv0_2025_10_21", load_npz=True
     )
     process_and_plot(data, do_plot_histograms=True)
-    # data = dm.get_raw_data(file_id=1803617430430, load_npz=False)
-    # process_and_plot(data, do_plot_histograms=True)
     kpl.show(block=True)

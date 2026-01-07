@@ -634,7 +634,7 @@ def process_and_plot_durations(data):
 
                 # Keep the value within the valid range and round to nearest integer divisible by 4
                 optimal_value = max(valid_range[0], min(valid_range[1], optimal_value))
-                optimal_value = int(round(optimal_value / 4.0) * 4)
+                # optimal_value = int(round(optimal_value / 4.0) * 4)
 
                 optimal_values[nv_ind] = optimal_value
                 snr_values[nv_ind] = max(snr_values_curve)  # Optimal SNR
@@ -664,45 +664,47 @@ def process_and_plot_durations(data):
             optimal_durations[nv_index] = median_duration
 
     # Plot individual NV fits
-    for nv_index in selected_indices:
-        plt.figure(figsize=(6, 4))
-        plt.errorbar(
-            taus,
-            avg_snr[nv_index],
-            yerr=avg_snr_ste[nv_index],
-            fmt="o",
-            label="SNR Data",
-        )
-        if optimal_durations[nv_index] is not None:
-            tau_linspace = np.linspace(min(taus), max(taus), 1000)
-            popt, fit_fn = fit_duration(taus, avg_snr[nv_index], avg_snr_ste[nv_index])
-            plt.plot(
-                tau_linspace,
-                fit_fn(tau_linspace, *popt),
-                label="Fitted Curve",
-            )
-            plt.axvline(
-                optimal_durations[nv_index],
-                color="r",
-                linestyle="--",
-                label=f"Optimal Duration: {optimal_durations[nv_index]}",
-            )
-        plt.title(f"NV {nv_index} - Duration Optimization")
-        plt.xlabel("Duration")
-        plt.ylabel("SNR")
-        plt.legend()
-        plt.grid(alpha=0.3)
-        plt.show(block=True)
+    # for nv_index in selected_indices:
+    #     plt.figure(figsize=(6, 4))
+    #     plt.errorbar(
+    #         taus,
+    #         avg_snr[nv_index],
+    #         yerr=avg_snr_ste[nv_index],
+    #         fmt="o",
+    #         label="SNR Data",
+    #     )
+    #     if optimal_durations[nv_index] is not None:
+    #         tau_linspace = np.linspace(min(taus), max(taus), 1000)
+    #         popt, fit_fn = fit_duration(taus, avg_snr[nv_index], avg_snr_ste[nv_index])
+    #         plt.plot(
+    #             tau_linspace,
+    #             fit_fn(tau_linspace, *popt),
+    #             label="Fitted Curve",
+    #         )
+    #         plt.axvline(
+    #             optimal_durations[nv_index],
+    #             color="r",
+    #             linestyle="--",
+    #             label=f"Optimal Duration: {optimal_durations[nv_index]}",
+    #         )
+    #     plt.title(f"NV {nv_index} - Duration Optimization")
+    #     plt.xlabel("Duration")
+    #     plt.ylabel("SNR")
+    #     plt.legend()
+    #     plt.grid(alpha=0.3)
+    #     plt.show(block=True)
 
     # Print lists of durations and SNRs
     print("Optimal Durations:")
 
-    optimal_durations = [optimal_durations[nv] for nv in selected_indices]
+    optimal_durations = [int(round(optimal_durations[nv]/4)*4) for nv in selected_indices]
     print("Optimal SNRs:")
     print(optimal_durations)
     optimal_snrs = [optimal_snrs[nv] for nv in selected_indices]
     print(optimal_snrs)
-
+    # median = np.median(optimal_durations)
+    # optimal_durations = [int(median) if (val < 24 or val > 200) else val for val in optimal_durations]
+  
     plt.figure(figsize=(6, 5))
     plt.scatter(
         optimal_durations,
@@ -714,7 +716,7 @@ def process_and_plot_durations(data):
     )
     plt.xlabel("Durations")
     plt.ylabel("SNR")
-    plt.show(block=True)
+    plt.title(f"SNR Vs SCC Durations ({len(optimal_durations)}NVs)")
     return
     # Sort optimal_durations by index (key)
     sorted_optimal_durations = dict(sorted(optimal_durations.items()))
@@ -744,17 +746,17 @@ if __name__ == "__main__":
 
     #duration
     data = dm.get_raw_data(
-        file_stem="2025_10_07-22_42_14-rubin-nv0_2025_09_08", load_npz=True
+        file_stem="2025_11_22-12_50_55-johnson-nv0_2025_10_21", load_npz=True
     )
 
     results = process_and_plot_durations(data)
 
-    #amp_file id
-    data = dm.get_raw_data(
-        file_stem="2025_10_07-19_22_19-rubin-nv0_2025_09_08", load_npz=True
-    )
-    results = process_and_plot_amplitudes(data)
+    # amp_file id
+    # data = dm.get_raw_data(
+    #     file_stem="2025_10_27-01_08_57-johnson-nv0_2025_10_21", load_npz=True
+    # )
+    # results = process_and_plot_amplitudes(data)
 
-    print("Results:", results)
+    # print("Results:", results)
     # print(f"{file_name}_{duration_file_id}")
     kpl.show(block=True)
