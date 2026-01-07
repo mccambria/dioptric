@@ -323,12 +323,13 @@ config |= {
             "do_sample_clock": 0,  # 125 MHz-compatible sample clock out to Tagger
             "do_apd_gate": 1,  # gate line to Tagger
             # "do_camera_trigger": 6,  # optional
-            "do_laser_INTE_520_dm": 2,  # green  TTL
+            # "do_laser_INTE_520_dm": 2,  # green  TTL
+            "do_laser_COBO_520_dm": 2,
             "do_laser_COBO_638_dm": 3,  # red TTL
             # microwaves (TTL gate to SGs)
             # "do_sig_gen_BERK_bnc835_gate": 4,
-            "do_sig_gen_STAN_sg394_2_gate": 4,
-            "do_sig_gen_STAN_sg394_gate": 5,
+            "do_sig_gen_STAN_sg394_2_dm": 4,
+            "do_sig_gen_STAN_sg394_dm": 5,
             # analog (for the yellow AOM amplitude)
             "ao_laser_OPTO_589_am": 0,  # yellow analog modulation
         },

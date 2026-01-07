@@ -11,9 +11,8 @@ from enum import Enum, auto
 
 import matplotlib.pyplot as plt
 import numpy as np
-
-import utils.data_manager as dm
 from utils import common
+import utils.data_manager as dm
 from utils import kplotlib as kpl
 from utils import positioning as pos
 from utils import tool_belt as tb
@@ -74,6 +73,7 @@ def confocal_scan(nv_sig: NVSig, x_range, y_range, num_steps, nv_minus_init=Fals
     pulse = tb.get_server_pulse_streamer()
     ctr   = tb.get_server_counter()
 
+
     img = np.full((h, w), np.nan, float)
     img_kcps = np.copy(img) if count_fmt == CountFormat.KCPS else None
 
@@ -94,9 +94,16 @@ def confocal_scan(nv_sig: NVSig, x_range, y_range, num_steps, nv_minus_init=Fals
     # ---- sequence loading (hardware delay, not Python sleep) ----
     pos_key = CoordsKey.PIXEL
     delay_ns = int(cfg["Positioning"]["Positioners"][pos_key]["delay"])  # e.g. 400e3 ns for galvo
+    # period_ns = pulse.stream_load(
+    #     SEQ_FILE_PIXEL_READOUT,
+    #     tb.encode_seq_args([delay_ns, readout_ns, readout_laser, 1.0])  # laser args ignored by your seq
+    # )[0]
+
+    readout_vkey = VirtualLaserKey.IMAGING
+
     period_ns = pulse.stream_load(
-        SEQ_FILE_PIXEL_READOUT,
-        tb.encode_seq_args([delay_ns, readout_ns, readout_laser, 1.0])  # laser args ignored by your seq
+        "simple_readout.py",
+        tb.encode_seq_args([delay_ns, readout_ns, readout_vkey, 100, 1])  # 100ns marker at readout start
     )[0]
 
     try:
@@ -111,7 +118,7 @@ def confocal_scan(nv_sig: NVSig, x_range, y_range, num_steps, nv_minus_init=Fals
                     Xr.append(x); Yr.append(y)
 
             seq_args = [0, readout_ns, list(Xr), list(Yr)]   # delay handled in pixel-readout mode only
-            period_ns = pulse.stream_load(SEQ_FILE_SEQUENCE_SCAN, tb.encode_seq_args(seq_args))[0]
+            period_ns = pulse.stream_load(SEQ_FILE_PIXEL_READOUT, tb.encode_seq_args(seq_args))[0]
             pulse.stream_start(total)
 
             written = []  # state for _raster_fill
@@ -166,12 +173,6 @@ def confocal_scan(nv_sig: NVSig, x_range, y_range, num_steps, nv_minus_init=Fals
                         continue
 
                     _raster_fill(vals, img, written)
-                    
-                    # if img_kcps is not None:
-                    #     img_kcps[:] = (img/1000.0)/readout_s
-                    #     kpl.imshow_update(ax, img_kcps)
-                    # else:
-                    #     kpl.imshow_update(ax, img)
                         
                     # UI throttle
                     pixels_done = written[0]
@@ -192,19 +193,6 @@ def confocal_scan(nv_sig: NVSig, x_range, y_range, num_steps, nv_minus_init=Fals
     units_out = "kcps" if is_kcps else "counts"
 
     ts = dm.get_time_stamp()
-    # raw = dict(
-    #     timestamp=ts,
-    #     "nv_sig": nv_sig,
-    #     mode="confocal_scan_raster",
-    #     num_steps=num_steps,
-    #     x_range=x_range, y_range=y_range,
-    #     x_center=x0, y_center=y0,
-    #     extent=extent,
-    #     readout_ns=readout_ns, readout_units="ns",
-    #     img_array=img_out.astype(float), img_array_units=units_out,
-    #     x_coords_1d=x1d, y_coords_1d=y1d,
-    #     nv_sig=nv_sig.__dict__ if hasattr(nv_sig, "__dict__") else nv_sig,
-    # )
     raw = {
     "timestamp": ts,
     "nv_sig": nv_sig,  
@@ -231,7 +219,7 @@ def get_coord(coords, key):
         return coords.get(key, coords.get(key.name))
     return coords.get(key)
 if __name__ == "__main__":
-    file_name = "2025_12_16-12_48_20-(Rubin)"
+    file_name = "2026_01_05-18_45_52-(Rubin)"
 
     data = dm.get_raw_data(file_name)
     print("Top-level keys in saved file:")

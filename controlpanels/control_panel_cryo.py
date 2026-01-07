@@ -22,14 +22,18 @@ import sys
 import numpy as np
 from utils import positioning as pos
 from utils import kplotlib as kpl
+from utils import common
+from utils import tool_belt as tb
+
 # import majorroutines.confocal.determine_standard_readout_params as determine_standard_readout_params
 # import majorroutines.confocal.g2_measurement as g2_measurement
 import majorroutines.confocal.confocal_image_sample as image_sample
+
 # import majorroutines.confocal.image_sample as image_sample
 
 # import majorroutines.confocal.optimize_magnet_angle as optimize_magnet_angle
 # import majorroutines.confocal.pulsed_resonance as pulsed_resonance
-# import majorroutines.confocal.confocal_rabi as rabi
+import majorroutines.confocal.confocal_rabi as rabi
 
 # import majorroutines.confocal.ramsey as ramsey
 # import majorroutines.confocal.resonance as resonance
@@ -654,24 +658,24 @@ def do_z_scan_3d(nv_sig):
 #     )
 
 
-# def do_rabi(nv_sig):
-#     num_steps = 51
-#     num_reps = 2e4
-#     num_runs = 16
-#     min_tau = 8
-#     max_tau = 400
-#     uwave_ind_list = [0, 1]
-
-#     rabi.main(
-#         nv_sig,
-#         num_steps,
-#         num_reps,
-#         num_runs,
-#         min_tau,
-#         max_tau,
-#         uwave_ind_list,
-#     )
-#     # nv_sig["rabi_{}".format(state.name)] = period
+def do_rabi(nv_sig):
+    num_steps = 51
+    num_reps = 2e4
+    num_runs = 16
+    min_tau = 8
+    max_tau = 400
+    uwave_ind_list = [0, 1]
+# endregion
+    rabi.main(
+        nv_sig,
+        num_steps,
+        num_reps,
+        num_runs,
+        min_tau,
+        max_tau,
+        uwave_ind_list,
+    )
+    # nv_sig["rabi_{}".format(state.name)] = period
 
 
 # def do_t1_dq(nv_sig):
@@ -738,11 +742,34 @@ def do_z_scan_3d(nv_sig):
 #     )
 #     return angle
 
+def do_pulse_gen_constant(digital_channels=(2,), analog0=None, analog1=None):
+    pulse_gen = tb.get_server_pulse_streamer()
+    # Build args for the LabRAD setting
+    digital_channels = [int(ch) for ch in digital_channels]
 
-# endregion
+    analog_channels = []
+    analog_voltages = []
+    if analog0 is not None:
+        analog_channels.append(0)
+        analog_voltages.append(float(analog0))
+    if analog1 is not None:
+        analog_channels.append(1)
+        analog_voltages.append(float(analog1))
+
+    # Turn on constant outputs
+    pulse_gen.constant(digital_channels, analog_channels, analog_voltages)
+
+    try:
+        input("Constant state applied. Press Enter to stop...")
+    finally:
+        # Safest cleanup: forces final + sets everything off
+        pulse_gen.reset()
+
+
+
 
 def get_sample_name() -> str:
-    sample = "Rubin" #Wu
+    sample = "Wu" #Rubin
     return sample
 
 # region main
@@ -781,9 +808,9 @@ if __name__ == "__main__":
     # region Postion and Time Control
     sample_xy = [0.0,0.0] # piezo XY voltage input (1.0=1V) (not coordinates, relative)
     coord_z = 0  # piezo z voltage (negative is closer to smaple)
-    # pixel_xy = [0.053, -0.048]  # galvo XY 
-    # pixel_xy = [-0.017, -0.011]    # NV canidate
-    pixel_xy = [0,0]    # NV canidate
+    pixel_xy = [0,0]  # galvo XY 
+    # pixel_xy = [0.053, 0.045]  # NV canidate
+
 # return 
     nv_sig = NVSig(
         name=f"({get_sample_name()})",
@@ -819,33 +846,36 @@ if __name__ == "__main__":
         # tool_belt.set_drift([0.0, 0.0, drift[2]])  # Keep z
         # tool_belt.set_drifts([drift[0], drift[1], 0.0])  # Keep xy
         
-        pos.set_xyz_on_nv(nv_sig) # Hahn omits this line, currently leave this line out when calibrating z
-# 
-        #region 1D scan + Calibrate
-        # do_calibrate_z_axis(nv_sig)
-        # do_z_scan_1d(nv_sig)
+        pos.set_xyz_on_nv(nv_sig) # Leave this line out when calibrating z
+        
+        # do_pulse_gen_constant()
+        # do_pulse_gen_constant(digital_channels=(2,))
 
-
-        # # # # Manually set Z reference to current position
+        # # # Manually set Z reference to current position
         # piezo = pos.get_positioner_server(CoordsKey.Z)
         # # print(piezo.get_z_position())
         # piezo.set_z_reference()
 
-        # region 2D scan (x galvo, z piezo)
+        #region 1D scan + Calibrate
+        # do_calibrate_z_axis(nv_sig)
+        # do_z_scan_1d(nv_sig)
+        # endregion 1D scan + Calibrate
 
+        # region 2D scan (x galvo, z piezo)
         # # do_2D_xz_scan(nv_sig)
-        # z_range = np.linspace(0, -150, 31)
+        # z_range = np.linspace(20, 20, 11)
         # for z in z_range:
         #     nv_sig.coords[CoordsKey.Z] = z
         #     pos.set_xyz_on_nv(nv_sig)
-        #     do_2D_xz_scan(nv_sig)
+        #     do_image_sample(nv_sig)
+            # do_2D_xz_scan(nv_sig)
  
         # endregion 2D scan
 
-        # region Image sample     
+        # region Image / 3D scan    
 
         # do_z_scan_3d(nv_sig) # (xy gavo, z piezo)
-        do_image_sample(nv_sig)
+        # do_image_sample(nv_sig)
         # do_image_sample_zoom(nv_sig)
 
         # Quick NV area scans
@@ -854,7 +884,7 @@ if __name__ == "__main__":
         #     nv_sig.coords[CoordsKey.Z] = z
         #     # pos.set_xyz_on_nv(nv_sig)
         #     # do_image_sample_zoom(nv_sig)
-        # do_image_sample(nv_sig)
+        #       do_image_sample(nv_sig)
 
         # do_image_sample(nv_sig, nv_minus_initialization=True)
         # do_image_sample_zoom(nv_sig, nv_minus_initialization=True)
@@ -867,33 +897,20 @@ if __name__ == "__main__":
         # do_compensate_for_drift(nv_sig)
         # endregion Optimize
 
-        # nv_sig["imaging_readout_dur"] = 5e7-
-        
-        #Hahn control panel image sample
-        # for z in np.arange(0, -100, -5):
-        # # while True:
-        #     if tool_belt.safe_stop():
-        #         break
-        #     nv_sig["coords"][2] = int(z)
-        # do_image_sample(nv_sig)
-        # nv_sig["imaging_readout_dur"] = 5e7
-        # do_image_sample_Hahn(nv_sig)
-        # do_image_sample_Hahn(nv_sig, nv_minus_initialization=True)
-
         # region Stationary count
-        # print( pixel_xy )
-        do_stationary_count(nv_sig, disable_opt=True) #Note there is a slow response time w/ the APD
+        # do_stationary_count(nv_sig, disable_opt=True) #Note there is a slow response time w/ the APD
         # do_stationary_count(nv_sig, disable_opt=True, nv_minus_initialization=True)
         # do_stationary_count(nv_sig, disable_opt=True, nv_zero_initialization=True)
         # endregion Stationary count
  
+        # region Resonance and SCC
         # do_resonance(nv_sig, 2.87, 0.200)
         # do_resonance_state(nv_sig , States.LOW)
         # do_resonance_state(nv_sig, States.HIGH)
         # do_pulsed_resonance(nv_sig, 2.87, 0.200)
         # do_pulsed_re2.sonance_state(nv_sig, States.LOW)
         # do_pulsed_resonance_state(nv_sig, States.HIGH)
-        # do_rabi(nv_sig)
+        do_rabi(nv_sig)
         # do_rabi(nv_sig, States.HIGH, uwave_time_range=[0, 400])
         # do_spin_echo(nv_sig)
         # do_g2_measurement(nv_sig, 0, 1)
@@ -902,6 +919,7 @@ if __name__ == "__main__":
         # SCC characterization
         # do_determine_charge_readout_params(nv_sig,nbins=200,nreps=100)
         # do_scc_pulsed_resonance(nv_sig)
+        # endregion Resonance and SCC
 
     ### Error handling and wrap-up
 
