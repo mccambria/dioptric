@@ -154,18 +154,17 @@ def simulate_dd_with_revivals(
     )
 
 
-def demo():
+def main():
     # If you want "classic" visible revivals, use ~30–80 G (period ~10–30 µs)
     B = 50.0
-
     tau = np.linspace(0.2e-6, 200e-6, 900)  # half-spacing
     res = simulate_dd_with_revivals(
-        N_pulses=8,        # echo
+        N_pulses=8,        # dd
         tau_array=tau,
         B_gauss=B,
-        sigma_ou_hz=1500.0,    # LOWER this if it smears everything
+        sigma_ou_hz=1500.0,    #smears
         tau_c=400e-6,
-        sigma_peak_hz=15000.0,  # increase for stronger revivals
+        sigma_peak_hz=15000.0,  # hihger -> stronger revivals
         peak_width_hz=1500.0,   # narrower -> sharper revivals
         fmax_hz=60e6,
         n_log=5000,
@@ -189,6 +188,5 @@ def demo():
     plt.tight_layout()
     plt.show()
 
-
 if __name__ == "__main__":
-    demo()
+    main()

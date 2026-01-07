@@ -1402,7 +1402,7 @@ if __name__ == "__main__":
     # magnet_angle = 90
     date_str = "2025_10_21"
     sample_coords = [0.4, 0.8]
-    z_coord = 0.3
+    z_coord = 0.0
     # Load NV pixel coordinates1
     pixel_coords_list = load_nv_coords(
         # file_path="slmsuite/nv_blob_detection/nv_blob_308nvs_reordered.npz",
@@ -1446,8 +1446,9 @@ if __name__ == "__main__":
     print(f"Red Laser Coordinates: {red_coords_list[0]}")
 
     # pixel_coords_list = [[124.195, 127.341],[14.043, 37.334],[106.538, 237.374],[218.314, 23.302]]
-    # green_coords_list = [[108.0, 107.846],[119.412, 119.364],[111.402, 95.571],[96.063, 118.755]]
-    # red_coords_list = [[73.369, 72.165],[82.292, 82.112],[76.582, 62.362],[63.227, 80.42]]
+    # green_coords_list = [[108.021, 107.983],[119.419, 119.481],[111.434, 95.675],[96.084, 118.836]]
+    # red_coords_list = [[73.382, 72.277],[82.294, 82.207],[76.605, 62.448],[63.242, 80.487]]
+
     num_nvs = len(pixel_coords_list)
     threshold_list = [None] * num_nvs
     # fmt: off
@@ -1536,7 +1537,8 @@ if __name__ == "__main__":
     # nv_sig.expected_counts = 900
     # nv_sig.expected_counts = 1400
     nv_sig.expected_counts = 1300
-    # nv_sig.expected_counts = 1500
+    # nv_sig.expected_counts = 1200
+    # nv_sig.expected_counts = 1800
 
     # nv_list = nv_list[::-1]  # flipping the order of NVs
     # nv_list = nv_list[:1]
@@ -1570,7 +1572,7 @@ if __name__ == "__main__":
         # )
 
         do_compensate_for_drift(nv_sig)
-        do_widefield_image_sample(nv_sig, 50)
+        # do_widefield_image_sample(nv_sig, 50)
         # do_widefield_image_sample(nv_sig, 400)
 
         # for nv in nv_list:
@@ -1637,7 +1639,7 @@ if __name__ == "__main__":
         # do_optimize_spin_pol_amp(nv_list)
         # do_check_readout_fidelity(nv_list)
 
-        # do_scc_snr_check(nv_list)
+        do_scc_snr_check(nv_list)
         # do_optimize_scc_duration(nv_list)
         # do_optimize_scc_amp(nv_list)
         # optimize_scc_amp_and_duration(nv_list)
@@ -1649,13 +1651,13 @@ if __name__ == "__main__":
         # do_spin_echo_phase_scan_test(nv_list)  # for iq mod test
         # evol_time_list = [18000, 19600, 21000]
 
-        evol_time_list = [24, 15000]  # ns
-        seq_types = ["hahn", "xy4", "xy8"]  # or add "ramsey", "xy16"
+        # evol_time_list = [24, 15000]  # ns
+        # seq_types = ["hahn", "xy4", "xy8"]  # or add "ramsey", "xy16"
 
-        for seq_type in seq_types:
-            for evol_time in evol_time_list:
-                print(f"Running {seq_type} at evol_time={evol_time} ns")
-                do_widefield_coherence_test(nv_list, evol_time, seq_type)
+        # for seq_type in seq_types:
+        #     for evol_time in evol_time_list:
+        #         print(f"Running {seq_type} at evol_time={evol_time} ns")
+        #         do_widefield_coherence_test(nv_list, evol_time, seq_type)
 
         # do_bootstrapped_pulse_error_tomography(nv_list)
         # do_calibrate_iq_delay(nv_list)

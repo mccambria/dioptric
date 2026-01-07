@@ -326,9 +326,11 @@ if __name__ == "__main__":
         # file_stem="2025_10_11-00_03_47-rubin-nv0_2025_09_08",  # spin echo
         # file_stem="2025_10_13-14_00_31-rubin-nv0_2025_09_08",  # xy8
         file_stem="2026_01_05-18_44_14-johnson-nv0_2025_10_21",  # xy8
+        # file_stem= "2026_01_05-21_44_23-johnson-nv0_2025_10_21",
         load_npz=True,
         use_cache=True,
     )
+    print(data.keys())
     nv_list = data["nv_list"]
     num_nvs = len(nv_list)
     num_steps = data["num_steps"]
