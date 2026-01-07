@@ -1639,7 +1639,7 @@ if __name__ == "__main__":
         # do_optimize_spin_pol_amp(nv_list)
         # do_check_readout_fidelity(nv_list)
 
-        do_scc_snr_check(nv_list)
+        # do_scc_snr_check(nv_list)
         # do_optimize_scc_duration(nv_list)
         # do_optimize_scc_amp(nv_list)
         # optimize_scc_amp_and_duration(nv_list)
@@ -1651,13 +1651,12 @@ if __name__ == "__main__":
         # do_spin_echo_phase_scan_test(nv_list)  # for iq mod test
         # evol_time_list = [18000, 19600, 21000]
 
-        # evol_time_list = [24, 15000]  # ns
-        # seq_types = ["hahn", "xy4", "xy8"]  # or add "ramsey", "xy16"
-
-        # for seq_type in seq_types:
-        #     for evol_time in evol_time_list:
-        #         print(f"Running {seq_type} at evol_time={evol_time} ns")
-        #         do_widefield_coherence_test(nv_list, evol_time, seq_type)
+        evol_time_list = [15000]  # ns
+        seq_types = ["hahn", "xy4", "xy8"]  # or add "ramsey", "xy16"
+        for seq_type in seq_types:
+            for evol_time in evol_time_list:
+                print(f"Running {seq_type} at evol_time={evol_time} ns")
+                do_widefield_coherence_test(nv_list, evol_time, seq_type)
 
         # do_bootstrapped_pulse_error_tomography(nv_list)
         # do_calibrate_iq_delay(nv_list)
