@@ -1446,8 +1446,8 @@ if __name__ == "__main__":
     print(f"Red Laser Coordinates: {red_coords_list[0]}")
 
     # pixel_coords_list = [[124.195, 127.341],[14.043, 37.334],[106.538, 237.374],[218.314, 23.302]]
-    # green_coords_list = [[108.021, 107.983],[119.419, 119.481],[111.434, 95.675],[96.084, 118.836]]
-    # red_coords_list = [[73.382, 72.277],[82.294, 82.207],[76.605, 62.448],[63.242, 80.487]]
+    # green_coords_list = [[108.025, 107.919],[119.424, 119.448],[111.407, 95.655],[96.084, 118.821]]
+    # red_coords_list = [[73.387, 72.226],[82.299, 82.181],[76.583, 62.43],[63.242, 80.475]]
 
     num_nvs = len(pixel_coords_list)
     threshold_list = [None] * num_nvs
@@ -1640,7 +1640,7 @@ if __name__ == "__main__":
         # do_check_readout_fidelity(nv_list)
 
         # do_scc_snr_check(nv_list)
-        # do_optimize_scc_duration(nv_list)
+        do_optimize_scc_duration(nv_list)
         # do_optimize_scc_amp(nv_list)
         # optimize_scc_amp_and_duration(nv_list)
         # do_optimize_scc_readout_amp(nv_list)
@@ -1651,12 +1651,12 @@ if __name__ == "__main__":
         # do_spin_echo_phase_scan_test(nv_list)  # for iq mod test
         # evol_time_list = [18000, 19600, 21000]
 
-        evol_time_list = [15000]  # ns
-        seq_types = ["hahn", "xy4", "xy8"]  # or add "ramsey", "xy16"
-        for seq_type in seq_types:
-            for evol_time in evol_time_list:
-                print(f"Running {seq_type} at evol_time={evol_time} ns")
-                do_widefield_coherence_test(nv_list, evol_time, seq_type)
+        # evol_time_list = [15000]  # ns
+        # seq_types = ["hahn", "xy4", "xy8"]  # or add "ramsey", "xy16"
+        # for seq_type in seq_types:
+        #     for evol_time in evol_time_list:
+        #         print(f"Running {seq_type} at evol_time={evol_time} ns")
+        #         do_widefield_coherence_test(nv_list, evol_time, seq_type)
 
         # do_bootstrapped_pulse_error_tomography(nv_list)
         # do_calibrate_iq_delay(nv_list)
