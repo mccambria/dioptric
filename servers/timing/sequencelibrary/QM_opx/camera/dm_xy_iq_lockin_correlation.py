@@ -106,8 +106,11 @@ def get_seq(base_scc_seq_args, tau_ns, n_pi=1, num_reps=1):
 
         def uwave_Qm(uwave_ind_list, step_val):
             return _echo_core_npi(uwave_ind_list, tau_cc, PH_mY, n_pi=n_pi)
+        
+        def uwave_ref(uwave_ind_list, step_val):
+            pass
 
-        uwave_macros = [uwave_Ip, uwave_Im, uwave_Qp, uwave_Qm]
+        uwave_macros = [uwave_Ip, uwave_Im, uwave_Qp, uwave_Qm, uwave_ref]
 
         base_scc_sequence.macro(
             base_scc_seq_args,

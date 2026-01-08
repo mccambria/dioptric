@@ -34,8 +34,8 @@ red_laser_aod = "laser_COBO_638_aod"
 
 
 calibration_coords_pixel = [[14.043, 37.334],[106.538, 237.374],[218.314, 23.302]]
-calibration_coords_green = [[119.412, 119.364],[111.402, 95.571],[96.063, 118.755]]
-calibration_coords_red = [[82.292, 82.112],[76.582, 62.362],[63.227, 80.42]]
+calibration_coords_green = [[119.424, 119.448],[111.407, 95.655],[96.084, 118.821]]
+calibration_coords_red = [[82.299, 82.181],[76.583, 62.43],[63.242, 80.475]]
 
 # Create the dictionaries using the provided lists
 calibration_coords_nv1 = {
@@ -158,7 +158,7 @@ config |= {
             2: {
                 "physical_name": "sig_gen_STAN_sg394_2",
                 "uwave_power": 11.0,
-                "frequency": 0.139,
+                "frequency": 0.173,
                 "rabi_period": 176,
                 "pi_pulse": 88,
                 "pi_on_2_pulse": 44,
@@ -216,7 +216,7 @@ config |= {
             },
             VirtualLaserKey.SPIN_READOUT: {
                 "physical_name": green_laser,
-                "duration": 300,
+                "duration": 200,
             },
             # LaserKey.CHARGE_POL: {"physical_name": green_laser, "duration": 10e3},
             VirtualLaserKey.CHARGE_POL: {

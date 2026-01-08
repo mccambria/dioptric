@@ -1,14 +1,15 @@
 # -*- coding: utf-8 -*-
 """
-Widefield Rabi experiment
+Widefield Rabi experiment.
 
-Created on November 29th, 2023
+Runs a widefield Rabi scan over pulse duration (taus) for many NVs using IQ-modulated
+microwaves, saves raw data, and provides optional analysis/plots:
+  - mean Rabi across all NVs (and by orientation groups)
+  - per-NV Rabi fits and correlation plots (optional)
 
-@author: mccambria
-
-updated by @Saroj Chand on Jan 6, 2025
-@author: sbchand
+Updated: Jan 6, 2025 (Saroj Chand)
 """
+
 
 import sys
 import time

@@ -1,10 +1,14 @@
 # -*- coding: utf-8 -*-
 """
-Base routine for widefield experiments with many spatially resolved NV centers.
+Widefield base routine for multi-NV experiments.
 
-Created on December 6th, 2023
+Runs a run→step→rep→exp loop for many spatially resolved NVs, with optional charge-prep,
+per-rep imaging + charge-state estimation (thresholding or MLE), and drift compensation
+between runs. Returns a raw_data dict containing counts[exp,nv,run,step,rep] (+ optional
+averaged images) and metadata; supports multi-channel microwave control and optional IQ.
 
-@author: mccambria
+Created: 2023-12-06 (mccambria)
+Updated: 2026-01-05 (Saroj Chand)
 """
 
 import logging

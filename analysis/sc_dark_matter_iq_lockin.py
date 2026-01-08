@@ -2257,13 +2257,10 @@ def remove_topk_modes(out, K=1):
     print(f"[remove-topK] K={K}: λmax={lam:.6f}, frac={frac:.8f}")
     return {"s_clean": s_clean, "C_clean": C, "lam": lam, "frac": frac}
 
-
 # ----------------------------
 # Suggested calls (after RUN 2)
 # ----------------------------
 if __name__ == "__main__":
-    from utils import data_manager as dm
-
     raw_data = dm.get_raw_data(
         file_stem="2025_12_24-09_32_29-johnson-nv0_2025_10_21", load_npz=True
     )

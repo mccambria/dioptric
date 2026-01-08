@@ -50,10 +50,10 @@ from majorroutines.widefield import (
     T2_correlation,
     two_block_hahn_spatial_correlation,
     spin_echo,
-    spin_echo_phase_scan_test,
     two_block_hahn_correlation,
     dm_xy_iq_lockin_correlation,
     spin_pol_check,
+    widefield_coherence,
     xy,
 )
 
@@ -526,15 +526,15 @@ def do_dm_xy_iq_lockin(nv_list):
     n_pi = 1
     num_reps = 75
     num_runs = 2000   # 200*90 = 18000 reps -> ~1 hour
-
-    dm_xy_iq_lockin_correlation.main(
-        nv_list=nv_list,
-        num_reps=num_reps,
-        num_runs=num_runs,
-        tau_ns=tau_ns,
-        n_pi=n_pi,
-        uwave_ind_list=(0, 1),
-    )
+    for _ in range(2):
+        dm_xy_iq_lockin_correlation.main(
+            nv_list=nv_list,
+            num_reps=num_reps,
+            num_runs=num_runs,
+            tau_ns=tau_ns,
+            n_pi=n_pi,
+            uwave_ind_list=(0, 1),
+        )
     
 def do_calibrate_iq_delay(nv_list):
     min_tau = 20
@@ -578,13 +578,13 @@ def do_resonance(nv_list):
 
 
 def do_deer_hahn(nv_list):
-    freq_center = 0.133
+    freq_center = 0.175
     freq_range = 0.024
     num_steps =  48
     # num_reps = 6
     num_reps = 3
     num_runs = 400
-    # num_runs = 300
+    num_runs = 2
     freqs = calculate_freqs(freq_center, freq_range, num_steps)
     ##
     # Remove duplicates and sort
@@ -597,7 +597,7 @@ def do_deer_hahn(nv_list):
             num_reps,
             num_runs,
             freqs=freqs,
-            uwave_ind_list=[0,1],
+            uwave_ind_list=[0,1,2],
         )
 
 def do_deer_hahn_rabi(nv_list):
@@ -680,21 +680,21 @@ def do_rabi(nv_list):
     # rabi.main(nv_list, num_steps, num_reps, num_runs, min_tau, max_tau, uwave_ind_list)
 
 
-def do_spin_echo_phase_scan_test(nv_list, evol_time):
+def do_widefield_coherence_test(nv_list, evol_time, seq_type):
     # num_reps = 11
     num_reps = 15
     num_runs = 150
     # num_runs = 2
     # phi_list = np.linspace(0, 360, num_steps)
     # fmt: off
-    phi_list = [0, 45, 90, 135, 180, 225, 270, 315, 360]
-    # phi_list = [0, 18, 36, 54, 72, 90, 108, 126, 144, 162, 180, 198, 216, 234, 252, 270, 288, 306, 324, 342, 360]
+    # phi_list = [0, 45, 90, 135, 180, 225, 270, 315, 360]
+    phi_list = [0, 18, 36, 54, 72, 90, 108, 126, 144, 162, 180, 198, 216, 234, 252, 270, 288, 306, 324, 342, 360]
     # phi_list = [-351, -333, -315, -297, -279, -261, -243, -225, -207, -189, -171, -153, -135, -117, -99, -81, -63, -45, -27, -9, 9, 27, 45, 63, 81, 99, 117, 135, 153, 171, 189, 207, 225, 243, 261, 279, 297, 315, 333, 351]
     # fmt: on
     num_steps = len(phi_list)
     uwave_ind_list = [0, 1]  # both are has iq modulation
-    spin_echo_phase_scan_test.main(
-        nv_list, num_steps, num_reps, num_runs, phi_list, evol_time, uwave_ind_list
+    widefield_coherence.main(
+        nv_list, num_steps, num_reps, num_runs, phi_list, evol_time, seq_type, uwave_ind_list
     )
     # for _ in range(2):
     #     spin_echo_phase_scan_test.main(
@@ -810,6 +810,37 @@ def do_two_block_hahn_correlation(nv_list):
     num_runs = 600
     for _ in range(2):
         two_block_hahn_correlation.main(nv_list, num_steps, num_reps, num_runs, tau, lag_taus)
+
+def do_two_block_hahn_correlation_dm(nv_list):
+    tau = 15e3  # your revival tau (ns)
+    # tau = 44  # your revival tau (ns)
+
+    # def lags_log_div4_ns(tmin_ns, tmax_ns, n):
+    #     # logspace, then round to nearest multiple of 4 ns
+    #     l = np.logspace(np.log10(tmin_ns), np.log10(tmax_ns), n)
+    #     l = np.unique((np.round(l / 4) * 4).astype(int))
+    #     l = l[(l >= tmin_ns) & (l <= tmax_ns)]
+    #     return l.tolist() 
+
+    lags_A = widefield.generate_divisible_by_4(int(0.2e3), int(20e3), 66)
+
+    # Bands
+    # lags_A = lags_log_div4_ns(16, int(50e3),  45)
+    # lags_B = lags_log_div4_ns(int(50e3), int(50e6), 35)
+    # lags_C = lags_log_div4_ns(int(50e6), int(2e9), 25)
+    # lags_A = lags_log_div4_ns(int(0.2e3), int(200e3), 45)  # 0.25–200 us
+    # lags_B = lags_log_div4_ns(int(200e3), int(20e6), 35)    # 0.2 ms–20 ms
+
+    num_reps = 4
+
+    # Fast band: cheap waits
+    two_block_hahn_correlation.main(nv_list, len(lags_A), num_reps, num_runs=2000, tau=tau, lag_taus=lags_A)
+
+    # Mid band
+    # two_block_hahn_correlation.main(nv_list, len(lags_B), num_reps, num_runs=200, tau=tau, lag_taus=lags_B)
+
+    # Slow band: waits dominate
+    # two_block_hahn_correlation.main(nv_list, len(lags_C), num_reps, num_runs=30,  tau=tau, lag_taus=lags_C)
 
 def do_spin_echo_1(nv_lis):
     min_tau = 200  # ns
@@ -1371,7 +1402,7 @@ if __name__ == "__main__":
     # magnet_angle = 90
     date_str = "2025_10_21"
     sample_coords = [0.4, 0.8]
-    z_coord = 0.3
+    z_coord = 0.0
     # Load NV pixel coordinates1
     pixel_coords_list = load_nv_coords(
         # file_path="slmsuite/nv_blob_detection/nv_blob_308nvs_reordered.npz",
@@ -1415,8 +1446,9 @@ if __name__ == "__main__":
     print(f"Red Laser Coordinates: {red_coords_list[0]}")
 
     # pixel_coords_list = [[124.195, 127.341],[14.043, 37.334],[106.538, 237.374],[218.314, 23.302]]
-    # green_coords_list = [[108.0, 107.846],[119.412, 119.364],[111.402, 95.571],[96.063, 118.755]]
-    # red_coords_list = [[73.369, 72.165],[82.292, 82.112],[76.582, 62.362],[63.227, 80.42]]
+    # green_coords_list = [[108.025, 107.919],[119.424, 119.448],[111.407, 95.655],[96.084, 118.821]]
+    # red_coords_list = [[73.387, 72.226],[82.299, 82.181],[76.583, 62.43],[63.242, 80.475]]
+
     num_nvs = len(pixel_coords_list)
     threshold_list = [None] * num_nvs
     # fmt: off
@@ -1505,7 +1537,8 @@ if __name__ == "__main__":
     # nv_sig.expected_counts = 900
     # nv_sig.expected_counts = 1400
     nv_sig.expected_counts = 1300
-    # nv_sig.expected_counts = 1500
+    # nv_sig.expected_counts = 1200
+    # nv_sig.expected_counts = 1800
 
     # nv_list = nv_list[::-1]  # flipping the order of NVs
     # nv_list = nv_list[:1]
@@ -1539,7 +1572,7 @@ if __name__ == "__main__":
         # )
 
         do_compensate_for_drift(nv_sig)
-        do_widefield_image_sample(nv_sig, 50)
+        # do_widefield_image_sample(nv_sig, 50)
         # do_widefield_image_sample(nv_sig, 400)
 
         # for nv in nv_list:
@@ -1607,7 +1640,7 @@ if __name__ == "__main__":
         # do_check_readout_fidelity(nv_list)
 
         # do_scc_snr_check(nv_list)
-        # do_optimize_scc_duration(nv_list)
+        do_optimize_scc_duration(nv_list)
         # do_optimize_scc_amp(nv_list)
         # optimize_scc_amp_and_duration(nv_list)
         # do_optimize_scc_readout_amp(nv_list)
@@ -1617,8 +1650,13 @@ if __name__ == "__main__":
         # do_calibrate_green_red_delay()
         # do_spin_echo_phase_scan_test(nv_list)  # for iq mod test
         # evol_time_list = [18000, 19600, 21000]
-        # for val in evol_time_list:
-        #     do_spin_echo_phase_scan_test(nv_list, val)  # for iq mod test
+
+        # evol_time_list = [15000]  # ns
+        # seq_types = ["hahn", "xy4", "xy8"]  # or add "ramsey", "xy16"
+        # for seq_type in seq_types:
+        #     for evol_time in evol_time_list:
+        #         print(f"Running {seq_type} at evol_time={evol_time} ns")
+        #         do_widefield_coherence_test(nv_list, evol_time, seq_type)
 
         # do_bootstrapped_pulse_error_tomography(nv_list)
         # do_calibrate_iq_delay(nv_list)
@@ -1637,14 +1675,15 @@ if __name__ == "__main__":
         # do_two_block_hahn_spatial_correlation(nv_list)
         # do_T2_correlation_test(nv_list)
         # do_two_block_hahn_correlation(nv_list)
-        # do_resonance(nv_list)
+        # do_resonance(nv_list) 
         # do_sq_relaxation(nv_list)
         # do_dq_relaxation(nv_list)
         # do_detect_cosmic_rays(nv_list)
         # do_check_readout_fidelity(nv_list)
         # do_charge_quantum_jump(nv_list)
         # do_ac_stark(nv_list)
-        do_dm_xy_iq_lockin(nv_list)
+        # do_dm_xy_iq_lockin(nv_list)
+        # do_two_block_hahn_correlation_dm(nv_list)
 
         # do_two_block_hahn_spatial_correlation(nv_list)
 

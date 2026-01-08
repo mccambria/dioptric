@@ -1,10 +1,12 @@
 # -*- coding: utf-8 -*-
 """
-Find the minimum green AOD voltage to polarize the spin after 1 us
+Calibrate green/red timing: sweep green delay and measure SNR after ~1 µs spin polarization.
 
-Created on March 31st, 2024
+Runs a single-NV widefield sequence ("calibrate_green_red_delay.py") over a range of delays,
+computes SNR from signal/reference counts, plots SNR vs delay, and saves raw_data + figure.
 
-@author: mccambria
+Created: 2024-03-31 (mccambria)
+Updated: 2026-01-05 (Saroj Chand)
 """
 
 import matplotlib.pyplot as plt

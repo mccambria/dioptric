@@ -4,9 +4,20 @@ Output server for the attodry800's piezos. See the physical manual from the
 attodry for more information about how we're communicating with the piezos
 and how the piezos work physically. The axes are numeric, with x:1, y:2, z:3.
 
+The piezo controller is a ANC300. The carrier is an ACC50. The steo module is noted to be an ANM150, this needs to be confirmed.
+
+Some of the comments are dated. The piezos currently require Labrad to be refreshed 
+after moving the position for the controller to know where it is currently positioned.
+
+Step voltage is limited to 150V. Step frequency is limited to 10,000 Hz. Capaitance is 1.61uF.
+
+Positioner step is set to 40V (was 30V) and frequency to 1000Hz. This can be changed (make sure to update these parameters in the 'cryo' file)
+
 Created on Tue Dec 29 2020
+Updated on Wed Nov 5 2025
 
 @author: mccambria
+@author: chemistatcode
 
 ### BEGIN NODE INFO
 [info]
@@ -32,9 +43,7 @@ import logging
 from utils import common
 from utils import tool_belt as tb
 
-# telnetlib is a package for connecting to networked device over the telnet
-# protocol. See the ANC150 section of the cryostat manual for more details on
-# this connection
+# telnetlib is a package for connecting to networked device over the telnet protocol. 
 from telnetlib import Telnet
 
 
@@ -76,7 +85,7 @@ class PosXyzAttoPiezos(LabradServer):
         # Read until we're prompted for a command
         self.piezos.read_until(b"> ")
         # Make sure all the axis modes are set to ground, with default
-        # frequency and voltage of 1000 Hz and 30 V
+        # frequency and voltage of 1000 Hz and 30 V-> changed to 40V
         self.send_cmd_all("setm", "gnd")
         self.send_cmd_all("setf", 1000)
         self.send_cmd_all("setv", cryo_piezos_voltage)
@@ -148,6 +157,36 @@ class PosXyzAttoPiezos(LabradServer):
         """Send a command to all three axes"""
         for axis in [1, 2, 3]:
             self.send_cmd(cmd, axis, arg)
+
+    @setting(0, returns="i")
+    def get_z_position(self, c):
+        """
+        Get the current cached Z position in steps.
+        Note: This is a software cache, not read from hardware.
+        """
+        return self.pos[2]
+
+    @setting(1, offset="i")
+    def set_z_reference(self, c, offset=0):
+        """
+        Reset the Z position cache to establish a new reference point.
+        The current physical position becomes 'offset' in the cache.
+        Use offset=0 to set current position as the zero reference.
+        """
+        self.pos[2] = offset
+        logging.info(f"Z reference set to {offset} steps")
+
+    @setting(5, num_steps="i", returns="i")
+    def move_z_steps(self, c, num_steps):
+        """
+        Move Z axis by a relative number of steps.
+        Positive steps = move up, negative steps = move down.
+        Returns the new Z position.
+        """
+        current_z = self.pos[2]
+        new_z = current_z + num_steps
+        self.write_ax(new_z, 3)
+        return self.pos[2]
 
     @setting(2, pos_in_steps="v")
     def write_z(self, c, pos_in_steps):

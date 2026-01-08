@@ -1,12 +1,28 @@
 # -*- coding: utf-8 -*-
 """
-Pulsed deer haha on multiple NVs with spin-to-charge
-conversion readout imaged onto a camera
+Pulsed widefield DEER (Hahn echo) on multiple NVs with spin-to-charge conversion (SCC)
+readout imaged onto a camera.
 
-Created on Coct 9th, 2025
+This routine sweeps an RF (bath) frequency while running a fixed NV Hahn-echo sequence.
+To suppress slow drifts, each RF point is acquired in an interleaved ON/OFF scheme:
 
-@author: schand
+  [f_on0, f_off0, f_on1, f_off1, ...]   where  f_off = f_on + Δ
+
+The saved data are post-processed to:
+  • split interleaved ON/OFF shots into two spectra per NV
+  • compute DEER contrast (e.g., (ON−OFF)/OFF) with propagated uncertainty
+  • optionally fit each NV’s DEER dip/peak (Gaussian or Lorentzian) and report
+    f0, amplitude, width, and reduced χ²
+  • optionally aggregate a selected NV subset (median + IQR bands) for a robust
+    ensemble view
+
+Hardware notes:
+  • NV MW source(s): fixed frequency and power (pulsed/gated by the sequencer)
+  • RF source: frequency updated each step; RF gated by TTL during the DEER window
+
+Created: Oct 9, 2025 (Saroj Chand)
 """
+
 
 import os
 import sys
@@ -226,7 +242,7 @@ def main(
     num_reps,
     num_runs,
     freqs,
-    uwave_ind_list=[0, 1],
+    uwave_ind_list=[0, 1, 2],
 ):
     ### Some initial setup
     pulse_gen = tb.get_server_pulse_gen()
@@ -257,15 +273,16 @@ def main(
 
     def step_fn(step_ind):
         # MW (NV) chain: fixed at NV transition; ON for pulses
-        mw_ind = uwave_ind_list[1]
-        mw_dict = tb.get_virtual_sig_gen_dict(mw_ind)
-        mw = tb.get_server_sig_gen(mw_ind)
-        mw.set_amp(mw_dict["uwave_power"])
-        mw.set_freq(mw_dict["frequency"])  # NV MW freq (GHz)
-        mw.uwave_on()
+        for ind in uwave_ind_list[:2]:
+            mw_ind = uwave_ind_list[ind]
+            mw_dict = tb.get_virtual_sig_gen_dict(mw_ind)
+            mw = tb.get_server_sig_gen(mw_ind)
+            mw.set_amp(mw_dict["uwave_power"])
+            mw.set_freq(mw_dict["frequency"])  # NV MW freq (GHz)
+            mw.uwave_on()
 
         # RF chain: set frequency per step (interleaved on/off)
-        rf_ind = uwave_ind_list[0]
+        rf_ind = uwave_ind_list[2]
         rf = tb.get_server_sig_gen(rf_ind)
         rf_dict = tb.get_virtual_sig_gen_dict(rf_ind)
         rf.set_amp(rf_dict["uwave_power"])  # RF power (dBm) for π_RF

@@ -314,7 +314,7 @@ def get_positioner_write_fn(positioner, axis_ind):
 
 def get_positioner_stream_fn(positioner, axis_ind):
     """Return the stream function for a given axis (0:x, 1:y, 2:z)"""
-    control_mode = get_positioner_control_mode(axis_ind)
+    control_mode = get_positioner_control_mode(positioner)
     if control_mode != PosControlMode.STREAM:
         return None
 
@@ -398,6 +398,10 @@ def get_drift_xy_coords_key():
     that can move in z. Otherwise there's no way to keep track of z drift.
     """
     config = common.get_config_dict()
+    # optional explicit override:
+    explicit = config["Positioning"].get("drift_xy_coords_key")
+    if explicit is not None:
+        return explicit
     collection_mode = config["collection_mode"]
     if collection_mode == CollectionMode.CAMERA:
         return CoordsKey.PIXEL
