@@ -471,11 +471,11 @@ if __name__ == "__main__":
     kpl.show(block=True)
     sys.exit()
     # --- Process & fit (DEER: ON/OFF interleaved) ---
-    try:
-        freqs_on_out, C_mean, C_ste, fit_results, deer_fig = postprocess_deer(
-            {"counts": counts}, freqs_interleaved, fit_model="gauss", do_fit=True
-        )
-    except Exception:
-        print(traceback.format_exc())
-        freqs_on_out, C_mean, C_ste, fit_results, deer_fig = None, None, None, [], None
+    # try:
+    #     freqs_on_out, C_mean, C_ste, fit_results, deer_fig = postprocess_deer(
+    #         {"counts": counts}, freqs_interleaved, fit_model="gauss", do_fit=True
+    #     )
+    # except Exception:
+    #     print(traceback.format_exc())
+    #     freqs_on_out, C_mean, C_ste, fit_results, deer_fig = None, None, None, [], None
 

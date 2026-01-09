@@ -27,7 +27,7 @@ def get_seq(
     reference = False  # References for this sequence are handled routine-side
     buffer = seq_utils.get_widefield_operation_buffer()
     # revival = 19.6e4 # in ns
-    revival = 200 # in ns
+    revival = 15e3 # in ns
     step_val = seq_utils.convert_ns_to_cc(revival)
     with qua.program() as seq:
         seq_utils.init()
@@ -35,15 +35,15 @@ def get_seq(
         step_ind = qua.declare(int)
 
         def uwave_macro(uwave_ind_list, step_ind):
-            MW_NV = [uwave_ind_list[1]]  # NV microwave chain (~2.87 GHz)
-            RF = [uwave_ind_list[0]]  # RF chain (~133 MHz)
+            MW_NV = [uwave_ind_list[0],uwave_ind_list[1]]  # NV microwave chai
+            RF = [uwave_ind_list[2]]  # RF chain
             qua.align()
             seq_utils.macro_pi_on_2_pulse(MW_NV, phase=0)
             qua.wait(step_val)
-            seq_utils.macro_pi_pulse(RF, phase=0)
             seq_utils.macro_pi_pulse(MW_NV, phase=0)
+            seq_utils.macro_pi_pulse(RF)
             qua.wait(step_val)
-            seq_utils.macro_pi_on_2_pulse(MW_NV, phase=99)
+            seq_utils.macro_pi_on_2_pulse(MW_NV, phase=90)
             qua.wait(buffer)
 
         with qua.for_each_(step_ind, step_inds):
