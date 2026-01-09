@@ -354,6 +354,8 @@ if __name__ == "__main__":
     kpl.init_kplotlib()
     # --- Load saved raw ---
     file_id = ["2025_10_15-17_27_25-rubin-nv0_2025_09_08"]
+    file_id = ["2026_01_08-21_38_45-johnson-nv0_2025_10_21"]
+    
     # file_id = ["2025_10_11-20_03_11-rubin-nv0_2025_09_08", "2025_10_11-23_49_23-rubin-nv0_2025_09_08"]
     
     data = widefield.process_multiple_files

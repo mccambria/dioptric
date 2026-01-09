@@ -888,7 +888,7 @@ def do_ramsey(nv_list):
 def do_xy(nv_list, xy_seq="xy8"):
     min_tau = 200
     max_tau = 1e6 + min_tau
-    num_steps = 24
+    # num_steps = 24
     num_reps = 2
     uwave_ind_list = [0, 1]  # iq modulated
     num_runs = 400
@@ -896,6 +896,7 @@ def do_xy(nv_list, xy_seq="xy8"):
     # taus = widefield.generate_log_spaced_taus(min_tau, max_tau, num_steps, base=4)
     taus = np.arange(200, 20000 + 1, 200)   # all divisible by 4
     taus = [int(t) for t in taus]
+    num_steps = len(taus)
     # print(taus)
     # sys.exit()
     # num_runs = 2
@@ -1576,7 +1577,7 @@ if __name__ == "__main__":
         # )
 
         do_compensate_for_drift(nv_sig)
-        # do_widefield_image_sample(nv_sig, 50)
+        do_widefield_image_sample(nv_sig, 50)
         # do_widefield_image_sample(nv_sig, 400)
 
         # for nv in nv_list:
@@ -1668,7 +1669,7 @@ if __name__ == "__main__":
         # do_power_rabi(nv_list)
         # do_resonance(nv_list)
         # do_rabi(nv_list)
-        do_deer_hahn(nv_list)
+        # do_deer_hahn(nv_list)
         # do_deer_hahn_rabi(nv_list)
         # do_resonance_zoom(nv_list)
         # do_spin_echo(nv_list)
@@ -1691,8 +1692,8 @@ if __name__ == "__main__":
 
         # do_two_block_hahn_spatial_correlation(nv_list)
 
-        # AVAILABLE_XY = ["hahn-n", "xy2-n", "xy4-n", "xy8-n", "xy16-n"]
-        # do_xy(nv_list, xy_seq="xy4-1")
+        AVAILABLE_XY = ["hahn-n", "xy2-n", "xy4-n", "xy8-n", "xy16-n"]
+        do_xy(nv_list, xy_seq="xy4-1")
         # do_xy_uniform_revival_scan(nv_list, xy_seq="xy4-1")
         # do_xy_revival_scan(nv_list, xy_seq="xy4-1")
 
