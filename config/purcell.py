@@ -102,6 +102,7 @@ config |= {
         "sig_gen_STAN_sg394_0_visa": "TCPIP::192.168.0.120::inst0::INSTR",
         "sig_gen_STAN_sg394_1_visa": "TCPIP::192.168.0.121::inst0::INSTR",
         "sig_gen_STAN_sg394_2_visa": "TCPIP::192.168.0.178::inst0::INSTR",
+        "sig_gen_STAN_sg394_3_visa": "TCPIP::192.168.0.177::inst0::INSTR",
         "sig_gen_TEKT_tsg4104a_visa": "TCPIP0::128.104.ramp_to_zero_duration.112::5025::SOCKET",
         "tagger_SWAB_20_1_serial": "1740000JEH",
         "tagger_SWAB_20_2_serial": "1948000SIP",
@@ -118,7 +119,7 @@ config |= {
             "sig_gen_BERK_bnc835": {"delay": 151, "fm_mod_bandwidth": 100000.0},
             "sig_gen_STAN_sg394_0": {"delay": 104, "fm_mod_bandwidth": 100000.0},
             "sig_gen_STAN_sg394_1": {"delay": 151, "fm_mod_bandwidth": 100000.0},
-            "sig_gen_STAN_sg394_2": {"delay": 151, "fm_mod_bandwidth": 100000.0}, ## need a work
+            "sig_gen_STAN_sg394_3": {"delay": 151, "fm_mod_bandwidth": 100000.0}, ## need a work
             "sig_gen_TEKT_tsg4104a": {"delay": 57},
         },
         "iq_comp_amp": 0.5,
@@ -156,12 +157,12 @@ config |= {
                 "pi_on_2_pulse": 44,
             },
             2: {
-                "physical_name": "sig_gen_STAN_sg394_2",
+                "physical_name": "sig_gen_STAN_sg394_3",
                 "uwave_power": 11.0,
                 "frequency": 0.173,
                 "rabi_period": 176,
-                "pi_pulse": 88,
-                "pi_on_2_pulse": 44,
+                "pi_pulse": 200,
+                "pi_on_2_pulse": 100,
             },
         },
     },
@@ -573,7 +574,6 @@ opx_config = {
             },
         },
         "do_sig_gen_STAN_sg394_0_dm": {
-            # "digitalInputs": {"chan": {"port": ("con1", 9), "delay": 0, "buffer": 0}},
             "digitalInputs": {"chan": {"port": ("con1", 9), "delay": iq_delay, "buffer": 0}},
             "operations": {
                 "on": "do_on",
@@ -583,7 +583,6 @@ opx_config = {
             },
         },
         "do_sig_gen_STAN_sg394_1_dm": {
-            # 230 ns I channel latency measured 3/26/25 MCC and Saroj using oscilloscope
             "digitalInputs": {
                 # "chan": {"port": ("con1", 10), "delay": 0, "buffer": 0}
                 "chan": {"port": ("con1", 10), "delay": iq_delay, "buffer": 0}
@@ -596,8 +595,8 @@ opx_config = {
                 "pi_on_2_pulse": "do_pi_on_2_pulse_1",
             },
         },
-        "do_sig_gen_STAN_sg394_2_dm": {
-            "digitalInputs": {"chan": {"port": ("con1", 3), "delay": 0, "buffer": 0}},
+        "do_sig_gen_STAN_sg394_3_dm": {
+            "digitalInputs": {"chan": {"port": ("con1", 3), "delay": iq_delay, "buffer": 0}},
             "operations": {
                 "on": "do_on",
                 "off": "do_off",
@@ -656,7 +655,7 @@ opx_config = {
         ### (con1,9) and (con1,10) already used by sg394_1.
         ### That means sg394_1 and sg394_2 cannot be active simultaneously.
         ### If you intend to use them independently, assign new AO ports.
-        "ao_sig_gen_STAN_sg394_2_i": {
+        "ao_sig_gen_STAN_sg394_3_i": {
             "singleInput": {"port": ("con1", 9)},
             "intermediate_frequency": 0,
             "operations": {
@@ -667,7 +666,7 @@ opx_config = {
                 "pi_on_2_pulse": "ao_iq_pi_on_2_pulse_2",
             },
         },
-        "ao_sig_gen_STAN_sg394_2_q": {
+        "ao_sig_gen_STAN_sg394_3_q": {
             "singleInput": {"port": ("con1", 10)},
             "intermediate_frequency": 0,
             "operations": {

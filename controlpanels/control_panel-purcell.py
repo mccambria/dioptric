@@ -578,19 +578,20 @@ def do_resonance(nv_list):
 
 
 def do_deer_hahn(nv_list):
-    freq_center = 0.175
+    freq_center = 0.174
     freq_range = 0.024
     num_steps =  48
     # num_reps = 6
     num_reps = 3
     num_runs = 400
-    num_runs = 2
+    # num_runs = 2
     freqs = calculate_freqs(freq_center, freq_range, num_steps)
     ##
     # Remove duplicates and sort
     freqs = sorted(set(freqs))
     num_steps = len(freqs)
     for _ in range(2):
+        do_widefield_image_sample(nv_sig, 50)
         deer_hahn.main(
             nv_list,
             num_steps,
@@ -887,7 +888,7 @@ def do_ramsey(nv_list):
 def do_xy(nv_list, xy_seq="xy8"):
     min_tau = 200
     max_tau = 1e6 + min_tau
-    num_steps = 24
+    # num_steps = 24
     num_reps = 2
     uwave_ind_list = [0, 1]  # iq modulated
     num_runs = 400
@@ -895,6 +896,7 @@ def do_xy(nv_list, xy_seq="xy8"):
     # taus = widefield.generate_log_spaced_taus(min_tau, max_tau, num_steps, base=4)
     taus = np.arange(200, 20000 + 1, 200)   # all divisible by 4
     taus = [int(t) for t in taus]
+    num_steps = len(taus)
     # print(taus)
     # sys.exit()
     # num_runs = 2
@@ -1176,15 +1178,15 @@ def do_opx_constant_ac():
 
     # Microwave test
     # if True:
-    #     sig_gen = cxn.sig_gen_STAN_sg394
+    #     sig_gen = cxn.sig_gen_STAN_sg394_3
     #     amp = 10
-    #     chan = 9
+    #     chan = 3
     # else:
     #     sig_gen = cxn.sig_gen_STAN_sg394_2
     #     amp = 10
     #     chan = 10
     # sig_gen.set_amp(amp)  # 12
-    # sig_gen.set_freq(0.2)
+    # sig_gen.set_freq(0.75)
     # sig_gen.uwave_on()
     # opx.constant_ac([chan])
 
@@ -1195,12 +1197,12 @@ def do_opx_constant_ac():
     # opx.stream_start()
 
     # Yellow
-    opx.constant_ac(
-        [],  # Digital channels
-        [7],  # Analog channels
-        [0.35],  # Analog voltages
-        [0],  # Analog frequencies
-    )
+    # opx.constant_ac(
+    #     [],  # Digital channels
+    #     [7],  # Analog channels
+    #     [0.35],  # Analog voltages
+    #     [0],  # Analog frequencies
+    # )
     # opx.constant_ac([4])  # Just laser
     # Red
     # freqs = [65, 75, 85]
@@ -1263,12 +1265,12 @@ def do_opx_constant_ac():
     # )
 
     # # Green + yellow
-    opx.constant_ac(
-        [4],  # Digital channels
-        [3, 4, 7],  # Analog channels
-        [0.11, 0.11, 0.30],  # Analog voltages
-        [107, 107, 0],  # Analog frequencies
-    )
+    # opx.constant_ac(
+    #     [4],  # Digital channels
+    #     [3, 4, 7],  # Analog channels
+    #     [0.11, 0.11, 0.30],  # Analog voltages
+    #     [107, 107, 0],  # Analog frequencies
+    # )
     # Red + green + Yellow
     # opx.constant_ac(
     #     [4, 1],  # Digital channels1
@@ -1575,7 +1577,7 @@ if __name__ == "__main__":
         # )
 
         do_compensate_for_drift(nv_sig)
-        # do_widefield_image_sample(nv_sig, 50)
+        do_widefield_image_sample(nv_sig, 50)
         # do_widefield_image_sample(nv_sig, 400)
 
         # for nv in nv_list:
