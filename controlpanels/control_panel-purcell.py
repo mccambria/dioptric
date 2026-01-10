@@ -1177,18 +1177,18 @@ def do_opx_constant_ac():
     # print((stop - start) / num_reps)
 
     # Microwave test
-    # if True:
-    #     sig_gen = cxn.sig_gen_STAN_sg394_3
-    #     amp = 10
-    #     chan = 3
-    # else:
-    #     sig_gen = cxn.sig_gen_STAN_sg394_2
-    #     amp = 10
-    #     chan = 10
-    # sig_gen.set_amp(amp)  # 12
-    # sig_gen.set_freq(0.75)
-    # sig_gen.uwave_on()
-    # opx.constant_ac([chan])
+    if True:
+        sig_gen = cxn.sig_gen_STAN_sg394_3
+        amp = 0
+        chan = 3
+    else:
+        sig_gen = cxn.sig_gen_STAN_sg394_2
+        amp = 10
+        chan = 10
+    sig_gen.set_amp(amp)  # 12
+    sig_gen.set_freq(0.175)
+    sig_gen.uwave_on()
+    opx.constant_ac([chan])
 
     # Camera frame rate test
     # seq_args = [500]
@@ -1577,7 +1577,7 @@ if __name__ == "__main__":
         # )
 
         do_compensate_for_drift(nv_sig)
-        do_widefield_image_sample(nv_sig, 50)
+        # do_widefield_image_sample(nv_sig, 50)
         # do_widefield_image_sample(nv_sig, 400)
 
         # for nv in nv_list:
@@ -1644,7 +1644,7 @@ if __name__ == "__main__":
         # do_optimize_spin_pol_amp(nv_list)
         # do_check_readout_fidelity(nv_list)
 
-        # do_scc_snr_check(nv_list)
+        do_scc_snr_check(nv_list)
         # do_optimize_scc_duration(nv_list)
         # do_optimize_scc_amp(nv_list)
         # optimize_scc_amp_and_duration(nv_list)
@@ -1692,8 +1692,8 @@ if __name__ == "__main__":
 
         # do_two_block_hahn_spatial_correlation(nv_list)
 
-        AVAILABLE_XY = ["hahn-n", "xy2-n", "xy4-n", "xy8-n", "xy16-n"]
-        do_xy(nv_list, xy_seq="xy4-1")
+        # AVAILABLE_XY = ["hahn-n", "xy2-n", "xy4-n", "xy8-n", "xy16-n"]
+        # do_xy(nv_list, xy_seq="xy4-1")
         # do_xy_uniform_revival_scan(nv_list, xy_seq="xy4-1")
         # do_xy_revival_scan(nv_list, xy_seq="xy4-1")
 
