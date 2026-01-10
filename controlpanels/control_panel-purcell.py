@@ -1450,8 +1450,8 @@ if __name__ == "__main__":
     print(f"Red Laser Coordinates: {red_coords_list[0]}")
 
     # pixel_coords_list = [[124.195, 127.341],[14.043, 37.334],[106.538, 237.374],[218.314, 23.302]]
-    # green_coords_list = [[108.025, 107.919],[119.424, 119.448],[111.407, 95.655],[96.084, 118.821]]
-    # red_coords_list = [[73.387, 72.226],[82.299, 82.181],[76.583, 62.43],[63.242, 80.475]]
+    # green_coords_list = [[107.884, 107.983],[119.262, 119.511],[111.272, 95.718],[95.966, 118.875]]
+    # red_coords_list = [[73.27, 72.27],[82.164, 82.223],[76.471, 62.475],[63.144, 80.513]]
 
     num_nvs = len(pixel_coords_list)
     threshold_list = [None] * num_nvs
@@ -1644,7 +1644,7 @@ if __name__ == "__main__":
         # do_optimize_spin_pol_amp(nv_list)
         # do_check_readout_fidelity(nv_list)
 
-        do_scc_snr_check(nv_list)
+        # do_scc_snr_check(nv_list)
         # do_optimize_scc_duration(nv_list)
         # do_optimize_scc_amp(nv_list)
         # optimize_scc_amp_and_duration(nv_list)
@@ -1669,7 +1669,7 @@ if __name__ == "__main__":
         # do_power_rabi(nv_list)
         # do_resonance(nv_list)
         # do_rabi(nv_list)
-        # do_deer_hahn(nv_list)
+        do_deer_hahn(nv_list)
         # do_deer_hahn_rabi(nv_list)
         # do_resonance_zoom(nv_list)
         # do_spin_echo(nv_list)

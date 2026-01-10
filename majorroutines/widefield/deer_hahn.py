@@ -300,7 +300,7 @@ def main(
         save_images=False,
         num_exps=1,
         ref_by_rep_parity=False,
-        load_iq=True,
+        # load_iq=True,
     )
 
     ### Process and plot
@@ -356,6 +356,7 @@ if __name__ == "__main__":
     # file_id = ["2025_10_15-17_27_25-rubin-nv0_2025_09_08"]
     file_id = ["2026_01_08-21_38_45-johnson-nv0_2025_10_21",
                "2026_01_09-01_42_12-johnson-nv0_2025_10_21"]
+    file_id = ['2026_01_10-00_17_26-johnson-nv0_2025_10_21']
     # file_id = ["2025_10_11-20_03_11-rubin-nv0_2025_09_08", "2025_10_11-23_49_23-rubin-nv0_2025_09_08"]
     
     data = widefield.process_multiple_files
@@ -439,33 +440,6 @@ if __name__ == "__main__":
         # Optional wider band:
         p16_curve    = np.nanpercentile(A, 16, axis=0)
         p84_curve    = np.nanpercentile(A, 84, axis=0)
-
-        
-        # freqs_on*=1000 ## MH
-        # fig, ax = plt.subplots()
-        # # Interquartile band
-        # ax.fill_between(freqs_on, p25_curve, p75_curve, alpha=0.3, linewidth=0)
-        # # Median
-        # ax.plot(freqs_on, median_curve, marker="o", ms=3, lw=1)
-
-        # # Nice labels
-        # ylabels = {
-        #     "contrast": "Contrast",
-        #     # "sig_counts": "Signal counts",
-        #     # "ref_counts": "Reference counts",
-        #     # "snr": "SNR",
-        # }
-        # titles = {
-        #     "contrast":   "Median DEER Contrast",
-        #     # "sig_counts": "Median Signal counts",
-        #     # "ref_counts": "MedianReference counts",
-        #     # "snr":        "Median SNR",
-        # }
-        # ax.set_title(f"{titles[name]} ({len(selected_indices)}NVs)")
-        # ax.set_xlabel("RF frequency (MHz)")
-        # ax.set_ylabel(f"{ylabels[name]}")
-        # ax.grid(True, linestyle="--", alpha=0.4)
-
 
         # --- frequency axis (DON'T modify freqs_on in-place) ---
         freqs_MHz = freqs_on * 1000.0
