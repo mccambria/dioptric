@@ -582,10 +582,12 @@ def do_deer_hahn(nv_list):
     freq_range = 0.024
     num_steps =  48
     # num_reps = 6
-    num_reps = 3
+    num_reps = 2
     num_runs = 400
     # num_runs = 2
-    freqs = calculate_freqs(freq_center, freq_range, num_steps)
+    # freqs = calculate_freqs(freq_center, freq_range, num_steps)
+    freqs = np.arange(20, 320 + 2, 2)
+    freqs = freqs / 1000
     ##
     # Remove duplicates and sort
     freqs = sorted(set(freqs))
@@ -593,7 +595,7 @@ def do_deer_hahn(nv_list):
     for _ in range(2):
         do_widefield_image_sample(nv_sig, 50)
         deer_hahn.main(
-            nv_list,
+            nv_list, 
             num_steps,
             num_reps,
             num_runs,

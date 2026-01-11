@@ -253,7 +253,7 @@ def main(
 
     ### Collect the data
     # Assume freqs is a 1D array (GHz) for RF sweep (e.g., 0.120–0.150 GHz)
-    delta = 0.60  # 60 MHz detuning for OFF
+    delta = 2.0  # 60 MHz detuning for OFF
     freqs_on = np.asarray(freqs, float)
     freqs_off = freqs_on + delta
 
@@ -354,9 +354,12 @@ if __name__ == "__main__":
     kpl.init_kplotlib()
     # --- Load saved raw ---
     # file_id = ["2025_10_15-17_27_25-rubin-nv0_2025_09_08"]
-    file_id = ["2026_01_08-21_38_45-johnson-nv0_2025_10_21",
-               "2026_01_09-01_42_12-johnson-nv0_2025_10_21"]
-    file_id = ['2026_01_10-00_17_26-johnson-nv0_2025_10_21']
+    # file_id = ["2026_01_08-21_38_45-johnson-nv0_2025_10_21",
+    #            "2026_01_09-01_42_12-johnson-nv0_2025_10_21"]
+    # file_id = ['2026_01_10-00_17_26-johnson-nv0_2025_10_21']
+    file_id = ['2026_01_10-04_25_53-johnson-nv0_2025_10_21',
+               "2026_01_10-08_18_23-johnson-nv0_2025_10_21"]
+    
     # file_id = ["2025_10_11-20_03_11-rubin-nv0_2025_09_08", "2025_10_11-23_49_23-rubin-nv0_2025_09_08"]
     
     data = widefield.process_multiple_files
@@ -473,8 +476,6 @@ if __name__ == "__main__":
         # Optional: overlay faint per-NV curves for context
         # for row in A:
         #     ax.plot(freqs_on, row, alpha=0.08, lw=0.7)
-
-
     kpl.show(block=True)
     sys.exit()
     # --- Process & fit (DEER: ON/OFF interleaved) ---
