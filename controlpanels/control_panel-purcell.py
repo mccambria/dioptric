@@ -580,19 +580,20 @@ def do_resonance(nv_list):
 def do_deer_hahn(nv_list):
     freq_center = 0.174
     freq_range = 0.024
-    num_steps =  48
+    # num_steps =  48
     # num_reps = 6
-    num_reps = 2
+    num_reps = 4
     num_runs = 400
     # num_runs = 2
     # freqs = calculate_freqs(freq_center, freq_range, num_steps)
-    freqs = np.arange(20, 320 + 2, 2)
+    # freqs = np.arange(20, 320 + 2, 2)
+    freqs = np.arange(130, 190 + 1, 1)
     freqs = freqs / 1000
     ##
     # Remove duplicates and sort
     freqs = sorted(set(freqs))
     num_steps = len(freqs)
-    for _ in range(2):
+    for _ in range(1):
         do_widefield_image_sample(nv_sig, 50)
         deer_hahn.main(
             nv_list, 

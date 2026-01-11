@@ -253,7 +253,7 @@ def main(
 
     ### Collect the data
     # Assume freqs is a 1D array (GHz) for RF sweep (e.g., 0.120–0.150 GHz)
-    delta = 2.0  # 60 MHz detuning for OFF
+    delta = 0.6  # 600 MHz detuning for OFF
     freqs_on = np.asarray(freqs, float)
     freqs_off = freqs_on + delta
 
@@ -361,6 +361,9 @@ if __name__ == "__main__":
                "2026_01_10-08_18_23-johnson-nv0_2025_10_21"]
     
     # file_id = ["2025_10_11-20_03_11-rubin-nv0_2025_09_08", "2025_10_11-23_49_23-rubin-nv0_2025_09_08"]
+    
+    file_id = ["2026_01_11-04_19_03-johnson-nv0_2025_10_21",
+               "2026_01_11-12_50_25-johnson-nv0_2025_10_21"]
     
     data = widefield.process_multiple_files
     data = dm.get_raw_data(file_stem=file_id, load_npz=True, use_cache=True)
