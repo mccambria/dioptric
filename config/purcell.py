@@ -119,7 +119,7 @@ config |= {
             "sig_gen_BERK_bnc835": {"delay": 151, "fm_mod_bandwidth": 100000.0},
             "sig_gen_STAN_sg394_0": {"delay": 104, "fm_mod_bandwidth": 100000.0},
             "sig_gen_STAN_sg394_1": {"delay": 151, "fm_mod_bandwidth": 100000.0},
-            "sig_gen_STAN_sg394_3": {"delay": 151, "fm_mod_bandwidth": 100000.0}, ## need a work
+            "sig_gen_STAN_sg394_3": {"delay": 151, "fm_mod_bandwidth": 100000.0},
             "sig_gen_TEKT_tsg4104a": {"delay": 57},
         },
         "iq_comp_amp": 0.5,
@@ -161,7 +161,7 @@ config |= {
                 "uwave_power": 11.0,
                 "frequency": 0.174,
                 "rabi_period": 176,
-                "pi_pulse": 2000,
+                "pi_pulse": 4000,
                 "pi_on_2_pulse": 100,
             },
         },
