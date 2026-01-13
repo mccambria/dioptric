@@ -368,6 +368,8 @@ if __name__ == "__main__":
     
     # file_id = ["2026_01_11-19_26_26-johnson-nv0_2025_10_21"]
     
+    file_id = ["2026_01_12-11_42_09-johnson-nv0_2025_10_21"]
+    
     data = widefield.process_multiple_files
     data = dm.get_raw_data(file_stem=file_id, load_npz=True, use_cache=True)
 
