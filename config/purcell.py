@@ -128,9 +128,9 @@ config |= {
             0: {
                 "physical_name": "sig_gen_STAN_sg394_0",
                 "uwave_power": 11.0,
-                # "frequency": 2.785146, #49G
+                "frequency": 2.771367, #49G
                 # "frequency": 2.747151,
-                "frequency": 2.709799,  #62G
+                # "frequency": 2.709799,  #62G
                 # "frequency":2.963189,
                 # "frequency": 2.917151,
                 # "frequency": 2.8082,
@@ -147,10 +147,10 @@ config |= {
                 "physical_name": "sig_gen_STAN_sg394_1",
                 "uwave_power": 11.0,
                 # "frequency": 2.917151,
-                # "frequency": 2.840681,#49G
+                "frequency": 2.810689,#49G
                 # "frequency": 2.982049,
                 # "frequency": 2.828210, 
-                "frequency": 2.816912, #62G
+                # "frequency": 2.816912, #62G
                 # "frequency": 2.8252,
                 "rabi_period": 192,
                 "pi_pulse": 88,
