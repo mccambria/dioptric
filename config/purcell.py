@@ -161,7 +161,7 @@ config |= {
                 "uwave_power": 11.0,
                 "frequency": 0.158,
                 "rabi_period": 176,
-                "pi_pulse": 1000,
+                "pi_pulse": 2000,
                 "pi_on_2_pulse": 100,
             },
         },
