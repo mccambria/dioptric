@@ -366,11 +366,12 @@ if __name__ == "__main__":
     # file_id = ["2026_01_11-04_19_03-johnson-nv0_2025_10_21",
     #            "2026_01_11-12_50_25-johnson-nv0_2025_10_21"]
     
-    file_id = ["2026_01_11-19_26_26-johnson-nv0_2025_10_21"]
+    # file_id = ["2026_01_11-19_26_26-johnson-nv0_2025_10_21"]
     
     # file_id = ["2026_01_12-11_42_09-johnson-nv0_2025_10_21"]
     
-    data = widefield.process_multiple_files
+    file_id = ["2026_01_15-04_02_02-johnson-nv0_2025_10_21"]
+    
     data = dm.get_raw_data(file_stem=file_id, load_npz=True, use_cache=True)
 
     nv_list  = data["nv_list"]
@@ -404,7 +405,6 @@ if __name__ == "__main__":
 
     avg_snr, avg_snr_ste = widefield.calc_snr(sig_counts, ref_counts)
     avg_contrast, avg_contrast_ste = widefield.calc_contrast(sig_counts, ref_counts)
-
     
     # Loop through NVs one by one
     # indices_113_MHz = [0, 1, 3, 6, 10, 14, 16, 17, 19, 23, 24, 25, 26, 27, 32, 33, 34, 35, 37, 38, 41, 49, 50, 51, 53, 54, 55, 60, 62, 63, 64, 66, 67, 68, 70, 72, 73, 74, 75, 76, 78, 80, 81, 82, 83, 84, 86, 88, 90, 92, 93, 95, 96, 99, 100, 101, 102, 103, 105, 108, 109, 111, 113, 114]
@@ -423,7 +423,6 @@ if __name__ == "__main__":
         # plt.show(block=True)
 
     # ----- Aggregate + plot for multiple metrics in a loop -----
-
     metrics = {
         "contrast":   avg_contrast,        # (NV, Nf)
         # "sig_counts": avg_sig_counts,      # (NV, Nf)
