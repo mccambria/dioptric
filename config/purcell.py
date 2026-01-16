@@ -34,8 +34,8 @@ red_laser_aod = "laser_COBO_638_aod"
 
 
 calibration_coords_pixel = [[14.043, 37.334],[106.538, 237.374],[218.314, 23.302]]
-calibration_coords_green = [[119.262, 119.511],[111.272, 95.718],[95.966, 118.875]]
-calibration_coords_red = [[82.164, 82.223],[76.471, 62.475],[63.144, 80.513]]
+calibration_coords_green = [[119.285, 119.542],[111.292, 95.748],[95.965, 118.938]]
+calibration_coords_red = [[82.182, 82.25],[76.486, 62.5],[63.141, 80.564]]
 
 # Create the dictionaries using the provided lists
 calibration_coords_nv1 = {
@@ -172,8 +172,8 @@ config |= {
         "resolution": (512, 512),
         "spot_radius": 2.5,  # Radius for integrating NV counts in a camera image
         "bias_clamp": 300,  # (changing this won't actually change the value on the camera currently)
-        # "em_gain": 5000,
-        "em_gain": 10,
+        "em_gain": 5000,
+        # "em_gain": 10,
         "temp": -60,
         "timeout": 60e3,  # ms
         # "timeout": -1,  # No timeout
