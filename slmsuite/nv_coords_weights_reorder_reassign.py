@@ -695,7 +695,6 @@ if __name__ == "__main__":
     # )
 
     # # Plot the original image with circles around each NV
-
     fig, ax = plt.subplots()
     title = "12ms, INTI_520_Combined_Image"
     kpl.imshow(ax, img_array, title=title, cbar_label="Photons")
