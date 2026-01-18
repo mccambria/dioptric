@@ -354,7 +354,7 @@ def process_and_plot(data):
     # plt.xlabel("SNR")
     # plt.ylabel("Frequency")
     # plt.grid(True)
-    # plt.show()
+    # plt.show()    
 
     # Plot: SNR vs. Distance with error bars
     distance = df["Distance"]

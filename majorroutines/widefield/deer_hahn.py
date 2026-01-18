@@ -373,7 +373,7 @@ if __name__ == "__main__":
     
     # file_id = ["2026_01_15-04_02_02-johnson-nv0_2025_10_21"]
     
-    file_id = ["2026_01_16-11_54_01-johnson-nv0_2025_10_21"]
+    file_id = ["2026_01_18-04_57_43-johnson-nv0_2025_10_21"]
     
     data = dm.get_raw_data(file_stem=file_id, load_npz=True, use_cache=True)
 
