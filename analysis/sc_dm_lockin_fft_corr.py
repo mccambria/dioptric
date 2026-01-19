@@ -1556,14 +1556,14 @@ def plot_physical_shot_diagnostics_s0(
 
     
     # 4) Phase increments (separate, clearer scaling)
-    fig, axp = plt.subplots(1, 1, figsize=(10, 3.0))
-    axp.plot(t[1:], dphi_m, lw=1)
-    axp.set_xlabel(xlab)
-    axp.set_ylabel(r"$\Delta\phi[k]$ (rad)")
-    axp.set_title(r"Global phase increment $\Delta\phi[k]=\arg(g[k]g^*[k-1])$ (masked when |g| small)")
-    axp.grid(True, ls="--", lw=0.5)
-    plt.tight_layout()
-    plt.show()
+    # fig, axp = plt.subplots(1, 1, figsize=(10, 3.0))
+    # axp.plot(t[1:], dphi_m, lw=1)
+    # axp.set_xlabel(xlab)
+    # axp.set_ylabel(r"$\Delta\phi[k]$ (rad)")
+    # axp.set_title(r"Global phase increment $\Delta\phi[k]=\arg(g[k]g^*[k-1])$ (masked when |g| small)")
+    # axp.grid(True, ls="--", lw=0.5)
+    # plt.tight_layout()
+    # plt.show()
 
     # ----- PRINTS -----
     prc = [1, 5, 50, 95, 99]
@@ -1585,6 +1585,222 @@ def plot_physical_shot_diagnostics_s0(
         "dphi": dphi,
         "dphi_masked": dphi_m,
     }
+
+import numpy as np
+import matplotlib.pyplot as plt
+
+def _phase_inc(z):
+    """Δphi[k] = angle(z[k] * conj(z[k-1])) for 1D complex series."""
+    return np.angle(z[1:] * np.conj(z[:-1]))
+
+def _unwrap_phase(z):
+    """Unwrapped phase of 1D complex series."""
+    return np.unwrap(np.angle(z))
+
+def _safe_mean(x, axis=0):
+    return np.nanmean(x, axis=axis)
+
+def _safe_amp(z):
+    return np.abs(z)
+
+def sample_from_groups(groups, n_each=6, seed=0):
+    """Return dict name -> sampled indices (no replacement)."""
+    rng = np.random.default_rng(seed)
+    out = {}
+    for name, idx in groups.items():
+        idx = np.array(idx, dtype=int)
+        if len(idx) == 0:
+            out[name] = np.array([], dtype=int)
+            continue
+        k = min(n_each, len(idx))
+        out[name] = rng.choice(idx, size=k, replace=False)
+    return out
+
+def plot_orientation_commonmode(
+    out,
+    groups,
+    dt=1.0,
+    nshots=None,
+    amp_prc=20.0,
+    windows_s=None,   # list of (t0,t1) in seconds
+    title_prefix="",
+):
+    """
+    Plots common-mode phasor for:
+      - all NVs
+      - each orientation group (mean over NVs in group)
+
+    Shows:
+      (1) |g_all(t)| and |g_group(t)|
+      (2) Δphi_all(t) and Δphi_group(t)   (masked when amplitude low)
+
+    Interpretation:
+      - If Δphi jumps are similar across groups -> reference/timing/MW phase.
+      - If Δphi jump sizes differ by group -> real ΔB projection effect.
+      - If mostly |g| changes -> optical/contrast/global amplitude change.
+    """
+    s = np.asarray(out["s0"])  # (M,N)
+    if nshots is not None:
+        nshots = min(int(nshots), s.shape[1])
+        s = s[:, :nshots]
+    M, N = s.shape
+    t = np.arange(N) * float(dt)
+    xlab = "time (s)" if dt != 1.0 else "shot index"
+
+    # Global mean phasor across all NVs
+    g_all = _safe_mean(s, axis=0)             # (N,)
+    amp_all = _safe_amp(g_all)
+    amp_thr_all = np.nanpercentile(amp_all, amp_prc)
+    good_all = amp_all > amp_thr_all
+    dphi_all = _phase_inc(g_all)
+    dphi_all_m = np.where(good_all[1:] & good_all[:-1], dphi_all, np.nan)
+
+    # Per-group phasors
+    gG = {}
+    ampG = {}
+    dphiG_m = {}
+    amp_thrG = {}
+    for name, idx in groups.items():
+        idx = np.array(idx, dtype=int)
+        idx = idx[(idx >= 0) & (idx < M)]
+        if len(idx) == 0:
+            continue
+        g = _safe_mean(s[idx, :], axis=0)
+        a = _safe_amp(g)
+        thr = np.nanpercentile(a, amp_prc)
+        good = a > thr
+        dphi = _phase_inc(g)
+        dphi_m = np.where(good[1:] & good[:-1], dphi, np.nan)
+        gG[name] = g
+        ampG[name] = a
+        dphiG_m[name] = dphi_m
+        amp_thrG[name] = thr
+
+    # ---- Plot amplitudes ----
+    fig, ax = plt.subplots(1, 1, figsize=(11, 3.2))
+    ax.plot(t, amp_all, lw=1.2, label="|g_all|")
+    ax.axhline(amp_thr_all, ls="--", lw=1, label=f"|g_all| p{amp_prc:g}")
+    for name in gG:
+        ax.plot(t, ampG[name], lw=1, alpha=0.9, label=f"|g_{name}|")
+    if windows_s:
+        for (t0, t1) in windows_s:
+            ax.axvspan(t0, t1, alpha=0.15)
+    ax.set_title(f"{title_prefix} Common-mode amplitudes")
+    ax.set_xlabel(xlab); ax.set_ylabel("|g(t)|")
+    ax.grid(True, ls="--", lw=0.5)
+    ax.legend(fontsize=8, ncol=3, loc="upper right")
+    plt.tight_layout()
+    plt.show()
+
+    # ---- Plot phase increments ----
+    fig, ax = plt.subplots(1, 1, figsize=(11, 3.2))
+    ax.plot(t[1:], dphi_all_m, lw=1.2, label="Δphi_all")
+    for name in dphiG_m:
+        ax.plot(t[1:], dphiG_m[name], lw=1, alpha=0.9, label=f"Δphi_{name}")
+    if windows_s:
+        for (t0, t1) in windows_s:
+            ax.axvspan(t0, t1, alpha=0.15)
+    ax.set_title(f"{title_prefix} Common-mode phase increments (masked when |g| small)")
+    ax.set_xlabel(xlab); ax.set_ylabel("Δphi (rad)")
+    ax.grid(True, ls="--", lw=0.5)
+    ax.legend(fontsize=8, ncol=3, loc="upper right")
+    plt.tight_layout()
+    plt.show()
+
+    return {
+        "t": t,
+        "g_all": g_all,
+        "amp_all": amp_all,
+        "dphi_all_masked": dphi_all_m,
+        "g_groups": gG,
+        "amp_groups": ampG,
+        "dphi_groups_masked": dphiG_m,
+    }
+
+def plot_random_nv_traces(
+    out,
+    nv_indices,
+    dt=1.0,
+    nshots=None,
+    windows_s=None,
+    show="phase",     # "phase" or "amp" or "IQ"
+    unwrap=True,
+    title="Random NV traces",
+):
+    """
+    Plot a handful of NV traces.
+    - show="phase": plots angle(s0) (unwrapped optionally)
+    - show="amp": plots |s0|
+    - show="IQ": plots I and Q (two panels)
+    """
+    s = np.asarray(out["s0"])
+    if nshots is not None:
+        nshots = min(int(nshots), s.shape[1])
+        s = s[:, :nshots]
+    M, N = s.shape
+    t = np.arange(N) * float(dt)
+    xlab = "time (s)" if dt != 1.0 else "shot index"
+
+    idx = np.array(nv_indices, dtype=int)
+    idx = idx[(idx >= 0) & (idx < M)]
+    if len(idx) == 0:
+        print("No valid NV indices.")
+        return
+
+    if show.lower() == "iq":
+        fig, ax = plt.subplots(2, 1, figsize=(11, 5.5), sharex=True)
+        for i in idx:
+            ax[0].plot(t, np.real(s[i]), lw=1, alpha=0.9, label=f"NV {i}")
+            ax[1].plot(t, np.imag(s[i]), lw=1, alpha=0.9, label=f"NV {i}")
+        if windows_s:
+            for (t0, t1) in windows_s:
+                ax[0].axvspan(t0, t1, alpha=0.15)
+                ax[1].axvspan(t0, t1, alpha=0.15)
+        ax[0].set_ylabel("I"); ax[1].set_ylabel("Q")
+        ax[1].set_xlabel(xlab)
+        ax[0].set_title(title + " (I)"); ax[1].set_title(title + " (Q)")
+        for a in ax: a.grid(True, ls="--", lw=0.5)
+        plt.tight_layout(); plt.show()
+        return
+
+    fig, ax = plt.subplots(1, 1, figsize=(11, 3.2))
+    for i in idx:
+        if show.lower() == "amp":
+            y = np.abs(s[i])
+        else:
+            y = np.angle(s[i])
+            if unwrap:
+                y = np.unwrap(y)
+        ax.plot(t, y, lw=1, alpha=0.9, label=f"NV {i}")
+    if windows_s:
+        for (t0, t1) in windows_s:
+            ax.axvspan(t0, t1, alpha=0.15)
+    ax.set_xlabel(xlab)
+    ax.set_ylabel("|s0|" if show.lower()=="amp" else "phase (rad)")
+    ax.set_title(title + f" ({show})")
+    ax.grid(True, ls="--", lw=0.5)
+    ax.legend(fontsize=8, ncol=3, loc="upper right")
+    plt.tight_layout()
+    plt.show()
+
+def remove_common_phase(s_mn, eps=1e-12):
+    """
+    Removes ONLY a global phase rotation:
+      s_i(t) -> s_i(t) * exp(-j*phi_cm(t))
+    where phi_cm(t) is the phase of the global mean g_all(t).
+    Useful test:
+      - if correlated jumps vanish after this, it was likely a reference-phase/timing jump.
+    """
+    s = np.asarray(s_mn)
+    g = np.nanmean(s, axis=0)
+    ph = np.angle(g)
+    rot = np.exp(-1j * ph)
+    # avoid rotating by garbage when |g| ~ 0
+    mask = (np.abs(g) > eps)
+    rot2 = np.ones_like(rot)
+    rot2[mask] = rot[mask]
+    return s * rot2[None, :]
+
 
 
 def make_summary_plots(out, dt=1.0, global_bad_thresh=0.9, zthr=6.0):
@@ -2433,21 +2649,524 @@ def perm_by_spectral_seriation(A, use_abs=True, eps=1e-12):
     perm = np.argsort(v)
     return perm
 
+
+def plot_orientation_energy(out, ori_idx, dt=1.0, nshots=None, zthr=20.0, title=""):
+    s = np.asarray(out["s0"])  # (M,N)
+    ori_idx = np.array(ori_idx, dtype=int)
+    ori_idx = ori_idx[(ori_idx >= 0) & (ori_idx < s.shape[0])]
+    if len(ori_idx) == 0:
+        print(f"{title}: empty orientation list")
+        return
+
+    x = s[ori_idx, :]
+    if nshots is not None:
+        nshots = min(int(nshots), x.shape[1])
+        x = x[:, :nshots]
+
+    # Energy across NVs in this orientation
+    E = np.nanmean(np.abs(x)**2, axis=0)
+
+    # Robust z-score for glitch marking
+    zE, med, sig = robust_zscore_mad(E)
+    glitch = np.abs(zE) >= float(zthr)
+
+    t = np.arange(E.size) * float(dt)
+    xlab = "time (s)" if dt != 1.0 else "shot index"
+
+    plt.figure(figsize=(11, 3.0))
+    plt.plot(t, E, lw=1)
+    if np.any(glitch):
+        plt.plot(t[glitch], E[glitch], "rx", ms=4, label=f"|z|≥{zthr:g}")
+        plt.legend(fontsize=8, loc="upper right")
+    plt.xlabel(xlab)
+    plt.ylabel(r"$\langle |s_0|^2\rangle_{NV}$")
+    plt.title(title)
+    plt.grid(True, ls="--", lw=0.5)
+    plt.tight_layout()
+
+
+def plot_orientation_energy_and_phase_coherence(
+    out, ori_idx, dt=1.0, nshots=None, amp_prc=1.0, title=""
+):
+    """
+    Panels:
+      (1) Energy E[k] = <|s0|^2> over NVs in this orientation
+      (2) Circular-mean phase increment dphi_bar[k] and coherence R[k]
+          using per-NV dphi_n[k] = arg(s[n,k] * conj(s[n,k-1])).
+
+    amp_prc: per-NV amplitude percentile used to mask low-amp shots (noise).
+    """
+    s = np.asarray(out["s0"])  # (M,N)
+    ori_idx = np.asarray(ori_idx, dtype=int)
+    ori_idx = ori_idx[(ori_idx >= 0) & (ori_idx < s.shape[0])]
+    if ori_idx.size == 0:
+        print(f"{title}: empty orientation list")
+        return
+
+    x = s[ori_idx, :]  # (Mori, N)
+    if nshots is not None:
+        nshots = min(int(nshots), x.shape[1])
+        x = x[:, :nshots]
+
+    Mori, N = x.shape
+    t = np.arange(N, dtype=float) * float(dt)
+    xlab = "time (s)" if dt != 1.0 else "shot index"
+
+    # (1) Energy (amplitude-only)
+    E = np.nanmean(np.abs(x)**2, axis=0)
+
+    # (2) Per-NV phase increment
+    # dphi_n[k] uses adjacent points, so length N-1
+    dphi = np.angle(x[:, 1:] * np.conj(x[:, :-1]))  # (Mori, N-1)
+
+    # Mask dphi when amplitude is small for that NV (noise-dominated)
+    amp = np.abs(x)  # (Mori, N)
+    thr_nv = np.nanpercentile(amp, amp_prc, axis=1)  # (Mori,)
+    good = (amp[:, 1:] > thr_nv[:, None]) & (amp[:, :-1] > thr_nv[:, None])
+    dphi_m = np.where(good, dphi, np.nan)
+
+    # Circular mean + coherence across NVs
+    z = np.exp(1j * dphi_m)  # (Mori, N-1)
+    z_mean = np.nanmean(z, axis=0)  # (N-1,)
+    dphi_bar = np.angle(z_mean)     # circular mean step
+    R = np.abs(z_mean)              # 0..1 coherence (correlated-jump detector)
+
+    fig, ax = plt.subplots(2, 1, figsize=(11, 5.2), sharex=True)
+
+    ax[0].plot(t, E, lw=1)
+    ax[0].set_ylabel(r"$\langle |s_0|^2\rangle$")
+    ax[0].set_title(title + " — energy (amplitude-only)")
+    ax[0].grid(True, ls="--", lw=0.5)
+
+    ax[1].plot(t[1:], dphi_bar, lw=1, label=r"$\bar{\Delta\phi}$ (circular mean)")
+    # ax2 = ax[1].twinx()
+    # ax2.plot(t[1:], R, lw=1, alpha=0.9, label="R (coherence)")
+
+    # ax[1].set_ylabel(r"$\bar{\Delta\phi}$ (rad)")
+    # ax2.set_ylabel("R (0..1)")
+    # ax[1].set_xlabel(xlab)
+    # ax[1].set_title("Per-NV phase increment: mean step + coherence R")
+    # ax[1].grid(True, ls="--", lw=0.5)
+
+    # Combined legend
+    lines, labels = ax[1].get_legend_handles_labels()
+    # lines2, labels2 = ax2.get_legend_handles_labels()
+    # ax[1].legend(lines + lines2, labels + labels2, fontsize=8, loc="upper right")
+
+    plt.tight_layout()
+
+    return {"t": t, "E": E, "dphi_bar": dphi_bar, "R": R, "mask_good_frac": np.nanmean(good)}
+
+
+import numpy as np
+import matplotlib.pyplot as plt
+
+def _apply_keep_runs_to_counts(counts, keep_runs):
+    """counts: (4,M,R,S,P). keep_runs can be None or array of run indices."""
+    if keep_runs is None:
+        return counts
+    keep_runs = np.asarray(keep_runs, dtype=int)
+    return counts[:, :, keep_runs, :, :]
+
+def orientation_brightness_series(counts, out, ori_idx, nshots=None):
+    """
+    Returns B[k] for an orientation group using raw counts:
+      B_n[k] = Ip+Im+Qp+Qm, then average across NVs in ori_idx.
+    Aligned to out['s0'] by applying out['keep_runs'] and out['keep_shots'].
+    """
+    counts = np.asarray(counts)
+    assert counts.ndim == 5, f"counts must be (4,M,R,S,P), got {counts.shape}"
+    assert counts.shape[0] == 4, "counts first axis must be 4 (Ip,Im,Qp,Qm)"
+
+    # Apply same run filtering as analyze_counts_fft_corr
+    counts_used = _apply_keep_runs_to_counts(counts, out.get("keep_runs", None))
+    _, M, R, S, P = counts_used.shape
+    Ntot = R * S * P
+
+    ori_idx = np.asarray(ori_idx, dtype=int)
+    ori_idx = ori_idx[(ori_idx >= 0) & (ori_idx < M)]
+    if ori_idx.size == 0:
+        raise ValueError("Empty ori_idx after bounds check.")
+
+    # Flatten shots to match out['keep_shots'] length
+    c = counts_used.reshape(4, M, Ntot)          # (4,M,Ntot)
+    B_nv = np.nansum(c, axis=0)                  # (M,Ntot) sum over 4 frames
+    B_ori = np.nanmean(B_nv[ori_idx, :], axis=0) # (Ntot,)
+
+    # Align with out['s0'] shots (drop shots that were dropped in lock-in)
+    keep_shots = out.get("keep_shots", None)
+    if keep_shots is not None:
+        keep_shots = np.asarray(keep_shots, dtype=bool)
+        if keep_shots.size != Ntot:
+            raise ValueError(f"keep_shots length {keep_shots.size} != Ntot {Ntot}")
+        B_ori = B_ori[keep_shots]
+
+    if nshots is not None:
+        B_ori = B_ori[:min(int(nshots), B_ori.size)]
+
+    return B_ori
+
+def orientation_energy_series(out, ori_idx, nshots=None):
+    """
+    E[k] = mean_{NV in ori} |s0|^2 using out['s0'] (already aligned shots).
+    """
+    s0 = np.asarray(out["s0"])  # (M,N)
+    M, N = s0.shape
+    ori_idx = np.asarray(ori_idx, dtype=int)
+    ori_idx = ori_idx[(ori_idx >= 0) & (ori_idx < M)]
+    if ori_idx.size == 0:
+        raise ValueError("Empty ori_idx after bounds check.")
+
+    s = s0[ori_idx, :]
+    if nshots is not None:
+        s = s[:, :min(int(nshots), s.shape[1])]
+
+    E = np.nanmean(np.abs(s)**2, axis=0)
+    return E
+
+def shade_windows(ax, windows, dt=1.0):
+    """
+    windows: list of (t0,t1) in seconds if dt != 1, else in shot index units.
+    """
+    if windows is None:
+        return
+    for (t0, t1) in windows:
+        ax.axvspan(t0, t1, alpha=0.15)
+
+def plot_brightness_vs_energy(
+    out, counts, ori_idx, dt=1.0, nshots=None, title="", windows=None
+):
+    """
+    Two-panel plot: Brightness proxy B[k] vs Lock-in energy E[k] for one orientation group.
+    """
+    B = orientation_brightness_series(counts, out, ori_idx, nshots=nshots)
+    E = orientation_energy_series(out, ori_idx, nshots=nshots)
+
+    N = min(B.size, E.size)
+    B = B[:N]
+    E = E[:N]
+    t = np.arange(N) * float(dt)
+    xlab = "time (s)" if dt != 1.0 else "shot index"
+
+    # correlation (helps quantify “amplitude-dominated”)
+    Bz = (B - np.nanmean(B)) / (np.nanstd(B) + 1e-12)
+    Ez = (E - np.nanmean(E)) / (np.nanstd(E) + 1e-12)
+    corr = np.nanmean(Bz * Ez)
+
+    fig, ax = plt.subplots(2, 1, figsize=(11, 5.6), sharex=True)
+
+    ax[0].plot(t, B, lw=1)
+    shade_windows(ax[0], windows)
+    ax[0].set_ylabel("B = <Ip+Im+Qp+Qm>")
+    ax[0].set_title(f"{title} — brightness proxy (raw counts)")
+
+    ax[1].plot(t, E, lw=1)
+    shade_windows(ax[1], windows)
+    ax[1].set_ylabel(r"E = $\langle |s_0|^2\rangle$")
+    ax[1].set_xlabel(xlab)
+    ax[1].set_title(f"lock-in energy (corr(B,E)≈{corr:.3f})")
+
+    for a in ax:
+        a.grid(True, ls="--", lw=0.5)
+
+    plt.tight_layout()
+    plt.show()
+
+    return {"t": t, "B": B, "E": E, "corr_BE": corr}
+
+import numpy as np
+import matplotlib.pyplot as plt
+
+def _apply_keep_runs_to_counts(counts, keep_runs):
+    if keep_runs is None:
+        return counts
+    keep_runs = np.asarray(keep_runs, dtype=int)
+    return counts[:, :, keep_runs, :, :]
+
+def plot_ori_sumdiff_contrast_and_E(out, counts, ori_idx, dt=1.0, nshots=None, title="", windows=None):
+    """
+    Plots for an orientation subset:
+      B  = <Ip+Im+Qp+Qm>    (brightness proxy)
+      DI = <Ip-Im>, DQ = <Qp-Qm>
+      CI = DI/<Ip+Im>, CQ = DQ/<Qp+Qm>   (contrast proxies)
+      E  = <|s0|^2> from out['s0']
+    """
+    counts = np.asarray(counts)  # (4,M,R,S,P)
+    assert counts.shape[0] == 4, "counts must be ordered [Ip, Im, Qp, Qm] on axis 0"
+    s0 = np.asarray(out["s0"])   # (M,Nshots_used)
+    M = s0.shape[0]
+
+    ori_idx = np.asarray(ori_idx, dtype=int)
+    ori_idx = ori_idx[(ori_idx >= 0) & (ori_idx < M)]
+    if ori_idx.size == 0:
+        print(f"{title}: empty orientation list")
+        return
+
+    # align counts to out's run filtering
+    counts_used = _apply_keep_runs_to_counts(counts, out.get("keep_runs", None))
+    _, M2, R, S, P = counts_used.shape
+    assert M2 == M, f"M mismatch: counts has {M2}, out['s0'] has {M}"
+    Ntot = R * S * P
+
+    c = counts_used.reshape(4, M, Ntot)  # (4,M,Ntot)
+
+    keep_shots = out.get("keep_shots", None)
+    if keep_shots is not None:
+        keep_shots = np.asarray(keep_shots, dtype=bool)
+        c = c[:, :, keep_shots]  # (4,M,N)
+    N = c.shape[2]
+
+    # apply nshots
+    if nshots is not None:
+        N = min(int(nshots), N)
+        c = c[:, :, :N]
+
+    Ip, Im, Qp, Qm = c[0], c[1], c[2], c[3]  # each (M,N)
+
+    # orientation averages
+    mIp = np.nanmean(Ip[ori_idx], axis=0)
+    mIm = np.nanmean(Im[ori_idx], axis=0)
+    mQp = np.nanmean(Qp[ori_idx], axis=0)
+    mQm = np.nanmean(Qm[ori_idx], axis=0)
+
+    B  = mIp + mIm + mQp + mQm
+    DI = mIp - mIm
+    DQ = mQp - mQm
+
+    # contrast proxies
+    CI = DI / (mIp + mIm + 1e-12)
+    CQ = DQ / (mQp + mQm + 1e-12)
+
+    # lock-in energy (already aligned shots)
+    E = np.nanmean(np.abs(s0[ori_idx, :N])**2, axis=0)
+
+    t = np.arange(N) * float(dt)
+    xlab = "time (s)" if dt != 1.0 else "shot index"
+
+    def shade(ax):
+        if windows is None: return
+        for (t0, t1) in windows:
+            ax.axvspan(t0, t1, alpha=0.15)
+
+    fig, ax = plt.subplots(4, 1, figsize=(11, 7.2), sharex=True)
+
+    ax[0].plot(t, B, lw=1);  shade(ax[0])
+    ax[0].set_ylabel("B"); ax[0].set_title(title + " — brightness & differences")
+
+    ax[1].plot(t, DI, lw=1, label="DI=<Ip-Im>")
+    ax[1].plot(t, DQ, lw=1, label="DQ=<Qp-Qm>")
+    shade(ax[1]); ax[1].legend(fontsize=8, loc="upper right")
+    ax[1].set_ylabel("DI, DQ")
+
+    ax[2].plot(t, CI, lw=1, label="CI=DI/<Ip+Im>")
+    ax[2].plot(t, CQ, lw=1, label="CQ=DQ/<Qp+Qm>")
+    shade(ax[2]); ax[2].legend(fontsize=8, loc="upper right")
+    ax[2].set_ylabel("contrast")
+
+    ax[3].plot(t, E, lw=1); shade(ax[3])
+    ax[3].set_ylabel(r"E=<|s0|^2>"); ax[3].set_xlabel(xlab)
+    ax[3].set_title("lock-in energy")
+
+    for a in ax:
+        a.grid(True, ls="--", lw=0.5)
+
+    plt.tight_layout()
+    plt.show()
+
+    # quick correlations to guide interpretation
+    def corr(a,b):
+        a=(a-np.nanmean(a))/(np.nanstd(a)+1e-12)
+        b=(b-np.nanmean(b))/(np.nanstd(b)+1e-12)
+        return float(np.nanmean(a*b))
+
+    print("corr(E,B) =", corr(E,B))
+    print("corr(E,CI) =", corr(E,CI), " corr(E,CQ) =", corr(E,CQ))
+
+    return {"t": t, "B": B, "DI": DI, "DQ": DQ, "CI": CI, "CQ": CQ, "E": E}
+
+import numpy as np
+import matplotlib.pyplot as plt
+
+def _apply_keep_runs_to_counts(counts, keep_runs):
+    if keep_runs is None:
+        return counts
+    keep_runs = np.asarray(keep_runs, dtype=int)
+    return counts[:, :, keep_runs, :, :]
+
+def _frac_dev(x, eps=1e-12):
+    """Fractional deviation from median (good for huge DC offsets)."""
+    med = np.nanmedian(x)
+    return (x - med) / (med + eps)
+
+def plot_ori_debug_decomposed(
+    out, counts, ori_idx, dt=1.0, nshots=None, title="", windows=None,
+    show_frac=True, frac_scale=100.0,  # 100 -> percent
+):
+    """
+    Orientation-resolved diagnostics:
+      - Ip,Im,Qp,Qm (means)
+      - B, DI, DQ, CI, CQ
+      - E = <|s0|^2>, plus decomposition:
+            E_common = |<s0>|^2
+            E_var    = <|s0|^2> - |<s0>|^2
+    Plots either raw or fractional deviation (%).
+    """
+    counts = np.asarray(counts)  # (4,M,R,S,P)
+    s0 = np.asarray(out["s0"])   # (M,Nshots)
+    M = s0.shape[0]
+
+    ori_idx = np.asarray(ori_idx, dtype=int)
+    ori_idx = ori_idx[(ori_idx >= 0) & (ori_idx < M)]
+    if ori_idx.size == 0:
+        print(f"{title}: empty orientation list")
+        return
+
+    # counts -> align with out filtering
+    counts_used = _apply_keep_runs_to_counts(counts, out.get("keep_runs", None))
+    _, M2, R, S, P = counts_used.shape
+    assert M2 == M
+    c = counts_used.reshape(4, M, R*S*P)
+
+    keep_shots = out.get("keep_shots", None)
+    if keep_shots is not None:
+        keep_shots = np.asarray(keep_shots, dtype=bool)
+        c = c[:, :, keep_shots]
+    N = c.shape[2]
+
+    if nshots is not None:
+        N = min(int(nshots), N)
+        c = c[:, :, :N]
+
+    Ip, Im, Qp, Qm = c[0], c[1], c[2], c[3]  # (M,N)
+
+    # orientation means
+    mIp = np.nanmean(Ip[ori_idx], axis=0)
+    mIm = np.nanmean(Im[ori_idx], axis=0)
+    mQp = np.nanmean(Qp[ori_idx], axis=0)
+    mQm = np.nanmean(Qm[ori_idx], axis=0)
+
+    B  = mIp + mIm + mQp + mQm
+    DI = mIp - mIm
+    DQ = mQp - mQm
+    CI = DI / (mIp + mIm + 1e-12)
+    CQ = DQ / (mQp + mQm + 1e-12)
+
+    # s0 orientation subset (already aligned shots)
+    x = s0[ori_idx, :N]                 # (nori,N)
+    g = np.nanmean(x, axis=0)           # <s0>
+    E = np.nanmean(np.abs(x)**2, axis=0)
+    E_common = np.abs(g)**2
+    E_var = np.maximum(E - E_common, 0.0)  # numerical safety
+
+    t = np.arange(N) * float(dt)
+    xlab = "time (s)" if dt != 1.0 else "shot index"
+
+    def shade(ax):
+        if windows is None: return
+        for (t0, t1) in windows:
+            ax.axvspan(t0, t1, alpha=0.15)
+
+    # choose transform
+    if show_frac:
+        f = lambda y: _frac_dev(y) * frac_scale
+        ylab_suffix = f" (Δ/median × {frac_scale:g})"
+    else:
+        f = lambda y: y
+        ylab_suffix = ""
+
+    fig, ax = plt.subplots(6, 1, figsize=(12, 9.5), sharex=True)
+
+    # raw windows (this is where charge/brightness shows up)
+    ax[0].plot(t, f(mIp), lw=1, label="Ip")
+    ax[0].plot(t, f(mIm), lw=1, label="Im")
+    ax[0].plot(t, f(mQp), lw=1, label="Qp")
+    ax[0].plot(t, f(mQm), lw=1, label="Qm")
+    shade(ax[0]); ax[0].legend(fontsize=8, loc="upper right")
+    ax[0].set_ylabel("windows" + ylab_suffix)
+    ax[0].set_title(title)
+
+    ax[1].plot(t, f(B), lw=1); shade(ax[1])
+    ax[1].set_ylabel("B" + ylab_suffix)
+
+    ax[2].plot(t, f(DI), lw=1, label="DI")
+    ax[2].plot(t, f(DQ), lw=1, label="DQ")
+    shade(ax[2]); ax[2].legend(fontsize=8, loc="upper right")
+    ax[2].set_ylabel("DI,DQ" + ylab_suffix)
+
+    ax[3].plot(t, f(CI), lw=1, label="CI")
+    ax[3].plot(t, f(CQ), lw=1, label="CQ")
+    shade(ax[3]); ax[3].legend(fontsize=8, loc="upper right")
+    ax[3].set_ylabel("CI,CQ" + ylab_suffix)
+
+    ax[4].plot(t, f(E), lw=1, label="E=<|s|^2>")
+    ax[4].plot(t, f(E_common), lw=1, label="E_common=|<s>|^2")
+    ax[4].plot(t, f(E_var), lw=1, label="E_var=<|s-<s>|^2>")
+    shade(ax[4]); ax[4].legend(fontsize=8, loc="upper right")
+    ax[4].set_ylabel("E parts" + ylab_suffix)
+
+    # also plot phase increment of g if you want (often reveals label swaps / MW phase issues)
+    dphi = np.angle(g[1:] * np.conj(g[:-1]))
+    ax[5].plot(t[1:], dphi, lw=1); shade(ax[5])
+    ax[5].set_ylabel("Δphi (rad)")
+    ax[5].set_xlabel(xlab)
+
+    for a in ax:
+        a.grid(True, ls="--", lw=0.5)
+
+    plt.tight_layout()
+    plt.show()
+
+    return {
+        "t": t, "mIp": mIp, "mIm": mIm, "mQp": mQp, "mQm": mQm,
+        "B": B, "DI": DI, "DQ": DQ, "CI": CI, "CQ": CQ,
+        "E": E, "E_common": E_common, "E_var": E_var, "g": g
+    }
+def find_top_variance_nvs(out, ori_idx, dt, win, baseline=None, topk=20):
+    s0 = np.asarray(out["s0"])
+    ori_idx = np.asarray(ori_idx, int)
+    ori_idx = ori_idx[(ori_idx >= 0) & (ori_idx < s0.shape[0])]
+    x = s0[ori_idx, :]  # (Mori,N)
+    t = np.arange(x.shape[1]) * float(dt)
+
+    wmask = (t >= win[0]) & (t <= win[1])
+    if baseline is None:
+        bmask = ~wmask
+    else:
+        bmask = (t >= baseline[0]) & (t <= baseline[1])
+
+    # per-NV variance of amplitude (you can also use |s|^2)
+    A = np.abs(x)
+    var_w = np.nanvar(A[:, wmask], axis=1)
+    var_b = np.nanvar(A[:, bmask], axis=1)
+
+    ratio = (var_w + 1e-12) / (var_b + 1e-12)
+    order = np.argsort(ratio)[::-1]
+    top = order[:topk]
+
+    return {
+        "ori_idx": ori_idx,
+        "top_local_indices": top,
+        "top_nv_indices": ori_idx[top],
+        "ratio": ratio,
+        "var_w": var_w,
+        "var_b": var_b,
+    }
+
 # ----------------------------
 # Example usage (edit for your loader)
 # ----------------------------
 if __name__ == "__main__":
     # Example: load from an npz that contains 'counts'
     from utils import data_manager as dm
-    # raw_data = dm.get_raw_data(
-    #     file_stem="2025_12_24-09_32_29-johnson-nv0_2025_10_21", load_npz=True
-    # )
-    file_stems = ["2026_01_04-18_43_01-johnson-nv0_2025_10_21",
-                  "2026_01_05-14_32_43-johnson-nv0_2025_10_21"]
+    raw_data = dm.get_raw_data(
+        file_stem="2025_12_24-09_32_29-johnson-nv0_2025_10_21", load_npz=True
+    )
+    # file_stems = ["2026_01_04-18_43_01-johnson-nv0_2025_10_21",
+    #               "2026_01_05-14_32_43-johnson-nv0_2025_10_21"]
     # raw_data = dm.get_raw_data(
     #     file_stem="2026_01_04-18_43_01-johnson-nv0_2025_10_21", load_npz=True
     # )
-    raw_data= widefield.process_multiple_files(file_stems, load_npz=True)
+    # raw_data= widefield.process_multiple_files(file_stems, load_npz=True)
 
     nv_list =  raw_data["nv_list"] 
     counts = raw_data["counts"]
@@ -2470,14 +3189,44 @@ if __name__ == "__main__":
     # make_summary_plots(out, dt=0.240, global_bad_thresh=0.9, zthr=10.0)
     # plot_shot_diagnostics(out, use="s0", nshots=300000)  # most “physical”
     # plot_shot_diagnostics(out, use="z",  nshots=300000)  # ensemble outlier score
-    res = plot_physical_shot_diagnostics_s0(
-    out,
-    nshots=None,   # or None for all shots
-    dt=0.240,        # seconds per complex shot (your value)
-    zthr=20.0,       # glitch threshold in robust z-score units
-    amp_prc=20.0,   # mask phase-increment when |g| is in lowest 20%
-    mark_glitches=False)
+    # res = plot_physical_shot_diagnostics_s0(
+    # out,
+    # nshots=None,   # or None for all shots
+    # dt=0.248,        # seconds per complex shot (your value)
+    # zthr=20.0,       # glitch threshold in robust z-score units
+    # amp_prc=20.0,   # mask phase-increment when |g| is in lowest 20%
+    # mark_glitches=False)
+    
+    # --- Use it ---
+    dt = 0.248
+    # plot_orientation_energy(out, ORI_11m1, dt=dt, zthr=20, title="ORI_11m1: shot energy")
+    # plot_orientation_energy(out, ORI_m111, dt=dt, zthr=20, title="ORI_m111: shot energy")
+    # --- Use it ---
+    # dt = 0.248
+    # plot_orientation_energy_and_phase_coherence(out, ORI_11m1, dt=dt, amp_prc=20, title="ORI_11m1")
+    # plot_orientation_energy_and_phase_coherence(out, ORI_m111, dt=dt, amp_prc=20, title="ORI_m111")
+    # plt.show()
+    # plt.show()
 
+    dt = 0.248
+    windows = [(29000, 36000), (69000, 72000)]  # seconds (since dt is seconds/shot)
+
+    # plot_brightness_vs_energy(out, counts, ORI_11m1, dt=dt, title="ORI_11m1", windows=windows)
+    # plot_brightness_vs_energy(out, counts, ORI_m111, dt=dt, title="ORI_m111", windows=windows)
+
+    plot_ori_sumdiff_contrast_and_E(out, counts, ORI_11m1, dt=dt, title="ORI_11m1", windows=windows)
+    plot_ori_sumdiff_contrast_and_E(out, counts, ORI_m111, dt=dt, title="ORI_m111", windows=windows)
+
+
+    plot_ori_debug_decomposed(out, counts, ORI_11m1, dt=dt, title="ORI_11m1", windows=windows,
+                            show_frac=True, frac_scale=100.0)
+    plot_ori_debug_decomposed(out, counts, ORI_m111, dt=dt, title="ORI_m111", windows=windows,
+                            show_frac=True, frac_scale=100.0)
+
+    dt = 0.248
+    win1 = (28000, 35000)
+    res1 = find_top_variance_nvs(out, ORI_11m1, dt, win1, topk=20)
+    print("Top NVs (ORI_11m1) driving var jump:", res1["top_nv_indices"])
     sys.exit()
     res = analyze_correlated_modes(out, nv_list, K=6)
     # plot_all_pairwise(out, use="z",  mask_phase_below=0.0)   # best for coherence structure

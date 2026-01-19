@@ -552,12 +552,12 @@ def do_calibrate_iq_delay(nv_list):
 def do_resonance(nv_list):
     freq_center = 2.8785
     
-    # freq_range = 0.36
-    # num_steps = 65
+    freq_range = 0.36
+    num_steps = 65
     
-    freq_range = 0.260
-    num_steps = 45
-    num_reps = 3
+    # freq_range = 0.260
+    # num_steps = 45
+    num_reps = 2
     num_runs = 800
     # num_runs = 1
     freqs = calculate_freqs(freq_center, freq_range, num_steps)
@@ -1414,10 +1414,10 @@ if __name__ == "__main__":
         # file_path="slmsuite/nv_blob_detection/nv_blob_151nvs_reordered.npz",
         # file_path="slmsuite/nv_blob_detection/nv_blob_136nvs_reordered.npz",
         # file_path="slmsuite/nv_blob_detection/nv_blob_118nvs_reordered.npz",
-        # file_path="slmsuite/nv_blob_detection/nv_blob_312nvs_reordered.npz",
+        file_path="slmsuite/nv_blob_detection/nv_blob_312nvs_reordered.npz",
         # file_path="slmsuite/nv_blob_detection/nv_blob_230nvs_reordered.npz",
         # file_path="slmsuite/nv_blob_detection/nv_blob_223nvs_reordered.npz",
-        file_path="slmsuite/nv_blob_detection/nv_blob_204nvs_reordered.npz",
+        # file_path="slmsuite/nv_blob_detection/nv_blob_204nvs_reordered.npz",
     ).tolist()
     # pixel_coords_list = [[124.195, 127.341],[14.043, 37.334],[106.538, 237.374],[218.314, 23.302]]
     green_coords_list = [
@@ -1503,9 +1503,9 @@ if __name__ == "__main__":
     indices_113_MHz = [0, 1, 3, 6, 10, 14, 16, 17, 19, 23, 24, 25, 26, 27, 32, 33, 34, 35, 37, 38, 41, 49, 50, 51, 53, 54, 55, 60, 62, 63, 64, 66, 67, 68, 70, 72, 73, 74, 75, 76, 78, 80, 81, 82, 83, 84, 86, 88, 90, 92, 93, 95, 96, 99, 100, 101, 102, 103, 105, 108, 109, 111, 113, 114]
     indices_217_MHz = [0, 2, 4, 5, 7, 8, 9, 11, 12, 13, 15, 18, 20, 21, 22, 28, 29, 30, 31, 36, 39, 40, 42, 43, 44, 45, 46, 47, 48, 52, 56, 57, 58, 59, 61, 65, 69, 71, 77, 79, 85, 87, 89, 91, 94, 97, 98, 104, 106, 107, 110, 112, 115, 116, 117]
     # scc_amp_list = [1.0] * num_nv
-    # scc_duration_list = [100] * num_nvs
+    scc_duration_list = [88] * num_nvs
     # pol_duration_list = [600] * num_nvs
-    # pol_duration_list = [1000] * num_nvs
+    pol_duration_list = [1000] * num_nvs
     # nv_list[i] will have the ith coordinates from the above lists
     nv_list: list[NVSig] = []
     for ind in range(num_nvs):
@@ -1644,7 +1644,7 @@ if __name__ == "__main__":
         # do_optimize_spin_pol_amp(nv_list)
         # do_check_readout_fidelity(nv_list)
 
-        do_scc_snr_check(nv_list)
+        # do_scc_snr_check(nv_list)
         # do_optimize_scc_duration(nv_list)
         # do_optimize_scc_amp(nv_list)
         # optimize_scc_amp_and_duration(nv_list)
@@ -1680,7 +1680,7 @@ if __name__ == "__main__":
         # do_two_block_hahn_spatial_correlation(nv_list)
         # do_T2_correlation_test(nv_list)
         # do_two_block_hahn_correlation(nv_list)
-        # do_resonance(nv_list) 
+        do_resonance(nv_list) 
         # do_sq_relaxation(nv_list)
         # do_dq_relaxation(nv_list)
         # do_detect_cosmic_rays(nv_list)
