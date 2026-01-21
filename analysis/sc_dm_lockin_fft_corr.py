@@ -3116,12 +3116,12 @@ def plot_lockin_simple_ori_or_all(
     ax[1].legend(fontsize=8, loc="upper right")
     ax[1].text(0.01, 0.98, r"$I=I^+-I^-,\ Q=Q^+-Q^-$ (from raw means)", transform=ax[1].transAxes, va="top")
 
-    ax[2].plot(t, E, lw=1, label=r"$E=\langle|s|^2\rangle$")
-    ax[2].plot(t, E_common, lw=1, label=r"$E_c=|\langle s\rangle|^2$")
-    ax[2].plot(t, E_var, lw=1, label=r"$E_v=E-E_c$")
-    ax[2].set_ylabel("energy")
-    ax[2].legend(fontsize=8, loc="upper right")
-    ax[2].text(0.01, 0.98, r"$s=I+iQ$; $E=\langle|s|^2\rangle$; $E=E_c+E_v$", transform=ax[2].transAxes, va="top")
+    # ax[2].plot(t, E, lw=1, label=r"$E=\langle|s|^2\rangle$")
+    # ax[2].plot(t, E_common, lw=1, label=r"$E_c=|\langle s\rangle|^2$")
+    # ax[2].plot(t, E_var, lw=1, label=r"$E_v=E-E_c$")
+    # ax[2].set_ylabel("energy")
+    # ax[2].legend(fontsize=8, loc="upper right")
+    # ax[2].text(0.01, 0.98, r"$s=I+iQ$; $E=\langle|s|^2\rangle$; $E=E_c+E_v$", transform=ax[2].transAxes, va="top")
 
     ax[3].plot(t, gamma, lw=1, label=r"$\gamma=E_c/(E+\epsilon)$")
     ax[3].plot(t, np.abs(g), lw=1, label=r"$|\langle s\rangle|$")
@@ -3130,11 +3130,11 @@ def plot_lockin_simple_ori_or_all(
     ax[3].set_ylim(-0.05, 0.5)
     ax[3].legend(fontsize=8, loc="upper right")
 
-    ax[4].plot(t, phi, lw=1, label=r"$\phi=\arg\langle s\rangle$")
-    ax[4].plot(t[1:], dphi, lw=1, label=r"$\Delta\phi=\arg(g_{k}g^{*}_{k-1})$")
-    ax[4].set_ylabel("phase (rad)")
-    ax[4].set_xlabel(xlab)
-    ax[4].legend(fontsize=8, loc="upper right")
+    # ax[4].plot(t, phi, lw=1, label=r"$\phi=\arg\langle s\rangle$")
+    # ax[4].plot(t[1:], dphi, lw=1, label=r"$\Delta\phi=\arg(g_{k}g^{*}_{k-1})$")
+    # ax[4].set_ylabel("phase (rad)")
+    # ax[4].set_xlabel(xlab)
+    # ax[4].legend(fontsize=8, loc="upper right")
 
     for a in ax:
         a.grid(True, ls="--", lw=0.5)
@@ -3151,37 +3151,85 @@ def plot_lockin_simple_ori_or_all(
         "g": g, "phi": phi, "dphi": dphi, "gamma": gamma,
     }
 
-    
-def find_top_variance_nvs(out, ori_idx, dt, win, baseline=None, topk=20):
-    s0 = np.asarray(out["s0"])
-    ori_idx = np.asarray(ori_idx, int)
-    ori_idx = ori_idx[(ori_idx >= 0) & (ori_idx < s0.shape[0])]
-    x = s0[ori_idx, :]  # (Mori,N)
-    t = np.arange(x.shape[1]) * float(dt)
 
-    wmask = (t >= win[0]) & (t <= win[1])
-    if baseline is None:
-        bmask = ~wmask
+import numpy as np
+import matplotlib.pyplot as plt
+
+import numpy as np
+import matplotlib.pyplot as plt
+
+def plot_lockin_simple(
+    out,
+    counts,
+    ori_idx=None,     # None -> all NVs; else list of NV indices
+    dt=1.0,
+    nshots=None,
+    title="",
+    seq=r"$\pi/2_x — \ \pi_x \ — \pi/2_{\{+x,-x,+y,-y\}}$",
+    eps=1e-12,
+):
+    counts = np.asarray(counts)
+    assert counts.ndim == 5 and counts.shape[0] == 4, "counts must be (4,M,R,S,P) ordered [Ip,Im,Qp,Qm]"
+
+    _, M, R, S, P = counts.shape
+
+    if ori_idx is None:
+        idx = np.arange(M, dtype=int)
+        subset_name = "ALL NVs"
     else:
-        bmask = (t >= baseline[0]) & (t <= baseline[1])
+        idx = np.asarray(ori_idx, dtype=int)
+        idx = idx[(idx >= 0) & (idx < M)]
+        if idx.size == 0:
+            raise ValueError("ori_idx is empty after sanitizing.")
+        subset_name = f"ORI subset (N={idx.size})"
 
-    # per-NV variance of amplitude (you can also use |s|^2)
-    A = np.abs(x)
-    var_w = np.nanvar(A[:, wmask], axis=1)
-    var_b = np.nanvar(A[:, bmask], axis=1)
+    Ntot = R * S * P
+    c = counts.reshape(4, M, Ntot)
 
-    ratio = (var_w + 1e-12) / (var_b + 1e-12)
-    order = np.argsort(ratio)[::-1]
-    top = order[:topk]
+    N = c.shape[2]
+    if nshots is not None:
+        N = min(int(nshots), N)
+        c = c[:, :, :N]
+    N = c.shape[2]
 
-    return {
-        "ori_idx": ori_idx,
-        "top_local_indices": top,
-        "top_nv_indices": ori_idx[top],
-        "ratio": ratio,
-        "var_w": var_w,
-        "var_b": var_b,
-    }
+    Ip, Im, Qp, Qm = c[0], c[1], c[2], c[3]
+
+    t = np.arange(N, dtype=float) * float(dt)
+    xlab = "time (s)" if dt != 1.0 else "shot index"
+
+    for nv in idx:
+        fig, ax = plt.subplots(4, 1, figsize=(11, 7.5), sharex=True)
+
+        # Label ONLY by final pulse axis (no I/Q wording)
+        ax[0].plot(t, Ip[nv, :N], lw=1, label=r"final $\pi/2_{+x}$")
+        ax[1].plot(t, Im[nv, :N], lw=1, label=r"final $\pi/2_{-x}$")
+        ax[2].plot(t, Qp[nv, :N], lw=1, label=r"final $\pi/2_{+y}$")
+        ax[3].plot(t, Qm[nv, :N], lw=1, label=r"final $\pi/2_{-y}$")
+
+        ax[0].set_ylabel(r"$\pi/2_{+x}$")
+        ax[1].set_ylabel(r"$\pi/2_{-x}$")
+        ax[2].set_ylabel(r"$\pi/2_{+y}$")
+        ax[3].set_ylabel(r"$\pi/2_{-y}$")
+        ax[3].set_xlabel(xlab)
+
+        base = f"{title} — " if title else ""
+        ax[0].set_title(f"{base}{subset_name} — NV idx: {nv}  |  seq: {seq}")
+
+        ax[0].text(
+            0.01, 0.98,
+            r"Interleaves correspond to final pulse: $+x,-x,+y,-y$",
+            transform=ax[0].transAxes, va="top"
+        )
+
+        for a in ax:
+            a.grid(True, ls="--", lw=0.5)
+            a.legend(fontsize=8, loc="upper right")
+
+        plt.tight_layout()
+        plt.show()
+
+    return {"t": t, "idx": idx}
+
 
 # ----------------------------
 # Example usage (edit for your loader)
@@ -3216,7 +3264,9 @@ if __name__ == "__main__":
     # #fmt:off 
     ORI_11m1 = [0, 1, 3, 5, 6, 7, 9, 10, 13, 18, 19, 21, 24, 25, 27, 28, 30, 32, 34, 36, 40, 41, 43, 44, 46, 48, 49, 51, 52, 53, 56, 57, 64, 65, 66, 67, 68, 69, 73, 75, 77, 80, 82, 84, 86, 88, 91, 98, 100, 101, 102, 103, 106, 107, 109, 110, 111, 113, 115, 116, 118, 119, 120, 121, 123, 124, 127, 129, 130, 131, 132, 133, 134, 135, 141, 142, 146, 149, 150, 152, 153, 156, 157, 158, 162, 163, 165, 167, 168, 171, 174, 177, 179, 184, 185, 186, 187, 189, 190, 191, 192, 193, 195, 198, 201, 203]
     ORI_m111 = [2, 4, 8, 11, 12, 14, 15, 16, 17, 20, 22, 23, 26, 29, 31, 33, 35, 37, 38, 39, 42, 45, 47, 50, 54, 55, 58, 59, 60, 61, 62, 63, 70, 71, 72, 74, 76, 78, 79, 81, 83, 85, 87, 89, 90, 92, 93, 94, 95, 96, 97, 99, 104, 105, 108, 112, 114, 117, 122, 125, 126, 128, 136, 137, 138, 139, 140, 143, 144, 145, 147, 148, 151, 154, 155, 159, 160, 161, 164, 166, 169, 170, 172, 173, 175, 176, 178, 180, 181, 182, 183, 188, 194, 196, 197, 199, 200, 202] 
-    ORI_m111_ORI_11m1 = ORI_11m1 + ORI_m111
+    # ORI_m111_ORI_11m1 = np.sort1(ORI_11m1 + ORI_m111)
+    ORI_m111_ORI_11m1 = np.unique(ORI_11m1 + ORI_m111)
+
     
     # # #fmt:on
     # make_summary_plots(out, dt=0.240, global_bad_thresh=0.9, zthr=10.0)
@@ -3262,8 +3312,10 @@ if __name__ == "__main__":
     
     dt = 0.248
     windows = [(28000, 35000), (69000, 72000)]
-    for i in range(102):
-        plot_lockin_simple_ori_or_all(out, counts, ori_idx=[i], dt=0.248, title="Run X")
+    # for i in range(102):
+    plot_lockin_simple(out, counts, ori_idx=ORI_m111_ORI_11m1, dt=1.0)
+    # plot_per_nv_raw_DI_DQ_var(out, counts, ori_idx=None, dt=1.0, nshots=None)
+
     plt.show()
     sys.exit()
     res = analyze_correlated_modes(out, nv_list, K=6)
