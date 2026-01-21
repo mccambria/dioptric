@@ -37,6 +37,7 @@ from majorroutines.widefield import (
     optimize_scc_readout,
     optimize_scc_amp_duration,
     optimize_spin_pol,
+    optimize_aod_access_time,
     power_rabi,
     rabi,
     ramsey,
@@ -426,6 +427,17 @@ def do_optimize_spin_pol_amp(nv_list):
         uwave_ind_list,
     )
 
+
+def do_optimize_aod_access_time(nv_list):
+    min_tau = 1e3
+    max_tau = 15e3
+    num_steps = 15
+    num_reps = 15
+    num_runs = 200
+    # num_runs = 2
+    optimize_scc.optimize_aod_access_time(
+        nv_list, num_steps, num_reps, num_runs, min_tau, max_tau
+    )
 
 def do_scc_snr_check(nv_list):
     num_reps = 200
@@ -942,7 +954,7 @@ def do_xy(nv_list, xy_seq="xy8"):
         fine_window_us=1.5,
         fine_step_ns=40,
         min_tau_ns=200,
-        max_tau_ns=33000          # cover up to ~35 us (safe for 27us)
+        max_tau_ns=3000          # cover up to ~35 us (safe for 27us)
     )
 
     num_steps = len(taus)
@@ -1676,7 +1688,7 @@ if __name__ == "__main__":
         # )
 
         do_compensate_for_drift(nv_sig)
-        # do_widefield_image_sample(nv_sig, 50)
+        do_widefield_image_sample(nv_sig, 50)
         # do_widefield_image_sample(nv_sig, 400)
 
         # for nv in nv_list:
@@ -1742,8 +1754,9 @@ if __name__ == "__main__":
         # optimize_readout_amp_and_duration(nv_list) 
         # do_optimize_spin_pol_amp(nv_list)
         # do_check_readout_fidelity(nv_list)
+        do_optimize_aod_access_time(nv_list)
 
-        do_scc_snr_check(nv_list)
+        # do_scc_snr_check(nv_list)
         # do_optimize_scc_duration(nv_list)
         # do_optimize_scc_amp(nv_list)
         # optimize_scc_amp_and_duration(nv_list)
