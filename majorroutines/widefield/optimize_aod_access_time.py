@@ -27,133 +27,101 @@ from utils import tool_belt as tb
 from utils import widefield as widefield
 
 
-def process_and_plot(nv_list, taus, sig_counts, ref_counts, duration_or_amp):
+import numpy as np
+import matplotlib.pyplot as plt
+from scipy.optimize import curve_fit
+
+def process_and_plot(nv_list, taus, sig_counts, ref_counts, median_band="iqr"):
+    """
+    Plots per-NV raw signal/ref counts, per-NV SNR, and summary across NVs:
+      - mean SNR across NVs
+      - median SNR across NVs (with a robust band)
+
+    Args:
+        nv_list: list of NV identifiers (whatever widefield expects)
+        taus: 1D array-like (x-axis)
+        sig_counts, ref_counts: arrays consumed by widefield.average_counts / widefield.calc_snr
+        median_band: "iqr" (default) or "mad_sem" for median uncertainty
+
+    Returns:
+        (sig_fig, ref_fig, snr_fig, mean_snr_fig, median_snr_fig, fit_fig)
+    """
+    taus = np.asarray(taus, dtype=float)
     num_nvs = len(nv_list)
 
-    # sig_counts, ref_counts = determine_threshold(nv_list, sig_counts, ref_counts)
-
+    # --- Averages + SNR (your existing pipeline) ---
     avg_sig_counts, avg_sig_counts_ste, _ = widefield.average_counts(sig_counts)
     avg_ref_counts, avg_ref_counts_ste, _ = widefield.average_counts(ref_counts)
     avg_snr, avg_snr_ste = widefield.calc_snr(sig_counts, ref_counts)
 
-    # avg_snr_ste = None
+    xlabel = "aod_access_time (us)"  # adjust if taus are ns
 
-    xlabel = (
-        "SCC pulse duration (ns)" if duration_or_amp else "SCC relative AOD amplitude"
-    )
-
+    # --- Signal plot ---
     sig_fig, sig_ax = plt.subplots()
     widefield.plot_raw_data(sig_ax, nv_list, taus, avg_sig_counts, avg_sig_counts_ste)
     sig_ax.set_xlabel(xlabel)
     sig_ax.set_ylabel("Signal counts")
+    sig_ax.set_title("Signal (per NV)")
 
+    # --- Reference plot ---
     ref_fig, ref_ax = plt.subplots()
     widefield.plot_raw_data(ref_ax, nv_list, taus, avg_ref_counts, avg_ref_counts_ste)
     ref_ax.set_xlabel(xlabel)
     ref_ax.set_ylabel("Reference counts")
+    ref_ax.set_title("Reference (per NV)")
 
+    # --- Per-NV SNR plot ---
     snr_fig, snr_ax = plt.subplots()
     widefield.plot_raw_data(snr_ax, nv_list, taus, avg_snr, avg_snr_ste)
     snr_ax.set_xlabel(xlabel)
     snr_ax.set_ylabel("SNR")
+    snr_ax.set_title("SNR (per NV)")
 
-    # for ind in range(num_nvs):
-    #     fig, ax = plt.subplots()
-    #     kpl.plot_points(ax, taus, avg_snr[ind], yerr=avg_snr_ste[ind])
-    #     ax.set_title(ind)
-    #     plt.show(block=True)
+    # --- Mean across NVs (your current "Average across NVs" but cleaned) ---
+    mean_snr_fig, mean_snr_ax = plt.subplots()
+    mean_snr = np.mean(avg_snr, axis=0)
+    kpl.plot_points(mean_snr_ax, taus, mean_snr, yerr=None)
+    mean_snr_ax.set_xlabel(xlabel)
+    mean_snr_ax.set_ylabel("Mean SNR")
+    mean_snr_ax.set_title("Mean SNR across NVs")
 
-    # Average across NVs
-    avg_snr_fig, avg_snr_ax = plt.subplots()
-    # avg_avg_snr = np.quantile(avg_snr, 0.75, axis=0)
-    # avg_avg_snr_ste = np.quantile(avg_snr_ste, 0.75, axis=0)
-    avg_avg_snr = np.mean(avg_snr, axis=0)
-    avg_avg_snr_ste = None
-    kpl.plot_points(avg_snr_ax, taus, avg_avg_snr, yerr=avg_avg_snr_ste)
-    avg_snr_ax.set_xlabel("Ionization pulse duration (ns)")
-    avg_snr_ax.set_ylabel("Average SNR")
+    # --- Median across NVs (requested) ---
+    median_snr_fig, median_snr_ax = plt.subplots()
+    med_snr = np.median(avg_snr, axis=0)
 
-    # Fits and optimum values
-    def fit_fn(tau, delay, slope, dec):
-        tau = np.array(tau) - delay
-        return slope * tau * np.exp(-tau / dec)
+    # Default: IQR band (25–75%), robust and easy to interpret
+    if median_band == "iqr":
+        q25 = np.quantile(avg_snr, 0.25, axis=0)
+        q75 = np.quantile(avg_snr, 0.75, axis=0)
+        kpl.plot_points(median_snr_ax, taus, med_snr, yerr=None)
+        median_snr_ax.fill_between(taus, q25, q75, alpha=0.25, linewidth=0)
+        median_snr_ax.set_title("Median SNR across NVs (IQR band 25–75%)")
 
-    fit_fig, fit_ax = plt.subplots()
-    opti_snrs = []
-    opti_durations = []
-    for nv_ind in range(num_nvs):
-        nv_sig = nv_list[nv_ind]
-        opti_snr = np.max(avg_snr[nv_ind])
-        opti_duration = taus[np.argmax(avg_snr[nv_ind])]
-        guess_params = [20, opti_snr / opti_duration, 300]
-        avg_snr_nv = avg_snr[nv_ind]
-        avg_snr_ste_nv = avg_snr_ste[nv_ind]
-        try:
-            popt, pcov = curve_fit(
-                fit_fn,
-                taus,
-                avg_snr_nv,
-                p0=guess_params,
-                sigma=avg_snr_ste_nv,
-                absolute_sigma=True,
-            )
-        except Exception:
-            popt = (20, 0, 300)
-        opti_duration = popt[-1] + popt[0]
-        opti_snr = fit_fn(opti_duration, *popt)
-        dof = len(taus) - len(guess_params)
-        red_chi_sq = (
-            np.sum(((avg_snr_nv - fit_fn(taus, *popt)) / avg_snr_ste_nv) ** 2) / dof
-        )
-        print(red_chi_sq)
-        tau_linspace = np.linspace(popt[0], np.max(taus), 1000)
-        nv_num = widefield.get_nv_num(nv_sig)
-        color = kpl.data_color_cycler[nv_num]
-        kpl.plot_line(
-            fit_ax,
-            tau_linspace,
-            fit_fn(tau_linspace, *popt),
-            color=color,
-            label=str(nv_num),
-        )
-        kpl.plot_points(
-            fit_ax,
-            taus,
-            avg_snr_nv,
-            yerr=avg_snr_ste_nv,
-            color=color,
-            label=str(nv_num),
-        )
-        fit_ax.legend()
-        fit_ax.set_xlabel("SCC pulse duration (ns)")
-        fit_ax.set_ylabel("SNR")
-        fit_fig, fit_ax = plt.subplots()
+    # Optional: MAD-based SEM-ish errorbars for the median
+    elif median_band == "mad_sem":
+        mad = np.median(np.abs(avg_snr - med_snr[None, :]), axis=0)
+        robust_sigma = 1.4826 * mad
+        robust_sem = robust_sigma / np.sqrt(avg_snr.shape[0])
+        kpl.plot_points(median_snr_ax, taus, med_snr, yerr=robust_sem)
+        median_snr_ax.set_title("Median SNR across NVs (MAD/√N errorbars)")
+    else:
+        raise ValueError("median_band must be 'iqr' or 'mad_sem'")
 
-        ind = -3
-        opti_snr = round(avg_snr[nv_ind, ind], 3)
-        opti_duration = round(taus[ind])
-        opti_snrs.append(opti_snr)
-        opti_durations.append(opti_duration)
-    print("Optimum SNRs")
-    print([round(val, 3) for val in opti_snrs])
-    print(f"Optimum {xlabel}")
-    print([round(val) for val in opti_durations])
-    fit_ax.legend(ncols=3)
-    fit_ax.set_xlabel(xlabel)
-    fit_ax.set_ylabel("SNR")
+    median_snr_ax.set_xlabel(xlabel)
+    median_snr_ax.set_ylabel("Median SNR")
 
-    return sig_fig, ref_fig, snr_fig, avg_snr_fig, fit_fig
-    # return sig_fig, ref_fig, snr_fig, avg_snr_fig
+    return sig_fig, ref_fig, snr_fig, mean_snr_fig, median_snr_fig
 
 
-def optimize_scc_duration(nv_list, num_steps, num_reps, num_runs, min_tau, max_tau):
-    return _main(nv_list, num_steps, num_reps, num_runs, min_tau, max_tau,)
 
-def _main(nv_list, num_steps, num_reps, num_runs, min_tau, max_tau, duration_or_amp):
+# def optimize_scc_duration(nv_list, num_steps, num_reps, num_runs, min_tau, max_tau):
+#     return _main(nv_list, num_steps, num_reps, num_runs, min_tau, max_tau,)
+
+def main(nv_list, num_steps, num_reps, num_runs, min_tau, max_tau):
     ### Some initial setup
     uwave_ind_list = [0, 1]
 
-    seq_file = "optimize_aod_access_time"
+    seq_file = "optimize_aod_access_time.py"
 
     taus = np.linspace(min_tau, max_tau, num_steps)
 
@@ -206,7 +174,7 @@ def _main(nv_list, num_steps, num_reps, num_runs, min_tau, max_tau, duration_or_
 
     ### Process and plot
     try:
-        figs = process_and_plot(nv_list, taus, sig_counts, ref_counts, duration_or_amp)
+        figs = process_and_plot(nv_list, taus, sig_counts, ref_counts)
     except Exception:
         print(traceback.format_exc())
         figs = None
@@ -229,7 +197,7 @@ if __name__ == "__main__":
     # data = dm.get_raw_data(file_id=1564881159891)
     # data = dm.get_raw_data(file_id=1720799193270)
     data = dm.get_raw_data(
-        file_stem="2025_09_30-19_26_09-rubin-nv0_2025_09_08", load_npz=True
+        file_stem="2026_01_20-21_13_29-johnson-nv0_2025_10_21", load_npz=True
     )
 
     nv_list = data["nv_list"]
@@ -240,6 +208,6 @@ if __name__ == "__main__":
 
     # sig_counts, ref_counts = widefield.threshold_counts(nv_list, sig_counts, ref_counts)
 
-    process_and_plot(nv_list, taus, sig_counts, ref_counts, False)
+    process_and_plot(nv_list, taus, sig_counts, ref_counts)
 
     plt.show(block=True)

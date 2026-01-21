@@ -146,6 +146,7 @@ def do_optimize_pol_duration(nv_list):
     # max_duration = 9992
     num_reps = 10
     num_runs = 220
+    # num_runs = 2
     return optimize_charge_state_histograms_mcc.optimize_pol_duration(
         nv_list, num_steps, num_reps, num_runs, min_duration, max_duration
     )
@@ -391,7 +392,6 @@ def do_optimize_scc_duration(nv_list):
     num_reps = 15
     num_runs = 200
     # num_runs = 2
-
     optimize_scc.optimize_scc_duration(
         nv_list, num_steps, num_reps, num_runs, min_tau, max_tau
     )
@@ -430,12 +430,12 @@ def do_optimize_spin_pol_amp(nv_list):
 
 def do_optimize_aod_access_time(nv_list):
     min_tau = 1e3
-    max_tau = 15e3
-    num_steps = 15
+    max_tau = 5e3
+    num_steps = 11
     num_reps = 15
     num_runs = 200
     # num_runs = 2
-    optimize_scc.optimize_aod_access_time(
+    optimize_aod_access_time.main(
         nv_list, num_steps, num_reps, num_runs, min_tau, max_tau
     )
 
@@ -1748,7 +1748,7 @@ if __name__ == "__main__":
         # do_charge_state_histograms_images(nv_list, vary_pol_laser=True)
 
         # do_optimize_pol_amp(nv_list)
-        # do_optimize_pol_duration(nv_list)
+        do_optimize_pol_duration(nv_list)
         # do_optimize_readout_amp(nv_list)
         # do_optimize_readout_duration(nv_list)
         # optimize_readout_amp_and_duration(nv_list) 
@@ -1757,7 +1757,7 @@ if __name__ == "__main__":
         do_optimize_aod_access_time(nv_list)
 
         # do_scc_snr_check(nv_list)
-        # do_optimize_scc_duration(nv_list)
+        do_optimize_scc_duration(nv_list)
         # do_optimize_scc_amp(nv_list)
         # optimize_scc_amp_and_duration(nv_list)
         # do_optimize_scc_readout_amp(nv_list)
