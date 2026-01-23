@@ -1048,10 +1048,13 @@ if __name__ == "__main__":
     # ]  # xy8 cpdd
     ### Internal Test Plots
 
+    # file_stems = [
+    # "2026_01_09-06_06_55-johnson-nv0_2025_10_21",
+    # "2026_01_09-10_35_51-johnson-nv0_2025_10_21",]  # xy4
     file_stems = [
-    "2026_01_09-06_06_55-johnson-nv0_2025_10_21",
-    "2026_01_09-10_35_51-johnson-nv0_2025_10_21",
-]  # xy14
+    "2026_01_22-04_03_03-johnson-nv0_2025_10_21",
+    ]
+    
     # plot_T2_on_T1()
     # contrast_plot()
     # T2_ratio_xy()

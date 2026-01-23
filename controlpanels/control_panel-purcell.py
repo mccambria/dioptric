@@ -897,8 +897,6 @@ def do_ramsey(nv_list):
     ramsey.main(nv_list, num_steps, num_reps, num_runs, min_tau, max_tau, detuning)
 
 
-import numpy as np
-
 def _quant4_ns(x):
     x = np.asarray(x, dtype=float)
     return (np.round(x / 4.0) * 4.0).astype(int)
@@ -997,54 +995,6 @@ def do_xy(nv_list, xy_seq="xy8"):
 
     for _ in range(3):
         xy.main(nv_list, len(taus), num_reps, num_runs, taus, uwave_ind_list, xy_seq)
-
-# def do_xy(nv_list, xy_seq="xy8"):
-#     # min_tau = 200
-#     # max_tau = 1e6 + min_tau
-#     # # num_steps = 24
-#     num_reps = 2
-#     uwave_ind_list = [0, 1]  # iq modulated
-#     num_runs = 400
-#     # # taus calculation
-#     # # taus = widefield.generate_log_spaced_taus(min_tau, max_tau, num_steps, base=4)
-#     # taus = np.arange(200, 20000 + 1, 200)   # all divisible by 4
-#     # taus = [int(t) for t in taus]
-#     # num_steps = len(taus)
-#     revival_2tau_us=36.0,
-#     coarse_window_us=4.0,
-#     coarse_step_ns=200,
-#     fine_window_us=1.5,
-#     fine_step_ns=40,
-#     # Echo revival period is in 2τ: T_L ~ revival_2tau_us
-#     # XY8 dip fundamental near τ ~ T_L / 4
-#     tau0_us = revival_2tau_us / 4.0  # ~9 us
-
-#     # Coarse sweep around tau0
-#     t0c = (tau0_us - coarse_window_us) * 1e3
-#     t1c = (tau0_us + coarse_window_us) * 1e3
-#     taus_coarse = np.arange(t0c, t1c + coarse_step_ns, coarse_step_ns)
-
-#     # Fine sweep around tau0
-#     t0f = (tau0_us - fine_window_us) * 1e3
-#     t1f = (tau0_us + fine_window_us) * 1e3
-#     taus_fine = np.arange(t0f, t1f + fine_step_ns, fine_step_ns)
-
-#     taus = np.unique(np.concatenate([taus_coarse, taus_fine]))
-#     taus = taus[taus > 0]  # keep positive
-#     taus = [(tau/4)*4 for tau in taus]
-#     num_steps = len(taus)
-#     print(len(num_steps))
-#     sys.exit()
-#     for _ in range(3):
-#         xy.main(
-#             nv_list,
-#             num_steps,
-#             num_reps,
-#             num_runs,
-#             taus,
-#             uwave_ind_list,
-#             xy_seq,
-#         )
 
 
 def do_xy_uniform_revival_scan(nv_list, xy_seq="xy8-1"):
@@ -1583,8 +1533,8 @@ if __name__ == "__main__":
     print(f"Red Laser Coordinates: {red_coords_list[0]}")
 
     # pixel_coords_list = [[124.195, 127.341],[14.043, 37.334],[106.538, 237.374],[218.314, 23.302]]
-    # green_coords_list = [[107.871, 108.068],[119.248, 119.584],[111.265, 95.774],[95.933, 118.969]]
-    # red_coords_list = [    [73.256, 72.339],[82.15, 82.282],[76.463, 62.52],[63.114, 80.587]]
+    # green_coords_list = [[107.85, 108.084],[119.238, 119.6],[111.232, 95.81],[95.925, 118.974]]
+    # red_coords_list = [[73.238, 72.351],[82.142, 82.295],[76.435, 62.548],[63.107, 80.591]]
 
     num_nvs = len(pixel_coords_list)
     threshold_list = [None] * num_nvs
@@ -1712,7 +1662,7 @@ if __name__ == "__main__":
         # )
 
         do_compensate_for_drift(nv_sig)
-        do_widefield_image_sample(nv_sig, 50)
+        # do_widefield_image_sample(nv_sig, 50)
         # do_widefield_image_sample(nv_sig, 400)
 
         # for nv in nv_list:
