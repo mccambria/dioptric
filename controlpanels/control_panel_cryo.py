@@ -17,19 +17,18 @@ Created on Oct 7th, 2025
 
 import copy
 import time
+
 import labrad
 import numpy as np
-from utils import positioning as pos
-from utils import kplotlib as kpl
+
 # import majorroutines.confocal.determine_standard_readout_params as determine_standard_readout_params
 # import majorroutines.confocal.g2_measurement as g2_measurement
 import majorroutines.confocal.confocal_image_sample as image_sample
-# import majorroutines.confocal.image_sample as image_sample
 
+# import majorroutines.confocal.image_sample as image_sample
 # import majorroutines.confocal.optimize_magnet_angle as optimize_magnet_angle
 # import majorroutines.confocal.pulsed_resonance as pulsed_resonance
 # import majorroutines.confocal.confocal_rabi as rabi
-
 # import majorroutines.confocal.ramsey as ramsey
 # import majorroutines.confocal.resonance as resonance
 # import majorroutines.confocal.spin_echo as spin_echo
@@ -38,6 +37,8 @@ import majorroutines.confocal.confocal_stationary_count as stationary_count
 # import majorroutines.confocal.t1_dq_main as t1_dq_main
 # import majorroutines.confocal.targeting as targeting
 import utils.tool_belt as tool_belt
+from utils import kplotlib as kpl
+from utils import positioning as pos
 from utils.constants import Axes, CoordsKey, NVSig, VirtualLaserKey
 
 # from utils.tool_belt import States
@@ -52,7 +53,7 @@ def do_image_sample(
     # scan_range = 0.2
     # num_steps = 60
 
-    scan_range = 1.0 #voltage 
+    scan_range = 1.0  # voltage
     num_steps = 90
 
     # For now we only support square scans so pass scan_range twice
@@ -65,7 +66,7 @@ def do_image_sample(
 
 
 def do_image_sample_zoom(nv_sig):
-    scan_range = 0.05 #cryo iimage conversion: 37um/V; step size: x,y,z=30,30,40V
+    scan_range = 0.05  # cryo iimage conversion: 37um/V; step size: x,y,z=30,30,40V
     num_steps = 30
 
     image_sample.confocal_scan(
@@ -374,9 +375,11 @@ def do_stationary_count(
 
 # endregion
 
+
 def get_sample_name() -> str:
-    sample = "lovelace" #lovelace
+    sample = "lovelace"  # lovelace
     return sample
+
 
 if __name__ == "__main__":
     ### Shared parameters
@@ -407,10 +410,13 @@ if __name__ == "__main__":
     #     }
     # fmt: on
 
-    # coords: SAMPLE (piezo) xyz 
+    # coords: SAMPLE (piezo) xyz
     # current step rate: 30.0V XY
     # current step rate: 40.0V Z
-    sample_xy = [0.0,0.0] # piezo XY voltage input (1.0=1V) (not coordinates, relative)
+    sample_xy = [
+        0.0,
+        0.0,
+    ]  # piezo XY voltage input (1.0=1V) (not coordinates, relative)
     coord_z = 0  # piezo z voltage (0 is the set midpoint, absolute) (negative is closer to smaple, move unit steps in sample; 37 is good surface focus with bs for Lovelace; 20 is good for dye)
     pixel_xy = [0.0, 0.0]  # galvo ref
 
@@ -454,7 +460,7 @@ if __name__ == "__main__":
         # region Image sample
         # do_image_sample(nv_sig)
         # ## Z AXIS PIEZO SCAN
-        z_range = np.linspace(0, -400, 61) # 37 is roughly the surface of Lovelace
+        z_range = np.linspace(0, -400, 61)  # 37 is roughly the surface of Lovelace
         for z in z_range:
             nv_sig.coords[CoordsKey.Z] = z
             pos.set_xyz_on_nv(nv_sig)
@@ -462,7 +468,7 @@ if __name__ == "__main__":
         # do_image_sample_zoom(nv_sig)
         # do_image_sample(nv_sig, nv_minus_initialization=True)
         # do_image_sample_zoom(nv_sig, nv_minus_initialization=True)
-        #end region Image sample
+        # end region Image sample
 
         # do_optimize(nv_sig)
         # nv_sig["imaging_readout_dur"] = 5e7

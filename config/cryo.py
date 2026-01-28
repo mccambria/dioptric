@@ -27,8 +27,8 @@ home = Path.home()
 
 # region Widefield calibration coords
 
-green_laser = "laser_COBO_520" # make labrad server for COBOLT green laser
-tisapph_laser = "" #fill this in later (labrad server for Tisapph)
+green_laser = "laser_COBO_520"  # make labrad server for COBOLT green laser
+tisapph_laser = ""  # fill this in later (labrad server for Tisapph)
 thor_galvos = "pos_xy_THOR_gvs212"
 cryo_piezo = "pos_xyz_ATTO_piezos"
 
@@ -94,7 +94,7 @@ config |= {
     "DeviceIDs": {
         "arb_wave_gen_visa_address": "TCPIP0::128.104.ramp_to_zero_duration.119::5025::SOCKET",
         "daq0_name": "Dev1",
-        "filter_slider_THOR_ell9k_com": "COM13",
+        "filter_slider_THOR_ell9k_com": "COM8",
         "gcs_dll_path": home
         / "GitHub/dioptric/servers/outputs/GCSTranslator/PI_GCS2_DLL_x64.dll",
         "objective_piezo_model": "E709",
@@ -153,7 +153,7 @@ config |= {
         "server_name": "camera_NUVU_hnu512gamma",
         "resolution": (512, 512),
         "spot_radius": 2.5,
-          # Radius for integrating NV counts in a camera image
+        # Radius for integrating NV counts in a camera image
         "bias_clamp": 300,  # (changing this won't actually change the value on the camera currently)
         "em_gain": 5000,
         # "em_gain": 1000,
@@ -187,16 +187,13 @@ config |= {
             # LaserKey.IMAGING: {"physical_name": green_laser, "duration": 50e6},
             VirtualLaserKey.IMAGING: {
                 # "physical_name": green_laser,
-                "physical_name": green_laser, #this is the laser that appears on the imaging APD scan
-                "duration": 12e6, #this duration appears on the imaging APD scan
+                "physical_name": green_laser,  # this is the laser that appears on the imaging APD scan
+                "duration": 12e6,  # this duration appears on the imaging APD scan
             },
-
             VirtualLaserKey.SINGLET_DRIVE: {
                 "physical_name": tisapph_laser,
-                "duration": 300, #this is a placeholder
+                "duration": 300,  # this is a placeholder
             },
-            
-
             VirtualLaserKey.SPIN_READOUT: {
                 "physical_name": green_laser,
                 "duration": 300,
@@ -215,8 +212,6 @@ config |= {
                 "physical_name": green_laser,
                 "duration": 60,
             },
-            
-
         },
         #
         "PulseSettings": {
@@ -226,7 +221,7 @@ config |= {
     ###
     "Positioning": {
         "Positioners": {
-            #update with correct piezos for cryo
+            # update with correct piezos for cryo
             CoordsKey.SAMPLE: {
                 "physical_name": "pos_xyz_ATTO_piezos",
                 "control_mode": PosControlMode.STREAM,
@@ -260,7 +255,7 @@ config |= {
         # "calibration_coords_nv3": calibration_coords_nv3,
         "pixel_to_sample_affine_transformation_matrix": pixel_to_sample_affine_transformation_matrix,
         "cryo_piezos_voltage": 33,
-        "z_bias_adjust": 0.0
+        "z_bias_adjust": 0.0,
     },
     ###
     "Servers": {  # Bucket for miscellaneous servers not otherwise listed above
@@ -323,7 +318,6 @@ config |= {
 }
 
 # endregion
-
 
 
 if __name__ == "__main__":
