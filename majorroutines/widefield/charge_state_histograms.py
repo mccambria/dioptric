@@ -1,12 +1,18 @@
 # -*- coding: utf-8 -*-
 """
-Illuminate an area, collecting onto the camera. Interleave a signal and control sequence
-and plot the difference
+Widefield charge-state histogram acquisition + fidelity extraction.
 
-Created on Fall 2023
+Illuminates an area and records camera counts for many NVs while interleaving:
+  (1) signal: with ionization pulse
+  (2) reference: without ionization pulse
+Then (optionally) plots per-NV histograms, fits the reference distribution with a
+bimodal model (NV⁰ / NV⁻), extracts an optimal threshold, and reports readout &
+preparation fidelities (plus ionization probability).
 
-@author: mccambria
+Created: Fall 2023 (M. Cambria)
+Updated: Fall 2025 (Saroj Chand)
 """
+
 
 import os
 import sys

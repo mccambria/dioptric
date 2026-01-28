@@ -1,13 +1,15 @@
 # -*- coding: utf-8 -*-
 """
-Illuminate an area, collecting onto the camera. Interleave a signal and control sequence
-and plot the difference
+Widefield charge-monitor / illumination routine.
 
-Created on Fall 2023
+Interleaves signal/control camera acquisitions (optionally with charge prep + two dark times),
+extracts NV charge states (thresholding or MLE), and provides analysis helpers for:
+  - cosmic-ray / coincidence detection across many NVs
+  - charge readout fidelity vs NV index
 
-@author: mccambria
+Created: Fall 2023 (mccambria)
+Updated: 2025-03-15 (Saroj Chand)
 """
-
 import os
 import sys
 import time
@@ -212,7 +214,7 @@ def main(
     pulse_gen = tb.get_server_pulse_gen()
 
     num_steps = 1
-    num_exps_per_rep = 2
+    num_exps_per_rep = 2 ## for new case
 
     ### Collect the data
 

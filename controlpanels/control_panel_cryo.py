@@ -16,10 +16,14 @@ Created on Oct 7th, 2025
 # region Imports and constants
 
 import copy
+import sys
 import time
 
 import labrad
 import numpy as np
+
+import majorroutines.calibration.calibrate_z_axis as calibrate_z_axis
+import majorroutines.calibration.optimize_xy as optimize_xy
 
 # import majorroutines.confocal.determine_standard_readout_params as determine_standard_readout_params
 # import majorroutines.confocal.g2_measurement as g2_measurement
@@ -28,17 +32,25 @@ import majorroutines.confocal.confocal_image_sample as image_sample
 # import majorroutines.confocal.image_sample as image_sample
 # import majorroutines.confocal.optimize_magnet_angle as optimize_magnet_angle
 # import majorroutines.confocal.pulsed_resonance as pulsed_resonance
-# import majorroutines.confocal.confocal_rabi as rabi
+import majorroutines.confocal.confocal_rabi as rabi
+
 # import majorroutines.confocal.ramsey as ramsey
 # import majorroutines.confocal.resonance as resonance
 # import majorroutines.confocal.spin_echo as spin_echo
 import majorroutines.confocal.confocal_stationary_count as stationary_count
+import majorroutines.confocal.z_scan_1d as z_scan_1d
+import majorroutines.confocal.z_scan_2d as z_scan_2d
 
 # import majorroutines.confocal.t1_dq_main as t1_dq_main
-# import majorroutines.confocal.targeting as targeting
+import majorroutines.targeting as targeting
 import utils.tool_belt as tool_belt
+from majorroutines.calibration import approach_surface, diagnose_z_direction
+from majorroutines.confocal.confocal_2D_scan import confocal_scan_2D_xz
+from majorroutines.confocal.z_scan_1d import main as scan_1D
+from utils import common
 from utils import kplotlib as kpl
 from utils import positioning as pos
+from utils import tool_belt as tb
 from utils.constants import Axes, CoordsKey, NVSig, VirtualLaserKey
 
 # from utils.tool_belt import States
@@ -47,13 +59,26 @@ from utils.constants import Axes, CoordsKey, NVSig, VirtualLaserKey
 # region Routines
 
 
-def do_image_sample(
-    nv_sig,
-):
-    # scan_range = 0.2
-    # num_steps = 60
+def do_image_sample(nv_sig):
+    """
+    A 2D galvo scan while the piezo holds a fixed z position. The output figure shows
+    photon counts at defined x,y galvo positions. Photon count is displayed as a color map.
 
-    scan_range = 1.0  # voltage
+    This routine:
+    1. Starts at the defined Galvo position
+    2. Sweeps the galvo in X over the defined range (scan_range)
+    3. Reads out photon counts at that position
+    4. Plots the data in real-time for a position z set by the piezo
+    5. When an x-axis row is complete (definded by num_steps), the galvo moves to the next y position
+    6. The proccesss repeats until the full xy grid is scanned.
+
+    This function is compatable with piezo z-axis scan and will create a new figure for each z position.
+
+    """
+    # scan_range = 0.2
+    # num_steps = 90
+
+    scan_range = 0.2  # voltage #cryo image conversion: 37um/V; step size: x,y,z=30V
     num_steps = 90
 
     # For now we only support square scans so pass scan_range twice
@@ -65,9 +90,70 @@ def do_image_sample(
     )
 
 
+# def do_image_sample_Hahn( # From Hahn control panel, should not work with current version of image_sample
+#     nv_sig,
+#     nv_minus_initialization=False,
+#     cbarmin=None,
+#     cbarmax=None,
+# ):
+#     # scan_range = 0.2
+#     # num_steps = 60
+
+#     scan_range = 0.5
+#     num_steps = 90
+
+#     # For now we only support square scans so pass scan_range twice
+#     image_sample.main(
+#         nv_sig,
+#         scan_range,
+#         scan_range,
+#         num_steps,
+#         nv_minus_initialization=nv_minus_initialization,
+#         cmin=cbarmin,
+#         cmax=cbarmax,
+#     )
+
+
+def do_2D_xz_scan(nv_sig):
+    """
+    A 2D z-scan of the piezo that sweeps the x-axis of the galvo.
+    This is a modified version of the 1D scan designed for when NVs location
+    are not known. Plots a line plot.
+
+    This routine:
+    1. Starts at the defined Galvo position
+    2. Sweeps the galvo in X over the defined range (scan_range)
+    3. Reads out photon counts at that position
+    4. Plots the data in real-time for a position z set by the piezo
+    5. When the plot is complete, the piezo will move down a defined step z and
+       repeat the scan until the final defined z step is reached.
+
+    """
+    scan_range = 0.4  # voltage range for X axis
+    num_steps = 60  # number of points along X
+
+    # 1D scan function
+    counts, x_positions = confocal_scan_2D_xz(
+        nv_sig,
+        scan_range,
+        num_steps,
+    )
+
+    return counts, x_positions
+
+
 def do_image_sample_zoom(nv_sig):
-    scan_range = 0.05  # cryo iimage conversion: 37um/V; step size: x,y,z=30,30,40V
-    num_steps = 30
+    """
+    A 2D galvo scan while the piezo holds a fixed z position. The output figure shows
+    photon counts at defined x,y galvo positions. Photon count is displayed as a color map.
+
+    This is a zoomed in version of the standard image sample routine. See do_sample_image for details.
+
+    This function is compatable with piezo z-axis scan and will create a new figure for each z position.
+
+    """
+    scan_range = 0.1
+    num_steps = 45
 
     image_sample.confocal_scan(
         nv_sig,
@@ -75,6 +161,118 @@ def do_image_sample_zoom(nv_sig):
         scan_range,
         num_steps,
     )
+
+
+def do_optimize_z(nv_sig, num_steps=20, step_size=1, scan_direction="down"):
+    """
+    Optimize Z position by scanning and fitting a Gaussian to find the focus peak.
+
+    # Uses the step-based scanning pattern from calibrate_z_axis.optimize_z which
+    is compatible with the Attocube piezo (unlike targeting.optimize which requires
+    streaming support).
+
+    Parameters
+    ----------
+    nv_sig : NVSig
+        NV center parameters (pulse durations, laser settings)
+    num_steps : int, optional
+        Total number of Z positions to scan. Default: 40
+    step_size : int, optional
+        Step size in piezo units between positions. Default: 1
+    scan_direction : str, optional
+        Direction to scan: "up" starts low and scans upward (away from sample),
+        "down" starts high and scans downward (toward sample). Default: "down"
+
+    Returns
+    -------
+    float or None
+        Optimal Z position (piezo steps), or None if optimization failed
+    """
+    results = calibrate_z_axis.optimize_z(
+        nv_sig,
+        num_steps=num_steps,
+        step_size=step_size,
+        num_averages=5,
+        move_to_optimal=True,
+        save_data=True,
+        scan_direction=scan_direction,
+    )
+
+    opti_z = results.get("opti_z")  # Actual final position
+    opti_z_fit = results.get("opti_z_fit")  # Gaussian fit estimate
+    opti_counts = results.get("opti_counts")
+
+    print(f"Z optimization complete: Final Z={opti_z}, Counts={opti_counts}")
+    if opti_z_fit is not None:
+        print(f"  (Gaussian fit estimated Z={opti_z_fit:.1f})")
+
+    return opti_z
+
+
+def do_optimize_green(nv_sig):
+    # Use whatever coords key the imaging laser uses (PIXEL in cryo, AOD in widefield)
+    coords_key = pos.get_laser_positioner(VirtualLaserKey.IMAGING)
+    opti_coords, final_counts = targeting.optimize(nv_sig, coords_key=coords_key)
+
+    if getattr(nv_sig, "expected_counts", None) is None:
+        nv_sig.expected_counts = final_counts
+
+    return opti_coords
+
+
+def do_optimize_xy(nv_sig, num_steps=15, scan_range=None, fit_method="gaussian"):
+    """
+    Optimize XY position using a grid/raster scan pattern.
+
+    Uses the galvo to scan a small grid around the current position,
+    collects photon counts, and finds the optimal XY position using either
+    2D Gaussian fitting or maximum counts.
+
+    Parameters
+    ----------
+    nv_sig : NVSig
+        NV center parameters (pulse durations, laser settings)
+    num_steps : int, optional
+        Number of steps per axis (creates num_steps x num_steps grid). Default: 15
+    scan_range : float, optional
+        Total scan range in volts. If None, uses config's optimize_range.
+        Step size = scan_range / (num_steps - 1). Default: None
+    fit_method : str, optional
+        Method to find optimal position: "gaussian" or "max_counts". Default: "gaussian"
+
+    Returns
+    -------
+    tuple
+        (opti_x, opti_y) - Optimal XY coordinates in volts
+    """
+    results = optimize_xy.main(
+        nv_sig,
+        num_steps=num_steps,
+        scan_range=scan_range,
+        fit_method=fit_method,
+        move_to_optimal=True,
+        save_data=True,
+    )
+
+    opti_x = results.get("opti_x")
+    opti_y = results.get("opti_y")
+    opti_counts = results.get("opti_counts")
+
+    print(f"XY optimization complete: X={opti_x:.4f}, Y={opti_y:.4f}")
+    if opti_counts is not None:
+        print(f"  Counts at optimal position: {opti_counts}")
+
+    return opti_x, opti_y
+
+
+# def do_optimize_pixel(nv_sig):
+#     ret_vals = targeting.optimize(nv_sig, coords_key=CoordsKey.PIXEL)
+#     opti_coords = ret_vals[0]
+#     return opti_coords
+
+
+def do_compensate_for_drift(nv_sig):
+    targeting.compensate_for_drift(nv_sig, no_crash=True)
 
 
 # def do_optimize(nv_sig):
@@ -90,6 +288,13 @@ def do_stationary_count(
     nv_sig,
     disable_opt=None,
 ):
+    """
+    A 1D scan which holds the galvo and piezo at a fixed position while collecting photon counts.
+
+    Movement can be done during this scan using cryo_position_control.py file and running in
+    a dedicated terminal.
+
+    """
     run_time = 3 * 60 * 10**9  # ns
 
     stationary_count.main(
@@ -100,6 +305,179 @@ def do_stationary_count(
         # nv_zero_initialization=nv_zero_initialization,
     )
 
+
+def do_calibrate_z_axis(nv_sig):
+    """
+    Calibrate the Z-axis to find the sample surface.
+
+    This routine:
+    1. Moves the piezo to the top of the Z range
+    2. Scans downward while monitoring photon counts
+    3. Finds the peak photon count position (surface)
+    4. Sets that position as Z=0 reference
+
+    Returns the calibration results dictionary.
+    """
+    # Go down to find approx. surface (target count=stopping point)
+    # results = approach_surface.main(
+    #     nv_sig,
+    #     target_counts=500,  # Stop at surface counts (needs to be updated)
+    #     direction="down"      # Move down toward surface
+    # )
+    # Continously go up for x amount of steps, stops after max steps (limited to 0.5mm, sample size)
+    results = diagnose_z_direction.main(
+        nv_sig,
+        step_size=10,  # 10 steps at a time
+        max_steps=500,  # Stop after 100k steps max
+    )
+    # Under construction, will combine above (and account for hysteresis)
+    # results = calibrate_z_axis.main(
+    #     nv_sig,
+    #     scan_range=600,  # Can be overridden by config
+    #     step_size=5,
+    #     num_averages=100,
+    #     safety_threshold=150,
+    # )
+    return results
+
+
+# region 1D Scan
+def do_z_scan_1d(nv_sig, num_steps=60, step_size=1, num_averages=1, min_threshold=1):
+    """
+    Perform a 1D Z-axis scan without calibration.
+
+    Scans along Z-axis, collecting photon counts at each position.
+    Does NOT move X or Y coordinates.
+    Displays real-time line plot of counts vs Z position.
+
+    Parameters
+    ----------
+    nv_sig : dict
+        NV center parameters
+    z_start : int
+        Starting Z position in steps
+    z_end : int
+        Ending Z position in steps
+    num_steps : int
+        Number of Z positions to scan
+    num_averages : int
+        Number of photon count samples to average at each Z position
+
+    Returns
+    -------
+    tuple
+        (counts, z_positions) - counts in kcps or raw depending on config
+    """
+
+    results = z_scan_1d.main(
+        nv_sig,
+        num_steps=num_steps,
+        step_size=step_size,
+        num_averages=num_averages,
+        min_threshold=min_threshold,
+    )
+    return results
+
+
+def do_z_scan_3d(nv_sig):
+    """
+    Perform a 3D scan: 2D XY confocal images at multiple Z depths.
+
+    At each Z position, performs a complete 2D XY confocal scan using galvo mirrors.
+    Generates one image per Z slice, displayed as subplots in a single figure.
+
+    This routine:
+    1. Starts at the current Z position
+    2. Moves Z relatively by z_step_size using piezo controls
+    3. Performs complete 2D XY galvo scan (like do_image_sample)
+    4. Generates and displays 2D image for this Z position
+    5. Checks safety threshold (pauses if mean counts drop too low)
+    6. Repeats for all Z steps
+
+    Z Direction Convention (absolute positioning):
+    - Negative z_step_size: moves TOWARD sample (closer)
+    - Positive z_step_size: moves AWAY FROM sample (farther)
+
+    Returns the 3D image array and Z positions.
+    """
+    # XY scan parameters (matching do_image_sample defaults)
+    scan_range = 0.2  # XY range in volts
+    num_steps = 90  # XY resolution
+
+    # Z scan parameters
+    num_z_steps = 42  # Number of Z slices
+    z_step_size = 3  # Each step ~100nm RT (+/- or up/down for direction)
+
+    # Safety and acquisition
+    num_averages = 1  # Samples per pixel
+    min_threshold = 0  # Pause if counts per image drops below this
+
+    return z_scan_2d.main(
+        nv_sig,
+        x_range=scan_range,
+        y_range=scan_range,
+        num_steps=num_steps,
+        num_z_steps=num_z_steps,
+        z_step_size=z_step_size,
+        num_averages=num_averages,
+        min_threshold=min_threshold,
+    )
+
+
+# end region
+
+# def do_z_scan_calibrated(nv_sig, z_start=50, z_end=-350, num_steps=61, num_averages=1):
+#     """
+#     Perform a 1D Z-axis scan with automatic calibration.
+
+#     This function:
+#     1. Calibrates the Z-axis to find surface (Z=0)
+#     2. Performs a 1D scan along Z-axis collecting photon counts
+#     3. Displays real-time plot of counts vs Z position
+#     4. Saves data and plot
+
+#     Parameters
+#     ----------
+#     nv_sig : dict
+#         NV center parameters
+#     z_start : int
+#         Starting Z position in steps (positive = above surface)
+#     z_end : int
+#         Ending Z position in steps (negative = below surface)
+#     num_steps : int
+#         Number of Z positions to scan
+#     num_averages : int
+#         Number of photon count samples to average at each Z position
+
+#     Returns
+#     -------
+#     tuple
+#         (counts, z_positions) - counts in kcps or raw depending on config
+#     """
+#     # First calibrate to find surface
+#     print("=== Starting Z-axis calibration ===")
+#     cal_results = do_calibrate_z_axis(nv_sig)
+
+#     if cal_results is None:
+#         print("ERROR: Calibration failed, aborting Z scan")
+#         return None, None
+
+#     print(f"Calibration complete. Surface set at Z=0")
+#     print()
+
+#     # Now perform 1D Z scan using the dedicated routine
+#     counts, z_positions = z_scan_1d.main(
+#         nv_sig,
+#         z_start=z_start,
+#         z_end=z_end,
+#         num_steps=num_steps,
+#         num_averages=num_averages,
+#         save_data=True,
+#     )
+
+#     return counts, z_positions
+
+# end of construction
 
 # def do_g2_measurement(nv_sig, apd_a_index, apd_b_index):
 #     run_time = 60 * 10  # s
@@ -288,24 +666,24 @@ def do_stationary_count(
 #     )
 
 
-# def do_rabi(nv_sig):
-#     num_steps = 51
-#     num_reps = 2e4
-#     num_runs = 16
-#     min_tau = 8
-#     max_tau = 400
-#     uwave_ind_list = [0, 1]
-
-#     rabi.main(
-#         nv_sig,
-#         num_steps,
-#         num_reps,
-#         num_runs,
-#         min_tau,
-#         max_tau,
-#         uwave_ind_list,
-#     )
-#     # nv_sig["rabi_{}".format(state.name)] = period
+def do_rabi(nv_sig):
+    num_steps = 51
+    num_reps = 2e4
+    num_runs = 16
+    min_tau = 8
+    max_tau = 400
+    uwave_ind_list = [0, 1]
+    # endregion
+    rabi.main(
+        nv_sig,
+        num_steps,
+        num_reps,
+        num_runs,
+        min_tau,
+        max_tau,
+        uwave_ind_list,
+    )
+    # nv_sig["rabi_{}".format(state.name)] = period
 
 
 # def do_t1_dq(nv_sig):
@@ -373,20 +751,43 @@ def do_stationary_count(
 #     return angle
 
 
-# endregion
+def do_pulse_gen_constant(digital_channels=(2,), analog0=None, analog1=None):
+    pulse_gen = tb.get_server_pulse_streamer()
+    # Build args for the LabRAD setting
+    digital_channels = [int(ch) for ch in digital_channels]
+
+    analog_channels = []
+    analog_voltages = []
+    if analog0 is not None:
+        analog_channels.append(0)
+        analog_voltages.append(float(analog0))
+    if analog1 is not None:
+        analog_channels.append(1)
+        analog_voltages.append(float(analog1))
+
+    # Turn on constant outputs
+    pulse_gen.constant(digital_channels, analog_channels, analog_voltages)
+
+    try:
+        input("Constant state applied. Press Enter to stop...")
+    finally:
+        # Safest cleanup: forces final + sets everything off
+        pulse_gen.reset()
 
 
 def get_sample_name() -> str:
-    sample = "lovelace"  # lovelace
+    sample = "Wu"  # Rubin
     return sample
 
+
+# region main
 
 if __name__ == "__main__":
     ### Shared parameters
 
-    green_laser = "laserglow_532"
-    yellow_laser = "laserglow_589"
-    red_laser = "cobolt_638"
+    green_laser = "laser_COBO_520"
+    # yellow_laser = "laserglow_589"
+    # red_laser = "cobolt_638"
 
     # fmt: off
      #lovelace"
@@ -411,67 +812,101 @@ if __name__ == "__main__":
     # fmt: on
 
     # coords: SAMPLE (piezo) xyz
-    # current step rate: 30.0V XY
-    # current step rate: 40.0V Z
+    # current step rate: 30.0V XYZ
+    # region Postion and Time Control
     sample_xy = [
         0.0,
         0.0,
     ]  # piezo XY voltage input (1.0=1V) (not coordinates, relative)
-    coord_z = 0  # piezo z voltage (0 is the set midpoint, absolute) (negative is closer to smaple, move unit steps in sample; 37 is good surface focus with bs for Lovelace; 20 is good for dye)
-    pixel_xy = [0.0, 0.0]  # galvo ref
+    coord_z = 0  # piezo z voltage (negative is closer to smaple)
+    pixel_xy = [0, 0]  # galvo XY
+    # pixel_xy = [0.053, 0.045]  # NV canidate
 
+    # return
     nv_sig = NVSig(
         name=f"({get_sample_name()})",
         coords={
             CoordsKey.SAMPLE: sample_xy,
             CoordsKey.Z: coord_z,
-            CoordsKey.PIXEL: pixel_xy,
+            CoordsKey.PIXEL: pixel_xy,  # galvo
         },
         disable_opt=False,
         disable_z_opt=True,
         expected_counts=13,
         pulse_durations={
-            VirtualLaserKey.IMAGING: int(5e6),
+            VirtualLaserKey.IMAGING: int(10e6),  # readout is in ns (5e6 = 5ms)
             VirtualLaserKey.CHARGE_POL: int(1e4),
             VirtualLaserKey.SPIN_POL: 2000,
             VirtualLaserKey.SINGLET_DRIVE: 300,  # placeholder
         },
     )
 
+    nv_sig.expected_counts = None  # raw counts, none when unknown
+
+    # cxn = labrad.connect()
+    # s = cxn.pos_xy_THOR_gvs212
+    # print(sorted(s.settings.keys()))
+    # sys.exit()
+    # endregion
     ### Routines to execute
 
     try:
         tool_belt.init_safe_stop()
-        # tool_belt.set_drift([0.0, 0.0, 0.0])  # Totally reset
+        # tool_belt.set_drift([0.0, 0.0, 0.0])  # Totally rneset
         # drift = tool_belt.get_drift()
         # tool_belt.set_drift([0.0, 0.0, drift[2]])  # Keep z
-        # tool_belt.set_drift([drift[0], drift[1], 0.0])  # Keep xy
-        # pos.set_xyz_on_nv(nv_sig)
+        # tool_belt.set_drifts([drift[0], drift[1], 0.0])  # Keep xy
 
-        # for z in np.arange(-24, 20, 4):
-        # for z in np.arange(0, -100, -5):
-        # # while True:
-        #     if tool_belt.safe_stop():
-        #         break
-        #     nv_sig["coords"][2] = int(z)
-        # do_image_sample(nv_sig)
-        # nv_sig["imaging_readout_dur"] = 5e7
+        pos.set_xyz_on_nv(nv_sig)  # Leave this line out when calibrating z
 
-        # region Image sample
-        # do_image_sample(nv_sig)
-        # ## Z AXIS PIEZO SCAN
-        z_range = np.linspace(0, -400, 61)  # 37 is roughly the surface of Lovelace
-        for z in z_range:
-            nv_sig.coords[CoordsKey.Z] = z
-            pos.set_xyz_on_nv(nv_sig)
-            do_image_sample(nv_sig)
+        # do_pulse_gen_constant()
+        # do_pulse_gen_constant(digital_channels=(2,))
+
+        # # # Manually set Z reference to current position
+        # piezo = pos.get_positioner_server(CoordsKey.Z)
+        # # print(piezo.get_z_position())
+        # piezo.set_z_reference()
+
+        # region 1D scan + Calibrate
+        # do_calibrate_z_axis(nv_sig)
+        # do_z_scan_1d(nv_sig)
+        # endregion 1D scan + Calibrate
+
+        # region 2D scan (x galvo, z piezo)
+        # # do_2D_xz_scan(nv_sig)
+        # z_range = np.linspace(20, 20, 11)
+        # for z in z_range:
+        #     nv_sig.coords[CoordsKey.Z] = z
+        #     pos.set_xyz_on_nv(nv_sig)
+        #     do_image_sample(nv_sig)
+        # do_2D_xz_scan(nv_sig)
+
+        # endregion 2D scan
+
+        # region Image / 3D scan
+
+        # do_z_scan_3d(nv_sig) # (xy gavo, z piezo)
+        do_image_sample(nv_sig)
         # do_image_sample_zoom(nv_sig)
+
+        # Quick NV area scans
+        # for i in range(27):
+        # do_image_sample_zoom(nv_sig)
+        #     nv_sig.coords[CoordsKey.Z] = z
+        #     # pos.set_xyz_on_nv(nv_sig)
+        #     # do_image_sample_zoom(nv_sig)
+        #       do_image_sample(nv_sig)
+
         # do_image_sample(nv_sig, nv_minus_initialization=True)
         # do_image_sample_zoom(nv_sig, nv_minus_initialization=True)
         # end region Image sample
 
-        # do_optimize(nv_sig)
-        # nv_sig["imaging_readout_dur"] = 5e7
+        # region Optimize
+        # do_optimize_z(nv_sig) # z position optimize
+        # do_optimize_xy(nv_sig, num_steps=8, scan_range=0.008) #xy galvo optimize but it works :)
+        # do_optimize_green(nv_sig) # old optimize xy
+        # do_compensate_for_drift(nv_sig)
+        # endregion Optimize
 
         # region Stationary count
         # do_stationary_count(nv_sig, disable_opt=True) #Note there is a slow response time w/ the APD
@@ -479,11 +914,12 @@ if __name__ == "__main__":
         # do_stationary_count(nv_sig, disable_opt=True, nv_zero_initialization=True)
         # endregion Stationary count
 
+        # region Resonance and SCC
         # do_resonance(nv_sig, 2.87, 0.200)
         # do_resonance_state(nv_sig , States.LOW)
         # do_resonance_state(nv_sig, States.HIGH)
         # do_pulsed_resonance(nv_sig, 2.87, 0.200)
-        # do_pulsed_resonance_state(nv_sig, States.LOW)
+        # do_pulsed_re2.sonance_state(nv_sig, States.LOW)
         # do_pulsed_resonance_state(nv_sig, States.HIGH)
         # do_rabi(nv_sig)
         # do_rabi(nv_sig, States.HIGH, uwave_time_range=[0, 400])
@@ -494,14 +930,17 @@ if __name__ == "__main__":
         # SCC characterization
         # do_determine_charge_readout_params(nv_sig,nbins=200,nreps=100)
         # do_scc_pulsed_resonance(nv_sig)
+        # endregion Resonance and SCC
 
     ### Error handling and wrap-up
 
     except Exception as exc:
         recipient = "cmreiter@berkeley.edu"
-        # tool_belt.send_exception_email(email_to=recipient)
+        tool_belt.send_exception_email(email_to=recipient)
         raise exc
     finally:
         tool_belt.reset_cfm()
         tool_belt.reset_safe_stop()
         kpl.show(block=True)
+
+# endregion

@@ -1,11 +1,11 @@
 # -*- coding: utf-8 -*-
 """
-Illuminate an area, collecting onto the camera
+Illuminate an area, collecting onto the camera.
 
-Created on April 9th, 2019
-
-@author: mccambria
+Created: April 9, 2019 (M. Cambria)
+Updated: Fall 2024 (Saroj Chand)
 """
+
 
 import copy
 import sys

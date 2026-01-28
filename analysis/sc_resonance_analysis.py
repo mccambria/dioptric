@@ -171,38 +171,41 @@ def plot_nv_resonance(
     ax_snr.grid(True, linestyle="--", alpha=0.6)
     ax_snr.tick_params(axis="both", labelsize=14)
     plt.show(block=True)
-    # # Set plot style
-    # for nv_ind in range(num_nvs):
-    #     fig, ax = plt.subplots(figsize=(8, 5))
-    #     # Data points with error bars
-    #     ax.errorbar(
-    #         freqs,
-    #         avg_counts[nv_ind],
-    #         yerr=avg_counts_ste[nv_ind],
-    #         fmt="o",
-    #         color="steelblue",
-    #         ecolor="gray",
-    #         elinewidth=1,
-    #         capsize=3,
-    #         markersize=5,
-    #         label="Data"
-    #     )
-    #     # Fit curve
-    #     ax.plot(freqs_dense, fit_fns[nv_ind], "-", color="red", label="Fit")
-    #     # Labels and style
-    #     ax.set_xlabel("Frequency (GHz)")
-    #     ax.set_ylabel("Normalized NV Population")
-    #     ax.set_title(f"NV Index: {nv_ind}")
-    #     ax.grid(True, linestyle="--", alpha=0.6)
-    #     ax.legend()
-    #     plt.show(block=True)
-    # return
+    # # # Set plot style
+    for nv_ind in range(num_nvs):
+        fig, ax = plt.subplots(figsize=(8, 5))
+        # Data points with error bars
+        ax.errorbar(
+            freqs,
+            avg_counts[nv_ind],
+            yerr=avg_counts_ste[nv_ind],
+            fmt="o",
+            color="steelblue",
+            ecolor="gray",
+            elinewidth=1,
+            capsize=3,
+            markersize=5,
+            label="Data"
+        )
+        # Fit curve
+        ax.plot(freqs_dense, fit_fns[nv_ind], "-", color="red", label="Fit")
+        # Labels and style
+        ax.set_xlabel("Frequency (GHz)")
+        ax.set_ylabel("Normalized NV Population")
+        ax.set_title(f"NV Index: {nv_ind}")
+        ax.grid(True, linestyle="--", alpha=0.6)
+        ax.legend()
+        plt.show(block=True)
 
     # ----------------- Example of use in your pipeline -----------------
     # center_freqs is your list of (f1, f2) from the fit_results
     # If you can also return (amp1, amp2) per NV from the fit, pass as peak_amps=...
-    targets = (2.766, 2.786, 2.82, 2.840)  # GHz
+    # targets = (2.766, 2.786, 2.82, 2.840)  # GHz
+    # targets = (2.787527, 2.840802)  # GHz
+    targets = (2.7733, 2.8103)  # GHz
+    # targets = (2.7230, 2.7470, 2.8290, 2.8467)  # GHz
     out = classify_nv_by_ms_minus_targets(center_freqs, targets_ghz=targets, tol_mhz=60.0)
+    # return
 
     # Access results:
     orientation_bins = out['bins']          # dict: {2.76: [nv_idx,...], 2.78: [...], ...}
@@ -212,7 +215,7 @@ def plot_nv_resonance(
     print("No match:", no_match, "Multi-match:", multi_match)
     # Print the NV indices per orientation bin
     for t, idx_list in out['bins'].items():
-        print(f"Target {t:.2f} GHz -> NV indices {idx_list}")
+        print(f"Target {t:.3f} GHz -> NV indices {idx_list}")
     # return
     ### snrs
     median_snr = np.median(snrs)
@@ -249,59 +252,15 @@ def plot_nv_resonance(
     print(f"Number of nvs after filtering : {len(cleaned_nv_indices)}")
     print(f"cleaned indices: {cleaned_nv_indices}")
     # return
-    # Scatter plot
-    plt.figure()
-    plt.scatter(
-        cleaned_nv_indices,
-        cleaned_snrs,
-        color="blue",
-        marker="o",
-        alpha=0.6,
-        label="SNRs",
-    )
-    for i, (nv_index, snr) in enumerate(zip(cleaned_nv_indices, cleaned_snrs)):
-        plt.annotate(
-            f"{nv_index}",
-            (nv_index, snr),
-            textcoords="offset points",
-            xytext=(0, 2),
-            ha="center",
-            fontsize=6,
-        )
-    # Add reference lines for median, Q1, and Q3
-    plt.axhline(
-        median_snr_cleaned,
-        color="green",
-        linestyle="--",
-        label=f"Median SNR = {median_snr_cleaned:.3f}",
-    )
-    plt.axhline(
-        Q1,
-        color="orange",
-        linestyle="--",
-        label=f"Q1 = {Q1:.3f}",
-    )
-    plt.axhline(
-        Q3,
-        color="red",
-        linestyle="--",
-        label=f"Q3 = {Q3:.3f}",
-    )
-    # Add labels and legend
-    plt.title(f"SNRs Across {num_nvs} Shallow NVs")
-    plt.xlabel("NV Index")
-    plt.ylabel("SNR")
-    plt.legend(loc="upper right", fontsize=9)
-    plt.grid(True, linestyle="--", alpha=0.5)
-    # return
-
     filter_nvs = True
     # filter_nvs = False
     if filter_nvs:
         # target_peak_values = [0.113, 0.217]
-        target_peak_values = [0.77, 0.181]
-        # target_peak_values = [0.290]
-        tolerance = 0.008
+        target_peak_values = [0.077, 0.176]
+        # target_peak_values = [0.113, 0.264]
+        # target_peak_values = [0.134, 0.326]
+        target_peak_values = [0.138, 0.207]
+        tolerance = 0.01
         # Filter indices based on proximity to target peak differences
         filtered_indices = [
             idx
@@ -363,7 +322,7 @@ def plot_nv_resonance(
     #     for idx in range(num_nvs)
     #     if idx not in indices_to_remove_manually
     # ]
-    # return
+    return
     filtered_nv_list = [nv_list[idx] for idx in filtered_indices]
     filtered_avg_counts = [avg_counts[idx] for idx in filtered_indices]
     filtered_avg_counts_ste = [avg_counts_ste[idx] for idx in filtered_indices]
@@ -726,30 +685,130 @@ if __name__ == "__main__":
     file_ids = [
         "2025_10_09-09_29_58-rubin-nv0_2025_09_08",
     ]
+    
     ## 118 nVs
-    file_ids = [
-        "2025_10_17-23_28_58-rubin-nv0_2025_09_08",
-    ]
-
+    # file_ids = [
+    #     "2025_10_17-23_28_58-rubin-nv0_2025_09_08",
+    # ]
+    
+    #====================johnson sample mounts=========================
     ## 312 nVs
-    file_ids = [
-        "2025_10_23-08_33_06-johnson-nv0_2025_10_21",
-    ]
+    # file_ids = [
+    #     "2025_10_23-08_33_06-johnson-nv0_2025_10_21",
+    # ]
+    ## 312 nVs
     # file_ids = [
     #     "2025_10_24-09_48_53-johnson-nv0_2025_10_21",
     # ]
+    ## 312 nVs
+    # file_ids = [
+    #     "2025_10_25-12_06_28-johnson-nv0_2025_10_21",
+    # ]
+    ## 230 nVs
+    # file_ids = [
+    #     "2025_10_27-11_35_46-johnson-nv0_2025_10_21",
+    # ]
+    ## 223 nVs
+    # file_ids = [
+    #     "2025_10_28-03_08_17-johnson-nv0_2025_10_21",
+    # ]
+    ## 204 nVs
+    # file_ids = [
+    #     "2025_11_01-07_35_08-johnson-nv0_2025_10_21",
+    # ]
+    ## 204 nVs
+    ## current: I_y (ch1) = 0.73, I_z(ch2)=1.54
+    # file_ids = [
+    #     "2025_11_04-03_46_51-johnson-nv0_2025_10_21",
+    # ]
+    ## 204 nVs
+    # ## current: I_y (ch1) = 0, I_z(ch2)=1.0
+    # file_ids = [
+    #     "2025_11_05-02_06_38-johnson-nv0_2025_10_21",
+    # ]
+    ## 204 nVs
+    ## current: I_y (ch1) = 1.0, I_z(ch2)=0
+    # file_ids = [
+    #     "2025_11_05-22_51_27-johnson-nv0_2025_10_21",
+    # ]
+    ## 204 nVs
+    # # current: I_y (ch1) = 1.0, I_z(ch2)=1.0
+    # file_ids = [
+    #     "2025_11_06-07_31_12-johnson-nv0_2025_10_21",
+    # ]
+    ## 312 nVs
+    ##  current: I_y (ch1) = 0.0, I_z(ch2)=1.0
+    # file_ids = [
+    #     "2025_11_07-02_08_20-johnson-nv0_2025_10_21",
+    # ]
+    ## 312 nVs
+    ###  current: I_y (ch1) = 1.0, I_z(ch2)=0.0
+    # file_ids = [
+    #     "2025_11_07-18_12_34-johnson-nv0_2025_10_21",
+    # ]
+    ## 312 nVs
+    ###  current: I_y (ch1) = 1.0, I_z(ch2)=1.0
+    # file_ids = [
+    #     "2025_11_08-03_22_11-johnson-nv0_2025_10_21",
+    # ]
+    ## 204 nVs
+    ###  current: I_y (ch1) = 0.0, I_z(ch2)=0.0
+    # file_ids = [
+    #     "2025_11_09-10_40_49-johnson-nv0_2025_10_21",
+    # ]
+    
+    ####### Iy=3A, IZ = -3A
+    # ## 312 nVs
+    # file_ids = [
+    #     "2025_11_20-09_14_44-johnson-nv0_2025_10_21",
+    # ]
+    ## 204 nVs
+    # file_ids = [
+    #     "2025_11_21-06_06_26-johnson-nv0_2025_10_21",
+    # ]
+    
+    ####### Iy=3A, IZ =3A
+    ## 312 nVs
+    # file_ids = [
+    #     "2025_11_27-11_18_26-johnson-nv0_2025_10_21",
+    # ]
+    
+    ####### Iy=3A, IZ =0
+    ## 312 nVs
+    # file_ids = [
+    #     "2025_11_28-01_53_35-johnson-nv0_2025_10_21",
+    # ]
+    ## 204 nVs
+    # file_ids = [
+    #     "2025_11_29-04_02_02-johnson-nv0_2025_10_21",
+    # ]
+    
+    ####### Iy=0, IZ =-3A
+    ## 312 nVs
+    # file_ids = [
+    #     "2025_12_10-10_28_25-johnson-nv0_2025_10_21",
+    # ]
+    ## 312 nVs
+    # file_ids = [
+    #     "2025_12_20-06_01_33-johnson-nv0_2025_10_21",
+    # ]
+    
+    ####### Iy=0, IZ =0
+    ##204 NVs
+    # file_ids = [
+    #     "2026_01_14-08_06_55-johnson-nv0_2025_10_21",
+    # ]
+    
+    ####### Iy=0, IZ =0
+    ##312 NVs
+    file_ids = [
+        "2026_01_19-10_59_31-johnson-nv0_2025_10_21",
+    ]
 
-    file_ids = [
-        "2025_10_25-12_06_28-johnson-nv0_2025_10_21",
-    ]
-    file_ids = [
-        "2025_10_27-11_35_46-johnson-nv0_2025_10_21",
-    ]
     # Load the first dataset as a base
     combined_data = dm.get_raw_data(
         file_stem=file_ids[0], load_npz=True, use_cache=True
     )
-
     combined_sig_counts = None
     combined_ref_counts = None
 
@@ -803,7 +862,7 @@ if __name__ == "__main__":
                 new_ref_counts[:, :, :, 0::2] = new_ref_counts_0
                 new_ref_counts[:, :, :, 1::2] = new_ref_counts_1
 
-                # Append new data
+                # Append new data 
                 combined_sig_counts = np.append(
                     combined_sig_counts, new_sig_counts, axis=1
                 )
@@ -833,5 +892,6 @@ if __name__ == "__main__":
         )
     else:
         print("No valid data available for plotting.")
-
+ 
+    
     kpl.show(block=True)

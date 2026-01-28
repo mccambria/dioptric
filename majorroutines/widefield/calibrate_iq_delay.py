@@ -1,12 +1,13 @@
 # -*- coding: utf-8 -*-
 """
-Created on November 29th, 2023
+Widefield IQ-delay calibration.
 
-@author: mccambria
+Sweeps an IQ timing offset (taus) using "calibrate_iq_delay.py", processes I/Q readout counts
+(threshold + normalization), plots the median I and Q response across NVs vs delay, and saves
+raw_data + metadata.
 
-Updated on April 17th, 2023
-
-@author: sbchand
+Created: 2023-11-29 (mccambria)
+Updated: 2024-04-17 (sbchand)
 """
 
 import sys

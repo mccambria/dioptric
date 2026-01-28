@@ -475,23 +475,6 @@ def plot_spin_echo_all(nv_list, taus, norm_counts, norm_counts_ste):
             label.set_horizontalalignment("right")
             label.set_x(0.02)  # Fine-tune this as needed
             label.set_zorder(100)
-        # for col in range(num_cols):
-        #     bottom_row_idx = num_rows * num_cols - num_cols + col
-        #     if bottom_row_idx < len(axes):
-        #         ax = axes[bottom_row_idx]
-        #         tick_positions = np.linspace(min(taus) + 2, max(taus) - 2, 6)
-        #         ax.set_xticks(tick_positions)
-        #         ax.set_xticklabels(
-        #             [f"{tick:.2f}" for tick in tick_positions],
-        #             rotation=45,
-        #             fontsize=9,
-        #             y=0.00,
-        #         )
-        #         ax.set_xlim(min(taus), max(taus))
-        #         ax.set_xlabel("Time (µs)")
-        #     else:
-        #         ax.set_xticklabels([])
-    # Set xticks only for bottom row
 
     for col in range(num_cols):
         bottom_row_idx = num_rows * num_cols - num_cols + col
@@ -563,6 +546,27 @@ if __name__ == "__main__":
                   "2025_10_09-23_03_41-rubin-nv0_2025_09_08",
                   "2025_10_10-14_23_58-rubin-nv0_2025_09_08",
                   "2025_10_10-17_04_27-rubin-nv0_2025_09_08"]
+    
+    file_stems = ["2025_10_29-10_33_01-johnson-nv0_2025_10_21",
+                "2025_10_29-02_21_07-johnson-nv0_2025_10_21",
+                ]
+    
+    ######## Johnson B\
+    file_stems = [
+                "2025_12_04-19_43_15-johnson-nv0_2025_10_21",
+                "2025_12_04-11_08_28-johnson-nv0_2025_10_21",
+                "2025_12_04-02_39_13-johnson-nv0_2025_10_21",
+                "2025_12_03-17_39_36-johnson-nv0_2025_10_21",
+                "2025_12_03-08_56_17-johnson-nv0_2025_10_21",
+                "2025_12_02-23_42_45-johnson-nv0_2025_10_21",
+                # "2025_12_02-02_01_34-johnson-nv0_2025_10_21",
+                # "2025_12_01-17_26_42-johnson-nv0_2025_10_21",
+                # "2025_12_01-08_53_38-johnson-nv0_2025_10_21",
+                "2025_12_01-00_24_57-johnson-nv0_2025_10_21",
+                "2025_11_30-07_21_26-johnson-nv0_2025_10_21",
+                "2025_11_30-15_56_42-johnson-nv0_2025_10_21",
+                ]
+    
     try:
         data = widefield.process_multiple_files(file_stems, load_npz=True)
         # data = widefield.process_multiple_files(file_stems)
@@ -589,10 +593,10 @@ if __name__ == "__main__":
         # fit_fns, popts = fit_spin_echo(
         #     nv_list, total_evolution_times, norm_counts, norm_counts_ste
         # )
-        # plot_spin_echo_fits(
-        #     nv_list, total_evolution_times, norm_counts, norm_counts_ste
-        # )
-        plot_spin_echo_all(nv_list, total_evolution_times, norm_counts, norm_counts_ste)
+        plot_spin_echo_fits(
+            nv_list, total_evolution_times, norm_counts, norm_counts_ste
+        )
+        # plot_spin_echo_all(nv_list, total_evolution_times, norm_counts, norm_counts_ste)
     except Exception as e:
         print(f"Error occurred: {e}")
         print(traceback.format_exc())

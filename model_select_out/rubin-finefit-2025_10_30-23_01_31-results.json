@@ -1,0 +1,483 @@
+{
+  "timestamp": "2025_10_30-23_01_31",
+  "Nmax": 3,
+  "test_chirp": [
+    false,
+    true
+  ],
+  "enable_comb_extras": true,
+  "per_nv": [
+    {
+      "nv": 0,
+      "error": "No valid model fit"
+    },
+    {
+      "nv": 1,
+      "error": "No valid model fit"
+    },
+    {
+      "nv": 2,
+      "error": "No valid model fit"
+    },
+    {
+      "nv": 3,
+      "error": "No valid model fit"
+    },
+    {
+      "nv": 4,
+      "error": "No valid model fit"
+    },
+    {
+      "nv": 5,
+      "error": "No valid model fit"
+    },
+    {
+      "nv": 6,
+      "error": "No valid model fit"
+    },
+    {
+      "nv": 7,
+      "error": "No valid model fit"
+    },
+    {
+      "nv": 8,
+      "error": "No valid model fit"
+    },
+    {
+      "nv": 9,
+      "error": "No valid model fit"
+    },
+    {
+      "nv": 10,
+      "error": "No valid model fit"
+    },
+    {
+      "nv": 11,
+      "error": "No valid model fit"
+    },
+    {
+      "nv": 12,
+      "error": "No valid model fit"
+    },
+    {
+      "nv": 13,
+      "error": "No valid model fit"
+    },
+    {
+      "nv": 14,
+      "error": "No valid model fit"
+    },
+    {
+      "nv": 15,
+      "error": "No valid model fit"
+    },
+    {
+      "nv": 16,
+      "error": "No valid model fit"
+    },
+    {
+      "nv": 17,
+      "error": "No valid model fit"
+    },
+    {
+      "nv": 18,
+      "error": "No valid model fit"
+    },
+    {
+      "nv": 19,
+      "error": "No valid model fit"
+    },
+    {
+      "nv": 20,
+      "error": "No valid model fit"
+    },
+    {
+      "nv": 21,
+      "error": "No valid model fit"
+    },
+    {
+      "nv": 22,
+      "error": "No valid model fit"
+    },
+    {
+      "nv": 23,
+      "error": "No valid model fit"
+    },
+    {
+      "nv": 24,
+      "error": "No valid model fit"
+    },
+    {
+      "nv": 25,
+      "error": "No valid model fit"
+    },
+    {
+      "nv": 26,
+      "error": "No valid model fit"
+    },
+    {
+      "nv": 27,
+      "error": "No valid model fit"
+    },
+    {
+      "nv": 28,
+      "error": "No valid model fit"
+    },
+    {
+      "nv": 29,
+      "error": "No valid model fit"
+    },
+    {
+      "nv": 30,
+      "error": "No valid model fit"
+    },
+    {
+      "nv": 31,
+      "error": "No valid model fit"
+    },
+    {
+      "nv": 32,
+      "error": "No valid model fit"
+    },
+    {
+      "nv": 33,
+      "error": "No valid model fit"
+    },
+    {
+      "nv": 34,
+      "error": "No valid model fit"
+    },
+    {
+      "nv": 35,
+      "error": "No valid model fit"
+    },
+    {
+      "nv": 36,
+      "error": "No valid model fit"
+    },
+    {
+      "nv": 37,
+      "error": "No valid model fit"
+    },
+    {
+      "nv": 38,
+      "error": "No valid model fit"
+    },
+    {
+      "nv": 39,
+      "error": "No valid model fit"
+    },
+    {
+      "nv": 40,
+      "error": "No valid model fit"
+    },
+    {
+      "nv": 41,
+      "error": "No valid model fit"
+    },
+    {
+      "nv": 42,
+      "error": "No valid model fit"
+    },
+    {
+      "nv": 43,
+      "error": "No valid model fit"
+    },
+    {
+      "nv": 44,
+      "error": "No valid model fit"
+    },
+    {
+      "nv": 45,
+      "error": "No valid model fit"
+    },
+    {
+      "nv": 46,
+      "error": "No valid model fit"
+    },
+    {
+      "nv": 47,
+      "error": "No valid model fit"
+    },
+    {
+      "nv": 48,
+      "error": "No valid model fit"
+    },
+    {
+      "nv": 49,
+      "error": "No valid model fit"
+    },
+    {
+      "nv": 50,
+      "error": "No valid model fit"
+    },
+    {
+      "nv": 51,
+      "error": "No valid model fit"
+    },
+    {
+      "nv": 52,
+      "error": "No valid model fit"
+    },
+    {
+      "nv": 53,
+      "error": "No valid model fit"
+    },
+    {
+      "nv": 54,
+      "error": "No valid model fit"
+    },
+    {
+      "nv": 55,
+      "error": "No valid model fit"
+    },
+    {
+      "nv": 56,
+      "error": "No valid model fit"
+    },
+    {
+      "nv": 57,
+      "error": "No valid model fit"
+    },
+    {
+      "nv": 58,
+      "error": "No valid model fit"
+    },
+    {
+      "nv": 59,
+      "error": "No valid model fit"
+    },
+    {
+      "nv": 60,
+      "error": "No valid model fit"
+    },
+    {
+      "nv": 61,
+      "error": "No valid model fit"
+    },
+    {
+      "nv": 62,
+      "error": "No valid model fit"
+    },
+    {
+      "nv": 63,
+      "error": "No valid model fit"
+    },
+    {
+      "nv": 64,
+      "error": "No valid model fit"
+    },
+    {
+      "nv": 65,
+      "error": "No valid model fit"
+    },
+    {
+      "nv": 66,
+      "error": "No valid model fit"
+    },
+    {
+      "nv": 67,
+      "error": "No valid model fit"
+    },
+    {
+      "nv": 68,
+      "error": "No valid model fit"
+    },
+    {
+      "nv": 69,
+      "error": "No valid model fit"
+    },
+    {
+      "nv": 70,
+      "error": "No valid model fit"
+    },
+    {
+      "nv": 71,
+      "error": "No valid model fit"
+    },
+    {
+      "nv": 72,
+      "error": "No valid model fit"
+    },
+    {
+      "nv": 73,
+      "error": "No valid model fit"
+    },
+    {
+      "nv": 74,
+      "error": "No valid model fit"
+    },
+    {
+      "nv": 75,
+      "error": "No valid model fit"
+    },
+    {
+      "nv": 76,
+      "error": "No valid model fit"
+    },
+    {
+      "nv": 77,
+      "error": "No valid model fit"
+    },
+    {
+      "nv": 78,
+      "error": "No valid model fit"
+    },
+    {
+      "nv": 79,
+      "error": "No valid model fit"
+    },
+    {
+      "nv": 80,
+      "error": "No valid model fit"
+    },
+    {
+      "nv": 81,
+      "error": "No valid model fit"
+    },
+    {
+      "nv": 82,
+      "error": "No valid model fit"
+    },
+    {
+      "nv": 83,
+      "error": "No valid model fit"
+    },
+    {
+      "nv": 84,
+      "error": "No valid model fit"
+    },
+    {
+      "nv": 85,
+      "error": "No valid model fit"
+    },
+    {
+      "nv": 86,
+      "error": "No valid model fit"
+    },
+    {
+      "nv": 87,
+      "error": "No valid model fit"
+    },
+    {
+      "nv": 88,
+      "error": "No valid model fit"
+    },
+    {
+      "nv": 89,
+      "error": "No valid model fit"
+    },
+    {
+      "nv": 90,
+      "error": "No valid model fit"
+    },
+    {
+      "nv": 91,
+      "error": "No valid model fit"
+    },
+    {
+      "nv": 92,
+      "error": "No valid model fit"
+    },
+    {
+      "nv": 93,
+      "error": "No valid model fit"
+    },
+    {
+      "nv": 94,
+      "error": "No valid model fit"
+    },
+    {
+      "nv": 95,
+      "error": "No valid model fit"
+    },
+    {
+      "nv": 96,
+      "error": "No valid model fit"
+    },
+    {
+      "nv": 97,
+      "error": "No valid model fit"
+    },
+    {
+      "nv": 98,
+      "error": "No valid model fit"
+    },
+    {
+      "nv": 99,
+      "error": "No valid model fit"
+    },
+    {
+      "nv": 100,
+      "error": "No valid model fit"
+    },
+    {
+      "nv": 101,
+      "error": "No valid model fit"
+    },
+    {
+      "nv": 102,
+      "error": "No valid model fit"
+    },
+    {
+      "nv": 103,
+      "error": "No valid model fit"
+    },
+    {
+      "nv": 104,
+      "error": "No valid model fit"
+    },
+    {
+      "nv": 105,
+      "error": "No valid model fit"
+    },
+    {
+      "nv": 106,
+      "error": "No valid model fit"
+    },
+    {
+      "nv": 107,
+      "error": "No valid model fit"
+    },
+    {
+      "nv": 108,
+      "error": "No valid model fit"
+    },
+    {
+      "nv": 109,
+      "error": "No valid model fit"
+    },
+    {
+      "nv": 110,
+      "error": "No valid model fit"
+    },
+    {
+      "nv": 111,
+      "error": "No valid model fit"
+    },
+    {
+      "nv": 112,
+      "error": "No valid model fit"
+    },
+    {
+      "nv": 113,
+      "error": "No valid model fit"
+    },
+    {
+      "nv": 114,
+      "error": "No valid model fit"
+    },
+    {
+      "nv": 115,
+      "error": "No valid model fit"
+    },
+    {
+      "nv": 116,
+      "error": "No valid model fit"
+    },
+    {
+      "nv": 117,
+      "error": "No valid model fit"
+    }
+  ]
+}

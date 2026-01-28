@@ -82,6 +82,54 @@ def get_seq(pol_coords_list, charge_prep, dark_time_1_ns, dark_time_2_ns, num_re
     seq_ret_vals = []
     return seq, seq_ret_vals
 
+# def get_seq(pol_coords_list, charge_prep, dark_time_1_ns, dark_time_2_ns, num_reps):
+#     """
+#     3 readouts per rep:
+#       exp0: readout at t0 (immediately after optional prep)
+#       exp1: readout after t1
+#       exp2: readout after t2 (implemented as wait(t2-t1) after exp1)
+#     """
+#     if num_reps is None:
+#         num_reps = 1
+
+#     num_nvs = len(pol_coords_list)
+
+#     t1 = seq_utils.convert_ns_to_cc(dark_time_1_ns, allow_zero=True)
+#     t2 = seq_utils.convert_ns_to_cc(dark_time_2_ns, allow_zero=True)
+#     if t2 < t1:
+#         raise ValueError("dark_time_2_ns must be >= dark_time_1_ns")
+
+#     dt = [0, t1, t2 - t1]  # waits before each readout (within the same rep)
+
+#     with qua.program() as seq:
+#         seq_utils.init(num_nvs)
+#         seq_utils.macro_run_aods()
+
+#         def one_exp(wait_time_cc, exp_ind):
+#             # wait relative to previous readout
+#             if wait_time_cc > 0:
+#                 qua.wait(wait_time_cc)
+#             qua.align()
+#             seq_utils.macro_charge_state_readout()
+#             seq_utils.macro_wait_for_trigger()
+
+#         def one_rep(rep_ind):
+#             # optional prep once per rep
+#             if charge_prep:
+#                 seq_utils.macro_polarize(
+#                     pol_coords_list,
+#                     spin_pol=False,
+#                     targeted_polarization=True,
+#                 )
+
+#             # exp0 (t0), exp1 (t1), exp2 (t2)
+#             for exp_ind, wait_cc in enumerate(dt):
+#                 one_exp(wait_cc, exp_ind)
+
+#         seq_utils.handle_reps(one_rep, num_reps, wait_for_trigger=False)
+#         seq_utils.macro_pause()
+
+#     return seq, []
 
 if __name__ == "__main__":
     config_module = common.get_config_module()

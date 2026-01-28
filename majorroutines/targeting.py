@@ -5,6 +5,7 @@ Optimize on an NV
 Largely rewritten August 16th, 2023
 
 @author: mccambria
+@author: sbchand
 """
 
 
@@ -111,14 +112,16 @@ def _fit_gaussian(scan_vals, count_vals, axis_ind, positive_amplitude=True, fig=
 
 # endregion
 # region Private axis optimization functions
-
-
-def _read_counts_counter_stream(axis_ind=None, scan_vals=None):
+def _read_counts_counter_stream(positioner=None, axis_ind=None, scan_vals=None):
+    """
+    Stream scan over scan_vals using the given positioner and read APD counts.
+    Used in confocal / COUNTER mode.
+    """
     if axis_ind is not None:
-        axis_stream_fn = pos.get_positioner_stream_fn(axis_ind)
+        axis_stream_fn = pos.get_positioner_stream_fn(positioner, axis_ind)
         axis_stream_fn(scan_vals)
     counter = tb.get_server_counter()
-    pulse_gen = tb.get_server_pulse_gen()
+    pulse_gen = tb.get_server_pulse_streamer()
     counts = []
     num_read_so_far = 0
     counter.start_tag_stream()
@@ -138,12 +141,15 @@ def _read_counts_counter_stream(axis_ind=None, scan_vals=None):
     counter.stop_tag_stream()
     return [np.array(counts, dtype=int)]
 
-
-def _read_counts_counter_step(axis_ind=None, scan_vals=None):
+def _read_counts_counter_step(positioner=None, axis_ind=None, scan_vals=None):
+    """
+    Step scan: move positioner one value at a time and read counts.
+    Used in confocal / COUNTER mode when control_mode == STEP.
+    """
     if axis_ind is not None:
         axis_write_fn = pos.get_positioner_write_fn(positioner, axis_ind)
     counter = tb.get_server_counter()
-    pulse_gen = tb.get_server_pulse_gen()
+    pulse_gen = tb.get_server_pulse_streamer()
     counter.start_tag_stream()
     counts = []
     for ind in range(len(scan_vals)):
@@ -182,7 +188,7 @@ def _read_counts_camera_step(nv_sig, axis_ind=None, scan_vals=None):
 
 
 def _get_opti_virtual_laser_key(positioner):
-    if positioner is CoordsKey.SAMPLE:
+    if positioner is CoordsKey.SAMPLE: #may need to make this z for cryo
         laser_key = VirtualLaserKey.IMAGING
     else:
         config = common.get_config_dict()
@@ -316,7 +322,7 @@ def _find_center_coords(nv_sig: NVSig, positioner, axis_ind, fig=None):
 
     # Perform Gaussian fit on the counts
     laser_key = _get_opti_virtual_laser_key(positioner)
-    positive_amplitude = laser_key != VirtualLaserKey.ION
+    positive_amplitude = laser_key != VirtualLaserKey.ION #Find out if ok this is imaging, or add ion
     opti_coord = _fit_gaussian(scan_vals, counts, axis_ind, positive_amplitude, fig)
 
     return opti_coord, scan_vals, counts
@@ -431,7 +437,6 @@ def _find_center_pixel_coords_with_img_array(
     else:
         return opti_pixel_coords
 
-
 def _read_counts(
     nv_sig, positioner=None, axis_ind=None, scan_vals=None, virtual_laser_key=None
 ):
@@ -440,10 +445,10 @@ def _read_counts(
     # How we conduct the scan depends on the config
     config = common.get_config_dict()
     collection_mode = config["collection_mode"]
-    pulse_gen = tb.get_server_pulse_gen()
-
+    # print(f"positioner: {positioner}, axis_ind: {axis_ind}")
     # Assume the lasers are sequence controlled if using camera
     if collection_mode == CollectionMode.CAMERA:
+        pulse_gen = tb.get_server_pulse_gen()  # not actually used
         ret_vals = _read_counts_camera_sequence(
             nv_sig, positioner, axis_ind, scan_vals, virtual_laser_key
         )
@@ -452,29 +457,34 @@ def _read_counts(
         laser_key = _get_opti_virtual_laser_key(positioner)
         laser_dict = tb.get_virtual_laser_dict(laser_key)
         laser_name = tb.get_physical_laser_name(laser_key)
+        pulse_gen = tb.get_server_pulse_streamer()
 
-        if positioner != CoordsKey.SAMPLE:
-            msg = "Optimization with a counter is only implemented for global coordinates."
+        if positioner not in (CoordsKey.SAMPLE, CoordsKey.PIXEL):
+            msg = "Optimization with a counter is only implemented for SAMPLE or PIXEL coords."
             raise NotImplementedError(msg)
+
         if laser_key != VirtualLaserKey.IMAGING:
             msg = "Optimization with a counter is only implemented for imaging lasers."
             raise NotImplementedError(msg)
 
-        delay = pos.get_positioner_delay(positioner=positioner)
-        control_mode = pos.get_positioner_control_mode(positioner)
+        # Get delay and control mode straight from the config
+        positioner_dict = config["Positioning"]["Positioners"][positioner]
+        delay = int(positioner_dict.get("delay", 0))
+        control_mode = positioner_dict.get("control_mode", PosControlMode.STREAM)
 
         seq_file_name = "simple_readout.py"
-        readout = laser_dict["duration"]
+        readout = int(laser_dict["duration"])
         seq_args = [delay, readout, laser_name]
         seq_args_string = tb.encode_seq_args(seq_args)
         pulse_gen.stream_load(seq_file_name, seq_args_string)
 
         if control_mode == PosControlMode.STEP:
-            ret_vals = _read_counts_counter_step(axis_ind, scan_vals)
+            ret_vals = _read_counts_counter_step(positioner, axis_ind, scan_vals)
         elif control_mode == PosControlMode.STREAM:
-            ret_vals = _read_counts_counter_stream(axis_ind, scan_vals)
+            ret_vals = _read_counts_counter_stream(positioner, axis_ind, scan_vals)
 
     return ret_vals
+
 
 
 def _create_opti_nv_sig(nv_sig, opti_coords, coords_key):
@@ -567,10 +577,46 @@ def _optimize_pixel_cost_jac(fit_params, x_crop_mesh, y_crop_mesh, img_array_cro
 # endregion
 # region General public functions
 
+def stationary_count_confocal_once(nv_sig, num_samples=50):
+    # Put NV at its SAMPLE coords
+    pos.set_xyz_on_nv(nv_sig)
+
+    vld_img = tb.get_virtual_laser_dict(VirtualLaserKey.IMAGING)
+    readout = int(nv_sig.pulse_durations.get(VirtualLaserKey.IMAGING, int(vld_img["duration"])))
+    readout_laser = vld_img["physical_name"]
+    readout_power = tb.set_laser_power(nv_sig, VirtualLaserKey.IMAGING)
+
+    pulsegen = tb.get_server_pulse_streamer()
+    counter = tb.get_server_counter()
+
+    delay = 0
+    seq_args = [delay, readout, readout_laser, readout_power]
+    seq_args_string = tb.encode_seq_args(seq_args)
+    seq_name = "simple_readout.py"
+
+    period = pulsegen.stream_load(seq_name, seq_args_string)[0]
+    # One gate per sample
+    counter.start_tag_stream()
+    counts = []
+    for _ in range(num_samples):
+        pulsegen.stream_start(1)
+        new = counter.read_counter_simple(1)
+        if len(new) > 0:
+            counts.append(int(new[0]))
+    counter.stop_tag_stream()
+
+    counts = np.array(counts, dtype=int)
+    avg_counts = float(np.mean(counts))
+    return avg_counts
+
 
 def stationary_count_lite(
     nv_sig, virtual_laser_key=VirtualLaserKey.IMAGING, ret_img_array=False
 ):
+    config = common.get_config_dict()
+    if config["collection_mode"] == CollectionMode.COUNTER:
+        avg_counts = stationary_count_confocal_once(nv_sig)
+        return avg_counts
     ret_vals = _read_counts(nv_sig, virtual_laser_key=virtual_laser_key)
     counts = ret_vals[0]
     avg_counts = np.average(counts)
@@ -587,6 +633,110 @@ def check_expected_counts(nv_sig, counts):
 
 
 # SBC
+# def compensate_for_drift(nv_sig: NVSig, no_crash=False):
+#     """Compensate for drift either by adjusting the sample position to recenter the sample
+#     or by adjusting the laser positioners to account for the drift
+
+#     Parameters
+#     ----------
+#     nv_sig : NVSig
+#         NV to optimize on
+#     no_crash : bool, optional
+#         flag to disable RuntimeError raised if drift compensation fails, by default False
+
+#     Raises
+#     ------
+#     RuntimeError
+#         Crashes out if drift compensation fails - disable by setting the no_crash flag
+#     """
+
+#     # Check if drift compensation is globally disabled
+#     config = common.get_config_dict()
+#     disable_drift_compensation = config.get("disable_drift_compensation", False)
+#     if disable_drift_compensation:
+#         return
+
+#     # Check expected counts and current counts
+#     expected_counts = nv_sig.expected_counts
+#     print(f"Expected counts: {expected_counts}")
+#     current_counts = stationary_count_lite(nv_sig)
+#     print(f"Counts at initial coordinates: {current_counts}")
+
+#     # Determine axes to adjust
+#     xy_coords_key = pos.get_drift_xy_coords_key()
+#     passed_coords = pos.get_nv_coords(nv_sig, xy_coords_key, drift_adjust=False)
+#     disable_z_drift_compensation = config.get("disable_z_drift_compensation", False)
+
+#     if disable_z_drift_compensation or not pos.has_z_positioner():
+#         axes = Axes.XY.value
+#     else:
+#         axes = Axes.XYZ.value
+#         passed_z_coord = pos.get_nv_coords(nv_sig, CoordsKey.Z, drift_adjust=False)
+#         passed_coords.append(passed_z_coord)
+
+#     opti_succeeded = False
+#     num_attempts = 5
+
+#     # Loop through attempts until we succeed or give up
+#     for ind in range(num_attempts):
+#         if opti_succeeded or tb.safe_stop():
+#             break
+#         print(f"Attempt number {ind + 1}")
+#         axis_failed = False
+
+#         for axis_ind in axes:
+#             # Always adjust x and y
+#             if axis_ind <= 1:
+#                 if axis_ind == 0:
+#                     opti_xy_coords = _find_center_pixel_coords(nv_sig)
+#                 opti_coord = opti_xy_coords[axis_ind]
+
+#             # Adjust z only if expected counts are None or do not meet criteria
+#             elif axis_ind == 2:
+#                 if expected_counts is not None and check_expected_counts(
+#                     nv_sig, current_counts
+#                 ):
+#                     print("Z drift compensation unnecessary.")
+#                     continue
+#                 ret_vals = _find_center_coords(nv_sig, CoordsKey.Z, axis_ind)
+#                 opti_coord = ret_vals[0]
+
+#             # Set drift if optimization succeeded
+#             if opti_coord is None:
+#                 axis_failed = True
+#             else:
+#                 cumulative = (
+#                     pos.has_sample_positioner()
+#                     and xy_coords_key is not CoordsKey.SAMPLE
+#                     and axis_ind in [0, 1]
+#                 )
+
+#                 drift_val = opti_coord - passed_coords[axis_ind]
+#                 pos.set_drift_val(drift_val, axis_ind, cumulative)
+
+#         if axis_failed:
+#             continue
+
+#         # Check counts after adjustment
+#         current_counts = stationary_count_lite(nv_sig)
+#         print(f"Counts after drift compensation: {round(current_counts, 1)}")
+#         if expected_counts is None or check_expected_counts(nv_sig, current_counts):
+#             opti_succeeded = True
+#             break
+#         else:
+#             print("Counts after drift compensation out of bounds.")
+
+#     # Cleanup and return
+#     pos.set_xyz_on_nv(nv_sig)
+
+#     if opti_succeeded:
+#         print("Drift compensation succeeded!")
+#     elif not no_crash:
+#         raise RuntimeError("Maxed out number of attempts. Drift compensation failed.")
+
+#     print()
+
+
 def compensate_for_drift(nv_sig: NVSig, no_crash=False):
     """Compensate for drift either by adjusting the sample position to recenter the sample
     or by adjusting the laser positioners to account for the drift
@@ -604,11 +754,12 @@ def compensate_for_drift(nv_sig: NVSig, no_crash=False):
         Crashes out if drift compensation fails - disable by setting the no_crash flag
     """
 
-    # Check if drift compensation is globally disabled
     config = common.get_config_dict()
     disable_drift_compensation = config.get("disable_drift_compensation", False)
     if disable_drift_compensation:
         return
+
+    collection_mode = config["collection_mode"]
 
     # Check expected counts and current counts
     expected_counts = nv_sig.expected_counts
@@ -641,9 +792,15 @@ def compensate_for_drift(nv_sig: NVSig, no_crash=False):
         for axis_ind in axes:
             # Always adjust x and y
             if axis_ind <= 1:
-                if axis_ind == 0:
-                    opti_xy_coords = _find_center_pixel_coords(nv_sig)
-                opti_coord = opti_xy_coords[axis_ind]
+                if collection_mode == CollectionMode.CAMERA:
+                    # Widefield: use image-based pixel optimizer
+                    if axis_ind == 0:
+                        opti_xy_coords = _find_center_pixel_coords(nv_sig)
+                    opti_coord = opti_xy_coords[axis_ind]
+                else:
+                    # Confocal / COUNTER: use 1D scans in xy_coords_key
+                    ret_vals = _find_center_coords(nv_sig, xy_coords_key, axis_ind)
+                    opti_coord = ret_vals[0]
 
             # Adjust z only if expected counts are None or do not meet criteria
             elif axis_ind == 2:
@@ -690,7 +847,6 @@ def compensate_for_drift(nv_sig: NVSig, no_crash=False):
 
     print()
 
-
 def optimize_pixel(nv_sig, img_array=None):
     do_plot = True
     if img_array is not None:
@@ -736,8 +892,13 @@ def optimize(
     """
 
     # Divert for pixel coords since we can just take a picture
-    if coords_key == CoordsKey.PIXEL:
+    # if coords_key == CoordsKey.PIXEL:
+    #     return optimize_pixel(nv_sig)
+    config = common.get_config_dict()
+    # Use image-based optimizer only in widefield CAMERA mode
+    if coords_key == CoordsKey.PIXEL and config["collection_mode"] == CollectionMode.CAMERA:
         return optimize_pixel(nv_sig)
+    
 
     ### Setup
 

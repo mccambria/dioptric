@@ -31,6 +31,7 @@ from labrad.server import LabradServer, setting
 from twisted.internet.defer import ensureDeferred
 
 from utils import common
+from utils import tool_belt as tb
 
 
 class FilterSliderThorEll9k(LabradServer):
